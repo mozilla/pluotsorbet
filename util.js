@@ -6,7 +6,7 @@
 var util = (function () {
   var formatRegExp = /%[sdj%]/g;
   function format(f) {
-    if (!isString(f)) {
+    if (typeof f !== "string") {
       var objects = [];
       for (var i = 0; i < arguments.length; i++) {
         objects.push(inspect(arguments[i]));
@@ -42,6 +42,10 @@ var util = (function () {
     }
     return str;
   };
+
+  function inspect(v) {
+    return "" + v;
+  }
 
   var Utf8TextDecoder;
 

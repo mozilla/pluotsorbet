@@ -10,7 +10,7 @@ var Frame = function(classArea, method) {
         
         for(var i=0; i<method.attributes.length; i++) {
             if (method.attributes[i].info.type === ATTRIBUTE_TYPES.Code) {
-                this._code = method.attributes[i].info.code;
+                this._code = Uint8Array(method.attributes[i].info.code);
                 this._exception_table = method.attributes[i].info.exception_table;
                 this._locals = new Array(method.attributes[i].info.max_locals);
                 break;
@@ -77,8 +77,8 @@ Frame.prototype.run = function(args, done) {
     var step = function() {
         
         SCHEDULER.tick(self._pid, function() {
-            var opCode = self._read8()
-            
+            var opCode = self._read8();
+
             switch (opCode) {
                 
                 case OPCODES.return:

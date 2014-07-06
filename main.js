@@ -19,4 +19,5 @@ jvm.setLogLevel(7);
 load("Main.class", function (data) {
   jvm.addPath("Main.class", data);
   jvm.loadClassFile("Main.class");
+  jvm.run();
 });

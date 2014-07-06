@@ -37,7 +37,7 @@ Classes.prototype.loadFile = function(fileName) {
 
 Classes.prototype.clinit = function() {
     for(var className in this.classes) {
-        classArea = this.classes[className];
+        var classArea = this.classes[className];
         var clinit = this.getStaticMethod(className, "<clinit>", "()V");
         if (clinit instanceof Frame) {
             SCHEDULER.sync(function() {
