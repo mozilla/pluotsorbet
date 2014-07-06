@@ -3,7 +3,7 @@
 
 'use strict';
 
-var Object = require("java/lang/Object.js");
+var Object = require("java/lang/Object");
 
 var StringBuilder = module.exports = function(p) {
     if (this instanceof StringBuilder) {
