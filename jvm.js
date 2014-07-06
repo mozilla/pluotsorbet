@@ -66,7 +66,8 @@ JVM.prototype.run = function() {
             SCHEDULER.tick(0, function() {
                 if (THREADS.count() === 1) {
                     THREADS.remove(0);
-                    console.log("exit(" + code + ")");
+                    if (typeof code !== "undefined")
+                        console.log("exit(" + code + ")");
                 } else {
                     exit();
                 }

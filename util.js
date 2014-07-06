@@ -68,10 +68,20 @@ var util = (function () {
     return Utf8TextDecoder.decode(Uint8Array(arrayBuffer));
   }
 
+  var out = "";
+  function print(s) {
+    out += s;
+    var n;
+    while ((n = out.indexOf("\n")) != -1) {
+      console.log(out.substr(0, n));
+      out = out.substr(n+1);
+    }
+  }
+
   return {
-    format: format,
     inherits: inherits,
-    print: console.log.bind(console),
+    format: format,
+    print: print,
     debug: console.info.bind(console),
     error: console.error.bind(console),
     info: console.info.bind(console),
