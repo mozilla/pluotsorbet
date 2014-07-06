@@ -30,9 +30,11 @@ Classes.prototype.loadFile = function(fileName) {
         if (name.substr(-4) !== ".jar")
             return true;
         var zip = classfiles[name];
-        if (fileName in zip.directory)
-            data = zip.read(fileName).buffer;
-        return !!data;
+        if (fileName in zip.directory) {
+            var bytes = zip.read(fileName);
+            data = bytes.buffer.slice(0, bytes.length);
+        }
+        return !data;
     });
     classfiles[fileName] = data;
     return data;
@@ -83,7 +85,7 @@ Classes.prototype.loadJSFile = function(fileName) {
       "(function () {\n" +
       "  var module = {};\n" +
       util.decodeUtf8(bytes) +
-      "  return module.export;\n" +
+      "  return module.exports;\n" +
       "})();";
     var classArea = eval(src);
     this.classes[classArea.getClassName()] = classArea;

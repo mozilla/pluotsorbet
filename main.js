@@ -16,8 +16,11 @@ function load(file, cb) {
 var jvm = new JVM();
 jvm.setLogLevel(7);
 
-load("test.jar", function (data) {
-  jvm.addPath("test.jar", data);
-  jvm.loadClassFile("Main.class");
-  jvm.run();
+load("classes.jar", function (data) {
+  jvm.addPath("classes.jar", data);
+  load("test.jar", function (data) {
+    jvm.addPath("test.jar", data);
+    jvm.loadClassFile("Main.class");
+    jvm.run();
+  });
 });
