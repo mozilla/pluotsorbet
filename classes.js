@@ -85,7 +85,6 @@ Classes.prototype.loadJSFile = function(fileName) {
     var fun = new Function("module", "require", "util", util.decodeUtf8(bytes));
     var module = {};
     function require(className) {
-        console.log("className=" + className);
         return self.getClass(className);
     }
     fun(module, require, util);

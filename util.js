@@ -71,6 +71,7 @@ var util = (function () {
   return {
     format: format,
     inherits: inherits,
+    print: console.log.bind(console),
     debug: console.info.bind(console),
     error: console.error.bind(console),
     info: console.info.bind(console),
