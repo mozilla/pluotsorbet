@@ -47,6 +47,18 @@ var util = (function () {
     return "" + v;
   }
 
+  function inherits(ctor, superCtor) {
+    ctor.super_ = superCtor;
+    ctor.prototype = Object.create(superCtor.prototype, {
+        constructor: {
+          value: ctor,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+    });
+  };
+
   var Utf8TextDecoder;
 
   function decodeUtf8(arrayBuffer) {
@@ -58,6 +70,7 @@ var util = (function () {
 
   return {
     format: format,
+    inherits: inherits,
     debug: console.info.bind(console),
     error: console.error.bind(console),
     info: console.info.bind(console),

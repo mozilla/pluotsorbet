@@ -81,13 +81,15 @@ Classes.prototype.loadJSFile = function(fileName) {
     var bytes = this.loadFile(fileName);
     if (!bytes)
         return null;
-    var src =
-      "(function () {\n" +
-      "  var module = {};\n" +
-      util.decodeUtf8(bytes) +
-      "  return module.exports;\n" +
-      "})();";
-    var classArea = eval(src);
+    var self = this;
+    var fun = new Function("module", "require", "util", util.decodeUtf8(bytes));
+    var module = {};
+    function require(className) {
+        console.log("className=" + className);
+        return self.getClass(className);
+    }
+    fun(module, require, util);
+    var classArea = module.exports;
     this.classes[classArea.getClassName()] = classArea;
     return classArea;
 }
