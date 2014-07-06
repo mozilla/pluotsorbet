@@ -22,16 +22,19 @@ Classes.prototype.addPath = function(name, data) {
 }
 
 Classes.prototype.loadFile = function(fileName) {
-    var data = this.classfiles[fileName];
+    var classfiles = this.classfiles;
+    var data = classfiles[fileName];
     if (data)
         return data;
-    Object.keys(this.classfiles).every(function (name, zip) {
+    Object.keys(classfiles).every(function (name) {
         if (name.substr(-4) !== ".jar")
             return true;
-        var data = zip.directory[fileName];
+        var zip = classfiles[name];
+        if (fileName in zip.directory)
+            data = zip.read(fileName).buffer;
         return !!data;
     });
-    this.classfiles[fileName] = data;
+    classfiles[fileName] = data;
     return data;
 }
 
@@ -112,18 +115,12 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
 
 Classes.prototype.getClass = function(className) {
     var ca = this.classes[className];
-    if (ca) {
+    if (ca)
         return ca;
-    }
-    for(var i=0; i<this.paths.length; i++) {
-        var fileName = util.format("%s/%s", this.paths[i], className);
-        if (fs.existsSync(fileName + ".js")) {
-            return this.loadJSFile(fileName + ".js");
-        }
-        if(fs.existsSync(fileName + ".class")) {
-            return this.loadClassFile(fileName + ".class");
-        }
-    }
+    if (!!(ca = this.loadJSFile(className + ".js")))
+        return ca;
+    if (!!(ca = this.loadClassFile(className + ".class")))
+        return ca;
     throw new Error(util.format("Implementation of the %s class is not found.", className));
 };
 

@@ -26,12 +26,12 @@ Scheduler.prototype.tick = function(pid, fn) {
         case MODE.YIELD:
             this._mode = MODE.NORMAL;
             this._ticks = 0;
-            (setImmediate || process.nextTick)(fn);
+            setTimeout(fn, 0);
             break;
         case MODE.NORMAL:
             if (++this._ticks > THREADS.getThread(pid).getPriority()) {
                 this._ticks = 0;
-                (setImmediate || process.nextTick)(fn);
+                setTimeout(fn, 0);
             } else {
                 fn();
             }

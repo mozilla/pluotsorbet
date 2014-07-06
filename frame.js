@@ -26,6 +26,14 @@ Frame.prototype.setPid = function(pid) {
     this._pid = pid;
 }
 
+Frame.prototype._u16_to_s16 = function(x) {
+    return (x > 0x7fff) ? (x - 0x10000) : x;
+}
+
+Frame.prototype._u32_to_s32 = function(x) {
+    return (x > 0x7fffffff) ? (x - 0x100000000) : x;
+}
+
 Frame.prototype._read8 = function() {
     return this._code[this._ip++];
 };
@@ -37,6 +45,14 @@ Frame.prototype._read16 = function() {
 Frame.prototype._read32 = function() {
     return this._read16()<<16 | this._read16();
 };
+
+Frame.prototype._read16signed = function() {
+    return this._u16_to_s16(this._read16());
+}
+
+Frame.prototype._read32signed = function() {
+    return this._u32_to_s32(this._read32());
+}
 
 Frame.prototype._throw = function(ex) { 
     var handler_pc = null;
@@ -1323,7 +1339,7 @@ Frame.prototype.arraylength = function(done) {
 }
 
 Frame.prototype.if_icmpeq = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());                                
+    var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 === ref2 ? jmp : this._ip;
@@ -1331,7 +1347,7 @@ Frame.prototype.if_icmpeq = function(done) {
 }
 
 Frame.prototype.if_icmpne = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());                                
+    var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 !== ref2 ? jmp : this._ip;
@@ -1339,7 +1355,7 @@ Frame.prototype.if_icmpne = function(done) {
 }
 
 Frame.prototype.if_icmpgt = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());                                
+    var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 < ref2 ? jmp : this._ip;
@@ -1347,19 +1363,19 @@ Frame.prototype.if_icmpgt = function(done) {
 }
 
 Frame.prototype.if_icmple = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() >= this._stack.pop() ? jmp : this._ip;
     return done();
 }
 
 Frame.prototype.if_icmplt = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() > this._stack.pop() ? jmp : this._ip;
     return done();
 }
 
 Frame.prototype.if_icmpge = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());                                
+    var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 <= ref2 ? jmp : this._ip;
@@ -1367,7 +1383,7 @@ Frame.prototype.if_icmpge = function(done) {
 }
 
 Frame.prototype.if_acmpeq = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());                                
+    var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 === ref2 ? jmp : this._ip;
@@ -1375,7 +1391,7 @@ Frame.prototype.if_acmpeq = function(done) {
 }
 
 Frame.prototype.if_acmpne = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());                                
+    var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 !== ref2 ? jmp : this._ip;
@@ -1383,37 +1399,37 @@ Frame.prototype.if_acmpne = function(done) {
 }
 
 Frame.prototype.ifne = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() !== 0 ? jmp : this._ip;
     return done();
 }
 
 Frame.prototype.ifeq = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() === 0 ? jmp : this._ip;
     return done();
 }
 
 Frame.prototype.iflt = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() < 0 ? jmp : this._ip;
     return done();
 }
 
 Frame.prototype.ifge = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() >= 0 ? jmp : this._ip;
     return done();
 }
 
 Frame.prototype.ifgt = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() > 0 ? jmp : this._ip;
     return done();
 }
 
 Frame.prototype.ifle = function(done) {
-    var jmp = this._ip - 1 + Numeric.getInt(this._read16());
+    var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() <= 0 ? jmp : this._ip;
     return done();
 }
@@ -1479,19 +1495,19 @@ Frame.prototype.f2l = function(done) {
 }
 
 Frame.prototype.goto = function(done) {
-    this._ip += Numeric.getInt(this._read16()) - 1;
+    this._ip += this._read16signed() - 1;
     return done();
 }
 
 Frame.prototype.goto_w = function(done) {
-    this._ip += Numeric.getInt(this._read32()) - 1;
+    this._ip += this._read32signed() - 1;
     return done();
 }
 
 Frame.prototype.ifnull = function(done) {
     var ref = this._stack.pop();
     if (!ref) {
-        this._ip += Numeric.getInt(this._read16()) - 1;
+        this._ip += this._read16signed() - 1;
     }
     return done();
 }
@@ -1499,7 +1515,7 @@ Frame.prototype.ifnull = function(done) {
 Frame.prototype.ifnonnull = function(done) {
     var ref = this._stack.pop();
     if (!!ref) {
-        this._ip += Numeric.getInt(this._read16()) - 1;
+        this._ip += this._read16signed() - 1;
     }
     return done();
 }
@@ -1753,7 +1769,7 @@ Frame.prototype.tableswitch = function(done) {
         jmp = this._read32();        
     }    
     
-    this._ip = startip - 1 + Numeric.getInt(jmp);
+    this._ip = startip - 1 + this._u32_to_s32(jmp);
     
     return done();
 }
@@ -1782,7 +1798,7 @@ Frame.prototype.lookupswitch = function(done) {
             }
         }
       
-    this._ip = startip - 1 + Numeric.getInt(jmp);
+    this._ip = startip - 1 + this._u32_to_s32(jmp);
     
     return done();
 }
