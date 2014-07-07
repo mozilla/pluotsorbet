@@ -11,11 +11,13 @@ var ClassArea = function(classBytes) {
     }
 }
 
-ClassArea.prototype.getClassName = function() {    
+ClassArea.prototype.getClassName = function() {
     return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.this_class].name_index].bytes;    
 }
 
-ClassArea.prototype.getSuperClassName = function() {    
+ClassArea.prototype.getSuperClassName = function() {
+    if (!this.classImage.super_class)
+        return null;
     return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.super_class].name_index].bytes;    
 }
 

@@ -76,23 +76,6 @@ Classes.prototype.loadClassFile = function(fileName) {
     return ca;
 }
 
-Classes.prototype.loadJSFile = function(fileName) {
-    LOG.debug("loading " + fileName + " ...");
-    var bytes = this.loadFile(fileName);
-    if (!bytes)
-        return null;
-    var self = this;
-    var fun = new Function("module", "require", "util", util.decodeUtf8(bytes));
-    var module = {};
-    function require(className) {
-        return self.getClass(className);
-    }
-    fun(module, require, util);
-    var classArea = module.exports;
-    this.classes[classArea.getClassName()] = classArea;
-    return classArea;
-}
-
 Classes.prototype.getEntryPoint = function(className, methodName) {
     for(var name in this.classes) {
         var ca = this.classes[name];
@@ -119,8 +102,6 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
 Classes.prototype.getClass = function(className) {
     var ca = this.classes[className];
     if (ca)
-        return ca;
-    if (!!(ca = this.loadJSFile(className + ".js")))
         return ca;
     if (!!(ca = this.loadClassFile(className + ".class")))
         return ca;
@@ -174,36 +155,47 @@ Classes.prototype.getMethod = function(className, methodName, signature) {
         
 Classes.prototype.newObject = function(className) {
     var ca = this.getClass(className);
-    if (ca instanceof ClassArea) {
+    var ctor = function() {};
+    var superClassName = ca.getSuperClassName();
+    if (superClassName)
+        ctor.prototype = this.newObject(superClassName);
+    var o = new ctor();
+
+    o.getClassName = new Function(util.format("return \"%s\"", className));
+
+    var cp = ca.getConstantPool();
+
+    ca.getFields().forEach(function(field) {
+        var fieldName = cp[field.name_index].bytes;
+        o[fieldName] = null;
+    });
         
-        var ctor = function() {};
-        ctor.prototype = this.newObject(ca.getSuperClassName());
-        var o = new ctor();
+    ca.getMethods().forEach(function(method) {
+        var methodName = cp[method.name_index].bytes;
+        o[methodName] = new Frame(ca, method);
+    });
         
-        o.getClassName = new Function(util.format("return \"%s\"", className));
-        
-        var cp = ca.getConstantPool();
-        
-        ca.getFields().forEach(function(field) {
-            var fieldName = cp[field.name_index].bytes;
-            o[fieldName] = null;
-        });
-        
-        ca.getMethods().forEach(function(method) {
-            var methodName = cp[method.name_index].bytes;
-            o[methodName] = new Frame(ca, method);
-        });
-        
-        return o;
-    } else {
-        var o = new ca();
-        o.getClassName = new Function(util.format("return \"%s\"", className));
-        return o;
-    }
+    return o;
 }
 
 Classes.prototype.newException = function(className, message, cause) {
     var ex = this.newObject(className);
+
+    var ca = this.getClass(className);
+    var cp = ca.getConstantPool();
+    var ctors = [];
+    ca.getMethods().forEach(function(method) {
+        if (cp[method.name_index].bytes === "<init>") {
+            ctors[cp[method.signature_index].bytes] = method;
+        }
+    });
+    var ctor = ctors["(Ljava/lang/String;)V"];
+    if (ctor) {
+    }
+
+    Object.keys(ctors).forEach(function (ctor) {
+        console.log(ctor);
+    });
     ex["<init>"](message, cause);
     return ex;
 }

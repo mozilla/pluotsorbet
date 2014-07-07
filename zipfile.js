@@ -3,6 +3,11 @@
 
 'use strict';
 
+function error(s) {
+  console.trace(s);
+  throw new Error(s);
+}
+
 var codeLenCodeMap = new Uint32Array([
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 ]);
@@ -104,8 +109,7 @@ function inflate(bytes) {
   function getBits(bits) {
     var b;
     while (codeSize < bits) {
-      if (typeof (b = bytes[bytesPos++]) == 'undefined')
-        error('Bad encoding in flate stream');
+      b = bytes[bytesPos++] | 0;
       codeBuf |= b << codeSize;
       codeSize += 8;
     }
@@ -120,9 +124,7 @@ function inflate(bytes) {
     var maxLen = table[1];
 
     while (codeSize < maxLen) {
-      var b;
-      if (typeof (b = bytes[bytesPos++]) == 'undefined')
-        error('Bad encoding in flate stream');
+      var b = bytes[bytesPos++] | 0;
       codeBuf |= (b << codeSize);
       codeSize += 8;
     }
@@ -398,6 +400,6 @@ ZipFile.prototype = {
   }
 };
 
-if (typeof exports === 'object') {
-  exports.ZipFile = ZipFile;
+if (typeof module === 'object') {
+  module.exports.ZipFile = ZipFile;
 }
