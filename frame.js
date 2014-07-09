@@ -80,10 +80,10 @@ Frame.prototype._throw = function(ex) {
 }
 
 Frame.prototype._newException = function(className, message) {
+    var done = arguments[arguments.length-1];
     var self = this;
     var ex = CLASSES.newObject(className);
-    var done = arguments[arguments.length-1];
-    var ctor = ex["<init>$(Ljava/lang/String;)V"];
+    var ctor = this.getMethod(className, "<init>", "(Ljava/lang/String;)V");
     ctor.setPid(self._pid);
     ctor.run([ex, message], function () {
         self._throw(ex);
@@ -105,7 +105,7 @@ Frame.prototype.run = function(args, done) {
     var step = function() {
         SCHEDULER.tick(self._pid, function() {
             var opCode = self._read8();
-            console.log(OPCODES.toString(opCode), self._stack.length);
+            console.log(self._ip - 1, OPCODES.toString(opCode), self._stack.length);
             switch (opCode) {
                 case OPCODES.return:
                     return done();
@@ -220,6 +220,7 @@ Frame.prototype.iconst_5 = function(done) {
 
 Frame.prototype.sipush = function(done) {
     this._stack.push(this._read16());
+    return done();
 }
 
 Frame.prototype.bipush = function(done) {
@@ -1408,6 +1409,9 @@ Frame.prototype.getfield = function(done) {
     if (!obj) {
         return this._newException("java/lang/NullPointerException", done);
     }
+    if (!(fieldName in obj)) {
+        return this._newException("java/lang/VirtualMachineError", done);
+    }
     this._stack.push(obj[fieldName]);
     return done();
 }
@@ -1424,7 +1428,9 @@ Frame.prototype.getstatic = function(done) {
     var idx = this._read16();
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var fieldName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
+    console.log("XXXXXXXXXXXX BEGIN GETSTATIC XXXXXXXXXXXXX", className, fieldName);
     this._stack.push(CLASSES.getStaticField(className, fieldName));
+    console.log("XXXXXXXXXXXX DONE GETSTATIC XXXXXXXXXXXXX", className, fieldName);
     return done();
 }
 
@@ -1432,6 +1438,7 @@ Frame.prototype.putstatic = function(done) {
     var idx = this._read16();
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var fieldName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
+    console.log(className, fieldName, CLASSES.getStaticField(className, fieldName));
     CLASSES.setStaticField(className, fieldName, this._stack.pop());
     return done();
 }
@@ -1454,9 +1461,9 @@ Frame.prototype.invokestatic = function(done) {
             args.unshift(this._stack.pop());
         }
     }
-    
+
     var method = CLASSES.getStaticMethod(className, methodName, signature);
-    
+
     if (method instanceof Frame) {
         method.setPid(self._pid);
         method.run(args, function(res) {
@@ -1484,6 +1491,8 @@ Frame.prototype.invokevirtual = function(done) {
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
 
+    console.log("invokevirtual", className, methodName, signature);
+
     var args = [];
     for (var i=0; i<signature.IN.length; i++) {
         if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
@@ -1497,7 +1506,7 @@ Frame.prototype.invokevirtual = function(done) {
     
     var instance = this._stack.pop();
     var method = CLASSES.getMethod(className, methodName, signature);
-      
+
     if (method instanceof Frame) {
         args.unshift(instance);
         method.setPid(self._pid);
@@ -1525,6 +1534,8 @@ Frame.prototype.invokespecial = function(done) {
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
 
+    console.log("invokespecial", className, methodName, signature);
+
     var args = [];
     for (var i=0; i<signature.IN.length; i++) {
         if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
@@ -1534,7 +1545,6 @@ Frame.prototype.invokespecial = function(done) {
             args.unshift(this._stack.pop());
         }
     }
-
 
     var instance = this._stack.pop();
     var ctor = CLASSES.getMethod(className, methodName, signature);

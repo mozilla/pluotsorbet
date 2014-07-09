@@ -85,14 +85,14 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
 
 Classes.prototype.initClass = function(className) {
     var clinit = this.getStaticMethod(className, "<clinit>", "()V");
-    if (clinit instanceof Frame) {
-        SCHEDULER.sync(function() {
-            LOG.debug("call " + className + ".<clinit> ...");
-            clinit.run([], function() {
-                LOG.debug("call " + className + ".<clinit> ... done");
-            });
+    if (!clinit)
+        return;
+    SCHEDULER.sync(function() {
+        LOG.debug("call " + className + ".<clinit> ...");
+        clinit.run([], function() {
+            LOG.debug("call " + className + ".<clinit> ... done");
         });
-    }
+    });
 }
 
 Classes.prototype.getClass = function(className, initialize) {
@@ -117,16 +117,18 @@ Classes.prototype.setStaticField = function(className, fieldName, value) {
     this.getClass(className, true).staticFields[fieldName] = value;
 }
 
-Classes.prototype.getStaticMethod = function(className, methodName, signature) {
-    var ca = this.getClass(className, true);
+Classes.prototype.getMethod = function(className, methodName, signature, staticFlag) {
+    // Only force initialization when accessing a static method.
+    var ca = this.getClass(className, staticFlag);
     if (ca instanceof ClassArea) {
         var methods = ca.getMethods();
         var cp = ca.getConstantPool();
-        for(var i=0; i<methods.length; i++) 
-            if (ACCESS_FLAGS.isStatic(methods[i].access_flags)) 
+        for(var i=0; i<methods.length; i++) {
+            if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag)
                 if (cp[methods[i].name_index].bytes === methodName)
                     if (signature.toString() === cp[methods[i].signature_index].bytes)
                         return new Frame(ca, methods[i]);
+        }
     } else {
         if (methodName in ca) {
             return ca[methodName];
@@ -134,48 +136,14 @@ Classes.prototype.getStaticMethod = function(className, methodName, signature) {
     }
     return null;
 };
-        
-Classes.prototype.getMethod = function(className, methodName, signature) {
-    // We won't get here without a call to newObject, so no need to force
-    // class initialization.
-    var ca = this.getClass(className, false);
-    if (ca instanceof ClassArea) {
-        var methods = ca.getMethods();
-        var cp = ca.getConstantPool();
-        for(var i=0; i<methods.length; i++)
-            if (!ACCESS_FLAGS.isStatic(methods[i].access_flags)) 
-                if (cp[methods[i].name_index].bytes === methodName) 
-                    if (signature.toString() === cp[methods[i].signature_index].bytes) 
-                        return new Frame(ca, methods[i]);
-    } else {
-        var o = new ca();
-        if (methodName in o) {
-           return o[methodName];
-        }
-    }
-    return null;
-};
-        
+
+Classes.prototype.getStaticMethod = function(className, methodName, signature) {
+    return this.getMethod(className, methodName, signature, true);
+}
+
 Classes.prototype.newObject = function(className) {
-    var ca = this.getClass(className, true);
-    var ctor = function() {};
-    var superClassName = ca.getSuperClassName();
-    if (superClassName)
-        ctor.prototype = this.newObject(superClassName);
-    var o = new ctor();
+    // Force initialization of the class (if not already done).
+    this.getClass(className, true);
 
-    var cp = ca.getConstantPool();
-
-    ca.getFields().forEach(function(field) {
-        var fieldName = cp[field.name_index].bytes;
-        o[fieldName] = null;
-    });
-        
-    ca.getMethods().forEach(function(method) {
-        var methodName = cp[method.name_index].bytes;
-        var signature = cp[method.signature_index].bytes;
-        o[methodName + "$" + signature] = new Frame(ca, method);
-    });
-        
-    return o;
+    return {};
 }
