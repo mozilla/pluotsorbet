@@ -143,7 +143,30 @@ Classes.prototype.getStaticMethod = function(className, methodName, signature) {
 
 Classes.prototype.newObject = function(className) {
     // Force initialization of the class (if not already done).
-    this.getClass(className, true);
+    return { class: this.getClass(className, true) };
+}
 
-    return {};
+Classes.prototype.newArray = function(type, size) {
+    switch (type) {
+    case ARRAY_TYPE.T_BOOLEAN: return new Uint8Array(size);
+    case ARRAY_TYPE.T_CHAR: return new Uint16Array(size);
+    case ARRAY_TYPE.T_FLOAT: return new Float32Array(size);
+    case ARRAY_TYPE.T_DOUBLE: return new Float64Array(size);
+    case ARRAY_TYPE.T_BYTE: return new Int8Array(size);
+    case ARRAY_TYPE.T_SHORT: return new Int16Array(size);
+    case ARRAY_TYPE.T_INT: return new Int32Array(size);
+    case ARRAY_TYPE.T_LONG: return new Int64Array(size);
+    }
+}
+
+Classes.prototype.newString = function(s) {
+    var obj = this.newObject("java/lang/String");
+    var length = s.length;
+    var chars = this.newArray(ARRAY_TYPE.T_CHAR, length);
+    for (var n = 0; n < length; ++n)
+        chars[n] = s.charCodeAt(n);
+    obj.value = chars;
+    obj.offset = 0;
+    obj.count = length;
+    return obj;
 }

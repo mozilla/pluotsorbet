@@ -56,15 +56,12 @@ var getClassImage = function(classBytes) {
     var classImage = {};
         
     var getAttribues = function(attribute_name_index, bytes) {
-            
         var reader = new Reader(bytes);
         var attribute = { attribute_name_index: attribute_name_index };
-    
     
         var item = classImage.constant_pool[attribute_name_index];
         
         switch(item.tag) {
-        
             case TAGS.CONSTANT_Long:
             case TAGS.CONSTANT_Float:
             case TAGS.CONSTANT_Double:
@@ -74,11 +71,8 @@ var getClassImage = function(classBytes) {
                 attribute.constantvalue_index = reader.read16();
                 return attribute;        
             
-                
             case TAGS.CONSTANT_Utf8:
-                
                 switch(item.bytes) {
-                    
                     case ATTRIBUTE_TYPES.Code:
                         attribute.type = ATTRIBUTE_TYPES.Code;
                         attribute.max_stack = reader.read16();

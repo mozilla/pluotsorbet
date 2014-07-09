@@ -232,7 +232,7 @@ Frame.prototype.ldc = function(done) {
     var constant = this._cp[this._read8()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:                        
-            this._stack.push(this._cp[constant.string_index].bytes);
+            this._stack.push(CLASSES.newString(this._cp[constant.string_index].bytes));
             break;
         default:
             throw new Error("not support constant type");
@@ -1163,7 +1163,7 @@ Frame.prototype.newarray = function(done) {
     if (size < 0) {
         return this._newException("java/lang/NegativeSizeException", done);
     }
-    this._stack.push(new Array(size));
+    this._stack.push(CLASSES.newArray(type, size));
     return done();    
 }
 
@@ -1684,7 +1684,7 @@ Frame.prototype.instanceof = function(done) {
     var idx = this._read16();
     var className = this._cp[this._cp[idx].name_index].bytes;
     var obj = this._stack.pop();
-    if (obj.getClassName() === className) {
+    if (obj.class.getClassName() === className) {
         this._stack.push(true);
     } else {
         this._stack.push(false);
