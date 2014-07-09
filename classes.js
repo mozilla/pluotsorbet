@@ -8,7 +8,6 @@ var Classes = function() {
         this.classfiles = [];
         this.mainclass = [];
         this.classes = {};
-        this.staticFields = {};
     } else  {
         return new Classes();
     }
@@ -38,21 +37,6 @@ Classes.prototype.loadFile = function(fileName) {
     });
     classfiles[fileName] = data;
     return data;
-}
-
-Classes.prototype.clinit = function() {
-    for(var className in this.classes) {
-        var classArea = this.classes[className];
-        var clinit = this.getStaticMethod(className, "<clinit>", "()V");
-        if (clinit instanceof Frame) {
-            SCHEDULER.sync(function() {
-                LOG.debug("call " + className + ".<clinit> ...");
-                clinit.run([], function() {
-                    LOG.debug("call " + className + ".<clinit> ... done");
-                });
-            });
-        }
-    }
 }
 
 Classes.prototype.loadClassBytes = function(bytes) {
@@ -99,25 +83,42 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
     }    
 }
 
-Classes.prototype.getClass = function(className) {
+Classes.prototype.initClass = function(className) {
+    var clinit = this.getStaticMethod(className, "<clinit>", "()V");
+    if (clinit instanceof Frame) {
+        SCHEDULER.sync(function() {
+            LOG.debug("call " + className + ".<clinit> ...");
+            clinit.run([], function() {
+                LOG.debug("call " + className + ".<clinit> ... done");
+            });
+        });
+    }
+}
+
+Classes.prototype.getClass = function(className, initialize) {
     var ca = this.classes[className];
     if (ca)
         return ca;
-    if (!!(ca = this.loadClassFile(className + ".class")))
+    if (!!(ca = this.loadClassFile(className + ".class"))) {
+        if (initialize) {
+            ca.staticFields = {};
+            this.initClass(className);
+        }
         return ca;
+    }
     throw new Error(util.format("Implementation of the %s class is not found.", className));
 };
 
 Classes.prototype.getStaticField = function(className, fieldName) {
-    return this.staticFields[className + '.' + fieldName]; 
+    return this.getClass(className, true).staticFields[fieldName];
 }
 
 Classes.prototype.setStaticField = function(className, fieldName, value) {
-    this.staticFields[className + '.' + fieldName] = value;
+    this.getClass(className, true).staticFields[fieldName] = value;
 }
 
 Classes.prototype.getStaticMethod = function(className, methodName, signature) {
-    var ca = this.getClass(className);  
+    var ca = this.getClass(className, true);
     if (ca instanceof ClassArea) {
         var methods = ca.getMethods();
         var cp = ca.getConstantPool();
@@ -135,7 +136,9 @@ Classes.prototype.getStaticMethod = function(className, methodName, signature) {
 };
         
 Classes.prototype.getMethod = function(className, methodName, signature) {
-    var ca = this.getClass(className);
+    // We won't get here without a call to newObject, so no need to force
+    // class initialization.
+    var ca = this.getClass(className, false);
     if (ca instanceof ClassArea) {
         var methods = ca.getMethods();
         var cp = ca.getConstantPool();
@@ -154,7 +157,7 @@ Classes.prototype.getMethod = function(className, methodName, signature) {
 };
         
 Classes.prototype.newObject = function(className) {
-    var ca = this.getClass(className);
+    var ca = this.getClass(className, true);
     var ctor = function() {};
     var superClassName = ca.getSuperClassName();
     if (superClassName)

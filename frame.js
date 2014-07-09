@@ -103,12 +103,10 @@ Frame.prototype.run = function(args, done) {
     }
     
     var step = function() {
-        
         SCHEDULER.tick(self._pid, function() {
             var opCode = self._read8();
-
+            console.log(OPCODES.toString(opCode), self._stack.length);
             switch (opCode) {
-                
                 case OPCODES.return:
                     return done();
                     
@@ -135,7 +133,6 @@ Frame.prototype.run = function(args, done) {
     
     step();
 }
-
 
 Frame.prototype.nop = function(done) {
     return done();
@@ -1480,13 +1477,13 @@ Frame.prototype.invokestatic = function(done) {
 
 Frame.prototype.invokevirtual = function(done) {
     var self = this;
-    
+
     var idx = this._read16();
-    
+
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
-    
+
     var args = [];
     for (var i=0; i<signature.IN.length; i++) {
         if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
@@ -1527,7 +1524,7 @@ Frame.prototype.invokespecial = function(done) {
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
-    
+
     var args = [];
     for (var i=0; i<signature.IN.length; i++) {
         if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {

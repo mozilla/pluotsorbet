@@ -53,14 +53,12 @@ JVM.prototype.loadJarFile = function(fileName) {
 
 JVM.prototype.run = function() {
     var self = this;
-    
-    CLASSES.clinit();
-    
+
     var entryPoint = CLASSES.getEntryPoint(this.entryPoint.className, this.entryPoint.methodName);
     if (!entryPoint) {
         throw new Error("Entry point method is not found.");
     }
-        
+
     entryPoint.run(arguments, function(code) {
         var exit = function() {
             SCHEDULER.tick(0, function() {
