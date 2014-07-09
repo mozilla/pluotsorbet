@@ -79,17 +79,21 @@ Frame.prototype._throw = function(ex) {
     }
 }
 
-Frame.prototype._newException = function(className) {
+Frame.prototype._newException = function(className, message) {
     var self = this;
-    var ex = CLASSES.newException(className, function () {
+    var ex = CLASSES.newObject(className);
+    var done = arguments[arguments.length-1];
+    var ctor = ex["<init>$(Ljava/lang/String;)V"];
+    ctor.setPid(self._pid);
+    ctor.run([ex, message], function () {
         self._throw(ex);
-        return arguments[arguments.length-1]();
+        return done();
     });
 }
 
 Frame.prototype.run = function(args, done) {
     var self = this;
-    
+
     this._ip = 0;
     this._stack = [];
     this._widened = false;

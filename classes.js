@@ -161,8 +161,6 @@ Classes.prototype.newObject = function(className) {
         ctor.prototype = this.newObject(superClassName);
     var o = new ctor();
 
-    o.getClassName = new Function(util.format("return \"%s\"", className));
-
     var cp = ca.getConstantPool();
 
     ca.getFields().forEach(function(field) {
@@ -172,31 +170,9 @@ Classes.prototype.newObject = function(className) {
         
     ca.getMethods().forEach(function(method) {
         var methodName = cp[method.name_index].bytes;
-        o[methodName] = new Frame(ca, method);
+        var signature = cp[method.signature_index].bytes;
+        o[methodName + "$" + signature] = new Frame(ca, method);
     });
         
     return o;
 }
-
-Classes.prototype.newException = function(className, message, cause) {
-    var ex = this.newObject(className);
-
-    var ca = this.getClass(className);
-    var cp = ca.getConstantPool();
-    var ctors = [];
-    ca.getMethods().forEach(function(method) {
-        if (cp[method.name_index].bytes === "<init>") {
-            ctors[cp[method.signature_index].bytes] = method;
-        }
-    });
-    var ctor = ctors["(Ljava/lang/String;)V"];
-    if (ctor) {
-    }
-
-    Object.keys(ctors).forEach(function (ctor) {
-        console.log(ctor);
-    });
-    ex["<init>"](message, cause);
-    return ex;
-}
-
