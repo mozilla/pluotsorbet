@@ -16,7 +16,6 @@ var Frame = function(classArea, method) {
                 break;
             }
         }
-        
     } else {
         return new Frame(classArea, method);
     }
@@ -1443,15 +1442,31 @@ Frame.prototype.putstatic = function(done) {
     return done();
 }
 
+Frame.prototype._invoke = function(method, signature, args, done) {
+    if (method instanceof Frame) {
+        method.setPid(this._pid);
+        method.run(args, function(res) {
+            if (signature.OUT.length != 0) {
+               this._stack.push(res);
+            }
+            return done();
+        });
+    } else {
+        var res = method.apply(null, args);
+        if (signature.OUT.length != 0) {
+            this._stack.push(res);
+        }
+        return done();
+    }
+}
+
 Frame.prototype.invokestatic = function(done) {
-    var self = this;
-    
     var idx = this._read16();
     
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
-    
+
     var args = [];
     for (var i=0; i<signature.IN.length; i++) {
         if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
@@ -1462,23 +1477,7 @@ Frame.prototype.invokestatic = function(done) {
         }
     }
 
-    var method = CLASSES.getStaticMethod(className, methodName, signature);
-
-    if (method instanceof Frame) {
-        method.setPid(self._pid);
-        method.run(args, function(res) {
-            if (signature.OUT.length != 0) {                        
-               self._stack.push(res);
-            }
-            return done();
-        });
-    } else {
-        var res = method.apply(null, args);
-        if (signature.OUT.length != 0) {                        
-            self._stack.push(res);                        
-        }
-        return done();
-    }
+    this._invoke(CLASSES.getStaticMethod(className, methodName, signature), signature, args, done);
 }    
 
 
@@ -1697,7 +1696,6 @@ Frame.prototype.checkcast = function(done) {
     var type = this._cp[this._cp[idx].name_index].bytes;
     return done();
 }
-
 
 Frame.prototype.athrow = function(done) {
     this._throw(this._stack.pop());

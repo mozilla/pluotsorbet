@@ -68,14 +68,13 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
                 if (ACCESS_FLAGS.isPublic(ca.getAccessFlags())) {
                     var methods = ca.getMethods();
                     var cp = ca.getConstantPool();
-                    for(var i=0; i<methods.length; i++) {
-                        if
-                        (
-                         ACCESS_FLAGS.isPublic(methods[i].access_flags) &&
-                         ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
-                         cp[methods[i].name_index].bytes === methodName
-                        )
-                        { return new Frame(ca, methods[i]); }
+                    for (var i=0; i<methods.length; i++) {
+                        if (ACCESS_FLAGS.isPublic(methods[i].access_flags) &&
+                            ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
+                            !ACCESS_FLAGS.isNative(methods[i].access_flags) &&
+                            cp[methods[i].name_index].bytes === methodName) {
+                            return new Frame(ca, methods[i]);
+                        }
                     }
                 }
             }
@@ -120,18 +119,18 @@ Classes.prototype.setStaticField = function(className, fieldName, value) {
 Classes.prototype.getMethod = function(className, methodName, signature, staticFlag) {
     // Only force initialization when accessing a static method.
     var ca = this.getClass(className, staticFlag);
-    if (ca instanceof ClassArea) {
-        var methods = ca.getMethods();
-        var cp = ca.getConstantPool();
-        for(var i=0; i<methods.length; i++) {
-            if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag)
-                if (cp[methods[i].name_index].bytes === methodName)
-                    if (signature.toString() === cp[methods[i].signature_index].bytes)
-                        return new Frame(ca, methods[i]);
-        }
-    } else {
-        if (methodName in ca) {
-            return ca[methodName];
+    var methods = ca.getMethods();
+    var cp = ca.getConstantPool();
+    for (var i=0; i<methods.length; i++) {
+        if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
+            if (cp[methods[i].name_index].bytes === methodName) {
+                if (signature.toString() === cp[methods[i].signature_index].bytes) {
+                    if (ACCESS_FLAGS.isNative(methods[i].access_flags)) {
+                        return NATIVE.getMethod(className, methodName, signature.toString());
+                    }
+                    return new Frame(ca, methods[i], className, methodName, signature);
+                }
+            }
         }
     }
     return null;

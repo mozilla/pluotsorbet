@@ -3,7 +3,7 @@
 
 'use strict';
 
-var LOG, CLASSES, THREADS, SCHEDULER;
+var LOG, CLASSES, THREADS, SCHEDULER, NATIVE;
 
 var JVM = function() {
     if (this instanceof JVM) {
@@ -11,6 +11,7 @@ var JVM = function() {
         CLASSES = new Classes();
         THREADS = new Threads();
         SCHEDULER = new Scheduler();
+        NATIVE = new Native();
         
         THREADS.add(new Thread("main"));
         

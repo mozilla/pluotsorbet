@@ -4,6 +4,6 @@ CLDC1_1_1_SRC=$(shell find cldc1.1.1 -name *.java) $(shell find vm -name *.java)
 cldc1_1_1.jar: $(CLDC1_1_1_SRC)
 	rm -rf build
 	mkdir build
-	javac -d ./build $^
+	javac -source 1.3 -d ./build $^
 	cd build && jar cvf ../cldc1.1.1.jar *
 	rm -rf build
