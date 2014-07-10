@@ -3,10 +3,10 @@
 
 'use strict';
 
-var Frame = function(classArea, method) {
+var Frame = function(classData, method) {
     if (this instanceof Frame) {
         this._pid = 0; // default main thread
-        this._cp = classArea.getConstantPool();
+        this._cp = classData.getConstantPool();
         
         for(var i=0; i<method.attributes.length; i++) {
             if (method.attributes[i].info.type === ATTRIBUTE_TYPES.Code) {
@@ -17,7 +17,7 @@ var Frame = function(classArea, method) {
             }
         }
     } else {
-        return new Frame(classArea, method);
+        return new Frame(classData, method);
     }
 }
 
@@ -1402,8 +1402,10 @@ Frame.prototype.putfield = function(done) {
 }
 
 Frame.prototype.getfield = function(done) {    
-    var idx = this._read16();
-    var fieldName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
+    var cp = this._cp;
+    var nameAndType = cp[cp[this._read16()].name_and_type_index];
+    var signature = Signature.parse(cp[nameAndType.signature_index])
+    console.log(fieldName, signature);
     var obj = this._stack.pop();
     if (!obj) {
         return this._newException("java/lang/NullPointerException", done);

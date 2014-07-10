@@ -67,7 +67,6 @@ Signature.parse = (function () {
     return function(s) {
         var IN = s.split(')')[0].substr(1);
         var OUT = s.split(')')[1];
-        
         return {
             IN: _parse(IN),
             OUT: _parse(OUT),

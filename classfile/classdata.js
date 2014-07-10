@@ -3,41 +3,41 @@
 
 'use strict';
 
-var ClassArea = function(classBytes) {
-    if (this instanceof ClassArea) {
+var ClassData = function(classBytes) {
+    if (this instanceof ClassData) {
         this.classImage = getClassImage(classBytes);
     } else {
-        return new ClassArea(classBytes);
+        return new ClassData(classBytes);
     }
 }
 
-ClassArea.prototype.getClassName = function() {
+ClassData.prototype.getClassName = function() {
     return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.this_class].name_index].bytes;    
 }
 
-ClassArea.prototype.getSuperClassName = function() {
+ClassData.prototype.getSuperClassName = function() {
     if (!this.classImage.super_class)
         return null;
     return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.super_class].name_index].bytes;    
 }
 
-ClassArea.prototype.getAccessFlags = function() {
+ClassData.prototype.getAccessFlags = function() {
     return this.classImage.access_flags;    
 }
 
-ClassArea.prototype.getConstantPool = function() {
+ClassData.prototype.getConstantPool = function() {
     return this.classImage.constant_pool;
 }
 
-ClassArea.prototype.getFields = function() {
+ClassData.prototype.getFields = function() {
     return this.classImage.fields;
 }
 
-ClassArea.prototype.getMethods = function() {
+ClassData.prototype.getMethods = function() {
     return this.classImage.methods;
 }
 
-ClassArea.prototype.getClasses = function() {
+ClassData.prototype.getClasses = function() {
     var self = this;
     var classes = [];
     this.classImage.attributes.forEach(function(a) {
