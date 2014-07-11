@@ -78,6 +78,14 @@ var util = (function () {
     }
   }
 
+  function defaultValue(type) {
+    if (type === 'J')
+      return gLong.ZERO;
+    if (type[0] === '[' || type[0] === 'L')
+      return null;
+    return 0;
+  }
+
   return {
     inherits: inherits,
     format: format,
@@ -86,6 +94,7 @@ var util = (function () {
     error: console.error.bind(console),
     info: console.info.bind(console),
     warn: console.warn.bind(console),
-    decodeUtf8: decodeUtf8
+    decodeUtf8: decodeUtf8,
+    defaultValue: defaultValue
   };
 })();

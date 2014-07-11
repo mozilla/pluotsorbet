@@ -55,7 +55,7 @@ Frame.prototype._read32signed = function() {
 
 Frame.prototype._throw = function(ex) { 
     var handler_pc = null;
- 
+
     for(var i=0; i<this._exception_table.length; i++) {
         if (this._ip >= this._exception_table[i].start_pc && this._ip <= this._exception_table[i].end_pc) {
             if (this._exception_table[i].catch_type === 0) {
@@ -82,7 +82,7 @@ Frame.prototype._newException = function(className, message) {
     var done = arguments[arguments.length-1];
     var self = this;
     var ex = CLASSES.newObject(className);
-    var ctor = this.getMethod(className, "<init>", "(Ljava/lang/String;)V");
+    var ctor = CLASSES.getMethod(className, "<init>", "(Ljava/lang/String;)V");
     ctor.setPid(self._pid);
     ctor.run([ex, message], function () {
         self._throw(ex);
@@ -1404,16 +1404,16 @@ Frame.prototype.putfield = function(done) {
 Frame.prototype.getfield = function(done) {    
     var cp = this._cp;
     var nameAndType = cp[cp[this._read16()].name_and_type_index];
-    var signature = Signature.parse(cp[nameAndType.signature_index])
-    console.log(fieldName, signature);
+    var fieldName = cp[nameAndType.name_index].bytes;
     var obj = this._stack.pop();
     if (!obj) {
         return this._newException("java/lang/NullPointerException", done);
     }
-    if (!(fieldName in obj)) {
-        return this._newException("java/lang/VirtualMachineError", done);
+    var value = obj[fieldName];
+    if (typeof value === "undefined") {
+        value = util.defaultValue(cp[nameAndType.signature_index].bytes);
     }
-    this._stack.push(obj[fieldName]);
+    this._stack.push(value);
     return done();
 }
 
@@ -1479,7 +1479,10 @@ Frame.prototype.invokestatic = function(done) {
         }
     }
 
-    this._invoke(CLASSES.getStaticMethod(className, methodName, signature), signature, args, done);
+    var method = CLASSES.getStaticMethod(className, methodName, signature);
+    if (!method)
+        return done();
+    return this._invoke(method, signature, args, done);
 }    
 
 
@@ -1548,16 +1551,16 @@ Frame.prototype.invokespecial = function(done) {
     }
 
     var instance = this._stack.pop();
-    var ctor = CLASSES.getMethod(className, methodName, signature);
+    var method = CLASSES.getMethod(className, methodName, signature);
     
-    if (ctor instanceof Frame) {
+    if (method instanceof Frame) {
         args.unshift(instance);
-        ctor.setPid(self._pid);
-        ctor.run(args, function() {
+        method.setPid(self._pid);
+        method.run(args, function() {
             return done();
         });
     } else {
-        ctor.apply(instance, args);
+        method.apply(instance, args);
         return done();
     }
     
