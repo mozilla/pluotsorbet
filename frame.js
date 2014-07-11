@@ -133,8 +133,7 @@ Frame.prototype.run = function(args, done) {
     step();
 }
 
-Frame.prototype.nop = function(done) {
-    return done();
+Frame.prototype.nop = function() {
 }
 
 Frame.prototype.aconst_null = function(done) {
