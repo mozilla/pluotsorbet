@@ -79,7 +79,7 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
                 }
             }
         }
-    }    
+    }
 }
 
 Classes.prototype.initClass = function(className) {

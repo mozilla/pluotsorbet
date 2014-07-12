@@ -205,13 +205,13 @@ var OPCODES = {
     "ifnonnull": 0xC7,
     "goto_w": 0xC8,
     "jsr_w": 0xC9,
-    
+
     toString: function(opCode) {
         if ( !this._cache ) {
             this._cache = new Array(256);
         }
         if ( this._cache[opCode] ) {
-            return this._cache[opCode]; 
+            return this._cache[opCode];
         }
         for(var opName in this) {
             if (this[opName] === opCode) {

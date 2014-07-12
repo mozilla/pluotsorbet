@@ -12,9 +12,9 @@ var JVM = function() {
         THREADS = new Threads();
         SCHEDULER = new Scheduler();
         NATIVE = new Native();
-        
+
         THREADS.add(new Thread("main"));
-        
+
         this.entryPoint = {
             className: null,
             methodName: "main"

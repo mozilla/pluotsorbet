@@ -72,13 +72,13 @@ Frame.prototype.pushReturnValue = function(signature, result) {
     }
 }
 
-Frame.prototype.throw = function(ex) { 
+Frame.prototype.throw = function(ex) {
     var handler_pc = null;
 
     for(var i=0; i<this.exception_table.length; i++) {
         if (this.ip >= this.exception_table[i].start_pc && this.ip <= this.exception_table[i].end_pc) {
             if (this.exception_table[i].catch_type === 0) {
-                handler_pc = this.exception_table[i].handler_pc;             
+                handler_pc = this.exception_table[i].handler_pc;
             } else {
                 var name = this.cp[this.cp[this.exception_table[i].catch_type].name_index].bytes;
                 if (name === ex.getClassName()) {
@@ -88,10 +88,10 @@ Frame.prototype.throw = function(ex) {
             }
         }
     }
-    
+
     if (handler_pc != null) {
         this.stack.push(ex);
-        this.ip = handler_pc;      
+        this.ip = handler_pc;
     } else {
         throw ex;
     }
@@ -194,7 +194,7 @@ Frame.prototype.bipush = function() {
 Frame.prototype.ldc = function() {
     var constant = this.cp[this.read8()];
     switch(constant.tag) {
-        case TAGS.CONSTANT_String:                        
+        case TAGS.CONSTANT_String:
             this.stack.push(CLASSES.newString(this.cp[constant.string_index].bytes));
             break;
         default:
@@ -205,7 +205,7 @@ Frame.prototype.ldc = function() {
 Frame.prototype.ldc_w = function() {
     var constant = this.cp[this.read16()];
     switch(constant.tag) {
-        case TAGS.CONSTANT_String:                        
+        case TAGS.CONSTANT_String:
             this.stack.push(this.cp[constant.string_index].bytes);
             break;
         default:
@@ -216,7 +216,7 @@ Frame.prototype.ldc_w = function() {
 Frame.prototype.ldc2_w = function() {
     var constant = this.cp[this.read16()];
     switch(constant.tag) {
-        case TAGS.CONSTANT_String:                        
+        case TAGS.CONSTANT_String:
             this.stack.push(this.cp[constant.string_index].bytes);
             break;
         case TAGS.CONSTANT_Long:
@@ -350,7 +350,7 @@ Frame.prototype.lstore_3 = Frame.prototype.dstore_3 = function() {
 
 Frame.prototype.iastore = Frame.prototype.fastore = Frame.prototype.aastore = Frame.prototype.bastore = Frame.prototype.castore = Frame.prototype.sastore = function() {
     var val = this.stack.pop();
-    var idx = this.stack.pop();                
+    var idx = this.stack.pop();
     var refArray = this.stack.pop();
     if (!this.checkArrayAccess(refArray, idx)) {
         return;
@@ -360,7 +360,7 @@ Frame.prototype.iastore = Frame.prototype.fastore = Frame.prototype.aastore = Fr
 
 Frame.prototype.lastore = Frame.prototype.dastore = function() {
     var val = this.stack.pop2();
-    var idx = this.stack.pop();                
+    var idx = this.stack.pop();
     var refArray = this.stack.pop();
     if (!this.checkArrayAccess(refArray, idx)) {
         return;
@@ -393,10 +393,10 @@ Frame.prototype.dup_x1 = function() {
 Frame.prototype.dup_x2 = function() {
     var val1 = this.stack.pop();
     var val2 = this.stack.pop();
-    var val3 = this.stack.pop();    
+    var val3 = this.stack.pop();
     this.stack.push(val1);
     this.stack.push(val3);
-    this.stack.push(val2);    
+    this.stack.push(val2);
     this.stack.push(val1);
 }
 
@@ -658,7 +658,7 @@ Frame.prototype.fcmpl = function() {
         this.stack.push(-1);
     } else {
         this.stack.push(0);
-    }    
+    }
 }
 
 Frame.prototype.fcmpg = function() {
@@ -672,7 +672,7 @@ Frame.prototype.fcmpg = function() {
         this.stack.push(-1);
     } else {
         this.stack.push(0);
-    }    
+    }
 }
 
 Frame.prototype.dcmpl = function() {
@@ -686,7 +686,7 @@ Frame.prototype.dcmpl = function() {
         this.stack.push(-1);
     } else {
         this.stack.push(0);
-    }    
+    }
 }
 
 Frame.prototype.dcmpg = function() {
@@ -700,11 +700,11 @@ Frame.prototype.dcmpg = function() {
         this.stack.push(-1);
     } else {
         this.stack.push(0);
-    }    
+    }
 }
 
 Frame.prototype.newarray = function() {
-    var type = this.read8();  
+    var type = this.read8();
     var size = this.stack.pop();
     if (size < 0) {
         this.newException("java/lang/NegativeSizeException");
@@ -715,7 +715,7 @@ Frame.prototype.newarray = function() {
 
 Frame.prototype.anewarray = function() {
     var idx = this.read16();
-    var className = this.cp[this.cp[idx].name_index].bytes;       
+    var className = this.cp[this.cp[idx].name_index].bytes;
     var size = this.stack.pop();
     if (size < 0) {
         this.newException("java/lang/NegativeSizeException");
@@ -726,7 +726,7 @@ Frame.prototype.anewarray = function() {
 
 Frame.prototype.multianewarray = function() {
     var idx = this.read16();
-    var type = this.cp[this.cp[idx].name_index].bytes;       
+    var type = this.cp[this.cp[idx].name_index].bytes;
     var dimensions = this.read8();
     var lengths = new Array(dimensions);
     for(var i=0; i<dimensions; i++) {
@@ -743,7 +743,7 @@ Frame.prototype.multianewarray = function() {
         }
         return array;
     };
-    this.stack.push(createMultiArray(lengths));    
+    this.stack.push(createMultiArray(lengths));
 }
 
 Frame.prototype.arraylength = function() {
@@ -752,21 +752,21 @@ Frame.prototype.arraylength = function() {
 }
 
 Frame.prototype.if_icmpeq = function() {
-    var jmp = this.ip - 1 + this.read16signed();                                
+    var jmp = this.ip - 1 + this.read16signed();
     var ref1 = this.stack.pop();
     var ref2 = this.stack.pop();
     this.ip = ref1 === ref2 ? jmp : this.ip;
 }
 
 Frame.prototype.if_icmpne = function() {
-    var jmp = this.ip - 1 + this.read16signed();                                
+    var jmp = this.ip - 1 + this.read16signed();
     var ref1 = this.stack.pop();
     var ref2 = this.stack.pop();
     this.ip = ref1 !== ref2 ? jmp : this.ip;
 }
 
 Frame.prototype.if_icmpgt = function() {
-    var jmp = this.ip - 1 + this.read16signed();                                
+    var jmp = this.ip - 1 + this.read16signed();
     var ref1 = this.stack.pop();
     var ref2 = this.stack.pop();
     this.ip = ref1 < ref2 ? jmp : this.ip;
@@ -783,21 +783,21 @@ Frame.prototype.if_icmplt = function() {
 }
 
 Frame.prototype.if_icmpge = function() {
-    var jmp = this.ip - 1 + this.read16signed();                                
+    var jmp = this.ip - 1 + this.read16signed();
     var ref1 = this.stack.pop();
     var ref2 = this.stack.pop();
     this.ip = ref1 <= ref2 ? jmp : this.ip;
 }
 
 Frame.prototype.if_acmpeq = function() {
-    var jmp = this.ip - 1 + this.read16signed();                                
+    var jmp = this.ip - 1 + this.read16signed();
     var ref1 = this.stack.pop();
     var ref2 = this.stack.pop();
     this.ip = ref1 === ref2 ? jmp : this.ip;
 }
 
 Frame.prototype.if_acmpne = function() {
-    var jmp = this.ip - 1 + this.read16signed();                                
+    var jmp = this.ip - 1 + this.read16signed();
     var ref1 = this.stack.pop();
     var ref2 = this.stack.pop();
     this.ip = ref1 !== ref2 ? jmp : this.ip;
@@ -916,7 +916,7 @@ Frame.prototype.ifnonnull = function() {
 
 Frame.prototype.putfield = function() {
     var idx = this.read16();
-    var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;    
+    var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var val = this.stack.pop();
     var obj = this.stack.pop();
     if (!obj) {
@@ -945,11 +945,11 @@ Frame.prototype.getfield = function() {
 
 Frame.prototype.new = function() {
     var idx = this.read16();
-    var className = this.cp[this.cp[idx].name_index].bytes;    
+    var className = this.cp[this.cp[idx].name_index].bytes;
     this.stack.push(CLASSES.newObject(className));
 }
 
-Frame.prototype.getstatic = function() {    
+Frame.prototype.getstatic = function() {
     var idx = this.read16();
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
@@ -987,7 +987,7 @@ Frame.prototype.invokestatic = function() {
     var method = CLASSES.getStaticMethod(className, methodName, signature);
     var result = this.invoke(method, null, args);
     this.pushReturnValue(signature, result);
-}    
+}
 
 Frame.prototype.invokevirtual = function() {
     var self = this;
@@ -1011,9 +1011,9 @@ Frame.prototype.invokevirtual = function() {
 
 Frame.prototype.invokespecial = function() {
     var self = this;
-    
+
     var idx = this.read16();
-    
+
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
@@ -1033,11 +1033,11 @@ Frame.prototype.invokespecial = function() {
 
 Frame.prototype.invokeinterface = function() {
     var self = this;
-    
+
     var idx = this.read16();
     var argsNumber = this.read8();
     var zero = this.read8();
-    
+
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
@@ -1067,9 +1067,9 @@ Frame.prototype.jsr_w = function() {
     this.ip = jmp;
 }
 
-Frame.prototype.ret = function() {   
+Frame.prototype.ret = function() {
     var idx = this.widened ? this.read16() : this.read8();
-    this.ip = this.locals[idx]; 
+    this.ip = this.locals[idx];
     this.widened = false;
 }
 
@@ -1080,19 +1080,19 @@ Frame.prototype.tableswitch = function() {
     while ((this.ip % 4) != 0) {
         this.ip++;
     }
-        
+
     var def = this.read32();
     var low = this.read32();
     var high = this.read32();
     var val = this.stack.pop();
-    
+
     if (val < low || val > high) {
         jmp = def;
     } else {
         this.ip  += (val - low) << 2;
-        jmp = this.read32();        
-    }    
-    
+        jmp = this.read32();
+    }
+
     this.ip = startip - 1 + this.u32_to_s32(jmp);
 }
 
@@ -1102,11 +1102,11 @@ Frame.prototype.lookupswitch = function() {
     while ((this.ip % 4) != 0) {
         this.ip++;
     }
-        
+
     var jmp = this.read32();
     var size = this.read32();
     var val = this.stack.pop();
-    
+
     lookup:
         for(var i=0; i<size; i++) {
             var key = this.read32();
@@ -1115,10 +1115,10 @@ Frame.prototype.lookupswitch = function() {
                 jmp = offset;
             }
             if (key >= val) {
-                break lookup;    
+                break lookup;
             }
         }
-      
+
     this.ip = startip - 1 + this.u32_to_s32(jmp);
 }
 
