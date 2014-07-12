@@ -279,7 +279,7 @@ Frame.prototype.checkArrayAccess = function(refArray, idx) {
         this.newException("java/lang/NullPointerException");
         return false;
     }
-    if (idx < 0 || idx >= array.length) {
+    if (idx < 0 || idx >= refArray.length) {
         this.newException("java/lang/ArrayIndexOutOfBoundsException", idx);
         return false;
     }
