@@ -87,13 +87,10 @@ Frame.prototype.newException = function(className, message) {
 }
 
 Frame.prototype.run = function(stack) {
+    var isStatic = ACCESS_FLAGS.isStatic(this.method.access_flags);
+
     var argc = 0;
-    if (!ACCESS_FLAGS.isStatic(this.method.access_flags)) {
-        var instance = stack.top();
-        if (!instance) {
-            this.newException("java/lang/NullPointerException");
-            return;
-        }
+    if (!isStatic) {
         ++argc;
     }
     var IN = this.signature.IN;
@@ -105,12 +102,22 @@ Frame.prototype.run = function(stack) {
     }
 
     var locals = stack.reserveLocals(argc, this.max_locals);
+    if (!isStatic && !locals.get(0)) {
+        this.newException("java/lang/NullPointerException");
+        return;
+    }
+
+    var args = "args: ";
+    for (var i=0; i < argc; ++i)
+        args += locals.get(i) + " ";
+    console.log(args);
 
     this.ip = 0;
 
     while (true) {
         var op = this.read8();
-        console.log(this.classData.getClassName(), this.ip - 1, OPCODES[op], stack.array.length);
+        console.log(this.classData.getClassName(), this.cp[this.method.name_index].bytes,
+                    this.ip - 1, OPCODES[op], stack.array.length);
         switch (op) {
         case OPCODES.return:
             stack.popLocals(locals);
@@ -365,7 +372,6 @@ Frame.prototype.lastore = Frame.prototype.dastore = function(stack, locals) {
 }
 
 Frame.prototype.pop = function(stack, locals) {
-    console.trace();
     stack.pop();
 }
 
