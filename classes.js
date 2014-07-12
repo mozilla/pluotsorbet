@@ -40,9 +40,9 @@ Classes.prototype.loadFile = function(fileName) {
 }
 
 Classes.prototype.loadClassBytes = function(bytes) {
-    var classData = new ClassData(bytes);
-    this.classes[classData.getClassName()] = classData;
-    return classData;
+    var classInfo = new ClassInfo(bytes);
+    this.classes[classInfo.getClassName()] = classInfo;
+    return classInfo;
 }
 
 Classes.prototype.loadClassFile = function(fileName) {
@@ -50,30 +50,30 @@ Classes.prototype.loadClassFile = function(fileName) {
     var bytes = this.loadFile(fileName);
     if (!bytes)
         return null;
-    var classData = this.loadClassBytes(bytes);
-    var classes = classData.getClasses();
+    var classInfo = this.loadClassBytes(bytes);
+    var classes = classInfo.getClasses();
     for (var i=0; i<classes.length; i++) {
         if (!this.classes[classes[i]]) {
             this.loadClassFile(path.dirname(fileName) + path.sep + classes[i] + ".class");
         }
     }
-    return classData;
+    return classInfo;
 }
 
 Classes.prototype.getEntryPoint = function(className, methodName) {
     for(var name in this.classes) {
-        var classData = this.classes[name];
-        if (classData instanceof ClassData) {
-            if (!className || (className === classData.getClassName())) {
-                if (ACCESS_FLAGS.isPublic(classData.getAccessFlags())) {
-                    var methods = classData.getMethods();
-                    var cp = classData.getConstantPool();
+        var classInfo = this.classes[name];
+        if (classInfo instanceof ClassInfo) {
+            if (!className || (className === classInfo.getClassName())) {
+                if (ACCESS_FLAGS.isPublic(classInfo.getAccessFlags())) {
+                    var methods = classInfo.getMethods();
+                    var cp = classInfo.getConstantPool();
                     for (var i=0; i<methods.length; i++) {
                         if (ACCESS_FLAGS.isPublic(methods[i].access_flags) &&
                             ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
                             !ACCESS_FLAGS.isNative(methods[i].access_flags) &&
                             cp[methods[i].name_index].bytes === methodName) {
-                            return new Frame(classData, methods[i]);
+                            return new Frame(classInfo, methods[i]);
                         }
                     }
                 }
@@ -91,15 +91,15 @@ Classes.prototype.initClass = function(className) {
 }
 
 Classes.prototype.getClass = function(className, initialize) {
-    var classData = this.classes[className];
-    if (classData)
-        return classData;
-    if (!!(classData = this.loadClassFile(className + ".class"))) {
+    var classInfo = this.classes[className];
+    if (classInfo)
+        return classInfo;
+    if (!!(classInfo = this.loadClassFile(className + ".class"))) {
         if (initialize) {
-            classData.staticFields = {};
+            classInfo.staticFields = {};
             this.initClass(className);
         }
-        return classData;
+        return classInfo;
     }
     throw new Error(util.format("Implementation of the %s class is not found.", className));
 };
@@ -114,9 +114,9 @@ Classes.prototype.setStaticField = function(className, fieldName, value) {
 
 Classes.prototype.getMethod = function(className, methodName, signature, staticFlag) {
     // Only force initialization when accessing a static method.
-    var classData = this.getClass(className, staticFlag);
-    var methods = classData.getMethods();
-    var cp = classData.getConstantPool();
+    var classInfo = this.getClass(className, staticFlag);
+    var methods = classInfo.getMethods();
+    var cp = classInfo.getConstantPool();
     for (var i=0; i<methods.length; i++) {
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
             if (cp[methods[i].name_index].bytes === methodName) {
@@ -124,7 +124,7 @@ Classes.prototype.getMethod = function(className, methodName, signature, staticF
                     if (ACCESS_FLAGS.isNative(methods[i].access_flags)) {
                         return NATIVE.getMethod(className, methodName, signature);
                     }
-                    return new Frame(classData, methods[i]);
+                    return new Frame(classInfo, methods[i]);
                 }
             }
         }
