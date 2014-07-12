@@ -117,7 +117,6 @@ Classes.prototype.setStaticField = function(className, fieldName, value) {
 }
 
 Classes.prototype.getMethod = function(className, methodName, signature, staticFlag) {
-    console.log(className, methodName);
     // Only force initialization when accessing a static method.
     var classData = this.getClass(className, staticFlag);
     var methods = classData.getMethods();
@@ -129,7 +128,7 @@ Classes.prototype.getMethod = function(className, methodName, signature, staticF
                     if (ACCESS_FLAGS.isNative(methods[i].access_flags)) {
                         return NATIVE.getMethod(className, methodName, signature.toString());
                     }
-                    return new Frame(classData, methods[i], className, methodName, signature);
+                    return new Frame(classData, methods[i]);
                 }
             }
         }
