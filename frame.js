@@ -58,6 +58,7 @@ Frame.prototype.popArgs = function(signature) {
             args.unshift(this.stack.pop());
         }
     }
+    return args;
 }
 
 Frame.prototype.pushReturnValue = function(signature, result) {
@@ -65,9 +66,9 @@ Frame.prototype.pushReturnValue = function(signature, result) {
         return;
     var type = signature.OUT[0].type;
     if (type === "long" || type === "double") {
-        this.push2(result);
+        this.stack.push2(result);
     } else {
-        this.push(result);
+        this.stack.push(result);
     }
 }
 
@@ -99,7 +100,7 @@ Frame.prototype.throw = function(ex) {
 Frame.prototype.newException = function(className, message) {
     var ex = CLASSES.newObject(className);
     var ctor = CLASSES.getMethod(className, "<init>", "(Ljava/lang/String;)V");
-    ctor.run([ex, message]);
+    this.invoke(ctor, ex, [message]);
     this.throw(ex);
 }
 
@@ -963,6 +964,15 @@ Frame.prototype.putstatic = function() {
     CLASSES.setStaticField(className, fieldName, this.stack.pop());
 }
 
+Frame.prototype.invoke = function(method, instance, args) {
+    if (method instanceof Frame) {
+        if (instance)
+            args.unshift(instance);
+        return method.run(args);
+    }
+    return method.apply(instance, args);
+}
+
 Frame.prototype.invokestatic = function() {
     var idx = this.read16();
     
@@ -972,12 +982,7 @@ Frame.prototype.invokestatic = function() {
 
     var args = this.popArgs(signature);
     var method = CLASSES.getStaticMethod(className, methodName, signature);
-    var result;
-    if (method instanceof Frame) {
-        result = method.run(args);
-    } else {
-        result = method.apply(null, args);
-    }
+    var result = this.invoke(method, null, args);
     this.pushReturnValue(signature, result);
 }    
 
@@ -992,14 +997,12 @@ Frame.prototype.invokevirtual = function() {
 
     var args = this.popArgs(signature);
     var instance = this.stack.pop();
-    var method = CLASSES.getMethod(className, methodName, signature);
-    var result;
-    if (method instanceof Frame) {
-        args.unshift(instance);
-        result = method.run(args);
-    } else {
-        result = method.apply(instance, args);
+    if (!instance) {
+        this.newException("java/lang/NullPointerException");
+        return;
     }
+    var method = CLASSES.getMethod(className, methodName, signature);
+    var result = this.invoke(method, instance, args);
     this.pushReturnValue(signature, result);
 }
 
@@ -1014,14 +1017,12 @@ Frame.prototype.invokespecial = function() {
 
     var args = this.popArgs(signature);
     var instance = this.stack.pop();
-    var method = CLASSES.getMethod(className, methodName, signature);
-    var result;
-    if (method instanceof Frame) {
-        args.unshift(instance);
-        result = method.run(args);
-    } else {
-        result = method.apply(instance, args);
+    if (!instance) {
+        this.newException("java/lang/NullPointerException");
+        return;
     }
+    var method = CLASSES.getMethod(className, methodName, signature);
+    var result = this.invoke(method, instance, args);
     this.pushReturnValue(signature, result);
 }
 
@@ -1038,13 +1039,12 @@ Frame.prototype.invokeinterface = function() {
 
     var args = this.popArgs(signature);
     var instance = this.stack.pop();
-    var method = instance[methodName];
-    if (method instanceof Frame) {
-        args.unshift(instance);
-        result = method.run(args);
-    } else {
-        result = method.apply(instance, args);
+    if (!instance) {
+        this.newException("java/lang/NullPointerException");
+        return;
     }
+    var method = instance[methodName];
+    var instance = this.invoke(method, instance, args);
     this.pushReturnValue(signature, result);
 }
 
