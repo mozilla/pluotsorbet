@@ -6,7 +6,8 @@
 var Frame = function(classData, method) {
     if (this instanceof Frame) {
         this.cp = classData.getConstantPool();
-        this.access_flags = method.access_flags;
+        this.classData = classData;
+        this.method = method;
         this.signature = Signature.parse(this.cp[method.signature_index].bytes);
         for(var i=0; i<method.attributes.length; i++) {
             if (method.attributes[i].info.type === ATTRIBUTE_TYPES.Code) {
@@ -87,7 +88,7 @@ Frame.prototype.newException = function(className, message) {
 
 Frame.prototype.run = function(stack) {
     var argc = 0;
-    if (!ACCESS_FLAGS.isStatic(this.access_flags)) {
+    if (!ACCESS_FLAGS.isStatic(this.method.access_flags)) {
         var instance = stack.top();
         if (!instance) {
             this.newException("java/lang/NullPointerException");
@@ -95,20 +96,21 @@ Frame.prototype.run = function(stack) {
         }
         ++argc;
     }
-    var IN = this.signature;
+    var IN = this.signature.IN;
     for (var i=0; i<IN.length; i++) {
         var type = IN[i].type;
         ++argc;
         if (type === "long" || type === "double")
             ++argc;
     }
+
     var locals = stack.reserveLocals(argc, this.max_locals);
 
     this.ip = 0;
 
     while (true) {
         var op = this.read8();
-        console.log(this.ip - 1, OPCODES[op], stack.array.length);
+        console.log(this.classData.getClassName(), this.ip - 1, OPCODES[op], stack.array.length);
         switch (op) {
         case OPCODES.return:
             stack.popLocals(locals);
@@ -955,7 +957,6 @@ Frame.prototype.putstatic = function(stack, locals) {
     var idx = this.read16();
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    console.log(className, fieldName, CLASSES.getStaticField(className, fieldName));
     CLASSES.setStaticField(className, fieldName, stack.pop());
 }
 
@@ -968,10 +969,10 @@ Frame.prototype.invoke = function(stack, method, signature) {
             instance = stack.pop();
         var args = stack.popArgs(method.signature);
         result = method.apply(instance, args);
-        var OUT = method.signature;
+        OUT = Signature.parse(siganture).OUT;
     } else {
         result = method.run(stack);
-        var OUT = Signature.parse(signature).OUT;
+        OUT = method.signature.OUT;
     }
     if (OUT.length)
         stack.pushType(OUT[0], result);
@@ -983,8 +984,6 @@ Frame.prototype.invokestatic = function(stack, locals) {
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
-
-    console.log(className, methodName);
 
     var method = CLASSES.getStaticMethod(className, methodName, signature);
 
@@ -1000,8 +999,6 @@ Frame.prototype.invokevirtual = function(stack, locals) {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    console.log(className, methodName);
-
     var method = CLASSES.getMethod(className, methodName, signature);
 
     this.invoke(stack, method, signature);
@@ -1015,8 +1012,6 @@ Frame.prototype.invokespecial = function(stack, locals) {
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
-
-    console.log(className, methodName);
 
     var method = CLASSES.getMethod(className, methodName, signature);
 
@@ -1033,8 +1028,6 @@ Frame.prototype.invokeinterface = function(stack, locals) {
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
-
-    console.log(className, methodName);
 
     var method = stack.top()[methodName];
 
