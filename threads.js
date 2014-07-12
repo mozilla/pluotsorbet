@@ -6,6 +6,9 @@
 var Threads = function() {
     this.threads = [];
     this.empty = [];
+    var mainThread = new Thread("main");
+    this.add(mainThread);
+    this.current = mainThread;
 }
 
 Threads.prototype.add = function(thread) {
@@ -30,6 +33,3 @@ Threads.prototype.count = function() {
 Threads.prototype.getThread = function(pid) {
     return this.threads[pid];
 }
-
-
-

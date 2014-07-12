@@ -86,12 +86,8 @@ Classes.prototype.initClass = function(className) {
     var clinit = this.getStaticMethod(className, "<clinit>", "()V");
     if (!clinit)
         return;
-    SCHEDULER.sync(function() {
-        LOG.debug("call " + className + ".<clinit> ...");
-        clinit.run([], function() {
-            LOG.debug("call " + className + ".<clinit> ... done");
-        });
-    });
+    LOG.debug("call " + className + ".<clinit> ...");
+    clinit.run(THREADS.current.stack);
 }
 
 Classes.prototype.getClass = function(className, initialize) {

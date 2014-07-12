@@ -106,24 +106,26 @@ Frame.prototype.run = function(stack) {
 
     this.ip = 0;
 
-    var result;
     while (true) {
         var op = this.read8();
-        console.log(this.ip - 1, op, OPCODES[op], stack.length);
+        console.log(this.ip - 1, OPCODES[op], stack.array.length);
         switch (op) {
         case OPCODES.return:
-            break;
+            stack.popLocals(locals);
+            return;
 
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            result = stack.pop();
-            break;
+            var result = stack.pop();
+            stack.popLocals(locals);
+            return result;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            result = stack.pop2();
-            break;
+            var result = stack.pop2();
+            stack.popLocals(locals);
+            return result;
 
         default:
             var opName = OPCODES[op];
@@ -134,9 +136,6 @@ Frame.prototype.run = function(stack) {
             break;
         }
     };
-
-    stack.popLocals(locals);
-    return result;
 }
 
 Frame.prototype.nop = function(stack, locals) {
@@ -364,6 +363,7 @@ Frame.prototype.lastore = Frame.prototype.dastore = function(stack, locals) {
 }
 
 Frame.prototype.pop = function(stack, locals) {
+    console.trace();
     stack.pop();
 }
 

@@ -47,7 +47,7 @@ Stack.prototype.popArgs = function (signature) {
 }
 
 Stack.prototype.top = function () {
-    return this.array[this.array.lengt - 1];
+    return this.array[this.array.length - 1];
 }
 
 Stack.prototype.reserveLocals = function (argc, max_locals) {

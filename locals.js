@@ -4,14 +4,14 @@
 'use strict';
 
 var Locals = function(stack, base) {
-    this.stack = stack;
+    this.array = stack.array;
     this.base = base;
 }
 
 Locals.prototype.set = function (idx, value) {
-    this.stack[base + idx] = value;
+    this.array[this.base + idx] = value;
 }
 
 Locals.prototype.get = function (idx) {
-    return this.stack[base + idx];
+    return this.array[this.base + idx];
 }
