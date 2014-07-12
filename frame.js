@@ -47,6 +47,30 @@ Frame.prototype._read32signed = function() {
     return this._u32_to_s32(this._read32());
 }
 
+Frame.prototype._popArgs = function(signature) {
+    var args = [];
+    for (var i=0; i<signature.IN.length; i++) {
+        var type = signature.IN[i].type;
+        if (type === "long" || type === "double") {
+            args.unshift(null);
+            args.unshift(this._stack.pop2());
+        } else {
+            args.unshift(this._stack.pop());
+        }
+    }
+}
+
+Frame.prototype._pushReturnValue = function(signature, result) {
+    if (!signature.OUT.length)
+        return;
+    var type = signature.OUT[0].type;
+    if (type === "long" || type === "double") {
+        this.push2(result);
+    } else {
+        this.push(result);
+    }
+}
+
 Frame.prototype._throw = function(ex) { 
     var handler_pc = null;
 
@@ -939,9 +963,6 @@ Frame.prototype.putstatic = function() {
     CLASSES.setStaticField(className, fieldName, this._stack.pop());
 }
 
-Frame.prototype._invoke = function(method, signature, args) {
-}
-
 Frame.prototype.invokestatic = function() {
     var idx = this._read16();
     
@@ -949,30 +970,15 @@ Frame.prototype.invokestatic = function() {
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
 
-    var args = [];
-    for (var i=0; i<signature.IN.length; i++) {
-        if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
-            args.unshift("");
-            args.unshift(this._stack.pop());
-        } else {
-            args.unshift(this._stack.pop());
-        }
-    }
-
+    var args = this._popArgs(signature);
     var method = CLASSES.getStaticMethod(className, methodName, signature);
-
+    var result;
     if (method instanceof Frame) {
-        method.run(args, function(res) {
-            if (signature.OUT.length != 0) {
-               this._stack.push(res);
-            }
-        });
+        result = method.run(args);
     } else {
-        var res = method.apply(null, args);
-        if (signature.OUT.length != 0) {
-            this._stack.push(res);
-        }
+        result = method.apply(null, args);
     }
+    this._pushReturnValue(signature, result);
 }    
 
 Frame.prototype.invokevirtual = function() {
@@ -984,33 +990,17 @@ Frame.prototype.invokevirtual = function() {
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
 
-    var args = [];
-    for (var i=0; i<signature.IN.length; i++) {
-        if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
-            args.unshift("");
-            args.unshift(this._stack.pop());
-        } else {
-            args.unshift(this._stack.pop());
-        }
-    }
-
+    var args = this._popArgs(signature);
     var instance = this._stack.pop();
     var method = CLASSES.getMethod(className, methodName, signature);
-
+    var result;
     if (method instanceof Frame) {
         args.unshift(instance);
-        method.setPid(self._pid);
-        method.run(args, function(res) {
-            if (signature.OUT.length != 0) {                        
-               self._this._stack.push(res);
-            }
-        });
+        result = method.run(args);
     } else {
-        var res = method.apply(instance, args);        
-        if (signature.OUT.length != 0) {
-            self._this._stack.push(res);
-        }
+        result = method.apply(instance, args);
     }
+    this._pushReturnValue(signature, result);
 }
 
 Frame.prototype.invokespecial = function() {
@@ -1022,27 +1012,17 @@ Frame.prototype.invokespecial = function() {
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
 
-    var args = [];
-    for (var i=0; i<signature.IN.length; i++) {
-        if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
-            args.unshift("");
-            args.unshift(this._stack.pop());
-        } else {
-            args.unshift(this._stack.pop());
-        }
-    }
-
+    var args = this._popArgs(signature);
     var instance = this._stack.pop();
     var method = CLASSES.getMethod(className, methodName, signature);
-    
+    var result;
     if (method instanceof Frame) {
         args.unshift(instance);
-        method.setPid(self._pid);
-        method.run(args, function() {
-        });
+        result = method.run(args);
     } else {
-        method.apply(instance, args);
+        result = method.apply(instance, args);
     }
+    this._pushReturnValue(signature, result);
 }
 
 Frame.prototype.invokeinterface = function() {
@@ -1055,33 +1035,17 @@ Frame.prototype.invokeinterface = function() {
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
-    
-    var args = [];
-    for (var i=0; i<signature.IN.length; i++) {
-        if (!signature.IN[i].isArray && ["long", "double"].indexOf(signature.IN[i].type) !== -1) {
-            args.unshift("");
-            args.unshift(this._stack.pop());
-        } else {
-            args.unshift(this._stack.pop());
-        }
-    }
 
+    var args = this._popArgs(signature);
     var instance = this._stack.pop();
-      
-    if (instance[methodName] instanceof Frame) {
+    var method = instance[methodName];
+    if (method instanceof Frame) {
         args.unshift(instance);
-        instance[methodName].setPid(self._pid);
-        instance[methodName].run(args, function(res) {
-            if (signature.OUT.length != 0) {                        
-               self._this._stack.push(res);
-            }
-        });
+        result = method.run(args);
     } else {
-        var res = instance[methodName].apply(instance, args);
-        if (signature.OUT.length != 0) {
-            self._this._stack.push(res);
-        }
+        result = method.apply(instance, args);
     }
+    this._pushReturnValue(signature, result);
 }
 
 Frame.prototype.jsr = function() {
@@ -1195,4 +1159,3 @@ Frame.prototype.monitorexit = function() {
     delete obj["$lock$"];
     SCHEDULER.yield();
 }
-
