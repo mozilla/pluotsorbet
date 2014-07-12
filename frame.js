@@ -5,7 +5,6 @@
 
 var Frame = function(classData, method) {
     if (this instanceof Frame) {
-        this._pid = 0; // default main thread
         this._cp = classData.getConstantPool();
         for(var i=0; i<method.attributes.length; i++) {
             if (method.attributes[i].info.type === ATTRIBUTE_TYPES.Code) {
@@ -18,10 +17,6 @@ var Frame = function(classData, method) {
     } else {
         return new Frame(classData, method);
     }
-}
-
-Frame.prototype.setPid = function(pid) {
-    this._pid = pid;
 }
 
 Frame.prototype._u16_to_s16 = function(x) {
@@ -78,26 +73,13 @@ Frame.prototype._throw = function(ex) {
 }
 
 Frame.prototype._newException = function(className, message) {
-    var self = this;
     var ex = CLASSES.newObject(className);
     var ctor = CLASSES.getMethod(className, "<init>", "(Ljava/lang/String;)V");
-    ctor.setPid(self._pid);
-    SCHEDULER.spawn(function () {
-        
-    });
-
-
-    ctor.run([ex, message], function () {
-        self._throw(ex);
-    });
+    ctor.run([ex, message]);
+    this._throw(ex);
 }
 
 Frame.prototype.run = function(args) {
-    this.start();
-    SCHEDULER.spawn(this.resume.bind());
-}
-
-Frame.prototype.start = function(args) {
     this._ip = 0;
     this._stack = [];
     this._widened = false;
@@ -105,12 +87,10 @@ Frame.prototype.start = function(args) {
     for(var i=0; i<args.length; i++) {
         this._locals[i] = args[i];
     }
-}
 
-Frame.prototype.resume = function() {
     while (true) {
         var op = this._read8();
-        console.log(self._ip - 1, OPCODES.toString(op), self._stack.length);
+        console.log(this._ip - 1, OPCODES.toString(op), this._stack.length);
         switch (op) {
         case OPCODES.return:
             return;
@@ -118,19 +98,18 @@ Frame.prototype.resume = function() {
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            return self._stack.pop();
+            return this._stack.pop();
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            return self._stack.pop2();
+            return this._stack.pop2();
 
         default:
             var opName = OPCODES.toString(op);
-            if (!(opName in self)) {
+            if (!(opName in this)) {
                 throw new Error(util.format("Opcode %s [%s] is not supported.", opName, opCode));
             }
             this[opName]();
-            SCHEDULER.yield(this._pid);
             break;
         }
     };
@@ -961,19 +940,6 @@ Frame.prototype.putstatic = function() {
 }
 
 Frame.prototype._invoke = function(method, signature, args) {
-    if (method instanceof Frame) {
-        method.setPid(this._pid);
-        method.run(args, function(res) {
-            if (signature.OUT.length != 0) {
-               this._stack.push(res);
-            }
-        });
-    } else {
-        var res = method.apply(null, args);
-        if (signature.OUT.length != 0) {
-            this._stack.push(res);
-        }
-    }
 }
 
 Frame.prototype.invokestatic = function() {
@@ -994,7 +960,19 @@ Frame.prototype.invokestatic = function() {
     }
 
     var method = CLASSES.getStaticMethod(className, methodName, signature);
-    return this._invoke(method, signature, args);
+
+    if (method instanceof Frame) {
+        method.run(args, function(res) {
+            if (signature.OUT.length != 0) {
+               this._stack.push(res);
+            }
+        });
+    } else {
+        var res = method.apply(null, args);
+        if (signature.OUT.length != 0) {
+            this._stack.push(res);
+        }
+    }
 }    
 
 Frame.prototype.invokevirtual = function() {
@@ -1065,7 +1043,6 @@ Frame.prototype.invokespecial = function() {
     } else {
         method.apply(instance, args);
     }
-    
 }
 
 Frame.prototype.invokeinterface = function() {
