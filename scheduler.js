@@ -3,49 +3,36 @@
 
 'use strict';
 
-var MODE = {
-    NORMAL: 0,
-    SYNC:   1,
-    YIELD:  2
-};
-
-var Scheduler = function(mticks) {
+var Scheduler = function() {
     if (this instanceof Scheduler) {
         this._ticks = 0;
-        this._mode = MODE.NORMAL;
+        this._sync = false;
+        this._yieldException = {};
     } else {
-        return new Scheduler(mticks);
+        return new Scheduler();
     }
 }
 
-Scheduler.prototype.tick = function(pid, fn) {
-    switch(this._mode) {
-        case MODE.SYNC:
-            fn();
-            break;
-        case MODE.YIELD:
-            this._mode = MODE.NORMAL;
-            this._ticks = 0;
-            setTimeout(fn, 0);
-            break;
-        case MODE.NORMAL:
-            if (++this._ticks > THREADS.getThread(pid).getPriority()) {
-                this._ticks = 0;
-                setTimeout(fn, 0);
-            } else {
-                fn();
-            }
-            break;
+Scheduler.prototype.yield = function(pid) {
+    if (!this._sync && ++this._ticks > THREADS.getThread(pid).getPriority()) {
+        this._ticks = 0;
+        throw this._yieldException;
     }
 }
 
-Scheduler.prototype.yield = function() {
-    this._mode = MODE.YIELD;
+Scheduler.prototype.spawn = function(fn) {
+    try {
+        fn();
+    } catch (e) {
+        if (e !== this._yieldException)
+            throw e;
+        setTimeout(fn, 0);
+    }
 }
 
 Scheduler.prototype.sync = function(fn) {
-    this._mode = MODE.SYNC;
+    this._sync = true;
     fn();
-    this._mode = MODE.NORMAL;
+    this._sync = false;
 }
 

@@ -7,7 +7,6 @@ var Frame = function(classData, method) {
     if (this instanceof Frame) {
         this._pid = 0; // default main thread
         this._cp = classData.getConstantPool();
-        
         for(var i=0; i<method.attributes.length; i++) {
             if (method.attributes[i].info.type === ATTRIBUTE_TYPES.Code) {
                 this._code = Uint8Array(method.attributes[i].info.code);
@@ -79,154 +78,116 @@ Frame.prototype._throw = function(ex) {
 }
 
 Frame.prototype._newException = function(className, message) {
-    var done = arguments[arguments.length-1];
     var self = this;
     var ex = CLASSES.newObject(className);
     var ctor = CLASSES.getMethod(className, "<init>", "(Ljava/lang/String;)V");
     ctor.setPid(self._pid);
+    SCHEDULER.spawn(function () {
+        
+    });
+
+
     ctor.run([ex, message], function () {
         self._throw(ex);
-        return done();
     });
 }
 
-Frame.prototype.run = function(args, done) {
-    var self = this;
+Frame.prototype.run = function(args) {
+    this.start();
+    SCHEDULER.spawn(this.resume.bind());
+}
 
+Frame.prototype.start = function(args) {
     this._ip = 0;
     this._stack = [];
     this._widened = false;
-       
+
     for(var i=0; i<args.length; i++) {
         this._locals[i] = args[i];
     }
-    
-    var step = function() {
-        SCHEDULER.tick(self._pid, function() {
-            var opCode = self._read8();
-            console.log(self._ip - 1, OPCODES.toString(opCode), self._stack.length);
-            switch (opCode) {
-                case OPCODES.return:
-                    return done();
-                    
-                case OPCODES.ireturn:
-                case OPCODES.lreturn:
-                case OPCODES.freturn:
-                case OPCODES.dreturn:
-                case OPCODES.areturn:
-                    return done(self._stack.pop());
-                
-                default:
-                    var opName = OPCODES.toString(opCode);
-                    
-                    if (!(opName in self)) {
-                        throw new Error(util.format("Opcode %s [%s] is not supported.", opName, opCode));
-                    }
-        
-                    self[opName]( function() { return step(); } );
-                    break;
+}
+
+Frame.prototype.resume = function() {
+    while (true) {
+        var op = this._read8();
+        console.log(self._ip - 1, OPCODES.toString(op), self._stack.length);
+        switch (op) {
+        case OPCODES.return:
+            return;
+
+        case OPCODES.ireturn:
+        case OPCODES.freturn:
+        case OPCODES.areturn:
+            return self._stack.pop();
+
+        case OPCODES.lreturn:
+        case OPCODES.dreturn:
+            return self._stack.pop2();
+
+        default:
+            var opName = OPCODES.toString(op);
+            if (!(opName in self)) {
+                throw new Error(util.format("Opcode %s [%s] is not supported.", opName, opCode));
             }
-        });
-        
+            this[opName]();
+            SCHEDULER.yield(this._pid);
+            break;
+        }
     };
-    
-    step();
 }
 
 Frame.prototype.nop = function() {
 }
 
-Frame.prototype.aconst_null = function(done) {
+Frame.prototype.aconst_null = function() {
     this._stack.push(null);
-    return done();
 }
 
-Frame.prototype.iconst_m1 = function(done) {
+Frame.prototype.iconst_m1 = function() {
     this._stack.push(-1);
-    return done();
 }
 
-Frame.prototype.iconst_0 = function(done) {
+Frame.prototype.iconst_0 = Frame.prototype.fconst_0 = function() {
     this._stack.push(0);
-    return done();
 }
 
-Frame.prototype.lconst_0 = function(done) {
-    this._stack.push(0);
-    return done();
+Frame.prototype.lconst_0 = Frame.prototype.dconst_0 = function() {
+    this._stack.push2(0);
 }
 
-Frame.prototype.fconst_0 = function(done) {
-    this._stack.push(0);
-    return done();
-}
-
-Frame.prototype.dconst_0 = function(done) {
-    this._stack.push(0);
-    return done();
-}
-
-Frame.prototype.iconst_1 = function(done) {
+Frame.prototype.iconst_1 = Frame.prototype.fconst_1 = function() {
     this._stack.push(1);
-    return done();
 }
 
-Frame.prototype.lconst_1 = function(done) {
-    this._stack.push(1);
-    return done();
+Frame.prototype.lconst_1 = Frame.prototype.dconst_1 = function() {
+    this._stack.push2(1);
 }
 
-Frame.prototype.fconst_1 = function(done) {
-    this._stack.push(1);
-    return done();
-}
-
-Frame.prototype.dconst_1 = function(done) {
-    this._stack.push(1);
-    return done();
-}
-
-Frame.prototype.iconst_2 = function(done) {
+Frame.prototype.iconst_2 = Frame.prototype.fconst_2 = function() {
     this._stack.push(2);
-    return done();
 }
 
-Frame.prototype.fconst_2 = function(done) {
-    this._stack.push(2);
-    return done();
-}
-
-Frame.prototype.iconst_3 = function(done) {
+Frame.prototype.iconst_3 = function() {
     this._stack.push(3);
-    return done();
 }
 
-Frame.prototype.iconst_4 = function(done) {
+Frame.prototype.iconst_4 = function() {
     this._stack.push(4);
-    return done();
 }
 
-Frame.prototype.iconst_4 = function(done) {
+Frame.prototype.iconst_5 = function() {
     this._stack.push(5);
-    return done();
 }
 
-Frame.prototype.iconst_5 = function(done) {
-    this._stack.push(5);
-    return done();
-}
-
-Frame.prototype.sipush = function(done) {
+Frame.prototype.sipush = function() {
     this._stack.push(this._read16());
-    return done();
 }
 
-Frame.prototype.bipush = function(done) {
+Frame.prototype.bipush = function() {
     this._stack.push(this._read8());
-    return done();
 }
 
-Frame.prototype.ldc = function(done) {
+Frame.prototype.ldc = function() {
     var constant = this._cp[this._read8()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:                        
@@ -235,10 +196,9 @@ Frame.prototype.ldc = function(done) {
         default:
             throw new Error("not support constant type");
     }
-    return done();
 }
 
-Frame.prototype.ldc_w = function(done) {
+Frame.prototype.ldc_w = function() {
     var constant = this._cp[this._read16()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:                        
@@ -247,562 +207,186 @@ Frame.prototype.ldc_w = function(done) {
         default:
             throw new Error("not support constant type");
     }
-    return done();
 }
 
-Frame.prototype.ldc2_w = function(done) {
+Frame.prototype.ldc2_w = function() {
     var constant = this._cp[this._read16()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:                        
             this._stack.push(this._cp[constant.string_index].bytes);
             break;
         case TAGS.CONSTANT_Long:
-            this._stack.push(Numeric.getLong(constant.bytes));
+            this._stack.push2(Numeric.getLong(constant.bytes));
             break;
         case TAGS.CONSTANT_Double:
-            this._stack.push(constant.bytes.readDoubleBE(0));
+            this._stack.push2(constant.bytes.readDoubleBE(0));
             break;
         default:
             throw new Error("not support constant type");
     }
-    return done();
 }
 
-Frame.prototype.iload = function(done) {
+Frame.prototype.iload = Frame.prototype.iload = Frame.prototype.aload = function() {
     var idx = this._widened ? this._read16() : this._read8();
     this._stack.push(this._locals[idx]);
     this._widened = false;
-    return done();
 }
 
-Frame.prototype.lload = function(done) {
+Frame.prototype.lload = Frame.prototype.dload = function() {
     var idx = this._widened ? this._read16() : this._read8();
-    this._stack.push(this._locals[idx]);
+    this._stack.push2(this._locals[idx]);
     this._widened = false;
-    return done();
 }
 
-Frame.prototype.fload = function(done) {
-    var idx = this._widened ? this._read16() : this._read8();
-    this._stack.push(this._locals[idx]);
-    this._widened = false;
-    return done();
-}
-
-Frame.prototype.dload = function(done) {
-    var idx = this._widened ? this._read16() : this._read8();
-    this._stack.push(this._locals[idx]);
-    this._widened = false;
-    return done();
-}
-
-Frame.prototype.aload = function(done) {
-    var idx = this._widened ? this._read16() : this._read8();
-    this._stack.push(this._locals[idx]);
-    this._widened = false;
-    return done();
-}
-
-Frame.prototype.iload_0 = function(done) {
+Frame.prototype.iload_0 = Frame.prototype.fload_0 = Frame.prototype.aload_0 = function() {
     this._stack.push(this._locals[0]);
-    return done();
 }
 
-Frame.prototype.lload_0 = function(done) {
+Frame.prototype.lload_0 = Frame.prototype.dloat_0 = function() {
+    this._stack.push2(this._locals[0]);
+}
+
+Frame.prototype.iload_1 = Frame.prototype.fload_1 = Frame.prototype.aload_1 = function() {
     this._stack.push(this._locals[0]);
-    return done();
 }
 
-Frame.prototype.fload_0 = function(done) {
+Frame.prototype.lload_1 = Frame.prototype.dloat_1 = function() {
+    this._stack.push2(this._locals[0]);
+}
+
+Frame.prototype.iload_2 = Frame.prototype.fload_2 = Frame.prototype.aload_2 = function() {
     this._stack.push(this._locals[0]);
-    return done();
 }
 
-Frame.prototype.fload_0 = function(done) {
+Frame.prototype.lload_2 = Frame.prototype.dloat_2 = function() {
+    this._stack.push2(this._locals[0]);
+}
+
+Frame.prototype.iload_3 = Frame.prototype.fload_3 = Frame.prototype.aload_3 = function() {
     this._stack.push(this._locals[0]);
-    return done();
 }
 
-Frame.prototype.dload_0 = function(done) {
-    this._stack.push(this._locals[0]);
-    return done();
+Frame.prototype.lload_3 = Frame.prototype.dloat_3 = function() {
+    this._stack.push2(this._locals[0]);
 }
 
-Frame.prototype.aload_0 = function(done) {
-    this._stack.push(this._locals[0]);
-    return done();
+Frame.prototype._checkArrayAccess = function(refArray, idx) {
+    if (!refArray) {
+        this._newException("java/lang/NullPointerException");
+        return false;
+    }
+    if (idx < 0 || idx >= array.length) {
+        this._newException("java/lang/ArrayIndexOutOfBoundsException", idx);
+        return false;
+    }
+    return true;
 }
 
-Frame.prototype.iload_1 = function(done) {
-    this._stack.push(this._locals[1]);
-    return done();
-}
-
-Frame.prototype.lload_1 = function(done) {
-    this._stack.push(this._locals[1]);
-    return done();
-}
-
-Frame.prototype.fload_1 = function(done) {
-    this._stack.push(this._locals[1]);
-    return done();
-}
-
-Frame.prototype.fload_1 = function(done) {
-    this._stack.push(this._locals[1]);
-    return done();
-}
-
-Frame.prototype.dload_1 = function(done) {
-    this._stack.push(this._locals[1]);
-    return done();
-}
-
-Frame.prototype.aload_1 = function(done) {
-    this._stack.push(this._locals[1]);
-    return done();
-}
-
-Frame.prototype.iload_2 = function(done) {
-    this._stack.push(this._locals[2]);
-    return done();
-}
-
-Frame.prototype.lload_2 = function(done) {
-    this._stack.push(this._locals[2]);
-    return done();
-}
-
-Frame.prototype.fload_2 = function(done) {
-    this._stack.push(this._locals[2]);
-    return done();
-}
-
-Frame.prototype.fload_2 = function(done) {
-    this._stack.push(this._locals[2]);
-    return done();
-}
-
-Frame.prototype.dload_2 = function(done) {
-    this._stack.push(this._locals[2]);
-    return done();
-}
-
-Frame.prototype.aload_2 = function(done) {
-    this._stack.push(this._locals[2]);
-    return done();
-}
-
-Frame.prototype.iload_3 = function(done) {
-    this._stack.push(this._locals[3]);
-    return done();
-}
-
-Frame.prototype.lload_3 = function(done) {
-    this._stack.push(this._locals[3]);
-    return done();
-}
-
-Frame.prototype.fload_3 = function(done) {
-    this._stack.push(this._locals[3]);
-    return done();
-}
-
-Frame.prototype.fload_3 = function(done) {
-    this._stack.push(this._locals[3]);
-    return done();
-}
-
-Frame.prototype.dload_3 = function(done) {
-    this._stack.push(this._locals[3]);
-    return done();
-}
-
-Frame.prototype.aload_3 = function(done) {
-    this._stack.push(this._locals[3]);
-    return done();
-}
-
-Frame.prototype.iaload = function(done) {
+Frame.prototype.iaload = Frame.prototype.faload = Frame.prototype.aaload = Frame.prototype.baload = Frame.prototype.caload = Frame.prototype.saload = function() {
     var idx = this._stack.pop();
     var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
+    if (!this._checkArrayAccess(refArray, idx)) {
+        return;
     }
     this._stack.push(refArray[idx]);
-    return done();
 }
 
-Frame.prototype.laload = function(done) {
+Frame.prototype.laload = Frame.prototype.daload = function() {
     var idx = this._stack.pop();
     var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
+    if (!this._checkArrayAccess(refArray, idx)) {
+        return;
     }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    this._stack.push(refArray[idx]);
-    return done();
+    this._stack.push2(refArray[idx]);
 }
 
-Frame.prototype.faload = function(done) {
-    var idx = this._stack.pop();
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    this._stack.push(refArray[idx]);
-    return done();
-}
-
-
-Frame.prototype.daload = function(done) {
-    var idx = this._stack.pop();
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    this._stack.push(refArray[idx]);
-    return done();
-}
-
-Frame.prototype.aaload = function(done) {
-    var idx = this._stack.pop();
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    this._stack.push(refArray[idx]);
-    return done();
-}
-
-Frame.prototype.baload = function(done) {
-    var idx = this._stack.pop();
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    this._stack.push(refArray[idx]);
-    return done();
-}
-
-Frame.prototype.caload = function(done) {
-    var idx = this._stack.pop();
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    this._stack.push(refArray[idx]);
-    return done();
-}
-
-Frame.prototype.saload = function(done) {
-    var idx = this._stack.pop();
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    this._stack.push(refArray[idx]);
-    return done();
-}
-
-Frame.prototype.istore = function(done) {
+Frame.prototype.istore = Frame.prototype.fstore = Frame.prototype.astore = function() {
     var idx = this._widened ? this._read16() : this._read8();
-    this._locals[idx] = this._stack.pop();
+    this._localsidx] = this._stack.pop();
     this._widened = false;
-    return done();
 }
 
-Frame.prototype.lstore = function(done) {
+Frame.prototype.lstore = Frame.prototype.dstore = function() {
     var idx = this._widened ? this._read16() : this._read8();
-    this._locals[idx] = this._stack.pop();
+    this._localsidx] = this._stack.pop2();
     this._widened = false;
-    return done();
 }
 
-Frame.prototype.fstore = function(done) {
-    var idx = this._widened ? this._read16() : this._read8();
-    this._locals[idx] = this._stack.pop();
-    this._widened = false;
-    return done();
-}
-
-Frame.prototype.dstore = function(done) {
-    var idx = this._widened ? this._read16() : this._read8();
-    this._locals[idx] = this._stack.pop();
-    this._widened = false;
-    return done();
-}
-
-Frame.prototype.astore = function(done) {
-    var idx = this._widened ? this._read16() : this._read8();
-    this._locals[idx] = this._stack.pop();
-    this._widened = false;
-    return done();
-}
-
-Frame.prototype.istore_0 = function(done) {
+Frame.prototype.istore_0 = Frame.prototype.fstore_0 = Frame.prototype.astore_0 = function() {
     this._locals[0] = this._stack.pop();
-    return done();
 }
 
-Frame.prototype.lstore_0 = function(done) {
+Frame.prototype.lstore_0 = Frame.prototype.dstore_0 = function() {
+    this._locals[0] = this._stack.pop2();
+}
+
+Frame.prototype.istore_1 = Frame.prototype.fstore_1 = Frame.prototype.astore_1 = function() {
     this._locals[0] = this._stack.pop();
-    return done();
 }
 
-Frame.prototype.fstore_0 = function(done) {
+Frame.prototype.lstore_1 = Frame.prototype.dstore_1 = function() {
+    this._locals[0] = this._stack.pop2();
+}
+
+Frame.prototype.istore_2 = Frame.prototype.fstore_2 = Frame.prototype.astore_2 = function() {
     this._locals[0] = this._stack.pop();
-    return done();
 }
 
-Frame.prototype.dstore_0 = function(done) {
+Frame.prototype.lstore_2 = Frame.prototype.dstore_2 = function() {
+    this._locals[0] = this._stack.pop2();
+}
+
+Frame.prototype.istore_3 = Frame.prototype.fstore_3 = Frame.prototype.astore_3 = function() {
     this._locals[0] = this._stack.pop();
-    return done();
 }
 
-Frame.prototype.astore_0 = function(done) {
-    this._locals[0] = this._stack.pop();
-    return done();
+Frame.prototype.lstore_3 = Frame.prototype.dstore_3 = function() {
+    this._locals[0] = this._stack.pop2();
 }
 
-Frame.prototype.istore_1 = function(done) {
-    this._locals[1] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.lstore_1 = function(done) {
-    this._locals[1] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.fstore_1 = function(done) {
-    this._locals[1] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.dstore_1 = function(done) {
-    this._locals[1] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.astore_1 = function(done) {
-    this._locals[1] = this._stack.pop();
-    return done();
-}
-
-
-Frame.prototype.istore_2 = function(done) {
-    this._locals[2] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.lstore_2 = function(done) {
-    this._locals[2] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.fstore_2 = function(done) {
-    this._locals[2] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.dstore_2 = function(done) {
-    this._locals[2] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.astore_2 = function(done) {
-    this._locals[2] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.istore_3 = function(done) {
-    this._locals[3] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.lstore_3 = function(done) {
-    this._locals[3] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.fstore_3 = function(done) {
-    this._locals[3] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.dstore_3 = function(done) {
-    this._locals[3] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.astore_3 = function(done) {
-    this._locals[3] = this._stack.pop();
-    return done();
-}
-
-Frame.prototype.iastore = function(done) {
+Frame.prototype.iastore = Frame.prototype.fastore = Frame.prototype.aastore = Frame.prototype.bastore = Frame.prototype.castore = Frame.prototype.sastore = function() {
     var val = this._stack.pop();
     var idx = this._stack.pop();                
     var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
+    if (!this._checkArrayAccess(refArray, idx)) {
+        return;
     }
     refArray[idx] = val;
-    return done();
 }
 
-Frame.prototype.lastore = function(done) {
-    var val = this._stack.pop();
+Frame.prototype.lastore = Frame.prototype.dastore = function() {
+    var val = this._stack.pop2();
     var idx = this._stack.pop();                
     var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
+    if (!this._checkArrayAccess(refArray, idx)) {
+        return;
     }
     refArray[idx] = val;
-    return done();
 }
 
-Frame.prototype.fastore = function(done) {
-    var val = this._stack.pop();
-    var idx = this._stack.pop();                
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    refArray[idx] = val;
-    return done();
-}
-
-Frame.prototype.dastore = function(done) {
-    var val = this._stack.pop();
-    var idx = this._stack.pop();                
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    refArray[idx] = val;
-    return done();
-}
-
-Frame.prototype.aastore = function(done) {
-    var val = this._stack.pop();
-    var idx = this._stack.pop();                
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    refArray[idx] = val;
-    return done();
-}
-
-Frame.prototype.bastore = function(done) {
-    var val = this._stack.pop();
-    var idx = this._stack.pop();                
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    refArray[idx] = val;
-    return done();
-}
-
-Frame.prototype.castore = function(done) {
-    var val = this._stack.pop();
-    var idx = this._stack.pop();                
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    refArray[idx] = val;
-    return done();
-}
-
-Frame.prototype.sastore = function(done) {
-    var val = this._stack.pop();
-    var idx = this._stack.pop();                
-    var refArray = this._stack.pop();
-    if (!refArray) {
-        return this._newException("java/lang/NullPointerException", done);
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        return this._newException("java/lang/ArrayIndexOutOfBoundsException", idx, done);
-    }
-    refArray[idx] = val;
-    return done();
-}
-
-Frame.prototype.pop = function(done) {
+Frame.prototype.pop = function() {
     this._stack.pop();
-    return done();
 }
 
-Frame.prototype.pop2 = function(done) {
-    this._stack.pop();
-    return done();
+Frame.prototype.pop2 = function() {
+    this._stack.pop2();
 }
 
-Frame.prototype.dup = function(done) {
+Frame.prototype.dup = function() {
     var val = this._stack.pop();
     this._stack.push(val);
     this._stack.push(val);
-    return done();
 }
 
-Frame.prototype.dup_x1 = function(done) {
+Frame.prototype.dup_x1 = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     this._stack.push(val1);
     this._stack.push(val2);
     this._stack.push(val1);
-    return done();
 }
 
-Frame.prototype.dup_x2 = function(done) {
+Frame.prototype.dup_x2 = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     var val3 = this._stack.pop();    
@@ -810,20 +394,18 @@ Frame.prototype.dup_x2 = function(done) {
     this._stack.push(val3);
     this._stack.push(val2);    
     this._stack.push(val1);
-    return done();
 }
 
-Frame.prototype.dup2 = function(done) {
+Frame.prototype.dup2 = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     this._stack.push(val2);
     this._stack.push(val1);
     this._stack.push(val2);
     this._stack.push(val1);
-    return done();
 }
 
-Frame.prototype.dup2_x1 = function(done) {
+Frame.prototype.dup2_x1 = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     var val3 = this._stack.pop();
@@ -832,10 +414,9 @@ Frame.prototype.dup2_x1 = function(done) {
     this._stack.push(val3);
     this._stack.push(val2);
     this._stack.push(val1);
-    return done();
 }
 
-Frame.prototype.dup2_x2 = function(done) {
+Frame.prototype.dup2_x2 = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     var val3 = this._stack.pop();
@@ -846,255 +427,223 @@ Frame.prototype.dup2_x2 = function(done) {
     this._stack.push(val3);
     this._stack.push(val2);
     this._stack.push(val1);
-    return done();
 }
 
-
-Frame.prototype.swap = function(done) {
+Frame.prototype.swap = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     this._stack.push(val1);
     this._stack.push(val2);
-    return done();
 }
 
-
-Frame.prototype.iinc = function(done) {
+Frame.prototype.iinc = function() {
     var idx = this._widened ? this._read16() : this._read8();
     var val = this._widened ? this._read16() : this._read8();
-    this._locals[idx] += val
+    this._localsidx] += val
     this._widened = false;
-    return done();
 }
 
-Frame.prototype.iadd = function(done) {
-    this._stack.push(this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.iadd = function() {
+    this._stack.push((this._stack.pop() + this._stack.pop())|0);
 }
 
-Frame.prototype.ladd = function(done) {
-    this._stack.push(this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.ladd = function() {
+    this._stack.push2(this._stack.pop2().add(this._stack.pop2()));
 }
 
-Frame.prototype.dadd = function(done) {
-    this._stack.push(this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.dadd = function() {
+    this._stack.push2(this._stack.pop2() + this._stack.pop2());
 }
 
-Frame.prototype.fadd = function(done) {
-    this._stack.push(this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.fadd = function() {
+    this._stack.push(utils.double2float(this._stack.pop() + this._stack.pop()));
 }
 
-Frame.prototype.isub = function(done) {
-    this._stack.push(- this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.isub = function() {
+    this._stack.push((- this._stack.pop() + this._stack.pop())|0);
 }
 
-Frame.prototype.lsub = function(done) {
-    this._stack.push(- this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.lsub = function() {
+    this._stack.push2(this._stack.pop2().add(this._stack.pop2()).negate());
 }
 
-Frame.prototype.dsub = function(done) {
-    this._stack.push(- this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.dsub = function() {
+    this._stack.push2(- this._stack.pop2() + this._stack.pop2());
 }
 
-Frame.prototype.fsub = function(done) {
-    this._stack.push(- this._stack.pop() + this._stack.pop());
-    return done();
+Frame.prototype.fsub = function() {
+    this._stack.push(utils.double2float(- this._stack.pop() + this._stack.pop()));
 }
 
-Frame.prototype.imul = function(done) {
-    this._stack.push(this._stack.pop() * this._stack.pop());
-    return done();
+Frame.prototype.imul = function() {
+    this._stack.push(Math.imul(this._stack.pop(), this._stack.pop()));
 }
 
-Frame.prototype.lmul = function(done) {
-    this._stack.push(this._stack.pop() * this._stack.pop());
-    return done();
+Frame.prototype.lmul = function() {
+    this._stack.push2(this._stack.pop2().multiply(this._stack.pop2()));
 }
 
-Frame.prototype.dmul = function(done) {
-    this._stack.push(this._stack.pop() * this._stack.pop());
-    return done();
+Frame.prototype.dmul = function() {
+    this._stack.push2(this._stack.pop2() * this._stack.pop2());
 }
 
-Frame.prototype.fmul = function(done) {
-    this._stack.push(this._stack.pop() * this._stack.pop());
-    return done();
+Frame.prototype.fmul = function() {
+    this._stack.push(utils.double2float(this._stack.pop() * this._stack.pop()));
 }
 
-Frame.prototype.idiv = function(done) {
+Frame.prototype.idiv = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
-    if (val1 === 0) {
-        return this._newException("java/lang/ArithmeticException", done);
+    if (!val1) {
+        this._newException("java/lang/ArithmeticException", "/ by zero");
+        return;
     }
-    this._stack.push(val2 / val1);
-    return done();
+    this._stack.push((val2 === utils.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
 }
 
-Frame.prototype.ldiv = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    if (val1 === 0) {
-        return this._newException("java/lang/ArithmeticException", done);
+Frame.prototype.ldiv = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    if (!val1.isZero()) {
+        this._newException("java/lang/ArithmeticException", "/ by zero");
+        return;
     }
-    this._stack.push(val2 / val1);
-    return done();
+    this._stack.push2(val2.div(val1));
 }
 
-Frame.prototype.ddiv = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    this._stack.push(val2 / val1);
-    return done();
+Frame.prototype.ddiv = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    this._stack.push2(val2 / val1);
 }
 
-Frame.prototype.fdiv = function(done) {
+Frame.prototype.fdiv = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
-    this._stack.push(val2 / val1);
-    return done();
+    this._stack.push(utils.double2float(val2 / val1));
 }
 
-Frame.prototype.irem = function(done) {
+Frame.prototype.irem = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
+    if (!val1) {
+        this._newException("java/lang/ArithmeticException", "/ by zero");
+        return;
+    }
     this._stack.push(val2 % val1);
-    return done();
 }
 
-Frame.prototype.lrem = function(done) {
+Frame.prototype.lrem = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    if (val1.isZero()) {
+        this._newException("java/lang/ArithmeticException", "/ by zero");
+        return;
+    }
+    this._stack.push2(val2.modulo(val1));
+}
+
+Frame.prototype.drem = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    this._stack.push2(val2 % val1);
+}
+
+Frame.prototype.frem = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
-    this._stack.push(val2 % val1);
-    return done();
+    this._stack.push(utils.double2float(val2 % val1));
 }
 
-Frame.prototype.drem = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    this._stack.push(val2 % val1);
-    return done();
+Frame.prototype.ineg = function() {
+    this._stack.push((- this._stack.pop())|0);
 }
 
-Frame.prototype.frem = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    this._stack.push(val2 % val1);
-    return done();
+Frame.prototype.lneg = function() {
+    this._stack.push2(this._stack.pop2().negate());
 }
 
-Frame.prototype.ineg = function(done) {
+Frame.prototype.dneg = function() {
+    this._stack.push2(- this._stack.pop2());
+}
+
+Frame.prototype.fneg = function() {
     this._stack.push(- this._stack.pop());
-    return done();
 }
 
-Frame.prototype.lneg = function(done) {
-    this._stack.push(- this._stack.pop());
-    return done();
-}
-
-Frame.prototype.dneg = function(done) {
-    this._stack.push(- this._stack.pop());
-    return done();
-}
-
-Frame.prototype.fneg = function(done) {
-    this._stack.push(- this._stack.pop());
-    return done();
-}
-
-Frame.prototype.ishl = function(done) {
+Frame.prototype.ishl = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     this._stack.push(val2 << val1);
-    return done();
 }
 
-Frame.prototype.lshl = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    this._stack.push(val2 << val1);
-    return done();
+Frame.prototype.lshl = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    this._stack.push2(val2.shiftLeft(val1));
 }
 
-Frame.prototype.ishr = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    this._stack.push(val2 >> val1);
-    return done();
-}
-
-Frame.prototype.lshr = function(done) {
+Frame.prototype.ishr = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     this._stack.push(val2 >> val1);
-    return done();
 }
 
-Frame.prototype.iushr = function(done) {
+Frame.prototype.lshr = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    this._stack.push2(val2.shiftRight(val1));
+}
+
+Frame.prototype.iushr = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     this._stack.push(val2 >>> val1);
-    return done();
 }
 
-Frame.prototype.lushr = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    this._stack.push(val2 >>> val1);
-    return done();
+Frame.prototype.lushr = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    this._stack.push2(val2.shiftRightUnsigned(val1));
 }
 
-Frame.prototype.iand = function(done) {
+Frame.prototype.iand = function() {
     this._stack.push(this._stack.pop() & this._stack.pop());
-    return done();
 }
 
-Frame.prototype.land = function(done) {
-    this._stack.push(this._stack.pop() & this._stack.pop());
-    return done();
+Frame.prototype.land = function() {
+    this._stack.push2(this._stack.pop2().and(this._stack.pop2()));
 }
 
-Frame.prototype.ior = function(done) {
+Frame.prototype.ior = function() {
     this._stack.push(this._stack.pop() | this._stack.pop());
-    return done();
 }
 
-Frame.prototype.lor = function(done) {
-    this._stack.push(this._stack.pop() | this._stack.pop());
-    return done();
+Frame.prototype.lor = function() {
+    this._stack.push2(this._stack.pop2().or(this._stack.pop2()));
 }
 
-Frame.prototype.ixor = function(done) {
+Frame.prototype.ixor = function() {
     this._stack.push(this._stack.pop() ^ this._stack.pop());
-    return done();
 }
 
-Frame.prototype.lxor = function(done) {
-    this._stack.push(this._stack.pop() ^ this._stack.pop());
-    return done();
+Frame.prototype.lxor = function() {
+    this._stack.push2(this._stack.pop2().xor(this._stack.pop2()));
 }
 
-Frame.prototype.lcmp = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
-    if (val2 > val1) {
+Frame.prototype.lcmp = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
+    if (val2.greaterThan(val1)) {
         this._stack.push(1);
-    } else if (val2 < val1) {
+    } else if (val2.lessThan(val1)) {
         this._stack.push(-1);
     } else {
         this._stack.push(0);
     }
-    return done();
 }
 
-Frame.prototype.fcmpl = function(done) {
+Frame.prototype.fcmpl = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     if (isNaN(val1) || isNaN(val2)) {
@@ -1106,10 +655,9 @@ Frame.prototype.fcmpl = function(done) {
     } else {
         this._stack.push(0);
     }    
-    return done;
 }
 
-Frame.prototype.fcmpg = function(done) {
+Frame.prototype.fcmpg = function() {
     var val1 = this._stack.pop();
     var val2 = this._stack.pop();
     if (isNaN(val1) || isNaN(val2)) {
@@ -1121,12 +669,11 @@ Frame.prototype.fcmpg = function(done) {
     } else {
         this._stack.push(0);
     }    
-    return done;
 }
 
-Frame.prototype.dcmpl = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
+Frame.prototype.dcmpl = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
     if (isNaN(val1) || isNaN(val2)) {
         this._stack.push(-1);
     } else if (val2 > val1) {
@@ -1136,12 +683,11 @@ Frame.prototype.dcmpl = function(done) {
     } else {
         this._stack.push(0);
     }    
-    return done;
 }
 
-Frame.prototype.dcmpg = function(done) {
-    var val1 = this._stack.pop();
-    var val2 = this._stack.pop();
+Frame.prototype.dcmpg = function() {
+    var val1 = this._stack.pop2();
+    var val2 = this._stack.pop2();
     if (isNaN(val1) || isNaN(val2)) {
         this._stack.push(1);
     } else if (val2 > val1) {
@@ -1151,33 +697,30 @@ Frame.prototype.dcmpg = function(done) {
     } else {
         this._stack.push(0);
     }    
-    return done;
 }
 
-
-Frame.prototype.newarray = function(done) {
+Frame.prototype.newarray = function() {
     var type = this._read8();  
     var size = this._stack.pop();
     if (size < 0) {
-        return this._newException("java/lang/NegativeSizeException", done);
+        this._newException("java/lang/NegativeSizeException");
+        return;
     }
     this._stack.push(CLASSES.newArray(type, size));
-    return done();    
 }
 
-
-Frame.prototype.anewarray = function(done) {
+Frame.prototype.anewarray = function() {
     var idx = this._read16();
     var className = this._cp[this._cp[idx].name_index].bytes;       
     var size = this._stack.pop();
     if (size < 0) {
-        return this._newException("java/lang/NegativeSizeException", done);
+        this._newException("java/lang/NegativeSizeException");
+        return;
     }
     this._stack.push(new Array(size));
-    return done();
 }
 
-Frame.prototype.multianewarray = function(done) {
+Frame.prototype.multianewarray = function() {
     var idx = this._read16();
     var type = this._cp[this._cp[idx].name_index].bytes;       
     var dimensions = this._read8();
@@ -1197,271 +740,243 @@ Frame.prototype.multianewarray = function(done) {
         return array;
     };
     this._stack.push(createMultiArray(lengths));    
-    return done();
 }
 
-Frame.prototype.arraylength = function(done) {
+Frame.prototype.arraylength = function() {
     var ref = this._stack.pop();
     this._stack.push(ref.length);
-    return done();
 }
 
-Frame.prototype.if_icmpeq = function(done) {
+Frame.prototype.if_icmpeq = function() {
     var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 === ref2 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.if_icmpne = function(done) {
+Frame.prototype.if_icmpne = function() {
     var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 !== ref2 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.if_icmpgt = function(done) {
+Frame.prototype.if_icmpgt = function() {
     var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 < ref2 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.if_icmple = function(done) {
+Frame.prototype.if_icmple = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() >= this._stack.pop() ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.if_icmplt = function(done) {
+Frame.prototype.if_icmplt = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() > this._stack.pop() ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.if_icmpge = function(done) {
+Frame.prototype.if_icmpge = function() {
     var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 <= ref2 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.if_acmpeq = function(done) {
+Frame.prototype.if_acmpeq = function() {
     var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 === ref2 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.if_acmpne = function(done) {
+Frame.prototype.if_acmpne = function() {
     var jmp = this._ip - 1 + this._read16signed();                                
     var ref1 = this._stack.pop();
     var ref2 = this._stack.pop();
     this._ip = ref1 !== ref2 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.ifne = function(done) {
+Frame.prototype.ifne = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() !== 0 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.ifeq = function(done) {
+Frame.prototype.ifeq = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() === 0 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.iflt = function(done) {
+Frame.prototype.iflt = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() < 0 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.ifge = function(done) {
+Frame.prototype.ifge = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() >= 0 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.ifgt = function(done) {
+Frame.prototype.ifgt = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() > 0 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.ifle = function(done) {
+Frame.prototype.ifle = function() {
     var jmp = this._ip - 1 + this._read16signed();
     this._ip = this._stack.pop() <= 0 ? jmp : this._ip;
-    return done();
 }
 
-Frame.prototype.i2l = function(done) {
-    return done();
+Frame.prototype.i2l = function() {
+    this._stack.push2(new gLong(this._stack.pop()));
 }
 
-Frame.prototype.i2f = function(done) {
-    return done();
+Frame.prototype.i2f = function() {
 }
 
-Frame.prototype.i2d = function(done) {
-    return done();
+Frame.prototype.i2d = function() {
+    this._stack.push2(this._stack.pop());
 }
 
-Frame.prototype.i2b = function(done) {
-    return done();
+Frame.prototype.i2b = function() {
+    this._stack.push((this._stack.pop() << 24) >> 24);
 }
 
-Frame.prototype.i2c = function(done) {
-    return done();
+Frame.prototype.i2c = function() {
+    this._stack.push(this._stack.pop() & 0xffff);
 }
 
-Frame.prototype.i2s = function(done) {
-    return done();
+Frame.prototype.i2s = function() {
+    this._stack.push((this._stack.pop() << 16) >> 16);
 }
 
-Frame.prototype.l2i = function(done) {
-    return done();
+Frame.prototype.l2i = function() {
+    this._stack.push(this._stack.pop2().toInt());
 }
 
-Frame.prototype.l2d = function(done) {
-    return done();
+Frame.prototype.l2d = function() {
+    this._stack.push2(this._stack.pop2().toNumber());
 }
 
-Frame.prototype.l2f = function(done) {
-    return done();
+Frame.prototype.l2f = function() {
+    this._stack.push(utils.double2float(this._stack.pop2().toNumber()));
 }
 
-Frame.prototype.d2i = function(done) {
-    return done();
+Frame.prototype.d2i = function() {
+    this._stack.push(utils.double2int(this._stack.pop2()));
 }
 
-Frame.prototype.d2l = function(done) {
-    return done();
+Frame.prototype.d2l = function() {
+    this._stack.push2(utils.double2long(this._stack.pop2()));
 }
 
-Frame.prototype.d2f = function(done) {
-    return done();
+Frame.prototype.d2f = function() {
+    this._stack.push(utils.double2float(this._stack.pop2()));
 }
 
-Frame.prototype.f2d = function(done) {
-    return done();
+Frame.prototype.f2d = function() {
+    this._stack.push2(this._stack.pop());
 }
 
-Frame.prototype.f2i = function(done) {
-    return done();
+Frame.prototype.f2i = function() {
+    this._stack.push(utils.double2int(this._stack.pop()));
 }
 
-Frame.prototype.f2l = function(done) {
-    return done();
+Frame.prototype.f2l = function() {
+    this._stack.push2(gLong.fromNumber(this._stack.pop()));
 }
 
-Frame.prototype.goto = function(done) {
+Frame.prototype.goto = function() {
     this._ip += this._read16signed() - 1;
-    return done();
 }
 
-Frame.prototype.goto_w = function(done) {
+Frame.prototype.goto_w = function() {
     this._ip += this._read32signed() - 1;
-    return done();
 }
 
-Frame.prototype.ifnull = function(done) {
+Frame.prototype.ifnull = function() {
     var ref = this._stack.pop();
     if (!ref) {
         this._ip += this._read16signed() - 1;
     }
-    return done();
 }
 
-Frame.prototype.ifnonnull = function(done) {
+Frame.prototype.ifnonnull = function() {
     var ref = this._stack.pop();
     if (!!ref) {
         this._ip += this._read16signed() - 1;
     }
-    return done();
 }
 
-Frame.prototype.putfield = function(done) {
+Frame.prototype.putfield = function() {
     var idx = this._read16();
     var fieldName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;    
     var val = this._stack.pop();
     var obj = this._stack.pop();
     if (!obj) {
-        return this._newException("java/lang/NullPointerException", done);
+        this._newException("java/lang/NullPointerException");
+        return;
     }
     obj[fieldName] = val;
-    return done();
 }
 
-Frame.prototype.getfield = function(done) {    
+Frame.prototype.getfield = function() {
     var cp = this._cp;
     var nameAndType = cp[cp[this._read16()].name_and_type_index];
     var fieldName = cp[nameAndType.name_index].bytes;
     var obj = this._stack.pop();
     if (!obj) {
-        return this._newException("java/lang/NullPointerException", done);
+        this._newException("java/lang/NullPointerException");
+        return;
     }
     var value = obj[fieldName];
     if (typeof value === "undefined") {
         value = util.defaultValue(cp[nameAndType.signature_index].bytes);
     }
     this._stack.push(value);
-    return done();
 }
 
 
-Frame.prototype.new = function(done) {
+Frame.prototype.new = function() {
     var idx = this._read16();
     var className = this._cp[this._cp[idx].name_index].bytes;    
     this._stack.push(CLASSES.newObject(className));
-    return done();
 }
 
-Frame.prototype.getstatic = function(done) {    
+Frame.prototype.getstatic = function() {    
     var idx = this._read16();
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var fieldName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
-    console.log("XXXXXXXXXXXX BEGIN GETSTATIC XXXXXXXXXXXXX", className, fieldName);
     this._stack.push(CLASSES.getStaticField(className, fieldName));
-    console.log("XXXXXXXXXXXX DONE GETSTATIC XXXXXXXXXXXXX", className, fieldName);
-    return done();
 }
 
-Frame.prototype.putstatic = function(done) {
+Frame.prototype.putstatic = function() {
     var idx = this._read16();
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var fieldName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     console.log(className, fieldName, CLASSES.getStaticField(className, fieldName));
     CLASSES.setStaticField(className, fieldName, this._stack.pop());
-    return done();
 }
 
-Frame.prototype._invoke = function(method, signature, args, done) {
+Frame.prototype._invoke = function(method, signature, args) {
     if (method instanceof Frame) {
         method.setPid(this._pid);
         method.run(args, function(res) {
             if (signature.OUT.length != 0) {
                this._stack.push(res);
             }
-            return done();
         });
     } else {
         var res = method.apply(null, args);
         if (signature.OUT.length != 0) {
             this._stack.push(res);
         }
-        return done();
     }
 }
 
-Frame.prototype.invokestatic = function(done) {
+Frame.prototype.invokestatic = function() {
     var idx = this._read16();
     
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
@@ -1479,13 +994,10 @@ Frame.prototype.invokestatic = function(done) {
     }
 
     var method = CLASSES.getStaticMethod(className, methodName, signature);
-    if (!method)
-        return done();
-    return this._invoke(method, signature, args, done);
+    return this._invoke(method, signature, args);
 }    
 
-
-Frame.prototype.invokevirtual = function(done) {
+Frame.prototype.invokevirtual = function() {
     var self = this;
 
     var idx = this._read16();
@@ -1493,8 +1005,6 @@ Frame.prototype.invokevirtual = function(done) {
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
-
-    console.log("invokevirtual", className, methodName, signature);
 
     var args = [];
     for (var i=0; i<signature.IN.length; i++) {
@@ -1506,7 +1016,6 @@ Frame.prototype.invokevirtual = function(done) {
         }
     }
 
-    
     var instance = this._stack.pop();
     var method = CLASSES.getMethod(className, methodName, signature);
 
@@ -1515,20 +1024,18 @@ Frame.prototype.invokevirtual = function(done) {
         method.setPid(self._pid);
         method.run(args, function(res) {
             if (signature.OUT.length != 0) {                        
-               self._stack.push(res);
+               self._this._stack.push(res);
             }
-            return done();            
         });
     } else {
         var res = method.apply(instance, args);        
         if (signature.OUT.length != 0) {
-            self._stack.push(res);
+            self._this._stack.push(res);
         }
-        return done();
     }
 }
 
-Frame.prototype.invokespecial = function(done) {
+Frame.prototype.invokespecial = function() {
     var self = this;
     
     var idx = this._read16();
@@ -1536,8 +1043,6 @@ Frame.prototype.invokespecial = function(done) {
     var className = this._cp[this._cp[this._cp[idx].class_index].name_index].bytes;
     var methodName = this._cp[this._cp[this._cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this._cp[this._cp[this._cp[idx].name_and_type_index].signature_index].bytes);
-
-    console.log("invokespecial", className, methodName, signature);
 
     var args = [];
     for (var i=0; i<signature.IN.length; i++) {
@@ -1556,16 +1061,14 @@ Frame.prototype.invokespecial = function(done) {
         args.unshift(instance);
         method.setPid(self._pid);
         method.run(args, function() {
-            return done();
         });
     } else {
         method.apply(instance, args);
-        return done();
     }
     
 }
 
-Frame.prototype.invokeinterface = function(done) {
+Frame.prototype.invokeinterface = function() {
     var self = this;
     
     var idx = this._read16();
@@ -1586,7 +1089,6 @@ Frame.prototype.invokeinterface = function(done) {
         }
     }
 
-
     var instance = this._stack.pop();
       
     if (instance[methodName] instanceof Frame) {
@@ -1594,42 +1096,36 @@ Frame.prototype.invokeinterface = function(done) {
         instance[methodName].setPid(self._pid);
         instance[methodName].run(args, function(res) {
             if (signature.OUT.length != 0) {                        
-               self._stack.push(res);
+               self._this._stack.push(res);
             }
-            return done();            
         });
     } else {
         var res = instance[methodName].apply(instance, args);
         if (signature.OUT.length != 0) {
-            self._stack.push(res);
+            self._this._stack.push(res);
         }
-        return done();
     }
 }
 
-Frame.prototype.jsr = function(done) {
+Frame.prototype.jsr = function() {
     var jmp = this._read16();
     this._stack.push(this._ip);
     this._ip = jmp;
-    return done();
 }
 
-Frame.prototype.jsr_w = function(done) {
+Frame.prototype.jsr_w = function() {
     var jmp = this._read32();
     this._stack.push(this._ip);
     this._ip = jmp;
-    return done();
 }
 
-Frame.prototype.ret = function(done) {   
+Frame.prototype.ret = function() {   
     var idx = this._widened ? this._read16() : this._read8();
     this._ip = this._locals[idx]; 
     this._widened = false;
-    return done();
 }
 
-Frame.prototype.tableswitch = function(done) {
-
+Frame.prototype.tableswitch = function() {
     var startip = this._ip;
     var jmp;
 
@@ -1650,12 +1146,9 @@ Frame.prototype.tableswitch = function(done) {
     }    
     
     this._ip = startip - 1 + this._u32_to_s32(jmp);
-    
-    return done();
 }
 
-Frame.prototype.lookupswitch = function(done) {
-
+Frame.prototype.lookupswitch = function() {
     var startip = this._ip;
 
     while ((this._ip % 4) != 0) {
@@ -1679,42 +1172,33 @@ Frame.prototype.lookupswitch = function(done) {
         }
       
     this._ip = startip - 1 + this._u32_to_s32(jmp);
-    
-    return done();
 }
 
-Frame.prototype.instanceof = function(done) {
+Frame.prototype.instanceof = function() {
     var idx = this._read16();
     var className = this._cp[this._cp[idx].name_index].bytes;
     var obj = this._stack.pop();
-    if (obj.class.getClassName() === className) {
-        this._stack.push(true);
-    } else {
-        this._stack.push(false);
-    }
-    return done();
+    this._stack.push(obj.class.getClassName() === className);
 }
 
-Frame.prototype.checkcast = function(done) {
+Frame.prototype.checkcast = function() {
     var idx = this._read16();
     var type = this._cp[this._cp[idx].name_index].bytes;
-    return done();
 }
 
-Frame.prototype.athrow = function(done) {
+Frame.prototype.athrow = function() {
     this._throw(this._stack.pop());
-    return done();
 }
 
-Frame.prototype.wide = function(done) {
+Frame.prototype.wide = function() {
     this._widened = true;
-    return done();
 }
 
-Frame.prototype.monitorenter = function(done) {
+Frame.prototype.monitorenter = function() {
     var obj = this._stack.pop();
     if (!obj) {
-        return this._newException("java/lang/NullPointerException", done);
+        this._newException("java/lang/NullPointerException");
+        return;
     }
     if (obj.hasOwnProperty("$lock$")) {
         this._stack.push(obj);
@@ -1723,16 +1207,15 @@ Frame.prototype.monitorenter = function(done) {
     } else {
         obj["$lock$"] = "locked";
     }
-    return done();
 }
 
-Frame.prototype.monitorexit = function(done) {
+Frame.prototype.monitorexit = function() {
     var obj = this._stack.pop();
     if (!obj) {
-        return this._newException("java/lang/NullPointerException", done);
+        this._newException("java/lang/NullPointerException");
+        return;
     }
     delete obj["$lock$"];
     SCHEDULER.yield();
-    return done();
 }
 
