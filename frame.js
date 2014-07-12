@@ -19,6 +19,10 @@ var Frame = function(classData, method) {
     }
 }
 
+Frame.prototype.isWide = function() {
+    return this.code[this.ip - 2] == OPCODES.wide;
+}
+
 Frame.prototype.u16_to_s16 = function(x) {
     return (x > 0x7fff) ? (x - 0x10000) : x;
 }
@@ -107,7 +111,6 @@ Frame.prototype.newException = function(className, message) {
 Frame.prototype.run = function(args) {
     this.ip = 0;
     this.stack = [];
-    this.widened = false;
 
     for(var i=0; i<args.length; i++) {
         this.locals[i] = args[i];
@@ -231,15 +234,13 @@ Frame.prototype.ldc2_w = function() {
 }
 
 Frame.prototype.iload = Frame.prototype.iload = Frame.prototype.aload = function() {
-    var idx = this.widened ? this.read16() : this.read8();
+    var idx = this.isWide() ? this.read16() : this.read8();
     this.stack.push(this.locals[idx]);
-    this.widened = false;
 }
 
 Frame.prototype.lload = Frame.prototype.dload = function() {
-    var idx = this.widened ? this.read16() : this.read8();
+    var idx = this.isWide() ? this.read16() : this.read8();
     this.stack.push2(this.locals[idx]);
-    this.widened = false;
 }
 
 Frame.prototype.iload_0 = Frame.prototype.fload_0 = Frame.prototype.aload_0 = function() {
@@ -305,15 +306,13 @@ Frame.prototype.laload = Frame.prototype.daload = function() {
 }
 
 Frame.prototype.istore = Frame.prototype.fstore = Frame.prototype.astore = function() {
-    var idx = this.widened ? this.read16() : this.read8();
+    var idx = this.isWide() ? this.read16() : this.read8();
     this.locals[idx] = this.stack.pop();
-    this.widened = false;
 }
 
 Frame.prototype.lstore = Frame.prototype.dstore = function() {
-    var idx = this.widened ? this.read16() : this.read8();
+    var idx = this.isWide() ? this.read16() : this.read8();
     this.locals[idx] = this.stack.pop2();
-    this.widened = false;
 }
 
 Frame.prototype.istore_0 = Frame.prototype.fstore_0 = Frame.prototype.astore_0 = function() {
@@ -441,10 +440,10 @@ Frame.prototype.swap = function() {
 }
 
 Frame.prototype.iinc = function() {
-    var idx = this.widened ? this.read16() : this.read8();
-    var val = this.widened ? this.read16() : this.read8();
+    var wide = this.isWide();
+    var idx = wide ? this.read16() : this.read8();
+    var val = wide ? this.read16() : this.read8();
     this.locals[idx] += val
-    this.widened = false;
 }
 
 Frame.prototype.iadd = function() {
@@ -1068,9 +1067,8 @@ Frame.prototype.jsr_w = function() {
 }
 
 Frame.prototype.ret = function() {
-    var idx = this.widened ? this.read16() : this.read8();
+    var idx = this.isWide() ? this.read16() : this.read8();
     this.ip = this.locals[idx];
-    this.widened = false;
 }
 
 Frame.prototype.tableswitch = function() {
@@ -1139,7 +1137,6 @@ Frame.prototype.athrow = function() {
 }
 
 Frame.prototype.wide = function() {
-    this.widened = true;
 }
 
 Frame.prototype.monitorenter = function() {
