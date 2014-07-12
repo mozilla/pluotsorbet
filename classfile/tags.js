@@ -23,5 +23,5 @@ var TAGS = {
             }
         }
         return null;
-    }        
+    }
 };

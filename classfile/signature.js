@@ -7,13 +7,13 @@ var TYPE = {
     boolean:    'Z',
     byte:       'B',
     char:       'C',
-    double:     'D', 
-    float:      'F',  
-    int:        'I',  
-    long:       'J',  
-    object:     'L',  
-    short:      'S',  
-    void:       'V',  
+    double:     'D',
+    float:      'F',
+    int:        'I',
+    long:       'J',
+    object:     'L',
+    short:      'S',
+    void:       'V',
     array:      '[',
     toString: function(s) {
         for(var type in this) {
@@ -39,7 +39,7 @@ var _parse = function(part) {
                 case TYPE.double:
                 case TYPE.float:
                 case TYPE.int:
-                case TYPE.long:    
+                case TYPE.long:
                 case TYPE.short:
                     res.push( { type: TYPE.toString(part[pos]), isArray: isArray } );
                     isArray = false;
@@ -51,7 +51,7 @@ var _parse = function(part) {
                     }
                     res.push( { type: "object", isArray: isArray, className: className } );
                     isArray = false;
-                    break;                                
+                    break;
                 case TYPE.array:
                     isArray = true;
                     break;
@@ -63,10 +63,10 @@ var _parse = function(part) {
 }
 
 var parse = function(s) {
-    
+
     var IN = s.split(')')[0].substr(1);
     var OUT = s.split(')')[1];
-        
+
     return {
         IN: _parse(IN),
         OUT: _parse(OUT),

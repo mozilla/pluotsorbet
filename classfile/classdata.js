@@ -12,17 +12,17 @@ var ClassData = function(classBytes) {
 }
 
 ClassData.prototype.getClassName = function() {
-    return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.this_class].name_index].bytes;    
+    return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.this_class].name_index].bytes;
 }
 
 ClassData.prototype.getSuperClassName = function() {
     if (!this.classImage.super_class)
         return null;
-    return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.super_class].name_index].bytes;    
+    return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.super_class].name_index].bytes;
 }
 
 ClassData.prototype.getAccessFlags = function() {
-    return this.classImage.access_flags;    
+    return this.classImage.access_flags;
 }
 
 ClassData.prototype.getConstantPool = function() {
@@ -78,8 +78,8 @@ var getClassImage = function(classBytes) {
                         attribute.max_locals = reader.read16();
                         var code_length = reader.read32();
                         attribute.code = reader.readBytes(code_length);
-                        
-                        var exception_table_length = reader.read16();        
+
+                        var exception_table_length = reader.read16();
                         attribute.exception_table = [];
                         for(var i=0; i<exception_table_length; i++) {
                             var start_pc = reader.read16();
@@ -89,7 +89,7 @@ var getClassImage = function(classBytes) {
                             attribute.exception_table.push({start_pc:start_pc,end_pc:end_pc,handler_pc:handler_pc,catch_type:catch_type });
                         }
 
-                        var attributes_count = reader.read16();        
+                        var attributes_count = reader.read16();
                         attribute.attributes = [];
                         for(var i=0; i<attributes_count; i++) {
                             var attribute_name_index = reader.read16();
@@ -112,7 +112,7 @@ var getClassImage = function(classBytes) {
                             attribute.exception_index_table.push(reader.read16());
                         }
                         return attribute;
-                    
+
                     case ATTRIBUTE_TYPES.InnerClasses:
                         attribute.type = ATTRIBUTE_TYPES.InnerClasses;
                         var number_of_classes = reader.read16();
@@ -128,11 +128,11 @@ var getClassImage = function(classBytes) {
                         return attribute;
 
                     default:
-                        throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");            
+                        throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");
                 }
 
             default:
-                throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");            
+                throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");
         }
     };
 
@@ -146,7 +146,7 @@ var getClassImage = function(classBytes) {
 
     classImage.constant_pool = [ null ];
     var constant_pool_count = reader.read16();
-    for(var i=1; i<constant_pool_count; i++) {        
+    for(var i=1; i<constant_pool_count; i++) {
         var tag =  reader.read8();
         switch(tag) {
             case TAGS.CONSTANT_Class:
@@ -166,20 +166,20 @@ var getClassImage = function(classBytes) {
             case TAGS.CONSTANT_NameAndType:
                 var name_index = reader.read16();
                 var signature_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, name_index: name_index,  signature_index: signature_index } );                
+                classImage.constant_pool.push( { tag: tag, name_index: name_index,  signature_index: signature_index } );
                 break;
             case TAGS.CONSTANT_Fieldref:
                 var class_index = reader.read16();
                 var name_and_type_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, class_index: class_index,  name_and_type_index: name_and_type_index } );                                
+                classImage.constant_pool.push( { tag: tag, class_index: class_index,  name_and_type_index: name_and_type_index } );
                 break;
             case TAGS.CONSTANT_String:
                 var string_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, string_index: string_index } );                                                
+                classImage.constant_pool.push( { tag: tag, string_index: string_index } );
                 break;
             case TAGS.CONSTANT_Integer:
                 var bytes = reader.read32();
-                classImage.constant_pool.push( {  tag: tag, bytes: bytes } );                                                
+                classImage.constant_pool.push( {  tag: tag, bytes: bytes } );
                 break;
             case TAGS.CONSTANT_Double:
             case TAGS.CONSTANT_Long:
@@ -195,17 +195,17 @@ var getClassImage = function(classBytes) {
             case TAGS.CONSTANT_InterfaceMethodref:
                 var class_index = reader.read16();
                 var name_and_type_index = reader.read16();
-                classImage.constant_pool.push( {  tag: tag, class_index: class_index, name_and_type_index:name_and_type_index } );                                                
+                classImage.constant_pool.push( {  tag: tag, class_index: class_index, name_and_type_index:name_and_type_index } );
                 break;
-            default:                
+            default:
                 throw new Error(util.format("tag %s is not supported.", tag));
         }
     }
-        
+
     classImage.access_flags = reader.read16();
-    
+
     classImage.this_class = reader.read16();
-    
+
     classImage.super_class = reader.read16();
 
     classImage.interfaces = [];
@@ -234,16 +234,16 @@ var getClassImage = function(classBytes) {
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
-            var constantvalue_index = reader.read16();            
+            var constantvalue_index = reader.read16();
             var attribute = {
                 attribute_name_index: attribute_name_index,
                 attribute_length: attribute_length,
                 constantvalue_index: constantvalue_index
-            }            
+            }
             field_info.attributes.push(attribute);
         }
         classImage.fields.push(field_info);
-    }    
+    }
 
     classImage.methods = [];
     var methods_count = reader.read16();
@@ -258,11 +258,11 @@ var getClassImage = function(classBytes) {
             signature_index: signature_index,
             attributes_count: attributes_count,
             attributes: []
-        }        
+        }
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
-            var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));            
+            var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));
             var attribute = {
                 attribute_name_index: attribute_name_index,
                 attribute_length: attribute_length,
@@ -270,7 +270,7 @@ var getClassImage = function(classBytes) {
             }
             method_info.attributes.push(attribute);
         }
-                
+
         classImage.methods.push(method_info);
     }
 
@@ -279,16 +279,16 @@ var getClassImage = function(classBytes) {
     for(var i=0; i<attributes_count; i++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
-            var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));            
+            var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));
             var attribute = {
                 attribute_name_index: attribute_name_index,
                 attribute_length: attribute_length,
                 info: info
             }
-            classImage.attributes.push(attribute);        
+            classImage.attributes.push(attribute);
     }
 
     return classImage;
- 
+
 };
 
