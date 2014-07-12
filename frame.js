@@ -115,7 +115,7 @@ Frame.prototype.run = function(args) {
 
     while (true) {
         var op = this.read8();
-        console.log(this.ip - 1, OPCODES.toString(op), this.stack.length);
+        console.log(this.ip - 1, op, OPCODES[op], this.stack.length);
         switch (op) {
         case OPCODES.return:
             return;
@@ -130,9 +130,9 @@ Frame.prototype.run = function(args) {
             return this.stack.pop2();
 
         default:
-            var opName = OPCODES.toString(op);
+            var opName = OPCODES[op];
             if (!(opName in this)) {
-                throw new Error(util.format("Opcode %s [%s] is not supported.", opName, opCode));
+                throw new Error(util.format("Opcode %s [%s] is not supported.", opName, op));
             }
             this[opName]();
             break;
