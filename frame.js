@@ -302,13 +302,13 @@ Frame.prototype.laload = Frame.prototype.daload = function() {
 
 Frame.prototype.istore = Frame.prototype.fstore = Frame.prototype.astore = function() {
     var idx = this._widened ? this._read16() : this._read8();
-    this._localsidx] = this._stack.pop();
+    this._locals[idx] = this._stack.pop();
     this._widened = false;
 }
 
 Frame.prototype.lstore = Frame.prototype.dstore = function() {
     var idx = this._widened ? this._read16() : this._read8();
-    this._localsidx] = this._stack.pop2();
+    this._locals[idx] = this._stack.pop2();
     this._widened = false;
 }
 
@@ -439,7 +439,7 @@ Frame.prototype.swap = function() {
 Frame.prototype.iinc = function() {
     var idx = this._widened ? this._read16() : this._read8();
     var val = this._widened ? this._read16() : this._read8();
-    this._localsidx] += val
+    this._locals[idx] += val
     this._widened = false;
 }
 
