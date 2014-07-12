@@ -12,6 +12,7 @@ Native.prototype = {
         return this[className + "." + methodName + "." + signature];
     },
     "java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V": function (src, srcOffset, dst, dstOffset, length) {
+        console.log(src, srcOffset, dst, dstOffset, length);
         var srcProto = Object.getPrototypeOf(src);
         var dstProto = Object.getPrototypeOf(dst);
         if (srcProto === dstProto) {

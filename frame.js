@@ -970,12 +970,13 @@ Frame.prototype.invoke = function(stack, method, signature) {
     var result;
     var OUT;
     if (!(method instanceof Frame)) {
+        signature = Signature.parse(signature);
+        var args = stack.popArgs(signature.IN);
         var instance = null;
         if (!ACCESS_FLAGS.isStatic(method.access_flags))
             instance = stack.pop();
-        var args = stack.popArgs(method.signature);
         result = method.apply(instance, args);
-        OUT = Signature.parse(siganture).OUT;
+        OUT = Signature.parse(signature).OUT;
     } else {
         result = method.run(stack);
         OUT = method.signature.OUT;

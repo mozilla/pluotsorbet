@@ -37,12 +37,12 @@ Stack.prototype.pushType = function (type, value) {
     this.push(value);
 }
 
-Stack.prototype.popArgs = function (signature) {
-    var IN = signature.IN;
-    var args = Array(IN.length);
-    for (var i=0; i<IN.length; i++) {
-        args[args.length-1-i] = this.popType(IN[i].type);
-    }
+Stack.prototype.popArgs = function (types) {
+    var args = Array(types.length);
+    console.log(types.length-1);
+    for (var i=types.length-1; i >= 0; --i)
+        args[i] = this.popType(types[i].type);
+    console.log("popArgs", types, args);
     return args;
 }
 
