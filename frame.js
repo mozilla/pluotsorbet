@@ -251,27 +251,27 @@ Frame.prototype.lload_0 = Frame.prototype.dloat_0 = function() {
 }
 
 Frame.prototype.iload_1 = Frame.prototype.fload_1 = Frame.prototype.aload_1 = function() {
-    this.stack.push(this.locals[0]);
+    this.stack.push(this.locals[1]);
 }
 
 Frame.prototype.lload_1 = Frame.prototype.dloat_1 = function() {
-    this.stack.push2(this.locals[0]);
+    this.stack.push2(this.locals[1]);
 }
 
 Frame.prototype.iload_2 = Frame.prototype.fload_2 = Frame.prototype.aload_2 = function() {
-    this.stack.push(this.locals[0]);
+    this.stack.push(this.locals[2]);
 }
 
 Frame.prototype.lload_2 = Frame.prototype.dloat_2 = function() {
-    this.stack.push2(this.locals[0]);
+    this.stack.push2(this.locals[2]);
 }
 
 Frame.prototype.iload_3 = Frame.prototype.fload_3 = Frame.prototype.aload_3 = function() {
-    this.stack.push(this.locals[0]);
+    this.stack.push(this.locals[3]);
 }
 
 Frame.prototype.lload_3 = Frame.prototype.dloat_3 = function() {
-    this.stack.push2(this.locals[0]);
+    this.stack.push2(this.locals[3]);
 }
 
 Frame.prototype.checkArrayAccess = function(refArray, idx) {
@@ -325,27 +325,27 @@ Frame.prototype.lstore_0 = Frame.prototype.dstore_0 = function() {
 }
 
 Frame.prototype.istore_1 = Frame.prototype.fstore_1 = Frame.prototype.astore_1 = function() {
-    this.locals[0] = this.stack.pop();
+    this.locals[1] = this.stack.pop();
 }
 
 Frame.prototype.lstore_1 = Frame.prototype.dstore_1 = function() {
-    this.locals[0] = this.stack.pop2();
+    this.locals[1] = this.stack.pop2();
 }
 
 Frame.prototype.istore_2 = Frame.prototype.fstore_2 = Frame.prototype.astore_2 = function() {
-    this.locals[0] = this.stack.pop();
+    this.locals[2] = this.stack.pop();
 }
 
 Frame.prototype.lstore_2 = Frame.prototype.dstore_2 = function() {
-    this.locals[0] = this.stack.pop2();
+    this.locals[2] = this.stack.pop2();
 }
 
 Frame.prototype.istore_3 = Frame.prototype.fstore_3 = Frame.prototype.astore_3 = function() {
-    this.locals[0] = this.stack.pop();
+    this.locals[3] = this.stack.pop();
 }
 
 Frame.prototype.lstore_3 = Frame.prototype.dstore_3 = function() {
-    this.locals[0] = this.stack.pop2();
+    this.locals[3] = this.stack.pop2();
 }
 
 Frame.prototype.iastore = Frame.prototype.fastore = Frame.prototype.aastore = Frame.prototype.bastore = Frame.prototype.castore = Frame.prototype.sastore = function() {
@@ -968,6 +968,7 @@ Frame.prototype.invoke = function(method, instance, args) {
     if (method instanceof Frame) {
         if (instance)
             args.unshift(instance);
+        console.log(args[0], args[1]);
         return method.run(args);
     }
     return method.apply(instance, args);
@@ -975,10 +976,12 @@ Frame.prototype.invoke = function(method, instance, args) {
 
 Frame.prototype.invokestatic = function() {
     var idx = this.read16();
-    
+
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
+
+    console.log(className, methodName);
 
     var args = this.popArgs(signature);
     var method = CLASSES.getStaticMethod(className, methodName, signature);
@@ -1015,6 +1018,8 @@ Frame.prototype.invokespecial = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
 
+    console.log(className, methodName);
+
     var args = this.popArgs(signature);
     var instance = this.stack.pop();
     if (!instance) {
@@ -1036,6 +1041,8 @@ Frame.prototype.invokeinterface = function() {
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
+
+    console.log(className, methodName);
 
     var args = this.popArgs(signature);
     var instance = this.stack.pop();
