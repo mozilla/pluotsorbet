@@ -52,15 +52,14 @@ ClassData.prototype.getClasses = function() {
 }
 
 var getClassImage = function(classBytes) {
-
     var classImage = {};
-        
+
     var getAttribues = function(attribute_name_index, bytes) {
         var reader = new Reader(bytes);
         var attribute = { attribute_name_index: attribute_name_index };
-    
+
         var item = classImage.constant_pool[attribute_name_index];
-        
+
         switch(item.tag) {
             case TAGS.CONSTANT_Long:
             case TAGS.CONSTANT_Float:
@@ -69,8 +68,8 @@ var getClassImage = function(classBytes) {
             case TAGS.CONSTANT_String:
                 attribute.type = ATTRIBUTE_TYPES.ConstantValue;
                 attribute.constantvalue_index = reader.read16();
-                return attribute;        
-            
+                return attribute;
+
             case TAGS.CONSTANT_Utf8:
                 switch(item.bytes) {
                     case ATTRIBUTE_TYPES.Code:
@@ -99,12 +98,12 @@ var getClassImage = function(classBytes) {
                             attribute.attributes.push({ attribute_name_index: attribute_name_index, attribute_length: attribute_length, info: info });
                         }
                         return attribute;
-                        
+
                     case ATTRIBUTE_TYPES.SourceFile:
                         attribute.type = ATTRIBUTE_TYPES.SourceFile;
                         attribute.sourcefile_index = reader.read16();
                         return attribute;
-                    
+
                     case ATTRIBUTE_TYPES.Exceptions:
                         attribute.type = ATTRIBUTE_TYPES.Exceptions;
                         var number_of_exceptions = reader.read16();
@@ -127,17 +126,16 @@ var getClassImage = function(classBytes) {
                             attribute.classes.push(inner);
                         }
                         return attribute;
-                    
+
                     default:
                         throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");            
                 }
-                
+
             default:
                 throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");            
         }
     };
-    
-    
+
     var reader = Reader(classBytes);
     classImage.magic = reader.read32().toString(16);
 
@@ -145,7 +143,7 @@ var getClassImage = function(classBytes) {
         minor_version: reader.read16(),
         major_version: reader.read16()
     };
-        
+
     classImage.constant_pool = [ null ];
     var constant_pool_count = reader.read16();
     for(var i=1; i<constant_pool_count; i++) {        
@@ -210,7 +208,6 @@ var getClassImage = function(classBytes) {
     
     classImage.super_class = reader.read16();
 
-    
     classImage.interfaces = [];
     var interfaces_count = reader.read16();
     for(var i=0; i<interfaces_count; i++) {
@@ -219,7 +216,7 @@ var getClassImage = function(classBytes) {
             classImage.interfaces.push(index);
         }
     }
-        
+
     classImage.fields = [];
     var fields_count = reader.read16();
     for(var i=0; i<fields_count; i++) {
@@ -247,8 +244,7 @@ var getClassImage = function(classBytes) {
         }
         classImage.fields.push(field_info);
     }    
-    
-    
+
     classImage.methods = [];
     var methods_count = reader.read16();
     for(var i=0; i<methods_count; i++) {
@@ -277,8 +273,7 @@ var getClassImage = function(classBytes) {
                 
         classImage.methods.push(method_info);
     }
-    
-    
+
     classImage.attributes = [];
     var attributes_count = reader.read16();
     for(var i=0; i<attributes_count; i++) {
@@ -292,7 +287,7 @@ var getClassImage = function(classBytes) {
             }
             classImage.attributes.push(attribute);        
     }
-    
+
     return classImage;
  
 };
