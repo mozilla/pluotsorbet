@@ -124,9 +124,9 @@ Classes.prototype.getMethod = function(className, methodName, signature, staticF
     for (var i=0; i<methods.length; i++) {
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
             if (cp[methods[i].name_index].bytes === methodName) {
-                if (signature.toString() === cp[methods[i].signature_index].bytes) {
+                if (signature === cp[methods[i].signature_index].bytes) {
                     if (ACCESS_FLAGS.isNative(methods[i].access_flags)) {
-                        return NATIVE.getMethod(className, methodName, signature.toString());
+                        return NATIVE.getMethod(className, methodName, signature);
                     }
                     return new Frame(classData, methods[i]);
                 }

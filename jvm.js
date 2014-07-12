@@ -3,14 +3,13 @@
 
 'use strict';
 
-var LOG, CLASSES, THREADS, SCHEDULER, NATIVE;
+var LOG, CLASSES, THREADS, NATIVE;
 
 var JVM = function() {
     if (this instanceof JVM) {
         LOG = new Logger();
         CLASSES = new Classes();
         THREADS = new Threads();
-        SCHEDULER = new Scheduler();
         NATIVE = new Native();
 
         THREADS.add(new Thread("main"));
@@ -60,19 +59,10 @@ JVM.prototype.run = function() {
         throw new Error("Entry point method is not found.");
     }
 
-    entryPoint.run(arguments, function(code) {
-        var exit = function() {
-            SCHEDULER.tick(0, function() {
-                if (THREADS.count() === 1) {
-                    THREADS.remove(0);
-                    if (typeof code !== "undefined")
-                        console.log("exit(" + code + ")");
-                } else {
-                    exit();
-                }
-            });
-        };
-        exit();
-    });
-}
+    console.log(entryPoint);
 
+    var stack = new Stack();
+    stack.push(null); // args
+    var exit = entryPoint.run(stack);
+    console.log("exit(" + exit + ")");
+}

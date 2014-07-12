@@ -166,12 +166,12 @@ var getClassImage = function(classBytes) {
             case TAGS.CONSTANT_NameAndType:
                 var name_index = reader.read16();
                 var signature_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, name_index: name_index,  signature_index: signature_index } );
+                classImage.constant_pool.push( { tag: tag, name_index: name_index, signature_index: signature_index } );
                 break;
             case TAGS.CONSTANT_Fieldref:
                 var class_index = reader.read16();
                 var name_and_type_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, class_index: class_index,  name_and_type_index: name_and_type_index } );
+                classImage.constant_pool.push( { tag: tag, class_index: class_index, name_and_type_index: name_and_type_index } );
                 break;
             case TAGS.CONSTANT_String:
                 var string_index = reader.read16();

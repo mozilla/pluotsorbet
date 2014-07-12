@@ -6,11 +6,13 @@
 var Frame = function(classData, method) {
     if (this instanceof Frame) {
         this.cp = classData.getConstantPool();
+        this.access_flags = method.access_flags;
+        this.signature = Signature.parse(this.cp[method.signature_index].bytes);
         for(var i=0; i<method.attributes.length; i++) {
             if (method.attributes[i].info.type === ATTRIBUTE_TYPES.Code) {
                 this.code = Uint8Array(method.attributes[i].info.code);
                 this.exception_table = method.attributes[i].info.exception_table;
-                this.locals = new Array(method.attributes[i].info.max_locals);
+                this.max_locals = method.attributes[i].info.max_locals;
                 break;
             }
         }
@@ -51,31 +53,6 @@ Frame.prototype.read32signed = function() {
     return this.u32_to_s32(this.read32());
 }
 
-Frame.prototype.popArgs = function(signature) {
-    var args = [];
-    for (var i=0; i<signature.IN.length; i++) {
-        var type = signature.IN[i].type;
-        if (type === "long" || type === "double") {
-            args.unshift(null);
-            args.unshift(this.stack.pop2());
-        } else {
-            args.unshift(this.stack.pop());
-        }
-    }
-    return args;
-}
-
-Frame.prototype.pushReturnValue = function(signature, result) {
-    if (!signature.OUT.length)
-        return;
-    var type = signature.OUT[0].type;
-    if (type === "long" || type === "double") {
-        this.stack.push2(result);
-    } else {
-        this.stack.push(result);
-    }
-}
-
 Frame.prototype.throw = function(ex) {
     var handler_pc = null;
 
@@ -94,7 +71,7 @@ Frame.prototype.throw = function(ex) {
     }
 
     if (handler_pc != null) {
-        this.stack.push(ex);
+        stack.push(ex);
         this.ip = handler_pc;
     } else {
         throw ex;
@@ -108,171 +85,190 @@ Frame.prototype.newException = function(className, message) {
     this.throw(ex);
 }
 
-Frame.prototype.run = function(args) {
-    this.ip = 0;
-    this.stack = [];
-
-    for(var i=0; i<args.length; i++) {
-        this.locals[i] = args[i];
+Frame.prototype.run = function(stack) {
+    var argc = 0;
+    if (!ACCESS_FLAGS.isStatic(this.access_flags)) {
+        var instance = stack.top();
+        if (!instance) {
+            this.newException("java/lang/NullPointerException");
+            return;
+        }
+        ++argc;
     }
+    var IN = this.signature;
+    for (var i=0; i<IN.length; i++) {
+        var type = IN[i].type;
+        ++argc;
+        if (type === "long" || type === "double")
+            ++argc;
+    }
+    var locals = stack.reserveLocals(argc, this.max_locals);
 
+    this.ip = 0;
+
+    var result;
     while (true) {
         var op = this.read8();
-        console.log(this.ip - 1, op, OPCODES[op], this.stack.length);
+        console.log(this.ip - 1, op, OPCODES[op], stack.length);
         switch (op) {
         case OPCODES.return:
-            return;
+            break;
 
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            return this.stack.pop();
+            result = stack.pop();
+            break;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            return this.stack.pop2();
+            result = stack.pop2();
+            break;
 
         default:
             var opName = OPCODES[op];
             if (!(opName in this)) {
                 throw new Error(util.format("Opcode %s [%s] is not supported.", opName, op));
             }
-            this[opName]();
+            this[opName](stack, locals);
             break;
         }
     };
+
+    stack.popLocals(locals);
+    return result;
 }
 
-Frame.prototype.nop = function() {
+Frame.prototype.nop = function(stack, locals) {
 }
 
-Frame.prototype.aconst_null = function() {
-    this.stack.push(null);
+Frame.prototype.aconst_null = function(stack, locals) {
+    stack.push(null);
 }
 
-Frame.prototype.iconst_m1 = function() {
-    this.stack.push(-1);
+Frame.prototype.iconst_m1 = function(stack, locals) {
+    stack.push(-1);
 }
 
-Frame.prototype.iconst_0 = Frame.prototype.fconst_0 = function() {
-    this.stack.push(0);
+Frame.prototype.iconst_0 = Frame.prototype.fconst_0 = function(stack, locals) {
+    stack.push(0);
 }
 
-Frame.prototype.lconst_0 = Frame.prototype.dconst_0 = function() {
-    this.stack.push2(0);
+Frame.prototype.lconst_0 = Frame.prototype.dconst_0 = function(stack, locals) {
+    stack.push2(0);
 }
 
-Frame.prototype.iconst_1 = Frame.prototype.fconst_1 = function() {
-    this.stack.push(1);
+Frame.prototype.iconst_1 = Frame.prototype.fconst_1 = function(stack, locals) {
+    stack.push(1);
 }
 
-Frame.prototype.lconst_1 = Frame.prototype.dconst_1 = function() {
-    this.stack.push2(1);
+Frame.prototype.lconst_1 = Frame.prototype.dconst_1 = function(stack, locals) {
+    stack.push2(1);
 }
 
-Frame.prototype.iconst_2 = Frame.prototype.fconst_2 = function() {
-    this.stack.push(2);
+Frame.prototype.iconst_2 = Frame.prototype.fconst_2 = function(stack, locals) {
+    stack.push(2);
 }
 
-Frame.prototype.iconst_3 = function() {
-    this.stack.push(3);
+Frame.prototype.iconst_3 = function(stack, locals) {
+    stack.push(3);
 }
 
-Frame.prototype.iconst_4 = function() {
-    this.stack.push(4);
+Frame.prototype.iconst_4 = function(stack, locals) {
+    stack.push(4);
 }
 
-Frame.prototype.iconst_5 = function() {
-    this.stack.push(5);
+Frame.prototype.iconst_5 = function(stack, locals) {
+    stack.push(5);
 }
 
-Frame.prototype.sipush = function() {
-    this.stack.push(this.read16());
+Frame.prototype.sipush = function(stack, locals) {
+    stack.push(this.read16());
 }
 
-Frame.prototype.bipush = function() {
-    this.stack.push(this.read8());
+Frame.prototype.bipush = function(stack, locals) {
+    stack.push(this.read8());
 }
 
-Frame.prototype.ldc = function() {
+Frame.prototype.ldc = function(stack, locals) {
     var constant = this.cp[this.read8()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:
-            this.stack.push(CLASSES.newString(this.cp[constant.string_index].bytes));
+            stack.push(CLASSES.newString(this.cp[constant.string_index].bytes));
             break;
         default:
             throw new Error("not support constant type");
     }
 }
 
-Frame.prototype.ldc_w = function() {
+Frame.prototype.ldc_w = function(stack, locals) {
     var constant = this.cp[this.read16()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:
-            this.stack.push(this.cp[constant.string_index].bytes);
+            stack.push(this.cp[constant.string_index].bytes);
             break;
         default:
             throw new Error("not support constant type");
     }
 }
 
-Frame.prototype.ldc2_w = function() {
+Frame.prototype.ldc2_w = function(stack, locals) {
     var constant = this.cp[this.read16()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:
-            this.stack.push(this.cp[constant.string_index].bytes);
+            stack.push(this.cp[constant.string_index].bytes);
             break;
         case TAGS.CONSTANT_Long:
-            this.stack.push2(Numeric.getLong(constant.bytes));
+            stack.push2(Numeric.getLong(constant.bytes));
             break;
         case TAGS.CONSTANT_Double:
-            this.stack.push2(constant.bytes.readDoubleBE(0));
+            stack.push2(constant.bytes.readDoubleBE(0));
             break;
         default:
             throw new Error("not support constant type");
     }
 }
 
-Frame.prototype.iload = Frame.prototype.iload = Frame.prototype.aload = function() {
+Frame.prototype.iload = Frame.prototype.iload = Frame.prototype.aload = function(stack, locals) {
     var idx = this.isWide() ? this.read16() : this.read8();
-    this.stack.push(this.locals[idx]);
+    stack.push(locals.get(idx));
 }
 
-Frame.prototype.lload = Frame.prototype.dload = function() {
+Frame.prototype.lload = Frame.prototype.dload = function(stack, locals) {
     var idx = this.isWide() ? this.read16() : this.read8();
-    this.stack.push2(this.locals[idx]);
+    stack.push2(locals.get(idx));
 }
 
-Frame.prototype.iload_0 = Frame.prototype.fload_0 = Frame.prototype.aload_0 = function() {
-    this.stack.push(this.locals[0]);
+Frame.prototype.iload_0 = Frame.prototype.fload_0 = Frame.prototype.aload_0 = function(stack, locals) {
+    stack.push(locals.get(0));
 }
 
-Frame.prototype.lload_0 = Frame.prototype.dloat_0 = function() {
-    this.stack.push2(this.locals[0]);
+Frame.prototype.lload_0 = Frame.prototype.dloat_0 = function(stack, locals) {
+    stack.push2(locals.get(0));
 }
 
-Frame.prototype.iload_1 = Frame.prototype.fload_1 = Frame.prototype.aload_1 = function() {
-    this.stack.push(this.locals[1]);
+Frame.prototype.iload_1 = Frame.prototype.fload_1 = Frame.prototype.aload_1 = function(stack, locals) {
+    stack.push(locals.get(1));
 }
 
-Frame.prototype.lload_1 = Frame.prototype.dloat_1 = function() {
-    this.stack.push2(this.locals[1]);
+Frame.prototype.lload_1 = Frame.prototype.dloat_1 = function(stack, locals) {
+    stack.push2(locals.get(1));
 }
 
-Frame.prototype.iload_2 = Frame.prototype.fload_2 = Frame.prototype.aload_2 = function() {
-    this.stack.push(this.locals[2]);
+Frame.prototype.iload_2 = Frame.prototype.fload_2 = Frame.prototype.aload_2 = function(stack, locals) {
+    stack.push(locals.get(2));
 }
 
-Frame.prototype.lload_2 = Frame.prototype.dloat_2 = function() {
-    this.stack.push2(this.locals[2]);
+Frame.prototype.lload_2 = Frame.prototype.dloat_2 = function(stack, locals) {
+    stack.push2(locals.get(2));
 }
 
-Frame.prototype.iload_3 = Frame.prototype.fload_3 = Frame.prototype.aload_3 = function() {
-    this.stack.push(this.locals[3]);
+Frame.prototype.iload_3 = Frame.prototype.fload_3 = Frame.prototype.aload_3 = function(stack, locals) {
+    stack.push(locals.get(3));
 }
 
-Frame.prototype.lload_3 = Frame.prototype.dloat_3 = function() {
-    this.stack.push2(this.locals[3]);
+Frame.prototype.lload_3 = Frame.prototype.dloat_3 = function(stack, locals) {
+    stack.push2(locals.get(3));
 }
 
 Frame.prototype.checkArrayAccess = function(refArray, idx) {
@@ -287,449 +283,449 @@ Frame.prototype.checkArrayAccess = function(refArray, idx) {
     return true;
 }
 
-Frame.prototype.iaload = Frame.prototype.faload = Frame.prototype.aaload = Frame.prototype.baload = Frame.prototype.caload = Frame.prototype.saload = function() {
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
+Frame.prototype.iaload = Frame.prototype.faload = Frame.prototype.aaload = Frame.prototype.baload = Frame.prototype.caload = Frame.prototype.saload = function(stack, locals) {
+    var idx = stack.pop();
+    var refArray = stack.pop();
     if (!this.checkArrayAccess(refArray, idx)) {
         return;
     }
-    this.stack.push(refArray[idx]);
+    stack.push(refArray[idx]);
 }
 
-Frame.prototype.laload = Frame.prototype.daload = function() {
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
+Frame.prototype.laload = Frame.prototype.daload = function(stack, locals) {
+    var idx = stack.pop();
+    var refArray = stack.pop();
     if (!this.checkArrayAccess(refArray, idx)) {
         return;
     }
-    this.stack.push2(refArray[idx]);
+    stack.push2(refArray[idx]);
 }
 
-Frame.prototype.istore = Frame.prototype.fstore = Frame.prototype.astore = function() {
+Frame.prototype.istore = Frame.prototype.fstore = Frame.prototype.astore = function(stack, locals) {
     var idx = this.isWide() ? this.read16() : this.read8();
-    this.locals[idx] = this.stack.pop();
+    locals.set(idx, stack.pop());
 }
 
-Frame.prototype.lstore = Frame.prototype.dstore = function() {
+Frame.prototype.lstore = Frame.prototype.dstore = function(stack, locals) {
     var idx = this.isWide() ? this.read16() : this.read8();
-    this.locals[idx] = this.stack.pop2();
+    locals.set(idx, stack.pop2());
 }
 
-Frame.prototype.istore_0 = Frame.prototype.fstore_0 = Frame.prototype.astore_0 = function() {
-    this.locals[0] = this.stack.pop();
+Frame.prototype.istore_0 = Frame.prototype.fstore_0 = Frame.prototype.astore_0 = function(stack, locals) {
+    locals.set(0, stack.pop());
 }
 
-Frame.prototype.lstore_0 = Frame.prototype.dstore_0 = function() {
-    this.locals[0] = this.stack.pop2();
+Frame.prototype.lstore_0 = Frame.prototype.dstore_0 = function(stack, locals) {
+    locals.set(0, stack.pop2());
 }
 
-Frame.prototype.istore_1 = Frame.prototype.fstore_1 = Frame.prototype.astore_1 = function() {
-    this.locals[1] = this.stack.pop();
+Frame.prototype.istore_1 = Frame.prototype.fstore_1 = Frame.prototype.astore_1 = function(stack, locals) {
+    locals.set(1, stack.pop());
 }
 
-Frame.prototype.lstore_1 = Frame.prototype.dstore_1 = function() {
-    this.locals[1] = this.stack.pop2();
+Frame.prototype.lstore_1 = Frame.prototype.dstore_1 = function(stack, locals) {
+    locals.set(1, stack.pop2());
 }
 
-Frame.prototype.istore_2 = Frame.prototype.fstore_2 = Frame.prototype.astore_2 = function() {
-    this.locals[2] = this.stack.pop();
+Frame.prototype.istore_2 = Frame.prototype.fstore_2 = Frame.prototype.astore_2 = function(stack, locals) {
+    locals.set(2, stack.pop());
 }
 
-Frame.prototype.lstore_2 = Frame.prototype.dstore_2 = function() {
-    this.locals[2] = this.stack.pop2();
+Frame.prototype.lstore_2 = Frame.prototype.dstore_2 = function(stack, locals) {
+    locals.set(2, stack.pop2());
 }
 
-Frame.prototype.istore_3 = Frame.prototype.fstore_3 = Frame.prototype.astore_3 = function() {
-    this.locals[3] = this.stack.pop();
+Frame.prototype.istore_3 = Frame.prototype.fstore_3 = Frame.prototype.astore_3 = function(stack, locals) {
+    locals.set(3, stack.pop());
 }
 
-Frame.prototype.lstore_3 = Frame.prototype.dstore_3 = function() {
-    this.locals[3] = this.stack.pop2();
+Frame.prototype.lstore_3 = Frame.prototype.dstore_3 = function(stack, locals) {
+    locals.set(3, stack.pop2());
 }
 
-Frame.prototype.iastore = Frame.prototype.fastore = Frame.prototype.aastore = Frame.prototype.bastore = Frame.prototype.castore = Frame.prototype.sastore = function() {
-    var val = this.stack.pop();
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
+Frame.prototype.iastore = Frame.prototype.fastore = Frame.prototype.aastore = Frame.prototype.bastore = Frame.prototype.castore = Frame.prototype.sastore = function(stack, locals) {
+    var val = stack.pop();
+    var idx = stack.pop();
+    var refArray = stack.pop();
     if (!this.checkArrayAccess(refArray, idx)) {
         return;
     }
     refArray[idx] = val;
 }
 
-Frame.prototype.lastore = Frame.prototype.dastore = function() {
-    var val = this.stack.pop2();
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
+Frame.prototype.lastore = Frame.prototype.dastore = function(stack, locals) {
+    var val = stack.pop2();
+    var idx = stack.pop();
+    var refArray = stack.pop();
     if (!this.checkArrayAccess(refArray, idx)) {
         return;
     }
     refArray[idx] = val;
 }
 
-Frame.prototype.pop = function() {
-    this.stack.pop();
+Frame.prototype.pop = function(stack, locals) {
+    stack.pop();
 }
 
-Frame.prototype.pop2 = function() {
-    this.stack.pop2();
+Frame.prototype.pop2 = function(stack, locals) {
+    stack.pop2();
 }
 
-Frame.prototype.dup = function() {
-    var val = this.stack.pop();
-    this.stack.push(val);
-    this.stack.push(val);
+Frame.prototype.dup = function(stack, locals) {
+    var val = stack.pop();
+    stack.push(val);
+    stack.push(val);
 }
 
-Frame.prototype.dup_x1 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val1);
-    this.stack.push(val2);
-    this.stack.push(val1);
+Frame.prototype.dup_x1 = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(val1);
+    stack.push(val2);
+    stack.push(val1);
 }
 
-Frame.prototype.dup_x2 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    var val3 = this.stack.pop();
-    this.stack.push(val1);
-    this.stack.push(val3);
-    this.stack.push(val2);
-    this.stack.push(val1);
+Frame.prototype.dup_x2 = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    var val3 = stack.pop();
+    stack.push(val1);
+    stack.push(val3);
+    stack.push(val2);
+    stack.push(val1);
 }
 
-Frame.prototype.dup2 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2);
-    this.stack.push(val1);
-    this.stack.push(val2);
-    this.stack.push(val1);
+Frame.prototype.dup2 = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(val2);
+    stack.push(val1);
+    stack.push(val2);
+    stack.push(val1);
 }
 
-Frame.prototype.dup2_x1 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    var val3 = this.stack.pop();
-    this.stack.push(val2);
-    this.stack.push(val1);
-    this.stack.push(val3);
-    this.stack.push(val2);
-    this.stack.push(val1);
+Frame.prototype.dup2_x1 = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    var val3 = stack.pop();
+    stack.push(val2);
+    stack.push(val1);
+    stack.push(val3);
+    stack.push(val2);
+    stack.push(val1);
 }
 
-Frame.prototype.dup2_x2 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    var val3 = this.stack.pop();
-    var val4 = this.stack.pop();
-    this.stack.push(val2);
-    this.stack.push(val1);
-    this.stack.push(val4);
-    this.stack.push(val3);
-    this.stack.push(val2);
-    this.stack.push(val1);
+Frame.prototype.dup2_x2 = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    var val3 = stack.pop();
+    var val4 = stack.pop();
+    stack.push(val2);
+    stack.push(val1);
+    stack.push(val4);
+    stack.push(val3);
+    stack.push(val2);
+    stack.push(val1);
 }
 
-Frame.prototype.swap = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val1);
-    this.stack.push(val2);
+Frame.prototype.swap = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(val1);
+    stack.push(val2);
 }
 
-Frame.prototype.iinc = function() {
+Frame.prototype.iinc = function(stack, locals) {
     var wide = this.isWide();
     var idx = wide ? this.read16() : this.read8();
     var val = wide ? this.read16() : this.read8();
-    this.locals[idx] += val
+    locals.set(idx, locals.get(idx) + val);
 }
 
-Frame.prototype.iadd = function() {
-    this.stack.push((this.stack.pop() + this.stack.pop())|0);
+Frame.prototype.iadd = function(stack, locals) {
+    stack.push((stack.pop() + stack.pop())|0);
 }
 
-Frame.prototype.ladd = function() {
-    this.stack.push2(this.stack.pop2().add(this.stack.pop2()));
+Frame.prototype.ladd = function(stack, locals) {
+    stack.push2(stack.pop2().add(stack.pop2()));
 }
 
-Frame.prototype.dadd = function() {
-    this.stack.push2(this.stack.pop2() + this.stack.pop2());
+Frame.prototype.dadd = function(stack, locals) {
+    stack.push2(stack.pop2() + stack.pop2());
 }
 
-Frame.prototype.fadd = function() {
-    this.stack.push(utils.double2float(this.stack.pop() + this.stack.pop()));
+Frame.prototype.fadd = function(stack, locals) {
+    stack.push(utils.double2float(stack.pop() + stack.pop()));
 }
 
-Frame.prototype.isub = function() {
-    this.stack.push((- this.stack.pop() + this.stack.pop())|0);
+Frame.prototype.isub = function(stack, locals) {
+    stack.push((- stack.pop() + stack.pop())|0);
 }
 
-Frame.prototype.lsub = function() {
-    this.stack.push2(this.stack.pop2().add(this.stack.pop2()).negate());
+Frame.prototype.lsub = function(stack, locals) {
+    stack.push2(stack.pop2().add(stack.pop2()).negate());
 }
 
-Frame.prototype.dsub = function() {
-    this.stack.push2(- this.stack.pop2() + this.stack.pop2());
+Frame.prototype.dsub = function(stack, locals) {
+    stack.push2(- stack.pop2() + stack.pop2());
 }
 
-Frame.prototype.fsub = function() {
-    this.stack.push(utils.double2float(- this.stack.pop() + this.stack.pop()));
+Frame.prototype.fsub = function(stack, locals) {
+    stack.push(utils.double2float(- stack.pop() + stack.pop()));
 }
 
-Frame.prototype.imul = function() {
-    this.stack.push(Math.imul(this.stack.pop(), this.stack.pop()));
+Frame.prototype.imul = function(stack, locals) {
+    stack.push(Math.imul(stack.pop(), stack.pop()));
 }
 
-Frame.prototype.lmul = function() {
-    this.stack.push2(this.stack.pop2().multiply(this.stack.pop2()));
+Frame.prototype.lmul = function(stack, locals) {
+    stack.push2(stack.pop2().multiply(stack.pop2()));
 }
 
-Frame.prototype.dmul = function() {
-    this.stack.push2(this.stack.pop2() * this.stack.pop2());
+Frame.prototype.dmul = function(stack, locals) {
+    stack.push2(stack.pop2() * stack.pop2());
 }
 
-Frame.prototype.fmul = function() {
-    this.stack.push(utils.double2float(this.stack.pop() * this.stack.pop()));
+Frame.prototype.fmul = function(stack, locals) {
+    stack.push(utils.double2float(stack.pop() * stack.pop()));
 }
 
-Frame.prototype.idiv = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
+Frame.prototype.idiv = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
     if (!val1) {
         this.newException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
-    this.stack.push((val2 === utils.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
+    stack.push((val2 === utils.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
 }
 
-Frame.prototype.ldiv = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
+Frame.prototype.ldiv = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
     if (!val1.isZero()) {
         this.newException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
-    this.stack.push2(val2.div(val1));
+    stack.push2(val2.div(val1));
 }
 
-Frame.prototype.ddiv = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2 / val1);
+Frame.prototype.ddiv = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
+    stack.push2(val2 / val1);
 }
 
-Frame.prototype.fdiv = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(utils.double2float(val2 / val1));
+Frame.prototype.fdiv = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(utils.double2float(val2 / val1));
 }
 
-Frame.prototype.irem = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
+Frame.prototype.irem = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
     if (!val1) {
         this.newException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
-    this.stack.push(val2 % val1);
+    stack.push(val2 % val1);
 }
 
-Frame.prototype.lrem = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
+Frame.prototype.lrem = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
     if (val1.isZero()) {
         this.newException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
-    this.stack.push2(val2.modulo(val1));
+    stack.push2(val2.modulo(val1));
 }
 
-Frame.prototype.drem = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2 % val1);
+Frame.prototype.drem = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
+    stack.push2(val2 % val1);
 }
 
-Frame.prototype.frem = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(utils.double2float(val2 % val1));
+Frame.prototype.frem = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(utils.double2float(val2 % val1));
 }
 
-Frame.prototype.ineg = function() {
-    this.stack.push((- this.stack.pop())|0);
+Frame.prototype.ineg = function(stack, locals) {
+    stack.push((- stack.pop())|0);
 }
 
-Frame.prototype.lneg = function() {
-    this.stack.push2(this.stack.pop2().negate());
+Frame.prototype.lneg = function(stack, locals) {
+    stack.push2(stack.pop2().negate());
 }
 
-Frame.prototype.dneg = function() {
-    this.stack.push2(- this.stack.pop2());
+Frame.prototype.dneg = function(stack, locals) {
+    stack.push2(- stack.pop2());
 }
 
-Frame.prototype.fneg = function() {
-    this.stack.push(- this.stack.pop());
+Frame.prototype.fneg = function(stack, locals) {
+    stack.push(- stack.pop());
 }
 
-Frame.prototype.ishl = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2 << val1);
+Frame.prototype.ishl = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(val2 << val1);
 }
 
-Frame.prototype.lshl = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2.shiftLeft(val1));
+Frame.prototype.lshl = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
+    stack.push2(val2.shiftLeft(val1));
 }
 
-Frame.prototype.ishr = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2 >> val1);
+Frame.prototype.ishr = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(val2 >> val1);
 }
 
-Frame.prototype.lshr = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2.shiftRight(val1));
+Frame.prototype.lshr = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
+    stack.push2(val2.shiftRight(val1));
 }
 
-Frame.prototype.iushr = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2 >>> val1);
+Frame.prototype.iushr = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
+    stack.push(val2 >>> val1);
 }
 
-Frame.prototype.lushr = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2.shiftRightUnsigned(val1));
+Frame.prototype.lushr = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
+    stack.push2(val2.shiftRightUnsigned(val1));
 }
 
-Frame.prototype.iand = function() {
-    this.stack.push(this.stack.pop() & this.stack.pop());
+Frame.prototype.iand = function(stack, locals) {
+    stack.push(stack.pop() & stack.pop());
 }
 
-Frame.prototype.land = function() {
-    this.stack.push2(this.stack.pop2().and(this.stack.pop2()));
+Frame.prototype.land = function(stack, locals) {
+    stack.push2(stack.pop2().and(stack.pop2()));
 }
 
-Frame.prototype.ior = function() {
-    this.stack.push(this.stack.pop() | this.stack.pop());
+Frame.prototype.ior = function(stack, locals) {
+    stack.push(stack.pop() | stack.pop());
 }
 
-Frame.prototype.lor = function() {
-    this.stack.push2(this.stack.pop2().or(this.stack.pop2()));
+Frame.prototype.lor = function(stack, locals) {
+    stack.push2(stack.pop2().or(stack.pop2()));
 }
 
-Frame.prototype.ixor = function() {
-    this.stack.push(this.stack.pop() ^ this.stack.pop());
+Frame.prototype.ixor = function(stack, locals) {
+    stack.push(stack.pop() ^ stack.pop());
 }
 
-Frame.prototype.lxor = function() {
-    this.stack.push2(this.stack.pop2().xor(this.stack.pop2()));
+Frame.prototype.lxor = function(stack, locals) {
+    stack.push2(stack.pop2().xor(stack.pop2()));
 }
 
-Frame.prototype.lcmp = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
+Frame.prototype.lcmp = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
     if (val2.greaterThan(val1)) {
-        this.stack.push(1);
+        stack.push(1);
     } else if (val2.lessThan(val1)) {
-        this.stack.push(-1);
+        stack.push(-1);
     } else {
-        this.stack.push(0);
+        stack.push(0);
     }
 }
 
-Frame.prototype.fcmpl = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
+Frame.prototype.fcmpl = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
     if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(-1);
+        stack.push(-1);
     } else if (val2 > val1) {
-        this.stack.push(1);
+        stack.push(1);
     } else if (val2 < val1) {
-        this.stack.push(-1);
+        stack.push(-1);
     } else {
-        this.stack.push(0);
+        stack.push(0);
     }
 }
 
-Frame.prototype.fcmpg = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
+Frame.prototype.fcmpg = function(stack, locals) {
+    var val1 = stack.pop();
+    var val2 = stack.pop();
     if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(1);
+        stack.push(1);
     } else if (val2 > val1) {
-        this.stack.push(1);
+        stack.push(1);
     } else if (val2 < val1) {
-        this.stack.push(-1);
+        stack.push(-1);
     } else {
-        this.stack.push(0);
+        stack.push(0);
     }
 }
 
-Frame.prototype.dcmpl = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
+Frame.prototype.dcmpl = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
     if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(-1);
+        stack.push(-1);
     } else if (val2 > val1) {
-        this.stack.push(1);
+        stack.push(1);
     } else if (val2 < val1) {
-        this.stack.push(-1);
+        stack.push(-1);
     } else {
-        this.stack.push(0);
+        stack.push(0);
     }
 }
 
-Frame.prototype.dcmpg = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
+Frame.prototype.dcmpg = function(stack, locals) {
+    var val1 = stack.pop2();
+    var val2 = stack.pop2();
     if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(1);
+        stack.push(1);
     } else if (val2 > val1) {
-        this.stack.push(1);
+        stack.push(1);
     } else if (val2 < val1) {
-        this.stack.push(-1);
+        stack.push(-1);
     } else {
-        this.stack.push(0);
+        stack.push(0);
     }
 }
 
-Frame.prototype.newarray = function() {
+Frame.prototype.newarray = function(stack, locals) {
     var type = this.read8();
-    var size = this.stack.pop();
+    var size = stack.pop();
     if (size < 0) {
         this.newException("java/lang/NegativeSizeException");
         return;
     }
-    this.stack.push(CLASSES.newArray(type, size));
+    stack.push(CLASSES.newArray(type, size));
 }
 
-Frame.prototype.anewarray = function() {
+Frame.prototype.anewarray = function(stack, locals) {
     var idx = this.read16();
     var className = this.cp[this.cp[idx].name_index].bytes;
-    var size = this.stack.pop();
+    var size = stack.pop();
     if (size < 0) {
         this.newException("java/lang/NegativeSizeException");
         return;
     }
-    this.stack.push(new Array(size));
+    stack.push(new Array(size));
 }
 
-Frame.prototype.multianewarray = function() {
+Frame.prototype.multianewarray = function(stack, locals) {
     var idx = this.read16();
     var type = this.cp[this.cp[idx].name_index].bytes;
     var dimensions = this.read8();
     var lengths = new Array(dimensions);
     for(var i=0; i<dimensions; i++) {
-        lengths[i] = this.stack.pop();
+        lengths[i] = stack.pop();
     }
     var createMultiArray = function(lengths) {
         if (lengths.length === 0) {
@@ -742,182 +738,182 @@ Frame.prototype.multianewarray = function() {
         }
         return array;
     };
-    this.stack.push(createMultiArray(lengths));
+    stack.push(createMultiArray(lengths));
 }
 
-Frame.prototype.arraylength = function() {
-    var ref = this.stack.pop();
-    this.stack.push(ref.length);
+Frame.prototype.arraylength = function(stack, locals) {
+    var ref = stack.pop();
+    stack.push(ref.length);
 }
 
-Frame.prototype.if_icmpeq = function() {
+Frame.prototype.if_icmpeq = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
+    var ref1 = stack.pop();
+    var ref2 = stack.pop();
     this.ip = ref1 === ref2 ? jmp : this.ip;
 }
 
-Frame.prototype.if_icmpne = function() {
+Frame.prototype.if_icmpne = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
+    var ref1 = stack.pop();
+    var ref2 = stack.pop();
     this.ip = ref1 !== ref2 ? jmp : this.ip;
 }
 
-Frame.prototype.if_icmpgt = function() {
+Frame.prototype.if_icmpgt = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
+    var ref1 = stack.pop();
+    var ref2 = stack.pop();
     this.ip = ref1 < ref2 ? jmp : this.ip;
 }
 
-Frame.prototype.if_icmple = function() {
+Frame.prototype.if_icmple = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() >= this.stack.pop() ? jmp : this.ip;
+    this.ip = stack.pop() >= stack.pop() ? jmp : this.ip;
 }
 
-Frame.prototype.if_icmplt = function() {
+Frame.prototype.if_icmplt = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() > this.stack.pop() ? jmp : this.ip;
+    this.ip = stack.pop() > stack.pop() ? jmp : this.ip;
 }
 
-Frame.prototype.if_icmpge = function() {
+Frame.prototype.if_icmpge = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
+    var ref1 = stack.pop();
+    var ref2 = stack.pop();
     this.ip = ref1 <= ref2 ? jmp : this.ip;
 }
 
-Frame.prototype.if_acmpeq = function() {
+Frame.prototype.if_acmpeq = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
+    var ref1 = stack.pop();
+    var ref2 = stack.pop();
     this.ip = ref1 === ref2 ? jmp : this.ip;
 }
 
-Frame.prototype.if_acmpne = function() {
+Frame.prototype.if_acmpne = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
+    var ref1 = stack.pop();
+    var ref2 = stack.pop();
     this.ip = ref1 !== ref2 ? jmp : this.ip;
 }
 
-Frame.prototype.ifne = function() {
+Frame.prototype.ifne = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() !== 0 ? jmp : this.ip;
+    this.ip = stack.pop() !== 0 ? jmp : this.ip;
 }
 
-Frame.prototype.ifeq = function() {
+Frame.prototype.ifeq = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() === 0 ? jmp : this.ip;
+    this.ip = stack.pop() === 0 ? jmp : this.ip;
 }
 
-Frame.prototype.iflt = function() {
+Frame.prototype.iflt = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() < 0 ? jmp : this.ip;
+    this.ip = stack.pop() < 0 ? jmp : this.ip;
 }
 
-Frame.prototype.ifge = function() {
+Frame.prototype.ifge = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() >= 0 ? jmp : this.ip;
+    this.ip = stack.pop() >= 0 ? jmp : this.ip;
 }
 
-Frame.prototype.ifgt = function() {
+Frame.prototype.ifgt = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() > 0 ? jmp : this.ip;
+    this.ip = stack.pop() > 0 ? jmp : this.ip;
 }
 
-Frame.prototype.ifle = function() {
+Frame.prototype.ifle = function(stack, locals) {
     var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() <= 0 ? jmp : this.ip;
+    this.ip = stack.pop() <= 0 ? jmp : this.ip;
 }
 
-Frame.prototype.i2l = function() {
-    this.stack.push2(new gLong(this.stack.pop()));
+Frame.prototype.i2l = function(stack, locals) {
+    stack.push2(new gLong(stack.pop()));
 }
 
-Frame.prototype.i2f = function() {
+Frame.prototype.i2f = function(stack, locals) {
 }
 
-Frame.prototype.i2d = function() {
-    this.stack.push2(this.stack.pop());
+Frame.prototype.i2d = function(stack, locals) {
+    stack.push2(stack.pop());
 }
 
-Frame.prototype.i2b = function() {
-    this.stack.push((this.stack.pop() << 24) >> 24);
+Frame.prototype.i2b = function(stack, locals) {
+    stack.push((stack.pop() << 24) >> 24);
 }
 
-Frame.prototype.i2c = function() {
-    this.stack.push(this.stack.pop() & 0xffff);
+Frame.prototype.i2c = function(stack, locals) {
+    stack.push(stack.pop() & 0xffff);
 }
 
-Frame.prototype.i2s = function() {
-    this.stack.push((this.stack.pop() << 16) >> 16);
+Frame.prototype.i2s = function(stack, locals) {
+    stack.push((stack.pop() << 16) >> 16);
 }
 
-Frame.prototype.l2i = function() {
-    this.stack.push(this.stack.pop2().toInt());
+Frame.prototype.l2i = function(stack, locals) {
+    stack.push(stack.pop2().toInt());
 }
 
-Frame.prototype.l2d = function() {
-    this.stack.push2(this.stack.pop2().toNumber());
+Frame.prototype.l2d = function(stack, locals) {
+    stack.push2(stack.pop2().toNumber());
 }
 
-Frame.prototype.l2f = function() {
-    this.stack.push(utils.double2float(this.stack.pop2().toNumber()));
+Frame.prototype.l2f = function(stack, locals) {
+    stack.push(utils.double2float(stack.pop2().toNumber()));
 }
 
-Frame.prototype.d2i = function() {
-    this.stack.push(utils.double2int(this.stack.pop2()));
+Frame.prototype.d2i = function(stack, locals) {
+    stack.push(utils.double2int(stack.pop2()));
 }
 
-Frame.prototype.d2l = function() {
-    this.stack.push2(utils.double2long(this.stack.pop2()));
+Frame.prototype.d2l = function(stack, locals) {
+    stack.push2(utils.double2long(stack.pop2()));
 }
 
-Frame.prototype.d2f = function() {
-    this.stack.push(utils.double2float(this.stack.pop2()));
+Frame.prototype.d2f = function(stack, locals) {
+    stack.push(utils.double2float(stack.pop2()));
 }
 
-Frame.prototype.f2d = function() {
-    this.stack.push2(this.stack.pop());
+Frame.prototype.f2d = function(stack, locals) {
+    stack.push2(stack.pop());
 }
 
-Frame.prototype.f2i = function() {
-    this.stack.push(utils.double2int(this.stack.pop()));
+Frame.prototype.f2i = function(stack, locals) {
+    stack.push(utils.double2int(stack.pop()));
 }
 
-Frame.prototype.f2l = function() {
-    this.stack.push2(gLong.fromNumber(this.stack.pop()));
+Frame.prototype.f2l = function(stack, locals) {
+    stack.push2(gLong.fromNumber(stack.pop()));
 }
 
-Frame.prototype.goto = function() {
+Frame.prototype.goto = function(stack, locals) {
     this.ip += this.read16signed() - 1;
 }
 
-Frame.prototype.goto_w = function() {
+Frame.prototype.goto_w = function(stack, locals) {
     this.ip += this.read32signed() - 1;
 }
 
-Frame.prototype.ifnull = function() {
-    var ref = this.stack.pop();
+Frame.prototype.ifnull = function(stack, locals) {
+    var ref = stack.pop();
     if (!ref) {
         this.ip += this.read16signed() - 1;
     }
 }
 
-Frame.prototype.ifnonnull = function() {
-    var ref = this.stack.pop();
+Frame.prototype.ifnonnull = function(stack, locals) {
+    var ref = stack.pop();
     if (!!ref) {
         this.ip += this.read16signed() - 1;
     }
 }
 
-Frame.prototype.putfield = function() {
+Frame.prototype.putfield = function(stack, locals) {
     var idx = this.read16();
     var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var val = this.stack.pop();
-    var obj = this.stack.pop();
+    var val = stack.pop();
+    var obj = stack.pop();
     if (!obj) {
         this.newException("java/lang/NullPointerException");
         return;
@@ -925,11 +921,11 @@ Frame.prototype.putfield = function() {
     obj[fieldName] = val;
 }
 
-Frame.prototype.getfield = function() {
+Frame.prototype.getfield = function(stack, locals) {
     var cp = this.cp;
     var nameAndType = cp[cp[this.read16()].name_and_type_index];
     var fieldName = cp[nameAndType.name_index].bytes;
-    var obj = this.stack.pop();
+    var obj = stack.pop();
     if (!obj) {
         this.newException("java/lang/NullPointerException");
         return;
@@ -938,99 +934,96 @@ Frame.prototype.getfield = function() {
     if (typeof value === "undefined") {
         value = util.defaultValue(cp[nameAndType.signature_index].bytes);
     }
-    this.stack.push(value);
+    stack.push(value);
 }
 
 
-Frame.prototype.new = function() {
+Frame.prototype.new = function(stack, locals) {
     var idx = this.read16();
     var className = this.cp[this.cp[idx].name_index].bytes;
-    this.stack.push(CLASSES.newObject(className));
+    stack.push(CLASSES.newObject(className));
 }
 
-Frame.prototype.getstatic = function() {
+Frame.prototype.getstatic = function(stack, locals) {
     var idx = this.read16();
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    this.stack.push(CLASSES.getStaticField(className, fieldName));
+    stack.push(CLASSES.getStaticField(className, fieldName));
 }
 
-Frame.prototype.putstatic = function() {
+Frame.prototype.putstatic = function(stack, locals) {
     var idx = this.read16();
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     console.log(className, fieldName, CLASSES.getStaticField(className, fieldName));
-    CLASSES.setStaticField(className, fieldName, this.stack.pop());
+    CLASSES.setStaticField(className, fieldName, stack.pop());
 }
 
-Frame.prototype.invoke = function(method, instance, args) {
-    if (method instanceof Frame) {
-        if (instance)
-            args.unshift(instance);
-        console.log(args[0], args[1]);
-        return method.run(args);
+Frame.prototype.invoke = function(stack, method, signature) {
+    var result;
+    var OUT;
+    if (!(method instanceof Frame)) {
+        var instance = null;
+        if (!ACCESS_FLAGS.isStatic(method.access_flags))
+            instance = stack.pop();
+        var args = stack.popArgs(method.signature);
+        result = method.apply(instance, args);
+        var OUT = method.signature;
+    } else {
+        result = method.run(stack);
+        var OUT = Signature.parse(signature).OUT;
     }
-    return method.apply(instance, args);
+    if (OUT.length)
+        stack.pushType(OUT[0], result);
 }
 
-Frame.prototype.invokestatic = function() {
+Frame.prototype.invokestatic = function(stack, locals) {
     var idx = this.read16();
 
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
+    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
     console.log(className, methodName);
 
-    var args = this.popArgs(signature);
     var method = CLASSES.getStaticMethod(className, methodName, signature);
-    var result = this.invoke(method, null, args);
-    this.pushReturnValue(signature, result);
+
+    this.invoke(stack, method, signature);
 }
 
-Frame.prototype.invokevirtual = function() {
+Frame.prototype.invokevirtual = function(stack, locals) {
     var self = this;
 
     var idx = this.read16();
 
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
-
-    var args = this.popArgs(signature);
-    var instance = this.stack.pop();
-    if (!instance) {
-        this.newException("java/lang/NullPointerException");
-        return;
-    }
-    var method = CLASSES.getMethod(className, methodName, signature);
-    var result = this.invoke(method, instance, args);
-    this.pushReturnValue(signature, result);
-}
-
-Frame.prototype.invokespecial = function() {
-    var self = this;
-
-    var idx = this.read16();
-
-    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
-    var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
+    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
     console.log(className, methodName);
 
-    var args = this.popArgs(signature);
-    var instance = this.stack.pop();
-    if (!instance) {
-        this.newException("java/lang/NullPointerException");
-        return;
-    }
     var method = CLASSES.getMethod(className, methodName, signature);
-    var result = this.invoke(method, instance, args);
-    this.pushReturnValue(signature, result);
+
+    this.invoke(stack, method, signature);
 }
 
-Frame.prototype.invokeinterface = function() {
+Frame.prototype.invokespecial = function(stack, locals) {
+    var self = this;
+
+    var idx = this.read16();
+
+    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
+    var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
+    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
+
+    console.log(className, methodName);
+
+    var method = CLASSES.getMethod(className, methodName, signature);
+
+    this.invoke(stack, method, signature);
+}
+
+Frame.prototype.invokeinterface = function(stack, locals) {
     var self = this;
 
     var idx = this.read16();
@@ -1039,39 +1032,33 @@ Frame.prototype.invokeinterface = function() {
 
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = Signature.parse(this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes);
+    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
     console.log(className, methodName);
 
-    var args = this.popArgs(signature);
-    var instance = this.stack.pop();
-    if (!instance) {
-        this.newException("java/lang/NullPointerException");
-        return;
-    }
-    var method = instance[methodName];
-    var instance = this.invoke(method, instance, args);
-    this.pushReturnValue(signature, result);
+    var method = stack.top()[methodName];
+
+    this.invoke(stack, method, signature);
 }
 
-Frame.prototype.jsr = function() {
+Frame.prototype.jsr = function(stack, locals) {
     var jmp = this.read16();
-    this.stack.push(this.ip);
+    stack.push(this.ip);
     this.ip = jmp;
 }
 
-Frame.prototype.jsr_w = function() {
+Frame.prototype.jsr_w = function(stack, locals) {
     var jmp = this.read32();
-    this.stack.push(this.ip);
+    stack.push(this.ip);
     this.ip = jmp;
 }
 
-Frame.prototype.ret = function() {
+Frame.prototype.ret = function(stack, locals) {
     var idx = this.isWide() ? this.read16() : this.read8();
-    this.ip = this.locals[idx];
+    this.ip = locals.get(idx);
 }
 
-Frame.prototype.tableswitch = function() {
+Frame.prototype.tableswitch = function(stack, locals) {
     var startip = this.ip;
     var jmp;
 
@@ -1082,7 +1069,7 @@ Frame.prototype.tableswitch = function() {
     var def = this.read32();
     var low = this.read32();
     var high = this.read32();
-    var val = this.stack.pop();
+    var val = stack.pop();
 
     if (val < low || val > high) {
         jmp = def;
@@ -1094,7 +1081,7 @@ Frame.prototype.tableswitch = function() {
     this.ip = startip - 1 + this.u32_to_s32(jmp);
 }
 
-Frame.prototype.lookupswitch = function() {
+Frame.prototype.lookupswitch = function(stack, locals) {
     var startip = this.ip;
 
     while ((this.ip % 4) != 0) {
@@ -1103,7 +1090,7 @@ Frame.prototype.lookupswitch = function() {
 
     var jmp = this.read32();
     var size = this.read32();
-    var val = this.stack.pop();
+    var val = stack.pop();
 
     lookup:
         for(var i=0; i<size; i++) {
@@ -1120,33 +1107,33 @@ Frame.prototype.lookupswitch = function() {
     this.ip = startip - 1 + this.u32_to_s32(jmp);
 }
 
-Frame.prototype.instanceof = function() {
+Frame.prototype.instanceof = function(stack, locals) {
     var idx = this.read16();
     var className = this.cp[this.cp[idx].name_index].bytes;
-    var obj = this.stack.pop();
-    this.stack.push(obj.class.getClassName() === className);
+    var obj = stack.pop();
+    stack.push(obj.class.getClassName() === className);
 }
 
-Frame.prototype.checkcast = function() {
+Frame.prototype.checkcast = function(stack, locals) {
     var idx = this.read16();
     var type = this.cp[this.cp[idx].name_index].bytes;
 }
 
-Frame.prototype.athrow = function() {
-    this.throw(this.stack.pop());
+Frame.prototype.athrow = function(stack, locals) {
+    this.throw(stack.pop());
 }
 
-Frame.prototype.wide = function() {
+Frame.prototype.wide = function(stack, locals) {
 }
 
-Frame.prototype.monitorenter = function() {
-    var obj = this.stack.pop();
+Frame.prototype.monitorenter = function(stack, locals) {
+    var obj = stack.pop();
     if (!obj) {
         this.newException("java/lang/NullPointerException");
         return;
     }
     if (obj.hasOwnProperty("$lock$")) {
-        this.stack.push(obj);
+        stack.push(obj);
         this.ip--;
         // SCHEDULER.yield();
     } else {
@@ -1154,8 +1141,8 @@ Frame.prototype.monitorenter = function() {
     }
 }
 
-Frame.prototype.monitorexit = function() {
-    var obj = this.stack.pop();
+Frame.prototype.monitorexit = function(stack, locals) {
+    var obj = stack.pop();
     if (!obj) {
         this.newException("java/lang/NullPointerException");
         return;
