@@ -90,7 +90,9 @@ Frame.prototype.throw = function(ex) {
 Frame.prototype.newException = function(className, message) {
     var ex = CLASSES.newObject(this, className);
     var ctor = CLASSES.getMethod(this, className, "<init>", "(Ljava/lang/String;)V");
-    this.invoke(ctor, ex, [message]);
+    this.stack.push(ex);
+    this.stack.push(message);
+    new Frame(ctor).run(this);
     this.throw(ex);
 }
 
