@@ -20,22 +20,22 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
     }
 
     function popArgs(types) {
+        var argc = types.length;
+        if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags))
+            ++argc;
         var args = Array(types.length);
-        console.log(types.length-1);
-        for (var i=types.length-1; i >= 0; --i)
-            args[i] = popType(types[i].type);
-        console.log("popArgs", types, args);
+        for (var i=types.length-1, j=args.length-1; i >= 0; --i, --j)
+            args[j] = popType(types[i].type);
+        if (j >= 0)
+            args[0] = caller.stack.pop();
         return args;
     }
 
     var signature = methodInfo.signature;
     var args = popArgs(signature.IN);
-    var instance = null;
-    if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags))
-        instance = this.stack.pop();
     if (!methodInfo.native)
         methodInfo.native = this.getMethod(methodInfo);
-    result = methodInfo.native.apply(instance, args);
+    result = methodInfo.native.apply(caller, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0], result);
 }
@@ -43,9 +43,9 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
 Native.prototype.getMethod = function (methodInfo) {
     var classInfo = methodInfo.classInfo;
     var cp = classInfo.getConstantPool();
-    var className = cp[classInfo.name_index];
-    var methodName = cp[methodInfo.name_index];
-    var signature = cp[methodInfo.signature_index];
+    var className = classInfo.getClassName();
+    var methodName = cp[methodInfo.name_index].bytes;
+    var signature = cp[methodInfo.signature_index].bytes;
     console.log("Native.getMethod", className, methodName, signature);
     return this[className + "." + methodName + "." + signature];
 }
