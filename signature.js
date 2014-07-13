@@ -43,7 +43,7 @@ Signature.parse = (function () {
                     case TYPE.int:
                     case TYPE.long:
                     case TYPE.short:
-                        res.push( { type: TYPE.toString(part[pos]), isArray: isArray } );
+                        res.push({ type: TYPE.toString(part[pos]), isArray: isArray });
                         isArray = false;
                         break;
                     case TYPE.object:
@@ -51,7 +51,7 @@ Signature.parse = (function () {
                         while (part[++pos] !== ';') {
                             className += part[pos];
                         }
-                        res.push( { type: "object", isArray: isArray, className: className } );
+                        res.push({ type: "object", isArray: isArray, className: className });
                         isArray = false;
                         break;
                     case TYPE.array:
