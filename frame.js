@@ -6,8 +6,7 @@
 var Frame = function(methodInfo) {
     if (this instanceof Frame) {
         this.methodInfo = methodInfo;
-        this.classInfo = methodInfo.classInfo;
-        this.cp = this.classInfo.getConstantPool();
+        this.cp = methodInfo.classInfo.getConstantPool();
         this.signature = Signature.parse(this.cp[methodInfo.signature_index].bytes);
         this.code = methodInfo.code;
     } else {
@@ -108,7 +107,7 @@ Frame.prototype.run = function(stack) {
 
     while (true) {
         var op = this.read8();
-        console.log(this.classInfo.getClassName(), this.cp[this.methodInfo.name_index].bytes,
+        console.log(this.methodInfo.classInfo.getClassName(), this.cp[this.methodInfo.name_index].bytes,
                     this.ip - 1, OPCODES[op], stack.array.length);
         switch (op) {
         case OPCODES.return:
