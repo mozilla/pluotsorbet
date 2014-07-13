@@ -3,7 +3,7 @@
 
 'use strict';
 
-var getClassImage = function(classBytes, classInfo) {
+var getClassImage = function(classBytes) {
     var classImage = {};
 
     var getAttribues = function(attribute_name_index, bytes) {
@@ -33,12 +33,13 @@ var getClassImage = function(classBytes, classInfo) {
 
                         var exception_table_length = reader.read16();
                         attribute.exception_table = [];
-                        for(var i=0; i<exception_table_length; i++) {
-                            var start_pc = reader.read16();
-                            var end_pc = reader.read16();
-                            var handler_pc= reader.read16();
-                            var catch_type = reader.read16();
-                            attribute.exception_table.push(new ExceptionInfo(start_pc, end_pc, handler_pc, catch_type));
+                        for (var i=0; i<exception_table_length; i++) {
+                            attribute.exception_table.push({
+                                start_pc: reader.read16(),
+                                end_pc: reader.read16(),
+                                handler_pc: reader.read16(),
+                                catch_type: reader.read16()
+                            });
                         }
 
                         var attributes_count = reader.read16();
@@ -194,7 +195,7 @@ var getClassImage = function(classBytes, classInfo) {
         var name_index = reader.read16();
         var signature_index = reader.read16();
         var attributes_count = reader.read16();
-        var method_info = new MethodInfo(classInfo, access_flags, name_index, signature_index);
+        var method_info = new MethodInfo(access_flags, name_index, signature_index);
         method_info.signature = Signature.parse(classImage.constant_pool[signature_index].bytes);
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();

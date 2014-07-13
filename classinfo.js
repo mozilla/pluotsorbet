@@ -13,6 +13,10 @@ var ClassInfo = function(classBytes) {
         this.constant_pool = cp;
         this.fields = classImage.fields;
         this.methods = classImage.methods;
+        var self = this;
+        this.methods.forEach(function(m) {
+            m.classInfo = self;
+        });
         this.classes = [];
         classImage.attributes.forEach(function(a) {
             if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
@@ -27,16 +31,14 @@ var ClassInfo = function(classBytes) {
     }
 }
 
-var FieldInfo = function(classInfo, access_flags, name_index, descriptor_index) {
-    this.classInfo = classInfo;
+var FieldInfo = function(access_flags, name_index, descriptor_index) {
     this.access_flags = access_flags;
     this.name_index = name_index;
     this.descriptor_index = descriptor_index;
     this.attributes = [];
 }
 
-var MethodInfo = function(classInfo, access_flags, name_index, signature_index) {
-    this.classInfo = classInfo;
+var MethodInfo = function(access_flags, name_index, signature_index) {
     this.access_flags = access_flags;
     this.name_index = name_index;
     this.signature_index = signature_index;
