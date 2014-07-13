@@ -990,7 +990,7 @@ Frame.prototype.invokevirtual = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getMethod(this, className, methodName, signature, false, true);
+    var method = CLASSES.getMethod(this, className, methodName, signature, false);
 
     this.invoke(method);
 }

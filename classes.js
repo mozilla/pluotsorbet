@@ -82,7 +82,7 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
 }
 
 Classes.prototype.initClass = function(caller, className) {
-    var clinit = this.getStaticMethod(caller, className, "<clinit>", "()V");
+    var clinit = this.getMethod(caller, className, "<clinit>", "()V", true);
     if (!clinit)
         return;
     LOG.debug("call " + className + ".<clinit> ...");
@@ -111,26 +111,20 @@ Classes.prototype.setStaticField = function(caller, className, fieldName, value)
     this.getClass(caller, className, true).staticFields[fieldName] = value;
 }
 
-Classes.prototype.getMethod = function(caller, className, methodName, signature, staticFlag, inheritFlag) {
+Classes.prototype.getMethod = function(caller, className, methodName, signature, staticFlag) {
     console.log(className, methodName, signature);
     // Only force initialization when accessing a static method.
     var classInfo = this.getClass(caller, className, staticFlag);
     var methods = classInfo.methods;
     for (var i=0; i<methods.length; i++) {
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
-            if (methods[i].name === methodName) {
-                if (signature === methods[i].signature) {
-                    return methods[i];
-                }
+            if (methods[i].name === methodName && methods[i].signature === signature) {
+                return methods[i];
             }
         }
     }
-    return inheritFlag ? this.getMethod(caller, classInfo.superClassName, methodName, signature, staticFlag, inheritFlag) : null;
+    return null;
 };
-
-Classes.prototype.getStaticMethod = function(caller, className, methodName, signature) {
-    return this.getMethod(caller, className, methodName, signature, true);
-}
 
 Classes.prototype.newObject = function(caller, className) {
     // Force initialization of the class (if not already done).
