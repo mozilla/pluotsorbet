@@ -3,6 +3,35 @@
 
 'use strict';
 
+function MethodInfo() {
+}
+
+MethodInfo.prototype.meta = function() {
+    if (this._meta)
+        return this._meta;
+
+    var s = Signature.parse(this.signature);
+    var IN = s.IN;
+    var OUT = s.OUT;
+
+    var consumes = 0;
+    var isStatic = ACCESS_FLAGS.isStatic(this.access_flags);
+    if (!isStatic) {
+        ++consumes;
+    }
+    for (var i=0; i<IN.length; i++) {
+        var type = IN[i].type;
+        ++consumes;
+        if (type === "long" || type === "double")
+            ++consumes;
+    }
+    var produces = 0;
+    if (OUT.length)
+        produces = (OUT[0] === "long" || OUT[0] === "double") ? 2 : 1;
+
+    return this._meta = { IN: IN, OUT: OUT, consumes: consumes, products: produces };
+}
+
 var ClassInfo = function(classBytes) {
     if (this instanceof ClassInfo) {
         var classImage = getClassImage(classBytes, this);
@@ -26,15 +55,12 @@ var ClassInfo = function(classBytes) {
 
         this.methods = [];
         classImage.methods.forEach(function(m) {
-            var method = {};
+            var method = new MethodInfo();
             method.classInfo = self;
             method.access_flags = m.access_flags;
             method.name = cp[m.name_index].bytes;
             method.signature = cp[m.signature_index].bytes;
             method.attributes = m.attributes;
-            var s = Signature.parse(method.signature);
-            method.IN = s.IN;
-            method.OUT = s.OUT;
             method.attributes.forEach(function(a) {
                 if (a.info.type === ATTRIBUTE_TYPES.Code) {
                     method.code = Uint8Array(a.info.code);

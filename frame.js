@@ -107,52 +107,35 @@ Frame.prototype.invoke = function(methodInfo) {
         return;
     }
 
+    var consumes = methodInfo.meta().consumes;
+
     var callee = new Frame(methodInfo);
-
-    var isStatic = ACCESS_FLAGS.isStatic(methodInfo.access_flags);
-    var argc = 0;
-    if (!isStatic) {
-        ++argc;
-    }
-    var IN = methodInfo.IN;
-    for (var i=0; i<IN.length; i++) {
-        var type = IN[i].type;
-        ++argc;
-        if (type === "long" || type === "double")
-            ++argc;
-    }
-
     callee.locals = this.stack;
-    callee.localsBase = this.stack.length - argc;
+    callee.localsBase = this.stack.length - consumes;
 
-    if (!isStatic && !callee.getLocal(0)) {
+    if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags) && !callee.getLocal(0)) {
         this.raiseException("java/lang/NullPointerException");
         return;
     }
-
-    var args = "args: ";
-    for (var i=0; i < argc; ++i)
-        args += callee.getLocal(i) + " ";
-    console.log(args);
 
     while (true) {
         var op = callee.read8();
         console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.length);
         switch (op) {
         case OPCODES.return:
-            this.stack.length -= argc;
+            this.stack.length -= consumes;
             return;
 
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            this.stack.length -= argc;
+            this.stack.length -= consumes;
             this.stack.push(callee.stack.pop());
             return;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            this.stack.length -= argc;
+            this.stack.length -= consumes;
             this.stack.push2(callee.stack.pop2());
             return;
 

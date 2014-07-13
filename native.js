@@ -31,12 +31,13 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
         return args;
     }
 
-    var args = popArgs(methodInfo.IN);
+    var meta = methodInfo.meta();
+    var args = popArgs(meta.IN);
     if (!methodInfo.native)
         methodInfo.native = this.getMethod(methodInfo);
     var result = methodInfo.native.apply(caller, args);
-    if (methodInfo.OUT.length)
-        pushType(methodInfo.OUT[0], result);
+    if (meta.OUT.length)
+        pushType(meta.OUT[0], result);
 }
 
 Native.prototype.getMethod = function (methodInfo) {
