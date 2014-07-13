@@ -82,39 +82,39 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
     }
 }
 
-Classes.prototype.initClass = function(className) {
-    var clinit = this.getStaticMethod(className, "<clinit>", "()V");
+Classes.prototype.initClass = function(caller, className) {
+    var clinit = this.getStaticMethod(caller, className, "<clinit>", "()V");
     if (!clinit)
         return;
     LOG.debug("call " + className + ".<clinit> ...");
-    new Frame(clinit).run(THREADS.current.frame);
+    new Frame(clinit).run(caller);
 }
 
-Classes.prototype.getClass = function(className, initialize) {
+Classes.prototype.getClass = function(caller, className, initialize) {
     var classInfo = this.classes[className];
     if (classInfo)
         return classInfo;
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
         if (initialize) {
             classInfo.staticFields = {};
-            this.initClass(className);
+            this.initClass(caller, className);
         }
         return classInfo;
     }
     throw new Error(util.format("Implementation of the %s class is not found.", className));
 };
 
-Classes.prototype.getStaticField = function(className, fieldName) {
-    return this.getClass(className, true).staticFields[fieldName];
+Classes.prototype.getStaticField = function(caller, className, fieldName) {
+    return this.getClass(caller, className, true).staticFields[fieldName];
 }
 
-Classes.prototype.setStaticField = function(className, fieldName, value) {
-    this.getClass(className, true).staticFields[fieldName] = value;
+Classes.prototype.setStaticField = function(caller, className, fieldName, value) {
+    this.getClass(caller, className, true).staticFields[fieldName] = value;
 }
 
-Classes.prototype.getMethod = function(className, methodName, signature, staticFlag) {
+Classes.prototype.getMethod = function(caller, className, methodName, signature, staticFlag) {
     // Only force initialization when accessing a static method.
-    var classInfo = this.getClass(className, staticFlag);
+    var classInfo = this.getClass(caller, className, staticFlag);
     var methods = classInfo.getMethods();
     var cp = classInfo.getConstantPool();
     for (var i=0; i<methods.length; i++) {
@@ -132,13 +132,13 @@ Classes.prototype.getMethod = function(className, methodName, signature, staticF
     return null;
 };
 
-Classes.prototype.getStaticMethod = function(className, methodName, signature) {
-    return this.getMethod(className, methodName, signature, true);
+Classes.prototype.getStaticMethod = function(caller, className, methodName, signature) {
+    return this.getMethod(caller, className, methodName, signature, true);
 }
 
-Classes.prototype.newObject = function(className) {
+Classes.prototype.newObject = function(caller, className) {
     // Force initialization of the class (if not already done).
-    return { class: this.getClass(className, true) };
+    return { class: this.getClass(caller, className, true) };
 }
 
 Classes.prototype.newArray = function(type, size) {
@@ -154,8 +154,8 @@ Classes.prototype.newArray = function(type, size) {
     }
 }
 
-Classes.prototype.newString = function(s) {
-    var obj = this.newObject("java/lang/String");
+Classes.prototype.newString = function(caller, s) {
+    var obj = this.newObject(caller, "java/lang/String");
     var length = s.length;
     var chars = this.newArray(ARRAY_TYPE.T_CHAR, length);
     for (var n = 0; n < length; ++n)

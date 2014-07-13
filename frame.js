@@ -88,15 +88,13 @@ Frame.prototype.throw = function(ex) {
 }
 
 Frame.prototype.newException = function(className, message) {
-    var ex = CLASSES.newObject(className);
-    var ctor = CLASSES.getMethod(className, "<init>", "(Ljava/lang/String;)V");
+    var ex = CLASSES.newObject(this, className);
+    var ctor = CLASSES.getMethod(this, className, "<init>", "(Ljava/lang/String;)V");
     this.invoke(ctor, ex, [message]);
     this.throw(ex);
 }
 
 Frame.prototype.run = function(caller) {
-    THREADS.current.frame = this;
-
     var methodInfo = this.methodInfo;
 
     this.cp = methodInfo.classInfo.getConstantPool();
@@ -219,7 +217,7 @@ Frame.prototype.ldc = function() {
     var constant = this.cp[this.read8()];
     switch(constant.tag) {
         case TAGS.CONSTANT_String:
-            this.stack.push(CLASSES.newString(this.cp[constant.string_index].bytes));
+            this.stack.push(CLASSES.newString(this, this.cp[constant.string_index].bytes));
             break;
         default:
             throw new Error("not support constant type");
@@ -966,21 +964,21 @@ Frame.prototype.getfield = function() {
 Frame.prototype.new = function() {
     var idx = this.read16();
     var className = this.cp[this.cp[idx].name_index].bytes;
-    this.stack.push(CLASSES.newObject(className));
+    this.stack.push(CLASSES.newObject(this, className));
 }
 
 Frame.prototype.getstatic = function() {
     var idx = this.read16();
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    this.stack.push(CLASSES.getStaticField(className, fieldName));
+    this.stack.push(CLASSES.getStaticField(this, className, fieldName));
 }
 
 Frame.prototype.putstatic = function() {
     var idx = this.read16();
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    CLASSES.setStaticField(className, fieldName, this.stack.pop());
+    CLASSES.setStaticField(this, className, fieldName, this.stack.pop());
 }
 
 Frame.prototype.invoke = function(method, signature) {
@@ -998,7 +996,7 @@ Frame.prototype.invokestatic = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getStaticMethod(className, methodName, signature);
+    var method = CLASSES.getStaticMethod(this, className, methodName, signature);
 
     this.invoke(method, signature);
 }
@@ -1012,7 +1010,7 @@ Frame.prototype.invokevirtual = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getMethod(className, methodName, signature);
+    var method = CLASSES.getMethod(this, className, methodName, signature);
 
     this.invoke(method, signature);
 }
@@ -1026,7 +1024,7 @@ Frame.prototype.invokespecial = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getMethod(className, methodName, signature);
+    var method = CLASSES.getMethod(this, className, methodName, signature);
 
     this.invoke(method, signature);
 }
