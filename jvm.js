@@ -59,5 +59,7 @@ JVM.prototype.run = function() {
         throw new Error("Entry point method is not found.");
     }
 
-    THREADS.current.startMain(entryPoint, []);
+    var stack = THREADS.current.stack;
+    stack.push(null); // args
+    entryPoint.run(stack);
 }

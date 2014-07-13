@@ -81,7 +81,6 @@ Frame.prototype.newException = function(className, message) {
 
 Frame.prototype.run = function(stack) {
     var isStatic = ACCESS_FLAGS.isStatic(this.methodInfo.access_flags);
-
     var argc = 0;
     if (!isStatic) {
         ++argc;

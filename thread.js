@@ -31,8 +31,3 @@ Thread.prototype.setPriority = function(priority) {
 Thread.prototype.getPriority = function() {
     return this.priority;
 }
-
-Thread.prototype.startMain = function(entryPoint, args) {
-    this.stack.push(null); // args
-    entryPoint.run(this.stack);
-}
