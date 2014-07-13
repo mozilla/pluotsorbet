@@ -18,12 +18,8 @@ Array.prototype.top = function () {
 }
 
 var Frame = function(methodInfo) {
-    if (this instanceof Frame) {
-        this.methodInfo = methodInfo;
-        this.stack = [];
-    } else {
-        return new Frame(methodInfo);
-    }
+    this.methodInfo = methodInfo;
+    this.stack = [];
 }
 
 Frame.prototype.getLocal = function(idx) {
@@ -32,19 +28,6 @@ Frame.prototype.getLocal = function(idx) {
 
 Frame.prototype.setLocal = function(idx, value) {
     this.locals[this.localsBase + idx] = value;
-}
-
-Frame.prototype.popType = function (type) {
-    return (type === "long" || type === "double") ? this.stack.pop2() : this.stack.pop();
-}
-
-Frame.prototype.popArgs = function (types) {
-    var args = Array(types.length);
-    console.log(types.length-1);
-    for (var i=types.length-1; i >= 0; --i)
-        args[i] = this.popType(types[i].type);
-    console.log("popArgs", types, args);
-    return args;
 }
 
 Frame.prototype.isWide = function() {
@@ -1003,15 +986,7 @@ Frame.prototype.putstatic = function() {
 Frame.prototype.invoke = function(method, signature) {
     var result;
     if (!(method instanceof MethodInfo)) {
-        signature = Signature.parse(signature);
-        var args = this.stack.popArgs(signature.IN);
-        var instance = null;
-        if (!ACCESS_FLAGS.isStatic(method.access_flags))
-            instance = this.stack.pop();
-        result = method.apply(instance, args);
-        var OUT = Signature.parse(signature).OUT;
-        if (OUT.length)
-            this.stack.pushType(OUT[0], result);
+        NATIVE.invokeNative(this, method, signature);
     } else {
         new Frame(method).run(this);
     }
