@@ -141,9 +141,8 @@ Frame.prototype.invoke = function(methodInfo) {
 
         default:
             var opName = OPCODES[op];
-            if (!(opName in this)) {
-                throw new Error(util.format("Opcode %s [%s] is not supported.", opName, op));
-            }
+            if (!(opName in this))
+                throw new Error("Opcode " + opName + " [" + op + "] not supported.");
             callee[opName]();
             break;
         }

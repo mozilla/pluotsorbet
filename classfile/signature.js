@@ -63,13 +63,11 @@ var _parse = function(part) {
 }
 
 var parse = function(s) {
-
     var IN = s.split(')')[0].substr(1);
     var OUT = s.split(')')[1];
 
     return {
         IN: _parse(IN),
-        OUT: _parse(OUT),
-        toString: new Function(util.format("return \"%s\"", s))
+        OUT: _parse(OUT)
     };
 };

@@ -92,7 +92,7 @@ Classes.prototype.getClass = function(caller, className) {
             caller.invoke(clinit);
         return classInfo;
     }
-    throw new Error(util.format("Implementation of the %s class is not found.", className));
+    throw new Error("Implementation of class '" + className + "' not found.");
 };
 
 Classes.prototype.getStaticField = function(caller, className, fieldName) {

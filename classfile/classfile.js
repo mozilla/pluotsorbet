@@ -151,7 +151,7 @@ var getClassImage = function(classBytes) {
                 classImage.constant_pool.push( {  tag: tag, class_index: class_index, name_and_type_index:name_and_type_index } );
                 break;
             default:
-                throw new Error(util.format("tag %s is not supported.", tag));
+                throw new Error("tag " + tag + " not supported.");
         }
     }
 
