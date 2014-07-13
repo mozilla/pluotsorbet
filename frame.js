@@ -3,20 +3,13 @@
 
 'use strict';
 
-var Frame = function(classData, method) {
+var Frame = function(classData, methodInfo) {
     if (this instanceof Frame) {
         this.cp = classData.getConstantPool();
         this.classData = classData;
-        this.method = method;
-        this.signature = Signature.parse(this.cp[method.signature_index].bytes);
-        for(var i=0; i<method.attributes.length; i++) {
-            if (method.attributes[i].info.type === ATTRIBUTE_TYPES.Code) {
-                this.code = Uint8Array(method.attributes[i].info.code);
-                this.exception_table = method.attributes[i].info.exception_table;
-                this.max_locals = method.attributes[i].info.max_locals;
-                break;
-            }
-        }
+        this.methodInfo = methodInfo;
+        this.signature = Signature.parse(this.cp[methodInfo.signature_index].bytes);
+        this.code = methodInfo.code;
     } else {
         return new Frame(classData, method);
     }
@@ -57,7 +50,7 @@ Frame.prototype.read32signed = function() {
 Frame.prototype.throw = function(ex) {
     var handler_pc = null;
 
-    for(var i=0; i<this.exception_table.length; i++) {
+    for (var i=0; i<this.exception_table.length; i++) {
         if (this.ip >= this.exception_table[i].start_pc && this.ip <= this.exception_table[i].end_pc) {
             if (this.exception_table[i].catch_type === 0) {
                 handler_pc = this.exception_table[i].handler_pc;
@@ -87,7 +80,7 @@ Frame.prototype.newException = function(className, message) {
 }
 
 Frame.prototype.run = function(stack) {
-    var isStatic = ACCESS_FLAGS.isStatic(this.method.access_flags);
+    var isStatic = ACCESS_FLAGS.isStatic(this.methodInfo.access_flags);
 
     var argc = 0;
     if (!isStatic) {
@@ -101,7 +94,7 @@ Frame.prototype.run = function(stack) {
             ++argc;
     }
 
-    var locals = stack.reserveLocals(argc, this.max_locals);
+    var locals = stack.reserveLocals(argc, this.methodInfo.max_locals);
     if (!isStatic && !locals.get(0)) {
         this.newException("java/lang/NullPointerException");
         return;
@@ -116,7 +109,7 @@ Frame.prototype.run = function(stack) {
 
     while (true) {
         var op = this.read8();
-        console.log(this.classData.getClassName(), this.cp[this.method.name_index].bytes,
+        console.log(this.classData.getClassName(), this.cp[this.methodInfo.name_index].bytes,
                     this.ip - 1, OPCODES[op], stack.array.length);
         switch (op) {
         case OPCODES.return:
@@ -128,13 +121,15 @@ Frame.prototype.run = function(stack) {
         case OPCODES.areturn:
             var result = stack.pop();
             stack.popLocals(locals);
-            return result;
+            stack.push(result);
+            return;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
             var result = stack.pop2();
             stack.popLocals(locals);
-            return result;
+            stack.push2(result);
+            return;
 
         default:
             var opName = OPCODES[op];
@@ -968,7 +963,6 @@ Frame.prototype.putstatic = function(stack, locals) {
 
 Frame.prototype.invoke = function(stack, method, signature) {
     var result;
-    var OUT;
     if (!(method instanceof Frame)) {
         signature = Signature.parse(signature);
         var args = stack.popArgs(signature.IN);
@@ -976,13 +970,12 @@ Frame.prototype.invoke = function(stack, method, signature) {
         if (!ACCESS_FLAGS.isStatic(method.access_flags))
             instance = stack.pop();
         result = method.apply(instance, args);
-        OUT = Signature.parse(signature).OUT;
+        var OUT = Signature.parse(signature).OUT;
+        if (OUT.length)
+            stack.pushType(OUT[0], result);
     } else {
-        result = method.run(stack);
-        OUT = method.signature.OUT;
+        method.run(stack);
     }
-    if (OUT.length)
-        stack.pushType(OUT[0], result);
 }
 
 Frame.prototype.invokestatic = function(stack, locals) {

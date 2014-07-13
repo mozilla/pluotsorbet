@@ -256,7 +256,6 @@ var getClassImage = function(classBytes) {
             access_flags: access_flags,
             name_index: name_index,
             signature_index: signature_index,
-            attributes_count: attributes_count,
             attributes: []
         }
         for(var j=0; j <attributes_count; j++) {
@@ -269,8 +268,12 @@ var getClassImage = function(classBytes) {
                 info: info
             }
             method_info.attributes.push(attribute);
+            if (info.type === ATTRIBUTE_TYPES.Code) {
+                method_info.code = Uint8Array(info.code);
+                method_info.exception_table = info.exception_table;
+                method_info.max_locals = info.max_locals;
+            }
         }
-
         classImage.methods.push(method_info);
     }
 
