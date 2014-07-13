@@ -6,7 +6,7 @@
 var getClassImage = function(classBytes) {
     var classImage = {};
 
-    var getAttribues = function(attribute_name_index, bytes) {
+    var getAttributes = function(attribute_name_index, bytes) {
         var reader = new Reader(bytes);
         var attribute = { attribute_name_index: attribute_name_index };
 
@@ -48,7 +48,7 @@ var getClassImage = function(classBytes) {
                             var attribute_name_index = reader.read16();
                             var attribute_length = reader.read32();
                             var info = reader.readBytes(attribute_length);
-                            attribute.attributes.push(new AttributeInfo(attribute_name_index, attribute_length, info));
+                            attribute.attributes.push({ attribute_name_index: attribute_name_index, info: info });
                         }
                         return attribute;
 
@@ -173,17 +173,13 @@ var getClassImage = function(classBytes) {
     classImage.fields = [];
     var fields_count = reader.read16();
     for(var i=0; i<fields_count; i++) {
-        var access_flags = reader.read16();
-        var name_index = reader.read16();
-        var descriptor_index = reader.read16();
+        var field_info = { access_flags: reader.read16(), name_index: reader.read16(), descriptor_index: reader.read16(), attributes: [] };
         var attributes_count = reader.read16();
-        var field_info = new FieldInfo(access_flags, name_index, descriptor_index);
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
-            var info = reader.read16();
-            var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
-            field_info.attributes.push(attribute);
+            var info = reader.readBytes(attribute_length);
+            field_info.attributes.push({ attribute_name_index: attribute_name_index, info: info });
         }
         classImage.fields.push(field_info);
     }
@@ -191,16 +187,12 @@ var getClassImage = function(classBytes) {
     classImage.methods = [];
     var methods_count = reader.read16();
     for(var i=0; i<methods_count; i++) {
-        var access_flags = reader.read16();
-        var name_index = reader.read16();
-        var signature_index = reader.read16();
+        var method_info = { access_flags: reader.read16(), name_index: reader.read16(), signature_index: reader.read16(), attributes: [] };
         var attributes_count = reader.read16();
-        var method_info = new MethodInfo(access_flags, name_index, signature_index);
-        method_info.signature = Signature.parse(classImage.constant_pool[signature_index].bytes);
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
-            var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));
+            var info = getAttributes(attribute_name_index, reader.readBytes(attribute_length));
             var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
             method_info.attributes.push(attribute);
             if (info.type === ATTRIBUTE_TYPES.Code) {
@@ -217,7 +209,7 @@ var getClassImage = function(classBytes) {
     for(var i=0; i<attributes_count; i++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
-            var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));
+            var info = getAttributes(attribute_name_index, reader.readBytes(attribute_length));
             var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
             classImage.attributes.push(attribute);
     }

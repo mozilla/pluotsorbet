@@ -16,6 +16,7 @@ var ClassInfo = function(classBytes) {
         var self = this;
         this.methods.forEach(function(m) {
             m.classInfo = self;
+            m.signature = Signature.parse(cp[m.signature_index].bytes);
         });
         this.classes = [];
         classImage.attributes.forEach(function(a) {
