@@ -92,7 +92,7 @@ Frame.prototype.throw = function(ex) {
     }
 }
 
-Frame.prototype.newException = function(className, message) {
+Frame.prototype.raiseException = function(className, message) {
     var ex = CLASSES.newObject(this, className);
     var ctor = CLASSES.getMethod(this, className, "<init>", "(Ljava/lang/String;)V");
     this.stack.push(ex);
@@ -126,7 +126,7 @@ Frame.prototype.invoke = function(methodInfo) {
     callee.localsBase = this.stack.length - argc;
 
     if (!isStatic && !callee.getLocal(0)) {
-        this.newException("java/lang/NullPointerException");
+        this.raiseException("java/lang/NullPointerException");
         return;
     }
 
@@ -303,11 +303,11 @@ Frame.prototype.lload_3 = Frame.prototype.dloat_3 = function() {
 
 Frame.prototype.checkArrayAccess = function(refArray, idx) {
     if (!refArray) {
-        this.newException("java/lang/NullPointerException");
+        this.raiseException("java/lang/NullPointerException");
         return false;
     }
     if (idx < 0 || idx >= refArray.length) {
-        this.newException("java/lang/ArrayIndexOutOfBoundsException", idx);
+        this.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
         return false;
     }
     return true;
@@ -524,7 +524,7 @@ Frame.prototype.idiv = function() {
     var val1 = this.stack.pop();
     var val2 = this.stack.pop();
     if (!val1) {
-        this.newException("java/lang/ArithmeticException", "/ by zero");
+        this.raiseException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
     this.stack.push((val2 === utils.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
@@ -534,7 +534,7 @@ Frame.prototype.ldiv = function() {
     var val1 = this.stack.pop2();
     var val2 = this.stack.pop2();
     if (!val1.isZero()) {
-        this.newException("java/lang/ArithmeticException", "/ by zero");
+        this.raiseException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
     this.stack.push2(val2.div(val1));
@@ -556,7 +556,7 @@ Frame.prototype.irem = function() {
     var val1 = this.stack.pop();
     var val2 = this.stack.pop();
     if (!val1) {
-        this.newException("java/lang/ArithmeticException", "/ by zero");
+        this.raiseException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
     this.stack.push(val2 % val1);
@@ -566,7 +566,7 @@ Frame.prototype.lrem = function() {
     var val1 = this.stack.pop2();
     var val2 = this.stack.pop2();
     if (val1.isZero()) {
-        this.newException("java/lang/ArithmeticException", "/ by zero");
+        this.raiseException("java/lang/ArithmeticException", "/ by zero");
         return;
     }
     this.stack.push2(val2.modulo(val1));
@@ -732,7 +732,7 @@ Frame.prototype.newarray = function() {
     var type = this.read8();
     var size = this.stack.pop();
     if (size < 0) {
-        this.newException("java/lang/NegativeSizeException");
+        this.raiseException("java/lang/NegativeSizeException");
         return;
     }
     this.stack.push(CLASSES.newArray(type, size));
@@ -743,7 +743,7 @@ Frame.prototype.anewarray = function() {
     var className = this.cp[this.cp[idx].name_index].bytes;
     var size = this.stack.pop();
     if (size < 0) {
-        this.newException("java/lang/NegativeSizeException");
+        this.raiseException("java/lang/NegativeSizeException");
         return;
     }
     this.stack.push(new Array(size));
@@ -945,7 +945,7 @@ Frame.prototype.putfield = function() {
     var val = this.stack.pop();
     var obj = this.stack.pop();
     if (!obj) {
-        this.newException("java/lang/NullPointerException");
+        this.raiseException("java/lang/NullPointerException");
         return;
     }
     obj[fieldName] = val;
@@ -957,7 +957,7 @@ Frame.prototype.getfield = function() {
     var fieldName = cp[nameAndType.name_index].bytes;
     var obj = this.stack.pop();
     if (!obj) {
-        this.newException("java/lang/NullPointerException");
+        this.raiseException("java/lang/NullPointerException");
         return;
     }
     var value = obj[fieldName];
@@ -1132,7 +1132,7 @@ Frame.prototype.wide = function() {
 Frame.prototype.monitorenter = function() {
     var obj = this.stack.pop();
     if (!obj) {
-        this.newException("java/lang/NullPointerException");
+        this.raiseException("java/lang/NullPointerException");
         return;
     }
     if (obj.hasOwnProperty("$lock$")) {
@@ -1147,7 +1147,7 @@ Frame.prototype.monitorenter = function() {
 Frame.prototype.monitorexit = function() {
     var obj = this.stack.pop();
     if (!obj) {
-        this.newException("java/lang/NullPointerException");
+        this.raiseException("java/lang/NullPointerException");
         return;
     }
     delete obj["$lock$"];

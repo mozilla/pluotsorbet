@@ -51,6 +51,10 @@ Native.prototype.getMethod = function (methodInfo) {
 }
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function (src, srcOffset, dst, dstOffset, length) {
+    if (!src || !dst) {
+        this.raiseException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+        return;
+    }
     console.log(src, srcOffset, dst, dstOffset, length);
     var srcProto = Object.getPrototypeOf(src);
     var dstProto = Object.getPrototypeOf(dst);
