@@ -87,7 +87,7 @@ Classes.prototype.initClass = function(caller, className) {
     if (!clinit)
         return;
     LOG.debug("call " + className + ".<clinit> ...");
-    new Frame(clinit).run(caller);
+    caller.invoke(clinit);
 }
 
 Classes.prototype.getClass = function(caller, className, initialize) {
@@ -121,9 +121,6 @@ Classes.prototype.getMethod = function(caller, className, methodName, signature,
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
             if (cp[methods[i].name_index].bytes === methodName) {
                 if (signature === cp[methods[i].signature_index].bytes) {
-                    if (ACCESS_FLAGS.isNative(methods[i].access_flags)) {
-                        return NATIVE.getMethod(className, methodName, signature);
-                    }
                     return methods[i];
                 }
             }

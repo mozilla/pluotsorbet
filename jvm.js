@@ -61,7 +61,5 @@ JVM.prototype.start = function() {
 
     var toplevel = new Frame();
     toplevel.stack.push(null); // args
-
-    var frame = new Frame(entryPoint);
-    frame.run(toplevel);
+    toplevel.invoke(entryPoint);
 }

@@ -272,6 +272,7 @@ var getClassImage = function(classBytes, classInfo) {
         var signature_index = reader.read16();
         var attributes_count = reader.read16();
         var method_info = new MethodInfo(classInfo, access_flags, name_index, signature_index);
+        method_info.signature = Signature.parse(classImage.constant_pool[signature_index].bytes);
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();

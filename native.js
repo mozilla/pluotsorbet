@@ -6,7 +6,7 @@
 var Native = function() {
 }
 
-Native.prototype.invokeNative = function(caller, native, signature) {
+Native.prototype.invokeNative = function(caller, methodInfo) {
     function pushType(type, value) {
         if (type === "long" || type === "double") {
             caller.stack.push2(value);
@@ -28,17 +28,24 @@ Native.prototype.invokeNative = function(caller, native, signature) {
         return args;
     }
 
-    signature = Signature.parse(signature);
+    var signature = methodInfo.signature;
     var args = popArgs(signature.IN);
     var instance = null;
-    if (!ACCESS_FLAGS.isStatic(method.access_flags))
+    if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags))
         instance = this.stack.pop();
-    result = native.apply(instance, args);
+    if (!methodInfo.native)
+        methodInfo.native = this.getMethod(methodInfo);
+    result = methodInfo.native.apply(instance, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0], result);
 }
 
-Native.prototype.getMethod = function (className, methodName, signature) {
+Native.prototype.getMethod = function (methodInfo) {
+    var classInfo = methodInfo.classInfo;
+    var cp = classInfo.getConstantPool();
+    var className = cp[classInfo.name_index];
+    var methodName = cp[methodInfo.name_index];
+    var signature = cp[methodInfo.signature_index];
     console.log("Native.getMethod", className, methodName, signature);
     return this[className + "." + methodName + "." + signature];
 }

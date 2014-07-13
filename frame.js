@@ -18,7 +18,12 @@ Array.prototype.top = function () {
 }
 
 var Frame = function(methodInfo) {
-    this.methodInfo = methodInfo;
+    if (methodInfo) {
+        this.methodInfo = methodInfo;
+        this.cp = methodInfo.classInfo.getConstantPool();
+        this.code = methodInfo.code;
+        this.ip = 0;
+    }
     this.stack = [];
 }
 
@@ -92,22 +97,24 @@ Frame.prototype.newException = function(className, message) {
     var ctor = CLASSES.getMethod(this, className, "<init>", "(Ljava/lang/String;)V");
     this.stack.push(ex);
     this.stack.push(message);
-    new Frame(ctor).run(this);
+    this.invoke(ctor);
     this.throw(ex);
 }
 
-Frame.prototype.run = function(caller) {
-    var methodInfo = this.methodInfo;
+Frame.prototype.invoke = function(methodInfo) {
+    if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
+        NATIVE.invokeNative(this, methodInfo);
+        return;
+    }
 
-    this.cp = methodInfo.classInfo.getConstantPool();
-    var signature = Signature.parse(this.cp[methodInfo.signature_index].bytes);
+    var callee = new Frame(methodInfo);
 
     var isStatic = ACCESS_FLAGS.isStatic(methodInfo.access_flags);
     var argc = 0;
     if (!isStatic) {
         ++argc;
     }
-    var IN = signature.IN;
+    var IN = methodInfo.signature.IN;
     for (var i=0; i<IN.length; i++) {
         var type = IN[i].type;
         ++argc;
@@ -115,42 +122,40 @@ Frame.prototype.run = function(caller) {
             ++argc;
     }
 
-    this.code = methodInfo.code;
-    this.ip = 0;
+    callee.locals = this.stack;
+    callee.localsBase = this.stack.length - argc;
 
-    this.locals = caller.stack;
-    this.localsBase = caller.stack.length - argc;
-
-    if (!isStatic && !this.getLocal(0)) {
+    if (!isStatic && !callee.getLocal(0)) {
         this.newException("java/lang/NullPointerException");
         return;
     }
 
     var args = "args: ";
     for (var i=0; i < argc; ++i)
-        args += this.getLocal(i) + " ";
+        args += callee.getLocal(i) + " ";
     console.log(args);
 
     while (true) {
-        var op = this.read8();
-        console.log(this.methodInfo.classInfo.getClassName(), this.cp[this.methodInfo.name_index].bytes,
-                    this.ip - 1, OPCODES[op], this.stack.length);
+        var op = callee.read8();
+        console.log(callee.methodInfo.classInfo.getClassName(),
+                    callee.cp[callee.methodInfo.name_index].bytes,
+                    callee.ip - 1, OPCODES[op], callee.stack.length);
         switch (op) {
         case OPCODES.return:
-            caller.stack.length -= argc;
+            this.stack.length -= argc;
             return;
 
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            caller.stack.length -= argc;
-            caller.stack.push(this.stack.pop());
+            this.stack.length -= argc;
+            this.stack.push(callee.stack.pop());
             return;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            caller.stack.length -= argc;
-            caller.stack.push2(this.stack.pop2());
+            this.stack.length -= argc;
+            this.stack.push2(callee.stack.pop2());
             return;
 
         default:
@@ -158,7 +163,7 @@ Frame.prototype.run = function(caller) {
             if (!(opName in this)) {
                 throw new Error(util.format("Opcode %s [%s] is not supported.", opName, op));
             }
-            this[opName]();
+            callee[opName]();
             break;
         }
     };
@@ -983,14 +988,6 @@ Frame.prototype.putstatic = function() {
     CLASSES.setStaticField(this, className, fieldName, this.stack.pop());
 }
 
-Frame.prototype.invoke = function(method, signature) {
-    if (!(method instanceof MethodInfo)) {
-        NATIVE.invokeNative(this, method, signature);
-        return;
-    }
-    new Frame(method).run(this);
-}
-
 Frame.prototype.invokestatic = function() {
     var idx = this.read16();
 
@@ -1000,7 +997,7 @@ Frame.prototype.invokestatic = function() {
 
     var method = CLASSES.getStaticMethod(this, className, methodName, signature);
 
-    this.invoke(method, signature);
+    this.invoke(method);
 }
 
 Frame.prototype.invokevirtual = function() {
@@ -1014,7 +1011,7 @@ Frame.prototype.invokevirtual = function() {
 
     var method = CLASSES.getMethod(this, className, methodName, signature);
 
-    this.invoke(method, signature);
+    this.invoke(method);
 }
 
 Frame.prototype.invokespecial = function() {
@@ -1028,7 +1025,7 @@ Frame.prototype.invokespecial = function() {
 
     var method = CLASSES.getMethod(this, className, methodName, signature);
 
-    this.invoke(method, signature);
+    this.invoke(method);
 }
 
 Frame.prototype.invokeinterface = function() {
@@ -1044,7 +1041,7 @@ Frame.prototype.invokeinterface = function() {
 
     var method = this.stack.top()[methodName];
 
-    this.invoke(method, signature);
+    this.invoke(method);
 }
 
 Frame.prototype.jsr = function() {
