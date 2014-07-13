@@ -41,7 +41,7 @@ Classes.prototype.loadFile = function(fileName) {
 
 Classes.prototype.loadClassBytes = function(bytes) {
     var classInfo = new ClassInfo(bytes);
-    this.classes[classInfo.getClassName()] = classInfo;
+    this.classes[classInfo.className] = classInfo;
     return classInfo;
 }
 
@@ -51,7 +51,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     if (!bytes)
         return null;
     var classInfo = this.loadClassBytes(bytes);
-    var classes = classInfo.getClasses();
+    var classes = classInfo.classes;
     for (var i=0; i<classes.length; i++) {
         if (!this.classes[classes[i]]) {
             this.loadClassFile(path.dirname(fileName) + path.sep + classes[i] + ".class");
@@ -64,10 +64,10 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
     for(var name in this.classes) {
         var classInfo = this.classes[name];
         if (classInfo instanceof ClassInfo) {
-            if (!className || (className === classInfo.getClassName())) {
-                if (ACCESS_FLAGS.isPublic(classInfo.getAccessFlags())) {
-                    var methods = classInfo.getMethods();
-                    var cp = classInfo.getConstantPool();
+            if (!className || (className === classInfo.className)) {
+                if (ACCESS_FLAGS.isPublic(classInfo.access_flags)) {
+                    var methods = classInfo.methods;
+                    var cp = classInfo.constant_pool;
                     for (var i=0; i<methods.length; i++) {
                         if (ACCESS_FLAGS.isPublic(methods[i].access_flags) &&
                             ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
@@ -116,8 +116,8 @@ Classes.prototype.getMethod = function(caller, className, methodName, signature,
     console.log(className, methodName, signature);
     // Only force initialization when accessing a static method.
     var classInfo = this.getClass(caller, className, staticFlag);
-    var methods = classInfo.getMethods();
-    var cp = classInfo.getConstantPool();
+    var methods = classInfo.methods;
+    var cp = classInfo.constant_pool;
     for (var i=0; i<methods.length; i++) {
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
             if (cp[methods[i].name_index].bytes === methodName) {
@@ -127,7 +127,7 @@ Classes.prototype.getMethod = function(caller, className, methodName, signature,
             }
         }
     }
-    return inheritFlag ? this.getMethod(caller, classInfo.getSuperClassName(), methodName, signature, staticFlag, inheritFlag) : null;
+    return inheritFlag ? this.getMethod(caller, classInfo.superClassName, methodName, signature, staticFlag, inheritFlag) : null;
 };
 
 Classes.prototype.getStaticMethod = function(caller, className, methodName, signature) {

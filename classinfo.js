@@ -5,50 +5,26 @@
 
 var ClassInfo = function(classBytes) {
     if (this instanceof ClassInfo) {
-        this.classImage = getClassImage(classBytes, this);
+        var classImage = getClassImage(classBytes, this);
+        var cp = classImage.constant_pool;
+        this.className = cp[cp[classImage.this_class].name_index].bytes;
+        this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
+        this.access_flags = classImage.access_flags;
+        this.constant_pool = cp;
+        this.fields = classImage.fields;
+        this.methods = classImage.methods;
+        this.classes = [];
+        classImage.attributes.forEach(function(a) {
+            if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
+                a.info.classes.forEach(function(c) {
+                    classes.push(cp[cp[c.inner_class_info_index].name_index].bytes);
+                    classes.push(cp[cp[c.outer_class_info_index].name_index].bytes);
+                });
+            }
+        });
     } else {
         return new ClassInfo(classBytes);
     }
-}
-
-ClassInfo.prototype.getClassName = function() {
-    return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.this_class].name_index].bytes;
-}
-
-ClassInfo.prototype.getSuperClassName = function() {
-    if (!this.classImage.super_class)
-        return null;
-    return this.classImage.constant_pool[this.classImage.constant_pool[this.classImage.super_class].name_index].bytes;
-}
-
-ClassInfo.prototype.getAccessFlags = function() {
-    return this.classImage.access_flags;
-}
-
-ClassInfo.prototype.getConstantPool = function() {
-    return this.classImage.constant_pool;
-}
-
-ClassInfo.prototype.getFields = function() {
-    return this.classImage.fields;
-}
-
-ClassInfo.prototype.getMethods = function() {
-    return this.classImage.methods;
-}
-
-ClassInfo.prototype.getClasses = function() {
-    var self = this;
-    var classes = [];
-    this.classImage.attributes.forEach(function(a) {
-        if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
-            a.info.classes.forEach(function(c) {
-                classes.push(self.classImage.constant_pool[self.classImage.constant_pool[c.inner_class_info_index].name_index].bytes);
-                classes.push(self.classImage.constant_pool[self.classImage.constant_pool[c.outer_class_info_index].name_index].bytes);
-            });
-        }
-    });
-    return classes;
 }
 
 var FieldInfo = function(classInfo, access_flags, name_index, descriptor_index) {

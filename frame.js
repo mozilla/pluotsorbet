@@ -20,7 +20,7 @@ Array.prototype.top = function () {
 var Frame = function(methodInfo) {
     if (methodInfo) {
         this.methodInfo = methodInfo;
-        this.cp = methodInfo.classInfo.getConstantPool();
+        this.cp = methodInfo.classInfo.constant_pool;
         this.code = methodInfo.code;
         this.ip = 0;
     }
@@ -76,7 +76,7 @@ Frame.prototype.throw = function(ex) {
                 handler_pc = this.exception_table[i].handler_pc;
             } else {
                 var name = this.cp[this.cp[this.exception_table[i].catch_type].name_index].bytes;
-                if (name === ex.getClassName()) {
+                if (name === ex.className) {
                     handler_pc = this.exception_table[i].handler_pc;
                     break;
                 }
@@ -137,7 +137,7 @@ Frame.prototype.invoke = function(methodInfo) {
 
     while (true) {
         var op = callee.read8();
-        console.log(callee.methodInfo.classInfo.getClassName(),
+        console.log(callee.methodInfo.classInfo.className,
                     callee.cp[callee.methodInfo.name_index].bytes,
                     callee.ip - 1, OPCODES[op], callee.stack.length);
         switch (op) {
@@ -1114,7 +1114,7 @@ Frame.prototype.instanceof = function() {
     var idx = this.read16();
     var className = this.cp[this.cp[idx].name_index].bytes;
     var obj = this.stack.pop();
-    this.stack.push(obj.class.getClassName() === className);
+    this.stack.push(obj.class.className === className);
 }
 
 Frame.prototype.checkcast = function() {

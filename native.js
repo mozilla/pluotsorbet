@@ -42,8 +42,8 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
 
 Native.prototype.getMethod = function (methodInfo) {
     var classInfo = methodInfo.classInfo;
-    var cp = classInfo.getConstantPool();
-    var className = classInfo.getClassName();
+    var cp = classInfo.constant_pool;
+    var className = classInfo.className;
     var methodName = cp[methodInfo.name_index].bytes;
     var signature = cp[methodInfo.signature_index].bytes;
     console.log("Native.getMethod", className, methodName, signature);
