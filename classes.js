@@ -112,7 +112,8 @@ Classes.prototype.setStaticField = function(caller, className, fieldName, value)
     this.getClass(caller, className, true).staticFields[fieldName] = value;
 }
 
-Classes.prototype.getMethod = function(caller, className, methodName, signature, staticFlag) {
+Classes.prototype.getMethod = function(caller, className, methodName, signature, staticFlag, inheritFlag) {
+    console.log(className, methodName, signature);
     // Only force initialization when accessing a static method.
     var classInfo = this.getClass(caller, className, staticFlag);
     var methods = classInfo.getMethods();
@@ -126,7 +127,7 @@ Classes.prototype.getMethod = function(caller, className, methodName, signature,
             }
         }
     }
-    return null;
+    return inheritFlag ? this.getMethod(caller, classInfo.getSuperClassName(), methodName, signature, staticFlag, inheritFlag) : null;
 };
 
 Classes.prototype.getStaticMethod = function(caller, className, methodName, signature) {

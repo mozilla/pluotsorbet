@@ -35,7 +35,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
     var args = popArgs(signature.IN);
     if (!methodInfo.native)
         methodInfo.native = this.getMethod(methodInfo);
-    result = methodInfo.native.apply(caller, args);
+    var result = methodInfo.native.apply(caller, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0], result);
 }
@@ -51,13 +51,38 @@ Native.prototype.getMethod = function (methodInfo) {
 }
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function (src, srcOffset, dst, dstOffset, length) {
+    console.log(src, srcOffset, dst, dstOffset, length);
     if (!src || !dst) {
         this.raiseException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
         return;
     }
-    console.log(src, srcOffset, dst, dstOffset, length);
-    var srcProto = Object.getPrototypeOf(src);
-    var dstProto = Object.getPrototypeOf(dst);
-    if (srcProto === dstProto) {
+    var proto = Object.getPrototypeOf(src);
+    if (proto !== Int8Array.prototype && proto !== Int16Array.prototype && proto !== Int32Array.prototype &&
+        proto !== Uint16Array.prototype && proto !== Float32Array.prototype && proto !== Float64Array.prototype &&
+        proto !== Array.prototype) {
+        this.raiseException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
+        return;
+    }
+    if (proto !== Object.getPrototypeOf(dst)) {
+        this.raiseException("java/lang/ArrayStoreException", "Incompatible component types.");
+        return;
+    }
+    if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
+        this.raiseException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
+        return;
+    }
+    if (proto === Array.prototype) {
+        // TODO: check casting
+        this.raiseException("java/lang/ArrayStoreException", "Invalid element type.");
+        return;
+    }
+    if (dst !== src || dstOffset < srcOffset) {
+        for (var n = 0; n < length; ++n)
+            dst[dstOffset++] = src[srcOffset++];
+    } else {
+        dstOffset += length;
+        srcOffset += length;
+        for (var n = 0; n < length; ++n)
+            dst[--dstOffset] = src[--srcOffset];
     }
 }

@@ -94,7 +94,7 @@ Frame.prototype.throw = function(ex) {
 
 Frame.prototype.raiseException = function(className, message) {
     var ex = CLASSES.newObject(this, className);
-    var ctor = CLASSES.getMethod(this, className, "<init>", "(Ljava/lang/String;)V");
+    var ctor = CLASSES.getMethod(this, className, "<init>", "(Ljava/lang/String;)V", false);
     this.stack.push(ex);
     this.stack.push(message);
     this.invoke(ctor);
@@ -995,7 +995,7 @@ Frame.prototype.invokestatic = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getStaticMethod(this, className, methodName, signature);
+    var method = CLASSES.getMethod(this, className, methodName, signature, true);
 
     this.invoke(method);
 }
@@ -1009,7 +1009,7 @@ Frame.prototype.invokevirtual = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getMethod(this, className, methodName, signature);
+    var method = CLASSES.getMethod(this, className, methodName, signature, false, true);
 
     this.invoke(method);
 }
@@ -1023,7 +1023,7 @@ Frame.prototype.invokespecial = function() {
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getMethod(this, className, methodName, signature);
+    var method = CLASSES.getMethod(this, className, methodName, signature, false);
 
     this.invoke(method);
 }
