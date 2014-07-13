@@ -51,7 +51,7 @@ JVM.prototype.loadJarFile = function(fileName) {
     return CLASSES.loadJarFile(fileName);
 }
 
-JVM.prototype.run = function() {
+JVM.prototype.start = function() {
     var self = this;
 
     var entryPoint = CLASSES.getEntryPoint(this.entryPoint.className, this.entryPoint.methodName);
@@ -59,7 +59,9 @@ JVM.prototype.run = function() {
         throw new Error("Entry point method is not found.");
     }
 
-    var stack = THREADS.current.stack;
-    stack.push(null); // args
-    new Frame(entryPoint).run(stack);
+    var toplevel = new Frame();
+    toplevel.stack.push(null); // args
+
+    var frame = new Frame(entryPoint);
+    frame.run(toplevel);
 }

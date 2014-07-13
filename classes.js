@@ -87,7 +87,7 @@ Classes.prototype.initClass = function(className) {
     if (!clinit)
         return;
     LOG.debug("call " + className + ".<clinit> ...");
-    new Frame(clinit).run(THREADS.current.stack);
+    new Frame(clinit).run(THREADS.current.frame);
 }
 
 Classes.prototype.getClass = function(className, initialize) {

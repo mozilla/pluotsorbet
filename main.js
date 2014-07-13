@@ -21,6 +21,6 @@ load("java/cldc1.1.1.jar", function (data) {
   load("tests/TestPrintln.class", function (data) {
     jvm.addPath("TestPrintln.class", data);
     jvm.loadClassFile("TestPrintln.class");
-    jvm.run();
+    jvm.start();
   });
 });
