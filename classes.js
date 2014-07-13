@@ -81,40 +81,32 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
     }
 }
 
-Classes.prototype.initClass = function(caller, className) {
-    var clinit = this.getMethod(caller, className, "<clinit>", "()V", true);
-    if (!clinit)
-        return;
-    LOG.debug("call " + className + ".<clinit> ...");
-    caller.invoke(clinit);
-}
-
-Classes.prototype.getClass = function(caller, className, initialize) {
+Classes.prototype.getClass = function(caller, className) {
     var classInfo = this.classes[className];
     if (classInfo)
         return classInfo;
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
-        if (initialize) {
-            classInfo.staticFields = {};
-            this.initClass(caller, className);
-        }
+        classInfo.staticFields = {};
+        var clinit = this.getMethod(caller, className, "<clinit>", "()V", true);
+        if (clinit)
+            caller.invoke(clinit);
         return classInfo;
     }
     throw new Error(util.format("Implementation of the %s class is not found.", className));
 };
 
 Classes.prototype.getStaticField = function(caller, className, fieldName) {
-    return this.getClass(caller, className, true).staticFields[fieldName];
+    return this.getClass(caller, className).staticFields[fieldName];
 }
 
 Classes.prototype.setStaticField = function(caller, className, fieldName, value) {
-    this.getClass(caller, className, true).staticFields[fieldName] = value;
+    this.getClass(caller, className).staticFields[fieldName] = value;
 }
 
 Classes.prototype.getMethod = function(caller, className, methodName, signature, staticFlag) {
     console.log(className, methodName, signature);
     // Only force initialization when accessing a static method.
-    var classInfo = this.getClass(caller, className, staticFlag);
+    var classInfo = this.getClass(caller, className);
     var methods = classInfo.methods;
     for (var i=0; i<methods.length; i++) {
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
@@ -127,8 +119,7 @@ Classes.prototype.getMethod = function(caller, className, methodName, signature,
 };
 
 Classes.prototype.newObject = function(caller, className) {
-    // Force initialization of the class (if not already done).
-    return { class: this.getClass(caller, className, true) };
+    return { class: this.getClass(caller, className) };
 }
 
 Classes.prototype.newArray = function(type, size) {
