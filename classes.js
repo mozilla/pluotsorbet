@@ -85,6 +85,8 @@ Classes.prototype.getClass = function(caller, className) {
     var classInfo = this.classes[className];
     if (classInfo)
         return classInfo;
+    if (className[0] === "[")
+        return this.getArrayClass(caller, className);
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
         classInfo.staticFields = {};
         var clinit = this.getMethod(caller, className, "<clinit>", "()V", true);
@@ -94,6 +96,24 @@ Classes.prototype.getClass = function(caller, className) {
     }
     throw new Error("Implementation of class '" + className + "' not found.");
 };
+
+Classes.prototype.getArrayClass = function(caller, typeName) {
+    var elementType = typeName.substr(1);
+    switch (elementType) {
+    case 'Z': return this.initPrimitiveArrayType(typeName, Uint8Array);
+    case 'C': return this.initPrimitiveArrayType(typeName, Uint16Array);
+    case 'B': return this.initPrimitiveArrayType(typeName, Int8Array);
+    case 'S': return this.initPrimitiveArrayType(typeName, Int16Array);
+    case 'I': return this.initPrimitiveArrayType(typeName, Int32Array);
+    case 'F': return this.initPrimitiveArrayType(typeName, Float32Array);
+    case 'D': return this.initPrimitiveArrayType(typeName, Float64Array);
+    }
+    return this.createArrayClass(elementType);
+}
+
+Classes.prototype.createArrayClass = function(elementType) {
+    return { className: "[" + elementType, superClassName: "java/lang/Object", access_flags: 0, elementType: elementType };
+}
 
 Classes.prototype.getStaticField = function(caller, className, fieldName) {
     return this.getClass(caller, className).staticFields[fieldName];

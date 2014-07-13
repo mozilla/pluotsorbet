@@ -80,6 +80,3 @@ var ClassInfo = function(classBytes) {
         }
     });
 }
-
-var ArrayClassInfo = function(elementType) {
-}
