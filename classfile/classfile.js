@@ -193,13 +193,7 @@ var getClassImage = function(classBytes) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
             var info = getAttributes(attribute_name_index, reader.readBytes(attribute_length));
-            var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
-            method_info.attributes.push(attribute);
-            if (info.type === ATTRIBUTE_TYPES.Code) {
-                method_info.code = Uint8Array(info.code);
-                method_info.exception_table = info.exception_table;
-                method_info.max_locals = info.max_locals;
-            }
+            method_info.attributes.push({ attribute_name_index: attribute_name_index, info: info });
         }
         classImage.methods.push(method_info);
     }
@@ -210,8 +204,7 @@ var getClassImage = function(classBytes) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
             var info = getAttributes(attribute_name_index, reader.readBytes(attribute_length));
-            var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
-            classImage.attributes.push(attribute);
+            classImage.attributes.push({ attribute_name_index: attribute_name_index, info: info });
     }
 
     return classImage;

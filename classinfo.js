@@ -11,13 +11,40 @@ var ClassInfo = function(classBytes) {
         this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
         this.access_flags = classImage.access_flags;
         this.constant_pool = cp;
-        this.fields = classImage.fields;
-        this.methods = classImage.methods;
+
         var self = this;
-        this.methods.forEach(function(m) {
-            m.classInfo = self;
-            m.signature = Signature.parse(cp[m.signature_index].bytes);
+
+        this.fields = [];
+        classImage.fields.forEach(function(f) {
+            self.fields.push({
+                access_flags: f.access_flags,
+                name: cp[f.name_index].bytes,
+                descriptor: cp[f.descriptor_index].bytes,
+                attributes: f.attributes
+            });
         });
+
+        this.methods = [];
+        classImage.methods.forEach(function(m) {
+            var method = {};
+            method.classInfo = self;
+            method.access_flags = m.access_flags;
+            method.name = cp[m.name_index].bytes;
+            method.signature = cp[m.signature_index].bytes;
+            method.attributes = m.attributes;
+            var s = Signature.parse(method.signature);
+            method.IN = s.IN;
+            method.OUT = s.OUT;
+            method.attributes.forEach(function(a) {
+                if (a.info.type === ATTRIBUTE_TYPES.Code) {
+                    method.code = Uint8Array(a.info.code);
+                    method.exception_table = a.info.exception_table;
+                    method.max_locals = a.info.max_locals;
+                }
+            });
+            self.methods.push(method);
+        });
+
         this.classes = [];
         classImage.attributes.forEach(function(a) {
             if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
@@ -30,31 +57,4 @@ var ClassInfo = function(classBytes) {
     } else {
         return new ClassInfo(classBytes);
     }
-}
-
-var FieldInfo = function(access_flags, name_index, descriptor_index) {
-    this.access_flags = access_flags;
-    this.name_index = name_index;
-    this.descriptor_index = descriptor_index;
-    this.attributes = [];
-}
-
-var MethodInfo = function(access_flags, name_index, signature_index) {
-    this.access_flags = access_flags;
-    this.name_index = name_index;
-    this.signature_index = signature_index;
-    this.attributes = [];
-}
-
-var AttributeInfo = function(attribute_name_index, attribute_length, info) {
-    this.attribute_name_index = attribute_name_index;
-    this.attribute_length = attribute_length;
-    this.info = info;
-}
-
-var ExceptionInfo = function(start_pc, end_pc, handler_pc, catch_type) {
-    this.start_pc = start_pc;
-    this.end_pc = end_pc;
-    this.handler_pc = handler_pc;
-    this.catch_type = catch_type;
 }

@@ -114,7 +114,7 @@ Frame.prototype.invoke = function(methodInfo) {
     if (!isStatic) {
         ++argc;
     }
-    var IN = methodInfo.signature.IN;
+    var IN = methodInfo.IN;
     for (var i=0; i<IN.length; i++) {
         var type = IN[i].type;
         ++argc;
@@ -137,9 +137,7 @@ Frame.prototype.invoke = function(methodInfo) {
 
     while (true) {
         var op = callee.read8();
-        console.log(callee.methodInfo.classInfo.className,
-                    callee.cp[callee.methodInfo.name_index].bytes,
-                    callee.ip - 1, OPCODES[op], callee.stack.length);
+        console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.length);
         switch (op) {
         case OPCODES.return:
             this.stack.length -= argc;

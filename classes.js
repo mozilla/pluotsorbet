@@ -67,12 +67,11 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
             if (!className || (className === classInfo.className)) {
                 if (ACCESS_FLAGS.isPublic(classInfo.access_flags)) {
                     var methods = classInfo.methods;
-                    var cp = classInfo.constant_pool;
                     for (var i=0; i<methods.length; i++) {
                         if (ACCESS_FLAGS.isPublic(methods[i].access_flags) &&
                             ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
                             !ACCESS_FLAGS.isNative(methods[i].access_flags) &&
-                            cp[methods[i].name_index].bytes === methodName) {
+                            methods[i].name === methodName) {
                             return methods[i];
                         }
                     }
@@ -117,11 +116,10 @@ Classes.prototype.getMethod = function(caller, className, methodName, signature,
     // Only force initialization when accessing a static method.
     var classInfo = this.getClass(caller, className, staticFlag);
     var methods = classInfo.methods;
-    var cp = classInfo.constant_pool;
     for (var i=0; i<methods.length; i++) {
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
-            if (cp[methods[i].name_index].bytes === methodName) {
-                if (signature === cp[methods[i].signature_index].bytes) {
+            if (methods[i].name === methodName) {
+                if (signature === methods[i].signature) {
                     return methods[i];
                 }
             }

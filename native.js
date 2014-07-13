@@ -31,21 +31,19 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
         return args;
     }
 
-    var signature = methodInfo.signature;
-    var args = popArgs(signature.IN);
+    var args = popArgs(methodInfo.IN);
     if (!methodInfo.native)
         methodInfo.native = this.getMethod(methodInfo);
     var result = methodInfo.native.apply(caller, args);
-    if (signature.OUT.length)
-        pushType(signature.OUT[0], result);
+    if (methodInfo.OUT.length)
+        pushType(methodInfo.OUT[0], result);
 }
 
 Native.prototype.getMethod = function (methodInfo) {
     var classInfo = methodInfo.classInfo;
-    var cp = classInfo.constant_pool;
     var className = classInfo.className;
-    var methodName = cp[methodInfo.name_index].bytes;
-    var signature = cp[methodInfo.signature_index].bytes;
+    var methodName = methodInfo.name;
+    var signature = methodInfo.signature;
     console.log("Native.getMethod", className, methodName, signature);
     return this[className + "." + methodName + "." + signature];
 }
