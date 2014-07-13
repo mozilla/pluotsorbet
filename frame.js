@@ -984,12 +984,11 @@ Frame.prototype.putstatic = function() {
 }
 
 Frame.prototype.invoke = function(method, signature) {
-    var result;
     if (!(method instanceof MethodInfo)) {
         NATIVE.invokeNative(this, method, signature);
-    } else {
-        new Frame(method).run(this);
+        return;
     }
+    new Frame(method).run(this);
 }
 
 Frame.prototype.invokestatic = function() {
