@@ -61,5 +61,5 @@ JVM.prototype.run = function() {
 
     var stack = THREADS.current.stack;
     stack.push(null); // args
-    entryPoint.run(stack);
+    new Frame(entryPoint).run(stack);
 }

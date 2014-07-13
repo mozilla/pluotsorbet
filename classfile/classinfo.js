@@ -5,7 +5,7 @@
 
 var ClassInfo = function(classBytes) {
     if (this instanceof ClassInfo) {
-        this.classImage = getClassImage(classBytes);
+        this.classImage = getClassImage(classBytes, this);
     } else {
         return new ClassInfo(classBytes);
     }
@@ -51,7 +51,36 @@ ClassInfo.prototype.getClasses = function() {
     return classes;
 }
 
-var getClassImage = function(classBytes) {
+var FieldInfo = function(classInfo, access_flags, name_index, descriptor_index) {
+    this.classInfo = classInfo;
+    this.access_flags = access_flags;
+    this.name_index = name_index;
+    this.descriptor_index = descriptor_index;
+    this.attributes = [];
+}
+
+var MethodInfo = function(classInfo, access_flags, name_index, signature_index) {
+    this.classInfo = classInfo;
+    this.access_flags = access_flags;
+    this.name_index = name_index;
+    this.signature_index = signature_index;
+    this.attributes = [];
+}
+
+var AttributeInfo = function(attribute_name_index, attribute_length, info) {
+    this.attribute_name_index = attribute_name_index;
+    this.attribute_length = attribute_length;
+    this.info = info;
+}
+
+var ExceptionInfo = function(start_pc, end_pc, handler_pc, catch_type) {
+    this.start_pc = start_pc;
+    this.end_pc = end_pc;
+    this.handler_pc = handler_pc;
+    this.catch_type = catch_type;
+}
+
+var getClassImage = function(classBytes, classInfo) {
     var classImage = {};
 
     var getAttribues = function(attribute_name_index, bytes) {
@@ -67,7 +96,7 @@ var getClassImage = function(classBytes) {
             case TAGS.CONSTANT_Integer:
             case TAGS.CONSTANT_String:
                 attribute.type = ATTRIBUTE_TYPES.ConstantValue;
-                attribute.constantvalue_index = reader.read16();
+                attribute.info = reader.read16();
                 return attribute;
 
             case TAGS.CONSTANT_Utf8:
@@ -86,7 +115,7 @@ var getClassImage = function(classBytes) {
                             var end_pc = reader.read16();
                             var handler_pc= reader.read16();
                             var catch_type = reader.read16();
-                            attribute.exception_table.push({start_pc:start_pc,end_pc:end_pc,handler_pc:handler_pc,catch_type:catch_type });
+                            attribute.exception_table.push(new ExceptionInfo(start_pc, end_pc, handler_pc, catch_type));
                         }
 
                         var attributes_count = reader.read16();
@@ -95,7 +124,7 @@ var getClassImage = function(classBytes) {
                             var attribute_name_index = reader.read16();
                             var attribute_length = reader.read32();
                             var info = reader.readBytes(attribute_length);
-                            attribute.attributes.push({ attribute_name_index: attribute_name_index, attribute_length: attribute_length, info: info });
+                            attribute.attributes.push(new AttributeInfo(attribute_name_index, attribute_length, info));
                         }
                         return attribute;
 
@@ -224,22 +253,12 @@ var getClassImage = function(classBytes) {
         var name_index = reader.read16();
         var descriptor_index = reader.read16();
         var attributes_count = reader.read16();
-        var field_info = {
-            access_flags: access_flags,
-            name_index: name_index,
-            descriptor_index: descriptor_index,
-            attributes_count: attributes_count,
-            attributes: []
-        }
+        var field_info = new FieldInfo(access_flags, name_index, descriptor_index);
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
-            var constantvalue_index = reader.read16();
-            var attribute = {
-                attribute_name_index: attribute_name_index,
-                attribute_length: attribute_length,
-                constantvalue_index: constantvalue_index
-            }
+            var info = reader.read16();
+            var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
             field_info.attributes.push(attribute);
         }
         classImage.fields.push(field_info);
@@ -252,21 +271,12 @@ var getClassImage = function(classBytes) {
         var name_index = reader.read16();
         var signature_index = reader.read16();
         var attributes_count = reader.read16();
-        var method_info  = {
-            access_flags: access_flags,
-            name_index: name_index,
-            signature_index: signature_index,
-            attributes: []
-        }
+        var method_info = new MethodInfo(classInfo, access_flags, name_index, signature_index);
         for(var j=0; j <attributes_count; j++) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
             var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));
-            var attribute = {
-                attribute_name_index: attribute_name_index,
-                attribute_length: attribute_length,
-                info: info
-            }
+            var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
             method_info.attributes.push(attribute);
             if (info.type === ATTRIBUTE_TYPES.Code) {
                 method_info.code = Uint8Array(info.code);
@@ -283,11 +293,7 @@ var getClassImage = function(classBytes) {
             var attribute_name_index = reader.read16();
             var attribute_length = reader.read32();
             var info = getAttribues(attribute_name_index, reader.readBytes(attribute_length));
-            var attribute = {
-                attribute_name_index: attribute_name_index,
-                attribute_length: attribute_length,
-                info: info
-            }
+            var attribute = new AttributeInfo(attribute_name_index, attribute_length, info);
             classImage.attributes.push(attribute);
     }
 

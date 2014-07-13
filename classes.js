@@ -73,7 +73,7 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
                             ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
                             !ACCESS_FLAGS.isNative(methods[i].access_flags) &&
                             cp[methods[i].name_index].bytes === methodName) {
-                            return new Frame(classInfo, methods[i]);
+                            return methods[i];
                         }
                     }
                 }
@@ -87,7 +87,7 @@ Classes.prototype.initClass = function(className) {
     if (!clinit)
         return;
     LOG.debug("call " + className + ".<clinit> ...");
-    clinit.run(THREADS.current.stack);
+    new Frame(clinit).run(THREADS.current.stack);
 }
 
 Classes.prototype.getClass = function(className, initialize) {
@@ -124,7 +124,7 @@ Classes.prototype.getMethod = function(className, methodName, signature, staticF
                     if (ACCESS_FLAGS.isNative(methods[i].access_flags)) {
                         return NATIVE.getMethod(className, methodName, signature);
                     }
-                    return new Frame(classInfo, methods[i]);
+                    return methods[i];
                 }
             }
         }

@@ -3,15 +3,15 @@
 
 'use strict';
 
-var Frame = function(classData, methodInfo) {
+var Frame = function(methodInfo) {
     if (this instanceof Frame) {
-        this.cp = classData.getConstantPool();
-        this.classData = classData;
         this.methodInfo = methodInfo;
+        this.classInfo = methodInfo.classInfo;
+        this.cp = this.classInfo.getConstantPool();
         this.signature = Signature.parse(this.cp[methodInfo.signature_index].bytes);
         this.code = methodInfo.code;
     } else {
-        return new Frame(classData, method);
+        return new Frame(methodInfo);
     }
 }
 
@@ -108,7 +108,7 @@ Frame.prototype.run = function(stack) {
 
     while (true) {
         var op = this.read8();
-        console.log(this.classData.getClassName(), this.cp[this.methodInfo.name_index].bytes,
+        console.log(this.classInfo.getClassName(), this.cp[this.methodInfo.name_index].bytes,
                     this.ip - 1, OPCODES[op], stack.array.length);
         switch (op) {
         case OPCODES.return:
@@ -962,7 +962,7 @@ Frame.prototype.putstatic = function(stack, locals) {
 
 Frame.prototype.invoke = function(stack, method, signature) {
     var result;
-    if (!(method instanceof Frame)) {
+    if (!(method instanceof MethodInfo)) {
         signature = Signature.parse(signature);
         var args = stack.popArgs(signature.IN);
         var instance = null;
@@ -973,7 +973,7 @@ Frame.prototype.invoke = function(stack, method, signature) {
         if (OUT.length)
             stack.pushType(OUT[0], result);
     } else {
-        method.run(stack);
+        new Frame(method).run(stack);
     }
 }
 
