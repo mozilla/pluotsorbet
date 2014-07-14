@@ -982,9 +982,10 @@ Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.i
         var zero = this.read8();
     }
 
-    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
-    var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
+    var cp = this.cp;
+    var className = cp[cp[cp[idx].class_index].name_index].bytes;
+    var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
+    var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
 
     var method = CLASSES.getMethod(this, className, methodName, signature, op === OPCODES.invokestatic);
 
