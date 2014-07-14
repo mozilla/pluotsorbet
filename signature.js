@@ -30,18 +30,21 @@ Signature.TYPE = {
 Signature.parse = (function () {
     function _parse(part) {
         var res = [];
+        var slots = 0;
         if (part != '') {
             var isArray = false;
             var pos = 0;
             while (pos < part.length) {
                 switch(part[pos]) {
+                    case TYPE.long:
+                    case TYPE.double:
+                        ++slots;
+                        // fall through
                     case TYPE.boolean:
                     case TYPE.byte:
                     case TYPE.char:
-                    case TYPE.double:
                     case TYPE.float:
                     case TYPE.int:
-                    case TYPE.long:
                     case TYPE.short:
                         res.push({ type: TYPE.toString(part[pos]), isArray: isArray });
                         isArray = false;
@@ -61,6 +64,8 @@ Signature.parse = (function () {
                 pos++;
             }
         }
+        slots += res.length;
+        res.slots = slots;
         return res;
     }
 
