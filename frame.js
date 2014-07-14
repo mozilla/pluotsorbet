@@ -111,7 +111,9 @@ Frame.prototype.invoke = function(methodInfo) {
         return;
     }
 
-    var consumes = methodInfo.meta().consumes;
+    var consumes = Signature.parse(methodInfo.signature).IN.slots;
+    if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags))
+        ++consumes;
 
     var callee = new Frame(methodInfo);
     callee.locals = this.stack;
