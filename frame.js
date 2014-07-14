@@ -36,7 +36,7 @@ Frame.prototype.setLocal = function(idx, value) {
 }
 
 Frame.prototype.isWide = function() {
-    return this.code[this.ip - 2] == OPCODES.wide;
+    return this.code[this.ip - 2] === OPCODES.wide;
 }
 
 Frame.prototype.u16_to_s16 = function(x) {
