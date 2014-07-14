@@ -39,6 +39,10 @@ Frame.prototype.isWide = function() {
     return this.code[this.ip - 2] === OPCODES.wide;
 }
 
+Frame.prototype.getOp = function() {
+    return this.code[this.ip - 1];
+}
+
 Frame.prototype.u16_to_s16 = function(x) {
     return (x > 0x7fff) ? (x - 0x10000) : x;
 }
@@ -968,52 +972,21 @@ Frame.prototype.putstatic = function() {
     CLASSES.setStaticField(this, className, fieldName, this.stack.pop());
 }
 
-Frame.prototype.invokestatic = function() {
+Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.invokespecial = Frame.prototype.invokeinterface = function() {
+    var op = this.getOp();
+
     var idx = this.read16();
+
+    if (op === OPCODES.invokeinterface) {
+        var argsNumber = this.read8();
+        var zero = this.read8();
+    }
 
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
     var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
     var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getMethod(this, className, methodName, signature, true);
-
-    this.invoke(method);
-}
-
-Frame.prototype.invokevirtual = function() {
-    var idx = this.read16();
-
-    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
-    var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
-
-    var method = CLASSES.getMethod(this, className, methodName, signature, false);
-
-    this.invoke(method);
-}
-
-Frame.prototype.invokespecial = function() {
-    var idx = this.read16();
-
-    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
-    var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
-
-    var method = CLASSES.getMethod(this, className, methodName, signature, false);
-
-    this.invoke(method);
-}
-
-Frame.prototype.invokeinterface = function() {
-    var idx = this.read16();
-    var argsNumber = this.read8();
-    var zero = this.read8();
-
-    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
-    var methodName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var signature = this.cp[this.cp[this.cp[idx].name_and_type_index].signature_index].bytes;
-
-    var method = this.stack.top()[methodName];
+    var method = CLASSES.getMethod(this, className, methodName, signature, op === OPCODES.invokestatic);
 
     this.invoke(method);
 }
