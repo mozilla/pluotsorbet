@@ -3,13 +3,24 @@
 
 'use strict';
 
-var ARRAY_TYPE = {
-    T_BOOLEAN: 4,
-    T_CHAR: 5,
-    T_FLOAT: 6,
-    T_DOUBLE: 7,
-    T_BYTE: 8,
-    T_SHORT: 9,
-    T_INT: 10,
-    T_LONG: 11
+function LongArray(size) {
+    var array = Array(size);
+    // We can pass 'null' here because we know no exception will be raised.
+    array.class = CLASSES.getClass(null, "[J");
+    return array;
 }
+
+var ARRAY_TYPE = [
+    null, // 0
+    null, // 1
+    null, // 2
+    null, // 3
+    Uint8Array, // 4
+    Uint16Array, // 5
+    Float32Array, // 6
+    Float64Array, // 7
+    Int8Array, // 8
+    Int16Array, // 9
+    Int32Array, // 10
+    LongArray, // 11
+];

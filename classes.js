@@ -99,15 +99,8 @@ Classes.prototype.getClass = function(caller, className) {
 
 Classes.prototype.getArrayClass = function(caller, typeName) {
     var elementType = typeName.substr(1);
-    switch (elementType) {
-    case 'Z': return this.initPrimitiveArrayType(elementType, Uint8Array);
-    case 'C': return this.initPrimitiveArrayType(elementType, Uint16Array);
-    case 'B': return this.initPrimitiveArrayType(elementType, Int8Array);
-    case 'S': return this.initPrimitiveArrayType(elementType, Int16Array);
-    case 'I': return this.initPrimitiveArrayType(elementType, Int32Array);
-    case 'F': return this.initPrimitiveArrayType(elementType, Float32Array);
-    case 'D': return this.initPrimitiveArrayType(elementType, Float64Array);
-    }
+    if (elementType in ARRAY_TYPE)
+        return this.initPrimitiveArrayType(elementType, ARRAY_TYPE[elementType]);
     var classInfo = new ArrayClass(elementType);
     classInfo.constructor = function (size) {
         var array = new Array(size);
@@ -151,23 +144,14 @@ Classes.prototype.newObject = function(caller, className) {
     return { class: this.getClass(caller, className) };
 }
 
-Classes.prototype.newArray = function(type, size) {
-    switch (type) {
-    case ARRAY_TYPE.T_BOOLEAN: return new Uint8Array(size);
-    case ARRAY_TYPE.T_CHAR: return new Uint16Array(size);
-    case ARRAY_TYPE.T_FLOAT: return new Float32Array(size);
-    case ARRAY_TYPE.T_DOUBLE: return new Float64Array(size);
-    case ARRAY_TYPE.T_BYTE: return new Int8Array(size);
-    case ARRAY_TYPE.T_SHORT: return new Int16Array(size);
-    case ARRAY_TYPE.T_INT: return new Int32Array(size);
-    case ARRAY_TYPE.T_LONG: return new Int64Array(size);
-    }
+Classes.prototype.newArray = function(caller, constructor, size) {
+    return constructor.call(null, size);
 }
 
 Classes.prototype.newString = function(caller, s) {
     var obj = this.newObject(caller, "java/lang/String");
     var length = s.length;
-    var chars = this.newArray(ARRAY_TYPE.T_CHAR, length);
+    var chars = this.newArray(caller, Uint16Array, length);
     for (var n = 0; n < length; ++n)
         chars[n] = s.charCodeAt(n);
     obj.value = chars;

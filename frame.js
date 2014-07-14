@@ -715,7 +715,7 @@ Frame.prototype.newarray = function() {
         this.raiseException("java/lang/NegativeSizeException");
         return;
     }
-    this.stack.push(CLASSES.newArray(type, size));
+    this.stack.push(CLASSES.newArray(this, ARRAY_TYPE[type], size));
 }
 
 Frame.prototype.anewarray = function() {
