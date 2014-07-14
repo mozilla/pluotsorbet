@@ -92,6 +92,9 @@ Classes.prototype.getClass = function(caller, className) {
         var clinit = this.getMethod(caller, className, "<clinit>", "()V", true);
         if (clinit)
             caller.invoke(clinit);
+        classInfo.constructor = function () {
+        }
+        classInfo.constructor.prototype.class = classInfo;
         return classInfo;
     }
     throw new Error("Implementation of class '" + className + "' not found.");
@@ -141,7 +144,7 @@ Classes.prototype.getMethod = function(caller, className, methodName, signature,
 };
 
 Classes.prototype.newObject = function(caller, className) {
-    return { class: this.getClass(caller, className) };
+    return new (this.getClass(caller, className).constructor)();
 }
 
 Classes.prototype.newArray = function(caller, constructor, size) {
