@@ -31,13 +31,13 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
         return args;
     }
 
-    var meta = methodInfo.meta();
-    var args = popArgs(meta.IN);
+    var signature = Signature.parse(methodInfo.signature);
+    var args = popArgs(signature.IN);
     if (!methodInfo.native)
         methodInfo.native = this.getNativeMethod(methodInfo);
     var result = methodInfo.native.apply(caller, args);
-    if (meta.OUT.length)
-        pushType(meta.OUT[0], result);
+    if (signature.OUT.length)
+        pushType(signature.OUT[0], result);
 }
 
 Native.prototype.getNativeMethod = function (methodInfo) {
