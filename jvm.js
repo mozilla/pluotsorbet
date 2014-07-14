@@ -61,5 +61,5 @@ JVM.prototype.start = function() {
 
     var toplevel = new Frame();
     toplevel.stack.push(null); // args
-    toplevel.invoke(entryPoint);
+    toplevel.invoke(OPCODES.invokestatic, entryPoint);
 }

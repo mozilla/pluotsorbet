@@ -101,25 +101,25 @@ Frame.prototype.raiseException = function(className, message) {
     var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false);
     this.stack.push(ex);
     this.stack.push(message);
-    this.invoke(ctor);
+    this.invoke(OPCODES.invokespecial, ctor);
     this.throw(ex);
 }
 
-Frame.prototype.invoke = function(methodInfo) {
+Frame.prototype.invoke = function(op, methodInfo) {
     if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
         NATIVE.invokeNative(this, methodInfo);
         return;
     }
 
     var consumes = Signature.parse(methodInfo.signature).IN.slots;
-    if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags))
+    if (op !== OPCODES.invokestatic)
         ++consumes;
 
     var callee = new Frame(methodInfo);
     callee.locals = this.stack;
     callee.localsBase = this.stack.length - consumes;
 
-    if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags) && !callee.getLocal(0)) {
+    if (op !== OPCODES.invokestatic && !callee.getLocal(0)) {
         this.raiseException("java/lang/NullPointerException");
         return;
     }
@@ -993,7 +993,7 @@ Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.i
     var classInfo = CLASSES.getClass(this, className);
     var method = CLASSES.getMethod(classInfo, methodName, signature, op === OPCODES.invokestatic);
 
-    this.invoke(method);
+    this.invoke(op, method);
 }
 
 Frame.prototype.jsr = function() {

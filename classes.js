@@ -91,7 +91,7 @@ Classes.prototype.getClass = function(caller, className) {
         classInfo.staticFields = {};
         var clinit = this.getMethod(classInfo, "<clinit>", "()V", true);
         if (clinit)
-            caller.invoke(clinit);
+            caller.invoke(OPCODES.invokestatic, clinit);
         classInfo.constructor = function () {
         }
         classInfo.constructor.prototype.class = classInfo;
