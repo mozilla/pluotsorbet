@@ -981,8 +981,6 @@ Frame.prototype.invokestatic = function() {
 }
 
 Frame.prototype.invokevirtual = function() {
-    var self = this;
-
     var idx = this.read16();
 
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
@@ -995,8 +993,6 @@ Frame.prototype.invokevirtual = function() {
 }
 
 Frame.prototype.invokespecial = function() {
-    var self = this;
-
     var idx = this.read16();
 
     var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
@@ -1009,8 +1005,6 @@ Frame.prototype.invokespecial = function() {
 }
 
 Frame.prototype.invokeinterface = function() {
-    var self = this;
-
     var idx = this.read16();
     var argsNumber = this.read8();
     var zero = this.read8();
