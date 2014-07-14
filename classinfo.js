@@ -80,3 +80,10 @@ var ClassInfo = function(classBytes) {
         }
     });
 }
+
+var ArrayClass = function(elementType) {
+    this.className = "[" + elementType;
+    this.superClassName = "java/lang/Object";
+    this.access_flags = 0;
+    this.elementType = elementType;
+}

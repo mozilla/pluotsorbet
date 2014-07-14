@@ -63,6 +63,8 @@ var util = (function () {
   }
 
   return {
+    INT_MAX: INT_MAX,
+    INT_MIN: INT_MIN,
     print: print,
     debug: console.info.bind(console),
     error: console.error.bind(console),
@@ -73,7 +75,5 @@ var util = (function () {
     double2float: double2float,
     double2int: double2int,
     double2long: double2long,
-    INT_MAX: INT_MAX,
-    INT_MIN: INT_MIN
   };
 })();
