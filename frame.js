@@ -112,17 +112,19 @@ Frame.prototype.invoke = function(op, methodInfo) {
     }
 
     var consumes = Signature.parse(methodInfo.signature).IN.slots;
-    if (op !== OPCODES.invokestatic)
+
+    if (op !== OPCODES.invokestatic) {
         ++consumes;
+        var obj = this.stack[this.stack.length - consumes];
+        if (!obj) {
+            this.raiseException("java/lang/NullPointerException");
+            return;
+        }
+    }
 
     var callee = new Frame(methodInfo);
     callee.locals = this.stack;
     callee.localsBase = this.stack.length - consumes;
-
-    if (op !== OPCODES.invokestatic && !callee.getLocal(0)) {
-        this.raiseException("java/lang/NullPointerException");
-        return;
-    }
 
     while (true) {
         var op = callee.read8();
