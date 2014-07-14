@@ -98,7 +98,7 @@ Frame.prototype.throw = function(ex) {
 
 Frame.prototype.raiseException = function(className, message) {
     var ex = CLASSES.newObject(this, className);
-    var ctor = CLASSES.getMethod(this, className, "<init>", "(Ljava/lang/String;)V", false);
+    var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false);
     this.stack.push(ex);
     this.stack.push(message);
     this.invoke(ctor);
@@ -983,11 +983,13 @@ Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.i
     }
 
     var cp = this.cp;
+
     var className = cp[cp[cp[idx].class_index].name_index].bytes;
     var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
     var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
 
-    var method = CLASSES.getMethod(this, className, methodName, signature, op === OPCODES.invokestatic);
+    var classInfo = CLASSES.getClass(this, className);
+    var method = CLASSES.getMethod(this, classInfo, methodName, signature, op === OPCODES.invokestatic);
 
     this.invoke(method);
 }

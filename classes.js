@@ -89,7 +89,7 @@ Classes.prototype.getClass = function(caller, className) {
         return this.getArrayClass(caller, className);
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
         classInfo.staticFields = {};
-        var clinit = this.getMethod(caller, className, "<clinit>", "()V", true);
+        var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true);
         if (clinit)
             caller.invoke(clinit);
         classInfo.constructor = function () {
@@ -128,10 +128,8 @@ Classes.prototype.setStaticField = function(caller, className, fieldName, value)
     this.getClass(caller, className).staticFields[fieldName] = value;
 }
 
-Classes.prototype.getMethod = function(caller, className, methodName, signature, staticFlag) {
-    console.log(className, methodName, signature);
-    // Only force initialization when accessing a static method.
-    var classInfo = this.getClass(caller, className);
+Classes.prototype.getMethod = function(caller, classInfo, methodName, signature, staticFlag) {
+    console.log(classInfo.className, methodName, signature);
     var methods = classInfo.methods;
     for (var i=0; i<methods.length; i++) {
         if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
