@@ -120,6 +120,13 @@ Frame.prototype.invoke = function(op, methodInfo) {
             this.raiseException("java/lang/NullPointerException");
             return;
         }
+        switch (op) {
+        case OPCODES.invokevirtual:
+            console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
+            if (methodInfo.classInfo != obj.class)
+                methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
+            break;
+        }
     }
 
     var callee = new Frame(methodInfo);
