@@ -34,18 +34,18 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
     var meta = methodInfo.meta();
     var args = popArgs(meta.IN);
     if (!methodInfo.native)
-        methodInfo.native = this.getMethod(methodInfo);
+        methodInfo.native = this.getNativeMethod(methodInfo);
     var result = methodInfo.native.apply(caller, args);
     if (meta.OUT.length)
         pushType(meta.OUT[0], result);
 }
 
-Native.prototype.getMethod = function (methodInfo) {
+Native.prototype.getNativeMethod = function (methodInfo) {
     var classInfo = methodInfo.classInfo;
     var className = classInfo.className;
     var methodName = methodInfo.name;
     var signature = methodInfo.signature;
-    console.log("Native.getMethod", className, methodName, signature);
+    console.log("Native.getNativeMethod", className, methodName, signature);
     return this[className + "." + methodName + "." + signature];
 }
 
