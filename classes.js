@@ -89,7 +89,7 @@ Classes.prototype.getClass = function(caller, className) {
         return this.getArrayClass(caller, className);
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
         classInfo.staticFields = {};
-        var clinit = this.getMethod(classInfo, "<clinit>", "()V", true);
+        var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true, false);
         if (clinit)
             caller.invoke(OPCODES.invokestatic, clinit);
         classInfo.constructor = function () {
@@ -128,17 +128,22 @@ Classes.prototype.setStaticField = function(caller, className, fieldName, value)
     this.getClass(caller, className).staticFields[fieldName] = value;
 }
 
-Classes.prototype.getMethod = function(classInfo, methodName, signature, staticFlag) {
+Classes.prototype.getMethod = function(caller, classInfo, methodName, signature, staticFlag, inheritFlag) {
     console.log(classInfo.className, methodName, signature);
-    var methods = classInfo.methods;
-    for (var i=0; i<methods.length; i++) {
-        if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
-            if (methods[i].name === methodName && methods[i].signature === signature) {
-                return methods[i];
+    while (true) {
+        var methods = classInfo.methods;
+        for (var i=0; i<methods.length; i++) {
+            if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
+                if (methods[i].name === methodName && methods[i].signature === signature) {
+                    return methods[i];
+                }
             }
         }
+        var superClassName = classInfo.superClassName;
+        if (!superClassName)
+            return null;
+        classInfo = this.getClass(caller, superClassName);
     }
-    return null;
 };
 
 Classes.prototype.newObject = function(caller, className) {

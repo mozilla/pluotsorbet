@@ -98,7 +98,7 @@ Frame.prototype.throw = function(ex) {
 
 Frame.prototype.raiseException = function(className, message) {
     var ex = CLASSES.newObject(this, className);
-    var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false);
+    var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
     this.stack.push(ex);
     this.stack.push(message);
     this.invoke(OPCODES.invokespecial, ctor);
@@ -124,7 +124,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case OPCODES.invokevirtual:
             console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
             if (methodInfo.classInfo != obj.class)
-                methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
+                methodInfo = CLASSES.getMethod(this, obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
             break;
         }
     }
@@ -133,9 +133,11 @@ Frame.prototype.invoke = function(op, methodInfo) {
     callee.locals = this.stack;
     callee.localsBase = this.stack.length - consumes;
 
+    console.log("consumes:", consumes, "localsBase:", callee.localsBase);
+
     while (true) {
         var op = callee.read8();
-        console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.length);
+        console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.join(","));
         switch (op) {
         case OPCODES.return:
             this.stack.length -= consumes;
@@ -1000,7 +1002,7 @@ Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.i
     var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
 
     var classInfo = CLASSES.getClass(this, className);
-    var method = CLASSES.getMethod(classInfo, methodName, signature, op === OPCODES.invokestatic);
+    var method = CLASSES.getMethod(this, classInfo, methodName, signature, op === OPCODES.invokestatic);
 
     this.invoke(op, method);
 }
