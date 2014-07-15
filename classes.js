@@ -46,7 +46,7 @@ Classes.prototype.loadClassBytes = function(bytes) {
 }
 
 Classes.prototype.loadClassFile = function(fileName) {
-    LOG.debug("loading " + fileName + " ...");
+    console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
     if (!bytes)
         return null;

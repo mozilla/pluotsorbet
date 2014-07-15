@@ -14,7 +14,6 @@ function load(file, cb) {
 }
 
 var jvm = new JVM();
-jvm.setLogLevel(7);
 
 load("java/cldc1.1.1.jar", function (data) {
   jvm.addPath("java/cldc1.1.1.jar", data);

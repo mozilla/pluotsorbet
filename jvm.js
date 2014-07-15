@@ -3,11 +3,10 @@
 
 'use strict';
 
-var LOG, CLASSES, THREADS, NATIVE;
+var CLASSES, THREADS, NATIVE;
 
 var JVM = function() {
     if (this instanceof JVM) {
-        LOG = new Logger();
         CLASSES = new Classes();
         THREADS = new Threads();
         NATIVE = new Native();
@@ -29,10 +28,6 @@ JVM.prototype.setEntryPointClassName = function(className) {
 
 JVM.prototype.setEntryPointMethodName = function(methodName) {
     this.entryPoint.methodName = methodName;
-}
-
-JVM.prototype.setLogLevel = function(level) {
-    LOG.setLogLevel(level);
 }
 
 JVM.prototype.addPath = function(path, data) {
