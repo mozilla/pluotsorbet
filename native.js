@@ -95,3 +95,15 @@ Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/S
         console.log("KEY: " + util.chars2string(key.value));
     }
 }
+
+Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function (src, srcOffset, dst, dstOffset, length) {
+    if (dst !== src || dstOffset < srcOffset) {
+        for (var n = 0; n < length; ++n)
+            dst[dstOffset++] = src[srcOffset++];
+    } else {
+        dstOffset += length;
+        srcOffset += length;
+        for (var n = 0; n < length; ++n)
+            dst[--dstOffset] = src[--srcOffset];
+    }
+}
