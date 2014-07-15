@@ -97,7 +97,7 @@ Classes.prototype.getClass = function(caller, className) {
         classInfo.constructor.prototype.class = classInfo;
         return classInfo;
     }
-    throw new Error("Implementation of class '" + className + "' not found.");
+    return null;
 };
 
 Classes.prototype.getArrayClass = function(caller, typeName) {

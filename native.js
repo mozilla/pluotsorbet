@@ -3,6 +3,11 @@
 
 'use strict';
 
+var JavaException = function (className, msg) {
+    this.className = className;
+    this.msg;
+}
+
 var Native = function() {
 }
 
@@ -23,7 +28,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
         var argc = types.length;
         if (!ACCESS_FLAGS.isStatic(methodInfo.access_flags))
             ++argc;
-        var args = Array(types.length);
+        var args = Array(argc);
         for (var i=types.length-1, j=args.length-1; i >= 0; --i, --j)
             args[j] = popType(types[i].type);
         if (j >= 0)
@@ -35,7 +40,15 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
     var args = popArgs(signature.IN);
     if (!methodInfo.native)
         methodInfo.native = this.getNativeMethod(methodInfo);
-    var result = methodInfo.native.apply(caller, args);
+    try {
+        var result = methodInfo.native.apply(caller, args);
+    } catch (e) {
+        if (!(e instanceof JavaException)) {
+            throw e;
+        }
+        caller.raiseException(e.className, e.msg);
+        return;
+    }
     if (signature.OUT.length)
         pushType(signature.OUT[0], result);
 }
@@ -110,6 +123,15 @@ Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
 
 Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function (name) {
     var className = util.chars2string(name.value, name.offset, name.count).replace(".", "/", "g");
-    var classObject = CLASSES.newObject(this, className);
-    console.log(classInfo);
+    var classInfo = CLASSES.getClass(this, className);
+    if (!classInfo) {
+        throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+    }
+    var classObject = CLASSES.newObject(this, "java/lang/Class");
+    classObject.vmClass = classInfo;
+    return classObject;
 }
+
+Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function (classObject) {
+    console.log(classObject.vmClass);
+};
