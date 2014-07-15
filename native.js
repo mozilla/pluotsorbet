@@ -45,6 +45,7 @@ Native.prototype.getNativeMethod = function (methodInfo) {
     var className = classInfo.className;
     var methodName = methodInfo.name;
     var signature = methodInfo.signature;
+    console.log(className + "." + methodName + "." + signature);
     console.log("Native.getNativeMethod", className, methodName, signature);
     return this[className + "." + methodName + "." + signature];
 }
@@ -83,5 +84,14 @@ Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Obje
         srcOffset += length;
         for (var n = 0; n < length; ++n)
             dst[--dstOffset] = src[--srcOffset];
+    }
+}
+
+Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function (key) {
+    switch (util.chars2string(key.value)) {
+    case "microedition.encoding":
+        return CLASSES.newString(this, "ISO-8859-1");
+    default:
+        console.log("KEY: " + util.chars2string(key.value));
     }
 }

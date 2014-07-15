@@ -62,6 +62,13 @@ var util = (function () {
     return gLong.fromNumber(d);
   }
 
+  function chars2string(chars) {
+    var s = "";
+    for (var n = 0; n < chars.length; ++n)
+      s += String.fromCharCode(chars[n]);
+    return s;
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -75,5 +82,6 @@ var util = (function () {
     double2float: double2float,
     double2int: double2int,
     double2long: double2long,
+    chars2string: chars2string
   };
 })();

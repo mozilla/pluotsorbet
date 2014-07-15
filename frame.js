@@ -122,7 +122,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
         }
         switch (op) {
         case OPCODES.invokevirtual:
-            console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
+            // console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
             if (methodInfo.classInfo != obj.class)
                 methodInfo = CLASSES.getMethod(this, obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
             break;
@@ -135,7 +135,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
 
     while (true) {
         var op = callee.read8();
-        console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.join(","));
+        // console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.join(","));
         switch (op) {
         case OPCODES.return:
             this.stack.length = callee.localsBase;
