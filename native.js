@@ -58,13 +58,10 @@ Native.prototype.getNativeMethod = function (methodInfo) {
     var className = classInfo.className;
     var methodName = methodInfo.name;
     var signature = methodInfo.signature;
-    console.log(className + "." + methodName + "." + signature);
-    console.log("Native.getNativeMethod", className, methodName, signature);
     return this[className + "." + methodName + "." + signature];
 }
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function (src, srcOffset, dst, dstOffset, length) {
-    console.log(src, srcOffset, dst, dstOffset, length);
     if (!src || !dst) {
         this.raiseException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
         return;
@@ -135,3 +132,15 @@ Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"
 Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function (classObject) {
     return new (classObject.vmClass.constructor)();
 };
+
+Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function () {
+    var s = "";
+    return function (obj, ch) {
+        if (ch === 10) {
+            console.log("OUTPUT: " + s);
+            s = "";
+            return;
+        }
+        s += String.fromCharCode(ch);
+    }
+})();

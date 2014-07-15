@@ -105,11 +105,6 @@ Frame.prototype.raiseException = function(className, message) {
 }
 
 Frame.prototype.invoke = function(op, methodInfo) {
-    if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
-        NATIVE.invokeNative(this, methodInfo);
-        return;
-    }
-
     var consumes = Signature.parse(methodInfo.signature).IN.slots;
 
     if (op !== OPCODES.invokestatic) {
@@ -126,6 +121,11 @@ Frame.prototype.invoke = function(op, methodInfo) {
                 methodInfo = CLASSES.getMethod(this, obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
             break;
         }
+    }
+
+    if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
+        NATIVE.invokeNative(this, methodInfo);
+        return;
     }
 
     var callee = new Frame(methodInfo);
