@@ -43,14 +43,6 @@ Frame.prototype.getOp = function() {
     return this.code[this.ip - 1];
 }
 
-Frame.prototype.u16_to_s16 = function(x) {
-    return (x > 0x7fff) ? (x - 0x10000) : x;
-}
-
-Frame.prototype.u32_to_s32 = function(x) {
-    return (x > 0x7fffffff) ? (x - 0x100000000) : x;
-}
-
 Frame.prototype.read8 = function() {
     return this.code[this.ip++];
 };
@@ -63,12 +55,19 @@ Frame.prototype.read32 = function() {
     return this.read16()<<16 | this.read16();
 };
 
+Frame.prototype.read8signed = function() {
+    var x = this.read8();
+    return (x > 0x7f) ? (x - 0x100) : x;
+}
+
 Frame.prototype.read16signed = function() {
-    return this.u16_to_s16(this.read16());
+    var x = this.read16();
+    return (x > 0x7fff) ? (x - 0x10000) : x;
 }
 
 Frame.prototype.read32signed = function() {
-    return this.u32_to_s32(this.read32());
+    var x = this.read32();
+    return (x > 0x7fffffff) ? (x - 0x100000000) : x;
 }
 
 Frame.prototype.throw = function(ex) {
@@ -135,7 +134,9 @@ Frame.prototype.invoke = function(op, methodInfo) {
 
     while (true) {
         var op = callee.read8();
-        // console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.join(","));
+        var x = [];
+        callee.stack.forEach(function (e) { x.push(e.toSource()); });
+        console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], x.join(" "));
         switch (op) {
         case OPCODES.return:
             this.stack.length = callee.localsBase;
@@ -208,11 +209,11 @@ Frame.prototype.iconst_5 = function() {
 }
 
 Frame.prototype.sipush = function() {
-    this.stack.push(this.read16());
+    this.stack.push(this.read16signed());
 }
 
 Frame.prototype.bipush = function() {
-    this.stack.push(this.read8());
+    this.stack.push(this.read8signed());
 }
 
 Frame.prototype.ldc = function() {
@@ -463,7 +464,8 @@ Frame.prototype.swap = function() {
 Frame.prototype.iinc = function() {
     var wide = this.isWide();
     var idx = wide ? this.read16() : this.read8();
-    var val = wide ? this.read16() : this.read8();
+    var val = wide ? this.read16signed() : this.read8signed();
+    console.log("iinc", idx, val);
     this.setLocal(idx, this.getLocal(idx) + val);
 }
 
@@ -1030,19 +1032,19 @@ Frame.prototype.tableswitch = function() {
         this.ip++;
     }
 
-    var def = this.read32();
-    var low = this.read32();
-    var high = this.read32();
+    var def = this.read32signed();
+    var low = this.read32signed();
+    var high = this.read32signed();
     var val = this.stack.pop();
 
     if (val < low || val > high) {
         jmp = def;
     } else {
         this.ip  += (val - low) << 2;
-        jmp = this.read32();
+        jmp = this.read32signed();
     }
 
-    this.ip = startip - 1 + this.u32_to_s32(jmp);
+    this.ip = startip - 1 + jmp;
 }
 
 Frame.prototype.lookupswitch = function() {
@@ -1052,14 +1054,14 @@ Frame.prototype.lookupswitch = function() {
         this.ip++;
     }
 
-    var jmp = this.read32();
+    var jmp = this.read32signed();
     var size = this.read32();
     var val = this.stack.pop();
 
     lookup:
         for(var i=0; i<size; i++) {
-            var key = this.read32();
-            var offset = this.read32();
+            var key = this.read32signed();
+            var offset = this.read32signed();
             if (key === val) {
                 jmp = offset;
             }
@@ -1068,7 +1070,7 @@ Frame.prototype.lookupswitch = function() {
             }
         }
 
-    this.ip = startip - 1 + this.u32_to_s32(jmp);
+    this.ip = startip - 1 + jmp;
 }
 
 Frame.prototype.instanceof = function() {
