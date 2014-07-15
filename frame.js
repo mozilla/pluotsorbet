@@ -133,26 +133,24 @@ Frame.prototype.invoke = function(op, methodInfo) {
     callee.locals = this.stack;
     callee.localsBase = this.stack.length - consumes;
 
-    console.log("consumes:", consumes, "localsBase:", callee.localsBase);
-
     while (true) {
         var op = callee.read8();
         console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], callee.stack.join(","));
         switch (op) {
         case OPCODES.return:
-            this.stack.length -= consumes;
+            this.stack.length = callee.localsBase;
             return;
 
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            this.stack.length -= consumes;
+            this.stack.length = callee.localsBase;
             this.stack.push(callee.stack.pop());
             return;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            this.stack.length -= consumes;
+            this.stack.length = callee.localsBase;
             this.stack.push2(callee.stack.pop2());
             return;
 
