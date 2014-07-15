@@ -136,7 +136,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
         var op = callee.read8();
         var x = [];
         callee.stack.forEach(function (e) { x.push(e.toSource()); });
-        console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], x.join(" "));
+        // console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], x.join(" "));
         switch (op) {
         case OPCODES.return:
             this.stack.length = callee.localsBase;
@@ -465,7 +465,6 @@ Frame.prototype.iinc = function() {
     var wide = this.isWide();
     var idx = wide ? this.read16() : this.read8();
     var val = wide ? this.read16signed() : this.read8signed();
-    console.log("iinc", idx, val);
     this.setLocal(idx, this.getLocal(idx) + val);
 }
 

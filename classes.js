@@ -129,7 +129,7 @@ Classes.prototype.setStaticField = function(caller, className, fieldName, value)
 }
 
 Classes.prototype.getMethod = function(caller, classInfo, methodName, signature, staticFlag, inheritFlag) {
-    console.log(classInfo.className, methodName, signature);
+    // console.log(classInfo.className, methodName, signature);
     while (true) {
         var methods = classInfo.methods;
         for (var i=0; i<methods.length; i++) {
