@@ -13,13 +13,17 @@ function load(file, cb) {
   xhr.send(null);
 }
 
-var jvm = new JVM();
-
-load("java/cldc1.1.1.jar", function (data) {
-  jvm.addPath("java/cldc1.1.1.jar", data);
-  load("tests/TestPrintln.class", function (data) {
-    jvm.addPath("TestPrintln.class", data);
-    jvm.loadClassFile("TestPrintln.class");
-    jvm.start();
+function runTest(path, name, cb) {
+  var jvm = new JVM();
+  load("java/cldc1.1.1.jar", function (data) {
+    jvm.addPath("java/cldc1.1.1.jar", data);
+    load(path + name, function (data) {
+      jvm.addPath(name, data);
+      jvm.loadClassFile(name);
+      jvm.start();
+      cb && cb();
+    });
   });
-});
+}
+
+runTest("tests/", "TestPrintln.class");
