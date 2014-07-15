@@ -13,11 +13,11 @@ function load(file, cb) {
   xhr.send(null);
 }
 
-function runTest(path, name, cb) {
+function runTest(name, cb) {
   var jvm = new JVM();
   load("java/cldc1.1.1.jar", function (data) {
     jvm.addPath("java/cldc1.1.1.jar", data);
-    load(path + name, function (data) {
+    load(name, function (data) {
       jvm.addPath(name, data);
       jvm.loadClassFile(name);
       jvm.start();
@@ -26,4 +26,4 @@ function runTest(path, name, cb) {
   });
 }
 
-runTest("tests/", "TestPrintln.class");
+runTest("tests/TestPrintln.class")

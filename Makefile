@@ -19,6 +19,14 @@ SRC = zipfile.js \
       jvm.js \
       main.js
 
+TESTS_SRC = $(shell ls tests/*.java)
+TESTS_BIN = $(TESTS_SRC:.java=.class)
+
+tests: $(TESTS_BIN)
+
+%.class: %.java
+	javac -classpath java/cldc1.1.1.jar $<
+
 j2me.js: $(SRC)
 	cat $^ > $@
 

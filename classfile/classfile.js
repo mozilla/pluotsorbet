@@ -136,7 +136,7 @@ var getClassImage = function(classBytes) {
                 break;
             case TAGS.CONSTANT_Double:
             case TAGS.CONSTANT_Long:
-                var bytes = new Buffer(8);
+                var bytes = new Uint8Array(8);
                 for (var b=0; b<8; b++) {
                     bytes[b] = reader.read8();
                 }

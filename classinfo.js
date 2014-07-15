@@ -41,7 +41,7 @@ var ClassInfo = function(classBytes) {
         self.methods.push(method);
     });
 
-    this.classes = [];
+    var classes = this.classes = [];
     classImage.attributes.forEach(function(a) {
         if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
             a.info.classes.forEach(function(c) {

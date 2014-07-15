@@ -54,7 +54,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     var classes = classInfo.classes;
     for (var i=0; i<classes.length; i++) {
         if (!this.classes[classes[i]]) {
-            this.loadClassFile(path.dirname(fileName) + path.sep + classes[i] + ".class");
+            this.loadClassFile(fileName.replace(/[^/]*\.class$/, "") + "/" + classes[i] + ".class");
         }
     }
     return classInfo;
