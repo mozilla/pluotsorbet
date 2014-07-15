@@ -7,6 +7,7 @@ var Thread = function(name) {
     if (this instanceof Thread) {
         this.name = name || "noname";
         this.priority = (Thread.MAX_PRIORITY + Thread.MIN_PRIORITY) >> 1;
+        this.frame = new Frame();
     } else {
         return new Thread(name);
     }

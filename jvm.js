@@ -47,14 +47,12 @@ JVM.prototype.loadJarFile = function(fileName) {
 }
 
 JVM.prototype.start = function() {
-    var self = this;
-
     var entryPoint = CLASSES.getEntryPoint(this.entryPoint.className, this.entryPoint.methodName);
     if (!entryPoint) {
         throw new Error("Entry point method is not found.");
     }
 
-    var toplevel = new Frame();
-    toplevel.stack.push(null); // args
-    toplevel.invoke(OPCODES.invokestatic, entryPoint);
+    var frame = THREADS.current.frame;
+    frame.stack.push(null); // args
+    frame.invoke(OPCODES.invokestatic, entryPoint);
 }
