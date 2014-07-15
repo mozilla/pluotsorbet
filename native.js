@@ -107,3 +107,9 @@ Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
             dst[--dstOffset] = src[--srcOffset];
     }
 }
+
+Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function (name) {
+    var className = util.chars2string(name.value, name.offset, name.count).replace(".", "/", "g");
+    var classObject = CLASSES.newObject(this, className);
+    console.log(classInfo);
+}

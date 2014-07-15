@@ -62,9 +62,11 @@ var util = (function () {
     return gLong.fromNumber(d);
   }
 
-  function chars2string(chars) {
+  function chars2string(chars, offset, count) {
     var s = "";
-    for (var n = 0; n < chars.length; ++n)
+    if (!count)
+      count = chars.length;
+    for (var n = offset | 0; n < count; ++n)
       s += String.fromCharCode(chars[n]);
     return s;
   }
