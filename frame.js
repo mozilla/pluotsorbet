@@ -1098,6 +1098,7 @@ Frame.prototype.monitorenter = function() {
         this.raiseException("java/lang/NullPointerException");
         return;
     }
+    /*
     if (obj.hasOwnProperty("$lock$")) {
         this.stack.push(obj);
         this.ip--;
@@ -1105,6 +1106,7 @@ Frame.prototype.monitorenter = function() {
     } else {
         obj["$lock$"] = "locked";
     }
+    */
 }
 
 Frame.prototype.monitorexit = function() {
@@ -1113,6 +1115,8 @@ Frame.prototype.monitorexit = function() {
         this.raiseException("java/lang/NullPointerException");
         return;
     }
+    /*
     delete obj["$lock$"];
     // SCHEDULER.yield();
+    */
 }

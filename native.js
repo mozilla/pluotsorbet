@@ -133,5 +133,5 @@ Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"
 }
 
 Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function (classObject) {
-    console.log(classObject.vmClass);
+    return new (classObject.vmClass.constructor)();
 };
