@@ -145,6 +145,8 @@ Frame.prototype.invoke = function(op, methodInfo) {
     }
 
     var callee = this.pushFrame(methodInfo, consumes);
+    var cp = callee.cp;
+    var stack = callee.stack;
 
     while (true) {
         var op = callee.read8();
@@ -152,6 +154,81 @@ Frame.prototype.invoke = function(op, methodInfo) {
         // callee.stack.forEach(function (e) { x.push(e.toSource()); });
         // console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], x.join(" "));
         switch (op) {
+        case 0x00: // nop
+            break;
+        case 0x01: // aconst_null
+            stack.push(null);
+            break;
+        case 0x02: // aconst_m1
+            stack.push(-1);
+            break;
+        case 0x03: case 0x0b: case 0x0e: // iconst_0, fconst_0, dconst_0
+            stack.push(0);
+            break;
+        case 0x04: case 0x0c: case 0x0f: // iconst_1, fconst_1, dconst_0
+            stack.push(1);
+            break;
+        case 0x05: case 0x0d: // iconst_2, fconst_2
+            stack.push(2);
+            break;
+        case 0x06: // iconst_3
+            stack.push(3);
+            break;
+        case 0x07: // iconst_4
+            stack.push(4);
+            break;
+        case 0x08: // iconst_5
+            stack.push(5);
+            break;
+        case 0x09: // lconst_0
+            stack.push2(gLong.fromInt(0));
+            break;
+        case 0x0a: // lconst_1
+            stack.push2(gLong.fromInt(1));
+            break;
+        case 0x10: // bipush
+            stack.push(callee.read8signed());
+            break;
+        case 0x11: // sipush
+            stack.push(callee.read16signed());
+            break;
+        case 0x12: // ldc
+            var constant = cp[callee.read8()];
+            switch(constant.tag) {
+            case TAGS.CONSTANT_String:
+                stack.push(CLASSES.newString(callee, cp[constant.string_index].bytes));
+                break;
+            default:
+                throw new Error("not support constant type");
+            }
+            break;
+        case 0x13: // ldc_w
+            var constant = cp[callee.read16()];
+            switch(constant.tag) {
+            case TAGS.CONSTANT_String:
+                stack.push(cp[constant.string_index].bytes);
+                break;
+            default:
+                throw new Error("not support constant type");
+            }
+            break;
+        case 0x14: // ldc2_w
+            var constant = cp[callee.read16()];
+            switch(constant.tag) {
+            case TAGS.CONSTANT_String:
+                stack.push(cp[constant.string_index].bytes);
+                break;
+            case TAGS.CONSTANT_Long:
+                stack.push2(Numeric.getLong(constant.bytes));
+                break;
+            case TAGS.CONSTANT_Double:
+                stack.push2(constant.bytes.readDoubleBE(0));
+                break;
+            default:
+                throw new Error("not support constant type");
+            }
+            break;
+
         case OPCODES.return:
             callee.popFrame();
             return;
@@ -226,45 +303,6 @@ Frame.prototype.sipush = function() {
 
 Frame.prototype.bipush = function() {
     this.stack.push(this.read8signed());
-}
-
-Frame.prototype.ldc = function() {
-    var constant = this.cp[this.read8()];
-    switch(constant.tag) {
-        case TAGS.CONSTANT_String:
-            this.stack.push(CLASSES.newString(this, this.cp[constant.string_index].bytes));
-            break;
-        default:
-            throw new Error("not support constant type");
-    }
-}
-
-Frame.prototype.ldc_w = function() {
-    var constant = this.cp[this.read16()];
-    switch(constant.tag) {
-        case TAGS.CONSTANT_String:
-            this.stack.push(this.cp[constant.string_index].bytes);
-            break;
-        default:
-            throw new Error("not support constant type");
-    }
-}
-
-Frame.prototype.ldc2_w = function() {
-    var constant = this.cp[this.read16()];
-    switch(constant.tag) {
-        case TAGS.CONSTANT_String:
-            this.stack.push(this.cp[constant.string_index].bytes);
-            break;
-        case TAGS.CONSTANT_Long:
-            this.stack.push2(Numeric.getLong(constant.bytes));
-            break;
-        case TAGS.CONSTANT_Double:
-            this.stack.push2(constant.bytes.readDoubleBE(0));
-            break;
-        default:
-            throw new Error("not support constant type");
-    }
 }
 
 Frame.prototype.iload = Frame.prototype.iload = Frame.prototype.aload = function() {
