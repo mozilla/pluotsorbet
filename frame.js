@@ -868,6 +868,19 @@ Frame.prototype.invoke = function(op, methodInfo) {
             var className = cp[cp[idx].name_index].bytes;
             stack.push(CLASSES.newObject(callee, className));
             break;
+        case 0xc0: // checkcast
+            var idx = callee.read16();
+            var type = cp[cp[idx].name_index].bytes;
+            break;
+        case 0xc1: // instanceof
+            var idx = callee.read16();
+            var className = cp[cp[idx].name_index].bytes;
+            var obj = stack.pop();
+            stack.push(obj.class.className === className);
+            break;
+        case 0xbf: // athrow
+            callee.throw(stack.pop());
+            break;
 
 
         case OPCODES.return:
@@ -884,6 +897,32 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case OPCODES.dreturn:
             callee.popFrame().stack.push2(callee.stack.pop2());
             return;
+
+        case 0xc2: // monitorenter
+            var obj = stack.pop();
+            if (!obj) {
+                callee.raiseException("java/lang/NullPointerException");
+                break;
+            }
+            // if (obj.hasOwnProperty("$lock$")) {
+            // stack.push(obj);
+            // this.ip--;
+            // SCHEDULER.yield();
+            // } else {
+            // obj["$lock$"] = "locked";
+            // }
+            break;
+        case 0xc3: // monitorexit
+            var obj = stack.pop();
+            if (!obj) {
+                callee.raiseException("java/lang/NullPointerException");
+                break;
+            }
+            // delete obj["$lock$"];
+            // SCHEDULER.yield();
+            break;
+        case 0xc4: // wide
+            break;
 
         default:
             var opName = OPCODES[op];
@@ -966,50 +1005,3 @@ Frame.prototype.lookupswitch = function() {
     this.ip = startip - 1 + jmp;
 }
 
-Frame.prototype.instanceof = function() {
-    var idx = this.read16();
-    var className = this.cp[this.cp[idx].name_index].bytes;
-    var obj = this.stack.pop();
-    this.stack.push(obj.class.className === className);
-}
-
-Frame.prototype.checkcast = function() {
-    var idx = this.read16();
-    var type = this.cp[this.cp[idx].name_index].bytes;
-}
-
-Frame.prototype.athrow = function() {
-    this.throw(this.stack.pop());
-}
-
-Frame.prototype.wide = function() {
-}
-
-Frame.prototype.monitorenter = function() {
-    var obj = this.stack.pop();
-    if (!obj) {
-        this.raiseException("java/lang/NullPointerException");
-        return;
-    }
-    /*
-    if (obj.hasOwnProperty("$lock$")) {
-        this.stack.push(obj);
-        this.ip--;
-        // SCHEDULER.yield();
-    } else {
-        obj["$lock$"] = "locked";
-    }
-    */
-}
-
-Frame.prototype.monitorexit = function() {
-    var obj = this.stack.pop();
-    if (!obj) {
-        this.raiseException("java/lang/NullPointerException");
-        return;
-    }
-    /*
-    delete obj["$lock$"];
-    // SCHEDULER.yield();
-    */
-}
