@@ -667,15 +667,11 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         case 0x9f: // if_icmpeq
             var jmp = callee.ip - 1 + callee.read16signed();
-            var ref1 = stack.pop();
-            var ref2 = stack.pop();
-            callee.ip = ref1 === ref2 ? jmp : callee.ip;
+            callee.ip = stack.pop() === stack.pop() ? jmp : callee.ip;
             break;
         case 0xa0: // if_cmpne
             var jmp = callee.ip - 1 + callee.read16signed();
-            var ref1 = stack.pop();
-            var ref2 = stack.pop();
-            callee.ip = ref1 !== ref2 ? jmp : callee.ip;
+            callee.ip = stack.pop() !== stack.pop() ? jmp : callee.ip;
             break;
         case 0xa1: // if_icmplt
             var jmp = callee.ip - 1 + callee.read16signed();
@@ -683,15 +679,11 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         case 0xa2: // if_icmpge
             var jmp = callee.ip - 1 + callee.read16signed();
-            var ref1 = stack.pop();
-            var ref2 = stack.pop();
-            callee.ip = ref1 <= ref2 ? jmp : callee.ip;
+            callee.ip = stack.pop() <= stack.pop() ? jmp : callee.ip;
             break;
         case 0xa3: // if_icmpgt
             var jmp = callee.ip - 1 + callee.read16signed();
-            var ref1 = stack.pop();
-            var ref2 = stack.pop();
-            callee.ip = ref1 < ref2 ? jmp : callee.ip;
+            callee.ip = stack.pop() < stack.pop() ? jmp : callee.ip;
             break;
         case 0xa4: // if_icmple
             var jmp = callee.ip - 1 + callee.read16signed();
@@ -699,15 +691,11 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         case 0xa5: // if_acmpeq
             var jmp = callee.ip - 1 + calee.read16signed();
-            var ref1 = stack.pop();
-            var ref2 = stack.pop();
-            callee.ip = ref1 === ref2 ? jmp : callee.ip;
+            callee.ip = stack.pop() === stack.pop() ? jmp : callee.ip;
             break;
         case 0xa6: // if_acmpne
             var jmp = callee.ip - 1 + callee.read16signed();
-            var ref1 = stack.pop();
-            var ref2 = stack.pop();
-            callee.ip = ref1 !== ref2 ? jmp : callee.ip;
+            callee.ip = stack.pop() !== stack.pop() ? jmp : callee.ip;
             break;
         case 0x99: // ifeq
             var jmp = callee.ip - 1 + callee.read16signed();
