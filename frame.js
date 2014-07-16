@@ -795,6 +795,43 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case 0x93: // i2s
             stack.push((stack.pop() << 16) >> 16);
             break;
+        case 0xaa: // tableswitch
+            var startip = callee.ip;
+            while ((callee.ip & 3) != 0)
+                callee.ip++;
+            var def = callee.read32signed();
+            var low = callee.read32signed();
+            var high = callee.read32signed();
+            var val = stack.pop();
+            var jmp;
+            if (val < low || val > high) {
+                jmp = def;
+            } else {
+                callee.ip  += (val - low) << 2;
+                jmp = callee.read32signed();
+            }
+            callee.ip = startip - 1 + jmp;
+            break;
+        case 0xab: // lookupswitch
+            var startip = callee.ip;
+            while ((callee.ip & 3) != 0)
+                callee.ip++;
+            var jmp = callee.read32signed();
+            var size = callee.read32();
+            var val = callee.stack.pop();
+          lookup:
+            for (var i=0; i<size; i++) {
+                var key = callee.read32signed();
+                var offset = callee.read32signed();
+                if (key === val) {
+                    jmp = offset;
+                }
+                if (key >= val) {
+                    break lookup;
+                }
+            }
+            callee.ip = startip - 1 + jmp;
+            break;
         case 0xbc: // newarray
             var type = callee.read8();
             var size = stack.pop();
@@ -936,59 +973,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
             return;
         default:
             var opName = OPCODES[op];
-            if (!(opName in this))
-                throw new Error("Opcode " + opName + " [" + op + "] not supported.");
-            callee[opName]();
-            break;
+            throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
     };
-}
-
-Frame.prototype.tableswitch = function() {
-    var startip = this.ip;
-    var jmp;
-
-    while ((this.ip % 4) != 0) {
-        this.ip++;
-    }
-
-    var def = this.read32signed();
-    var low = this.read32signed();
-    var high = this.read32signed();
-    var val = this.stack.pop();
-
-    if (val < low || val > high) {
-        jmp = def;
-    } else {
-        this.ip  += (val - low) << 2;
-        jmp = this.read32signed();
-    }
-
-    this.ip = startip - 1 + jmp;
-}
-
-Frame.prototype.lookupswitch = function() {
-    var startip = this.ip;
-
-    while ((this.ip % 4) != 0) {
-        this.ip++;
-    }
-
-    var jmp = this.read32signed();
-    var size = this.read32();
-    var val = this.stack.pop();
-
-    lookup:
-        for(var i=0; i<size; i++) {
-            var key = this.read32signed();
-            var offset = this.read32signed();
-            if (key === val) {
-                jmp = offset;
-            }
-            if (key >= val) {
-                break lookup;
-            }
-        }
-
-    this.ip = startip - 1 + jmp;
 }
