@@ -25,7 +25,7 @@ var util = (function () {
 
   function defaultValue(type) {
     if (type === 'J')
-      return gLong.ZERO;
+      return Long.ZERO;
     if (type[0] === '[' || type[0] === 'L')
       return null;
     return 0;
@@ -56,10 +56,10 @@ var util = (function () {
 
   function double2long(d) {
     if (d === Number.POSITIVE_INFINITY)
-      return gLong.MAX_VALUE;
+      return Long.MAX_VALUE;
     if (d === Number.NEGATIVE_INFINITY)
-      return gLong.MIN_VALUE;
-    return gLong.fromNumber(d);
+      return Long.MIN_VALUE;
+    return Long.fromNumber(d);
   }
 
   function chars2string(chars, offset, count) {

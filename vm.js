@@ -47,10 +47,10 @@ VM.execute = function(frame) {
             stack.push(5);
             break;
         case 0x09: // lconst_0
-            stack.push2(gLong.fromInt(0));
+            stack.push2(Long.fromInt(0));
             break;
         case 0x0a: // lconst_1
-            stack.push2(gLong.fromInt(1));
+            stack.push2(Long.fromInt(1));
             break;
         case 0x10: // bipush
             stack.push(frame.read8signed());
@@ -601,7 +601,7 @@ VM.execute = function(frame) {
             frame.ip = frame.getLocal(idx);
             break;
         case 0x85: // i2l
-            stack.push2(new gLong(stack.pop()));
+            stack.push2(Long.fromInt(stack.pop()));
             break;
         case 0x86: // i2f
             break;
@@ -621,7 +621,7 @@ VM.execute = function(frame) {
             stack.push(utils.double2int(stack.pop()));
             break;
         case 0x8c: // f2l
-            stack.push2(gLong.fromNumber(stack.pop()));
+            stack.push2(Long.fromNumber(stack.pop()));
             break;
         case 0x8d: // f2d
             stack.push2(stack.pop());

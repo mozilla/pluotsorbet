@@ -17,7 +17,7 @@
 * implementation is derived from LongLib in GWT.
 *
 */
-var gLong = (function () {
+var Long = (function (exports) {
     /**
     * Constructs a 64-bit two's-complement integer, given its low and high 32-bit
     * values as *signed* integers.  See the from* functions below for more
@@ -41,26 +41,26 @@ var gLong = (function () {
     * @param {number} high  The high (signed) 32 bits of the long.
     * @constructor
     */
-    function gLong(low, high) {
+    function Long(low, high) {
         this.low_ = low | 0; // force into 32 signed bits.
         this.high_ = high | 0; // force into 32 signed bits.
     }
     /**
     * Returns a Long representing the given (32-bit) integer value.
     * @param {number} value The 32-bit integer in question.
-    * @return {!gLong} The corresponding Long value.
+    * @return {!Long} The corresponding Long value.
     */
-    gLong.fromInt = function (value) {
+    Long.fromInt = function (value) {
         if (-128 <= value && value < 128) {
-            var cachedObj = gLong.IntCache_[value];
+            var cachedObj = Long.IntCache_[value];
             if (cachedObj) {
                 return cachedObj;
             }
         }
 
-        var obj = new gLong(value, value < 0 ? -1 : 0);
+        var obj = new Long(value, value < 0 ? -1 : 0);
         if (-128 <= value && value < 128) {
-            gLong.IntCache_[value] = obj;
+            Long.IntCache_[value] = obj;
         }
         return obj;
     };
@@ -69,19 +69,19 @@ var gLong = (function () {
     * Returns a Long representing the given value, provided that it is a finite
     * number.  Otherwise, zero is returned.
     * @param {number} value The number in question.
-    * @return {!gLong} The corresponding Long value.
+    * @return {!Long} The corresponding Long value.
     */
-    gLong.fromNumber = function (value) {
+    Long.fromNumber = function (value) {
         if (isNaN(value) || !isFinite(value)) {
-            return gLong.ZERO;
-        } else if (value <= -gLong.TWO_PWR_63_DBL_) {
-            return gLong.MIN_VALUE;
-        } else if (value + 1 >= gLong.TWO_PWR_63_DBL_) {
-            return gLong.MAX_VALUE;
+            return Long.ZERO;
+        } else if (value <= -Long.TWO_PWR_63_DBL_) {
+            return Long.MIN_VALUE;
+        } else if (value + 1 >= Long.TWO_PWR_63_DBL_) {
+            return Long.MAX_VALUE;
         } else if (value < 0) {
-            return gLong.fromNumber(-value).negate();
+            return Long.fromNumber(-value).negate();
         } else {
-            return new gLong((value % gLong.TWO_PWR_32_DBL_) | 0, (value / gLong.TWO_PWR_32_DBL_) | 0);
+            return new Long((value % Long.TWO_PWR_32_DBL_) | 0, (value / Long.TWO_PWR_32_DBL_) | 0);
         }
     };
 
@@ -90,10 +90,10 @@ var gLong = (function () {
     * the given high and low bits.  Each is assumed to use 32 bits.
     * @param {number} lowBits The low 32-bits.
     * @param {number} highBits The high 32-bits.
-    * @return {!gLong} The corresponding Long value.
+    * @return {!Long} The corresponding Long value.
     */
-    gLong.fromBits = function (lowBits, highBits) {
-        return new gLong(lowBits, highBits);
+    Long.fromBits = function (lowBits, highBits) {
+        return new Long(lowBits, highBits);
     };
 
     /**
@@ -101,9 +101,9 @@ var gLong = (function () {
     * radix.
     * @param {string} str The textual representation of the Long.
     * @param {number=} opt_radix The radix in which the text is written.
-    * @return {!gLong} The corresponding Long value.
+    * @return {!Long} The corresponding Long value.
     */
-    gLong.fromString = function (str, opt_radix) {
+    Long.fromString = function (str, opt_radix) {
         if (str.length == 0) {
             throw Error('number format error: empty string');
         }
@@ -114,45 +114,45 @@ var gLong = (function () {
         }
 
         if (str.charAt(0) == '-') {
-            return gLong.fromString(str.substring(1), radix).negate();
+            return Long.fromString(str.substring(1), radix).negate();
         } else if (str.indexOf('-') >= 0) {
             throw Error('number format error: interior "-" character: ' + str);
         }
 
         // Do several (8) digits each time through the loop, so as to
         // minimize the calls to the very expensive emulated div.
-        var radixToPower = gLong.fromNumber(Math.pow(radix, 8));
+        var radixToPower = Long.fromNumber(Math.pow(radix, 8));
 
-        var result = gLong.ZERO;
+        var result = Long.ZERO;
         for (var i = 0; i < str.length; i += 8) {
             var size = Math.min(8, str.length - i);
             var value = parseInt(str.substring(i, i + size), radix);
             if (size < 8) {
-                var power = gLong.fromNumber(Math.pow(radix, size));
-                result = result.multiply(power).add(gLong.fromNumber(value));
+                var power = Long.fromNumber(Math.pow(radix, size));
+                result = result.multiply(power).add(Long.fromNumber(value));
             } else {
                 result = result.multiply(radixToPower);
-                result = result.add(gLong.fromNumber(value));
+                result = result.add(Long.fromNumber(value));
             }
         }
         return result;
     };
 
     /** @return {number} The value, assuming it is a 32-bit integer. */
-    gLong.prototype.toInt = function () {
+    Long.prototype.toInt = function () {
         return this.low_;
     };
 
     /** @return {number} The closest floating-point representation to this value. */
-    gLong.prototype.toNumber = function () {
-        return this.high_ * gLong.TWO_PWR_32_DBL_ + this.getLowBitsUnsigned();
+    Long.prototype.toNumber = function () {
+        return this.high_ * Long.TWO_PWR_32_DBL_ + this.getLowBitsUnsigned();
     };
 
     /**
     * @param {number=} opt_radix The radix in which the text should be written.
     * @return {string} The textual representation of this value.
     */
-    gLong.prototype.toString = function (opt_radix) {
+    Long.prototype.toString = function (opt_radix) {
         var radix = opt_radix || 10;
         if (radix < 2 || 36 < radix) {
             throw Error('radix out of range: ' + radix);
@@ -163,10 +163,10 @@ var gLong = (function () {
         }
 
         if (this.isNegative()) {
-            if (this.equals(gLong.MIN_VALUE)) {
+            if (this.equals(Long.MIN_VALUE)) {
                 // We need to change the Long value before it can be negated, so we remove
                 // the bottom-most digit in this base and then recurse to do the rest.
-                var radixLong = gLong.fromNumber(radix);
+                var radixLong = Long.fromNumber(radix);
                 var div = this.div(radixLong);
                 var rem = div.multiply(radixLong).subtract(this);
                 return div.toString(radix) + rem.toInt().toString(radix);
@@ -177,7 +177,7 @@ var gLong = (function () {
 
         // Do several (6) digits each time through the loop, so as to
         // minimize the calls to the very expensive emulated div.
-        var radixToPower = gLong.fromNumber(Math.pow(radix, 6));
+        var radixToPower = Long.fromNumber(Math.pow(radix, 6));
 
         var rem = this;
         var result = '';
@@ -199,27 +199,27 @@ var gLong = (function () {
     };
 
     /** @return {number} The high 32-bits as a signed value. */
-    gLong.prototype.getHighBits = function () {
+    Long.prototype.getHighBits = function () {
         return this.high_;
     };
 
     /** @return {number} The low 32-bits as a signed value. */
-    gLong.prototype.getLowBits = function () {
+    Long.prototype.getLowBits = function () {
         return this.low_;
     };
 
     /** @return {number} The low 32-bits as an unsigned value. */
-    gLong.prototype.getLowBitsUnsigned = function () {
-        return (this.low_ >= 0) ? this.low_ : gLong.TWO_PWR_32_DBL_ + this.low_;
+    Long.prototype.getLowBitsUnsigned = function () {
+        return (this.low_ >= 0) ? this.low_ : Long.TWO_PWR_32_DBL_ + this.low_;
     };
 
     /**
     * @return {number} Returns the number of bits needed to represent the absolute
     *     value of this Long.
     */
-    gLong.prototype.getNumBitsAbs = function () {
+    Long.prototype.getNumBitsAbs = function () {
         if (this.isNegative()) {
-            if (this.equals(gLong.MIN_VALUE)) {
+            if (this.equals(Long.MIN_VALUE)) {
                 return 64;
             } else {
                 return this.negate().getNumBitsAbs();
@@ -236,75 +236,75 @@ var gLong = (function () {
     };
 
     /** @return {boolean} Whether this value is zero. */
-    gLong.prototype.isZero = function () {
+    Long.prototype.isZero = function () {
         return this.high_ == 0 && this.low_ == 0;
     };
 
     /** @return {boolean} Whether this value is negative. */
-    gLong.prototype.isNegative = function () {
+    Long.prototype.isNegative = function () {
         return this.high_ < 0;
     };
 
     /** @return {boolean} Whether this value is odd. */
-    gLong.prototype.isOdd = function () {
+    Long.prototype.isOdd = function () {
         return (this.low_ & 1) == 1;
     };
 
     /**
-    * @param {gLong} other Long to compare against.
+    * @param {Long} other Long to compare against.
     * @return {boolean} Whether this Long equals the other.
     */
-    gLong.prototype.equals = function (other) {
+    Long.prototype.equals = function (other) {
         return (this.high_ == other.high_) && (this.low_ == other.low_);
     };
 
     /**
-    * @param {gLong} other Long to compare against.
+    * @param {Long} other Long to compare against.
     * @return {boolean} Whether this Long does not equal the other.
     */
-    gLong.prototype.notEquals = function (other) {
+    Long.prototype.notEquals = function (other) {
         return (this.high_ != other.high_) || (this.low_ != other.low_);
     };
 
     /**
-    * @param {gLong} other Long to compare against.
+    * @param {Long} other Long to compare against.
     * @return {boolean} Whether this Long is less than the other.
     */
-    gLong.prototype.lessThan = function (other) {
+    Long.prototype.lessThan = function (other) {
         return this.compare(other) < 0;
     };
 
     /**
-    * @param {gLong} other Long to compare against.
+    * @param {Long} other Long to compare against.
     * @return {boolean} Whether this Long is less than or equal to the other.
     */
-    gLong.prototype.lessThanOrEqual = function (other) {
+    Long.prototype.lessThanOrEqual = function (other) {
         return this.compare(other) <= 0;
     };
 
     /**
-    * @param {gLong} other Long to compare against.
+    * @param {Long} other Long to compare against.
     * @return {boolean} Whether this Long is greater than the other.
     */
-    gLong.prototype.greaterThan = function (other) {
+    Long.prototype.greaterThan = function (other) {
         return this.compare(other) > 0;
     };
 
     /**
-    * @param {gLong} other Long to compare against.
+    * @param {Long} other Long to compare against.
     * @return {boolean} Whether this Long is greater than or equal to the other.
     */
-    gLong.prototype.greaterThanOrEqual = function (other) {
+    Long.prototype.greaterThanOrEqual = function (other) {
         return this.compare(other) >= 0;
     };
 
     /**
     * Compares this Long with the given one.
-    * @param {gLong} other Long to compare against.
+    * @param {Long} other Long to compare against.
     * @return {number} 0 if they are the same, 1 if the this is greater, and -1
     *     if the given one is greater.
     */
-    gLong.prototype.compare = function (other) {
+    Long.prototype.compare = function (other) {
         if (this.equals(other)) {
             return 0;
         }
@@ -326,21 +326,21 @@ var gLong = (function () {
         }
     };
 
-    /** @return {!gLong} The negation of this value. */
-    gLong.prototype.negate = function () {
-        if (this.equals(gLong.MIN_VALUE)) {
-            return gLong.MIN_VALUE;
+    /** @return {!Long} The negation of this value. */
+    Long.prototype.negate = function () {
+        if (this.equals(Long.MIN_VALUE)) {
+            return Long.MIN_VALUE;
         } else {
-            return this.not().add(gLong.ONE);
+            return this.not().add(Long.ONE);
         }
     };
 
     /**
     * Returns the sum of this and the given Long.
-    * @param {gLong} other Long to add to this one.
-    * @return {!gLong} The sum of this and the given Long.
+    * @param {Long} other Long to add to this one.
+    * @return {!Long} The sum of this and the given Long.
     */
-    gLong.prototype.add = function (other) {
+    Long.prototype.add = function (other) {
         // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
         var a48 = this.high_ >>> 16;
         var a32 = this.high_ & 0xFFFF;
@@ -364,34 +364,34 @@ var gLong = (function () {
         c32 &= 0xFFFF;
         c48 += a48 + b48;
         c48 &= 0xFFFF;
-        return gLong.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
+        return Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
     };
 
     /**
     * Returns the difference of this and the given Long.
-    * @param {gLong} other Long to subtract from this.
-    * @return {!gLong} The difference of this and the given Long.
+    * @param {Long} other Long to subtract from this.
+    * @return {!Long} The difference of this and the given Long.
     */
-    gLong.prototype.subtract = function (other) {
+    Long.prototype.subtract = function (other) {
         return this.add(other.negate());
     };
 
     /**
     * Returns the product of this and the given long.
-    * @param {gLong} other Long to multiply with this.
-    * @return {!gLong} The product of this and the other.
+    * @param {Long} other Long to multiply with this.
+    * @return {!Long} The product of this and the other.
     */
-    gLong.prototype.multiply = function (other) {
+    Long.prototype.multiply = function (other) {
         if (this.isZero()) {
-            return gLong.ZERO;
+            return Long.ZERO;
         } else if (other.isZero()) {
-            return gLong.ZERO;
+            return Long.ZERO;
         }
 
-        if (this.equals(gLong.MIN_VALUE)) {
-            return other.isOdd() ? gLong.MIN_VALUE : gLong.ZERO;
-        } else if (other.equals(gLong.MIN_VALUE)) {
-            return this.isOdd() ? gLong.MIN_VALUE : gLong.ZERO;
+        if (this.equals(Long.MIN_VALUE)) {
+            return other.isOdd() ? Long.MIN_VALUE : Long.ZERO;
+        } else if (other.equals(Long.MIN_VALUE)) {
+            return this.isOdd() ? Long.MIN_VALUE : Long.ZERO;
         }
 
         if (this.isNegative()) {
@@ -405,8 +405,8 @@ var gLong = (function () {
         }
 
         // If both longs are small, use float multiplication
-        if (this.lessThan(gLong.TWO_PWR_24_) && other.lessThan(gLong.TWO_PWR_24_)) {
-            return gLong.fromNumber(this.toNumber() * other.toNumber());
+        if (this.lessThan(Long.TWO_PWR_24_) && other.lessThan(Long.TWO_PWR_24_)) {
+            return Long.fromNumber(this.toNumber() * other.toNumber());
         }
 
         // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
@@ -442,40 +442,40 @@ var gLong = (function () {
         c32 &= 0xFFFF;
         c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
         c48 &= 0xFFFF;
-        return gLong.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
+        return Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
     };
 
     /**
     * Returns this Long divided by the given one.
-    * @param {gLong} other Long by which to divide.
-    * @return {!gLong} This Long divided by the given one.
+    * @param {Long} other Long by which to divide.
+    * @return {!Long} This Long divided by the given one.
     */
-    gLong.prototype.div = function (other) {
+    Long.prototype.div = function (other) {
         if (other.isZero()) {
             throw Error('division by zero');
         } else if (this.isZero()) {
-            return gLong.ZERO;
+            return Long.ZERO;
         }
 
-        if (this.equals(gLong.MIN_VALUE)) {
-            if (other.equals(gLong.ONE) || other.equals(gLong.NEG_ONE)) {
-                return gLong.MIN_VALUE;
-            } else if (other.equals(gLong.MIN_VALUE)) {
-                return gLong.ONE;
+        if (this.equals(Long.MIN_VALUE)) {
+            if (other.equals(Long.ONE) || other.equals(Long.NEG_ONE)) {
+                return Long.MIN_VALUE;
+            } else if (other.equals(Long.MIN_VALUE)) {
+                return Long.ONE;
             } else {
                 // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
                 var halfThis = this.shiftRight(1);
                 var l_approx = halfThis.div(other).shiftLeft(1);
-                if (l_approx.equals(gLong.ZERO)) {
-                    return other.isNegative() ? gLong.ONE : gLong.NEG_ONE;
+                if (l_approx.equals(Long.ZERO)) {
+                    return other.isNegative() ? Long.ONE : Long.NEG_ONE;
                 } else {
                     var rem = this.subtract(other.multiply(l_approx));
                     var result = l_approx.add(rem.div(other));
                     return result;
                 }
             }
-        } else if (other.equals(gLong.MIN_VALUE)) {
-            return gLong.ZERO;
+        } else if (other.equals(Long.MIN_VALUE)) {
+            return Long.ZERO;
         }
 
         if (this.isNegative()) {
@@ -493,7 +493,7 @@ var gLong = (function () {
         // into the result, and subtract it from the remainder.  It is critical that
         // the approximate value is less than or equal to the real value so that the
         // remainder never becomes negative.
-        var res = gLong.ZERO;
+        var res = Long.ZERO;
         var rem = this;
         while (rem.greaterThanOrEqual(other)) {
             // Approximate the result of division. This may be a little greater or
@@ -509,18 +509,18 @@ var gLong = (function () {
 
             // Decrease the approximation until it is smaller than the remainder.  Note
             // that if it is too large, the product overflows and is negative.
-            var approxRes = gLong.fromNumber(approx);
+            var approxRes = Long.fromNumber(approx);
             var approxRem = approxRes.multiply(other);
             while (approxRem.isNegative() || approxRem.greaterThan(rem)) {
                 approx -= delta;
-                approxRes = gLong.fromNumber(approx);
+                approxRes = Long.fromNumber(approx);
                 approxRem = approxRes.multiply(other);
             }
 
             // We know the answer can't be zero... and actually, zero would cause
             // infinite recursion since we would make no progress.
             if (approxRes.isZero()) {
-                approxRes = gLong.ONE;
+                approxRes = Long.ONE;
             }
 
             res = res.add(approxRes);
@@ -531,51 +531,51 @@ var gLong = (function () {
 
     /**
     * Returns this Long modulo the given one.
-    * @param {gLong} other Long by which to mod.
-    * @return {!gLong} This Long modulo the given one.
+    * @param {Long} other Long by which to mod.
+    * @return {!Long} This Long modulo the given one.
     */
-    gLong.prototype.modulo = function (other) {
+    Long.prototype.modulo = function (other) {
         return this.subtract(this.div(other).multiply(other));
     };
 
-    /** @return {!gLong} The bitwise-NOT of this value. */
-    gLong.prototype.not = function () {
-        return gLong.fromBits(~this.low_, ~this.high_);
+    /** @return {!Long} The bitwise-NOT of this value. */
+    Long.prototype.not = function () {
+        return Long.fromBits(~this.low_, ~this.high_);
     };
 
     /**
     * Returns the bitwise-AND of this Long and the given one.
-    * @param {gLong} other The Long with which to AND.
-    * @return {!gLong} The bitwise-AND of this and the other.
+    * @param {Long} other The Long with which to AND.
+    * @return {!Long} The bitwise-AND of this and the other.
     */
-    gLong.prototype.and = function (other) {
-        return gLong.fromBits(this.low_ & other.low_, this.high_ & other.high_);
+    Long.prototype.and = function (other) {
+        return Long.fromBits(this.low_ & other.low_, this.high_ & other.high_);
     };
 
     /**
     * Returns the bitwise-OR of this Long and the given one.
-    * @param {gLong} other The Long with which to OR.
-    * @return {!gLong} The bitwise-OR of this and the other.
+    * @param {Long} other The Long with which to OR.
+    * @return {!Long} The bitwise-OR of this and the other.
     */
-    gLong.prototype.or = function (other) {
-        return gLong.fromBits(this.low_ | other.low_, this.high_ | other.high_);
+    Long.prototype.or = function (other) {
+        return Long.fromBits(this.low_ | other.low_, this.high_ | other.high_);
     };
 
     /**
     * Returns the bitwise-XOR of this Long and the given one.
-    * @param {gLong} other The Long with which to XOR.
-    * @return {!gLong} The bitwise-XOR of this and the other.
+    * @param {Long} other The Long with which to XOR.
+    * @return {!Long} The bitwise-XOR of this and the other.
     */
-    gLong.prototype.xor = function (other) {
-        return gLong.fromBits(this.low_ ^ other.low_, this.high_ ^ other.high_);
+    Long.prototype.xor = function (other) {
+        return Long.fromBits(this.low_ ^ other.low_, this.high_ ^ other.high_);
     };
 
     /**
     * Returns this Long with bits shifted to the left by the given amount.
     * @param {number} numBits The number of bits by which to shift.
-    * @return {!gLong} This shifted to the left by the given amount.
+    * @return {!Long} This shifted to the left by the given amount.
     */
-    gLong.prototype.shiftLeft = function (numBits) {
+    Long.prototype.shiftLeft = function (numBits) {
         numBits &= 63;
         if (numBits == 0) {
             return this;
@@ -583,9 +583,9 @@ var gLong = (function () {
             var low = this.low_;
             if (numBits < 32) {
                 var high = this.high_;
-                return gLong.fromBits(low << numBits, (high << numBits) | (low >>> (32 - numBits)));
+                return Long.fromBits(low << numBits, (high << numBits) | (low >>> (32 - numBits)));
             } else {
-                return gLong.fromBits(0, low << (numBits - 32));
+                return Long.fromBits(0, low << (numBits - 32));
             }
         }
     };
@@ -593,9 +593,9 @@ var gLong = (function () {
     /**
     * Returns this Long with bits shifted to the right by the given amount.
     * @param {number} numBits The number of bits by which to shift.
-    * @return {!gLong} This shifted to the right by the given amount.
+    * @return {!Long} This shifted to the right by the given amount.
     */
-    gLong.prototype.shiftRight = function (numBits) {
+    Long.prototype.shiftRight = function (numBits) {
         numBits &= 63;
         if (numBits == 0) {
             return this;
@@ -603,9 +603,9 @@ var gLong = (function () {
             var high = this.high_;
             if (numBits < 32) {
                 var low = this.low_;
-                return gLong.fromBits((low >>> numBits) | (high << (32 - numBits)), high >> numBits);
+                return Long.fromBits((low >>> numBits) | (high << (32 - numBits)), high >> numBits);
             } else {
-                return gLong.fromBits(high >> (numBits - 32), high >= 0 ? 0 : -1);
+                return Long.fromBits(high >> (numBits - 32), high >= 0 ? 0 : -1);
             }
         }
     };
@@ -614,10 +614,10 @@ var gLong = (function () {
     * Returns this Long with bits shifted to the right by the given amount, with
     * the new top bits matching the current sign bit.
     * @param {number} numBits The number of bits by which to shift.
-    * @return {!gLong} This shifted to the right by the given amount, with
+    * @return {!Long} This shifted to the right by the given amount, with
     *     zeros placed into the new leading bits.
     */
-    gLong.prototype.shiftRightUnsigned = function (numBits) {
+    Long.prototype.shiftRightUnsigned = function (numBits) {
         numBits &= 63;
         if (numBits == 0) {
             return this;
@@ -625,29 +625,29 @@ var gLong = (function () {
             var high = this.high_;
             if (numBits < 32) {
                 var low = this.low_;
-                return gLong.fromBits((low >>> numBits) | (high << (32 - numBits)), high >>> numBits);
+                return Long.fromBits((low >>> numBits) | (high << (32 - numBits)), high >>> numBits);
             } else if (numBits == 32) {
-                return gLong.fromBits(high, 0);
+                return Long.fromBits(high, 0);
             } else {
-                return gLong.fromBits(high >>> (numBits - 32), 0);
+                return Long.fromBits(high >>> (numBits - 32), 0);
             }
         }
     };
-    gLong.IntCache_ = {};
+    Long.IntCache_ = {};
 
-    gLong.TWO_PWR_16_DBL_ = 1 << 16;
-    gLong.TWO_PWR_24_DBL_ = 1 << 24;
-    gLong.TWO_PWR_32_DBL_ = gLong.TWO_PWR_16_DBL_ * gLong.TWO_PWR_16_DBL_;
-    gLong.TWO_PWR_31_DBL_ = gLong.TWO_PWR_32_DBL_ / 2;
-    gLong.TWO_PWR_48_DBL_ = gLong.TWO_PWR_32_DBL_ * gLong.TWO_PWR_16_DBL_;
-    gLong.TWO_PWR_64_DBL_ = gLong.TWO_PWR_32_DBL_ * gLong.TWO_PWR_32_DBL_;
-    gLong.TWO_PWR_63_DBL_ = gLong.TWO_PWR_64_DBL_ / 2;
+    Long.TWO_PWR_16_DBL_ = 1 << 16;
+    Long.TWO_PWR_24_DBL_ = 1 << 24;
+    Long.TWO_PWR_32_DBL_ = Long.TWO_PWR_16_DBL_ * Long.TWO_PWR_16_DBL_;
+    Long.TWO_PWR_31_DBL_ = Long.TWO_PWR_32_DBL_ / 2;
+    Long.TWO_PWR_48_DBL_ = Long.TWO_PWR_32_DBL_ * Long.TWO_PWR_16_DBL_;
+    Long.TWO_PWR_64_DBL_ = Long.TWO_PWR_32_DBL_ * Long.TWO_PWR_32_DBL_;
+    Long.TWO_PWR_63_DBL_ = Long.TWO_PWR_64_DBL_ / 2;
 
-    gLong.ZERO = gLong.fromInt(0);
-    gLong.ONE = gLong.fromInt(1);
-    gLong.NEG_ONE = gLong.fromInt(-1);
-    gLong.MAX_VALUE = gLong.fromBits(0xFFFFFFFF, 0x7FFFFFFF);
-    gLong.MIN_VALUE = gLong.fromBits(0, 0x80000000);
-    gLong.TWO_PWR_24_ = gLong.fromInt(gLong.TWO_PWR_24_DBL_);
-    return gLong;
+    Long.ZERO = Long.fromInt(0);
+    Long.ONE = Long.fromInt(1);
+    Long.NEG_ONE = Long.fromInt(-1);
+    Long.MAX_VALUE = Long.fromBits(0xFFFFFFFF, 0x7FFFFFFF);
+    Long.MIN_VALUE = Long.fromBits(0, 0x80000000);
+    Long.TWO_PWR_24_ = Long.fromInt(Long.TWO_PWR_24_DBL_);
+    return Long;
 })();
