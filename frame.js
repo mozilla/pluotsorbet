@@ -245,11 +245,14 @@ Frame.prototype.invoke = function(op, methodInfo) {
                 throw new Error("not support constant type");
             }
             break;
-        case 0x15: case 0x17: case 0x19: // iload, ifloat, aload
+        case 0x15: // iload
+        case 0x17: // fload
+        case 0x19: // aload
             var idx = callee.isWide() ? callee.read16() : callee.read8();
             stack.push(callee.getLocal(idx));
             break;
-        case 0x16: case 0x18: // lload, dload
+        case 0x16: // lload
+        case 0x18: // dload
             var idx = callee.isWide() ? callee.read16() : callee.read8();
             stack.push2(callee.getLocal(idx));
             break;
@@ -309,6 +312,75 @@ Frame.prototype.invoke = function(op, methodInfo) {
                 break;
             stack.push2(refArray[idx]);
             break;
+        case 0x36: // istore
+        case 0x38: // fstore
+        case 0x3a: // astore
+            var idx = callee.isWide() ? callee.read16() : callee.read8();
+            callee.setLocal(idx, stack.pop());
+            break;
+        case 0x37: // lstore
+        case 0x39: // dstore
+            var idx = callee.isWide() ? callee.read16() : callee.read8();
+            callee.setLocal(idx, stack.pop2());
+            break;
+        case 0x3b: // istore_0
+        case 0x43: // fstore_0
+        case 0x4b: // astore_0
+            callee.setLocal(0, stack.pop());
+            break;
+        case 0x3c: // istore_1
+        case 0x44: // fstore_1
+        case 0x4c: // astore_1
+            callee.setLocal(1, stack.pop());
+            break;
+        case 0x3d: // istore_2
+        case 0x45: // fstore_2
+        case 0x4d: // astore_2
+            callee.setLocal(2, stack.pop());
+            break;
+        case 0x3e: // istore_3
+        case 0x46: // fstore_3
+        case 0x4e: // astore_3
+            callee.setLocal(3, stack.pop());
+            break;
+        case 0x3f: // lstore_0
+        case 0x47: // dstore_0
+            callee.setLocal(0, stack.pop2());
+            break;
+        case 0x40: // lstore_1
+        case 0x48: // dstore_1
+            callee.setLocal(1, stack.pop2());
+            break;
+        case 0x41: // lstore_2
+        case 0x49: // dstore_2
+            callee.setLocal(2, stack.pop2());
+            break;
+        case 0x42: // lstore_3
+        case 0x4a: // dstore_3
+            callee.setLocal(2, stack.pop2());
+            break;
+        case 0x4f: // iastore
+        case 0x51: // fastore
+        case 0x53: // aastore
+        case 0x54: // bastore
+        case 0x55: // castore
+        case 0x56: // sastore
+            var val = stack.pop();
+            var idx = stack.pop();
+            var refArray = stack.pop();
+            if (!callee.checkArrayAccess(refArray, idx))
+                break;
+            refArray[idx] = val;
+            break;
+        case 0x50: // lastore
+        case 0x52: // dastore
+            var val = stack.pop2();
+            var idx = stack.pop();
+            var refArray = stack.pop();
+            if (!callee.checkArrayAccess(refArray, idx))
+                break;
+            refArray[idx] = val;
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -333,68 +405,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.istore = Frame.prototype.fstore = Frame.prototype.astore = function() {
-    var idx = this.isWide() ? this.read16() : this.read8();
-    this.setLocal(idx, this.stack.pop());
-}
-
-Frame.prototype.lstore = Frame.prototype.dstore = function() {
-    var idx = this.isWide() ? this.read16() : this.read8();
-    this.setLocal(idx, this.stack.pop2());
-}
-
-Frame.prototype.istore_0 = Frame.prototype.fstore_0 = Frame.prototype.astore_0 = function() {
-    this.setLocal(0, this.stack.pop());
-}
-
-Frame.prototype.lstore_0 = Frame.prototype.dstore_0 = function() {
-    this.setLocal(0, this.stack.pop2());
-}
-
-Frame.prototype.istore_1 = Frame.prototype.fstore_1 = Frame.prototype.astore_1 = function() {
-    this.setLocal(1, this.stack.pop());
-}
-
-Frame.prototype.lstore_1 = Frame.prototype.dstore_1 = function() {
-    this.setLocal(1, this.stack.pop2());
-}
-
-Frame.prototype.istore_2 = Frame.prototype.fstore_2 = Frame.prototype.astore_2 = function() {
-    this.setLocal(2, this.stack.pop());
-}
-
-Frame.prototype.lstore_2 = Frame.prototype.dstore_2 = function() {
-    this.setLocal(2, this.stack.pop2());
-}
-
-Frame.prototype.istore_3 = Frame.prototype.fstore_3 = Frame.prototype.astore_3 = function() {
-    this.setLocal(3, this.stack.pop());
-}
-
-Frame.prototype.lstore_3 = Frame.prototype.dstore_3 = function() {
-    this.setLocal(3, this.stack.pop2());
-}
-
-Frame.prototype.iastore = Frame.prototype.fastore = Frame.prototype.aastore = Frame.prototype.bastore = Frame.prototype.castore = Frame.prototype.sastore = function() {
-    var val = this.stack.pop();
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
-    if (!this.checkArrayAccess(refArray, idx)) {
-        return;
-    }
-    refArray[idx] = val;
-}
-
-Frame.prototype.lastore = Frame.prototype.dastore = function() {
-    var val = this.stack.pop2();
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
-    if (!this.checkArrayAccess(refArray, idx)) {
-        return;
-    }
-    refArray[idx] = val;
 }
 
 Frame.prototype.pop = function() {
