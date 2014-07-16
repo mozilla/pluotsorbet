@@ -148,8 +148,8 @@ Frame.prototype.invoke = function(op, methodInfo) {
 
     while (true) {
         var op = callee.read8();
-        var x = [];
-        callee.stack.forEach(function (e) { x.push(e.toSource()); });
+        // var x = [];
+        // callee.stack.forEach(function (e) { x.push(e.toSource()); });
         // console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], x.join(" "));
         switch (op) {
         case OPCODES.return:
