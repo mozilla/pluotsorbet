@@ -881,23 +881,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case 0xbf: // athrow
             callee.throw(stack.pop());
             break;
-
-
-        case OPCODES.return:
-            callee.popFrame();
-            return;
-
-        case OPCODES.ireturn:
-        case OPCODES.freturn:
-        case OPCODES.areturn:
-            callee.popFrame().stack.push(callee.stack.pop());
-            return;
-
-        case OPCODES.lreturn:
-        case OPCODES.dreturn:
-            callee.popFrame().stack.push2(callee.stack.pop2());
-            return;
-
         case 0xc2: // monitorenter
             var obj = stack.pop();
             if (!obj) {
@@ -923,6 +906,21 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         case 0xc4: // wide
             break;
+
+        case OPCODES.return:
+            callee.popFrame();
+            return;
+
+        case OPCODES.ireturn:
+        case OPCODES.freturn:
+        case OPCODES.areturn:
+            callee.popFrame().stack.push(callee.stack.pop());
+            return;
+
+        case OPCODES.lreturn:
+        case OPCODES.dreturn:
+            callee.popFrame().stack.push2(callee.stack.pop2());
+            return;
 
         default:
             var opName = OPCODES[op];
@@ -1004,4 +1002,3 @@ Frame.prototype.lookupswitch = function() {
 
     this.ip = startip - 1 + jmp;
 }
-
