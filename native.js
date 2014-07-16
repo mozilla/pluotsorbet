@@ -3,12 +3,12 @@
 
 'use strict';
 
-var JavaException = function (className, msg) {
-    this.className = className;
-    this.msg;
+var Native = function() {
 }
 
-var Native = function() {
+Native.prototype.JavaException = function(className, msg) {
+    this.className = className;
+    this.msg = msg;
 }
 
 Native.prototype.invokeNative = function(caller, methodInfo) {
@@ -43,7 +43,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
     try {
         var result = methodInfo.native.apply(caller, args);
     } catch (e) {
-        if (!(e instanceof JavaException)) {
+        if (!(e instanceof Native.JavaException)) {
             throw e;
         }
         caller.raiseException(e.className, e.msg);
@@ -122,7 +122,7 @@ Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"
     var className = util.chars2string(name.value, name.offset, name.count).replace(".", "/", "g");
     var classInfo = CLASSES.getClass(this, className);
     if (!classInfo) {
-        throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+        throw new Native.JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
     }
     var classObject = CLASSES.newObject(this, "java/lang/Class");
     classObject.vmClass = classInfo;
