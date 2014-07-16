@@ -486,6 +486,62 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case 0x6b: // dmul
             stack.push2(stack.pop2() * stack.pop2());
             break;
+        case 0x6c: // idiv
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            if (!val1) {
+                callee.raiseException("java/lang/ArithmeticException", "/ by zero");
+                break;
+            }
+            stack.push((val2 === utils.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
+            break;
+        case 0x6d: // ldiv
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            if (!val1.isZero()) {
+                callee.raiseException("java/lang/ArithmeticException", "/ by zero");
+                break;
+            }
+            stack.push2(val2.div(val1));
+            break;
+        case 0x6e: // fdiv
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(utils.double2float(val2 / val1));
+            break;
+        case 0x6f: // ddiv
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            stack.push2(val2 / val1);
+            break;
+        case 0x70: // irem
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            if (!val1) {
+                callee.raiseException("java/lang/ArithmeticException", "/ by zero");
+                break;
+            }
+            stack.push(val2 % val1);
+            break;
+        case 0x71: // lrem
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            if (val1.isZero()) {
+                callee.raiseException("java/lang/ArithmeticException", "/ by zero");
+                break;
+            }
+            stack.push2(val2.modulo(val1));
+            break;
+        case 0x72: // frem
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(utils.double2float(val2 % val1));
+            break;
+        case 0x73: // drem
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            stack.push2(val2 % val1);
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -510,70 +566,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.idiv = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    if (!val1) {
-        this.raiseException("java/lang/ArithmeticException", "/ by zero");
-        return;
-    }
-    this.stack.push((val2 === utils.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
-}
-
-Frame.prototype.ldiv = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    if (!val1.isZero()) {
-        this.raiseException("java/lang/ArithmeticException", "/ by zero");
-        return;
-    }
-    this.stack.push2(val2.div(val1));
-}
-
-Frame.prototype.ddiv = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2 / val1);
-}
-
-Frame.prototype.fdiv = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(utils.double2float(val2 / val1));
-}
-
-Frame.prototype.irem = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    if (!val1) {
-        this.raiseException("java/lang/ArithmeticException", "/ by zero");
-        return;
-    }
-    this.stack.push(val2 % val1);
-}
-
-Frame.prototype.lrem = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    if (val1.isZero()) {
-        this.raiseException("java/lang/ArithmeticException", "/ by zero");
-        return;
-    }
-    this.stack.push2(val2.modulo(val1));
-}
-
-Frame.prototype.drem = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2 % val1);
-}
-
-Frame.prototype.frem = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(utils.double2float(val2 % val1));
 }
 
 Frame.prototype.ineg = function() {
