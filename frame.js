@@ -27,7 +27,7 @@ var Frame = function(methodInfo) {
     this.stack = [];
 }
 
-Frame.prototype.newFrame = function(methodInfo, consumes) {
+Frame.prototype.pushFrame = function(methodInfo, consumes) {
     var callee = new Frame(methodInfo);
     callee.locals = this.stack;
     callee.localsBase = this.stack.length - consumes;
@@ -144,7 +144,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
         return;
     }
 
-    var callee = this.newFrame(methodInfo, consumes);
+    var callee = this.pushFrame(methodInfo, consumes);
 
     while (true) {
         var op = callee.read8();
