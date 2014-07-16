@@ -922,22 +922,18 @@ Frame.prototype.invoke = function(op, methodInfo) {
             var method = CLASSES.getMethod(callee, classInfo, methodName, signature, op === 0xb8);
             callee.invoke(op, method);
             break;
-
-        case OPCODES.return:
+        case 0xb1: // return
             callee.popFrame();
             return;
-
-        case OPCODES.ireturn:
-        case OPCODES.freturn:
-        case OPCODES.areturn:
+        case 0xac: // ireturn
+        case 0xae: // freturn
+        case 0xb0: // areturn
             callee.popFrame().stack.push(callee.stack.pop());
             return;
-
-        case OPCODES.lreturn:
-        case OPCODES.dreturn:
+        case 0xad: // lreturn
+        case 0xaf: // dreturn
             callee.popFrame().stack.push2(callee.stack.pop2());
             return;
-
         default:
             var opName = OPCODES[op];
             if (!(opName in this))
@@ -946,9 +942,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.invokespecial = Frame.prototype.invokeinterface = function() {
 }
 
 Frame.prototype.tableswitch = function() {
