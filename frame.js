@@ -826,8 +826,31 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case 0xbe: // arraylength
             stack.push(stack.pop().length);
             break;
-
-
+        case 0xb4: // getfield
+            var idx = callee.read16();
+            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
+            var obj = stack.pop();
+            if (!obj) {
+                callee.raiseException("java/lang/NullPointerException");
+                break;
+            }
+            var value = obj[fieldName];
+            if (typeof value === "undefined") {
+                value = util.defaultValue(cp[cp[cp[idx].name_and_type_index].signature_index].bytes);
+            }
+            stack.push(value);
+            break;
+        case 0xb5: // putfield
+            var idx = callee.read16();
+            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
+            var val = stack.pop();
+            var obj = stack.pop();
+            if (!obj) {
+                callee.raiseException("java/lang/NullPointerException");
+                break;
+            }
+            obj[fieldName] = val;
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -853,35 +876,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
         }
     };
 }
-
-Frame.prototype.putfield = function() {
-    var idx = this.read16();
-    var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    var val = this.stack.pop();
-    var obj = this.stack.pop();
-    if (!obj) {
-        this.raiseException("java/lang/NullPointerException");
-        return;
-    }
-    obj[fieldName] = val;
-}
-
-Frame.prototype.getfield = function() {
-    var cp = this.cp;
-    var nameAndType = cp[cp[this.read16()].name_and_type_index];
-    var fieldName = cp[nameAndType.name_index].bytes;
-    var obj = this.stack.pop();
-    if (!obj) {
-        this.raiseException("java/lang/NullPointerException");
-        return;
-    }
-    var value = obj[fieldName];
-    if (typeof value === "undefined") {
-        value = util.defaultValue(cp[nameAndType.signature_index].bytes);
-    }
-    this.stack.push(value);
-}
-
 
 Frame.prototype.new = function() {
     var idx = this.read16();
