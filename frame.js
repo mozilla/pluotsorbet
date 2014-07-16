@@ -602,6 +602,137 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case 0x83: // lxor
             stack.push2(stack.pop2().xor(stack.pop2()));
             break;
+        case 0x94: // lcmp
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            if (val2.greaterThan(val1)) {
+                stack.push(1);
+            } else if (val2.lessThan(val1)) {
+                stack.push(-1);
+            } else {
+                stack.push(0);
+            }
+            break;
+        case 0x95: // fcmpl
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            if (isNaN(val1) || isNaN(val2)) {
+                stack.push(-1);
+            } else if (val2 > val1) {
+                stack.push(1);
+            } else if (val2 < val1) {
+                stack.push(-1);
+            } else {
+                stack.push(0);
+            }
+            break;
+        case 0x96: // fcmpg
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            if (isNaN(val1) || isNaN(val2)) {
+                stack.push(1);
+            } else if (val2 > val1) {
+                stack.push(1);
+            } else if (val2 < val1) {
+                stack.push(-1);
+            } else {
+                stack.push(0);
+            }
+            break;
+        case 0x97: // dcmpl
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            if (isNaN(val1) || isNaN(val2)) {
+                stack.push(-1);
+            } else if (val2 > val1) {
+                stack.push(1);
+            } else if (val2 < val1) {
+                stack.push(-1);
+            } else {
+                stack.push(0);
+            }
+            break;
+        case 0x98: // dcmpg
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            if (isNaN(val1) || isNaN(val2)) {
+                stack.push(1);
+            } else if (val2 > val1) {
+                stack.push(1);
+            } else if (val2 < val1) {
+                stack.push(-1);
+            } else {
+                stack.push(0);
+            }
+            break;
+        case 0x9f: // if_icmpeq
+            var jmp = callee.ip - 1 + callee.read16signed();
+            var ref1 = stack.pop();
+            var ref2 = stack.pop();
+            callee.ip = ref1 === ref2 ? jmp : callee.ip;
+            break;
+        case 0xa0: // if_cmpne
+            var jmp = callee.ip - 1 + callee.read16signed();
+            var ref1 = stack.pop();
+            var ref2 = stack.pop();
+            callee.ip = ref1 !== ref2 ? jmp : callee.ip;
+            break;
+        case 0xa1: // if_icmplt
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() > stack.pop() ? jmp : callee.ip;
+            break;
+        case 0xa2: // if_icmpge
+            var jmp = callee.ip - 1 + callee.read16signed();
+            var ref1 = stack.pop();
+            var ref2 = stack.pop();
+            callee.ip = ref1 <= ref2 ? jmp : callee.ip;
+            break;
+        case 0xa3: // if_icmpgt
+            var jmp = callee.ip - 1 + callee.read16signed();
+            var ref1 = stack.pop();
+            var ref2 = stack.pop();
+            callee.ip = ref1 < ref2 ? jmp : callee.ip;
+            break;
+        case 0xa4: // if_icmple
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() >= stack.pop() ? jmp : callee.ip;
+            break;
+        case 0xa5: // if_acmpeq
+            var jmp = callee.ip - 1 + calee.read16signed();
+            var ref1 = stack.pop();
+            var ref2 = stack.pop();
+            callee.ip = ref1 === ref2 ? jmp : callee.ip;
+            break;
+        case 0xa6: // if_acmpne
+            var jmp = callee.ip - 1 + callee.read16signed();
+            var ref1 = stack.pop();
+            var ref2 = stack.pop();
+            callee.ip = ref1 !== ref2 ? jmp : callee.ip;
+            break;
+        case 0x99: // ifeq
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() === 0 ? jmp : callee.ip;
+            break;
+        case 0x9a: // ifne
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() !== 0 ? jmp : callee.ip;
+            break;
+        case 0x9b: // iflt
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() < 0 ? jmp : callee.ip;
+            break;
+        case 0x9c: // ifge
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() >= 0 ? jmp : callee.ip;
+            break;
+        case 0x9d: // ifgt
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() > 0 ? jmp : callee.ip;
+            break;
+        case 0x9e: // ifle
+            var jmp = callee.ip - 1 + callee.read16signed();
+            callee.ip = stack.pop() <= 0 ? jmp : callee.ip;
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -626,74 +757,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.lcmp = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    if (val2.greaterThan(val1)) {
-        this.stack.push(1);
-    } else if (val2.lessThan(val1)) {
-        this.stack.push(-1);
-    } else {
-        this.stack.push(0);
-    }
-}
-
-Frame.prototype.fcmpl = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(-1);
-    } else if (val2 > val1) {
-        this.stack.push(1);
-    } else if (val2 < val1) {
-        this.stack.push(-1);
-    } else {
-        this.stack.push(0);
-    }
-}
-
-Frame.prototype.fcmpg = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(1);
-    } else if (val2 > val1) {
-        this.stack.push(1);
-    } else if (val2 < val1) {
-        this.stack.push(-1);
-    } else {
-        this.stack.push(0);
-    }
-}
-
-Frame.prototype.dcmpl = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(-1);
-    } else if (val2 > val1) {
-        this.stack.push(1);
-    } else if (val2 < val1) {
-        this.stack.push(-1);
-    } else {
-        this.stack.push(0);
-    }
-}
-
-Frame.prototype.dcmpg = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    if (isNaN(val1) || isNaN(val2)) {
-        this.stack.push(1);
-    } else if (val2 > val1) {
-        this.stack.push(1);
-    } else if (val2 < val1) {
-        this.stack.push(-1);
-    } else {
-        this.stack.push(0);
-    }
 }
 
 Frame.prototype.newarray = function() {
@@ -744,87 +807,6 @@ Frame.prototype.arraylength = function() {
     this.stack.push(ref.length);
 }
 
-Frame.prototype.if_icmpeq = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
-    this.ip = ref1 === ref2 ? jmp : this.ip;
-}
-
-Frame.prototype.if_icmpne = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
-    this.ip = ref1 !== ref2 ? jmp : this.ip;
-}
-
-Frame.prototype.if_icmpgt = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
-    this.ip = ref1 < ref2 ? jmp : this.ip;
-}
-
-Frame.prototype.if_icmple = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() >= this.stack.pop() ? jmp : this.ip;
-}
-
-Frame.prototype.if_icmplt = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() > this.stack.pop() ? jmp : this.ip;
-}
-
-Frame.prototype.if_icmpge = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
-    this.ip = ref1 <= ref2 ? jmp : this.ip;
-}
-
-Frame.prototype.if_acmpeq = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
-    this.ip = ref1 === ref2 ? jmp : this.ip;
-}
-
-Frame.prototype.if_acmpne = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    var ref1 = this.stack.pop();
-    var ref2 = this.stack.pop();
-    this.ip = ref1 !== ref2 ? jmp : this.ip;
-}
-
-Frame.prototype.ifne = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() !== 0 ? jmp : this.ip;
-}
-
-Frame.prototype.ifeq = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() === 0 ? jmp : this.ip;
-}
-
-Frame.prototype.iflt = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() < 0 ? jmp : this.ip;
-}
-
-Frame.prototype.ifge = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() >= 0 ? jmp : this.ip;
-}
-
-Frame.prototype.ifgt = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() > 0 ? jmp : this.ip;
-}
-
-Frame.prototype.ifle = function() {
-    var jmp = this.ip - 1 + this.read16signed();
-    this.ip = this.stack.pop() <= 0 ? jmp : this.ip;
-}
 
 Frame.prototype.i2l = function() {
     this.stack.push2(new gLong(this.stack.pop()));
