@@ -120,6 +120,18 @@ Frame.prototype.raiseException = function(className, message) {
     this.throw(ex);
 }
 
+Frame.prototype.checkArrayAccess = function(refArray, idx) {
+    if (!refArray) {
+        this.raiseException("java/lang/NullPointerException");
+        return false;
+    }
+    if (idx < 0 || idx >= refArray.length) {
+        this.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
+        return false;
+    }
+    return true;
+}
+
 Frame.prototype.invoke = function(op, methodInfo) {
     var consumes = Signature.parse(methodInfo.signature).IN.slots;
 
@@ -162,13 +174,18 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case 0x02: // aconst_m1
             stack.push(-1);
             break;
-        case 0x03: case 0x0b: case 0x0e: // iconst_0, fconst_0, dconst_0
+        case 0x03: // iconst_0
+        case 0x0b: // fconst_0
+        case 0x0e: // dconst_0
             stack.push(0);
             break;
-        case 0x04: case 0x0c: case 0x0f: // iconst_1, fconst_1, dconst_0
+        case 0x04: // iconst_1
+        case 0x0c: // fconst_1
+        case 0x0f: // dconst_1
             stack.push(1);
             break;
-        case 0x05: case 0x0d: // iconst_2, fconst_2
+        case 0x05: // iconst_2
+        case 0x0d: // fconst_2
             stack.push(2);
             break;
         case 0x06: // iconst_3
@@ -228,6 +245,70 @@ Frame.prototype.invoke = function(op, methodInfo) {
                 throw new Error("not support constant type");
             }
             break;
+        case 0x15: case 0x17: case 0x19: // iload, ifloat, aload
+            var idx = callee.isWide() ? callee.read16() : callee.read8();
+            stack.push(callee.getLocal(idx));
+            break;
+        case 0x16: case 0x18: // lload, dload
+            var idx = callee.isWide() ? callee.read16() : callee.read8();
+            stack.push2(callee.getLocal(idx));
+            break;
+        case 0x1a: // iload_0
+        case 0x22: // fload_0
+        case 0x2a: // aload_0
+            stack.push(callee.getLocal(0));
+            break;
+        case 0x1b: // iload_1
+        case 0x23: // fload_1
+        case 0x2b: // aload_1
+            stack.push(callee.getLocal(1));
+            break;
+        case 0x1c: // iload_2
+        case 0x24: // fload_2
+        case 0x2c: // aload_2
+            stack.push(callee.getLocal(2));
+            break;
+        case 0x1d: // iload_3
+        case 0x25: // fload_3
+        case 0x2d: // aload_3
+            stack.push(callee.getLocal(3));
+            break;
+        case 0x1e: // lload_0
+        case 0x26: // dload_0
+            stack.push2(callee.getLocal(0));
+            break;
+        case 0x1f: // lload_1
+        case 0x27: // dload_1
+            stack.push2(callee.getLocal(1));
+            break;
+        case 0x20: // lload_2
+        case 0x28: // dload_2
+            stack.push2(callee.getLocal(2));
+            break;
+        case 0x21: // lload_3
+        case 0x29: // dload_3
+            stack.push2(callee.getLocal(3));
+            break;
+        case 0x2e: // iaload
+        case 0x30: // faload
+        case 0x32: // aaload
+        case 0x33: // baload
+        case 0x34: // caload
+        case 0x35: // saload
+            var idx = stack.pop();
+            var refArray = stack.pop();
+            if (!callee.checkArrayAccess(refArray, idx))
+                break;
+            stack.push(refArray[idx]);
+            break;
+        case 0x2f: // laload
+        case 0x31: // daload
+            var idx = stack.pop();
+            var refArray = stack.pop();
+            if (!callee.checkArrayAccess(refArray, idx))
+                break;
+            stack.push2(refArray[idx]);
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -252,78 +333,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.iload = Frame.prototype.iload = Frame.prototype.aload = function() {
-    var idx = this.isWide() ? this.read16() : this.read8();
-    this.stack.push(this.getLocal(idx));
-}
-
-Frame.prototype.lload = Frame.prototype.dload = function() {
-    var idx = this.isWide() ? this.read16() : this.read8();
-    this.stack.push2(this.getLocal(idx));
-}
-
-Frame.prototype.iload_0 = Frame.prototype.fload_0 = Frame.prototype.aload_0 = function() {
-    this.stack.push(this.getLocal(0));
-}
-
-Frame.prototype.lload_0 = Frame.prototype.dloat_0 = function() {
-    this.stack.push2(this.getLocal(0));
-}
-
-Frame.prototype.iload_1 = Frame.prototype.fload_1 = Frame.prototype.aload_1 = function() {
-    this.stack.push(this.getLocal(1));
-}
-
-Frame.prototype.lload_1 = Frame.prototype.dloat_1 = function() {
-    this.stack.push2(this.getLocal(1));
-}
-
-Frame.prototype.iload_2 = Frame.prototype.fload_2 = Frame.prototype.aload_2 = function() {
-    this.stack.push(this.getLocal(2));
-}
-
-Frame.prototype.lload_2 = Frame.prototype.dloat_2 = function() {
-    this.stack.push2(this.getLocal(2));
-}
-
-Frame.prototype.iload_3 = Frame.prototype.fload_3 = Frame.prototype.aload_3 = function() {
-    this.stack.push(this.getLocal(3));
-}
-
-Frame.prototype.lload_3 = Frame.prototype.dloat_3 = function() {
-    this.stack.push2(this.getLocal(3));
-}
-
-Frame.prototype.checkArrayAccess = function(refArray, idx) {
-    if (!refArray) {
-        this.raiseException("java/lang/NullPointerException");
-        return false;
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        this.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
-        return false;
-    }
-    return true;
-}
-
-Frame.prototype.iaload = Frame.prototype.faload = Frame.prototype.aaload = Frame.prototype.baload = Frame.prototype.caload = Frame.prototype.saload = function() {
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
-    if (!this.checkArrayAccess(refArray, idx)) {
-        return;
-    }
-    this.stack.push(refArray[idx]);
-}
-
-Frame.prototype.laload = Frame.prototype.daload = function() {
-    var idx = this.stack.pop();
-    var refArray = this.stack.pop();
-    if (!this.checkArrayAccess(refArray, idx)) {
-        return;
-    }
-    this.stack.push2(refArray[idx]);
 }
 
 Frame.prototype.istore = Frame.prototype.fstore = Frame.prototype.astore = function() {
