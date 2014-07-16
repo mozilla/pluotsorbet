@@ -444,6 +444,48 @@ Frame.prototype.invoke = function(op, methodInfo) {
             stack.push(val1);
             stack.push(val2);
             break;
+        case 0x84: // iinc
+            var wide = callee.isWide();
+            var idx = wide ? callee.read16() : callee.read8();
+            var val = wide ? callee.read16signed() : callee.read8signed();
+            callee.setLocal(idx, callee.getLocal(idx) + val);
+            break;
+        case 0x60: // iadd
+            stack.push((stack.pop() + stack.pop())|0);
+            break;
+        case 0x61: // ladd
+            stack.push2(stack.pop2().add(stack.pop2()));
+            break;
+        case 0x62: // fadd
+            stack.push(utils.double2float(stack.pop() + stack.pop()));
+            break;
+        case 0x63: // dadd
+            stack.push2(stack.pop2() + stack.pop2());
+            break;
+        case 0x64: // isub
+            stack.push((- stack.pop() + stack.pop())|0);
+            break;
+        case 0x65: // lsub
+            stack.push2(stack.pop2().add(stack.pop2()).negate());
+            break;
+        case 0x66: // fsub
+            stack.push(utils.double2float(- stack.pop() + stack.pop()));
+            break;
+        case 0x67: // dsub
+            stack.push2(- stack.pop2() + stack.pop2());
+            break;
+        case 0x68: // imul
+            stack.push(Math.imul(stack.pop(), stack.pop()));
+            break;
+        case 0x69: // lmul
+            stack.push2(stack.pop2().multiply(stack.pop2()));
+            break;
+        case 0x6a: // fmul
+            stack.push(utils.double2float(stack.pop() * stack.pop()));
+            break;
+        case 0x6b: // dmul
+            stack.push2(stack.pop2() * stack.pop2());
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -468,61 +510,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.iinc = function() {
-    var wide = this.isWide();
-    var idx = wide ? this.read16() : this.read8();
-    var val = wide ? this.read16signed() : this.read8signed();
-    this.setLocal(idx, this.getLocal(idx) + val);
-}
-
-Frame.prototype.iadd = function() {
-    this.stack.push((this.stack.pop() + this.stack.pop())|0);
-}
-
-Frame.prototype.ladd = function() {
-    this.stack.push2(this.stack.pop2().add(this.stack.pop2()));
-}
-
-Frame.prototype.dadd = function() {
-    this.stack.push2(this.stack.pop2() + this.stack.pop2());
-}
-
-Frame.prototype.fadd = function() {
-    this.stack.push(utils.double2float(this.stack.pop() + this.stack.pop()));
-}
-
-Frame.prototype.isub = function() {
-    this.stack.push((- this.stack.pop() + this.stack.pop())|0);
-}
-
-Frame.prototype.lsub = function() {
-    this.stack.push2(this.stack.pop2().add(this.stack.pop2()).negate());
-}
-
-Frame.prototype.dsub = function() {
-    this.stack.push2(- this.stack.pop2() + this.stack.pop2());
-}
-
-Frame.prototype.fsub = function() {
-    this.stack.push(utils.double2float(- this.stack.pop() + this.stack.pop()));
-}
-
-Frame.prototype.imul = function() {
-    this.stack.push(Math.imul(this.stack.pop(), this.stack.pop()));
-}
-
-Frame.prototype.lmul = function() {
-    this.stack.push2(this.stack.pop2().multiply(this.stack.pop2()));
-}
-
-Frame.prototype.dmul = function() {
-    this.stack.push2(this.stack.pop2() * this.stack.pop2());
-}
-
-Frame.prototype.fmul = function() {
-    this.stack.push(utils.double2float(this.stack.pop() * this.stack.pop()));
 }
 
 Frame.prototype.idiv = function() {
