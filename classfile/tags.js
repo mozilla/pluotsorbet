@@ -16,12 +16,4 @@ var TAGS = {
     CONSTANT_NameAndType: 12,
     CONSTANT_Utf8: 1,
     CONSTANT_Unicode: 2,
-    toString: function(tag) {
-        for(var name in this) {
-            if (this[name] === tag) {
-                return name;
-            }
-        }
-        return null;
-    }
 };
