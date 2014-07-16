@@ -851,6 +851,24 @@ Frame.prototype.invoke = function(op, methodInfo) {
             }
             obj[fieldName] = val;
             break;
+        case 0xb2: // getstatic
+            var idx = callee.read16();
+            var className = cp[cp[cp[idx].class_index].name_index].bytes;
+            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
+            stack.push(CLASSES.getStaticField(callee, className, fieldName));
+            break;
+        case 0xb3: // putstatic
+            var idx = callee.read16();
+            var className = cp[cp[cp[idx].class_index].name_index].bytes;
+            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
+            CLASSES.setStaticField(callee, className, fieldName, stack.pop());
+            break;
+        case 0xbb: // new
+            var idx = callee.read16();
+            var className = cp[cp[idx].name_index].bytes;
+            stack.push(CLASSES.newObject(callee, className));
+            break;
+
 
         case OPCODES.return:
             callee.popFrame();
@@ -875,26 +893,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.new = function() {
-    var idx = this.read16();
-    var className = this.cp[this.cp[idx].name_index].bytes;
-    this.stack.push(CLASSES.newObject(this, className));
-}
-
-Frame.prototype.getstatic = function() {
-    var idx = this.read16();
-    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
-    var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    this.stack.push(CLASSES.getStaticField(this, className, fieldName));
-}
-
-Frame.prototype.putstatic = function() {
-    var idx = this.read16();
-    var className = this.cp[this.cp[this.cp[idx].class_index].name_index].bytes;
-    var fieldName = this.cp[this.cp[this.cp[idx].name_and_type_index].name_index].bytes;
-    CLASSES.setStaticField(this, className, fieldName, this.stack.pop());
 }
 
 Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.invokespecial = Frame.prototype.invokeinterface = function() {
