@@ -45,14 +45,17 @@ var Long = (function (exports) {
         this.low_ = low | 0; // force into 32 signed bits.
         this.high_ = high | 0; // force into 32 signed bits.
     }
+
+    var IntCache = {};
+
     /**
     * Returns a Long representing the given (32-bit) integer value.
     * @param {number} value The 32-bit integer in question.
     * @return {!Long} The corresponding Long value.
     */
-    Long.fromInt = function (value) {
+    function fromInt(value) {
         if (-128 <= value && value < 128) {
-            var cachedObj = Long.IntCache_[value];
+            var cachedObj = IntCache[value];
             if (cachedObj) {
                 return cachedObj;
             }
@@ -60,7 +63,7 @@ var Long = (function (exports) {
 
         var obj = new Long(value, value < 0 ? -1 : 0);
         if (-128 <= value && value < 128) {
-            Long.IntCache_[value] = obj;
+            IntCache[value] = obj;
         }
         return obj;
     };
@@ -71,17 +74,17 @@ var Long = (function (exports) {
     * @param {number} value The number in question.
     * @return {!Long} The corresponding Long value.
     */
-    Long.fromNumber = function (value) {
+    function fromNumber(value) {
         if (isNaN(value) || !isFinite(value)) {
-            return Long.ZERO;
-        } else if (value <= -Long.TWO_PWR_63_DBL_) {
-            return Long.MIN_VALUE;
-        } else if (value + 1 >= Long.TWO_PWR_63_DBL_) {
-            return Long.MAX_VALUE;
+            return ZERO;
+        } else if (value <= -TWO_PWR_63_DBL_) {
+            return MIN_VALUE;
+        } else if (value + 1 >= TWO_PWR_63_DBL_) {
+            return MAX_VALUE;
         } else if (value < 0) {
-            return Long.fromNumber(-value).negate();
+            return fromNumber(-value).negate();
         } else {
-            return new Long((value % Long.TWO_PWR_32_DBL_) | 0, (value / Long.TWO_PWR_32_DBL_) | 0);
+            return new Long((value % TWO_PWR_32_DBL_) | 0, (value / TWO_PWR_32_DBL_) | 0);
         }
     };
 
@@ -92,7 +95,7 @@ var Long = (function (exports) {
     * @param {number} highBits The high 32-bits.
     * @return {!Long} The corresponding Long value.
     */
-    Long.fromBits = function (lowBits, highBits) {
+    function fromBits(lowBits, highBits) {
         return new Long(lowBits, highBits);
     };
 
@@ -103,7 +106,7 @@ var Long = (function (exports) {
     * @param {number=} opt_radix The radix in which the text is written.
     * @return {!Long} The corresponding Long value.
     */
-    Long.fromString = function (str, opt_radix) {
+    function fromString(str, opt_radix) {
         if (str.length == 0) {
             throw Error('number format error: empty string');
         }
@@ -114,25 +117,25 @@ var Long = (function (exports) {
         }
 
         if (str.charAt(0) == '-') {
-            return Long.fromString(str.substring(1), radix).negate();
+            return fromString(str.substring(1), radix).negate();
         } else if (str.indexOf('-') >= 0) {
             throw Error('number format error: interior "-" character: ' + str);
         }
 
         // Do several (8) digits each time through the loop, so as to
         // minimize the calls to the very expensive emulated div.
-        var radixToPower = Long.fromNumber(Math.pow(radix, 8));
+        var radixToPower = fromNumber(Math.pow(radix, 8));
 
-        var result = Long.ZERO;
+        var result = ZERO;
         for (var i = 0; i < str.length; i += 8) {
             var size = Math.min(8, str.length - i);
             var value = parseInt(str.substring(i, i + size), radix);
             if (size < 8) {
-                var power = Long.fromNumber(Math.pow(radix, size));
-                result = result.multiply(power).add(Long.fromNumber(value));
+                var power = fromNumber(Math.pow(radix, size));
+                result = result.multiply(power).add(fromNumber(value));
             } else {
                 result = result.multiply(radixToPower);
-                result = result.add(Long.fromNumber(value));
+                result = result.add(fromNumber(value));
             }
         }
         return result;
@@ -145,7 +148,7 @@ var Long = (function (exports) {
 
     /** @return {number} The closest floating-point representation to this value. */
     Long.prototype.toNumber = function () {
-        return this.high_ * Long.TWO_PWR_32_DBL_ + this.getLowBitsUnsigned();
+        return this.high_ * TWO_PWR_32_DBL_ + this.getLowBitsUnsigned();
     };
 
     /**
@@ -163,10 +166,10 @@ var Long = (function (exports) {
         }
 
         if (this.isNegative()) {
-            if (this.equals(Long.MIN_VALUE)) {
+            if (this.equals(MIN_VALUE)) {
                 // We need to change the Long value before it can be negated, so we remove
                 // the bottom-most digit in this base and then recurse to do the rest.
-                var radixLong = Long.fromNumber(radix);
+                var radixLong = fromNumber(radix);
                 var div = this.div(radixLong);
                 var rem = div.multiply(radixLong).subtract(this);
                 return div.toString(radix) + rem.toInt().toString(radix);
@@ -177,7 +180,7 @@ var Long = (function (exports) {
 
         // Do several (6) digits each time through the loop, so as to
         // minimize the calls to the very expensive emulated div.
-        var radixToPower = Long.fromNumber(Math.pow(radix, 6));
+        var radixToPower = fromNumber(Math.pow(radix, 6));
 
         var rem = this;
         var result = '';
@@ -210,7 +213,7 @@ var Long = (function (exports) {
 
     /** @return {number} The low 32-bits as an unsigned value. */
     Long.prototype.getLowBitsUnsigned = function () {
-        return (this.low_ >= 0) ? this.low_ : Long.TWO_PWR_32_DBL_ + this.low_;
+        return (this.low_ >= 0) ? this.low_ : TWO_PWR_32_DBL_ + this.low_;
     };
 
     /**
@@ -219,7 +222,7 @@ var Long = (function (exports) {
     */
     Long.prototype.getNumBitsAbs = function () {
         if (this.isNegative()) {
-            if (this.equals(Long.MIN_VALUE)) {
+            if (this.equals(MIN_VALUE)) {
                 return 64;
             } else {
                 return this.negate().getNumBitsAbs();
@@ -328,10 +331,10 @@ var Long = (function (exports) {
 
     /** @return {!Long} The negation of this value. */
     Long.prototype.negate = function () {
-        if (this.equals(Long.MIN_VALUE)) {
-            return Long.MIN_VALUE;
+        if (this.equals(MIN_VALUE)) {
+            return MIN_VALUE;
         } else {
-            return this.not().add(Long.ONE);
+            return this.not().add(ONE);
         }
     };
 
@@ -364,7 +367,7 @@ var Long = (function (exports) {
         c32 &= 0xFFFF;
         c48 += a48 + b48;
         c48 &= 0xFFFF;
-        return Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
+        return fromBits((c16 << 16) | c00, (c48 << 16) | c32);
     };
 
     /**
@@ -382,16 +385,14 @@ var Long = (function (exports) {
     * @return {!Long} The product of this and the other.
     */
     Long.prototype.multiply = function (other) {
-        if (this.isZero()) {
-            return Long.ZERO;
-        } else if (other.isZero()) {
-            return Long.ZERO;
+        if (this.isZero() | other.isZero()) {
+            return ZERO;
         }
 
-        if (this.equals(Long.MIN_VALUE)) {
-            return other.isOdd() ? Long.MIN_VALUE : Long.ZERO;
-        } else if (other.equals(Long.MIN_VALUE)) {
-            return this.isOdd() ? Long.MIN_VALUE : Long.ZERO;
+        if (this.equals(MIN_VALUE)) {
+            return other.isOdd() ? MIN_VALUE : ZERO;
+        } else if (other.equals(MIN_VALUE)) {
+            return this.isOdd() ? MIN_VALUE : ZERO;
         }
 
         if (this.isNegative()) {
@@ -405,8 +406,8 @@ var Long = (function (exports) {
         }
 
         // If both longs are small, use float multiplication
-        if (this.lessThan(Long.TWO_PWR_24_) && other.lessThan(Long.TWO_PWR_24_)) {
-            return Long.fromNumber(this.toNumber() * other.toNumber());
+        if (this.lessThan(TWO_PWR_24_) && other.lessThan(TWO_PWR_24_)) {
+            return fromNumber(this.toNumber() * other.toNumber());
         }
 
         // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
@@ -442,7 +443,7 @@ var Long = (function (exports) {
         c32 &= 0xFFFF;
         c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
         c48 &= 0xFFFF;
-        return Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
+        return fromBits((c16 << 16) | c00, (c48 << 16) | c32);
     };
 
     /**
@@ -454,28 +455,28 @@ var Long = (function (exports) {
         if (other.isZero()) {
             throw Error('division by zero');
         } else if (this.isZero()) {
-            return Long.ZERO;
+            return ZERO;
         }
 
-        if (this.equals(Long.MIN_VALUE)) {
-            if (other.equals(Long.ONE) || other.equals(Long.NEG_ONE)) {
-                return Long.MIN_VALUE;
-            } else if (other.equals(Long.MIN_VALUE)) {
-                return Long.ONE;
+        if (this.equals(MIN_VALUE)) {
+            if (other.equals(ONE) || other.equals(NEG_ONE)) {
+                return MIN_VALUE;
+            } else if (other.equals(MIN_VALUE)) {
+                return ONE;
             } else {
                 // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
                 var halfThis = this.shiftRight(1);
                 var l_approx = halfThis.div(other).shiftLeft(1);
-                if (l_approx.equals(Long.ZERO)) {
-                    return other.isNegative() ? Long.ONE : Long.NEG_ONE;
+                if (l_approx.equals(ZERO)) {
+                    return other.isNegative() ? ONE : NEG_ONE;
                 } else {
                     var rem = this.subtract(other.multiply(l_approx));
                     var result = l_approx.add(rem.div(other));
                     return result;
                 }
             }
-        } else if (other.equals(Long.MIN_VALUE)) {
-            return Long.ZERO;
+        } else if (other.equals(MIN_VALUE)) {
+            return ZERO;
         }
 
         if (this.isNegative()) {
@@ -493,7 +494,7 @@ var Long = (function (exports) {
         // into the result, and subtract it from the remainder.  It is critical that
         // the approximate value is less than or equal to the real value so that the
         // remainder never becomes negative.
-        var res = Long.ZERO;
+        var res = ZERO;
         var rem = this;
         while (rem.greaterThanOrEqual(other)) {
             // Approximate the result of division. This may be a little greater or
@@ -509,18 +510,18 @@ var Long = (function (exports) {
 
             // Decrease the approximation until it is smaller than the remainder.  Note
             // that if it is too large, the product overflows and is negative.
-            var approxRes = Long.fromNumber(approx);
+            var approxRes = fromNumber(approx);
             var approxRem = approxRes.multiply(other);
             while (approxRem.isNegative() || approxRem.greaterThan(rem)) {
                 approx -= delta;
-                approxRes = Long.fromNumber(approx);
+                approxRes = fromNumber(approx);
                 approxRem = approxRes.multiply(other);
             }
 
             // We know the answer can't be zero... and actually, zero would cause
             // infinite recursion since we would make no progress.
             if (approxRes.isZero()) {
-                approxRes = Long.ONE;
+                approxRes = ONE;
             }
 
             res = res.add(approxRes);
@@ -540,7 +541,7 @@ var Long = (function (exports) {
 
     /** @return {!Long} The bitwise-NOT of this value. */
     Long.prototype.not = function () {
-        return Long.fromBits(~this.low_, ~this.high_);
+        return fromBits(~this.low_, ~this.high_);
     };
 
     /**
@@ -549,7 +550,7 @@ var Long = (function (exports) {
     * @return {!Long} The bitwise-AND of this and the other.
     */
     Long.prototype.and = function (other) {
-        return Long.fromBits(this.low_ & other.low_, this.high_ & other.high_);
+        return fromBits(this.low_ & other.low_, this.high_ & other.high_);
     };
 
     /**
@@ -558,7 +559,7 @@ var Long = (function (exports) {
     * @return {!Long} The bitwise-OR of this and the other.
     */
     Long.prototype.or = function (other) {
-        return Long.fromBits(this.low_ | other.low_, this.high_ | other.high_);
+        return fromBits(this.low_ | other.low_, this.high_ | other.high_);
     };
 
     /**
@@ -567,7 +568,7 @@ var Long = (function (exports) {
     * @return {!Long} The bitwise-XOR of this and the other.
     */
     Long.prototype.xor = function (other) {
-        return Long.fromBits(this.low_ ^ other.low_, this.high_ ^ other.high_);
+        return fromBits(this.low_ ^ other.low_, this.high_ ^ other.high_);
     };
 
     /**
@@ -583,9 +584,9 @@ var Long = (function (exports) {
             var low = this.low_;
             if (numBits < 32) {
                 var high = this.high_;
-                return Long.fromBits(low << numBits, (high << numBits) | (low >>> (32 - numBits)));
+                return fromBits(low << numBits, (high << numBits) | (low >>> (32 - numBits)));
             } else {
-                return Long.fromBits(0, low << (numBits - 32));
+                return fromBits(0, low << (numBits - 32));
             }
         }
     };
@@ -603,9 +604,9 @@ var Long = (function (exports) {
             var high = this.high_;
             if (numBits < 32) {
                 var low = this.low_;
-                return Long.fromBits((low >>> numBits) | (high << (32 - numBits)), high >> numBits);
+                return fromBits((low >>> numBits) | (high << (32 - numBits)), high >> numBits);
             } else {
-                return Long.fromBits(high >> (numBits - 32), high >= 0 ? 0 : -1);
+                return fromBits(high >> (numBits - 32), high >= 0 ? 0 : -1);
             }
         }
     };
@@ -625,29 +626,36 @@ var Long = (function (exports) {
             var high = this.high_;
             if (numBits < 32) {
                 var low = this.low_;
-                return Long.fromBits((low >>> numBits) | (high << (32 - numBits)), high >>> numBits);
+                return fromBits((low >>> numBits) | (high << (32 - numBits)), high >>> numBits);
             } else if (numBits == 32) {
-                return Long.fromBits(high, 0);
+                return fromBits(high, 0);
             } else {
-                return Long.fromBits(high >>> (numBits - 32), 0);
+                return fromBits(high >>> (numBits - 32), 0);
             }
         }
     };
-    Long.IntCache_ = {};
 
-    Long.TWO_PWR_16_DBL_ = 1 << 16;
-    Long.TWO_PWR_24_DBL_ = 1 << 24;
-    Long.TWO_PWR_32_DBL_ = Long.TWO_PWR_16_DBL_ * Long.TWO_PWR_16_DBL_;
-    Long.TWO_PWR_31_DBL_ = Long.TWO_PWR_32_DBL_ / 2;
-    Long.TWO_PWR_48_DBL_ = Long.TWO_PWR_32_DBL_ * Long.TWO_PWR_16_DBL_;
-    Long.TWO_PWR_64_DBL_ = Long.TWO_PWR_32_DBL_ * Long.TWO_PWR_32_DBL_;
-    Long.TWO_PWR_63_DBL_ = Long.TWO_PWR_64_DBL_ / 2;
+    var ZERO = fromInt(0);
+    var ONE = fromInt(1);
+    var NEG_ONE = fromInt(-1);
+    var MAX_VALUE = fromBits(0xFFFFFFFF, 0x7FFFFFFF);
+    var MIN_VALUE = fromBits(0, 0x80000000);
 
-    Long.ZERO = Long.fromInt(0);
-    Long.ONE = Long.fromInt(1);
-    Long.NEG_ONE = Long.fromInt(-1);
-    Long.MAX_VALUE = Long.fromBits(0xFFFFFFFF, 0x7FFFFFFF);
-    Long.MIN_VALUE = Long.fromBits(0, 0x80000000);
-    Long.TWO_PWR_24_ = Long.fromInt(Long.TWO_PWR_24_DBL_);
-    return Long;
-})();
+    var TWO_PWR_24_ = fromInt(TWO_PWR_24_DBL_);
+
+    var TWO_PWR_16_DBL_ = 1 << 16;
+    var TWO_PWR_24_DBL_ = 1 << 24;
+    var TWO_PWR_32_DBL_ = TWO_PWR_16_DBL_ * TWO_PWR_16_DBL_;
+    var TWO_PWR_31_DBL_ = TWO_PWR_32_DBL_ / 2;
+    var TWO_PWR_48_DBL_ = TWO_PWR_32_DBL_ * TWO_PWR_16_DBL_;
+    var TWO_PWR_64_DBL_ = TWO_PWR_32_DBL_ * TWO_PWR_32_DBL_;
+    var TWO_PWR_63_DBL_ = TWO_PWR_64_DBL_ / 2;
+
+    exports.ZERO = ZERO;
+    exports.ONE = ONE;
+
+    exports.fromInt = fromInt;
+    exports.fromNumber = fromNumber;
+    exports.fromBits = fromBits;
+    exports.fromString = fromString;
+})(typeof exports === "undefined" ? this.Long = {} : exports);
