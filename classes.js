@@ -158,6 +158,17 @@ Classes.prototype.newArray = function(caller, typeName, size) {
     return this.getArrayClass(caller, typeName).constructor.call(null, size);
 }
 
+Classes.prototype.newMultiArray = function(caller, typeName, lengths) {
+    var length = lengths[0];
+    var array = this.newArray(caller, typeName, length);
+    if (lengths.length > 0) {
+        lengths = lengths.slice(1);
+        for (var i=0; i<length; i++)
+            array[i] = this.newMultiArray(caller, typeName.substr(1), lengths);
+    }
+    return array;
+}
+
 Classes.prototype.newString = function(caller, s) {
     var obj = this.newObject(caller, "java/lang/String");
     var length = s.length;

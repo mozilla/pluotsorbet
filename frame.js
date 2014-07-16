@@ -784,6 +784,16 @@ Frame.prototype.invoke = function(op, methodInfo) {
             }
             stack.push(CLASSES.newArray(callee, className, size));
             break;
+        case 0xc5: // multianewarray
+            var idx = callee.read16();
+            var typeName = cp[cp[idx].name_index].bytes;
+            var dimensions = callee.read8();
+            var lengths = new Array(dimensions);
+            for (var i=0; i<dimensions; i++)
+                lengths[i] = stack.pop();
+            stack.push(CLASSES.newMultiArray(callee, typeName, lengths));
+            break;
+
 
         case OPCODES.return:
             callee.popFrame();
@@ -811,28 +821,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
 }
 
 
-
-Frame.prototype.multianewarray = function() {
-    var idx = this.read16();
-    var type = this.cp[this.cp[idx].name_index].bytes;
-    var dimensions = this.read8();
-    var lengths = new Array(dimensions);
-    for(var i=0; i<dimensions; i++) {
-        lengths[i] = this.stack.pop();
-    }
-    var createMultiArray = function(lengths) {
-        if (lengths.length === 0) {
-            return null;
-        }
-        var length = lengths.shift();
-        var array = new Array(length);
-        for (var i=0; i<length; i++) {
-            array[i] = createMultiArray(lengths);
-        }
-        return array;
-    };
-    this.stack.push(createMultiArray(lengths));
-}
 
 Frame.prototype.arraylength = function() {
     var ref = this.stack.pop();
