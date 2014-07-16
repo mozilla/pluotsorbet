@@ -906,6 +906,22 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         case 0xc4: // wide
             break;
+        case 0xb6: // invokevirtual
+        case 0xb7: // invokespecial
+        case 0xb8: // invokestatic
+        case 0xb9: // invokeinterface
+            var idx = callee.read16();
+            if (op === 0xb9) {
+                var argsNumber = callee.read8();
+                var zero = callee.read8();
+            }
+            var className = cp[cp[cp[idx].class_index].name_index].bytes;
+            var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
+            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
+            var classInfo = CLASSES.getClass(callee, className);
+            var method = CLASSES.getMethod(callee, classInfo, methodName, signature, op === 0xb8);
+            callee.invoke(op, method);
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -933,25 +949,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
 }
 
 Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.invokespecial = Frame.prototype.invokeinterface = function() {
-    var op = this.getOp();
-
-    var idx = this.read16();
-
-    if (op === OPCODES.invokeinterface) {
-        var argsNumber = this.read8();
-        var zero = this.read8();
-    }
-
-    var cp = this.cp;
-
-    var className = cp[cp[cp[idx].class_index].name_index].bytes;
-    var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-    var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-
-    var classInfo = CLASSES.getClass(this, className);
-    var method = CLASSES.getMethod(this, classInfo, methodName, signature, op === OPCODES.invokestatic);
-
-    this.invoke(op, method);
 }
 
 Frame.prototype.tableswitch = function() {
