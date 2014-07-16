@@ -721,6 +721,36 @@ Frame.prototype.invoke = function(op, methodInfo) {
             var jmp = callee.ip - 1 + callee.read16signed();
             callee.ip = stack.pop() !== stack.pop() ? jmp : callee.ip;
             break;
+        case 0xc6: // ifnull
+            var ref = stack.pop();
+            if (!ref)
+                callee.ip += callee.read16signed() - 1;
+            break;
+        case 0xc7: // ifnonnull
+            var ref = stack.pop();
+            if (!!ref)
+                callee.ip += callee.read16signed() - 1;
+            break;
+        case 0xa7: // goto
+            callee.ip += callee.read16signed() - 1;
+            break;
+        case 0xc8: // goto_w
+            callee.ip += callee.read32signed() - 1;
+            break;
+        case 0xa8: // jsr
+            var jmp = callee.read16();
+            stack.push(callee.ip);
+            callee.ip = jmp;
+            break;
+        case 0xc9: // jsr_w
+            var jmp = callee.read32();
+            stack.push(callee.ip);
+            callee.ip = jmp;
+            break;
+        case 0xa9: // ret
+            var idx = callee.isWide() ? callee.read16() : callee.read8();
+            callee.ip = callee.getLocal(idx);
+            break;
         case 0x85: // i2l
             stack.push2(new gLong(stack.pop()));
             break;
@@ -793,6 +823,10 @@ Frame.prototype.invoke = function(op, methodInfo) {
                 lengths[i] = stack.pop();
             stack.push(CLASSES.newMultiArray(callee, typeName, lengths));
             break;
+        case 0xbe: // arraylength
+            stack.push(stack.pop().length);
+            break;
+
 
 
         case OPCODES.return:
@@ -818,36 +852,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-
-
-Frame.prototype.arraylength = function() {
-    var ref = this.stack.pop();
-    this.stack.push(ref.length);
-}
-
-
-Frame.prototype.goto = function() {
-    this.ip += this.read16signed() - 1;
-}
-
-Frame.prototype.goto_w = function() {
-    this.ip += this.read32signed() - 1;
-}
-
-Frame.prototype.ifnull = function() {
-    var ref = this.stack.pop();
-    if (!ref) {
-        this.ip += this.read16signed() - 1;
-    }
-}
-
-Frame.prototype.ifnonnull = function() {
-    var ref = this.stack.pop();
-    if (!!ref) {
-        this.ip += this.read16signed() - 1;
-    }
 }
 
 Frame.prototype.putfield = function() {
@@ -919,23 +923,6 @@ Frame.prototype.invokestatic = Frame.prototype.invokevirtual = Frame.prototype.i
     var method = CLASSES.getMethod(this, classInfo, methodName, signature, op === OPCODES.invokestatic);
 
     this.invoke(op, method);
-}
-
-Frame.prototype.jsr = function() {
-    var jmp = this.read16();
-    this.stack.push(this.ip);
-    this.ip = jmp;
-}
-
-Frame.prototype.jsr_w = function() {
-    var jmp = this.read32();
-    this.stack.push(this.ip);
-    this.ip = jmp;
-}
-
-Frame.prototype.ret = function() {
-    var idx = this.isWide() ? this.read16() : this.read8();
-    this.ip = this.getLocal(idx);
 }
 
 Frame.prototype.tableswitch = function() {
