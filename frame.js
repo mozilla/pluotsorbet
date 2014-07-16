@@ -159,16 +159,12 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            var result = callee.stack.pop();
-            callee.popFrame();
-            this.stack.push(result);
+            callee.popFrame().stack.push(callee.stack.pop());
             return;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            var result = callee.stack.pop2();
-            callee.popFrame();
-            this.stack.push2(result);
+            callee.popFrame().stack.push2(callee.stack.pop2());
             return;
 
         default:
