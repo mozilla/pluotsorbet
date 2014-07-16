@@ -254,57 +254,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
     };
 }
 
-Frame.prototype.nop = function() {
-}
-
-Frame.prototype.aconst_null = function() {
-    this.stack.push(null);
-}
-
-Frame.prototype.iconst_m1 = function() {
-    this.stack.push(-1);
-}
-
-Frame.prototype.iconst_0 = Frame.prototype.fconst_0 = function() {
-    this.stack.push(0);
-}
-
-Frame.prototype.lconst_0 = Frame.prototype.dconst_0 = function() {
-    this.stack.push2(0);
-}
-
-Frame.prototype.iconst_1 = Frame.prototype.fconst_1 = function() {
-    this.stack.push(1);
-}
-
-Frame.prototype.lconst_1 = Frame.prototype.dconst_1 = function() {
-    this.stack.push2(1);
-}
-
-Frame.prototype.iconst_2 = Frame.prototype.fconst_2 = function() {
-    this.stack.push(2);
-}
-
-Frame.prototype.iconst_3 = function() {
-    this.stack.push(3);
-}
-
-Frame.prototype.iconst_4 = function() {
-    this.stack.push(4);
-}
-
-Frame.prototype.iconst_5 = function() {
-    this.stack.push(5);
-}
-
-Frame.prototype.sipush = function() {
-    this.stack.push(this.read16signed());
-}
-
-Frame.prototype.bipush = function() {
-    this.stack.push(this.read8signed());
-}
-
 Frame.prototype.iload = Frame.prototype.iload = Frame.prototype.aload = function() {
     var idx = this.isWide() ? this.read16() : this.read8();
     this.stack.push(this.getLocal(idx));
