@@ -926,7 +926,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
             }
             // if (obj.hasOwnProperty("$lock$")) {
             // stack.push(obj);
-            // this.ip--;
+            // callee.ip--;
             // SCHEDULER.yield();
             // } else {
             // obj["$lock$"] = "locked";
