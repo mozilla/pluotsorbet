@@ -721,6 +721,50 @@ Frame.prototype.invoke = function(op, methodInfo) {
             var jmp = callee.ip - 1 + callee.read16signed();
             callee.ip = stack.pop() !== stack.pop() ? jmp : callee.ip;
             break;
+        case 0x85: // i2l
+            stack.push2(new gLong(stack.pop()));
+            break;
+        case 0x86: // i2f
+            break;
+        case 0x87: // i2d
+            stack.push2(stack.pop());
+            break;
+        case 0x88: // l2i
+            stack.push(stack.pop2().toInt());
+            break;
+        case 0x89: // l2f
+            stack.push(utils.double2float(stack.pop2().toNumber()));
+            break;
+        case 0x8a: // l2d
+            stack.push2(stack.pop2().toNumber());
+            break;
+        case 0x8b: // f2i
+            stack.push(utils.double2int(stack.pop()));
+            break;
+        case 0x8c: // f2l
+            stack.push2(gLong.fromNumber(stack.pop()));
+            break;
+        case 0x8d: // f2d
+            stack.push2(stack.pop());
+            break;
+        case 0x8e: // d2i
+            stack.push(utils.double2int(stack.pop2()));
+            break;
+        case 0x8f: // d2l
+            stack.push2(utils.double2long(stack.pop2()));
+            break;
+        case 0x90: // d2f
+            stack.push(utils.double2float(stack.pop2()));
+            break;
+        case 0x91: // i2b
+            stack.push((stack.pop() << 24) >> 24);
+            break;
+        case 0x92: // i2c
+            stack.push(stack.pop() & 0xffff);
+            break;
+        case 0x93: // i2s
+            stack.push((stack.pop() << 16) >> 16);
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -795,65 +839,6 @@ Frame.prototype.arraylength = function() {
     this.stack.push(ref.length);
 }
 
-
-Frame.prototype.i2l = function() {
-    this.stack.push2(new gLong(this.stack.pop()));
-}
-
-Frame.prototype.i2f = function() {
-}
-
-Frame.prototype.i2d = function() {
-    this.stack.push2(this.stack.pop());
-}
-
-Frame.prototype.i2b = function() {
-    this.stack.push((this.stack.pop() << 24) >> 24);
-}
-
-Frame.prototype.i2c = function() {
-    this.stack.push(this.stack.pop() & 0xffff);
-}
-
-Frame.prototype.i2s = function() {
-    this.stack.push((this.stack.pop() << 16) >> 16);
-}
-
-Frame.prototype.l2i = function() {
-    this.stack.push(this.stack.pop2().toInt());
-}
-
-Frame.prototype.l2d = function() {
-    this.stack.push2(this.stack.pop2().toNumber());
-}
-
-Frame.prototype.l2f = function() {
-    this.stack.push(utils.double2float(this.stack.pop2().toNumber()));
-}
-
-Frame.prototype.d2i = function() {
-    this.stack.push(utils.double2int(this.stack.pop2()));
-}
-
-Frame.prototype.d2l = function() {
-    this.stack.push2(utils.double2long(this.stack.pop2()));
-}
-
-Frame.prototype.d2f = function() {
-    this.stack.push(utils.double2float(this.stack.pop2()));
-}
-
-Frame.prototype.f2d = function() {
-    this.stack.push2(this.stack.pop());
-}
-
-Frame.prototype.f2i = function() {
-    this.stack.push(utils.double2int(this.stack.pop()));
-}
-
-Frame.prototype.f2l = function() {
-    this.stack.push2(gLong.fromNumber(this.stack.pop()));
-}
 
 Frame.prototype.goto = function() {
     this.ip += this.read16signed() - 1;
