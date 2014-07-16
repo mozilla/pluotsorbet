@@ -542,6 +542,66 @@ Frame.prototype.invoke = function(op, methodInfo) {
             var val2 = stack.pop2();
             stack.push2(val2 % val1);
             break;
+        case 0x74: // ineg
+            stack.push((- stack.pop())|0);
+            break;
+        case 0x75: // lneg
+            stack.push2(stack.pop2().negate());
+            break;
+        case 0x76: // fneg
+            stack.push(- stack.pop());
+            break;
+        case 0x77: // dneg
+            stack.push2(- stack.pop2());
+            break;
+        case 0x78: // ishl
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(val2 << val1);
+            break;
+        case 0x79: // lshl
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            stack.push2(val2.shiftLeft(val1));
+            break;
+        case 0x7a: // ishr
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(val2 >> val1);
+            break;
+        case 0x7b: // lshr
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            stack.push2(val2.shiftRight(val1));
+            break;
+        case 0x7c: // iushr
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(val2 >>> val1);
+            break;
+        case 0x7d: // lushr
+            var val1 = stack.pop2();
+            var val2 = stack.pop2();
+            stack.push2(val2.shiftRightUnsigned(val1));
+            break;
+        case 0x7e: // iand
+            stack.push(stack.pop() & stack.pop());
+            break;
+        case 0x7f: // land
+            stack.push2(stack.pop2().and(stack.pop2()));
+            break;
+        case 0x80: // ior
+            stack.push(stack.pop() | stack.pop());
+            break;
+        case 0x81: // lor
+            stack.push2(stack.pop2().or(stack.pop2()));
+            break;
+        case 0x82: // ixor
+            stack.push(stack.pop() ^ stack.pop());
+            break;
+        case 0x83: // lxor
+            stack.push2(stack.pop2().xor(stack.pop2()));
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -566,82 +626,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.ineg = function() {
-    this.stack.push((- this.stack.pop())|0);
-}
-
-Frame.prototype.lneg = function() {
-    this.stack.push2(this.stack.pop2().negate());
-}
-
-Frame.prototype.dneg = function() {
-    this.stack.push2(- this.stack.pop2());
-}
-
-Frame.prototype.fneg = function() {
-    this.stack.push(- this.stack.pop());
-}
-
-Frame.prototype.ishl = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2 << val1);
-}
-
-Frame.prototype.lshl = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2.shiftLeft(val1));
-}
-
-Frame.prototype.ishr = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2 >> val1);
-}
-
-Frame.prototype.lshr = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2.shiftRight(val1));
-}
-
-Frame.prototype.iushr = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2 >>> val1);
-}
-
-Frame.prototype.lushr = function() {
-    var val1 = this.stack.pop2();
-    var val2 = this.stack.pop2();
-    this.stack.push2(val2.shiftRightUnsigned(val1));
-}
-
-Frame.prototype.iand = function() {
-    this.stack.push(this.stack.pop() & this.stack.pop());
-}
-
-Frame.prototype.land = function() {
-    this.stack.push2(this.stack.pop2().and(this.stack.pop2()));
-}
-
-Frame.prototype.ior = function() {
-    this.stack.push(this.stack.pop() | this.stack.pop());
-}
-
-Frame.prototype.lor = function() {
-    this.stack.push2(this.stack.pop2().or(this.stack.pop2()));
-}
-
-Frame.prototype.ixor = function() {
-    this.stack.push(this.stack.pop() ^ this.stack.pop());
-}
-
-Frame.prototype.lxor = function() {
-    this.stack.push2(this.stack.pop2().xor(this.stack.pop2()));
 }
 
 Frame.prototype.lcmp = function() {
