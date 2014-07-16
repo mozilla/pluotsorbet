@@ -150,14 +150,18 @@ Classes.prototype.newObject = function(caller, className) {
     return new (this.getClass(caller, className).constructor)();
 }
 
-Classes.prototype.newArray = function(caller, constructor, size) {
+Classes.prototype.newPrimitiveArray = function(constructor, size) {
     return constructor.call(null, size);
+}
+
+Classes.prototype.newArray = function(caller, typeName, size) {
+    return this.getArrayClass(caller, typeName).constructor.call(null, size);
 }
 
 Classes.prototype.newString = function(caller, s) {
     var obj = this.newObject(caller, "java/lang/String");
     var length = s.length;
-    var chars = this.newArray(caller, Uint16Array, length);
+    var chars = this.newPrimitiveArray(Uint16Array, length);
     for (var n = 0; n < length; ++n)
         chars[n] = s.charCodeAt(n);
     obj.value = chars;

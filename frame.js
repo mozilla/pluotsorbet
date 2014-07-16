@@ -765,6 +765,25 @@ Frame.prototype.invoke = function(op, methodInfo) {
         case 0x93: // i2s
             stack.push((stack.pop() << 16) >> 16);
             break;
+        case 0xbc: // newarray
+            var type = callee.read8();
+            var size = stack.pop();
+            if (size < 0) {
+                callee.raiseException("java/lang/NegativeSizeException");
+                break;
+            }
+            stack.push(CLASSES.newPrimitiveArray(ARRAY_TYPE[type], size));
+            break;
+        case 0xbd: // anewarray
+            var idx = callee.read16();
+            var className = cp[cp[idx].name_index].bytes;
+            var size = stack.pop();
+            if (size < 0) {
+                callee.raiseException("java/lang/NegativeSizeException");
+                break;
+            }
+            stack.push(CLASSES.newArray(callee, className, size));
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -791,26 +810,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
     };
 }
 
-Frame.prototype.newarray = function() {
-    var type = this.read8();
-    var size = this.stack.pop();
-    if (size < 0) {
-        this.raiseException("java/lang/NegativeSizeException");
-        return;
-    }
-    this.stack.push(CLASSES.newArray(this, ARRAY_TYPE[type], size));
-}
 
-Frame.prototype.anewarray = function() {
-    var idx = this.read16();
-    var className = this.cp[this.cp[idx].name_index].bytes;
-    var size = this.stack.pop();
-    if (size < 0) {
-        this.raiseException("java/lang/NegativeSizeException");
-        return;
-    }
-    this.stack.push(new Array(size));
-}
 
 Frame.prototype.multianewarray = function() {
     var idx = this.read16();
