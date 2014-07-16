@@ -381,6 +381,69 @@ Frame.prototype.invoke = function(op, methodInfo) {
                 break;
             refArray[idx] = val;
             break;
+        case 0x57: // pop
+            stack.pop();
+            break;
+        case 0x58: // pop2
+            stack.pop2();
+            break;
+        case 0x59: // dup
+            var val = stack.pop();
+            stack.push(val);
+            stack.push(val);
+            break;
+        case 0x5a: // dup_x1
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(val1);
+            stack.push(val2);
+            stack.push(val1);
+            break;
+        case 0x5b: // dup_x2
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            var val3 = stack.pop();
+            stack.push(val1);
+            stack.push(val3);
+            stack.push(val2);
+            stack.push(val1);
+            break;
+        case 0x5c: // dup2
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(val2);
+            stack.push(val1);
+            stack.push(val2);
+            stack.push(val1);
+            break;
+        case 0x5d: // dup2_x1
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            var val3 = stack.pop();
+            stack.push(val2);
+            stack.push(val1);
+            stack.push(val3);
+            stack.push(val2);
+            stack.push(val1);
+            break;
+        case 0x5e: // dup2_x2
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            var val3 = stack.pop();
+            var val4 = stack.pop();
+            stack.push(val2);
+            stack.push(val1);
+            stack.push(val4);
+            stack.push(val3);
+            stack.push(val2);
+            stack.push(val1);
+            break;
+        case 0x5f: // swap
+            var val1 = stack.pop();
+            var val2 = stack.pop();
+            stack.push(val1);
+            stack.push(val2);
+            break;
 
         case OPCODES.return:
             callee.popFrame();
@@ -405,78 +468,6 @@ Frame.prototype.invoke = function(op, methodInfo) {
             break;
         }
     };
-}
-
-Frame.prototype.pop = function() {
-    this.stack.pop();
-}
-
-Frame.prototype.pop2 = function() {
-    this.stack.pop2();
-}
-
-Frame.prototype.dup = function() {
-    var val = this.stack.pop();
-    this.stack.push(val);
-    this.stack.push(val);
-}
-
-Frame.prototype.dup_x1 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val1);
-    this.stack.push(val2);
-    this.stack.push(val1);
-}
-
-Frame.prototype.dup_x2 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    var val3 = this.stack.pop();
-    this.stack.push(val1);
-    this.stack.push(val3);
-    this.stack.push(val2);
-    this.stack.push(val1);
-}
-
-Frame.prototype.dup2 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val2);
-    this.stack.push(val1);
-    this.stack.push(val2);
-    this.stack.push(val1);
-}
-
-Frame.prototype.dup2_x1 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    var val3 = this.stack.pop();
-    this.stack.push(val2);
-    this.stack.push(val1);
-    this.stack.push(val3);
-    this.stack.push(val2);
-    this.stack.push(val1);
-}
-
-Frame.prototype.dup2_x2 = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    var val3 = this.stack.pop();
-    var val4 = this.stack.pop();
-    this.stack.push(val2);
-    this.stack.push(val1);
-    this.stack.push(val4);
-    this.stack.push(val3);
-    this.stack.push(val2);
-    this.stack.push(val1);
-}
-
-Frame.prototype.swap = function() {
-    var val1 = this.stack.pop();
-    var val2 = this.stack.pop();
-    this.stack.push(val1);
-    this.stack.push(val2);
 }
 
 Frame.prototype.iinc = function() {
