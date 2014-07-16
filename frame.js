@@ -27,6 +27,22 @@ var Frame = function(methodInfo) {
     this.stack = [];
 }
 
+Frame.prototype.newFrame = function(methodInfo, consumes) {
+    var callee = new Frame(methodInfo);
+    callee.locals = this.stack;
+    callee.localsBase = this.stack.length - consumes;
+    callee.caller = this;
+    THREADS.current.frame = callee;
+    return callee;
+}
+
+Frame.prototype.popFrame = function() {
+    var caller = this.caller;
+    caller.stack.length = this.localsBase;
+    THREADS.current.frame = caller;
+    return caller;
+}
+
 Frame.prototype.getLocal = function(idx) {
     return this.locals[this.localsBase + idx];
 }
@@ -128,9 +144,7 @@ Frame.prototype.invoke = function(op, methodInfo) {
         return;
     }
 
-    var callee = new Frame(methodInfo);
-    callee.locals = this.stack;
-    callee.localsBase = this.stack.length - consumes;
+    var callee = this.newFrame(methodInfo, consumes);
 
     while (true) {
         var op = callee.read8();
@@ -139,20 +153,22 @@ Frame.prototype.invoke = function(op, methodInfo) {
         // console.log(callee.methodInfo.classInfo.className, callee.methodInfo.name, callee.ip - 1, OPCODES[op], x.join(" "));
         switch (op) {
         case OPCODES.return:
-            this.stack.length = callee.localsBase;
+            callee.popFrame();
             return;
 
         case OPCODES.ireturn:
         case OPCODES.freturn:
         case OPCODES.areturn:
-            this.stack.length = callee.localsBase;
-            this.stack.push(callee.stack.pop());
+            var result = callee.stack.pop();
+            callee.popFrame();
+            this.stack.push(result);
             return;
 
         case OPCODES.lreturn:
         case OPCODES.dreturn:
-            this.stack.length = callee.localsBase;
-            this.stack.push2(callee.stack.pop2());
+            var result = callee.stack.pop2();
+            callee.popFrame();
+            this.stack.push2(result);
             return;
 
         default:
