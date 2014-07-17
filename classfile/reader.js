@@ -30,6 +30,18 @@ Reader.prototype.read32 = function() {
     return data;
 }
 
+Reader.prototype.readInteger = function() {
+    var data = this.bytes.getInt32(this.offset, false);
+    this.offset += 4;
+    return data;
+}
+
+Reader.prototype.readFloat = function() {
+    var data = this.bytes.getFloat32(this.offset, false);
+    this.offset += 4;
+    return data;
+}
+
 var Utf8TextDecoder;
 
 Reader.prototype.readString = function(length) {

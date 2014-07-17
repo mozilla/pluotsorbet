@@ -61,7 +61,10 @@ VM.execute = function(frame) {
             var constant = cp[(op === 0x12) ? frame.read8() : frame.read16()];
             switch(constant.tag) {
             case TAGS.CONSTANT_Integer:
-                stack.push(constant.bytes|0);
+                stack.push(constant.integer);
+                break;
+            case TAGS.CONSTANT_Float:
+                stack.push(constant.float);
                 break;
             case TAGS.CONSTANT_String:
                 stack.push(CLASSES.newString(frame, cp[constant.string_index].bytes));
@@ -73,9 +76,6 @@ VM.execute = function(frame) {
         case 0x14: // ldc2_w
             var constant = cp[frame.read16()];
             switch(constant.tag) {
-            case TAGS.CONSTANT_String:
-                stack.push(cp[constant.string_index].bytes);
-                break;
             case TAGS.CONSTANT_Long:
                 stack.push2(Numeric.getLong(constant.bytes));
                 break;
@@ -298,7 +298,7 @@ VM.execute = function(frame) {
             stack.push2(stack.pop2().add(stack.pop2()));
             break;
         case 0x62: // fadd
-            stack.push(utils.double2float(stack.pop() + stack.pop()));
+            stack.push(util.double2float(stack.pop() + stack.pop()));
             break;
         case 0x63: // dadd
             stack.push2(stack.pop2() + stack.pop2());
@@ -310,7 +310,7 @@ VM.execute = function(frame) {
             stack.push2(stack.pop2().add(stack.pop2()).negate());
             break;
         case 0x66: // fsub
-            stack.push(utils.double2float(- stack.pop() + stack.pop()));
+            stack.push(util.double2float(- stack.pop() + stack.pop()));
             break;
         case 0x67: // dsub
             stack.push2(- stack.pop2() + stack.pop2());
@@ -322,7 +322,7 @@ VM.execute = function(frame) {
             stack.push2(stack.pop2().multiply(stack.pop2()));
             break;
         case 0x6a: // fmul
-            stack.push(utils.double2float(stack.pop() * stack.pop()));
+            stack.push(util.double2float(stack.pop() * stack.pop()));
             break;
         case 0x6b: // dmul
             stack.push2(stack.pop2() * stack.pop2());
@@ -334,7 +334,7 @@ VM.execute = function(frame) {
                 frame.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
-            stack.push((val2 === utils.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
+            stack.push((val2 === util.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
             break;
         case 0x6d: // ldiv
             var val1 = stack.pop2();
@@ -348,7 +348,7 @@ VM.execute = function(frame) {
         case 0x6e: // fdiv
             var val1 = stack.pop();
             var val2 = stack.pop();
-            stack.push(utils.double2float(val2 / val1));
+            stack.push(util.double2float(val2 / val1));
             break;
         case 0x6f: // ddiv
             var val1 = stack.pop2();
@@ -376,7 +376,7 @@ VM.execute = function(frame) {
         case 0x72: // frem
             var val1 = stack.pop();
             var val2 = stack.pop();
-            stack.push(utils.double2float(val2 % val1));
+            stack.push(util.double2float(val2 % val1));
             break;
         case 0x73: // drem
             var val1 = stack.pop2();
@@ -604,13 +604,13 @@ VM.execute = function(frame) {
             stack.push(stack.pop2().toInt());
             break;
         case 0x89: // l2f
-            stack.push(utils.double2float(stack.pop2().toNumber()));
+            stack.push(util.double2float(stack.pop2().toNumber()));
             break;
         case 0x8a: // l2d
             stack.push2(stack.pop2().toNumber());
             break;
         case 0x8b: // f2i
-            stack.push(utils.double2int(stack.pop()));
+            stack.push(util.double2int(stack.pop()));
             break;
         case 0x8c: // f2l
             stack.push2(Long.fromNumber(stack.pop()));
@@ -619,13 +619,13 @@ VM.execute = function(frame) {
             stack.push2(stack.pop());
             break;
         case 0x8e: // d2i
-            stack.push(utils.double2int(stack.pop2()));
+            stack.push(util.double2int(stack.pop2()));
             break;
         case 0x8f: // d2l
-            stack.push2(utils.double2long(stack.pop2()));
+            stack.push2(util.double2long(stack.pop2()));
             break;
         case 0x90: // d2f
-            stack.push(utils.double2float(stack.pop2()));
+            stack.push(util.double2float(stack.pop2()));
             break;
         case 0x91: // i2b
             stack.push((stack.pop() << 24) >> 24);

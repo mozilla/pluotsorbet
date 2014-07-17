@@ -31,16 +31,11 @@ var util = (function () {
     return 0;
   }
 
+  var floatmem = Float32Array(1);
+
   function double2float(d) {
-    if (a > 3.40282346638528860e+38)
-      return Number.POSITIVE_INFINITY;
-    if (0 < a < 1.40129846432481707e-45)
-      return 0;
-    if (a < -3.40282346638528860e+38)
-      return Number.NEGATIVE_INFINITY;
-    if (0 > a > -1.40129846432481707e-45)
-      return 0;
-    return a;
+    floatmem[0] = d;
+    return floatmem[0];
   }
 
   var INT_MAX = Math.pow(2, 31) - 1;

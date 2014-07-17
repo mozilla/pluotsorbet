@@ -131,8 +131,10 @@ var getClassImage = function(classBytes) {
                 classImage.constant_pool.push( { tag: tag, string_index: string_index } );
                 break;
             case TAGS.CONSTANT_Integer:
-                var bytes = reader.read32();
-                classImage.constant_pool.push( {  tag: tag, bytes: bytes } );
+                classImage.constant_pool.push( { tag: tag, integer: reader.readInteger() } );
+                break;
+            case TAGS.CONSTANT_Float:
+                classImage.constant_pool.push( { tag: tag, float: reader.readFloat() } );
                 break;
             case TAGS.CONSTANT_Double:
             case TAGS.CONSTANT_Long:
@@ -148,7 +150,7 @@ var getClassImage = function(classBytes) {
             case TAGS.CONSTANT_InterfaceMethodref:
                 var class_index = reader.read16();
                 var name_and_type_index = reader.read16();
-                classImage.constant_pool.push( {  tag: tag, class_index: class_index, name_and_type_index:name_and_type_index } );
+                classImage.constant_pool.push( { tag: tag, class_index: class_index, name_and_type_index:name_and_type_index } );
                 break;
             default:
                 throw new Error("tag " + tag + " not supported.");
