@@ -28,6 +28,4 @@ function runTest(name, cb) {
   });
 }
 
-runTest("tests/TestPrintln.class", function () {
-  runTest("tests/TestDup.class");
-});
+runTest("tests/TestPrintln.class");
