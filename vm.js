@@ -11,7 +11,7 @@ VM.execute = function(frame) {
 
     while (true) {
         var op = frame.read8();
-        //console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + frame.stack.join(","));
+        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + frame.stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;

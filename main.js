@@ -29,3 +29,4 @@ function runTest(name, cb) {
 }
 
 runTest("tests/TestOps.class");
+//runTest("tests/TestLong.class");

@@ -17,6 +17,18 @@ public class TestOps {
 	return -a;
     }
 
+    static float fmul(float a, float b) {
+	return a * b;
+    }
+
+    static float fdiv(float a, float b) {
+	return a / b;
+    }
+
+    static float frem(float a, float b) {
+	return a % b;
+    }
+
     public static void main(String[] args) {
 	Assert("Do asserts work", true);
 	Assert("add two ints", iadd(1, 2) == 3);
@@ -25,6 +37,8 @@ public class TestOps {
 	Assert("add two floats", fadd(1.0f, 2.0f) == 3.0f);
 	Assert("max float + 1", fadd(Float.MAX_VALUE, 1) == Float.MAX_VALUE);
 	Assert("float neg", fneg(1.0f) == -1.0f);
+	Assert("float mul", fmul(2.0f, 3.0f) == 6.0f);
+	Assert("float div", fdiv(6.0f, 2.0f) == 3.0f);
     }
 }
 
