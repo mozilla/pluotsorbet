@@ -41,6 +41,7 @@ Classes.prototype.loadFile = function(fileName) {
 
 Classes.prototype.loadClassBytes = function(bytes) {
     var classInfo = new ClassInfo(bytes);
+    classInfo.staticFields = {};
     this.classes[classInfo.className] = classInfo;
     return classInfo;
 }
@@ -88,7 +89,6 @@ Classes.prototype.getClass = function(caller, className) {
     if (className[0] === "[")
         return this.getArrayClass(caller, className);
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
-        classInfo.staticFields = {};
         var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true, false);
         if (clinit)
             caller.invoke(OPCODES.invokestatic, clinit);

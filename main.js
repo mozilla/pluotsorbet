@@ -15,6 +15,8 @@ function load(file, cb) {
 
 function runTest(name, cb) {
   var jvm = new JVM();
+  // This is a hack. We should eliminate CLASSES instead.
+  CLASSES.classes = {};
   load("java/cldc1.1.1.jar", function (data) {
     jvm.addPath("java/cldc1.1.1.jar", data);
     load(name, function (data) {
@@ -26,4 +28,6 @@ function runTest(name, cb) {
   });
 }
 
-runTest("tests/TestPrintln.class")
+runTest("tests/TestPrintln.class", function () {
+  runTest("tests/TestDup.class");
+});

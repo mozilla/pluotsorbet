@@ -31,4 +31,4 @@ j2me.js: $(SRC)
 	cat $^ > $@
 
 clean:
-	rm -f j2me.js `find . -name "*~"`
+	rm -f j2me.js tests/*.class `find . -name "*~"`
