@@ -30,8 +30,7 @@ JVM.prototype.loadJarFile = function(fileName) {
 }
 
 JVM.prototype.run = function(className) {
-    var frame = THREADS.current.frame;
-    var classInfo = CLASSES.getClass(frame, className);
+    var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
         throw new Error("Could not find or load main class " + className);
     }
@@ -39,6 +38,7 @@ JVM.prototype.run = function(className) {
     if (!entryPoint) {
         throw new Error("Could not find main method in class " + className);
     }
+    var frame = new Frame();
     frame.stack.push(null); // args
     frame.invoke(OPCODES.invokestatic, entryPoint);
 }

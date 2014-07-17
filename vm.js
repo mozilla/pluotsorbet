@@ -67,7 +67,7 @@ VM.execute = function(frame) {
                 stack.push(constant.float);
                 break;
             case TAGS.CONSTANT_String:
-                stack.push(CLASSES.newString(frame, cp[constant.string_index].bytes));
+                stack.push(CLASSES.newString(cp[constant.string_index].bytes));
                 break;
             default:
                 throw new Error("not support constant type");
@@ -198,7 +198,7 @@ VM.execute = function(frame) {
             break;
         case 0x42: // lstore_3
         case 0x4a: // dstore_3
-            frame.setLocal(2, stack.pop2());
+            frame.setLocal(3, stack.pop2());
             break;
         case 0x4f: // iastore
         case 0x51: // fastore
@@ -690,7 +690,7 @@ VM.execute = function(frame) {
                 frame.raiseException("java/lang/NegativeSizeException");
                 break;
             }
-            stack.push(CLASSES.newArray(frame, className, size));
+            stack.push(CLASSES.newArray(className, size));
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();
@@ -699,7 +699,7 @@ VM.execute = function(frame) {
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
                 lengths[i] = stack.pop();
-            stack.push(CLASSES.newMultiArray(frame, typeName, lengths));
+            stack.push(CLASSES.newMultiArray(typeName, lengths));
             break;
         case 0xbe: // arraylength
             stack.push(stack.pop().length);
@@ -736,19 +736,19 @@ VM.execute = function(frame) {
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            stack.pushType(signature, CLASSES.getStaticField(frame, className, fieldName));
+            stack.pushType(signature, CLASSES.getStaticField(className, fieldName));
             break;
         case 0xb3: // putstatic
             var idx = frame.read16();
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            CLASSES.setStaticField(frame, className, fieldName, stack.popType(signature));
+            CLASSES.setStaticField(className, fieldName, stack.popType(signature));
             break;
         case 0xbb: // new
             var idx = frame.read16();
             var className = cp[cp[idx].name_index].bytes;
-            stack.push(CLASSES.newObject(frame, className));
+            stack.push(CLASSES.newObject(className));
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();
@@ -800,8 +800,8 @@ VM.execute = function(frame) {
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var classInfo = CLASSES.getClass(frame, className, op === 0xb8);
-            var methodInfo = CLASSES.getMethod(frame, classInfo, methodName, signature, op === 0xb8);
+            var classInfo = CLASSES.getClass(className, op === 0xb8);
+            var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, op === 0xb8);
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
             if (op !== OPCODES.invokestatic) {
                 ++consumes;
@@ -814,7 +814,7 @@ VM.execute = function(frame) {
                 case OPCODES.invokevirtual:
                     // console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
                     if (methodInfo.classInfo != obj.class)
-                        methodInfo = CLASSES.getMethod(frame, obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
+                        methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
                     break;
                 }
             }

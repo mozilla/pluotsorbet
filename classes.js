@@ -75,21 +75,22 @@ Classes.prototype.getEntryPoint = function(classInfo) {
     }
 }
 
-Classes.prototype.initClass = function(caller, classInfo) {
+Classes.prototype.initClass = function(classInfo) {
     if (classInfo.staticFields)
         return;
     if (classInfo.superClassName)
-        this.getClass(caller, classInfo.superClassName, true);
+        this.getClass(classInfo.superClassName, true);
     classInfo.staticFields = {};
-    var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true, false);
-    if (clinit)
-        caller.invoke(OPCODES.invokestatic, clinit);
+    var clinit = this.getMethod(classInfo, "<clinit>", "()V", true, false);
+    if (clinit) {
+        (new Frame()).invoke(OPCODES.invokestatic, clinit);
+    }
     classInfo.constructor = function () {
     }
     classInfo.constructor.prototype.class = classInfo;
 }
 
-Classes.prototype.getClass = function(caller, className, init) {
+Classes.prototype.getClass = function(className, init) {
     var classInfo = this.classes[className];
     if (!classInfo) {
         if (className[0] === "[") {
@@ -100,7 +101,7 @@ Classes.prototype.getClass = function(caller, className, init) {
             return null;
     }
     if (init)
-        this.initClass(caller, classInfo);
+        this.initClass(classInfo);
     return classInfo;
 };
 
@@ -124,15 +125,15 @@ Classes.prototype.initPrimitiveArrayType = function(elementType, constructor) {
     return classInfo;
 }
 
-Classes.prototype.getStaticField = function(caller, className, fieldName) {
-    return this.getClass(caller, className, true).staticFields[fieldName];
+Classes.prototype.getStaticField = function(className, fieldName) {
+    return this.getClass(className, true).staticFields[fieldName];
 }
 
-Classes.prototype.setStaticField = function(caller, className, fieldName, value) {
-    this.getClass(caller, className, true).staticFields[fieldName] = value;
+Classes.prototype.setStaticField = function(className, fieldName, value) {
+    this.getClass(className, true).staticFields[fieldName] = value;
 }
 
-Classes.prototype.getMethod = function(caller, classInfo, methodName, signature, staticFlag, inheritFlag) {
+Classes.prototype.getMethod = function(classInfo, methodName, signature, staticFlag, inheritFlag) {
     while (true) {
         var methods = classInfo.methods;
         for (var i=0; i<methods.length; i++) {
@@ -145,35 +146,35 @@ Classes.prototype.getMethod = function(caller, classInfo, methodName, signature,
         var superClassName = classInfo.superClassName;
         if (!superClassName)
             return null;
-        classInfo = this.getClass(caller, superClassName);
+        classInfo = this.getClass(superClassName);
     }
 };
 
-Classes.prototype.newObject = function(caller, className) {
-    return new (this.getClass(caller, className, true).constructor)();
+Classes.prototype.newObject = function(className) {
+    return new (this.getClass(className, true).constructor)();
 }
 
 Classes.prototype.newPrimitiveArray = function(constructor, size) {
     return constructor.call(null, size);
 }
 
-Classes.prototype.newArray = function(caller, typeName, size) {
+Classes.prototype.newArray = function(typeName, size) {
     return this.getArrayClass(typeName).constructor.call(null, size);
 }
 
-Classes.prototype.newMultiArray = function(caller, typeName, lengths) {
+Classes.prototype.newMultiArray = function(typeName, lengths) {
     var length = lengths[0];
     var array = this.newArray(caller, typeName, length);
     if (lengths.length > 0) {
         lengths = lengths.slice(1);
         for (var i=0; i<length; i++)
-            array[i] = this.newMultiArray(caller, typeName.substr(1), lengths);
+            array[i] = this.newMultiArray(typeName.substr(1), lengths);
     }
     return array;
 }
 
-Classes.prototype.newString = function(caller, s) {
-    var obj = this.newObject(caller, "java/lang/String");
+Classes.prototype.newString = function(s) {
+    var obj = this.newObject("java/lang/String");
     var length = s.length;
     var chars = this.newPrimitiveArray(Uint16Array, length);
     for (var n = 0; n < length; ++n)

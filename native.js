@@ -100,7 +100,7 @@ Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Obje
 Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function (key) {
     switch (util.chars2string(key.value)) {
     case "microedition.encoding":
-        return CLASSES.newString(this, "ISO-8859-1");
+        return CLASSES.newString("ISO-8859-1");
     default:
         console.log("KEY: " + util.chars2string(key.value));
     }
@@ -120,18 +120,18 @@ Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
 
 Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function (name) {
     var className = util.chars2string(name.value, name.offset, name.count).replace(".", "/", "g");
-    var classInfo = CLASSES.getClass(this, className);
+    var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
         throw new Native.JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
     }
-    var classObject = CLASSES.newObject(this, "java/lang/Class");
+    var classObject = CLASSES.newObject("java/lang/Class");
     classObject.vmClass = classInfo;
     return classObject;
 }
 
 Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function (classObject) {
     var classInfo = classObject.vmClass;
-    CLASSES.initClass(this, classInfo);
+    CLASSES.initClass(classInfo);
     return new (classInfo.constructor)();
 };
 
