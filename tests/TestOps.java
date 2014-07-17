@@ -49,6 +49,10 @@ public class TestOps {
 	return a / b;
     }
 
+    static double dadd(double a, double b) {
+	return a + b;
+    }
+
     public static void main(String[] args) {
 	Assert("Do asserts work", true);
 	Assert("add two ints", iadd(1, 2) == 3);
@@ -65,5 +69,6 @@ public class TestOps {
 	Assert("float div", fdiv(6.0f, 2.0f) == 3.0f);
 	Assert("long add", ladd(1L, 2L) == 3L);
 	Assert("long div", ldiv(12L, 4L) == 3L);
+	Assert("double add", dadd(3.0d, 4.0d) == 7.0d);
     }
 }
