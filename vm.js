@@ -707,6 +707,7 @@ VM.execute = function(frame) {
         case 0xb4: // getfield
             var idx = frame.read16();
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
+            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var obj = stack.pop();
             if (!obj) {
                 frame.raiseException("java/lang/NullPointerException");
@@ -714,9 +715,9 @@ VM.execute = function(frame) {
             }
             var value = obj[fieldName];
             if (typeof value === "undefined") {
-                value = util.defaultValue(cp[cp[cp[idx].name_and_type_index].signature_index].bytes);
+                value = util.defaultValue(signature);
             }
-            stack.push(value);
+            stack.pushType(signature, value);
             break;
         case 0xb5: // putfield
             var idx = frame.read16();
@@ -740,7 +741,8 @@ VM.execute = function(frame) {
             var idx = frame.read16();
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            CLASSES.setStaticField(frame, className, fieldName, stack.pop());
+            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
+            CLASSES.setStaticField(frame, className, fieldName, stack.popType(signature));
             break;
         case 0xbb: // new
             var idx = frame.read16();

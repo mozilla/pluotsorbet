@@ -99,7 +99,7 @@ Classes.prototype.getClass = function(caller, className) {
     if (className[0] === "[")
         return this.getArrayClass(caller, className);
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
-        this.initClass(classInfo);
+        this.initClass(caller, classInfo);
         return classInfo;
     }
     return null;
