@@ -822,20 +822,34 @@ VM.execute = function(frame) {
                 NATIVE.invokeNative(frame, methodInfo);
                 continue;
             }
-            VM.execute(frame.pushFrame(methodInfo, consumes));
+            frame = frame.pushFrame(methodInfo, consumes);
+            stack = frame.stack;
+            cp = frame.cp;
             break;
         case 0xb1: // return
-            frame.popFrame();
-            return;
+            frame = frame.popFrame();
+            if (!frame.caller)
+                return;
+            stack = frame.stack;
+            cp = frame.cp;
+            break;
         case 0xac: // ireturn
         case 0xae: // freturn
         case 0xb0: // areturn
-            frame.popFrame().stack.push(frame.stack.pop());
-            return;
+            (frame = frame.popFrame()).stack.push(stack.pop());
+            if (!frame.caller)
+                return;
+            stack = frame.stack;
+            cp = frame.cp;
+            break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
-            frame.popFrame().stack.push2(frame.stack.pop2());
-            return;
+            (frame = frame.popFrame()).stack.push2(stack.pop2());
+            if (!frame.caller)
+                return;
+            stack = frame.stack;
+            cp = frame.cp;
+            break;
         default:
             var opName = OPCODES[op];
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
