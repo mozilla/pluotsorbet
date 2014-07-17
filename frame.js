@@ -40,14 +40,12 @@ Frame.prototype.pushFrame = function(methodInfo, consumes) {
     callee.locals = this.stack;
     callee.localsBase = this.stack.length - consumes;
     callee.caller = this;
-    THREADS.current.frame = callee;
     return callee;
 }
 
 Frame.prototype.popFrame = function() {
     var caller = this.caller;
     caller.stack.length = this.localsBase;
-    THREADS.current.frame = caller;
     return caller;
 }
 
