@@ -801,8 +801,28 @@ VM.execute = function(frame) {
             var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(frame, className, op === 0xb8);
-            var method = CLASSES.getMethod(frame, classInfo, methodName, signature, op === 0xb8);
-            frame.invoke(op, method);
+            var methodInfo = CLASSES.getMethod(frame, classInfo, methodName, signature, op === 0xb8);
+            var consumes = Signature.parse(methodInfo.signature).IN.slots;
+            if (op !== OPCODES.invokestatic) {
+                ++consumes;
+                var obj = stack[stack.length - consumes];
+                if (!obj) {
+                    frame.raiseException("java/lang/NullPointerException");
+                    return;
+                }
+                switch (op) {
+                case OPCODES.invokevirtual:
+                    // console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
+                    if (methodInfo.classInfo != obj.class)
+                        methodInfo = CLASSES.getMethod(frame, obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
+                    break;
+                }
+            }
+            if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
+                NATIVE.invokeNative(frame, methodInfo);
+                continue;
+            }
+            VM.execute(frame.pushFrame(methodInfo, consumes));
             break;
         case 0xb1: // return
             frame.popFrame();

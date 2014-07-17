@@ -28,6 +28,7 @@ function runTest(className, cb) {
   });
 }
 
+//runTest("tests/TestDup");
 runTest("tests/TestOps");
 //runTest("tests/TestLong");
 //runTest("tests/TestPrintln");
