@@ -722,7 +722,8 @@ VM.execute = function(frame) {
         case 0xb5: // putfield
             var idx = frame.read16();
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            var val = stack.pop();
+            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
+            var val = stack.popType(signature);
             var obj = stack.pop();
             if (!obj) {
                 frame.raiseException("java/lang/NullPointerException");
