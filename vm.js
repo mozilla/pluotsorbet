@@ -77,7 +77,7 @@ VM.execute = function(frame) {
             var constant = cp[frame.read16()];
             switch(constant.tag) {
             case TAGS.CONSTANT_Long:
-                stack.push2(Long.fromBits(constant.bits[0], constant.bits[1]));
+                stack.push2(Long.fromBits(constant.lowBits, constant.highBits));
                 break;
             case TAGS.CONSTANT_Double:
                 stack.push2(constant.double);

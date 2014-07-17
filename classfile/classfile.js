@@ -142,7 +142,7 @@ var getClassImage = function(classBytes) {
                 ++i;
                 break;
             case TAGS.CONSTANT_Long:
-                classImage.constant_pool.push({ tag: tag, bits: reader.readLong() });
+                classImage.constant_pool.push({ tag: tag, highBits: reader.readInteger(), lowBits: reader.readInteger() });
                 classImage.constant_pool.push(null);
                 ++i;
                 break;
