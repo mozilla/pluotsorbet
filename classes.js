@@ -78,6 +78,8 @@ Classes.prototype.getEntryPoint = function(classInfo) {
 Classes.prototype.initClass = function(caller, classInfo) {
     if (classInfo.staticFields)
         return;
+    if (classInfo.superClassName)
+        this.getClass(caller, classInfo.superClassName, true);
     classInfo.staticFields = {};
     var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true, false);
     if (clinit)
