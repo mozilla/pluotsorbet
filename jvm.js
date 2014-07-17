@@ -12,22 +12,9 @@ var JVM = function() {
         NATIVE = new Native();
 
         THREADS.add(new Thread("main"));
-
-        this.entryPoint = {
-            className: null,
-            methodName: "main"
-        };
     } else {
         return new JVM();
     }
-}
-
-JVM.prototype.setEntryPointClassName = function(className) {
-    this.entryPoint.className = className;
-}
-
-JVM.prototype.setEntryPointMethodName = function(methodName) {
-    this.entryPoint.methodName = methodName;
 }
 
 JVM.prototype.addPath = function(path, data) {
@@ -42,11 +29,15 @@ JVM.prototype.loadJarFile = function(fileName) {
     return CLASSES.loadJarFile(fileName);
 }
 
-JVM.prototype.start = function() {
+JVM.prototype.run = function(className) {
     var frame = THREADS.current.frame;
-    var entryPoint = CLASSES.getEntryPoint(frame, this.entryPoint.className, this.entryPoint.methodName);
+    var classInfo = CLASSES.getClass(frame, className);
+    if (!classInfo) {
+        throw new Error("Could not find or load main class " + className);
+    }
+    var entryPoint = CLASSES.getEntryPoint(classInfo);
     if (!entryPoint) {
-        throw new Error("Entry point method is not found.");
+        throw new Error("Could not find main method in class " + className);
     }
     frame.stack.push(null); // args
     frame.invoke(OPCODES.invokestatic, entryPoint);

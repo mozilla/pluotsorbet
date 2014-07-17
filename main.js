@@ -13,22 +13,22 @@ function load(file, cb) {
   xhr.send(null);
 }
 
-function runTest(name, cb) {
+function runTest(className, cb) {
   var jvm = new JVM();
   // This is a hack. We should eliminate CLASSES instead.
   CLASSES.classes = {};
   load("java/cldc1.1.1.jar", function (data) {
     jvm.addPath("java/cldc1.1.1.jar", data);
-    load(name, function (data) {
-      jvm.addPath(name, data);
-      jvm.loadClassFile(name);
-      jvm.start();
+    var fileName = className + ".class";
+    load(fileName, function (data) {
+      jvm.addPath(fileName, data);
+      jvm.run(className);
       cb && cb();
     });
   });
 }
 
-runTest("tests/TestOps.class");
-//runTest("tests/TestLong.class");
-//runTest("tests/TestPrintln.class");
+runTest("tests/TestOps");
+//runTest("tests/TestLong");
+//runTest("tests/TestPrintln");
 

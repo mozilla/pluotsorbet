@@ -61,23 +61,16 @@ Classes.prototype.loadClassFile = function(fileName) {
     return classInfo;
 }
 
-Classes.prototype.getEntryPoint = function(caller, className, methodName) {
-    for(var name in this.classes) {
-        var classInfo = this.classes[name];
-        if (classInfo instanceof ClassInfo) {
-            if (!className || (className === classInfo.className)) {
-                if (ACCESS_FLAGS.isPublic(classInfo.access_flags)) {
-                    var methods = classInfo.methods;
-                    for (var i=0; i<methods.length; i++) {
-                        if (ACCESS_FLAGS.isPublic(methods[i].access_flags) &&
-                            ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
-                            !ACCESS_FLAGS.isNative(methods[i].access_flags) &&
-                            methods[i].name === methodName) {
-                            this.initClass(caller, classInfo);
-                            return methods[i];
-                        }
-                    }
-                }
+Classes.prototype.getEntryPoint = function(classInfo) {
+    if (ACCESS_FLAGS.isPublic(classInfo.access_flags)) {
+        var methods = classInfo.methods;
+        for (var i=0; i<methods.length; i++) {
+            if (ACCESS_FLAGS.isPublic(methods[i].access_flags) &&
+                ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
+                !ACCESS_FLAGS.isNative(methods[i].access_flags) &&
+                methods[i].name === "main" &&
+                methods[i].signature === "([Ljava/lang/String;)V") {
+                return methods[i];
             }
         }
     }
