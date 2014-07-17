@@ -13,6 +13,7 @@ public class TestOps {
 	Assert("Do asserts work", true);
 	Assert("add two ints", add(1, 2) == 3);
 	Assert("overflow", add(0x7fffffff, 1) == -2147483648);
+	Assert("underflow", add(-2147483648, -1) == 0x7fffffff);
     }
 }
 
