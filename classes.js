@@ -41,7 +41,6 @@ Classes.prototype.loadFile = function(fileName) {
 
 Classes.prototype.loadClassBytes = function(bytes) {
     var classInfo = new ClassInfo(bytes);
-    classInfo.staticFields = {};
     this.classes[classInfo.className] = classInfo;
     return classInfo;
 }
@@ -77,6 +76,9 @@ Classes.prototype.getEntryPoint = function(classInfo) {
 }
 
 Classes.prototype.initClass = function(caller, classInfo) {
+    if (classInfo.staticFields)
+        return;
+    classInfo.staticFields = {};
     var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true, false);
     if (clinit)
         caller.invoke(OPCODES.invokestatic, clinit);
@@ -85,17 +87,19 @@ Classes.prototype.initClass = function(caller, classInfo) {
     classInfo.constructor.prototype.class = classInfo;
 }
 
-Classes.prototype.getClass = function(caller, className) {
+Classes.prototype.getClass = function(caller, className, init) {
     var classInfo = this.classes[className];
-    if (classInfo)
-        return classInfo;
-    if (className[0] === "[")
-        return this.getArrayClass(caller, className);
-    if (!!(classInfo = this.loadClassFile(className + ".class"))) {
-        this.initClass(caller, classInfo);
-        return classInfo;
+    if (!classInfo) {
+        if (className[0] === "[") {
+            return this.classes[className] = this.getArrayClass(caller, className);
+        }
+        classInfo = this.loadClassFile(className + ".class");
+        if (!classInfo)
+            return null;
     }
-    return null;
+    if (init)
+        this.initClass(caller, classInfo);
+    return classInfo;
 };
 
 Classes.prototype.getArrayClass = function(caller, typeName) {
@@ -119,15 +123,14 @@ Classes.prototype.initPrimitiveArrayType = function(elementType, constructor) {
 }
 
 Classes.prototype.getStaticField = function(caller, className, fieldName) {
-    return this.getClass(caller, className).staticFields[fieldName];
+    return this.getClass(caller, className, true).staticFields[fieldName];
 }
 
 Classes.prototype.setStaticField = function(caller, className, fieldName, value) {
-    this.getClass(caller, className).staticFields[fieldName] = value;
+    this.getClass(caller, className, true).staticFields[fieldName] = value;
 }
 
 Classes.prototype.getMethod = function(caller, classInfo, methodName, signature, staticFlag, inheritFlag) {
-    // console.log(classInfo.className, methodName, signature);
     while (true) {
         var methods = classInfo.methods;
         for (var i=0; i<methods.length; i++) {
@@ -145,7 +148,7 @@ Classes.prototype.getMethod = function(caller, classInfo, methodName, signature,
 };
 
 Classes.prototype.newObject = function(caller, className) {
-    return new (this.getClass(caller, className).constructor)();
+    return new (this.getClass(caller, className, true).constructor)();
 }
 
 Classes.prototype.newPrimitiveArray = function(constructor, size) {

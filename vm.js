@@ -800,7 +800,7 @@ VM.execute = function(frame) {
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var classInfo = CLASSES.getClass(frame, className);
+            var classInfo = CLASSES.getClass(frame, className, op === 0xb8);
             var method = CLASSES.getMethod(frame, classInfo, methodName, signature, op === 0xb8);
             frame.invoke(op, method);
             break;

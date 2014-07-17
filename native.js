@@ -130,7 +130,9 @@ Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"
 }
 
 Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function (classObject) {
-    return new (classObject.vmClass.constructor)();
+    var classInfo = classObject.vmClass;
+    CLASSES.initClass(this, classInfo);
+    return new (classInfo.constructor)();
 };
 
 Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function () {
