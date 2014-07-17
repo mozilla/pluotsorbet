@@ -25,7 +25,7 @@ TESTS_BIN = $(TESTS_SRC:.java=.class)
 tests: $(TESTS_BIN)
 
 %.class: %.java
-	javac -classpath java/cldc1.1.1.jar $<
+	javac -Xlint:-options -source 1.3 -bootclasspath java/cldc1.1.1.jar $<
 
 j2me.js: $(SRC)
 	cat $^ > $@

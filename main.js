@@ -28,4 +28,4 @@ function runTest(name, cb) {
   });
 }
 
-runTest("tests/TestPrintln.class");
+runTest("tests/TestOps.class");
