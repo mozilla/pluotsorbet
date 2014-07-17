@@ -4,6 +4,6 @@ public class TestLong {
     static long a = 0x0123456789abcdefL;
 
     public static void main(String[] args) {
-	System.out.println(a);
+	System.out.println(0x12345678);
     }
 }

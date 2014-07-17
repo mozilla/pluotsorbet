@@ -11,7 +11,7 @@ VM.execute = function(frame) {
 
     while (true) {
         var op = frame.read8();
-        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
+        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
         switch (op) {
         case 0x00: // nop
             break;
@@ -234,56 +234,56 @@ VM.execute = function(frame) {
             stack.push(val);
             break;
         case 0x5a: // dup_x1
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(val1);
-            stack.push(val2);
-            stack.push(val1);
+            var a = stack.pop();
+            var b = stack.pop();
+            stack.push(a);
+            stack.push(b);
+            stack.push(a);
             break;
         case 0x5b: // dup_x2
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            var val3 = stack.pop();
-            stack.push(val1);
-            stack.push(val3);
-            stack.push(val2);
-            stack.push(val1);
+            var a = stack.pop();
+            var b = stack.pop();
+            var c = stack.pop();
+            stack.push(a);
+            stack.push(c);
+            stack.push(b);
+            stack.push(a);
             break;
         case 0x5c: // dup2
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(val2);
-            stack.push(val1);
-            stack.push(val2);
-            stack.push(val1);
+            var a = stack.pop();
+            var b = stack.pop();
+            stack.push(b);
+            stack.push(a);
+            stack.push(b);
+            stack.push(a);
             break;
         case 0x5d: // dup2_x1
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            var val3 = stack.pop();
-            stack.push(val2);
-            stack.push(val1);
-            stack.push(val3);
-            stack.push(val2);
-            stack.push(val1);
+            var a = stack.pop();
+            var b = stack.pop();
+            var c = stack.pop();
+            stack.push(b);
+            stack.push(a);
+            stack.push(c);
+            stack.push(b);
+            stack.push(a);
             break;
         case 0x5e: // dup2_x2
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            var val3 = stack.pop();
-            var val4 = stack.pop();
-            stack.push(val2);
-            stack.push(val1);
-            stack.push(val4);
-            stack.push(val3);
-            stack.push(val2);
-            stack.push(val1);
+            var a = stack.pop();
+            var b = stack.pop();
+            var c = stack.pop();
+            var d = stack.pop();
+            stack.push(b);
+            stack.push(a);
+            stack.push(d);
+            stack.push(c);
+            stack.push(b);
+            stack.push(a);
             break;
         case 0x5f: // swap
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(val1);
-            stack.push(val2);
+            var a = stack.pop();
+            var b = stack.pop();
+            stack.push(a);
+            stack.push(b);
             break;
         case 0x84: // iinc
             var wide = frame.isWide();
@@ -328,60 +328,60 @@ VM.execute = function(frame) {
             stack.push2(stack.pop2() * stack.pop2());
             break;
         case 0x6c: // idiv
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            if (!val1) {
+            var b = stack.pop();
+            var a = stack.pop();
+            if (!b) {
                 frame.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
-            stack.push((val2 === util.INT_MIN && val1 === -1) ? val2 : ((a / b)|0));
+            stack.push((a === util.INT_MIN && b === -1) ? a : ((a / b)|0));
             break;
         case 0x6d: // ldiv
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            if (val1.isZero()) {
+            var b = stack.pop2();
+            var a = stack.pop2();
+            if (b.isZero()) {
                 frame.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
-            stack.push2(val2.div(val1));
+            stack.push2(a.div(b));
             break;
         case 0x6e: // fdiv
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(util.double2float(val2 / val1));
+            var b = stack.pop();
+            var a = stack.pop();
+            stack.push(util.double2float(a / b));
             break;
         case 0x6f: // ddiv
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            stack.push2(val2 / val1);
+            var b = stack.pop2();
+            var a = stack.pop2();
+            stack.push2(a / b);
             break;
         case 0x70: // irem
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            if (!val1) {
+            var b = stack.pop();
+            var a = stack.pop();
+            if (!b) {
                 frame.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
-            stack.push(val2 % val1);
+            stack.push(a % b);
             break;
         case 0x71: // lrem
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            if (val1.isZero()) {
+            var b = stack.pop2();
+            var a = stack.pop2();
+            if (b.isZero()) {
                 frame.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
-            stack.push2(val2.modulo(val1));
+            stack.push2(a.modulo(b));
             break;
         case 0x72: // frem
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(util.double2float(val2 % val1));
+            var b = stack.pop();
+            var a = stack.pop();
+            stack.push(util.double2float(a % b));
             break;
         case 0x73: // drem
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            stack.push2(val2 % val1);
+            var b = stack.pop2();
+            var a = stack.pop2();
+            stack.push2(a % b);
             break;
         case 0x74: // ineg
             stack.push((- stack.pop())|0);
@@ -396,34 +396,34 @@ VM.execute = function(frame) {
             stack.push2(- stack.pop2());
             break;
         case 0x78: // ishl
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(val2 << val1);
+            var b = stack.pop();
+            var a = stack.pop();
+            stack.push(a << b);
             break;
         case 0x79: // lshl
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            stack.push2(val2.shiftLeft(val1));
+            var b = stack.pop2();
+            var a = stack.pop2();
+            stack.push2(a.shiftLeft(b));
             break;
         case 0x7a: // ishr
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(val2 >> val1);
+            var b = stack.pop();
+            var a = stack.pop();
+            stack.push(a >> b);
             break;
         case 0x7b: // lshr
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            stack.push2(val2.shiftRight(val1));
+            var b = stack.pop2();
+            var a = stack.pop2();
+            stack.push2(a.shiftRight(b));
             break;
         case 0x7c: // iushr
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            stack.push(val2 >>> val1);
+            var b = stack.pop();
+            var a = stack.pop();
+            stack.push(a >>> b);
             break;
         case 0x7d: // lushr
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            stack.push2(val2.shiftRightUnsigned(val1));
+            var b = stack.pop2();
+            var a = stack.pop2();
+            stack.push2(a.shiftRightUnsigned(b));
             break;
         case 0x7e: // iand
             stack.push(stack.pop() & stack.pop());
@@ -444,63 +444,63 @@ VM.execute = function(frame) {
             stack.push2(stack.pop2().xor(stack.pop2()));
             break;
         case 0x94: // lcmp
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            if (val2.greaterThan(val1)) {
+            var b = stack.pop2();
+            var a = stack.pop2();
+            if (a.greaterThan(b)) {
                 stack.push(1);
-            } else if (val2.lessThan(val1)) {
+            } else if (a.lessThan(b)) {
                 stack.push(-1);
             } else {
                 stack.push(0);
             }
             break;
         case 0x95: // fcmpl
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            if (isNaN(val1) || isNaN(val2)) {
+            var b = stack.pop();
+            var a = stack.pop();
+            if (isNaN(a) || isNaN(b)) {
                 stack.push(-1);
-            } else if (val2 > val1) {
+            } else if (a > b) {
                 stack.push(1);
-            } else if (val2 < val1) {
+            } else if (a < b) {
                 stack.push(-1);
             } else {
                 stack.push(0);
             }
             break;
         case 0x96: // fcmpg
-            var val1 = stack.pop();
-            var val2 = stack.pop();
-            if (isNaN(val1) || isNaN(val2)) {
+            var b = stack.pop();
+            var a = stack.pop();
+            if (isNaN(a) || isNaN(b)) {
                 stack.push(1);
-            } else if (val2 > val1) {
+            } else if (a > b) {
                 stack.push(1);
-            } else if (val2 < val1) {
+            } else if (a < b) {
                 stack.push(-1);
             } else {
                 stack.push(0);
             }
             break;
         case 0x97: // dcmpl
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            if (isNaN(val1) || isNaN(val2)) {
+            var b = stack.pop2();
+            var a = stack.pop2();
+            if (isNaN(a) || isNaN(b)) {
                 stack.push(-1);
-            } else if (val2 > val1) {
+            } else if (a > b) {
                 stack.push(1);
-            } else if (val2 < val1) {
+            } else if (a < b) {
                 stack.push(-1);
             } else {
                 stack.push(0);
             }
             break;
         case 0x98: // dcmpg
-            var val1 = stack.pop2();
-            var val2 = stack.pop2();
-            if (isNaN(val1) || isNaN(val2)) {
+            var b = stack.pop2();
+            var a = stack.pop2();
+            if (isNaN(a) || isNaN(b)) {
                 stack.push(1);
-            } else if (val2 > val1) {
+            } else if (a > b) {
                 stack.push(1);
-            } else if (val2 < val1) {
+            } else if (a < b) {
                 stack.push(-1);
             } else {
                 stack.push(0);
