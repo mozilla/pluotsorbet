@@ -93,7 +93,7 @@ Classes.prototype.getClass = function(caller, className, init) {
     var classInfo = this.classes[className];
     if (!classInfo) {
         if (className[0] === "[") {
-            return this.classes[className] = this.getArrayClass(caller, className);
+            return this.classes[className] = this.getArrayClass(className);
         }
         classInfo = this.loadClassFile(className + ".class");
         if (!classInfo)
@@ -104,7 +104,7 @@ Classes.prototype.getClass = function(caller, className, init) {
     return classInfo;
 };
 
-Classes.prototype.getArrayClass = function(caller, typeName) {
+Classes.prototype.getArrayClass = function(typeName) {
     var elementType = typeName.substr(1);
     if (elementType in ARRAY_TYPE)
         return this.initPrimitiveArrayType(elementType, ARRAY_TYPE[elementType]);
@@ -158,7 +158,7 @@ Classes.prototype.newPrimitiveArray = function(constructor, size) {
 }
 
 Classes.prototype.newArray = function(caller, typeName, size) {
-    return this.getArrayClass(caller, typeName).constructor.call(null, size);
+    return this.getArrayClass(typeName).constructor.call(null, size);
 }
 
 Classes.prototype.newMultiArray = function(caller, typeName, lengths) {
