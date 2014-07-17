@@ -11,9 +11,7 @@ VM.execute = function(frame) {
 
     while (true) {
         var op = frame.read8();
-        // var x = [];
-        // frame.stack.forEach(function (e) { x.push(e.toSource()); });
-        // console.log(frame.methodInfo.classInfo.className, frame.methodInfo.name, frame.ip - 1, OPCODES[op], x.join(" "));
+        //console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + frame.stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;
@@ -59,20 +57,14 @@ VM.execute = function(frame) {
             stack.push(frame.read16signed());
             break;
         case 0x12: // ldc
-            var constant = cp[frame.read8()];
+        case 0x13: // ldc_w
+            var constant = cp[(op === 0x12) ? frame.read8() : frame.read16()];
             switch(constant.tag) {
+            case TAGS.CONSTANT_Integer:
+                stack.push(constant.bytes|0);
+                break;
             case TAGS.CONSTANT_String:
                 stack.push(CLASSES.newString(frame, cp[constant.string_index].bytes));
-                break;
-            default:
-                throw new Error("not support constant type");
-            }
-            break;
-        case 0x13: // ldc_w
-            var constant = cp[frame.read16()];
-            switch(constant.tag) {
-            case TAGS.CONSTANT_String:
-                stack.push(cp[constant.string_index].bytes);
                 break;
             default:
                 throw new Error("not support constant type");
