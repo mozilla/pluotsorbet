@@ -100,7 +100,7 @@ var getClassImage = function(classBytes) {
     classImage.constant_pool = [ null ];
     var constant_pool_count = reader.read16();
     for(var i=1; i<constant_pool_count; i++) {
-        var tag =  reader.read8();
+        var tag = reader.read8();
         switch(tag) {
             case TAGS.CONSTANT_Class:
                 var name_index = reader.read16();
@@ -137,13 +137,14 @@ var getClassImage = function(classBytes) {
                 classImage.constant_pool.push({ tag: tag, float: reader.readFloat() });
                 break;
             case TAGS.CONSTANT_Double:
+                classImage.constant_pool.push({ tag: tag, double: reader.readDouble() });
+                classImage.constant_pool.push(null);
+                ++i;
+                break;
             case TAGS.CONSTANT_Long:
-                var bytes = new Uint8Array(8);
-                for (var b=0; b<8; b++) {
-                    bytes[b] = reader.read8();
-                }
-                classImage.constant_pool.push({ tag: tag, bytes: bytes });
-                classImage.constant_pool.push(null); i++;
+                classImage.constant_pool.push({ tag: tag, bits: reader.readLong() });
+                classImage.constant_pool.push(null);
+                ++i;
                 break;
             case TAGS.CONSTANT_Fieldref:
             case TAGS.CONSTANT_Methodref:

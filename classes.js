@@ -61,7 +61,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     return classInfo;
 }
 
-Classes.prototype.getEntryPoint = function(className, methodName) {
+Classes.prototype.getEntryPoint = function(caller, className, methodName) {
     for(var name in this.classes) {
         var classInfo = this.classes[name];
         if (classInfo instanceof ClassInfo) {
@@ -73,6 +73,7 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
                             ACCESS_FLAGS.isStatic(methods[i].access_flags) &&
                             !ACCESS_FLAGS.isNative(methods[i].access_flags) &&
                             methods[i].name === methodName) {
+                            this.initClass(caller, classInfo);
                             return methods[i];
                         }
                     }
@@ -82,6 +83,15 @@ Classes.prototype.getEntryPoint = function(className, methodName) {
     }
 }
 
+Classes.prototype.initClass = function(caller, classInfo) {
+    var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true, false);
+    if (clinit)
+        caller.invoke(OPCODES.invokestatic, clinit);
+    classInfo.constructor = function () {
+    }
+    classInfo.constructor.prototype.class = classInfo;
+}
+
 Classes.prototype.getClass = function(caller, className) {
     var classInfo = this.classes[className];
     if (classInfo)
@@ -89,12 +99,7 @@ Classes.prototype.getClass = function(caller, className) {
     if (className[0] === "[")
         return this.getArrayClass(caller, className);
     if (!!(classInfo = this.loadClassFile(className + ".class"))) {
-        var clinit = this.getMethod(caller, classInfo, "<clinit>", "()V", true, false);
-        if (clinit)
-            caller.invoke(OPCODES.invokestatic, clinit);
-        classInfo.constructor = function () {
-        }
-        classInfo.constructor.prototype.class = classInfo;
+        this.initClass(classInfo);
         return classInfo;
     }
     return null;

@@ -3,18 +3,27 @@
 
 'use strict';
 
-Array.prototype.push2 = function (value) {
+Array.prototype.push2 = function(value) {
     this.push(value);
     this.push(null);
 }
 
-Array.prototype.pop2 = function () {
+Array.prototype.pop2 = function() {
     this.pop();
     return this.pop();
 }
 
-Array.prototype.top = function () {
-    return this[this.length - 1];
+Array.prototype.pushType = function(signature, value) {
+    if (signature === "J" || signature === "D") {
+        this.push2(value);
+        debug;
+        return;
+    }
+    this.push(value);
+}
+
+Array.prototype.popType = function(signature) {
+    return (signature === "J" || signature === "D") ? this.pop2() : this.pop();
 }
 
 var Frame = function(methodInfo) {

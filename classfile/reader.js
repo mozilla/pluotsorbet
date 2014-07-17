@@ -42,6 +42,19 @@ Reader.prototype.readFloat = function() {
     return data;
 }
 
+Reader.prototype.readLong = function() {
+    var data = new Int32Array(2);
+    data[0] = this.readInteger();
+    data[1] = this.readInteger();
+    return data;
+}
+
+Reader.prototype.readDouble = function() {
+    var data = this.bytes.getFloat64(this.offset, false);
+    this.offset += 8;
+    return data;
+}
+
 var Utf8TextDecoder;
 
 Reader.prototype.readString = function(length) {

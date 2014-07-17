@@ -38,21 +38,16 @@ JVM.prototype.loadClassFile = function(fileName) {
     return CLASSES.loadClassFile(fileName);
 }
 
-JVM.prototype.loadJSFile = function(fileName) {
-    return CLASSES.loadJSFile(fileName);
-}
-
 JVM.prototype.loadJarFile = function(fileName) {
     return CLASSES.loadJarFile(fileName);
 }
 
 JVM.prototype.start = function() {
-    var entryPoint = CLASSES.getEntryPoint(this.entryPoint.className, this.entryPoint.methodName);
+    var frame = THREADS.current.frame;
+    var entryPoint = CLASSES.getEntryPoint(frame, this.entryPoint.className, this.entryPoint.methodName);
     if (!entryPoint) {
         throw new Error("Entry point method is not found.");
     }
-
-    var frame = THREADS.current.frame;
     frame.stack.push(null); // args
     frame.invoke(OPCODES.invokestatic, entryPoint);
 }

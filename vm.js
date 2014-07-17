@@ -11,7 +11,7 @@ VM.execute = function(frame) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + frame.stack.join(","));
+        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
         switch (op) {
         case 0x00: // nop
             break;
@@ -77,10 +77,10 @@ VM.execute = function(frame) {
             var constant = cp[frame.read16()];
             switch(constant.tag) {
             case TAGS.CONSTANT_Long:
-                stack.push2(Numeric.getLong(constant.bytes));
+                stack.push2(Long.fromBits(constant.bits[0], constant.bits[1]));
                 break;
             case TAGS.CONSTANT_Double:
-                stack.push2(constant.bytes.readDoubleBE(0));
+                stack.push2(constant.double);
                 break;
             default:
                 throw new Error("not support constant type");
@@ -733,7 +733,8 @@ VM.execute = function(frame) {
             var idx = frame.read16();
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            stack.push(CLASSES.getStaticField(frame, className, fieldName));
+            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
+            stack.pushType(signature, CLASSES.getStaticField(frame, className, fieldName));
             break;
         case 0xb3: // putstatic
             var idx = frame.read16();
