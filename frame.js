@@ -16,7 +16,6 @@ Array.prototype.pop2 = function() {
 Array.prototype.pushType = function(signature, value) {
     if (signature === "J" || signature === "D") {
         this.push2(value);
-        debug;
         return;
     }
     this.push(value);

@@ -339,7 +339,7 @@ VM.execute = function(frame) {
         case 0x6d: // ldiv
             var val1 = stack.pop2();
             var val2 = stack.pop2();
-            if (!val1.isZero()) {
+            if (val1.isZero()) {
                 frame.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
