@@ -104,37 +104,37 @@ var getClassImage = function(classBytes) {
         switch(tag) {
             case TAGS.CONSTANT_Class:
                 var name_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, name_index: name_index } );
+                classImage.constant_pool.push({ tag: tag, name_index: name_index });
                 break;
             case TAGS.CONSTANT_Utf8:
                 var length = reader.read16();
                 var bytes = reader.readString(length);
-                classImage.constant_pool.push( { tag: tag, bytes: bytes } );
+                classImage.constant_pool.push({ tag: tag, bytes: bytes });
                 break;
             case TAGS.CONSTANT_Methodref:
                 var class_index = reader.read16();
                 var name_and_type_index = reader.read16();
-                classImage.constant_pool.push( {  tag: tag, class_index: class_index, name_and_type_index: name_and_type_index } );
+                classImage.constant_pool.push({  tag: tag, class_index: class_index, name_and_type_index: name_and_type_index });
                 break;
             case TAGS.CONSTANT_NameAndType:
                 var name_index = reader.read16();
                 var signature_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, name_index: name_index, signature_index: signature_index } );
+                classImage.constant_pool.push({ tag: tag, name_index: name_index, signature_index: signature_index });
                 break;
             case TAGS.CONSTANT_Fieldref:
                 var class_index = reader.read16();
                 var name_and_type_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, class_index: class_index, name_and_type_index: name_and_type_index } );
+                classImage.constant_pool.push({ tag: tag, class_index: class_index, name_and_type_index: name_and_type_index });
                 break;
             case TAGS.CONSTANT_String:
                 var string_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, string_index: string_index } );
+                classImage.constant_pool.push({ tag: tag, string_index: string_index });
                 break;
             case TAGS.CONSTANT_Integer:
-                classImage.constant_pool.push( { tag: tag, integer: reader.readInteger() } );
+                classImage.constant_pool.push({ tag: tag, integer: reader.readInteger() });
                 break;
             case TAGS.CONSTANT_Float:
-                classImage.constant_pool.push( { tag: tag, float: reader.readFloat() } );
+                classImage.constant_pool.push({ tag: tag, float: reader.readFloat() });
                 break;
             case TAGS.CONSTANT_Double:
             case TAGS.CONSTANT_Long:
@@ -142,15 +142,15 @@ var getClassImage = function(classBytes) {
                 for (var b=0; b<8; b++) {
                     bytes[b] = reader.read8();
                 }
-                classImage.constant_pool.push( {  tag: tag, bytes: bytes } );
-                classImage.constant_pool.push( null ); i++;
+                classImage.constant_pool.push({ tag: tag, bytes: bytes });
+                classImage.constant_pool.push(null); i++;
                 break;
             case TAGS.CONSTANT_Fieldref:
             case TAGS.CONSTANT_Methodref:
             case TAGS.CONSTANT_InterfaceMethodref:
                 var class_index = reader.read16();
                 var name_and_type_index = reader.read16();
-                classImage.constant_pool.push( { tag: tag, class_index: class_index, name_and_type_index:name_and_type_index } );
+                classImage.constant_pool.push({ tag: tag, class_index: class_index, name_and_type_index:name_and_type_index });
                 break;
             default:
                 throw new Error("tag " + tag + " not supported.");
