@@ -139,7 +139,7 @@ Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function
     var s = "";
     return function (obj, ch) {
         if (ch === 10) {
-            console.log("OUTPUT: " + s);
+            document.getElementById("output").textContent += s + "\n";
             s = "";
             return;
         }
