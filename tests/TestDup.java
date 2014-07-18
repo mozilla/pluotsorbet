@@ -1,5 +1,3 @@
-package tests;
-
 public class TestDup {
     public static void main(String[] args) {
 	// do it twice so we know the adding was done correctly in the first call

@@ -1,5 +1,3 @@
-package tests;
-
 public class TestArrays {
     public static void main(String[] args) {
 	byte b[][] = new byte[3][4];

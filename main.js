@@ -19,19 +19,18 @@ function runTest(className, cb) {
   CLASSES.classes = {};
   load("java/classes.jar", function (data) {
     jvm.addPath("java/classes.jar", data);
-    var fileName = className + ".class";
-    load(fileName, function (data) {
-      jvm.addPath(fileName, data);
+    load("tests/tests.jar", function (data) {
+      jvm.addPath("tests/tests.jar", data);
       jvm.run(className);
       cb && cb();
     });
   });
 }
 
-//runTest("tests/TestDup");
-//runTest("tests/TestOps");
-//runTest("tests/TestLong");
-//runTest("tests/TestPrintln");
-//runTest("tests/TestException");
-//runTest("tests/TestInterface");
-runTest("tests/TestArrays");
+//runTest("TestDup");
+//runTest("TestOps");
+//runTest("TestLong");
+//runTest("TestPrintln");
+//runTest("TestException");
+//runTest("TestInterface");
+runTest("TestArrays");

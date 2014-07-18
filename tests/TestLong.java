@@ -1,5 +1,3 @@
-package tests;
-
 public class TestLong {
     static long a = 0x0123456789abcdefL;
 

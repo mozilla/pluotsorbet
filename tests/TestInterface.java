@@ -1,5 +1,3 @@
-package tests;
-
 public class TestInterface implements Runnable {
     public void run() {
 	System.out.println("yes!");

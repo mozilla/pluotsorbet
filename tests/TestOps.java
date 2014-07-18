@@ -1,5 +1,3 @@
-package tests;
-
 public class TestOps {
     static void Assert(String test, boolean ok) {
         System.out.println(test + " " + (ok ? "PASS" : "FAIL"));

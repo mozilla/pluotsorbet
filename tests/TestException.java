@@ -1,5 +1,3 @@
-package tests;
-
 public class TestException {
     static void throw1() {
 	try {
