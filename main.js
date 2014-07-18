@@ -28,4 +28,4 @@ function runTest(className, cb) {
 }
 
 runTest("RunAll");
-//runTest("TestBoolean");
+//runTest("TestByteArrayInputStream");

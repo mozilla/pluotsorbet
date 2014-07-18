@@ -1,5 +1,6 @@
 public class RunAll {
-    private static String[] tests = {"TestArrays", "TestOps", "TestLong", "TestException", "TestDup", "TestBoolean"};
+    private static String[] tests = {"TestArrays", "TestOps", "TestLong", "TestException", "TestDup", "TestBoolean",
+				     "TestByteArrayInputStream"};
 
     public static void main(String[] args) {
 	boolean failed = false;

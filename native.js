@@ -143,6 +143,24 @@ Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(
     return new (classInfo.constructor)();
 };
 
+Native.prototype["java/lang/Float.floatToIntBits.(F)I"] = (function() {
+    var fa = Float32Array(1);
+    var ia = Int32Array(fa.buffer);
+    return function(f) {
+        fa[0] = f;
+        return ia[0];
+    }
+})();
+
+Native.prototype["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
+    var da = Float64Array(1);
+    var ia = Int32Array(da.buffer);
+    return function(d) {
+        da[0] = d;
+        return Long.fromBits(ia[0], ia[1]);
+    }
+})();
+
 Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = (function() {
 });
 

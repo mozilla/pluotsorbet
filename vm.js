@@ -798,7 +798,12 @@ VM.resume = function(frame, callback) {
             stack.push(CLASSES.newMultiArray(typeName, lengths));
             break;
         case 0xbe: // arraylength
-            stack.push(stack.pop().length);
+            var obj = stack.pop();
+            if (!obj) {
+                raiseException("java/lang/NullPointerException");
+                break;
+            }
+            stack.push(obj.length);
             break;
         case 0xb4: // getfield
             var idx = frame.read16();
