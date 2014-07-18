@@ -1,4 +1,4 @@
-public class TestOps {
+public class TestOps extends Test {
     static void Assert(String test, boolean ok) {
         System.out.println(test + " " + (ok ? "PASS" : "FAIL"));
     }
@@ -51,7 +51,7 @@ public class TestOps {
         return a + b;
     }
 
-    public static void main(String[] args) {
+    public void main() {
         Assert("Do asserts work", true);
         Assert("add two ints", iadd(1, 2) == 3);
         Assert("int div", idiv(8, 2) == 4);
@@ -68,5 +68,9 @@ public class TestOps {
         Assert("long add", ladd(1L, 2L) == 3L);
         Assert("long div", ldiv(12L, 4L) == 3L);
         Assert("double add", dadd(3.0d, 4.0d) == 7.0d);
+    }
+
+    public static void main(String[] args) {
+	(new TestOps()).main();
     }
 }

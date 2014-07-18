@@ -27,10 +27,11 @@ function runTest(className, cb) {
   });
 }
 
+runTest("RunAll");
 //runTest("TestDup");
 //runTest("TestOps");
 //runTest("TestLong");
 //runTest("TestPrintln");
 //runTest("TestException");
 //runTest("TestInterface");
-runTest("TestArrays");
+//runTest("TestArrays");
