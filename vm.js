@@ -49,13 +49,20 @@ VM.resume = function(frame, callback) {
         return frame.caller;
     }
 
+    function raiseException(className, message) {
+        var ex = CLASSES.newObject(this, className);
+        var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
+        VM.invoke(ctor, [ex, message]);
+        frame.throw(ex);
+    }
+
     function checkArrayAccess(refArray, idx) {
         if (!refArray) {
-            frame.raiseException("java/lang/NullPointerException");
+            raiseException("java/lang/NullPointerException");
             return false;
         }
         if (idx < 0 || idx >= refArray.length) {
-            frame.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
+            raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
             return false;
         }
         return true;
@@ -383,7 +390,7 @@ VM.resume = function(frame, callback) {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-                frame.raiseException("java/lang/ArithmeticException", "/ by zero");
+                raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push((a === util.INT_MIN && b === -1) ? a : ((a / b)|0));
@@ -392,7 +399,7 @@ VM.resume = function(frame, callback) {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-                frame.raiseException("java/lang/ArithmeticException", "/ by zero");
+                raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push2(a.div(b));
@@ -411,7 +418,7 @@ VM.resume = function(frame, callback) {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-                frame.raiseException("java/lang/ArithmeticException", "/ by zero");
+                raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push(a % b);
@@ -420,7 +427,7 @@ VM.resume = function(frame, callback) {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-                frame.raiseException("java/lang/ArithmeticException", "/ by zero");
+                raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push2(a.modulo(b));
@@ -729,7 +736,7 @@ VM.resume = function(frame, callback) {
             var type = frame.read8();
             var size = stack.pop();
             if (size < 0) {
-                frame.raiseException("java/lang/NegativeSizeException");
+                raiseException("java/lang/NegativeSizeException");
                 break;
             }
             stack.push(CLASSES.newPrimitiveArray(ARRAY_TYPE[type], size));
@@ -739,7 +746,7 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[idx].name_index].bytes;
             var size = stack.pop();
             if (size < 0) {
-                frame.raiseException("java/lang/NegativeSizeException");
+                raiseException("java/lang/NegativeSizeException");
                 break;
             }
             stack.push(CLASSES.newArray(className, size));
@@ -762,7 +769,7 @@ VM.resume = function(frame, callback) {
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var obj = stack.pop();
             if (!obj) {
-                frame.raiseException("java/lang/NullPointerException");
+                raiseException("java/lang/NullPointerException");
                 break;
             }
             var value = obj[fieldName];
@@ -778,7 +785,7 @@ VM.resume = function(frame, callback) {
             var val = stack.popType(signature);
             var obj = stack.pop();
             if (!obj) {
-                frame.raiseException("java/lang/NullPointerException");
+                raiseException("java/lang/NullPointerException");
                 break;
             }
             obj[fieldName] = val;
@@ -818,7 +825,7 @@ VM.resume = function(frame, callback) {
         case 0xc2: // monitorenter
             var obj = stack.pop();
             if (!obj) {
-                frame.raiseException("java/lang/NullPointerException");
+                raiseException("java/lang/NullPointerException");
                 break;
             }
             // if (obj.hasOwnProperty("$lock$")) {
@@ -832,7 +839,7 @@ VM.resume = function(frame, callback) {
         case 0xc3: // monitorexit
             var obj = stack.pop();
             if (!obj) {
-                frame.raiseException("java/lang/NullPointerException");
+                raiseException("java/lang/NullPointerException");
                 break;
             }
             // delete obj["$lock$"];
@@ -859,7 +866,7 @@ VM.resume = function(frame, callback) {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
                 if (!obj) {
-                    frame.raiseException("java/lang/NullPointerException");
+                    raiseException("java/lang/NullPointerException");
                     break;
                 }
                 switch (op) {
@@ -877,7 +884,7 @@ VM.resume = function(frame, callback) {
                     if (!(e instanceof NATIVE.JavaException)) {
                         throw e;
                     }
-                    frame.raiseException(e.className, e.msg);
+                    raiseException(e.className, e.msg);
                     return;
                 }
                 break;

@@ -116,10 +116,3 @@ Frame.prototype.throw = function(ex) {
         throw ex;
     }
 }
-
-Frame.prototype.raiseException = function(className, message) {
-    var ex = CLASSES.newObject(this, className);
-    var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(ctor, [ex, message]);
-    this.throw(ex);
-}
