@@ -33,6 +33,7 @@ var Frame = function(methodInfo) {
         this.ip = 0;
     }
     this.stack = [];
+    this.exception_table = [];
 }
 
 Frame.prototype.pushFrame = function(methodInfo, consumes) {
@@ -113,14 +114,17 @@ Frame.prototype.throw = function(ex) {
         stack.push(ex);
         this.ip = handler_pc;
     } else {
-        throw ex;
+        var er = new Error(ex.class.className);
+        er.details = ex;
+        throw er;
     }
 }
 
 Frame.prototype.raiseException = function(className, message) {
-    var ex = CLASSES.newObject(this, className);
-    var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
+    var ex = CLASSES.newObject(className);
+    var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
     VM.invoke(ctor, [ex, message]);
+    ex.detailMessage = message;
     this.throw(ex);
 }
 
