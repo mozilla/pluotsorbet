@@ -49,20 +49,27 @@ Classes.prototype.loadClassFile = function(fileName) {
     console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
     if (!bytes)
-        return null;
+        throw Error("File " + fileName + " not found.");
     var self = this;
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)
-        classInfo.superClass = this.getClass(classInfo.superClassName);
+        classInfo.superClass = this.loadClass(classInfo.superClassName);
     var interfaces = classInfo.interfaces;
     interfaces.forEach(function (i, n) {
-        interfaces[n] = self.getClass(i);
+        interfaces[n] = self.loadClass(i);
     });
     var classes = classInfo.classes;
     classes.forEach(function (c, n) {
-        classes[n] = self.getClass(fileName.replace(/[^/]*\.class$/, "") + "/" + c);
+        classes[n] = self.loadClass(fileName.replace(/[^/]*\.class$/, "") + "/" + c);
     });
     return classInfo;
+}
+
+Classes.prototype.loadClass = function(className) {
+    var classInfo = this.classes[className];
+    if (classInfo)
+        return classInfo;
+    return this.loadClassFile(className + ".class");
 }
 
 Classes.prototype.getEntryPoint = function(classInfo) {
@@ -100,11 +107,9 @@ Classes.prototype.getClass = function(className, init) {
     if (!classInfo) {
         if (className[0] === "[") {
             classInfo = this.getArrayClass(className);
-            if (!classInfo)
-                return null;
-            return this.classes[className] = classInfo;
+        } else {
+            classInfo = this.loadClass(className);
         }
-        classInfo = this.loadClassFile(className + ".class");
         if (!classInfo)
             return null;
     }
@@ -118,17 +123,21 @@ Classes.prototype.getArrayClass = function(typeName) {
     var constructor = ARRAYS[elementType];
     if (constructor)
         return this.initPrimitiveArrayType(elementType, constructor);
+    if (elementType[0] === "L")
+        elementType = elementType.substr(1).replace(/;$/, "");
     var classInfo = new ArrayClass(typeName, this.getClass(elementType));
+    classInfo.superClass = this.loadClass("java/lang/Object");
     classInfo.constructor = function (size) {
         var array = new Array(size);
         array.class = classInfo;
         return array;
     }
-    return classInfo;
+    return this.classes[typeName] = classInfo;
 }
 
 Classes.prototype.initPrimitiveArrayType = function(elementType, constructor) {
     var classInfo = new ArrayClass("[" + elementType);
+    classInfo.superClass = this.loadClass("java/lang/Object");
     constructor.prototype.class = classInfo;
     classInfo.constructor = constructor;
     return classInfo;
@@ -174,7 +183,7 @@ Classes.prototype.newArray = function(typeName, size) {
 Classes.prototype.newMultiArray = function(typeName, lengths) {
     var length = lengths[0];
     var array = this.newArray(typeName, length);
-    if (lengths.length > 0) {
+    if (lengths.length > 1) {
         lengths = lengths.slice(1);
         for (var i=0; i<length; i++)
             array[i] = this.newMultiArray(typeName.substr(1), lengths);

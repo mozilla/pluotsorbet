@@ -7,6 +7,7 @@ public class TestArrays {
 	for (int n = 0; n < b.length; ++n)
 	    for (int m = 0; m < b[n].length; ++m)
 		System.out.println(b[n][m]);
-	Runnable r[][] = new Runnable[5][5];
+	Object o[][] = new Object[5][5];
+	o[1][1] = new Integer(5);
    }
 }

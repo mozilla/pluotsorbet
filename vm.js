@@ -288,7 +288,6 @@ VM.resume = function(frame, callback) {
             break;
         case 0x4f: // iastore
         case 0x51: // fastore
-        case 0x53: // aastore
         case 0x54: // bastore
         case 0x55: // castore
         case 0x56: // sastore
@@ -306,6 +305,15 @@ VM.resume = function(frame, callback) {
             var refArray = stack.pop();
             if (!checkArrayAccess(refArray, idx))
                 break;
+            refArray[idx] = val;
+            break;
+        case 0x53: // aastore
+            var val = stack.pop();
+            var idx = stack.pop();
+            var refArray = stack.pop();
+            if (!checkArrayAccess(refArray, idx))
+                break;
+            console.log(refArray.class);
             refArray[idx] = val;
             break;
         case 0x57: // pop
