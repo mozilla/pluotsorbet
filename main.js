@@ -27,4 +27,5 @@ function runTest(className, cb) {
   });
 }
 
-runTest("RunAll");
+//runTest("RunAll");
+runTest("TestBoolean");

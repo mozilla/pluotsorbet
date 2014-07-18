@@ -96,13 +96,13 @@ Classes.prototype.initClass = function(classInfo) {
     if (classInfo.superClass)
         this.initClass(classInfo.superClass);
     classInfo.staticFields = {};
+    classInfo.constructor = function () {
+    }
+    classInfo.constructor.prototype.class = classInfo;
     var clinit = this.getMethod(classInfo, "<clinit>", "()V", true, false);
     if (clinit) {
         VM.invoke(clinit);
     }
-    classInfo.constructor = function () {
-    }
-    classInfo.constructor.prototype.class = classInfo;
 }
 
 Classes.prototype.getClass = function(className, init) {
