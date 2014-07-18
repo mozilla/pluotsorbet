@@ -6,7 +6,6 @@
 var Threads = function() {
     this.threads = [];
     this.empty = [];
-    this.ready = [];
     var mainThread = new Thread("main");
     this.add(mainThread);
     this.current = mainThread;
@@ -36,17 +35,4 @@ Threads.prototype.count = function() {
 
 Threads.prototype.getThread = function(pid) {
     return this.threads[pid];
-}
-
-Threads.prototype.yield = function(frame) {
-    if (this.ready.length) {
-        this.current.frame = frame;
-        this.ready.unshift(this.current);
-        this.current = this.ready[this.ready.length - 1];
-    }
-    window.postMessage(null, "*");
-}
-
-Threads.prototype.resume = function() {
-    VM.resume(this.current.frame);
 }
