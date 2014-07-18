@@ -784,7 +784,7 @@ VM.resume = function(frame, callback) {
                 raiseException("java/lang/NegativeSizeException");
                 break;
             }
-            stack.push(CLASSES.newArray(className, size));
+            stack.push(CLASSES.newArray("[L" + className + ";", size));
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();
