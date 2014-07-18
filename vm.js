@@ -870,7 +870,12 @@ VM.resume = function(frame, callback) {
             stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow
-            throw_(stack.pop());
+            var obj = stack.pop();
+            if (!obj) {
+                raiseException("java/lang/NullPointerException");
+                break;
+            }
+            throw_(obj);
             break;
         case 0xc2: // monitorenter
             var obj = stack.pop();
