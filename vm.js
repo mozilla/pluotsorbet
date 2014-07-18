@@ -5,6 +5,19 @@
 
 var VM = {};
 
+VM.invoke = function(methodInfo, args) {
+    var caller = new Frame();
+    var consumes = 0;
+    if (args) {
+        consumes = args.length;
+        var stack = caller.stack;
+        for (var n = 0; n < consumes; ++n)
+            stack.push(args[n]);
+    }
+    var callee = caller.pushFrame(methodInfo, consumes);
+    VM.execute(callee);
+}
+
 VM.execute = function(frame) {
     var cp = frame.cp;
     var stack = frame.stack;

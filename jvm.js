@@ -38,7 +38,5 @@ JVM.prototype.run = function(className) {
     if (!entryPoint) {
         throw new Error("Could not find main method in class " + className);
     }
-    var frame = new Frame();
-    frame.stack.push(null); // args
-    frame.invoke(OPCODES.invokestatic, entryPoint);
+    VM.invoke(entryPoint, [null]);
 }

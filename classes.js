@@ -83,7 +83,7 @@ Classes.prototype.initClass = function(classInfo) {
     classInfo.staticFields = {};
     var clinit = this.getMethod(classInfo, "<clinit>", "()V", true, false);
     if (clinit) {
-        (new Frame()).invoke(OPCODES.invokestatic, clinit);
+        VM.invoke(clinit);
     }
     classInfo.constructor = function () {
     }

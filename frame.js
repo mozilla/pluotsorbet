@@ -120,9 +120,7 @@ Frame.prototype.throw = function(ex) {
 Frame.prototype.raiseException = function(className, message) {
     var ex = CLASSES.newObject(this, className);
     var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    this.stack.push(ex);
-    this.stack.push(message);
-    this.invoke(OPCODES.invokespecial, ctor);
+    VM.invoke(ctor, [ex, message]);
     this.throw(ex);
 }
 
@@ -136,33 +134,4 @@ Frame.prototype.checkArrayAccess = function(refArray, idx) {
         return false;
     }
     return true;
-}
-
-Frame.prototype.invoke = function(op, methodInfo) {
-    var consumes = Signature.parse(methodInfo.signature).IN.slots;
-
-    if (op !== OPCODES.invokestatic) {
-        ++consumes;
-        var obj = this.stack[this.stack.length - consumes];
-        if (!obj) {
-            this.raiseException("java/lang/NullPointerException");
-            return;
-        }
-        switch (op) {
-        case OPCODES.invokevirtual:
-            // console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
-            if (methodInfo.classInfo != obj.class)
-                methodInfo = CLASSES.getMethod(this, obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
-            break;
-        }
-    }
-
-    if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
-        NATIVE.invokeNative(this, methodInfo);
-        return;
-    }
-
-    var callee = this.pushFrame(methodInfo, consumes);
-
-    VM.execute(callee);
 }
