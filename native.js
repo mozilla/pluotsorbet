@@ -53,8 +53,8 @@ Native.prototype.getNativeMethod = function (methodInfo) {
     return this[className + "." + methodName + "." + signature];
 }
 
-Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = function (src, srcOffset, dst, dstOffset, length) {
-  //console.log("fillInStackTrace called", src);
+Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = function () {
+  //console.log("fillInStackTrace called");
 }
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function (src, srcOffset, dst, dstOffset, length) {
