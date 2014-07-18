@@ -32,4 +32,6 @@ function runTest(className, cb) {
 //runTest("tests/TestOps");
 //runTest("tests/TestLong");
 //runTest("tests/TestPrintln");
-runTest("tests/TestException");
+//runTest("tests/TestException");
+runTest("tests/TestInterface");
+

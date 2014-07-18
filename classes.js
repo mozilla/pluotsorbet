@@ -50,12 +50,17 @@ Classes.prototype.loadClassFile = function(fileName) {
     var bytes = this.loadFile(fileName);
     if (!bytes)
         return null;
+    var self = this;
     var classInfo = this.loadClassBytes(bytes);
-    var classes = classInfo.classes;
     if (classInfo.superClassName)
         classInfo.superClass = this.getClass(classInfo.superClassName);
-    classInfo.classes.map(function (c) {
-        return this.getClass(fileName.replace(/[^/]*\.class$/, "") + "/" + c);
+    var interfaces = classInfo.interfaces;
+    interfaces.forEach(function (i, n) {
+        interfaces[n] = self.getClass(i);
+    });
+    var classes = classInfo.classes;
+    classes.forEach(function (c, n) {
+        classes[n] = self.getClass(fileName.replace(/[^/]*\.class$/, "") + "/" + c);
     });
     return classInfo;
 }

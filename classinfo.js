@@ -13,6 +13,11 @@ var ClassInfo = function(classBytes) {
 
     var self = this;
 
+    this.interfaces = [];
+    classImage.interfaces.forEach(function(i) {
+        self.interfaces.push(cp[cp[i].name_index].bytes);
+    });
+
     this.fields = [];
     classImage.fields.forEach(function(f) {
         self.fields.push({

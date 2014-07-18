@@ -168,7 +168,7 @@ var getClassImage = function(classBytes) {
     var interfaces_count = reader.read16();
     for(var i=0; i<interfaces_count; i++) {
         var index = reader.read16();
-        if (index != 0){
+        if (index != 0) {
             classImage.interfaces.push(index);
         }
     }
