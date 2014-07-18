@@ -46,7 +46,6 @@ VM.resume = function(frame, callback) {
             stack.push(callee.stack.pop());
             break;
         }
-        return frame.caller;
     }
 
     function raiseException(className, message) {
@@ -914,18 +913,21 @@ VM.resume = function(frame, callback) {
             pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return
-            if (!popFrame(0))
+            popFrame(0);
+            if (!frame.caller)
                 return !callback || callback();
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
         case 0xb0: // areturn
-            if (!popFrame(1))
+            popFrame(1);
+            if (!frame.caller)
                 return !callback || callback();
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
-            if (!popFrame(2))
+            popFrame(2);
+            if (!frame.caller)
                 return !callback || callback();
             break;
         default:
