@@ -9,6 +9,12 @@ VM.execute = function(frame) {
     var cp = frame.cp;
     var stack = frame.stack;
 
+    function pushFrame(methodInfo, consumes) {
+        frame = frame.pushFrame(methodInfo, consumes);
+        stack = frame.stack;
+        cp = frame.cp;
+    }
+
     while (true) {
         var op = frame.read8();
         // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
@@ -822,9 +828,7 @@ VM.execute = function(frame) {
                 NATIVE.invokeNative(frame, methodInfo);
                 continue;
             }
-            frame = frame.pushFrame(methodInfo, consumes);
-            stack = frame.stack;
-            cp = frame.cp;
+            pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return
             frame = frame.popFrame();
