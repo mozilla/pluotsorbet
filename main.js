@@ -17,8 +17,8 @@ function runTest(className, cb) {
   var jvm = new JVM();
   // This is a hack. We should eliminate CLASSES instead.
   CLASSES.classes = {};
-  load("java/cldc1.1.1.jar", function (data) {
-    jvm.addPath("java/cldc1.1.1.jar", data);
+  load("java/classes.jar", function (data) {
+    jvm.addPath("java/classes.jar", data);
     var fileName = className + ".class";
     load(fileName, function (data) {
       jvm.addPath(fileName, data);
