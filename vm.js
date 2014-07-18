@@ -14,11 +14,8 @@ VM.invoke = function(methodInfo, args) {
         for (var n = 0; n < consumes; ++n)
             stack.push(args[n]);
     }
-    var callee = caller.pushFrame(methodInfo, consumes);
-    VM.execute(callee);
-}
+    var frame = caller.pushFrame(methodInfo, consumes);
 
-VM.execute = function(frame) {
     var cp = frame.cp;
     var stack = frame.stack;
 
