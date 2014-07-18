@@ -57,13 +57,28 @@ var ClassInfo = function(classBytes) {
     });
 }
 
-ClassInfo.prototype.canAssignTo = function(other) {
+ClassInfo.prototype.implementsInterface = function(iface) {
     var classInfo = this;
     do {
-        if (classInfo === other)
-            return true;
+        var interfaces = classInfo.interfaces;
+        for (var n = 0; n < interfaces.length; ++n) {
+            if (interfaces[n] === iface)
+                return true;
+        }
         classInfo = classInfo.superClass;
     } while (classInfo);
+    return false;
+}
+
+ClassInfo.prototype.canAssignTo = function(toClass) {
+    if (toClass.className === "java/lang/Object")
+        return true;
+    var fromClass = this;
+    do {
+        if (fromClass === toClass)
+            return true;
+        fromClass = classInfo.superClass;
+    } while (fromClass);
     return false;
 }
 
