@@ -66,6 +66,10 @@ var util = (function () {
     return s;
   }
 
+  function fromJavaString(str) {
+    return chars2string(str.value, str.offset, str.count);
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -79,6 +83,7 @@ var util = (function () {
     double2float: double2float,
     double2int: double2int,
     double2long: double2long,
-    chars2string: chars2string
+    chars2string: chars2string,
+    fromJavaString: fromJavaString,
   };
 })();

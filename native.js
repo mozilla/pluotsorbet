@@ -11,6 +11,10 @@ Native.prototype.JavaException = function(className, msg) {
     this.msg = msg;
 }
 
+Native.prototype.JavaException.prototype.toString = function () {
+    return "Uncaught Java Exception " + this.className + " " + this.msg;
+}
+
 Native.prototype.invokeNative = function(caller, methodInfo) {
     function pushType(type, value) {
         if (type === "long" || type === "double") {
@@ -90,11 +94,11 @@ Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Obje
 }
 
 Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function (key) {
-    switch (util.chars2string(key.value)) {
+    switch (util.fromJavaString(key)) {
     case "microedition.encoding":
         return CLASSES.newString("ISO-8859-1");
     default:
-        console.log("KEY: " + util.chars2string(key.value));
+        console.log("KEY: " + util.fromJavaString(key.value));
     }
 }
 
@@ -111,7 +115,7 @@ Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
 }
 
 Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function (name) {
-    var className = util.chars2string(name.value, name.offset, name.count).replace(".", "/", "g");
+    var className = util.fromJavaString(name).replace(".", "/", "g");
     var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
         throw new Native.JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
@@ -138,3 +142,6 @@ Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function
         s += String.fromCharCode(ch);
     }
 })();
+
+Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = (function () {
+});
