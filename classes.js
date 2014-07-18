@@ -118,7 +118,7 @@ Classes.prototype.getArrayClass = function(typeName) {
     var constructor = ARRAYS[elementType];
     if (constructor)
         return this.initPrimitiveArrayType(elementType, constructor);
-    var classInfo = new ArrayClass(elementType);
+    var classInfo = new ArrayClass(typeName, this.getClass(elementType));
     classInfo.constructor = function (size) {
         var array = new Array(size);
         array.class = classInfo;
@@ -128,7 +128,7 @@ Classes.prototype.getArrayClass = function(typeName) {
 }
 
 Classes.prototype.initPrimitiveArrayType = function(elementType, constructor) {
-    var classInfo = new ArrayClass(elementType);
+    var classInfo = new ArrayClass("[" + elementType);
     constructor.prototype.class = classInfo;
     classInfo.constructor = constructor;
     return classInfo;

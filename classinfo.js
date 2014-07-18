@@ -91,8 +91,8 @@ ClassInfo.prototype.getClassObject = function() {
     });
 }
 
-var ArrayClass = function(elementType) {
-    this.className = "[" + elementType;
+var ArrayClass = function(className, elementType) {
+    this.className = className;
     this.superClassName = "java/lang/Object";
     this.access_flags = 0;
     this.elementType = elementType;
