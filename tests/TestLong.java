@@ -6,6 +6,7 @@ public class TestLong {
     }
 
     public static void main(String[] args) {
-        Assert("long to string", ("" + a).equals("81985529216486895"));
+        //Assert("long to string", ("" + a).equals("81985529216486895"));
+	System.out.println(System.currentTimeMillis());
     }
 }

@@ -46,7 +46,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
         methodInfo.native = this.getNativeMethod(methodInfo);
     var result = methodInfo.native.apply(caller, args);
     if (signature.OUT.length)
-        pushType(signature.OUT[0], result);
+        pushType(signature.OUT[0].type, result);
 }
 
 Native.prototype.getNativeMethod = function(methodInfo) {
@@ -100,6 +100,10 @@ Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/S
     default:
         console.log("KEY: " + util.fromJavaString(key.value));
     }
+}
+
+Native.prototype["java/lang/System.currentTimeMillis.()J"] = function() {
+    return Long.fromNumber(Date.now());
 }
 
 Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(src, srcOffset, dst, dstOffset, length) {

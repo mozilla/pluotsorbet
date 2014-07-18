@@ -77,9 +77,12 @@ VM.resume = function(frame, callback) {
     }
 
     function raiseException(className, message) {
+        if (!message)
+            message = "";
+        message = "" + message;
         var ex = CLASSES.newObject(className);
         var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-        VM.invoke(ctor, [ex, message]);
+        VM.invoke(ctor, [ex, CLASSES.newString(message)]);
         throw_(ex);
     }
 
@@ -313,7 +316,6 @@ VM.resume = function(frame, callback) {
             var refArray = stack.pop();
             if (!checkArrayAccess(refArray, idx))
                 break;
-            console.log(refArray.class);
             refArray[idx] = val;
             break;
         case 0x57: // pop
@@ -771,7 +773,7 @@ VM.resume = function(frame, callback) {
             var type = frame.read8();
             var size = stack.pop();
             if (size < 0) {
-                raiseException("java/lang/NegativeSizeException");
+                raiseException("java/lang/NegativeSizeException", size);
                 break;
             }
             stack.push(CLASSES.newPrimitiveArray("????ZCFDBSIJ"[type], size));
@@ -781,7 +783,7 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[idx].name_index].bytes;
             var size = stack.pop();
             if (size < 0) {
-                raiseException("java/lang/NegativeSizeException");
+                raiseException("java/lang/NegativeSizeException", size);
                 break;
             }
             stack.push(CLASSES.newArray("[L" + className + ";", size));
