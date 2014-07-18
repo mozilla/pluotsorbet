@@ -1,18 +1,18 @@
-public class TestDup {
-    public static void main(String[] args) {
+public class TestDup extends Test {
+    public void main() {
 	// do it twice so we know the adding was done correctly in the first call
-	System.out.println(dup2());
-	System.out.println(dup2());
+	compare(dup2(), 5);
+	compare(dup2(), 6);
 
 	DupMore d = new DupMore();
-	System.out.println(d.dup2_x1());
-	System.out.println(d.dup2_x1());
+	compare(d.dup2_x1(), 4);
+	compare(d.dup2_x1(), 5);
 
-	System.out.println(d.dup2_x2());
-	System.out.println(d.dup2_x2());
+	compare(d.dup2_x2(), 1);
+	compare(d.dup2_x2(), 2);
 
-	System.out.println(d.dup_x2());
-	System.out.println(d.dup_x2());
+	compare(d.dup_x2(), 4);
+	compare(d.dup_x2(), 5);
     }
 
     private static long longValue = 5;
