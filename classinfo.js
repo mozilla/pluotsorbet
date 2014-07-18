@@ -77,3 +77,5 @@ var ArrayClass = function(elementType) {
     this.access_flags = 0;
     this.elementType = elementType;
 }
+
+ArrayClass.prototype.isArrayClass = true;
