@@ -78,8 +78,8 @@ Classes.prototype.getEntryPoint = function(classInfo) {
 Classes.prototype.initClass = function(classInfo) {
     if (classInfo.staticFields)
         return;
-    if (classInfo.superClassName)
-        this.getClass(classInfo.superClassName, true);
+    if (classInfo.superClass)
+        this.initClass(classInfo.superClass);
     classInfo.staticFields = {};
     var clinit = this.getMethod(classInfo, "<clinit>", "()V", true, false);
     if (clinit) {
@@ -134,7 +134,7 @@ Classes.prototype.setStaticField = function(className, fieldName, value) {
 }
 
 Classes.prototype.getMethod = function(classInfo, methodName, signature, staticFlag, inheritFlag) {
-    while (true) {
+    do {
         var methods = classInfo.methods;
         for (var i=0; i<methods.length; i++) {
             if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
@@ -143,11 +143,8 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
                 }
             }
         }
-        var superClassName = classInfo.superClassName;
-        if (!superClassName)
-            return null;
-        classInfo = this.getClass(superClassName);
-    }
+        classInfo = classInfo.superClass;
+    } while (classInfo);
 };
 
 Classes.prototype.newObject = function(className) {
