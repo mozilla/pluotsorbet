@@ -5,7 +5,7 @@
 
 var VM = {};
 
-VM.invoke = function(methodInfo, args) {
+VM.invoke = function(methodInfo, args, callback) {
     var caller = new Frame();
     var consumes = 0;
     if (args) {
@@ -14,10 +14,10 @@ VM.invoke = function(methodInfo, args) {
         for (var n = 0; n < consumes; ++n)
             stack.push(args[n]);
     }
-    VM.resume(caller.pushFrame(methodInfo, consumes));
+    VM.resume(caller.pushFrame(methodInfo, consumes), callback);
 }
 
-VM.resume = function(frame) {
+VM.resume = function(frame, callback) {
     var cp = frame.cp;
     var stack = frame.stack;
 
@@ -842,7 +842,7 @@ VM.resume = function(frame) {
                 var obj = stack[stack.length - consumes];
                 if (!obj) {
                     frame.raiseException("java/lang/NullPointerException");
-                    return;
+                    break;
                 }
                 switch (op) {
                 case OPCODES.invokevirtual:
@@ -860,18 +860,18 @@ VM.resume = function(frame) {
             break;
         case 0xb1: // return
             if (!popFrame(0))
-                return;
+                return !callback || callback();
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
         case 0xb0: // areturn
             if (!popFrame(1))
-                return;
+                return !callback || callback();
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
             if (!popFrame(2))
-                return;
+                return !callback || callback();
             break;
         default:
             var opName = OPCODES[op];
