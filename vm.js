@@ -49,6 +49,18 @@ VM.resume = function(frame, callback) {
         return frame.caller;
     }
 
+    function checkArrayAccess(refArray, idx) {
+        if (!refArray) {
+            frame.raiseException("java/lang/NullPointerException");
+            return false;
+        }
+        if (idx < 0 || idx >= refArray.length) {
+            frame.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
+            return false;
+        }
+        return true;
+    }
+
     while (true) {
         var op = frame.read8();
         // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
@@ -181,7 +193,7 @@ VM.resume = function(frame, callback) {
         case 0x35: // saload
             var idx = stack.pop();
             var refArray = stack.pop();
-            if (!frame.checkArrayAccess(refArray, idx))
+            if (!checkArrayAccess(refArray, idx))
                 break;
             stack.push(refArray[idx]);
             break;
@@ -189,7 +201,7 @@ VM.resume = function(frame, callback) {
         case 0x31: // daload
             var idx = stack.pop();
             var refArray = stack.pop();
-            if (!frame.checkArrayAccess(refArray, idx))
+            if (!checkArrayAccess(refArray, idx))
                 break;
             stack.push2(refArray[idx]);
             break;
@@ -249,7 +261,7 @@ VM.resume = function(frame, callback) {
             var val = stack.pop();
             var idx = stack.pop();
             var refArray = stack.pop();
-            if (!frame.checkArrayAccess(refArray, idx))
+            if (!checkArrayAccess(refArray, idx))
                 break;
             refArray[idx] = val;
             break;
@@ -258,7 +270,7 @@ VM.resume = function(frame, callback) {
             var val = stack.pop2();
             var idx = stack.pop();
             var refArray = stack.pop();
-            if (!frame.checkArrayAccess(refArray, idx))
+            if (!checkArrayAccess(refArray, idx))
                 break;
             refArray[idx] = val;
             break;

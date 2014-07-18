@@ -123,15 +123,3 @@ Frame.prototype.raiseException = function(className, message) {
     VM.invoke(ctor, [ex, message]);
     this.throw(ex);
 }
-
-Frame.prototype.checkArrayAccess = function(refArray, idx) {
-    if (!refArray) {
-        this.raiseException("java/lang/NullPointerException");
-        return false;
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        this.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
-        return false;
-    }
-    return true;
-}
