@@ -41,15 +41,15 @@ public class TestByteArrayOutputStream extends Test {
 		check(s.toByteArray().length == 2);
 		s = new ByteArrayOutputStream(3);
 		//26
-		check(s.size() == 0);
-		check(s.toString().equals(""));
-		check(s.toByteArray().length == 0);
+		compare(s.size(), 0);
+		compare(s.toString(), "");
+		compare(s.toByteArray().length, 0);
 		byte[] bb = "ściółka冷蔵庫".getBytes();
 		for (int i = 0; i < bb.length; i++) {
 			s.write(bb[i]);
 		}
-		check(s.size() == 19);
-		check(s.toString().equals("ściółka冷蔵庫"));
+		compare(s.size(), 19);
+		compare(s, "ściółka冷蔵庫");
 		try {
 			new ByteArrayOutputStream(-3);
 			check(false);
