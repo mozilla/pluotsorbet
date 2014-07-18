@@ -9,17 +9,13 @@ function LongArray(size) {
     return array;
 }
 
-var ARRAY_TYPE = [
-    null, // 0
-    null, // 1
-    null, // 2
-    null, // 3
-    Uint8Array, // 4
-    Uint16Array, // 5
-    Float32Array, // 6
-    Float64Array, // 7
-    Int8Array, // 8
-    Int16Array, // 9
-    Int32Array, // 10
-    LongArray, // 11
-];
+var ARRAYS = {
+    'Z': Uint8Array,
+    'C': Uint16Array,
+    'F': Float32Array,
+    'D': Float64Array,
+    'B': Int8Array,
+    'S': Int16Array,
+    'I': Int32Array,
+    'J': LongArray,
+};

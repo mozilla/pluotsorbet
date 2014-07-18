@@ -766,7 +766,7 @@ VM.resume = function(frame, callback) {
                 raiseException("java/lang/NegativeSizeException");
                 break;
             }
-            stack.push(CLASSES.newPrimitiveArray(ARRAY_TYPE[type], size));
+            stack.push(CLASSES.newPrimitiveArray("????ZCFDBSIJ"[type], size));
             break;
         case 0xbd: // anewarray
             var idx = frame.read16();

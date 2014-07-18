@@ -99,7 +99,10 @@ Classes.prototype.getClass = function(className, init) {
     var classInfo = this.classes[className];
     if (!classInfo) {
         if (className[0] === "[") {
-            return this.classes[className] = this.getArrayClass(className);
+            classInfo = this.getArrayClass(className);
+            if (!classInfo)
+                return null;
+            return this.classes[className] = classInfo;
         }
         classInfo = this.loadClassFile(className + ".class");
         if (!classInfo)
@@ -112,8 +115,9 @@ Classes.prototype.getClass = function(className, init) {
 
 Classes.prototype.getArrayClass = function(typeName) {
     var elementType = typeName.substr(1);
-    if (elementType in ARRAY_TYPE)
-        return this.initPrimitiveArrayType(elementType, ARRAY_TYPE[elementType]);
+    var constructor = ARRAYS[elementType];
+    if (constructor)
+        return this.initPrimitiveArrayType(elementType, constructor);
     var classInfo = new ArrayClass(elementType);
     classInfo.constructor = function (size) {
         var array = new Array(size);
@@ -156,7 +160,10 @@ Classes.prototype.newObject = function(className) {
     return new (this.getClass(className, true).constructor)();
 }
 
-Classes.prototype.newPrimitiveArray = function(constructor, size) {
+Classes.prototype.newPrimitiveArray = function(type, size) {
+    var constructor = ARRAYS[type];
+    if (!constructor.prototype.class)
+        this.initPrimitiveArrayType(type, constructor);
     return constructor.call(null, size);
 }
 
@@ -178,7 +185,7 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
 Classes.prototype.newString = function(s) {
     var obj = this.newObject("java/lang/String");
     var length = s.length;
-    var chars = this.newPrimitiveArray(Uint16Array, length);
+    var chars = this.newPrimitiveArray("C", length);
     for (var n = 0; n < length; ++n)
         chars[n] = s.charCodeAt(n);
     obj.value = chars;
