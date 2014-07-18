@@ -77,8 +77,8 @@ VM.resume = function(frame, callback) {
     }
 
     function raiseException(className, message) {
-        var ex = CLASSES.newObject(this, className);
-        var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
+        var ex = CLASSES.newObject(className);
+        var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
         VM.invoke(ctor, [ex, message]);
         throw_(ex);
     }

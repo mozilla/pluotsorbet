@@ -166,7 +166,7 @@ Classes.prototype.newArray = function(typeName, size) {
 
 Classes.prototype.newMultiArray = function(typeName, lengths) {
     var length = lengths[0];
-    var array = this.newArray(caller, typeName, length);
+    var array = this.newArray(typeName, length);
     if (lengths.length > 0) {
         lengths = lengths.slice(1);
         for (var i=0; i<length; i++)

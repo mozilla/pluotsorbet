@@ -33,5 +33,5 @@ function runTest(className, cb) {
 //runTest("tests/TestLong");
 //runTest("tests/TestPrintln");
 //runTest("tests/TestException");
-runTest("tests/TestInterface");
-
+//runTest("tests/TestInterface");
+runTest("tests/TestArrays");
