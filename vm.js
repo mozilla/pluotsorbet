@@ -59,7 +59,7 @@ VM.resume = function(frame, callback) {
                         handler_pc = exception_table[i].handler_pc;
                     } else {
                         var name = cp[cp[exception_table[i].catch_type].name_index].bytes;
-                        if (exClass.canAssignTo(CLASSES.getClass(name))) {
+                        if (ex.class.isAssignableTo(CLASSES.getClass(name))) {
                             handler_pc = exception_table[i].handler_pc;
                             break;
                         }
@@ -848,7 +848,14 @@ VM.resume = function(frame, callback) {
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();
-            var type = cp[cp[idx].name_index].bytes;
+            var className = cp[cp[idx].name_index].bytes;
+            var obj = stack[stack.length - 1];
+            if (obj) {
+                if (!obj.class.isAssignableTo(CLASSES.getClass(className))) {
+                    raiseException("java/lang/ClassCastException");
+                    break;
+                }
+            }
             break;
         case 0xc1: // instanceof
             var idx = frame.read16();

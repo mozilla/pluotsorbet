@@ -70,16 +70,10 @@ ClassInfo.prototype.implementsInterface = function(iface) {
     return false;
 }
 
-ClassInfo.prototype.canAssignTo = function(toClass) {
-    if (toClass.className === "java/lang/Object")
+ClassInfo.prototype.isAssignableTo = function(toClass) {
+    if (this === toClass || toClass.className === "java/lang/Object")
         return true;
-    var fromClass = this;
-    do {
-        if (fromClass === toClass)
-            return true;
-        fromClass = classInfo.superClass;
-    } while (fromClass);
-    return false;
+    return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
 }
 
 ClassInfo.prototype.getClassObject = function() {
