@@ -861,7 +861,8 @@ VM.resume = function(frame, callback) {
             var idx = frame.read16();
             var className = cp[cp[idx].name_index].bytes;
             var obj = stack.pop();
-            stack.push(obj.class.className === className);
+            var result = !obj ? false : obj.class.isAssignableTo(CLASSES.getClass(className));
+            stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow
             throw_(stack.pop());
