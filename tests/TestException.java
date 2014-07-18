@@ -1,13 +1,16 @@
-public class TestException {
-    static void throw1() {
+public class TestException extends Test {
+    void throw1() {
+	boolean caught = false;
 	try {
-	    throw new RuntimeException("Hello, this is error 1");
+	    throw new RuntimeException("Foo");
 	} catch (Exception e) {
-	    System.out.println("caught " + e.toString());
+	    compare(e.getMessage(), "Foo");
+	    caught = true;
 	}
+	check(caught);
     }
 
-    public static void main(String[] args) {
+    public void main() {
 	throw1();
     }
 }
