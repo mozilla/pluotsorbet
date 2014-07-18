@@ -8,4 +8,4 @@ classes.jar: $(SRCS)
 	rm -rf build
 
 clean:
-	rm `find . -name "*.jar" -or -name "*~"`
+	rm -f `find . -name "*.jar" -or -name "*~"`
