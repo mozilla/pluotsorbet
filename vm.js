@@ -53,7 +53,29 @@ VM.resume = function(frame, callback) {
         var ex = CLASSES.newObject(this, className);
         var ctor = CLASSES.getMethod(this, ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
         VM.invoke(ctor, [ex, message]);
-        frame.throw(ex);
+        do {
+            var handler_pc = null;
+            for (var i=0; i<frame.exception_table.length; i++) {
+                if (frame.ip >= frame.exception_table[i].start_pc && frame.ip <= frame.exception_table[i].end_pc) {
+                    if (frame.exception_table[i].catch_type === 0) {
+                        handler_pc = frame.exception_table[i].handler_pc;
+                    } else {
+                        var name = cp[cp[exception_table[i].catch_type].name_index].bytes;
+                        if (name === className) {
+                            handler_pc = this.exception_table[i].handler_pc;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (handler_pc != null) {
+                stack.push(ex);
+                this.ip = handler_pc;
+                return;
+            }
+            popFrame();
+        } while (frame.caller);
+        throw new NATIVE.JavaException(className, message);
     }
 
     function checkArrayAccess(refArray, idx) {

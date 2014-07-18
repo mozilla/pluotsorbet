@@ -91,28 +91,3 @@ Frame.prototype.read32signed = function() {
     var x = this.read32();
     return (x > 0x7fffffff) ? (x - 0x100000000) : x;
 }
-
-Frame.prototype.throw = function(ex) {
-    var handler_pc = null;
-
-    for (var i=0; i<this.exception_table.length; i++) {
-        if (this.ip >= this.exception_table[i].start_pc && this.ip <= this.exception_table[i].end_pc) {
-            if (this.exception_table[i].catch_type === 0) {
-                handler_pc = this.exception_table[i].handler_pc;
-            } else {
-                var name = this.cp[this.cp[this.exception_table[i].catch_type].name_index].bytes;
-                if (name === ex.className) {
-                    handler_pc = this.exception_table[i].handler_pc;
-                    break;
-                }
-            }
-        }
-    }
-
-    if (handler_pc != null) {
-        stack.push(ex);
-        this.ip = handler_pc;
-    } else {
-        throw ex;
-    }
-}
