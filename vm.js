@@ -15,6 +15,22 @@ VM.execute = function(frame) {
         cp = frame.cp;
     }
 
+    function popFrame(consumes) {
+        var callee = frame;
+        frame = frame.popFrame();
+        stack = frame.stack;
+        cp = frame.cp;
+        switch (consumes) {
+        case 2:
+            stack.push2(callee.stack.pop2());
+            break;
+        case 1:
+            stack.push(callee.stack.pop());
+            break;
+        }
+        return frame.caller;
+    }
+
     while (true) {
         var op = frame.read8();
         // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
@@ -831,28 +847,19 @@ VM.execute = function(frame) {
             pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return
-            frame = frame.popFrame();
-            if (!frame.caller)
+            if (!popFrame(0))
                 return;
-            stack = frame.stack;
-            cp = frame.cp;
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
         case 0xb0: // areturn
-            (frame = frame.popFrame()).stack.push(stack.pop());
-            if (!frame.caller)
+            if (!popFrame(1))
                 return;
-            stack = frame.stack;
-            cp = frame.cp;
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
-            (frame = frame.popFrame()).stack.push2(stack.pop2());
-            if (!frame.caller)
+            if (!popFrame(2))
                 return;
-            stack = frame.stack;
-            cp = frame.cp;
             break;
         default:
             var opName = OPCODES[op];
