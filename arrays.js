@@ -5,8 +5,7 @@
 
 function LongArray(size) {
     var array = Array(size);
-    // We can pass 'null' here because we know no exception will be raised.
-    array.class = CLASSES.getClass(null, "[J");
+    array.class = CLASSES.getClass("[J");
     return array;
 }
 

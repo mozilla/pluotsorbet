@@ -126,7 +126,7 @@ Native.prototype["java/lang/Class.getName.()Ljava/lang/String;"] = function(obj)
 
 Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
     var className = util.fromJavaString(name).replace(".", "/", "g");
-    var classInfo = CLASSES.getClass(className);
+    var classInfo = (className[0] === "[") ? null : CLASSES.getClass(className);
     if (!classInfo) {
         throw new Native.JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
     }
