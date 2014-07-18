@@ -52,6 +52,25 @@ var ClassInfo = function(classBytes) {
     });
 }
 
+ClassInfo.prototype.canAssignTo = function(other) {
+    var classInfo = this;
+    do {
+        if (classInfo === other)
+            return true;
+        classInfo = classInfo.superClass;
+    } while (classInfo);
+    return false;
+}
+
+ClassInfo.prototype.getClassObject = function() {
+    var self = this;
+    return util.cache(this, "classObject", function () {
+        var classObject = CLASSES.newObject("java/lang/Class");
+        classObject.vmClass = self;
+        return classObject;
+    });
+}
+
 var ArrayClass = function(elementType) {
     this.className = "[" + elementType;
     this.superClassName = "java/lang/Object";

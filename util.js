@@ -70,6 +70,12 @@ var util = (function () {
     return chars2string(str.value, str.offset, str.count);
   }
 
+  function cache(obj, name, fn) {
+    name = "cache$" + name;
+    var result = obj[name];
+    return result ? result : obj[name] = fn();
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -85,5 +91,6 @@ var util = (function () {
     double2long: double2long,
     chars2string: chars2string,
     fromJavaString: fromJavaString,
+    cache: cache
   };
 })();

@@ -11,7 +11,7 @@ Native.prototype.JavaException = function(className, msg) {
     this.msg = msg;
 }
 
-Native.prototype.JavaException.prototype.toString = function () {
+Native.prototype.JavaException.prototype.toString = function() {
     return "Uncaught Java Exception " + this.className + " " + this.msg;
 }
 
@@ -49,7 +49,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
         pushType(signature.OUT[0], result);
 }
 
-Native.prototype.getNativeMethod = function (methodInfo) {
+Native.prototype.getNativeMethod = function(methodInfo) {
     var classInfo = methodInfo.classInfo;
     var className = classInfo.className;
     var methodName = methodInfo.name;
@@ -57,7 +57,7 @@ Native.prototype.getNativeMethod = function (methodInfo) {
     return this[className + "." + methodName + "." + signature];
 }
 
-Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function (src, srcOffset, dst, dstOffset, length) {
+Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst) {
         throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
         return;
@@ -93,7 +93,7 @@ Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Obje
     }
 }
 
-Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function (key) {
+Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
         return CLASSES.newString("ISO-8859-1");
@@ -102,7 +102,7 @@ Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/S
     }
 }
 
-Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function (src, srcOffset, dst, dstOffset, length) {
+Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n)
             dst[dstOffset++] = src[srcOffset++];
@@ -114,26 +114,37 @@ Native.prototype["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
     }
 }
 
-Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function (name) {
+Native.prototype["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(obj) {
+    return obj.class.getClassObject();
+}
+
+Native.prototype["java/lang/Class.getName.()Ljava/lang/String;"] = function(obj) {
+    return util.cache(obj, "getName", function () {
+        return CLASSES.newString(obj.vmClass.className);
+    });
+}
+
+Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
     var className = util.fromJavaString(name).replace(".", "/", "g");
     var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
         throw new Native.JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
     }
-    var classObject = CLASSES.newObject("java/lang/Class");
-    classObject.vmClass = classInfo;
-    return classObject;
+    return classInfo.getClassObject();
 }
 
-Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function (classObject) {
+Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(classObject) {
     var classInfo = classObject.vmClass;
     CLASSES.initClass(classInfo);
     return new (classInfo.constructor)();
 };
 
-Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function () {
+Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = (function() {
+});
+
+Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
     var s = "";
-    return function (obj, ch) {
+    return function(obj, ch) {
         if (ch === 10) {
             document.getElementById("output").textContent += s + "\n";
             s = "";
@@ -142,6 +153,3 @@ Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function
         s += String.fromCharCode(ch);
     }
 })();
-
-Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = (function () {
-});

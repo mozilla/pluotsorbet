@@ -5,6 +5,7 @@ public class TestException {
 	try {
 	    throw new RuntimeException("Hello, this is error 1");
 	} catch (Exception e) {
+	    System.out.println("caught " + e.toString());
 	}
     }
 

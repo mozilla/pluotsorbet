@@ -49,6 +49,7 @@ VM.resume = function(frame, callback) {
     }
 
     function throw_(ex) {
+        var exClass = CLASSES.getClass(ex.class.className);
         do {
             var exception_table = frame.methodInfo.exception_table;
             var handler_pc = null;
@@ -58,7 +59,7 @@ VM.resume = function(frame, callback) {
                         handler_pc = exception_table[i].handler_pc;
                     } else {
                         var name = cp[cp[exception_table[i].catch_type].name_index].bytes;
-                        if (name === className) {
+                        if (exClass.canAssignTo(CLASSES.getClass(name))) {
                             handler_pc = exception_table[i].handler_pc;
                             break;
                         }
@@ -67,7 +68,7 @@ VM.resume = function(frame, callback) {
             }
             if (handler_pc != null) {
                 stack.push(ex);
-                this.ip = handler_pc;
+                frame.ip = handler_pc;
                 return;
             }
             popFrame();
