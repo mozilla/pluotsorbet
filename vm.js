@@ -898,6 +898,7 @@ VM.resume = function(frame, callback) {
                 }
                 switch (op) {
                 case OPCODES.invokevirtual:
+                case OPCODES.invokeinterface:
                     // console.log("virtual dispatch", methodInfo.classInfo.className, obj.class.className, methodInfo.name, methodInfo.signature);
                     if (methodInfo.classInfo != obj.class)
                         methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
