@@ -40,15 +40,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
     var args = popArgs(signature.IN);
     if (!methodInfo.native)
         methodInfo.native = this.getNativeMethod(methodInfo);
-    try {
-        var result = methodInfo.native.apply(caller, args);
-    } catch (e) {
-        if (!(e instanceof Native.JavaException)) {
-            throw e;
-        }
-        caller.raiseException(e.className, e.msg);
-        return;
-    }
+    var result = methodInfo.native.apply(caller, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0], result);
 }

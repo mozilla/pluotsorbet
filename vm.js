@@ -859,8 +859,16 @@ VM.resume = function(frame, callback) {
                 }
             }
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
-                NATIVE.invokeNative(frame, methodInfo);
-                continue;
+                try {
+                    NATIVE.invokeNative(frame, methodInfo);
+                } catch (e) {
+                    if (!(e instanceof NATIVE.JavaException)) {
+                        throw e;
+                    }
+                    frame.raiseException(e.className, e.msg);
+                    return;
+                }
+                break;
             }
             pushFrame(methodInfo, consumes);
             break;
