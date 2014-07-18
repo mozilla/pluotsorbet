@@ -6,3 +6,6 @@ classes.jar: $(SRCS)
 	javac -source 1.3 -d ./build $^
 	cd build && jar cvf ../classes.jar *
 	rm -rf build
+
+clean:
+	rm `find . -name "*.jar" -or -name "*~"`
