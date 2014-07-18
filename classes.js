@@ -52,11 +52,11 @@ Classes.prototype.loadClassFile = function(fileName) {
         return null;
     var classInfo = this.loadClassBytes(bytes);
     var classes = classInfo.classes;
-    for (var i=0; i<classes.length; i++) {
-        if (!this.classes[classes[i]]) {
-            this.loadClassFile(fileName.replace(/[^/]*\.class$/, "") + "/" + classes[i] + ".class");
-        }
-    }
+    if (classInfo.superClassName)
+        classInfo.superClass = this.getClass(classInfo.superClassName);
+    classInfo.classes.map(function (c) {
+        return this.getClass(fileName.replace(/[^/]*\.class$/, "") + "/" + c);
+    });
     return classInfo;
 }
 
