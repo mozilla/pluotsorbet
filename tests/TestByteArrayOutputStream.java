@@ -49,7 +49,7 @@ public class TestByteArrayOutputStream extends Test {
 			s.write(bb[i]);
 		}
 		compare(s.size(), 19);
-		compare(s, "ściółka冷蔵庫");
+		compare(s.toString(), "ściółka冷蔵庫");
 		try {
 			new ByteArrayOutputStream(-3);
 			check(false);
