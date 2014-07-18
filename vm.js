@@ -5,6 +5,8 @@
 
 var VM = {};
 
+VM.level = 0;
+
 VM.invoke = function(methodInfo, args, callback) {
     var caller = new Frame();
     var consumes = 0;
@@ -14,7 +16,11 @@ VM.invoke = function(methodInfo, args, callback) {
         for (var n = 0; n < consumes; ++n)
             stack.push(args[n]);
     }
-    VM.resume(caller.pushFrame(methodInfo, consumes), callback);
+    VM.level++;
+    VM.resume(caller.pushFrame(methodInfo, consumes), function () {
+        VM.level--;
+        return !callback || callback();
+    });
 }
 
 VM.resume = function(frame, callback) {
