@@ -28,7 +28,7 @@ function runTest(className, cb) {
 }
 
 //runTest("Andreas");
-//runTest("RunAll");
-runTest("TestString");
+runTest("RunAll");
+//runTest("TestString");
 //runTest("TestDate");
 //runTest("TestByteArrayOutputStream");

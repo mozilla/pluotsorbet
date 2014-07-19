@@ -214,6 +214,10 @@ Native.prototype["java/lang/Runtime.totalMemory.()J"] = function() {
 Native.prototype["java/lang/Runtime.gc.()V"] = function() {
 }
 
+Native.prototype["java/lang/Math.floor.(D)D"] = function(d) {
+    return Math.floor(d);
+}
+
 Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
     var s = "";
     return function(obj, ch) {
@@ -256,6 +260,10 @@ Native.prototype["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Obje
     return len;
 }
 
-Native.prototype["java/lang/Math.floor.(D)D"] = function(d) {
-    return Math.floor(d);
+Native.prototype["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(c) {
+    return String.fromCharCode(c).toLowerCase().charCodeAt(0);
+}
+
+Native.prototype["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(c) {
+    return String.fromCharCode(c).toUpperCase().charCodeAt(0);
 }

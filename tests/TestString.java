@@ -80,7 +80,6 @@ public class TestString extends Test {
 			} catch (UnsupportedEncodingException e) {
 				check(true);
 			}
-			/*
 			check(s.getBytes("utf-8")[0] == 97);
 			//20
 			check(s.getBytes("utf-8")[1] == -59);
@@ -214,7 +213,6 @@ public class TestString extends Test {
 			check(String.valueOf(2000001000000L).equals("2000001000000"));
 			check(String.valueOf(1.5f).equals("1.5"));
 			check(String.valueOf(1.5555).equals("1.5555"));
-			*/
 		} catch (Exception e) {
 			e.printStackTrace();
 			check(false);

@@ -49,7 +49,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
     if (!bytes)
-        throw Error("File " + fileName + " not found.");
+        throw VM.newException("java/lang/ClassNotFoundException", "fileName");
     var self = this;
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)
