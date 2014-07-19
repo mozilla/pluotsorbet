@@ -53,24 +53,18 @@ Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Obje
         throw VM.newException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
         return;
     }
-    var proto = Object.getPrototypeOf(src);
-    if (proto !== Int8Array.prototype && proto !== Int16Array.prototype && proto !== Int32Array.prototype &&
-        proto !== Uint16Array.prototype && proto !== Float32Array.prototype && proto !== Float64Array.prototype &&
-        proto !== Array.prototype) {
+    var srcClass = src.class;
+    var dstClass = dst.class;
+    if (!srcClass.isArrayClass || !dstClass.isArrayClass) {
         throw VM.newException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
         return;
     }
-    if (proto !== Object.getPrototypeOf(dst)) {
+    if (srcClass != dstClass && (!srcClass.elementClass || !dstClass.elementClass || !srcClass.elementClass.isAssignableTo(dstClass.elementClass))) {
         throw VM.newException("java/lang/ArrayStoreException", "Incompatible component types.");
         return;
     }
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
         throw VM.newException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
-        return;
-    }
-    if (proto === Array.prototype) {
-        // TODO: check casting
-        throw VM.newException("java/lang/ArrayStoreException", "Invalid element type.");
         return;
     }
     if (dst !== src || dstOffset < srcOffset) {

@@ -73,6 +73,8 @@ ClassInfo.prototype.implementsInterface = function(iface) {
 ClassInfo.prototype.isAssignableTo = function(toClass) {
     if (this === toClass || toClass.className === "java/lang/Object")
         return true;
+    if (this.elementClass && toClass.elementClass)
+        return this.elementClass.isAssignableTo(toClass.elementClass);
     return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
 }
 
@@ -85,11 +87,19 @@ ClassInfo.prototype.getClassObject = function() {
     });
 }
 
-var ArrayClass = function(className, elementType) {
+var ArrayClass = function(className, elementClass) {
     this.className = className;
     this.superClassName = "java/lang/Object";
     this.access_flags = 0;
-    this.elementType = elementType;
+    this.elementClass = elementClass;
 }
 
 ArrayClass.prototype.isArrayClass = true;
+
+ArrayClass.prototype.implementsInterface = function(iface) {
+    return false;
+}
+
+ArrayClass.prototype.isAssignableTo = ClassInfo.prototype.isAssignableTo;
+
+ArrayClass.prototype.getClassObject = ClassInfo.prototype.getClassObject;

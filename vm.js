@@ -329,6 +329,10 @@ VM.resume = function(frame, callback) {
             var refArray = stack.pop();
             if (!checkArrayAccess(refArray, idx))
                 break;
+            if (!val.class.isAssignableTo(refArray.class.elementClass)) {
+                raiseException("java/lang/ArrayStoreException");
+                break;
+            }
             refArray[idx] = val;
             break;
         case 0x57: // pop
@@ -784,7 +788,7 @@ VM.resume = function(frame, callback) {
             var type = frame.read8();
             var size = stack.pop();
             if (size < 0) {
-                raiseException("java/lang/NegativeSizeException", size);
+                raiseException("java/lang/NegativeArraySizeException", size);
                 break;
             }
             stack.push(CLASSES.newPrimitiveArray("????ZCFDBSIJ"[type], size));
@@ -794,10 +798,13 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[idx].name_index].bytes;
             var size = stack.pop();
             if (size < 0) {
-                raiseException("java/lang/NegativeSizeException", size);
+                raiseException("java/lang/NegativeArraySizeException", size);
                 break;
             }
-            stack.push(CLASSES.newArray("[L" + className + ";", size));
+            if (className[0] !== "[")
+                className = "L" + className + ";";
+            className = "[" + className;
+            stack.push(CLASSES.newArray(className, size));
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();

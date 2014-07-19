@@ -29,6 +29,6 @@ function runTest(className, cb) {
 
 runTest("RunAll");
 //runTest("Andreas");
-//runTest("TestThrowable");
+//runTest("TestArrays");
 //runTest("TestDate");
 //runTest("TestByteArrayOutputStream");

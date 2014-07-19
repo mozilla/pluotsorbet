@@ -106,7 +106,7 @@ Classes.prototype.getClass = function(className, init) {
     var classInfo = this.classes[className];
     if (!classInfo) {
         if (className[0] === "[") {
-            classInfo = this.getArrayClass(className);
+            classInfo = this.initArrayClass(className);
         } else {
             classInfo = this.loadClass(className);
         }
@@ -118,13 +118,13 @@ Classes.prototype.getClass = function(className, init) {
     return classInfo;
 };
 
-Classes.prototype.getArrayClass = function(typeName) {
+Classes.prototype.initArrayClass = function(typeName) {
     var elementType = typeName.substr(1);
     var constructor = ARRAYS[elementType];
     if (constructor)
-        return this.initPrimitiveArrayType(elementType, constructor);
+        return this.initPrimitiveArrayType(typeName, constructor);
     if (elementType[0] === "L")
-        elementType = elementType.substr(1).replace(/;$/, "");
+        elementType = elementType.substr(1).replace(";", "");
     var classInfo = new ArrayClass(typeName, this.getClass(elementType));
     classInfo.superClass = this.loadClass("java/lang/Object");
     classInfo.constructor = function (size) {
@@ -135,8 +135,8 @@ Classes.prototype.getArrayClass = function(typeName) {
     return this.classes[typeName] = classInfo;
 }
 
-Classes.prototype.initPrimitiveArrayType = function(elementType, constructor) {
-    var classInfo = new ArrayClass("[" + elementType);
+Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
+    var classInfo = new ArrayClass(typeName);
     classInfo.superClass = this.loadClass("java/lang/Object");
     constructor.prototype.class = classInfo;
     classInfo.constructor = constructor;
@@ -177,7 +177,7 @@ Classes.prototype.newPrimitiveArray = function(type, size) {
 }
 
 Classes.prototype.newArray = function(typeName, size) {
-    return this.getArrayClass(typeName).constructor.call(null, size);
+    return this.getClass(typeName).constructor.call(null, size);
 }
 
 Classes.prototype.newMultiArray = function(typeName, lengths) {
