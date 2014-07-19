@@ -76,6 +76,14 @@ var util = (function () {
     return result ? result : obj[name] = fn();
   }
 
+  function withPath(base, fileName) {
+    var i = base.lastIndexOf("/");
+    if (i === -1)
+      return fileName;
+    console.log(base.substr(0, i) + fileName);
+    return base.substr(0, i) + fileName;
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -91,6 +99,7 @@ var util = (function () {
     double2long: double2long,
     chars2string: chars2string,
     fromJavaString: fromJavaString,
-    cache: cache
+    cache: cache,
+    withPath: withPath
   };
 })();
