@@ -57,4 +57,8 @@ public class TestByteArrayOutputStream extends Test {
 			check(true);
 		}
 	}
+
+    public static void main(String[] args) {
+	(new TestByteArrayOutputStream()).run();
+    }
 }

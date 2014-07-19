@@ -192,8 +192,6 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
 }
 
 Classes.prototype.newString = function(s) {
-    // Translate from UTF-8 to ISO-8859-1.
-    s = unescape(encodeURIComponent(s));
     var obj = this.newObject("java/lang/String");
     var length = s.length;
     var chars = this.newPrimitiveArray("C", length);
