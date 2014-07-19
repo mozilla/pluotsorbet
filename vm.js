@@ -81,6 +81,7 @@ VM.resume = function(frame, callback) {
     }
 
     function raiseException(className, message) {
+        // console.log(frame.backTrace());
         if (!message)
             message = "";
         message = "" + message;
@@ -669,13 +670,11 @@ VM.resume = function(frame, callback) {
             break;
         case 0xc6: // ifnull
             var jmp = frame.ip - 1 + frame.read16signed();
-            var ref = stack.pop();
-            frame.ip = stack.pop() ? jmp : frame.ip;
+            frame.ip = !stack.pop() ? jmp : frame.ip;
             break;
         case 0xc7: // ifnonnull
             var jmp = frame.ip - 1 + frame.read16signed();
-            var ref = stack.pop();
-            frame.ip = !stack.pop() ? jmp : frame.ip;
+            frame.ip = stack.pop() ? jmp : frame.ip;
             break;
         case 0xa7: // goto
             frame.ip += frame.read16signed() - 1;
@@ -846,7 +845,12 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            stack.pushType(signature, CLASSES.getStaticField(className, fieldName));
+            var value = CLASSES.getStaticField(className, fieldName);
+            if (typeof value === "undefined") {
+                value = util.defaultValue(signature);
+            }
+            // console.log("getstatic", className, fieldName, signature, value);
+            stack.pushType(signature, value);
             break;
         case 0xb3: // putstatic
             var idx = frame.read16();

@@ -111,7 +111,12 @@ Frame.prototype.backTrace = function() {
             case "double":
                 ++lp;
             case "object":
-                arg = arg ? ("<" + arg.class.className + ">") : "null";
+                if (arg === null)
+                    arg = "null";
+                else if (arg.class.className === "java/lang/String")
+                    arg = "'" + util.fromJavaString(arg) + "'";
+                else
+                    arg = "<" + arg.class.className + ">";
             }
             args.push(arg);
         }
