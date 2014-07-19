@@ -97,9 +97,9 @@ Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/S
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
         return CLASSES.newString("ISO-8859-1");
-    default:
-        console.log("KEY: " + util.fromJavaString(key));
     }
+    console.log("UNKNOWN PROPERTY: " + util.fromJavaString(key));
+    return null;
 }
 
 Native.prototype["java/lang/System.currentTimeMillis.()J"] = function() {

@@ -413,7 +413,7 @@ VM.resume = function(frame, callback) {
             stack.push((- stack.pop() + stack.pop())|0);
             break;
         case 0x65: // lsub
-            stack.push2(stack.pop2().add(stack.pop2()).negate());
+            stack.push2(stack.pop2().negate().add(stack.pop2()));
             break;
         case 0x66: // fsub
             stack.push(util.double2float(- stack.pop() + stack.pop()));
