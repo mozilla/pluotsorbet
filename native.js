@@ -98,7 +98,7 @@ Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/S
     case "microedition.encoding":
         return CLASSES.newString("ISO-8859-1");
     default:
-        console.log("KEY: " + util.fromJavaString(key.value));
+        console.log("KEY: " + util.fromJavaString(key));
     }
 }
 

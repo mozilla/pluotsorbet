@@ -91,3 +91,32 @@ Frame.prototype.read32signed = function() {
     var x = this.read32();
     return (x > 0x7fffffff) ? (x - 0x100000000) : x;
 }
+
+Frame.prototype.backTrace = function() {
+    var stack = [];
+    var frame = this;
+    while (frame.caller) {
+        var methodInfo = frame.methodInfo;
+        var className = methodInfo.classInfo.className;
+        var methodName = methodInfo.name;
+        var signature = Signature.parse(methodInfo.signature);
+        var IN = signature.IN;
+        var args = [];
+        var lp = 0;
+        for (var n = 0; n < IN.length; ++n) {
+            var arg = frame.locals[frame.localsBase + lp];
+            ++lp;
+            switch (IN[n].type) {
+            case "long":
+            case "double":
+                ++lp;
+            case "object":
+                arg = arg ? ("<" + arg.class.className + ">") : "null";
+            }
+            args.push(arg);
+        }
+        stack.push(methodInfo.classInfo.className + "." + methodInfo.name + "(" + args.join(",") + ")");
+        frame = frame.caller;
+    }
+    return stack.join("\n");
+}

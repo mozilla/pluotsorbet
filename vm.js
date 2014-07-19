@@ -49,6 +49,7 @@ VM.resume = function(frame, callback) {
     }
 
     function throw_(ex) {
+        // console.log(frame.backTrace());
         var exClass = CLASSES.getClass(ex.class.className);
         do {
             var exception_table = frame.methodInfo.exception_table;
@@ -163,6 +164,7 @@ VM.resume = function(frame, callback) {
                 stack.push(constant.float);
                 break;
             case TAGS.CONSTANT_String:
+                // console.log(cp[constant.string_index].bytes);
                 stack.push(CLASSES.newString(cp[constant.string_index].bytes));
                 break;
             default:
@@ -666,14 +668,14 @@ VM.resume = function(frame, callback) {
             frame.ip = stack.pop() !== stack.pop() ? jmp : frame.ip;
             break;
         case 0xc6: // ifnull
+            var jmp = frame.ip - 1 + frame.read16signed();
             var ref = stack.pop();
-            if (!ref)
-                frame.ip += frame.read16signed() - 1;
+            frame.ip = stack.pop() ? jmp : frame.ip;
             break;
         case 0xc7: // ifnonnull
+            var jmp = frame.ip - 1 + frame.read16signed();
             var ref = stack.pop();
-            if (!!ref)
-                frame.ip += frame.read16signed() - 1;
+            frame.ip = !stack.pop() ? jmp : frame.ip;
             break;
         case 0xa7: // goto
             frame.ip += frame.read16signed() - 1;
