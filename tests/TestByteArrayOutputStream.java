@@ -48,9 +48,8 @@ public class TestByteArrayOutputStream extends Test {
 		for (int i = 0; i < bb.length; i++) {
 			s.write(bb[i]);
 		}
-		// We are using ISO-8859-1 by default, so this here can't work.
-		knownFail(s.size() == 19);
-		knownFail(s.toString().equals("ściółka冷蔵庫"));
+		compare(s.size(), 19);
+		compare(s.toString(), "ściółka冷蔵庫");
 		try {
 			new ByteArrayOutputStream(-3);
 			check(false);

@@ -96,7 +96,7 @@ Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Obje
 Native.prototype["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
-        return CLASSES.newString("ISO-8859-1");
+        return CLASSES.newString("UTF-8");
     }
     console.log("UNKNOWN PROPERTY: " + util.fromJavaString(key));
     return null;
