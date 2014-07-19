@@ -408,9 +408,6 @@ class String {
      * @see     java.lang.String#compareTo(java.lang.String)
      * @see     java.lang.String#equalsIgnoreCase(java.lang.String)
      */
-/*
-    public native boolean equals(Object anObject);
-*/
     public boolean equals(Object anObject) {
         if (this == anObject) {
             return true;
@@ -715,8 +712,6 @@ class String {
      *
      * @return  a hash code value for this object.
      */
-    public native int hashCode();
-/*
     public int hashCode() {
         int h = 0;
         int off = offset;
@@ -728,7 +723,6 @@ class String {
         }
         return h;
     }
-*/
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -747,12 +741,9 @@ class String {
      *          character sequence represented by this object, or
      *          <code>-1</code> if the character does not occur.
      */
-    public native int indexOf(int ch);
-/*
     public int indexOf(int ch) {
         return indexOf(ch, 0);
     }
-*/
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -782,26 +773,23 @@ class String {
      *          than or equal to <code>fromIndex</code>, or <code>-1</code>
      *          if the character does not occur.
      */
-    public native int indexOf(int ch, int fromIndex);
-/************
- *  public int indexOf(int ch, int fromIndex) {
- *      int max = offset + count;
- *      char v[] = value;
- *
- *      if (fromIndex < 0) {
- *          fromIndex = 0;
- *      } else if (fromIndex >= count) {
- *          // Note: fromIndex might be near -1>>>1.
- *          return -1;
- *      }
- *      for (int i = offset + fromIndex ; i < max ; i++) {
- *          if (v[i] == ch) {
- *              return i - offset;
- *          }
- *      }
- *      return -1;
- *  }
- ******/
+    public int indexOf(int ch, int fromIndex) {
+	int max = offset + count;
+	char v[] = value;
+
+	if (fromIndex < 0) {
+	    fromIndex = 0;
+	} else if (fromIndex >= count) {
+	    // Note: fromIndex might be near -1>>>1.
+	    return -1;
+	}
+	for (int i = offset + fromIndex ; i < max ; i++) {
+	    if (v[i] == ch) {
+		return i - offset;
+	    }
+	}
+	return -1;
+    }
 
     /**
      * Returns the index within this string of the last occurrence of the
@@ -818,12 +806,9 @@ class String {
      *          character sequence represented by this object, or
      *          <code>-1</code> if the character does not occur.
      */
-    public native int lastIndexOf(int ch);
-/*
     public int lastIndexOf(int ch) {
         return lastIndexOf(ch, count - 1);
     }
-*/
 
     /**
      * Returns the index within this string of the last occurrence of the
@@ -848,8 +833,6 @@ class String {
      *          than or equal to <code>fromIndex</code>, or <code>-1</code>
      *          if the character does not occur before that point.
      */
-    public native int lastIndexOf(int ch, int fromIndex);
-/*
     public int lastIndexOf(int ch, int fromIndex) {
         int min = offset;
         char v[] = value;
@@ -861,7 +844,6 @@ class String {
         }
         return -1;
     }
-*/
 
     /**
      * Returns the index within this string of the first occurrence of the

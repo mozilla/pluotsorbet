@@ -124,7 +124,7 @@ Native.prototype["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(obj
 
 Native.prototype["java/lang/Class.getName.()Ljava/lang/String;"] = function(obj) {
     return util.cache(obj, "getName", function () {
-        return CLASSES.newString(obj.vmClass.className);
+        return CLASSES.newString(obj.vmClass.className.replace("/", ".", "g"));
     });
 }
 
@@ -142,6 +142,28 @@ Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(
     CLASSES.initClass(classInfo);
     return new (classInfo.constructor)();
 };
+
+Native.prototype["java/lang/Class.isInterface.()Z"] = function(classObject) {
+    var classInfo = classObject.vmClass;
+    return ACCESS_FLAGS.isInterface(classInfo.access_flags) ? 1 : 0;
+}
+
+Native.prototype["java/lang/Class.isArray.()Z"] = function(classObject) {
+    var classInfo = classObject.vmClass;
+    return classInfo.isArrayClass ? 1 : 0;
+}
+
+Native.prototype["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(classObject, fromClass) {
+    if (!fromClass) {
+        throw new JavaException("java/lang/NullPointerException");
+        return;
+    }
+    return fromClass.vmClass.isAssignableTo(classObject.vmClass) ? 1 : 0;
+}
+
+Native.prototype["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(classObject, obj) {
+    return obj && obj.class.isAssignableTo(classObject.vmClass) ? 1 : 0;
+}
 
 Native.prototype["java/lang/Float.floatToIntBits.(F)I"] = (function() {
     var fa = Float32Array(1);
@@ -164,6 +186,10 @@ Native.prototype["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
 Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = (function() {
 });
 
+Native.prototype["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function() {
+    return null;
+});
+
 Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
     var s = "";
     return function(obj, ch) {
@@ -175,3 +201,33 @@ Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function
         s += String.fromCharCode(ch);
     }
 })();
+
+Native.prototype["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(name) {
+    var fileName = util.fromJavaString(name);
+    var data = CLASSES.loadFile(fileName);
+    if (!data)
+        return null;
+    var obj = CLASSES.newObject("java/lang/Object");
+    obj.data = Uint8Array(data);
+    obj.pos = 0;
+    return obj;
+};
+
+Native.prototype["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
+    return handle.data.length - handle.pos;
+}
+
+Native.prototype["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
+    return handle.data[handle.pos++];
+}
+
+Native.prototype["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(handle, b, off, len) {
+    var data = handle.data;
+    var remaining = data.length - handle.pos;
+    if (remaining > len)
+        len = remaining;
+    for (var n = 0; n < len; ++n)
+        b[off+n] = data[n];
+    handle.pos += len;
+    return len;
+}

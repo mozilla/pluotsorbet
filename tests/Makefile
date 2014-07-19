@@ -10,6 +10,7 @@ tests.jar: $(SRCS)
 	mkdir build
 	javac -source 1.3 -bootclasspath ../java/classes.jar -d ./build $^
 	cd build && jar cvf ../tests.jar *
+	jar uvf tests.jar test.png
 	rm -rf build
 
 clean:
