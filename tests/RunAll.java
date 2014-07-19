@@ -1,7 +1,7 @@
 public class RunAll {
     private static String[] tests = {"TestArrays", "TestOps", "TestLong", "TestException", "TestDup", "TestBoolean",
 				     "TestByteArrayInputStream", "TestByteArrayOutputStream", "TestClass",
-				     "TestDouble", "TestDataInputStream"};
+				     "TestDouble", "TestDataInputStream", "TestDate"};
 
     public static void main(String[] args) {
 	boolean failed = false;
@@ -12,7 +12,7 @@ public class RunAll {
 		if (!test.run())
 		    failed = true;
 	    } catch (Exception e) {
-		System.out.println("Failed to load " + tests[n]);
+		System.out.println("Failed to load " + tests[n] + " " + e.toString() + " " + e.getMessage());
 		failed = true;
 	    }
 	}

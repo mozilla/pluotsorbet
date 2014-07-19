@@ -140,7 +140,10 @@ Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"
 Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(classObject) {
     var classInfo = classObject.vmClass;
     CLASSES.initClass(classInfo);
-    return new (classInfo.constructor)();
+    var obj = new (classInfo.constructor)();
+    var ctor = CLASSES.getMethod(classInfo, "<init>", "()V", false, false);
+    VM.invoke(ctor, [obj]);
+    return obj;
 };
 
 Native.prototype["java/lang/Class.isInterface.()Z"] = function(classObject) {

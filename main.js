@@ -27,5 +27,5 @@ function runTest(className, cb) {
   });
 }
 
-runTest("RunAll");
-//runTest("TestString");
+//runTest("RunAll");
+runTest("TestDate");
