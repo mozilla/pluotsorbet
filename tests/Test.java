@@ -12,6 +12,15 @@ public abstract class Test {
 	}
     }
 
+    public void knownFail(boolean result) {
+	tests++;
+	if (result) {
+	} else {
+	    passed++;
+	    System.out.println("Test " + tests + " known to fail");
+	}
+    }
+
     public void compare(long a, long b) {
 	if (a == b) {
 	    check(true);

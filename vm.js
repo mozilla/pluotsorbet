@@ -73,7 +73,10 @@ VM.resume = function(frame, callback) {
             }
             popFrame();
         } while (frame.caller);
-        throw new NATIVE.JavaException(ex.class.className, util.fromJavaString(ex.detailMessage));
+        throw new NATIVE.JavaException(ex.class.className,
+                                       ex.detailMessage
+                                       ? util.fromJavaString(ex.detailMessage)
+                                       : "");
     }
 
     function raiseException(className, message) {

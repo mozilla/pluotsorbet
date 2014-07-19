@@ -43,12 +43,7 @@ public class TestDataInputStream extends Test {
 			check(s.readShort() == -3562);
 			check(s.readUnsignedByte() == 255);
 			check(s.readUnsignedShort() == 65535);
-			String x = s.readUTF();
-			compare(x, "ściółka");
-			System.out.println(x.length());
-			System.out.println("ściółka".length());
-			System.out.println(x.getBytes().length);
-			System.out.println("ściółka".getBytes().length);
+			compare(s.readUTF(), "ściółka");
 			check(s.available() == 0);
 			//30
 			try {
