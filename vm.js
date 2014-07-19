@@ -668,7 +668,7 @@ VM.resume = function(frame, callback) {
             frame.ip = stack.pop() >= stack.pop() ? jmp : frame.ip;
             break;
         case 0xa5: // if_acmpeq
-            var jmp = frame.ip - 1 + calee.read16signed();
+            var jmp = frame.ip - 1 + frame.read16signed();
             frame.ip = stack.pop() === stack.pop() ? jmp : frame.ip;
             break;
         case 0xa6: // if_acmpne
