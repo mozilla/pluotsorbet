@@ -212,6 +212,17 @@ Native.prototype["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (
     return null;
 });
 
+Native.prototype["java/lang/Runtime.freeMemory.()J"] = function() {
+    return Long.fromInt(0x800000);
+}
+
+Native.prototype["java/lang/Runtime.totalMemory.()J"] = function() {
+    return Long.fromInt(0x1000000);
+}
+
+Native.prototype["java/lang/Runtime.gc.()V"] = function() {
+}
+
 Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
     var s = "";
     return function(obj, ch) {
