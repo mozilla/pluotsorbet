@@ -8,6 +8,13 @@ public class TestException extends Test {
 	    caught = true;
 	}
 	check(caught);
+	int i = 8;
+	try {
+	    i /= 0;
+	} catch (Exception e) {
+	    i++;
+	}
+	check(i == 9);
     }
 
     public void main() {
