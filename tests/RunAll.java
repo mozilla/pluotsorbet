@@ -2,7 +2,7 @@ public class RunAll {
     private static String[] tests = {"TestArrays", "TestOps", "TestLong", "TestException", "TestDup", "TestBoolean",
 				     "TestByteArrayInputStream", "TestByteArrayOutputStream", "TestClass",
 				     "TestDouble", "TestDataInputStream", "TestDataOutputStream", "TestDate", "TestInteger",
-				     "TestPrintStream", "TestRuntime", "TestString"};
+				     "TestPrintStream", "TestRuntime", "TestString", "TestThrowable"};
 
     public static void main(String[] args) {
 	boolean failed = false;
