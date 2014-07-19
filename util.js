@@ -42,11 +42,11 @@ var util = (function () {
   var INT_MIN = -INT_MAX - 1;
 
   function double2int(d) {
-    if (a > INT_MAX)
+    if (d > INT_MAX)
       return INT_MAX;
-    if (a < INT_MIN)
+    if (d < INT_MIN)
       return INT_MIN;
-    return a|0;
+    return d|0;
   }
 
   function double2long(d) {

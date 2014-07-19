@@ -100,7 +100,7 @@ VM.resume = function(frame, callback) {
 
     while (true) {
         var op = frame.read8();
-        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
+        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
         switch (op) {
         case 0x00: // nop
             break;
@@ -112,13 +112,17 @@ VM.resume = function(frame, callback) {
             break;
         case 0x03: // iconst_0
         case 0x0b: // fconst_0
-        case 0x0e: // dconst_0
             stack.push(0);
+            break;
+        case 0x0e: // dconst_0
+            stack.push2(0);
             break;
         case 0x04: // iconst_1
         case 0x0c: // fconst_1
-        case 0x0f: // dconst_1
             stack.push(1);
+            break;
+        case 0x0f: // dconst_1
+            stack.push2(1);
             break;
         case 0x05: // iconst_2
         case 0x0d: // fconst_2

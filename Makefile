@@ -19,19 +19,14 @@ SRC = zipfile.js \
       jvm.js \
       main.js
 
-TESTS_SRC = $(shell ls tests/*.java)
-TESTS_BIN = $(TESTS_SRC:.java=.class)
-
-tests: $(TESTS_BIN)
+java/tests.jar:
+	cd tests && make
 
 java/classes.jar:
 	cd java && make
-
-%.class: %.java java/classes.jar
-	javac -Xlint:-options -source 1.3 -bootclasspath java/classes.jar $<
 
 j2me.js: $(SRC)
 	cat $^ > $@
 
 clean:
-	rm -f j2me.js tests/*.class `find . -name "*~"`
+	rm -f j2me.js tests/*.jar java/*.jar `find . -name "*~"`

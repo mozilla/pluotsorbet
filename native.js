@@ -250,3 +250,7 @@ Native.prototype["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Obje
     handle.pos += len;
     return len;
 }
+
+Native.prototype["java/lang/Math.floor.(D)D"] = function(d) {
+    return Math.floor(d);
+}

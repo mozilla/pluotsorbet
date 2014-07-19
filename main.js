@@ -27,5 +27,5 @@ function runTest(className, cb) {
   });
 }
 
-//runTest("RunAll");
-runTest("TestDataInputStream");
+runTest("RunAll");
+//runTest("TestDouble");
