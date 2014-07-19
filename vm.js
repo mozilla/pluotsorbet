@@ -160,8 +160,7 @@ VM.resume = function(frame, callback) {
                 stack.push(constant.float);
                 break;
             case TAGS.CONSTANT_String:
-                // Translate from UTF-8 to ISO-8859-1.
-                stack.push(CLASSES.newString(unescape(encodeURIComponent(cp[constant.string_index].bytes))));
+                stack.push(CLASSES.newString(cp[constant.string_index].bytes));
                 break;
             default:
                 throw new Error("not support constant type");
