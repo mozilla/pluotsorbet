@@ -3,7 +3,7 @@ public class RunAll {
 				     "TestByteArrayInputStream", "TestByteArrayOutputStream", "TestClass",
 				     "TestDouble", "TestDataInputStream", "TestDataOutputStream", "TestDate", "TestInteger",
 				     "TestPrintStream", "TestRuntime", "TestString", "TestThrowable", "TestBytecodes",
-				     "TestConditions"};
+				     "TestConditions", "TestObjects"};
 
     public static void main(String[] args) {
 	boolean failed = false;

@@ -151,14 +151,32 @@ Classes.prototype.setStaticField = function(className, fieldName, value) {
     this.getClass(className, true).staticFields[fieldName] = value;
 }
 
+Classes.prototype.getField = function(className, fieldName, signature, staticFlag) {
+    var classInfo = this.getClass(className, false);
+    do {
+        var fields = classInfo.fields;
+        for (var i=0; i<fields.length; ++i) {
+            var field = fields[i];
+            if (ACCESS_FLAGS.isStatic(field.access_flags) === !!staticFlag) {
+                if (field.name === fieldName && field.signature === signature) {
+                    if (!field.id)
+                        field.id = classInfo.className + "$" + fieldName;
+                    return field;
+                }
+            }
+        }
+        classInfo = classInfo.superClass;
+    } while (classInfo);
+};
+
 Classes.prototype.getMethod = function(classInfo, methodName, signature, staticFlag, inheritFlag) {
     do {
         var methods = classInfo.methods;
-        for (var i=0; i<methods.length; i++) {
-            if (ACCESS_FLAGS.isStatic(methods[i].access_flags) === !!staticFlag) {
-                if (methods[i].name === methodName && methods[i].signature === signature) {
-                    return methods[i];
-                }
+        for (var i=0; i<methods.length; ++i) {
+            var method = methods[i];
+            if (ACCESS_FLAGS.isStatic(method.access_flags) === !!staticFlag) {
+                if (method.name === methodName && method.signature === signature)
+                    return method;
             }
         }
         classInfo = classInfo.superClass;
@@ -197,8 +215,8 @@ Classes.prototype.newString = function(s) {
     var chars = this.newPrimitiveArray("C", length);
     for (var n = 0; n < length; ++n)
         chars[n] = s.charCodeAt(n);
-    obj.value = chars;
-    obj.offset = 0;
-    obj.count = length;
+    obj["java/lang/String$value"] = chars;
+    obj["java/lang/String$offset"] = 0;
+    obj["java/lang/String$count"] = length;
     return obj;
 }

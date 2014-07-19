@@ -58,9 +58,9 @@ var util = (function () {
   }
 
   function fromJavaString(str) {
-    var chars = str.value;
-    var offset = str.offset;
-    var count = str.count;
+    var chars = str["java/lang/String$value"];
+    var offset = str["java/lang/String$offset"];
+    var count = str["java/lang/String$count"];
     var s = "";
     if (!count)
       count = chars.length;

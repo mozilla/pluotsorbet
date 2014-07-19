@@ -825,14 +825,16 @@ VM.resume = function(frame, callback) {
             break;
         case 0xb4: // getfield
             var idx = frame.read16();
+            var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
+            var field = CLASSES.getField(className, fieldName, signature, false);
             var obj = stack.pop();
             if (!obj) {
                 raiseException("java/lang/NullPointerException");
                 break;
             }
-            var value = obj[fieldName];
+            var value = obj[field.id];
             if (typeof value === "undefined") {
                 value = util.defaultValue(signature);
             }
@@ -840,15 +842,17 @@ VM.resume = function(frame, callback) {
             break;
         case 0xb5: // putfield
             var idx = frame.read16();
+            var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
+            var field = CLASSES.getField(className, fieldName, signature, false);
             var val = stack.popType(signature);
             var obj = stack.pop();
             if (!obj) {
                 raiseException("java/lang/NullPointerException");
                 break;
             }
-            obj[fieldName] = val;
+            obj[field.id] = val;
             break;
         case 0xb2: // getstatic
             var idx = frame.read16();
@@ -859,7 +863,6 @@ VM.resume = function(frame, callback) {
             if (typeof value === "undefined") {
                 value = util.defaultValue(signature);
             }
-            // console.log("getstatic", className, fieldName, signature, value);
             stack.pushType(signature, value);
             break;
         case 0xb3: // putstatic

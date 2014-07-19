@@ -23,7 +23,7 @@ var ClassInfo = function(classBytes) {
         self.fields.push({
             access_flags: f.access_flags,
             name: cp[f.name_index].bytes,
-            descriptor: cp[f.descriptor_index].bytes,
+            signature: cp[f.descriptor_index].bytes,
             attributes: f.attributes
         });
     });
