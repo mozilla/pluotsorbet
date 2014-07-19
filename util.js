@@ -57,17 +57,16 @@ var util = (function () {
     return Long.fromNumber(d);
   }
 
-  function chars2string(chars, offset, count) {
+  function fromJavaString(str) {
+    var chars = str.value;
+    var offset = str.offset;
+    var count = str.count;
     var s = "";
     if (!count)
       count = chars.length;
-    for (var n = offset | 0; n < count; ++n)
+    for (var n = offset; n < count; ++n)
       s += String.fromCharCode(chars[n]);
     return s;
-  }
-
-  function fromJavaString(str) {
-    return chars2string(str.value, str.offset, str.count);
   }
 
   function cache(obj, name, fn) {
@@ -97,7 +96,6 @@ var util = (function () {
     double2float: double2float,
     double2int: double2int,
     double2long: double2long,
-    chars2string: chars2string,
     fromJavaString: fromJavaString,
     cache: cache,
     withPath: withPath
