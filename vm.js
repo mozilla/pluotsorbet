@@ -5,6 +5,16 @@
 
 var VM = {};
 
+VM.newException = function(className, message) {
+    if (!message)
+        message = "";
+    message = "" + message;
+    var ex = CLASSES.newObject(className);
+    var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
+    VM.invoke(ctor, [ex, CLASSES.newString(message)]);
+    return ex;
+}
+
 VM.level = 0;
 
 VM.invoke = function(methodInfo, args, callback) {
@@ -74,21 +84,14 @@ VM.resume = function(frame, callback) {
             }
             popFrame();
         } while (frame.caller);
-        throw new NATIVE.JavaException(ex.class.className,
-                                       ex.detailMessage
-                                       ? util.fromJavaString(ex.detailMessage)
-                                       : "");
+        throw new Error(ex.class.className + " " +
+                        (ex.detailMessage
+                         ? util.fromJavaString(ex.detailMessage)
+                         : ""));
     }
 
     function raiseException(className, message) {
-        // console.log(frame.backTrace());
-        if (!message)
-            message = "";
-        message = "" + message;
-        var ex = CLASSES.newObject(className);
-        var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-        VM.invoke(ctor, [ex, CLASSES.newString(message)]);
-        throw_(ex);
+        throw_(VM.newException(className, message));
     }
 
     function checkArrayAccess(refArray, idx) {
@@ -105,7 +108,7 @@ VM.resume = function(frame, callback) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
+        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
         switch (op) {
         case 0x00: // nop
             break;
@@ -949,11 +952,10 @@ VM.resume = function(frame, callback) {
                 try {
                     NATIVE.invokeNative(frame, methodInfo);
                 } catch (e) {
-                    if (!(e instanceof NATIVE.JavaException)) {
+                    if (!e.class) {
                         throw e;
                     }
-                    raiseException(e.className, e.msg);
-                    return;
+                    throw_(e);
                 }
                 break;
             }

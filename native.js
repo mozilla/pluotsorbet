@@ -6,15 +6,6 @@
 var Native = function() {
 }
 
-Native.prototype.JavaException = function(className, msg) {
-    this.className = className;
-    this.msg = msg;
-}
-
-Native.prototype.JavaException.prototype.toString = function() {
-    return "Uncaught Java Exception " + this.className + " " + this.msg;
-}
-
 Native.prototype.invokeNative = function(caller, methodInfo) {
     function pushType(type, value) {
         if (type === "long" || type === "double") {
@@ -59,27 +50,27 @@ Native.prototype.getNativeMethod = function(methodInfo) {
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst) {
-        throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+        throw VM.newException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
         return;
     }
     var proto = Object.getPrototypeOf(src);
     if (proto !== Int8Array.prototype && proto !== Int16Array.prototype && proto !== Int32Array.prototype &&
         proto !== Uint16Array.prototype && proto !== Float32Array.prototype && proto !== Float64Array.prototype &&
         proto !== Array.prototype) {
-        throw new JavaException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
+        throw VM.newException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
         return;
     }
     if (proto !== Object.getPrototypeOf(dst)) {
-        throw new JavaException("java/lang/ArrayStoreException", "Incompatible component types.");
+        throw VM.newException("java/lang/ArrayStoreException", "Incompatible component types.");
         return;
     }
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
-        throw new JavaException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
+        throw VM.newException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
         return;
     }
     if (proto === Array.prototype) {
         // TODO: check casting
-        throw new JavaException("java/lang/ArrayStoreException", "Invalid element type.");
+        throw VM.newException("java/lang/ArrayStoreException", "Invalid element type.");
         return;
     }
     if (dst !== src || dstOffset < srcOffset) {
@@ -132,7 +123,7 @@ Native.prototype["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"
     var className = util.fromJavaString(name).replace(".", "/", "g");
     var classInfo = (className[0] === "[") ? null : CLASSES.getClass(className);
     if (!classInfo) {
-        throw new Native.JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+        throw new Native.VM.JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
     }
     return classInfo.getClassObject();
 }
@@ -158,7 +149,7 @@ Native.prototype["java/lang/Class.isArray.()Z"] = function(classObject) {
 
 Native.prototype["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(classObject, fromClass) {
     if (!fromClass) {
-        throw new JavaException("java/lang/NullPointerException");
+        throw VM.newException("java/lang/NullPointerException");
         return;
     }
     return fromClass.vmClass.isAssignableTo(classObject.vmClass) ? 1 : 0;

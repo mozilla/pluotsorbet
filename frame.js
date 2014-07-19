@@ -110,6 +110,7 @@ Frame.prototype.backTrace = function() {
             case "long":
             case "double":
                 ++lp;
+                break;
             case "object":
                 if (arg === null)
                     arg = "null";
