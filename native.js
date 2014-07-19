@@ -196,8 +196,8 @@ Native.prototype["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
     var da = Float64Array(1);
     var ia = Int32Array(da.buffer);
     return function(l) {
-        ia[0] = l.low;
-        ia[1] = l.high;
+        ia[0] = l.low_;
+        ia[1] = l.high_;
         return da[0];
     }
 })();
