@@ -100,7 +100,7 @@ VM.resume = function(frame, callback) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
+        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
         switch (op) {
         case 0x00: // nop
             break;
@@ -497,7 +497,7 @@ VM.resume = function(frame, callback) {
             stack.push(a << b);
             break;
         case 0x79: // lshl
-            var b = stack.pop2();
+            var b = stack.pop();
             var a = stack.pop2();
             stack.push2(a.shiftLeft(b));
             break;
@@ -507,7 +507,7 @@ VM.resume = function(frame, callback) {
             stack.push(a >> b);
             break;
         case 0x7b: // lshr
-            var b = stack.pop2();
+            var b = stack.pop();
             var a = stack.pop2();
             stack.push2(a.shiftRight(b));
             break;
@@ -517,7 +517,7 @@ VM.resume = function(frame, callback) {
             stack.push(a >>> b);
             break;
         case 0x7d: // lushr
-            var b = stack.pop2();
+            var b = stack.pop();
             var a = stack.pop2();
             stack.push2(a.shiftRightUnsigned(b));
             break;

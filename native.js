@@ -183,6 +183,25 @@ Native.prototype["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
     }
 })();
 
+Native.prototype["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
+    var fa = Float32Array(1);
+    var ia = Int32Array(fa.buffer);
+    return function(i) {
+        ia[0] = i;
+        return fa[0];
+    }
+})();
+
+Native.prototype["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
+    var da = Float64Array(1);
+    var ia = Int32Array(da.buffer);
+    return function(l) {
+        ia[0] = l.low;
+        ia[1] = l.high;
+        return da[0];
+    }
+})();
+
 Native.prototype["java/lang/Throwable.fillInStackTrace.()V"] = (function() {
 });
 
