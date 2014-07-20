@@ -49,7 +49,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
     if (!bytes)
-        throw this.newException("java/lang/ClassNotFoundException", "fileName");
+        throw this.newException(this.mainThread, "java/lang/ClassNotFoundException", "fileName");
     var self = this;
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)
@@ -214,13 +214,13 @@ Classes.prototype.newString = function(s) {
     return obj;
 }
 
-Classes.prototype.newException = function(className, message) {
+Classes.prototype.newException = function(thread, className, message) {
     if (!message)
         message = "";
     message = "" + message;
     var ex = this.newObject(className);
     var ctor = this.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(this.mainThread, ctor, [ex, CLASSES.newString(message)]);
+    VM.invoke(thread, ctor, [ex, CLASSES.newString(message)]);
     return ex;
 }
 

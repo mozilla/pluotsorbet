@@ -44,22 +44,23 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
 }
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
+    var frame = this;
     if (!src || !dst) {
-        throw CLASSES.newException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+        throw CLASSES.newException(frame.getThread(), "java/lang/NullPointerException", "Cannot copy to/from a null array.");
         return;
     }
     var srcClass = src.class;
     var dstClass = dst.class;
     if (!srcClass.isArrayClass || !dstClass.isArrayClass) {
-        throw CLASSES.newException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
+        throw CLASSES.newException(frame.getThread(), "java/lang/ArrayStoreException", "Can only copy to/from array types.");
         return;
     }
     if (srcClass != dstClass && (!srcClass.elementClass || !dstClass.elementClass || !srcClass.elementClass.isAssignableTo(dstClass.elementClass))) {
-        throw CLASSES.newException("java/lang/ArrayStoreException", "Incompatible component types.");
+        throw CLASSES.newException(frame.getThread(), "java/lang/ArrayStoreException", "Incompatible component types.");
         return;
     }
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
-        throw CLASSES.newException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
+        throw CLASSES.newException(frame.getThread(), "java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
         return;
     }
     if (dst !== src || dstOffset < srcOffset) {
@@ -137,7 +138,7 @@ Native.prototype["java/lang/Class.isArray.()Z"] = function(classObject) {
 
 Native.prototype["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(classObject, fromClass) {
     if (!fromClass) {
-        throw CLASSES.newException("java/lang/NullPointerException");
+        throw CLASSES.newException(frame.getThread(), "java/lang/NullPointerException");
         return;
     }
     return fromClass.vmClass.isAssignableTo(classObject.vmClass) ? 1 : 0;
