@@ -43,9 +43,11 @@ JVM.prototype.run = function(className) {
     ensureInitialized("java/lang/Object");
     ensureInitialized("java/lang/Class");
     ensureInitialized("java/lang/String");
-    ensureInitialized("java/lang/Thread");
     ensureInitialized("java/lang/Throwable");
     ensureInitialized("java/lang/Error");
+
+    var mainThread = CLASSES.newObject("java/lang/Thread");
+    CLASSES.invokeConstructor(mainThread);
 
     VM.invoke(entryPoint, [null]);
 }

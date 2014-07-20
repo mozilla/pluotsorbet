@@ -38,7 +38,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
                                  methodInfo.name + "." +
                                  methodInfo.signature];
     }
-    var result = methodInfo.native.apply(null, args);
+    var result = methodInfo.native.apply(caller, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0].type, result);
 }
@@ -121,8 +121,7 @@ Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(
     var classInfo = classObject.vmClass;
     CLASSES.initClass(classInfo);
     var obj = new (classInfo.constructor)();
-    var ctor = CLASSES.getMethod(classInfo, "<init>", "()V", false, false);
-    VM.invoke(ctor, [obj]);
+    CLASSES.invokeConstructor(obj);
     return obj;
 };
 
@@ -205,6 +204,16 @@ Native.prototype["java/lang/Runtime.gc.()V"] = function() {
 
 Native.prototype["java/lang/Math.floor.(D)D"] = function(d) {
     return Math.floor(d);
+}
+
+Native.prototype["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {
+    return this.getThread();
+}
+
+Native.prototype["java/lang/Thread.setPriority0.(II)V"] = function(thread, oldPriority, newPriority) {
+}
+
+Native.prototype["java/lang/Thread.start0.()V"] = function() {
 }
 
 Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {

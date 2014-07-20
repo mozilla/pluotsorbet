@@ -126,3 +126,12 @@ Frame.prototype.backTrace = function() {
     }
     return stack.join("\n");
 }
+
+Frame.prototype.getThread = function() {
+    for (var frame = this; frame.caller; frame = frame.caller) {
+        var thread = frame.thread;
+        if (thread)
+            return thread;
+    }
+    return null;
+}

@@ -186,6 +186,11 @@ Classes.prototype.newObject = function(className) {
     return new (this.getClass(className, true).constructor)();
 }
 
+Classes.prototype.invokeConstructor = function(obj) {
+    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
+    VM.invoke(ctor, [obj]);
+}
+
 Classes.prototype.newPrimitiveArray = function(type, size) {
     var constructor = ARRAYS[type];
     if (!constructor.prototype.class)

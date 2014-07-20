@@ -175,7 +175,8 @@ class Thread implements Runnable {
         Thread parent = currentThread();
         this.target = target;
         this.name  = name.toCharArray();
-        this.priority = parent.getPriority();
+	if (parent != null)
+	    this.priority = parent.getPriority();
         setPriority(priority);
     }
 
