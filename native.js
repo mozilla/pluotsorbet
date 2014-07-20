@@ -40,12 +40,13 @@ Native.prototype.invokeNative = function(caller, methodInfo, callback) {
     }
     var result = methodInfo.native.apply(caller, args);
     if (typeof result === "function") {
-        window.setZeroTimeout(function () {
-            result(function(result) {
-                if (signature.OUT.length)
-                    pushType(signature.OUT[0].type, result);
-                VM.resume(frame, callback);
-            });
+        // If we get a function back, immediately invoke it and hand in a closure
+        // that can be used to continue execution later (the native wants to
+        // deschedule us).
+        result(function (result) {
+            if (signature.OUT.length)
+                pushType(signature.OUT[0].type, result);
+            VM.resume(frame, callback);
         });
         return false;
     }
