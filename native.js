@@ -215,8 +215,11 @@ Native.prototype["java/lang/Thread.setPriority0.(II)V"] = function(thread, oldPr
 }
 
 Native.prototype["java/lang/Thread.start0.()V"] = function(thread) {
+    // The main thread starts during bootstrap and don't allow calling start()
+    // on already running threads.
     if (thread === CLASSES.mainThread || thread.running)
         throw CLASSES.newException(frame.getThread(), "java/lang/IllegalThreadStateException");
+    thread.running = true;
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
     window.setZeroTimeout(function () {
         VM.invoke(thread, run, [thread]);
