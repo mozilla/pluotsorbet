@@ -29,6 +29,11 @@ VM.invokeConstructor = function(thread, obj) {
     VM.invoke(thread, ctor, [obj]);
 }
 
+VM.invokeConstructorWithString = function(thread, obj, str) {
+    var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
+    VM.invoke(thread, ctor, [obj, CLASSES.newString(str)]);
+}
+
 VM.resume = function(frame, callback) {
     var cycles = 0;
 

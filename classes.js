@@ -219,8 +219,7 @@ Classes.prototype.newException = function(thread, className, message) {
         message = "";
     message = "" + message;
     var ex = this.newObject(className);
-    var ctor = this.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(thread, ctor, [ex, CLASSES.newString(message)]);
+    VM.invokeConstructorWithString(thread, ex, message);
     return ex;
 }
 
