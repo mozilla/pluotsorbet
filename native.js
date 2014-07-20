@@ -33,19 +33,14 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
 
     var signature = Signature.parse(methodInfo.signature);
     var args = popArgs(signature.IN);
-    if (!methodInfo.native)
-        methodInfo.native = this.getNativeMethod(methodInfo);
+    if (!methodInfo.native) {
+        methodInfo.native = this[methodInfo.classInfo.className + "." +
+                                 methodInfo.name + "." +
+                                 methodInfo.signature];
+    }
     var result = methodInfo.native.apply(caller, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0].type, result);
-}
-
-Native.prototype.getNativeMethod = function(methodInfo) {
-    var classInfo = methodInfo.classInfo;
-    var className = classInfo.className;
-    var methodName = methodInfo.name;
-    var signature = methodInfo.signature;
-    return this[className + "." + methodName + "." + signature];
 }
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
