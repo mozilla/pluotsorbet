@@ -49,7 +49,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
     if (!bytes)
-        throw VM.newException("java/lang/ClassNotFoundException", "fileName");
+        throw this.newException("java/lang/ClassNotFoundException", "fileName");
     var self = this;
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)
@@ -216,6 +216,16 @@ Classes.prototype.newString = function(s) {
     obj["java/lang/String$offset"] = 0;
     obj["java/lang/String$count"] = length;
     return obj;
+}
+
+Classes.prototype.newException = function(className, message) {
+    if (!message)
+        message = "";
+    message = "" + message;
+    var ex = this.newObject(className);
+    var ctor = this.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
+    VM.invoke(ctor, [ex, CLASSES.newString(message)]);
+    return ex;
 }
 
 Classes.prototype.bootstrap = function() {

@@ -5,16 +5,6 @@
 
 var VM = {};
 
-VM.newException = function(className, message) {
-    if (!message)
-        message = "";
-    message = "" + message;
-    var ex = CLASSES.newObject(className);
-    var ctor = CLASSES.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(ctor, [ex, CLASSES.newString(message)]);
-    return ex;
-}
-
 VM.level = 0;
 
 VM.invoke = function(methodInfo, args, callback) {
@@ -93,7 +83,7 @@ VM.resume = function(frame, callback) {
     }
 
     function raiseException(className, message) {
-        throw_(VM.newException(className, message));
+        throw_(CLASSES.newException(className, message));
     }
 
     function checkArrayAccess(refArray, idx) {
