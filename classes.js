@@ -207,7 +207,7 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
 }
 
 Classes.prototype.newString = function(s) {
-    var obj = new (this.java_lang_String.constructor)();
+    var obj = this.newObject("java/lang/String");
     var length = s.length;
     var chars = this.newPrimitiveArray("C", length);
     for (var n = 0; n < length; ++n)
@@ -219,8 +219,6 @@ Classes.prototype.newString = function(s) {
 }
 
 Classes.prototype.bootstrap = function() {
-    this.java_lang_String = this.initClass(this.loadClass("java/lang/String"));
-
     var mainThread = this.newObject("java/lang/Thread");
     this.invokeConstructor(mainThread);
 }
