@@ -3,15 +3,12 @@
 
 'use strict';
 
-var CLASSES, THREADS, NATIVE;
+var CLASSES, NATIVE;
 
 var JVM = function() {
     if (this instanceof JVM) {
         CLASSES = new Classes();
-        THREADS = new Threads();
         NATIVE = new Native();
-
-        THREADS.add(new Thread("main"));
     } else {
         return new JVM();
     }
