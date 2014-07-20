@@ -34,6 +34,8 @@ VM.invoke = function(methodInfo, args, callback) {
 }
 
 VM.resume = function(frame, callback) {
+    var cycles = 0;
+
     var cp = frame.cp;
     var stack = frame.stack;
 
@@ -994,6 +996,14 @@ VM.resume = function(frame, callback) {
         default:
             var opName = OPCODES[op];
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
+        }
+        if (VM.level <= 1) {
+            if (cycles++ > 1000) {
+                window.setZeroTimeout(function () {
+                    VM.resume(frame, callback);
+                });
+                return;
+            }
         }
     };
 }

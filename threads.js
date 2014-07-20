@@ -9,9 +9,6 @@ var Threads = function() {
     var mainThread = new Thread("main");
     this.add(mainThread);
     this.current = mainThread;
-    window.addEventListener("message", function () {
-        this.resume();
-    }, false);
 }
 
 Threads.prototype.add = function(thread) {
