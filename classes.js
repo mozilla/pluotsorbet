@@ -101,7 +101,7 @@ Classes.prototype.initClass = function(classInfo) {
     }
 }
 
-Classes.prototype.getClass = function(className, init) {
+Classes.prototype.getClass = function(className) {
     var classInfo = this.classes[className];
     if (!classInfo) {
         if (className[0] === "[") {
@@ -112,8 +112,6 @@ Classes.prototype.getClass = function(className, init) {
         if (!classInfo)
             return null;
     }
-    if (init)
-        this.initClass(classInfo);
     return classInfo;
 };
 
