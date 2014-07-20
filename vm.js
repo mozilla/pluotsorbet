@@ -861,7 +861,9 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var value = CLASSES.getStaticField(className, fieldName);
+            var classInfo = CLASSES.getClass(className);
+            CLASSES.initClass(classInfo);
+            var value = classInfo.staticFields[fieldName];
             if (typeof value === "undefined") {
                 value = util.defaultValue(signature);
             }
@@ -872,7 +874,9 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            CLASSES.setStaticField(className, fieldName, stack.popType(signature));
+            var classInfo = CLASSES.getClass(className);
+            CLASSES.initClass(classInfo);
+            classInfo.staticFields[fieldName] = stack.popType(signature);
             break;
         case 0xbb: // new
             var idx = frame.read16();
