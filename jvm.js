@@ -38,6 +38,17 @@ JVM.prototype.run = function(className) {
     if (!entryPoint) {
         throw new Error("Could not find main method in class " + className);
     }
-    CLASSES.initClass(CLASSES.loadClass("java/lang/System"));
+
+    function ensureInitialized(className) {
+        CLASSES.initClass(CLASSES.loadClass(className));
+    }
+
+    ensureInitialized("java/lang/Object");
+    ensureInitialized("java/lang/Class");
+    ensureInitialized("java/lang/String");
+    ensureInitialized("java/lang/Thread");
+    ensureInitialized("java/lang/Throwable");
+    ensureInitialized("java/lang/Error");
+
     VM.invoke(entryPoint, [null]);
 }
