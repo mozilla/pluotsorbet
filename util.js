@@ -31,13 +31,6 @@ var util = (function () {
     return 0;
   }
 
-  var floatmem = Float32Array(1);
-
-  function double2float(d) {
-    floatmem[0] = d;
-    return floatmem[0];
-  }
-
   var INT_MAX = Math.pow(2, 31) - 1;
   var INT_MIN = -INT_MAX - 1;
 
@@ -93,7 +86,6 @@ var util = (function () {
     warn: console.warn.bind(console),
     decodeUtf8: decodeUtf8,
     defaultValue: defaultValue,
-    double2float: double2float,
     double2int: double2int,
     double2long: double2long,
     fromJavaString: fromJavaString,

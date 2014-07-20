@@ -413,7 +413,7 @@ VM.resume = function(frame, callback) {
             stack.push2(stack.pop2().add(stack.pop2()));
             break;
         case 0x62: // fadd
-            stack.push(util.double2float(stack.pop() + stack.pop()));
+            stack.push(Math.fround(stack.pop() + stack.pop()));
             break;
         case 0x63: // dadd
             stack.push2(stack.pop2() + stack.pop2());
@@ -425,7 +425,7 @@ VM.resume = function(frame, callback) {
             stack.push2(stack.pop2().negate().add(stack.pop2()));
             break;
         case 0x66: // fsub
-            stack.push(util.double2float(- stack.pop() + stack.pop()));
+            stack.push(Math.fround(- stack.pop() + stack.pop()));
             break;
         case 0x67: // dsub
             stack.push2(- stack.pop2() + stack.pop2());
@@ -437,7 +437,7 @@ VM.resume = function(frame, callback) {
             stack.push2(stack.pop2().multiply(stack.pop2()));
             break;
         case 0x6a: // fmul
-            stack.push(util.double2float(stack.pop() * stack.pop()));
+            stack.push(Math.fround(stack.pop() * stack.pop()));
             break;
         case 0x6b: // dmul
             stack.push2(stack.pop2() * stack.pop2());
@@ -463,7 +463,7 @@ VM.resume = function(frame, callback) {
         case 0x6e: // fdiv
             var b = stack.pop();
             var a = stack.pop();
-            stack.push(util.double2float(a / b));
+            stack.push(Math.fround(a / b));
             break;
         case 0x6f: // ddiv
             var b = stack.pop2();
@@ -491,7 +491,7 @@ VM.resume = function(frame, callback) {
         case 0x72: // frem
             var b = stack.pop();
             var a = stack.pop();
-            stack.push(util.double2float(a % b));
+            stack.push(Math.fround(a % b));
             break;
         case 0x73: // drem
             var b = stack.pop2();
@@ -717,7 +717,7 @@ VM.resume = function(frame, callback) {
             stack.push(stack.pop2().toInt());
             break;
         case 0x89: // l2f
-            stack.push(util.double2float(stack.pop2().toNumber()));
+            stack.push(Math.fround(stack.pop2().toNumber()));
             break;
         case 0x8a: // l2d
             stack.push2(stack.pop2().toNumber());
@@ -738,7 +738,7 @@ VM.resume = function(frame, callback) {
             stack.push2(util.double2long(stack.pop2()));
             break;
         case 0x90: // d2f
-            stack.push(util.double2float(stack.pop2()));
+            stack.push(Math.fround(stack.pop2()));
             break;
         case 0x91: // i2b
             stack.push((stack.pop() << 24) >> 24);
