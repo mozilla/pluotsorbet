@@ -207,7 +207,7 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
 }
 
 Classes.prototype.newString = function(s) {
-    var obj = this.newObject("java/lang/String");
+    var obj = new (this.java_lang_String.constructor)();
     var length = s.length;
     var chars = this.newPrimitiveArray("C", length);
     for (var n = 0; n < length; ++n)
