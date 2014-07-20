@@ -187,7 +187,9 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
 };
 
 Classes.prototype.newObject = function(className) {
-    return new (this.getClass(className, true).constructor)();
+    var classInfo = this.getClass(className);
+    this.initClass(classInfo);
+    return new (classInfo.constructor)();
 }
 
 Classes.prototype.invokeConstructor = function(obj) {
