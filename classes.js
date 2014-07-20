@@ -180,7 +180,7 @@ Classes.prototype.newObject = function(className) {
 }
 
 Classes.prototype.invokeConstructor = function(obj) {
-    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
+    var ctor = this.getMethod(obj.class, "<init>", "()V", false, false);
     VM.invoke(ctor, [obj]);
 }
 
@@ -219,6 +219,6 @@ Classes.prototype.newString = function(s) {
 }
 
 Classes.prototype.bootstrap = function() {
-    var mainThread = this.newObject("java/lang/Thread");
-    this.invokeConstructor(mainThread);
+    this.mainThread = this.newObject("java/lang/Thread");
+    this.invokeConstructor(this.mainThread);
 }
