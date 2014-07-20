@@ -217,3 +217,10 @@ Classes.prototype.newString = function(s) {
     obj["java/lang/String$count"] = length;
     return obj;
 }
+
+Classes.prototype.bootstrap = function() {
+    this.java_lang_String = this.initClass(this.loadClass("java/lang/String"));
+
+    var mainThread = this.newObject("java/lang/Thread");
+    this.invokeConstructor(mainThread);
+}

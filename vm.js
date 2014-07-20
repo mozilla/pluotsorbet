@@ -15,17 +15,6 @@ VM.newException = function(className, message) {
     return ex;
 }
 
-VM.bootstrap = function() {
-    function init(className) {
-        return CLASSES.initClass(CLASSES.loadClass(className));
-    }
-
-    VM.java_lang_String = init("java/lang/String");
-
-    var mainThread = CLASSES.newObject("java/lang/Thread");
-    CLASSES.invokeConstructor(mainThread);
-}
-
 VM.level = 0;
 
 VM.invoke = function(methodInfo, args, callback) {

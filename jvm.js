@@ -27,7 +27,7 @@ JVM.prototype.loadJarFile = function(fileName) {
 }
 
 JVM.prototype.run = function(className) {
-    VM.bootstrap();
+    CLASSES.bootstrap();
 
     var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
