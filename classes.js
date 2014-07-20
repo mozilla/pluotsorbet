@@ -143,11 +143,15 @@ Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
 }
 
 Classes.prototype.getStaticField = function(className, fieldName) {
-    return this.getClass(className, true).staticFields[fieldName];
+    var classInfo = this.getClass(className);
+    this.initClass(classInfo);
+    return classInfo.staticFields[fieldName];
 }
 
 Classes.prototype.setStaticField = function(className, fieldName, value) {
-    this.getClass(className, true).staticFields[fieldName] = value;
+    var classInfo = this.getClass(className);
+    this.initClass(classInfo);
+    classInfo.staticFields[fieldName] = value;
 }
 
 Classes.prototype.getField = function(className, fieldName, signature, staticFlag) {
