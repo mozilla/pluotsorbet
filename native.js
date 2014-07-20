@@ -121,7 +121,7 @@ Native.prototype["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(
     var classInfo = classObject.vmClass;
     CLASSES.initClass(classInfo);
     var obj = new (classInfo.constructor)();
-    CLASSES.invokeConstructor(obj);
+    VM.invokeConstructor(this.getThread(), obj);
     return obj;
 };
 

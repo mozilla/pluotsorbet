@@ -97,7 +97,8 @@ Classes.prototype.initClass = function(classInfo) {
     classInfo.constructor.prototype.class = classInfo;
     var clinit = this.getMethod(classInfo, "<clinit>", "()V", true, false);
     if (clinit) {
-        VM.invoke(clinit);
+        // Static initializers always run on the main thread.
+        VM.invoke(this.mainThread, clinit);
     }
     return classInfo;
 }
@@ -179,11 +180,6 @@ Classes.prototype.newObject = function(className) {
     return new (classInfo.constructor)();
 }
 
-Classes.prototype.invokeConstructor = function(obj) {
-    var ctor = this.getMethod(obj.class, "<init>", "()V", false, false);
-    VM.invoke(ctor, [obj]);
-}
-
 Classes.prototype.newPrimitiveArray = function(type, size) {
     var constructor = ARRAYS[type];
     if (!constructor.prototype.class)
@@ -224,11 +220,11 @@ Classes.prototype.newException = function(className, message) {
     message = "" + message;
     var ex = this.newObject(className);
     var ctor = this.getMethod(ex.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(ctor, [ex, CLASSES.newString(message)]);
+    VM.invoke(this.mainThread, ctor, [ex, CLASSES.newString(message)]);
     return ex;
 }
 
 Classes.prototype.bootstrap = function() {
     this.mainThread = this.newObject("java/lang/Thread");
-    this.invokeConstructor(this.mainThread);
+    VM.invokeConstructor(this.mainThread, this.mainThread);
 }

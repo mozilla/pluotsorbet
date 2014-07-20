@@ -7,8 +7,9 @@ var VM = {};
 
 VM.level = 0;
 
-VM.invoke = function(methodInfo, args, callback) {
+VM.invoke = function(thread, methodInfo, args, callback) {
     var caller = new Frame();
+    caller.thread = thread;
     var consumes = 0;
     if (args) {
         consumes = args.length;
@@ -21,6 +22,11 @@ VM.invoke = function(methodInfo, args, callback) {
         VM.level--;
         return !callback || callback();
     });
+}
+
+VM.invokeConstructor = function(thread, obj) {
+    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
+    VM.invoke(thread, ctor, [obj]);
 }
 
 VM.resume = function(frame, callback) {

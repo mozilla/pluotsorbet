@@ -38,5 +38,5 @@ JVM.prototype.run = function(className) {
         throw new Error("Could not find main method in class " + className);
     }
 
-    VM.invoke(entryPoint, [null]);
+    VM.invoke(CLASSES.mainThread, entryPoint, [null]);
 }
