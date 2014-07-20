@@ -214,7 +214,13 @@ Native.prototype["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = functi
 Native.prototype["java/lang/Thread.setPriority0.(II)V"] = function(thread, oldPriority, newPriority) {
 }
 
-Native.prototype["java/lang/Thread.start0.()V"] = function() {
+Native.prototype["java/lang/Thread.start0.()V"] = function(thread) {
+    if (thread === CLASSES.mainThread || thread.running)
+        throw CLASSES.newException(frame.getThread(), "java/lang/IllegalThreadStateException");
+    var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
+    window.setZeroTimeout(function () {
+        VM.invoke(thread, run, [thread]);
+    });
 }
 
 Native.prototype["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
