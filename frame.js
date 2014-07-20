@@ -128,10 +128,12 @@ Frame.prototype.backTrace = function() {
 }
 
 Frame.prototype.getThread = function() {
-    for (var frame = this; frame.caller; frame = frame.caller) {
+    var frame = this;
+    do {
         var thread = frame.thread;
         if (thread)
             return thread;
-    }
+        frame = frame.caller;
+    } while (frame);
     return null;
 }

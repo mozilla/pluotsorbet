@@ -225,5 +225,5 @@ Classes.prototype.newException = function(thread, className, message) {
 
 Classes.prototype.bootstrap = function() {
     this.mainThread = this.newObject("java/lang/Thread");
-    VM.invokeConstructor(this.mainThread, this.mainThread);
+    VM.invokeConstructorWithString(this.mainThread, this.mainThread, "main");
 }
