@@ -6,7 +6,7 @@
 var Native = function() {
 }
 
-Native.prototype.invokeNative = function(caller, methodInfo) {
+Native.prototype.invokeNative = function(caller, methodInfo, callback) {
     function pushType(type, value) {
         if (type === "long" || type === "double") {
             caller.stack.push2(value);
@@ -39,8 +39,19 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
                                  methodInfo.signature];
     }
     var result = methodInfo.native.apply(caller, args);
+    if (typeof result === "function") {
+        window.setZeroTimeout(function () {
+            result(function(result) {
+                if (signature.OUT.length)
+                    pushType(signature.OUT[0].type, result);
+                VM.resume(frame, callback);
+            });
+        });
+        return false;
+    }
     if (signature.OUT.length)
         pushType(signature.OUT[0].type, result);
+    return true;
 }
 
 Native.prototype["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
