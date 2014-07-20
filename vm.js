@@ -15,6 +15,21 @@ VM.newException = function(className, message) {
     return ex;
 }
 
+VM.bootstrap = function() {
+    function ensureInitialized(className) {
+        CLASSES.initClass(CLASSES.loadClass(className));
+    }
+
+    ensureInitialized("java/lang/Object");
+    ensureInitialized("java/lang/Class");
+    ensureInitialized("java/lang/String");
+    ensureInitialized("java/lang/Throwable");
+    ensureInitialized("java/lang/Error");
+
+    var mainThread = CLASSES.newObject("java/lang/Thread");
+    CLASSES.invokeConstructor(mainThread);
+}
+
 VM.level = 0;
 
 VM.invoke = function(methodInfo, args, callback) {

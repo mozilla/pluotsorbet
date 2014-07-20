@@ -27,6 +27,8 @@ JVM.prototype.loadJarFile = function(fileName) {
 }
 
 JVM.prototype.run = function(className) {
+    VM.bootstrap();
+
     var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
         throw new Error("Could not find or load main class " + className);
@@ -35,19 +37,6 @@ JVM.prototype.run = function(className) {
     if (!entryPoint) {
         throw new Error("Could not find main method in class " + className);
     }
-
-    function ensureInitialized(className) {
-        CLASSES.initClass(CLASSES.loadClass(className));
-    }
-
-    ensureInitialized("java/lang/Object");
-    ensureInitialized("java/lang/Class");
-    ensureInitialized("java/lang/String");
-    ensureInitialized("java/lang/Throwable");
-    ensureInitialized("java/lang/Error");
-
-    var mainThread = CLASSES.newObject("java/lang/Thread");
-    CLASSES.invokeConstructor(mainThread);
 
     VM.invoke(entryPoint, [null]);
 }
