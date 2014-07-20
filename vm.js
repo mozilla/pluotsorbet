@@ -939,13 +939,16 @@ VM.resume = function(frame, callback) {
                 var argsNumber = frame.read8();
                 var zero = frame.read8();
             }
+            var isStatic = (op === 0xb8);
             var className = cp[cp[cp[idx].class_index].name_index].bytes;
             var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var classInfo = CLASSES.getClass(className, op === 0xb8);
-            var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, op === 0xb8);
+            var classInfo = CLASSES.getClass(className);
+            var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, isStatic);
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
-            if (op !== OPCODES.invokestatic) {
+            if (isStatic) {
+                CLASSES.initClass(classInfo);
+            } else {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
                 if (!obj) {
@@ -956,7 +959,7 @@ VM.resume = function(frame, callback) {
                 case OPCODES.invokevirtual:
                 case OPCODES.invokeinterface:
                     if (methodInfo.classInfo != obj.class)
-                        methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, op === OPCODES.invokestatic);
+                        methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, false, true);
                     break;
                 }
             }
