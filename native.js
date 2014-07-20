@@ -38,7 +38,7 @@ Native.prototype.invokeNative = function(caller, methodInfo) {
                                  methodInfo.name + "." +
                                  methodInfo.signature];
     }
-    var result = methodInfo.native.apply(caller, args);
+    var result = methodInfo.native.apply(null, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0].type, result);
 }
