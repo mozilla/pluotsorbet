@@ -99,6 +99,7 @@ Classes.prototype.initClass = function(classInfo) {
     if (clinit) {
         VM.invoke(clinit);
     }
+    return classInfo;
 }
 
 Classes.prototype.getClass = function(className) {
