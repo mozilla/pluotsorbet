@@ -37,7 +37,6 @@ VM.resume = function(frame, callback) {
 
     var cp = frame.cp;
     var stack = frame.stack;
-    var thread = frame.getThread();
 
     function pushFrame(methodInfo, consumes) {
         frame = frame.pushFrame(methodInfo, consumes);
@@ -1015,8 +1014,8 @@ VM.resume = function(frame, callback) {
             var opName = OPCODES[op];
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
-        if (thread.level <= 1) {
-            if (cycles++ > 1000) {
+        if (cycles++ > 1000) {
+            if (frame.getThread().level <= 1) {
                 window.setZeroTimeout(function () {
                     VM.resume(frame, callback);
                 });
