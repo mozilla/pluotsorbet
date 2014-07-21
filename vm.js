@@ -866,7 +866,7 @@ VM.resume = function(frame, callback) {
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
             if (!classInfo.initialized)
-                CLASSES.initClass(classInfo);
+                frame.initClass(classInfo);
             var value = classInfo.staticFields[fieldName];
             if (typeof value === "undefined") {
                 value = util.defaultValue(signature);
@@ -880,7 +880,7 @@ VM.resume = function(frame, callback) {
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
             if (!classInfo.initialized)
-                CLASSES.initClass(classInfo);
+                frame.initClass(classInfo);
             classInfo.staticFields[fieldName] = stack.popType(signature);
             break;
         case 0xbb: // new
@@ -888,7 +888,7 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[idx].name_index].bytes;
             var classInfo = CLASSES.getClass(className);
             if (!classInfo.initialized)
-                CLASSES.initClass(classInfo);
+                frame.initClass(classInfo);
             stack.push(CLASSES.newObject(classInfo));
             break;
         case 0xc0: // checkcast
@@ -958,7 +958,7 @@ VM.resume = function(frame, callback) {
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
             if (isStatic) {
                 if (!classInfo.initialized)
-                    CLASSES.initClass(classInfo);
+                    frame.initClass(classInfo);
             } else {
                 ++consumes;
                 var obj = stack[stack.length - consumes];

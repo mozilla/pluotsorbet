@@ -89,24 +89,6 @@ Classes.prototype.getEntryPoint = function(classInfo) {
     }
 }
 
-Classes.prototype.initClass = function(classInfo) {
-    if (classInfo.initialized)
-        return;
-    classInfo.initialized = true;
-    if (classInfo.superClass)
-        this.initClass(classInfo.superClass);
-    classInfo.staticFields = {};
-    classInfo.constructor = function () {
-    }
-    classInfo.constructor.prototype.class = classInfo;
-    var clinit = this.getMethod(classInfo, "<clinit>", "()V", true, false);
-    if (clinit) {
-        // Static initializers always run on the main thread.
-        VM.invoke(this.mainThread, clinit);
-    }
-    return classInfo;
-}
-
 Classes.prototype.getClass = function(className) {
     var classInfo = this.classes[className];
     if (!classInfo) {
@@ -205,13 +187,14 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
 }
 
 Classes.prototype.bootstrap = function() {
-    this.java_lang_Object = this.initClass(this.loadClass("java/lang/Object"));
-    this.java_lang_String = this.initClass(this.loadClass("java/lang/String"));
-    this.java_lang_Class = this.initClass(this.loadClass("java/lang/Class"));
-    this.java_lang_Thread = this.initClass(this.loadClass("java/lang/Thread"));
+    var frame = new Frame();
+
+    this.java_lang_Object = frame.initClass(this.loadClass("java/lang/Object"));
+    this.java_lang_String = frame.initClass(this.loadClass("java/lang/String"));
+    this.java_lang_Class = frame.initClass(this.loadClass("java/lang/Class"));
+    this.java_lang_Thread = frame.initClass(this.loadClass("java/lang/Thread"));
 
     this.mainThread = this.newObject(this.java_lang_Thread);
-    var frame = new Frame();
     frame.thread = this.mainThread;
     frame.invokeConstructorWithString(this.mainThread, "main");
 }

@@ -177,6 +177,24 @@ Frame.prototype.invokeConstructorWithString = function(obj, str) {
     VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
 }
 
+Frame.prototype.initClass = function(classInfo) {
+    if (classInfo.initialized)
+        return;
+    classInfo.initialized = true;
+    if (classInfo.superClass)
+        this.initClass(classInfo.superClass);
+    classInfo.staticFields = {};
+    classInfo.constructor = function () {
+    }
+    classInfo.constructor.prototype.class = classInfo;
+    var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
+    if (clinit) {
+        // Static initializers always run on the main thread.
+        VM.invoke(this.getThread(), clinit);
+    }
+    return classInfo;
+}
+
 Frame.prototype.newString = function(s) {
     var obj = CLASSES.newObject(CLASSES.java_lang_String);
     var length = s.length;
@@ -195,7 +213,7 @@ Frame.prototype.newException = function(className, message) {
     message = "" + message;
     var classInfo = CLASSES.getClass(className);
     if (!classInfo.initialized)
-        CLASSES.initClass(classInfo);
+        this.initClass(classInfo);
     var ex = CLASSES.newObject(classInfo);
     this.invokeConstructorWithString(ex, message);
     return ex;

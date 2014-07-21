@@ -126,7 +126,7 @@ Native.fast["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = f
 
 Native.fast["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(classObject) {
     var classInfo = classObject.vmClass;
-    CLASSES.initClass(classInfo);
+    this.initClass(classInfo);
     var obj = CLASSES.newObject(classInfo);
     this.invokeConstructor(obj);
     return obj;
