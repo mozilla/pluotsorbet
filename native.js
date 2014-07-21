@@ -226,9 +226,7 @@ Native.fast["java/lang/Thread.start0.()V"] = function(thread) {
         throw CLASSES.newException(frame.getThread(), "java/lang/IllegalThreadStateException");
     thread.running = true;
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
-    window.setZeroTimeout(function () {
-        VM.invoke(thread, run, [thread]);
-    });
+    window.setZeroTimeout(VM.invoke.bind(VM, thread, run, [thread]));
 }
 
 Native.slow["java/lang/Thread.sleep.(J)V"] = function(caller, callback) {
@@ -238,9 +236,7 @@ Native.slow["java/lang/Thread.sleep.(J)V"] = function(caller, callback) {
         console.log("WARNING: nested invocation, can't reschedule.");
         return true;
     }
-    window.setTimeout(function () {
-        VM.resume(caller, callback);
-    }, delay);
+    window.setTimeout(VM.resume.bind(VM, caller, callback), delay);
     return false;
 }
 
