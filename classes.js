@@ -205,7 +205,7 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
 }
 
 Classes.prototype.newString = function(s) {
-    var obj = this.newObject("java/lang/String");
+    var obj = this.newObject(this.java_lang_String);
     var length = s.length;
     var chars = this.newPrimitiveArray("C", length);
     for (var n = 0; n < length; ++n)
@@ -226,8 +226,8 @@ Classes.prototype.newException = function(thread, className, message) {
 }
 
 Classes.prototype.bootstrap = function() {
-    // Preload classes we depend on not having to load.
     this.java_lang_Object = this.initClass(this.loadClass("java/lang/Object"));
+    this.java_lang_String = this.initClass(this.loadClass("java/lang/String"));
 
     this.mainThread = this.newObject("java/lang/Thread");
     VM.invokeConstructorWithString(this.mainThread, this.mainThread, "main");
