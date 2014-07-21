@@ -44,6 +44,8 @@ Frame.prototype.pushFrame = function(methodInfo, consumes) {
 }
 
 Frame.prototype.popFrame = function() {
+    if (this.lockObject)
+        this.monitorLeave(this.lockObject);
     var caller = this.caller;
     caller.stack.length = this.localsBase;
     return caller;
@@ -148,8 +150,6 @@ Frame.prototype.monitorEnter = function(obj, callback) {
         lock.count++;
         return true;
     }
-    // When we resume we will try to aquire the monitor by re-executing the opcode.
-    this.ip--;
     lock.waiters.push(function () {
         VM.resume(this, callback);
     });

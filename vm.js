@@ -39,12 +39,25 @@ VM.resume = function(frame, callback) {
     var stack = frame.stack;
 
     function pushFrame(methodInfo, consumes) {
+        var lockObject;
+        if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
+            lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
+                         ? methodInfo.classInfo.getClassObject()
+                         : stack[stack.length - consumes];
+            if (!frame.monitorEnter(lockObject, callback))
+                return false;
+        }
         frame = frame.pushFrame(methodInfo, consumes);
         stack = frame.stack;
         cp = frame.cp;
+        if (lockObject)
+            frame.lockObject = lockObject;
+        return true;
     }
 
     function popFrame(consumes) {
+        if (frame.lockObject)
+            frame.monitorLeave(frame.lockObject);
         var callee = frame;
         frame = frame.popFrame();
         stack = frame.stack;
@@ -921,8 +934,11 @@ VM.resume = function(frame, callback) {
                 break;
             }
             // console.log("monitor enter ", obj);
-            if (!frame.monitorEnter(obj, callback))
+            if (!frame.monitorEnter(obj, callback)) {
+                // When we resume we will try to aquire the monitor by re-executing the opcode.
+                this.ip--;
                 return;
+            }
             // console.log("ok");
             break;
         case 0xc3: // monitorexit
@@ -940,6 +956,7 @@ VM.resume = function(frame, callback) {
         case 0xb7: // invokespecial
         case 0xb8: // invokestatic
         case 0xb9: // invokeinterface
+            var startip = frame.ip - 1;
             var idx = frame.read16();
             if (op === 0xb9) {
                 var argsNumber = frame.read8();
@@ -987,7 +1004,10 @@ VM.resume = function(frame, callback) {
             }
             // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
             //             (op !== OPCODES.invokestatic) ? obj.class.className : "static");
-            pushFrame(methodInfo, consumes);
+            if (!pushFrame(methodInfo, consumes)) {
+                frame.ip = startip;
+                return;
+            }
             break;
         case 0xb1: // return
             popFrame(0);
