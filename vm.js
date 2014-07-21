@@ -5,8 +5,6 @@
 
 var VM = {};
 
-VM.level = 0;
-
 VM.invoke = function(thread, methodInfo, args, callback) {
     var caller = new Frame();
     caller.thread = thread;
@@ -17,9 +15,9 @@ VM.invoke = function(thread, methodInfo, args, callback) {
         for (var n = 0; n < consumes; ++n)
             stack.push(args[n]);
     }
-    VM.level++;
+    thread.level = (thread.level + 1) | 0;
     VM.resume(caller.pushFrame(methodInfo, consumes), function () {
-        VM.level--;
+        thread.level--;
         return !callback || callback();
     });
 }
@@ -39,6 +37,7 @@ VM.resume = function(frame, callback) {
 
     var cp = frame.cp;
     var stack = frame.stack;
+    var thread = frame.getThread();
 
     function pushFrame(methodInfo, consumes) {
         frame = frame.pushFrame(methodInfo, consumes);
@@ -1016,7 +1015,7 @@ VM.resume = function(frame, callback) {
             var opName = OPCODES[op];
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
-        if (VM.level <= 1) {
+        if (thread.level <= 1) {
             if (cycles++ > 1000) {
                 window.setZeroTimeout(function () {
                     VM.resume(frame, callback);

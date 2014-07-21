@@ -9,6 +9,8 @@ Native.invoke = function(caller, methodInfo, callback) {
     if (!methodInfo.native) {
         var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
         methodInfo.native = Native.fast[key];
+        if (!methodInfo.native)
+            return Native.slow[key](caller, callback);
     }
 
     function pushType(type, value) {
@@ -44,6 +46,7 @@ Native.invoke = function(caller, methodInfo, callback) {
 }
 
 Native.fast = {};
+Native.slow = {};
 
 Native.fast["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     var frame = this;
@@ -226,6 +229,19 @@ Native.fast["java/lang/Thread.start0.()V"] = function(thread) {
     window.setZeroTimeout(function () {
         VM.invoke(thread, run, [thread]);
     });
+}
+
+Native.slow["java/lang/Thread.sleep.(J)V"] = function(caller, callback) {
+    var thread = caller.getThread();
+    var delay = caller.stack.pop2().toNumber();
+    if (thread.level > 1) {
+        console.log("WARNING: nested invocation, can't reschedule.");
+        return true;
+    }
+    window.setTimeout(function () {
+        VM.resume(caller, callback);
+    }, delay);
+    return false;
 }
 
 Native.fast["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
