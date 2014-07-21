@@ -920,13 +920,10 @@ VM.resume = function(frame, callback) {
                 raiseException("java/lang/NullPointerException");
                 break;
             }
-            // if (obj.hasOwnProperty("$lock$")) {
-            // stack.push(obj);
-            // frame.ip--;
-            // SCHEDULER.yield();
-            // } else {
-            // obj["$lock$"] = "locked";
-            // }
+            // console.log("monitor enter ", obj);
+            if (!frame.monitorEnter(obj, callback))
+                return;
+            // console.log("ok");
             break;
         case 0xc3: // monitorexit
             var obj = stack.pop();
@@ -934,8 +931,8 @@ VM.resume = function(frame, callback) {
                 raiseException("java/lang/NullPointerException");
                 break;
             }
-            // delete obj["$lock$"];
-            // SCHEDULER.yield();
+            // console.log("monitor leave", obj);
+            frame.monitorLeave(obj);
             break;
         case 0xc4: // wide
             break;

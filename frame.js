@@ -137,3 +137,38 @@ Frame.prototype.getThread = function() {
     } while (frame);
     return null;
 }
+
+Frame.prototype.monitorEnter = function(obj, callback) {
+    var lock = obj.lock;
+    if (!lock) {
+        obj.lock = { thread: this.getThread(), count: 1, waiters: [] };
+        return true;
+    }
+    if (lock.thread === this.getThread()) {
+        lock.count++;
+        return true;
+    }
+    // When we resume we will try to aquire the monitor by re-executing the opcode.
+    this.ip--;
+    lock.waiters.push(function () {
+        VM.resume(this, callback);
+    });
+    return false;
+}
+
+Frame.prototype.monitorLeave = function(obj) {
+    var lock = obj.lock;
+    if (lock.thread !== this.getThread()) {
+        console.log("WARNING: thread tried to unlock a monitor it didn't own");
+        return;
+    }
+    if (lock.count-- > 0)
+        return;
+    var waiters = lock.waiters;
+    obj.lock = null;
+    for (var n = 0; n < waiters.length; ++n) {
+        window.setZeroTimeout(function () {
+            waiters[n]();
+        });
+    }
+}
