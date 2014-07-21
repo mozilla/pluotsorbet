@@ -1030,9 +1030,7 @@ VM.resume = function(frame, callback) {
         }
         if (cycles++ > 1000) {
             if (frame.getThread().level <= 1) {
-                window.setZeroTimeout(function () {
-                    VM.resume(frame, callback);
-                });
+                window.setZeroTimeout(VM.resume.bind(VM, frame, callback));
                 return;
             }
         }
