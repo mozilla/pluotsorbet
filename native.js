@@ -82,7 +82,7 @@ Native.fast["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II
 Native.fast["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
-        return CLASSES.newString("UTF-8");
+        return this.newString("UTF-8");
     }
     console.log("UNKNOWN PROPERTY: " + util.fromJavaString(key));
     return null;
@@ -109,8 +109,9 @@ Native.fast["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(obj) {
 }
 
 Native.fast["java/lang/Class.getName.()Ljava/lang/String;"] = function(obj) {
+    var frame = this;
     return util.cache(obj, "getName", function () {
-        return CLASSES.newString(obj.vmClass.className.replace("/", ".", "g"));
+        return frame.newString(obj.vmClass.className.replace("/", ".", "g"));
     });
 }
 
@@ -126,8 +127,8 @@ Native.fast["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = f
 Native.fast["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(classObject) {
     var classInfo = classObject.vmClass;
     CLASSES.initClass(classInfo);
-    var obj = new (classInfo.constructor)();
-    VM.invokeConstructor(this.getThread(), obj);
+    var obj = CLASSES.newObject(classInfo);
+    this.invokeConstructor(obj);
     return obj;
 };
 

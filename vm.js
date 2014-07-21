@@ -22,16 +22,6 @@ VM.invoke = function(thread, methodInfo, args, callback) {
     });
 }
 
-VM.invokeConstructor = function(thread, obj) {
-    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
-    VM.invoke(thread, ctor, [obj]);
-}
-
-VM.invokeConstructorWithString = function(thread, obj, str) {
-    var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(thread, ctor, [obj, CLASSES.newString(str)]);
-}
-
 VM.resume = function(frame, callback) {
     var cycles = 0;
 
@@ -184,7 +174,7 @@ VM.resume = function(frame, callback) {
                 break;
             case TAGS.CONSTANT_String:
                 // console.log(cp[constant.string_index].bytes);
-                stack.push(CLASSES.newString(cp[constant.string_index].bytes));
+                stack.push(frame.newString(cp[constant.string_index].bytes));
                 break;
             default:
                 throw new Error("not support constant type");

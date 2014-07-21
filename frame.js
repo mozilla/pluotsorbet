@@ -166,3 +166,25 @@ Frame.prototype.monitorLeave = function(obj) {
     for (var n = 0; n < waiters.length; ++n)
         window.setZeroTimeout.call(window, waiters[n]);
 }
+
+Frame.prototype.newString = function(s) {
+    var obj = CLASSES.newObject(CLASSES.java_lang_String);
+    var length = s.length;
+    var chars = CLASSES.newPrimitiveArray("C", length);
+    for (var n = 0; n < length; ++n)
+        chars[n] = s.charCodeAt(n);
+    obj["java/lang/String$value"] = chars;
+    obj["java/lang/String$offset"] = 0;
+    obj["java/lang/String$count"] = length;
+    return obj;
+}
+
+Frame.prototype.invokeConstructor = function(obj) {
+    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
+    VM.invoke(this.getThread(), ctor, [obj]);
+}
+
+Frame.prototype.invokeConstructorWithString = function(obj, str) {
+    var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
+    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
+}

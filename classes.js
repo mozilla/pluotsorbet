@@ -201,18 +201,6 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
     return array;
 }
 
-Classes.prototype.newString = function(s) {
-    var obj = this.newObject(this.java_lang_String);
-    var length = s.length;
-    var chars = this.newPrimitiveArray("C", length);
-    for (var n = 0; n < length; ++n)
-        chars[n] = s.charCodeAt(n);
-    obj["java/lang/String$value"] = chars;
-    obj["java/lang/String$offset"] = 0;
-    obj["java/lang/String$count"] = length;
-    return obj;
-}
-
 Classes.prototype.newException = function(thread, className, message) {
     if (!message)
         message = "";
@@ -221,7 +209,9 @@ Classes.prototype.newException = function(thread, className, message) {
     if (!classInfo.initialized)
         this.initClass(classInfo);
     var ex = this.newObject(classInfo);
-    VM.invokeConstructorWithString(thread, ex, message);
+    var frame = new Frame();
+    frame.thread = thread;
+    frame.invokeConstructorWithString(ex, message);
     return ex;
 }
 
@@ -232,5 +222,7 @@ Classes.prototype.bootstrap = function() {
     this.java_lang_Thread = this.initClass(this.loadClass("java/lang/Thread"));
 
     this.mainThread = this.newObject(this.java_lang_Thread);
-    VM.invokeConstructorWithString(this.mainThread, this.mainThread, "main");
+    var frame = new Frame();
+    frame.thread = this.mainThread;
+    frame.invokeConstructorWithString(this.mainThread, "main");
 }
