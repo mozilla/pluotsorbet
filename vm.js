@@ -81,6 +81,7 @@ VM.resume = function(frame, callback) {
                 }
             }
             if (handler_pc != null) {
+                stack.length = 0;
                 stack.push(ex);
                 frame.ip = handler_pc;
                 return;
