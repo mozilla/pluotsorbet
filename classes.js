@@ -228,6 +228,7 @@ Classes.prototype.newException = function(thread, className, message) {
 Classes.prototype.bootstrap = function() {
     this.java_lang_Object = this.initClass(this.loadClass("java/lang/Object"));
     this.java_lang_String = this.initClass(this.loadClass("java/lang/String"));
+    this.java_lang_Class = this.initClass(this.loadClass("java/lang/Class"));
 
     this.mainThread = this.newObject("java/lang/Thread");
     VM.invokeConstructorWithString(this.mainThread, this.mainThread, "main");

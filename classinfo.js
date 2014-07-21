@@ -81,7 +81,7 @@ ClassInfo.prototype.isAssignableTo = function(toClass) {
 ClassInfo.prototype.getClassObject = function() {
     var self = this;
     return util.cache(this, "classObject", function () {
-        var classObject = CLASSES.newObject("java/lang/Class");
+        var classObject = CLASSES.newObject(CLASSES.java_lang_Class);
         classObject.vmClass = self;
         return classObject;
     });
