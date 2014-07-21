@@ -6,6 +6,11 @@
 var Native = {};
 
 Native.invoke = function(caller, methodInfo, callback) {
+    if (!methodInfo.native) {
+        var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+        methodInfo.native = Native.fast[key];
+    }
+
     function pushType(type, value) {
         if (type === "long" || type === "double") {
             caller.stack.push2(value);
@@ -32,10 +37,6 @@ Native.invoke = function(caller, methodInfo, callback) {
 
     var signature = Signature.parse(methodInfo.signature);
     var args = popArgs(signature.IN);
-    if (!methodInfo.native) {
-        var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
-        methodInfo.native = Native.fast[key];
-    }
     var result = methodInfo.native.apply(caller, args);
     if (signature.OUT.length)
         pushType(signature.OUT[0].type, result);
