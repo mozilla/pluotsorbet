@@ -884,7 +884,10 @@ VM.resume = function(frame, callback) {
         case 0xbb: // new
             var idx = frame.read16();
             var className = cp[cp[idx].name_index].bytes;
-            stack.push(CLASSES.newObject(className));
+            var classInfo = CLASSES.getClass(className);
+            if (!classInfo.initialized)
+                CLASSES.initClass(classInfo);
+            stack.push(CLASSES.newObject(classInfo));
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();

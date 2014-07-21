@@ -175,11 +175,7 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
     } while (classInfo);
 };
 
-Classes.prototype.newObject = function(classNameOrClassInfo) {
-    var classInfo = (typeof classNameOrClassInfo === "string")
-                  ? this.getClass(classNameOrClassInfo)
-                  : classNameOrClassInfo;
-    this.initClass(classInfo);
+Classes.prototype.newObject = function(classInfo) {
     return new (classInfo.constructor)();
 }
 
@@ -221,7 +217,10 @@ Classes.prototype.newException = function(thread, className, message) {
     if (!message)
         message = "";
     message = "" + message;
-    var ex = this.newObject(className);
+    var classInfo = this.getClass(className);
+    if (!classInfo.initialized)
+        this.initClass(classInfo);
+    var ex = this.newObject(classInfo);
     VM.invokeConstructorWithString(thread, ex, message);
     return ex;
 }
@@ -230,7 +229,8 @@ Classes.prototype.bootstrap = function() {
     this.java_lang_Object = this.initClass(this.loadClass("java/lang/Object"));
     this.java_lang_String = this.initClass(this.loadClass("java/lang/String"));
     this.java_lang_Class = this.initClass(this.loadClass("java/lang/Class"));
+    this.java_lang_Thread = this.initClass(this.loadClass("java/lang/Thread"));
 
-    this.mainThread = this.newObject("java/lang/Thread");
+    this.mainThread = this.newObject(this.java_lang_Thread);
     VM.invokeConstructorWithString(this.mainThread, this.mainThread, "main");
 }
