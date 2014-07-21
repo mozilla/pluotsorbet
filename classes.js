@@ -87,8 +87,9 @@ Classes.prototype.getEntryPoint = function(classInfo) {
 }
 
 Classes.prototype.initClass = function(classInfo) {
-    if (classInfo.staticFields)
+    if (classInfo.initialized)
         return;
+    classInfo.initialized = true;
     if (classInfo.superClass)
         this.initClass(classInfo.superClass);
     classInfo.staticFields = {};

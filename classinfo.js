@@ -103,3 +103,5 @@ ArrayClass.prototype.implementsInterface = function(iface) {
 ArrayClass.prototype.isAssignableTo = ClassInfo.prototype.isAssignableTo;
 
 ArrayClass.prototype.getClassObject = ClassInfo.prototype.getClassObject;
+
+ArrayClass.prototype.initialized = true;
