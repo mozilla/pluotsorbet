@@ -48,8 +48,11 @@ Classes.prototype.loadClassBytes = function(bytes) {
 Classes.prototype.loadClassFile = function(fileName) {
     console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
-    if (!bytes)
-        throw this.newException(this.mainThread, "java/lang/ClassNotFoundException", "fileName");
+    if (!bytes) {
+        var frame = new Frame();
+        frame.thread = CLASSES.mainThread;
+        throw frame.newException("java/lang/ClassNotFoundException", fileName);
+    }
     var self = this;
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)
@@ -199,20 +202,6 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
             array[i] = this.newMultiArray(typeName.substr(1), lengths);
     }
     return array;
-}
-
-Classes.prototype.newException = function(thread, className, message) {
-    if (!message)
-        message = "";
-    message = "" + message;
-    var classInfo = this.getClass(className);
-    if (!classInfo.initialized)
-        this.initClass(classInfo);
-    var ex = this.newObject(classInfo);
-    var frame = new Frame();
-    frame.thread = thread;
-    frame.invokeConstructorWithString(ex, message);
-    return ex;
 }
 
 Classes.prototype.bootstrap = function() {

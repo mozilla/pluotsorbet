@@ -96,7 +96,7 @@ VM.resume = function(frame, callback) {
     }
 
     function raiseException(className, message) {
-        throw_(CLASSES.newException(frame.getThread(), className, message));
+        throw_(frame.newException(className, message));
     }
 
     function checkArrayAccess(refArray, idx) {

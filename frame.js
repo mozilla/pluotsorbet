@@ -167,6 +167,16 @@ Frame.prototype.monitorLeave = function(obj) {
         window.setZeroTimeout.call(window, waiters[n]);
 }
 
+Frame.prototype.invokeConstructor = function(obj) {
+    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
+    VM.invoke(this.getThread(), ctor, [obj]);
+}
+
+Frame.prototype.invokeConstructorWithString = function(obj, str) {
+    var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
+    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
+}
+
 Frame.prototype.newString = function(s) {
     var obj = CLASSES.newObject(CLASSES.java_lang_String);
     var length = s.length;
@@ -179,12 +189,14 @@ Frame.prototype.newString = function(s) {
     return obj;
 }
 
-Frame.prototype.invokeConstructor = function(obj) {
-    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj]);
-}
-
-Frame.prototype.invokeConstructorWithString = function(obj, str) {
-    var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
+Frame.prototype.newException = function(className, message) {
+    if (!message)
+        message = "";
+    message = "" + message;
+    var classInfo = CLASSES.getClass(className);
+    if (!classInfo.initialized)
+        CLASSES.initClass(classInfo);
+    var ex = CLASSES.newObject(classInfo);
+    this.invokeConstructorWithString(ex, message);
+    return ex;
 }
