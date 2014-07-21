@@ -3,12 +3,11 @@
 
 'use strict';
 
-var CLASSES, NATIVE;
+var CLASSES;
 
 var JVM = function() {
     if (this instanceof JVM) {
         CLASSES = new Classes();
-        NATIVE = new Native();
     } else {
         return new JVM();
     }

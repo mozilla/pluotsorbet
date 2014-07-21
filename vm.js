@@ -973,7 +973,7 @@ VM.resume = function(frame, callback) {
             }
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
                 try {
-                    if (!NATIVE.invokeNative(frame, methodInfo, callback)) {
+                    if (!Native.invoke(frame, methodInfo, callback)) {
                         // Some natives can't produce an immediate result and will schedule
                         // an event that will re-enter via resume(frame, callback).
                         return;
