@@ -71,7 +71,7 @@ ClassInfo.prototype.implementsInterface = function(iface) {
 }
 
 ClassInfo.prototype.isAssignableTo = function(toClass) {
-    if (this === toClass || toClass.className === "java/lang/Object")
+    if (this === toClass || toClass === ClassInfo.java_lang_Object)
         return true;
     if (this.elementClass && toClass.elementClass)
         return this.elementClass.isAssignableTo(toClass.elementClass);

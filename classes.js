@@ -125,7 +125,7 @@ Classes.prototype.initArrayClass = function(typeName) {
     if (elementType[0] === "L")
         elementType = elementType.substr(1).replace(";", "");
     var classInfo = new ArrayClass(typeName, this.getClass(elementType));
-    classInfo.superClass = this.loadClass("java/lang/Object");
+    classInfo.superClass = this.java_lang_Object;
     classInfo.constructor = function (size) {
         var array = new Array(size);
         array.class = classInfo;
@@ -136,7 +136,7 @@ Classes.prototype.initArrayClass = function(typeName) {
 
 Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
     var classInfo = new ArrayClass(typeName);
-    classInfo.superClass = this.loadClass("java/lang/Object");
+    classInfo.superClass = this.java_lang_Object;
     constructor.prototype.class = classInfo;
     classInfo.constructor = constructor;
     return classInfo;
@@ -174,8 +174,10 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
     } while (classInfo);
 };
 
-Classes.prototype.newObject = function(className) {
-    var classInfo = this.getClass(className);
+Classes.prototype.newObject = function(classNameOrClassInfo) {
+    var classInfo = (typeof classNameOrClassInfo === "string")
+                  ? this.getClass(classNameOrClassInfo)
+                  : classNameOrClassInfo;
     this.initClass(classInfo);
     return new (classInfo.constructor)();
 }
@@ -224,6 +226,9 @@ Classes.prototype.newException = function(thread, className, message) {
 }
 
 Classes.prototype.bootstrap = function() {
+    // Preload classes we depend on not having to load.
+    this.java_lang_Object = this.initClass(this.loadClass("java/lang/Object"));
+
     this.mainThread = this.newObject("java/lang/Thread");
     VM.invokeConstructorWithString(this.mainThread, this.mainThread, "main");
 }

@@ -255,7 +255,7 @@ Native.prototype["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)L
     var data = CLASSES.loadFile(fileName);
     if (!data)
         return null;
-    var obj = CLASSES.newObject("java/lang/Object");
+    var obj = CLASSES.newObject(CLASSES.java_lang_Object);
     obj.data = Uint8Array(data);
     obj.pos = 0;
     return obj;
