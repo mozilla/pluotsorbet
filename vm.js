@@ -933,13 +933,11 @@ VM.resume = function(frame, callback) {
                 raiseException("java/lang/NullPointerException");
                 break;
             }
-            // console.log("monitor enter ", obj);
             if (!frame.monitorEnter(obj, callback)) {
                 // When we resume we will try to aquire the monitor by re-executing the opcode.
                 this.ip--;
                 return;
             }
-            // console.log("ok");
             break;
         case 0xc3: // monitorexit
             var obj = stack.pop();
@@ -947,7 +945,6 @@ VM.resume = function(frame, callback) {
                 raiseException("java/lang/NullPointerException");
                 break;
             }
-            // console.log("monitor leave", obj);
             frame.monitorLeave(obj);
             break;
         case 0xc4: // wide

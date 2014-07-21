@@ -44,8 +44,6 @@ Frame.prototype.pushFrame = function(methodInfo, consumes) {
 }
 
 Frame.prototype.popFrame = function() {
-    if (this.lockObject)
-        this.monitorLeave(this.lockObject);
     var caller = this.caller;
     caller.stack.length = this.localsBase;
     return caller;
@@ -147,12 +145,10 @@ Frame.prototype.monitorEnter = function(obj, callback) {
         return true;
     }
     if (lock.thread === this.getThread()) {
-        lock.count++;
+        ++lock.count;
         return true;
     }
-    lock.waiters.push(function () {
-        VM.resume(this, callback);
-    });
+    lock.waiters.push(VM.resume.bind(VM, this, callback));
     return false;
 }
 
@@ -162,13 +158,11 @@ Frame.prototype.monitorLeave = function(obj) {
         console.log("WARNING: thread tried to unlock a monitor it didn't own");
         return;
     }
-    if (lock.count-- > 0)
+    if (--lock.count > 0) {
         return;
+    }
     var waiters = lock.waiters;
     obj.lock = null;
-    for (var n = 0; n < waiters.length; ++n) {
-        window.setZeroTimeout(function () {
-            waiters[n]();
-        });
-    }
+    for (var n = 0; n < waiters.length; ++n)
+        window.setZeroTimeout.call(window, waiters[n]);
 }
