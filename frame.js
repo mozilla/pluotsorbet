@@ -188,10 +188,8 @@ Frame.prototype.initClass = function(classInfo) {
     }
     classInfo.constructor.prototype.class = classInfo;
     var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
-    if (clinit) {
-        // Static initializers always run on the main thread.
+    if (clinit)
         VM.invoke(this.getThread(), clinit);
-    }
     return classInfo;
 }
 
