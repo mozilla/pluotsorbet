@@ -990,7 +990,7 @@ VM.resume = function(frame, callback) {
                 break;
             }
             // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
-            //             (op !== OPCODES.invokestatic) ? obj.class.className : "static");
+            // (op !== OPCODES.invokestatic) ? obj.class.className : "static");
             if (!pushFrame(methodInfo, consumes)) {
                 frame.ip = startip;
                 return;
@@ -998,31 +998,33 @@ VM.resume = function(frame, callback) {
             break;
         case 0xb1: // return
             popFrame(0);
-            if (!frame.caller)
+            if (!frame.methodInfo)
                 return !callback || callback();
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
         case 0xb0: // areturn
             popFrame(1);
-            if (!frame.caller)
+            if (!frame.methodInfo)
                 return !callback || callback();
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
             popFrame(2);
-            if (!frame.caller)
+            if (!frame.methodInfo)
                 return !callback || callback();
             break;
         default:
             var opName = OPCODES[op];
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
-        if (cycles++ > 1000) {
-            if (frame.getThread().level <= 1) {
+        /*
+        if (frame.getThread().level <= 1) {
+            if (cycles++ > 0) {
                 window.setZeroTimeout(VM.resume.bind(VM, frame, callback));
                 return;
             }
         }
+        */
     };
 }
