@@ -888,7 +888,7 @@ VM.resume = function(frame, callback) {
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
             if (!classInfo.initialized)
-                frame.initClass(classInfo);
+                return initClass(frame.ip - 3, classInfo);
             classInfo.staticFields[fieldName] = stack.popType(signature);
             break;
         case 0xbb: // new
@@ -896,7 +896,7 @@ VM.resume = function(frame, callback) {
             var className = cp[cp[idx].name_index].bytes;
             var classInfo = CLASSES.getClass(className);
             if (!classInfo.initialized)
-                frame.initClass(classInfo);
+                return initClass(frame.ip - 3, classInfo);
             stack.push(CLASSES.newObject(classInfo));
             break;
         case 0xc0: // checkcast
@@ -966,7 +966,7 @@ VM.resume = function(frame, callback) {
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
             if (isStatic) {
                 if (!classInfo.initialized)
-                    frame.initClass(classInfo);
+                    return initClass(startip, classInfo);
             } else {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
