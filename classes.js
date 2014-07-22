@@ -189,10 +189,10 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
 Classes.prototype.bootstrap = function() {
     var frame = new Frame();
 
-    this.java_lang_Object = frame.initClass(this.loadClass("java/lang/Object"));
-    this.java_lang_String = frame.initClass(this.loadClass("java/lang/String"));
-    this.java_lang_Class = frame.initClass(this.loadClass("java/lang/Class"));
-    this.java_lang_Thread = frame.initClass(this.loadClass("java/lang/Thread"));
+    frame.initClass(this.java_lang_Object = this.loadClass("java/lang/Object"));
+    frame.initClass(this.java_lang_String = this.loadClass("java/lang/String"));
+    frame.initClass(this.java_lang_Class = this.loadClass("java/lang/Class"));
+    frame.initClass(this.java_lang_Thread = this.loadClass("java/lang/Thread"));
 
     this.mainThread = this.newObject(this.java_lang_Thread);
     frame.thread = this.mainThread;

@@ -177,20 +177,28 @@ Frame.prototype.invokeConstructorWithString = function(obj, str) {
     VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
 }
 
-Frame.prototype.initClass = function(classInfo) {
-    if (classInfo.initialized)
-        return;
-    classInfo.initialized = true;
-    if (classInfo.superClass)
-        this.initClass(classInfo.superClass);
-    classInfo.staticFields = {};
-    classInfo.constructor = function () {
+Frame.prototype.initClass = function(classInfo, callback) {
+    var frame = this;
+
+    function initializeThisClass() {
+        classInfo.staticFields = {};
+        classInfo.constructor = function () {
+        }
+        classInfo.constructor.prototype.class = classInfo;
+        var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
+        if (!clinit)
+            return !callback || callback();
+        VM.invoke(frame.getThread(), clinit, null, callback);
     }
-    classInfo.constructor.prototype.class = classInfo;
-    var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
-    if (clinit)
-        VM.invoke(this.getThread(), clinit);
-    return classInfo;
+
+    if (classInfo.initialized)
+        return !callback || callback();
+    classInfo.initialized = true;
+    if (classInfo.superClass) {
+        this.initClass(classInfo.superClass, initializeThisClass);
+        return;
+    }
+    initializeThisClass();
 }
 
 Frame.prototype.newString = function(s) {

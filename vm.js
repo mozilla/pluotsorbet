@@ -6,6 +6,7 @@
 var VM = {};
 
 VM.invoke = function(thread, methodInfo, args, callback) {
+    // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, callback);
     var caller = new Frame();
     caller.thread = thread;
     var consumes = 0;
@@ -109,6 +110,13 @@ VM.resume = function(frame, callback) {
             return false;
         }
         return true;
+    }
+
+    function initClass(ip, classInfo) {
+        frame.ip = ip;
+        frame.initClass(classInfo, function() {
+            VM.resume(frame, callback);
+        });
     }
 
     while (true) {
@@ -866,7 +874,7 @@ VM.resume = function(frame, callback) {
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
             if (!classInfo.initialized)
-                frame.initClass(classInfo);
+                return initClass(frame.ip - 3, classInfo);
             var value = classInfo.staticFields[fieldName];
             if (typeof value === "undefined") {
                 value = util.defaultValue(signature);
