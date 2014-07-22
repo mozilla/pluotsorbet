@@ -185,16 +185,3 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
     }
     return array;
 }
-
-Classes.prototype.bootstrap = function() {
-    var frame = new Frame();
-
-    frame.initClass(this.java_lang_Object = this.loadClass("java/lang/Object"));
-    frame.initClass(this.java_lang_String = this.loadClass("java/lang/String"));
-    frame.initClass(this.java_lang_Class = this.loadClass("java/lang/Class"));
-    frame.initClass(this.java_lang_Thread = this.loadClass("java/lang/Thread"));
-
-    this.mainThread = this.newObject(this.java_lang_Thread);
-    frame.thread = this.mainThread;
-    frame.invokeConstructorWithString(this.mainThread, "main");
-}

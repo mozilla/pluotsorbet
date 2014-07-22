@@ -26,8 +26,6 @@ JVM.prototype.loadJarFile = function(fileName) {
 }
 
 JVM.prototype.run = function(className) {
-    CLASSES.bootstrap();
-
     var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
         throw new Error("Could not find or load main class " + className);
@@ -37,5 +35,18 @@ JVM.prototype.run = function(className) {
         throw new Error("Could not find main method in class " + className);
     }
 
-    VM.invoke(CLASSES.mainThread, entryPoint, [null]);
+    var frame = new Frame();
+    frame.initClass(CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object"), function() {
+        frame.initClass(CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String"), function() {
+            frame.initClass(CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class"), function() {
+                frame.initClass(CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread"), function() {
+                    CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
+                    frame.thread = CLASSES.mainThread;
+                    frame.invokeConstructorWithString(CLASSES.mainThread, "main", function() {
+                        VM.invoke(CLASSES.mainThread, entryPoint, [null]);
+                    });
+                });
+            });
+        });
+    });
 }

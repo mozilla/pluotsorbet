@@ -167,14 +167,14 @@ Frame.prototype.monitorLeave = function(obj) {
         window.setZeroTimeout.call(window, waiters[n]);
 }
 
-Frame.prototype.invokeConstructor = function(obj) {
+Frame.prototype.invokeConstructor = function(obj, callback) {
     var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj]);
+    VM.invoke(this.getThread(), ctor, [obj], callback);
 }
 
-Frame.prototype.invokeConstructorWithString = function(obj, str) {
+Frame.prototype.invokeConstructorWithString = function(obj, str, callback) {
     var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
+    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)], callback);
 }
 
 Frame.prototype.initClass = function(classInfo, callback) {
