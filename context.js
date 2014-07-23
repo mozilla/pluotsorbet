@@ -7,3 +7,9 @@ function Context(thread) {
   this.thread = thread;
   this.level = 0;
 }
+
+Context.prototype.invoke = function(methodInfo, args) {
+  ++this.level;
+  VM.invoke(this, methodInfo, args);
+  --this.level;
+}
