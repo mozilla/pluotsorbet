@@ -138,18 +138,19 @@ Frame.prototype.getThread = function() {
     return null;
 }
 
-Frame.prototype.monitorEnter = function(obj, callback) {
+Frame.prototype.monitorEnter = function(obj) {
+    var promise = new Promise();
     var lock = obj.lock;
     if (!lock) {
         obj.lock = { thread: this.getThread(), count: 1, waiters: [] };
-        return true;
+        return promise.done();
     }
     if (lock.thread === this.getThread()) {
         ++lock.count;
-        return true;
+        return promise.done();
     }
     lock.waiters.push(VM.resume.bind(VM, this, callback));
-    return false;
+    return promise.done();
 }
 
 Frame.prototype.monitorLeave = function(obj) {

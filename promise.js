@@ -6,37 +6,37 @@
 function Promise() {
 }
 
-Promise.prototype.done = function() {
-  var s = this.s;
-  if (!s)
-    return;
+Promise.prototype.fulfill = function(q, args) {
+  if (!q)
+    return this;
+  var args = arguments;
   window.setZeroTimeout(function() {
-    s.forEach(function(fn) {
-      fn();
+    q.forEach(function(fn) {
+      fn.call(null, args);
     });
   });
+  return this;
+}
+
+Promise.prototype.enqueue = function(n, fn) {
+  if (!fn)
+    return;
+  var q = this[n];
+  if (!q)
+    q = this[n] = [];
+  q.push(fn);
+}
+
+Promise.prototype.done = function() {
+  return this.fulfill(this.s, arguments);
 }
 
 Promise.prototype.error = function() {
-  var f = this.f;
-  if (!f)
-    return;
-  window.setZeroTimeout(function() {
-    f.forEach(function(fn) {
-      fn();
-    });
-  });
+  return this.fulfill(this.f, arguments);
 }
 
 Promise.prototype.then = function(success, fail) {
-  if (success) {
-    if (!this.s)
-      this.s = [];
-    this.s.push(success);
-  }
-  if (fail) {
-    if (!this.f)
-      this.f = [];
-    this.f.push(fail);
-  }
+  this.enqueue("s", success);
+  this.enqueue("f", fail);
+  return this;
 }
