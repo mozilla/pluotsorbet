@@ -6,20 +6,26 @@
 function Promise() {
 }
 
-Promise.prototype.return = function() {
-  if (this.s) {
-    this.s.forEach(function (fn) {
-        fn();
+Promise.prototype.done = function() {
+  var s = this.s;
+  if (!s)
+    return;
+  window.setZeroTimeout(function() {
+    s.forEach(function(fn) {
+      fn();
     });
-  }
+  });
 }
 
-Promise.prototype.throw = function() {
-  if (this.s) {
-    this.s.forEach(function (fn) {
-        fn();
+Promise.prototype.error = function() {
+  var f = this.f;
+  if (!f)
+    return;
+  window.setZeroTimeout(function() {
+    f.forEach(function(fn) {
+      fn();
     });
-  }
+  });
 }
 
 Promise.prototype.then = function(success, fail) {
