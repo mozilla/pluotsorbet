@@ -4,12 +4,6 @@
 'use strict';
 
 function Context(thread) {
+  this.frames = [];
   this.thread = thread;
-  this.level = 0;
-}
-
-Context.prototype.invoke = function(methodInfo, args) {
-  ++this.level;
-  VM.invoke(this, methodInfo, args);
-  --this.level;
 }
