@@ -138,18 +138,20 @@ Frame.prototype.getThread = function() {
     return null;
 }
 
-Frame.prototype.monitorEnter = function(obj, callback) {
+Frame.prototype.monitorEnter = function(obj) {
     var lock = obj.lock;
     if (!lock) {
         obj.lock = { thread: this.getThread(), count: 1, waiters: [] };
-        return true;
+        return;
     }
     if (lock.thread === this.getThread()) {
         ++lock.count;
-        return true;
+        return;
     }
-    lock.waiters.push(VM.resume.bind(VM, this, callback));
-    return false;
+    var frame = this;
+    lock.waiters.push(function () {
+        VM.resume(frame);
+    });
 }
 
 Frame.prototype.monitorLeave = function(obj) {
@@ -167,38 +169,31 @@ Frame.prototype.monitorLeave = function(obj) {
         window.setZeroTimeout.call(window, waiters[n]);
 }
 
-Frame.prototype.invokeConstructor = function(obj, callback) {
+Frame.prototype.invokeConstructor = function(obj) {
     var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj], callback);
+    VM.invoke(this.getThread(), ctor, [obj]);
 }
 
-Frame.prototype.invokeConstructorWithString = function(obj, str, callback) {
+Frame.prototype.invokeConstructorWithString = function(obj, str) {
     var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)], callback);
+    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
 }
 
-Frame.prototype.initClass = function(classInfo, callback) {
+Frame.prototype.initClass = function(classInfo) {
     var frame = this;
-
-    function initializeThisClass() {
-        classInfo.staticFields = {};
-        classInfo.constructor = function () {
-        }
-        classInfo.constructor.prototype.class = classInfo;
-        var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
-        if (!clinit)
-            return !callback || callback();
-        VM.invoke(frame.getThread(), clinit, null, callback);
-    }
-
     if (classInfo.initialized)
-        return !callback || callback();
-    classInfo.initialized = true;
-    if (classInfo.superClass) {
-        this.initClass(classInfo.superClass, initializeThisClass);
         return;
+    classInfo.initialized = true;
+    if (classInfo.superClass)
+        this.initClass(classInfo.superClass);
+    classInfo.staticFields = {};
+    classInfo.constructor = function () {
     }
-    initializeThisClass();
+    classInfo.constructor.prototype.class = classInfo;
+    var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
+    if (!clinit)
+        return;
+    VM.invoke(frame.getThread(), clinit, null);
 }
 
 Frame.prototype.newString = function(s) {

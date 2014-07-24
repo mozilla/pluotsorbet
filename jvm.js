@@ -36,17 +36,12 @@ JVM.prototype.run = function(className) {
     }
 
     var frame = new Frame();
-    frame.initClass(CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object"), function() {
-        frame.initClass(CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String"), function() {
-            frame.initClass(CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class"), function() {
-                frame.initClass(CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread"), function() {
-                    CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
-                    frame.thread = CLASSES.mainThread;
-                    frame.invokeConstructorWithString(CLASSES.mainThread, "main", function() {
-                        VM.invoke(CLASSES.mainThread, entryPoint, [null]);
-                    });
-                });
-            });
-        });
-    });
+    frame.initClass(CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object"));
+    frame.initClass(CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String"));
+    frame.initClass(CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class"));
+    frame.initClass(CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread"));
+    CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
+    frame.thread = CLASSES.mainThread;
+    frame.invokeConstructorWithString(CLASSES.mainThread, "main");
+    VM.invoke(CLASSES.mainThread, entryPoint, [null]);
 }

@@ -5,12 +5,10 @@
 
 var Native = {};
 
-Native.invoke = function(caller, methodInfo, callback) {
+Native.invoke = function(caller, methodInfo) {
     if (!methodInfo.native) {
         var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
-        methodInfo.native = Native.fast[key];
-        if (!methodInfo.native)
-            return Native.slow[key](caller, callback);
+        methodInfo.native = Native[key];
     }
 
     function pushType(type, value) {
@@ -45,10 +43,7 @@ Native.invoke = function(caller, methodInfo, callback) {
     return true;
 }
 
-Native.fast = {};
-Native.slow = {};
-
-Native.fast["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
+Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     var frame = this;
     if (!src || !dst) {
         throw this.newException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
@@ -79,7 +74,7 @@ Native.fast["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II
     }
 }
 
-Native.fast["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
+Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
         return this.newString("UTF-8");
@@ -88,11 +83,11 @@ Native.fast["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String
     return null;
 }
 
-Native.fast["java/lang/System.currentTimeMillis.()J"] = function() {
+Native["java/lang/System.currentTimeMillis.()J"] = function() {
     return Long.fromNumber(Date.now());
 }
 
-Native.fast["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(src, srcOffset, dst, dstOffset, length) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n)
             dst[dstOffset++] = src[srcOffset++];
@@ -104,18 +99,18 @@ Native.fast["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = func
     }
 }
 
-Native.fast["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(obj) {
+Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(obj) {
     return obj.class.getClassObject();
 }
 
-Native.fast["java/lang/Class.getName.()Ljava/lang/String;"] = function(obj) {
+Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(obj) {
     var frame = this;
     return util.cache(obj, "getName", function () {
         return frame.newString(obj.vmClass.className.replace("/", ".", "g"));
     });
 }
 
-Native.fast["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
+Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
     var className = util.fromJavaString(name).replace(".", "/", "g");
     var classInfo = (className[0] === "[") ? null : CLASSES.getClass(className);
     if (!classInfo) {
@@ -124,7 +119,7 @@ Native.fast["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = f
     return classInfo.getClassObject();
 }
 
-Native.fast["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(classObject) {
+Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(classObject) {
     var classInfo = classObject.vmClass;
     this.initClass(classInfo);
     var obj = CLASSES.newObject(classInfo);
@@ -132,17 +127,17 @@ Native.fast["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(class
     return obj;
 };
 
-Native.fast["java/lang/Class.isInterface.()Z"] = function(classObject) {
+Native["java/lang/Class.isInterface.()Z"] = function(classObject) {
     var classInfo = classObject.vmClass;
     return ACCESS_FLAGS.isInterface(classInfo.access_flags) ? 1 : 0;
 }
 
-Native.fast["java/lang/Class.isArray.()Z"] = function(classObject) {
+Native["java/lang/Class.isArray.()Z"] = function(classObject) {
     var classInfo = classObject.vmClass;
     return classInfo.isArrayClass ? 1 : 0;
 }
 
-Native.fast["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(classObject, fromClass) {
+Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(classObject, fromClass) {
     if (!fromClass) {
         throw this.newException("java/lang/NullPointerException");
         return;
@@ -150,11 +145,11 @@ Native.fast["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(
     return fromClass.vmClass.isAssignableTo(classObject.vmClass) ? 1 : 0;
 }
 
-Native.fast["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(classObject, obj) {
+Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(classObject, obj) {
     return obj && obj.class.isAssignableTo(classObject.vmClass) ? 1 : 0;
 }
 
-Native.fast["java/lang/Float.floatToIntBits.(F)I"] = (function() {
+Native["java/lang/Float.floatToIntBits.(F)I"] = (function() {
     var fa = Float32Array(1);
     var ia = Int32Array(fa.buffer);
     return function(f) {
@@ -163,7 +158,7 @@ Native.fast["java/lang/Float.floatToIntBits.(F)I"] = (function() {
     }
 })();
 
-Native.fast["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
+Native["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
     var da = Float64Array(1);
     var ia = Int32Array(da.buffer);
     return function(d) {
@@ -172,7 +167,7 @@ Native.fast["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
     }
 })();
 
-Native.fast["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
+Native["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
     var fa = Float32Array(1);
     var ia = Int32Array(fa.buffer);
     return function(i) {
@@ -181,7 +176,7 @@ Native.fast["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
     }
 })();
 
-Native.fast["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
+Native["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
     var da = Float64Array(1);
     var ia = Int32Array(da.buffer);
     return function(l) {
@@ -191,57 +186,51 @@ Native.fast["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
     }
 })();
 
-Native.fast["java/lang/Throwable.fillInStackTrace.()V"] = (function() {
+Native["java/lang/Throwable.fillInStackTrace.()V"] = (function() {
 });
 
-Native.fast["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function() {
+Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function() {
     return null;
 });
 
-Native.fast["java/lang/Runtime.freeMemory.()J"] = function() {
+Native["java/lang/Runtime.freeMemory.()J"] = function() {
     return Long.fromInt(0x800000);
 }
 
-Native.fast["java/lang/Runtime.totalMemory.()J"] = function() {
+Native["java/lang/Runtime.totalMemory.()J"] = function() {
     return Long.fromInt(0x1000000);
 }
 
-Native.fast["java/lang/Runtime.gc.()V"] = function() {
+Native["java/lang/Runtime.gc.()V"] = function() {
 }
 
-Native.fast["java/lang/Math.floor.(D)D"] = function(d) {
+Native["java/lang/Math.floor.(D)D"] = function(d) {
     return Math.floor(d);
 }
 
-Native.fast["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {
+Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {
     return this.getThread();
 }
 
-Native.fast["java/lang/Thread.setPriority0.(II)V"] = function(thread, oldPriority, newPriority) {
+Native["java/lang/Thread.setPriority0.(II)V"] = function(thread, oldPriority, newPriority) {
 }
 
-Native.fast["java/lang/Thread.start0.()V"] = function(thread) {
+Native["java/lang/Thread.start0.()V"] = function(thread) {
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
     if (thread === CLASSES.mainThread || thread.running)
         throw this.newException("java/lang/IllegalThreadStateException");
     thread.running = true;
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
-    window.setZeroTimeout(VM.invoke.bind(VM, thread, run, [thread]));
+    VM.invoke(thread, run, [thread]);
+    // FIXME
 }
 
-Native.slow["java/lang/Thread.sleep.(J)V"] = function(caller, callback) {
-    var thread = caller.getThread();
-    var delay = caller.stack.pop2().toNumber();
-    if (thread.level > 1) {
-        console.log("WARNING: nested invocation, can't reschedule.");
-        return true;
-    }
-    window.setTimeout(VM.resume.bind(VM, caller, callback), delay);
-    return false;
+Native["java/lang/Thread.sleep.(J)V"] = function(thread, delay) {
+    // FIXME
 }
 
-Native.fast["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
+Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
     var s = "";
     return function(obj, ch) {
         if (ch === 10) {
@@ -253,7 +242,7 @@ Native.fast["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
     }
 })();
 
-Native.fast["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(name) {
+Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(name) {
     var fileName = util.fromJavaString(name);
     var data = CLASSES.loadFile(fileName);
     if (!data)
@@ -264,15 +253,15 @@ Native.fast["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/
     return obj;
 };
 
-Native.fast["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
+Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
     return handle.data.length - handle.pos;
 }
 
-Native.fast["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
+Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
     return handle.data[handle.pos++];
 }
 
-Native.fast["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(handle, b, off, len) {
+Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(handle, b, off, len) {
     var data = handle.data;
     var remaining = data.length - handle.pos;
     if (remaining > len)
@@ -283,10 +272,10 @@ Native.fast["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[B
     return len;
 }
 
-Native.fast["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(c) {
+Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(c) {
     return String.fromCharCode(c).toLowerCase().charCodeAt(0);
 }
 
-Native.fast["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(c) {
+Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(c) {
     return String.fromCharCode(c).toUpperCase().charCodeAt(0);
 }

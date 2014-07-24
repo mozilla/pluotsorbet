@@ -13,7 +13,7 @@ function load(file, cb) {
   xhr.send(null);
 }
 
-function runTest(className, cb) {
+function runTest(className) {
   var jvm = new JVM();
   // This is a hack. We should eliminate CLASSES instead.
   CLASSES.classes = {};
@@ -22,10 +22,10 @@ function runTest(className, cb) {
     load("tests/tests.jar", function (data) {
       jvm.addPath("tests/tests.jar", data);
       jvm.run(className);
-      cb && cb();
     });
   });
 }
+
 
 //runTest("TestThread");
 runTest("RunAll");

@@ -5,8 +5,8 @@
 
 var VM = {};
 
-VM.invoke = function(thread, methodInfo, args, callback) {
-    // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, callback);
+VM.invoke = function(thread, methodInfo, args) {
+    console.log("invoke", methodInfo.classInfo.className, methodInfo.name);
     var caller = new Frame();
     caller.thread = thread;
     var consumes = 0;
@@ -16,14 +16,10 @@ VM.invoke = function(thread, methodInfo, args, callback) {
         for (var n = 0; n < consumes; ++n)
             stack.push(args[n]);
     }
-    thread.level = (thread.level + 1) | 0;
-    VM.resume(caller.pushFrame(methodInfo, consumes), function () {
-        thread.level--;
-        return !callback || callback();
-    });
+    VM.resume(caller.pushFrame(methodInfo, consumes));
 }
 
-VM.resume = function(frame, callback) {
+VM.resume = function(frame) {
     var cycles = 0;
 
     var cp = frame.cp;
@@ -35,15 +31,13 @@ VM.resume = function(frame, callback) {
             lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
                          ? methodInfo.classInfo.getClassObject()
                          : stack[stack.length - consumes];
-            if (!frame.monitorEnter(lockObject, callback))
-                return false;
+            frame.monitorEnter(lockObject);
         }
         frame = frame.pushFrame(methodInfo, consumes);
         stack = frame.stack;
         cp = frame.cp;
         if (lockObject)
             frame.lockObject = lockObject;
-        return true;
     }
 
     function popFrame(consumes) {
@@ -110,13 +104,6 @@ VM.resume = function(frame, callback) {
             return false;
         }
         return true;
-    }
-
-    function initClass(ip, classInfo) {
-        frame.ip = ip;
-        frame.initClass(classInfo, function() {
-            VM.resume(frame, callback);
-        });
     }
 
     while (true) {
@@ -873,8 +860,7 @@ VM.resume = function(frame, callback) {
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
-            if (!classInfo.initialized)
-                return initClass(frame.ip - 3, classInfo);
+            frame.initClass(classInfo);
             var value = classInfo.staticFields[fieldName];
             if (typeof value === "undefined") {
                 value = util.defaultValue(signature);
@@ -887,16 +873,14 @@ VM.resume = function(frame, callback) {
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
-            if (!classInfo.initialized)
-                return initClass(frame.ip - 3, classInfo);
+            frame.initClass(classInfo);
             classInfo.staticFields[fieldName] = stack.popType(signature);
             break;
         case 0xbb: // new
             var idx = frame.read16();
             var className = cp[cp[idx].name_index].bytes;
             var classInfo = CLASSES.getClass(className);
-            if (!classInfo.initialized)
-                return initClass(frame.ip - 3, classInfo);
+            frame.initClass(classInfo);
             stack.push(CLASSES.newObject(classInfo));
             break;
         case 0xc0: // checkcast
@@ -931,11 +915,7 @@ VM.resume = function(frame, callback) {
                 raiseException("java/lang/NullPointerException");
                 break;
             }
-            if (!frame.monitorEnter(obj, callback)) {
-                // When we resume we will try to aquire the monitor by re-executing the opcode.
-                this.ip--;
-                return;
-            }
+            frame.monitorEnter(obj);
             break;
         case 0xc3: // monitorexit
             var obj = stack.pop();
@@ -965,8 +945,7 @@ VM.resume = function(frame, callback) {
             var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, isStatic);
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
             if (isStatic) {
-                if (!classInfo.initialized)
-                    return initClass(startip, classInfo);
+                frame.initClass(classInfo);
             } else {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
@@ -984,11 +963,7 @@ VM.resume = function(frame, callback) {
             }
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
                 try {
-                    if (!Native.invoke(frame, methodInfo, callback)) {
-                        // Some natives can't produce an immediate result and will schedule
-                        // an event that will re-enter via resume(frame, callback).
-                        return;
-                    }
+                    Native.invoke(frame, methodInfo);
                 } catch (e) {
                     if (!e.class) {
                         throw e;
@@ -999,40 +974,29 @@ VM.resume = function(frame, callback) {
             }
             // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
             // (op !== OPCODES.invokestatic) ? obj.class.className : "static");
-            if (!pushFrame(methodInfo, consumes)) {
-                frame.ip = startip;
-                return;
-            }
+            pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return
             popFrame(0);
             if (!frame.methodInfo)
-                return !callback || callback();
+                return;
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
         case 0xb0: // areturn
             popFrame(1);
             if (!frame.methodInfo)
-                return !callback || callback();
+                return;
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
             popFrame(2);
             if (!frame.methodInfo)
-                return !callback || callback();
+                return;
             break;
         default:
             var opName = OPCODES[op];
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
-        /*
-        if (frame.getThread().level <= 1) {
-            if (cycles++ > 0) {
-                window.setZeroTimeout(VM.resume.bind(VM, frame, callback));
-                return;
-            }
-        }
-        */
     };
 }
