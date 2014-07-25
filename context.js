@@ -123,7 +123,7 @@ Context.prototype.raiseException = function(className, message) {
         { name_index: 7, signature_index: 8 },
         { bytes: "<init>" },
         { bytes: "(Ljava/lang/String;)V" },
-      ]
+      ],
     },
     code: [
       0xbb, 0x00, 0x01, // new <idx=1>
@@ -132,6 +132,7 @@ Context.prototype.raiseException = function(className, message) {
       0xb7, 0x00, 0x05, // invokespecial <idx=5>
       0xbf              // athrow
     ],
+    exception_table: [],
   };
   this.pushFrame(syntheticMethod, 0);
   throw VM.Yield;
