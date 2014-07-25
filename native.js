@@ -231,7 +231,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
         caller.stack.push(thread);
         ctx.frames.push(caller);
         ctx.pushFrame(run, 1);
-        ctx.run(caller);
+        ctx.start(caller);
     });
 }
 

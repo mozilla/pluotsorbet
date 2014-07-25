@@ -42,15 +42,15 @@ JVM.prototype.run = function(className) {
 
     ["java/lang/Object", "java/lang/String", "java/lang/Class", "java/lang/Thread"].forEach(function(className) {
         ctx.pushClassInitFrame(CLASSES[className.replace("/", "_", "g")] = CLASSES.loadClass(className));
-        ctx.run(caller);
+        ctx.execute(caller);
     });
 
     ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
     caller.stack.push(CLASSES.mainThread);
     caller.stack.push(ctx.newString("main"));
     ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
-    ctx.run(caller);
+    ctx.execute(caller);
     caller.stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
     ctx.pushFrame(entryPoint, 1);
-    ctx.run(caller);
+    ctx.start(caller);
 }

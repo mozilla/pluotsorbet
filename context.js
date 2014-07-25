@@ -150,7 +150,7 @@ Context.prototype.newString = function(s) {
   return obj;
 }
 
-Context.prototype.run = function(stopFrame) {
+Context.prototype.execute = function(stopFrame) {
   while (this.current() !== stopFrame) {
     try {
       VM.execute(this);
@@ -159,4 +159,19 @@ Context.prototype.run = function(stopFrame) {
         throw e;
     }
   }
+}
+
+Context.prototype.start = function(stopFrame) {
+  if (this.current() === stopFrame)
+    return;
+  var ctx = this;
+  window.setZeroTimeout(function() {
+    try {
+      VM.execute(ctx);
+    } catch (e) {
+      if (e !== VM.Yield)
+        throw e;
+    }
+    ctx.start(stopFrame);
+  });
 }
