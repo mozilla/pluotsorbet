@@ -148,28 +148,28 @@ Native["java/lang/Float.floatToIntBits.(F)I"] = (function(ctx, stack) {
     }
 })();
 
-Native["java/lang/Double.doubleToLongBits.(D)J"] = (function(ctx, stack) {
+Native["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
     var da = Float64Array(1);
     var ia = Int32Array(da.buffer);
-    return function(d) {
+    return function(ctx, stack) {
         da[0] = stack.pop2();
         stack.push2(Long.fromBits(ia[0], ia[1]));
     }
 })();
 
-Native["java/lang/Float.intBitsToFloat.(I)F"] = (function(ctx, stack) {
+Native["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
     var fa = Float32Array(1);
     var ia = Int32Array(fa.buffer);
-    return function(i) {
+    return function(ctx, stack) {
         ia[0] = stack.pop();
         stack.push(fa[0]);
     }
 })();
 
-Native["java/lang/Double.longBitsToDouble.(J)D"] = (function(ctx, stack) {
+Native["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
     var da = Float64Array(1);
     var ia = Int32Array(da.buffer);
-    return function() {
+    return function(ctx, stack) {
         var l = stack.pop2();
         ia[0] = l.low_;
         ia[1] = l.high_;
