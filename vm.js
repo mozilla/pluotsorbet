@@ -103,7 +103,7 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
+        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;

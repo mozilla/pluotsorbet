@@ -185,14 +185,17 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function(c
 });
 
 Native["java/lang/Runtime.freeMemory.()J"] = function(ctx, stack) {
+    var runtime = stack.pop();
     stack.push2(Long.fromInt(0x800000));
 }
 
 Native["java/lang/Runtime.totalMemory.()J"] = function(ctx, stack) {
+    var runtime = stack.pop();
     stack.push2(Long.fromInt(0x1000000));
 }
 
 Native["java/lang/Runtime.gc.()V"] = function(ctx, stack) {
+    var runtime = stack.pop();
 }
 
 Native["java/lang/Math.floor.(D)D"] = function(ctx, stack) {
