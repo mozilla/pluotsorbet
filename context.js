@@ -126,7 +126,7 @@ Context.prototype.raiseException = function(className, message) {
       ]
     },
     code: [
-      0xbb, 0x00, 0x00, // new <idx=0>
+      0xbb, 0x00, 0x01, // new <idx=1>
       0x59,             // dup
       0x12, 0x02,       // ldc <idx=2>
       0xb7, 0x00, 0x04, // invokespecial <idx=4>
