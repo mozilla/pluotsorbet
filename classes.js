@@ -13,6 +13,9 @@ var Classes = function() {
     }
 }
 
+Classes.ClassNotFoundException = function() {
+}
+
 Classes.prototype.addPath = function(name, data) {
     if (name.substr(-4) === ".jar") {
         data = new ZipFile(data);
@@ -48,11 +51,8 @@ Classes.prototype.loadClassBytes = function(bytes) {
 Classes.prototype.loadClassFile = function(fileName) {
     console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
-    if (!bytes) {
-        var frame = new Frame();
-        frame.thread = CLASSES.mainThread;
-        throw frame.newException("java/lang/ClassNotFoundException", fileName);
-    }
+    if (!bytes)
+        throw new (Classes.ClassNotFoundException)();
     var self = this;
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)

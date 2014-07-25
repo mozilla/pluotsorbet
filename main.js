@@ -28,8 +28,8 @@ function runTest(className) {
 
 //runTest("TestRuntime");
 //runTest("TestDate");
-runTest("Andreas");
+//runTest("Andreas");
 //runTest("TestThread");
-//runTest("RunAll");
+runTest("RunAll");
 //runTest("TestArrays");
 //runTest("TestByteArrayOutputStream");
