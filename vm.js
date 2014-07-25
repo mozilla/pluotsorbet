@@ -5,22 +5,11 @@
 
 var VM = {};
 
-VM.invoke = function(thread, methodInfo, args) {
-    console.log("invoke", methodInfo.classInfo.className, methodInfo.name);
-    var caller = new Frame();
-    caller.thread = thread;
-    var consumes = 0;
-    if (args) {
-        consumes = args.length;
-        var stack = caller.stack;
-        for (var n = 0; n < consumes; ++n)
-            stack.push(args[n]);
-    }
-    VM.resume(caller.pushFrame(methodInfo, consumes));
-}
+VM.Yield = {};
+VM.Pause = {};
 
-VM.resume = function(frame) {
-    var cycles = 0;
+VM.execute = function(ctx) {
+    var frame = ctx.current();
 
     var cp = frame.cp;
     var stack = frame.stack;
@@ -31,20 +20,21 @@ VM.resume = function(frame) {
             lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
                          ? methodInfo.classInfo.getClassObject()
                          : stack[stack.length - consumes];
-            frame.monitorEnter(lockObject);
+            ctx.monitorEnter(lockObject);
         }
-        frame = frame.pushFrame(methodInfo, consumes);
+        frame = ctx.pushFrame(methodInfo, consumes);
         stack = frame.stack;
         cp = frame.cp;
         if (lockObject)
             frame.lockObject = lockObject;
+        return frame;
     }
 
     function popFrame(consumes) {
         if (frame.lockObject)
-            frame.monitorLeave(frame.lockObject);
+            ctx.monitorLeave(frame.lockObject);
         var callee = frame;
-        frame = frame.popFrame();
+        frame = ctx.popFrame();
         stack = frame.stack;
         cp = frame.cp;
         switch (consumes) {
@@ -55,6 +45,7 @@ VM.resume = function(frame) {
             stack.push(callee.stack.pop());
             break;
         }
+        return frame;
     }
 
     function throw_(ex) {
@@ -82,33 +73,37 @@ VM.resume = function(frame) {
                 frame.ip = handler_pc;
                 return;
             }
-            popFrame();
-        } while (frame.caller);
+            popFrame(0);
+        } while (frame.methodInfo);
         throw new Error(ex.class.className + " " +
                         (ex.detailMessage
                          ? util.fromJavaString(ex.detailMessage)
                          : ""));
     }
 
-    function raiseException(className, message) {
-        throw_(frame.newException(className, message));
-    }
-
     function checkArrayAccess(refArray, idx) {
         if (!refArray) {
-            raiseException("java/lang/NullPointerException");
+            ctx.raiseException("java/lang/NullPointerException");
             return false;
         }
         if (idx < 0 || idx >= refArray.length) {
-            raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
+            ctx.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
             return false;
         }
         return true;
     }
 
+    function classInitCheck(classInfo, ip) {
+        if (classInfo.initialized)
+            return;
+        frame.ip = ip;
+        ctx.pushClassInitFrame(classInfo);
+        throw VM.Yield;
+    }
+
     while (true) {
         var op = frame.read8();
-        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.length);
+        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;
@@ -169,7 +164,7 @@ VM.resume = function(frame) {
                 break;
             case TAGS.CONSTANT_String:
                 // console.log(cp[constant.string_index].bytes);
-                stack.push(frame.newString(cp[constant.string_index].bytes));
+                stack.push(ctx.newString(cp[constant.string_index].bytes));
                 break;
             default:
                 throw new Error("not support constant type");
@@ -330,7 +325,7 @@ VM.resume = function(frame) {
             if (!checkArrayAccess(refArray, idx))
                 break;
             if (!val.class.isAssignableTo(refArray.class.elementClass)) {
-                raiseException("java/lang/ArrayStoreException");
+                ctx.raiseException("java/lang/ArrayStoreException");
                 break;
             }
             refArray[idx] = val;
@@ -444,7 +439,7 @@ VM.resume = function(frame) {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-                raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push((a === util.INT_MIN && b === -1) ? a : ((a / b)|0));
@@ -453,7 +448,7 @@ VM.resume = function(frame) {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-                raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push2(a.div(b));
@@ -472,7 +467,7 @@ VM.resume = function(frame) {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-                raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push(a % b);
@@ -481,7 +476,7 @@ VM.resume = function(frame) {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-                raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push2(a.modulo(b));
@@ -788,7 +783,7 @@ VM.resume = function(frame) {
             var type = frame.read8();
             var size = stack.pop();
             if (size < 0) {
-                raiseException("java/lang/NegativeArraySizeException", size);
+                ctx.raiseException("java/lang/NegativeArraySizeException", size);
                 break;
             }
             stack.push(CLASSES.newPrimitiveArray("????ZCFDBSIJ"[type], size));
@@ -798,7 +793,7 @@ VM.resume = function(frame) {
             var className = cp[cp[idx].name_index].bytes;
             var size = stack.pop();
             if (size < 0) {
-                raiseException("java/lang/NegativeArraySizeException", size);
+                ctx.raiseException("java/lang/NegativeArraySizeException", size);
                 break;
             }
             if (className[0] !== "[")
@@ -818,7 +813,7 @@ VM.resume = function(frame) {
         case 0xbe: // arraylength
             var obj = stack.pop();
             if (!obj) {
-                raiseException("java/lang/NullPointerException");
+                ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
             stack.push(obj.length);
@@ -831,7 +826,7 @@ VM.resume = function(frame) {
             var field = CLASSES.getField(className, fieldName, signature, false);
             var obj = stack.pop();
             if (!obj) {
-                raiseException("java/lang/NullPointerException");
+                ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
             var value = obj[field.id];
@@ -849,7 +844,7 @@ VM.resume = function(frame) {
             var val = stack.popType(signature);
             var obj = stack.pop();
             if (!obj) {
-                raiseException("java/lang/NullPointerException");
+                ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
             obj[field.id] = val;
@@ -860,7 +855,7 @@ VM.resume = function(frame) {
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
-            frame.initClass(classInfo);
+            classInitCheck(classInfo, frame.ip-3);
             var value = classInfo.staticFields[fieldName];
             if (typeof value === "undefined") {
                 value = util.defaultValue(signature);
@@ -873,14 +868,14 @@ VM.resume = function(frame) {
             var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
             var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
             var classInfo = CLASSES.getClass(className);
-            frame.initClass(classInfo);
+            classInitCheck(classInfo, frame.ip-3);
             classInfo.staticFields[fieldName] = stack.popType(signature);
             break;
         case 0xbb: // new
             var idx = frame.read16();
             var className = cp[cp[idx].name_index].bytes;
             var classInfo = CLASSES.getClass(className);
-            frame.initClass(classInfo);
+            classInitCheck(classInfo, frame.ip-3);
             stack.push(CLASSES.newObject(classInfo));
             break;
         case 0xc0: // checkcast
@@ -889,7 +884,7 @@ VM.resume = function(frame) {
             var obj = stack[stack.length - 1];
             if (obj) {
                 if (!obj.class.isAssignableTo(CLASSES.getClass(className))) {
-                    raiseException("java/lang/ClassCastException");
+                    ctx.raiseException("java/lang/ClassCastException");
                     break;
                 }
             }
@@ -904,7 +899,7 @@ VM.resume = function(frame) {
         case 0xbf: // athrow
             var obj = stack.pop();
             if (!obj) {
-                raiseException("java/lang/NullPointerException");
+                ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
             throw_(obj);
@@ -912,18 +907,18 @@ VM.resume = function(frame) {
         case 0xc2: // monitorenter
             var obj = stack.pop();
             if (!obj) {
-                raiseException("java/lang/NullPointerException");
+                ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
-            frame.monitorEnter(obj);
+            ctx.monitorEnter(obj);
             break;
         case 0xc3: // monitorexit
             var obj = stack.pop();
             if (!obj) {
-                raiseException("java/lang/NullPointerException");
+                ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
-            frame.monitorLeave(obj);
+            ctx.monitorLeave(obj);
             break;
         case 0xc4: // wide
             break;
@@ -945,12 +940,12 @@ VM.resume = function(frame) {
             var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, isStatic);
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
             if (isStatic) {
-                frame.initClass(classInfo);
+                classInitCheck(classInfo, startip);
             } else {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
                 if (!obj) {
-                    raiseException("java/lang/NullPointerException");
+                    ctx.raiseException("java/lang/NullPointerException");
                     break;
                 }
                 switch (op) {
@@ -963,7 +958,7 @@ VM.resume = function(frame) {
             }
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
                 try {
-                    Native.invoke(frame, methodInfo);
+                    Native.invoke(ctx, methodInfo);
                 } catch (e) {
                     if (!e.class) {
                         throw e;
@@ -972,8 +967,8 @@ VM.resume = function(frame) {
                 }
                 break;
             }
-            // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
-            // (op !== OPCODES.invokestatic) ? obj.class.className : "static");
+            console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
+                        (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
             pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return

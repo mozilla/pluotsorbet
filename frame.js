@@ -13,6 +13,13 @@ Array.prototype.pop2 = function() {
     return this.pop();
 }
 
+Array.prototype.dup = function() {
+    var v = this.pop();
+    this.push(v);
+    this.push(v);
+    return v;
+}
+
 Array.prototype.pushType = function(signature, value) {
     if (signature === "J" || signature === "D") {
         this.push2(value);
@@ -33,20 +40,6 @@ var Frame = function(methodInfo) {
         this.ip = 0;
     }
     this.stack = [];
-}
-
-Frame.prototype.pushFrame = function(methodInfo, consumes) {
-    var callee = new Frame(methodInfo);
-    callee.locals = this.stack;
-    callee.localsBase = this.stack.length - consumes;
-    callee.caller = this;
-    return callee;
-}
-
-Frame.prototype.popFrame = function() {
-    var caller = this.caller;
-    caller.stack.length = this.localsBase;
-    return caller;
 }
 
 Frame.prototype.getLocal = function(idx) {
@@ -90,132 +83,4 @@ Frame.prototype.read16signed = function() {
 Frame.prototype.read32signed = function() {
     var x = this.read32();
     return (x > 0x7fffffff) ? (x - 0x100000000) : x;
-}
-
-Frame.prototype.backTrace = function() {
-    var stack = [];
-    var frame = this;
-    while (frame.caller) {
-        var methodInfo = frame.methodInfo;
-        var className = methodInfo.classInfo.className;
-        var methodName = methodInfo.name;
-        var signature = Signature.parse(methodInfo.signature);
-        var IN = signature.IN;
-        var args = [];
-        var lp = 0;
-        for (var n = 0; n < IN.length; ++n) {
-            var arg = frame.locals[frame.localsBase + lp];
-            ++lp;
-            switch (IN[n].type) {
-            case "long":
-            case "double":
-                ++lp;
-                break;
-            case "object":
-                if (arg === null)
-                    arg = "null";
-                else if (arg.class.className === "java/lang/String")
-                    arg = "'" + util.fromJavaString(arg) + "'";
-                else
-                    arg = "<" + arg.class.className + ">";
-            }
-            args.push(arg);
-        }
-        stack.push(methodInfo.classInfo.className + "." + methodInfo.name + "(" + args.join(",") + ")");
-        frame = frame.caller;
-    }
-    return stack.join("\n");
-}
-
-Frame.prototype.getThread = function() {
-    var frame = this;
-    do {
-        var thread = frame.thread;
-        if (thread)
-            return thread;
-        frame = frame.caller;
-    } while (frame);
-    return null;
-}
-
-Frame.prototype.monitorEnter = function(obj) {
-    var lock = obj.lock;
-    if (!lock) {
-        obj.lock = { thread: this.getThread(), count: 1, waiters: [] };
-        return;
-    }
-    if (lock.thread === this.getThread()) {
-        ++lock.count;
-        return;
-    }
-    var frame = this;
-    lock.waiters.push(function () {
-        VM.resume(frame);
-    });
-}
-
-Frame.prototype.monitorLeave = function(obj) {
-    var lock = obj.lock;
-    if (lock.thread !== this.getThread()) {
-        console.log("WARNING: thread tried to unlock a monitor it didn't own");
-        return;
-    }
-    if (--lock.count > 0) {
-        return;
-    }
-    var waiters = lock.waiters;
-    obj.lock = null;
-    for (var n = 0; n < waiters.length; ++n)
-        window.setZeroTimeout.call(window, waiters[n]);
-}
-
-Frame.prototype.invokeConstructor = function(obj) {
-    var ctor = CLASSES.getMethod(obj.class, "<init>", "()V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj]);
-}
-
-Frame.prototype.invokeConstructorWithString = function(obj, str) {
-    var ctor = CLASSES.getMethod(obj.class, "<init>", "(Ljava/lang/String;)V", false, false);
-    VM.invoke(this.getThread(), ctor, [obj, this.newString(str)]);
-}
-
-Frame.prototype.initClass = function(classInfo) {
-    var frame = this;
-    if (classInfo.initialized)
-        return;
-    classInfo.initialized = true;
-    if (classInfo.superClass)
-        this.initClass(classInfo.superClass);
-    classInfo.staticFields = {};
-    classInfo.constructor = function () {
-    }
-    classInfo.constructor.prototype.class = classInfo;
-    var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
-    if (!clinit)
-        return;
-    VM.invoke(frame.getThread(), clinit, null);
-}
-
-Frame.prototype.newString = function(s) {
-    var obj = CLASSES.newObject(CLASSES.java_lang_String);
-    var length = s.length;
-    var chars = CLASSES.newPrimitiveArray("C", length);
-    for (var n = 0; n < length; ++n)
-        chars[n] = s.charCodeAt(n);
-    obj["java/lang/String$value"] = chars;
-    obj["java/lang/String$offset"] = 0;
-    obj["java/lang/String$count"] = length;
-    return obj;
-}
-
-Frame.prototype.newException = function(className, message) {
-    if (!message)
-        message = "";
-    message = "" + message;
-    var classInfo = CLASSES.getClass(className);
-    if (!classInfo.initialized)
-        this.initClass(classInfo);
-    var ex = CLASSES.newObject(classInfo);
-    this.invokeConstructorWithString(ex, message);
-    return ex;
 }

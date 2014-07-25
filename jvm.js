@@ -35,13 +35,22 @@ JVM.prototype.run = function(className) {
         throw new Error("Could not find main method in class " + className);
     }
 
-    var frame = new Frame();
-    frame.initClass(CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object"));
-    frame.initClass(CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String"));
-    frame.initClass(CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class"));
-    frame.initClass(CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread"));
-    CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
-    frame.thread = CLASSES.mainThread;
-    frame.invokeConstructorWithString(CLASSES.mainThread, "main");
-    VM.invoke(CLASSES.mainThread, entryPoint, [null]);
+    var ctx = new Context();
+
+    var caller = new Frame();
+    ctx.frames.push(caller);
+
+    ["java/lang/Object", "java/lang/String", "java/lang/Class", "java/lang/Thread"].forEach(function(className) {
+        ctx.pushClassInitFrame(CLASSES[className.replace("/", "_", "g")] = CLASSES.loadClass(className));
+        ctx.run(caller);
+    });
+
+    ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
+    caller.stack.push(CLASSES.mainThread);
+    caller.stack.push(ctx.newString("main"));
+    ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
+    ctx.run(caller);
+    caller.stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
+    ctx.pushFrame(entryPoint, 1);
+    ctx.run(caller);
 }
