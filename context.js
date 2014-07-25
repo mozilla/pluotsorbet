@@ -114,12 +114,13 @@ Context.prototype.raiseException = function(className, message) {
   var syntheticMethod = {
     classInfo: {
       constant_pool: [
-        { name_index: 1 },
+        null,
+        { name_index: 2 },
         { bytes: className },
-        { tag: TAGS.CONSTANT_String, string_index: 3 },
+        { tag: TAGS.CONSTANT_String, string_index: 4 },
         { bytes: message },
-        { class_index: 0, name_and_type_index: 5 },
-        { name_index: 6, signature_index: 7 },
+        { class_index: 1, name_and_type_index: 6 },
+        { name_index: 7, signature_index: 8 },
         { bytes: "<init>" },
         { bytes: "(Ljava/lang/String;)V" },
       ]
@@ -128,7 +129,7 @@ Context.prototype.raiseException = function(className, message) {
       0xbb, 0x00, 0x00, // new <idx=0>
       0x59,             // dup
       0x12, 0x02,       // ldc <idx=2>
-      0xb7, 0x00, 0x02, // invokespecial <idx=4>
+      0xb7, 0x00, 0x04, // invokespecial <idx=4>
       0xbf              // athrow
     ],
   };

@@ -95,18 +95,19 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack
     var syntheticMethod = {
       classInfo: {
         constant_pool: [
-          { name_index: 1 },
+          null,
+          { name_index: 2 },
           { bytes: className },
-          { class_index: 0, name_and_type_index: 3 },
-          { name_index: 4, signature_index: 5 },
+          { class_index: 1, name_and_type_index: 4 },
+          { name_index: 5, signature_index: 6 },
           { bytes: "<init>" },
           { bytes: "()V" },
         ]
       },
       code: [
-        0xbb, 0x00, 0x00, // new <idx=0>
+        0xbb, 0x00, 0x01, // new <idx=1>
         0x59,             // dup
-        0xb7, 0x00, 0x02, // invokespecial <idx=2>
+        0xb7, 0x00, 0x03, // invokespecial <idx=3>
         0xb0              // areturn
       ],
     };
