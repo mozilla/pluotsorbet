@@ -2,7 +2,7 @@
 
 j2me.js is a small J2ME virtual machine in JavaScript.
 
-A few similar projects exist. My primary objective is to keep this very simple and small and to leverage the CDLC JDK. In particular I am trying to implement as little as possible in Java, re-using as much of the CDLC infrastructure as I can.
+A few similar projects exist. My primary objective is to keep this very simple and small and to leverage the CDLC JDK. In particular I am trying to implement as little as possible in JavaScript, re-using as much of the CDLC infrastructure and existing Java code as I can.
 
 The VM core itself is based on node-jvm, which has a very nice classfile parser but is quite buggy and incomplete.
 
