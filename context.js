@@ -29,17 +29,6 @@ Context.prototype.popFrame = function() {
   return caller;
 }
 
-Context.prototype.run = function(stopFrame) {
-  while (this.current() !== stopFrame) {
-    try {
-      VM.execute(this);
-    } catch (e) {
-      if (e !== VM.Yield)
-        throw e;
-    }
-  }
-}
-
 Context.prototype.monitorEnter = function(obj) {
   var lock = obj.lock;
   if (!lock) {
@@ -69,9 +58,20 @@ Context.prototype.monitorLeave = function(obj) {
     window.setZeroTimeout(VM.execute.bind(null, waiters[n]));
 }
 
-Context.prototype.raiseException = function(className, message) {
-  this.pushExceptionFrame(className, message);
-  throw VM.Yield;
+Context.prototype.pushClassInitFrame = function(classInfo) {
+  if (classInfo.initialized)
+    return;
+  if (classInfo.superClass)
+    this.pushClassInitFrame(classInfo.superClass);
+  classInfo.initialized = true;
+  classInfo.staticFields = {};
+  classInfo.constructor = function () {
+  }
+  classInfo.constructor.prototype.class = classInfo;
+  var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
+  if (!clinit)
+    return;
+  this.pushFrame(clinit, 0);
 }
 
 Context.prototype.backTrace = function() {
@@ -107,23 +107,7 @@ Context.prototype.backTrace = function() {
   return stack.join("\n");
 }
 
-Context.prototype.pushClassInitFrame = function(classInfo) {
-  if (classInfo.initialized)
-    return;
-  if (classInfo.superClass)
-    this.pushClassInitFrame(classInfo.superClass);
-  classInfo.initialized = true;
-  classInfo.staticFields = {};
-  classInfo.constructor = function () {
-  }
-  classInfo.constructor.prototype.class = classInfo;
-  var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
-  if (!clinit)
-    return;
-  this.pushFrame(clinit, 0);
-}
-
-Context.prototype.pushExceptionFrame = function(className, message) {
+Context.prototype.raiseException = function(className, message) {
   if (!message)
     message = "";
   message = "" + message;
@@ -149,6 +133,7 @@ Context.prototype.pushExceptionFrame = function(className, message) {
     ],
   };
   this.pushFrame(syntheticMethod, 0);
+  throw VM.Yield;
 }
 
 Context.prototype.newString = function(s) {
@@ -161,4 +146,15 @@ Context.prototype.newString = function(s) {
   obj["java/lang/String$offset"] = 0;
   obj["java/lang/String$count"] = length;
   return obj;
+}
+
+Context.prototype.run = function(stopFrame) {
+  while (this.current() !== stopFrame) {
+    try {
+      VM.execute(this);
+    } catch (e) {
+      if (e !== VM.Yield)
+        throw e;
+    }
+  }
 }
