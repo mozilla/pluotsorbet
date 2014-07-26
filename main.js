@@ -33,8 +33,8 @@ console.log = function() {
 
 //runTest("TestThread");
 //runTest("TestRuntime");
-runTest("Andreas");
+//runTest("Andreas");
 //runTest("TestDate");
-//runTest("RunAll");
+runTest("RunAll");
 //runTest("TestArrays");
 //runTest("TestByteArrayOutputStream");

@@ -72,10 +72,25 @@ Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(ctx, stack) {
     stack.push(stack.pop().class.getClassObject());
 }
 
+Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
+    var classInfo = stack.pop().vmClass;
+    var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true);
+    ctx.pushFrame(clinit, 0);
+    throw VM.Yield;
+}
+
+Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
+    var classObject = stack.pop();
+    var classInfo = classObject.vmClass;
+    classInfo.initialized = true;
+    classInfo.thread = null;
+    ctx.notifyAll(classObject);
+}
+
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {
-    var obj = stack.pop();
-    stack.push(util.cache(obj, "getName", function () {
-        return ctx.newString(obj.vmClass.className.replace("/", ".", "g"));
+    var classObject = stack.pop();
+    stack.push(util.cache(classObject, "getName", function () {
+        return ctx.newString(classObject.vmClass.className.replace("/", ".", "g"));
     }));
 }
 

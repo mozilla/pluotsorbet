@@ -44,15 +44,14 @@ JVM.prototype.run = function(className) {
     CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object");
     CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class");
     CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String");
-
-    ctx.pushClassInitFrame(CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread"));
-    ctx.execute(caller);
+    CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread");
 
     ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
     caller.stack.push(CLASSES.mainThread);
     caller.stack.push(ctx.newString("main"));
     ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
     ctx.execute(caller);
+
     caller.stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
     ctx.pushFrame(entryPoint, 1);
     ctx.start(caller);

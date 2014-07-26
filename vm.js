@@ -15,24 +15,21 @@ VM.execute = function(ctx) {
     var stack = frame.stack;
 
     function pushFrame(methodInfo, consumes) {
-        var lockObject;
-        if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
-            lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
-                         ? methodInfo.classInfo.getClassObject()
-                         : stack[stack.length - consumes];
-            ctx.monitorEnter(lockObject);
-        }
         frame = ctx.pushFrame(methodInfo, consumes);
         stack = frame.stack;
         cp = frame.cp;
-        if (lockObject)
-            frame.lockObject = lockObject;
+        if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
+            frame.lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
+                               ? methodInfo.classInfo.getClassObject()
+                               : frame.getLocal(0);
+            ctx.monitorEnter(frame.lockObject);
+        }
         return frame;
     }
 
     function popFrame(consumes) {
         if (frame.lockObject)
-            ctx.monitorLeave(frame.lockObject);
+            ctx.monitorExit(frame.lockObject);
         var callee = frame;
         frame = ctx.popFrame();
         stack = frame.stack;
@@ -98,6 +95,13 @@ VM.execute = function(ctx) {
     function classInitCheck(classInfo, ip) {
         if (classInfo.initialized)
             return;
+        if (classInfo.thread) {
+            // Nothing to do if class initialization is currently in progress on this thread.
+            if (classInfo.thread === ctx.thread)
+                return;
+            ctx.wait(classInfo.getClassObject());
+            // not reached
+        }
         frame.ip = ip;
         ctx.pushClassInitFrame(classInfo);
         throw VM.Yield;
@@ -105,7 +109,7 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
+        // console.log("PID" + ctx.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;
@@ -165,7 +169,6 @@ VM.execute = function(ctx) {
                 stack.push(constant.float);
                 break;
             case TAGS.CONSTANT_String:
-                // console.log(cp[constant.string_index].bytes);
                 stack.push(ctx.newString(cp[constant.string_index].bytes));
                 break;
             default:
@@ -920,7 +923,7 @@ VM.execute = function(ctx) {
                 ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
-            ctx.monitorLeave(obj);
+            ctx.monitorExit(obj);
             break;
         case 0xc4: // wide
             break;
@@ -942,7 +945,6 @@ VM.execute = function(ctx) {
             var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, isStatic);
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
             if (isStatic) {
-                console.log("invokestatic initialized=" + classInfo.initialized + " " + classInfo.className);
                 classInitCheck(classInfo, startip);
             } else {
                 ++consumes;

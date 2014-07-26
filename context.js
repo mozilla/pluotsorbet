@@ -7,6 +7,14 @@ function Context() {
   this.frames = [];
 }
 
+var Context = (function() {
+  var pid = 0;
+  return function() {
+    this.frames = [];
+    this.pid = pid++;
+  }
+})();
+
 Context.prototype.current = function() {
   var frames = this.frames;
   return frames[frames.length - 1];
@@ -29,46 +37,45 @@ Context.prototype.popFrame = function() {
   return caller;
 }
 
-Context.prototype.monitorEnter = function(obj) {
-  var lock = obj.lock;
-  if (!lock) {
-    obj.lock = { thread: this.thread, count: 1, waiters: [] };
-    return;
-  }
-  if (lock.thread === this.thread) {
-    ++lock.count;
-    return;
-  }
-  lock.waiters.push(this);
-  throw VM.Pause;
-}
-
-Context.prototype.monitorLeave = function(obj) {
-  var lock = obj.lock;
-  if (lock.thread !== this.thread) {
-    console.log("WARNING: thread tried to unlock a monitor it didn't own");
-    return;
-  }
-  if (--lock.count > 0) {
-    return;
-  }
-  var waiters = lock.waiters;
-  obj.lock = null;
-  for (var n = 0; n < waiters.length; ++n)
-    window.setZeroTimeout(VM.execute.bind(null, waiters[n]));
-}
-
 Context.prototype.pushClassInitFrame = function(classInfo) {
-  console.log("pushClassInitFrame", classInfo.className, classInfo.initialized);
   if (classInfo.initialized)
     return;
   if (classInfo.superClass)
     this.pushClassInitFrame(classInfo.superClass);
-  classInfo.initialized = true;
   var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
-  if (!clinit)
+  if (!clinit) {
+    classInfo.initialized = true;
     return;
-  this.pushFrame(clinit, 0);
+  }
+  // console.log("starting initialization of", classInfo.className, this.thread.toString());
+  classInfo.thread = this.thread;
+  var syntheticMethod = {
+    classInfo: {
+      constant_pool: [
+        null,
+        { class_index: 2, name_and_type_index: 4 },
+        { name_index: 3 },
+        { bytes: "java/lang/Class" },
+        { name_index: 5, signature_index: 6 },
+        { bytes: "invoke_clinit" },
+        { bytes: "()V" },
+        { class_index: 2, name_and_type_index: 8 },
+        { name_index: 9, signature_index: 10 },
+        { bytes: "init9" },
+        { bytes: "()V" },
+      ],
+    },
+    code: [
+        0x2a,             // aload_0
+        0x59,             // dup
+        0xb7, 0x00, 0x01, // invokespecial <idx=1>
+        0xb7, 0x00, 0x07, // invokespecial <idx=7>
+        0xb1,             // return
+    ],
+    exception_table: [],
+  };
+  this.current().stack.push(classInfo.getClassObject());
+  this.pushFrame(syntheticMethod, 1);
 }
 
 Context.prototype.backTrace = function() {
@@ -191,4 +198,49 @@ Context.prototype.start = function(stopFrame) {
 
 Context.prototype.resume = function() {
   this.start(this.stopFrame);
+}
+
+Context.prototype.wait = function(obj) {
+  if (!obj.waiters)
+    obj.waiters = [];
+  obj.waiters.push(this);
+  throw VM.Pause;
+}
+
+Context.prototype.notify = function(obj) {
+  if (!obj.waiters || !obj.waiters.length)
+    return;
+  var waiter = obj.waiters.pop();
+  window.setZeroTimeout(VM.execute.bind(null, waiter));
+}
+
+Context.prototype.notifyAll = function(obj) {
+  while (obj.waiters && obj.waiters.length)
+    this.notify(obj);
+}
+
+Context.prototype.monitorEnter = function(obj) {
+  var lock = obj.lock;
+  if (!lock) {
+    obj.lock = { thread: this.thread, count: 1 };
+    return;
+  }
+  if (lock.thread === this.thread) {
+    ++lock.count;
+    return;
+  }
+  this.wait(obj);
+}
+
+Context.prototype.monitorExit = function(obj) {
+  var lock = obj.lock;
+  if (lock.thread !== this.thread) {
+    console.log("WARNING: thread tried to unlock a monitor it didn't own");
+    return;
+  }
+  if (--lock.count > 0) {
+    return;
+  }
+  obj.lock = null;
+  this.notifyAll(obj);
 }
