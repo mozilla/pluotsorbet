@@ -75,10 +75,12 @@ VM.execute = function(ctx) {
             }
             popFrame(0);
         } while (frame.methodInfo);
-        throw new Error(ex.class.className + " " +
-                        (ex["java/lang/Throwable$detailMessage"]
-                         ? util.fromJavaString(ex["java/lang/Throwable$detailMessage"])
-                         : ""));
+        var e = new Error(ex.class.className + " " +
+                          (ex["java/lang/Throwable$detailMessage"]
+                           ? util.fromJavaString(ex["java/lang/Throwable$detailMessage"])
+                           : ""));
+        e.ex = ex;
+        throw e;
     }
 
     function checkArrayAccess(refArray, idx) {
@@ -103,7 +105,7 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
+        console.log(frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;
@@ -940,6 +942,7 @@ VM.execute = function(ctx) {
             var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, isStatic);
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
             if (isStatic) {
+                console.log("invokestatic initialized=" + classInfo.initialized + " " + classInfo.className);
                 classInitCheck(classInfo, startip);
             } else {
                 ++consumes;

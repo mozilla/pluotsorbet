@@ -40,10 +40,13 @@ JVM.prototype.run = function(className) {
     var caller = new Frame();
     ctx.frames.push(caller);
 
-    ["java/lang/Object", "java/lang/String", "java/lang/Class", "java/lang/Thread"].forEach(function(className) {
-        ctx.pushClassInitFrame(CLASSES[className.replace("/", "_", "g")] = CLASSES.loadClass(className));
-        ctx.execute(caller);
-    });
+    // These classes are guaranteed to not have a static initializer.
+    CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object");
+    CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class");
+    CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String");
+
+    ctx.pushClassInitFrame(CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread"));
+    ctx.execute(caller);
 
     ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
     caller.stack.push(CLASSES.mainThread);

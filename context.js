@@ -59,15 +59,12 @@ Context.prototype.monitorLeave = function(obj) {
 }
 
 Context.prototype.pushClassInitFrame = function(classInfo) {
+  console.log("pushClassInitFrame", classInfo.className, classInfo.initialized);
   if (classInfo.initialized)
     return;
   if (classInfo.superClass)
     this.pushClassInitFrame(classInfo.superClass);
   classInfo.initialized = true;
-  classInfo.staticFields = {};
-  classInfo.constructor = function () {
-  }
-  classInfo.constructor.prototype.class = classInfo;
   var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
   if (!clinit)
     return;

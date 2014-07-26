@@ -26,15 +26,14 @@ function runTest(className) {
   });
 }
 
-/*console.log = function() {
+console.log = function() {
   var s = Array.prototype.join.call(arguments, ",") +"\n";
   document.getElementById("log").textContent += s;
-  }*/
+}
 
-runTest("TestThread");
-
+//runTest("TestThread");
 //runTest("TestRuntime");
-//runTest("Andreas");
+runTest("Andreas");
 //runTest("TestDate");
 //runTest("RunAll");
 //runTest("TestArrays");
