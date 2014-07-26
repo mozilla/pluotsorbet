@@ -223,6 +223,47 @@ Native["java/lang/Math.floor.(D)D"] = function(ctx, stack) {
     stack.push2(Math.floor(stack.pop2()));
 }
 
+Native["java/lang/Math.asin.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.asin(stack.pop2()));
+}
+
+Native["java/lang/Math.acos.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.acos(stack.pop2()));
+}
+
+Native["java/lang/Math.atan.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.atan(stack.pop2()));
+}
+
+Native["java/lang/Math.atan2.(DD)D"] = function(ctx, stack) {
+    var y = stack.pop2(), x = stack.pop2();
+    stack.push2(Math.atan2(x, y));
+}
+
+Native["java/lang/Math.sin.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.sin(stack.pop2()));
+}
+
+Native["java/lang/Math.cos.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.cos(stack.pop2()));
+}
+
+Native["java/lang/Math.tan.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.tan(stack.pop2()));
+}
+
+Native["java/lang/Math.sqrt.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.sqrt(stack.pop2()));
+}
+
+Native["java/lang/Math.ceil.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.ceil(stack.pop2()));
+}
+
+Native["java/lang/Math.floor.(D)D"] = function(ctx, stack) {
+    stack.push2(Math.floor(stack.pop2()));
+}
+
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function(ctx, stack) {
     stack.push(ctx.thread);
 }

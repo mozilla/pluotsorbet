@@ -38,6 +38,18 @@ public abstract class TestHarness {
 	check(result, expected);
     }
 
+    public void pass() {
+	check(true);
+    }
+
+    public void pass(String note) {
+	check(true, note);
+    }
+
+    public void fail() {
+	check(false);
+    }
+
     public void fail(String note) {
 	check(false, note);
     }
