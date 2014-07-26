@@ -77,6 +77,8 @@ ClassInfo.prototype.implementsInterface = function(iface) {
 ClassInfo.prototype.isAssignableTo = function(toClass) {
     if (this === toClass || toClass === ClassInfo.java_lang_Object)
         return true;
+    if (ACCESS_FLAGS.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
+        return true;
     if (this.elementClass && toClass.elementClass)
         return this.elementClass.isAssignableTo(toClass.elementClass);
     return this.superClass ? this.superClass.isAssignableTo(toClass) : false;

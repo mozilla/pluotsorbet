@@ -31,10 +31,11 @@ console.log = function() {
   document.getElementById("log").textContent += s;
 }
 
+runTest("RunTests");
 //runTest("TestThread");
 //runTest("TestRuntime");
 //runTest("Andreas");
 //runTest("TestDate");
-runTest("RunAll");
+//runTest("RunAll");
 //runTest("TestArrays");
 //runTest("TestByteArrayOutputStream");

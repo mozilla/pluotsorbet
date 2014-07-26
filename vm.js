@@ -329,7 +329,7 @@ VM.execute = function(ctx) {
             var refArray = stack.pop();
             if (!checkArrayAccess(refArray, idx))
                 break;
-            if (!val.class.isAssignableTo(refArray.class.elementClass)) {
+            if (val && !val.class.isAssignableTo(refArray.class.elementClass)) {
                 ctx.raiseException("java/lang/ArrayStoreException");
                 break;
             }
