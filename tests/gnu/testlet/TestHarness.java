@@ -5,6 +5,10 @@ public abstract class TestHarness {
     public abstract void debug(String msg);
     public abstract void setNote(String note);
 
+    public void checkPoint(String note) {
+	setNote(note);
+    }
+
     public void check(boolean result, boolean expected) {
 	boolean ok = (result == expected);
 	check(ok);
