@@ -145,7 +145,7 @@ Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(ctx, stack
     stack.push((obj && obj.class.isAssignableTo(classObject.vmClass)) ? 1 : 0);
 }
 
-Native["java/lang/Float.floatToIntBits.(F)I"] = (function(ctx, stack) {
+Native["java/lang/Float.floatToIntBits.(F)I"] = (function() {
     var fa = Float32Array(1);
     var ia = Int32Array(fa.buffer);
     return function(ctx, stack) {
@@ -220,24 +220,25 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     var thread = stack.pop();
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
-    if (thread === CLASSES.mainThread || thread.running)
+    if (thread === CLASSES.mainThread || thread.Thread$running)
         ctx.raiseException("java/lang/IllegalThreadStateException");
     thread.running = true;
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
-    window.setZeroTimeout(function () {
-        var ctx = new Context();
-        ctx.thread = thread;
-        var caller = new Frame();
-        caller.stack.push(thread);
-        ctx.frames.push(caller);
-        ctx.pushFrame(run, 1);
-        ctx.start(caller);
-    });
+    // Spawn a new thread.
+    var ctx = new Context();
+    ctx.thread = thread;
+    var caller = new Frame();
+    caller.stack.push(thread);
+    ctx.frames.push(caller);
+    ctx.pushFrame(run, 1);
+    ctx.start(caller);
 }
 
-Native["java/lang/Thread.sleep.(J)V"] = function(thread, delay) {
-    var delay = stack.pop2(), thread = stack.pop();
-    // FIXME
+Native["java/lang/Thread.sleep.(J)V"] = function(ctx, stack) {
+    var delay = stack.pop2().toNumber();
+    window.setTimeout(function() {
+        ctx.resume();
+    }, delay);
 }
 
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
@@ -250,7 +251,7 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
             return;
         }
         s += String.fromCharCode(ch);
-    }
+    };
 })();
 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(ctx, stack) {

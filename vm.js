@@ -49,7 +49,7 @@ VM.execute = function(ctx) {
     }
 
     function throw_(ex) {
-        // console.log(frame.backTrace());
+        // console.log(ctx.backTrace());
         var exClass = CLASSES.getClass(ex.class.className);
         do {
             var exception_table = frame.methodInfo.exception_table;
@@ -76,8 +76,8 @@ VM.execute = function(ctx) {
             popFrame(0);
         } while (frame.methodInfo);
         throw new Error(ex.class.className + " " +
-                        (ex.detailMessage
-                         ? util.fromJavaString(ex.detailMessage)
+                        (ex["java/lang/Throwable$detailMessage"]
+                         ? util.fromJavaString(ex["java/lang/Throwable$detailMessage"])
                          : ""));
     }
 
@@ -967,8 +967,8 @@ VM.execute = function(ctx) {
                 }
                 break;
             }
-            console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
-                        (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
+            // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
+            // (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
             pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return

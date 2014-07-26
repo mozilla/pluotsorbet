@@ -78,6 +78,8 @@ Context.prototype.backTrace = function() {
   var stack = [];
   this.frames.forEach(function(frame) {
     var methodInfo = frame.methodInfo;
+    if (!methodInfo || !methodInfo.name)
+      return;
     var className = methodInfo.classInfo.className;
     var methodName = methodInfo.name;
     var signature = Signature.parse(methodInfo.signature);
@@ -102,7 +104,8 @@ Context.prototype.backTrace = function() {
       }
       args.push(arg);
     }
-    stack.push(methodInfo.classInfo.className + "." + methodInfo.name + "(" + args.join(",") + ")");
+    stack.push(methodInfo.classInfo.className + "." + methodInfo.name + ":" + frame.ip +
+               "(" + args.join(",") + ")");
   });
   return stack.join("\n");
 }
@@ -155,8 +158,14 @@ Context.prototype.execute = function(stopFrame) {
     try {
       VM.execute(this);
     } catch (e) {
-      if (e !== VM.Yield)
+      switch (e) {
+      case VM.Yield:
+        break;
+      case VM.Pause:
+        return;
+      default:
         throw e;
+      }
     }
   }
 }
@@ -165,13 +174,24 @@ Context.prototype.start = function(stopFrame) {
   if (this.current() === stopFrame)
     return;
   var ctx = this;
+  ctx.stopFrame = stopFrame;
   window.setZeroTimeout(function() {
     try {
       VM.execute(ctx);
     } catch (e) {
-      if (e !== VM.Yield)
+      switch (e) {
+      case VM.Yield:
+        break;
+      case VM.Pause:
+        return;
+      default:
         throw e;
+      }
     }
     ctx.start(stopFrame);
   });
+}
+
+Context.prototype.resume = function() {
+  this.start(this.stopFrame);
 }
