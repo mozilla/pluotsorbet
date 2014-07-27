@@ -32,6 +32,7 @@ console.log = function() {
 }
 
 runTest("RunTests");
+//runTest("gnu/testlet/vm/SystemTest");
 //runTest("TestThread");
 //runTest("TestRuntime");
 //runTest("Andreas");

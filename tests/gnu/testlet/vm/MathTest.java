@@ -21,7 +21,6 @@
 *   Belgium - EUROPE                                                      *
 **************************************************************************/
 
-
 package gnu.testlet.vm;
 
 import gnu.testlet.*;

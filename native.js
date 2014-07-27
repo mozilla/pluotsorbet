@@ -21,10 +21,32 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
     var dstClass = dst.class;
     if (!srcClass.isArrayClass || !dstClass.isArrayClass)
         ctx.raiseException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
-    if (srcClass != dstClass && (!srcClass.elementClass || !dstClass.elementClass || !srcClass.elementClass.isAssignableTo(dstClass.elementClass)))
-        ctx.raiseException("java/lang/ArrayStoreException", "Incompatible component types.");
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
         ctx.raiseException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
+    if ((!!srcClass.elementClass != !!dstClass.elementClass) ||
+        (!srcClass.elementClass && srcClass != dstClass)) {
+        ctx.raiseException("java/lang/ArrayStoreException", "Incompatible component types.");
+    }
+    if (dstClass.elementClass) {
+        if (srcClass != dstClass && !srcClass.elementClass.isAssignableTo(dstClass.elementClass)) {
+            function copy(to, from) {
+                var obj = src[from];
+                if (obj && !obj.class.isAssignableTo(dstClass.elementClass))
+                    ctx.raiseException("java/lang/ArrayStoreException", "Incompatible component types.");
+                dst[to] = obj;
+            }
+            if (dst !== src || dstOffset < srcOffset) {
+                for (var n = 0; n < length; ++n)
+                    copy(dstOffset++, srcOffset++);
+            } else {
+                dstOffset += length;
+                srcOffset += length;
+                for (var n = 0; n < length; ++n)
+                    copy(--dstOffset, --srcOffset);
+            }
+            return;
+        }
+    }
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n)
             dst[dstOffset++] = src[srcOffset++];
