@@ -9,6 +9,8 @@ Native.invoke = function(ctx, methodInfo) {
     if (!methodInfo.native) {
         var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
         methodInfo.native = Native[key];
+        if (!methodInfo.native)
+            console.log(key);
     }
     methodInfo.native.call(null, ctx, ctx.current().stack);
 }
@@ -93,6 +95,19 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(ctx, stack) {
     stack.push(stack.pop().class.getClassObject());
 }
+
+Native["java/lang/Object.hashCode.()I"] = (function() {
+    var gen = 0;
+    return function(ctx, stack) {
+        var obj = stack.pop();
+        var hashCode = obj.hashCode;
+        if (hashCode) {
+            hashCode = obj.hashCode = gen;
+            gen = (gen+1) & 0x7fffffff;
+        }
+        stack.push(hashCode);
+    };
+})();
 
 Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
     var classInfo = stack.pop().vmClass;
