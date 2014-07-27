@@ -100,6 +100,8 @@ var ArrayClass = function(className, elementClass) {
     this.elementClass = elementClass;
 }
 
+ArrayClass.prototype.methods = [];
+
 ArrayClass.prototype.isArrayClass = true;
 
 ArrayClass.prototype.implementsInterface = function(iface) {

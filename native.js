@@ -120,14 +120,12 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
     var name = stack.pop();
     var className = util.fromJavaString(name).replace(".", "/", "g");
     var classInfo = null;
-    if (className[0] !== "[") {
-        try {
-            classInfo = CLASSES.getClass(className);
-        } catch (e) {
-            if (e instanceof (Classes.ClassNotFoundException))
-                ctx.raiseException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
-            throw e;
-        }
+    try {
+        classInfo = CLASSES.getClass(className);
+    } catch (e) {
+        if (e instanceof (Classes.ClassNotFoundException))
+            ctx.raiseException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+        throw e;
     }
     stack.push(classInfo.getClassObject());
 }
