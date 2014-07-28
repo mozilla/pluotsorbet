@@ -1,8 +1,8 @@
 public class RunAll {
-    private static String[] tests = {"TestArrays", "TestOps", "TestLong", "TestException", "TestDup", "TestBoolean",
+    private static String[] tests = {"TestArrays", "TestOps", "TestLong", "TestException", "TestBoolean",
 				     "TestByteArrayInputStream", "TestByteArrayOutputStream", "TestClass",
 				     "TestDouble", "TestDataInputStream", "TestDataOutputStream", "TestDate", "TestInteger",
-				     "TestPrintStream", "TestRuntime", "TestString", "TestThrowable", "TestBytecodes",
+				     "TestPrintStream", "TestRuntime", "TestString", "TestThrowable",
 				     "TestConditions", "TestObjects"};
 
     public static void main(String[] args) {
