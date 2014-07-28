@@ -98,18 +98,19 @@ Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(ctx, stack) {
     stack.push(stack.pop().class.getClassObject());
 }
 
-Native["java/lang/Object.hashCode.()I"] = (function() {
-    var gen = 0;
-    return function(ctx, stack) {
-        var obj = stack.pop();
-        var hashCode = obj.hashCode;
-        if (hashCode) {
-            hashCode = obj.hashCode = gen;
-            gen = (gen+1) & 0x7fffffff;
-        }
-        stack.push(hashCode);
-    };
-})();
+Native["java/lang/Object.hashCode.()I"] = function(ctx, stack) {
+    var obj = stack.pop();
+    var hashCode = obj.hashCode;
+    while (!hashCode)
+        hashCode = obj.hashCode = util.id();
+    console.log(hashCode);
+    stack.push(hashCode);
+}
+
+Native["java/lang/Object.wait.(J)V"] = function(ctx, stack) {
+    var timeout = stack.pop2(), obj = stack.pop();
+    ctx.wait(obj);
+}
 
 Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
     var classInfo = stack.pop().vmClass;
@@ -319,6 +320,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     if (thread === CLASSES.mainThread || thread.Thread$running)
         ctx.raiseException("java/lang/IllegalThreadStateException");
     thread.running = true;
+    thread.pid = util.id();
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
     // Create a context for the thread and start it.
     var ctx = new Context();
@@ -345,7 +347,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
       code: [
         0x2a,             // aload_0
         0x59,             // dup
-        0xb7, 0x00, 0x01, // invokespecial <idx=1>
+        0xb6, 0x00, 0x01, // invokespecial <idx=1>
         0xb7, 0x00, 0x07, // invokespecial <idx=7>
         0xb1,             // return
       ],

@@ -68,6 +68,19 @@ var util = (function () {
     return result ? result : obj[name] = fn();
   }
 
+  var id = (function() {
+    var gen = 0;
+    return function() {
+      return ++gen;
+    }
+  })();
+
+  function tag(obj) {
+    if (!obj.tag)
+      obj.tag = id();
+    return obj.tag;
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -82,5 +95,7 @@ var util = (function () {
     double2long: double2long,
     fromJavaString: fromJavaString,
     cache: cache,
+    id: id,
+    tag: tag,
   };
 })();

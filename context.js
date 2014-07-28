@@ -7,14 +7,6 @@ function Context() {
   this.frames = [];
 }
 
-var Context = (function() {
-  var pid = 0;
-  return function() {
-    this.frames = [];
-    this.pid = pid++;
-  }
-})();
-
 Context.prototype.current = function() {
   var frames = this.frames;
   return frames[frames.length - 1];

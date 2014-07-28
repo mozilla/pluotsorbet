@@ -47,6 +47,7 @@ JVM.prototype.run = function(className) {
     CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread");
 
     ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
+    ctx.thread.pid = util.id();
     ctx.thread.running = true;
     caller.stack.push(CLASSES.mainThread);
     caller.stack.push(ctx.newString("main"));
