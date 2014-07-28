@@ -50,10 +50,6 @@ Frame.prototype.setLocal = function(idx, value) {
     this.locals[this.localsBase + idx] = value;
 }
 
-Frame.prototype.isWide = function() {
-    return this.code[this.ip - 2] === OPCODES.wide;
-}
-
 Frame.prototype.getOp = function() {
     return this.code[this.ip - 1];
 }

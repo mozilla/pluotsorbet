@@ -191,13 +191,11 @@ VM.execute = function(ctx) {
         case 0x15: // iload
         case 0x17: // fload
         case 0x19: // aload
-            var idx = frame.isWide() ? frame.read16() : frame.read8();
-            stack.push(frame.getLocal(idx));
+            stack.push(frame.getLocal(frame.read8()));
             break;
         case 0x16: // lload
         case 0x18: // dload
-            var idx = frame.isWide() ? frame.read16() : frame.read8();
-            stack.push2(frame.getLocal(idx));
+            stack.push2(frame.getLocal(frame.read8()));
             break;
         case 0x1a: // iload_0
         case 0x22: // fload_0
@@ -258,13 +256,11 @@ VM.execute = function(ctx) {
         case 0x36: // istore
         case 0x38: // fstore
         case 0x3a: // astore
-            var idx = frame.isWide() ? frame.read16() : frame.read8();
-            frame.setLocal(idx, stack.pop());
+            frame.setLocal(frame.read8(), stack.pop());
             break;
         case 0x37: // lstore
         case 0x39: // dstore
-            var idx = frame.isWide() ? frame.read16() : frame.read8();
-            frame.setLocal(idx, stack.pop2());
+            frame.setLocal(frame.read8(), stack.pop2());
             break;
         case 0x3b: // istore_0
         case 0x43: // fstore_0
@@ -399,9 +395,8 @@ VM.execute = function(ctx) {
             stack.push(b);
             break;
         case 0x84: // iinc
-            var wide = frame.isWide();
-            var idx = wide ? frame.read16() : frame.read8();
-            var val = wide ? frame.read16signed() : frame.read8signed();
+            var idx = frame.read8();
+            var val = frame.read8signed();
             frame.setLocal(idx, frame.getLocal(idx) + val);
             break;
         case 0x60: // iadd
@@ -700,8 +695,7 @@ VM.execute = function(ctx) {
             frame.ip = jmp;
             break;
         case 0xa9: // ret
-            var idx = frame.isWide() ? frame.read16() : frame.read8();
-            frame.ip = frame.getLocal(idx);
+            frame.ip = frame.getLocal(frame.read8());
             break;
         case 0x85: // i2l
             stack.push2(Long.fromInt(stack.pop()));
@@ -926,6 +920,37 @@ VM.execute = function(ctx) {
             ctx.monitorExit(obj);
             break;
         case 0xc4: // wide
+            switch (op = frame.read8()) {
+            case 0x15: // iload
+            case 0x17: // fload
+            case 0x19: // aload
+                stack.push(frame.getLocal(frame.read16()));
+                break;
+            case 0x16: // lload
+            case 0x18: // dload
+                stack.push2(frame.getLocal(frame.read16()));
+                break;
+            case 0x36: // istore
+            case 0x38: // fstore
+            case 0x3a: // astore
+                frame.setLocal(frame.read16(), stack.pop());
+                break;
+            case 0x37: // lstore
+            case 0x39: // dstore
+                frame.setLocal(frame.read16(), stack.pop2());
+                break;
+            case 0x84: // iinc
+                var idx = frame.read16();
+                var val = frame.read16signed();
+                frame.setLocal(idx, frame.getLocal(idx) + val);
+                break;
+            case 0xa9: // ret
+                frame.ip = frame.getLocal(frame.read16());
+                break;
+            default:
+                var opName = OPCODES[op];
+                throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
+            }
             break;
         case 0xb6: // invokevirtual
         case 0xb7: // invokespecial
