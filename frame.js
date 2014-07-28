@@ -50,10 +50,6 @@ Frame.prototype.setLocal = function(idx, value) {
     this.locals[this.localsBase + idx] = value;
 }
 
-Frame.prototype.getOp = function() {
-    return this.code[this.ip - 1];
-}
-
 Frame.prototype.read8 = function() {
     return this.code[this.ip++];
 };
