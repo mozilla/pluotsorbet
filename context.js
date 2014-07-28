@@ -198,11 +198,11 @@ Context.prototype.block = function(obj, queue) {
 Context.prototype.monitorEnter = function(obj) {
   var lock = obj.lock;
   if (!lock) {
-    obj.lock = { thread: this.thread, count: 1 };
+    obj.lock = { thread: this.thread, level: 1 };
     return;
   }
   if (lock.thread === this.thread) {
-    ++lock.count;
+    ++lock.level;
     return;
   }
   this.block(obj, "ready");
@@ -212,7 +212,7 @@ Context.prototype.monitorExit = function(obj) {
   var lock = obj.lock;
   if (lock.thread !== this.thread)
     this.raiseException("java/lang/IllegalMonitorStateException");
-  if (--lock.count > 0) {
+  if (--lock.level > 0) {
     return;
   }
   obj.lock = null;
@@ -224,9 +224,12 @@ Context.prototype.monitorExit = function(obj) {
 }
 
 Context.prototype.wait = function(obj, timeout) {
-  if (!obj.lock || obj.lock.thread !== this.thread || obj.lock.count !== 1)
+  var lock = obj.lock;
+  if (!lock || lock.thread !== this.thread)
     this.raiseException("java/lang/IllegalMonitorStateException");
-  this.monitorExit(obj);
+  var lockLevel = lock.level;
+  while (lock.level > 0)
+    this.monitorExit(obj);
   this.block(obj, "waiting");
 }
 
