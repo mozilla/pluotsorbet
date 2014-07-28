@@ -40,13 +40,6 @@ Context.prototype.popFrame = function() {
 Context.prototype.pushClassInitFrame = function(classInfo) {
   if (classInfo.initialized)
     return;
-  if (classInfo.superClass)
-    this.pushClassInitFrame(classInfo.superClass);
-  var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true, false);
-  if (!clinit) {
-    classInfo.initialized = true;
-    return;
-  }
   // console.log("starting initialization of", classInfo.className, this.thread.toString());
   classInfo.thread = this.thread;
   var syntheticMethod = {

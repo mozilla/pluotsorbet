@@ -114,7 +114,10 @@ Native["java/lang/Object.hashCode.()I"] = (function() {
 Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
     var classInfo = stack.pop().vmClass;
     var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true);
-    ctx.pushFrame(clinit, 0);
+    if (clinit)
+        ctx.pushFrame(clinit, 0);
+    if (classInfo.superClass)
+        ctx.pushClassInitFrame(classInfo.superClass);
     throw VM.Yield;
 }
 
