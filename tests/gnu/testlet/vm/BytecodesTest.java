@@ -1,49 +1,53 @@
-public class TestBytecodes extends Test {
-	public void main() {
+package gnu.testlet.vm;
+
+import gnu.testlet.*;
+
+public class BytecodesTest implements Testlet {
+    public void test(TestHarness th) {
 		String s = null;
-		check(s == null);
+		th.check(s == null);
 		int i = (new Integer(-1)).intValue();
-		check(i == -1);
+		th.check(i == -1);
 		i = 0;
-		check(i == 0);
+		th.check(i == 0);
 		i = 1;
-		check(i == 1);
+		th.check(i == 1);
 		i = 2;
-		check(i == 2);
+		th.check(i == 2);
 		i = 3;
-		check(i == 3);
+		th.check(i == 3);
 		i = 4;
-		check(i == 4);
+		th.check(i == 4);
 		i = 5;
-		check(i == 5);
+		th.check(i == 5);
 		long l = 0;
-		check(l == 0);
+		th.check(l == 0);
 		l = 1;
-		check(l == 1);
+		th.check(l == 1);
 		byte b = -113;
-		check(b == -113);
+		th.check(b == -113);
 		b = 113;
-		check(b == 113);
+		th.check(b == 113);
 		short q = -424;
-		check(q == -424);
+		th.check(q == -424);
 		q = 1424;
-		check(q == 1424);
+		th.check(q == 1424);
 		s = "test";
-		check(s.equals("test"));
+		th.check(s.equals("test"));
 		//16
 		l = 542434;
-		check(l == 542434);
+		th.check(l == 542434);
 		l = l + 566;
-		check(l == 543000);
+		th.check(l == 543000);
 		String s2 = s;
-		check(s2.equals(s));
-		check(s2.equals("test"));
+		th.check(s2.equals(s));
+		th.check(s2.equals("test"));
 		byte[] bb = new byte[9];
 		for (byte j = 0; j < bb.length; j++) {
 			bb[j] = j;
 		}
 		for (byte j = 0; j < bb.length; j++) {
-			check(bb[j] == j);
+			th.check(bb[j] == j);
 		}
 		String[] ss = new String[4];
 		ss[0] = "s";
@@ -51,67 +55,63 @@ public class TestBytecodes extends Test {
 			ss[j] = ss[j-1] + 's';
 		}
 		for (byte j = 0; j < ss.length; j++) {
-			check(ss[j].length() == j + 1);
-			check(ss[j].length() - 1 == ss[j].lastIndexOf('s'));
+			th.check(ss[j].length() == j + 1);
+			th.check(ss[j].length() - 1 == ss[j].lastIndexOf('s'));
 		}
 		//37
-		check(i >> 2 == 1);
-		check(i << 2 == 20);
-		check(i >> 6 == 0);
+		th.check(i >> 2 == 1);
+		th.check(i << 2 == 20);
+		th.check(i >> 6 == 0);
 		//40
 		String[] as = new String[]{"abc", "smt", "123"};
-		check(as[1].equals("smt"));
+		th.check(as[1].equals("smt"));
 		try {
-			fail(as[4]);
+		    th.fail(as[4]);
 		} catch (ArrayIndexOutOfBoundsException e) {
-			check(true);
+			th.check(true);
 		}
 		as = null;
 		try {
-			fail(as[0]);
+		    th.fail(as[0]);
 		} catch (NullPointerException e) {
-			check(true);
+			th.check(true);
 		}
 		try {
 			as[0] = "test";
-			check(false);
+			th.check(false);
 		} catch (NullPointerException e) {
-			check(true);
+			th.check(true);
 		}
 		as = new String[2];
 		as[0] = "test";
-		check(as[0].equals("test"));
+		th.check(as[0].equals("test"));
 		Object x[]=new String[3];
 		x[0] = "test";
 		try {
 			x[1] = new Integer(0);
-			check(false);
+			th.check(false);
 		} catch (ArrayStoreException e) {
-			check(true);
+			th.check(true);
 		}
 		try {
 			as[-1] = "test";
-			check(false);
+			th.check(false);
 		} catch (ArrayIndexOutOfBoundsException e) {
-			check(true);
+			th.check(true);
 		}
 		try {
 			as = new String[-1];
-			check(false);
+			th.check(false);
 		} catch (NegativeArraySizeException e) {
-			check(true);
+			th.check(true);
 		}
-		check(x.length == 3);
+		th.check(x.length == 3);
 		as = null;
 		try {
 			
-			fail(new Integer(as.length));
+		    th.fail("" + as.length);
 		} catch (NullPointerException e) {
-			check(true);
+			th.check(true);
 		}
 	}
-
-    public static void main(String[] args) {
-	(new TestBytecodes()).main();
-    }
 }
