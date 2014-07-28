@@ -320,14 +320,47 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
         ctx.raiseException("java/lang/IllegalThreadStateException");
     thread.running = true;
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
-    // Spawn a new thread.
+    // Create a context for the thread and start it.
     var ctx = new Context();
     ctx.thread = thread;
     var caller = new Frame();
-    caller.stack.push(thread);
     ctx.frames.push(caller);
-    ctx.pushFrame(run, 1);
+    caller.stack.push(thread);
+    var syntheticMethod = {
+      classInfo: {
+        constant_pool: [
+          null,
+          { class_index: 2, name_and_type_index: 4 },
+          { name_index: 3 },
+          { bytes: "java/lang/Thread" },
+          { name_index: 5, signature_index: 6 },
+          { bytes: "run" },
+          { bytes: "()V" },
+          { class_index: 2, name_and_type_index: 8 },
+          { name_index: 9, signature_index: 10 },
+          { bytes: "internalExit" },
+          { bytes: "()V" },
+        ],
+      },
+      code: [
+        0x2a,             // aload_0
+        0x59,             // dup
+        0xb7, 0x00, 0x01, // invokespecial <idx=1>
+        0xb7, 0x00, 0x07, // invokespecial <idx=7>
+        0xb1,             // return
+      ],
+      exception_table: [],
+    };
+    ctx.pushFrame(syntheticMethod, 1);
     ctx.start(caller);
+}
+
+Native["java/lang/Thread.internalExit.()V"] = function(ctx, stack) {
+    stack.pop().running = false;
+}
+
+Native["java/lang/Thread.isAlive.()Z"] = function(ctx, stack) {
+    stack.push(stack.pop().running ? 1 : 0);
 }
 
 Native["java/lang/Thread.sleep.(J)V"] = function(ctx, stack) {

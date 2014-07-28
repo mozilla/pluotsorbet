@@ -109,7 +109,7 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // console.log("PID" + ctx.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
+        // console.log(ctx.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;
@@ -983,6 +983,8 @@ VM.execute = function(ctx) {
                 case OPCODES.invokeinterface:
                     if (methodInfo.classInfo != obj.class)
                         methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, false, true);
+                    if (!methodInfo)
+                        console.log(obj.class.className, classInfo.className, methodName, signature, isStatic);
                     break;
                 }
             }
