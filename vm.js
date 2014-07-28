@@ -102,7 +102,7 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
+        console.log(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;
@@ -981,6 +981,8 @@ VM.execute = function(ctx) {
                     break;
                 }
             }
+            console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
+                        (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
                 try {
                     Native.invoke(ctx, methodInfo);
@@ -992,8 +994,6 @@ VM.execute = function(ctx) {
                 }
                 break;
             }
-            // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
-            // (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
             pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return
