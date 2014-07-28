@@ -227,7 +227,7 @@ Context.prototype.wait = function(obj, timeout) {
   this.monitorExit(obj);
   if (!obj.waiting)
     obj.waiting = [];
-  obj.waiting.push(obj);
+  obj.waiting.push(this);
   throw VM.Pause;
 }
 
@@ -235,6 +235,8 @@ Context.prototype.notify = function(obj, notifyAll) {
   if (!obj.lock || obj.lock.thread !== this.thread)
     this.raiseException("java/lang/IllegalMonitorStateException");
   while (obj.waiting && obj.waiting.length) {
+    if (!obj.ready)
+      obj.ready = [];
     obj.ready.push(obj.waiting.pop());
     if (!notifyAll)
       break;
