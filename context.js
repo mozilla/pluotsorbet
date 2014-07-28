@@ -188,10 +188,11 @@ Context.prototype.resume = function() {
   this.start(this.stopFrame);
 }
 
-Context.prototype.block = function(obj, queue) {
+Context.prototype.block = function(obj, queue, lockLevel) {
   if (!obj[queue])
     obj[queue] = [];
   obj[queue].push(this);
+  this.lockLevel = lockLevel;
   throw VM.Pause;
 }
 
@@ -205,7 +206,7 @@ Context.prototype.monitorEnter = function(obj) {
     ++lock.level;
     return;
   }
-  this.block(obj, "ready");
+  this.block(obj, "ready", 1);
 }
 
 Context.prototype.monitorExit = function(obj) {
@@ -218,7 +219,8 @@ Context.prototype.monitorExit = function(obj) {
   obj.lock = null;
   if (obj.ready && obj.ready.length) {
     var ctx = obj.ready.pop();
-    ctx.monitorEnter(obj);
+    while (ctx.lockLevel-- > 0)
+      ctx.monitorEnter(obj);
     ctx.resume();
   }
 }
@@ -230,7 +232,7 @@ Context.prototype.wait = function(obj, timeout) {
   var lockLevel = lock.level;
   while (lock.level > 0)
     this.monitorExit(obj);
-  this.block(obj, "waiting");
+  this.block(obj, "waiting", lockLevel);
 }
 
 Context.prototype.notify = function(obj, notifyAll) {
