@@ -95,13 +95,6 @@ VM.execute = function(ctx) {
     function classInitCheck(classInfo, ip) {
         if (classInfo.initialized)
             return;
-        if (classInfo.thread) {
-            // Nothing to do if class initialization is currently in progress on this thread.
-            if (classInfo.thread === ctx.thread)
-                return;
-            ctx.wait(classInfo.getClassObject());
-            // not reached
-        }
         frame.ip = ip;
         ctx.pushClassInitFrame(classInfo);
         throw VM.Yield;

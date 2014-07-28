@@ -103,7 +103,6 @@ Native["java/lang/Object.hashCode.()I"] = function(ctx, stack) {
     var hashCode = obj.hashCode;
     while (!hashCode)
         hashCode = obj.hashCode = util.id();
-    console.log(hashCode);
     stack.push(hashCode);
 }
 
@@ -113,7 +112,11 @@ Native["java/lang/Object.wait.(J)V"] = function(ctx, stack) {
 }
 
 Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
-    var classInfo = stack.pop().vmClass;
+    var classObject = stack.pop();
+    var classInfo = classObject.vmClass;
+    if (classInfo.initialized || classInfo.pending)
+        return;
+    classInfo.pending = true;
     var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true);
     if (clinit)
         ctx.pushFrame(clinit, 0);
@@ -125,9 +128,10 @@ Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
 Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
     var classObject = stack.pop();
     var classInfo = classObject.vmClass;
+    if (classInfo.initialized)
+        return;
+    classInfo.pending = false;
     classInfo.initialized = true;
-    classInfo.thread = null;
-    ctx.notifyAll(classObject);
 }
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {

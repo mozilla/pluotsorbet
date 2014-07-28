@@ -32,7 +32,6 @@ Context.prototype.popFrame = function() {
 Context.prototype.pushClassInitFrame = function(classInfo) {
   if (classInfo.initialized)
     return;
-  // console.log("starting initialization of", classInfo.className, this.thread.toString());
   classInfo.thread = this.thread;
   var syntheticMethod = {
     classInfo: {
@@ -53,8 +52,12 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     code: [
         0x2a,             // aload_0
         0x59,             // dup
+        0x59,             // dup
+        0x59,             // dup
+        0xc2,             // monitorenter
         0xb7, 0x00, 0x01, // invokespecial <idx=1>
         0xb7, 0x00, 0x07, // invokespecial <idx=7>
+        0xc3,             // monitorexit
         0xb1,             // return
     ],
     exception_table: [],
@@ -185,30 +188,6 @@ Context.prototype.resume = function() {
   this.start(this.stopFrame);
 }
 
-Context.prototype.wait = function(obj) {
-  if (!obj.waiters)
-    obj.waiters = [];
-  obj.waiters.push(this);
-  throw VM.Pause;
-}
-
-Context.prototype.notify = function(obj) {
-  if (obj.waiters && obj.waiters.length) {
-    if (!obj.ready)
-      obj.ready = [];
-    obj.ready.push(obj.waiters.pop());
-  }
-  if (!obj.ready || !obj.ready.length)
-    return;
-  var ctx = obj.ready.pop();
-  window.setZeroTimeout(VM.execute.bind(null, ctx));
-}
-
-Context.prototype.notifyAll = function(obj) {
-  while ((obj.waiters && obj.waiters.length) || (obj.ready && obj.ready.length))
-    this.notify(obj);
-}
-
 Context.prototype.monitorEnter = function(obj) {
   var lock = obj.lock;
   if (!lock) {
@@ -219,7 +198,10 @@ Context.prototype.monitorEnter = function(obj) {
     ++lock.count;
     return;
   }
-  this.wait(obj);
+  if (!obj.ready)
+    obj.ready = [];
+  obj.ready.push(this);
+  throw VM.Pause;
 }
 
 Context.prototype.monitorExit = function(obj) {
@@ -232,5 +214,29 @@ Context.prototype.monitorExit = function(obj) {
     return;
   }
   obj.lock = null;
-  this.notifyAll(obj);
+  if (obj.ready && obj.ready.length) {
+    var ctx = obj.ready.pop();
+    ctx.monitorEnter(obj);
+    ctx.resume();
+  }
+}
+
+Context.prototype.wait = function(obj, timeout) {
+  if (!obj.lock || obj.lock.thread !== this.thread || obj.lock.count !== 1)
+    this.raiseException("java/lang/IllegalMonitorStateException");
+  this.monitorExit(obj);
+  if (!obj.waiting)
+    obj.waiting = [];
+  obj.waiting.push(obj);
+  throw VM.Pause;
+}
+
+Context.prototype.notify = function(obj, notifyAll) {
+  if (!obj.lock || obj.lock.thread !== this.thread)
+    this.raiseException("java/lang/IllegalMonitorStateException");
+  while (obj.waiting && obj.waiting.length) {
+    obj.ready.push(obj.waiting.pop());
+    if (!notifyAll)
+      break;
+  }
 }
