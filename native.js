@@ -79,7 +79,9 @@ Native["java/lang/System.currentTimeMillis.()J"] = function(ctx, stack) {
     stack.push2(Long.fromNumber(Date.now()));
 }
 
-Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(ctx, stack) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
+Native["com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V"] =
+Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V"] = function(ctx, stack) {
     var length = stack.pop(), dstOffset = stack.pop(), dst = stack.pop(), srcOffset = stack.pop(), src = stack.pop();
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n)
