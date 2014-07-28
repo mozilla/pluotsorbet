@@ -63,7 +63,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     });
     var classes = classInfo.classes;
     classes.forEach(function (c, n) {
-        classes[n] = self.loadClass(util.withPath(fileName, c));
+        classes[n] = self.loadClass(c);
     });
     return classInfo;
 }

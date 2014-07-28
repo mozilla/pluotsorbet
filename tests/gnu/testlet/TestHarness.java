@@ -16,7 +16,7 @@ public abstract class TestHarness {
 	    debug("got (" + result + "), expected(" + expected + ")");
     }
 
-    public void check(int result, int expected) {
+    public void check(long result, long expected) {
 	boolean ok = (result == expected);
 	check(ok);
 	if (!ok)
@@ -33,7 +33,7 @@ public abstract class TestHarness {
 	check(result, expected);
     }
 
-    public void check(int result, int expected, String note) {
+    public void check(long result, long expected, String note) {
 	setNote(note);
 	check(result, expected);
     }

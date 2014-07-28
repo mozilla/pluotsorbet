@@ -1,18 +1,22 @@
-public class TestDup extends Test {
-    public void main() {
+package gnu.testlet.vm;
+
+import gnu.testlet.*;
+
+public class DupTest implements Testlet {
+    public void test(TestHarness th) {
 	// do it twice so we know the adding was done correctly in the first call
-	compare(dup2(), 5);
-	compare(dup2(), 6);
+	th.check(dup2(), 5);
+	th.check(dup2(), 6);
 
 	DupMore d = new DupMore();
-	compare(d.dup2_x1(), 4);
-	compare(d.dup2_x1(), 5);
+	th.check(d.dup2_x1(), 4);
+	th.check(d.dup2_x1(), 5);
 
-	compare(d.dup2_x2(), 1);
-	compare(d.dup2_x2(), 2);
+	th.check(d.dup2_x2(), 1);
+	th.check(d.dup2_x2(), 2);
 
-	compare(d.dup_x2(), 4);
-	compare(d.dup_x2(), 5);
+	th.check(d.dup_x2(), 4);
+	th.check(d.dup_x2(), 5);
     }
 
     private static long longValue = 5;
