@@ -193,14 +193,19 @@ Context.prototype.wait = function(obj) {
 }
 
 Context.prototype.notify = function(obj) {
-  if (!obj.waiters || !obj.waiters.length)
+  if (obj.waiters && obj.waiters.length) {
+    if (!obj.ready)
+      obj.ready = [];
+    obj.ready.push(obj.waiters.pop());
+  }
+  if (!obj.ready || !obj.ready.length)
     return;
-  var waiter = obj.waiters.pop();
-  window.setZeroTimeout(VM.execute.bind(null, waiter));
+  var ctx = obj.ready.pop();
+  window.setZeroTimeout(VM.execute.bind(null, ctx));
 }
 
 Context.prototype.notifyAll = function(obj) {
-  while (obj.waiters && obj.waiters.length)
+  while ((obj.waiters && obj.waiters.length) || (obj.ready && obj.ready.length))
     this.notify(obj);
 }
 
