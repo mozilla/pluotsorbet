@@ -111,6 +111,16 @@ Native["java/lang/Object.wait.(J)V"] = function(ctx, stack) {
     ctx.wait(obj);
 }
 
+Native["java/lang/Object.notify.()V"] = function(ctx, stack) {
+    var obj = stack.pop();
+    ctx.notify(obj);
+}
+
+Native["java/lang/Object.notifyAll.()V"] = function(ctx, stack) {
+    var obj = stack.pop();
+    ctx.notifyAll(obj);
+}
+
 Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
     var classObject = stack.pop();
     var classInfo = classObject.vmClass;
