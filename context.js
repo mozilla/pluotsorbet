@@ -188,6 +188,13 @@ Context.prototype.resume = function() {
   this.start(this.stopFrame);
 }
 
+Context.prototype.block = function(obj, queue) {
+  if (!obj[queue])
+    obj[queue] = [];
+  obj[queue].push(this);
+  throw VM.Pause;
+}
+
 Context.prototype.monitorEnter = function(obj) {
   var lock = obj.lock;
   if (!lock) {
@@ -198,10 +205,7 @@ Context.prototype.monitorEnter = function(obj) {
     ++lock.count;
     return;
   }
-  if (!obj.ready)
-    obj.ready = [];
-  obj.ready.push(this);
-  throw VM.Pause;
+  this.block(obj, "ready");
 }
 
 Context.prototype.monitorExit = function(obj) {
@@ -223,10 +227,7 @@ Context.prototype.wait = function(obj, timeout) {
   if (!obj.lock || obj.lock.thread !== this.thread || obj.lock.count !== 1)
     this.raiseException("java/lang/IllegalMonitorStateException");
   this.monitorExit(obj);
-  if (!obj.waiting)
-    obj.waiting = [];
-  obj.waiting.push(this);
-  throw VM.Pause;
+  this.block(obj, "waiting");
 }
 
 Context.prototype.notify = function(obj, notifyAll) {
