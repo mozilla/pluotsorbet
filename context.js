@@ -206,10 +206,8 @@ Context.prototype.monitorEnter = function(obj) {
 
 Context.prototype.monitorExit = function(obj) {
   var lock = obj.lock;
-  if (lock.thread !== this.thread) {
-    console.log("WARNING: thread tried to unlock a monitor it didn't own");
-    return;
-  }
+  if (lock.thread !== this.thread)
+    this.raiseException("java/lang/IllegalMonitorStateException");
   if (--lock.count > 0) {
     return;
   }
