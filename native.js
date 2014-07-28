@@ -384,6 +384,11 @@ Native["java/lang/Thread.sleep.(J)V"] = function(ctx, stack) {
     window.setTimeout(function() {
         ctx.resume();
     }, delay);
+    throw VM.Pause;
+}
+
+Native["java/lang/Thread.yield.()V"] = function(ctx, stack) {
+    throw VM.Yield;
 }
 
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
