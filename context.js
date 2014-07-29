@@ -37,13 +37,13 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     classInfo: {
       constant_pool: [
         null,
-        { class_index: 2, name_and_type_index: 4 },
-        { name_index: 3 },
+        { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
+        { tag: TAGS.CONSTANT_Class, name_index: 3 },
         { bytes: "java/lang/Class" },
         { name_index: 5, signature_index: 6 },
         { bytes: "invoke_clinit" },
         { bytes: "()V" },
-        { class_index: 2, name_and_type_index: 8 },
+        { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 8 },
         { name_index: 9, signature_index: 10 },
         { bytes: "init9" },
         { bytes: "()V" },
@@ -110,11 +110,11 @@ Context.prototype.raiseException = function(className, message) {
     classInfo: {
       constant_pool: [
         null,
-        { name_index: 2 },
+        { tag: TAGS.CONSTANT_Class, name_index: 2 },
         { bytes: className },
         { tag: TAGS.CONSTANT_String, string_index: 4 },
         { bytes: message },
-        { class_index: 1, name_and_type_index: 6 },
+        { tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 6 },
         { name_index: 7, signature_index: 8 },
         { bytes: "<init>" },
         { bytes: "(Ljava/lang/String;)V" },

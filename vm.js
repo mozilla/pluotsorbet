@@ -56,8 +56,8 @@ VM.execute = function(ctx) {
                     if (exception_table[i].catch_type === 0) {
                         handler_pc = exception_table[i].handler_pc;
                     } else {
-                        var name = cp[cp[exception_table[i].catch_type].name_index].bytes;
-                        if (ex.class.isAssignableTo(CLASSES.getClass(name))) {
+                        var classInfo = resolve(OPCODES.athrow, exception_table[i].catch_type);
+                        if (ex.class.isAssignableTo(classInfo)) {
                             handler_pc = exception_table[i].handler_pc;
                             break;
                         }
@@ -120,11 +120,21 @@ VM.execute = function(ctx) {
         case TAGS.CONSTANT_Double:
             constant = constant.double;
             break;
+        case TAGS.CONSTANT_Class:
+            constant = CLASSES.getClass(cp[constant.name_index].bytes);
+            break;
         case TAGS.CONSTANT_Fieldref:
-            var className = cp[cp[constant.class_index].name_index].bytes;
+            var classInfo = resolve(op, constant.class_index);
             var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getField(className, fieldName, signature, (op === 0xb2 || op == 0xb3));
+            constant = CLASSES.getField(classInfo.className, fieldName, signature, (op === 0xb2 || op == 0xb3));
+            break;
+        case TAGS.CONSTANT_Methodref:
+        case TAGS.CONSTANT_InterfaceMethodref:
+            var classInfo = resolve(op, constant.class_index);
+            var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
+            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+            constant = CLASSES.getMethod(classInfo, methodName, signature, op === 0xb8);
             break;
         default:
             throw new Error("not support constant type");
@@ -799,12 +809,15 @@ VM.execute = function(ctx) {
             break;
         case 0xbd: // anewarray
             var idx = frame.read16();
-            var className = cp[cp[idx].name_index].bytes;
+            var classInfo = cp[idx];
+            if (classInfo.tag)
+                classInfo = resolve(op, idx);
             var size = stack.pop();
             if (size < 0) {
                 ctx.raiseException("java/lang/NegativeArraySizeException", size);
                 break;
             }
+            var className = classInfo.className;
             if (className[0] !== "[")
                 className = "L" + className + ";";
             className = "[" + className;
@@ -812,12 +825,14 @@ VM.execute = function(ctx) {
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();
-            var typeName = cp[cp[idx].name_index].bytes;
+            var classInfo = cp[idx];
+            if (classInfo.tag)
+                classInfo = resolve(op, idx);
             var dimensions = frame.read8();
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
                 lengths[i] = stack.pop();
-            stack.push(CLASSES.newMultiArray(typeName, lengths));
+            stack.push(CLASSES.newMultiArray(classInfo.className, lengths));
             break;
         case 0xbe: // arraylength
             var obj = stack.pop();
@@ -880,17 +895,21 @@ VM.execute = function(ctx) {
             break;
         case 0xbb: // new
             var idx = frame.read16();
-            var className = cp[cp[idx].name_index].bytes;
-            var classInfo = CLASSES.getClass(className);
-            classInitCheck(classInfo, frame.ip-3);
+            var classInfo = cp[idx];
+            if (classInfo.tag) {
+                classInfo = resolve(op, idx);
+                classInitCheck(classInfo, frame.ip-3);
+            }
             stack.push(CLASSES.newObject(classInfo));
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();
-            var className = cp[cp[idx].name_index].bytes;
+            var classInfo = cp[idx];
+            if (classInfo.tag)
+                classInfo = resolve(op, idx);
             var obj = stack[stack.length - 1];
             if (obj) {
-                if (!obj.class.isAssignableTo(CLASSES.getClass(className))) {
+                if (!obj.class.isAssignableTo(classInfo)) {
                     ctx.raiseException("java/lang/ClassCastException");
                     break;
                 }
@@ -898,9 +917,11 @@ VM.execute = function(ctx) {
             break;
         case 0xc1: // instanceof
             var idx = frame.read16();
-            var className = cp[cp[idx].name_index].bytes;
+            var classInfo = cp[idx];
+            if (classInfo.tag)
+                classInfo = resolve(op, idx);
             var obj = stack.pop();
-            var result = !obj ? false : obj.class.isAssignableTo(CLASSES.getClass(className));
+            var result = !obj ? false : obj.class.isAssignableTo(classInfo);
             stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow
@@ -971,15 +992,14 @@ VM.execute = function(ctx) {
                 var zero = frame.read8();
             }
             var isStatic = (op === 0xb8);
-            var className = cp[cp[cp[idx].class_index].name_index].bytes;
-            var methodName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var classInfo = CLASSES.getClass(className);
-            var methodInfo = CLASSES.getMethod(classInfo, methodName, signature, isStatic);
+            var methodInfo = cp[idx];
+            if (methodInfo.tag) {
+                methodInfo = resolve(op, idx);
+                if (isStatic)
+                    classInitCheck(methodInfo.classInfo, startip);
+            }
             var consumes = Signature.parse(methodInfo.signature).IN.slots;
-            if (isStatic) {
-                classInitCheck(classInfo, startip);
-            } else {
+            if (!isStatic) {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
                 if (!obj) {

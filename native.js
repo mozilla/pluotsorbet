@@ -172,9 +172,9 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack
       classInfo: {
         constant_pool: [
           null,
-          { name_index: 2 },
+          { tag: TAGS.CONSTANT_Class, name_index: 2 },
           { bytes: className },
-          { class_index: 1, name_and_type_index: 4 },
+          { tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 4 },
           { name_index: 5, signature_index: 6 },
           { bytes: "<init>" },
           { bytes: "()V" },
@@ -346,13 +346,13 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
       classInfo: {
         constant_pool: [
           null,
-          { class_index: 2, name_and_type_index: 4 },
-          { name_index: 3 },
+          { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
+          { tag: TAGS.CONSTANT_Class, name_index: 3 },
           { bytes: "java/lang/Thread" },
-          { name_index: 5, signature_index: 6 },
+          { tag: TAGS.CONSTANT_Methodref, name_index: 5, signature_index: 6 },
           { bytes: "run" },
           { bytes: "()V" },
-          { class_index: 2, name_and_type_index: 8 },
+          { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 8 },
           { name_index: 9, signature_index: 10 },
           { bytes: "internalExit" },
           { bytes: "()V" },
