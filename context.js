@@ -193,14 +193,23 @@ Context.prototype.block = function(obj, queue, lockLevel, timeout) {
     obj[queue] = [];
   obj[queue].push(this);
   this.lockLevel = lockLevel;
-  /*
   if (timeout) {
+    var self = this;
     this.lockTimeout = window.setTimeout(function () {
+      self.lockTimeout = null;
+      // If the timeout hits, remove us from the queue and resume.
+      obj[queue].forEach(function(ctx, n) {
+        if (ctx === self) {
+          obj[queue][n] = null;
+          while (ctx.lockLevel-- > 0)
+            ctx.monitorEnter(obj);
+          ctx.resume();
+        }
+      });
     }, timeout);
   } else {
     this.lockTimeout = null;
   }
-  */
   throw VM.Pause;
 }
 
@@ -209,6 +218,8 @@ Context.prototype.unblock = function(obj, queue, notifyAll, callback) {
     var ctx = obj[queue].pop();
     if (!ctx)
       continue;
+    if (ctx.lockTimeout !== null)
+      window.clearTimeout(ctx.lockTimeout);
     callback(ctx);
     if (!notifyAll)
       break;
