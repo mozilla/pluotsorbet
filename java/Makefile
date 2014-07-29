@@ -1,4 +1,4 @@
-SRCS=$(shell find cldc1.1.1 -name *.java) $(shell find vm -name *.java) $(shell find midp/i18n -name *.java)
+SRCS=$(shell find cldc1.1.1 -name *.java) $(shell find vm -name *.java) $(shell find midp/i18n -name *.java) $(shell find midp/security -name *.java)
 
 classes.jar: $(SRCS)
 	rm -rf build
