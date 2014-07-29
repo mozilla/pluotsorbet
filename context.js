@@ -188,16 +188,6 @@ Context.prototype.resume = function() {
   this.start(this.stopFrame);
 }
 
-Context.prototype.ready = function(obj) {
-  if (this.lockTimeout !== null) {
-    window.clearTimeout(this.lockTimeout);
-    this.lockTimeout = null;
-  }
-  if (!obj.ready)
-    obj.ready = [];
-  obj.ready.push(this);
-}
-
 Context.prototype.block = function(obj, queue, lockLevel) {
   if (!obj[queue])
     obj[queue] = [];
@@ -218,8 +208,14 @@ Context.prototype.unblock = function(obj, queue, notifyAll, callback) {
 }
 
 Context.prototype.wakeup = function(obj) {
+  if (this.lockTimeout !== null) {
+    window.clearTimeout(this.lockTimeout);
+    this.lockTimeout = null;
+  }
   if (obj.lock) {
-    this.ready(obj);
+    if (!obj.ready)
+      obj.ready = [];
+    obj.ready.push(this);
   } else {
     while (this.lockLevel-- > 0)
       this.monitorEnter(obj);
@@ -282,6 +278,6 @@ Context.prototype.notify = function(obj, notifyAll) {
   if (!obj.lock || obj.lock.thread !== this.thread)
     this.raiseException("java/lang/IllegalMonitorStateException");
   this.unblock(obj, "waiting", notifyAll, function(ctx) {
-    ctx.ready(obj);
+    ctx.wakeup(obj);
   });
 }
