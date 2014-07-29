@@ -100,7 +100,7 @@ VM.execute = function(ctx) {
         throw VM.Yield;
     }
 
-    function resolve(idx) {
+    function resolve(op, idx) {
         var constant = cp[idx];
         switch(constant.tag) {
         case TAGS.CONSTANT_Integer:
@@ -186,14 +186,14 @@ VM.execute = function(ctx) {
             var idx = (op === 0x12) ? frame.read8() : frame.read16();
             var constant = cp[idx];
             if (constant.tag)
-                constant = resolve(idx);
+                constant = resolve(op, idx);
             stack.push(constant);
             break;
         case 0x14: // ldc2_w
             var idx = frame.read16();
             var constant = cp[idx];
             if (constant.tag)
-                constant = resolve(idx);
+                constant = resolve(op, idx);
             stack.push2(constant);
             break;
         case 0x15: // iload
@@ -829,7 +829,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var field = cp[idx];
             if (field.tag)
-                field = resolve(idx);
+                field = resolve(op, idx);
             var obj = stack.pop();
             if (!obj) {
                 ctx.raiseException("java/lang/NullPointerException");
@@ -845,7 +845,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var field = cp[idx];
             if (field.tag)
-                field = resolve(idx);
+                field = resolve(op, idx);
             var val = stack.popType(field.signature);
             var obj = stack.pop();
             if (!obj) {
