@@ -1,4 +1,8 @@
-public class TestObjects extends Test {
+package gnu.testlet.vm;
+
+import gnu.testlet.*;
+
+public class ObjectsTest implements Testlet {
 	
 	class A {
 		private int a;
@@ -32,19 +36,15 @@ public class TestObjects extends Test {
 		}
 	}
 	
-	public void main() {
+	public void test(TestHarness th) {
 		B a = new B();
 		a.put(5);
-		check(a.getb() == 5);
+		th.check(a.getb() == 5);
 		a.puts(6);
 		a.b = 7;
-		check(a.get() == 5);
-		check(a.gets() == 6);
-		check(a.getb() == 6);
-		check(a.b == 7);
+		th.check(a.get() == 5);
+		th.check(a.gets() == 6);
+		th.check(a.getb() == 6);
+		th.check(a.b == 7);
 	}
-
-    public static void main(String[] args) {
-	(new TestObjects()).main();
-    }
 }
