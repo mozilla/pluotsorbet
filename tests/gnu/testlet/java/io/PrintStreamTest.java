@@ -1,6 +1,10 @@
+package gnu.testlet.java.io;
+
 import java.io.*;
-public class TestPrintStream extends Test {
-	public void main() {
+import gnu.testlet.*;
+
+public class PrintStreamTest implements Testlet {
+	public void test(TestHarness th) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		PrintStream s = new PrintStream(out);
 		s.print(true);
@@ -28,12 +32,12 @@ public class TestPrintStream extends Test {
 			s.write(bb, 1, 1);
 			s.write(99);
 		} catch(IOException e) {
-			check(false);
+			th.check(false);
 		}
-		check(!s.checkError());
+		th.check(!s.checkError());
 		s.flush();
 		s.close();
 		String test = "truefalseśćx冷-3.78-8430948308430948307ściółka\ntrue\ny\nćx冷\n7.5\n-999\n-894384038080312\n7\ntest\nxA0Ac";
-		compare(test, out.toString());
+		th.check(test, out.toString());
 	}
 }
