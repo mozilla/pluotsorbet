@@ -23,6 +23,13 @@ public abstract class TestHarness {
 	    debug("got (" + result + "), expected(" + expected + ")");
     }
 
+    public void check(Object result, Object expected) {
+	boolean ok = (result.toString().equals(expected.toString()));
+	check(ok);
+	if (!ok)
+	    debug("got (" + result + "), expected(" + expected + ")");
+    }
+
     public void check(double result, double expected) {
 	boolean ok = (result == expected);
 	check(ok);
