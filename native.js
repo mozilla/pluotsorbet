@@ -108,7 +108,7 @@ Native["java/lang/Object.hashCode.()I"] = function(ctx, stack) {
 
 Native["java/lang/Object.wait.(J)V"] = function(ctx, stack) {
     var timeout = stack.pop2(), obj = stack.pop();
-    ctx.wait(obj);
+    ctx.wait(obj, timeout.toNumber());
 }
 
 Native["java/lang/Object.notify.()V"] = function(ctx, stack) {
