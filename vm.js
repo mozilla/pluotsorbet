@@ -102,6 +102,8 @@ VM.execute = function(ctx) {
 
     function resolve(op, idx) {
         var constant = cp[idx];
+        if (!constant.tag)
+            return constant;
         switch(constant.tag) {
         case TAGS.CONSTANT_Integer:
             constant = constant.integer;
