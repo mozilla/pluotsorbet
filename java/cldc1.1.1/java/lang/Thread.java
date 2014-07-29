@@ -346,8 +346,6 @@ class Thread implements Runnable {
      *             current thread is cleared when this exception is thrown.
      */
     public final synchronized void join() throws InterruptedException {
-	if (Thread.currentThread() == this || !isAlive())
-	    return;
         while (isAlive()) {
             wait(1000);
         }
