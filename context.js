@@ -188,6 +188,16 @@ Context.prototype.resume = function() {
   this.start(this.stopFrame);
 }
 
+Context.prototype.ready = function(obj) {
+  if (this.lockTimeout !== null) {
+    window.clearTimeout(this.lockTimeout);
+    this.lockTimeout = null;
+  }
+  if (!obj.ready)
+    obj.ready = [];
+  obj.ready.push(this);
+}
+
 Context.prototype.block = function(obj, queue, lockLevel) {
   if (!obj[queue])
     obj[queue] = [];
@@ -207,14 +217,14 @@ Context.prototype.unblock = function(obj, queue, notifyAll, callback) {
   }
 }
 
-Context.prototype.ready = function(obj) {
-  if (this.lockTimeout !== null) {
-    window.clearTimeout(this.lockTimeout);
-    this.lockTimeout = null;
+Context.prototype.wakeup = function(obj) {
+  if (obj.lock) {
+    this.ready(obj);
+  } else {
+    while (this.lockLevel-- > 0)
+      this.monitorEnter(obj);
+    this.resume();
   }
-  if (!obj.ready)
-    obj.ready = [];
-  obj.ready.push(this);
 }
 
 Context.prototype.monitorEnter = function(obj) {
@@ -239,9 +249,7 @@ Context.prototype.monitorExit = function(obj) {
   }
   obj.lock = null;
   this.unblock(obj, "ready", false, function(ctx) {
-    while (ctx.lockLevel-- > 0)
-      ctx.monitorEnter(obj);
-    ctx.resume();
+    ctx.wakeup(obj);
   });
 }
 
@@ -260,13 +268,7 @@ Context.prototype.wait = function(obj, timeout) {
       obj.waiting.forEach(function(ctx, n) {
         if (ctx === self) {
           obj.waiting[n] = null;
-          if (obj.lock) {
-            ctx.ready(obj);
-          } else {
-            while (ctx.lockLevel-- > 0)
-              ctx.monitorEnter(obj);
-            ctx.resume();
-          }
+          ctx.wakeup(obj);
         }
       });
     }, timeout);
