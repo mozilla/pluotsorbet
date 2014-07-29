@@ -333,7 +333,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     // on already running threads.
     if (thread === CLASSES.mainThread || thread.Thread$running)
         ctx.raiseException("java/lang/IllegalThreadStateException");
-    thread.running = true;
+    thread.alive = true;
     thread.pid = util.id();
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
     // Create a context for the thread and start it.
@@ -372,11 +372,11 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
 }
 
 Native["java/lang/Thread.internalExit.()V"] = function(ctx, stack) {
-    stack.pop().running = false;
+    stack.pop().alive = false;
 }
 
 Native["java/lang/Thread.isAlive.()Z"] = function(ctx, stack) {
-    stack.push(stack.pop().running ? 1 : 0);
+    stack.push(stack.pop().alive ? 1 : 0);
 }
 
 Native["java/lang/Thread.sleep.(J)V"] = function(ctx, stack) {
