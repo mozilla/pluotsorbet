@@ -19,6 +19,7 @@ tests.jar: $(SRCS) Testlets.java
 	cd build && jar cvf ../tests.jar *
 	jar uvf tests.jar gnu/testlet/vm/test.png
 	rm -rf build
+	rm -f Testlets.java
 
 clean:
 	rm -f `find . -name "*.jar" -or -name "*~"`

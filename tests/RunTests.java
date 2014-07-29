@@ -68,7 +68,8 @@ public class RunTests {
 	    }
 	    Testlet t = (Testlet) obj;
 	    t.test(harness);
-	    harness.report();
+	    if (harness.failed() > 0)
+		harness.report();
 	    pass += harness.passed();
 	    fail += harness.failed();
 	}
