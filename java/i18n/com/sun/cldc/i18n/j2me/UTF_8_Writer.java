@@ -63,8 +63,8 @@ public class UTF_8_Writer extends com.sun.cldc.i18n.StreamWriter {
             inputChar = 0xffff & cbuf[off + count];
             if (0 != pendingSurrogate) {
                 if (0xdc00<=inputChar && inputChar<=0xdfff) {
-		    //000u uuuu xxxx xxxx xxxx xxxx
-		    //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
+                //000u uuuu xxxx xxxx xxxx xxxx
+                //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
                     final int highHalf = (pendingSurrogate & 0x03ff) + 0x0040;
                     final int lowHalf = inputChar & 0x03ff;
                     inputChar = (highHalf << 10) | lowHalf;
@@ -98,7 +98,7 @@ public class UTF_8_Writer extends com.sun.cldc.i18n.StreamWriter {
             } else {
                 /* 21 bits: 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
                  * a aabb  bbbb cccc  ccdd dddd
-		 */
+                */
                 outputByte[0] = (byte)(0xf0 | ((inputChar >> 18) & 0x07));
                 outputByte[1] = (byte)(0x80 | ((inputChar >> 12) & 0x3f));
                 outputByte[2] = (byte)(0x80 | ((inputChar >> 6) & 0x3f));
@@ -126,11 +126,11 @@ public class UTF_8_Writer extends com.sun.cldc.i18n.StreamWriter {
         while (offset < length) {
             inputChar = array[offset];
             if (inputChar < 0x80) {
-		outputSize++;
+            outputSize++;
             } else if (inputChar < 0x800) {
-		outputSize += 2;
+            outputSize += 2;
             } else {
-		outputSize += 3;
+            outputSize += 3;
             }
             offset++;
         }
@@ -146,7 +146,7 @@ public class UTF_8_Writer extends com.sun.cldc.i18n.StreamWriter {
      * @throws UnsupportedEncodingException
      */
     public Writer open(OutputStream outputStream, String encoding)
-	throws UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         pendingSurrogate = 0;
         return super.open(outputStream,encoding);
     }
@@ -172,3 +172,6 @@ public class UTF_8_Writer extends com.sun.cldc.i18n.StreamWriter {
     // is still expected to arrive.
     // public void flush() throws IOException { super.flush(); }
 }
+
+
+

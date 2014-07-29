@@ -68,7 +68,7 @@ public class UTF_8_Reader extends com.sun.cldc.i18n.StreamReader {
      * be encoded with this number of bytes
      */
     private static final int[] minimalValidValue
-	= {0x00, 0x80, 0x800, 0x10000 /*, 0x200000*/};
+            = {0x00, 0x80, 0x800, 0x10000 /*, 0x200000*/};
     /**
      * Read a block of UTF8 characters.
      *
@@ -176,9 +176,9 @@ public class UTF_8_Reader extends com.sun.cldc.i18n.StreamReader {
                 cbuf[off + count] = (char)currentChar;
                 count++;
             } else if (currentChar <= 0xd7ff
-		       // d800...d8ff and dc00...dfff are high and low surrogate code
-		       // points, they do not represent characters
-		       || (0xe000 <= currentChar && currentChar <= 0xffff)) {
+             // d800...d8ff and dc00...dfff are high and low surrogate code
+             // points, they do not represent characters
+             || (0xe000 <= currentChar && currentChar <= 0xffff)) {
                 cbuf[off + count] = (char)currentChar;
                 count++;
             } else if (0xffff < currentChar && currentChar <= 0x10ffff) {
@@ -332,7 +332,7 @@ public class UTF_8_Reader extends com.sun.cldc.i18n.StreamReader {
                         break;
                     } // else as default
 
-		default:
+             default:
                     /*
                      * this byte will be replaced with 'RC'
                      */
