@@ -1,6 +1,10 @@
+package gnu.testlet.java.io;
+
 import java.io.*;
-public class TestDataOutputStream extends Test {
-	public void main() {
+import gnu.testlet.*;
+
+public class DataOutputStreamTest implements Testlet {
+	public void test(TestHarness th) {
 		
 		try {
 			byte[] input = {-2, 54, -2, -2, 1, 0, -128, 1, 91, -64, 0x0C, 0x7A, -31, 0x47, -82, 0x14, 0x7B, 0x41, 0x09, 
@@ -25,15 +29,15 @@ public class TestDataOutputStream extends Test {
 			s.writeUTF("ściółka");
 			s.flush();
 			bb = out.toByteArray();
-			compare(bb.length, input.length);
+			th.check(bb.length, input.length);
 			for (int i = 0; i < bb.length; i++) {
-				compare(bb[i], input[i]);
+				th.check(bb[i], input[i]);
 			}
 			s.close();
 			
 		} catch (Exception e) {
 			e.printStackTrace();
-			check(false);
+			th.check(false);
 		}
 	}
 }
