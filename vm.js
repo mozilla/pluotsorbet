@@ -122,7 +122,7 @@ VM.execute = function(ctx) {
             var className = cp[cp[constant.class_index].name_index].bytes;
             var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getField(className, fieldName, signature, false);
+            constant = CLASSES.getField(className, fieldName, signature, (op === 0xb2 || op == 0xb3));
             break;
         default:
             throw new Error("not support constant type");
