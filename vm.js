@@ -153,33 +153,43 @@ VM.execute = function(ctx) {
             break;
         case 0x12: // ldc
         case 0x13: // ldc_w
-            var constant = cp[(op === 0x12) ? frame.read8() : frame.read16()];
-            switch(constant.tag) {
-            case TAGS.CONSTANT_Integer:
-                stack.push(constant.integer);
-                break;
-            case TAGS.CONSTANT_Float:
-                stack.push(constant.float);
-                break;
-            case TAGS.CONSTANT_String:
-                stack.push(ctx.newString(cp[constant.string_index].bytes));
-                break;
-            default:
-                throw new Error("not support constant type");
+            var idx = (op === 0x12) ? frame.read8() : frame.read16();
+            var constant = cp[idx];
+            if (typeof constant === "object" && constant.tag) { // resolve
+                switch(constant.tag) {
+                case TAGS.CONSTANT_Integer:
+                    constant = constant.integer;
+                    break;
+                case TAGS.CONSTANT_Float:
+                    constant = constant.float;
+                    break;
+                case TAGS.CONSTANT_String:
+                    constant = ctx.newString(cp[constant.string_index].bytes);
+                    break;
+                default:
+                    throw new Error("not support constant type");
+                }
+                cp[idx] = constant;
             }
+            stack.push(constant);
             break;
         case 0x14: // ldc2_w
-            var constant = cp[frame.read16()];
-            switch(constant.tag) {
-            case TAGS.CONSTANT_Long:
-                stack.push2(Long.fromBits(constant.lowBits, constant.highBits));
-                break;
-            case TAGS.CONSTANT_Double:
-                stack.push2(constant.double);
-                break;
-            default:
-                throw new Error("not support constant type");
+            var idx = frame.read16();
+            var constant = cp[idx];
+            if (typeof constant === "object" && constant.tag) { // resolve
+                switch(constant.tag) {
+                case TAGS.CONSTANT_Long:
+                    constant = Long.fromBits(constant.lowBits, constant.highBits);
+                    break;
+                case TAGS.CONSTANT_Double:
+                    constant = constant.double;
+                    break;
+                default:
+                    throw new Error("not support constant type");
+                }
+                cp[idx] = constant;
             }
+            stack.push2(constant);
             break;
         case 0x15: // iload
         case 0x17: // fload
