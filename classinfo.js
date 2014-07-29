@@ -25,6 +25,7 @@ var ClassInfo = function(classBytes) {
     this.fields = [];
     classImage.fields.forEach(function(f) {
         self.fields.push({
+            classInfo: self,
             access_flags: f.access_flags,
             name: cp[f.name_index].bytes,
             signature: cp[f.descriptor_index].bytes,
