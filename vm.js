@@ -856,10 +856,9 @@ VM.execute = function(ctx) {
             break;
         case 0xb2: // getstatic
             var idx = frame.read16();
-            var className = cp[cp[cp[idx].class_index].name_index].bytes;
-            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var field = CLASSES.getField(className, fieldName, signature, true);
+            var field = cp[idx];
+            if (field.tag)
+                field = resolve(op, idx);
             classInitCheck(field.classInfo, frame.ip-3);
             var value = field.classInfo.staticFields[field.name];
             if (typeof value === "undefined") {
@@ -869,11 +868,9 @@ VM.execute = function(ctx) {
             break;
         case 0xb3: // putstatic
             var idx = frame.read16();
-            var className = cp[cp[cp[idx].class_index].name_index].bytes;
-            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var field = CLASSES.getField(className, fieldName, signature, true);
-            var classInfo = CLASSES.getClass(className);
+            var field = cp[idx];
+            if (field.tag)
+                field = resolve(op, idx);
             classInitCheck(field.classInfo, frame.ip-3);
             field.classInfo.staticFields[field.name] = stack.popType(field.signature);
             break;
