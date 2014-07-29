@@ -10,7 +10,7 @@ var util = (function () {
     if (!Utf8TextDecoder) {
         Utf8TextDecoder = new TextDecoder("utf-8");
     }
-    return Utf8TextDecoder.decode(Uint8Array(arrayBuffer));
+    return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
   }
 
   var out = "";

@@ -216,8 +216,8 @@ Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(ctx, stack
 }
 
 Native["java/lang/Float.floatToIntBits.(F)I"] = (function() {
-    var fa = Float32Array(1);
-    var ia = Int32Array(fa.buffer);
+    var fa = new Float32Array(1);
+    var ia = new Int32Array(fa.buffer);
     return function(ctx, stack) {
         fa[0] = stack.pop();
         stack.push(ia[0]);
@@ -225,8 +225,8 @@ Native["java/lang/Float.floatToIntBits.(F)I"] = (function() {
 })();
 
 Native["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
-    var da = Float64Array(1);
-    var ia = Int32Array(da.buffer);
+    var da = new Float64Array(1);
+    var ia = new Int32Array(da.buffer);
     return function(ctx, stack) {
         da[0] = stack.pop2();
         stack.push2(Long.fromBits(ia[0], ia[1]));
@@ -234,8 +234,8 @@ Native["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
 })();
 
 Native["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
-    var fa = Float32Array(1);
-    var ia = Int32Array(fa.buffer);
+    var fa = new Float32Array(1);
+    var ia = new Int32Array(fa.buffer);
     return function(ctx, stack) {
         ia[0] = stack.pop();
         stack.push(fa[0]);
@@ -243,8 +243,8 @@ Native["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
 })();
 
 Native["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
-    var da = Float64Array(1);
-    var ia = Int32Array(da.buffer);
+    var da = new Float64Array(1);
+    var ia = new Int32Array(da.buffer);
     return function(ctx, stack) {
         var l = stack.pop2();
         ia[0] = l.low_;

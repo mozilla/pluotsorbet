@@ -42,7 +42,7 @@ var ClassInfo = function(classBytes) {
         method.attributes = m.attributes;
         method.attributes.forEach(function(a) {
             if (a.info.type === ATTRIBUTE_TYPES.Code) {
-                method.code = Uint8Array(a.info.code);
+                method.code = new Uint8Array(a.info.code);
                 method.exception_table = a.info.exception_table;
                 method.max_locals = a.info.max_locals;
             }

@@ -168,7 +168,7 @@ Classes.prototype.newPrimitiveArray = function(type, size) {
     var constructor = ARRAYS[type];
     if (!constructor.prototype.class)
         this.initPrimitiveArrayType(type, constructor);
-    return constructor.call(null, size);
+    return new constructor(size);
 }
 
 Classes.prototype.newArray = function(typeName, size) {

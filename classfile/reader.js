@@ -5,7 +5,7 @@
 
 var Reader = function(bytes, offset) {
     if (this instanceof Reader) {
-        this.bytes = DataView(bytes);
+        this.bytes = new DataView(bytes);
         this.offset = offset || 0;
     } else {
         return new Reader(bytes, offset);
