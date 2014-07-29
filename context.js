@@ -188,28 +188,11 @@ Context.prototype.resume = function() {
   this.start(this.stopFrame);
 }
 
-Context.prototype.block = function(obj, queue, lockLevel, timeout) {
+Context.prototype.block = function(obj, queue, lockLevel) {
   if (!obj[queue])
     obj[queue] = [];
   obj[queue].push(this);
   this.lockLevel = lockLevel;
-  if (timeout) {
-    var self = this;
-    this.lockTimeout = window.setTimeout(function () {
-      self.lockTimeout = null;
-      // If the timeout hits, remove us from the queue and resume.
-      obj[queue].forEach(function(ctx, n) {
-        if (ctx === self) {
-          obj[queue][n] = null;
-          while (ctx.lockLevel-- > 0)
-            ctx.monitorEnter(obj);
-          ctx.resume();
-        }
-      });
-    }, timeout);
-  } else {
-    this.lockTimeout = null;
-  }
   throw VM.Pause;
 }
 
@@ -218,12 +201,20 @@ Context.prototype.unblock = function(obj, queue, notifyAll, callback) {
     var ctx = obj[queue].pop();
     if (!ctx)
       continue;
-    if (ctx.lockTimeout !== null)
-      window.clearTimeout(ctx.lockTimeout);
     callback(ctx);
     if (!notifyAll)
       break;
   }
+}
+
+Context.prototype.ready = function(obj) {
+  if (this.lockTimeout !== null) {
+    window.clearTimeout(this.lockTimeout);
+    this.lockTimeout = null;
+  }
+  if (!obj.ready)
+    obj.ready = [];
+  obj.ready.push(this);
 }
 
 Context.prototype.monitorEnter = function(obj) {
@@ -263,15 +254,32 @@ Context.prototype.wait = function(obj, timeout) {
   var lockLevel = lock.level;
   while (lock.level > 0)
     this.monitorExit(obj);
-  this.block(obj, "waiting", lockLevel, timeout);
+  if (timeout) {
+    var self = this;
+    this.lockTimeout = window.setTimeout(function() {
+      obj.waiting.forEach(function(ctx, n) {
+        if (ctx === self) {
+          obj.waiting[n] = null;
+          if (obj.lock) {
+            ctx.ready(obj);
+          } else {
+            while (ctx.lockLevel-- > 0)
+              ctx.monitorEnter(obj);
+            ctx.resume();
+          }
+        }
+      });
+    }, timeout);
+  } else {
+    this.lockTimeout = null;
+  }
+  this.block(obj, "waiting", lockLevel);
 }
 
 Context.prototype.notify = function(obj, notifyAll) {
   if (!obj.lock || obj.lock.thread !== this.thread)
     this.raiseException("java/lang/IllegalMonitorStateException");
   this.unblock(obj, "waiting", notifyAll, function(ctx) {
-    if (!obj.ready)
-      obj.ready = [];
-    obj.ready.push(ctx);
+    ctx.ready(obj);
   });
 }
