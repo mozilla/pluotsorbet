@@ -34,9 +34,18 @@ public class RunTests {
 	public void report() {
 	    System.out.println(testName + ": " + pass + " pass, " + fail + " fail");
 	}
+
+	public int passed() {
+	    return pass;
+	}
+
+	public int failed() {
+	    return fail;
+	}
     };
 
     public static void main(String args[]) {
+	int pass = 0, fail = 0;
 	for (int n = 0; n < Testlets.list.length; ++n) {
 	    String name = Testlets.list[n];
 	    if (name == null)
@@ -60,6 +69,9 @@ public class RunTests {
 	    Testlet t = (Testlet) obj;
 	    t.test(harness);
 	    harness.report();
+	    pass += harness.passed();
+	    fail += harness.failed();
 	}
+	System.out.println("TOTAL: " + pass + " pass, " + fail + " fail");
     }
 };

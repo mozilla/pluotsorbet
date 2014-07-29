@@ -64,7 +64,7 @@ public abstract class TestHarness {
 	check(false);
     }
 
-    public void fail(String note) {
-	check(false, note);
+    public void fail(Object note) {
+	check(false, "" + note);
     }
 }
