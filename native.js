@@ -118,7 +118,7 @@ Native["java/lang/Object.notify.()V"] = function(ctx, stack) {
 
 Native["java/lang/Object.notifyAll.()V"] = function(ctx, stack) {
     var obj = stack.pop();
-    ctx.notifyAll(obj);
+    ctx.notify(obj, true);
 }
 
 Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {

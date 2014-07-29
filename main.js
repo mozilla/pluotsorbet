@@ -32,11 +32,11 @@ console.log = function() {
 }
 
 //runTest("join");
-//runTest("RunTests");
+runTest("RunTests");
 //runTest("gnu/testlet/vm/SystemTest");
 //runTest("TestThread");
 //runTest("TestRuntime");
-runTest("Andreas");
+//runTest("Andreas");
 //runTest("TestDate");
 //runTest("RunAll");
 //runTest("TestArrays");
