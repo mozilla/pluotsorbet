@@ -31,11 +31,12 @@ console.log = function() {
   document.getElementById("log").textContent += s;
 }
 
-//runTest("RunTests");
+//runTest("join");
+runTest("RunTests");
 //runTest("gnu/testlet/vm/SystemTest");
 //runTest("TestThread");
 //runTest("TestRuntime");
-runTest("Andreas");
+//runTest("Andreas");
 //runTest("TestDate");
 //runTest("RunAll");
 //runTest("TestArrays");
