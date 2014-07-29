@@ -100,6 +100,36 @@ VM.execute = function(ctx) {
         throw VM.Yield;
     }
 
+    function resolve(idx) {
+        var constant = cp[idx];
+        switch(constant.tag) {
+        case TAGS.CONSTANT_Integer:
+            constant = constant.integer;
+            break;
+        case TAGS.CONSTANT_Float:
+            constant = constant.float;
+            break;
+        case TAGS.CONSTANT_String:
+            constant = ctx.newString(cp[constant.string_index].bytes);
+            break;
+        case TAGS.CONSTANT_Long:
+            constant = Long.fromBits(constant.lowBits, constant.highBits);
+            break;
+        case TAGS.CONSTANT_Double:
+            constant = constant.double;
+            break;
+        case TAGS.CONSTANT_Fieldref:
+            var className = cp[cp[constant.class_index].name_index].bytes;
+            var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
+            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+            constant = CLASSES.getField(className, fieldName, signature, false);
+            break;
+        default:
+            throw new Error("not support constant type");
+        }
+        return cp[idx] = constant;
+    }
+
     while (true) {
         var op = frame.read8();
         // console.log(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
@@ -155,40 +185,15 @@ VM.execute = function(ctx) {
         case 0x13: // ldc_w
             var idx = (op === 0x12) ? frame.read8() : frame.read16();
             var constant = cp[idx];
-            if (constant.tag) { // resolve
-                switch(constant.tag) {
-                case TAGS.CONSTANT_Integer:
-                    constant = constant.integer;
-                    break;
-                case TAGS.CONSTANT_Float:
-                    constant = constant.float;
-                    break;
-                case TAGS.CONSTANT_String:
-                    constant = ctx.newString(cp[constant.string_index].bytes);
-                    break;
-                default:
-                    throw new Error("not support constant type");
-                }
-                cp[idx] = constant;
-            }
+            if (constant.tag)
+                constant = resolve(idx);
             stack.push(constant);
             break;
         case 0x14: // ldc2_w
             var idx = frame.read16();
             var constant = cp[idx];
-            if (constant.tag) { // resolve
-                switch(constant.tag) {
-                case TAGS.CONSTANT_Long:
-                    constant = Long.fromBits(constant.lowBits, constant.highBits);
-                    break;
-                case TAGS.CONSTANT_Double:
-                    constant = constant.double;
-                    break;
-                default:
-                    throw new Error("not support constant type");
-                }
-                cp[idx] = constant;
-            }
+            if (constant.tag)
+                constant = resolve(idx);
             stack.push2(constant);
             break;
         case 0x15: // iload
@@ -823,12 +828,8 @@ VM.execute = function(ctx) {
         case 0xb4: // getfield
             var idx = frame.read16();
             var field = cp[idx];
-            if (field.tag) { // resolve
-                var className = cp[cp[field.class_index].name_index].bytes;
-                var fieldName = cp[cp[field.name_and_type_index].name_index].bytes;
-                var signature = cp[cp[field.name_and_type_index].signature_index].bytes;
-                field = cp[idx] = CLASSES.getField(className, fieldName, signature, false);
-            }
+            if (field.tag)
+                field = resolve(idx);
             var obj = stack.pop();
             if (!obj) {
                 ctx.raiseException("java/lang/NullPointerException");
@@ -843,12 +844,8 @@ VM.execute = function(ctx) {
         case 0xb5: // putfield
             var idx = frame.read16();
             var field = cp[idx];
-            if (field.tag) { // resolve
-                var className = cp[cp[field.class_index].name_index].bytes;
-                var fieldName = cp[cp[field.name_and_type_index].name_index].bytes;
-                var signature = cp[cp[field.name_and_type_index].signature_index].bytes;
-                field = cp[idx] = CLASSES.getField(className, fieldName, signature, false);
-            }
+            if (field.tag)
+                field = resolve(idx);
             var val = stack.popType(field.signature);
             var obj = stack.pop();
             if (!obj) {
