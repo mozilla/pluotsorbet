@@ -155,7 +155,7 @@ VM.execute = function(ctx) {
         case 0x13: // ldc_w
             var idx = (op === 0x12) ? frame.read8() : frame.read16();
             var constant = cp[idx];
-            if (typeof constant === "object" && constant.tag) { // resolve
+            if (constant.tag) { // resolve
                 switch(constant.tag) {
                 case TAGS.CONSTANT_Integer:
                     constant = constant.integer;
@@ -176,7 +176,7 @@ VM.execute = function(ctx) {
         case 0x14: // ldc2_w
             var idx = frame.read16();
             var constant = cp[idx];
-            if (typeof constant === "object" && constant.tag) { // resolve
+            if (constant.tag) { // resolve
                 switch(constant.tag) {
                 case TAGS.CONSTANT_Long:
                     constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -822,10 +822,13 @@ VM.execute = function(ctx) {
             break;
         case 0xb4: // getfield
             var idx = frame.read16();
-            var className = cp[cp[cp[idx].class_index].name_index].bytes;
-            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var field = CLASSES.getField(className, fieldName, signature, false);
+            var field = cp[idx];
+            if (field.tag) { // resolve
+                var className = cp[cp[field.class_index].name_index].bytes;
+                var fieldName = cp[cp[field.name_and_type_index].name_index].bytes;
+                var signature = cp[cp[field.name_and_type_index].signature_index].bytes;
+                field = cp[idx] = CLASSES.getField(className, fieldName, signature, false);
+            }
             var obj = stack.pop();
             if (!obj) {
                 ctx.raiseException("java/lang/NullPointerException");
@@ -833,17 +836,20 @@ VM.execute = function(ctx) {
             }
             var value = obj[field.id];
             if (typeof value === "undefined") {
-                value = util.defaultValue(signature);
+                value = util.defaultValue(field.signature);
             }
-            stack.pushType(signature, value);
+            stack.pushType(field.signature, value);
             break;
         case 0xb5: // putfield
             var idx = frame.read16();
-            var className = cp[cp[cp[idx].class_index].name_index].bytes;
-            var fieldName = cp[cp[cp[idx].name_and_type_index].name_index].bytes;
-            var signature = cp[cp[cp[idx].name_and_type_index].signature_index].bytes;
-            var field = CLASSES.getField(className, fieldName, signature, false);
-            var val = stack.popType(signature);
+            var field = cp[idx];
+            if (field.tag) { // resolve
+                var className = cp[cp[field.class_index].name_index].bytes;
+                var fieldName = cp[cp[field.name_and_type_index].name_index].bytes;
+                var signature = cp[cp[field.name_and_type_index].signature_index].bytes;
+                field = cp[idx] = CLASSES.getField(className, fieldName, signature, false);
+            }
+            var val = stack.popType(field.signature);
             var obj = stack.pop();
             if (!obj) {
                 ctx.raiseException("java/lang/NullPointerException");
