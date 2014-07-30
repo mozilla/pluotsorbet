@@ -5,7 +5,7 @@ VPATH=./cldc1.1.1 ./vm ./midp
 classes.jar: $(SRCS)
 	rm -rf build
 	mkdir build
-	javac -sourcepath ./cldc1.1.1 -sourcepath ./vm -sourcepath ./midp -source 1.3 -d ./build $^
+	javac -sourcepath ./cldc1.1.1 -sourcepath ./vm -sourcepath ./midp -source 1.3 -target 1.3 -d ./build $^
 	cd build && jar cvf ../classes.jar *
 	rm -rf build
 

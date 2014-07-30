@@ -12,5 +12,5 @@ var ATTRIBUTE_TYPES = {
     SourceFile: "SourceFile",
     LineNumberTable: "LineNumberTable",
     LocalVariableTable: "LocalVariableTable",
-    Deprecated: "Deprecated"
+    Deprecated: "Deprecated",
 };

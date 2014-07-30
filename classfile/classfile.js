@@ -80,6 +80,10 @@ var getClassImage = function(classBytes) {
                         }
                         return attribute;
 
+                    case ATTRIBUTE_TYPES.Synthetic:
+                        attribute.type = ATTRIBUTE_TYPES.Synthetic;
+                        return attribute;
+
                     default:
                         throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");
                 }
