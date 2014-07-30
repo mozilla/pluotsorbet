@@ -122,7 +122,8 @@ Native.messagesTBL = [
       "Is it OK to access your smart card?",
       "Application %1 wants to access your smart card.\n\nIs it OK to access your smart card?"
       ],
-     ["satsa"]];
+     ["satsa"]
+];
 
 Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
@@ -226,4 +227,96 @@ Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"]
         list[n] = CLASSES.newString(e);
     });
     stack.push(list);
+}
+
+Native.NEVER = 0;
+Native.ALLOW = 1;
+Native.BLANKET = 4;
+Native.SESSION = 8;
+Native.ONESHOT = 16;
+
+Native.identifiedTBL = {
+    net_access: { max: Native.BLANKET, default: Native.SESSION},
+    low_level_net_access: { max: Native.BLANKET, default: Native.SESSION},
+    call_control: { max: Native.BLANKET, default: Native.ONESHOT},
+    application_auto_invocation: { max: Native.BLANKET, default: Native.ONESHOT},
+    local_connectivity: { max: Native.BLANKET, default: Native.SESSION},
+    messaging: { max: Native.BLANKET, default: Native.ONESHOT},
+    restricted_messaging: { max: Native.BLANKET, default: Native.ONESHOT},
+    multimedia_recording: { max: Native.BLANKET, default: Native.SESSION},
+    read_user_data_access: { max: Native.BLANKET, default: Native.ONESHOT},
+    write_user_data_access: { max: Native.BLANKET, default: Native.ONESHOT},
+    location: { max: Native.BLANKET, default: Native.SESSION},
+    landmark: { max: Native.BLANKET, default: Native.SESSION},
+    payment: { max: Native.ALLOW,   default: Native.ALLOW},
+    authentication: { max: Native.BLANKET, default: Native.SESSION},
+    smart_card: { max: Native.BLANKET, default: Native.SESSION},
+    satsa: { max: Native.NEVER,   default: Native.NEVER},
+};
+
+Native.unidentifiedTBL = {
+    net_access: { max: Native.SESSION, default: Native.ONESHOT},
+    low_level_net_access: { max: Native.SESSION, default: Native.ONESHOT},
+    call_control: { max: Native.ONESHOT, default: Native.ONESHOT},
+    application_auto_invocation: { max: Native.SESSION, default: Native.ONESHOT},
+    local_connectivity: { max: Native.BLANKET, default: Native.ONESHOT},
+    messaging: { max: Native.ONESHOT, default: Native.ONESHOT},
+    restricted_messaging: { max: Native.ONESHOT, default: Native.ONESHOT},
+    multimedia_recording: { max: Native.SESSION, default: Native.ONESHOT},
+    read_user_data_access: { max: Native.ONESHOT, default: Native.ONESHOT},
+    write_user_data_access: { max: Native.ONESHOT, default: Native.ONESHOT},
+    location: { max: Native.SESSION, default: Native.ONESHOT},
+    landmark: { max: Native.SESSION, default: Native.ONESHOT},
+    payment: { max: Native.NEVER,   default: Native.NEVER},
+    authentication: { max: Native.NEVER,   default: Native.NEVER},
+    smart_card: { max: Native.NEVER,   default: Native.NEVER},
+    satsa: { max: Native.NEVER,   default: Native.NEVER},
+};
+
+Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
+    var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
+    var allow = Native.NEVER;
+    switch (domain) {
+    case "manufacturer":
+    case "maximum":
+    case "operator":
+        allow = Native.ALLOW;
+        break;
+    case "identified_third_party":
+        allow = Native.identifiedTBL[group].default;
+        break;
+    case "unidentified_third_party":
+        allow = Native.unidentifiedTBL[group].default;
+        break;
+    }
+    stack.push(allow);
+}
+
+Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
+    var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
+    var allow = Native.NEVER;
+    switch (domain) {
+    case "manufacturer":
+    case "maximum":
+    case "operator":
+        allow = Native.ALLOW;
+        break;
+    case "identified_third_party":
+        allow = Native.identifiedTBL[group].max;
+        break;
+    case "unidentified_third_party":
+        allow = Native.unidentifiedTBL[group].max;
+        break;
+    }
+    stack.push(allow);
+}
+
+Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function(ctx, stack) {
+}
+
+Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function(ctx, stack) {
+}
+
+Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(ctx, stack) {
+    return 0;
 }
