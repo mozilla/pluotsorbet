@@ -1,0 +1,740 @@
+/*
+ *
+ *
+ * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License version
+ * 2 only, as published by the Free Software Foundation.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License version 2 for more details (a copy is
+ * included at /legal/license.txt).
+ * 
+ * You should have received a copy of the GNU General Public License
+ * version 2 along with this work; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ * 
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 or visit www.sun.com if you need additional
+ * information or have any questions.
+ */
+
+package com.sun.midp.midletsuite;
+
+import java.io.*;
+
+import java.util.*;
+
+import javax.microedition.io.*;
+
+import javax.microedition.lcdui.*;
+
+import javax.microedition.midlet.*;
+
+import com.sun.j2me.security.AccessController;
+
+import com.sun.midp.io.*;
+
+import com.sun.midp.i18n.Resource;
+import com.sun.midp.i18n.ResourceConstants;
+
+import com.sun.midp.security.*;
+
+import com.sun.midp.midlet.*;
+
+import com.sun.midp.midletsuite.SuiteProperties;
+
+import com.sun.midp.io.j2me.storage.*;
+
+import com.sun.midp.log.Logging;
+import com.sun.midp.log.LogChannels;
+import com.sun.midp.main.MIDletSuiteVerifier;
+
+import com.sun.midp.util.Properties;
+import com.sun.midp.configurator.Constants;
+
+/**
+ * Implements the required MIDletSuite functionality needed by the
+ * system.
+ */
+public final class MIDletSuiteImpl implements MIDletSuite {
+    /** This class has a different security domain than the application. */
+    private static SecurityToken classSecurityToken;
+
+    /** MIDlet Suite Storage. */
+    private MIDletSuiteStorage midletSuiteStorage;
+
+    /** Security token for this suite. */
+    private SecurityHandler securityHandler;
+
+    /** Suite properties of the application descriptor and manifest. */
+    private SuiteProperties suiteProperties;
+
+    /** Suite settings for this suite. */
+    private SuiteSettings suiteSettings;
+
+    /** Installation information for this suite. */
+    private InstallInfo installInfo;
+
+    /** The ID of this suite. */
+    private int id;
+
+    /** Cache of MIDlet-1 name. */
+    private String midlet_1_name;
+
+    /** Cache of MIDlet-1 class. */
+    private String midlet_1_class;
+
+    /**
+     * Number of midlets in this suite. less than 0 mean they need to
+     * counted.
+     */
+    private int numberOfMidlets = -1;
+
+    /**
+     * Indicator to check if the suite has already been locked
+     */
+    private boolean locked = false;
+
+    /**
+     * Initializes the security token for this class, so it can
+     * perform actions that a normal MIDlet Suite cannot.
+     *
+     * @param token security token for this class
+     */
+    static void initSecurityToken(SecurityToken token) {
+        if (classSecurityToken != null) {
+            return;
+        }
+
+        classSecurityToken = token;
+    }
+
+    /**
+     * Constructs MIDletSuiteImpl from an installed MIDlet Suite.
+     *
+     * @param theID unique identifier for this suite
+     */
+    MIDletSuiteImpl(int theID)
+            throws MIDletSuiteCorruptedException {
+        id = theID;
+        locked = true;
+
+        suiteProperties = new SuiteProperties(id);
+        suiteSettings = new SuiteSettings(id);
+        suiteSettings.load();
+        installInfo = new InstallInfo(id);
+
+        try {
+            installInfo.load();
+        } catch (IOException ioe) {
+            throw new MIDletSuiteCorruptedException(
+                "installInfo.load IOException");
+        }
+    }
+
+    /**
+     * Gets a property of the suite. A property is an attribute from
+     * either the application descriptor or JAR Manifest.
+     *
+     * @param key the name of the property
+     * @return A string with the value of the property.
+     *    <code>null</code> is returned if no value is available for
+     *          the key.
+     */
+    public String getProperty(String key) {
+        guaranteeMIDletSuiteLocked("getProperty");
+
+        return suiteProperties.getProperty(key);
+    }
+
+    /**
+     * Replace or add a property to the suite for this run only.
+     *
+     * @param token token with the AMS permission set to allowed,
+     *        can be null to use the suite's permission
+     * @param key the name of the property
+     * @param value the value of the property
+     *
+     * @exception SecurityException if the caller's token does not have
+     *            internal AMS permission
+     */
+    public void setTempProperty(SecurityToken token, String key,
+            String value) {
+        guaranteeMIDletSuiteLocked("setTempProperty");
+
+        if (token != null) {
+            token.checkIfPermissionAllowed(Permissions.AMS);
+        } else {
+            AccessController.checkPermission(Permissions.AMS_PERMISSION_NAME);
+        }
+
+        suiteProperties.setTempProperty(key, value);
+    }
+
+    /**
+     * Checks to see the suite has the ALLOW level for specific permission.
+     * This is used for by internal APIs that only provide access to
+     * trusted system applications.
+     *
+     * @param permission permission ID from com.sun.midp.security.Permissions
+     *
+     * @exception SecurityException if the suite is not allowed the permission
+     */
+    public void checkIfPermissionAllowed(String permission) {
+        if (checkPermission(permission) != 1) {
+            throw new SecurityException(SecurityToken.STD_EX_MSG);
+        }
+    }
+
+    /**
+     * Checks for permission and throw an exception if not allowed.
+     * May block to ask the user a question.
+     *
+     * @param permission ID of the permission to check for,
+     *      the ID must be from
+     *      {@link com.sun.midp.security.Permissions}
+     * @param resource string to insert into the question, can be null if
+     *        no %2 in the question
+     *
+     * @exception SecurityException if the permission is not
+     *            allowed by this token
+     * @exception InterruptedException if another thread interrupts the
+     *   calling thread while this method is waiting to preempt the
+     *   display.
+     */
+    public void checkForPermission(String permission, String resource)
+            throws InterruptedException {
+        guaranteeMIDletSuiteLocked("checkForPermission");
+        checkForPermission(permission,
+            getProperty(SUITE_NAME_PROP), resource, null);
+    }
+
+    /**
+     * Checks for permission and throw an exception if not allowed.
+     * May block to ask the user a question.
+     *
+     * @param permission ID of the permission to check for,
+     *      the ID must be from
+     *      {@link com.sun.midp.security.Permissions}
+     * @param resource string to insert into the question, can be null if
+     *        no %2 in the question
+     * @param extraValue string to insert into the question,
+     *        can be null if no %3 in the question
+     *
+     * @exception SecurityException if the permission is not
+     *            allowed by this token
+     * @exception InterruptedException if another thread interrupts the
+     *   calling thread while this method is waiting to preempt the
+     *   display.
+     */
+    public void checkForPermission(String permission, String resource,
+            String extraValue) throws InterruptedException {
+        guaranteeMIDletSuiteLocked("checkForPermission");
+        checkForPermission(permission,
+            getProperty(SUITE_NAME_PROP), resource, extraValue);
+    }
+
+    /**
+     * Checks for permission and throw an exception if not allowed.
+     * May block to ask the user a question.
+     *
+     * @param permissionStr ID of the permission to check for,
+     *      the ID must be from
+     *      {@link com.sun.midp.security.Permissions}
+     * @param name name of the suite, %1 in the question
+     * @param resource string to insert into the question, can be null if
+     *        no %2 in the question
+     * @param extraValue string to insert into the question,
+     *        can be null if no %3 in the question
+     *
+     * @exception SecurityException if the permission is not
+     *            allowed by this token
+     * @exception InterruptedException if another thread interrupts the
+     *   calling thread while this method is waiting to preempt the
+     *   display.
+     */
+    private void checkForPermission(String permissionStr, String name,
+            String resource, String extraValue) throws InterruptedException {
+        boolean settingsChanged = true; // assume they changed
+        suiteSettings.load();
+
+        try {
+			int permission = Permissions.getId(permissionStr);
+            settingsChanged = getSecurityHandler().checkForPermission(
+                                  permissionStr,
+                                  Permissions.getTitle(permission),
+                                  Permissions.getQuestion(permission),
+                                  Permissions.getOneshotQuestion(permission),
+                                  name, resource, extraValue);
+        } finally {
+            if (settingsChanged) {
+                suiteSettings.save();
+            }
+        }
+    }
+
+    /**
+     * Gets the status of the specified permission.
+     * If no API on the device defines the specific permission
+     * requested then it must be reported as denied.
+     * If the status of the permission is not known because it might
+     * require a user interaction then it should be reported as unknown.
+     *
+     * @param permission to check if denied, allowed, or unknown
+     * @return 0 if the permission is denied; 1 if the permission is allowed;
+     *  -1 if the status is unknown
+     */
+    public int checkPermission(String permission) {
+        guaranteeMIDletSuiteLocked("checkPermission");
+        suiteSettings.load();
+
+        return getSecurityHandler().checkPermission(permission);
+    }
+
+    /**
+     * Gets the unique ID of the suite.
+     *
+     * @return suite ID
+     */
+    public int getID() {
+        guaranteeMIDletSuiteLocked("getID");
+
+        return id;
+    }
+
+    /**
+     * Asks the user want to interrupt the current MIDlet with
+     * a new MIDlet that has received network data.
+     *
+     * @param connection connection to place in the permission question or
+     *        null for alarm
+     *
+     * @return true if the use wants interrupt the current MIDlet, else false
+     */
+    public boolean permissionToInterrupt(String connection) {
+        String name;
+        MIDletSuite current;
+        int question;
+        String currentName;
+        boolean interruptOk;
+        boolean settingsChanged = false;
+
+        guaranteeMIDletSuiteLocked("permissionToInterrupt");
+        suiteSettings.load();
+
+        switch (suiteSettings.getPushInterruptSetting()) {
+        case Permissions.ALLOW:
+        case Permissions.BLANKET_GRANTED:
+            return true;
+
+        case Permissions.BLANKET_DENIED:
+        case Permissions.NEVER:
+            return false;
+        }
+
+        /* Any other cases require prompting the user. */
+
+        name = getSuiteNameForInterrupt();
+
+        // The currently running suite controls what question to ask.
+        current = MIDletStateHandler.getMidletStateHandler().getMIDletSuite();
+        if (current instanceof MIDletSuiteImpl) {
+            MIDletSuiteImpl temp = (MIDletSuiteImpl)current;
+            if (connection == null) {
+                question = temp.getAlarmInterruptQuestion();
+            } else {
+                question = temp.getPushInterruptQuestion();
+            }
+
+            currentName = temp.getSuiteNameForInterrupt();
+        } else {
+            // Use the internal MIDlet question
+            question = ResourceConstants.
+                           AMS_MIDLETSUITELDR_PUSH_INTERRUPT_QUESTION;
+
+            currentName = Resource.getString
+                (ResourceConstants.AMS_MIDLETSUITEIMPL_CURR_APP);
+        }
+
+        try {
+            interruptOk = SecurityHandler.askUserForPermission(
+                          classSecurityToken, isTrusted(),
+                          Resource.getString(ResourceConstants.AMS_MIDLETSUITEIMPL_INTRPT_QUE),
+                          Resource.getString(question),
+                          name, currentName, null);
+            switch (suiteSettings.getPushInterruptSetting()) {
+            case Permissions.BLANKET:
+                if (interruptOk) {
+                    suiteSettings.setPushInterruptSetting(
+                        Permissions.BLANKET_GRANTED);
+                    settingsChanged = true;
+                    return true;
+                }
+
+                suiteSettings.setPushInterruptSetting(
+                    Permissions.BLANKET_DENIED);
+                settingsChanged = true;
+                return false;
+
+            case Permissions.SESSION:
+                if (interruptOk) {
+                    return true;
+                }
+
+                return false;
+            }
+
+            /* Default case permission is ONE_SHOT or DENY */
+            if (interruptOk) {
+                return true;
+            }
+
+            return false;
+        } catch (InterruptedException ie) {
+            return false;
+        } finally {
+            if (settingsChanged) {
+                suiteSettings.save();
+            }
+        }
+    }
+
+    /**
+     * Indicates if the named MIDlet is registered in the suite
+     * with MIDlet-&lt;n&gt; record in the manifest or
+     * application descriptor.
+     *
+     * @param midletClassName class name of the MIDlet to be checked
+     *
+     * @return true if the MIDlet is registered
+     */
+    public boolean isRegistered(String midletClassName) {
+        String midlet;
+        MIDletInfo midletInfo;
+
+        guaranteeMIDletSuiteLocked("isRegistered");
+        for (int i = 1; ; i++) {
+            midlet = getProperty("MIDlet-" + i);
+            if (midlet == null) {
+                return false; // We went past the last MIDlet
+            }
+
+            /* Check if the names match. */
+            midletInfo = new MIDletInfo(midlet);
+            if (midletInfo.classname.equals(midletClassName)) {
+                return true;
+            }
+        }
+    }
+
+    /**
+     * Get the name of a MIDlet to display to the user from suite's
+     * MIDlet-&lt;n&gt; record in the manifest or
+     * application descriptor.
+     *
+     * @param className class name of the MIDlet to be checked
+     *
+     * @return name to display to the user
+     */
+    public String getMIDletName(String className) {
+        String midlet;
+        MIDletInfo midletInfo;
+
+        guaranteeMIDletSuiteLocked("getMIDletName");
+
+        for (int i = 1; ; i++) {
+            midlet = getProperty("MIDlet-" + i);
+            if (midlet == null) {
+                return getProperty(SUITE_NAME_PROP);
+            }
+
+            /* Check if the names match. */
+            midletInfo = new MIDletInfo(midlet);
+            if (midletInfo.classname.equals(className)) {
+                return midletInfo.name;
+            }
+        }
+    }
+
+    /**
+     * Indicates if this suite is trusted.
+     * (not to be confused with a domain named "trusted",
+     * this is used for extra checks beyond permission checking)
+     *
+     * @return true if the suite is trusted false if not
+     */
+    public boolean isTrusted() {
+        guaranteeMIDletSuiteLocked("isTrusted");
+        return installInfo.isTrusted();
+    }
+
+    /**
+     * Provides the number of of MIDlets in this suite.
+     *
+     * @return number of MIDlet in the suite
+     */
+    public int getNumberOfMIDlets() {
+        guaranteeMIDletSuiteLocked("getNumberOfMIDlets");
+        if (numberOfMidlets <= 0) {
+            numberOfMidlets = countMIDlets();
+        }
+
+        return numberOfMidlets;
+    }
+
+    /**
+     * Gets the Push interrupt question the should be used when
+     * interrupting this suite.
+     * <p>
+     * The question will have %2 where this suite name should be and
+     * a %1 where the current suite name should be.
+     *
+     * @return push interrupt question
+     */
+    private int getPushInterruptQuestion() {
+        return
+         ResourceConstants.AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION;
+    }
+
+    /**
+     * Gets the installation information of this suite.
+     *
+     * @return installation information
+     */
+    public InstallInfo getInstallInfo() {
+        guaranteeMIDletSuiteLocked("getInstallInfo");
+
+        return installInfo;
+    }
+
+    /**
+     * Gets the Alarm interrupt question the should be used when
+     * interrupting this suite.
+     * <p>
+     * The question will have %2 where this suite name should be and
+     * a %1 where the current suite name should be.
+     *
+     * @return alarm interrupt question
+     */
+    private int getAlarmInterruptQuestion() {
+        return
+         ResourceConstants.AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION;
+    }
+
+    /**
+     * Gets the suite name for interruption purposes.
+     *
+     * @return name for interrupt question
+     */
+    private String getSuiteNameForInterrupt() {
+        return getProperty(SUITE_NAME_PROP);
+    }
+
+    /**
+     * Counts the number of MIDlets from its properties.
+     *
+     * @return number of midlet in the suite
+     */
+    private int countMIDlets() {
+        String temp;
+        MIDletInfo midletInfo;
+        int i;
+
+        temp = getProperty("MIDlet-1");
+        if (temp == null) {
+            return 0;
+        }
+
+        /* To save time starting up, cache the first MIDlet entry. */
+        midletInfo = new MIDletInfo(temp);
+        midlet_1_name =    midletInfo.name;
+        midlet_1_class =    midletInfo.classname;
+
+        for (i = 2; getProperty("MIDlet-" + i) != null; i++);
+
+        return i - 1;
+    }
+
+    /**
+     * Gets push setting for interrupting other MIDlets.
+     * Reuses the Permissions.
+     *
+     * @return push setting for interrupting MIDlets the value
+     *        will be permission level from {@link Permissions}
+     */
+    public byte getPushInterruptSetting() {
+        guaranteeMIDletSuiteLocked("getPushInterruptSetting");
+
+        return suiteSettings.getPushInterruptSetting();
+    }
+
+    /**
+     * Gets push options for this suite.
+     *
+     * @return push options are defined in {@link PushRegistryImpl}
+     */
+    public int getPushOptions() {
+        guaranteeMIDletSuiteLocked("getPushOptions");
+
+        return suiteSettings.getPushOptions();
+    }
+
+    /**
+     * Gets list of permissions for this suite.
+     *
+     * @return array of permissions from {@link Permissions}
+     */
+    public byte[] getPermissions() {
+        guaranteeMIDletSuiteLocked("getPermissions");
+
+        return suiteSettings.getPermissions();
+    }
+
+    /**
+     * Returns a reference to the singleton MIDlet suite storage object.
+     *
+     * @return the storage reference
+     *
+     * @exception SecurityException if the caller does not have permission
+     *   to install software
+     */
+    private MIDletSuiteStorage getMIDletSuiteStorage()
+            throws SecurityException {
+        if (midletSuiteStorage == null) {
+            midletSuiteStorage =
+                MIDletSuiteStorage.getMIDletSuiteStorage(classSecurityToken);
+        }
+
+        return midletSuiteStorage;
+    }
+
+    /**
+     * Gets the security handler. Creates one on the first call.
+     *
+     * @return handler for security
+     */
+    private SecurityHandler getSecurityHandler() {
+        if (securityHandler == null) {
+            securityHandler =
+                new SecurityHandler(classSecurityToken,
+                                    suiteSettings.getPermissions(),
+                                    getSecurityDomain());
+        }
+
+        return securityHandler;
+    }
+
+    /**
+     * Gets the security domain. Reads it if needed.
+     *
+     * @return name of security domain
+     */
+    private String getSecurityDomain() {
+        return installInfo.getSecurityDomain();
+    }
+
+    /**
+     * Unlocks the MIDletSuite.
+     *
+     */
+    public void close() {
+        if (locked) {
+            unlockMIDletSuite(id);
+            locked = false;
+        }
+    }
+
+    /**
+     * Native finalizer
+     *
+     */
+
+
+
+    private native void finalize();
+
+
+    /**
+     * Unlocks the MIDletSuite.
+     *
+     * @param suiteId the name of the MIDletSuite
+     */
+    private static native void unlockMIDletSuite(int suiteId);
+
+    /**
+     * Locks the MIDletSuite.
+     *
+     * @param suiteId the name of the MIDletSuite
+     * @param isUpdate true if the suite is being updated
+     *
+     * @exception MIDletSuiteLockedException is thrown, if the MIDletSuite is
+     * locked
+     */
+    static native void lockMIDletSuite(int suiteId,
+        boolean isUpdate) throws MIDletSuiteLockedException;
+
+    /**
+     * Guarantees the the MIDletSuite is locked.
+     *
+     * @param s the error message to print out.
+     *
+     * @exception IllegalStateException is thrown if the MIDletSuite
+     * is not locked.
+     */
+    private void guaranteeMIDletSuiteLocked(String s) {
+        if (!locked) {
+            throw new IllegalStateException(s);
+        }
+    }
+
+    /**
+     * Check that suite classes were verified during installation, and
+     * hash value of the suite hasn't changed since installation
+     *
+     * @return true if suite has verified classes, false otherwise
+     */
+    public boolean isVerified() {
+        boolean res = false;
+        final byte[] verifyHash = installInfo.getVerifyHash();
+
+        if (verifyHash != null) {
+            if (!Constants.VERIFY_SUITE_HASH) {
+                res = true;
+            } else {
+                try {
+                    String jarPath = getMIDletSuiteStorage().
+                        getMidletSuiteJarPath(id);
+                    if (MIDletSuiteVerifier.checkJarHash(
+                            jarPath, verifyHash)) {
+                        res = true;
+                    }
+                } catch (Exception e) {
+                    /**
+                     * Any exception caught here means that we can't
+                     * guarantee the suite classes are verified, so do
+                     * nothing and just return false value by default.
+                     */
+                }
+            }
+        }
+
+        return res;
+    }
+
+    /**
+     * Determine if the a MIDlet from this suite can be run. Note that
+     * disable suites can still have their settings changed and their
+     * install info displayed.
+     *
+     * @return true if suite is enabled, false otherwise
+     */
+    public boolean isEnabled() {
+        return suiteSettings.isEnabled();
+    }
+}
