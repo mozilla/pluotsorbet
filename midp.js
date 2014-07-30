@@ -130,7 +130,7 @@ Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[
     Native.groupTBL.forEach(function(e, n) {
         if (e === name) {
             var messages = Native.messagesTBL[n];
-            list = CLASSES.newArray("[Ljava/lang/String;", messages.length - 1);
+            list = CLASSES.newArray("[Ljava/lang/String;", messages.length);
             messages.forEach(function (e, n) {
                 list[n] = CLASSES.newString(e);
             });
@@ -198,7 +198,7 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
     Native.groupTBL.forEach(function(e, n) {
         if (e === name) {
             var members = Native.membersTBL[n];
-            list = CLASSES.newArray("[Ljava/lang/String;", members.length - 1);
+            list = CLASSES.newArray("[Ljava/lang/String;", members.length);
             members.forEach(function (e, n) {
                 list[n] = CLASSES.newString(e);
             });
@@ -209,4 +209,21 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
+}
+
+Native.domainTBL = [
+    "manufacturer",
+    "operator",
+    "identified_third_party",
+    "unidentified_third_party,unsecured",
+    "minimum,unsecured",
+    "maximum,unsecured",
+];
+
+Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function(ctx, stack) {
+    var list = CLASSES.newArray("[Ljava/lang/String;", Native.domainTBL.length);
+    Native.domainTBL.forEach(function (e, n) {
+        list[n] = CLASSES.newString(e);
+    });
+    stack.push(list);
 }
