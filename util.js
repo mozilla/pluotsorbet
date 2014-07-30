@@ -57,8 +57,8 @@ var util = (function () {
     var s = "";
     if (!count)
       count = chars.length;
-    for (var n = offset; n < count; ++n)
-      s += String.fromCharCode(chars[n]);
+    for (var n = 0; n < count; ++n)
+      s += String.fromCharCode(chars[offset+n]);
     return s;
   }
 
