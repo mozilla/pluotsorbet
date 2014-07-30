@@ -261,6 +261,8 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = (function(ctx, stack) {
             return;
         var methodInfo = frame.methodInfo;
         var methodName = methodInfo.name;
+        if (!methodName)
+            return;
         var classInfo = methodInfo.classInfo;
         var className = classInfo.className;
         throwable.stackTrace.unshift({ className: className, methodName: methodName, offset: frame.ip });
