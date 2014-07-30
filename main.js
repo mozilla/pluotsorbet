@@ -31,8 +31,9 @@ console.log = function() {
   document.getElementById("log").textContent += s;
 }
 
+runTest("Launcher");
 //runTest("join");
-runTest("RunTests");
+//runTest("RunTests");
 //runTest("gnu/testlet/vm/SystemTest");
 //runTest("TestThread");
 //runTest("TestRuntime");
