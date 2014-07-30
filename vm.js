@@ -112,7 +112,7 @@ VM.execute = function(ctx) {
             constant = constant.float;
             break;
         case TAGS.CONSTANT_String:
-            constant = ctx.newString(cp[constant.string_index].bytes);
+            constant = CLASSES.newString(cp[constant.string_index].bytes);
             break;
         case TAGS.CONSTANT_Long:
             constant = Long.fromBits(constant.lowBits, constant.highBits);

@@ -133,18 +133,6 @@ Context.prototype.raiseException = function(className, message) {
   throw VM.Yield;
 }
 
-Context.prototype.newString = function(s) {
-  var obj = CLASSES.newObject(CLASSES.java_lang_String);
-  var length = s.length;
-    var chars = CLASSES.newPrimitiveArray("C", length);
-  for (var n = 0; n < length; ++n)
-    chars[n] = s.charCodeAt(n);
-  obj["java/lang/String$value"] = chars;
-  obj["java/lang/String$offset"] = 0;
-  obj["java/lang/String$count"] = length;
-  return obj;
-}
-
 Context.prototype.execute = function(stopFrame) {
   while (this.current() !== stopFrame) {
     try {

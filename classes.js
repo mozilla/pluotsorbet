@@ -164,6 +164,18 @@ Classes.prototype.newObject = function(classInfo) {
     return new (classInfo.constructor)();
 }
 
+Classes.prototype.newString = function(s) {
+  var obj = this.newObject(CLASSES.java_lang_String);
+  var length = s.length;
+    var chars = this.newPrimitiveArray("C", length);
+  for (var n = 0; n < length; ++n)
+    chars[n] = s.charCodeAt(n);
+  obj["java/lang/String$value"] = chars;
+  obj["java/lang/String$offset"] = 0;
+  obj["java/lang/String$count"] = length;
+  return obj;
+}
+
 Classes.prototype.newPrimitiveArray = function(type, size) {
     var constructor = ARRAYS[type];
     if (!constructor.prototype.class)

@@ -65,7 +65,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     var value;
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
-        value = ctx.newString("UTF-8");
+        value = CLASSES.newString("UTF-8");
         break;
     default:
         console.log("UNKNOWN PROPERTY: " + util.fromJavaString(key));
@@ -147,7 +147,7 @@ Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {
     var classObject = stack.pop();
     stack.push(util.cache(classObject, "getName", function () {
-        return ctx.newString(classObject.vmClass.className.replace("/", ".", "g"));
+        return CLASSES.newString(classObject.vmClass.className.replace("/", ".", "g"));
     }));
 }
 
