@@ -254,10 +254,38 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
 })();
 
 Native["java/lang/Throwable.fillInStackTrace.()V"] = (function(ctx, stack) {
+    var throwable = stack.pop();
+    throwable.stackTrace = [];
+    ctx.frames.forEach(function(frame) {
+        if (!frame.methodInfo)
+            return;
+        var methodInfo = frame.methodInfo;
+        var methodName = methodInfo.name;
+        var classInfo = methodInfo.classInfo;
+        var className = classInfo.className;
+        throwable.stackTrace.unshift({ className: className, methodName: methodName, offset: frame.ip });
+    });
 });
 
 Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function(ctx, stack) {
-    stack.push(null);
+    var obj = stack.pop();
+    var result = null;
+    if (obj.stackTrace) {
+        var depth = obj.stackTrace.length;
+        var classNames = CLASSES.newArray("[Ljava/lang/Object;", depth);
+        var methodNames = CLASSES.newArray("[Ljava/lang/Object;", depth);
+        var offsets = CLASSES.newPrimitiveArray("I", depth);
+        obj.stackTrace.forEach(function(e, n) {
+            classNames[n] = CLASSES.newString(e.className);
+            methodNames[n] = CLASSES.newString(e.methodName);
+            offsets[n] = e.offset;
+        });
+        result = CLASSES.newArray("[Ljava/lang/Object;", 3);
+        result[0] = classNames;
+        result[1] = methodNames;
+        result[2] = offsets;
+    }
+    stack.push(result);
 });
 
 Native["java/lang/Runtime.freeMemory.()J"] = function(ctx, stack) {

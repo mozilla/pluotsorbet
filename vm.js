@@ -46,7 +46,6 @@ VM.execute = function(ctx) {
     }
 
     function throw_(ex) {
-        // console.log(ctx.backTrace());
         var exClass = CLASSES.getClass(ex.class.className);
         do {
             var exception_table = frame.methodInfo.exception_table;

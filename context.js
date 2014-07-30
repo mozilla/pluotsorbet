@@ -66,42 +66,6 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
   this.pushFrame(syntheticMethod, 1);
 }
 
-Context.prototype.backTrace = function() {
-  var stack = [];
-  this.frames.forEach(function(frame) {
-    var methodInfo = frame.methodInfo;
-    if (!methodInfo || !methodInfo.name)
-      return;
-    var className = methodInfo.classInfo.className;
-    var methodName = methodInfo.name;
-    var signature = Signature.parse(methodInfo.signature);
-    var IN = signature.IN;
-    var args = [];
-    var lp = 0;
-    for (var n = 0; n < IN.length; ++n) {
-      var arg = frame.locals[frame.localsBase + lp];
-      ++lp;
-      switch (IN[n].type) {
-      case "long":
-      case "double":
-        ++lp;
-        break;
-      case "object":
-        if (arg === null)
-          arg = "null";
-        else if (arg.class.className === "java/lang/String")
-          arg = "'" + util.fromJavaString(arg) + "'";
-        else
-          arg = "<" + arg.class.className + ">";
-      }
-      args.push(arg);
-    }
-    stack.push(methodInfo.classInfo.className + "." + methodInfo.name + ":" + frame.ip +
-               "(" + args.join(",") + ")");
-  });
-  return stack.join("\n");
-}
-
 Context.prototype.raiseException = function(className, message) {
   if (!message)
     message = "";
