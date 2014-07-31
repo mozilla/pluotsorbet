@@ -555,8 +555,35 @@ Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack)
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
 }
 
-Native.eventQueue = [];
+Native.nativeEventQueue = [];
+
+Native.deliverWaitForNativeEventResult = function(ctx) {
+    var stack = ctx.current().stack;
+    var obj = stack.pop();
+    if (Native.nativeEventQueue.length > 0) {
+        var ev = Native.nativeEventQueue.pop();
+        obj["com/sun/midp/events/Event$type"] = ev.type;
+        obj["com/sun/midp/events/NativeEvent$intParam1"] = ev.intParam1;
+        obj["com/sun/midp/events/NativeEvent$intParam2"] = ev.intParam2;
+        obj["com/sun/midp/events/NativeEvent$intParam4"] = ev.intParam4;
+    }
+    stack.push(Native.nativeEventQueue.length);
+}
 
 window.addEventListener("keypress", function(ev) {
-    Native.eventQueue.push({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
+    Native.nativeEventQueue.push({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
+    var ctx = Native.waitingNativeEventContext;
+    if (!ctx)
+        return;
+    Native.deliverWaitForNativeEventResult(Native.waitingNativeEventContext);
+    Native.waitingNativeEventContext.resume();
+    Native.waitingNativeEventContext = null;
 });
+
+Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
+    if (Native.nativeEventQueue.length === 0) {
+        Native.waitingNativeEventContext = ctx;
+        throw VM.Pause;
+    }
+    Native.Native.deliverWaitForNativeEventResult(ctx);
+}
