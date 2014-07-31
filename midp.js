@@ -344,6 +344,9 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     case "com.sun.midp.publickeystore.WebPublicKeyStore":
         value = CLASSES.newString("web.pks");
         break;
+    case "com.sun.midp.events.dispatchTableInitSize":
+        value = CLASSES.newString("16");
+        break;
     default:
         console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
@@ -358,6 +361,29 @@ Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = functio
 
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
 }
+
+Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
+    var isolate = stack.pop();
+    var evt = stack.pop();
+    Native.sendEvent({
+      type: evt["com/sun/midp/events/Event$type"],
+      intParam1: evt["com/sun/midp/events/NativeEvent$intParam1"],
+      intParam2: evt["com/sun/midp/events/NativeEvent$intParam2"],
+      intParam3: evt["com/sun/midp/events/NativeEvent$intParam3"],
+      intParam4: evt["com/sun/midp/events/NativeEvent$intParam4"],
+      intParam5: evt["com/sun/midp/events/NativeEvent$intParam5"],
+      intParam6: evt["com/sun/midp/events/NativeEvent$intParam6"],
+      stringParam1: evt["com/sun/midp/events/NativeEvent$stringParam1"],
+      stringParam2: evt["com/sun/midp/events/NativeEvent$stringParam2"],
+      stringParam3: evt["com/sun/midp/events/NativeEvent$stringParam3"],
+      stringParam4: evt["com/sun/midp/events/NativeEvent$stringParam4"],
+      stringParam5: evt["com/sun/midp/events/NativeEvent$stringParam5"],
+      stringParam6: evt["com/sun/midp/events/NativeEvent$stringParam6"],
+    });
+//    console.log("sendNativeEventToIsolate", JSON.stringify(evt));
+//    console.log("isolate", isolate);
+}
+
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
@@ -555,6 +581,10 @@ Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack)
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
 }
 
+Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
+    stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
+}
+
 Native.nativeEventQueue = [];
 
 Native.deliverWaitForNativeEventResult = function(ctx) {
@@ -570,14 +600,18 @@ Native.deliverWaitForNativeEventResult = function(ctx) {
     stack.push(Native.nativeEventQueue.length);
 }
 
-window.addEventListener("keypress", function(ev) {
-    Native.nativeEventQueue.push({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
+Native.sendEvent = function(evt) {
+    Native.nativeEventQueue.push(evt);
     var ctx = Native.waitingNativeEventContext;
     if (!ctx)
         return;
     Native.deliverWaitForNativeEventResult(Native.waitingNativeEventContext);
     Native.waitingNativeEventContext.resume();
-    Native.waitingNativeEventContext = null;
+    Native.waitingNativeEventContext = null;    
+}
+
+window.addEventListener("keypress", function(ev) {
+    Native.sendEvent({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
 });
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
