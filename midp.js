@@ -208,8 +208,18 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
     stack.push(list);
 }
 
+Native.commandState = {
+    midletClassName: "com.sun.midp.demos.HelloWorld",
+    suiteId: 1
+};
+
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
+    state["com/sun/midp/main/CommandState$midletClassName"] = CLASSES.newString(Native.commandState.midletClassName);
+    state["com/sun/midp/main/CommandState$arg0"] = CLASSES.newString("");
+    state["com/sun/midp/main/CommandState$arg1"] = CLASSES.newString("");
+    state["com/sun/midp/main/CommandState$arg2"] = CLASSES.newString("");
+    state["com/sun/midp/main/CommandState$suiteId"] = Native.commandState.suiteId;
 }
 
 Native.domainTBL = [
