@@ -371,11 +371,12 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFi
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B"] = function(ctx, stack) {
     var len = stack.pop();
-    if (!Native.skinFileData || (Native.skinFilePos + len) < Native.skinFileData.byteLength)
+    if (!Native.skinFileData || (Native.skinFilePos + len) > Native.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
-    var bytes = ctx.newPrimitiveArray("B", len);
-    for (var n = 0; n < len; ++n)
-        bytes[n] = Native.skinFileData.getUint8(this.skinFilePos++);
+    var bytes = CLASSES.newPrimitiveArray("B", len);
+    for (var n = 0; n < len; ++n) {
+        bytes[n] = Native.skinFileData.getUint8(Native.skinFilePos++);
+    }
     stack.push(bytes);
 }
 
