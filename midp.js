@@ -354,3 +354,13 @@ Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = functio
 
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
 }
+
+Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var storageId = stack.pop();
+    stack.push(CLASSES.newString("/" + storageId + "/"));
+}
+
+Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V"] = function(ctx, stack) {
+    var fileName = util.fromJavaString(stack.pop());
+    console.log(fileName);
+}
