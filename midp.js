@@ -561,3 +561,10 @@ Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
 Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
     stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
 }
+
+Native.eventQueue = [];
+
+window.addEventListener("keypress", function(ev) {
+    Native.eventQueue.push({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
+});
+
