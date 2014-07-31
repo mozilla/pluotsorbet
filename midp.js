@@ -344,6 +344,9 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     case "com.sun.midp.publickeystore.WebPublicKeyStore":
         value = CLASSES.newString("web.pks");
         break;
+    case "com.sun.midp.events.dispatchTableInitSize":
+        value = CLASSES.newString("16");
+        break;
     default:
         console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
@@ -555,8 +558,13 @@ Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack)
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
 }
 
+Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
+    stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
+}
+
 Native.eventQueue = [];
 
 window.addEventListener("keypress", function(ev) {
     Native.eventQueue.push({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
 });
+
