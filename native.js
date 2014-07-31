@@ -75,7 +75,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = null;
         break;
     }
-    stack.push(CLASSES.newString(value));
+    stack.push(value ? CLASSES.newString(value) : null);
 }
 
 Native["java/lang/System.currentTimeMillis.()J"] = function(ctx, stack) {

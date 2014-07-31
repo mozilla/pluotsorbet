@@ -352,17 +352,20 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     var value;
     switch (util.fromJavaString(key)) {
     case "com.sun.midp.publickeystore.WebPublicKeyStore":
-        value = CLASSES.newString("web.pks");
+        value = "web.pks";
         break;
     case "com.sun.midp.events.dispatchTableInitSize":
-        value = CLASSES.newString("16");
+        value = "16";
+        break;
+    case "microedition.locale":
+        value = navigator.language;
         break;
     default:
         console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
         break;
     }
-    stack.push(value);
+    stack.push(value ? CLASSES.newString(value) : null);
 }
 
 Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
