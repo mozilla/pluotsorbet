@@ -447,12 +447,25 @@ Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAllResour
     stack.push(0);
 }
 
+Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(ctx, stack) {
+    var fileName = "assets/0/" + util.fromJavaString(stack.pop()).replace("_", ".").replace("_png", ".png");
+    console.log(fileName);
+    var data = CLASSES.loadFile(fileName);
+    if (!data)
+        ctx.raiseException("java/lang/IOException");
+    var len = data.byteLength;
+    var bytes = CLASSES.newPrimitiveArray("B", len);
+    var src = new Uint8Array(data);
+    for (var n = 0; n < bytes.byteLength; ++n)
+        bytes[n] = src[n];
+    stack.push(bytes);
+}
+
 Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
     var size = stack.pop(), style = stack.pop(), face = stack.pop();
 }
 
-Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(ctx, stack) {
-    var fileName = "assert/0/" + util.fromJavaString(stack.pop()).replace("_", ".").replace("_png", ".png");
-    console.log(fileName);
+Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
+    var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), image = stack.pop();
+    image.data = bytes.buffer.slice(offset, offset + length);
 }
-
