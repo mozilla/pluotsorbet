@@ -314,9 +314,32 @@ Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/l
 Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function(ctx, stack) {
 }
 
+Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(ctx, stack) {
+    stack.push(0);
+}
+
 Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function(ctx, stack) {
 }
 
-Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(ctx, stack) {
-    return 0;
+Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function(ctx, stack) {
+    stack.push(0);
+}
+
+Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(ctx, stack) {
+    var midletIsolateId = stack.pop();
+}
+
+Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
+    var key = stack.pop();
+    var value;
+    switch (util.fromJavaString(key)) {
+    case "com.sun.midp.publickeystore.WebPublicKeyStore":
+        value = CLASSES.newString("web.pks");
+        break;
+    default:
+        console.log("UNKNOWN PROPERTY: " + util.fromJavaString(key));
+        value = null;
+        break;
+    }
+    stack.push(value);
 }
