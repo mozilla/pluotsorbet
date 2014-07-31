@@ -380,6 +380,55 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[
     stack.push(bytes);
 }
 
+Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I"] = function(ctx, stack) {
+    if (!Native.skinFileData || (Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+        ctx.raiseException("java/lang/IllegalStateException");
+    var len = Native.skinFileData.getInt32(Native.skinFilePos, true);
+    Native.skinFilePos += 4;
+    var ints = CLASSES.newPrimitiveArray("I", len);
+    for (var n = 0; n < len; ++n) {
+        if ((Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+            ctx.raiseException("java/lang/IllegalStateException");
+        ints[n] = Native.skinFileData.getInt32(Native.skinFilePos, true);
+        Native.skinFilePos += 4;
+    }
+    stack.push(ints);
+}
+
+Native.STRING_ENCODING_USASCII = 0;
+Native.STRING_ENCODING_UTF8 = 1;
+
+Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()[Ljava/lang/String;"] = function(ctx, stack) {
+    if (!Native.skinFileData || (Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+        ctx.raiseException("java/lang/IllegalStateException");
+    var len = Native.skinFileData.getInt32(Native.skinFilePos, true);
+    Native.skinFilePos += 4;
+    var strings = CLASSES.newArray("[Ljava/lang/String;", len);
+    for (var n = 0; n < len; ++n) {
+        if ((Native.skinFilePos + 2) > Native.skinFileData.byteLength)
+            ctx.raiseException("java/lang/IllegalStateException");
+        var strLen = Native.skinFileData.getUint8(Native.skinFilePos++);
+        var strEnc = Native.skinFileData.getUint8(Native.skinFilePos++);
+        if ((Native.skinFilePos + strLen) > Native.skinFileData.byteLength)
+            ctx.raiseException("java/lang/IllegalStateException");
+        var bytes = Native.skinFileData.buffer.slice(Native.skinFilePos, Native.skinFilePos + strLen);
+        Native.skinFilePos += strLen;
+        var str;
+        if (strEnc === Native.STRING_ENCODING_USASCII) {
+            var data = new Uint8Array(bytes);
+            str = "";
+            for (var i = 0; i < strLen; ++i)
+                str += String.fromCharCode(data[i]);
+        } else if (strEnc === Native.STRING_ENCODING_UTF8) {
+            str = util.decodeUtf8(bytes);
+        } else {
+            ctx.raiseException("java/lang/IllegalStateException");
+        }
+        strings[n] = CLASSES.newString(str);
+    }
+    stack.push(strings);
+}
+
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinFile.()I"] = function(ctx, stack) {
     Native.skinFileData = null;
     Native.skinFilePos = 0;
