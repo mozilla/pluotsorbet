@@ -484,3 +484,63 @@ Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] =
     ids[0] = 0;
     stack.push(ids);
 }
+
+Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(null);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(1);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(1);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(0x3ff);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenSupported0.(I)Z"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(1);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(1);
+}
+
+Native.Context2D = (function() {
+    var c = document.getElementById("canvas");
+    c.width = 320;
+    c.height = 480;
+    return c.getContext("2d");
+})();
+
+Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(Native.Context2D.width);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(Native.Context2D.height);
+}
+
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function(ctx, stack) {
+    stack.push(0);
+}
+
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push((id === 0) ? 1 : 0);
+}
+
+Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
+    var lock = stack.pop(), id = stack.pop();
+}
