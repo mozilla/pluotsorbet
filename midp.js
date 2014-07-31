@@ -333,6 +333,10 @@ Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(ctx,
     var midletIsolateId = stack.pop();
 }
 
+Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(ctx, stack) {
+    var midletIsolateId = stack.pop();
+}
+
 Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
     var key = stack.pop();
     var value;
@@ -543,4 +547,10 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = functio
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
     var lock = stack.pop(), id = stack.pop();
+}
+
+Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack) {
+}
+
+Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
 }
