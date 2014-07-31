@@ -357,10 +357,30 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ct
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
-    stack.push(CLASSES.newString("/" + storageId + "/"));
+    stack.push(CLASSES.newString("assets/" + storageId + "/"));
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V"] = function(ctx, stack) {
     var fileName = util.fromJavaString(stack.pop());
-    console.log(fileName);
+    var data = CLASSES.loadFile(fileName);
+    if (!data)
+        ctx.raiseException("java/lang/IOException");
+    Native.skinFileData = new DataView(data);
+    Native.skinFilePos = 0;
+}
+
+Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B"] = function(ctx, stack) {
+    var len = stack.pop();
+    if (!Native.skinFileData || (Native.skinFilePos + len) < Native.skinFileData.byteLength)
+        ctx.raiseException("java/lang/IllegalStateException");
+    var bytes = ctx.newPrimitiveArray("B", len);
+    for (var n = 0; n < len; ++n)
+        bytes[n] = Native.skinFileData.getUint8(this.skinFilePos++);
+    stack.push(bytes);
+}
+
+Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinFile.()I"] = function(ctx, stack) {
+    Native.skinFileData = null;
+    Native.skinFilePos = 0;
+    stack.push(0);
 }
