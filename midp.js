@@ -473,3 +473,7 @@ Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImag
 Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function(ctx, stack) {
     stack.push(0);
 }
+
+Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) {
+    stack.push(Long.fromNumber(Date.now()));
+}

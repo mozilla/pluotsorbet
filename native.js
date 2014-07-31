@@ -65,14 +65,17 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     var value;
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
-        value = CLASSES.newString("UTF-8");
+        value = "UTF-8";
+        break;
+    case "microedition.locale":
+        value = navigator.language;
         break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
         break;
     }
-    stack.push(value);
+    stack.push(CLASSES.newString(value));
 }
 
 Native["java/lang/System.currentTimeMillis.()J"] = function(ctx, stack) {
