@@ -449,10 +449,11 @@ Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAllResour
 
 Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(ctx, stack) {
     var fileName = "assets/0/" + util.fromJavaString(stack.pop()).replace("_", ".").replace("_png", ".png");
-    console.log(fileName);
     var data = CLASSES.loadFile(fileName);
-    if (!data)
+    if (!data) {
+        console.log(fileName);
         ctx.raiseException("java/lang/IOException");
+    }
     var len = data.byteLength;
     var bytes = CLASSES.newPrimitiveArray("B", len);
     var src = new Uint8Array(data);
@@ -476,4 +477,10 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
 
 Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) {
     stack.push(Long.fromNumber(Date.now()));
+}
+
+Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
+    var ids = CLASSES.newPrimitiveArray("I", 1);
+    ids[0] = 0;
+    stack.push(ids);
 }
