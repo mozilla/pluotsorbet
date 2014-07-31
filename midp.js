@@ -365,7 +365,7 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ct
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
     var isolate = stack.pop();
     var evt = stack.pop();
-    Native.eventQueue.push({
+    Native.sendEvent({
       type: evt["com/sun/midp/events/Event$type"],
       intParam1: evt["com/sun/midp/events/NativeEvent$intParam1"],
       intParam2: evt["com/sun/midp/events/NativeEvent$intParam2"],
@@ -380,7 +380,7 @@ Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/e
       stringParam5: evt["com/sun/midp/events/NativeEvent$stringParam5"],
       stringParam6: evt["com/sun/midp/events/NativeEvent$stringParam6"],
     });
-    console.log("sendNativeEventToIsolate", JSON.stringify(evt));
+//    console.log("sendNativeEventToIsolate", JSON.stringify(evt));
 //    console.log("isolate", isolate);
 }
 
@@ -585,9 +585,39 @@ Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = 
     stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
 }
 
-Native.eventQueue = [];
+Native.nativeEventQueue = [];
+
+Native.deliverWaitForNativeEventResult = function(ctx) {
+    var stack = ctx.current().stack;
+    var obj = stack.pop();
+    if (Native.nativeEventQueue.length > 0) {
+        var ev = Native.nativeEventQueue.pop();
+        obj["com/sun/midp/events/Event$type"] = ev.type;
+        obj["com/sun/midp/events/NativeEvent$intParam1"] = ev.intParam1;
+        obj["com/sun/midp/events/NativeEvent$intParam2"] = ev.intParam2;
+        obj["com/sun/midp/events/NativeEvent$intParam4"] = ev.intParam4;
+    }
+    stack.push(Native.nativeEventQueue.length);
+}
+
+Native.sendEvent = function(evt) {
+    Native.nativeEventQueue.push(evt);
+    var ctx = Native.waitingNativeEventContext;
+    if (!ctx)
+        return;
+    Native.deliverWaitForNativeEventResult(Native.waitingNativeEventContext);
+    Native.waitingNativeEventContext.resume();
+    Native.waitingNativeEventContext = null;    
+}
 
 window.addEventListener("keypress", function(ev) {
-    Native.eventQueue.push({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
+    Native.sendEvent({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
 });
 
+Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
+    if (Native.nativeEventQueue.length === 0) {
+        Native.waitingNativeEventContext = ctx;
+        throw VM.Pause;
+    }
+    Native.Native.deliverWaitForNativeEventResult(ctx);
+}
