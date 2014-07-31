@@ -363,8 +363,7 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ct
 }
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
-    var isolate = stack.pop();
-    var evt = stack.pop();
+    var isolate = stack.pop(), evt = stack.pop();
     Native.sendEvent({
       type: evt["com/sun/midp/events/Event$type"],
       intParam1: evt["com/sun/midp/events/NativeEvent$intParam1"],
@@ -380,8 +379,6 @@ Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/e
       stringParam5: evt["com/sun/midp/events/NativeEvent$stringParam5"],
       stringParam6: evt["com/sun/midp/events/NativeEvent$stringParam6"],
     });
-//    console.log("sendNativeEventToIsolate", JSON.stringify(evt));
-//    console.log("isolate", isolate);
 }
 
 
