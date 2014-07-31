@@ -5,9 +5,14 @@
 
 var MIDP = {
     commandState: {
-        midletClassName: "com.sun.midp.demos.HelloWorld",
         suiteId: 1
-    }
+    },
+    suites: [
+        null,
+        {
+            midletClassName: "com.sun.midp.demos.HelloWorld",
+        }
+    ]
 };
 
 Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(ctx, stack) {
@@ -217,11 +222,13 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
-    state["com/sun/midp/main/CommandState$midletClassName"] = CLASSES.newString(MIDP.commandState.midletClassName);
+    var suiteId = MIDP.commandState.suiteId;
+    var suite = MIDP.suites[suiteId];
+    state["com/sun/midp/main/CommandState$midletClassName"] = CLASSES.newString(suite.midletClassName);
     state["com/sun/midp/main/CommandState$arg0"] = CLASSES.newString("");
     state["com/sun/midp/main/CommandState$arg1"] = CLASSES.newString("");
     state["com/sun/midp/main/CommandState$arg2"] = CLASSES.newString("");
-    state["com/sun/midp/main/CommandState$suiteId"] = MIDP.commandState.suiteId;
+    state["com/sun/midp/main/CommandState$suiteId"] = suiteId;
 }
 
 Native.domainTBL = [
@@ -580,7 +587,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = fun
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(ctx, stack) {
     var id = stack.pop();
-    stack.push((id === 0) ? 1 : 0);
+    stack.push(MIDP.suites[id] ? 1 : 0);
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
