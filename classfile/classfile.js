@@ -84,6 +84,10 @@ var getClassImage = function(classBytes) {
                         attribute.type = ATTRIBUTE_TYPES.Synthetic;
                         return attribute;
 
+                    case ATTRIBUTE_TYPES.Deprecated:
+                        attribute.type = ATTRIBUTE_TYPES.Deprecated;
+                        return attribute;
+
                     default:
                         throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");
                 }
