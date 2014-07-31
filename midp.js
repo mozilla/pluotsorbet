@@ -469,3 +469,7 @@ Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImag
     var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), image = stack.pop();
     image.data = bytes.buffer.slice(offset, offset + length);
 }
+
+Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function(ctx, stack) {
+    stack.push(0);
+}
