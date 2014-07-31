@@ -68,7 +68,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = CLASSES.newString("UTF-8");
         break;
     default:
-        console.log("UNKNOWN PROPERTY: " + util.fromJavaString(key));
+        console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
         break;
     }

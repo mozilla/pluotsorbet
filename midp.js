@@ -325,6 +325,10 @@ Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function(ctx,
     stack.push(0);
 }
 
+Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function(ctx, stack) {
+    stack.push(1);
+}
+
 Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(ctx, stack) {
     var midletIsolateId = stack.pop();
 }
@@ -337,9 +341,16 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
         value = CLASSES.newString("web.pks");
         break;
     default:
-        console.log("UNKNOWN PROPERTY: " + util.fromJavaString(key));
+        console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
         break;
     }
     stack.push(value);
+}
+
+Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
+    stack.push(0);
+}
+
+Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
 }

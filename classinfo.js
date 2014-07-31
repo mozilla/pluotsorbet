@@ -56,7 +56,8 @@ var ClassInfo = function(classBytes) {
         if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
             a.info.classes.forEach(function(c) {
                 classes.push(cp[cp[c.inner_class_info_index].name_index].bytes);
-                classes.push(cp[cp[c.outer_class_info_index].name_index].bytes);
+                if (c.outer_class_info_index)
+                    classes.push(cp[cp[c.outer_class_info_index].name_index].bytes);
             });
         }
     });
