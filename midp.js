@@ -362,6 +362,29 @@ Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = functio
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
 }
 
+Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
+    var isolate = stack.pop();
+    var evt = stack.pop();
+    Native.eventQueue.push({
+      type: evt["com/sun/midp/events/Event$type"],
+      intParam1: evt["com/sun/midp/events/NativeEvent$intParam1"],
+      intParam2: evt["com/sun/midp/events/NativeEvent$intParam2"],
+      intParam3: evt["com/sun/midp/events/NativeEvent$intParam3"],
+      intParam4: evt["com/sun/midp/events/NativeEvent$intParam4"],
+      intParam5: evt["com/sun/midp/events/NativeEvent$intParam5"],
+      intParam6: evt["com/sun/midp/events/NativeEvent$intParam6"],
+      stringParam1: evt["com/sun/midp/events/NativeEvent$stringParam1"],
+      stringParam2: evt["com/sun/midp/events/NativeEvent$stringParam2"],
+      stringParam3: evt["com/sun/midp/events/NativeEvent$stringParam3"],
+      stringParam4: evt["com/sun/midp/events/NativeEvent$stringParam4"],
+      stringParam5: evt["com/sun/midp/events/NativeEvent$stringParam5"],
+      stringParam6: evt["com/sun/midp/events/NativeEvent$stringParam6"],
+    });
+    console.log("sendNativeEventToIsolate", JSON.stringify(evt));
+//    console.log("isolate", isolate);
+}
+
+
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
     stack.push(CLASSES.newString("assets/" + storageId + "/"));
