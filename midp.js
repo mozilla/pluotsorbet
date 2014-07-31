@@ -434,3 +434,25 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinF
     Native.skinFilePos = 0;
     stack.push(0);
 }
+
+Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareResourcePool.(Ljava/lang/Object;)V"] = function(ctx, stack) {
+    var pool = stack.pop();
+}
+
+Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareSkinData.(Ljava/lang/Object;)V"] = function(ctx, stack) {
+    var data = stack.pop();
+}
+
+Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAllResources0.()Z"] = function(ctx, stack) {
+    stack.push(0);
+}
+
+Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
+    var size = stack.pop(), style = stack.pop(), face = stack.pop();
+}
+
+Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(ctx, stack) {
+    var fileName = "assert/0/" + util.fromJavaString(stack.pop()).replace("_", ".").replace("_png", ".png");
+    console.log(fileName);
+}
+
