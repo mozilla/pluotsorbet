@@ -10,7 +10,7 @@ var MIDP = {
     suites: [
         null,
         {
-            midletClassName: "com.sun.midp.demos.HelloWorld",
+            midletClassName: "HelloCommandMIDlet",
         }
     ]
 };
