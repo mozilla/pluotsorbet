@@ -749,16 +749,16 @@ Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = fu
 }
 
 MIDP.anchors = {
-    "HCENTER": 1,
-    "VCENTER": 2,
-    "LEFT": 4,
-    "RIGHT": 8,
-    "TOP": 16,
-    "BOTTOM": 32,
-    "BASELINE": 64    
+    HCENTER: 1,
+    VCENTER: 2,
+    LEFT: 4,
+    RIGHT: 8,
+    TOP: 16,
+    BOTTOM: 32,
+    BASELINE: 64    
 }
 
-Native.anchorXY = function(anchor, x, y, width, height) {
+Native.withAdjustedPosition = function(anchor, x, y, width, height, callback) {
     var outX = x, outY = y;
 
     // LEFT and TOP: do nothing
@@ -777,16 +777,17 @@ Native.anchorXY = function(anchor, x, y, width, height) {
     if (anchor & MIDP.anchors.BASELINE) {
         outY = y - height;
     }
-
-    return {x: outX, y: outY};
+    callback(outX, outY);    
 }
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
-        img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"],
-        pos = Native.anchorXY(anchor, x, y, img.width, img.height);
+        img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"];
 
-    Native.Context2D.drawImage(img, pos.x, pos.y);
+    Native.withAdjustedPosition(anchor, x, y, img.width, img.height, function(anchorX, anchorY) {
+        Native.Context2D.drawImage(img, anchorX, anchorY);
+    })
+
     stack.push(1);
 }
 
@@ -798,9 +799,11 @@ Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = func
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        pos = Native.anchorXY(anchor, x, y + 20, Native.Context2D.measureText(str).width, 20);
-    console.log("drawString x:" + pos.x + " y: " + pos.y + " str: " + str);
-    Native.Context2D.fillText(str, pos.x, pos.y);
+        metrics = Native.Context2D.measureText(str).width;
+
+    Native.withAdjustedPosition(anchor, x, y + 20, metrics.width, 20, function(anchorX, anchorY) {
+        Native.Context2D.fillText(str, anchorX, anchorY);
+    });
 }
 
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
@@ -827,10 +830,11 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
         }
     }
 
-    var pos = Native.anchorXY(x, y + 20, Native.Context2D.measureText(str).width, 20);
-
-    Native.Context2D.fillStyle = "black";
-    Native.Context2D.fillText(str, pos.x, pos.y);
+    var metrics = Native.Context2D.measureText(str).width;
+    Native.withAdjustedPosition(anchor, x, y, metrics.width, 20, function(anchorX, anchorY) {
+        Native.Context2D.fillStyle = "black";
+        Native.Context2D.fillText(str, anchorX, anchorY);
+    });
 }
 
 Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
