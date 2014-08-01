@@ -775,7 +775,7 @@ Native.anchorXY = function(anchor, x, y, width, height) {
         outY = Native.Canvas.height / 2 - height / 2;
     }
     if (anchor & MIDP.anchors.BASELINE) {
-        console.log("TODO implement BASELINE anchor");
+        outY = y - height;
     }
 
     return {x: outX, y: outY};
@@ -798,8 +798,37 @@ Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = func
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()),
-        pos = Native.anchorXY(anchor, x, y + 20, 50, 50);
+        pos = Native.anchorXY(anchor, x, y + 20, Native.Context2D.measureText(str).width, 20);
     console.log("drawString x:" + pos.x + " y: " + pos.y + " str: " + str);
+    Native.Context2D.fillText(str, pos.x, pos.y);
+}
+
+Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop();
+    // TODO what color? Is it the color last passed to getPixel?
+    Native.Context2D.fillStyle = "white";
+    Native.Context2D.fillRect(x, y, width, height);
+}
+
+Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop();
+    Native.Context2D.strokeStyle = "black";
+    Native.Context2D.strokeRect(x, y, width, height);
+}
+
+Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), len = stack.pop(), offset = stack.pop(), data = stack.pop(),
+        str = "";
+
+    for (var i in data) {
+        if (typeof data[i] === "number") {
+            str += String.fromCharCode(data[i]);
+        }
+    }
+
+    var pos = Native.anchorXY(x, y + 20, Native.Context2D.measureText(str).width, 20);
+
+    Native.Context2D.fillStyle = "black";
     Native.Context2D.fillText(str, pos.x, pos.y);
 }
 
@@ -826,5 +855,8 @@ Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, st
 
 Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function(ctx, stack) {
     var inputModeIds = CLASSES.newPrimitiveArray("I", 0);
+    // TODO We want to return [1] here for KEYBOARD_INPUT_MODE but it causes a vm crash
     stack.push(inputModeIds);
 }
+
+
