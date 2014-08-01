@@ -600,17 +600,20 @@ Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = 
 
 Native.nativeEventQueue = [];
 
+Native.copyEvent = function(obj) {
+    var e = Native.nativeEventQueue.pop();
+    obj["com/sun/midp/events/Event$type"] = e["com/sun/midp/events/Event$type"];
+    Object.keys(e).forEach(function (fieldName) {
+        if (fieldName.indexOf("com/sun/midp/events/NativeEvent$") === 0)
+            obj[fieldName] = e[fieldName];
+    });
+}
+
 Native.deliverWaitForNativeEventResult = function(ctx) {
     var stack = ctx.current().stack;
     var obj = stack.pop();
-    if (Native.nativeEventQueue.length > 0) {
-        var e = Native.nativeEventQueue.pop();
-        obj["com/sun/midp/events/Event$type"] = e["com/sun/midp/events/Event$type"];
-        Object.keys(e).forEach(function (fieldName) {
-            if (fieldName.indexOf("com/sun/midp/events/NativeEvent$") === 0)
-                obj[fieldName] = e[fieldName];
-        });
-    }
+    if (Native.nativeEventQueue.length > 0)
+        Native.copyEvent(obj);
     stack.push(Native.nativeEventQueue.length);
 }
 
@@ -645,6 +648,16 @@ Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp
         throw VM.Pause;
     }
     Native.deliverWaitForNativeEventResult(ctx);
+}
+
+Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] = function(ctx, stack) {
+    var obj = stack.pop();
+    if (!Native.nativeEventQueue.length) {
+        stack.push(0);
+        return;
+    }
+    Native.copyEvent(obj);
+    stack.push(1);
 }
 
 Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(ctx, stack) {

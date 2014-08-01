@@ -481,3 +481,10 @@ Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = functio
 Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(ctx, stack) {
     stack.push(String.fromCharCode(stack.pop()).toUpperCase().charCodeAt(0));
 }
+
+Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function(ctx, stack) {
+}
+
+Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(ctx, stack) {
+    var displayId = stack.pop(), isolateId = stack.pop();
+}
