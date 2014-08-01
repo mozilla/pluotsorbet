@@ -642,7 +642,7 @@ Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp
         Native.waitingNativeEventContext = ctx;
         throw VM.Pause;
     }
-    Native.Native.deliverWaitForNativeEventResult(ctx);
+    Native.deliverWaitForNativeEventResult(ctx);
 }
 
 Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(ctx, stack) {
