@@ -581,6 +581,10 @@ Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx,
     stack.push(Native.Context2D.height);
 }
 
+Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
+    var sate = stack.pop(), hardwareId = stack.pop();
+}
+
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function(ctx, stack) {
     stack.push(0);
 }
@@ -669,4 +673,8 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
 Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
     var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop();
     stack.push(rgb);
+}
+
+Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
+    var drawTrusted = stack.pop(), displayId = stack.pop();
 }
