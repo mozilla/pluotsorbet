@@ -633,8 +633,11 @@ Native.sendEvent = function(evt) {
     Native.waitingNativeEventContext = null;    
 }
 
+MIDP.KEY_EVENT = 1;
+MIDP.EVENT_QUEUE_SHUTDOWN = 31;
+
 window.addEventListener("keypress", function(ev) {
-    Native.sendEvent({ type: 1 /* KEY_EVENT */, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
+    Native.sendEvent({ type: MIDP.KEY_EVENT, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
 });
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
@@ -677,4 +680,12 @@ Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stac
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
     var drawTrusted = stack.pop(), displayId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(ctx, stack) {
+    var taskId = stack.pop();
+}
+
+Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
+    Native.sendEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN });
 }
