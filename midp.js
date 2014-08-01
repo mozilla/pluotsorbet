@@ -799,7 +799,7 @@ Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = func
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str).width,
+        metrics = Native.Context2D.measureText(str),
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
         transY = _this["javax/microedition/lcdui/Graphics$transY"];
 
@@ -835,7 +835,7 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
         transY = _this["javax/microedition/lcdui/Graphics$transY"],
         pixel = _this["javax/microedition/lcdui/Graphics$pixel"],
-        metrics = Native.Context2D.measureText(str).width;
+        metrics = Native.Context2D.measureText(str);
 
     Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
 
