@@ -385,24 +385,9 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ct
 }
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
-    var isolate = stack.pop(), evt = stack.pop();
-    Native.sendEvent({
-      type: evt["com/sun/midp/events/Event$type"],
-      intParam1: evt["com/sun/midp/events/NativeEvent$intParam1"],
-      intParam2: evt["com/sun/midp/events/NativeEvent$intParam2"],
-      intParam3: evt["com/sun/midp/events/NativeEvent$intParam3"],
-      intParam4: evt["com/sun/midp/events/NativeEvent$intParam4"],
-      intParam5: evt["com/sun/midp/events/NativeEvent$intParam5"],
-      intParam6: evt["com/sun/midp/events/NativeEvent$intParam6"],
-      stringParam1: evt["com/sun/midp/events/NativeEvent$stringParam1"],
-      stringParam2: evt["com/sun/midp/events/NativeEvent$stringParam2"],
-      stringParam3: evt["com/sun/midp/events/NativeEvent$stringParam3"],
-      stringParam4: evt["com/sun/midp/events/NativeEvent$stringParam4"],
-      stringParam5: evt["com/sun/midp/events/NativeEvent$stringParam5"],
-      stringParam6: evt["com/sun/midp/events/NativeEvent$stringParam6"],
-    });
+    var isolate = stack.pop(), obj = stack.pop();
+    Native.sendEvent(obj);
 }
-
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
@@ -619,30 +604,39 @@ Native.deliverWaitForNativeEventResult = function(ctx) {
     var stack = ctx.current().stack;
     var obj = stack.pop();
     if (Native.nativeEventQueue.length > 0) {
-        var ev = Native.nativeEventQueue.pop();
-        obj["com/sun/midp/events/Event$type"] = ev.type;
-        obj["com/sun/midp/events/NativeEvent$intParam1"] = ev.intParam1;
-        obj["com/sun/midp/events/NativeEvent$intParam2"] = ev.intParam2;
-        obj["com/sun/midp/events/NativeEvent$intParam4"] = ev.intParam4;
+        var e = Native.nativeEventQueue.pop();
+        obj["com/sun/midp/events/Event$type"] = e["com/sun/midp/events/Event$type"];
+        Object.keys(e).forEach(function (fieldName) {
+            if (fieldName.indexOf("com/sun/midp/events/NativeEvent$") === 0)
+                obj[fieldName] = e[fieldName];
+        });
     }
     stack.push(Native.nativeEventQueue.length);
 }
 
-Native.sendEvent = function(evt) {
-    Native.nativeEventQueue.push(evt);
+Native.sendEvent = function(obj) {
+    var e = { "com/sun/midp/events/Event$type": obj["com/sun/midp/events/Event$type"] };
+    Object.keys(obj).forEach(function (fieldName) {
+        if (fieldName.indexOf("com/sun/midp/events/NativeEvent$") === 0)
+            e[fieldName] = obj[fieldName];
+    });
+    Native.nativeEventQueue.push(e);
     var ctx = Native.waitingNativeEventContext;
     if (!ctx)
         return;
     Native.deliverWaitForNativeEventResult(Native.waitingNativeEventContext);
     Native.waitingNativeEventContext.resume();
-    Native.waitingNativeEventContext = null;    
+    Native.waitingNativeEventContext = null;
 }
 
 MIDP.KEY_EVENT = 1;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
 window.addEventListener("keypress", function(ev) {
-    Native.sendEvent({ type: MIDP.KEY_EVENT, intParam1: 1 /* PRESSED */, intParam2: ev.charCode, intParam4: 0 /* Display ID */ });
+    Native.sendEvent({ "com/sun/midp/events/Event$type": MIDP.KEY_EVENT,
+                       "com/sun/midp/events/NativeEvent$intParam1": 1 /* PRESSED */,
+                       "com/sun/midp/events/NativeEvent$intParam2": ev.charCode,
+                       "com/sun/midp/events/NativeEvent$intParam4": 0 /* Display ID */ });
 });
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
@@ -670,7 +664,6 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
     for (n = 0; n < entries.length; ++n) {
         var entry = entries[n];
         if (entry.attributes.Key.value === key) {
-            console.log(entry.attributes.Value.value);
             stack.push(CLASSES.newString(entry.attributes.Value.value));
             return;
         }
