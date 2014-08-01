@@ -709,3 +709,25 @@ Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack
     console.log("Exit: " + stack.pop());
     throw VM.Pause;
 }
+
+Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function(ctx, stack) {
+    stack.push(0);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(ctx, stack) {
+    var mode = stack.pop(), displayId = stack.pop(), hardwareId = stack.pop();
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(ctx, stack) {
+    var displayId = stack.pop(), hardwareId = stack.pop();
+}
+
+Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(ctx, stack) {
+    var on = stack.pop(), displayId = stack.pop();
+    stack.push(1);
+}
+
+Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = function(ctx, stack) {
+    var displayId = stack.pop();
+    stack.push(1);
+}
