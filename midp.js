@@ -564,6 +564,11 @@ Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z"] = f
     stack.push(1);
 }
 
+Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(0);
+}
+
 Native.Context2D = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
