@@ -52,7 +52,7 @@ public class Constants {
      * When false, Chameleon will not even attempt to load romized images for 
      * the UI.
      */
-    public final static boolean CHAM_ROMIZED_IMAGES = true;
+    public final static boolean CHAM_ROMIZED_IMAGES = false;
 
     /**
      * (Chameleon Only) display width
