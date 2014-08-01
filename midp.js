@@ -689,3 +689,12 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
     Native.sendEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN });
 }
+
+Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
+    var commandState = stack.pop();
+}
+
+Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack) {
+    console.log("Exit: " + stack.pop());
+    throw VM.Pause;
+}
