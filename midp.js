@@ -780,9 +780,11 @@ Native.withAdjustedPosition = function(anchor, x, y, width, height, callback) {
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
-        img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"];
+        img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"],
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"];
 
-    Native.withAdjustedPosition(anchor, x, y, img.width, img.height, function(anchorX, anchorY) {
+    Native.withAdjustedPosition(anchor, x + transX, y + transY, img.width, img.height, function(anchorX, anchorY) {
         Native.Context2D.drawImage(img, anchorX, anchorY);
     })
 
@@ -797,33 +799,43 @@ Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = func
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str).width;
+        metrics = Native.Context2D.measureText(str).width,
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"];
 
-    Native.withAdjustedPosition(anchor, x, y + 20, metrics.width, 20, function(anchorX, anchorY) {
+    Native.withAdjustedPosition(anchor, x + transX, y + transY, metrics.width, 20, function(anchorX, anchorY) {
         Native.Context2D.fillText(str, anchorX, anchorY);
     });
 }
 
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"];
+
     // TODO what color? Is it the color last passed to getPixel?
     Native.Context2D.fillStyle = "white";
-    Native.Context2D.fillRect(x, y, width, height);
+    Native.Context2D.fillRect(x + transX, y + transY, width, height);
 }
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"];
+
     Native.Context2D.strokeStyle = "black";
-    Native.Context2D.strokeRect(x, y, width, height);
+    Native.Context2D.strokeRect(x + transX, y + transY, width, height);
 }
 
 Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
         len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
-        str = util.fromJavaChars(data, offset, len);
+        str = util.fromJavaChars(data, offset, len),
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"];
 
     var metrics = Native.Context2D.measureText(str).width;
-    Native.withAdjustedPosition(anchor, x, y, metrics.width, 20, function(anchorX, anchorY) {
+    Native.withAdjustedPosition(anchor, x + transX, y + transY, metrics.width, 20, function(anchorX, anchorY) {
         Native.Context2D.fillStyle = "black";
         Native.Context2D.fillText(str, anchorX, anchorY);
     });
