@@ -759,25 +759,23 @@ MIDP.anchors = {
 }
 
 Native.withAdjustedPosition = function(anchor, x, y, width, height, callback) {
-    var outX = x, outY = y;
-
     // LEFT and TOP: do nothing
     if (anchor & MIDP.anchors.RIGHT) {
-        outX = Native.Canvas.width - width;
+        x = Native.Canvas.width - width;
     }
     if (anchor & MIDP.anchors.BOTTOM) {
-        outY = Native.Canvas.height - height;
+        y = Native.Canvas.height - height;
     }
     if (anchor & MIDP.anchors.HCENTER) {
-        outX = Native.Canvas.width / 2 - width / 2;
+        x = Native.Canvas.width / 2 - width / 2;
     }
     if (anchor & MIDP.anchors.VCENTER) {
-        outY = Native.Canvas.height / 2 - height / 2;
+        y = Native.Canvas.height / 2 - height / 2;
     }
     if (anchor & MIDP.anchors.BASELINE) {
-        outY = y - height;
+        y = y - height;
     }
-    callback(outX, outY);    
+    callback(x, y);    
 }
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
