@@ -15,7 +15,7 @@ Testlets.java: $(SRCS) Makefile
 tests.jar: $(SRCS) Testlets.java
 	rm -rf build
 	mkdir build
-	javac -source 1.3 -target 1.3 -bootclasspath ../java/classes.jar -d ./build $^
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -d ./build $^
 	cd build && jar cvf ../tests.jar *
 	jar uvf tests.jar gnu/testlet/vm/test.png
 	rm -rf build
