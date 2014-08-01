@@ -811,19 +811,20 @@ Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] 
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
     var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
-        transY = _this["javax/microedition/lcdui/Graphics$transY"];
+        transY = _this["javax/microedition/lcdui/Graphics$transY"],
+        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
 
-    // TODO what color? Is it the color last passed to getPixel?
-    Native.Context2D.fillStyle = "white";
+    Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.Context2D.fillRect(x + transX, y + transY, width, height);
 }
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
     var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
-        transY = _this["javax/microedition/lcdui/Graphics$transY"];
+        transY = _this["javax/microedition/lcdui/Graphics$transY"],
+        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
 
-    Native.Context2D.strokeStyle = "black";
+    Native.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.Context2D.strokeRect(x + transX, y + transY, width, height);
 }
 
@@ -832,11 +833,13 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
         len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
         str = util.fromJavaChars(data, offset, len),
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
-        transY = _this["javax/microedition/lcdui/Graphics$transY"];
+        transY = _this["javax/microedition/lcdui/Graphics$transY"],
+        pixel = _this["javax/microedition/lcdui/Graphics$pixel"],
+        metrics = Native.Context2D.measureText(str).width;
 
-    var metrics = Native.Context2D.measureText(str).width;
+    Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+
     Native.withAdjustedPosition(anchor, x + transX, y + transY, metrics.width, 20, function(anchorX, anchorY) {
-        Native.Context2D.fillStyle = "black";
         Native.Context2D.fillText(str, anchorX, anchorY);
     });
 }
