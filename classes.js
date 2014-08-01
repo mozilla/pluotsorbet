@@ -147,8 +147,9 @@ Classes.prototype.getField = function(className, fieldName, signature, staticFla
 };
 
 Classes.prototype.getMethod = function(classInfo, methodName, signature, staticFlag, inheritFlag) {
+    var c = classInfo;
     do {
-        var methods = classInfo.methods;
+        var methods = c.methods;
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
             if (ACCESS_FLAGS.isStatic(method.access_flags) === !!staticFlag) {
@@ -156,8 +157,15 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
                     return method;
             }
         }
-        classInfo = classInfo.superClass;
-    } while (classInfo);
+        c = c.superClass;
+    } while (c);
+    if (ACCESS_FLAGS.isInterface(classInfo.access_flags)) {
+        for (var n = 0; n < classInfo.interfaces.length; ++n) {
+            var m = this.getMethod(classInfo.interfaces[n], methodName, signature, staticFlag, inheritFlag);
+            if (m)
+                return m;
+        }
+    }
 };
 
 Classes.prototype.newObject = function(classInfo) {
