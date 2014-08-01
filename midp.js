@@ -501,8 +501,20 @@ Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
 }
 
 Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), image = stack.pop();
-    image.data = bytes.buffer.slice(offset, offset + length);
+    var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop();
+    var blob = new Blob([bytes.buffer.slice(offset, offset + length)], { type: "image/png" });
+    var img = new Image();
+    img.src = URL.createObjectURL(blob);
+    img.onload = function() {
+        imageData["javax/microedition/lcdui/ImageData$width"] = img.naturalWidth;
+        imageData["javax/microedition/lcdui/ImageData$height"] = img.naturalHeight;
+        imageData["javax/microedition/lcdui/ImageData$nativeImageData"] = img;
+        ctx.resume();
+    }
+    img.onerror = function(e) {
+        ctx.resume();
+    }
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function(ctx, stack) {

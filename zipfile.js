@@ -224,7 +224,6 @@ function inflate(bytes) {
 
       ensureBuffer(bufferLength + blockLen);
       var end = bufferLength + blockLen;
-      bufferLength = end;
       for (var n = bufferLength; n < end; ++n) {
         if (typeof (b = bytes[bytesPos++]) == 'undefined') {
           eof = true;
@@ -232,6 +231,7 @@ function inflate(bytes) {
         }
         buffer[n] = b;
       }
+      bufferLength = end;
       return eof;
     }
 
