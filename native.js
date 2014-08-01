@@ -488,3 +488,8 @@ Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = f
 Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(ctx, stack) {
     var displayId = stack.pop(), isolateId = stack.pop();
 }
+
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
+    // Wait for incoming connections
+    throw VM.Pause;
+}
