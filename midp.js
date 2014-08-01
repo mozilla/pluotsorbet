@@ -782,7 +782,7 @@ Native.anchorXY = function(anchor, x, y, width, height) {
 }
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
-    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(),
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
         img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"],
         pos = Native.anchorXY(anchor, x, y, img.width, img.height);
 
@@ -791,33 +791,34 @@ Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Imag
 }
 
 Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
-    var str = util.fromJavaString(stack.pop()),
+    var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
         metrics = Native.Context2D.measureText(str);
     stack.push(metrics.width);
 }
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
-    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()),
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
         pos = Native.anchorXY(anchor, x, y + 20, Native.Context2D.measureText(str).width, 20);
     console.log("drawString x:" + pos.x + " y: " + pos.y + " str: " + str);
     Native.Context2D.fillText(str, pos.x, pos.y);
 }
 
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop();
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
     // TODO what color? Is it the color last passed to getPixel?
     Native.Context2D.fillStyle = "white";
     Native.Context2D.fillRect(x, y, width, height);
 }
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop();
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
     Native.Context2D.strokeStyle = "black";
     Native.Context2D.strokeRect(x, y, width, height);
 }
 
 Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
-    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), len = stack.pop(), offset = stack.pop(), data = stack.pop(),
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
+    len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
         str = "";
 
     for (var i in data) {
@@ -833,20 +834,20 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
 }
 
 Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
-    var str = String.fromCharCode(stack.pop()),
+    var str = String.fromCharCode(stack.pop()), _this = stack.pop(),
         metrics = Native.Context2D.measureText(str);
     stack.push(metrics.width);
 }
 
 Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
-    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()),
+    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
         metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
 
     stack.push(metrics.width);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
-    var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(),
+    var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop(),
         displayId = stack.pop(), hardwareId = stack.pop();
 
     console.log("refresh0 hardwareId:" + hardwareId + " displayId:" + displayId + " x1:" + x1 + " y1:" + y1 + " x2:" + x2 + " y2:" + y2);
