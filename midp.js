@@ -665,3 +665,8 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
     }
     ctx.raiseException("java/lang/IllegalStateException");
 }
+
+Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
+    var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop();
+    stack.push(rgb);
+}
