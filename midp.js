@@ -819,14 +819,8 @@ Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, sta
 
 Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
-    len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
-        str = "";
-
-    for (var i in data) {
-        if (typeof data[i] === "number") {
-            str += String.fromCharCode(data[i]);
-        }
-    }
+        len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
+        str = util.fromJavaChars(data, offset, len);
 
     var metrics = Native.Context2D.measureText(str).width;
     Native.withAdjustedPosition(anchor, x, y, metrics.width, 20, function(anchorX, anchorY) {
