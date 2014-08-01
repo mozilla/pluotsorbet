@@ -743,3 +743,41 @@ Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = fu
     var displayId = stack.pop();
     stack.push(1);
 }
+
+Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop();
+    stack.push(1);
+}
+
+Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
+    var str = util.fromJavaString(stack.pop()),
+        metrics = Native.Context2D.measureText(str);
+    stack.push(metrics.width);
+}
+
+Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop());
+    console.log("drawString x:" + x + " y: " + y + " str: " + str);
+    Native.Context2D.fillText(str, x, y + 20);
+}
+
+Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
+    var str = String.fromCharCode(stack.pop()),
+        metrics = Native.Context2D.measureText(str);
+    stack.push(metrics.width);
+}
+
+Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
+    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()),
+        metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
+
+    stack.push(metrics.width);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
+    var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(),
+        displayId = stack.pop(), hardwareId = stack.pop();
+
+    console.log("refresh0 hardwareId:" + hardwareId + " displayId:" + displayId + " x1:" + x1 + " y1:" + y1 + " x2:" + x2 + " y2:" + y2);
+}
+
