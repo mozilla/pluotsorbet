@@ -24,13 +24,17 @@ var ClassInfo = function(classBytes) {
 
     this.fields = [];
     classImage.fields.forEach(function(f) {
-        self.fields.push({
+        var field = {
             classInfo: self,
             access_flags: f.access_flags,
             name: cp[f.name_index].bytes,
             signature: cp[f.descriptor_index].bytes,
-            attributes: f.attributes
+        };
+        f.attributes.forEach(function(attribute) {
+            if (cp[attribute.attribute_name_index].bytes === "ConstantValue")
+                field.constantValue = new DataView(attribute.info).getUint16(0, false);
         });
+        self.fields.push(field);
     });
 
     this.methods = [];

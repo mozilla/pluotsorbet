@@ -1,5 +1,5 @@
 SRCS=$(shell cd cldc1.1.1 && find . -name *.java) $(shell cd vm && find . -name *.java) $(shell cd midp && find . -name *.java)
-EXTRA=$(shell find . -name *.png) $(shell find . -name *.bin)
+EXTRA=$(shell find . -name *.png) $(shell find . -name *.bin) $(shell find . -name *.xml)
 
 VPATH=./cldc1.1.1 ./vm ./midp
 

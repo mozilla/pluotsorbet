@@ -640,3 +640,28 @@ Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp
     }
     Native.Native.deliverWaitForNativeEventResult(ctx);
 }
+
+Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var id = stack.pop();
+    var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
+    var key;
+    classInfo.fields.forEach(function(field) {
+        if (classInfo.constant_pool[field.constantValue].integer === id)
+            key = field.name;
+    });
+    var data = CLASSES.loadFile("assets/0/en-US.xml");
+    if (!data || !key)
+        ctx.raiseException("java/lang/IOException");
+    var text = util.decodeUtf8(data);
+    var xml = new window.DOMParser().parseFromString(text, "text/xml");
+    var entries = xml.getElementsByTagName("localized_string");
+    for (n = 0; n < entries.length; ++n) {
+        var entry = entries[n];
+        if (entry.attributes.Key.value === key) {
+            console.log(entry.attributes.Value.value);
+            stack.push(CLASSES.newString(entry.attributes.Value.value));
+            return;
+        }
+    }
+    ctx.raiseException("java/lang/IllegalStateException");
+}

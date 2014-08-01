@@ -50,7 +50,7 @@ VM.execute = function(ctx) {
         do {
             var exception_table = frame.methodInfo.exception_table;
             var handler_pc = null;
-            for (var i=0; i<exception_table.length; i++) {
+            for (var i=0; exception_table && i<exception_table.length; i++) {
                 if (frame.ip >= exception_table[i].start_pc && frame.ip <= exception_table[i].end_pc) {
                     if (exception_table[i].catch_type === 0) {
                         handler_pc = exception_table[i].handler_pc;
