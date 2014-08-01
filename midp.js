@@ -378,14 +378,16 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
 }
 
 Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
     stack.push(0);
 }
 
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
 }
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
-    var isolate = stack.pop(), obj = stack.pop();
+    var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
     Native.sendEvent(obj);
 }
 
@@ -497,11 +499,11 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
 }
 
 Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
-    var size = stack.pop(), style = stack.pop(), face = stack.pop();
+    var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
 }
 
 Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop();
+    var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop(), _this = stack.pop();
     var blob = new Blob([bytes.buffer.slice(offset, offset + length)], { type: "image/png" });
     var img = new Image();
     img.src = URL.createObjectURL(blob);
@@ -526,43 +528,43 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) 
 }
 
 Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
-    var ids = CLASSES.newPrimitiveArray("I", 1);
+    var _this = stack.pop(), ids = CLASSES.newPrimitiveArray("I", 1);
     ids[0] = 0;
     stack.push(ids);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(null);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(1);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(1);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(0x3ff);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenSupported0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(1);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(1);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(0);
 }
 
@@ -578,17 +580,17 @@ Native.Context2D = (function() {
 })();
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(Native.Canvas.width);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(Native.Canvas.height);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
-    var sate = stack.pop(), hardwareId = stack.pop();
+    var state = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function(ctx, stack) {
@@ -596,7 +598,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = fun
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop();
+    var id = stack.pop(), _this = stack.pop();
     stack.push(MIDP.suites[id] ? 1 : 0);
 }
 
@@ -605,12 +607,15 @@ Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = funct
 }
 
 Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
 }
 
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
 }
 
 Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
+    var _this = stack.pop();
     stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
 }
 
@@ -701,12 +706,12 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
 }
 
 Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
-    var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop();
+    var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
     stack.push(rgb);
 }
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
-    var drawTrusted = stack.pop(), displayId = stack.pop();
+    var drawTrusted = stack.pop(), displayId = stack.pop(), _this = stack.pop();
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(ctx, stack) {
@@ -714,6 +719,7 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 }
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
     Native.sendEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN });
 }
 
@@ -727,24 +733,25 @@ Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack
 }
 
 Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function(ctx, stack) {
+    var _this = stack.pop();
     stack.push(0);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(ctx, stack) {
-    var mode = stack.pop(), displayId = stack.pop(), hardwareId = stack.pop();
+    var mode = stack.pop(), displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(ctx, stack) {
-    var displayId = stack.pop(), hardwareId = stack.pop();
+    var displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
 }
 
 Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(ctx, stack) {
-    var on = stack.pop(), displayId = stack.pop();
+    var on = stack.pop(), displayId = stack.pop(), _this = stack.pop();
     stack.push(1);
 }
 
 Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = function(ctx, stack) {
-    var displayId = stack.pop();
+    var displayId = stack.pop(), _this = stack.pop();
     stack.push(1);
 }
 
