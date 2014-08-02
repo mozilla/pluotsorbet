@@ -793,12 +793,17 @@ Native.setClip = function(g) {
     y1 -= transY;
     x2 -= transX;
     y2 -= transY;
+    Native.Context2D.save();
     Native.Context2D.beginPath();
     Native.Context2D.moveTo(x1, y1);
     Native.Context2D.lineTo(x2, y1);
     Native.Context2D.lineTo(x2, y2);
     Native.Context2D.lineTo(x1, y2);
     Native.Context2D.clip();
+}
+
+Native.restoreClip = function() {
+    Native.Context2D.restore();
 }
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
@@ -809,6 +814,7 @@ Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Imag
     Native.withAdjustedPosition(anchor, x + transX, y + transY, img.width, img.height, function(anchorX, anchorY) {
         Native.setClip(_this);
         Native.Context2D.drawImage(img, anchorX, anchorY);
+        Native.restoreClip();
     })
     stack.push(1);
 }
@@ -829,6 +835,7 @@ Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] 
         Native.setClip(_this);
         Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
         Native.Context2D.fillText(str, anchorX, anchorY);
+        Native.restoreClip();
     });
 }
 
@@ -840,6 +847,7 @@ Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, sta
     Native.setClip(_this);
     Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.Context2D.fillRect(x + transX, y + transY, width, height);
+    Native.restoreClip();
 }
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
@@ -850,6 +858,7 @@ Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, sta
     Native.setClip(_this);
     Native.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.Context2D.strokeRect(x + transX, y + transY, width, height);
+    Native.restoreClip();
 }
 
 Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
@@ -864,6 +873,7 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
         Native.setClip(_this);
         Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
         Native.Context2D.fillText(str, anchorX, anchorY);
+        Native.restoreClip();
     });
 }
 
