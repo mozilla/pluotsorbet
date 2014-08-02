@@ -22,4 +22,4 @@ tests.jar: $(SRCS) Testlets.java
 	rm -f Testlets.java
 
 clean:
-	rm -f `find . -name "*.jar" -or -name "*~"`
+	rm -f `find . -name "*.jar" -or -name "*~" -or -name "*.class"`
