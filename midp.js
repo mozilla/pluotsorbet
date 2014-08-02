@@ -652,6 +652,15 @@ Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImage
     stack.push(0);
 }
 
+Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(ctx, stack) {
+    var name = util.fromJavaString(stack.pop());
+    stack.push(0);
+}
+
+Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx, stack) {
+    var id = stack.pop();
+}
+
 Native.nativeEventQueue = [];
 
 Native.copyEvent = function(obj) {
