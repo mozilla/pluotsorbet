@@ -769,12 +769,15 @@ MIDP.draw = function(g, anchor, x, y, w, h, cb) {
         clipX1 = g.class.getField("clipX1", "S").get(g),
         clipY1 = g.class.getField("clipY1", "S").get(g),
         clipX2 = g.class.getField("clipX2", "S").get(g),
-        clipY2 = g.class.getField("clipY2", "S").get(g);
+        clipY2 = g.class.getField("clipY2", "S").get(g),
+        clipped = g.class.getField("clipped", "Z").get(g);
     var ctx = Native.Context2D;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(clipX1 - transX, clipY1 - transY, clipX2 - clipX1, clipY2 - clipY1);
-    ctx.clip();
+    if (clipped) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(clipX1 - transX, clipY1 - transY, clipX2 - clipX1, clipY2 - clipY1);
+        ctx.clip();
+    }
     x += transX;
     y += transY;
     if (anchor) {
@@ -791,7 +794,9 @@ MIDP.draw = function(g, anchor, x, y, w, h, cb) {
             y = y - h;
     }
     cb(x, y);
-    ctx.restore();
+    if (clipped) {
+        ctx.restore();
+    }
 }
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
