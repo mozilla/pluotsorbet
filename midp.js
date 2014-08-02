@@ -224,11 +224,11 @@ Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/C
     var state = stack.pop();
     var suiteId = MIDP.commandState.suiteId;
     var suite = MIDP.suites[suiteId];
-    state["com/sun/midp/main/CommandState$midletClassName"] = CLASSES.newString(suite.midletClassName);
-    state["com/sun/midp/main/CommandState$arg0"] = CLASSES.newString("");
-    state["com/sun/midp/main/CommandState$arg1"] = CLASSES.newString("");
-    state["com/sun/midp/main/CommandState$arg2"] = CLASSES.newString("");
-    state["com/sun/midp/main/CommandState$suiteId"] = suiteId;
+    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(suite.midletClassName));
+    state.class.getField("arg0", "Ljava/lang/String;").set(state, CLASSES.newString(""));
+    state.class.getField("arg1", "Ljava/lang/String;").set(state, CLASSES.newString(""));
+    state.class.getField("arg2", "Ljava/lang/String;").set(state, CLASSES.newString(""));
+    state.class.getField("suiteId", "I").set(state, suiteId);
 }
 
 Native.domainTBL = [
@@ -508,9 +508,9 @@ Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImag
     var img = new Image();
     img.src = URL.createObjectURL(blob);
     img.onload = function() {
-        imageData["javax/microedition/lcdui/ImageData$width"] = img.naturalWidth;
-        imageData["javax/microedition/lcdui/ImageData$height"] = img.naturalHeight;
-        imageData["javax/microedition/lcdui/ImageData$nativeImageData"] = img;
+        imageData.class.getField("width", "I").set(imageData, img.naturalWidth);
+        imageData.class.getField("height", "I").set(imageData, img.naturalHeight);
+        imageData.class.getField("nativeImageData", "I").set(imageData, img);
         ctx.resume();
     }
     img.onerror = function(e) {
@@ -623,10 +623,9 @@ Native.nativeEventQueue = [];
 
 Native.copyEvent = function(obj) {
     var e = Native.nativeEventQueue.pop();
-    obj["com/sun/midp/events/Event$type"] = e["com/sun/midp/events/Event$type"];
-    Object.keys(e).forEach(function (fieldName) {
-        if (fieldName.indexOf("com/sun/midp/events/NativeEvent$") === 0)
-            obj[fieldName] = e[fieldName];
+    obj.class.getField("type", "I").set(obj, e.type);
+    obj.class.fields.forEach(function(field) {
+        field.set(obj, e[field.name]);
     });
 }
 
@@ -639,10 +638,9 @@ Native.deliverWaitForNativeEventResult = function(ctx) {
 }
 
 Native.sendEvent = function(obj) {
-    var e = { "com/sun/midp/events/Event$type": obj["com/sun/midp/events/Event$type"] };
-    Object.keys(obj).forEach(function (fieldName) {
-        if (fieldName.indexOf("com/sun/midp/events/NativeEvent$") === 0)
-            e[fieldName] = obj[fieldName];
+    var e = { type: obj.class.getField("type", "I").get(obj) };
+    obj.class.fields.forEach(function(field) {
+        e[field.name] = field.get(obj);
     });
     Native.nativeEventQueue.push(e);
     var ctx = Native.waitingNativeEventContext;
@@ -657,10 +655,10 @@ MIDP.KEY_EVENT = 1;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
 window.addEventListener("keypress", function(ev) {
-    Native.sendEvent({ "com/sun/midp/events/Event$type": MIDP.KEY_EVENT,
-                       "com/sun/midp/events/NativeEvent$intParam1": 1 /* PRESSED */,
-                       "com/sun/midp/events/NativeEvent$intParam2": ev.charCode,
-                       "com/sun/midp/events/NativeEvent$intParam4": 0 /* Display ID */ });
+    Native.sendEvent({ type: MIDP.KEY_EVENT,
+                       intParam1: 1 /* PRESSED */,
+                       intParam2: ev.charCode,
+                       intParam4: 0 /* Display ID */ });
 });
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
@@ -766,12 +764,12 @@ MIDP.anchors = {
 }
 
 MIDP.draw = function(g, anchor, x, y, w, h, cb) {
-    var transX = g["javax/microedition/lcdui/Graphics$transX"],
-        transY = g["javax/microedition/lcdui/Graphics$transY"],
-        clipX1 = g["javax/microedition/lcdui/Graphics$clipX1"],
-        clipY1 = g["javax/microedition/lcdui/Graphics$clipY1"],
-        clipX2 = g["javax/microedition/lcdui/Graphics$clipX2"],
-        clipY2 = g["javax/microedition/lcdui/Graphics$clipY2"];
+    var transX = g.class.getField("transX", "I").get(g),
+        transY = g.class.getField("transY", "I").get(g),
+        clipX1 = g.class.getField("clipX1", "S").get(g),
+        clipY1 = g.class.getField("clipY1", "S").get(g),
+        clipX2 = g.class.getField("clipX2", "S").get(g),
+        clipY2 = g.class.getField("clipY2", "S").get(g);
     var ctx = Native.Context2D;
     ctx.save();
     ctx.beginPath();
@@ -798,11 +796,12 @@ MIDP.draw = function(g, anchor, x, y, w, h, cb) {
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
-        img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"],
-        transX = _this["javax/microedition/lcdui/Graphics$transX"],
-        transY = _this["javax/microedition/lcdui/Graphics$transY"];
-    MIDP.draw(_this, anchor, x, y, img.width, img.height, function(x, y) {
-        Native.Context2D.drawImage(img, x, y);
+        img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
+        imgData = img.class.getField("nativeImageData", "I").get(img),
+        transX = _this.class.getField("transX", "I").get(_this),
+        transY = _this.class.getField("transY", "I").get(_this);
+    MIDP.draw(_this, anchor, x, y, imgData.width, imgData.height, function(x, y) {
+        Native.Context2D.drawImage(imgData, x, y);
     });
     stack.push(1);
 }
@@ -816,7 +815,7 @@ Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = func
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
         metrics = Native.Context2D.measureText(str),
-        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+        pixel = _this.class.getField("pixel", "I").get(_this);
     MIDP.draw(_this, anchor, x, y, metrics.width, 0, function(x, y) {
         Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
         Native.Context2D.fillText(str, x, y);
@@ -825,7 +824,7 @@ Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] 
 
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
     var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
-        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+        pixel = _this.class.getField("pixel", "I").get(_this);
     MIDP.draw(_this, 0, x, y, width, height, function(x, y) {
         Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
         Native.Context2D.fillRect(x, y, width, height);
@@ -834,7 +833,7 @@ Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, sta
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
     var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
-        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+        pixel = _this.class.getField("pixel", "I").get(_this);
     MIDP.draw(_this, 0, x, y, width, height, function(x, y) {
         Native.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
         Native.Context2D.strokeRect(x, y, width, height);
@@ -845,7 +844,7 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
         len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
         str = util.fromJavaChars(data, offset, len),
-        pixel = _this["javax/microedition/lcdui/Graphics$pixel"],
+        pixel = _this.class.getField("pixel", "I").get(_this),
         metrics = Native.Context2D.measureText(str);
     MIDP.draw(_this, 0, x, y, metrics.width, 0, function(x, y) {
         Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
