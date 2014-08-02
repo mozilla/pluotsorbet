@@ -3,11 +3,18 @@
 
 'use strict';
 
-var urlParams = {};
-for (var param of location.search.substring(1).split("&")) {
-  var [name, value] = param.split("=").map(v => v.replace(/\+/g, " ")).map(decodeURIComponent);
-  urlParams[name] = value;
+console.log = function() {
+  var s = Array.prototype.join.call(arguments, ",") +"\n";
+  document.getElementById("log").textContent += s;
 }
+
+var urlParams = {};
+location.search.substring(1).split("&").forEach(function (param) {
+  param = param.split("=").map(function(v) {
+      return v.replace(/\+/g, " ");
+  }).map(decodeURIComponent);
+  urlParams[param[0]] = param[1];
+});
 
 function load(file, cb) {
   var xhr = new XMLHttpRequest();
@@ -40,11 +47,6 @@ function runTest(className) {
       jvm.run(className);
     }
   })();
-}
-
-console.log = function() {
-  var s = Array.prototype.join.call(arguments, ",") +"\n";
-  document.getElementById("log").textContent += s;
 }
 
 runTest("Launcher");
