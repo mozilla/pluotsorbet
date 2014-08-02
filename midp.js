@@ -566,21 +566,25 @@ Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = functio
     stack.push(0);
 }
 
-Native.Context2D = (function() {
+Native.Canvas = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
     c.height = 480;
-    return c.getContext("2d");
+    return c;  
+})();
+
+Native.Context2D = (function() {
+    return Native.Canvas.getContext("2d");
 })();
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
     var id = stack.pop();
-    stack.push(Native.Context2D.width);
+    stack.push(Native.Canvas.width);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
     var id = stack.pop();
-    stack.push(Native.Context2D.height);
+    stack.push(Native.Canvas.height);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
@@ -743,3 +747,129 @@ Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = fu
     var displayId = stack.pop();
     stack.push(1);
 }
+
+MIDP.anchors = {
+    HCENTER: 1,
+    VCENTER: 2,
+    LEFT: 4,
+    RIGHT: 8,
+    TOP: 16,
+    BOTTOM: 32,
+    BASELINE: 64    
+}
+
+Native.withAdjustedPosition = function(anchor, x, y, width, height, callback) {
+    // LEFT and TOP: do nothing
+    if (anchor & MIDP.anchors.RIGHT) {
+        x = Native.Canvas.width - width;
+    }
+    if (anchor & MIDP.anchors.BOTTOM) {
+        y = Native.Canvas.height - height;
+    }
+    if (anchor & MIDP.anchors.HCENTER) {
+        x = Native.Canvas.width / 2 - width / 2;
+    }
+    if (anchor & MIDP.anchors.VCENTER) {
+        y = Native.Canvas.height / 2 - height / 2;
+    }
+    if (anchor & MIDP.anchors.BASELINE) {
+        y = y - height;
+    }
+    callback(x, y);    
+}
+
+Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
+        img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"],
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"];
+
+    Native.withAdjustedPosition(anchor, x + transX, y + transY, img.width, img.height, function(anchorX, anchorY) {
+        Native.Context2D.drawImage(img, anchorX, anchorY);
+    })
+
+    stack.push(1);
+}
+
+Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
+    var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
+        metrics = Native.Context2D.measureText(str);
+    stack.push(metrics.width);
+}
+
+Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
+        metrics = Native.Context2D.measureText(str),
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"],
+        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+
+    Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+
+    Native.withAdjustedPosition(anchor, x + transX, y + transY, metrics.width, 20, function(anchorX, anchorY) {
+        Native.Context2D.fillText(str, anchorX, anchorY);
+    });
+}
+
+Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"],
+        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+
+    Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+    Native.Context2D.fillRect(x + transX, y + transY, width, height);
+}
+
+Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"],
+        pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+
+    Native.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+    Native.Context2D.strokeRect(x + transX, y + transY, width, height);
+}
+
+Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
+        len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
+        str = util.fromJavaChars(data, offset, len),
+        transX = _this["javax/microedition/lcdui/Graphics$transX"],
+        transY = _this["javax/microedition/lcdui/Graphics$transY"],
+        pixel = _this["javax/microedition/lcdui/Graphics$pixel"],
+        metrics = Native.Context2D.measureText(str);
+
+    Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+
+    Native.withAdjustedPosition(anchor, x + transX, y + transY, metrics.width, 20, function(anchorX, anchorY) {
+        Native.Context2D.fillText(str, anchorX, anchorY);
+    });
+}
+
+Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
+    var str = String.fromCharCode(stack.pop()), _this = stack.pop(),
+        metrics = Native.Context2D.measureText(str);
+    stack.push(metrics.width);
+}
+
+Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
+    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
+        metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
+
+    stack.push(metrics.width);
+}
+
+Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
+    var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(),
+        displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+}
+
+
+Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function(ctx, stack) {
+    var inputModeIds = CLASSES.newPrimitiveArray("I", 0);
+    // TODO We want to return [1] here for KEYBOARD_INPUT_MODE but it causes a vm crash
+    stack.push(inputModeIds);
+}
+
+

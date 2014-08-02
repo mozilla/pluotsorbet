@@ -50,18 +50,24 @@ var util = (function () {
     return Long.fromNumber(d);
   }
 
+  function fromJavaChars(chars, offset, count) {
+    var s = "";
+    if (!count)
+      count = chars.length;
+    if (!offset)
+      offset = 0;
+    for (var n = 0; n < count; ++n)
+      s += String.fromCharCode(chars[offset+n]);
+    return s;      
+  }
+
   function fromJavaString(str) {
     if (!str)
       return null;
     var chars = str["java/lang/String$value"];
     var offset = str["java/lang/String$offset"];
     var count = str["java/lang/String$count"];
-    var s = "";
-    if (!count)
-      count = chars.length;
-    for (var n = 0; n < count; ++n)
-      s += String.fromCharCode(chars[offset+n]);
-    return s;
+    return fromJavaChars(chars, offset, count);
   }
 
   function cache(obj, name, fn) {
@@ -95,6 +101,7 @@ var util = (function () {
     defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
+    fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
     cache: cache,
     id: id,
