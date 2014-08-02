@@ -596,25 +596,21 @@ Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = functio
     stack.push(0);
 }
 
-Native.Canvas = (function() {
+Native.Context2D = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
     c.height = 480;
-    return c;  
-})();
-
-Native.Context2D = (function() {
-    return Native.Canvas.getContext("2d");
+    return c.getContext("2d");
 })();
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(Native.Canvas.width);
+    stack.push(Native.Context2D.canvas.width);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(Native.Canvas.height);
+    stack.push(Native.Context2D.canvas.height);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
