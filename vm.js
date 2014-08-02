@@ -831,7 +831,7 @@ VM.execute = function(ctx) {
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
                 lengths[i] = stack.pop();
-            stack.push(CLASSES.newMultiArray(classInfo.className, lengths));
+            stack.push(CLASSES.newMultiArray(classInfo.className, lengths.reverse()));
             break;
         case 0xbe: // arraylength
             var obj = stack.pop();

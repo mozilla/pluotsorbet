@@ -17,5 +17,15 @@ public class ArrayTest implements Testlet {
 	b[1] = new String[3];
 	th.check(b[1][0] == null);
 	th.check(b[0] == null);
+        String[][] x = new String[2][3];
+        for (int i = 0; i < 2; ++i)
+            for (int j = 0; j < 3; ++j)
+                x[i][j] = "" + i + " " + j;
+	th.check(x[0][0].equals("0 0"));
+	th.check(x[0][1].equals("0 1"));
+	th.check(x[0][2].equals("0 2"));
+	th.check(x[1][0].equals("1 0"));
+	th.check(x[1][1].equals("1 1"));
+	th.check(x[1][2].equals("1 2"));
     }
 }

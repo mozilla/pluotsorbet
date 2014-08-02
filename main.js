@@ -49,9 +49,9 @@ function runTest(className) {
   })();
 }
 
-runTest("Launcher");
+//runTest("Launcher");
 //runTest("join");
-//runTest("RunTests");
+runTest("RunTests");
 //runTest("gnu/testlet/vm/SystemTest");
 //runTest("TestThread");
 //runTest("TestRuntime");
