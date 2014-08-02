@@ -153,7 +153,7 @@ Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {
     var classObject = stack.pop();
     stack.push(util.cache(classObject, "getName", function () {
-        return CLASSES.newString(classObject.vmClass.className.replace("/", ".", "g"));
+        return CLASSES.newString(classObject.vmClass.className.replace(/\//g, "."));
     }));
 }
 
@@ -162,7 +162,7 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
     try {
         if (!name)
             throw new Classes.ClassNotFoundException();
-        var className = util.fromJavaString(name).replace(".", "/", "g");
+        var className = util.fromJavaString(name).replace(/\./g, "/");
         var classInfo = null;
         classInfo = CLASSES.getClass(className);
     } catch (e) {
