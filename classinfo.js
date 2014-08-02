@@ -33,7 +33,6 @@ var ClassInfo = function(classBytes) {
     this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
     this.access_flags = classImage.access_flags;
     this.constant_pool = cp;
-    this.staticFields = {};
     this.constructor = function () {
     }
     this.constructor.prototype.class = this;
