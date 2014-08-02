@@ -784,7 +784,15 @@ Native.setClip = function(g) {
     var x1 = g["javax/microedition/lcdui/Graphics$clipX1"],
         y1 = g["javax/microedition/lcdui/Graphics$clipY1"],
         x2 = g["javax/microedition/lcdui/Graphics$clipX2"],
-        y2 = g["javax/microedition/lcdui/Graphics$clipY2"];
+        y2 = g["javax/microedition/lcdui/Graphics$clipY2"],
+        transX = g["javax/microedition/lcdui/Graphics$transX"],
+        transY = g["javax/microedition/lcdui/Graphics$transY"],
+        clipped = g["javax/microedition/lcdui/Graphics$clipped"];
+    if (!clipped) return;
+    x1 -= transX;
+    y1 -= transY;
+    x2 -= transX;
+    y2 -= transY;
     Native.Context2D.beginPath();
     Native.Context2D.moveTo(x1, y1);
     Native.Context2D.lineTo(x2, y1);
