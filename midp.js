@@ -626,6 +626,84 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = functio
     stack.push(MIDP.suites[id] ? 1 : 0);
 }
 
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var id = stack.pop(), _this = stack.pop();
+    stack.push(CLASSES.newString(""));
+}
+
+Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), path = util.fromJavaString(stack.pop());
+    stack.push(0);
+}
+
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I"] = function(ctx, stack) {
+    var storageId = stack.pop(), name = util.fromJavaString(stack.pop());
+    stack.push(10 * 4096 * 4096);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I"] = function(ctx, stack) {
+    var storageId = stack.pop(), base = util.fromJavaString(stack.pop()), handle = stack.pop();
+    stack.push(10 * 4096 * 4096);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(ctx, stack) {
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), base = util.fromJavaString(stack.pop()), _this = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(ctx, stack) {
+    var pos = stack.pop(), handle = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
+    var count = stack.pop(), offset = stack.pop(), bytes = stack.pop(), fileId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(ctx, stack) {
+    var fileId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack) {
+    var fileId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] = function(ctx, stack) {
+    var headerDataSize = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(ctx, stack) {
+    var headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] = function(ctx, stack) {
+    var headerVersion = stack.pop(), headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
+    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+    stack.push(CLASSES.newPrimitiveArray("I", 0));
+}
+
+Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
+    var recordId = stack.pop(), changeType = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
+    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+}
+
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
     var lock = stack.pop(), id = stack.pop();
 }
@@ -655,6 +733,15 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx, stack) {
     var id = stack.pop();
+}
+
+Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ctx, stack) {
+    var id = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(1);
 }
 
 MIDP.nativeEventQueue = [];
