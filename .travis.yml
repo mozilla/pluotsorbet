@@ -1,4 +1,4 @@
 language: node_js
 script:
-  - cd java && make
-  - cd tests && make
+  - cd java && make && cd ..
+  - cd tests && make && cd ..
