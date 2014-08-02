@@ -775,7 +775,7 @@ MIDP.draw = function(g, anchor, x, y, w, h, cb) {
     if (clipped) {
         ctx.save();
         ctx.beginPath();
-        ctx.rect(clipX1 - transX, clipY1 - transY, clipX2 - clipX1, clipY2 - clipY1);
+        ctx.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
         ctx.clip();
     }
     x += transX;
