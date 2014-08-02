@@ -780,11 +780,11 @@ Native.withAdjustedPosition = function(anchor, x, y, width, height, callback) {
     callback(x, y);    
 }
 
-Native.setClip = function(_this) {
-    var x1 = _this["javax/microedition/lcdui/Graphics$clipX1"],
-        y1 = _this["javax/microedition/lcdui/Graphics$clipY1"],
-        x2 = _this["javax/microedition/lcdui/Graphics$clipX2"],
-        y2 = _this["javax/microedition/lcdui/Graphics$clipY2"];
+Native.setClip = function(g) {
+    var x1 = g["javax/microedition/lcdui/Graphics$clipX1"],
+        y1 = g["javax/microedition/lcdui/Graphics$clipY1"],
+        x2 = g["javax/microedition/lcdui/Graphics$clipX2"],
+        y2 = g["javax/microedition/lcdui/Graphics$clipY2"];
     Native.Context2D.beginPath();
     Native.Context2D.moveTo(x1, y1);
     Native.Context2D.lineTo(x2, y1);
@@ -883,4 +883,8 @@ Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = f
     stack.push(ids);
 }
 
-
+Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack) {
+    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop(),
+        metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
+    stack.push(metrics.width);
+}

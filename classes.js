@@ -107,7 +107,7 @@ Classes.prototype.initArrayClass = function(typeName) {
     var elementType = typeName.substr(1);
     var constructor = ARRAYS[elementType];
     if (constructor)
-        return this.initPrimitiveArrayType(typeName, constructor);
+        return this.classes[typeName] = this.initPrimitiveArrayType(typeName, constructor);
     if (elementType[0] === "L")
         elementType = elementType.substr(1).replace(";", "");
     var classInfo = new ArrayClass(typeName, this.getClass(elementType));
