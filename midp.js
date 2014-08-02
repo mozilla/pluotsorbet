@@ -878,9 +878,9 @@ Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, st
 
 
 Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function(ctx, stack) {
-    var inputModeIds = CLASSES.newPrimitiveArray("I", 0);
-    // TODO We want to return [1] here for KEYBOARD_INPUT_MODE but it causes a vm crash
-    stack.push(inputModeIds);
+    var ids = CLASSES.newPrimitiveArray("I", 1);
+    ids[0] = 1; // KEYBOARD_INPUT_MODE
+    stack.push(ids);
 }
 
 

@@ -142,6 +142,13 @@ Classes.prototype.getField = function(className, fieldName, signature, staticFla
                 }
             }
         }
+        if (staticFlag) {
+            for (var n = 0; n < classInfo.interfaces.length; ++n) {
+                var field = this.getField(classInfo.interfaces[n].className, fieldName, signature, staticFlag);
+                if (field)
+                    return field;
+            }
+        }
         classInfo = classInfo.superClass;
     } while (classInfo);
 };
@@ -161,9 +168,9 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
     } while (c);
     if (ACCESS_FLAGS.isInterface(classInfo.access_flags)) {
         for (var n = 0; n < classInfo.interfaces.length; ++n) {
-            var m = this.getMethod(classInfo.interfaces[n], methodName, signature, staticFlag, inheritFlag);
-            if (m)
-                return m;
+            var method = this.getMethod(classInfo.interfaces[n], methodName, signature, staticFlag, inheritFlag);
+            if (method)
+                return method;
         }
     }
 };
