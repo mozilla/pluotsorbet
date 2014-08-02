@@ -551,10 +551,6 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
     stack.push(0);
 }
 
-Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) {
-    stack.push(Long.fromNumber(Date.now()));
-}
-
 Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
     var _this = stack.pop(), ids = CLASSES.newPrimitiveArray("I", 1);
     ids[0] = 0;

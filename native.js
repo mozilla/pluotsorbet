@@ -100,6 +100,10 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Lja
     }
 }
 
+Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) {
+    stack.push2(Long.fromNumber(Date.now()));
+}
+
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(ctx, stack) {
     stack.push(stack.pop().class.getClassObject());
 }
