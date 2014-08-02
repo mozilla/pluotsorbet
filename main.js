@@ -26,7 +26,7 @@ function load(file, cb) {
   xhr.send(null);
 }
 
-function runTest(className) {
+function run(className, args) {
   var jvm = new JVM();
   // This is a hack. We should eliminate CLASSES instead.
   CLASSES.classes = {};
@@ -44,12 +44,17 @@ function runTest(className) {
         loadNextJar();
       });
     } else {
-      jvm.run(className);
+      jvm.run(className, args);
     }
   })();
 }
 
-runTest("Launcher");
+if (!urlParams.main)
+  console.log("Supported URL parameters: main=MainClass args=comma,separated,list");
+
+run(urlParams.main || "RunTests", (urlParams.args || "").split(","));
+
+//runTest("Launcher");
 //runTest("join");
 //runTest("RunTests");
 //runTest("gnu/testlet/vm/SystemTest");

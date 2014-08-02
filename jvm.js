@@ -25,7 +25,7 @@ JVM.prototype.loadJarFile = function(fileName) {
     return CLASSES.loadJarFile(fileName);
 }
 
-JVM.prototype.run = function(className) {
+JVM.prototype.run = function(className, args) {
     var classInfo = CLASSES.getClass(className);
     if (!classInfo) {
         throw new Error("Could not find or load main class " + className);
@@ -54,7 +54,10 @@ JVM.prototype.run = function(className) {
     ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
     ctx.execute(caller);
 
-    caller.stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
+    var arr = CLASSES.newArray("[Ljava/lang/String;", args.length);
+    for (var n = 0; n < args.length; ++n)
+        arr[n] = CLASSES.newString(args[n]);
+    caller.stack.push(arr);
     ctx.pushFrame(entryPoint, 1);
     ctx.start(caller);
 }
