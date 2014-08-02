@@ -1,4 +1,6 @@
 language: node_js
+node_js:
+  - "0.10"
 script:
   - cd java && make && cd ..
   - cd tests && make && cd ..
