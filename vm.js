@@ -126,7 +126,7 @@ VM.execute = function(ctx) {
             var classInfo = resolve(op, constant.class_index);
             var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getField(classInfo.className, fieldName, signature, (op === 0xb2 || op == 0xb3));
+            constant = CLASSES.getField(classInfo, fieldName, signature, (op === 0xb2 || op == 0xb3));
             break;
         case TAGS.CONSTANT_Methodref:
         case TAGS.CONSTANT_InterfaceMethodref:
@@ -851,11 +851,7 @@ VM.execute = function(ctx) {
                 ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
-            var value = obj[field.id];
-            if (typeof value === "undefined") {
-                value = util.defaultValue(field.signature);
-            }
-            stack.pushType(field.signature, value);
+            stack.pushType(field.signature, field.get(obj));
             break;
         case 0xb5: // putfield
             var idx = frame.read16();
@@ -868,7 +864,7 @@ VM.execute = function(ctx) {
                 ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
-            obj[field.id] = val;
+            field.set(obj, val);
             break;
         case 0xb2: // getstatic
             var idx = frame.read16();

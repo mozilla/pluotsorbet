@@ -128,23 +128,19 @@ Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
     return classInfo;
 }
 
-Classes.prototype.getField = function(className, fieldName, signature, staticFlag) {
-    var classInfo = this.getClass(className, false);
+Classes.prototype.getField = function(classInfo, fieldName, signature, staticFlag) {
     do {
         var fields = classInfo.fields;
         for (var i=0; i<fields.length; ++i) {
             var field = fields[i];
             if (ACCESS_FLAGS.isStatic(field.access_flags) === !!staticFlag) {
-                if (field.name === fieldName && field.signature === signature) {
-                    if (!field.id)
-                        field.id = classInfo.className + "$" + fieldName;
+                if (field.name === fieldName && field.signature === signature)
                     return field;
-                }
             }
         }
         if (staticFlag) {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
-                var field = this.getField(classInfo.interfaces[n].className, fieldName, signature, staticFlag);
+                var field = this.getField(classInfo.interfaces[n], fieldName, signature, staticFlag);
                 if (field)
                     return field;
             }
@@ -185,9 +181,9 @@ Classes.prototype.newString = function(s) {
     var chars = this.newPrimitiveArray("C", length);
   for (var n = 0; n < length; ++n)
     chars[n] = s.charCodeAt(n);
-  obj["java/lang/String$value"] = chars;
-  obj["java/lang/String$offset"] = 0;
-  obj["java/lang/String$count"] = length;
+  CLASSES.java_lang_String.getField("value", "[C").set(obj, chars);
+  CLASSES.java_lang_String.getField("offset", "I").set(obj, 0);
+  CLASSES.java_lang_String.getField("count", "I").set(obj, length);
   return obj;
 }
 

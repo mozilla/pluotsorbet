@@ -3,6 +3,29 @@
 
 'use strict';
 
+var FieldInfo = (function() {
+    var idgen = 0;
+    return function(classInfo, access_flags, name, signature) {
+        this.classInfo = classInfo;
+        this.access_flags = access_flags;
+        this.name = name;
+        this.signature = signature;
+        this.id = idgen++;
+    }
+})();
+
+FieldInfo.prototype.get = function(obj) {
+    var value = obj[this.id];
+    if (typeof value === "undefined") {
+        value = util.defaultValue(this.signature);
+    }
+    return value;
+}
+
+FieldInfo.prototype.set = function(obj, value) {
+    obj[this.id] = value;
+}
+
 var ClassInfo = function(classBytes) {
     var classImage = getClassImage(classBytes, this);
     var cp = classImage.constant_pool;
@@ -24,12 +47,7 @@ var ClassInfo = function(classBytes) {
 
     this.fields = [];
     classImage.fields.forEach(function(f) {
-        var field = {
-            classInfo: self,
-            access_flags: f.access_flags,
-            name: cp[f.name_index].bytes,
-            signature: cp[f.descriptor_index].bytes,
-        };
+        var field = new FieldInfo(self, f.access_flags, cp[f.name_index].bytes, cp[f.descriptor_index].bytes);
         f.attributes.forEach(function(attribute) {
             if (cp[attribute.attribute_name_index].bytes === "ConstantValue")
                 field.constantValue = new DataView(attribute.info).getUint16(0, false);
@@ -97,6 +115,10 @@ ClassInfo.prototype.getClassObject = function() {
         classObject.vmClass = self;
         return classObject;
     });
+}
+
+ClassInfo.prototype.getField = function(name, signature, isStatic) {
+    return CLASSES.getField(this, name, signature, isStatic);
 }
 
 var ArrayClass = function(className, elementClass) {
