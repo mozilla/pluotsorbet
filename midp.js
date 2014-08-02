@@ -861,6 +861,14 @@ MIDP.withTextAnchor = function(g, anchor, x, y, cb) {
     });
 }
 
+MIDP.withPixel = function(g, cb) {
+    var pixel = g.class.getField("pixel", "I").get(g);
+    var style = "#" + ("00000" + pixel.toString(16)).slice(-6);
+    MIDP.Context2D.fillStyle = style;
+    MIDP.Context2D.strokeStyle = style;
+    cb();
+}
+
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
         img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
@@ -880,40 +888,40 @@ Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = func
 }
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
-    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        pixel = _this.class.getField("pixel", "I").get(_this);
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
     MIDP.withTextAnchor(_this, anchor, x, y, function(x, y) {
-        MIDP.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        MIDP.Context2D.fillText(str, x, y);
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillText(str, x, y);
+        });
     });
 }
 
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
-        pixel = _this.class.getField("pixel", "I").get(_this);
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
     MIDP.withClip(_this, x, y, function(x, y) {
-        MIDP.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        MIDP.Context2D.fillRect(x, y, width, height);
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillRect(x, y, width, height);
+        });
     });
 }
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
-        pixel = _this.class.getField("pixel", "I").get(_this);
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
     MIDP.withClip(_this, x, y, function(x, y) {
-        MIDP.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        MIDP.Context2D.strokeRect(x, y, width, height);
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.strokeRect(x, y, width, height);
+        });
     });
 }
 
 Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
         len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
-        str = util.fromJavaChars(data, offset, len),
-        pixel = _this.class.getField("pixel", "I").get(_this);
+        str = util.fromJavaChars(data, offset, len);
     MIDP.withTextAnchor(_this, anchor, x, y, function(x, y) {
-        MIDP.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        MIDP.Context2D.fillText(str, x, y);
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillText(str, x, y);
+        });
     });
 }
 
