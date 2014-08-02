@@ -20,7 +20,7 @@ Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function
     console.info(util.fromJavaString(message));
 }
 
-Native.groupTBL = [
+MIDP.groupTBL = [
     "net_access",
     "low_level_net_access",
     "call_control",
@@ -40,14 +40,14 @@ Native.groupTBL = [
 ];
 
 Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function(ctx, stack) {
-    var list = CLASSES.newArray("[Ljava/lang/String;", Native.groupTBL.length);
-    Native.groupTBL.forEach(function (e, n) {
+    var list = CLASSES.newArray("[Ljava/lang/String;", MIDP.groupTBL.length);
+    MIDP.groupTBL.forEach(function (e, n) {
         list[n] = CLASSES.newString(e);
     });
     stack.push(list);
 }
 
-Native.messagesTBL = [
+MIDP.messagesTBL = [
      ["Airtime",
       "How often should %1 ask for permission to use airtime? Using airtime may result in charges.",
       "Don't use airtime and don't ask",
@@ -140,9 +140,9 @@ Native.messagesTBL = [
 Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
     var list = null;
-    Native.groupTBL.forEach(function(e, n) {
+    MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
-            var messages = Native.messagesTBL[n];
+            var messages = MIDP.messagesTBL[n];
             list = CLASSES.newArray("[Ljava/lang/String;", messages.length);
             messages.forEach(function (e, n) {
                 list[n] = CLASSES.newString(e);
@@ -152,7 +152,7 @@ Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[
     stack.push(list);
 }
 
-Native.membersTBL = [
+MIDP.membersTBL = [
     ["javax.microedition.io.Connector.http",
      "javax.microedition.io.Connector.https",
      "javax.microedition.io.Connector.obex.client.tcp",
@@ -208,9 +208,9 @@ Native.membersTBL = [
 Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
     var list = null;
-    Native.groupTBL.forEach(function(e, n) {
+    MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
-            var members = Native.membersTBL[n];
+            var members = MIDP.membersTBL[n];
             list = CLASSES.newArray("[Ljava/lang/String;", members.length);
             members.forEach(function (e, n) {
                 list[n] = CLASSES.newString(e);
@@ -231,7 +231,7 @@ Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/C
     state.class.getField("suiteId", "I").set(state, suiteId);
 }
 
-Native.domainTBL = [
+MIDP.domainTBL = [
     "manufacturer",
     "operator",
     "identified_third_party",
@@ -241,71 +241,71 @@ Native.domainTBL = [
 ];
 
 Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function(ctx, stack) {
-    var list = CLASSES.newArray("[Ljava/lang/String;", Native.domainTBL.length);
-    Native.domainTBL.forEach(function (e, n) {
+    var list = CLASSES.newArray("[Ljava/lang/String;", MIDP.domainTBL.length);
+    MIDP.domainTBL.forEach(function (e, n) {
         list[n] = CLASSES.newString(e);
     });
     stack.push(list);
 }
 
-Native.NEVER = 0;
-Native.ALLOW = 1;
-Native.BLANKET = 4;
-Native.SESSION = 8;
-Native.ONESHOT = 16;
+MIDP.NEVER = 0;
+MIDP.ALLOW = 1;
+MIDP.BLANKET = 4;
+MIDP.SESSION = 8;
+MIDP.ONESHOT = 16;
 
-Native.identifiedTBL = {
-    net_access: { max: Native.BLANKET, default: Native.SESSION},
-    low_level_net_access: { max: Native.BLANKET, default: Native.SESSION},
-    call_control: { max: Native.BLANKET, default: Native.ONESHOT},
-    application_auto_invocation: { max: Native.BLANKET, default: Native.ONESHOT},
-    local_connectivity: { max: Native.BLANKET, default: Native.SESSION},
-    messaging: { max: Native.BLANKET, default: Native.ONESHOT},
-    restricted_messaging: { max: Native.BLANKET, default: Native.ONESHOT},
-    multimedia_recording: { max: Native.BLANKET, default: Native.SESSION},
-    read_user_data_access: { max: Native.BLANKET, default: Native.ONESHOT},
-    write_user_data_access: { max: Native.BLANKET, default: Native.ONESHOT},
-    location: { max: Native.BLANKET, default: Native.SESSION},
-    landmark: { max: Native.BLANKET, default: Native.SESSION},
-    payment: { max: Native.ALLOW,   default: Native.ALLOW},
-    authentication: { max: Native.BLANKET, default: Native.SESSION},
-    smart_card: { max: Native.BLANKET, default: Native.SESSION},
-    satsa: { max: Native.NEVER,   default: Native.NEVER},
+MIDP.identifiedTBL = {
+    net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    low_level_net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    call_control: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    application_auto_invocation: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    local_connectivity: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    restricted_messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    multimedia_recording: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    read_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    write_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    location: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    landmark: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    payment: { max: MIDP.ALLOW,   default: MIDP.ALLOW},
+    authentication: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    smart_card: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
 };
 
-Native.unidentifiedTBL = {
-    net_access: { max: Native.SESSION, default: Native.ONESHOT},
-    low_level_net_access: { max: Native.SESSION, default: Native.ONESHOT},
-    call_control: { max: Native.ONESHOT, default: Native.ONESHOT},
-    application_auto_invocation: { max: Native.SESSION, default: Native.ONESHOT},
-    local_connectivity: { max: Native.BLANKET, default: Native.ONESHOT},
-    messaging: { max: Native.ONESHOT, default: Native.ONESHOT},
-    restricted_messaging: { max: Native.ONESHOT, default: Native.ONESHOT},
-    multimedia_recording: { max: Native.SESSION, default: Native.ONESHOT},
-    read_user_data_access: { max: Native.ONESHOT, default: Native.ONESHOT},
-    write_user_data_access: { max: Native.ONESHOT, default: Native.ONESHOT},
-    location: { max: Native.SESSION, default: Native.ONESHOT},
-    landmark: { max: Native.SESSION, default: Native.ONESHOT},
-    payment: { max: Native.NEVER,   default: Native.NEVER},
-    authentication: { max: Native.NEVER,   default: Native.NEVER},
-    smart_card: { max: Native.NEVER,   default: Native.NEVER},
-    satsa: { max: Native.NEVER,   default: Native.NEVER},
+MIDP.unidentifiedTBL = {
+    net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    low_level_net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    call_control: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    application_auto_invocation: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    local_connectivity: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    restricted_messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    multimedia_recording: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    read_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    write_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    location: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    landmark: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    payment: { max: MIDP.NEVER,   default: MIDP.NEVER},
+    authentication: { max: MIDP.NEVER,   default: MIDP.NEVER},
+    smart_card: { max: MIDP.NEVER,   default: MIDP.NEVER},
+    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
 };
 
 Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
     var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
-    var allow = Native.NEVER;
+    var allow = MIDP.NEVER;
     switch (domain) {
     case "manufacturer":
     case "maximum":
     case "operator":
-        allow = Native.ALLOW;
+        allow = MIDP.ALLOW;
         break;
     case "identified_third_party":
-        allow = Native.identifiedTBL[group].default;
+        allow = MIDP.identifiedTBL[group].default;
         break;
     case "unidentified_third_party":
-        allow = Native.unidentifiedTBL[group].default;
+        allow = MIDP.unidentifiedTBL[group].default;
         break;
     }
     stack.push(allow);
@@ -313,18 +313,18 @@ Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Lja
 
 Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
     var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
-    var allow = Native.NEVER;
+    var allow = MIDP.NEVER;
     switch (domain) {
     case "manufacturer":
     case "maximum":
     case "operator":
-        allow = Native.ALLOW;
+        allow = MIDP.ALLOW;
         break;
     case "identified_third_party":
-        allow = Native.identifiedTBL[group].max;
+        allow = MIDP.identifiedTBL[group].max;
         break;
     case "unidentified_third_party":
-        allow = Native.unidentifiedTBL[group].max;
+        allow = MIDP.unidentifiedTBL[group].max;
         break;
     }
     stack.push(allow);
@@ -388,7 +388,7 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ct
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
     var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
-    Native.sendEvent(obj);
+    MIDP.sendEvent(obj);
 }
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
@@ -401,61 +401,61 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFi
     var data = CLASSES.loadFile(fileName);
     if (!data)
         ctx.raiseException("java/lang/IOException");
-    Native.skinFileData = new DataView(data);
-    Native.skinFilePos = 0;
+    MIDP.skinFileData = new DataView(data);
+    MIDP.skinFilePos = 0;
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B"] = function(ctx, stack) {
     var len = stack.pop();
-    if (!Native.skinFileData || (Native.skinFilePos + len) > Native.skinFileData.byteLength)
+    if (!MIDP.skinFileData || (MIDP.skinFilePos + len) > MIDP.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
     var bytes = CLASSES.newPrimitiveArray("B", len);
     for (var n = 0; n < len; ++n) {
-        bytes[n] = Native.skinFileData.getUint8(Native.skinFilePos++);
+        bytes[n] = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
     }
     stack.push(bytes);
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I"] = function(ctx, stack) {
-    if (!Native.skinFileData || (Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
-    var len = Native.skinFileData.getInt32(Native.skinFilePos, true);
-    Native.skinFilePos += 4;
+    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
+    MIDP.skinFilePos += 4;
     var ints = CLASSES.newPrimitiveArray("I", len);
     for (var n = 0; n < len; ++n) {
-        if ((Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+        if ((MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
-        ints[n] = Native.skinFileData.getInt32(Native.skinFilePos, true);
-        Native.skinFilePos += 4;
+        ints[n] = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
+        MIDP.skinFilePos += 4;
     }
     stack.push(ints);
 }
 
-Native.STRING_ENCODING_USASCII = 0;
-Native.STRING_ENCODING_UTF8 = 1;
+MIDP.STRING_ENCODING_USASCII = 0;
+MIDP.STRING_ENCODING_UTF8 = 1;
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()[Ljava/lang/String;"] = function(ctx, stack) {
-    if (!Native.skinFileData || (Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
-    var len = Native.skinFileData.getInt32(Native.skinFilePos, true);
-    Native.skinFilePos += 4;
+    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
+    MIDP.skinFilePos += 4;
     var strings = CLASSES.newArray("[Ljava/lang/String;", len);
     for (var n = 0; n < len; ++n) {
-        if ((Native.skinFilePos + 2) > Native.skinFileData.byteLength)
+        if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
-        var strLen = Native.skinFileData.getUint8(Native.skinFilePos++);
-        var strEnc = Native.skinFileData.getUint8(Native.skinFilePos++);
-        if ((Native.skinFilePos + strLen) > Native.skinFileData.byteLength)
+        var strLen = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
+        var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
+        if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
-        var bytes = Native.skinFileData.buffer.slice(Native.skinFilePos, Native.skinFilePos + strLen);
-        Native.skinFilePos += strLen;
+        var bytes = MIDP.skinFileData.buffer.slice(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
+        MIDP.skinFilePos += strLen;
         var str;
-        if (strEnc === Native.STRING_ENCODING_USASCII) {
+        if (strEnc === MIDP.STRING_ENCODING_USASCII) {
             var data = new Uint8Array(bytes);
             str = "";
             for (var i = 0; i < strLen; ++i)
                 str += String.fromCharCode(data[i]);
-        } else if (strEnc === Native.STRING_ENCODING_UTF8) {
+        } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
             str = util.decodeUtf8(bytes);
         } else {
             ctx.raiseException("java/lang/IllegalStateException");
@@ -466,8 +466,8 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinFile.()I"] = function(ctx, stack) {
-    Native.skinFileData = null;
-    Native.skinFilePos = 0;
+    MIDP.skinFileData = null;
+    MIDP.skinFilePos = 0;
     stack.push(0);
 }
 
@@ -596,7 +596,7 @@ Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = functio
     stack.push(0);
 }
 
-Native.Context2D = (function() {
+MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
     c.height = 480;
@@ -605,12 +605,12 @@ Native.Context2D = (function() {
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(Native.Context2D.canvas.width);
+    stack.push(MIDP.Context2D.canvas.width);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(Native.Context2D.canvas.height);
+    stack.push(MIDP.Context2D.canvas.height);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
@@ -657,36 +657,36 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx,
     var id = stack.pop();
 }
 
-Native.nativeEventQueue = [];
+MIDP.nativeEventQueue = [];
 
-Native.copyEvent = function(obj) {
-    var e = Native.nativeEventQueue.pop();
+MIDP.copyEvent = function(obj) {
+    var e = MIDP.nativeEventQueue.pop();
     obj.class.getField("type", "I").set(obj, e.type);
     obj.class.fields.forEach(function(field) {
         field.set(obj, e[field.name]);
     });
 }
 
-Native.deliverWaitForNativeEventResult = function(ctx) {
+MIDP.deliverWaitForNativeEventResult = function(ctx) {
     var stack = ctx.current().stack;
     var obj = stack.pop();
-    if (Native.nativeEventQueue.length > 0)
-        Native.copyEvent(obj);
-    stack.push(Native.nativeEventQueue.length);
+    if (MIDP.nativeEventQueue.length > 0)
+        MIDP.copyEvent(obj);
+    stack.push(MIDP.nativeEventQueue.length);
 }
 
-Native.sendEvent = function(obj) {
+MIDP.sendEvent = function(obj) {
     var e = { type: obj.class.getField("type", "I").get(obj) };
     obj.class.fields.forEach(function(field) {
         e[field.name] = field.get(obj);
     });
-    Native.nativeEventQueue.push(e);
-    var ctx = Native.waitingNativeEventContext;
+    MIDP.nativeEventQueue.push(e);
+    var ctx = MIDP.waitingNativeEventContext;
     if (!ctx)
         return;
-    Native.deliverWaitForNativeEventResult(Native.waitingNativeEventContext);
-    Native.waitingNativeEventContext.resume();
-    Native.waitingNativeEventContext = null;
+    MIDP.deliverWaitForNativeEventResult(MIDP.waitingNativeEventContext);
+    MIDP.waitingNativeEventContext.resume();
+    MIDP.waitingNativeEventContext = null;
 }
 
 MIDP.KEY_EVENT = 1;
@@ -698,24 +698,24 @@ window.addEventListener("keypress", function(ev) {
     obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
     obj.class.getField("intParam2", "I").set(obj, ev.charCode);
     obj.class.getField("intParam4", "I").set(obj, 0); // displayID
-    Native.sendEvent(obj);
+    MIDP.sendEvent(obj);
 });
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
-    if (Native.nativeEventQueue.length === 0) {
-        Native.waitingNativeEventContext = ctx;
+    if (MIDP.nativeEventQueue.length === 0) {
+        MIDP.waitingNativeEventContext = ctx;
         throw VM.Pause;
     }
-    Native.deliverWaitForNativeEventResult(ctx);
+    MIDP.deliverWaitForNativeEventResult(ctx);
 }
 
 Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] = function(ctx, stack) {
     var obj = stack.pop();
-    if (!Native.nativeEventQueue.length) {
+    if (!MIDP.nativeEventQueue.length) {
         stack.push(0);
         return;
     }
-    Native.copyEvent(obj);
+    MIDP.copyEvent(obj);
     stack.push(1);
 }
 
@@ -760,7 +760,7 @@ Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, s
     var _this = stack.pop();
     var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
     obj.class.getField("type", "I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
-    Native.sendEvent(obj);
+    MIDP.sendEvent(obj);
 }
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
@@ -813,7 +813,7 @@ MIDP.withClip = function(g, x, y, cb) {
         clipped = g.class.getField("clipped", "Z").get(g),
         transX = g.class.getField("transX", "I").get(g),
         transY = g.class.getField("transY", "I").get(g);
-    var ctx = Native.Context2D;
+    var ctx = MIDP.Context2D;
     if (clipped) {
         ctx.save();
         ctx.beginPath();
@@ -844,7 +844,7 @@ MIDP.withAnchor = function(g, anchor, x, y, w, h, cb) {
 
 MIDP.withTextAnchor = function(g, anchor, x, y, cb) {
     MIDP.withClip(g, x, y, function(x, y) {
-        var ctx = Native.Context2D;
+        var ctx = MIDP.Context2D;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
         if (anchor & MIDP.anchors.RIGHT)
@@ -868,14 +868,14 @@ Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Imag
         transX = _this.class.getField("transX", "I").get(_this),
         transY = _this.class.getField("transY", "I").get(_this);
     MIDP.withAnchor(_this, anchor, x, y, imgData.width, imgData.height, function(x, y) {
-        Native.Context2D.drawImage(imgData, x, y);
+        MIDP.Context2D.drawImage(imgData, x, y);
     });
     stack.push(1);
 }
 
 Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
     var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str);
+        metrics = MIDP.Context2D.measureText(str);
     stack.push(metrics.width);
 }
 
@@ -883,8 +883,8 @@ Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] 
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
         pixel = _this.class.getField("pixel", "I").get(_this);
     MIDP.withTextAnchor(_this, anchor, x, y, function(x, y) {
-        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.fillText(str, x, y);
+        MIDP.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+        MIDP.Context2D.fillText(str, x, y);
     });
 }
 
@@ -892,8 +892,8 @@ Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, sta
     var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
         pixel = _this.class.getField("pixel", "I").get(_this);
     MIDP.withClip(_this, x, y, function(x, y) {
-        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.fillRect(x, y, width, height);
+        MIDP.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+        MIDP.Context2D.fillRect(x, y, width, height);
     });
 }
 
@@ -901,8 +901,8 @@ Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, sta
     var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
         pixel = _this.class.getField("pixel", "I").get(_this);
     MIDP.withClip(_this, x, y, function(x, y) {
-        Native.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.strokeRect(x, y, width, height);
+        MIDP.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+        MIDP.Context2D.strokeRect(x, y, width, height);
     });
 }
 
@@ -912,20 +912,20 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
         str = util.fromJavaChars(data, offset, len),
         pixel = _this.class.getField("pixel", "I").get(_this);
     MIDP.withTextAnchor(_this, anchor, x, y, function(x, y) {
-        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.fillText(str, x, y);
+        MIDP.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
+        MIDP.Context2D.fillText(str, x, y);
     });
 }
 
 Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
     var str = String.fromCharCode(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str);
+        metrics = MIDP.Context2D.measureText(str);
     stack.push(metrics.width);
 }
 
 Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
     var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
+        metrics = MIDP.Context2D.measureText(str.slice(offset, offset + len));
     stack.push(metrics.width);
 }
 
@@ -943,6 +943,6 @@ Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = f
 
 Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack) {
     var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
+        metrics = MIDP.Context2D.measureText(str.slice(offset, offset + len));
     stack.push(metrics.width);
 }
