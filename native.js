@@ -70,6 +70,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "microedition.locale":
         value = navigator.language;
         break;
+    case "microedition.platform":
+        value = "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
+        break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
