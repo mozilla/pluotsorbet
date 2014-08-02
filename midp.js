@@ -780,12 +780,26 @@ Native.withAdjustedPosition = function(anchor, x, y, width, height, callback) {
     callback(x, y);    
 }
 
+Native.setClip = function(_this) {
+    var x1 = _this["javax/microedition/lcdui/Graphics$clipX1"],
+        y1 = _this["javax/microedition/lcdui/Graphics$clipY1"],
+        x2 = _this["javax/microedition/lcdui/Graphics$clipX2"],
+        y2 = _this["javax/microedition/lcdui/Graphics$clipY2"];
+    Native.Context2D.beginPath();
+    Native.Context2D.moveTo(x1, y1);
+    Native.Context2D.lineTo(x2, y1);
+    Native.Context2D.lineTo(x2, y2);
+    Native.Context2D.lineTo(x1, y2);
+    Native.Context2D.clip();
+}
+
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
         img = image["javax/microedition/lcdui/Image$imageData"]["javax/microedition/lcdui/ImageData$nativeImageData"],
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
         transY = _this["javax/microedition/lcdui/Graphics$transY"];
     Native.withAdjustedPosition(anchor, x + transX, y + transY, img.width, img.height, function(anchorX, anchorY) {
+        Native.setClip(_this);
         Native.Context2D.drawImage(img, anchorX, anchorY);
     })
     stack.push(1);
@@ -803,8 +817,9 @@ Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] 
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
         transY = _this["javax/microedition/lcdui/Graphics$transY"],
         pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
-    Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.withAdjustedPosition(anchor, x + transX, y + transY, metrics.width, 20, function(anchorX, anchorY) {
+        Native.setClip(_this);
+        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
         Native.Context2D.fillText(str, anchorX, anchorY);
     });
 }
@@ -814,6 +829,7 @@ Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, sta
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
         transY = _this["javax/microedition/lcdui/Graphics$transY"],
         pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+    Native.setClip(_this);
     Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.Context2D.fillRect(x + transX, y + transY, width, height);
 }
@@ -823,6 +839,7 @@ Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, sta
         transX = _this["javax/microedition/lcdui/Graphics$transX"],
         transY = _this["javax/microedition/lcdui/Graphics$transY"],
         pixel = _this["javax/microedition/lcdui/Graphics$pixel"];
+    Native.setClip(_this);
     Native.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.Context2D.strokeRect(x + transX, y + transY, width, height);
 }
@@ -835,8 +852,9 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
         transY = _this["javax/microedition/lcdui/Graphics$transY"],
         pixel = _this["javax/microedition/lcdui/Graphics$pixel"],
         metrics = Native.Context2D.measureText(str);
-    Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
     Native.withAdjustedPosition(anchor, x + transX, y + transY, metrics.width, 20, function(anchorX, anchorY) {
+        Native.setClip(_this);
+        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
         Native.Context2D.fillText(str, anchorX, anchorY);
     });
 }

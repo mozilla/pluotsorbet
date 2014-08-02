@@ -486,13 +486,15 @@ Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = functio
 }
 
 Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
 }
 
 Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(ctx, stack) {
-    var displayId = stack.pop(), isolateId = stack.pop();
+    var displayId = stack.pop(), isolateId = stack.pop(), _this = stack.pop();
 }
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
+    var time = stack.pop(), _this = stack.pop();
     // Wait for incoming connections
     throw VM.Pause;
 }
