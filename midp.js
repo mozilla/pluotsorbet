@@ -786,14 +786,19 @@ MIDP.withClip = function(g, cb) {
         clipX1 = g["javax/microedition/lcdui/Graphics$clipX1"],
         clipY1 = g["javax/microedition/lcdui/Graphics$clipY1"],
         clipX2 = g["javax/microedition/lcdui/Graphics$clipX2"],
-        clipY2 = g["javax/microedition/lcdui/Graphics$clipY2"];
+        clipY2 = g["javax/microedition/lcdui/Graphics$clipY2"],
+        clipped = g["javax/microedition/lcdui/Graphics$clipped"];
     var ctx = Native.Context2D;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(clipX1 - transX, clipY1 - transY, clipX2 - clipX1, clipY2 - clipY1);
-    ctx.clip();
+    if (clipped) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(clipX1 - transX, clipY1 - transY, clipX2 - clipX1, clipY2 - clipY1);
+        ctx.clip();
+    }
     cb();
-    ctx.restore();
+    if (clipped) {
+        ctx.restore();
+    }
 }
 
 Native.restoreClip = function() {
