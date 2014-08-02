@@ -3,6 +3,12 @@
 
 'use strict';
 
+var urlParams = {};
+for (var param of location.search.substring(1).split("&")) {
+  var [name, value] = param.split("=").map(v => v.replace(/\+/g, " ")).map(decodeURIComponent);
+  urlParams[name] = value;
+}
+
 function load(file, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open("GET", file, true);
@@ -17,13 +23,23 @@ function runTest(className) {
   var jvm = new JVM();
   // This is a hack. We should eliminate CLASSES instead.
   CLASSES.classes = {};
-  load("java/classes.jar", function (data) {
-    jvm.addPath("java/classes.jar", data);
-    load("tests/tests.jar", function (data) {
-      jvm.addPath("tests/tests.jar", data);
+
+  var jars = ["java/classes.jar", "tests/tests.jar"];
+  if (urlParams.jars) {
+    jars = jars.concat(urlParams.jars.split(":"));
+  }
+
+  (function loadNextJar() {
+    if (jars.length) {
+      var jar = jars.shift();
+      load(jar, function (data) {
+        jvm.addPath(jar, data);
+        loadNextJar();
+      });
+    } else {
       jvm.run(className);
-    });
-  });
+    }
+  })();
 }
 
 console.log = function() {

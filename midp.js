@@ -10,7 +10,7 @@ var MIDP = {
     suites: [
         null,
         {
-            midletClassName: "HelloCommandMIDlet",
+            midletClassName: urlParams["midletClassName"] || "HelloCommandMIDlet",
         }
     ]
 };
