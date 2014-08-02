@@ -647,6 +647,11 @@ Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = 
     stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
 }
 
+Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(ctx, stack) {
+    var fileName = util.fromJavaString(stack.pop()), suiteId = stack.pop(), imageData = stack.pop();
+    stack.push(0);
+}
+
 Native.nativeEventQueue = [];
 
 Native.copyEvent = function(obj) {
@@ -683,10 +688,12 @@ MIDP.KEY_EVENT = 1;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
 window.addEventListener("keypress", function(ev) {
-    Native.sendEvent({ type: MIDP.KEY_EVENT,
-                       intParam1: 1 /* PRESSED */,
-                       intParam2: ev.charCode,
-                       intParam4: 0 /* Display ID */ });
+    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    obj.class.getField("type", "I").set(obj, MIDP.KEY_EVENT);
+    obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
+    obj.class.getField("intParam2", "I").set(obj, ev.charCode);
+    obj.class.getField("intParam4", "I").set(obj, 0); // displayID
+    Native.sendEvent(obj);
 });
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
@@ -746,7 +753,9 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    Native.sendEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN });
+    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    obj.class.getField("type", "I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
+    Native.sendEvent(obj);
 }
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {

@@ -469,12 +469,12 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     var len = stack.pop(), off = stack.pop(), b = stack.pop(), handle = stack.pop();
     var data = handle.data;
     var remaining = data.length - handle.pos;
-    if (remaining > len)
+    if (len > remaining)
         len = remaining;
     for (var n = 0; n < len; ++n)
         b[off+n] = data[n];
     handle.pos += len;
-    stack.push(len);
+    stack.push((len > 0) ? len : -1);
 }
 
 Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(ctx, stack) {
