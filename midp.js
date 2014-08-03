@@ -503,38 +503,6 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     stack.push(bytes);
 }
 
-MIDP.Font = {
-    FACE_SYSTEM: 0,
-    FACE_MONOSPACE: 32,
-    FACE_PROPORTIONAL: 64,
-    STYLE_PLAIN: 0,
-    STYLE_BOLD: 1,
-    STYLE_ITALIC: 2,
-    STYLE_UNDERLINED: 4,
-    SIZE_SMALL: 8,
-    SIZE_MEDIUM: 0,
-    SIZE_LARGE: 16,
-};
-
-Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
-    var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
-    var font = [];
-    if (style & MIDP.Font.STYLE_BOLD)
-        font.push("bold");
-    if (style & MIDP.Font.STYLE_ITALIC)
-        font.push("italic");
-    // Canvas doesn't support text decorations (underline).
-    if (size === MIDP.Font.SIZE_SMALL)
-        font.push("0.7em");
-    else if (size === MIDP.Font.SIZE_LARGE)
-        font.push("1.3em");
-    if (face === MIDP.Font.MONOSPACE)
-        font.push("monospace");
-    else if (face === MIDP.Font.PROPORTIONAL)
-        font.push("san-serif");
-    font = font.join(" ");
-}
-
 Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop(), _this = stack.pop();
     var blob = new Blob([bytes.buffer.slice(offset, offset + length)], { type: "image/png" });
@@ -906,7 +874,8 @@ MIDP.withClip = function(g, x, y, cb) {
         ctx.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
         ctx.clip();
     }
-    ctx.translate(transX, transY);
+    if (transX || transY)
+        ctx.translate(transX, transY);
     cb(x, y);
     if (clipped) {
         ctx.restore();
@@ -918,31 +887,39 @@ MIDP.withAnchor = function(g, anchor, x, y, w, h, cb) {
         if (anchor & MIDP.RIGHT)
             x -= w;
         if (anchor & MIDP.HCENTER)
-            x -= w/2;
+            x -= (w/2)|0;
         if (anchor & MIDP.BOTTOM)
             y -= h;
         if (anchor & MIDP.VCENTER)
-            y -= h/2;
+            y -= (h/2)|0;
         cb(x, y);
     });
 }
 
-MIDP.withTextAnchor = function(g, anchor, x, y, w, cb) {
+MIDP.withFont = function(font, str, cb) {
+    var ctx = MIDP.Context2D;
+    ctx.font = font.css;
+    cb(ctx.measureText(str).width | 0);
+}
+
+MIDP.withTextAnchor = function(g, anchor, x, y, str, cb) {
     MIDP.withClip(g, x, y, function(x, y) {
-        var ctx = MIDP.Context2D;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        if (anchor & MIDP.RIGHT)
-            x -= w;
-        if (anchor & MIDP.HCENTER)
-            x -= w/2;
-        if (anchor & MIDP.BOTTOM)
-            ctx.textBaseline = "bottom";
-        if (anchor & MIDP.VCENTER)
-            ctx.textBaseline = "middle";
-        if (anchor & MIDP.BASELINE)
-            ctx.textBaseline = "alphabetic";
-        cb(x, y);
+        MIDP.withFont(g.class.getField("currentFont", "Ljavax/microedition/lcdui/Font;").get(g), str, function(w) {
+            var ctx = MIDP.Context2D;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            if (anchor & MIDP.RIGHT)
+                x -= w;
+            if (anchor & MIDP.HCENTER)
+                x -= (w/2)|0;
+            if (anchor & MIDP.BOTTOM)
+                ctx.textBaseline = "bottom";
+            if (anchor & MIDP.VCENTER)
+                ctx.textBaseline = "middle";
+            if (anchor & MIDP.BASELINE)
+                ctx.textBaseline = "alphabetic";
+            cb(x, y, w);
+        });
     });
 }
 
@@ -964,15 +941,20 @@ Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Imag
     stack.push(1);
 }
 
-Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
-    var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = MIDP.Context2D.measureText(str);
-    stack.push(metrics.width);
-}
-
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
-    MIDP.withTextAnchor(_this, anchor, x, y, MIDP.Context2D.measureText(str), function(x, y) {
+    MIDP.withTextAnchor(_this, anchor, x, y, str, function(x, y) {
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillText(str, x, y);
+        });
+    });
+}
+
+Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
+        len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
+        str = util.fromJavaChars(data, offset, len);
+    MIDP.withTextAnchor(_this, anchor, x, y, str, function(x, y) {
         MIDP.withPixel(_this, function() {
             MIDP.Context2D.fillText(str, x, y);
         });
@@ -997,27 +979,74 @@ Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, sta
     });
 }
 
-Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
-    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
-        len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
-        str = util.fromJavaChars(data, offset, len);
-    MIDP.withTextAnchor(_this, anchor, x, y, MIDP.Context2D.measureText(str), function(x, y) {
-        MIDP.withPixel(_this, function() {
-            MIDP.Context2D.fillText(str, x, y);
-        });
+MIDP.FACE_SYSTEM = 0;
+MIDP.FACE_MONOSPACE = 32;
+MIDP.FACE_PROPORTIONAL = 64;
+MIDP.STYLE_PLAIN = 0;
+MIDP.STYLE_BOLD = 1;
+MIDP.STYLE_ITALIC = 2;
+MIDP.STYLE_UNDERLINED = 4;
+MIDP.SIZE_SMALL = 8;
+MIDP.SIZE_MEDIUM = 0;
+MIDP.SIZE_LARGE = 16;
+
+Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
+    var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
+    var defaultSize = Math.max(12, (MIDP.Context2D.canvas.height / 40) | 0);
+    if (size & MIDP.SIZE_SMALL)
+        size = defaultSize / 1.5;
+    else if (size & MIDP.SIZE_LARGE)
+        size = defaultSize * 1.5;
+    else
+        size = defaultSize;
+    size |= 0;
+
+    if (style & MIDP.STYLE_BOLD)
+        style = "bold";
+    else if (style & MIDP.STYLE_ITALIC)
+        style = "italic";
+    else
+        style = "";
+
+    if (face & MIDP.MONOSPACE)
+        face = "monospace";
+    else if (face & MIDP.PROPORTIONAL)
+        face = "san-serif";
+    else
+        face = "arial";
+
+    _this.class.getField("baseline", "I").set(_this, (size/2)|0);
+    _this.class.getField("height", "I").set(_this, (size * 1.3)|0);
+    _this.css = style + " " + size + "pt " + face;
+    console.log(_this.css);
+}
+
+Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
+    var str = util.fromJavaString(stack.pop()), _this = stack.pop();
+    MIDP.withFont(_this, str, function(w) {
+        stack.push(w);
     });
 }
 
 Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
-    var str = String.fromCharCode(stack.pop()), _this = stack.pop(),
-        metrics = MIDP.Context2D.measureText(str);
-    stack.push(metrics.width);
+    var str = String.fromCharCode(stack.pop()), _this = stack.pop();
+    MIDP.withFont(_this, str, function(w) {
+        stack.push(w);
+    });
+}
+
+Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack) {
+    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop();
+    MIDP.withFont(_this, str.slice(offset, offset + len), function(w) {
+        stack.push(w);
+    });
 }
 
 Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
-    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = MIDP.Context2D.measureText(str.slice(offset, offset + len));
-    stack.push(metrics.width);
+    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
+    MIDP.withFont(_this, str.slice(offset, offset + len), function(w) {
+        stack.push(w);
+    });
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
@@ -1030,12 +1059,6 @@ Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = f
     var ids = CLASSES.newPrimitiveArray("I", 1);
     ids[0] = 1; // KEYBOARD_INPUT_MODE
     stack.push(ids);
-}
-
-Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack) {
-    var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop(),
-        metrics = MIDP.Context2D.measureText(str.slice(offset, offset + len));
-    stack.push(metrics.width);
 }
 
 MIDP.TRANS_NONE = 0;
