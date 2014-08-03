@@ -47,14 +47,19 @@ console.log = function() {
   document.getElementById("log").textContent += s;
 }
 
-runTest("Launcher");
-//runTest("join");
-//runTest("RunTests");
-//runTest("gnu/testlet/vm/SystemTest");
-//runTest("TestThread");
-//runTest("TestRuntime");
-//runTest("Andreas");
-//runTest("TestDate");
-//runTest("RunAll");
-//runTest("TestArrays");
-//runTest("TestByteArrayOutputStream");
+var idb_fs = new BrowserFS.FileSystem.IndexedDB(function() {
+  BrowserFS.initialize(idb_fs);
+
+  runTest("Launcher");
+  //runTest("join");
+  //runTest("RunTests");
+  //runTest("gnu/testlet/vm/SystemTest");
+  //runTest("TestThread");
+  //runTest("TestRuntime");
+  //runTest("Andreas");
+  //runTest("TestDate");
+  //runTest("RunAll");
+  //runTest("TestArrays");
+  //runTest("TestByteArrayOutputStream");
+});
+
