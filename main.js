@@ -55,4 +55,8 @@ function run(className, args) {
 // To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
 
-run(urlParams.main || "RunTests", urlParams.args);
+var idb_fs = new BrowserFS.FileSystem.IndexedDB(function() {
+  BrowserFS.initialize(idb_fs);
+
+  run(urlParams.main || "RunTests", urlParams.args);
+});
