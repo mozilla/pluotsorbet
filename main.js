@@ -16,6 +16,8 @@ location.search.substring(1).split("&").forEach(function (param) {
   urlParams[param[0]] = param[1];
 });
 
+urlParams.args = (urlParams.args || "").split(",");
+
 function load(file, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open("GET", file, true);
@@ -52,4 +54,4 @@ function run(className, args) {
 // To launch the unit tests: ?main=RunTests
 // To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&args=HelloCommandMIDlet
 
-run(urlParams.main || "RunTests", (urlParams.args || "").split(","));
+run(urlParams.main || "RunTests", urlParams.args);

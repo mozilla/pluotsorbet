@@ -23,6 +23,17 @@ Classes.prototype.addPath = function(name, data) {
     this.classfiles[name] = data;
 }
 
+Classes.prototype.loadFileFromJar = function(jar, fileName) {
+    var classfiles = this.classfiles;
+    var zip = classfiles[jar];
+    if (!zip)
+        return null;
+    if (!(fileName in zip.directory))
+        return null;
+    var bytes = zip.read(fileName);
+    return bytes.buffer.slice(0, bytes.length);
+}
+
 Classes.prototype.loadFile = function(fileName) {
     var classfiles = this.classfiles;
     var data = classfiles[fileName];

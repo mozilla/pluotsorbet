@@ -4,16 +4,20 @@
 'Use strict';
 
 var MIDP = {
-    commandState: {
-        suiteId: 1
-    },
-    suites: [
-        null,
-        {
-            midletClassName: urlParams["midletClassName"] || "HelloCommandMIDlet",
-        }
-    ]
 };
+
+Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(ctx, stack) {
+    var entryName = util.fromJavaString(stack.pop()), jar = util.fromJavaString(stack.pop());
+    var bytes = CLASSES.loadFileFromJar(jar, entryName);
+    if (!bytes)
+        ctx.raiseException("java/lang/IOException");
+    var length = bytes.byteLength;
+    var data = new Uint8Array(bytes);
+    var array = CLASSES.newPrimitiveArray("B", length);
+    for (var n = 0; n < length; ++n)
+        array[n] = data[n];
+    stack.push(array);
+}
 
 Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(ctx, stack) {
     var message = stack.pop(), channelID = stack.pop(), severity = stack.pop();
@@ -222,13 +226,12 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
-    var suiteId = MIDP.commandState.suiteId;
-    var suite = MIDP.suites[suiteId];
-    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(suite.midletClassName));
-    state.class.getField("arg0", "Ljava/lang/String;").set(state, CLASSES.newString(""));
-    state.class.getField("arg1", "Ljava/lang/String;").set(state, CLASSES.newString(""));
-    state.class.getField("arg2", "Ljava/lang/String;").set(state, CLASSES.newString(""));
-    state.class.getField("suiteId", "I").set(state, suiteId);
+    state.class.getField("suiteId", "I").set(state, -1);
+    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString("internal"));
+    var args = urlParams.args;
+    state.class.getField("arg0", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 0) ? args[0] : ""));
+    state.class.getField("arg1", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 1) ? args[1] : ""));
+    state.class.getField("arg2", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 2) ? args[2] : ""));
 }
 
 MIDP.domainTBL = [
