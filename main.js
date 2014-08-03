@@ -49,19 +49,7 @@ function run(className, args) {
   })();
 }
 
-if (!urlParams.main)
-  console.log("Supported URL parameters: main=MainClass args=comma,separated,list");
+// To launch the unit tests: ?main=RunTests
+// To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&args=HelloCommandMIDlet
 
 run(urlParams.main || "RunTests", (urlParams.args || "").split(","));
-
-//runTest("Launcher");
-//runTest("join");
-//runTest("RunTests");
-//runTest("gnu/testlet/vm/SystemTest");
-//runTest("TestThread");
-//runTest("TestRuntime");
-//runTest("Andreas");
-//runTest("TestDate");
-//runTest("RunAll");
-//runTest("TestArrays");
-//runTest("TestByteArrayOutputStream");
