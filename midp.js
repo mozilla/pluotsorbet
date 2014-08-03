@@ -1074,3 +1074,16 @@ Native["javax/microedition/lcdui/Graphics.renderRegion.(Ljavax/microedition/lcdu
     });
     stack.push(1);
 }
+
+Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(ctx, stack) {
+    var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop(),
+        dx = x2 - x1, dy = y2 - y1;
+    MIDP.withClip(_this, x1, y1, function(x, y) {
+        var ctx = MIDP.Context2D;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + dx, y + dy);
+        ctx.stroke();
+        ctx.closePath();
+    });
+}
