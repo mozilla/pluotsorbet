@@ -226,7 +226,7 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
-    var midletClassName = urlParams.midletClassName ? urlParams.midletClassName : internal;
+    var midletClassName = urlParams.midletClassName ? urlParams.midletClassName : "internal";
     var suiteId = (midletClassName === "internal") ? -1 : 1;
     state.class.getField("suiteId", "I").set(state, suiteId);
     state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(midletClassName));
