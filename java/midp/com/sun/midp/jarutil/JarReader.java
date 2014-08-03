@@ -61,7 +61,10 @@ public class JarReader {
      */
     public static byte[] readJarEntry(String jarFilePath, String entryName)
             throws IOException {
-        AccessController.checkPermission(Permissions.AMS_PERMISSION_NAME);
+	// This is called in the startup path before the security context
+	// has been installed.
+	//
+        // AccessController.checkPermission(Permissions.AMS_PERMISSION_NAME);
 
         if (entryName.charAt(0) == '/') {
             /*
@@ -70,7 +73,6 @@ public class JarReader {
              */
             entryName = entryName.substring(1, entryName.length());
         }
-
         return readJarEntry0(jarFilePath, entryName);
     }
 

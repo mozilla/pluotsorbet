@@ -4,23 +4,27 @@
 'Use strict';
 
 var MIDP = {
-    commandState: {
-        suiteId: 1
-    },
-    suites: [
-        null,
-        {
-            midletClassName: urlParams["midletClassName"] || "HelloCommandMIDlet",
-        }
-    ]
 };
+
+Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(ctx, stack) {
+    var entryName = util.fromJavaString(stack.pop()), jar = util.fromJavaString(stack.pop());
+    var bytes = CLASSES.loadFileFromJar(jar, entryName);
+    if (!bytes)
+        ctx.raiseException("java/lang/IOException");
+    var length = bytes.byteLength;
+    var data = new Uint8Array(bytes);
+    var array = CLASSES.newPrimitiveArray("B", length);
+    for (var n = 0; n < length; ++n)
+        array[n] = data[n];
+    stack.push(array);
+}
 
 Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(ctx, stack) {
     var message = stack.pop(), channelID = stack.pop(), severity = stack.pop();
     console.info(util.fromJavaString(message));
 }
 
-Native.groupTBL = [
+MIDP.groupTBL = [
     "net_access",
     "low_level_net_access",
     "call_control",
@@ -40,14 +44,14 @@ Native.groupTBL = [
 ];
 
 Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function(ctx, stack) {
-    var list = CLASSES.newArray("[Ljava/lang/String;", Native.groupTBL.length);
-    Native.groupTBL.forEach(function (e, n) {
+    var list = CLASSES.newArray("[Ljava/lang/String;", MIDP.groupTBL.length);
+    MIDP.groupTBL.forEach(function (e, n) {
         list[n] = CLASSES.newString(e);
     });
     stack.push(list);
 }
 
-Native.messagesTBL = [
+MIDP.messagesTBL = [
      ["Airtime",
       "How often should %1 ask for permission to use airtime? Using airtime may result in charges.",
       "Don't use airtime and don't ask",
@@ -140,9 +144,9 @@ Native.messagesTBL = [
 Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
     var list = null;
-    Native.groupTBL.forEach(function(e, n) {
+    MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
-            var messages = Native.messagesTBL[n];
+            var messages = MIDP.messagesTBL[n];
             list = CLASSES.newArray("[Ljava/lang/String;", messages.length);
             messages.forEach(function (e, n) {
                 list[n] = CLASSES.newString(e);
@@ -152,7 +156,7 @@ Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[
     stack.push(list);
 }
 
-Native.membersTBL = [
+MIDP.membersTBL = [
     ["javax.microedition.io.Connector.http",
      "javax.microedition.io.Connector.https",
      "javax.microedition.io.Connector.obex.client.tcp",
@@ -208,9 +212,9 @@ Native.membersTBL = [
 Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
     var list = null;
-    Native.groupTBL.forEach(function(e, n) {
+    MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
-            var members = Native.membersTBL[n];
+            var members = MIDP.membersTBL[n];
             list = CLASSES.newArray("[Ljava/lang/String;", members.length);
             members.forEach(function (e, n) {
                 list[n] = CLASSES.newString(e);
@@ -222,16 +226,17 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
-    var suiteId = MIDP.commandState.suiteId;
-    var suite = MIDP.suites[suiteId];
-    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(suite.midletClassName));
-    state.class.getField("arg0", "Ljava/lang/String;").set(state, CLASSES.newString(""));
-    state.class.getField("arg1", "Ljava/lang/String;").set(state, CLASSES.newString(""));
-    state.class.getField("arg2", "Ljava/lang/String;").set(state, CLASSES.newString(""));
+    var midletClassName = urlParams.midletClassName ? urlParams.midletClassName : "internal";
+    var suiteId = (midletClassName === "internal") ? -1 : 1;
     state.class.getField("suiteId", "I").set(state, suiteId);
+    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(midletClassName));
+    var args = urlParams.args;
+    state.class.getField("arg0", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 0) ? args[0] : ""));
+    state.class.getField("arg1", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 1) ? args[1] : ""));
+    state.class.getField("arg2", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 2) ? args[2] : ""));
 }
 
-Native.domainTBL = [
+MIDP.domainTBL = [
     "manufacturer",
     "operator",
     "identified_third_party",
@@ -241,71 +246,71 @@ Native.domainTBL = [
 ];
 
 Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function(ctx, stack) {
-    var list = CLASSES.newArray("[Ljava/lang/String;", Native.domainTBL.length);
-    Native.domainTBL.forEach(function (e, n) {
+    var list = CLASSES.newArray("[Ljava/lang/String;", MIDP.domainTBL.length);
+    MIDP.domainTBL.forEach(function (e, n) {
         list[n] = CLASSES.newString(e);
     });
     stack.push(list);
 }
 
-Native.NEVER = 0;
-Native.ALLOW = 1;
-Native.BLANKET = 4;
-Native.SESSION = 8;
-Native.ONESHOT = 16;
+MIDP.NEVER = 0;
+MIDP.ALLOW = 1;
+MIDP.BLANKET = 4;
+MIDP.SESSION = 8;
+MIDP.ONESHOT = 16;
 
-Native.identifiedTBL = {
-    net_access: { max: Native.BLANKET, default: Native.SESSION},
-    low_level_net_access: { max: Native.BLANKET, default: Native.SESSION},
-    call_control: { max: Native.BLANKET, default: Native.ONESHOT},
-    application_auto_invocation: { max: Native.BLANKET, default: Native.ONESHOT},
-    local_connectivity: { max: Native.BLANKET, default: Native.SESSION},
-    messaging: { max: Native.BLANKET, default: Native.ONESHOT},
-    restricted_messaging: { max: Native.BLANKET, default: Native.ONESHOT},
-    multimedia_recording: { max: Native.BLANKET, default: Native.SESSION},
-    read_user_data_access: { max: Native.BLANKET, default: Native.ONESHOT},
-    write_user_data_access: { max: Native.BLANKET, default: Native.ONESHOT},
-    location: { max: Native.BLANKET, default: Native.SESSION},
-    landmark: { max: Native.BLANKET, default: Native.SESSION},
-    payment: { max: Native.ALLOW,   default: Native.ALLOW},
-    authentication: { max: Native.BLANKET, default: Native.SESSION},
-    smart_card: { max: Native.BLANKET, default: Native.SESSION},
-    satsa: { max: Native.NEVER,   default: Native.NEVER},
+MIDP.identifiedTBL = {
+    net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    low_level_net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    call_control: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    application_auto_invocation: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    local_connectivity: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    restricted_messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    multimedia_recording: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    read_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    write_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    location: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    landmark: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    payment: { max: MIDP.ALLOW,   default: MIDP.ALLOW},
+    authentication: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    smart_card: { max: MIDP.BLANKET, default: MIDP.SESSION},
+    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
 };
 
-Native.unidentifiedTBL = {
-    net_access: { max: Native.SESSION, default: Native.ONESHOT},
-    low_level_net_access: { max: Native.SESSION, default: Native.ONESHOT},
-    call_control: { max: Native.ONESHOT, default: Native.ONESHOT},
-    application_auto_invocation: { max: Native.SESSION, default: Native.ONESHOT},
-    local_connectivity: { max: Native.BLANKET, default: Native.ONESHOT},
-    messaging: { max: Native.ONESHOT, default: Native.ONESHOT},
-    restricted_messaging: { max: Native.ONESHOT, default: Native.ONESHOT},
-    multimedia_recording: { max: Native.SESSION, default: Native.ONESHOT},
-    read_user_data_access: { max: Native.ONESHOT, default: Native.ONESHOT},
-    write_user_data_access: { max: Native.ONESHOT, default: Native.ONESHOT},
-    location: { max: Native.SESSION, default: Native.ONESHOT},
-    landmark: { max: Native.SESSION, default: Native.ONESHOT},
-    payment: { max: Native.NEVER,   default: Native.NEVER},
-    authentication: { max: Native.NEVER,   default: Native.NEVER},
-    smart_card: { max: Native.NEVER,   default: Native.NEVER},
-    satsa: { max: Native.NEVER,   default: Native.NEVER},
+MIDP.unidentifiedTBL = {
+    net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    low_level_net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    call_control: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    application_auto_invocation: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    local_connectivity: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
+    messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    restricted_messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    multimedia_recording: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    read_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    write_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
+    location: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    landmark: { max: MIDP.SESSION, default: MIDP.ONESHOT},
+    payment: { max: MIDP.NEVER,   default: MIDP.NEVER},
+    authentication: { max: MIDP.NEVER,   default: MIDP.NEVER},
+    smart_card: { max: MIDP.NEVER,   default: MIDP.NEVER},
+    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
 };
 
 Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
     var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
-    var allow = Native.NEVER;
+    var allow = MIDP.NEVER;
     switch (domain) {
     case "manufacturer":
     case "maximum":
     case "operator":
-        allow = Native.ALLOW;
+        allow = MIDP.ALLOW;
         break;
     case "identified_third_party":
-        allow = Native.identifiedTBL[group].default;
+        allow = MIDP.identifiedTBL[group].default;
         break;
     case "unidentified_third_party":
-        allow = Native.unidentifiedTBL[group].default;
+        allow = MIDP.unidentifiedTBL[group].default;
         break;
     }
     stack.push(allow);
@@ -313,18 +318,18 @@ Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Lja
 
 Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
     var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
-    var allow = Native.NEVER;
+    var allow = MIDP.NEVER;
     switch (domain) {
     case "manufacturer":
     case "maximum":
     case "operator":
-        allow = Native.ALLOW;
+        allow = MIDP.ALLOW;
         break;
     case "identified_third_party":
-        allow = Native.identifiedTBL[group].max;
+        allow = MIDP.identifiedTBL[group].max;
         break;
     case "unidentified_third_party":
-        allow = Native.unidentifiedTBL[group].max;
+        allow = MIDP.unidentifiedTBL[group].max;
         break;
     }
     stack.push(allow);
@@ -388,7 +393,7 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ct
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
     var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
-    Native.sendEvent(obj);
+    MIDP.sendEvent(obj);
 }
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
@@ -401,61 +406,61 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFi
     var data = CLASSES.loadFile(fileName);
     if (!data)
         ctx.raiseException("java/lang/IOException");
-    Native.skinFileData = new DataView(data);
-    Native.skinFilePos = 0;
+    MIDP.skinFileData = new DataView(data);
+    MIDP.skinFilePos = 0;
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B"] = function(ctx, stack) {
     var len = stack.pop();
-    if (!Native.skinFileData || (Native.skinFilePos + len) > Native.skinFileData.byteLength)
+    if (!MIDP.skinFileData || (MIDP.skinFilePos + len) > MIDP.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
     var bytes = CLASSES.newPrimitiveArray("B", len);
     for (var n = 0; n < len; ++n) {
-        bytes[n] = Native.skinFileData.getUint8(Native.skinFilePos++);
+        bytes[n] = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
     }
     stack.push(bytes);
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I"] = function(ctx, stack) {
-    if (!Native.skinFileData || (Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
-    var len = Native.skinFileData.getInt32(Native.skinFilePos, true);
-    Native.skinFilePos += 4;
+    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
+    MIDP.skinFilePos += 4;
     var ints = CLASSES.newPrimitiveArray("I", len);
     for (var n = 0; n < len; ++n) {
-        if ((Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+        if ((MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
-        ints[n] = Native.skinFileData.getInt32(Native.skinFilePos, true);
-        Native.skinFilePos += 4;
+        ints[n] = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
+        MIDP.skinFilePos += 4;
     }
     stack.push(ints);
 }
 
-Native.STRING_ENCODING_USASCII = 0;
-Native.STRING_ENCODING_UTF8 = 1;
+MIDP.STRING_ENCODING_USASCII = 0;
+MIDP.STRING_ENCODING_UTF8 = 1;
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()[Ljava/lang/String;"] = function(ctx, stack) {
-    if (!Native.skinFileData || (Native.skinFilePos + 4) > Native.skinFileData.byteLength)
+    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
-    var len = Native.skinFileData.getInt32(Native.skinFilePos, true);
-    Native.skinFilePos += 4;
+    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
+    MIDP.skinFilePos += 4;
     var strings = CLASSES.newArray("[Ljava/lang/String;", len);
     for (var n = 0; n < len; ++n) {
-        if ((Native.skinFilePos + 2) > Native.skinFileData.byteLength)
+        if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
-        var strLen = Native.skinFileData.getUint8(Native.skinFilePos++);
-        var strEnc = Native.skinFileData.getUint8(Native.skinFilePos++);
-        if ((Native.skinFilePos + strLen) > Native.skinFileData.byteLength)
+        var strLen = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
+        var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
+        if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
-        var bytes = Native.skinFileData.buffer.slice(Native.skinFilePos, Native.skinFilePos + strLen);
-        Native.skinFilePos += strLen;
+        var bytes = MIDP.skinFileData.buffer.slice(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
+        MIDP.skinFilePos += strLen;
         var str;
-        if (strEnc === Native.STRING_ENCODING_USASCII) {
+        if (strEnc === MIDP.STRING_ENCODING_USASCII) {
             var data = new Uint8Array(bytes);
             str = "";
             for (var i = 0; i < strLen; ++i)
                 str += String.fromCharCode(data[i]);
-        } else if (strEnc === Native.STRING_ENCODING_UTF8) {
+        } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
             str = util.decodeUtf8(bytes);
         } else {
             ctx.raiseException("java/lang/IllegalStateException");
@@ -466,8 +471,8 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinFile.()I"] = function(ctx, stack) {
-    Native.skinFileData = null;
-    Native.skinFilePos = 0;
+    MIDP.skinFileData = null;
+    MIDP.skinFilePos = 0;
     stack.push(0);
 }
 
@@ -498,8 +503,36 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     stack.push(bytes);
 }
 
+MIDP.Font = {
+    FACE_SYSTEM: 0,
+    FACE_MONOSPACE: 32,
+    FACE_PROPORTIONAL: 64,
+    STYLE_PLAIN: 0,
+    STYLE_BOLD: 1,
+    STYLE_ITALIC: 2,
+    STYLE_UNDERLINED: 4,
+    SIZE_SMALL: 8,
+    SIZE_MEDIUM: 0,
+    SIZE_LARGE: 16,
+};
+
 Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
     var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
+    var font = [];
+    if (style & MIDP.Font.STYLE_BOLD)
+        font.push("bold");
+    if (style & MIDP.Font.STYLE_ITALIC)
+        font.push("italic");
+    // Canvas doesn't support text decorations (underline).
+    if (size === MIDP.Font.SIZE_SMALL)
+        font.push("0.7em");
+    else if (size === MIDP.Font.SIZE_LARGE)
+        font.push("1.3em");
+    if (face === MIDP.Font.MONOSPACE)
+        font.push("monospace");
+    else if (face === MIDP.Font.PROPORTIONAL)
+        font.push("san-serif");
+    font = font.join(" ");
 }
 
 Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
@@ -521,10 +554,6 @@ Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImag
 
 Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function(ctx, stack) {
     stack.push(0);
-}
-
-Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) {
-    stack.push(Long.fromNumber(Date.now()));
 }
 
 Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
@@ -568,25 +597,21 @@ Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = functio
     stack.push(0);
 }
 
-Native.Canvas = (function() {
+MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
     c.height = 480;
-    return c;  
-})();
-
-Native.Context2D = (function() {
-    return Native.Canvas.getContext("2d");
+    return c.getContext("2d");
 })();
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(Native.Canvas.width);
+    stack.push(MIDP.Context2D.canvas.width);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(Native.Canvas.height);
+    stack.push(MIDP.Context2D.canvas.height);
 }
 
 Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
@@ -599,7 +624,85 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = fun
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(MIDP.suites[id] ? 1 : 0);
+    stack.push(id <= 1 ? 1 : 0);
+}
+
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var id = stack.pop(), _this = stack.pop();
+    stack.push(CLASSES.newString(""));
+}
+
+Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), path = util.fromJavaString(stack.pop());
+    stack.push(0);
+}
+
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I"] = function(ctx, stack) {
+    var storageId = stack.pop(), name = util.fromJavaString(stack.pop());
+    stack.push(10 * 4096 * 4096);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I"] = function(ctx, stack) {
+    var storageId = stack.pop(), base = util.fromJavaString(stack.pop()), handle = stack.pop();
+    stack.push(10 * 4096 * 4096);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(ctx, stack) {
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), base = util.fromJavaString(stack.pop()), _this = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(ctx, stack) {
+    var pos = stack.pop(), handle = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
+    var count = stack.pop(), offset = stack.pop(), bytes = stack.pop(), fileId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(ctx, stack) {
+    var fileId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack) {
+    var fileId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] = function(ctx, stack) {
+    var headerDataSize = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(ctx, stack) {
+    var headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] = function(ctx, stack) {
+    var headerVersion = stack.pop(), headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
+    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+    stack.push(CLASSES.newPrimitiveArray("I", 0));
+}
+
+Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
+    var recordId = stack.pop(), changeType = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
+    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
@@ -619,63 +722,88 @@ Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = 
     stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
 }
 
-Native.nativeEventQueue = [];
+Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(ctx, stack) {
+    var fileName = util.fromJavaString(stack.pop()), suiteId = stack.pop(), imageData = stack.pop();
+    stack.push(0);
+}
 
-Native.copyEvent = function(obj) {
-    var e = Native.nativeEventQueue.pop();
+Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(ctx, stack) {
+    var name = util.fromJavaString(stack.pop());
+    stack.push(0);
+}
+
+Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx, stack) {
+    var id = stack.pop();
+}
+
+Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ctx, stack) {
+    var id = stack.pop();
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(1);
+}
+
+MIDP.nativeEventQueue = [];
+
+MIDP.copyEvent = function(obj) {
+    var e = MIDP.nativeEventQueue.pop();
     obj.class.getField("type", "I").set(obj, e.type);
     obj.class.fields.forEach(function(field) {
         field.set(obj, e[field.name]);
     });
 }
 
-Native.deliverWaitForNativeEventResult = function(ctx) {
+MIDP.deliverWaitForNativeEventResult = function(ctx) {
     var stack = ctx.current().stack;
     var obj = stack.pop();
-    if (Native.nativeEventQueue.length > 0)
-        Native.copyEvent(obj);
-    stack.push(Native.nativeEventQueue.length);
+    if (MIDP.nativeEventQueue.length > 0)
+        MIDP.copyEvent(obj);
+    stack.push(MIDP.nativeEventQueue.length);
 }
 
-Native.sendEvent = function(obj) {
+MIDP.sendEvent = function(obj) {
     var e = { type: obj.class.getField("type", "I").get(obj) };
     obj.class.fields.forEach(function(field) {
         e[field.name] = field.get(obj);
     });
-    Native.nativeEventQueue.push(e);
-    var ctx = Native.waitingNativeEventContext;
+    MIDP.nativeEventQueue.push(e);
+    var ctx = MIDP.waitingNativeEventContext;
     if (!ctx)
         return;
-    Native.deliverWaitForNativeEventResult(Native.waitingNativeEventContext);
-    Native.waitingNativeEventContext.resume();
-    Native.waitingNativeEventContext = null;
+    MIDP.deliverWaitForNativeEventResult(MIDP.waitingNativeEventContext);
+    MIDP.waitingNativeEventContext.resume();
+    MIDP.waitingNativeEventContext = null;
 }
 
 MIDP.KEY_EVENT = 1;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
 window.addEventListener("keypress", function(ev) {
-    Native.sendEvent({ type: MIDP.KEY_EVENT,
-                       intParam1: 1 /* PRESSED */,
-                       intParam2: ev.charCode,
-                       intParam4: 0 /* Display ID */ });
+    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    obj.class.getField("type", "I").set(obj, MIDP.KEY_EVENT);
+    obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
+    obj.class.getField("intParam2", "I").set(obj, ev.charCode);
+    obj.class.getField("intParam4", "I").set(obj, 0); // displayID
+    MIDP.sendEvent(obj);
 });
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
-    if (Native.nativeEventQueue.length === 0) {
-        Native.waitingNativeEventContext = ctx;
+    if (MIDP.nativeEventQueue.length === 0) {
+        MIDP.waitingNativeEventContext = ctx;
         throw VM.Pause;
     }
-    Native.deliverWaitForNativeEventResult(ctx);
+    MIDP.deliverWaitForNativeEventResult(ctx);
 }
 
 Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] = function(ctx, stack) {
     var obj = stack.pop();
-    if (!Native.nativeEventQueue.length) {
+    if (!MIDP.nativeEventQueue.length) {
         stack.push(0);
         return;
     }
-    Native.copyEvent(obj);
+    MIDP.copyEvent(obj);
     stack.push(1);
 }
 
@@ -718,7 +846,9 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    Native.sendEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN });
+    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    obj.class.getField("type", "I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
+    MIDP.sendEvent(obj);
 }
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
@@ -753,119 +883,140 @@ Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = fu
     stack.push(1);
 }
 
-MIDP.anchors = {
-    HCENTER: 1,
-    VCENTER: 2,
-    LEFT: 4,
-    RIGHT: 8,
-    TOP: 16,
-    BOTTOM: 32,
-    BASELINE: 64    
-}
+MIDP.HCENTER = 1;
+MIDP.VCENTER = 2;
+MIDP.LEFT = 4;
+MIDP.RIGHT = 8;
+MIDP.TOP = 16;
+MIDP.BOTTOM = 32;
+MIDP.BASELINE = 64;
 
-MIDP.draw = function(g, anchor, x, y, w, h, cb) {
-    var transX = g.class.getField("transX", "I").get(g),
-        transY = g.class.getField("transY", "I").get(g),
-        clipX1 = g.class.getField("clipX1", "S").get(g),
+MIDP.withClip = function(g, x, y, cb) {
+    var clipX1 = g.class.getField("clipX1", "S").get(g),
         clipY1 = g.class.getField("clipY1", "S").get(g),
         clipX2 = g.class.getField("clipX2", "S").get(g),
         clipY2 = g.class.getField("clipY2", "S").get(g),
-        clipped = g.class.getField("clipped", "Z").get(g);
-    var ctx = Native.Context2D;
+        clipped = g.class.getField("clipped", "Z").get(g),
+        transX = g.class.getField("transX", "I").get(g),
+        transY = g.class.getField("transY", "I").get(g);
+    var ctx = MIDP.Context2D;
     if (clipped) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
         ctx.clip();
     }
-    x += transX;
-    y += transY;
-    if (anchor) {
-        // LEFT and TOP: do nothing
-        if (anchor & MIDP.anchors.RIGHT)
-            x = Native.Canvas.width - w;
-        if (anchor & MIDP.anchors.BOTTOM)
-            y = Native.Canvas.height - h;
-        if (anchor & MIDP.anchors.HCENTER)
-            x = Native.Canvas.width / 2 - w / 2;
-        if (anchor & MIDP.anchors.VCENTER)
-            y = Native.Canvas.height / 2 - h / 2;
-        if (anchor & MIDP.anchors.BASELINE)
-            y = y - h;
-    }
+    ctx.translate(transX, transY);
     cb(x, y);
     if (clipped) {
         ctx.restore();
     }
 }
 
+MIDP.withAnchor = function(g, anchor, x, y, w, h, cb) {
+    MIDP.withClip(g, x, y, function(x, y) {
+        if (anchor & MIDP.RIGHT)
+            x -= w;
+        if (anchor & MIDP.HCENTER)
+            x -= w/2;
+        if (anchor & MIDP.BOTTOM)
+            y -= h;
+        if (anchor & MIDP.VCENTER)
+            y -= h/2;
+        cb(x, y);
+    });
+}
+
+MIDP.withTextAnchor = function(g, anchor, x, y, w, cb) {
+    MIDP.withClip(g, x, y, function(x, y) {
+        var ctx = MIDP.Context2D;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        if (anchor & MIDP.RIGHT)
+            x -= w;
+        if (anchor & MIDP.HCENTER)
+            x -= w/2;
+        if (anchor & MIDP.BOTTOM)
+            ctx.textBaseline = "bottom";
+        if (anchor & MIDP.VCENTER)
+            ctx.textBaseline = "middle";
+        if (anchor & MIDP.BASELINE)
+            ctx.textBaseline = "alphabetic";
+        cb(x, y);
+    });
+}
+
+MIDP.withPixel = function(g, cb) {
+    var pixel = g.class.getField("pixel", "I").get(g);
+    var style = "#" + ("00000" + pixel.toString(16)).slice(-6);
+    MIDP.Context2D.fillStyle = style;
+    MIDP.Context2D.strokeStyle = style;
+    cb();
+}
+
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
         img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
-        imgData = img.class.getField("nativeImageData", "I").get(img),
-        transX = _this.class.getField("transX", "I").get(_this),
-        transY = _this.class.getField("transY", "I").get(_this);
-    MIDP.draw(_this, anchor, x, y, imgData.width, imgData.height, function(x, y) {
-        Native.Context2D.drawImage(imgData, x, y);
+        imgData = img.class.getField("nativeImageData", "I").get(img);
+    MIDP.withAnchor(_this, anchor, x, y, imgData.width, imgData.height, function(x, y) {
+        MIDP.Context2D.drawImage(imgData, x, y);
     });
     stack.push(1);
 }
 
 Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
     var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str);
+        metrics = MIDP.Context2D.measureText(str);
     stack.push(metrics.width);
 }
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
-    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str),
-        pixel = _this.class.getField("pixel", "I").get(_this);
-    MIDP.draw(_this, anchor, x, y, metrics.width, 0, function(x, y) {
-        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.fillText(str, x, y);
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
+    MIDP.withTextAnchor(_this, anchor, x, y, MIDP.Context2D.measureText(str), function(x, y) {
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillText(str, x, y);
+        });
     });
 }
 
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
-        pixel = _this.class.getField("pixel", "I").get(_this);
-    MIDP.draw(_this, 0, x, y, width, height, function(x, y) {
-        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.fillRect(x, y, width, height);
+    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
+    MIDP.withClip(_this, x, y, function(x, y) {
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillRect(x, y, width, height);
+        });
     });
 }
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop(),
-        pixel = _this.class.getField("pixel", "I").get(_this);
-    MIDP.draw(_this, 0, x, y, width, height, function(x, y) {
-        Native.Context2D.strokeStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.strokeRect(x, y, width, height);
+    var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
+    MIDP.withClip(_this, x, y, function(x, y) {
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.strokeRect(x, y, Math.max(w, 1), Math.max(h, 1));
+        });
     });
 }
 
 Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
         len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
-        str = util.fromJavaChars(data, offset, len),
-        pixel = _this.class.getField("pixel", "I").get(_this),
-        metrics = Native.Context2D.measureText(str);
-    MIDP.draw(_this, 0, x, y, metrics.width, 0, function(x, y) {
-        Native.Context2D.fillStyle = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        Native.Context2D.fillText(str, x, y);
+        str = util.fromJavaChars(data, offset, len);
+    MIDP.withTextAnchor(_this, anchor, x, y, MIDP.Context2D.measureText(str), function(x, y) {
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillText(str, x, y);
+        });
     });
 }
 
 Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
     var str = String.fromCharCode(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str);
+        metrics = MIDP.Context2D.measureText(str);
     stack.push(metrics.width);
 }
 
 Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
     var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
+        metrics = MIDP.Context2D.measureText(str.slice(offset, offset + len));
     stack.push(metrics.width);
 }
 
@@ -883,6 +1034,43 @@ Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = f
 
 Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack) {
     var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop(),
-        metrics = Native.Context2D.measureText(str.slice(offset, offset + len));
+        metrics = MIDP.Context2D.measureText(str.slice(offset, offset + len));
     stack.push(metrics.width);
+}
+
+MIDP.TRANS_NONE = 0;
+MIDP.TRANS_MIRROR_ROT180 = 1;
+MIDP.TRANS_MIRROR = 2;
+MIDP.TRANS_MIRROR_ROT90 = 3;
+MIDP.TRANS_MIRROR_ROT270 = 4;
+MIDP.TRANS_MIRROR_ROT90 = 5;
+MIDP.TRANS_MIRROR_ROT270 = 6;
+MIDP.TRANS_MIRROR_ROT90 = 7;
+
+Native["javax/microedition/lcdui/Graphics.renderRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)Z"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
+        transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
+        img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
+        imgData = img.class.getField("nativeImageData", "I").get(img);
+    var w = sw, h = sh;
+    if (transform >= 4) {
+        w = sh;
+        h = sw;
+    }
+    MIDP.withAnchor(_this, anchor, x, y, w, h, function(x, y) {
+        var ctx = MIDP.Context2D;
+        ctx.translate(w/2, h/2);
+        if (transform === MIDP.TRANS_MIRROR || transform === MIDP.TRANS_MIRROR_ROT180)
+            ctx.scale(-1, 1);
+        if (transform === MIDP.TRANS_MIRROR_ROT90 || transform === MIDP.TRANS_MIRROR_ROT270)
+            ctx.scale(1, -1);
+        if (transform === MIDP.TRANS_ROT90 || transform === MIDP.TRANS_MIRROR_ROT90)
+            ctx.rotate(Math.PI / 2);
+        if (transform === MIDP.TRANS_ROT180 || transform === MIDP.TRANS_MIRROR_ROT180)
+            ctx.rotate(Math.PI);
+        if (transform === MIDP.TRANS_ROT270 || transform === MIDP.TRANS_MIRROR_ROT270)
+            ctx.rotate(1.5 * Math.PI);
+        MIDP.Context2D.drawImage(imgData, sx, sy, w, h, -w / 2, -h / 2, sw, sh);
+    });
+    stack.push(1);
 }

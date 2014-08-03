@@ -100,6 +100,10 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Lja
     }
 }
 
+Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) {
+    stack.push2(Long.fromNumber(Date.now()));
+}
+
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(ctx, stack) {
     stack.push(stack.pop().class.getClassObject());
 }
@@ -153,7 +157,7 @@ Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {
     var classObject = stack.pop();
     stack.push(util.cache(classObject, "getName", function () {
-        return CLASSES.newString(classObject.vmClass.className.replace("/", ".", "g"));
+        return CLASSES.newString(classObject.vmClass.className.replace(/\//g, "."));
     }));
 }
 
@@ -162,7 +166,7 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
     try {
         if (!name)
             throw new Classes.ClassNotFoundException();
-        var className = util.fromJavaString(name).replace(".", "/", "g");
+        var className = util.fromJavaString(name).replace(/\./g, "/");
         var classInfo = null;
         classInfo = CLASSES.getClass(className);
     } catch (e) {
@@ -469,12 +473,12 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     var len = stack.pop(), off = stack.pop(), b = stack.pop(), handle = stack.pop();
     var data = handle.data;
     var remaining = data.length - handle.pos;
-    if (remaining > len)
+    if (len > remaining)
         len = remaining;
     for (var n = 0; n < len; ++n)
         b[off+n] = data[n];
     handle.pos += len;
-    stack.push(len);
+    stack.push((len > 0) ? len : -1);
 }
 
 Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(ctx, stack) {

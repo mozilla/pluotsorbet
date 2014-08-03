@@ -3,11 +3,20 @@
 
 'use strict';
 
-var urlParams = {};
-for (var param of location.search.substring(1).split("&")) {
-  var [name, value] = param.split("=").map(v => v.replace(/\+/g, " ")).map(decodeURIComponent);
-  urlParams[name] = value;
+console.log = function() {
+  var s = Array.prototype.join.call(arguments, ",") +"\n";
+  document.getElementById("log").textContent += s;
 }
+
+var urlParams = {};
+location.search.substring(1).split("&").forEach(function (param) {
+  param = param.split("=").map(function(v) {
+      return v.replace(/\+/g, " ");
+  }).map(decodeURIComponent);
+  urlParams[param[0]] = param[1];
+});
+
+urlParams.args = (urlParams.args || "").split(",");
 
 function load(file, cb) {
   var xhr = new XMLHttpRequest();
@@ -19,7 +28,7 @@ function load(file, cb) {
   xhr.send(null);
 }
 
-function runTest(className) {
+function run(className, args) {
   var jvm = new JVM();
   // This is a hack. We should eliminate CLASSES instead.
   CLASSES.classes = {};
@@ -37,29 +46,17 @@ function runTest(className) {
         loadNextJar();
       });
     } else {
-      jvm.run(className);
+      jvm.run(className, args);
     }
   })();
 }
 
-console.log = function() {
-  var s = Array.prototype.join.call(arguments, ",") +"\n";
-  document.getElementById("log").textContent += s;
-}
+// To launch the unit tests: ?main=RunTests
+// To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
+// To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
 
 var idb_fs = new BrowserFS.FileSystem.IndexedDB(function() {
   BrowserFS.initialize(idb_fs);
 
-  runTest("Launcher");
-  //runTest("join");
-  //runTest("RunTests");
-  //runTest("gnu/testlet/vm/SystemTest");
-  //runTest("TestThread");
-  //runTest("TestRuntime");
-  //runTest("Andreas");
-  //runTest("TestDate");
-  //runTest("RunAll");
-  //runTest("TestArrays");
-  //runTest("TestByteArrayOutputStream");
+  run(urlParams.main || "RunTests", urlParams.args);
 });
-
