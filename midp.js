@@ -1018,7 +1018,6 @@ Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
     _this.class.getField("baseline", "I").set(_this, (size/2)|0);
     _this.class.getField("height", "I").set(_this, (size * 1.3)|0);
     _this.css = style + " " + size + "pt " + face;
-    console.log(_this.css);
 }
 
 Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
