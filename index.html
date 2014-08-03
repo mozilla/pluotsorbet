@@ -7,10 +7,20 @@
   position: absolute;
   top: 0px;
   right: 0px;
-  border: 1px dotted #ababab;
+  border: 1px solid #ababab;
 }
+
+@media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+  #canvas {
+    bottom: 0px;
+    left: 0px;
+    border: none;
+  }
+}
+
   </style>
   <meta charset="UTF-8">
+  <meta name="viewport" content="initial-scale=1.0">
   <script type="text/javascript">
     if (!window.TextDecoder) {
         var script = document.createElement("script");
