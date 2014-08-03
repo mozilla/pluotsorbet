@@ -226,8 +226,10 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
-    state.class.getField("suiteId", "I").set(state, -1);
-    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString("internal"));
+    var midletClassName = urlParams.midletClassName ? urlParams.midletClassName : internal;
+    var suiteId = (midletClassName === "internal") ? -1 : 1;
+    state.class.getField("suiteId", "I").set(state, suiteId);
+    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(midletClassName));
     var args = urlParams.args;
     state.class.getField("arg0", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 0) ? args[0] : ""));
     state.class.getField("arg1", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 1) ? args[1] : ""));
@@ -622,7 +624,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = fun
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(MIDP.suites[id] ? 1 : 0);
+    stack.push(id <= 1 ? 1 : 0);
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(ctx, stack) {
@@ -906,8 +908,7 @@ MIDP.withClip = function(g, x, y, cb) {
         ctx.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
         ctx.clip();
     }
-    x += transX;
-    y += transY;
+    ctx.translate(transX, transY);
     cb(x, y);
     if (clipped) {
         ctx.restore();
