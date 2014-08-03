@@ -17,7 +17,7 @@ tests.jar: $(SRCS) Testlets.java
 	mkdir build
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -d ./build $^
 	cd build && jar cvfe ../tests.jar RunTests *
-	jar uvf tests.jar gnu/testlet/vm/test.png
+	jar uvf tests.jar gnu/testlet/vm/test.png midlets/test.png
 	rm -rf build
 	rm -f Testlets.java
 

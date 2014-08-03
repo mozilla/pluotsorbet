@@ -883,15 +883,13 @@ Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = fu
     stack.push(1);
 }
 
-MIDP.anchors = {
-    HCENTER: 1,
-    VCENTER: 2,
-    LEFT: 4,
-    RIGHT: 8,
-    TOP: 16,
-    BOTTOM: 32,
-    BASELINE: 64    
-}
+MIDP.HCENTER = 1;
+MIDP.VCENTER = 2;
+MIDP.LEFT = 4;
+MIDP.RIGHT = 8;
+MIDP.TOP = 16;
+MIDP.BOTTOM = 32;
+MIDP.BASELINE = 64;
 
 MIDP.withClip = function(g, x, y, cb) {
     var clipX1 = g.class.getField("clipX1", "S").get(g),
@@ -917,32 +915,32 @@ MIDP.withClip = function(g, x, y, cb) {
 
 MIDP.withAnchor = function(g, anchor, x, y, w, h, cb) {
     MIDP.withClip(g, x, y, function(x, y) {
-        if (anchor & MIDP.anchors.RIGHT)
+        if (anchor & MIDP.RIGHT)
             x -= w;
-        if (anchor & MIDP.anchors.HCENTER)
+        if (anchor & MIDP.HCENTER)
             x -= w/2;
-        if (anchor & MIDP.anchors.BOTTOM)
+        if (anchor & MIDP.BOTTOM)
             y -= h;
-        if (anchor & MIDP.anchors.VCENTER)
+        if (anchor & MIDP.VCENTER)
             y -= h/2;
         cb(x, y);
     });
 }
 
-MIDP.withTextAnchor = function(g, anchor, x, y, cb) {
+MIDP.withTextAnchor = function(g, anchor, x, y, w, cb) {
     MIDP.withClip(g, x, y, function(x, y) {
         var ctx = MIDP.Context2D;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
-        if (anchor & MIDP.anchors.RIGHT)
-            ctx.textAlign = "right";
-        if (anchor & MIDP.anchors.BOTTOM)
+        if (anchor & MIDP.RIGHT)
+            x -= w;
+        if (anchor & MIDP.HCENTER)
+            x -= w/2;
+        if (anchor & MIDP.BOTTOM)
             ctx.textBaseline = "bottom";
-        if (anchor & MIDP.anchors.HCENTER)
-            ctx.textAlign = "center";
-        if (anchor & MIDP.anchors.VCENTER)
+        if (anchor & MIDP.VCENTER)
             ctx.textBaseline = "middle";
-        if (anchor & MIDP.anchors.BASELINE)
+        if (anchor & MIDP.BASELINE)
             ctx.textBaseline = "alphabetic";
         cb(x, y);
     });
@@ -959,9 +957,7 @@ MIDP.withPixel = function(g, cb) {
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
         img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
-        imgData = img.class.getField("nativeImageData", "I").get(img),
-        transX = _this.class.getField("transX", "I").get(_this),
-        transY = _this.class.getField("transY", "I").get(_this);
+        imgData = img.class.getField("nativeImageData", "I").get(img);
     MIDP.withAnchor(_this, anchor, x, y, imgData.width, imgData.height, function(x, y) {
         MIDP.Context2D.drawImage(imgData, x, y);
     });
@@ -976,7 +972,7 @@ Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = func
 
 Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
-    MIDP.withTextAnchor(_this, anchor, x, y, function(x, y) {
+    MIDP.withTextAnchor(_this, anchor, x, y, MIDP.Context2D.measureText(str), function(x, y) {
         MIDP.withPixel(_this, function() {
             MIDP.Context2D.fillText(str, x, y);
         });
@@ -993,10 +989,10 @@ Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, sta
 }
 
 Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
+    var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
     MIDP.withClip(_this, x, y, function(x, y) {
         MIDP.withPixel(_this, function() {
-            MIDP.Context2D.strokeRect(x, y, width, height);
+            MIDP.Context2D.strokeRect(x, y, Math.max(w, 1), Math.max(h, 1));
         });
     });
 }
@@ -1005,7 +1001,7 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
     var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
         len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
         str = util.fromJavaChars(data, offset, len);
-    MIDP.withTextAnchor(_this, anchor, x, y, function(x, y) {
+    MIDP.withTextAnchor(_this, anchor, x, y, MIDP.Context2D.measureText(str), function(x, y) {
         MIDP.withPixel(_this, function() {
             MIDP.Context2D.fillText(str, x, y);
         });
@@ -1040,4 +1036,41 @@ Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack
     var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop(),
         metrics = MIDP.Context2D.measureText(str.slice(offset, offset + len));
     stack.push(metrics.width);
+}
+
+MIDP.TRANS_NONE = 0;
+MIDP.TRANS_MIRROR_ROT180 = 1;
+MIDP.TRANS_MIRROR = 2;
+MIDP.TRANS_MIRROR_ROT90 = 3;
+MIDP.TRANS_MIRROR_ROT270 = 4;
+MIDP.TRANS_MIRROR_ROT90 = 5;
+MIDP.TRANS_MIRROR_ROT270 = 6;
+MIDP.TRANS_MIRROR_ROT90 = 7;
+
+Native["javax/microedition/lcdui/Graphics.renderRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)Z"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
+        transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
+        img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
+        imgData = img.class.getField("nativeImageData", "I").get(img);
+    var w = sw, h = sh;
+    if (transform >= 4) {
+        w = sh;
+        h = sw;
+    }
+    MIDP.withAnchor(_this, anchor, x, y, w, h, function(x, y) {
+        var ctx = MIDP.Context2D;
+        ctx.translate(w/2, h/2);
+        if (transform === MIDP.TRANS_MIRROR || transform === MIDP.TRANS_MIRROR_ROT180)
+            ctx.scale(-1, 1);
+        if (transform === MIDP.TRANS_MIRROR_ROT90 || transform === MIDP.TRANS_MIRROR_ROT270)
+            ctx.scale(1, -1);
+        if (transform === MIDP.TRANS_ROT90 || transform === MIDP.TRANS_MIRROR_ROT90)
+            ctx.rotate(Math.PI / 2);
+        if (transform === MIDP.TRANS_ROT180 || transform === MIDP.TRANS_MIRROR_ROT180)
+            ctx.rotate(Math.PI);
+        if (transform === MIDP.TRANS_ROT270 || transform === MIDP.TRANS_MIRROR_ROT270)
+            ctx.rotate(1.5 * Math.PI);
+        MIDP.Context2D.drawImage(imgData, sx, sy, w, h, -w / 2, -h / 2, sw, sh);
+    });
+    stack.push(1);
 }
