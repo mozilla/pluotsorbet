@@ -18,6 +18,7 @@ SRC = zipfile.js \
       threads.js \
       jvm.js \
       main.js \
+      libs/async_storage.js \
       libs/fs.js
 
 java/tests.jar: java/classes.jar
