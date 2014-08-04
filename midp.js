@@ -716,7 +716,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = f
 MIDP.nativeEventQueue = [];
 
 MIDP.copyEvent = function(obj) {
-    var e = MIDP.nativeEventQueue.pop();
+    var e = MIDP.nativeEventQueue.shift();
     obj.class.getField("type", "I").set(obj, e.type);
     obj.class.fields.forEach(function(field) {
         field.set(obj, e[field.name]);
