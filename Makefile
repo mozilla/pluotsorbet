@@ -17,7 +17,8 @@ SRC = zipfile.js \
       thread.js \
       threads.js \
       jvm.js \
-      main.js
+      main.js \
+      libs/fs.js
 
 java/tests.jar: java/classes.jar
 	cd tests && make
