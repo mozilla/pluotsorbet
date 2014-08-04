@@ -79,6 +79,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "fileconn.dir.private":
         value = "fcfile:///tmp/";
     break;
+    case "file.separator":
+        value = '/';
+    break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
