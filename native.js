@@ -513,9 +513,108 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
 }
 
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
-    var byteArray = stack.pop(), _this = stack.pop;
+    var byteArray = stack.pop(), _this = stack.pop();
 
     console.log(new TextDecoder().decode(byteArray));
 
-    stack.push(true);
+    stack.push(1);
+}
+
+Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.exists(path, function(exists) {
+        stack.push(exists ? 1 : 0);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.size(path, function(size) {
+        stack.push(size);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.list(path, function(files) {
+        stack.push(files ? 1 : 0);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    stack.push(Long.fromNumber(Date.now()));
+}
+
+Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(ctx, stack) {
+    // todo
+
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.list(path, function(files) {
+        stack.push(files ? 1 : 0);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    // IBM's implementation returns different error numbers, we don't care
+
+    fs.mkdir(path, function(created) {
+        stack.push(created ? 0 : 42);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    // IBM's implementation returns different error numbers, we don't care
+
+    fs.exists(path, function(exists) {
+        if (exists) {
+            fs.truncate(path, function(truncated) {
+                stack.push(truncated ? 0 : 42);
+                ctx.resume();
+            });
+        } else {
+            fs.create(path, function(created) {
+                stack.push(created ? 0 : 42);
+                ctx.resume();
+            });
+        }
+    });
+
+    throw VM.Pause;
 }
