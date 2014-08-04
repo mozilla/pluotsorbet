@@ -16,10 +16,10 @@ tests.jar: $(SRCS) Testlets.java
 	rm -rf build
 	mkdir build
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -d ./build $^
-	cd build && jar cvf ../tests.jar *
-	jar uvf tests.jar gnu/testlet/vm/test.png
+	cd build && jar cvfe ../tests.jar RunTests *
+	jar uvf tests.jar gnu/testlet/vm/test.png midlets/test.png
 	rm -rf build
 	rm -f Testlets.java
 
 clean:
-	rm -f `find . -name "*.jar" -or -name "*~"`
+	rm -f `find . -name "*.jar" -or -name "*~" -or -name "*.class"`

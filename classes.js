@@ -23,6 +23,17 @@ Classes.prototype.addPath = function(name, data) {
     this.classfiles[name] = data;
 }
 
+Classes.prototype.loadFileFromJar = function(jar, fileName) {
+    var classfiles = this.classfiles;
+    var zip = classfiles[jar];
+    if (!zip)
+        return null;
+    if (!(fileName in zip.directory))
+        return null;
+    var bytes = zip.read(fileName);
+    return bytes.buffer.slice(0, bytes.length);
+}
+
 Classes.prototype.loadFile = function(fileName) {
     var classfiles = this.classfiles;
     var data = classfiles[fileName];
@@ -107,7 +118,7 @@ Classes.prototype.initArrayClass = function(typeName) {
     var elementType = typeName.substr(1);
     var constructor = ARRAYS[elementType];
     if (constructor)
-        return this.initPrimitiveArrayType(typeName, constructor);
+        return this.classes[typeName] = this.initPrimitiveArrayType(typeName, constructor);
     if (elementType[0] === "L")
         elementType = elementType.substr(1).replace(";", "");
     var classInfo = new ArrayClass(typeName, this.getClass(elementType));
@@ -128,23 +139,19 @@ Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
     return classInfo;
 }
 
-Classes.prototype.getField = function(className, fieldName, signature, staticFlag) {
-    var classInfo = this.getClass(className, false);
+Classes.prototype.getField = function(classInfo, fieldName, signature, staticFlag) {
     do {
         var fields = classInfo.fields;
         for (var i=0; i<fields.length; ++i) {
             var field = fields[i];
             if (ACCESS_FLAGS.isStatic(field.access_flags) === !!staticFlag) {
-                if (field.name === fieldName && field.signature === signature) {
-                    if (!field.id)
-                        field.id = classInfo.className + "$" + fieldName;
+                if (field.name === fieldName && field.signature === signature)
                     return field;
-                }
             }
         }
         if (staticFlag) {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
-                var field = this.getField(classInfo.interfaces[n].className, fieldName, signature, staticFlag);
+                var field = this.getField(classInfo.interfaces[n], fieldName, signature, staticFlag);
                 if (field)
                     return field;
             }
@@ -185,9 +192,9 @@ Classes.prototype.newString = function(s) {
     var chars = this.newPrimitiveArray("C", length);
   for (var n = 0; n < length; ++n)
     chars[n] = s.charCodeAt(n);
-  obj["java/lang/String$value"] = chars;
-  obj["java/lang/String$offset"] = 0;
-  obj["java/lang/String$count"] = length;
+  CLASSES.java_lang_String.getField("value", "[C").set(obj, chars);
+  CLASSES.java_lang_String.getField("offset", "I").set(obj, 0);
+  CLASSES.java_lang_String.getField("count", "I").set(obj, length);
   return obj;
 }
 

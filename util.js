@@ -64,9 +64,9 @@ var util = (function () {
   function fromJavaString(str) {
     if (!str)
       return null;
-    var chars = str["java/lang/String$value"];
-    var offset = str["java/lang/String$offset"];
-    var count = str["java/lang/String$count"];
+    var chars = CLASSES.java_lang_String.getField("value", "[C").get(str);
+    var offset = CLASSES.java_lang_String.getField("offset", "I").get(str);
+    var count = CLASSES.java_lang_String.getField("count", "I").get(str);
     return fromJavaChars(chars, offset, count);
   }
 
