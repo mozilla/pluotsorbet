@@ -799,7 +799,7 @@ window.addEventListener("keypress", function(ev) {
     var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
     obj.class.getField("type", "I").set(obj, MIDP.KEY_EVENT);
     obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
-    obj.class.getField("intParam2", "I").set(obj, ev.charCode);
+    obj.class.getField("intParam2", "I").set(obj, ev.which);
     obj.class.getField("intParam4", "I").set(obj, 1); // displayID
     MIDP.sendEvent(obj);
 });
@@ -872,7 +872,6 @@ Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/Comm
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack) {
     console.log("Exit: " + stack.pop());
-    document.getElementById("canvas").style.display = "none";
     throw VM.Pause;
 }
 
@@ -1160,8 +1159,15 @@ Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(ctx, sta
 
 Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx, stack) {
     var key = stack.pop();
-    // Return 0 if the key is not a "System Key", whatever that is
-    stack.push(0);
+    /* We don't care about the system keys POWER, SEND, END, SELECT,
+      SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
+      but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
+    */
+    if (key === 8) {
+        stack.push(4)
+    } else {
+        stack.push(0);
+    }
 }
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
