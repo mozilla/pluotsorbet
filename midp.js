@@ -569,6 +569,50 @@ MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
     c.height = 480;
+
+
+    // TODO These mouse event handlers only work on firefox right now,
+    // because they use layerX and layerY.
+
+    var mouse_is_down = false;
+    
+    c.addEventListener("mousedown", function(ev) {
+        console.log("mousedown", ev.layerX, ev.layerY);
+        mouse_is_down = true;
+        var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+        obj.class.getField("type", "I").set(obj, MIDP.PEN_EVENT);
+        obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
+        obj.class.getField("intParam2", "I").set(obj, ev.layerX);
+        obj.class.getField("intParam3", "I").set(obj, ev.layerY);
+        obj.class.getField("intParam4", "I").set(obj, 1); // displayID
+        MIDP.sendEvent(obj);
+    });
+    
+    c.addEventListener("mousemove", function(ev) {
+        if (mouse_is_down) {
+            //console.log("mousemove");
+            var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+            obj.class.getField("type", "I").set(obj, MIDP.PEN_EVENT);
+            obj.class.getField("intParam1", "I").set(obj, 3); // DRAGGED
+            obj.class.getField("intParam2", "I").set(obj, ev.layerX);
+            obj.class.getField("intParam3", "I").set(obj, ev.layerY);
+            obj.class.getField("intParam4", "I").set(obj, 1); // displayID
+            MIDP.sendEvent(obj);
+        }
+    });
+    
+    c.addEventListener("mouseup", function(ev) {
+        console.log("mouseup");
+        mouse_is_down = false;
+        var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+        obj.class.getField("type", "I").set(obj, MIDP.PEN_EVENT);
+        obj.class.getField("intParam1", "I").set(obj, 2); // RELEASED
+        obj.class.getField("intParam2", "I").set(obj, ev.layerX);
+        obj.class.getField("intParam2", "I").set(obj, ev.layerY);
+        obj.class.getField("intParam4", "I").set(obj, 1); // displayID
+        MIDP.sendEvent(obj);
+    });
+
     return c.getContext("2d");
 })();
 
@@ -746,9 +790,12 @@ MIDP.sendEvent = function(obj) {
 }
 
 MIDP.KEY_EVENT = 1;
+MIDP.PEN_EVENT = 2;
+MIDP.COMMAND_EVENT = 3;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
 window.addEventListener("keypress", function(ev) {
+    ev.preventDefault();
     var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
     obj.class.getField("type", "I").set(obj, MIDP.KEY_EVENT);
     obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
@@ -825,6 +872,7 @@ Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/Comm
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack) {
     console.log("Exit: " + stack.pop());
+    document.getElementById("canvas").style.display = "none";
     throw VM.Pause;
 }
 
@@ -1114,5 +1162,9 @@ Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx
     var key = stack.pop();
     // Return 0 if the key is not a "System Key", whatever that is
     stack.push(0);
+}
+
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
+    var className = stack.pop(), suiteId = stack.pop();
 }
 
