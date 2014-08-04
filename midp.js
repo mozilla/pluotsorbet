@@ -382,20 +382,6 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     stack.push(value ? CLASSES.newString(value) : null);
 }
 
-Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
-    var _this = stack.pop();
-    stack.push(0);
-}
-
-Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-}
-
-Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
-    var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
-    MIDP.sendEvent(obj);
-}
-
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
     stack.push(CLASSES.newString("assets/" + storageId + "/"));
@@ -794,6 +780,20 @@ window.addEventListener("keypress", function(ev) {
     ev.preventDefault();
     MIDP.sendNativeEvent(MIDP.KEY_EVENT, MIDP.PRESSED, ev.which);
 });
+
+Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+}
+
+Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
+    var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
+    MIDP.sendEvent(obj);
+}
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
     if (MIDP.nativeEventQueue.length === 0) {

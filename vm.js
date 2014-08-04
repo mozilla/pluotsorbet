@@ -46,7 +46,7 @@ VM.execute = function(ctx) {
     }
 
     function throw_(ex) {
-        var exClass = CLASSES.getClass(ex.class.className);
+        var exClass = ex.class;
         do {
             var exception_table = frame.methodInfo.exception_table;
             var handler_pc = null;
