@@ -526,7 +526,7 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
 
 Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
     var _this = stack.pop(), ids = CLASSES.newPrimitiveArray("I", 1);
-    ids[0] = 0;
+    ids[0] = 1;
     stack.push(ids);
 }
 
@@ -753,7 +753,7 @@ window.addEventListener("keypress", function(ev) {
     obj.class.getField("type", "I").set(obj, MIDP.KEY_EVENT);
     obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
     obj.class.getField("intParam2", "I").set(obj, ev.charCode);
-    obj.class.getField("intParam4", "I").set(obj, 0); // displayID
+    obj.class.getField("intParam4", "I").set(obj, 1); // displayID
     MIDP.sendEvent(obj);
 });
 
@@ -1109,3 +1109,10 @@ Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(ctx, sta
         ctx.closePath();
     });
 }
+
+Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx, stack) {
+    var key = stack.pop();
+    // Return 0 if the key is not a "System Key", whatever that is
+    stack.push(0);
+}
+
