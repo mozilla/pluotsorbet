@@ -511,3 +511,11 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
     // Wait for incoming connections
     throw VM.Pause;
 }
+
+Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop;
+
+    console.log(new TextDecoder().decode(byteArray));
+
+    stack.push(true);
+}
