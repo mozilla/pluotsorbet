@@ -73,6 +73,15 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "microedition.platform":
         value = "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
+    case "fileconn.dir.memorycard":
+        value = "fcfile:///tmp/";
+        break;
+    case "fileconn.dir.private":
+        value = "fcfile:///tmp/";
+    break;
+    case "file.separator":
+        value = '/';
+    break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
