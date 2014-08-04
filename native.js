@@ -618,3 +618,115 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ct
 
     throw VM.Pause;
 }
+
+Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    function open() {
+        fs.open(path, function(fd) {
+            stack.push(fd);
+            _this.pos = 0;
+            ctx.resume();
+        });
+    }
+
+    fs.exists(path, function(exists) {
+        if (exists) {
+            fs.truncate(path, function(truncated) {
+                if (truncated) {
+                    open();
+                } else {
+                    stack.push(-1);
+                    ctx.resume();
+                }
+            });
+        } else {
+            fs.create(path, function(created) {
+                if (created) {
+                    open();
+                } else {
+                    stack.push(-1);
+                    ctx.resume();
+                }
+            });
+        }
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"] = function(ctx, stack) {
+    var byteArray = stack.pop(), offset = stack.pop2(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    function open() {
+        fs.open(path, function(fd) {
+            stack.push(fd);
+            _this.pos = offset.toNumber();
+            ctx.resume();
+        });
+    }
+
+    fs.exists(path, function(exists) {
+        if (exists) {
+            open();
+        } else {
+            fs.create(path, function(created) {
+                if (created) {
+                    open();
+                } else {
+                    stack.push(-1);
+                    ctx.resume();
+                }
+            });
+        }
+    });
+}
+
+Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = function(ctx, stack) {
+    var byteArray = stack.pop(), offset = stack.pop(), count: stack.pop(), fd: stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.write(fd, new Blob(byteArray).slice(offset, offset+count), _this.pos);
+
+    _this.pos += count;
+}
+
+Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = function(ctx, stack) {
+    var val = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    var intBuf = new Uint32Array(1);
+    intBuf[0] = val;
+
+    var buf = new Uint8Array(intBuf.buffer);
+
+    fs.write(fd, new Blob([buf]).slice(3, 4), _this.pos);
+
+    _this.pos += 1;
+}
+
+Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(ctx, stack) {
+    var fd = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.close(fd);
+}
+
+Native["com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V"] = function(ctx, stack) {
+    var fd = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.flush(fd, function() {
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
