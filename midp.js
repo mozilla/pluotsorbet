@@ -1189,35 +1189,20 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/la
     var className = stack.pop(), suiteId = stack.pop();
 }
 
-MIDP.gameConstants = {
-    UP: 1,
-    DOWN: 6,
-    LEFT: 2,
-    RIGHT: 5,
-    FIRE: 8,
-    GAME_A: 9,
-    GAME_B: 10,
-    GAME_C: 11,
-    GAME_D: 12
-};
-
 MIDP.gameKeys = {
-    119: MIDP.gameConstants.UP,
-    97: MIDP.gameConstants.LEFT,
-    115: MIDP.gameConstants.DOWN,
-    100: MIDP.gameConstants.RIGHT,
-    32: MIDP.gameConstants.FIRE,
-    113: MIDP.gameConstants.GAME_A,
-    101: MIDP.gameConstants.GAME_B,
-    122: MIDP.gameConstants.GAME_C,
-    99: MIDP.gameConstants.GAME_D
-}
+    119: 1,  // UP
+    97: 2,   // LEFT
+    115: 6,  // DOWN
+    100: 5,  // RIGHT
+    32: 8,   // FIRE
+    113: 9,  // GAME_A
+    101: 10, // GAME_B
+    122: 11, // GAME_C
+    99: 12   // GAME_D
+};
 
 Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(ctx, stack) {
     var keyCode = stack.pop();
-    if (keyCode in MIDP.gameKeys)
-        stack.push(MIDP.gameKeys[keyCode]);
-    else
-        stack.push(0);
+    stack.push(MIDP.gameKeys[keyCode] || 0);
 }
 
