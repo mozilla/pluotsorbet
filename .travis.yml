@@ -7,8 +7,8 @@ addons:
   firefox: "31.0"
 before_script:
   - "sh -e /etc/init.d/xvfb start"
-  - npm install -g casperjs
-  - npm install -g slimerjs
+  - npm install casperjs
+  - npm install slimerjs
 script:
   - casperjs $TRAVIS_BUILD_DIR/tests/automation.js
   - export PATH=${PATH}:/home/travis/.nvm/v0.10.29/lib/node_modules/slimerjs
