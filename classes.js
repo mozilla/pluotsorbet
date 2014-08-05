@@ -16,7 +16,7 @@ var Classes = function() {
 Classes.ClassNotFoundException = function(message) {
     this.message = message;
 };
-Classes.ClassNotFoundException.prototype = new Error();
+Classes.ClassNotFoundException.prototype = Object.create(Error.prototype);
 Classes.ClassNotFoundException.prototype.name = "ClassNotFoundException";
 Classes.ClassNotFoundException.prototype.constructor = Classes.ClassNotFoundException;
 
