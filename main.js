@@ -58,7 +58,6 @@ function run(className, args) {
 asyncStorage.clear(function() {
   fs.init(function() {
     fs.mkdir("/tmp", function(created) {
-      console.log(created + " created /tmp");
       run(urlParams.main || "RunTests", urlParams.args);
     });
   });

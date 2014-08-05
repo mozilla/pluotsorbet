@@ -552,7 +552,6 @@ Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(c
     var path = "/" + new TextDecoder().decode(byteArray);
 
     fs.size(path, function(size) {
-        console.log(size + " size " + path);
         stack.push(size);
         ctx.resume();
     });
@@ -566,7 +565,6 @@ Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = functio
     var path = "/" + new TextDecoder().decode(byteArray);
 
     fs.list(path, function(files) {
-        console.log((files ? 1 : 0) + " isdir " + path);
         stack.push(files ? 1 : 0);
         ctx.resume();
     });
@@ -613,36 +611,8 @@ Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx,
     // IBM's implementation returns different error numbers, we don't care
 
     fs.mkdir(path, function(created) {
-        console.log(created + " created " + path);
         stack.push(created ? 0 : 42);
         ctx.resume();
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ctx, stack) {
-    var byteArray = stack.pop(), _this = stack.pop();
-
-    var path = "/" + new TextDecoder().decode(byteArray);
-
-    // IBM's implementation returns different error numbers, we don't care
-
-    fs.exists(path, function(exists) {
-        console.log(exists + " exists " + path);
-        if (exists) {
-            fs.truncate(path, function(truncated) {
-                console.log(truncated + " truncated " + path);
-                stack.push(truncated ? 0 : 42);
-                ctx.resume();
-            });
-        } else {
-            fs.create(path, function(created) {
-                console.log(created + " created " + path);
-                stack.push(created ? 0 : 42);
-                ctx.resume();
-            });
-        }
     });
 
     throw VM.Pause;
