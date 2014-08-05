@@ -1050,7 +1050,10 @@ Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(ctx, st
         // TODO need to use bezierCurveTo to implement this properly,
         // but this works as a rough hack for now
         var radius = Math.ceil(Math.max(height, width) / 2);
-        MIDP.Context2D.arc(x, y, radius, startAngle, arcAngle);
+        var startRad = startAngle * 0.0175;
+        var arcRad = arcAngle * 0.0175;
+        MIDP.Context2D.moveTo(x + radius, y);
+        MIDP.Context2D.arc(x, y, radius, startRad, arcRad);
         MIDP.Context2D.stroke();
     })
 }
