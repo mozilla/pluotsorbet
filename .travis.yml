@@ -12,6 +12,7 @@ before_script:
   - "unzip slimerjs-0.9.1.zip"
   - "mv slimerjs-0.9.1 ./slimerjs"
   - npm install -g casperjs
+  - npm install -g slimerjs
 script:
   - casperjs $TRAVIS_BUILD_DIR/tests/automation.js
   - casperjs --engine=slimerjs $TRAVIS_BUILD_DIR/tests/automation.js
