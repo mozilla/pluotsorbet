@@ -534,7 +534,7 @@ Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/
 
 Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
     var gestureEventIdentity = stack.pop();
-    stack.push(false);
+    stack.push(0);
 }
 
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
