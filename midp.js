@@ -1395,7 +1395,6 @@ Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(c
     var path = "/" + new TextDecoder().decode(byteArray);
 
     fs.size(path, function(size) {
-        console.log(path + " size " + size);
         stack.push2(Long.fromNumber(size));
         ctx.resume();
     });
@@ -1455,7 +1454,6 @@ Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx,
     // IBM's implementation returns different error numbers, we don't care
 
     fs.mkdir(path, function(created) {
-        console.log(created + " created " + path);
         stack.push(created ? 0 : 42);
         ctx.resume();
     });
@@ -1471,16 +1469,13 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ct
     // IBM's implementation returns different error numbers, we don't care
 
     fs.exists(path, function(exists) {
-        console.log(exists + " exists " + path);
         if (exists) {
             fs.truncate(path, function(truncated) {
-                console.log(truncated + " truncated " + path);
                 stack.push(truncated ? 0 : 42);
                 ctx.resume();
             });
         } else {
             fs.create(path, new Blob(), function(created) {
-                console.log(created + " created " + path);
                 stack.push(created ? 0 : 42);
                 ctx.resume();
             });
