@@ -769,7 +769,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = funct
 
     var buf = new Uint8Array(intBuf.buffer);
 
-    fs.write(fd, new Blob([buf]).slice(3, 4), _this.pos);
+    fs.write(fd, buf.subarray(3, 4), _this.pos);
 
     _this.pos += 1;
 }
@@ -777,7 +777,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = funct
 Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = function(ctx, stack) {
     var fd = stack.pop(), count = stack.pop(), offset = stack.pop(), byteArray = stack.pop(), _this = stack.pop();
 
-    fs.write(fd, new Blob([byteArray]).slice(offset, offset+count), _this.pos);
+    fs.write(fd, byteArray.subarray(offset, offset+count), _this.pos);
 
     _this.pos += count;
 }

@@ -1,10 +1,5 @@
 'use strict';
 
-function Buffer() {
-  this.pos = 0;
-  this.array = new Uint8Array(1024);
-}
-
 var fs = (function() {
   function cleanup(path) {
     if (path.length != 1 && path.lastIndexOf("/") == path.length-1) {
@@ -53,12 +48,15 @@ var fs = (function() {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
-        var fd = openedFiles.push({
-          path: path,
-          blob: blob,
-          buffer: new Buffer(),
-        }) - 1;
-        cb(fd);
+        var reader = new FileReader();
+        reader.addEventListener("loadend", function() {
+          var fd = openedFiles.push({
+            path: path,
+            buffer: new Uint8Array(reader.result),
+          }) - 1;
+          cb(fd);
+        });
+        reader.readAsArrayBuffer(blob);
       }
     });    
   }
@@ -74,21 +72,21 @@ var fs = (function() {
       return null;
     }
 
-    var blob = openedFiles[fd].blob;
+    var buffer = openedFiles[fd].buffer;
 
     if (!from) {
       from = 0;
     }
 
     if (!to) {
-      to = blob.size;
+      to = buffer.byteLength;
     }
 
-    if (from > blob.size || to > blob.size) {
+    if (from > buffer.byteLength || to > buffer.byteLength) {
       return null;
     }
 
-    return blob.slice(from, to);
+    return buffer.subarray(from, to);
   }
 
   function write(fd, data, from) {
@@ -96,25 +94,34 @@ var fs = (function() {
       from = 0;
     }
 
-    var oldBlob = openedFiles[fd].blob;
+    var buffer = openedFiles[fd].buffer;
 
-    var parts = new Array();
-
-    if (from > 0) {
-      parts.push(oldBlob.slice(0, from));
+    if (from > buffer.byteLength) {
+      from = buffer.byteLength;
     }
 
-    parts.push(data);
+    var newLength = (from + data.byteLength > buffer.byteLength) ? (from + data.byteLength) : (buffer.byteLength);
 
-    if (from + data.size < oldBlob.size) {
-      parts.push(oldBlob.slice(from + data.size, oldBlob.size));
+    var newBuffer = new Uint8Array(newLength);
+
+    for (var i = 0; i < from; i++) {
+      newBuffer[i] = buffer[i];
     }
 
-    openedFiles[fd].blob = new Blob(parts);
+    for (var i = from; i < data.byteLength + from; i++) {
+      newBuffer[i] = data[i - from];
+    }
+
+    for (var i = from + data.byteLength; i < newLength; i++) {
+      newBuffer[i] = buffer[i];
+    }
+
+    openedFiles[fd].buffer = newBuffer;
   }
 
   function flush(fd, cb) {
-    asyncStorage.setItem(openedFiles[fd].path, openedFiles[fd].blob, cb);
+    var blob = new Blob([openedFiles[fd].buffer]);
+    asyncStorage.setItem(openedFiles[fd].path, blob, cb);
   }
 
   function list(path, cb) {
