@@ -1205,4 +1205,3 @@ Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(ct
     var keyCode = stack.pop();
     stack.push(MIDP.gameKeys[keyCode] || 0);
 }
-
