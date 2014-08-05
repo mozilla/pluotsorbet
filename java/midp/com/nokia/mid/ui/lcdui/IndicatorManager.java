@@ -1,9 +1,9 @@
 package com.nokia.mid.ui.lcdui;
 
 public class IndicatorManager {
-  private IndicatorManager instance = null;
+  private static IndicatorManager instance = null;
 
-  public IndicatorManager getIndicatorManager() {
+  public static IndicatorManager getIndicatorManager() {
     if (instance == null) {
       instance = new IndicatorManager();
     }
