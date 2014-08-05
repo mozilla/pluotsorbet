@@ -1,5 +1,8 @@
 test: java/tests.jar java/classes.jar
-	casperjs --enginer=slimerjs test `pwd`/tests/automation.js
+	killall python || true
+	python -m SimpleHTTPServer &
+	casperjs --verbose --log-level=debug --engine=slimerjs test `pwd`/tests/automation.js
+	killall python || true
 
 java/tests.jar: java/classes.jar
 	cd tests && make

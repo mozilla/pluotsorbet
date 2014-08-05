@@ -73,6 +73,6 @@ public class RunTests {
 	    pass += harness.passed();
 	    fail += harness.failed();
 	}
-	System.out.println("TOTAL: " + pass + " pass, " + fail + " fail");
+	System.out.println("DONE: " + pass + " pass, " + fail + " fail");
     }
 };
