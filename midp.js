@@ -226,7 +226,7 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
-    var midletClassName = urlParams.midletClassName ? urlParams.midletClassName : "internal";
+    var midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "internal";
     var suiteId = (midletClassName === "internal") ? -1 : 1;
     state.class.getField("suiteId", "I").set(state, suiteId);
     state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(midletClassName));
@@ -382,20 +382,6 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     stack.push(value ? CLASSES.newString(value) : null);
 }
 
-Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
-    var _this = stack.pop();
-    stack.push(0);
-}
-
-Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-}
-
-Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
-    var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
-    MIDP.sendEvent(obj);
-}
-
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
     stack.push(CLASSES.newString("assets/" + storageId + "/"));
@@ -526,7 +512,7 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
 
 Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
     var _this = stack.pop(), ids = CLASSES.newPrimitiveArray("I", 1);
-    ids[0] = 0;
+    ids[0] = 1;
     stack.push(ids);
 }
 
@@ -569,6 +555,29 @@ MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
     c.height = 480;
+
+
+    // TODO These mouse event handlers only work on firefox right now,
+    // because they use layerX and layerY.
+
+    var mouse_is_down = false;
+    
+    c.addEventListener("mousedown", function(ev) {
+        mouse_is_down = true;
+        MIDP.sendNativeEvent(MIDP.PEN_EVENT, MIDP.PRESSED, ev.layerX, ev.layerY);
+    });
+    
+    c.addEventListener("mousemove", function(ev) {
+        if (mouse_is_down) {
+            MIDP.sendNativeEvent(MIDP.PEN_EVENT, MIDP.DRAGGED, ev.layerX, ev.layerY)
+        }
+    });
+    
+    c.addEventListener("mouseup", function(ev) {
+        mouse_is_down = false;
+        MIDP.sendNativeEvent(MIDP.PEN_EVENT, MIDP.RELEASED, ev.layerX, ev.layerY);
+    });
+
     return c.getContext("2d");
 })();
 
@@ -745,17 +754,45 @@ MIDP.sendEvent = function(obj) {
     MIDP.waitingNativeEventContext = null;
 }
 
+MIDP.sendNativeEvent = function(type, intParam1, intParam2, intParam3) {
+    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    obj.class.getField("type", "I").set(obj, type);
+    if (intParam1 !== undefined)
+        obj.class.getField("intParam1", "I").set(obj, intParam1); // PRESSED
+    if (intParam2 !== undefined)
+        obj.class.getField("intParam2", "I").set(obj, intParam2);
+    if (intParam3 !== undefined)
+        obj.class.getField("intParam3", "I").set(obj, intParam3);
+    
+    obj.class.getField("intParam4", "I").set(obj, 1); // displayID
+    MIDP.sendEvent(obj);  
+}
+
 MIDP.KEY_EVENT = 1;
+MIDP.PEN_EVENT = 2;
+MIDP.PRESSED = 1;
+MIDP.RELEASED = 2;
+MIDP.DRAGGED = 3;
+MIDP.COMMAND_EVENT = 3;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
 window.addEventListener("keypress", function(ev) {
-    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
-    obj.class.getField("type", "I").set(obj, MIDP.KEY_EVENT);
-    obj.class.getField("intParam1", "I").set(obj, 1); // PRESSED
-    obj.class.getField("intParam2", "I").set(obj, ev.charCode);
-    obj.class.getField("intParam4", "I").set(obj, 0); // displayID
-    MIDP.sendEvent(obj);
+    MIDP.sendNativeEvent(MIDP.KEY_EVENT, MIDP.PRESSED, ev.which);
 });
+
+Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+}
+
+Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
+    var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
+    MIDP.sendEvent(obj);
+}
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
     if (MIDP.nativeEventQueue.length === 0) {
@@ -961,6 +998,15 @@ Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx,
     });
 }
 
+Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(ctx, stack) {
+    var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), chr = String.fromCharCode(stack.pop()), _this = stack.pop();
+    MIDP.withTextAnchor(_this, anchor, x, y, chr, function(x, y) {
+        MIDP.withPixel(_this, function() {
+            MIDP.Context2D.fillText(chr, x, y);
+        });
+    });
+}
+
 Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
     var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
     MIDP.withClip(_this, x, y, function(x, y) {
@@ -977,6 +1023,22 @@ Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, sta
             MIDP.Context2D.strokeRect(x, y, Math.max(w, 1), Math.max(h, 1));
         });
     });
+}
+
+Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(ctx, stack) {
+    var arcHeight = stack.pop(), arcWidth = stack.pop(),
+        height = stack.pop(), width = stack.pop(),
+        y = stack.pop(), x = stack.pop(), _this = stack.pop();
+    MIDP.withClip(_this, x, y, function(x, y) {
+        MIDP.withPixel(_this, function() {
+            // TODO implement rounding
+            MIDP.Context2D.fillRect(x, y, Math.max(width, 1), Math.max(height, 1));
+        });
+    });
+}
+
+Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(ctx, stack) {
+  // TODO implement
 }
 
 MIDP.FACE_SYSTEM = 0;
@@ -1108,4 +1170,38 @@ Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(ctx, sta
         ctx.stroke();
         ctx.closePath();
     });
+}
+
+Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx, stack) {
+    var key = stack.pop();
+    /* We don't care about the system keys POWER, SEND, END, SELECT,
+      SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
+      but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
+    */
+    if (key === 8) {
+        stack.push(4)
+    } else {
+        stack.push(0);
+    }
+}
+
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
+    var className = stack.pop(), suiteId = stack.pop();
+}
+
+MIDP.gameKeys = {
+    119: 1,  // UP
+    97: 2,   // LEFT
+    115: 6,  // DOWN
+    100: 5,  // RIGHT
+    32: 8,   // FIRE
+    113: 9,  // GAME_A
+    101: 10, // GAME_B
+    122: 11, // GAME_C
+    99: 12   // GAME_D
+};
+
+Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(ctx, stack) {
+    var keyCode = stack.pop();
+    stack.push(MIDP.gameKeys[keyCode] || 0);
 }
