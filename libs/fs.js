@@ -7,6 +7,11 @@ var fs = (function() {
       return ".";
     }
 
+    if (index == path.length-1) {
+      path = path.substring(0, index);
+      index = path.lastIndexOf("/");
+    }
+
     while (index >= 0 && path[index] == "/") {
       --index;
     }
@@ -19,11 +24,24 @@ var fs = (function() {
   }
 
   function basename(path) {
-    return path.slice(path.lastIndexOf("/") + 1);
+    var index = path.lastIndexOf("/");
+
+    if (index == path.length-1) {
+      path = path.substring(0, index);
+      index = path.lastIndexOf("/");
+    }
+
+    return path.slice(index + 1);
   }
 
   function init(cb) {
-    asyncStorage.setItem("/", [], cb);
+    asyncStorage.getItem("/", function(data) {
+      if (data) {
+        cb();
+      } else {
+        asyncStorage.setItem("/", [], cb);
+      }
+    });
   }
 
   var openedFiles = [];
