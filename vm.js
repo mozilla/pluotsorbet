@@ -134,6 +134,10 @@ VM.execute = function(ctx) {
             var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
             constant = CLASSES.getMethod(classInfo, methodName, signature, op === 0xb8, op !== 0xb8);
+            if (!constant) {
+                ctx.raiseException("java/lang/RuntimeException",
+                                   classInfo.className + "." + methodName + "." + signature + " not found");
+            }
             break;
         default:
             throw new Error("not support constant type");
