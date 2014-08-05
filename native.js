@@ -512,6 +512,22 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
     throw VM.Pause;
 }
 
+Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(ctx, stack) {
+    var target = stack.pop(), _this = stack.pop();
+    _this.target = target;
+}
+
+Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(ctx, stack) {
+    var _this = stack.pop();
+    var target = _this.target;
+    stack.push(target ? target : null);
+}
+
+Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+    _this.target = null;
+}
+
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
     stack.push(1);
