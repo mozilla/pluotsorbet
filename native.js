@@ -514,13 +514,10 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
 
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
-
-    console.log(new TextDecoder().decode(byteArray));
-
     stack.push(1);
 }
 
-Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
+/*Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
     var path = "/" + new TextDecoder().decode(byteArray);
@@ -729,4 +726,4 @@ Native["com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V"] = function(ct
     });
 
     throw VM.Pause;
-}
+}*/
