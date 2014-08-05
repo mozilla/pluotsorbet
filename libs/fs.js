@@ -1,15 +1,22 @@
 'use strict';
 
+function Buffer() {
+  this.pos = 0;
+  this.array = new Uint8Array(1024);
+}
+
 var fs = (function() {
+  function cleanup(path) {
+    if (path.length != 1 && path.lastIndexOf("/") == path.length-1) {
+      path = path.substring(0, path.length-1);
+    }
+    return path;
+  }
+
   function dirname(path) {
     var index = path.lastIndexOf("/");
     if (index == -1) {
       return ".";
-    }
-
-    if (index == path.length-1) {
-      path = path.substring(0, index);
-      index = path.lastIndexOf("/");
     }
 
     while (index >= 0 && path[index] == "/") {
@@ -24,14 +31,7 @@ var fs = (function() {
   }
 
   function basename(path) {
-    var index = path.lastIndexOf("/");
-
-    if (index == path.length-1) {
-      path = path.substring(0, index);
-      index = path.lastIndexOf("/");
-    }
-
-    return path.slice(index + 1);
+    return path.slice(path.lastIndexOf("/") + 1);
   }
 
   function init(cb) {
@@ -47,6 +47,8 @@ var fs = (function() {
   var openedFiles = [];
 
   function open(path, cb) {
+    path = cleanup(path);
+
     asyncStorage.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
@@ -54,6 +56,7 @@ var fs = (function() {
         var fd = openedFiles.push({
           path: path,
           blob: blob,
+          buffer: new Buffer(),
         }) - 1;
         cb(fd);
       }
@@ -115,6 +118,8 @@ var fs = (function() {
   }
 
   function list(path, cb) {
+    path = cleanup(path);
+
     asyncStorage.getItem(path, function(files) {
       if (files == null || files instanceof Blob) {
         cb(null);
@@ -125,6 +130,8 @@ var fs = (function() {
   }
 
   function exists(path, cb) {
+    path = cleanup(path);
+
     asyncStorage.getItem(path, function(data) {
       if (data == null) {
         cb(false);
@@ -135,6 +142,8 @@ var fs = (function() {
   }
 
   function truncate(path, cb) {
+    path = cleanup(path);
+
     asyncStorage.getItem(path, function(data) {
       if (data == null || !(data instanceof Blob)) {
         cb(false);
@@ -147,6 +156,8 @@ var fs = (function() {
   }
 
   function remove(path, cb) {
+    path = cleanup(path);
+
     list(path, function(files) {
       if (files != null && files.length > 0) {
         cb(false);
@@ -175,6 +186,8 @@ var fs = (function() {
   }
 
   function createInternal(path, data, cb) {
+    path = cleanup(path);
+
     var name = basename(path);
     var dir = dirname(path);
 
@@ -202,6 +215,8 @@ var fs = (function() {
   }
 
   function size(path, cb) {
+    path = cleanup(path);
+
     asyncStorage.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
