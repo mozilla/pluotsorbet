@@ -1,5 +1,5 @@
 test: java/tests.jar java/classes.jar
-	casperjs --enginer=slimerjs `pwd`/tests/automation.js
+	casperjs --enginer=slimerjs test `pwd`/tests/automation.js
 
 java/tests.jar: java/classes.jar
 	cd tests && make
