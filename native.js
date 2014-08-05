@@ -85,6 +85,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "com.sun.cldc.util.j2me.TimeZoneImpl.timezone":
         value = "GMT";
         break;
+    case "com.nokia.keyboard.type":
+        value = "FullKeyboard";
+        break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
