@@ -14,7 +14,6 @@ before_script:
   - npm install -g casperjs
 script:
   - casperjs
-  - ls ./slimerjs
-  - PATH=${PATH}:./slimerjs casperjs --engine=slimerjs
+  - casperjs --engine=slimerjs
   - cd java && make && cd ..
   - cd tests && make && cd ..
