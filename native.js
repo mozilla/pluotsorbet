@@ -527,3 +527,12 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
     var _this = stack.pop();
     _this.target = null;
 }
+
+Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureListener;)V"] = function(ctx, stack) {
+    var listener = stack.pop(), container = stack.pop();
+}
+
+Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
+    var gestureEventIdentity = stack.pop();
+    stack.push(false);
+}
