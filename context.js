@@ -129,6 +129,7 @@ Context.prototype.start = function(stopFrame) {
       case VM.Pause:
         return;
       default:
+        console.info(e);
         throw e;
       }
     }
