@@ -776,8 +776,12 @@ MIDP.DRAGGED = 3;
 MIDP.COMMAND_EVENT = 3;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
+MIDP.suppressKeyEvents = false;
+
 window.addEventListener("keypress", function(ev) {
-    MIDP.sendNativeEvent(MIDP.KEY_EVENT, MIDP.PRESSED, ev.which);
+    if (!MIDP.suppressKeyEvents) {
+        MIDP.sendNativeEvent(MIDP.KEY_EVENT, MIDP.PRESSED, ev.which);
+    }
 });
 
 Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {
@@ -1204,4 +1208,9 @@ MIDP.gameKeys = {
 Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(ctx, stack) {
     var keyCode = stack.pop();
     stack.push(MIDP.gameKeys[keyCode] || 0);
+}
+
+Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(ctx, stack) {
+    var suppressKeyEvents = stack.pop(), canvas = stack.pop(), _this = stack.pop();
+    MIDP.suppressKeyEvents = suppressKeyEvents;
 }
