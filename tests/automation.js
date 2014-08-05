@@ -10,8 +10,6 @@ casper.test.begin("unit tests", 1, function(test) {
     .start("http://localhost:8000/index.html?main=RunTests")
     .waitForText("DONE", function then() {
         test.assertTextExists("DONE: 702 pass, 0 fail", "run unit tests");
-    }, function error() {
-        this.captureSelector('screen.png', 'body');
     })
     .run(function() {
         test.done();
