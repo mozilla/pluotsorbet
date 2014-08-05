@@ -967,9 +967,11 @@ MIDP.withTextAnchor = function(g, anchor, x, y, str, cb) {
 MIDP.withPixel = function(g, cb) {
     var pixel = g.class.getField("pixel", "I").get(g);
     var style = "#" + ("00000" + pixel.toString(16)).slice(-6);
+    MIDP.Context2D.save();
     MIDP.Context2D.fillStyle = style;
     MIDP.Context2D.strokeStyle = style;
     cb();
+    MIDP.Context2D.restore();
 }
 
 Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
