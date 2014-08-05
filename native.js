@@ -528,6 +528,15 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
     _this.target = null;
 }
 
+Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureListener;)V"] = function(ctx, stack) {
+    var listener = stack.pop(), container = stack.pop();
+}
+
+Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
+    var gestureEventIdentity = stack.pop();
+    stack.push(false);
+}
+
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
     stack.push(1);
