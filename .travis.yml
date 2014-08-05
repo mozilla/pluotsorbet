@@ -13,7 +13,7 @@ before_script:
   - "mv slimerjs-0.9.1 ./slimerjs"
   - npm install -g casperjs
 script:
-  - casperjs
-  - casperjs --engine=slimerjs
+  - casperjs $TRAVIS_BUILD_DIR/tests/automation.js
+  - casperjs --engine=slimerjs $TRAVIS_BUILD_DIR/tests/automation.js
   - cd java && make && cd ..
   - cd tests && make && cd ..
