@@ -536,3 +536,93 @@ Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = fu
     var gestureEventIdentity = stack.pop();
     stack.push(0);
 }
+
+Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+    stack.push(1);
+}
+
+Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.exists(path, function(exists) {
+        stack.push(exists ? 1 : 0);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.size(path, function(size) {
+        stack.push2(Long.fromNumber(size));
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    fs.list(path, function(files) {
+        stack.push(files ? 1 : 0);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(ctx, stack) {
+    // TODO: FILTER
+
+    var includeHidden = stack.pop(), filterArray = stack.pop(), byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    var filter = "";
+    if (filterArray) {
+        filter = new TextDecoder().decode(filterArray);
+    }
+
+    fs.list(path, function(files) {
+        var pathsArray = CLASSES.newArray("[B", files.length);
+        for (var i = 0; i < files.length; i++) {
+            var curPath = path + files[i];
+            var bytesCurPath = new TextEncoder.encode(curPath);
+            var pathArray = CLASSES.newPrimitiveArray("B", bytesCurPath.byteLength);
+            for (var j = 0; j < bytesCurPath.byteLength; j++) {
+                pathArray[j] = bytesCurPath[j];
+            }
+            pathsArray[i] = pathArray;
+        }
+
+        stack.push(pathsArray);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    // IBM's implementation returns different error numbers, we don't care
+
+    fs.mkdir(path, function(created) {
+        stack.push(created ? 0 : 42);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
