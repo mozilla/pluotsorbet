@@ -2,9 +2,7 @@ language: node_js
 node_js:
   - "0.10"
 env:
-  - SLIMERJSLAUNCHER=$(which firefox) DISPLAY=:99.0 PATH=${PATH}:$TRAVIS_BUILD_DIR/node_modules/slimerjs/lib/slimer
-addons:
-  firefox: "31.0"
+  - DISPLAY=:99.0 PATH=${PATH}:$TRAVIS_BUILD_DIR/node_modules/slimerjs/lib/slimer
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
