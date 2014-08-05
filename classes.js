@@ -210,7 +210,7 @@ Classes.prototype.newPrimitiveArray = function(type, size) {
 }
 
 Classes.prototype.newArray = function(typeName, size) {
-    return this.getClass(typeName).constructor.call(null, size);
+    return new (this.getClass(typeName).constructor)(size);
 }
 
 Classes.prototype.newMultiArray = function(typeName, lengths) {

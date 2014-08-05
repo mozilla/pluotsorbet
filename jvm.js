@@ -17,14 +17,6 @@ JVM.prototype.addPath = function(path, data) {
     return CLASSES.addPath(path, data);
 }
 
-JVM.prototype.loadClassFile = function(fileName) {
-    return CLASSES.loadClassFile(fileName);
-}
-
-JVM.prototype.loadJarFile = function(fileName) {
-    return CLASSES.loadJarFile(fileName);
-}
-
 JVM.prototype.run = function(className, args) {
     var classInfo = CLASSES.getClass(className);
     if (!classInfo) {

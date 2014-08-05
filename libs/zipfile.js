@@ -3,11 +3,6 @@
 
 'use strict';
 
-function error(s) {
-  console.trace(s);
-  throw new Error(s);
-}
-
 var codeLenCodeMap = new Uint32Array([
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 ]);
@@ -132,7 +127,7 @@ function inflate(bytes) {
     var codeLen = code >> 16;
     var codeVal = code & 0xffff;
     if (codeSize == 0 || codeSize < codeLen || codeLen == 0)
-      error('Bad encoding in flate stream');
+      new Error('Bad encoding in flate stream');
     codeBuf >>= codeLen;
     codeSize -= codeLen;
     return codeVal;
@@ -205,19 +200,19 @@ function inflate(bytes) {
       var b;
 
       if (typeof (b = bytes[bytesPos++]) == 'undefined')
-        error('Bad block header in flate stream');
+        new Error('Bad block header in flate stream');
       var blockLen = b;
       if (typeof (b = bytes[bytesPos++]) == 'undefined')
-        error('Bad block header in flate stream');
+        new Error('Bad block header in flate stream');
       blockLen |= (b << 8);
       if (typeof (b = bytes[bytesPos++]) == 'undefined')
-        error('Bad block header in flate stream');
+        new Error('Bad block header in flate stream');
       var check = b;
       if (typeof (b = bytes[bytesPos++]) == 'undefined')
-        error('Bad block header in flate stream');
+        new Error('Bad block header in flate stream');
       check |= (b << 8);
       if (check != (~blockLen & 0xffff))
-        error('Bad uncompressed block length in flate stream');
+        new Error('Bad uncompressed block length in flate stream');
 
       codeBuf = 0;
       codeSize = 0;
@@ -278,7 +273,7 @@ function inflate(bytes) {
       litCodeTable = generateHuffmanTable(codeLengths.subarray(0, numLitCodes));
       distCodeTable = generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
     } else {
-      error('Unknown block type in flate stream');
+      new Error('Unknown block type in flate stream');
     }
 
     var limit = buffer ? buffer.length : 0;
