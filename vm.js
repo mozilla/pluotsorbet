@@ -127,6 +127,8 @@ VM.execute = function(ctx) {
             var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
             constant = CLASSES.getField(classInfo, fieldName, signature, (op === 0xb2 || op == 0xb3));
+            if (!constant)
+                ctx.raiseException("java/lang/RuntimeException", classInfo.className + "." + fieldName + "." + signature + " not found");
             break;
         case TAGS.CONSTANT_Methodref:
         case TAGS.CONSTANT_InterfaceMethodref:
@@ -134,10 +136,8 @@ VM.execute = function(ctx) {
             var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
             constant = CLASSES.getMethod(classInfo, methodName, signature, op === 0xb8, op !== 0xb8);
-            if (!constant) {
-                ctx.raiseException("java/lang/RuntimeException",
-                                   classInfo.className + "." + methodName + "." + signature + " not found");
-            }
+            if (!constant)
+                ctx.raiseException("java/lang/RuntimeException", classInfo.className + "." + methodName + "." + signature + " not found");
             break;
         default:
             throw new Error("not support constant type");
