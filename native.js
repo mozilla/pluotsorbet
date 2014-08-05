@@ -85,6 +85,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "com.sun.cldc.util.j2me.TimeZoneImpl.timezone":
         value = "GMT";
         break;
+    case "com.nokia.keyboard.type":
+        value = "FullKeyboard";
+        break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
@@ -537,6 +540,11 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
 
 Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureListener;)V"] = function(ctx, stack) {
     var listener = stack.pop(), container = stack.pop();
+}
+
+Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.register.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureInteractiveZone;)Z"] = function(ctx, stack) {
+    var gestureInteractiveZone = stack.pop(), container = stack.pop();
+    stack.push(0);
 }
 
 Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {

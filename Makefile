@@ -1,8 +1,8 @@
 test: java/tests.jar java/classes.jar
-	pkill -f SimpleHTTPServer || true
+	killall python || true
 	python -m SimpleHTTPServer &
 	casperjs --verbose --log-level=debug --engine=slimerjs test `pwd`/tests/automation.js
-	pkill -f SimpleHTTPServer || true
+	killall python || true
 
 java/tests.jar: java/classes.jar
 	cd tests && make

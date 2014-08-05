@@ -13,8 +13,12 @@ var Classes = function() {
     }
 }
 
-Classes.ClassNotFoundException = function() {
-}
+Classes.ClassNotFoundException = function(message) {
+    this.message = message;
+};
+Classes.ClassNotFoundException.prototype = Object.create(Error.prototype);
+Classes.ClassNotFoundException.prototype.name = "ClassNotFoundException";
+Classes.ClassNotFoundException.prototype.constructor = Classes.ClassNotFoundException;
 
 Classes.prototype.addPath = function(name, data) {
     if (name.substr(-4) === ".jar") {
@@ -63,7 +67,7 @@ Classes.prototype.loadClassFile = function(fileName) {
     console.info("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
     if (!bytes)
-        throw new (Classes.ClassNotFoundException)();
+        throw new (Classes.ClassNotFoundException)(fileName);
     var self = this;
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)

@@ -506,6 +506,19 @@ Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImag
     throw VM.Pause;
 }
 
+Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] = function(ctx, stack) {
+    var height = stack.pop(), width = stack.pop(), data = stack.pop(), _this = stack.pop();
+
+    var img = new Image();
+    // TODO actually implement.
+    // Right now this just loads a 1x1 transparent pixel png.
+    img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=";
+
+    data.class.getField("width", "I").set(data, width);
+    data.class.getField("height", "I").set(data, height);
+    data.class.getField("nativeImageData", "I").set(data, img);
+}
+
 Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function(ctx, stack) {
     stack.push(0);
 }
@@ -1202,6 +1215,11 @@ Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx
     } else {
         stack.push(0);
     }
+}
+
+Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var keyCode = stack.pop();
+    stack.push(CLASSES.newString(String.fromCharCode(keyCode)));
 }
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
