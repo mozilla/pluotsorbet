@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - "0.10"
 env:
-  - SLIMERJSLAUNCHER=$(which firefox) DISPLAY=:99.0
+  - SLIMERJSLAUNCHER=$(which firefox) DISPLAY=:99.0 PATH=${PATH}:$TRAVIS_BUILD_DIR/node_modules/slimerjs/lib/slimer
 addons:
   firefox: "31.0"
 before_script:
@@ -11,7 +11,6 @@ before_script:
   - npm install slimerjs
 script:
   - casperjs $TRAVIS_BUILD_DIR/tests/automation.js
-  - export PATH=${PATH}:/home/travis/.nvm/v0.10.29/lib/node_modules/slimerjs
   - casperjs --engine=slimerjs $TRAVIS_BUILD_DIR/tests/automation.js
   - slimerjs
   - cd java && make && cd ..
