@@ -97,6 +97,10 @@ Context.prototype.raiseException = function(className, message) {
   throw VM.Yield;
 }
 
+Context.prototype.raiseRuntimeException = function(message) {
+  this.raiseException("java/lang/RuntimeException", message);
+}
+
 Context.prototype.execute = function(stopFrame) {
   while (this.current() !== stopFrame) {
     try {
