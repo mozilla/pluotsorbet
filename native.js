@@ -561,7 +561,7 @@ Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(c
     var path = "/" + new TextDecoder().decode(byteArray);
 
     fs.size(path, function(size) {
-        stack.push(size);
+        stack.push2(size);
         ctx.resume();
     });
 
