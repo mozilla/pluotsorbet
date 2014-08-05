@@ -1042,7 +1042,17 @@ Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(c
 }
 
 Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(ctx, stack) {
-  // TODO implement
+    var arcAngle = stack.pop(), startAngle = stack.pop(),
+        height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
+        _this = stack.pop();
+
+    MIDP.withPixel(_this, function() {
+        // TODO need to use bezierCurveTo to implement this properly,
+        // but this works as a rough hack for now
+        var radius = Math.ceil(Math.max(height, width) / 2);
+        MIDP.Context2D.arc(x, y, radius, startAngle, arcAngle);
+        MIDP.Context2D.stroke();
+    })
 }
 
 MIDP.FACE_SYSTEM = 0;
@@ -1214,3 +1224,4 @@ Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/mi
     var suppressKeyEvents = stack.pop(), canvas = stack.pop(), _this = stack.pop();
     MIDP.suppressKeyEvents = suppressKeyEvents;
 }
+
