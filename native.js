@@ -546,18 +546,19 @@ Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx
     throw VM.Pause;
 }
 
-/*Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(ctx, stack) {
+Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
     var path = "/" + new TextDecoder().decode(byteArray);
 
     fs.size(path, function(size) {
+        console.log(size + " size " + path);
         stack.push(size);
         ctx.resume();
     });
 
     throw VM.Pause;
-}*/
+}
 
 Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
@@ -573,14 +574,8 @@ Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = functio
     throw VM.Pause;
 }
 
-/*Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = function(ctx, stack) {
-    var byteArray = stack.pop(), _this = stack.pop();
-
-    stack.push(Long.fromNumber(Date.now()));
-}*/
-
 Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(ctx, stack) {
-    // todo
+    // TODO: FILTER
 
     var includeHidden = stack.pop(), filterArray = stack.pop(), byteArray = stack.pop(), _this = stack.pop();
 
@@ -591,14 +586,10 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
         filter = new TextDecoder().decode(filterArray);
     }
 
-    console.log("FILTER: " + filter);
-
     fs.list(path, function(files) {
-        console.log("list " + path);
         var pathsArray = CLASSES.newArray("[B", files.length);
         for (var i = 0; i < files.length; i++) {
             var curPath = path + files[i];
-            console.log("list[i] " + curPath);
             var bytesCurPath = new TextEncoder.encode(curPath);
             var pathArray = CLASSES.newPrimitiveArray("B", bytesCurPath.byteLength);
             for (var j = 0; j < bytesCurPath.byteLength; j++) {
@@ -630,7 +621,7 @@ Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx,
     throw VM.Pause;
 }
 
-/*Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ctx, stack) {
+Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
     var path = "/" + new TextDecoder().decode(byteArray);
@@ -638,13 +629,16 @@ Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx,
     // IBM's implementation returns different error numbers, we don't care
 
     fs.exists(path, function(exists) {
+        console.log(exists + " exists " + path);
         if (exists) {
             fs.truncate(path, function(truncated) {
+                console.log(truncated + " truncated " + path);
                 stack.push(truncated ? 0 : 42);
                 ctx.resume();
             });
         } else {
             fs.create(path, function(created) {
+                console.log(created + " created " + path);
                 stack.push(created ? 0 : 42);
                 ctx.resume();
             });
@@ -653,115 +647,3 @@ Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx,
 
     throw VM.Pause;
 }
-
-Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(ctx, stack) {
-    var byteArray = stack.pop(), _this = stack.pop();
-
-    var path = "/" + new TextDecoder().decode(byteArray);
-
-    function open() {
-        fs.open(path, function(fd) {
-            stack.push(fd);
-            _this.pos = 0;
-            ctx.resume();
-        });
-    }
-
-    fs.exists(path, function(exists) {
-        if (exists) {
-            fs.truncate(path, function(truncated) {
-                if (truncated) {
-                    open();
-                } else {
-                    stack.push(-1);
-                    ctx.resume();
-                }
-            });
-        } else {
-            fs.create(path, function(created) {
-                if (created) {
-                    open();
-                } else {
-                    stack.push(-1);
-                    ctx.resume();
-                }
-            });
-        }
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"] = function(ctx, stack) {
-    var byteArray = stack.pop(), offset = stack.pop2(), _this = stack.pop();
-
-    var path = "/" + new TextDecoder().decode(byteArray);
-
-    function open() {
-        fs.open(path, function(fd) {
-            stack.push(fd);
-            _this.pos = offset.toNumber();
-            ctx.resume();
-        });
-    }
-
-    fs.exists(path, function(exists) {
-        if (exists) {
-            open();
-        } else {
-            fs.create(path, function(created) {
-                if (created) {
-                    open();
-                } else {
-                    stack.push(-1);
-                    ctx.resume();
-                }
-            });
-        }
-    });
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = function(ctx, stack) {
-    var byteArray = stack.pop(), offset = stack.pop(), count: stack.pop(), fd: stack.pop(), _this = stack.pop();
-
-    var path = "/" + new TextDecoder().decode(byteArray);
-
-    fs.write(fd, new Blob(byteArray).slice(offset, offset+count), _this.pos);
-
-    _this.pos += count;
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = function(ctx, stack) {
-    var val = stack.pop(), _this = stack.pop();
-
-    var path = "/" + new TextDecoder().decode(byteArray);
-
-    var intBuf = new Uint32Array(1);
-    intBuf[0] = val;
-
-    var buf = new Uint8Array(intBuf.buffer);
-
-    fs.write(fd, new Blob([buf]).slice(3, 4), _this.pos);
-
-    _this.pos += 1;
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(ctx, stack) {
-    var fd = stack.pop(), _this = stack.pop();
-
-    var path = "/" + new TextDecoder().decode(byteArray);
-
-    fs.close(fd);
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V"] = function(ctx, stack) {
-    var fd = stack.pop(), _this = stack.pop();
-
-    var path = "/" + new TextDecoder().decode(byteArray);
-
-    fs.flush(fd, function() {
-        ctx.resume();
-    });
-
-    throw VM.Pause;
-}*/
