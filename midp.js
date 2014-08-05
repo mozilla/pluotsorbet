@@ -1037,6 +1037,10 @@ Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(c
     });
 }
 
+Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(ctx, stack) {
+  // TODO implement
+}
+
 MIDP.FACE_SYSTEM = 0;
 MIDP.FACE_MONOSPACE = 32;
 MIDP.FACE_PROPORTIONAL = 64;
@@ -1185,9 +1189,49 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/la
     var className = stack.pop(), suiteId = stack.pop();
 }
 
+UP = 1;
+DOWN = 6;
+LEFT = 2;
+RIGHT = 5;
+FIRE = 8;
+GAME_A = 9;
+GAME_B = 10;
+GAME_C = 11;
+GAME_D = 12;
+
 Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(ctx, stack) {
     var keyCode = stack.pop();
-    stack.push(0);
+    switch (keyCode) {
+    case 119:
+        stack.push(UP);
+        break;
+    case 97:
+        stack.push(LEFT);
+        break;
+    case 115:
+        stack.push(DOWN);
+        break;
+    case 100:
+        stack.push(RIGHT);
+        break;
+    case 32:
+        stack.push(FIRE);
+        break;
+    case 113:
+        stack.push(GAME_A);
+        break;
+    case 101:
+        stack.push(GAME_B);
+        break;
+    case 122:
+        stack.push(GAME_C);
+        break;
+    case 99:
+        stack.push(GAME_D);
+        break;
+    default:
+        stack.push(0);
+        break
+    }
 }
-
 
