@@ -13,16 +13,41 @@ public class FrameAnimator {
     protected int actionType;
     protected int actionID;
 
+    protected static int _numRegistered;
+
     public FrameAnimator() {}
 
-    native public boolean register(int x, int y, short maxFps, short maxPps, FrameAnimatorListener listener);
-    native public void unregister();
-    native public void drag(int x, int y);
-    native public void kineticScroll(int speed, int direction, int friction, float angle);
-    native public void limitedKineticScroll(int speed, int direction, int friction, float angle, int limitUp, int limitDown);
-    native public void stop();
-    native public boolean isRegistered();
+    public boolean register(int x, int y, short maxFps, short maxPps, FrameAnimatorListener listener) {
+        _numRegistered++;
+        return true;
+    }
 
-    native public static int getNumRegisteredFrameAnimators();
+    public void unregister() {
+        _numRegistered--;
+    }
+
+    public void drag(int x, int y) {
+        //
+    }
+
+    public void kineticScroll(int speed, int direction, int friction, float angle) {
+        //
+    }
+
+    public void limitedKineticScroll(int speed, int direction, int friction, float angle, int limitUp, int limitDown) {
+        //
+    }
+
+    public void stop() {
+        //
+    }
+
+    public boolean isRegistered() {
+        return true;
+    }
+
+    public static int getNumRegisteredFrameAnimators() {
+        return _numRegistered;
+    }
 
 }
