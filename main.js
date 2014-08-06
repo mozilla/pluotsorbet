@@ -55,10 +55,8 @@ function run(className, args) {
 // To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
 
-asyncStorage.clear(function() {
-  fs.init(function() {
-    fs.mkdir("/tmp", function(created) {
-      run(urlParams.main || "RunTests", urlParams.args);
-    });
+fs.init(function() {
+  fs.mkdir("/tmp", function(created) {
+    run(urlParams.main || "RunTests", urlParams.args);
   });
 });
