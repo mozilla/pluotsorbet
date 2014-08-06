@@ -224,33 +224,3 @@ Classes.prototype.newMultiArray = function(typeName, lengths) {
     }
     return array;
 }
-
-Classes.prototype.preload = function(cb) {
-    var self = this;
-    asyncStorage.getItem("preload", function(data) {
-        if (data) {
-            var classNames = Object.keys(data);
-            classNames.forEach(function(name) {
-                self.classfiles[name] = data[name];
-            });
-            console.log("preloaded " + classNames.length + " classes");
-        }
-        cb();
-    });
-}
-
-window.setTimeout(function() {
-    var files = CLASSES.classfiles;
-    var preload = {};
-    var total = 0;
-    Object.keys(files).forEach(function (name) {
-        if (name.indexOf(".jar") !== -1)
-            return;
-        var file = files[name];
-        total += file.byteLength;
-        preload[name] = file;
-    });
-    asyncStorage.setItem("preload", preload, function() {
-        console.log(total + " bytes written to the preload cache.");
-    });
-}, 5000);

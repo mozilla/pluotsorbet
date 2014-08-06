@@ -18,40 +18,38 @@ JVM.prototype.addPath = function(path, data) {
 }
 
 JVM.prototype.run = function(className, args) {
-    CLASSES.preload(function() {
-        var classInfo = CLASSES.getClass(className);
-        if (!classInfo) {
-            throw new Error("Could not find or load main class " + className);
-        }
-        var entryPoint = CLASSES.getEntryPoint(classInfo);
-        if (!entryPoint) {
-            throw new Error("Could not find main method in class " + className);
-        }
+    var classInfo = CLASSES.getClass(className);
+    if (!classInfo) {
+        throw new Error("Could not find or load main class " + className);
+    }
+    var entryPoint = CLASSES.getEntryPoint(classInfo);
+    if (!entryPoint) {
+        throw new Error("Could not find main method in class " + className);
+    }
 
-        var ctx = new Context();
+    var ctx = new Context();
 
-        var caller = new Frame();
-        ctx.frames.push(caller);
+    var caller = new Frame();
+    ctx.frames.push(caller);
 
-        // These classes are guaranteed to not have a static initializer.
-        CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object");
-        CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class");
-        CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String");
-        CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread");
+    // These classes are guaranteed to not have a static initializer.
+    CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object");
+    CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class");
+    CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String");
+    CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread");
 
-        ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
-        ctx.thread.pid = util.id();
-        ctx.thread.alive = true;
-        caller.stack.push(CLASSES.mainThread);
-        caller.stack.push(CLASSES.newString("main"));
-        ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
-        ctx.execute(caller);
+    ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
+    ctx.thread.pid = util.id();
+    ctx.thread.alive = true;
+    caller.stack.push(CLASSES.mainThread);
+    caller.stack.push(CLASSES.newString("main"));
+    ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
+    ctx.execute(caller);
 
-        var arr = CLASSES.newArray("[Ljava/lang/String;", args.length);
-        for (var n = 0; n < args.length; ++n)
-            arr[n] = CLASSES.newString(args[n]);
-        caller.stack.push(arr);
-        ctx.pushFrame(entryPoint, 1);
-        ctx.start(caller);
-    });
+    var arr = CLASSES.newArray("[Ljava/lang/String;", args.length);
+    for (var n = 0; n < args.length; ++n)
+        arr[n] = CLASSES.newString(args[n]);
+    caller.stack.push(arr);
+    ctx.pushFrame(entryPoint, 1);
+    ctx.start(caller);
 }
