@@ -523,47 +523,6 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
     stack.push(0);
 }
 
-Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
-    var _this = stack.pop(), ids = CLASSES.newPrimitiveArray("I", 1);
-    ids[0] = 1;
-    stack.push(ids);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(null);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(0x3ff);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenSupported0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(0);
-}
-
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
     c.width = 320;
@@ -593,20 +552,6 @@ MIDP.Context2D = (function() {
 
     return c.getContext("2d");
 })();
-
-Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(MIDP.Context2D.canvas.width);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(MIDP.Context2D.canvas.height);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
-    var state = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
-}
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function(ctx, stack) {
     stack.push(0);
@@ -885,29 +830,6 @@ Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack
 Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function(ctx, stack) {
     var _this = stack.pop();
     stack.push(0);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(ctx, stack) {
-    var mode = stack.pop(), displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(ctx, stack) {
-    var displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
-}
-
-Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(ctx, stack) {
-    var on = stack.pop(), displayId = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
-
-Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = function(ctx, stack) {
-    var displayId = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
-
-Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
-    var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(),
-        displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
 }
 
 Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function(ctx, stack) {
