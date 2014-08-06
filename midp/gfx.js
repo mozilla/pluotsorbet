@@ -5,7 +5,7 @@
 
 (function(Native) {
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
-        var _this = stack.pop(), ids = CLASSES.newPrimitiveArray("I", 1);
+        var _this = stack.pop(), ids = ctx.newPrimitiveArray("I", 1);
         ids[0] = 1;
         stack.push(ids);
     }

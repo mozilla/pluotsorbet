@@ -13,7 +13,7 @@ Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/la
         ctx.raiseException("java/lang/IOException");
     var length = bytes.byteLength;
     var data = new Uint8Array(bytes);
-    var array = CLASSES.newPrimitiveArray("B", length);
+    var array = ctx.newPrimitiveArray("B", length);
     for (var n = 0; n < length; ++n)
         array[n] = data[n];
     stack.push(array);
@@ -400,7 +400,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[
     var len = stack.pop();
     if (!MIDP.skinFileData || (MIDP.skinFilePos + len) > MIDP.skinFileData.byteLength)
         ctx.raiseException("java/lang/IllegalStateException");
-    var bytes = CLASSES.newPrimitiveArray("B", len);
+    var bytes = ctx.newPrimitiveArray("B", len);
     for (var n = 0; n < len; ++n) {
         bytes[n] = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
     }
@@ -412,7 +412,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I"
         ctx.raiseException("java/lang/IllegalStateException");
     var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
     MIDP.skinFilePos += 4;
-    var ints = CLASSES.newPrimitiveArray("I", len);
+    var ints = ctx.newPrimitiveArray("I", len);
     for (var n = 0; n < len; ++n) {
         if ((MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
@@ -482,7 +482,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
         ctx.raiseException("java/lang/IOException");
     }
     var len = data.byteLength;
-    var bytes = CLASSES.newPrimitiveArray("B", len);
+    var bytes = ctx.newPrimitiveArray("B", len);
     var src = new Uint8Array(data);
     for (var n = 0; n < bytes.byteLength; ++n)
         bytes[n] = src[n];
@@ -597,7 +597,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx
 
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    stack.push(CLASSES.newPrimitiveArray("I", 0));
+    stack.push(ctx.newPrimitiveArray("I", 0));
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
@@ -794,7 +794,7 @@ Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = f
 }
 
 Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function(ctx, stack) {
-    var ids = CLASSES.newPrimitiveArray("I", 1);
+    var ids = ctx.newPrimitiveArray("I", 1);
     ids[0] = 1; // KEYBOARD_INPUT_MODE
     stack.push(ids);
 }
@@ -932,7 +932,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
         for (var i = 0; i < files.length; i++) {
             var curPath = path + files[i];
             var bytesCurPath = new TextEncoder.encode(curPath);
-            var pathArray = CLASSES.newPrimitiveArray("B", bytesCurPath.byteLength);
+            var pathArray = ctx.newPrimitiveArray("B", bytesCurPath.byteLength);
             for (var j = 0; j < bytesCurPath.byteLength; j++) {
                 pathArray[j] = bytesCurPath[j];
             }
@@ -1027,7 +1027,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
         for (var i = 0; i < files.length; i++) {
             var curPath = path + files[i];
             var bytesCurPath = new TextEncoder().encode(curPath);
-            var pathArray = CLASSES.newPrimitiveArray("B", bytesCurPath.byteLength);
+            var pathArray = ctx.newPrimitiveArray("B", bytesCurPath.byteLength);
             for (var j = 0; j < bytesCurPath.byteLength; j++) {
                 pathArray[j] = bytesCurPath[j];
             }

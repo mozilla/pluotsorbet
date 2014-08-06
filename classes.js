@@ -186,11 +186,3 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
         }
     }
 };
-
-Classes.prototype.newPrimitiveArray = function(type, size) {
-    var constructor = ARRAYS[type];
-    if (!constructor.prototype.class)
-        this.initPrimitiveArrayType(type, constructor);
-    return new constructor(size);
-}
-

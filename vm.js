@@ -810,7 +810,7 @@ VM.execute = function(ctx) {
                 ctx.raiseException("java/lang/NegativeArraySizeException", size);
                 break;
             }
-            stack.push(CLASSES.newPrimitiveArray("????ZCFDBSIJ"[type], size));
+            stack.push(ctx.newPrimitiveArray("????ZCFDBSIJ"[type], size));
             break;
         case 0xbd: // anewarray
             var idx = frame.read16();

@@ -239,6 +239,13 @@ Context.prototype.notify = function(obj, notifyAll) {
   });
 }
 
+Context.prototype.newPrimitiveArray = function(type, size) {
+  var constructor = ARRAYS[type];
+  if (!constructor.prototype.class)
+    CLASSES.initPrimitiveArrayType(type, constructor);
+  return new constructor(size);
+}
+
 Context.prototype.newArray = function(typeName, size) {
   return new (CLASSES.getClass(typeName).constructor)(size);
 }
@@ -261,7 +268,7 @@ Context.prototype.newObject = function(classInfo) {
 Context.prototype.newString = function(s) {
   var obj = this.newObject(CLASSES.java_lang_String);
   var length = s.length;
-  var chars = CLASSES.newPrimitiveArray("C", length);
+  var chars = this.newPrimitiveArray("C", length);
   for (var n = 0; n < length; ++n)
     chars[n] = s.charCodeAt(n);
   CLASSES.java_lang_String.getField("value", "[C").set(obj, chars);

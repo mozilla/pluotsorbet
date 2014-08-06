@@ -303,7 +303,7 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function(c
         var depth = obj.stackTrace.length;
         var classNames = ctx.newArray("[Ljava/lang/Object;", depth);
         var methodNames = ctx.newArray("[Ljava/lang/Object;", depth);
-        var offsets = CLASSES.newPrimitiveArray("I", depth);
+        var offsets = ctx.newPrimitiveArray("I", depth);
         obj.stackTrace.forEach(function(e, n) {
             classNames[n] = ctx.newString(e.className);
             methodNames[n] = ctx.newString(e.methodName);
