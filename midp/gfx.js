@@ -393,7 +393,7 @@
                 ctx.rotate(Math.PI);
             if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                 ctx.rotate(1.5 * Math.PI);
-            MIDP.Context2D.drawImage(texture, sx, sy, w, h, -w / 2, -h / 2, sw, sh);
+            MIDP.Context2D.drawImage(texture, sx, sy, w, h, x - w/2, y -h/2, sw, sh);
         });
         stack.push(1);
     }
