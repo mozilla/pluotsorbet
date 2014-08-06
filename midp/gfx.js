@@ -61,15 +61,15 @@
                 var ctx = MIDP.Context2D;
                 ctx.textAlign = "left";
                 ctx.textBaseline = "top";
-                if (anchor & MIDP.RIGHT)
+                if (anchor & RIGHT)
                     x -= w;
-                if (anchor & MIDP.HCENTER)
+                if (anchor & HCENTER)
                     x -= (w/2)|0;
-                if (anchor & MIDP.BOTTOM)
+                if (anchor & BOTTOM)
                     ctx.textBaseline = "bottom";
-                if (anchor & MIDP.VCENTER)
+                if (anchor & VCENTER)
                     ctx.textBaseline = "middle";
-                if (anchor & MIDP.BASELINE)
+                if (anchor & BASELINE)
                     ctx.textBaseline = "alphabetic";
                 cb(x, y, w);
             });
@@ -273,15 +273,15 @@
         withAnchor(_this, anchor, x, y, w, h, function(x, y) {
             var ctx = MIDP.Context2D;
             ctx.translate(w/2, h/2);
-            if (transform === MIDP.TRANS_MIRROR || transform === MIDP.TRANS_MIRROR_ROT180)
+            if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
                 ctx.scale(-1, 1);
-            if (transform === MIDP.TRANS_MIRROR_ROT90 || transform === MIDP.TRANS_MIRROR_ROT270)
+            if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270)
                 ctx.scale(1, -1);
-            if (transform === MIDP.TRANS_ROT90 || transform === MIDP.TRANS_MIRROR_ROT90)
+            if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90)
                 ctx.rotate(Math.PI / 2);
-            if (transform === MIDP.TRANS_ROT180 || transform === MIDP.TRANS_MIRROR_ROT180)
+            if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180)
                 ctx.rotate(Math.PI);
-            if (transform === MIDP.TRANS_ROT270 || transform === MIDP.TRANS_MIRROR_ROT270)
+            if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                 ctx.rotate(1.5 * Math.PI);
             MIDP.Context2D.drawImage(imgData, sx, sy, w, h, -w / 2, -h / 2, sw, sh);
         });
