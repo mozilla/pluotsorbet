@@ -461,10 +461,13 @@
         for (y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
             for (x = 0; x < width; ++x) {
-                rgbData[j++] = imageData[i++];
-                rgbData[j++] = imageData[i++];
-                rgbData[j++] = imageData[i++];
-                rgbData[j++] = imageData[i++];
+                // input: bytes in RGBA order
+                // output: 0xAARRGGBB
+                var r = imageData[i++];
+                var g = imageData[i++];
+                var b = imageData[i++];
+                var a = imageData[i++];
+                rgbData[j++] = (a<<24)|(b<<16)|(g<<8)|a;
             }
         }
     }
