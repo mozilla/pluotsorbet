@@ -179,10 +179,10 @@
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
-            img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
-            imgData = img.class.getField("nativeImageData", "I").get(img);
-        withAnchor(_this, anchor, x, y, imgData.width, imgData.height, function(x, y) {
-            MIDP.Context2D.drawImage(imgData, x, y);
+            imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
+            texture = imgData.class.getField("nativeImageData", "I").get(imgData);
+        withAnchor(_this, anchor, x, y, texture.width, texture.height, function(x, y) {
+            MIDP.Context2D.drawImage(texture, x, y);
         });
         stack.push(1);
     }
@@ -345,17 +345,17 @@
     var TRANS_NONE = 0;
     var TRANS_MIRROR_ROT180 = 1;
     var TRANS_MIRROR = 2;
-    var TRANS_MIRROR_ROT90 = 3;
+    var TRANS_ROT180 = 3;
     var TRANS_MIRROR_ROT270 = 4;
-    var TRANS_MIRROR_ROT90 = 5;
-    var TRANS_MIRROR_ROT270 = 6;
+    var TRANS_ROT90 = 5;
+    var TRANS_ROT270 = 6;
     var TRANS_MIRROR_ROT90 = 7;
 
     Native["javax/microedition/lcdui/Graphics.renderRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)Z"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
             transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
-            img = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
-            imgData = img.class.getField("nativeImageData", "I").get(img);
+            imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
+            texture = imgData.class.getField("nativeImageData", "I").get(imgData);
         var w = sw, h = sh;
         if (transform >= 4) {
             w = sh;
@@ -374,7 +374,7 @@
                 ctx.rotate(Math.PI);
             if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                 ctx.rotate(1.5 * Math.PI);
-            MIDP.Context2D.drawImage(imgData, sx, sy, w, h, -w / 2, -h / 2, sw, sh);
+            MIDP.Context2D.drawImage(texture, sx, sy, w, h, -w / 2, -h / 2, sw, sh);
         });
         stack.push(1);
     }
