@@ -71,12 +71,14 @@ VM.execute = function(ctx) {
             }
             popFrame(0);
         } while (frame.methodInfo);
-        var e = new Error(ex.class.className + " " +
-                          (ex["java/lang/Throwable$detailMessage"]
-                           ? util.fromJavaString(ex["java/lang/Throwable$detailMessage"])
-                           : ""));
-        e.ex = ex;
-        throw e;
+        var className = ex.class.className;
+        var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "detailMessage", "Ljava/lang/String;", false).get(ex));
+        var dump = [];
+        ex.stackTrace.forEach(function(frame) {
+            dump.push(frame.className + "." + frame.methodName + ", bci=" + frame.offset);
+        });
+        dump = dump.join("\n");
+        throw new Error(className + " " + (detailMessage ? detailMessage : "") + "\n" + dump);
     }
 
     function checkArrayAccess(refArray, idx) {
