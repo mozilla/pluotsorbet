@@ -489,36 +489,6 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     stack.push(bytes);
 }
 
-Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop(), _this = stack.pop();
-    var blob = new Blob([bytes.buffer.slice(offset, offset + length)], { type: "image/png" });
-    var img = new Image();
-    img.src = URL.createObjectURL(blob);
-    img.onload = function() {
-        imageData.class.getField("width", "I").set(imageData, img.naturalWidth);
-        imageData.class.getField("height", "I").set(imageData, img.naturalHeight);
-        imageData.class.getField("nativeImageData", "I").set(imageData, img);
-        ctx.resume();
-    }
-    img.onerror = function(e) {
-        ctx.resume();
-    }
-    throw VM.Pause;
-}
-
-Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] = function(ctx, stack) {
-    var height = stack.pop(), width = stack.pop(), data = stack.pop(), _this = stack.pop();
-
-    var img = new Image();
-    // TODO actually implement.
-    // Right now this just loads a 1x1 transparent pixel png.
-    img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=";
-
-    data.class.getField("width", "I").set(data, width);
-    data.class.getField("height", "I").set(data, height);
-    data.class.getField("nativeImageData", "I").set(data, img);
-}
-
 Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function(ctx, stack) {
     stack.push(0);
 }
