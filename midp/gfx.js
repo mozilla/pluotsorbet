@@ -414,13 +414,12 @@
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), data = stack.pop(), _this = stack.pop();
 
-        var img = new Image();
-        // TODO actually implement.
-        // Right now this just loads a 1x1 transparent pixel png.
-        img.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=";
+        var texture = document.createElement("canvas");
+        texture.width = width;
+        texture.height = height;
 
         data.class.getField("width", "I").set(data, width);
         data.class.getField("height", "I").set(data, height);
-        data.class.getField("nativeImageData", "I").set(data, img);
+        data.class.getField("nativeImageData", "I").set(data, texture);
     }
 })(Native);
