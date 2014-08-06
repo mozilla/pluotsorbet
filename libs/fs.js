@@ -1,15 +1,17 @@
 'use strict';
 
 var fs = (function() {
+  function normalizePath(path) {
+    if (path.length != 1 && path.lastIndexOf("/") == path.length-1) {
+      path = path.substring(0, path.length-1);
+    }
+    return path;
+  }
+
   function dirname(path) {
     var index = path.lastIndexOf("/");
     if (index == -1) {
       return ".";
-    }
-
-    if (index == path.length-1) {
-      path = path.substring(0, index);
-      index = path.lastIndexOf("/");
     }
 
     while (index >= 0 && path[index] == "/") {
@@ -24,14 +26,7 @@ var fs = (function() {
   }
 
   function basename(path) {
-    var index = path.lastIndexOf("/");
-
-    if (index == path.length-1) {
-      path = path.substring(0, index);
-      index = path.lastIndexOf("/");
-    }
-
-    return path.slice(index + 1);
+    return path.slice(path.lastIndexOf("/") + 1);
   }
 
   function init(cb) {
@@ -47,15 +42,21 @@ var fs = (function() {
   var openedFiles = [];
 
   function open(path, cb) {
+    path = normalizePath(path);
+
     asyncStorage.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
-        var fd = openedFiles.push({
-          path: path,
-          blob: blob,
-        }) - 1;
-        cb(fd);
+        var reader = new FileReader();
+        reader.addEventListener("loadend", function() {
+          var fd = openedFiles.push({
+            path: path,
+            buffer: new Uint8Array(reader.result),
+          }) - 1;
+          cb(fd);
+        });
+        reader.readAsArrayBuffer(blob);
       }
     });    
   }
@@ -71,21 +72,21 @@ var fs = (function() {
       return null;
     }
 
-    var blob = openedFiles[fd].blob;
+    var buffer = openedFiles[fd].buffer;
 
     if (!from) {
       from = 0;
     }
 
     if (!to) {
-      to = blob.size;
+      to = buffer.byteLength;
     }
 
-    if (from > blob.size || to > blob.size) {
+    if (from > buffer.byteLength || to > buffer.byteLength) {
       return null;
     }
 
-    return blob.slice(from, to);
+    return buffer.subarray(from, to);
   }
 
   function write(fd, data, from) {
@@ -93,28 +94,39 @@ var fs = (function() {
       from = 0;
     }
 
-    var oldBlob = openedFiles[fd].blob;
+    var buffer = openedFiles[fd].buffer;
 
-    var parts = new Array();
-
-    if (from > 0) {
-      parts.push(oldBlob.slice(0, from));
+    if (from > buffer.byteLength) {
+      from = buffer.byteLength;
     }
 
-    parts.push(data);
+    var newLength = (from + data.byteLength > buffer.byteLength) ? (from + data.byteLength) : (buffer.byteLength);
 
-    if (from + data.size < oldBlob.size) {
-      parts.push(oldBlob.slice(from + data.size, oldBlob.size));
+    var newBuffer = new Uint8Array(newLength);
+
+    for (var i = 0; i < from; i++) {
+      newBuffer[i] = buffer[i];
     }
 
-    openedFiles[fd].blob = new Blob(parts);
+    for (var i = from; i < data.byteLength + from; i++) {
+      newBuffer[i] = data[i - from];
+    }
+
+    for (var i = from + data.byteLength; i < newLength; i++) {
+      newBuffer[i] = buffer[i];
+    }
+
+    openedFiles[fd].buffer = newBuffer;
   }
 
   function flush(fd, cb) {
-    asyncStorage.setItem(openedFiles[fd].path, openedFiles[fd].blob, cb);
+    var blob = new Blob([openedFiles[fd].buffer]);
+    asyncStorage.setItem(openedFiles[fd].path, blob, cb);
   }
 
   function list(path, cb) {
+    path = normalizePath(path);
+
     asyncStorage.getItem(path, function(files) {
       if (files == null || files instanceof Blob) {
         cb(null);
@@ -125,6 +137,8 @@ var fs = (function() {
   }
 
   function exists(path, cb) {
+    path = normalizePath(path);
+
     asyncStorage.getItem(path, function(data) {
       if (data == null) {
         cb(false);
@@ -135,6 +149,8 @@ var fs = (function() {
   }
 
   function truncate(path, cb) {
+    path = normalizePath(path);
+
     asyncStorage.getItem(path, function(data) {
       if (data == null || !(data instanceof Blob)) {
         cb(false);
@@ -147,6 +163,8 @@ var fs = (function() {
   }
 
   function remove(path, cb) {
+    path = normalizePath(path);
+
     list(path, function(files) {
       if (files != null && files.length > 0) {
         cb(false);
@@ -175,6 +193,8 @@ var fs = (function() {
   }
 
   function createInternal(path, data, cb) {
+    path = normalizePath(path);
+
     var name = basename(path);
     var dir = dirname(path);
 
@@ -202,6 +222,8 @@ var fs = (function() {
   }
 
   function size(path, cb) {
+    path = normalizePath(path);
+
     asyncStorage.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);

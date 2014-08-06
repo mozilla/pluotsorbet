@@ -481,7 +481,7 @@ Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] 
 
 Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(ctx, stack) {
     var handle = stack.pop();
-    stack.push(handle.data[handle.pos++]);
+    stack.push((handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1);
 }
 
 Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(ctx, stack) {
@@ -519,4 +519,3 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
     var _this = stack.pop();
     _this.target = null;
 }
-
