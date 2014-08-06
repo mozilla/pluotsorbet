@@ -481,11 +481,7 @@ Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] 
 
 Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(ctx, stack) {
     var handle = stack.pop();
-    if (handle.data.length - handle.pos <= 0) {
-        stack.push(-1);
-    } else {
-        stack.push(handle.data[handle.pos++]);
-    }
+    stack.push((handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1);
 }
 
 Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(ctx, stack) {
