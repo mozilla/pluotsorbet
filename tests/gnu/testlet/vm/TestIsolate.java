@@ -14,10 +14,10 @@ public class TestIsolate implements Testlet {
         th.check(IsolatedClass.val, 2);
 
         try {
-            Isolate iso = new Isolate("gnu.testlet.vm.IsolatedClass", new String[] { "1" });
+            Isolate iso = new Isolate("gnu.testlet.vm.IsolatedClass", new String[] { "5" });
             iso.start();
             iso.waitForExit();
-            th.check(IsolatedClass.val, 1);
+            th.check(IsolatedClass.val, 2);
         } catch(Exception e) {
             th.fail("Unexpected exception: " + e.getMessage());
         }
