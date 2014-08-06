@@ -238,3 +238,14 @@ Context.prototype.notify = function(obj, notifyAll) {
     ctx.wakeup(obj);
   });
 }
+
+Context.prototype.newMultiArray = function(typeName, lengths) {
+    var length = lengths[0];
+    var array = CLASSES.newArray(typeName, length);
+    if (lengths.length > 1) {
+        lengths = lengths.slice(1);
+        for (var i=0; i<length; i++)
+            array[i] = this.newMultiArray(typeName.substr(1), lengths);
+    }
+    return array;
+}
