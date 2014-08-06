@@ -46,7 +46,7 @@ JVM.prototype.run = function(className, args) {
     ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
     ctx.execute(caller);
 
-    var arr = CLASSES.newArray("[Ljava/lang/String;", args.length);
+    var arr = ctx.newArray("[Ljava/lang/String;", args.length);
     for (var n = 0; n < args.length; ++n)
         arr[n] = CLASSES.newString(args[n]);
     caller.stack.push(arr);

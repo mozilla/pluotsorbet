@@ -301,15 +301,15 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function(c
     var result = null;
     if (obj.stackTrace) {
         var depth = obj.stackTrace.length;
-        var classNames = CLASSES.newArray("[Ljava/lang/Object;", depth);
-        var methodNames = CLASSES.newArray("[Ljava/lang/Object;", depth);
+        var classNames = ctx.newArray("[Ljava/lang/Object;", depth);
+        var methodNames = ctx.newArray("[Ljava/lang/Object;", depth);
         var offsets = CLASSES.newPrimitiveArray("I", depth);
         obj.stackTrace.forEach(function(e, n) {
             classNames[n] = CLASSES.newString(e.className);
             methodNames[n] = CLASSES.newString(e.methodName);
             offsets[n] = e.offset;
         });
-        result = CLASSES.newArray("[Ljava/lang/Object;", 3);
+        result = ctx.newArray("[Ljava/lang/Object;", 3);
         result[0] = classNames;
         result[1] = methodNames;
         result[2] = offsets;

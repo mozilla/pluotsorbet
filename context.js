@@ -239,13 +239,17 @@ Context.prototype.notify = function(obj, notifyAll) {
   });
 }
 
+Context.prototype.newArray = function(typeName, size) {
+  return new (CLASSES.getClass(typeName).constructor)(size);
+}
+
 Context.prototype.newMultiArray = function(typeName, lengths) {
-    var length = lengths[0];
-    var array = CLASSES.newArray(typeName, length);
-    if (lengths.length > 1) {
-        lengths = lengths.slice(1);
-        for (var i=0; i<length; i++)
-            array[i] = this.newMultiArray(typeName.substr(1), lengths);
-    }
-    return array;
+  var length = lengths[0];
+  var array = this.newArray(typeName, length);
+  if (lengths.length > 1) {
+    lengths = lengths.slice(1);
+    for (var i=0; i<length; i++)
+      array[i] = this.newMultiArray(typeName.substr(1), lengths);
+  }
+  return array;
 }

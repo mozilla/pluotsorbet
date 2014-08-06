@@ -210,7 +210,3 @@ Classes.prototype.newPrimitiveArray = function(type, size) {
     return new constructor(size);
 }
 
-Classes.prototype.newArray = function(typeName, size) {
-    return new (this.getClass(typeName).constructor)(size);
-}
-
