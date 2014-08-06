@@ -216,12 +216,20 @@
         });
     }
 
-    Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
-        var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        withClip(_this, x, y, function(x, y) {
+    Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(ctx, stack) {
+        var y3 = stack.pop(), x3 = stack.pop(), y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop();
+        withClip(_this, x1, y1, function(x, y) {
             withPixel(_this, function() {
-                withSize(w, h, function(w, h) {
-                    MIDP.Context2D.fillRect(x, y, w, h);
+                withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
+                    withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
+                        var ctx = MIDP.Context2D;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + dx1, y + dy1);
+                        ctx.lineTo(x + dx2, y + dy2);
+                        ctx.closePath();
+                        ctx.fill();
+                    });
                 });
             });
         });
@@ -233,6 +241,17 @@
             withPixel(_this, function() {
                 withSize(w, h, function(w, h) {
                     MIDP.Context2D.strokeRect(x, y, w, h);
+                });
+            });
+        });
+    }
+
+    Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
+        var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
+        withClip(_this, x, y, function(x, y) {
+            withPixel(_this, function() {
+                withSize(w, h, function(w, h) {
+                    MIDP.Context2D.fillRect(x, y, w, h);
                 });
             });
         });
