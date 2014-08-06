@@ -93,7 +93,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = null;
         break;
     }
-    stack.push(value ? CLASSES.newString(value) : null);
+    stack.push(value ? ctx.newString(value) : null);
 }
 
 Native["java/lang/System.currentTimeMillis.()J"] = function(ctx, stack) {
@@ -120,7 +120,7 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(ctx, stack) 
 }
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(ctx, stack) {
-    stack.push(stack.pop().class.getClassObject());
+    stack.push(stack.pop().class.getClassObject(ctx));
 }
 
 Native["java/lang/Object.hashCode.()I"] = function(ctx, stack) {
@@ -172,7 +172,7 @@ Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {
     var classObject = stack.pop();
     stack.push(util.cache(classObject, "getName", function () {
-        return CLASSES.newString(classObject.vmClass.className.replace(/\//g, "."));
+        return ctx.newString(classObject.vmClass.className.replace(/\//g, "."));
     }));
 }
 
@@ -189,7 +189,7 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
             ctx.raiseException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
         throw e;
     }
-    stack.push(classInfo.getClassObject());
+    stack.push(classInfo.getClassObject(ctx));
 }
 
 Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack) {
@@ -305,8 +305,8 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = (function(c
         var methodNames = ctx.newArray("[Ljava/lang/Object;", depth);
         var offsets = CLASSES.newPrimitiveArray("I", depth);
         obj.stackTrace.forEach(function(e, n) {
-            classNames[n] = CLASSES.newString(e.className);
-            methodNames[n] = CLASSES.newString(e.methodName);
+            classNames[n] = ctx.newString(e.className);
+            methodNames[n] = ctx.newString(e.methodName);
             offsets[n] = e.offset;
         });
         result = ctx.newArray("[Ljava/lang/Object;", 3);
@@ -467,7 +467,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     var data = CLASSES.loadFile(fileName);
     var obj = null;
     if (data) {
-        obj = CLASSES.newObject(CLASSES.java_lang_Object);
+        obj = ctx.newObject(CLASSES.java_lang_Object);
         obj.data = new Uint8Array(data);
         obj.pos = 0;
     }

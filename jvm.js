@@ -38,17 +38,17 @@ JVM.prototype.run = function(className, args) {
     CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String");
     CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread");
 
-    ctx.thread = CLASSES.mainThread = CLASSES.newObject(CLASSES.java_lang_Thread);
+    ctx.thread = CLASSES.mainThread = ctx.newObject(CLASSES.java_lang_Thread);
     ctx.thread.pid = util.id();
     ctx.thread.alive = true;
     caller.stack.push(CLASSES.mainThread);
-    caller.stack.push(CLASSES.newString("main"));
+    caller.stack.push(ctx.newString("main"));
     ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "<init>", "(Ljava/lang/String;)V"), 2);
     ctx.execute(caller);
 
     var arr = ctx.newArray("[Ljava/lang/String;", args.length);
     for (var n = 0; n < args.length; ++n)
-        arr[n] = CLASSES.newString(args[n]);
+        arr[n] = ctx.newString(args[n]);
     caller.stack.push(arr);
     ctx.pushFrame(entryPoint, 1);
     ctx.start(caller);

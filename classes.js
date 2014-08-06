@@ -187,22 +187,6 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
     }
 };
 
-Classes.prototype.newObject = function(classInfo) {
-    return new (classInfo.constructor)();
-}
-
-Classes.prototype.newString = function(s) {
-  var obj = this.newObject(CLASSES.java_lang_String);
-  var length = s.length;
-    var chars = this.newPrimitiveArray("C", length);
-  for (var n = 0; n < length; ++n)
-    chars[n] = s.charCodeAt(n);
-  CLASSES.java_lang_String.getField("value", "[C").set(obj, chars);
-  CLASSES.java_lang_String.getField("offset", "I").set(obj, 0);
-  CLASSES.java_lang_String.getField("count", "I").set(obj, length);
-  return obj;
-}
-
 Classes.prototype.newPrimitiveArray = function(type, size) {
     var constructor = ARRAYS[type];
     if (!constructor.prototype.class)

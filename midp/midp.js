@@ -44,9 +44,9 @@ MIDP.groupTBL = [
 ];
 
 Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function(ctx, stack) {
-    var list = CLASSES.newArray("[Ljava/lang/String;", MIDP.groupTBL.length);
+    var list = ctx.newArray("[Ljava/lang/String;", MIDP.groupTBL.length);
     MIDP.groupTBL.forEach(function (e, n) {
-        list[n] = CLASSES.newString(e);
+        list[n] = ctx.newString(e);
     });
     stack.push(list);
 }
@@ -147,9 +147,9 @@ Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[
     MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
             var messages = MIDP.messagesTBL[n];
-            list = CLASSES.newArray("[Ljava/lang/String;", messages.length);
+            list = ctx.newArray("[Ljava/lang/String;", messages.length);
             messages.forEach(function (e, n) {
-                list[n] = CLASSES.newString(e);
+                list[n] = ctx.newString(e);
             });
         }
     });
@@ -215,9 +215,9 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
     MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
             var members = MIDP.membersTBL[n];
-            list = CLASSES.newArray("[Ljava/lang/String;", members.length);
+            list = ctx.newArray("[Ljava/lang/String;", members.length);
             members.forEach(function (e, n) {
-                list[n] = CLASSES.newString(e);
+                list[n] = ctx.newString(e);
             });
         }
     });
@@ -229,11 +229,11 @@ Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/C
     var midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "internal";
     var suiteId = (midletClassName === "internal") ? -1 : 1;
     state.class.getField("suiteId", "I").set(state, suiteId);
-    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, CLASSES.newString(midletClassName));
+    state.class.getField("midletClassName", "Ljava/lang/String;").set(state, ctx.newString(midletClassName));
     var args = urlParams.args;
-    state.class.getField("arg0", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 0) ? args[0] : ""));
-    state.class.getField("arg1", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 1) ? args[1] : ""));
-    state.class.getField("arg2", "Ljava/lang/String;").set(state, CLASSES.newString((args.length > 2) ? args[2] : ""));
+    state.class.getField("arg0", "Ljava/lang/String;").set(state, ctx.newString((args.length > 0) ? args[0] : ""));
+    state.class.getField("arg1", "Ljava/lang/String;").set(state, ctx.newString((args.length > 1) ? args[1] : ""));
+    state.class.getField("arg2", "Ljava/lang/String;").set(state, ctx.newString((args.length > 2) ? args[2] : ""));
 }
 
 MIDP.domainTBL = [
@@ -246,9 +246,9 @@ MIDP.domainTBL = [
 ];
 
 Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function(ctx, stack) {
-    var list = CLASSES.newArray("[Ljava/lang/String;", MIDP.domainTBL.length);
+    var list = ctx.newArray("[Ljava/lang/String;", MIDP.domainTBL.length);
     MIDP.domainTBL.forEach(function (e, n) {
-        list[n] = CLASSES.newString(e);
+        list[n] = ctx.newString(e);
     });
     stack.push(list);
 }
@@ -379,12 +379,12 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
         value = null;
         break;
     }
-    stack.push(value ? CLASSES.newString(value) : null);
+    stack.push(value ? ctx.newString(value) : null);
 }
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
-    stack.push(CLASSES.newString("assets/" + storageId + "/"));
+    stack.push(ctx.newString("assets/" + storageId + "/"));
 }
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V"] = function(ctx, stack) {
@@ -430,7 +430,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()
         ctx.raiseException("java/lang/IllegalStateException");
     var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
     MIDP.skinFilePos += 4;
-    var strings = CLASSES.newArray("[Ljava/lang/String;", len);
+    var strings = ctx.newArray("[Ljava/lang/String;", len);
     for (var n = 0; n < len; ++n) {
         if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
             ctx.raiseException("java/lang/IllegalStateException");
@@ -451,7 +451,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()
         } else {
             ctx.raiseException("java/lang/IllegalStateException");
         }
-        strings[n] = CLASSES.newString(str);
+        strings[n] = ctx.newString(str);
     }
     stack.push(strings);
 }
@@ -505,18 +505,17 @@ MIDP.Context2D = (function() {
     
     c.addEventListener("mousedown", function(ev) {
         mouse_is_down = true;
-        MIDP.sendNativeEvent(MIDP.PEN_EVENT, MIDP.PRESSED, ev.layerX, ev.layerY);
+        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: 1 });
     });
     
     c.addEventListener("mousemove", function(ev) {
-        if (mouse_is_down) {
-            MIDP.sendNativeEvent(MIDP.PEN_EVENT, MIDP.DRAGGED, ev.layerX, ev.layerY)
-        }
+        if (mouse_is_down)
+            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: 1 })
     });
     
     c.addEventListener("mouseup", function(ev) {
         mouse_is_down = false;
-        MIDP.sendNativeEvent(MIDP.PEN_EVENT, MIDP.RELEASED, ev.layerX, ev.layerY);
+        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: 1 });
     });
 
     return c.getContext("2d");
@@ -533,7 +532,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = functio
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var id = stack.pop(), _this = stack.pop();
-    stack.push(CLASSES.newString(""));
+    stack.push(ctx.newString(""));
 }
 
 Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
@@ -623,7 +622,7 @@ Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
 
 Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
     var _this = stack.pop();
-    stack.push(CLASSES.newArray("[Ljava/lang/String;", 0));
+    stack.push(ctx.newArray("[Ljava/lang/String;", 0));
 }
 
 Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(ctx, stack) {
@@ -672,6 +671,10 @@ MIDP.sendEvent = function(obj) {
     obj.class.fields.forEach(function(field) {
         e[field.name] = field.get(obj);
     });
+    MIDP.sendNativeEvent(e);
+}
+
+MIDP.sendNativeEvent = function(e) {
     MIDP.nativeEventQueue.push(e);
     var ctx = MIDP.waitingNativeEventContext;
     if (!ctx)
@@ -679,20 +682,6 @@ MIDP.sendEvent = function(obj) {
     MIDP.deliverWaitForNativeEventResult(MIDP.waitingNativeEventContext);
     MIDP.waitingNativeEventContext.resume();
     MIDP.waitingNativeEventContext = null;
-}
-
-MIDP.sendNativeEvent = function(type, intParam1, intParam2, intParam3) {
-    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
-    obj.class.getField("type", "I").set(obj, type);
-    if (intParam1 !== undefined)
-        obj.class.getField("intParam1", "I").set(obj, intParam1); // PRESSED
-    if (intParam2 !== undefined)
-        obj.class.getField("intParam2", "I").set(obj, intParam2);
-    if (intParam3 !== undefined)
-        obj.class.getField("intParam3", "I").set(obj, intParam3);
-    
-    obj.class.getField("intParam4", "I").set(obj, 1); // displayID
-    MIDP.sendEvent(obj);  
 }
 
 MIDP.KEY_EVENT = 1;
@@ -706,9 +695,8 @@ MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 MIDP.suppressKeyEvents = false;
 
 MIDP.keyPress = function(keyCode) {
-    if (!MIDP.suppressKeyEvents) {
-        MIDP.sendNativeEvent(MIDP.KEY_EVENT, MIDP.PRESSED, keyCode);
-    }
+    if (!MIDP.suppressKeyEvents)
+        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: 1 });
 }
 
 window.addEventListener("keypress", function(ev) {
@@ -764,7 +752,7 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
     for (n = 0; n < entries.length; ++n) {
         var entry = entries[n];
         if (entry.attributes.Key.value === key) {
-            stack.push(CLASSES.newString(entry.attributes.Value.value));
+            stack.push(ctx.newString(entry.attributes.Value.value));
             return;
         }
     }
@@ -786,7 +774,7 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    var obj = CLASSES.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    var obj = ctx.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
     obj.class.getField("type", "I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
     MIDP.sendEvent(obj);
 }
@@ -826,7 +814,7 @@ Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx
 
 Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var keyCode = stack.pop();
-    stack.push(CLASSES.newString(String.fromCharCode(keyCode)));
+    stack.push(ctx.newString(String.fromCharCode(keyCode)));
 }
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
@@ -940,7 +928,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
     }
 
     fs.list(path, function(files) {
-        var pathsArray = CLASSES.newArray("[B", files.length);
+        var pathsArray = ctx.newArray("[B", files.length);
         for (var i = 0; i < files.length; i++) {
             var curPath = path + files[i];
             var bytesCurPath = new TextEncoder.encode(curPath);
@@ -1035,7 +1023,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
     }
 
     fs.list(path, function(files) {
-        var pathsArray = CLASSES.newArray("[B", files.length);
+        var pathsArray = ctx.newArray("[B", files.length);
         for (var i = 0; i < files.length; i++) {
             var curPath = path + files[i];
             var bytesCurPath = new TextEncoder().encode(curPath);

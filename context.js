@@ -62,7 +62,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     ],
     exception_table: [],
   };
-  this.current().stack.push(classInfo.getClassObject());
+  this.current().stack.push(classInfo.getClassObject(this));
   this.pushFrame(syntheticMethod, 1);
 }
 
@@ -252,4 +252,20 @@ Context.prototype.newMultiArray = function(typeName, lengths) {
       array[i] = this.newMultiArray(typeName.substr(1), lengths);
   }
   return array;
+}
+
+Context.prototype.newObject = function(classInfo) {
+    return new (classInfo.constructor)();
+}
+
+Context.prototype.newString = function(s) {
+  var obj = this.newObject(CLASSES.java_lang_String);
+  var length = s.length;
+  var chars = CLASSES.newPrimitiveArray("C", length);
+  for (var n = 0; n < length; ++n)
+    chars[n] = s.charCodeAt(n);
+  CLASSES.java_lang_String.getField("value", "[C").set(obj, chars);
+  CLASSES.java_lang_String.getField("offset", "I").set(obj, 0);
+  CLASSES.java_lang_String.getField("count", "I").set(obj, length);
+  return obj;
 }

@@ -107,10 +107,10 @@ ClassInfo.prototype.isAssignableTo = function(toClass) {
     return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
 }
 
-ClassInfo.prototype.getClassObject = function() {
+ClassInfo.prototype.getClassObject = function(ctx) {
     var self = this;
     return util.cache(this, "classObject", function () {
-        var classObject = CLASSES.newObject(CLASSES.java_lang_Class);
+        var classObject = ctx.newObject(CLASSES.java_lang_Class);
         classObject.vmClass = self;
         return classObject;
     });

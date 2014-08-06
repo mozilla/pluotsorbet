@@ -20,7 +20,7 @@ VM.execute = function(ctx) {
         cp = frame.cp;
         if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
             frame.lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
-                               ? methodInfo.classInfo.getClassObject()
+                               ? methodInfo.classInfo.getClassObject(ctx)
                                : frame.getLocal(0);
             ctx.monitorEnter(frame.lockObject);
         }
@@ -113,7 +113,7 @@ VM.execute = function(ctx) {
             constant = constant.float;
             break;
         case TAGS.CONSTANT_String:
-            constant = CLASSES.newString(cp[constant.string_index].bytes);
+            constant = ctx.newString(cp[constant.string_index].bytes);
             break;
         case TAGS.CONSTANT_Long:
             constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -901,7 +901,7 @@ VM.execute = function(ctx) {
                 classInfo = resolve(op, idx);
                 classInitCheck(classInfo, frame.ip-3);
             }
-            stack.push(CLASSES.newObject(classInfo));
+            stack.push(ctx.newObject(classInfo));
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();
