@@ -60,3 +60,9 @@ fs.init(function() {
     run(urlParams.main || "RunTests", urlParams.args);
   });
 });
+
+window.onload = function() {
+ document.getElementById("clearstorage").onclick = function() {
+   asyncStorage.clear();
+ };
+};
