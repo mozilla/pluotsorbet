@@ -217,10 +217,12 @@
     }
 
     Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
-        var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
+        var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
         withClip(_this, x, y, function(x, y) {
             withPixel(_this, function() {
-                MIDP.Context2D.fillRect(x, y, width, height);
+                withSize(w, h, function(w, h) {
+                    MIDP.Context2D.fillRect(x, y, w, h);
+                });
             });
         });
     }
@@ -229,19 +231,22 @@
         var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
         withClip(_this, x, y, function(x, y) {
             withPixel(_this, function() {
-                MIDP.Context2D.strokeRect(x, y, Math.max(w, 1), Math.max(h, 1));
+                withSize(w, h, function(w, h) {
+                    MIDP.Context2D.strokeRect(x, y, w, h);
+                });
             });
         });
     }
 
     Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(ctx, stack) {
         var arcHeight = stack.pop(), arcWidth = stack.pop(),
-            height = stack.pop(), width = stack.pop(),
-        y = stack.pop(), x = stack.pop(), _this = stack.pop();
+            h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
         withClip(_this, x, y, function(x, y) {
             withPixel(_this, function() {
-                // TODO implement rounding
-                MIDP.Context2D.fillRect(x, y, Math.max(width, 1), Math.max(height, 1));
+                withSize(w, h, function(w, h) {
+                    // TODO implement rounding
+                    MIDP.Context2D.fillRect(x, y, w, h);
+                });
             });
         });
     }
