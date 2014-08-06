@@ -1485,6 +1485,33 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ct
     throw VM.Pause;
 }
 
+Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(ctx, stack) {
+    var newLength = stack.pop2().toNumber(), byteArray = stack.pop(), _this = stack.pop();
+
+    var path = "/" + new TextDecoder().decode(byteArray);
+
+    // IBM's implementation returns different error numbers, we don't care
+
+    fs.open(path, function(fd) {
+      if (fd == -1) {
+        ctx.raiseException("java/lang/IOException", "truncate failed");
+        ctx.resume();
+      } else {
+        var data = fs.read(fd);
+        fs.truncate(path, function(truncated) {
+          if (truncated) {
+            fs.write(fd, data.subarray(0, newLength));
+          } else {
+            ctx.raiseException("java/lang/IOException", "truncate failed");
+          }
+          ctx.resume();
+        });
+      }
+    });
+
+    throw VM.Pause;
+}
+
 Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(ctx, stack) {
     var fd = stack.pop(), _this = stack.pop();
 
