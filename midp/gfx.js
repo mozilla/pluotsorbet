@@ -164,6 +164,14 @@
         MIDP.Context2D.restore();
     }
 
+    function withSize(dx, dy, cb) {
+        if (!dx)
+            dx = 1;
+        if (!dy)
+            dy = 1;
+        cb(dx, dy);
+    }
+
     Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
         var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
         stack.push(rgb);
@@ -370,12 +378,14 @@
         var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop(),
             dx = x2 - x1, dy = y2 - y1;
         withClip(_this, x1, y1, function(x, y) {
-            var ctx = MIDP.Context2D;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + dx, y + dy);
-            ctx.stroke();
-            ctx.closePath();
+            withSize(dx, dy, function(dx, dy) {
+                var ctx = MIDP.Context2D;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + dx, y + dy);
+                ctx.stroke();
+                ctx.closePath();
+            });
         });
-   }
+    }
 })(Native);

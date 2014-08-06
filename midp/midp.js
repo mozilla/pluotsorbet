@@ -528,7 +528,6 @@ MIDP.Context2D = (function() {
     c.width = 320;
     c.height = 480;
 
-
     // TODO These mouse event handlers only work on firefox right now,
     // because they use layerX and layerY.
 
