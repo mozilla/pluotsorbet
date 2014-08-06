@@ -99,8 +99,8 @@
             transX = g.class.getField("transX", "I").get(g),
             transY = g.class.getField("transY", "I").get(g);
         var ctx = MIDP.Context2D;
+        ctx.save();
         if (clipped) {
-            ctx.save();
             ctx.beginPath();
             ctx.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
             ctx.clip();
@@ -108,9 +108,7 @@
         if (transX || transY)
             ctx.translate(transX, transY);
         cb(x, y);
-        if (clipped) {
-            ctx.restore();
-        }
+        ctx.restore();
     }
 
     function withAnchor(g, anchor, x, y, w, h, cb) {
@@ -376,13 +374,9 @@
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.class.getField("nativeImageData", "I").get(imgData);
         var w = sw, h = sh;
-        if (transform >= 4) {
-            w = sh;
-            h = sw;
-        }
         withAnchor(_this, anchor, x, y, w, h, function(x, y) {
             var ctx = MIDP.Context2D;
-            ctx.translate(w/2, h/2);
+            ctx.translate(x, y);
             if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
                 ctx.scale(-1, 1);
             if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270)
@@ -393,7 +387,7 @@
                 ctx.rotate(Math.PI);
             if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                 ctx.rotate(1.5 * Math.PI);
-            MIDP.Context2D.drawImage(texture, sx, sy, w, h, x - w/2, y -h/2, sw, sh);
+            MIDP.Context2D.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
         });
         stack.push(1);
     }
