@@ -705,10 +705,14 @@ MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 
 MIDP.suppressKeyEvents = false;
 
-window.addEventListener("keypress", function(ev) {
+MIDP.keyPress = function(keyCode) {
     if (!MIDP.suppressKeyEvents) {
-        MIDP.sendNativeEvent(MIDP.KEY_EVENT, MIDP.PRESSED, ev.which);
+        MIDP.sendNativeEvent(MIDP.KEY_EVENT, MIDP.PRESSED, keyCode);
     }
+}
+
+window.addEventListener("keypress", function(ev) {
+    MIDP.keyPress(ev.which);
 });
 
 Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function(ctx, stack) {

@@ -10,12 +10,31 @@
   border: 1px solid #ababab;
 }
 
+button {
+  display: none;
+}
+
+
 @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
   #canvas {
     bottom: 0px;
     left: 0px;
     border: none;
   }
+
+  button {
+    display: block;
+    position: absolute;
+    height: 40px;
+    width: 40px;
+  }
+
+  #up { left: 75px; bottom: 40px; }
+  #down { left: 75px; bottom: 0px; }
+  #left { left: 25px; bottom: 20px; }
+  #right { left: 125px; bottom: 20px; }
+  #fire { left: 250px; bottom: 20px; }
+
 }
 
   </style>
@@ -48,6 +67,7 @@
   <script type="text/javascript" src="main.js" defer></script>
   <script type="text/javascript" src="midp/midp.js" defer></script>
   <script type="text/javascript" src="midp/gfx.js" defer></script>
+  <script type="text/javascript" src="game-ui.js" defer></script>
 </head>
 
 <body>
@@ -60,6 +80,11 @@
     Log:
     <pre id="log"></pre>
   </div>
+  <button id="up">up</button>
+  <button id="down">down</button>
+  <button id="left">left</button>
+  <button id="right">right</button>
+  <button id="fire">fire</button>
 </body>
 
 </html>

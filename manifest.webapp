@@ -1,0 +1,14 @@
+{
+  "name": "j2me.js",
+  "description": "j2me interpreter for firefox os",
+  "launch_path": "/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=asteroids.Game",
+  "icons": {
+    "128": "/img/icon-128.png"
+  },
+  "developer": {
+    "name": "Mozilla",
+    "url": "http://mozilla.org"
+  },
+  "default_locale": "en",
+  "orientation": ["portrait-primary"]
+}
