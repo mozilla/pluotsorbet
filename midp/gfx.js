@@ -422,4 +422,31 @@
         data.class.getField("height", "I").set(data, height);
         data.class.getField("nativeImageData", "I").set(data, texture);
     }
+
+    Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(ctx, stack) {
+        var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), scanlength = stack.pop(), offset = stack.pop(),
+            rgbData = stack.pop(), _this = stack.pop();
+        var texture = _this.class.getField("nativeImageData", "I").get(_this);
+        // If nativeImageData is not a canvas texture already, then convert it now.
+        if (!(texture instanceof HTMLCanvasElement)) {
+            var canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(texture, 0, 0);
+            texture = canvas;
+            _this.class.getField("nativeImageData", "I").set(_this, texture);
+        }
+        var imageData = texture.getContext("2d").getImageData(x, y, width, height);
+        var i = 0;
+        for (y = 0; y < height; ++y) {
+            var j = offset + y * scanlength;
+            for (x = 0; x < width; ++x) {
+                rgbData[j++] = imageData[i++];
+                rgbData[j++] = imageData[i++];
+                rgbData[j++] = imageData[i++];
+                rgbData[j++] = imageData[i++];
+            }
+        }
+    }
 })(Native);
