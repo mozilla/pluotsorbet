@@ -458,9 +458,9 @@
         }
         var imageData = texture.getContext("2d").getImageData(x, y, width, height);
         var i = 0;
-        for (y = 0; y < height; ++y) {
-            var j = offset + y * scanlength;
-            for (x = 0; x < width; ++x) {
+        for (var yy = 0; yy < height; ++yy) {
+            var j = offset + yy * scanlength;
+            for (var xx = 0; xx < width; ++xx) {
                 // input: bytes in RGBA order
                 // output: 0xAARRGGBB
                 var r = imageData[i++];
@@ -470,5 +470,37 @@
                 rgbData[j++] = (a<<24)|(b<<16)|(g<<8)|a;
             }
         }
+    }
+
+    Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] = function(ctx, stack) {
+        var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
+            scanlength = stack.pop(), offset = stack.pop(), rgbData = stack.pop(), _this = stack.pop();
+        var ctx = MIDP.Context2D;
+        var imgData = ctx.createImageData(width, height);
+        var i = 0;
+        for (var yy = 0; yy < height; ++yy) {
+            var j = offset + y * scanlength;
+            for (var xx = 0; xx < width; ++xx) {
+                // input: 0xAARRGGBB
+                // output: bytes in RGBA order
+                var argb = rgbData[j++];
+                imgData[i++] = (argb >> 16);
+                imgData[i++] = (argb >> 8);
+                imgData[i++] = argb;
+                imgData[i++] = processAlpha ? (argb >> 24) : 255;
+            }
+        }
+        withClip(_this, x, y, function(x, y) {
+            if (processAlpha) {
+                var canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                var ctx2 = canvas.getContext("2d");
+                ctx2.putImageData(imgData, 0, 0);
+                ctx.drawImage(canvas, x, y);
+            } else {
+                ctx.putImage(imgData, x, y);
+            }
+        });
     }
 })(Native);
