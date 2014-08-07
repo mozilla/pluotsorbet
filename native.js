@@ -9,8 +9,11 @@ Native.invoke = function(ctx, methodInfo) {
     if (!methodInfo.native) {
         var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
         methodInfo.native = Native[key];
-        if (!methodInfo.native)
-            console.log(key);
+        if (!methodInfo.native) {
+            console.log("Missing native: " + key);
+            ctx.raiseException("java/lang/RuntimeException", key + " not found");
+            return;
+        }
     }
     methodInfo.native.call(null, ctx, ctx.current().stack);
 }
