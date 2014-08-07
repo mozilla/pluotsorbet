@@ -427,7 +427,9 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
                 withPixel(_this, c, function() {
-                    c.fillText(str, x, y);
+                    withTranslate(_this, c, function() {
+                        c.fillText(str, x, y);
+                    });
                 });
             });
         });
@@ -438,7 +440,9 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, chr, function(x, y) {
                 withPixel(_this, c, function() {
-                    c.fillText(chr, x, y);
+                    withTranslate(_this, c, function() {
+                        c.fillText(chr, x, y);
+                    });
                 });
             });
         });
