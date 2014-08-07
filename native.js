@@ -558,15 +558,16 @@ Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
         mainArgs[n] = util.fromJavaString(str);
     });
     ctx.runtime.vm.run(mainClass, mainArgs, _this);
+    _this.runtime.updateStatus(2 /* STARTED */);
 }
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
     var status = stack.pop(), _this = stack.pop();
     var runtime = _this.runtime;
-    if (runtime.status > status)
+    if (runtime.status >= status)
         return;
     function waitForStatus() {
-        if (runtime.status > status) {
+        if (runtime.status >= status) {
             ctx.resume();
             return;
         }
