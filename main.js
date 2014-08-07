@@ -30,13 +30,10 @@ function load(file, cb) {
 
 function run(className, args) {
   var jvm = new JVM();
-  // This is a hack. We should eliminate CLASSES instead.
-  CLASSES.classes = {};
 
   var jars = ["java/classes.jar", "tests/tests.jar"];
-  if (urlParams.jars) {
+  if (urlParams.jars)
     jars = jars.concat(urlParams.jars.split(":"));
-  }
 
   (function loadNextJar() {
     if (jars.length) {

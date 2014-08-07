@@ -19,13 +19,12 @@ JVM.prototype.addPath = function(path, data) {
 
 JVM.prototype.run = function(className, args) {
     var classInfo = CLASSES.getClass(className);
-    if (!classInfo) {
+    if (!classInfo)
         throw new Error("Could not find or load main class " + className);
-    }
+
     var entryPoint = CLASSES.getEntryPoint(classInfo);
-    if (!entryPoint) {
+    if (!entryPoint)
         throw new Error("Could not find main method in class " + className);
-    }
 
     var runtime = new Runtime();
     var ctx = new Context(runtime);
