@@ -395,13 +395,18 @@
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
-        withGraphics(_this, function(c) {
+        // HACK: For now always draw strings on the main canvas;
+        // TODO: figure out why strings drawn offscreen are not copied to the main
+        // canvas and remove this hack
+        (function(c) {
+        //withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
                 withPixel(_this, c, function() {
                     c.fillText(str, x, y);
                 });
             });
-        });
+        //});
+        })(MIDP.Context2D);
     }
 
     Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
