@@ -3,7 +3,8 @@
 
 'use strict';
 
-function Runtime() {
+function Runtime(vm) {
+  this.vm = vm;
   this.initialized = {};
   this.pending = {};
   this.staticFields = {};
