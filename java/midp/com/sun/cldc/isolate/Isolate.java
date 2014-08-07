@@ -896,7 +896,7 @@ public final class Isolate {
                 // waitStatus() performs the getStatus() <= STOPPING check in
                 // native code again, where thread switch is guaranteed to
                 // not happen. Hence we won't have a race condition.
-                waitStatus(STOPPED);
+                waitStatus(STOPPING);
             } catch (InterruptedException e) {
                 // IMPL_NOTE: this method should throw InterruptedException!
                 throw new Error();
