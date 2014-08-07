@@ -422,7 +422,7 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, chr, function(x, y) {
                 withPixel(_this, c, function() {
-                    MIDP.Context2D.fillText(chr, x, y);
+                    c.fillText(chr, x, y);
                 });
             });
         });
@@ -482,7 +482,7 @@
                 withPixel(_this, c, function() {
                     withSize(w, h, function(w, h) {
                         // TODO implement rounding
-                        MIDP.Context2D.fillRect(x, y, w, h);
+                        c.fillRect(x, y, w, h);
                     });
                 });
             });
@@ -501,10 +501,10 @@
                 var radius = Math.ceil(Math.max(height, width) / 2);
                 var startRad = startAngle * 0.0175;
                 var arcRad = arcAngle * 0.0175;
-                MIDP.Context2D.beginPath();
-                MIDP.Context2D.moveTo(x + radius, y);
-                MIDP.Context2D.arc(x, y, radius, startRad, arcRad);
-                MIDP.Context2D.stroke();
+                c.beginPath();
+                c.moveTo(x + radius, y);
+                c.arc(x, y, radius, startRad, arcRad);
+                c.stroke();
             });
         });
     }
@@ -521,10 +521,10 @@
                 var radius = Math.ceil(Math.max(height, width) / 2);
                 var startRad = startAngle * 0.0175;
                 var arcRad = arcAngle * 0.0175;
-                MIDP.Context2D.beginPath();
-                MIDP.Context2D.moveTo(x + radius, y);
-                MIDP.Context2D.arc(x, y, radius, startRad, arcRad);
-                MIDP.Context2D.fill();
+                c.beginPath();
+                c.moveTo(x + radius, y);
+                c.arc(x, y, radius, startRad, arcRad);
+                c.fill();
             });
         });
     }
