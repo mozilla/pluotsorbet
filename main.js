@@ -18,10 +18,23 @@ location.search.substring(1).split("&").forEach(function (param) {
 
 urlParams.args = (urlParams.args || "").split(",");
 
-function load(file, cb) {
+function parseManifest(data) {
+  data
+  .replace(/\r\n|\r/g, "\n")
+  .replace(/\n /g, "")
+  .split("\n")
+  .forEach(function(entry) {
+    if (entry) {
+      var keyval = entry.split(':');
+      MIDP.manifest[keyval[0]] = keyval[1].trim();
+    }
+  });
+}
+
+function load(file, responseType, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open("GET", file, true);
-  xhr.responseType = "arraybuffer";
+  xhr.responseType = responseType;
   xhr.onload = function () {
     cb(xhr.response);
   }
@@ -38,12 +51,19 @@ function run(className, args) {
   (function loadNextJar() {
     if (jars.length) {
       var jar = jars.shift();
-      load(jar, function (data) {
+      load(jar, "arraybuffer", function (data) {
         jvm.addPath(jar, data);
         loadNextJar();
       });
     } else {
-      jvm.run(className, args);
+      if (urlParams.jad) {
+        load(urlParams.jad, "text", function(data) {
+          parseManifest(data);
+          jvm.run(className, args);
+        });
+      } else {
+        jvm.run(className, args);
+      }
     }
   })();
 }

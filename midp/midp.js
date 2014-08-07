@@ -6,6 +6,8 @@
 var MIDP = {
 };
 
+MIDP.manifest = {};
+
 Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(ctx, stack) {
     var entryName = util.fromJavaString(stack.pop()), jar = util.fromJavaString(stack.pop());
     var bytes = CLASSES.loadFileFromJar(jar, entryName);
@@ -616,13 +618,24 @@ Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack)
     var _this = stack.pop();
 }
 
+Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(ctx, stack) {
+    var permissions = stack.pop(), pushOptions = stack.pop(), pushInterruptSetting = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+}
+
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
     var _this = stack.pop();
 }
 
 Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
     var _this = stack.pop();
-    stack.push(ctx.newArray("[Ljava/lang/String;", 0));
+    var keys = Object.keys(MIDP.manifest);
+    var arr = ctx.newArray("[Ljava/lang/String;", keys.length * 2);
+    var i = 0;
+    keys.forEach(function(key) {
+      arr[i++] = ctx.newString(key);
+      arr[i++] = ctx.newString(MIDP.manifest[key]);
+    });
+    stack.push(arr);
 }
 
 Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(ctx, stack) {
