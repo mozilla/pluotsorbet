@@ -560,8 +560,9 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
     function waitForStatus() {
         if (runtime.status >= status) {
             ctx.resume();
-            runtime.unwaitStatus(waitForStatus);
+            return;
         }
+        runtime.waitStatus(waitForStatus);
     }
-    runtime.waitStatus(waitForStatus);
+    waitForStatus();
 }
