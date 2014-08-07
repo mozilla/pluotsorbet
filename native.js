@@ -76,10 +76,10 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
     case "fileconn.dir.memorycard":
-        value = "fcfile:///tmp/";
+        value = "fcfile:///";
         break;
     case "fileconn.dir.private":
-        value = "fcfile:///tmp/";
+        value = "fcfile:///";
         break;
     case "file.separator":
         value = "/";

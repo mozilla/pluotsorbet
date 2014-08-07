@@ -53,9 +53,7 @@ function run(className, args) {
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
 
 fs.init(function() {
-  fs.mkdir("/tmp", function(created) {
-    run(urlParams.main || "RunTests", urlParams.args);
-  });
+  run(urlParams.main || "RunTests", urlParams.args);
 });
 
 window.onload = function() {
