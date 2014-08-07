@@ -19,10 +19,10 @@ casper.test.begin("unit tests", 2, function(test) {
 m\n\
 a ma\n\
 ma\n\
+ma\n\
+ma\n\
 1 m1\n\
-ma\n\
 2 m2\n\
-ma\n\
 ma\n\
 r mar\n\
 mar\n\
