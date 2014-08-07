@@ -533,12 +533,15 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    _this.status = 1; // NEW
+    _this.runtime = ctx.runtime;
 }
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
     var _this = stack.pop();
-    stack.push(_this.status);
+    // XXX Use ctx.runtime, although it's the wrong status if we're called
+    // on a different isolate from the current one.  Why isn't _this.runtime
+    // defined here?
+    stack.push(ctx.runtime.status);
 }
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
@@ -548,6 +551,34 @@ Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
     mainArgs.forEach(function(str, n) {
         mainArgs[n] = util.fromJavaString(str);
     });
-    _this.status = 2; // STARTED
     _this.runtime = ctx.runtime.vm.run(mainClass, mainArgs);
+}
+
+Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
+    var status = stack.pop(), _this = stack.pop();
+    var runtime = _this.runtime;
+    console.log(runtime.toSource());
+    function waitForStatus() {
+        if (runtime.status >= status) {
+            ctx.resume();
+            return;
+        }
+        runtime.waitStatus(ctx, waitForStatus);
+    }
+    waitForStatus();
+}
+
+Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
+    var status = stack.pop(), _this = stack.pop();
+    var runtime = _this.runtime;
+    if (runtime.status >= status) {
+        return;
+    }
+    function waitForStatus() {
+        if (runtime.status >= status) {
+            ctx.resume();
+            // XXX Remove this function from the list of functions awaiting status.
+        }
+    }
+    runtime.waitStatus(waitForStatus);
 }

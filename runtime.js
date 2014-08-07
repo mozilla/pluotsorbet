@@ -5,6 +5,7 @@
 
 function Runtime(vm) {
   this.vm = vm;
+  this.status = 2; // STARTED
   this.waiting = [];
   this.threadCount = 0;
   this.initialized = {};
@@ -13,15 +14,30 @@ function Runtime(vm) {
   this.classObjects = {};
 }
 
+Runtime.prototype.waitStatus = function(callback) {
+  this.waiting.push(callback);
+  throw VM.Pause;
+}
+
+Runtime.prototype.setStatus = function(status) {
+  this.status = status;
+  this.notifyStatusChange();
+}
+
+Runtime.prototype.notifyStatusChange = function() {
+  this.waiting.forEach(function(callback) {
+      callback();
+  });
+}
+
 Runtime.prototype.addContext = function(ctx) {
   ++this.threadCount;
 }
 
 Runtime.prototype.removeContext = function(ctx) {
   if (!--this.threadCount) {
-    this.waiting.forEach(function(ctx) {
-      ctx.resume();
-    });
+    this.runtime = 4; // STOPPED
+    this.notifyStatusChange();
   }
 }
 
