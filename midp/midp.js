@@ -6,6 +6,8 @@
 var MIDP = {
 };
 
+MIDP.manifest = {};
+
 Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(ctx, stack) {
     var entryName = util.fromJavaString(stack.pop()), jar = util.fromJavaString(stack.pop());
     var bytes = CLASSES.loadFileFromJar(jar, entryName);
