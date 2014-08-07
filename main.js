@@ -19,8 +19,6 @@ location.search.substring(1).split("&").forEach(function (param) {
 urlParams.args = (urlParams.args || "").split(",");
 
 function parseManifest(data) {
-  MIDP.manifest = {};
-
   data
   .replace(/\r\n|\r/g, "\n")
   .replace(/\n /g, "")
