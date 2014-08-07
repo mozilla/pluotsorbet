@@ -71,6 +71,7 @@ VM.execute = function(ctx) {
             }
             popFrame(0);
         } while (frame.methodInfo);
+        ctx.kill();
         var className = ex.class.className;
         var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "detailMessage", "Ljava/lang/String;", false).get(ex));
         var dump = [];
@@ -94,7 +95,7 @@ VM.execute = function(ctx) {
     }
 
     function classInitCheck(classInfo, ip) {
-        if (ctx.runtime.initialized[classInfo.className])
+        if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
             return;
         frame.ip = ip;
         ctx.pushClassInitFrame(classInfo);
@@ -875,10 +876,9 @@ VM.execute = function(ctx) {
         case 0xb2: // getstatic
             var idx = frame.read16();
             var field = cp[idx];
-            if (field.tag) {
+            if (field.tag)
                 field = resolve(op, idx);
-                classInitCheck(field.classInfo, frame.ip-3);
-            }
+            classInitCheck(field.classInfo, frame.ip-3);
             var value = ctx.runtime.getStatic(field);
             if (typeof value === "undefined") {
                 value = util.defaultValue(field.signature);
@@ -888,19 +888,17 @@ VM.execute = function(ctx) {
         case 0xb3: // putstatic
             var idx = frame.read16();
             var field = cp[idx];
-            if (field.tag) {
+            if (field.tag)
                 field = resolve(op, idx);
-                classInitCheck(field.classInfo, frame.ip-3);
-            }
+            classInitCheck(field.classInfo, frame.ip-3);
             ctx.runtime.setStatic(field, stack.popType(field.signature));
             break;
         case 0xbb: // new
             var idx = frame.read16();
             var classInfo = cp[idx];
-            if (classInfo.tag) {
+            if (classInfo.tag)
                 classInfo = resolve(op, idx);
-                classInitCheck(classInfo, frame.ip-3);
-            }
+            classInitCheck(classInfo, frame.ip-3);
             stack.push(ctx.newObject(classInfo));
             break;
         case 0xc0: // checkcast

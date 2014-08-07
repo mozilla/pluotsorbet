@@ -108,12 +108,15 @@ ClassInfo.prototype.isAssignableTo = function(toClass) {
 }
 
 ClassInfo.prototype.getClassObject = function(ctx) {
-    var self = this;
-    return util.cache(this, "classObject", function () {
-        var classObject = ctx.newObject(CLASSES.java_lang_Class);
-        classObject.vmClass = self;
-        return classObject;
-    });
+    var className = this.className;
+    var classObjects = ctx.runtime.classObjects;
+    var classObject = classObjects[className];
+    if (!classObject) {
+        classObject = ctx.newObject(CLASSES.java_lang_Class);
+        classObject.vmClass = this;
+        classObjects[className] = classObject;
+    }
+    return classObject;
 }
 
 ClassInfo.prototype.getField = function(name, signature, isStatic) {
@@ -138,5 +141,3 @@ ArrayClass.prototype.implementsInterface = function(iface) {
 ArrayClass.prototype.isAssignableTo = ClassInfo.prototype.isAssignableTo;
 
 ArrayClass.prototype.getClassObject = ClassInfo.prototype.getClassObject;
-
-ArrayClass.prototype.initialized = true;
