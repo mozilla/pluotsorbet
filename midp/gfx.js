@@ -287,9 +287,6 @@
 
     function withGraphics(g, cb) {
         var img = g.class.getField("img", "Ljavax/microedition/lcdui/Image;").get(g),
-            transX = g.class.getField("transX", "I").get(g),
-            transY = g.class.getField("transY", "I").get(g),
-            translate = transX || transY,
             c = null;
 
         if (img === null) {
@@ -302,6 +299,21 @@
         cb(c);
     }
 
+    function withTranslate(g, c, cb) {
+        var transX = g.class.getField("transX", "I").get(g),
+            transY = g.class.getField("transY", "I").get(g),
+            translate = transX || transY;
+
+        if (translate) {
+            c.save();
+            c.translate(transX, transY);
+            cb();
+            c.restore();
+        } else {
+            cb();
+        }
+    }
+  
     function withClip(g, c, x, y, cb) {
         var clipX1 = g.class.getField("clipX1", "S").get(g),
             clipY1 = g.class.getField("clipY1", "S").get(g),
@@ -387,7 +399,9 @@
 
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
-                c.drawImage(texture, x, y);
+                withTranslate(_this, c, function() {
+                    c.drawImage(texture, x, y);
+                });
             });
         });
         stack.push(1);
@@ -395,18 +409,15 @@
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
-        // HACK: For now always draw strings on the main canvas;
-        // TODO: figure out why strings drawn offscreen are not copied to the main
-        // canvas and remove this hack
-        (function(c) {
-        //withGraphics(_this, function(c) {
+        withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
                 withPixel(_this, c, function() {
-                    c.fillText(str, x, y);
+                    withTranslate(_this, c, function() {
+                        c.fillText(str, x, y);
+                    });
                 });
             });
-        //});
-        })(MIDP.Context2D);
+        });
     }
 
     Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
@@ -548,7 +559,6 @@
             transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.class.getField("nativeImageData", "I").get(imgData);
-
         var w = sw, h = sh;
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, w, h, function(x, y) {
