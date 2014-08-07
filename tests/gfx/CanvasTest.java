@@ -25,7 +25,6 @@ public class CanvasTest extends MIDlet implements CommandListener {
         test.addCommand(quitCommand);
         test.setCommandListener(this);
         display.setCurrent(test);
-	throw new NullPointerException();
     }
 
     public void pauseApp() {
