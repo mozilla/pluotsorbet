@@ -27,7 +27,8 @@ JVM.prototype.run = function(className, args) {
         throw new Error("Could not find main method in class " + className);
     }
 
-    var ctx = new Context();
+    var runtime = new Runtime();
+    var ctx = new Context(runtime);
 
     var caller = new Frame();
     ctx.frames.push(caller);

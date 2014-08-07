@@ -394,7 +394,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     thread.pid = util.id();
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
     // Create a context for the thread and start it.
-    var ctx = new Context();
+    var ctx = new Context(ctx.runtime);
     ctx.thread = thread;
     var caller = new Frame();
     ctx.frames.push(caller);
