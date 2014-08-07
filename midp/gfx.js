@@ -244,35 +244,29 @@
     }
 
     Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
-        var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
-        withFont(_this, c, str, function(w) {
+        var str = util.fromJavaString(stack.pop()), _this = stack.pop();
+        withFont(_this, str, function(w) {
             stack.push(w);
         });
     }
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
-        var str = String.fromCharCode(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
-
-        withFont(_this, c, str, function(w) {
+        var str = String.fromCharCode(stack.pop()), _this = stack.pop();
+        withFont(_this, str, function(w) {
             stack.push(w);
         });
     }
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack) {
-        var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
-
-        withFont(_this, c, str.slice(offset, offset + len), function(w) {
+        var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop();
+        withFont(_this, str.slice(offset, offset + len), function(w) {
             stack.push(w);
         });
     }
 
     Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
-        var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
-        withFont(_this, c, str.slice(offset, offset + len), function(w) {
+        var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
+        withFont(_this, str.slice(offset, offset + len), function(w) {
             stack.push(w);
         });
     }
@@ -285,41 +279,29 @@
     var BOTTOM = 32;
     var BASELINE = 64;
 
-    function withGraphics(g, cb) {
-        var img = g.class.getField("img", "Ljavax/microedition/lcdui/Image;").get(g),
-            transX = g.class.getField("transX", "I").get(g),
-            transY = g.class.getField("transY", "I").get(g),
-            translate = transX || transY,
-            c = null;
-
-        if (img === null) {
-            c = MIDP.Context2D;
-        } else {
-            var imgData = img.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(img),
-                canvas = imgData.class.getField("nativeImageData", "I").get(imgData);
-            c = canvas.getContext("2d");
-        }
-        cb(c);
-    }
-
-    function withClip(g, c, x, y, cb) {
+    function withClip(g, x, y, cb) {
         var clipX1 = g.class.getField("clipX1", "S").get(g),
             clipY1 = g.class.getField("clipY1", "S").get(g),
             clipX2 = g.class.getField("clipX2", "S").get(g),
             clipY2 = g.class.getField("clipY2", "S").get(g),
-            clipped = g.class.getField("clipped", "Z").get(g);
-        c.save();
+            clipped = g.class.getField("clipped", "Z").get(g),
+            transX = g.class.getField("transX", "I").get(g),
+            transY = g.class.getField("transY", "I").get(g);
+        var ctx = MIDP.Context2D;
+        ctx.save();
         if (clipped) {
-            c.beginPath();
-            c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
-            c.clip();
+            ctx.beginPath();
+            ctx.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
+            ctx.clip();
         }
+        if (transX || transY)
+            ctx.translate(transX, transY);
         cb(x, y);
-        c.restore();
+        ctx.restore();
     }
 
-    function withAnchor(g, c, anchor, x, y, w, h, cb) {
-        withClip(g, c, x, y, function(x, y) {
+    function withAnchor(g, anchor, x, y, w, h, cb) {
+        withClip(g, x, y, function(x, y) {
             if (anchor & RIGHT)
                 x -= w;
             if (anchor & HCENTER)
@@ -332,39 +314,41 @@
         });
     }
 
-    function withFont(font, c, str, cb) {
-        c.font = font.css;
-        cb(c.measureText(str).width | 0, c);
+    function withFont(font, str, cb) {
+        var ctx = MIDP.Context2D;
+        ctx.font = font.css;
+        cb(ctx.measureText(str).width | 0);
     }
 
-    function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        withClip(g, c, x, y, function(x, y) {
-            withFont(g.class.getField("currentFont", "Ljavax/microedition/lcdui/Font;").get(g), c, str, function(w, c) {
-                c.textAlign = "left";
-                c.textBaseline = "top";
+    function withTextAnchor(g, anchor, x, y, str, cb) {
+        withClip(g, x, y, function(x, y) {
+            withFont(g.class.getField("currentFont", "Ljavax/microedition/lcdui/Font;").get(g), str, function(w) {
+                var ctx = MIDP.Context2D;
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
                 if (anchor & RIGHT)
                     x -= w;
                 if (anchor & HCENTER)
                     x -= (w/2)|0;
                 if (anchor & BOTTOM)
-                    c.textBaseline = "bottom";
+                    ctx.textBaseline = "bottom";
                 if (anchor & VCENTER)
-                    c.textBaseline = "middle";
+                    ctx.textBaseline = "middle";
                 if (anchor & BASELINE)
-                    c.textBaseline = "alphabetic";
+                    ctx.textBaseline = "alphabetic";
                 cb(x, y, w);
             });
         });
     }
 
-    function withPixel(g, c, cb) {
+    function withPixel(g, cb) {
         var pixel = g.class.getField("pixel", "I").get(g);
         var style = "#" + ("00000" + pixel.toString(16)).slice(-6);
-        c.save();
-        c.fillStyle = style;
-        c.strokeStyle = style;
+        MIDP.Context2D.save();
+        MIDP.Context2D.fillStyle = style;
+        MIDP.Context2D.strokeStyle = style;
         cb();
-        c.restore();
+        MIDP.Context2D.restore();
     }
 
     function withSize(dx, dy, cb) {
@@ -384,69 +368,54 @@
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.class.getField("nativeImageData", "I").get(imgData);
-
-        withGraphics(_this, function(c) {
-            withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
-                c.drawImage(texture, x, y);
-            });
+        withAnchor(_this, anchor, x, y, texture.width, texture.height, function(x, y) {
+            MIDP.Context2D.drawImage(texture, x, y);
         });
         stack.push(1);
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
-        // HACK: For now always draw strings on the main canvas;
-        // TODO: figure out why strings drawn offscreen are not copied to the main
-        // canvas and remove this hack
-        (function(c) {
-        //withGraphics(_this, function(c) {
-            withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
-                withPixel(_this, c, function() {
-                    c.fillText(str, x, y);
-                });
+        withTextAnchor(_this, anchor, x, y, str, function(x, y) {
+            withPixel(_this, function() {
+                MIDP.Context2D.fillText(str, x, y);
             });
-        //});
-        })(MIDP.Context2D);
+        });
     }
 
     Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
             len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
             str = util.fromJavaChars(data, offset, len);
-        withGraphics(_this, function(c) {
-            withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
-                withPixel(_this, c, function() {
-                    c.fillText(str, x, y);
-                });
+        withTextAnchor(_this, anchor, x, y, str, function(x, y) {
+            withPixel(_this, function() {
+                MIDP.Context2D.fillText(str, x, y);
             });
         });
     }
 
     Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), chr = String.fromCharCode(stack.pop()), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withTextAnchor(_this, c, anchor, x, y, chr, function(x, y) {
-                withPixel(_this, c, function() {
-                    c.fillText(chr, x, y);
-                });
+        withTextAnchor(_this, anchor, x, y, chr, function(x, y) {
+            withPixel(_this, function() {
+                MIDP.Context2D.fillText(chr, x, y);
             });
         });
     }
 
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(ctx, stack) {
         var y3 = stack.pop(), x3 = stack.pop(), y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x1, y1, function(x, y) {
-                withPixel(_this, c, function() {
-                    withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
-                        withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
-                            c.beginPath();
-                            c.moveTo(x, y);
-                            c.lineTo(x + dx1, y + dy1);
-                            c.lineTo(x + dx2, y + dy2);
-                            c.closePath();
-                            c.fill();
-                        });
+        withClip(_this, x1, y1, function(x, y) {
+            withPixel(_this, function() {
+                withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
+                    withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
+                        var ctx = MIDP.Context2D;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + dx1, y + dy1);
+                        ctx.lineTo(x + dx2, y + dy2);
+                        ctx.closePath();
+                        ctx.fill();
                     });
                 });
             });
@@ -455,12 +424,10 @@
 
     Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
         var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
-                withPixel(_this, c, function() {
-                    withSize(w, h, function(w, h) {
-                        c.strokeRect(x, y, w, h);
-                    });
+        withClip(_this, x, y, function(x, y) {
+            withPixel(_this, function() {
+                withSize(w, h, function(w, h) {
+                    MIDP.Context2D.strokeRect(x, y, w, h);
                 });
             });
         });
@@ -468,12 +435,10 @@
 
     Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
         var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
-                withPixel(_this, c, function() {
-                    withSize(w, h, function(w, h) {
-                        c.fillRect(x, y, w, h);
-                    });
+        withClip(_this, x, y, function(x, y) {
+            withPixel(_this, function() {
+                withSize(w, h, function(w, h) {
+                    MIDP.Context2D.fillRect(x, y, w, h);
                 });
             });
         });
@@ -482,13 +447,11 @@
     Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(ctx, stack) {
         var arcHeight = stack.pop(), arcWidth = stack.pop(),
             h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
-                withPixel(_this, c, function() {
-                    withSize(w, h, function(w, h) {
-                        // TODO implement rounding
-                        c.fillRect(x, y, w, h);
-                    });
+        withClip(_this, x, y, function(x, y) {
+            withPixel(_this, function() {
+                withSize(w, h, function(w, h) {
+                    // TODO implement rounding
+                    MIDP.Context2D.fillRect(x, y, w, h);
                 });
             });
         });
@@ -499,19 +462,17 @@
             height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
             _this = stack.pop();
 
-        withGraphics(_this, function(c) {
-            withPixel(_this, c, function() {
-                // TODO need to use bezierCurveTo to implement this properly,
-                // but this works as a rough hack for now
-                var radius = Math.ceil(Math.max(height, width) / 2);
-                var startRad = startAngle * 0.0175;
-                var arcRad = arcAngle * 0.0175;
-                c.beginPath();
-                c.moveTo(x + radius, y);
-                c.arc(x, y, radius, startRad, arcRad);
-                c.stroke();
-            });
-        });
+        withPixel(_this, function() {
+            // TODO need to use bezierCurveTo to implement this properly,
+            // but this works as a rough hack for now
+            var radius = Math.ceil(Math.max(height, width) / 2);
+            var startRad = startAngle * 0.0175;
+            var arcRad = arcAngle * 0.0175;
+            MIDP.Context2D.beginPath();
+            MIDP.Context2D.moveTo(x + radius, y);
+            MIDP.Context2D.arc(x, y, radius, startRad, arcRad);
+            MIDP.Context2D.stroke();
+        })
     }
 
     Native["javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V"] = function(ctx, stack) {
@@ -519,18 +480,16 @@
             height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
             _this = stack.pop();
 
-        withGraphics(_this, function(c) {
-            withPixel(_this, c, function() {
-                // TODO need to use bezierCurveTo to implement this properly,
-                // but this works as a rough hack for now
-                var radius = Math.ceil(Math.max(height, width) / 2);
-                var startRad = startAngle * 0.0175;
-                var arcRad = arcAngle * 0.0175;
-                c.beginPath();
-                c.moveTo(x + radius, y);
-                c.arc(x, y, radius, startRad, arcRad);
-                c.fill();
-            });
+        withPixel(_this, function() {
+            // TODO need to use bezierCurveTo to implement this properly,
+            // but this works as a rough hack for now
+            var radius = Math.ceil(Math.max(height, width) / 2);
+            var startRad = startAngle * 0.0175;
+            var arcRad = arcAngle * 0.0175;
+            MIDP.Context2D.beginPath();
+            MIDP.Context2D.moveTo(x + radius, y);
+            MIDP.Context2D.arc(x, y, radius, startRad, arcRad);
+            MIDP.Context2D.fill();
         });
     }
 
@@ -548,25 +507,21 @@
             transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.class.getField("nativeImageData", "I").get(imgData);
-
         var w = sw, h = sh;
-        withGraphics(_this, function(c) {
-            withAnchor(_this, c, anchor, x, y, w, h, function(x, y) {
-                c.save();
-                c.translate(x, y);
-                if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
-                    c.scale(-1, 1);
-                if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270)
-                    c.scale(1, -1);
-                if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90)
-                    c.rotate(Math.PI / 2);
-                if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180)
-                    c.rotate(Math.PI);
-                if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
-                    c.rotate(1.5 * Math.PI);
-                c.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
-                c.restore();
-            });
+        withAnchor(_this, anchor, x, y, w, h, function(x, y) {
+            var ctx = MIDP.Context2D;
+            ctx.translate(x, y);
+            if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
+                ctx.scale(-1, 1);
+            if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270)
+                ctx.scale(1, -1);
+            if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90)
+                ctx.rotate(Math.PI / 2);
+            if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180)
+                ctx.rotate(Math.PI);
+            if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
+                ctx.rotate(1.5 * Math.PI);
+            MIDP.Context2D.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
         });
         stack.push(1);
     }
@@ -574,17 +529,15 @@
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(ctx, stack) {
         var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop(),
             dx = x2 - x1, dy = y2 - y1;
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x1, y1, function(x, y) {
-                withSize(dx, dy, function(dx, dy) {
-                    withPixel(_this, c, function() {
-                        var ctx = MIDP.Context2D;
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + dx, y + dy);
-                        ctx.stroke();
-                        ctx.closePath();
-                    });
+        withClip(_this, x1, y1, function(x, y) {
+            withSize(dx, dy, function(dx, dy) {
+                withPixel(_this, function() {
+                    var ctx = MIDP.Context2D;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + dx, y + dy);
+                    ctx.stroke();
+                    ctx.closePath();
                 });
             });
         });
@@ -597,10 +550,9 @@
         texture.width = width;
         texture.height = height;
         (processAlpha ? textureFromRGBA : textureFromRGB)(texture, rgbData, offset, scanlength);
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
-                c.drawImage(texture, x, y);
-            });
+        var ctx = MIDP.Context2D;
+        withClip(_this, x, y, function(x, y) {
+            ctx.drawImage(canvas, x, y);
         });
     }
 })(Native);
