@@ -4,8 +4,9 @@
 'use strict';
 
 function Runtime() {
-  this.initialized = Object.create(null);
-  this.pending = Object.create(null);
+  this.initialized = {};
+  this.pending = {};
+  this.staticFields = {};
 }
 
 Runtime.prototype.newPrimitiveArray = function(type, size) {

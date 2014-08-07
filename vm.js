@@ -879,7 +879,7 @@ VM.execute = function(ctx) {
                 field = resolve(op, idx);
                 classInitCheck(field.classInfo, frame.ip-3);
             }
-            var value = field.value;
+            var value = ctx.runtime.staticFields[field.id];
             if (typeof value === "undefined") {
                 value = util.defaultValue(field.signature);
             }
@@ -892,7 +892,7 @@ VM.execute = function(ctx) {
                 field = resolve(op, idx);
                 classInitCheck(field.classInfo, frame.ip-3);
             }
-            field.value = stack.popType(field.signature);
+            ctx.runtime.staticFields[field.id] = stack.popType(field.signature);
             break;
         case 0xbb: // new
             var idx = frame.read16();
