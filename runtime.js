@@ -19,6 +19,13 @@ Runtime.prototype.waitStatus = function(callback) {
   throw VM.Pause;
 }
 
+Runtime.prototype.unwaitStatus = function(callback) {
+  var index = this.waiting.indexOf(callback);
+  if (index != -1) {
+    this.waiting.splice(index, 1);
+  }
+}
+
 Runtime.prototype.setStatus = function(status) {
   this.status = status;
   this.notifyStatusChange();
