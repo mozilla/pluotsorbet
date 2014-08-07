@@ -5,7 +5,7 @@
 
 function Runtime(vm) {
   this.vm = vm;
-  this.status = 2; // STARTED
+  this.status = 1; // NEW
   this.waiting = [];
   this.threadCount = 0;
   this.initialized = {};
@@ -19,12 +19,8 @@ Runtime.prototype.waitStatus = function(callback) {
   throw VM.Pause;
 }
 
-Runtime.prototype.setStatus = function(status) {
+Runtime.prototype.updateStatus = function(status) {
   this.status = status;
-  this.notifyStatusChange();
-}
-
-Runtime.prototype.notifyStatusChange = function() {
   var waiting = this.waiting;
   this.waiting = [];
   waiting.forEach(function(callback) {
@@ -37,10 +33,8 @@ Runtime.prototype.addContext = function(ctx) {
 }
 
 Runtime.prototype.removeContext = function(ctx) {
-  if (!--this.threadCount) {
-    this.runtime = 4; // STOPPED
-    this.notifyStatusChange();
-  }
+  if (!--this.threadCount)
+    this.updateStatus(4); // STOPPED
 }
 
 Runtime.prototype.newPrimitiveArray = function(type, size) {
