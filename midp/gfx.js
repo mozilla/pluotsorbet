@@ -217,9 +217,9 @@
         var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
         var defaultSize = Math.max(10, (MIDP.Context2D.canvas.height / 48) | 0);
         if (size & SIZE_SMALL)
-            size = defaultSize / 1.5;
+            size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
-            size = defaultSize * 1.5;
+            size = defaultSize * 1.25;
         else
             size = defaultSize;
         size |= 0;
