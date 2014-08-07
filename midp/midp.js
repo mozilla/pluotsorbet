@@ -616,6 +616,10 @@ Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack)
     var _this = stack.pop();
 }
 
+Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(ctx, stack) {
+    var permissions = stack.pop(), pushOptions = stack.pop(), pushInterruptSetting = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+}
+
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
     var _this = stack.pop();
 }
@@ -1126,4 +1130,14 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = functi
     fs.write(fd, byteArray.subarray(offset, offset+count), _this.pos);
 
     _this.pos += count;
+}
+
+Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
+    var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+    stack.push(1);
+}
+
+Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(ctx, stack) {
+  var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+  stack.push(1);
 }

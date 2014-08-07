@@ -75,6 +75,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "microedition.platform":
         value = "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
+    case "microedition.profiles":
+        value = "MIDP-2.0"
+        break;
     case "fileconn.dir.memorycard":
         value = "fcfile:///tmp/";
         break;
