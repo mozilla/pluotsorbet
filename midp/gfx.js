@@ -531,12 +531,14 @@
             dx = x2 - x1, dy = y2 - y1;
         withClip(_this, x1, y1, function(x, y) {
             withSize(dx, dy, function(dx, dy) {
-                var ctx = MIDP.Context2D;
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + dx, y + dy);
-                ctx.stroke();
-                ctx.closePath();
+                withPixel(_this, function() {
+                    var ctx = MIDP.Context2D;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x + dx, y + dy);
+                    ctx.stroke();
+                    ctx.closePath();
+                });
             });
         });
     }
