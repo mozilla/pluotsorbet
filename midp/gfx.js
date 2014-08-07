@@ -468,10 +468,29 @@
             var radius = Math.ceil(Math.max(height, width) / 2);
             var startRad = startAngle * 0.0175;
             var arcRad = arcAngle * 0.0175;
+            MIDP.Context2D.beginPath();
             MIDP.Context2D.moveTo(x + radius, y);
             MIDP.Context2D.arc(x, y, radius, startRad, arcRad);
             MIDP.Context2D.stroke();
         })
+    }
+
+    Native["javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V"] = function(ctx, stack) {
+        var arcAngle = stack.pop(), startAngle = stack.pop(),
+            height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
+            _this = stack.pop();
+
+        withPixel(_this, function() {
+            // TODO need to use bezierCurveTo to implement this properly,
+            // but this works as a rough hack for now
+            var radius = Math.ceil(Math.max(height, width) / 2);
+            var startRad = startAngle * 0.0175;
+            var arcRad = arcAngle * 0.0175;
+            MIDP.Context2D.beginPath();
+            MIDP.Context2D.moveTo(x + radius, y);
+            MIDP.Context2D.arc(x, y, radius, startRad, arcRad);
+            MIDP.Context2D.fill();
+        });
     }
 
     var TRANS_NONE = 0;
