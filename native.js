@@ -156,6 +156,10 @@ Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
     if (runtime.initialized[className] || runtime.pending[className])
         return;
     runtime.pending[className] = true;
+    if (className === "com/sun/cldc/isolate/Isolate") {
+        // The very first isolate is granted access to the isolate API.
+        ctx.runtime.setStatic(CLASSES.getField(classInfo, "_API_access_ok", "I", true), 1);
+    }
     var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true);
     if (clinit)
         ctx.pushFrame(clinit, 0);
@@ -524,4 +528,8 @@ Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(ctx, s
 Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
     var _this = stack.pop();
     _this.target = null;
+}
+
+Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
 }

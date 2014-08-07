@@ -46,3 +46,11 @@ Runtime.prototype.newString = function(s) {
   CLASSES.java_lang_String.getField("count", "I").set(obj, length);
   return obj;
 }
+
+Runtime.prototype.setStatic = function(field, value) {
+  this.staticFields[field.id] = value;
+}
+
+Runtime.prototype.getStatic = function(field) {
+  return this.staticFields[field.id];
+}
