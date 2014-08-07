@@ -5,7 +5,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 2, function(test) {
+casper.test.begin("unit tests", 3, function(test) {
     casper
     .start("http://localhost:8000/index.html?main=RunTests")
     .waitForText("DONE", function then() {
@@ -15,20 +15,13 @@ casper.test.begin("unit tests", 2, function(test) {
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate")
     .waitForText("DONE", function then() {
-    	test.assertTextExists("\
-m\n\
-a ma\n\
-ma\n\
-ma\n\
-ma\n\
-1 m1\n\
-2 m2\n\
-ma\n\
-r mar\n\
-mar\n\
-c marc\n\
-marc\n\
-");
+        test.assertTextExists("m\na ma\n\ma\nma\nma\n1 m1\n2 m2\nma\nr mar\nmar\nc marc\nmarc\n");
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=gfx/CanvasTest")
+    .waitForText("PAINTED", function then() {
+        test.assert(true);
     });
 
     casper
