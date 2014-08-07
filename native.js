@@ -388,7 +388,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     var thread = stack.pop();
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
-    if (thread === CLASSES.mainThread || thread.alive)
+    if (thread === ctx.runtime.mainThread || thread.alive)
         ctx.raiseException("java/lang/IllegalThreadStateException");
     thread.alive = true;
     thread.pid = util.id();
