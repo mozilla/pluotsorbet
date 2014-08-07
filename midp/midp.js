@@ -616,6 +616,10 @@ Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack)
     var _this = stack.pop();
 }
 
+Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(ctx, stack) {
+    var permissions = stack.pop(), pushOptions = stack.pop(), pushInterruptSetting = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+}
+
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
     var _this = stack.pop();
 }
