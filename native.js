@@ -558,10 +558,10 @@ Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
     var status = stack.pop(), _this = stack.pop();
     var runtime = _this.runtime;
-    if (runtime.status > status)
+    if (runtime.status >= status)
         return;
     function waitForStatus() {
-        if (runtime.status > status) {
+        if (runtime.status >= status) {
             ctx.resume();
             return;
         }
