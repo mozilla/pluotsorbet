@@ -1140,3 +1140,13 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = functi
 
     _this.pos += count;
 }
+
+Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
+    var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+    stack.push(1);
+}
+
+Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(ctx, stack) {
+    var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+    stack.push(1);
+}
