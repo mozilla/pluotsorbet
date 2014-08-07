@@ -538,10 +538,7 @@ Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, st
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
     var _this = stack.pop();
-    // XXX Use ctx.runtime, although it's the wrong status if we're called
-    // on a different isolate from the current one.  Why isn't _this.runtime
-    // defined here?
-    stack.push(ctx.runtime.status);
+    stack.push(_this.runtime.status);
 }
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
@@ -551,21 +548,7 @@ Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
     mainArgs.forEach(function(str, n) {
         mainArgs[n] = util.fromJavaString(str);
     });
-    _this.runtime = ctx.runtime.vm.run(mainClass, mainArgs);
-}
-
-Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
-    var status = stack.pop(), _this = stack.pop();
-    var runtime = _this.runtime;
-    console.log(runtime.toSource());
-    function waitForStatus() {
-        if (runtime.status >= status) {
-            ctx.resume();
-            return;
-        }
-        runtime.waitStatus(ctx, waitForStatus);
-    }
-    waitForStatus();
+    ctx.runtime.vm.run(mainClass, mainArgs, _this);
 }
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {

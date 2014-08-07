@@ -17,7 +17,7 @@ JVM.prototype.addPath = function(path, data) {
     return CLASSES.addPath(path, data);
 }
 
-JVM.prototype.run = function(className, args) {
+JVM.prototype.run = function(className, args, isolate) {
     var classInfo = CLASSES.getClass(className.replace(/\./g, "/"));
     if (!classInfo)
         throw new Error("Could not find or load main class " + className);
@@ -27,6 +27,9 @@ JVM.prototype.run = function(className, args) {
         throw new Error("Could not find main method in class " + className);
 
     var runtime = new Runtime(this);
+    if (isolate) {
+        isolate.runtime = runtime;
+    }
     var ctx = new Context(runtime);
 
     var caller = new Frame();
@@ -52,6 +55,4 @@ JVM.prototype.run = function(className, args) {
     caller.stack.push(arr);
     ctx.pushFrame(entryPoint, 1);
     ctx.start(caller);
-
-    return runtime;
 }
