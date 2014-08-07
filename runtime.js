@@ -26,10 +26,12 @@ Runtime.prototype.updateStatus = function(status) {
   waiting.forEach(function(callback) {
     try {
       callback();
-    } catch(ex if ex instanceof VM.Pause) {
+    } catch(ex) {
       // If the callback calls Runtime.prototype.waitStatus to continue waiting,
-      // then calling it will throw VM.Pause, which shouldn't propagate up to
-      // the caller of Runtime.prototype.updateStatus.
+      // then waitStatus will throw VM.Pause, which shouldn't propagate up to
+      // the caller of Runtime.prototype.updateStatus, so we silently ignore it
+      // (along with any other exceptions thrown by the callback, so they don't
+      // propagate to the caller of updateStatus).
     }
   });
 }
