@@ -27,7 +27,6 @@ function parseManifest(data) {
   .split("\n")
   .forEach(function(entry) {
     if (entry) {
-      console.info(entry);
       var keyval = entry.split(':');
       MIDP.manifest[keyval[0]] = keyval[1].trim();
     }
