@@ -628,17 +628,13 @@ Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
 
 Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
     var _this = stack.pop();
-
     var keys = Object.keys(MIDP.manifest);
-
     var arr = ctx.newArray("[Ljava/lang/String;", keys.length * 2);
-
     var i = 0;
     keys.forEach(function(key) {
       arr[i++] = ctx.newString(key);
       arr[i++] = ctx.newString(MIDP.manifest[key]);
     });
-
     stack.push(arr);
 }
 
