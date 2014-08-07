@@ -180,10 +180,7 @@ Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
 }
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {
-    var classObject = stack.pop();
-    stack.push(util.cache(classObject, "getName", function () {
-        return ctx.newString(classObject.vmClass.className.replace(/\//g, "."));
-    }));
+    stack.push(ctx.newString(stack.pop().vmClass.className.replace(/\//g, ".")));
 }
 
 Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(ctx, stack) {
@@ -456,6 +453,10 @@ Native["java/lang/Thread.sleep.(J)V"] = function(ctx, stack) {
 
 Native["java/lang/Thread.yield.()V"] = function(ctx, stack) {
     throw VM.Yield;
+}
+
+Native["java/lang/Thread.activeCount.()I"] = function(ctx, stack) {
+    stack.push(ctx.runtime.threadCount);
 }
 
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {

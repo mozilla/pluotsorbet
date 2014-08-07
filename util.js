@@ -70,12 +70,6 @@ var util = (function () {
     return fromJavaChars(chars, offset, count);
   }
 
-  function cache(obj, name, fn) {
-    name = "cache$" + name;
-    var result = obj[name];
-    return result ? result : obj[name] = fn();
-  }
-
   var id = (function() {
     var gen = 0;
     return function() {
@@ -103,7 +97,6 @@ var util = (function () {
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
-    cache: cache,
     id: id,
     tag: tag,
   };

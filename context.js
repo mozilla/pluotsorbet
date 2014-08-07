@@ -4,8 +4,13 @@
 'use strict';
 
 function Context(runtime) {
-  this.runtime = runtime;
   this.frames = [];
+  this.runtime = runtime;
+  this.runtime.addContext(this);
+}
+
+Context.prototype.kill = function() {
+  this.runtime.removeContext(this);
 }
 
 Context.prototype.current = function() {
@@ -120,8 +125,10 @@ Context.prototype.execute = function(stopFrame) {
 }
 
 Context.prototype.start = function(stopFrame) {
-  if (this.current() === stopFrame)
+  if (this.current() === stopFrame) {
+    this.kill();
     return;
+  }
   var ctx = this;
   ctx.stopFrame = stopFrame;
   window.setZeroTimeout(function() {

@@ -5,9 +5,24 @@
 
 function Runtime(vm) {
   this.vm = vm;
+  this.waiting = [];
+  this.threadCount = 0;
   this.initialized = {};
   this.pending = {};
   this.staticFields = {};
+  this.classObjects = {};
+}
+
+Runtime.prototype.addContext = function(ctx) {
+  ++this.threadCount;
+}
+
+Runtime.prototype.removeContext = function(ctx) {
+  if (!--this.threadCount) {
+    this.waiting.forEach(function(ctx) {
+      ctx.resume();
+    });
+  }
 }
 
 Runtime.prototype.newPrimitiveArray = function(type, size) {
