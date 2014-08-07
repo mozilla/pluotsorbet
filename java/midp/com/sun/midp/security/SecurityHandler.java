@@ -208,10 +208,9 @@ public final class SecurityHandler {
     	
     	MIDletSuite current =
             MIDletStateHandler.getMidletStateHandler().getMIDletSuite();
-        System.out.println("THISCHECKFORPERMISSION");
+
         if (current != null) {
             // can throw SecurityException
-            System.out.println("HERE");
             int permId = Permissions.getId(permission);
             if (checkPermission0(current.getID(), permId)) {
                 return false;
