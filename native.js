@@ -90,6 +90,12 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "com.nokia.keyboard.type":
         value = "FullKeyboard";
         break;
+    case "javax.microedition.io.Connector.protocolpath":
+        value = "com.sun.cldc.io";
+        break;
+    case "javax.microedition.io.Connector.protocolpath.fallback":
+        value = "com.sun.midp.io";
+        break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
