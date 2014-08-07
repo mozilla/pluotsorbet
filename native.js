@@ -552,6 +552,13 @@ Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
         mainArgs[n] = util.fromJavaString(str);
     });
     ctx.runtime.vm.run(mainClass, mainArgs, _this);
+    try {
+        _this.runtime.updateStatus(2 /* STARTED */);
+    } catch(ex) {
+        // If another isolate is awaiting this one's status, then updating it
+        // might rethrow VM.yield, which we don't want to do here, so we catch
+        // and discard the exception.
+    }
 }
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
