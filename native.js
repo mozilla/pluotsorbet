@@ -149,9 +149,11 @@ Native["java/lang/Object.notifyAll.()V"] = function(ctx, stack) {
 Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
     var classObject = stack.pop();
     var classInfo = classObject.vmClass;
-    if (classInfo.initialized || classInfo.pending)
+    var className = classInfo.className;
+    var runtime = ctx.runtime;
+    if (runtime.initialized[className] || runtime.pending[className])
         return;
-    classInfo.pending = true;
+    runtime.pending[className] = true;
     var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true);
     if (clinit)
         ctx.pushFrame(clinit, 0);
@@ -163,10 +165,12 @@ Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
 Native["java/lang/Class.init9.()V"] = function(ctx, stack) {
     var classObject = stack.pop();
     var classInfo = classObject.vmClass;
-    if (classInfo.initialized)
+    var className = classInfo.className;
+    var runtime = ctx.runtime;
+    if (runtime.initialized[className])
         return;
-    classInfo.pending = false;
-    classInfo.initialized = true;
+    runtime.pending[className] = false;
+    runtime.initialized[className] = true;
 }
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(ctx, stack) {

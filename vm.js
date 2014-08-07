@@ -94,7 +94,7 @@ VM.execute = function(ctx) {
     }
 
     function classInitCheck(classInfo, ip) {
-        if (classInfo.initialized)
+        if (ctx.runtime.initialized[classInfo.className])
             return;
         frame.ip = ip;
         ctx.pushClassInitFrame(classInfo);

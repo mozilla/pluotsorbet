@@ -4,6 +4,8 @@
 'use strict';
 
 function Runtime() {
+  this.initialized = Object.create(null);
+  this.pending = Object.create(null);
 }
 
 Runtime.prototype.newPrimitiveArray = function(type, size) {

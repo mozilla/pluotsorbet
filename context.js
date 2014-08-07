@@ -31,7 +31,7 @@ Context.prototype.popFrame = function() {
 }
 
 Context.prototype.pushClassInitFrame = function(classInfo) {
-  if (classInfo.initialized)
+  if (this.runtime.initialized[classInfo.className])
     return;
   classInfo.thread = this.thread;
   var syntheticMethod = {
