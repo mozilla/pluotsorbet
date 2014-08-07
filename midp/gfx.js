@@ -215,7 +215,7 @@
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
         var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
-        var defaultSize = Math.max(12, (MIDP.Context2D.canvas.height / 40) | 0);
+        var defaultSize = Math.max(10, (MIDP.Context2D.canvas.height / 48) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.5;
         else if (size & SIZE_LARGE)
