@@ -49,7 +49,7 @@ JVM.prototype.startIsolate0 = function(className, args) {
 
     caller.stack.push(isolate);
     ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "start", "()V"), 1);
-    ctx.execute(caller);
+    ctx.start(caller);
 }
 
 JVM.prototype.startIsolate = function(isolate) {
