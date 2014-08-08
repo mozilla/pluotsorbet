@@ -537,13 +537,23 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Lja
     stack.push(ctx.newString(""));
 }
 
-Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
-    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), path = util.fromJavaString(stack.pop());
-    stack.push(0);
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var id = stack.pop();
+    stack.push(ctx.newString(id.toString()));
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(ctx, stack) {
     var id = stack.pop();
+    stack.push(0);
+}
+
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteJarPath.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var id = stack.pop(), _this = stack.pop();
+    stack.push(ctx.newString(""));
+}
+
+Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), path = util.fromJavaString(stack.pop());
     stack.push(0);
 }
 
@@ -614,8 +624,13 @@ Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = funct
     var lock = stack.pop(), id = stack.pop();
 }
 
+Native["com/sun/midp/midletsuite/MIDletSuiteImpl.unlockMIDletSuite.(I)V"] = function(ctx, stack) {
+    var suiteId = stack.pop();
+}
+
 Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
+    var suiteSettings = stack.pop();
+    suiteSettings.class.getField("pushInterruptSetting", "B").set(suiteSettings, 1);
 }
 
 Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(ctx, stack) {
@@ -864,10 +879,70 @@ Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = f
     var displayId = stack.pop(), isolateId = stack.pop(), _this = stack.pop();
 }
 
+var alarms = [];
+var lastAlarmId = -1;
+
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
-    var time = stack.pop(), _this = stack.pop();
+    var time = stack.pop2().toNumber(), _this = stack.pop();
+
+    // TODO: Put the thread to sleep until a connection arrives / an alarm is triggered
     // Wait for incoming connections
+    setTimeout(function() {
+        var id = -1;
+
+        for (var i = 0; i < alarms.length; i++) {
+            if (alarms[i].time < Date.now()) {
+                id = alarms[i].id;
+                break;
+            }
+        }
+
+        stack.push(id);
+        ctx.resume();
+    }, 5000);
+
     throw VM.Pause;
+}
+
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(ctx, stack) {
+    var time = stack.pop2().toNumber(), midlet = util.decodeUtf8(stack.pop());
+
+    var lastAlarm = 0;
+    for (var i = 0; i < alarms.length; i++) {
+        if(alarms[i].midlet == midlet) {
+            if (time != 0) {
+                lastAlarm = alarms[i].time;
+                alarms[i].time = time;
+            } else {
+                alarms.splice(i, 1);
+            }
+
+            break;
+        }
+    }
+
+    if (lastAlarm == 0 && time != 0) {
+      alarms.push({
+        midlet: midlet,
+        id: ++lastAlarmId,
+        time: time,
+      });
+    }
+
+    stack.push2(Long.fromNumber(lastAlarm));
+}
+
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(ctx, stack) {
+  var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
+
+  var midlet = alarms[handle].midlet;
+
+  for (var i = 0; i < midlet.length; i++) {
+    regentry[i] = midlet.charCodeAt(i);
+  }
+  regentry[midlet.length] = 0;
+
+  stack.push(0);
 }
 
 Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureListener;)V"] = function(ctx, stack) {
