@@ -32,6 +32,7 @@ JVM.prototype.startIsolate0 = function(className, args) {
     var com_sun_cldc_isolate_Isolate = CLASSES.getClass("com/sun/cldc/isolate/Isolate");
 
     var isolate = ctx.newObject(com_sun_cldc_isolate_Isolate);
+    isolate.id = util.id();
 
     var caller = new Frame();
     ctx.frames.push(caller);
@@ -48,7 +49,7 @@ JVM.prototype.startIsolate0 = function(className, args) {
 
     caller.stack.push(isolate);
     ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "start", "()V"), 1);
-    ctx.execute(caller);
+    ctx.start(caller);
 }
 
 JVM.prototype.startIsolate = function(isolate) {
