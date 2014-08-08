@@ -84,7 +84,7 @@ var fs = (function() {
 
     var buffer = openedFiles[fd].buffer;
 
-    if (!from) {
+    if (typeof from == "undefined") {
       from = openedFiles[fd].position;
     }
 
@@ -96,6 +96,7 @@ var fs = (function() {
       return null;
     }
 
+    openedFiles[fd].position += to - from;
     return buffer.subarray(from, to);
   }
 
