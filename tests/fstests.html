@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="initial-scale=1.0">
+  <script type="text/javascript" src="../libs/async_storage.js" defer></script>
+  <script type="text/javascript" src="../libs/fs.js" defer></script>
+  <script type="text/javascript">
+  console.log = function() {
+    var s = Array.prototype.join.call(arguments, ",") +"\n";
+    document.getElementById("log").textContent += s;
+  }
+  </script>
+  <script type="text/javascript" src="fstests.js" defer></script>
+</head>
+
+<body>
+  <div>
+    Log:
+    <pre id="log"></pre>
+  </div>
+</body>
+
+</html>
