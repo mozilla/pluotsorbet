@@ -51,7 +51,7 @@ JVM.prototype.run = function(className, args, isolate) {
 
     var arr = ctx.newArray("[Ljava/lang/String;", args.length);
     for (var n = 0; n < args.length; ++n)
-        arr[n] = ctx.newString(args[n]);
+        arr[n] = args[n] ? ctx.newString(args[n]) : null;
     caller.stack.push(arr);
     ctx.pushFrame(entryPoint, 1);
     ctx.start(caller);
