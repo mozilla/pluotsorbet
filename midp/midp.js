@@ -363,6 +363,10 @@ Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(ctx, s
     var midletIsolateId = stack.pop();
 }
 
+Native["com/sun/midp/main/AppIsolateMIDletSuiteLoader.allocateReservedResources0.()Z"] = function(ctx, stack) {
+  stack.push(1);
+}
+
 Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
     var key = stack.pop();
     var value;
