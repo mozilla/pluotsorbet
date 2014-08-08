@@ -565,6 +565,7 @@ Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/St
     });
 
     throw VM.Pause;
+}
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var id = stack.pop();
