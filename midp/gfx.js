@@ -303,7 +303,6 @@
         var transX = g.class.getField("transX", "I").get(g),
             transY = g.class.getField("transY", "I").get(g),
             translate = transX || transY;
-
         if (translate) {
             c.save();
             c.translate(transX, transY);
@@ -396,7 +395,6 @@
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.class.getField("nativeImageData", "I").get(imgData);
-
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
                 withTranslate(_this, c, function() {
@@ -533,7 +531,6 @@
         var arcAngle = stack.pop(), startAngle = stack.pop(),
             height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
             _this = stack.pop();
-
         withGraphics(_this, function(c) {
             withPixel(_this, c, function() {
                 // TODO need to use bezierCurveTo to implement this properly,
