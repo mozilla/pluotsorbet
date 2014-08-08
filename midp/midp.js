@@ -649,13 +649,17 @@ Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, s
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(ctx, stack) {
-    var fileId = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V");
+    var handle = stack.pop();
+    fs.flush(handle, function() {
+        ctx.resume();
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack) {
-    var fileId = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreFile.closeFile.(I)V");
+    var handle = stack.pop();
+    fs.close(handle);
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] = function(ctx, stack) {
