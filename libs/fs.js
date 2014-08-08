@@ -71,7 +71,9 @@ var fs = (function() {
 
   function close(fd) {
     if (fd >= 0) {
-      openedFiles.splice(fd, 1);
+      // Replace descriptor object with null value instead of removing it from
+      // the array so we don't change the indexes of the other objects.
+      openedFiles.splice(fd, 1, null);
     }
   }
 
