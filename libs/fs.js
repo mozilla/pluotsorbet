@@ -8,7 +8,7 @@ var fs = (function() {
     }
 
     // Coalesce multiple consecutive slashes.
-    path.replace(/\/{2,}/, "/");
+    path = path.replace(/\/{2,}/, "/");
 
     // XXX Replace "." and ".." parts.
 
@@ -16,6 +16,8 @@ var fs = (function() {
   }
 
   function dirname(path) {
+    path = normalizePath(path);
+
     var index = path.lastIndexOf("/");
     if (index == -1) {
       return ".";
