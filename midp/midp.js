@@ -840,6 +840,22 @@ Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx
     }
 }
 
+MIDP.keyMap = {
+    1: 33, // UP
+    2: 37, // LEFT
+    5: 39, // RIGHT
+    6: 40, // DOWN
+    8: 32, // FIRE
+    9: 49, // GAME_A
+    10: 50, // GAME_B
+    11: 51, // GAME_C
+    12: 52, // GAME_D
+};
+
+Native["javax/microedition/lcdui/KeyConverter.getKeyCode.(I)I"] = function(ctx, stack) {
+    stack.push(MIDP.keyMap[stack.pop()] | 0);
+}
+
 Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var keyCode = stack.pop();
     stack.push(ctx.newString(String.fromCharCode(keyCode)));
