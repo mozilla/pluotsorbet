@@ -568,13 +568,7 @@ Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    var mainClass = util.fromJavaString(_this.class.getField("_mainClass", "Ljava/lang/String;", false).get(_this));
-    var mainArgs = _this.class.getField("_mainArgs", "[Ljava/lang/String;", false).get(_this);
-    mainArgs.forEach(function(str, n) {
-        mainArgs[n] = util.fromJavaString(str);
-    });
-    ctx.runtime.vm.run(mainClass, mainArgs, _this);
-    _this.runtime.updateStatus(2 /* STARTED */);
+    ctx.runtime.vm.startIsolate(_this);
 }
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {

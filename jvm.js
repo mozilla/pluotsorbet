@@ -17,6 +17,16 @@ JVM.prototype.addPath = function(path, data) {
     return CLASSES.addPath(path, data);
 }
 
+JVM.prototype.startIsolate = function(isolate) {
+    var mainClass = util.fromJavaString(isolate.class.getField("_mainClass", "Ljava/lang/String;", false).get(isolate));
+    var mainArgs = isolate.class.getField("_mainArgs", "[Ljava/lang/String;", false).get(isolate);
+    mainArgs.forEach(function(str, n) {
+        mainArgs[n] = util.fromJavaString(str);
+    });
+    this.run(mainClass, mainArgs, isolate);
+    isolate.runtime.updateStatus(2 /* STARTED */);
+}
+
 JVM.prototype.run = function(className, args, isolate) {
     var classInfo = CLASSES.getClass(className.replace(/\./g, "/"));
     if (!classInfo)
