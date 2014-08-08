@@ -251,8 +251,8 @@ public final class SecurityInitializer {
 
 
 
-
-
+        "com.sun.midp.util.isolate.SecurityTokenProvider$SecurityTrusted",
+        "com.sun.midp.io.j2me.pipe.SecurityTokenProvider$SecurityTrusted",
 
 
 
@@ -263,12 +263,12 @@ public final class SecurityInitializer {
         "com.sun.mmedia.MMEventHandler$SecurityTrusted",
 
         
-
-
-
-
+        "com.sun.midp.main.AmsUtil$SecurityTrusted",
+        "com.sun.midp.io.j2me.pipe.Protocol$SecurityTrusted",
+        "com.sun.midp.installer.AutoTester$SecurityTrusted",
 
         
+
 
 
 
