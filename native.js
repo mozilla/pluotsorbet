@@ -111,9 +111,10 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "com.nokia.mid.ui.version":
         value = "1.6";
         break;
+    case "classpathext":
+        break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
-        value = null;
         break;
     }
     stack.push(value ? ctx.newString(value) : null);
