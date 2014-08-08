@@ -2,9 +2,16 @@
 
 var fs = (function() {
   function normalizePath(path) {
+    // Remove a trailing slash.
     if (path.length != 1 && path.lastIndexOf("/") == path.length-1) {
       path = path.substring(0, path.length-1);
     }
+
+    // Coalesce multiple consecutive slashes.
+    path.replace(/\/{2,}/, "/");
+
+    // XXX Replace "." and ".." parts.
+
     return path;
   }
 
@@ -221,6 +228,51 @@ var fs = (function() {
     createInternal(path, [], cb);
   }
 
+  function mkdirp(path, cb) {
+    if (path[0] !== "/") {
+      console.error("mkdirp called on relative path: " + path);
+      cb(false);
+    }
+
+    // Split the path into parts across "/", discarding the initial, empty part.
+    var parts = normalizePath(path).split("/").slice(1);
+
+    var partPath = "";
+
+    function mkpart(created) {
+      if (!created) {
+        return cb(false);
+      }
+
+      if (!parts.length) {
+        return cb(true);
+      }
+
+      partPath += "/" + parts.shift();
+
+      exists(partPath, function(exists) {
+        if (exists) {
+          list(partPath, function(files) {
+            if (files) {
+              // The part exists and is a directory; continue to next part.
+              mkpart(true);
+            }
+            else {
+              // The part exists but isn't a directory; fail.
+              console.error("mkdirp called on path with non-dir part: " + partPath);
+              cb(false);
+            }
+          });
+        } else {
+          // The part doesn't exist; make it, then continue to next part.
+          mkdir(partPath, mkpart);
+        }
+      });
+    }
+
+    mkpart(true);
+  }
+
   function size(path, cb) {
     path = normalizePath(path);
 
@@ -234,6 +286,7 @@ var fs = (function() {
   }
 
   return {
+    dirname: dirname,
     init: init,
     open: open,
     close: close,
@@ -246,6 +299,7 @@ var fs = (function() {
     remove: remove,
     create: create,
     mkdir: mkdir,
+    mkdirp: mkdirp,
     size: size,
   };
 })();

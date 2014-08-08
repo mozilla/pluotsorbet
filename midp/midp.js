@@ -3,6 +3,8 @@
 
 'Use strict';
 
+const RECORD_STORE_BASE = "/RecordStore";
+
 var MIDP = {
 };
 
@@ -540,7 +542,8 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Lja
 Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
     var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop());
 
-    var path = "/RecordStore/" + filenameBase + "/" + name + "." + ext;
+    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
+
     fs.exists(path, function(exists) {
         stack.push(exists ? 1 : 0);
         ctx.resume();
@@ -573,9 +576,60 @@ console.warn("com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(ctx, stack) {
-    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), base = util.fromJavaString(stack.pop()), _this = stack.pop();
-    stack.push(0);
-console.warn("com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I");
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop()), _this = stack.pop();
+
+    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
+
+    function openCallback(fd) {
+        if (fd == -1) {
+            try {
+              ctx.raiseException("java/io/IOException", "openRecordStoreFile: open failed");
+            } catch(ex) {
+              // Catch and ignore the VM.Yield exception that Context.raiseException
+              // throws.
+            }
+        } else {
+            stack.push(fd); // handle
+        }
+        ctx.resume();
+    }
+
+    fs.exists(path, function(exists) {
+        if (exists) {
+            fs.open(path, openCallback);
+        } else {
+            // Per the reference impl, create the file if it doesn't exist.
+            var dirname = fs.dirname(path);
+            fs.mkdirp(dirname, function(created) {
+                if (created) {
+                    fs.create(path, new Blob(), function(created) {
+                        if (created) {
+                            fs.open(path, openCallback);
+                        }
+                        else {
+                            try {
+                                ctx.raiseException("java/io/IOException", "openRecordStoreFile: create failed");
+                            } catch(ex) {
+                                // Catch and ignore the VM.Yield exception that Context.raiseException
+                                // throws.
+                            }
+                            ctx.resume();
+                        }
+                    });
+                } else {
+                    try {
+                        ctx.raiseException("java/io/IOException", "openRecordStoreFile: mkdirp failed");
+                    } catch(ex) {
+                        // Catch and ignore the VM.Yield exception that Context.raiseException
+                        // throws.
+                    }
+                    ctx.resume();
+                }
+            });
+        }
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(ctx, stack) {
