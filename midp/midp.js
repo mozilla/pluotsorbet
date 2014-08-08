@@ -570,9 +570,13 @@ Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/la
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I"] = function(ctx, stack) {
-    var storageId = stack.pop(), base = util.fromJavaString(stack.pop()), handle = stack.pop();
-    stack.push(10 * 4096 * 4096);
-console.warn("com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I");
+    var storageId = stack.pop(), filenameBase = util.fromJavaString(stack.pop()), handle = stack.pop();
+
+    // Pretend there is 50MiB available.  Our implementation is backed
+    // by IndexedDB, which has no actual limit beyond space available on device,
+    // which I don't think we can determine.  But this should be sufficient
+    // to convince the MIDlet to use the API as needed.
+    stack.push(50 * 1024 * 1024);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(ctx, stack) {
