@@ -596,6 +596,15 @@ Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function(ctx, stack) {
     stack.push(_this.id);
 }
 
+Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function(ctx, stack) {
+    var isolates = ctx.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
+    var n = 0;
+    Runtime.all.forEach(function (runtime) {
+        isolates[n] = runtime.isolate[n++];
+    });
+    stack.push(isolates);
+}
+
 var links = {};
 var waitingForLinks = {};
 
