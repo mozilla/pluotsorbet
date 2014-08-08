@@ -112,6 +112,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "1.6";
         break;
     case "classpathext":
+        value = null;
         break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
