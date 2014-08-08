@@ -341,18 +341,19 @@ Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function(ctx, 
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(ctx, stack) {
-    stack.push(0);
+    stack.push(ctx.runtime.isolate.id);
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function(ctx, stack) {
+    MIDP.AMSIsolateId = ctx.runtime.isolate.id;
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function(ctx, stack) {
-    stack.push(0);
+    stack.push(MIDP.AMSIsolateId);
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function(ctx, stack) {
-    stack.push(1);
+    stack.push((ctx.runtime.isolate.id == MIDP.AMSIsolateId) ? 1 : 0);
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(ctx, stack) {
