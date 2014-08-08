@@ -75,6 +75,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "microedition.platform":
         value = "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
+    case "microedition.platformimpl":
+        value = "";
+        break;
     case "microedition.profiles":
         value = "MIDP-2.0"
         break;
@@ -99,9 +102,20 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "javax.microedition.io.Connector.protocolpath.fallback":
         value = "com.sun.midp.io";
         break;
+    case "com.nokia.multisim.slots":
+        value = "1";
+        break;
+    case "com.nokia.mid.imsi":
+        value = "000000000000000";
+        break;
+    case "com.nokia.mid.ui.version":
+        value = "1.6";
+        break;
+    case "classpathext":
+        value = null;
+        break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
-        value = null;
         break;
     }
     stack.push(value ? ctx.newString(value) : null);
@@ -545,23 +559,16 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    _this.runtime = ctx.runtime;
 }
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
     var _this = stack.pop();
-    stack.push(_this.runtime.status);
+    stack.push(_this.runtime ? _this.runtime.status : 1); // NEW
 }
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    var mainClass = util.fromJavaString(_this.class.getField("_mainClass", "Ljava/lang/String;", false).get(_this));
-    var mainArgs = _this.class.getField("_mainArgs", "[Ljava/lang/String;", false).get(_this);
-    mainArgs.forEach(function(str, n) {
-        mainArgs[n] = util.fromJavaString(str);
-    });
-    ctx.runtime.vm.run(mainClass, mainArgs, _this);
-    _this.runtime.updateStatus(2 /* STARTED */);
+    ctx.runtime.vm.startIsolate(_this);
 }
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
@@ -577,4 +584,17 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
         runtime.waitStatus(waitForStatus);
     }
     waitForStatus();
+}
+
+Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function(ctx, stack) {
+    stack.push(ctx.runtime.isolate);
+}
+
+Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function(ctx, stack) {
+    var isolates = ctx.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
+    var n = 0;
+    Runtime.all.forEach(function (runtime) {
+        isolates[n] = runtime.isolate[n++];
+    });
+    stack.push(isolates);
 }

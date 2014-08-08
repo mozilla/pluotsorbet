@@ -36,13 +36,18 @@ Runtime.prototype.updateStatus = function(status) {
   });
 }
 
+Runtime.all = new Set();
+
 Runtime.prototype.addContext = function(ctx) {
   ++this.threadCount;
+  Runtime.all.add(this);
 }
 
 Runtime.prototype.removeContext = function(ctx) {
-  if (!--this.threadCount)
+  if (!--this.threadCount) {
+    Runtime.all.delete(this);
     this.updateStatus(4); // STOPPED
+  }
 }
 
 Runtime.prototype.newPrimitiveArray = function(type, size) {

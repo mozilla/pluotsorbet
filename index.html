@@ -14,7 +14,7 @@ button {
   display: none;
 }
 
-#clearstorage {
+#clearstorage,#trace {
   display: inline;
 }
 
@@ -45,7 +45,6 @@ button {
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
-  <script type="text/javascript" src="long.js" defer></script>
   <script type="text/javascript" src="classfile/reader.js" defer></script>
   <script type="text/javascript" src="classfile/accessflags.js" defer></script>
   <script type="text/javascript" src="classfile/attributetypes.js" defer></script>
@@ -78,6 +77,7 @@ button {
 <body>
   <div>x,y <span id="xy"></span></div>
   <button id="clearstorage">Clear storage</button>
+  <button id="trace">Trace</button>
   <canvas id="canvas">
   </canvas>
   <div>

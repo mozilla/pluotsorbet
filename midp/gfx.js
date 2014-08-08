@@ -215,11 +215,11 @@
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
         var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
-        var defaultSize = Math.max(12, (MIDP.Context2D.canvas.height / 40) | 0);
+        var defaultSize = Math.max(10, (MIDP.Context2D.canvas.height / 48) | 0);
         if (size & SIZE_SMALL)
-            size = defaultSize / 1.5;
+            size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
-            size = defaultSize * 1.5;
+            size = defaultSize * 1.25;
         else
             size = defaultSize;
         size |= 0;
@@ -299,33 +299,21 @@
         cb(c);
     }
 
-    function withTranslate(g, c, cb) {
-        var transX = g.class.getField("transX", "I").get(g),
-            transY = g.class.getField("transY", "I").get(g),
-            translate = transX || transY;
-
-        if (translate) {
-            c.save();
-            c.translate(transX, transY);
-            cb();
-            c.restore();
-        } else {
-            cb();
-        }
-    }
-  
     function withClip(g, c, x, y, cb) {
         var clipX1 = g.class.getField("clipX1", "S").get(g),
             clipY1 = g.class.getField("clipY1", "S").get(g),
             clipX2 = g.class.getField("clipX2", "S").get(g),
             clipY2 = g.class.getField("clipY2", "S").get(g),
-            clipped = g.class.getField("clipped", "Z").get(g);
+            clipped = g.class.getField("clipped", "Z").get(g),
+            transX = g.class.getField("transX", "I").get(g),
+            transY = g.class.getField("transY", "I").get(g);
         c.save();
         if (clipped) {
             c.beginPath();
             c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
             c.clip();
         }
+        c.translate(transX, transY);
         cb(x, y);
         c.restore();
     }
@@ -396,12 +384,9 @@
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.class.getField("nativeImageData", "I").get(imgData);
-
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
-                withTranslate(_this, c, function() {
-                    c.drawImage(texture, x, y);
-                });
+                c.drawImage(texture, x, y);
             });
         });
         stack.push(1);
@@ -412,9 +397,7 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
                 withPixel(_this, c, function() {
-                    withTranslate(_this, c, function() {
-                        c.fillText(str, x, y);
-                    });
+                    c.fillText(str, x, y);
                 });
             });
         });
@@ -427,9 +410,7 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
                 withPixel(_this, c, function() {
-                    withTranslate(_this, c, function() {
-                        c.fillText(str, x, y);
-                    });
+                    c.fillText(str, x, y);
                 });
             });
         });
@@ -440,9 +421,7 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, chr, function(x, y) {
                 withPixel(_this, c, function() {
-                    withTranslate(_this, c, function() {
-                        c.fillText(chr, x, y);
-                    });
+                    c.fillText(chr, x, y);
                 });
             });
         });
@@ -533,7 +512,6 @@
         var arcAngle = stack.pop(), startAngle = stack.pop(),
             height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
             _this = stack.pop();
-
         withGraphics(_this, function(c) {
             withPixel(_this, c, function() {
                 // TODO need to use bezierCurveTo to implement this properly,
@@ -566,7 +544,6 @@
         var w = sw, h = sh;
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, w, h, function(x, y) {
-                c.save();
                 c.translate(x, y);
                 if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
                     c.scale(-1, 1);
@@ -579,7 +556,6 @@
                 if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                     c.rotate(1.5 * Math.PI);
                 c.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
-                c.restore();
             });
         });
         stack.push(1);

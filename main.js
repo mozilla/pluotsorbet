@@ -56,13 +56,14 @@ function run(className, args) {
         loadNextJar();
       });
     } else {
+      jvm.initializeBuiltinClasses();
       if (urlParams.jad) {
         load(urlParams.jad, "text", function(data) {
           parseManifest(data);
-          jvm.run(className, args);
+          jvm.startIsolate0(className, args);
         });
       } else {
-        jvm.run(className, args);
+        jvm.startIsolate0(className, args);
       }
     }
   })();
@@ -79,5 +80,8 @@ fs.init(function() {
 window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    asyncStorage.clear();
+ };
+ document.getElementById("trace").onclick = function() {
+   VM.DEBUG = !VM.DEBUG;
  };
 };
