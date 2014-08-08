@@ -41,7 +41,7 @@ class HelloGraphics extends Canvas implements Runnable {
         offscreenImage.getRGB(arrayOfInt, 0, 25, 0, 0, 25, 25);
         for (int i = 0; i < arrayOfInt.length; i++) {
             if (arrayOfInt[i] != 0)
-                arrayOfInt[i] = (0xFF000000 & arrayOfInt[i] | 0x00FF0000);
+                arrayOfInt[i] = (0xFF000000 & arrayOfInt[i] | 0x0000FF00);
         }
         offscreenImage2 = Image.createRGBImage(
             arrayOfInt, 25, 25, true);
