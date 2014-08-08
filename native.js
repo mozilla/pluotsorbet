@@ -559,6 +559,7 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, stack) {
     var _this = stack.pop();
+    _this.id = util.id();
 }
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
@@ -597,4 +598,9 @@ Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isola
         isolates[n] = runtime.isolate[n++];
     });
     stack.push(isolates);
+}
+
+Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
+    stack.push(_this.id);
 }
