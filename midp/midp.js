@@ -637,6 +637,12 @@ Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(ctx, sta
 console.warn("com/sun/midp/rms/RecordStoreFile.setPosition.(II)V");
 }
 
+Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(ctx, stack) {
+    var numBytes = stack.pop(), offset = stack.pop(), buf = stack.pop(), handle = stack.pop();
+stack.push(0); // number of bytes read
+console.warn("com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I");
+}
+
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
     var count = stack.pop(), offset = stack.pop(), bytes = stack.pop(), fileId = stack.pop();
 console.warn("com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V");
