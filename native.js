@@ -602,31 +602,21 @@ var waitingForLinks = {};
 Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function(ctx, stack) {
     var isolateId = ctx.runtime.isolate.id;
 
-    function checkLinks() {
-        return (links[isolateId]) ? links[isolateId].length : 0;
-    }
-
-    var linkCount = checkLinks();
-    if (linkCount > 0) {
-        console.log("GOT LINK COUNT");
-        stack.push(linkCount);
-    } else {
+    if (!links[isolateId]) {
         waitingForLinks[isolateId] = function() {
-            var linkCount = checkLinks();
-            if (linkCount > 0) {
-                console.log("GOT LINK COUNT");
-                stack.push(linkCount);
-                ctx.resume();
-            }
+            stack.push(links[isolateId].length);
+            ctx.resume();
         }
-        console.log("WAIT FOR LINK COUNT");
+
         throw VM.Pause;
     }
+
+    stack.push(links[isolateId].length);
 }
 
 Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
     var linkArray = stack.pop();
-    console.log("GET LINKS");
+
     var isolateId = ctx.runtime.isolate.id;
 
     for (var i = 0; i < links[isolateId].length; i++) {
