@@ -60,6 +60,7 @@ var fs = (function() {
           var fd = openedFiles.push({
             path: path,
             buffer: new Uint8Array(reader.result),
+            position: 0,
           }) - 1;
           cb(fd);
         });
@@ -98,7 +99,7 @@ var fs = (function() {
 
   function write(fd, data, from) {
     if (!from) {
-      from = 0;
+      from = openedFiles[fd].position;
     }
 
     var buffer = openedFiles[fd].buffer;
@@ -124,6 +125,7 @@ var fs = (function() {
     }
 
     openedFiles[fd].buffer = newBuffer;
+    openedFiles[fd].position = from + data.byteLength;
   }
 
   function flush(fd, cb) {

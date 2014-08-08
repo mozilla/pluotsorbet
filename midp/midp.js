@@ -644,8 +644,8 @@ console.warn("com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I");
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
-    var count = stack.pop(), offset = stack.pop(), bytes = stack.pop(), fileId = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V");
+    var numBytes = stack.pop(), offset = stack.pop(), buf = stack.pop(), handle = stack.pop();
+    fs.write(handle, buf.subarray(offset, offset + numBytes));
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(ctx, stack) {
