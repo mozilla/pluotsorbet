@@ -678,40 +678,40 @@ Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack)
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] = function(ctx, stack) {
     var headerDataSize = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
     stack.push(0);
-console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I");
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I");
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(ctx, stack) {
     var headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
     stack.push(0);
-console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I");
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I");
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] = function(ctx, stack) {
     var headerVersion = stack.pop(), headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
     stack.push(0);
-console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I");
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I");
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V");
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
     stack.push(ctx.newPrimitiveArray("I", 0));
-console.warn("com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I");
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
     var recordId = stack.pop(), changeType = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V");
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V");
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V");
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
@@ -763,7 +763,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ct
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(ctx, stack) {
     var id = stack.pop();
     stack.push(1);
-console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I");
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I");
 }
 
 MIDP.nativeEventQueue = [];
@@ -888,7 +888,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(ctx, stack) {
     var taskId = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V");
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V");
 }
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
