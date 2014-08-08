@@ -595,3 +595,67 @@ Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function(ctx, stack) {
     var _this = stack.pop();
     stack.push(_this.id);
 }
+
+var links = {};
+var waitingForLinks = {};
+
+Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function(ctx, stack) {
+    var isolateId = ctx.runtime.isolate.id;
+
+    function checkLinks() {
+        return (links[isolateId]) ? links[isolateId].length : 0;
+    }
+
+    var linkCount = checkLinks();
+    if (linkCount > 0) {
+        console.log("GOT LINK COUNT");
+        stack.push(linkCount);
+    } else {
+        waitingForLinks[isolateId] = function() {
+            var linkCount = checkLinks();
+            if (linkCount > 0) {
+                console.log("GOT LINK COUNT");
+                stack.push(linkCount);
+                ctx.resume();
+            }
+        }
+        console.log("WAIT FOR LINK COUNT");
+        throw VM.Pause;
+    }
+}
+
+Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
+    var linkArray = stack.pop();
+    console.log("GET LINKS");
+    var isolateId = ctx.runtime.isolate.id;
+
+    for (var i = 0; i < links[isolateId].length; i++) {
+        var nativePointer = links[isolateId][i].class.getField("nativePointer", "I").get(links[isolateId][i]);
+        linkArray[i].class.getField("nativePointer", "I").set(linkArray[i], nativePointer);
+        linkArray[i].sender = links[isolateId][i].sender;
+        linkArray[i].receiver = links[isolateId][i].receiver;
+    }
+}
+
+Native["com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
+    var linkArray = stack.pop(), id = stack.pop();
+
+    links[id] = linkArray;
+
+    if (waitingForLinks[id]) {
+        waitingForLinks[id]();
+    }
+}
+
+Native["com/sun/midp/links/Link.init0.(II)V"] = function(ctx, stack) {
+    var receiver = stack.pop(), sender = stack.pop(), _this = stack.pop();
+    _this.sender = sender;
+    _this.receiver = receiver;
+    _this.class.getField("nativePointer", "I").set(_this, util.id());
+}
+
+Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
+    var link = stack.pop(), linkMessage = stack.pop(), _this = stack.pop();
+    // TODO: Implement when something hits send0
+    throw VM.Pause;
+}
