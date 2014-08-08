@@ -587,8 +587,7 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
 }
 
 Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function(ctx, stack) {
-    // FIXME: we always should have an isolate
-    stack.push(ctx.runtime.isolate ? ctx.runtime.isolate : null);
+    stack.push(ctx.runtime.isolate);
 }
 
 Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function(ctx, stack) {
