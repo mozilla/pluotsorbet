@@ -29,6 +29,7 @@ JVM.prototype.run = function(className, args, isolate) {
     var runtime = new Runtime(this);
     if (isolate) {
         isolate.runtime = runtime;
+        runtime.isolate = isolate;
     }
     var ctx = new Context(runtime);
 
