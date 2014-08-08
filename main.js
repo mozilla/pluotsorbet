@@ -60,10 +60,10 @@ function run(className, args) {
       if (urlParams.jad) {
         load(urlParams.jad, "text", function(data) {
           parseManifest(data);
-          jvm.run(className, args);
+          jvm.startIsolate0(className, args);
         });
       } else {
-        jvm.run(className, args);
+        jvm.startIsolate0(className, args);
       }
     }
   })();

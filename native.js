@@ -558,12 +558,11 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    _this.runtime = ctx.runtime;
 }
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
     var _this = stack.pop();
-    stack.push(_this.runtime.status);
+    stack.push(_this.runtime ? _this.runtime.status : 1); // NEW
 }
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
