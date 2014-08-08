@@ -8,6 +8,8 @@ var VM = {};
 VM.Yield = {};
 VM.Pause = {};
 
+VM.DEBUG = false;
+
 VM.execute = function(ctx) {
     var frame = ctx.current();
 
@@ -1013,8 +1015,10 @@ VM.execute = function(ctx) {
                     break;
                 }
             }
-            // console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
-            // (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
+            if (VM.DEBUG) {
+                console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
+                            (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
+            }
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
                 try {
                     Native.invoke(ctx, methodInfo);

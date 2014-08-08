@@ -81,4 +81,7 @@ window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    asyncStorage.clear();
  };
+ document.getElementById("trace").onclick = function() {
+   VM.DEBUG = !VM.DEBUG;
+ };
 };
