@@ -56,6 +56,7 @@ function run(className, args) {
         loadNextJar();
       });
     } else {
+      jvm.initializeBuiltinClasses();
       if (urlParams.jad) {
         load(urlParams.jad, "text", function(data) {
           parseManifest(data);

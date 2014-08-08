@@ -17,6 +17,14 @@ JVM.prototype.addPath = function(path, data) {
     return CLASSES.addPath(path, data);
 }
 
+JVM.prototype.initializeBuiltinClasses = function() {
+    // These classes are guaranteed to not have a static initializer.
+    CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object");
+    CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class");
+    CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String");
+    CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread");
+}
+
 JVM.prototype.startIsolate = function(isolate) {
     var mainClass = util.fromJavaString(isolate.class.getField("_mainClass", "Ljava/lang/String;", false).get(isolate));
     var mainArgs = isolate.class.getField("_mainArgs", "[Ljava/lang/String;", false).get(isolate);
@@ -45,12 +53,6 @@ JVM.prototype.run = function(className, args, isolate) {
 
     var caller = new Frame();
     ctx.frames.push(caller);
-
-    // These classes are guaranteed to not have a static initializer.
-    CLASSES.java_lang_Object = CLASSES.loadClass("java/lang/Object");
-    CLASSES.java_lang_Class = CLASSES.loadClass("java/lang/Class");
-    CLASSES.java_lang_String = CLASSES.loadClass("java/lang/String");
-    CLASSES.java_lang_Thread = CLASSES.loadClass("java/lang/Thread");
 
     ctx.thread = runtime.mainThread = ctx.newObject(CLASSES.java_lang_Thread);
     ctx.thread.pid = util.id();
