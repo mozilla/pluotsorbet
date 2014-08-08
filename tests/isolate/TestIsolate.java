@@ -25,8 +25,8 @@ public class TestIsolate {
             System.out.println(iso1.id());
             System.out.println(iso2.id());
 
-            if (Isolate.getIsolates().length == 3) {
-                System.out.println("3 isolates");
+            if (Isolate.getIsolates().length == 1) {
+                System.out.println("1 isolate");
             }
 
             iso1.start();
@@ -47,7 +47,7 @@ public class TestIsolate {
             System.out.println(IsolatedClass.val);
 
             if (Isolate.getIsolates().length == 1) {
-                System.out.println("3 isolates");
+                System.out.println("1 isolate");
             }
 
             if (iso1.isTerminated() && iso2.isTerminated()) {
