@@ -469,12 +469,23 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinF
     stack.push(0);
 }
 
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareResourcePool.(Ljava/lang/Object;)V"] = function(ctx, stack) {
-    var pool = stack.pop();
+MIDP.sharedPool = null;
+MIDP.sharedSkinData = null;
+
+ Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareResourcePool.(Ljava/lang/Object;)V"] = function(ctx, stack) {
+    MIDP.sharedPool = stack.pop();
+}
+
+Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.getSharedResourcePool.()Ljava/lang/Object;"] = function(ctx, stack) {
+    stack.push(MIDP.sharedPool);
 }
 
 Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareSkinData.(Ljava/lang/Object;)V"] = function(ctx, stack) {
-    var data = stack.pop();
+    MIDP.sharedSkinData = stack.pop();
+}
+
+Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.getSharedSkinData.()Ljava/lang/Object;"] = function(ctx, stack) {
+    stack.push(MIDP.sharedSkinData);
 }
 
 Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAllResources0.()Z"] = function(ctx, stack) {
