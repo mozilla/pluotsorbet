@@ -75,6 +75,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "microedition.platform":
         value = "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
+    case "microedition.platformimpl":
+        value = "";
+        break;
     case "microedition.profiles":
         value = "MIDP-2.0"
         break;
@@ -98,6 +101,15 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         break;
     case "javax.microedition.io.Connector.protocolpath.fallback":
         value = "com.sun.midp.io";
+        break;
+    case "com.nokia.multisim.slots":
+        value = "1";
+        break;
+    case "com.nokia.mid.imsi":
+        value = "000000000000000";
+        break;
+    case "com.nokia.mid.ui.version":
+        value = "1.6";
         break;
     default:
         console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
