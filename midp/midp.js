@@ -634,13 +634,22 @@ Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;
 
 Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(ctx, stack) {
     var pos = stack.pop(), handle = stack.pop();
-console.warn("com/sun/midp/rms/RecordStoreFile.setPosition.(II)V");
+
+    fs.setpos(handle, pos);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(ctx, stack) {
     var numBytes = stack.pop(), offset = stack.pop(), buf = stack.pop(), handle = stack.pop();
-stack.push(0); // number of bytes read
-console.warn("com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I");
+
+    var from = fs.getpos(handle);
+    var to = from + numBytes;
+    var readBytes = fs.read(handle, from, to);
+    var subBuffer = buf.subarray(offset, offset + numBytes);
+    for (var i = 0; i < readBytes.byteLength; i++) {
+      subBuffer[i] = readBytes[i];
+    }
+
+    stack.push(readBytes.byteLength);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {

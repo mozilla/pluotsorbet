@@ -85,7 +85,7 @@ var fs = (function() {
     var buffer = openedFiles[fd].buffer;
 
     if (!from) {
-      from = 0;
+      from = openedFiles[fd].position;
     }
 
     if (!to) {
@@ -128,6 +128,14 @@ var fs = (function() {
 
     openedFiles[fd].buffer = newBuffer;
     openedFiles[fd].position = from + data.byteLength;
+  }
+
+  function getpos(fd) {
+    return openedFiles[fd].position;
+  }
+
+  function setpos(fd, pos) {
+    openedFiles[fd].position = pos;
   }
 
   function flush(fd, cb) {
@@ -296,6 +304,8 @@ var fs = (function() {
     close: close,
     read: read,
     write: write,
+    getpos: getpos,
+    setpos: setpos,
     flush: flush,
     list: list,
     exists: exists,
