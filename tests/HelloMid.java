@@ -2,15 +2,20 @@
 
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
+import com.sun.midp.lcdui.GraphicsAccess;
 
 
 class HelloGraphics extends Canvas implements Runnable {
     int position = 0;
     boolean increment = true;
+    Image offscreenImage = null;
+    Image offscreenImage2 = null;
 
     protected void paint(Graphics g) {
-        g.setColor(0x00FFFFFF);;
+        g.setColor(0x00FFFFFF);
         g.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
+        g.drawImage(offscreenImage, getWidth() / 4 - 25, getHeight() / 2 - 25, 0);
+        g.drawImage(offscreenImage2, getWidth() / 4, getHeight() / 2, 0);
         g.setColor(0x00000000);
         g.drawLine(0 + position, 0, getWidth() - position, getHeight());
         g.drawArc(
@@ -26,6 +31,21 @@ class HelloGraphics extends Canvas implements Runnable {
     }
 
     public void run() {
+        offscreenImage = Image.createImage(25, 25);
+        Graphics g = offscreenImage.getGraphics();
+        g.setColor(0, 0, 0);
+        g.fillRect(0, 0, 25, 25);
+        g.setColor(0, 0xFF, 0x88);
+        g.fillRect(5, 5, 15, 15);
+        int[] arrayOfInt = new int[625];
+        offscreenImage.getRGB(arrayOfInt, 0, 25, 0, 0, 25, 25);
+        for (int i = 0; i < arrayOfInt.length; i++) {
+            if (arrayOfInt[i] != 0)
+                arrayOfInt[i] = (0xFF000000 & arrayOfInt[i] | 0x0000FF00);
+        }
+        offscreenImage2 = Image.createRGBImage(
+            arrayOfInt, 25, 25, true);
+        
         while (true) {
             if (increment) {
                 position = position + 5;
