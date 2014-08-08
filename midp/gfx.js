@@ -299,32 +299,21 @@
         cb(c);
     }
 
-    function withTranslate(g, c, cb) {
-        var transX = g.class.getField("transX", "I").get(g),
-            transY = g.class.getField("transY", "I").get(g),
-            translate = transX || transY;
-        if (translate) {
-            c.save();
-            c.translate(transX, transY);
-            cb();
-            c.restore();
-        } else {
-            cb();
-        }
-    }
-  
     function withClip(g, c, x, y, cb) {
         var clipX1 = g.class.getField("clipX1", "S").get(g),
             clipY1 = g.class.getField("clipY1", "S").get(g),
             clipX2 = g.class.getField("clipX2", "S").get(g),
             clipY2 = g.class.getField("clipY2", "S").get(g),
-            clipped = g.class.getField("clipped", "Z").get(g);
+            clipped = g.class.getField("clipped", "Z").get(g),
+            transX = g.class.getField("transX", "I").get(g),
+            transY = g.class.getField("transY", "I").get(g);
         c.save();
         if (clipped) {
             c.beginPath();
             c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
             c.clip();
         }
+        c.translate(transX, transY);
         cb(x, y);
         c.restore();
     }
@@ -397,9 +386,7 @@
             texture = imgData.class.getField("nativeImageData", "I").get(imgData);
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
-                withTranslate(_this, c, function() {
-                    c.drawImage(texture, x, y);
-                });
+                c.drawImage(texture, x, y);
             });
         });
         stack.push(1);
@@ -410,9 +397,7 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
                 withPixel(_this, c, function() {
-                    withTranslate(_this, c, function() {
-                        c.fillText(str, x, y);
-                    });
+                    c.fillText(str, x, y);
                 });
             });
         });
@@ -425,9 +410,7 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
                 withPixel(_this, c, function() {
-                    withTranslate(_this, c, function() {
-                        c.fillText(str, x, y);
-                    });
+                    c.fillText(str, x, y);
                 });
             });
         });
@@ -438,9 +421,7 @@
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, chr, function(x, y) {
                 withPixel(_this, c, function() {
-                    withTranslate(_this, c, function() {
-                        c.fillText(chr, x, y);
-                    });
+                    c.fillText(chr, x, y);
                 });
             });
         });
