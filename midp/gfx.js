@@ -544,7 +544,6 @@
         var w = sw, h = sh;
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, w, h, function(x, y) {
-                c.save();
                 c.translate(x, y);
                 if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
                     c.scale(-1, 1);
@@ -557,7 +556,6 @@
                 if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                     c.rotate(1.5 * Math.PI);
                 c.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
-                c.restore();
             });
         });
         stack.push(1);
