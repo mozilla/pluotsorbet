@@ -101,7 +101,7 @@ var fs = (function() {
   }
 
   function write(fd, data, from) {
-    if (!from) {
+    if (typeof from == "undefined") {
       from = openedFiles[fd].position;
     }
 
