@@ -2,13 +2,22 @@
 
 var fs = (function() {
   function normalizePath(path) {
+    // Remove a trailing slash.
     if (path.length != 1 && path.lastIndexOf("/") == path.length-1) {
       path = path.substring(0, path.length-1);
     }
+
+    // Coalesce multiple consecutive slashes.
+    path = path.replace(/\/{2,}/, "/");
+
+    // XXX Replace "." and ".." parts.
+
     return path;
   }
 
   function dirname(path) {
+    path = normalizePath(path);
+
     var index = path.lastIndexOf("/");
     if (index == -1) {
       return ".";
@@ -53,6 +62,7 @@ var fs = (function() {
           var fd = openedFiles.push({
             path: path,
             buffer: new Uint8Array(reader.result),
+            position: 0,
           }) - 1;
           cb(fd);
         });
@@ -62,8 +72,10 @@ var fs = (function() {
   }
 
   function close(fd) {
-    if (fd >= 0) {
-      openedFiles.splice(fd, 1);
+    if (fd >= 0 && openedFiles[fd]) {
+      // Replace descriptor object with null value instead of removing it from
+      // the array so we don't change the indexes of the other objects.
+      openedFiles.splice(fd, 1, null);
     }
   }
 
@@ -74,8 +86,8 @@ var fs = (function() {
 
     var buffer = openedFiles[fd].buffer;
 
-    if (!from) {
-      from = 0;
+    if (typeof from == "undefined") {
+      from = openedFiles[fd].position;
     }
 
     if (!to) {
@@ -86,12 +98,13 @@ var fs = (function() {
       return null;
     }
 
+    openedFiles[fd].position += to - from;
     return buffer.subarray(from, to);
   }
 
   function write(fd, data, from) {
-    if (!from) {
-      from = 0;
+    if (typeof from == "undefined") {
+      from = openedFiles[fd].position;
     }
 
     var buffer = openedFiles[fd].buffer;
@@ -117,6 +130,15 @@ var fs = (function() {
     }
 
     openedFiles[fd].buffer = newBuffer;
+    openedFiles[fd].position = from + data.byteLength;
+  }
+
+  function getpos(fd) {
+    return openedFiles[fd].position;
+  }
+
+  function setpos(fd, pos) {
+    openedFiles[fd].position = pos;
   }
 
   function flush(fd, cb) {
@@ -221,6 +243,51 @@ var fs = (function() {
     createInternal(path, [], cb);
   }
 
+  function mkdirp(path, cb) {
+    if (path[0] !== "/") {
+      console.error("mkdirp called on relative path: " + path);
+      cb(false);
+    }
+
+    // Split the path into parts across "/", discarding the initial, empty part.
+    var parts = normalizePath(path).split("/").slice(1);
+
+    var partPath = "";
+
+    function mkpart(created) {
+      if (!created) {
+        return cb(false);
+      }
+
+      if (!parts.length) {
+        return cb(true);
+      }
+
+      partPath += "/" + parts.shift();
+
+      exists(partPath, function(exists) {
+        if (exists) {
+          list(partPath, function(files) {
+            if (files) {
+              // The part exists and is a directory; continue to next part.
+              mkpart(true);
+            }
+            else {
+              // The part exists but isn't a directory; fail.
+              console.error("mkdirp called on path with non-dir part: " + partPath);
+              cb(false);
+            }
+          });
+        } else {
+          // The part doesn't exist; make it, then continue to next part.
+          mkdir(partPath, mkpart);
+        }
+      });
+    }
+
+    mkpart(true);
+  }
+
   function size(path, cb) {
     path = normalizePath(path);
 
@@ -234,11 +301,14 @@ var fs = (function() {
   }
 
   return {
+    dirname: dirname,
     init: init,
     open: open,
     close: close,
     read: read,
     write: write,
+    getpos: getpos,
+    setpos: setpos,
     flush: flush,
     list: list,
     exists: exists,
@@ -246,6 +316,7 @@ var fs = (function() {
     remove: remove,
     create: create,
     mkdir: mkdir,
+    mkdirp: mkdirp,
     size: size,
   };
 })();

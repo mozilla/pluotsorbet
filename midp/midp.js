@@ -3,6 +3,8 @@
 
 'Use strict';
 
+const RECORD_STORE_BASE = "/RecordStore";
+
 var MIDP = {
 };
 
@@ -559,14 +561,29 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Lja
     stack.push(ctx.newString(""));
 }
 
+Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop());
+
+    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
+
+    fs.exists(path, function(exists) {
+        stack.push(exists ? 1 : 0);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var id = stack.pop();
     stack.push(ctx.newString(id.toString()));
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(ctx, stack) {
-    var id = stack.pop();
-    stack.push(0);
+    var suiteId = stack.pop();
+
+    // We should be able to use the same storage ID for all MIDlet suites.
+    stack.push(0); // storageId
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteJarPath.(I)Ljava/lang/String;"] = function(ctx, stack) {
@@ -574,72 +591,159 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteJarPath.(I)Lja
     stack.push(ctx.newString(""));
 }
 
-Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
-    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), path = util.fromJavaString(stack.pop());
-    stack.push(0);
-}
-
 Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I"] = function(ctx, stack) {
-    var storageId = stack.pop(), name = util.fromJavaString(stack.pop());
-    stack.push(10 * 4096 * 4096);
+    var storageId = stack.pop(), filenameBase = util.fromJavaString(stack.pop());
+
+    // Pretend there is 50MiB available.  Our implementation is backed
+    // by IndexedDB, which has no actual limit beyond space available on device,
+    // which I don't think we can determine.  But this should be sufficient
+    // to convince the MIDlet to use the API as needed.
+    stack.push(50 * 1024 * 1024);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I"] = function(ctx, stack) {
-    var storageId = stack.pop(), base = util.fromJavaString(stack.pop()), handle = stack.pop();
-    stack.push(10 * 4096 * 4096);
+    var storageId = stack.pop(), filenameBase = util.fromJavaString(stack.pop()), handle = stack.pop();
+
+    // Pretend there is 50MiB available.  Our implementation is backed
+    // by IndexedDB, which has no actual limit beyond space available on device,
+    // which I don't think we can determine.  But this should be sufficient
+    // to convince the MIDlet to use the API as needed.
+    stack.push(50 * 1024 * 1024);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(ctx, stack) {
-    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), base = util.fromJavaString(stack.pop()), _this = stack.pop();
-    stack.push(0);
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop()), _this = stack.pop();
+
+    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
+
+    function openCallback(fd) {
+        if (fd == -1) {
+            try {
+              ctx.raiseException("java/io/IOException", "openRecordStoreFile: open failed");
+            } catch(ex) {
+              // Catch and ignore the VM.Yield exception that Context.raiseException
+              // throws.
+            }
+        } else {
+            stack.push(fd); // handle
+        }
+        ctx.resume();
+    }
+
+    fs.exists(path, function(exists) {
+        if (exists) {
+            fs.open(path, openCallback);
+        } else {
+            // Per the reference impl, create the file if it doesn't exist.
+            var dirname = fs.dirname(path);
+            fs.mkdirp(dirname, function(created) {
+                if (created) {
+                    fs.create(path, new Blob(), function(created) {
+                        if (created) {
+                            fs.open(path, openCallback);
+                        }
+                        else {
+                            try {
+                                ctx.raiseException("java/io/IOException", "openRecordStoreFile: create failed");
+                            } catch(ex) {
+                                // Catch and ignore the VM.Yield exception that Context.raiseException
+                                // throws.
+                            }
+                            ctx.resume();
+                        }
+                    });
+                } else {
+                    try {
+                        ctx.raiseException("java/io/IOException", "openRecordStoreFile: mkdirp failed");
+                    } catch(ex) {
+                        // Catch and ignore the VM.Yield exception that Context.raiseException
+                        // throws.
+                    }
+                    ctx.resume();
+                }
+            });
+        }
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(ctx, stack) {
     var pos = stack.pop(), handle = stack.pop();
+
+    fs.setpos(handle, pos);
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(ctx, stack) {
+    var numBytes = stack.pop(), offset = stack.pop(), buf = stack.pop(), handle = stack.pop();
+
+    var from = fs.getpos(handle);
+    var to = from + numBytes;
+    var readBytes = fs.read(handle, from, to);
+    var subBuffer = buf.subarray(offset, offset + numBytes);
+    for (var i = 0; i < readBytes.byteLength; i++) {
+      subBuffer[i] = readBytes[i];
+    }
+
+    stack.push(readBytes.byteLength);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
-    var count = stack.pop(), offset = stack.pop(), bytes = stack.pop(), fileId = stack.pop();
+    var numBytes = stack.pop(), offset = stack.pop(), buf = stack.pop(), handle = stack.pop();
+    fs.write(handle, buf.subarray(offset, offset + numBytes));
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(ctx, stack) {
-    var fileId = stack.pop();
+    var handle = stack.pop();
+    fs.flush(handle, function() {
+        ctx.resume();
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack) {
-    var fileId = stack.pop();
+    var handle = stack.pop();
+    fs.close(handle);
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] = function(ctx, stack) {
     var headerDataSize = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
     stack.push(0);
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I");
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(ctx, stack) {
     var headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
     stack.push(0);
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I");
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] = function(ctx, stack) {
     var headerVersion = stack.pop(), headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
     stack.push(0);
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I");
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx, stack) {
     var _this = stack.pop();
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
     stack.push(ctx.newPrimitiveArray("I", 0));
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
     var recordId = stack.pop(), changeType = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V");
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
@@ -696,6 +800,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ct
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(ctx, stack) {
     var id = stack.pop();
     stack.push(1);
+    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I");
 }
 
 // The foreground isolate will get the user events (keypresses, etc.)
@@ -829,6 +934,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(ctx, stack) {
     var taskId = stack.pop();
+    console.warn("com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V");
 }
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
