@@ -559,6 +559,7 @@ Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, stack) {
     var _this = stack.pop();
+    _this.id = util.id();
 }
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
@@ -597,6 +598,11 @@ Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isola
         isolates[n] = runtime.isolate[n++];
     });
     stack.push(isolates);
+}
+
+Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
+    stack.push(_this.id);
 }
 
 var links = {};
@@ -650,5 +656,6 @@ Native["com/sun/midp/links/Link.init0.(II)V"] = function(ctx, stack) {
 Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
     var link = stack.pop(), linkMessage = stack.pop(), _this = stack.pop();
     // TODO: Implement when something hits send0
+    console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
     throw VM.Pause;
 }

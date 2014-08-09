@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+MIDlet-2: MIDlet2,,tests.alarm.MIDlet2
+MIDlet-1: MIDlet1,,tests.alarm.MIDlet1
+MIDlet-Permissions: javax.microedition.io.Connector.socket, javax.micr
+ oedition.io.Connector.file.read, javax.microedition.io.Connector.file
+ .write, com.nokia.mid.s40.io.Connector.localmsg, com.nokia.mid.s40.io
+ .Connector.localstream, javax.wireless.messaging.sms.send, javax.wire
+ less.messaging.sms.receive, javax.microedition.io.Connector.sms, java
+ x.microedition.io.Connector.ssl, javax.microedition.media.control.Rec
+ ordControl, javax.microedition.media.control.VideoControl.getSnapshot
+ , javax.microedition.io.PushRegistry, javax.microedition.io.Connector
+ .http, javax.microedition.pim.ContactList.read, javax.microedition.pi
+ m.ContactList.write, javax.microedition.io.Connector.https
+MIDlet-Vendor: Mozilla
+Nokia-MIDlet-bg-memory-size: 350
+Nokia-MIDlet-Background-Exit-Confirm-en: DO NOT EXIT!
+Nokia-MIDlet-Save-Location: Root
+Nokia-MIDlet-bg-server: 2
+MIDlet-Name: AlarmMIDlet
+Nokia-MIDlet-Dual-SIM-Compliant: true
+MIDlet-Version: 2.12.25
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.1
+
