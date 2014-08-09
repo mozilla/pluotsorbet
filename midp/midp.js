@@ -341,22 +341,29 @@ Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function(ctx, 
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(ctx, stack) {
-    stack.push(0);
+    stack.push(ctx.runtime.isolate.id);
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function(ctx, stack) {
+    MIDP.AMSIsolateId = ctx.runtime.isolate.id;
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function(ctx, stack) {
-    stack.push(0);
+    stack.push(MIDP.AMSIsolateId);
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function(ctx, stack) {
-    stack.push(1);
+    stack.push((MIDP.AMSIsolateId == ctx.runtime.isolate.id) ? 1 : 0);
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(ctx, stack) {
     var midletIsolateId = stack.pop();
+    // See DisplayContainer::createDisplayId, called by the LCDUIEnvironment constructor,
+    // called by CldcMIDletSuiteLoader::createSuiteEnvironment.
+    // The formula depens on the ID of the isolate that calls createDisplayId, that is
+    // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
+    // the display ID.
+    MIDP.displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(ctx, stack) {
@@ -522,17 +529,17 @@ MIDP.Context2D = (function() {
     
     c.addEventListener("mousedown", function(ev) {
         mouse_is_down = true;
-        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: 1 });
+        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId });
     });
     
     c.addEventListener("mousemove", function(ev) {
         if (mouse_is_down)
-            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: 1 })
+            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId })
     });
     
     c.addEventListener("mouseup", function(ev) {
         mouse_is_down = false;
-        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: 1 });
+        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId });
     });
 
     return c.getContext("2d");
@@ -739,7 +746,7 @@ MIDP.suppressKeyEvents = false;
 
 MIDP.keyPress = function(keyCode) {
     if (!MIDP.suppressKeyEvents)
-        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: 1 });
+        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId });
 }
 
 window.addEventListener("keypress", function(ev) {
