@@ -5,7 +5,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 4, function(test) {
+casper.test.begin("unit tests", 5, function(test) {
     casper
     .start("http://localhost:8000/index.html?main=RunTests")
     .waitForText("DONE", function then() {
@@ -31,6 +31,12 @@ casper.test.begin("unit tests", 4, function(test) {
     }, function onTimeout() {
         test.fail();
     }, 10000);
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fstests.html")
+    .waitForText("DONE", function then() {
+        test.assertTextExists("DONE: 82 pass, 0 FAIL", "run fs.js unit tests");
+    });
 
     casper
     .run(function() {
