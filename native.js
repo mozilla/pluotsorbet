@@ -111,6 +111,12 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "com.nokia.mid.ui.version":
         value = "1.6";
         break;
+    case "com.nokia.mid.networkID":
+        value = mobileInfo.networkID;
+        break;
+    case "com.nokia.mid.mnc":
+        value = mobileInfo.mnc;
+        break;
     case "classpathext":
         value = null;
         break;
