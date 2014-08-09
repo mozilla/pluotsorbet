@@ -529,17 +529,17 @@ MIDP.Context2D = (function() {
     
     c.addEventListener("mousedown", function(ev) {
         mouse_is_down = true;
-        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId });
+        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
     });
     
     c.addEventListener("mousemove", function(ev) {
         if (mouse_is_down)
-            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId })
+            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId)
     });
     
     c.addEventListener("mouseup", function(ev) {
         mouse_is_down = false;
-        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId });
+        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
     });
 
     return c.getContext("2d");
@@ -698,40 +698,43 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = f
     stack.push(1);
 }
 
-MIDP.nativeEventQueue = [];
+// The foreground isolate will get the user events (keypresses, etc.)
+MIDP.foregroundIsolateId;
+MIDP.nativeEventQueues = {};
+MIDP.waitingNativeEventContexts = {};
 
-MIDP.copyEvent = function(obj) {
-    var e = MIDP.nativeEventQueue.shift();
+MIDP.copyEvent = function(obj, isolateId) {
+    var e = MIDP.nativeEventQueues[isolateId].shift();
     obj.class.getField("type", "I").set(obj, e.type);
     obj.class.fields.forEach(function(field) {
         field.set(obj, e[field.name]);
     });
 }
 
-MIDP.deliverWaitForNativeEventResult = function(ctx) {
+MIDP.deliverWaitForNativeEventResult = function(ctx, isolateId) {
     var stack = ctx.current().stack;
     var obj = stack.pop();
-    if (MIDP.nativeEventQueue.length > 0)
-        MIDP.copyEvent(obj);
-    stack.push(MIDP.nativeEventQueue.length);
+    if (MIDP.nativeEventQueues[isolateId].length > 0)
+        MIDP.copyEvent(obj, isolateId);
+    stack.push(MIDP.nativeEventQueues[isolateId].length);
 }
 
-MIDP.sendEvent = function(obj) {
+MIDP.sendEvent = function(obj, isolateId) {
     var e = { type: obj.class.getField("type", "I").get(obj) };
     obj.class.fields.forEach(function(field) {
         e[field.name] = field.get(obj);
     });
-    MIDP.sendNativeEvent(e);
+    MIDP.sendNativeEvent(e, isolateId);
 }
 
-MIDP.sendNativeEvent = function(e) {
-    MIDP.nativeEventQueue.push(e);
-    var ctx = MIDP.waitingNativeEventContext;
+MIDP.sendNativeEvent = function(e, isolateId) {
+    MIDP.nativeEventQueues[isolateId].push(e);
+    var ctx = MIDP.waitingNativeEventContexts[isolateId];
     if (!ctx)
         return;
-    MIDP.deliverWaitForNativeEventResult(MIDP.waitingNativeEventContext);
-    MIDP.waitingNativeEventContext.resume();
-    MIDP.waitingNativeEventContext = null;
+    MIDP.deliverWaitForNativeEventResult(ctx, isolateId);
+    ctx.resume();
+    delete MIDP.waitingNativeEventContexts[isolateId];
 }
 
 MIDP.KEY_EVENT = 1;
@@ -746,7 +749,7 @@ MIDP.suppressKeyEvents = false;
 
 MIDP.keyPress = function(keyCode) {
     if (!MIDP.suppressKeyEvents)
-        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId });
+        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
 }
 
 window.addEventListener("keypress", function(ev) {
@@ -763,25 +766,31 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ct
 }
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
-    var isolate = stack.pop(), obj = stack.pop(), _this = stack.pop();
-    MIDP.sendEvent(obj);
+    var isolateId = stack.pop(), obj = stack.pop(), _this = stack.pop();
+    MIDP.sendEvent(obj, isolateId);
 }
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] = function(ctx, stack) {
-    if (MIDP.nativeEventQueue.length === 0) {
-        MIDP.waitingNativeEventContext = ctx;
+    var isolateId = ctx.runtime.isolate.id;
+
+    if (!MIDP.nativeEventQueues[isolateId]) {
+      MIDP.nativeEventQueues[isolateId] = [];
+    }
+
+    if (MIDP.nativeEventQueues[isolateId].length === 0) {
+        MIDP.waitingNativeEventContexts[isolateId] = ctx;
         throw VM.Pause;
     }
-    MIDP.deliverWaitForNativeEventResult(ctx);
+    MIDP.deliverWaitForNativeEventResult(ctx, isolateId);
 }
 
 Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] = function(ctx, stack) {
     var obj = stack.pop();
-    if (!MIDP.nativeEventQueue.length) {
+    if (!MIDP.nativeEventQueues[ctx.runtime.isolate.id].length) {
         stack.push(0);
         return;
     }
-    MIDP.copyEvent(obj);
+    MIDP.copyEvent(obj, ctx.runtime.isolate.id);
     stack.push(1);
 }
 
@@ -911,10 +920,13 @@ Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/mi
 
 Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function(ctx, stack) {
     var _this = stack.pop();
+    MIDP.displayId = -1;
 }
 
 Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(ctx, stack) {
     var displayId = stack.pop(), isolateId = stack.pop(), _this = stack.pop();
+    MIDP.displayId = displayId;
+    MIDP.foregroundIsolateId = isolateId;
 }
 
 var alarms = [];
