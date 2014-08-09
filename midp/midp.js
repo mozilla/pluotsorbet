@@ -927,7 +927,6 @@ Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = f
     var displayId = stack.pop(), isolateId = stack.pop(), _this = stack.pop();
     MIDP.displayId = displayId;
     MIDP.foregroundIsolateId = isolateId;
-    console.log("SET FOREGROUND: " + isolateId);
 }
 
 var alarms = [];
