@@ -707,28 +707,86 @@ Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack)
     fs.close(handle);
 }
 
+MIDP.RecordStoreCache = [];
+
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] = function(ctx, stack) {
     var headerDataSize = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    stack.push(0);
-    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I");
+
+    var sharedHeader =
+        MIDP.RecordStoreCache.filter(function(v) { return (v.suiteId == suiteId && v.storeName == storeName); })[0];
+    if (!sharedHeader) {
+        sharedHeader = {
+            suiteId: suiteId,
+            storeName: storeName,
+            headerVersion: 0,
+            headerData: null,
+            headerDataSize: headerDataSize,
+            refCount: 0,
+            // Use cache indices as IDs, so we can look up objects by index.
+            lookupId: MIDP.RecordStoreCache.length,
+        };
+        MIDP.RecordStoreCache.push(sharedHeader);
+    }
+    ++sharedHeader.refCount;
+
+    stack.push(sharedHeader.lookupId);
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(ctx, stack) {
     var headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
-    stack.push(0);
-    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I");
+
+    var sharedHeader = MIDP.RecordStoreCache[lookupId];
+    var size = headerDataSize;
+    if (size > sharedHeader.headerDataSize) {
+        size = sharedHeader.headerDataSize;
+    }
+    sharedHeader.headerData = headerData.buffer.slice(0, size);
+    ++sharedHeader.headerVersion;
+
+    stack.push(sharedHeader.headerVersion);
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] = function(ctx, stack) {
     var headerVersion = stack.pop(), headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
-    stack.push(0);
-    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I");
+
+    var sharedHeader = MIDP.RecordStoreCache[lookupId];
+    if (sharedHeader.headerVersion > headerVersion && sharedHeader.headerData) {
+        var size = sharedHeader.headerDataSize;
+        if (size > headerDataSize) {
+            size = headerDataSize;
+        }
+        for (var i = 0; i < size; i++) {
+            headerData[i] = sharedHeader.headerData[i];
+        }
+        stack.push(sharedHeader.headerVersion);
+    } else {
+        stack.push(headerVersion);
+    }
+}
+
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(ctx, stack) {
+    var lookupId = stack.pop();
+
+    var sharedHeader = MIDP.RecordStoreCache[lookupId];
+
+    stack.push(sharedHeader.refCount);
 }
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V");
+
+    for (var i = 0; i < MIDP.RecordStoreCache.length; i++) {
+        if (--MIDP.RecordStoreCache[i].refCount <= 0) {
+            // Set to null instead of removing from array to maintain
+            // correspondence between lookup IDs and array indices.
+            MIDP.RecordStoreCache[i] = null;
+        }
+    }
 }
+
+// In the reference implementation, finalize is identical to cleanup0.
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.finalize.()V"] =
+    Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"];
 
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
@@ -795,12 +853,6 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx,
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ctx, stack) {
     var id = stack.pop();
-}
-
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(ctx, stack) {
-    var id = stack.pop();
-    stack.push(1);
-    console.warn("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I");
 }
 
 // The foreground isolate will get the user events (keypresses, etc.)
