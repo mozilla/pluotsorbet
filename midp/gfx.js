@@ -86,7 +86,7 @@
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
     }
 
-    function textureToRGB(texture, rgbData, offset, scanlength) {
+    function textureToRGBA(texture, rgbData, offset, scanlength) {
         var width = texture.width;
         var height = texture.height;
         var data = texture.getContext("2d").getImageData(0, 0, width, height).data;
@@ -95,7 +95,7 @@
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
             for (var x = 0; x < width; ++x)
-                rgbData[j++] = swapRB(pixels[i++]) & 0xffffff;
+                rgbData[j++] = swapRB(pixels[i++]);
         }
     }
 
@@ -131,15 +131,26 @@
         ctx.putImageData(imageData, 0, 0);
     }
 
+    function createTexture(width, height) {
+        var texture = document.createElement("canvas");
+        texture.width = width;
+        texture.height = height;
+        return texture;
+    }
+
+    function setImageData(imageData, width, height, data) {
+        imageData.class.getField("width", "I").set(imageData, width);
+        imageData.class.getField("height", "I").set(imageData, height);
+        imageData.class.getField("nativeImageData", "I").set(imageData, data);
+    }
+
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
         var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop(), _this = stack.pop();
         var blob = new Blob([bytes.buffer.slice(offset, offset + length)], { type: "image/png" });
         var img = new Image();
         img.src = URL.createObjectURL(blob);
         img.onload = function() {
-            imageData.class.getField("width", "I").set(imageData, img.naturalWidth);
-            imageData.class.getField("height", "I").set(imageData, img.naturalHeight);
-            imageData.class.getField("nativeImageData", "I").set(imageData, img);
+            setImageData(imageData, img.naturalWidth, img.naturalHeight, img);
             ctx.resume();
         }
         img.onerror = function(e) {
@@ -150,28 +161,19 @@
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), imageData = stack.pop(), _this = stack.pop();
-        var texture = document.createElement("canvas");
-        texture.width = width;
-        texture.height = height;
+        var texture = createTexture(width, height);
         var ctx = texture.getContext("2d");
-        ctx.fillStyle = "rgb(255,255,255)";
-        ctx.fillRect(0, 0, width, height);
-        imageData.class.getField("width", "I").set(imageData, width);
-        imageData.class.getField("height", "I").set(imageData, height);
-        imageData.class.getField("nativeImageData", "I").set(imageData, texture);
+        ctx.fillStyle = "rgb(255,255,255)"; // white
+        ctx.fillRect(0, 0, texture.width, texture.height);
+        setImageData(imageData, width, height, texture);
     }
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] = function(ctx, stack) {
         var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), rgbData = stack.pop(),
             imageData = stack.pop(), _this = stack.pop();
-        var texture = document.createElement("canvas");
-        texture.mozOpaque = true;
-        texture.width = width;
-        texture.height = height;
-        imageData.class.getField("width", "I").set(imageData, width);
-        imageData.class.getField("height", "I").set(imageData, height);
-        imageData.class.getField("nativeImageData", "I").set(imageData, texture);
+        var texture = createTexture(width, height);
         (processAlpha ? textureFromRGBA : textureFromRGB)(texture, rgbData, 0, width);
+        setImageData(imageData, width, height, texture);
 
     }
 
@@ -189,7 +191,7 @@
             texture = canvas;
             _this.class.getField("nativeImageData", "I").set(_this, texture);
         }
-        textureToRGB(texture, rgbData, offset, scanlength);
+        textureToRGBA(texture, rgbData, offset, scanlength);
     }
 
     var FACE_SYSTEM = 0;
@@ -349,13 +351,13 @@
 
     function withPixel(g, c, cb) {
         var pixel = g.class.getField("pixel", "I").get(g);
+        c.save();
+        var a = (pixel >> 24) & 0xff;
         var b = (pixel >> 16) & 0xff;
         var g = (pixel >> 8) & 0xff;
         var r = pixel & 0xff;
-        var style = "rgb(" + r + "," + g + "," + b + ")";
-        c.save();
-        c.fillStyle = style;
-        c.strokeStyle = style;
+        var style = "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
+        c.fillStyle = c.strokeStyle = style;
         cb();
         c.restore();
     }
@@ -370,7 +372,20 @@
 
     Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
         var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
-        stack.push(swapRB(rgb));
+        stack.push(swapRB(rgb) | 0xff000000);
+    }
+
+    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(ctx, stack) {
+        var rgba = stack.pop(), _this = stack.pop();
+        var g = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
+        g.class.getField("pixel", "I").set(g, swapRB(rgba));
+    }
+
+    Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        var g = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var pixel = g.class.getField("pixel", "I").get(g);
+        stack.push((pixel >> 24) & 0xff);
     }
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
