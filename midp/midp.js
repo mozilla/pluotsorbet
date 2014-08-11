@@ -1237,7 +1237,7 @@ Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = fun
 Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     fs.exists(path, function(exists) {
         stack.push(exists ? 1 : 0);
@@ -1250,7 +1250,7 @@ Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx
 Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     fs.size(path, function(size) {
         stack.push2(Long.fromNumber(size));
@@ -1263,7 +1263,7 @@ Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(c
 Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     fs.list(path, function(files) {
         stack.push(files ? 1 : 0);
@@ -1276,7 +1276,7 @@ Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = functio
 Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(ctx, stack) {
     var includeHidden = stack.pop(), filterArray = stack.pop(), byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     var filter = "";
     if (filterArray) {
@@ -1306,7 +1306,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
 Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     // IBM's implementation returns different error numbers, we don't care
 
@@ -1326,7 +1326,7 @@ Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = fu
 Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     // IBM's implementation returns different error numbers, we don't care
 
@@ -1350,7 +1350,7 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ct
 Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(ctx, stack) {
     var newLength = stack.pop2().toNumber(), byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     // IBM's implementation returns different error numbers, we don't care
 
@@ -1398,7 +1398,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(c
 Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     function open() {
         fs.open(path, function(fd) {
@@ -1436,7 +1436,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(c
 Native["com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"] = function(ctx, stack) {
     var offset = stack.pop2(), byteArray = stack.pop(), _this = stack.pop();
 
-    var path = "/" + util.decodeUtf8(byteArray);
+    var path = util.decodeUtf8(byteArray);
 
     function open() {
         fs.open(path, function(fd) {
