@@ -1281,14 +1281,24 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
     var filter = "";
     if (filterArray) {
         filter = util.decodeUtf8(filterArray);
-        console.warn("Connection.listImpl: filter not implemented (yet)");
+        if (!filter.startsWith("*.")) {
+            console.warn("Our implementation of Connection::listImpl assumes the filter starts with *.");
+        }
+        filter = filter.replace(/\*\./g, ".\\.");
     }
 
-    fs.list(path, function(files) {
+    fs.list(path, function(foundFiles) {
+        var files = [];
+        for (var i = 0; i < foundFiles.length; i++) {
+            if (new RegExp(filter).test(foundFiles[i])) {
+                files.push(foundFiles[i]);
+            }
+        }
+
         var pathsArray = ctx.newArray("[B", files.length);
         for (var i = 0; i < files.length; i++) {
             var curPath = path + files[i];
-            var bytesCurPath = new TextEncoder().encode(curPath);
+            var bytesCurPath = new TextEncoder("utf-8").encode(curPath);
             var pathArray = ctx.newPrimitiveArray("B", bytesCurPath.byteLength);
             for (var j = 0; j < bytesCurPath.byteLength; j++) {
                 pathArray[j] = bytesCurPath[j];
