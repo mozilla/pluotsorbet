@@ -1254,8 +1254,6 @@ Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = functio
 }
 
 Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(ctx, stack) {
-    // TODO: FILTER
-
     var includeHidden = stack.pop(), filterArray = stack.pop(), byteArray = stack.pop(), _this = stack.pop();
 
     var path = "/" + util.decodeUtf8(byteArray);
@@ -1263,6 +1261,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
     var filter = "";
     if (filterArray) {
         filter = util.decodeUtf8(filterArray);
+        console.warn("Connection.listImpl: filter not implemented (yet)");
     }
 
     fs.list(path, function(files) {

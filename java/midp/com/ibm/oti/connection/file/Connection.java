@@ -141,8 +141,7 @@ public void setParameters(String spec, int accessMode, boolean timeout) throws I
 
 	this.accessMode = accessMode;
 	checkSecurity(platformPath);
-	open = true;		
-	Logging.report(Logging.INFORMATION, LogChannels.LC_CORE, "IBMConnection: " + platformPath);
+	open = true;
 }
 
 private void setPaths(String path) {
