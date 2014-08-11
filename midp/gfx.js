@@ -82,22 +82,20 @@
             displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
     }
 
-    function textureToRGBA(texture, rgbData, offset, scanlength) {
+    function swapRB(pixel) {
+        return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
+    }
+
+    function textureToRGB(texture, rgbData, offset, scanlength) {
         var width = texture.width;
         var height = texture.height;
         var data = texture.getContext("2d").getImageData(0, 0, width, height).data;
+        var pixels = new Int32Array(data.buffer);
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
-            for (var x = 0; x < width; ++x) {
-                // input: bytes in RGBA order
-                // output: 0xAARRGGBB
-                var r = data[i++];
-                var g = data[i++];
-                var b = data[i++];
-                var a = data[i++];
-                rgbData[j++] = (a<<24)|(r<<16)|(g<<8)|b;
-            }
+            for (var x = 0; x < width; ++x)
+                rgbData[j++] = swapRB(pixels[i++]) & 0xffffff;
         }
     }
 
@@ -107,18 +105,12 @@
         var ctx = texture.getContext("2d");
         var imageData = ctx.createImageData(width, height);
         var data = imageData.data;
+        var pixels = new Int32Array(data.buffer);
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
-            for (var x = 0; x < width; ++x) {
-                // input: 0xAARRGGBB
-                // output: bytes in RGBA order
-                var argb = rgbData[j++];
-                data[i++] = (argb >> 16);
-                data[i++] = (argb >> 8);
-                data[i++] = argb;
-                data[i++] = (argb >> 24);
-            }
+            for (var x = 0; x < width; ++x)
+                pixels[i++] = swapRB(rgbData[j++]);
         }
         ctx.putImageData(imageData, 0, 0);
     }
@@ -129,18 +121,12 @@
         var ctx = texture.getContext("2d");
         var imageData = ctx.createImageData(width, height);
         var data = imageData.data;
+        var pixels = new Int32Array(data.buffer);
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
-            for (var x = 0; x < width; ++x) {
-                // input: 0xAARRGGBB
-                // output: bytes in RGBA order
-                var argb = rgbData[j++];
-                data[i++] = (argb >> 16);
-                data[i++] = (argb >> 8);
-                data[i++] = argb;
-                data[i++] = 255;
-            }
+            for (var x = 0; x < width; ++x)
+                pixels[i++] = swapRB(rgbData[j++]) | 0xff000000;
         }
         ctx.putImageData(imageData, 0, 0);
     }
@@ -167,6 +153,9 @@
         var texture = document.createElement("canvas");
         texture.width = width;
         texture.height = height;
+        var ctx = texture.getContext("2d");
+        ctx.fillStyle = "rgb(255,255,255)";
+        ctx.fillRect(0, 0, width, height);
         imageData.class.getField("width", "I").set(imageData, width);
         imageData.class.getField("height", "I").set(imageData, height);
         imageData.class.getField("nativeImageData", "I").set(imageData, texture);
@@ -176,6 +165,7 @@
         var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), rgbData = stack.pop(),
             imageData = stack.pop(), _this = stack.pop();
         var texture = document.createElement("canvas");
+        texture.mozOpaque = true;
         texture.width = width;
         texture.height = height;
         imageData.class.getField("width", "I").set(imageData, width);
@@ -192,14 +182,14 @@
         // If nativeImageData is not a canvas texture already, then convert it now.
         if (!(texture instanceof HTMLCanvasElement)) {
             var canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
+            canvas.width = texture.width;
+            canvas.height = texture.height;
             var ctx = canvas.getContext("2d");
             ctx.drawImage(texture, 0, 0);
             texture = canvas;
             _this.class.getField("nativeImageData", "I").set(_this, texture);
         }
-        textureToRGBA(texture, rgbData, offset, scanlength);
+        textureToRGB(texture, rgbData, offset, scanlength);
     }
 
     var FACE_SYSTEM = 0;
@@ -359,7 +349,10 @@
 
     function withPixel(g, c, cb) {
         var pixel = g.class.getField("pixel", "I").get(g);
-        var style = "#" + ("00000" + pixel.toString(16)).slice(-6);
+        var b = (pixel >> 16) & 0xff;
+        var g = (pixel >> 8) & 0xff;
+        var r = pixel & 0xff;
+        var style = "rgb(" + r + "," + g + "," + b + ")";
         c.save();
         c.fillStyle = style;
         c.strokeStyle = style;
@@ -377,7 +370,7 @@
 
     Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
         var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
-        stack.push(rgb);
+        stack.push(swapRB(rgb));
     }
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {

@@ -1015,7 +1015,8 @@ VM.execute = function(ctx) {
                     break;
                 }
             }
-            if (VM.DEBUG) {
+            if (VM.DEBUG &&
+                (methodInfo.classInfo.className.indexOf("Graphics") > 0 || methodInfo.classInfo.className.indexOf("Image") > 0)) {
                 console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
                             (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
             }
