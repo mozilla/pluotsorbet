@@ -14,7 +14,7 @@ Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/la
     var entryName = util.fromJavaString(stack.pop()), jar = util.fromJavaString(stack.pop());
     var bytes = CLASSES.loadFileFromJar(jar, entryName);
     if (!bytes)
-        ctx.raiseException("java/lang/IOException");
+        ctx.raiseException("java/io/IOException");
     var length = bytes.byteLength;
     var data = new Uint8Array(bytes);
     var array = ctx.newPrimitiveArray("B", length);
@@ -406,7 +406,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFi
     var fileName = util.fromJavaString(stack.pop());
     var data = CLASSES.loadFile(fileName);
     if (!data)
-        ctx.raiseException("java/lang/IOException");
+        ctx.raiseException("java/io/IOException");
     MIDP.skinFileData = new DataView(data);
     MIDP.skinFilePos = 0;
 }
@@ -505,7 +505,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     var data = CLASSES.loadFile(fileName);
     if (!data) {
         console.log(fileName);
-        ctx.raiseException("java/lang/IOException");
+        ctx.raiseException("java/io/IOException");
     }
     var len = data.byteLength;
     var bytes = ctx.newPrimitiveArray("B", len);
@@ -622,7 +622,7 @@ Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;
               ctx.raiseException("java/io/IOException", "openRecordStoreFile: open failed");
             } catch(ex) {
               // Catch and ignore the VM.Yield exception that Context.raiseException
-              // throws.
+              // throws so we reach ctx.resume() to resume the thread.
             }
         } else {
             stack.push(fd); // handle
@@ -647,7 +647,7 @@ Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;
                                 ctx.raiseException("java/io/IOException", "openRecordStoreFile: create failed");
                             } catch(ex) {
                                 // Catch and ignore the VM.Yield exception that Context.raiseException
-                                // throws.
+                                // throws so we reach ctx.resume() to resume the thread.
                             }
                             ctx.resume();
                         }
@@ -657,7 +657,7 @@ Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;
                         ctx.raiseException("java/io/IOException", "openRecordStoreFile: mkdirp failed");
                     } catch(ex) {
                         // Catch and ignore the VM.Yield exception that Context.raiseException
-                        // throws.
+                        // throws so we reach ctx.resume() to resume the thread.
                     }
                     ctx.resume();
                 }
@@ -713,7 +713,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/Str
     var headerDataSize = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
 
     var sharedHeader =
-        MIDP.RecordStoreCache.filter(function(v) { return (v.suiteId == suiteId && v.storeName == storeName); })[0];
+        MIDP.RecordStoreCache.filter(function(v) { return (v && v.suiteId == suiteId && v.storeName == storeName); })[0];
     if (!sharedHeader) {
         sharedHeader = {
             suiteId: suiteId,
@@ -736,6 +736,14 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = 
     var headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
 
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
+    if (!sharedHeader) {
+        ctx.raiseException("java/lang/IllegalStateException", "invalid header lookup ID");
+    }
+
+    if (!headerData) {
+      ctx.raiseException("java/lang/IllegalArgumentException", "header data is null");
+    }
+
     var size = headerDataSize;
     if (size > sharedHeader.headerDataSize) {
         size = sharedHeader.headerDataSize;
@@ -750,6 +758,14 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] 
     var headerVersion = stack.pop(), headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
 
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
+    if (!sharedHeader) {
+        ctx.raiseException("java/lang/IllegalStateException", "invalid header lookup ID");
+    }
+
+    if (!headerData) {
+      ctx.raiseException("java/lang/IllegalArgumentException", "header data is null");
+    }
+
     if (sharedHeader.headerVersion > headerVersion && sharedHeader.headerData) {
         var size = sharedHeader.headerDataSize;
         if (size > headerDataSize) {
@@ -768,6 +784,9 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = f
     var lookupId = stack.pop();
 
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
+    if (!sharedHeader) {
+        ctx.raiseException("java/lang/IllegalStateException", "invalid header lookup ID");
+    }
 
     stack.push(sharedHeader.refCount);
 }
@@ -776,6 +795,9 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx
     var _this = stack.pop();
 
     for (var i = 0; i < MIDP.RecordStoreCache.length; i++) {
+        if (MIDP.RecordStoreCache[i] == null) {
+            continue;
+        }
         if (--MIDP.RecordStoreCache[i].refCount <= 0) {
             // Set to null instead of removing from array to maintain
             // correspondence between lookup IDs and array indices.
@@ -961,7 +983,7 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
     });
     var data = CLASSES.loadFile("assets/0/en-US.xml");
     if (!data || !key)
-        ctx.raiseException("java/lang/IOException");
+        ctx.raiseException("java/io/IOException");
     var text = util.decodeUtf8(data);
     var xml = new window.DOMParser().parseFromString(text, "text/xml");
     var entries = xml.getElementsByTagName("localized_string");
@@ -1295,7 +1317,12 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
 
     fs.open(path, function(fd) {
       if (fd == -1) {
-        ctx.raiseException("java/lang/IOException", "truncate failed");
+        try {
+          ctx.raiseException("java/io/IOException", "truncate failed");
+        } catch(ex) {
+          // Catch and ignore the VM.Yield exception that Context.raiseException
+          // throws so we reach ctx.resume() to resume the thread.
+        }
         ctx.resume();
       } else {
         var data = fs.read(fd);
@@ -1303,7 +1330,12 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
           if (truncated) {
             fs.write(fd, data.subarray(0, newLength));
           } else {
-            ctx.raiseException("java/lang/IOException", "truncate failed");
+            try {
+              ctx.raiseException("java/io/IOException", "truncate failed");
+            } catch(ex) {
+              // Catch and ignore the VM.Yield exception that Context.raiseException
+              // throws so we reach ctx.resume() to resume the thread.
+            }
           }
           ctx.resume();
         });
