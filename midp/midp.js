@@ -389,6 +389,9 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     case "microedition.locale":
         value = navigator.language;
         break;
+    case "datagram":
+        value = "com.sun.midp.io.j2me.datagram.ProtocolPushImpl";
+        break;
     default:
         console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
@@ -1129,8 +1132,9 @@ Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = f
     MIDP.foregroundIsolateId = isolateId;
 }
 
+var pushRegistrations = [];
 var alarms = [];
-var lastAlarmId = -1;
+var lastPushRegistrationId = -1;
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
     var time = stack.pop2().toNumber(), _this = stack.pop();
@@ -1154,6 +1158,22 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
     throw VM.Pause;
 }
 
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(ctx, stack) {
+    var connection = util.fromJavaString(stack.pop());
+
+    var values = connection.split(',');
+
+    pushRegistrations.push({
+      connection: values[0],
+      midlet: values[1],
+      filter: values[2],
+      suiteId: values[3],
+      id: ++lastPushRegistrationId,
+    });
+
+    stack.push(0);
+}
+
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(ctx, stack) {
     var time = stack.pop2().toNumber(), midlet = util.decodeUtf8(stack.pop());
 
@@ -1174,7 +1194,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     if (lastAlarm == 0 && time != 0) {
       alarms.push({
         midlet: midlet,
-        id: ++lastAlarmId,
+        id: ++lastPushRegistrationId,
         time: time,
       });
     }
