@@ -577,6 +577,18 @@ Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/St
     throw VM.Pause;
 }
 
+Native["com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V"] = function(ctx, stack) {
+    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop());
+
+    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
+
+    fs.remove(path, function(removed) {
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var id = stack.pop();
     stack.push(ctx.newString(id.toString()));
