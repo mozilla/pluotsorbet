@@ -833,7 +833,7 @@ private String validateSpec(String spec) {
 	if (idx==0) {
 		// no host is specified, since the URL started as "file:///"
 		host="";		
-		fullPath=spec.substring(1,spec.length()) ;
+		fullPath=spec.substring(0,spec.length()) ;
 	} else {
 		// There is a host specified
 		// make sure it is a valid specification.
@@ -843,7 +843,7 @@ private String validateSpec(String spec) {
 		if ((idx2!=-1 && idx2<idx ) ||  (idx3!=-1 && idx3<idx ))
 			throw new  IllegalArgumentException(spec);
 	
-		fullPath = spec.substring(idx+1,spec.length());
+		fullPath = spec.substring(idx,spec.length());
 		host = spec.substring(0,idx);	
 	}
 	
