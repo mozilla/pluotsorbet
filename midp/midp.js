@@ -680,12 +680,15 @@ Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(ctx, st
     var from = fs.getpos(handle);
     var to = from + numBytes;
     var readBytes = fs.read(handle, from, to);
-    var subBuffer = buf.subarray(offset, offset + numBytes);
-    for (var i = 0; i < readBytes.byteLength; i++) {
-      subBuffer[i] = readBytes[i];
+    if (readBytes) {
+        var subBuffer = buf.subarray(offset, offset + numBytes);
+        for (var i = 0; i < readBytes.byteLength; i++) {
+            subBuffer[i] = readBytes[i];
+        }
+        stack.push(readBytes.byteLength);
+    } else {
+        ctx.raiseException("java/io/IOException", "handle invalid or segment indices out of bounds");
     }
-
-    stack.push(readBytes.byteLength);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
@@ -704,7 +707,24 @@ Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(ctx, stac
 
 Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack) {
     var handle = stack.pop();
-    fs.close(handle);
+
+    fs.flush(handle, function() {
+        fs.close(handle);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V"] = function(ctx, stack) {
+    var size = stack.pop(), handle = stack.pop();
+
+    fs.flush(handle, function() {
+        fs.ftruncate(handle, size);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
 }
 
 MIDP.RecordStoreCache = [];
