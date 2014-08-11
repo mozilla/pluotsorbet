@@ -184,6 +184,18 @@ var fs = (function() {
     });
   }
 
+  function ftruncate(fd, size) {
+    var buffer = openedFiles[fd].buffer;
+
+    if (buffer.length > size) {
+      openedFiles[fd].buffer = new Uint8Array(buffer.buffer.slice(0, size));
+    } else {
+      var newBuffer = new Uint8Array(size);
+      newBuffer.set(buffer);
+      openedFiles[fd].buffer = newBuffer;
+    }
+  }
+
   function remove(path, cb) {
     path = normalizePath(path);
 
@@ -313,6 +325,7 @@ var fs = (function() {
     list: list,
     exists: exists,
     truncate: truncate,
+    ftruncate: ftruncate,
     remove: remove,
     create: create,
     mkdir: mkdir,
