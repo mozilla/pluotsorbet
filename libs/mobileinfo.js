@@ -2,8 +2,8 @@
 
 // Use only the info about the first SIM for the time being
 var mobileInfo = (function() {
-  var networkID = "01 (TEST)";
-  var mnc = "01";
+  var networkID = "001 0001";
+  var mnc = "001";
 
   var mobileConnections = window.navigator.mozMobileConnections;
   if (!mobileConnections && window.navigator.mozMobileConnection) {
