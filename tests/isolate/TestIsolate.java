@@ -14,8 +14,14 @@ public class TestIsolate {
         Isolate myIso = Isolate.currentIsolate();
         System.out.println(myIso.id());
 
-        if (Isolate.getIsolates().length == 1) {
+        Isolate[] isolates = Isolate.getIsolates();
+
+        if (isolates.length == 1) {
             System.out.println("1 isolate");
+        }
+
+        if (isolates[0].id() == myIso.id()) {
+            System.out.println("Isolate ID correct");
         }
 
         try {
