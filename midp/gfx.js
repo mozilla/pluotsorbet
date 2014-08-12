@@ -353,9 +353,9 @@
     function withPixel(g, c, cb) {
         var pixel = g.class.getField("pixel", "I").get(g);
         c.save();
-        var a = (pixel >>> 24) & 0xff;
-        var b = (pixel >>> 16) & 0xff;
-        var g = (pixel >>> 8) & 0xff;
+        var a = (pixel >> 24) & 0xff;
+        var b = (pixel >> 16) & 0xff;
+        var g = (pixel >> 8) & 0xff;
         var r = pixel & 0xff;
         var style = "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
         c.fillStyle = c.strokeStyle = style;
