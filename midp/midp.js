@@ -1528,3 +1528,6 @@ Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = f
     var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
     stack.push(1);
 }
+
+Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function(ctx, stack) {
+}
