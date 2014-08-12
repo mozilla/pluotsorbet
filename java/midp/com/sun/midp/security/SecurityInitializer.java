@@ -180,11 +180,11 @@ public final class SecurityInitializer {
         "com.sun.midp.io.j2me.datagram.Protocol$SecurityTrusted",
 
         
-
-
-
+        "com.sun.midp.io.j2me.https.Protocol$SecurityTrusted",
+        "com.sun.midp.io.j2me.ssl.Protocol$SecurityTrusted",
 
         
+
 
 
 
