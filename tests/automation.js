@@ -15,7 +15,7 @@ casper.test.begin("unit tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate")
     .waitForText("DONE", function then() {
-        test.assertTextExists("m\na ma\n2\nma\n2\n1 isolate\n4\n5\n1 isolate\nma\nma\n3 isolates\n1 m1\n2 m2\n4\n5\nma\n1 isolate\nIsolates terminated\nr mar\n2\nmar\nc marc\n2\nmarc\nMain isolate still running");
+        test.assertTextExists("m\na ma\n2\nma\n2\n1 isolate\nIsolate ID correct\n4\n5\n1 isolate\nma\nma\n3 isolates\n1 m1\n2 m2\n4\n5\nma\n1 isolate\nIsolates terminated\nr mar\n2\nmar\nc marc\n2\nmarc\nMain isolate still running");
     });
 
     casper

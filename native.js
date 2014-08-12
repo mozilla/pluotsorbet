@@ -601,7 +601,7 @@ Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isola
     var isolates = ctx.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
     var n = 0;
     Runtime.all.forEach(function (runtime) {
-        isolates[n] = runtime.isolate[n++];
+        isolates[n++] = runtime.isolate;
     });
     stack.push(isolates);
 }
