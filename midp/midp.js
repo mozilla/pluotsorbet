@@ -1411,6 +1411,34 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
     throw VM.Pause;
 }
 
+Native["com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I"] = function(ctx, stack) {
+    var byteArray = stack.pop(), _this = stack.pop();
+
+    var path = util.decodeUtf8(byteArray);
+
+    fs.open(path, function(fd) {
+        stack.push(fd);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I"] = function(ctx, stack) {
+    var fd = stack.pop(), _this = stack.pop();
+
+    var curpos = fs.getpos(fd);
+
+    var data = fs.read(fd, curpos, curpos+1);
+
+    stack.push((data) ? data[0] : -1);
+}
+
+Native["com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V"] = function(ctx, stack) {
+    var fd = stack.pop(), _this = stack.pop();
+    fs.close(fd);
+}
+
 Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(ctx, stack) {
     var fd = stack.pop(), _this = stack.pop();
 
@@ -1430,7 +1458,6 @@ Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(c
     function open() {
         fs.open(path, function(fd) {
             stack.push(fd);
-            _this.pos = 0;
             ctx.resume();
         });
     }
@@ -1468,7 +1495,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"] = fun
     function open() {
         fs.open(path, function(fd) {
             stack.push(fd);
-            _this.pos = offset.toNumber();
+            fs.setpos(fd, offset.toNumber());
             ctx.resume();
         });
     }
@@ -1509,17 +1536,13 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = funct
 
     var buf = new Uint8Array(intBuf.buffer);
 
-    fs.write(fd, buf.subarray(3, 4), _this.pos);
-
-    _this.pos += 1;
+    fs.write(fd, buf.subarray(3, 4));
 }
 
 Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = function(ctx, stack) {
     var fd = stack.pop(), count = stack.pop(), offset = stack.pop(), byteArray = stack.pop(), _this = stack.pop();
 
-    fs.write(fd, byteArray.subarray(offset, offset+count), _this.pos);
-
-    _this.pos += count;
+    fs.write(fd, byteArray.subarray(offset, offset+count));
 }
 
 Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
