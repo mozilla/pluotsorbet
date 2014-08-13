@@ -392,6 +392,9 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     case "datagram":
         value = "com.sun.midp.io.j2me.datagram.ProtocolPushImpl";
         break;
+    case "com.sun.midp.io.j2me.socket.buffersize":
+        value = 0;
+        break;
     default:
         console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
