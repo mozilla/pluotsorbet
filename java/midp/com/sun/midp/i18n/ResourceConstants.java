@@ -1998,4 +1998,78 @@ public class ResourceConstants {
      */
     public final static int AMS_GRA_INTLR_FILE_NOT_FOUND = 392;
 
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_ENUM_LISTS = 393;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_OPEN_DEFAULT_LIST = 394;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_OPEN_LIST = 395;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_ADD_OR_UPDATE_ITEM = 396;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_REMOVE_ITEM = 397;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_ENUM_CATEGORY_ITEMS = 398;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_ENUM_MATCHING_ITEMS = 399;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_ENUM_ALL_ITEMS = 400;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_ENUM_ITEMS_MATCHING_STRING = 401;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_ADD_CATEGORY = 402;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_RENAME_CATEGORY = 403;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int JSR75_DELETE_CATEGORY = 404;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int ABSTRACTIONS_PIM_CONTACTS = 405;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int ABSTRACTIONS_PIM_EVENTS = 406;
+    
+    /**
+     * JSR75 PIM
+     */
+    public final static int ABSTRACTIONS_PIM_TODO = 407;
 }

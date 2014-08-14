@@ -818,5 +818,37 @@
                 Value="Loading the application file..."/>
 <localized_string Key="AMS_GRA_INTLR_FILE_NOT_FOUND"
                 Value="File not found in the current path"/>       
+
+<localized_string Key="JSR75_ENUM_LISTS"
+                Value="enumerate lists"/>
+<localized_string Key="JSR75_OPEN_DEFAULT_LIST"
+                Value="open default list"/>
+<localized_string Key="JSR75_OPEN_LIST"
+                Value="open list"/>
+<localized_string Key="JSR75_ADD_OR_UPDATE_ITEM"
+                Value="add or update an item"/>
+<localized_string Key="JSR75_REMOVE_ITEM"
+                Value="remove an item"/>
+<localized_string Key="JSR75_ENUM_CATEGORY_ITEMS"
+                Value="enumerate items in a category"/>
+<localized_string Key="JSR75_ENUM_MATCHING_ITEMS"
+                Value="enumerate matching items"/>
+<localized_string Key="JSR75_ENUM_ALL_ITEMS"
+                Value="enumerate all items"/>
+<localized_string Key="JSR75_ENUM_ITEMS_MATCHING_STRING"
+                Value="enumerate items matching a string"/>
+<localized_string Key="JSR75_ADD_CATEGORY"
+                Value="add a category"/>
+<localized_string Key="JSR75_RENAME_CATEGORY"
+                Value="rename a category"/>
+<localized_string Key="JSR75_DELETE_CATEGORY"
+                Value="delete a category"/>
+
+<localized_string Key="ABSTRACTIONS_PIM_CONTACTS"
+                Value="PIM contact list"/>
+<localized_string Key="ABSTRACTIONS_PIM_EVENTS"
+                Value="PIM event list"/>
+<localized_string Key="ABSTRACTIONS_PIM_TODO"
+                Value="PIM to-do list"/>
 </localized_strings>
 </configuration>
