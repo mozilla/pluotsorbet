@@ -287,6 +287,7 @@
             var imgData = img.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(img),
                 canvas = imgData.class.getField("nativeImageData", "I").get(imgData);
             c = canvas.getContext("2d");
+            c.globalCompositeOperation = "copy";
         }
         cb(c);
     }
@@ -362,6 +363,23 @@
         c.restore();
     }
 
+    /**
+     * Like withPixel, but ignores alpha channel, setting the alpha value to 1.
+     * Useful when you suspect that the caller is specifying the alpha channel
+     * incorrectly, although we should actually figure out why that's happening.
+     */
+    function withOpaquePixel(g, c, cb) {
+        var pixel = g.class.getField("pixel", "I").get(g);
+        c.save();
+        var b = (pixel >> 16) & 0xff;
+        var g = (pixel >> 8) & 0xff;
+        var r = pixel & 0xff;
+        var style = "rgba(" + r + "," + g + "," + b + "," + 1 + ")";
+        c.fillStyle = c.strokeStyle = style;
+        cb();
+        c.restore();
+    }
+
     function withSize(dx, dy, cb) {
         if (!dx)
             dx = 1;
@@ -404,7 +422,7 @@
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
         withGraphics(_this, function(c) {
             withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
-                withPixel(_this, c, function() {
+                withOpaquePixel(_this, c, function() {
                     c.fillText(str, x, y);
                 });
             });
