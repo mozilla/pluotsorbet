@@ -1374,6 +1374,11 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ct
     throw VM.Pause;
 }
 
+Native["com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z"] = function(ctx, stack) {
+    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
+    stack.push(0);
+}
+
 Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(ctx, stack) {
     var newLength = stack.pop2().toNumber(), byteArray = stack.pop(), _this = stack.pop();
 
