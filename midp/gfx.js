@@ -388,6 +388,11 @@
         cb(dx, dy);
     }
 
+    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(ctx, stack) {
+        var color = stack.pop(), _this = stack.pop();
+        stack.push(color);
+    }
+
     Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
         var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
         stack.push(swapRB(rgb) | 0xff000000);
