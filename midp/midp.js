@@ -1374,9 +1374,32 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ct
     throw VM.Pause;
 }
 
+Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] =
+Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] = function(ctx, stack) {
+    var path = util.decodeUtf8(stack.pop());
+    fs.remove(path, function(removed) {
+        stack.push(removed ? 1 : 0);
+        ctx.resume();
+    });
+    throw VM.Pause;
+}
+
+Native["com/ibm/oti/connection/file/Connection.isReadOnlyImpl.([B)Z"] = function(ctx, stack) {
+    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
+    stack.push(0);
+}
+
 Native["com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z"] = function(ctx, stack) {
     var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
     stack.push(0);
+}
+
+Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(ctx, stack) {
+    var newPath = util.decodeUtf8(stack.pop()), oldPath = util.decodeUtf8(stack.pop()), _this = stack.pop();
+    fs.rename(oldPath, newPath, function() {
+      ctx.resume();
+    });
+    throw VM.Pause;
 }
 
 Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(ctx, stack) {
