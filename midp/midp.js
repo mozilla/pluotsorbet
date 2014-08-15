@@ -850,7 +850,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.finalize.()V"] =
 
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    stack.push(ctx.newPrimitiveArray("I", 0));
+    stack.push(null);
     console.warn("com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I");
 }
 
