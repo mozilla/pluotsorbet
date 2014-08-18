@@ -13,41 +13,44 @@ public class FrameAnimator {
     protected int actionType;
     protected int actionID;
 
-    protected static int _numRegistered;
-
-    public FrameAnimator() {}
+    public FrameAnimator() {
+        throw new RuntimeException("FrameAnimator() not implemented");
+    }
 
     public boolean register(int x, int y, short maxFps, short maxPps, FrameAnimatorListener listener) {
-        _numRegistered++;
-        return true;
+        throw new RuntimeException("FrameAnimator.register(IISSL…FrameAnimatorListener;)Z not implemented (" +
+                                   x + ", " + y + ", " + maxFps + ", " + maxPps + ", " + listener + ")");
     }
 
     public void unregister() {
-        _numRegistered--;
+        throw new RuntimeException("FrameAnimator.unregister()V not implemented");
     }
 
     public void drag(int x, int y) {
-        //
+        throw new RuntimeException("FrameAnimator.drag(II)V not implemented (" + x + ", " + y + ")");
     }
 
     public void kineticScroll(int speed, int direction, int friction, float angle) {
-        //
+        throw new RuntimeException("FrameAnimator.kineticScroll(IIIF)V not implemented (" +
+                                   speed + ", " + direction + ", " + friction + ", " + angle + ")");
     }
 
     public void limitedKineticScroll(int speed, int direction, int friction, float angle, int limitUp, int limitDown) {
-        //
+        throw new RuntimeException("FrameAnimator.limitedKineticScroll(IIIFII)V not implemented (" +
+                                   speed + ", " + direction + ", " + friction + ", " + angle + ", " + limitUp + ", " +
+                                   limitDown + ")");
     }
 
     public void stop() {
-        //
+        throw new RuntimeException("FrameAnimator.stop()V not implemented");
     }
 
     public boolean isRegistered() {
-        return true;
+        throw new RuntimeException("FrameAnimator.isRegistered()Z not implemented");
     }
 
     public static int getNumRegisteredFrameAnimators() {
-        return _numRegistered;
+        throw new RuntimeException("FrameAnimator.getNumRegisteredFrameAnimators()I not implemented");
     }
 
 }
