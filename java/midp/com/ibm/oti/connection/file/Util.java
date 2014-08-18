@@ -8,6 +8,7 @@ package com.ibm.oti.connection.file;
 public class Util {
 
 	public static void init() {
+		throw new RuntimeException("Util.init()V commented out");
 		/*try {
 			System.loadLibrary("fileconn");
 		} catch (UnsatisfiedLinkError err) {}*/

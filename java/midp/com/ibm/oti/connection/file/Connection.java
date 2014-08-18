@@ -159,6 +159,7 @@ private String getPlatformPath(String path) {
 }
 
 private void checkSecurity(String path) {
+	System.out.println("warning: Connection.checkSecurity(S)V commented out (" + path + ")");
 	/*SecurityManager security = System.getSecurityManager();
 	if (security != null) {
 		if (accessMode == Connector.READ_WRITE) {
