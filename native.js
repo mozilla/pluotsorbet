@@ -94,7 +94,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "GMT";
         break;
     case "com.nokia.keyboard.type":
-        value = "FullKeyboard";
+        value = "None";
         break;
     case "javax.microedition.io.Connector.protocolpath":
         value = "com.sun.cldc.io";
