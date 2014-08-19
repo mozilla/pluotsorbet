@@ -340,6 +340,7 @@ Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/l
 }
 
 Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function(ctx, stack) {
+    console.warn("Permissions.loadingFinished.()V not implemented");
 }
 
 Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(ctx, stack) {
@@ -851,25 +852,30 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.finalize.()V"] =
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
     stack.push(null);
-    console.warn("com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I");
+    console.warn("RecordStoreRegistry.getRecordStoreListeners.(IL...String;)[I not implemented (" +
+                 suiteId + ", " + storeName + ")");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
     var recordId = stack.pop(), changeType = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    console.warn("com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V");
+    console.warn("RecordStoreRegistry.sendRecordStoreChangeEvent.(IL...String;II)V not implemented (" +
+                 suiteId + ", " + storeName + ", " + changeType + ", " + recordId + ")");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    console.warn("com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V");
+    console.warn("RecordStoreRegistry.stopRecordStoreListening.(IL...String;)V not implemented (" +
+                 suiteId + ", " + storeName + ")");
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(ctx, stack) {
     var lock = stack.pop(), id = stack.pop();
+    console.warn("MIDletSuiteImpl.lockMIDletSuite.(IZ)V not implemented (" + id + ", " + lock + ")");
 }
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.unlockMIDletSuite.(I)V"] = function(ctx, stack) {
     var suiteId = stack.pop();
+    console.warn("MIDletSuiteImpl.unlockMIDletSuite.(I)V not implemented (" + suiteId + ")");
 }
 
 Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack) {
@@ -879,6 +885,8 @@ Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack)
 
 Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(ctx, stack) {
     var permissions = stack.pop(), pushOptions = stack.pop(), pushInterruptSetting = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
+    console.warn("SuiteSettings.save0.(IBI[B)V not implemented (" +
+                 suiteId + ", " + pushInterruptSetting + ", " + pushOptions + ", " + permissions + ")");
 }
 
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
@@ -902,19 +910,24 @@ Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = 
 Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(ctx, stack) {
     var fileName = util.fromJavaString(stack.pop()), suiteId = stack.pop(), imageData = stack.pop();
     stack.push(0);
+    console.warn("SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(L...ImageData;IL...String;)Z " +
+                 "not implemented (" + imageData + ", " + suiteId + ", " + fileName + ")");
 }
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
     stack.push(0);
+    console.warn("InterIsolateMutex.getID0.(L...String;)I not implemented (" + name + ")");
 }
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx, stack) {
     var id = stack.pop();
+    console.warn("InterIsolateMutex.lock0.(I)V not implemented (" + id + ")");
 }
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ctx, stack) {
     var id = stack.pop();
+    console.warn("InterIsolateMutex.unlock0.(I)V not implemented (" + id + ")");
 }
 
 // The foreground isolate will get the user events (keypresses, etc.)
@@ -982,6 +995,7 @@ Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = functio
 
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function(ctx, stack) {
     var _this = stack.pop();
+    console.warn("EventQueue.resetNativeEventQueue.()V not implemented");
 }
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] = function(ctx, stack) {
@@ -1044,11 +1058,12 @@ Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stac
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
     var drawTrusted = stack.pop(), displayId = stack.pop(), _this = stack.pop();
+    console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + displayId + ", " + drawTrusted + ")");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(ctx, stack) {
     var taskId = stack.pop();
-    console.warn("com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V");
+    console.warn("RecordStoreRegistry.stopAllRecordStoreListeners.(I)V not implemented (" + taskId + ")");
 }
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
@@ -1060,6 +1075,7 @@ Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, s
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var commandState = stack.pop();
+    console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
 }
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack) {
@@ -1070,6 +1086,7 @@ Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack
 Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function(ctx, stack) {
     var _this = stack.pop();
     stack.push(0);
+    console.warn("SuspendSystem$MIDPSystem.allMidletsKilled.()Z not implemented");
 }
 
 Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function(ctx, stack) {
@@ -1114,6 +1131,8 @@ Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"]
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
     var className = stack.pop(), suiteId = stack.pop();
+    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
+                 suiteId + ", " + className + ")");
 }
 
 MIDP.gameKeys = {
@@ -1234,21 +1253,27 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
 
 Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureListener;)V"] = function(ctx, stack) {
     var listener = stack.pop(), container = stack.pop();
+    console.warn("GestureRegistrationManager.setListener.(L...Object;L...GestureListener;)V not implemented (" +
+                 container + ", " + listener + ")");
 }
 
 Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.register.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureInteractiveZone;)Z"] = function(ctx, stack) {
     var gestureInteractiveZone = stack.pop(), container = stack.pop();
     stack.push(0);
+    console.warn("GestureRegistrationManager.register.(L...Object;L...GestureInteractiveZone;)Z not implemented (" +
+                 container + ", " + gestureInteractiveZone + ")");
 }
 
 Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
     var gestureEventIdentity = stack.pop();
     stack.push(0);
+    console.warn("GestureInteractiveZone.isSupported.(I)Z not implemented (" + gestureEventIdentity + ")");
 }
 
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
     stack.push(1);
+    console.warn("Connection.isValidFilenameImpl.([B)Z not implemented (" + util.decodeUtf8(byteArray) + ")");
 }
 
 Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
@@ -1345,11 +1370,6 @@ Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx,
     throw VM.Pause;
 }
 
-Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
-    var gestureEventIdentity = stack.pop();
-    stack.push(0);
-}
-
 Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ctx, stack) {
     var byteArray = stack.pop(), _this = stack.pop();
 
@@ -1387,11 +1407,13 @@ Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] = function(
 Native["com/ibm/oti/connection/file/Connection.isReadOnlyImpl.([B)Z"] = function(ctx, stack) {
     var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
     stack.push(0);
+    console.warn("Connection.isReadOnlyImpl.([B)Z not implemented (" + path + ")");
 }
 
 Native["com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z"] = function(ctx, stack) {
     var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
     stack.push(0);
+    console.warn("Connection.isWriteOnlyImpl.([B)Z not implemented (" + path + ")");
 }
 
 Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(ctx, stack) {
@@ -1584,6 +1606,7 @@ Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = f
 }
 
 Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function(ctx, stack) {
+    console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
 }
 
 var LocalMsgConnection = function() {

@@ -14,8 +14,12 @@ public class GestureInteractiveZone
     public static final int GESTURE_RECOGNITION_END = 0x8000;
     public static final int GESTURE_ALL = 0xC0FF;
 
-    public GestureInteractiveZone(int gestures) throws java.lang.IllegalArgumentException {}
-    public GestureInteractiveZone(int gestures, int timeInterval) throws java.lang.IllegalArgumentException {}
+    public GestureInteractiveZone(int gestures) throws java.lang.IllegalArgumentException {
+        System.out.println("warning: GestureInteractiveZone(I) not implemented (" + gestures + ")");
+    }
+    public GestureInteractiveZone(int gestures, int timeInterval) throws java.lang.IllegalArgumentException {
+        throw new RuntimeException("GestureInteractiveZone(II) not implemented (" + gestures + ", " + timeInterval + ")");
+    }
 
     native public void setRectangle(int x, int y, int width, int height) throws java.lang.IllegalArgumentException;
     native public void setLongPressTimeInterval(int timeInterval) throws java.lang.IllegalArgumentException;

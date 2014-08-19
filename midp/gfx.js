@@ -13,16 +13,19 @@
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(null);
+        console.warn("DisplayDevice.getDisplayName0.(I)L...String; not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(1);
+        console.warn("DisplayDevice.isDisplayPrimary0.(I)Z not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(1);
+        console.warn("DisplayDevice.isbuildInDisplay0.(I)Z not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
@@ -57,14 +60,18 @@
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
         var state = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.displayStateChanged0.(II)V not implemented (" + hardwareId + ", " + state + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(ctx, stack) {
         var mode = stack.pop(), displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.setFullScreen0.(IIZ)V not implemented (" +
+                     hardwareId + ", " + displayId + ", " + mode + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(ctx, stack) {
         var displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(ctx, stack) {
@@ -80,6 +87,8 @@
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
         var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(),
             displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.refresh0.(IIIIII)V not implemented (" +
+                     hardwareId + ", " + displayId + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ")");
     }
 
     function swapRB(pixel) {
