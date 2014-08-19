@@ -2,24 +2,27 @@ package com.nokia.mid.ui.gestures;
 
 public class GestureEventImpl implements GestureEvent
 {
-    private int type;
-    private int dragDistanceX;
-    private int dragDistanceY;
-    private int startX;
-    private int startY;
-    private float flickDirection;
-    private int flickSpeed;
-    private int flickSpeedX;
-    private int flickSpeedY;
-    private int pinchDistanceStarting;
-    private int pinchDistanceCurrent;
-    private int pinchDistanceChange;
-    private int pinchCenterX;
-    private int pinchCenterY;
-    private int pinchCenterChangeX;
-    private int pinchCenterChangeY;
+    private final int type;
+    private final int dragDistanceX;
+    private final int dragDistanceY;
+    private final int startX;
+    private final int startY;
+    private final float flickDirection;
+    private final int flickSpeed;
+    private final int flickSpeedX;
+    private final int flickSpeedY;
+    private final int pinchDistanceStarting;
+    private final int pinchDistanceCurrent;
+    private final int pinchDistanceChange;
+    private final int pinchCenterX;
+    private final int pinchCenterY;
+    private final int pinchCenterChangeX;
+    private final int pinchCenterChangeY;
 
-    public GestureEventImpl(int type, int dragDistanceX, int dragDistanceY, int startX, int startY, float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY, int pinchDistanceStarting, int pinchDistanceCurrent, int pinchDistanceChange, int pinchCenterX, int pinchCenterY, int pinchCenterChangeX, int pinchCenterChangeY) {
+    public GestureEventImpl(int type, int dragDistanceX, int dragDistanceY, int startX, int startY,
+                            float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY,
+                            int pinchDistanceStarting, int pinchDistanceCurrent, int pinchDistanceChange,
+                            int pinchCenterX, int pinchCenterY, int pinchCenterChangeX, int pinchCenterChangeY) {
         this.type = type;
         this.dragDistanceX = dragDistanceX;
         this.dragDistanceY = dragDistanceY;

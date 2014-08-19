@@ -200,21 +200,21 @@ public class DisplayEventListener implements EventListener {
 
                 case EventTypes.GESTURE_EVENT:
                     GestureEvent gestureEvent = new GestureEventImpl(nativeEvent.intParam1,
-                                                              nativeEvent.intParam2,
-                                                              nativeEvent.intParam3,
-                                                              nativeEvent.intParam5,
-                                                              nativeEvent.intParam6,
-                                                              nativeEvent.floatParam1,
-                                                              nativeEvent.intParam7,
-                                                              nativeEvent.intParam8,
-                                                              nativeEvent.intParam9,
-                                                              nativeEvent.intParam10,
-                                                              nativeEvent.intParam11,
-                                                              nativeEvent.intParam12,
-                                                              nativeEvent.intParam13,
-                                                              nativeEvent.intParam14,
-                                                              nativeEvent.intParam15,
-                                                              nativeEvent.intParam16);
+                                                                     nativeEvent.intParam2,
+                                                                     nativeEvent.intParam3,
+                                                                     nativeEvent.intParam5,
+                                                                     nativeEvent.intParam6,
+                                                                     nativeEvent.floatParam1,
+                                                                     nativeEvent.intParam7,
+                                                                     nativeEvent.intParam8,
+                                                                     nativeEvent.intParam9,
+                                                                     nativeEvent.intParam10,
+                                                                     nativeEvent.intParam11,
+                                                                     nativeEvent.intParam12,
+                                                                     nativeEvent.intParam13,
+                                                                     nativeEvent.intParam14,
+                                                                     nativeEvent.intParam15,
+                                                                     nativeEvent.intParam16);
                     dc.handleGestureEvent(gestureEvent);
 
                 default:
