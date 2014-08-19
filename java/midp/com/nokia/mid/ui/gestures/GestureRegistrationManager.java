@@ -1,53 +1,52 @@
 package com.nokia.mid.ui.gestures;
 
-class ListenerRegistration {
-    private Object container;
-    private GestureListener listener;
-
-    public ListenerRegistration(Object container, GestureListener listener) {
-        this.container = container;
-        this.listener = listener;
-    }
-}
+import java.util.Hashtable;
+import java.util.Vector;
 
 class ZoneRegistration {
-  public Object container;
-  public GestureInteractiveZone zone;
-  public GestureListener listener;
+    public Object container;
+    public GestureInteractiveZone zone;
+
+    public ZoneRegistration(Object container, GestureInteractiveZone zone) {
+        this.container = container;
+        this.zone = zone;
+    }
 }
 
 public class GestureRegistrationManager {
     public static final int MAX_SUPPORTED_GESTURE_INTERACTIVE_ZONES = 99;
 
-    //private static ArrayList zoneRegistrations = new ArrayList();
-    //private static ArrayList listenerRegistrations = new ArrayList();
-
-    private static GestureListener privListener = null;
-    private static GestureInteractiveZone privGestureInteractiveZone = null;
-    private static Object privContainer = null;
+    private static Vector zoneRegistrations = new Vector();
+    private static Hashtable listenerRegistrations = new Hashtable();
 
     public static void setListener(Object container, GestureListener listener) throws IllegalArgumentException {
-        System.out.println("REGISTER LISTENER");
-        //listenerRegistrations.add(new ListenerRegistration(container, listener));
-        privListener = listener;
-        privContainer = container;
+        listenerRegistrations.put(container, listener);
     }
 
     public static void callListener(GestureEvent event) {
-        privListener.gestureAction(privContainer, privGestureInteractiveZone, event);
+        for (int i = 0; i < zoneRegistrations.size(); i++) {
+            ZoneRegistration zoneReg = (ZoneRegistration)zoneRegistrations.elementAt(i);
+
+            GestureInteractiveZone zone = zoneReg.zone;
+            if (!zone.contains(event.getStartX(), event.getStartY())) {
+                continue;
+            }
+
+            GestureListener listener = (GestureListener)listenerRegistrations.get(zoneReg.container);
+            listener.gestureAction(zoneReg.container, zone, event);
+        }
     }
 
     public static boolean register(Object container, GestureInteractiveZone gestureInteractiveZone) throws IllegalArgumentException {
-        System.out.println("REGISTER");
-        privGestureInteractiveZone = gestureInteractiveZone;
+        zoneRegistrations.addElement(new ZoneRegistration(container, gestureInteractiveZone));
         return true;
     }
 
-    native public static void unregister(java.lang.Object container, GestureInteractiveZone gestureInteractiveZone)
-        throws java.lang.IllegalArgumentException;
+    native public static void unregister(Object container, GestureInteractiveZone gestureInteractiveZone)
+        throws IllegalArgumentException;
 
-    native public static void unregisterAll(java.lang.Object container)
-        throws java.lang.IllegalArgumentException;
+    native public static void unregisterAll(Object container)
+        throws IllegalArgumentException;
 
     native public static GestureInteractiveZone getInteractiveZone(Object container);
 }

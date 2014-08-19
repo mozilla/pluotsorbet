@@ -49,4 +49,14 @@ public class GestureInteractiveZone
     native public int getHeight();
     native public int getLongPressTimeInterval();
     native public static boolean isSupported(int gestureEventIdentity);
+
+    public boolean contains(int x, int y) {
+        if (rect == null ||
+            x >= rect.x && x <= (rect.x+rect.width) &&
+            y >= rect.y && y <= (rect.y+rect.height)) {
+                return true;
+        }
+
+        return false;
+    }
 }
