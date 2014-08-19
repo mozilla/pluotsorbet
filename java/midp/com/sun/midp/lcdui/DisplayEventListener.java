@@ -199,7 +199,6 @@ public class DisplayEventListener implements EventListener {
                     return;
 
                 case EventTypes.GESTURE_EVENT:
-                    System.out.println("GESTUREEVENT");
                     GestureEvent gestureEvent = new GestureEventImpl(nativeEvent.intParam1,
                                                               nativeEvent.intParam2,
                                                               nativeEvent.intParam3,

@@ -3292,7 +3292,9 @@ public class Display {
             if(currentCopy != null &&
                window.bodyContainsPoint(event.getStartX(), event.getStartY())) {
                 // Should we subtract window.getBodyAnchorX like in pointer events?
-                System.out.println("BODYANCHORX: " + window.getBodyAnchorX());
+                if (window.getBodyAnchorX() > 0 || window.getBodyAnchorY() > 0) {
+                    System.out.println("We should take window.getBodyAnchor[XY] into account in handleGestureEvent");
+                }
                 GestureRegistrationManager.callListener(event);
             }
         }
