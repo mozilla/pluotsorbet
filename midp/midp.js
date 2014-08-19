@@ -852,19 +852,19 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.finalize.()V"] =
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
     stack.push(null);
-    console.warn("RecordStoreRegistry.getRecordStoreListeners.(IL…String;)[I not implemented (" +
+    console.warn("RecordStoreRegistry.getRecordStoreListeners.(IL...String;)[I not implemented (" +
                  suiteId + ", " + storeName + ")");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
     var recordId = stack.pop(), changeType = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    console.warn("RecordStoreRegistry.sendRecordStoreChangeEvent.(IL…String;II)V not implemented (" +
+    console.warn("RecordStoreRegistry.sendRecordStoreChangeEvent.(IL...String;II)V not implemented (" +
                  suiteId + ", " + storeName + ", " + changeType + ", " + recordId + ")");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    console.warn("RecordStoreRegistry.stopRecordStoreListening.(IL…String;)V not implemented (" +
+    console.warn("RecordStoreRegistry.stopRecordStoreListening.(IL...String;)V not implemented (" +
                  suiteId + ", " + storeName + ")");
 }
 
@@ -910,14 +910,14 @@ Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = 
 Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(ctx, stack) {
     var fileName = util.fromJavaString(stack.pop()), suiteId = stack.pop(), imageData = stack.pop();
     stack.push(0);
-    console.warn("SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(L…ImageData;IL…String;)Z not implemented (" +
-                 imageData + ", " + suiteId + ", " + fileName + ")");
+    console.warn("SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(L...ImageData;IL...String;)Z " +
+                 "not implemented (" + imageData + ", " + suiteId + ", " + fileName + ")");
 }
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
     stack.push(0);
-    console.warn("InterIsolateMutex.getID0.(L…String;)I not implemented (" + name + ")");
+    console.warn("InterIsolateMutex.getID0.(L...String;)I not implemented (" + name + ")");
 }
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx, stack) {
@@ -1075,7 +1075,7 @@ Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, s
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var commandState = stack.pop();
-    console.warn("CommandState.saveCommandState.(L…CommandState;)V not implemented (" + commandState + ")");
+    console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
 }
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack) {
@@ -1131,7 +1131,7 @@ Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"]
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
     var className = stack.pop(), suiteId = stack.pop();
-    console.warn("ConnectionRegistry.checkInByMidlet0.(IL…String;)V not implemented (" +
+    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
                  suiteId + ", " + className + ")");
 }
 
@@ -1253,14 +1253,14 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
 
 Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureListener;)V"] = function(ctx, stack) {
     var listener = stack.pop(), container = stack.pop();
-    console.warn("GestureRegistrationManager.setListener.(L…Object;L…GestureListener;)V not implemented (" +
+    console.warn("GestureRegistrationManager.setListener.(L...Object;L...GestureListener;)V not implemented (" +
                  container + ", " + listener + ")");
 }
 
 Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.register.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureInteractiveZone;)Z"] = function(ctx, stack) {
     var gestureInteractiveZone = stack.pop(), container = stack.pop();
     stack.push(0);
-    console.warn("GestureRegistrationManager.register.(L…Object;L…GestureInteractiveZone;)Z not implemented (" +
+    console.warn("GestureRegistrationManager.register.(L...Object;L...GestureInteractiveZone;)Z not implemented (" +
                  container + ", " + gestureInteractiveZone + ")");
 }
 
