@@ -4,6 +4,7 @@ import com.sun.j2me.security.AccessControlContext;
 import com.sun.j2me.security.AccessController;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
+import javax.microedition.rms.RecordStoreException;
 
 public class TestRecordStoreFileNatives implements Testlet, SuiteContainer, AccessControlContext {
     // SuiteContainer stubs
@@ -86,6 +87,14 @@ public class TestRecordStoreFileNatives implements Testlet, SuiteContainer, Acce
                 th.fail("attempt to read byte from truncated file succeeded");
             } catch(java.io.IOException ex) {
                 th.check(ex, "java.io.IOException: handle invalid or segment indices out of bounds");
+            }
+
+            // Clean up.
+            file.close();
+            try {
+                RecordStoreUtil.deleteFile(filenameBase, name, extension);
+            } catch(RecordStoreException ex) {
+                th.fail("record store file could not be deleted: " + ex);
             }
         } catch(java.io.IOException ex) {
             // We catch all expected exceptions, so any unexpected ones
