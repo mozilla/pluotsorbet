@@ -3287,8 +3287,6 @@ public class Display {
             // SYNC NOTE: assignment is atomic.
             DisplayableLF currentCopy = current;
 
-            // When should the gesture event be sent to the midlet?
-            // If the starting point is in the window or ...?
             if(currentCopy != null &&
                window.bodyContainsPoint(event.getStartX(), event.getStartY())) {
                 // Should we subtract window.getBodyAnchorX like in pointer events?
@@ -3298,7 +3296,7 @@ public class Display {
                 GestureRegistrationManager.callListener(event);
             }
         }
-        
+
         /**
          * Called from the event delivery system when a command is seen.
          * The id parameter is an index into the list of Commands that are
