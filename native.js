@@ -534,7 +534,7 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     if (len > remaining)
         len = remaining;
     for (var n = 0; n < len; ++n)
-        b[off+n] = data[n];
+        b[off+n] = data[handle.pos+n];
     handle.pos += len;
     stack.push((len > 0) ? len : -1);
 }
