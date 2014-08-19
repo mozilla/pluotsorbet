@@ -538,6 +538,9 @@ MIDP.Context2D = (function() {
 
     c.addEventListener("mousedown", function(ev) {
         mouse_is_down = true;
+        MIDP.sendNativeEvent({ type: MIDP.GESTURE_EVENT, intParam1: MIDP.GESTURE_TAP, intParam2: 0, intParam3: 0, intParam4: MIDP.displayId,
+                               intParam5: ev.layerX, intParam6: ev.layerY, floatParam1: 0.0, intParam7: 0, intParam8: 0, intParam9: 0,
+                               intParam10: 0, intParam11: 0, intParam12: 0, intParam13: 0, intParam14: 0, intParam15: 0, intParam16: 0 }, MIDP.foregroundIsolateId);
         MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
     });
 
@@ -976,6 +979,8 @@ MIDP.RELEASED = 2;
 MIDP.DRAGGED = 3;
 MIDP.COMMAND_EVENT = 3;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
+MIDP.GESTURE_EVENT = 71;
+MIDP.GESTURE_TAP = 0x1;
 
 MIDP.suppressKeyEvents = false;
 

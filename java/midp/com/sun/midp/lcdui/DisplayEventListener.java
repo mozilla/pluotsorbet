@@ -43,6 +43,9 @@ import com.sun.midp.lcdui.DisplayAccess;
 import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
 
+import com.nokia.mid.ui.gestures.GestureEvent;
+import com.nokia.mid.ui.gestures.GestureEventImpl;
+
 /**
  * Listener for LCDUI events (user inputs, etc).
  */
@@ -88,6 +91,7 @@ public class DisplayEventListener implements EventListener {
 	eventQueue.registerEventListener(EventTypes.DISPLAY_CLAMSHELL_STATE_CHANGED_EVENT,this);	
         eventQueue.registerEventListener(EventTypes.VIRTUAL_KEYBOARD_EVENT,this);
         eventQueue.registerEventListener(EventTypes.CHANGE_LOCALE_EVENT,this);
+        eventQueue.registerEventListener(EventTypes.GESTURE_EVENT, this);
     }
 
     /**
@@ -193,6 +197,26 @@ public class DisplayEventListener implements EventListener {
                 case EventTypes.VIRTUAL_KEYBOARD_EVENT:
                     dc.handleVirtualKeyboardEvent();
                     return;
+
+                case EventTypes.GESTURE_EVENT:
+                    System.out.println("GESTUREEVENT");
+                    GestureEvent gestureEvent = new GestureEventImpl(nativeEvent.intParam1,
+                                                              nativeEvent.intParam2,
+                                                              nativeEvent.intParam3,
+                                                              nativeEvent.intParam5,
+                                                              nativeEvent.intParam6,
+                                                              nativeEvent.floatParam1,
+                                                              nativeEvent.intParam7,
+                                                              nativeEvent.intParam8,
+                                                              nativeEvent.intParam9,
+                                                              nativeEvent.intParam10,
+                                                              nativeEvent.intParam11,
+                                                              nativeEvent.intParam12,
+                                                              nativeEvent.intParam13,
+                                                              nativeEvent.intParam14,
+                                                              nativeEvent.intParam15,
+                                                              nativeEvent.intParam16);
+                    dc.handleGestureEvent(gestureEvent);
 
                 default:
                     if (Logging.REPORT_LEVEL <= Logging.WARNING) {

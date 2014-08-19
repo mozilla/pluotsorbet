@@ -66,7 +66,8 @@ import com.sun.midp.chameleon.skins.ScreenSkin;
 import com.sun.midp.chameleon.skins.resources.*;
 import java.io.IOException;
 
-
+import com.nokia.mid.ui.gestures.GestureEvent;
+import com.nokia.mid.ui.gestures.GestureRegistrationManager;
 
 
 
@@ -3282,6 +3283,20 @@ public class Display {
 
         } // handlePointerEvent()
 
+        public void handleGestureEvent(GestureEvent event) {
+            // SYNC NOTE: assignment is atomic.
+            DisplayableLF currentCopy = current;
+
+            // When should the gesture event be sent to the midlet?
+            // If the starting point is in the window or ...?
+            if(currentCopy != null &&
+               window.bodyContainsPoint(event.getStartX(), event.getStartY())) {
+                // Should we subtract window.getBodyAnchorX like in pointer events?
+                System.out.println("BODYANCHORX: " + window.getBodyAnchorX());
+                GestureRegistrationManager.callListener(event);
+            }
+        }
+        
         /**
          * Called from the event delivery system when a command is seen.
          * The id parameter is an index into the list of Commands that are
