@@ -1256,19 +1256,6 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
   stack.push(0);
 }
 
-Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.setListener.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureListener;)V"] = function(ctx, stack) {
-    var listener = stack.pop(), container = stack.pop();
-    console.warn("GestureRegistrationManager.setListener.(L...Object;L...GestureListener;)V not implemented (" +
-                 container + ", " + listener + ")");
-}
-
-Native["com/nokia/mid/ui/gestures/GestureRegistrationManager.register.(Ljava/lang/Object;Lcom/nokia/mid/ui/gestures/GestureInteractiveZone;)Z"] = function(ctx, stack) {
-    var gestureInteractiveZone = stack.pop(), container = stack.pop();
-    stack.push(0);
-    console.warn("GestureRegistrationManager.register.(L...Object;L...GestureInteractiveZone;)Z not implemented (" +
-                 container + ", " + gestureInteractiveZone + ")");
-}
-
 Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
     var gestureEventIdentity = stack.pop();
     stack.push(0);
