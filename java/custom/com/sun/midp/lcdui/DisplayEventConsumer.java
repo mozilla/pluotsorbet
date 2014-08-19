@@ -28,6 +28,8 @@ package com.sun.midp.lcdui;
 
 import javax.microedition.lcdui.Displayable;
 
+import com.nokia.mid.ui.gestures.GestureEvent;
+
 /**
  * This interface provides a set of methods to handle 
  * display-related events: user input, drawing, 
@@ -84,6 +86,8 @@ public interface DisplayEventConsumer {
      * @param y y-coordinate of the pointer event
      */
     public void handlePointerEvent(int pointerType, int x, int y);
+
+    public void handleGestureEvent(GestureEvent gestureEvent);
 
     /**
      * Called by event delivery when an abstract Command is fired.

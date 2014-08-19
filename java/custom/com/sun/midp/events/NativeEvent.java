@@ -69,6 +69,28 @@ public class NativeEvent extends Event {
     /** Sixth int parameter for the event. Event dependent. */
     public int intParam6;
 
+    public int intParam7;
+
+    public int intParam8;
+
+    public int intParam9;
+
+    public int intParam10;
+
+    public int intParam11;
+
+    public int intParam12;
+
+    public int intParam13;
+
+    public int intParam14;
+
+    public int intParam15;
+
+    public int intParam16;
+
+    public float floatParam1;
+
     /** First string parameter for the event. Event dependent. */
     public String stringParam1;
 
