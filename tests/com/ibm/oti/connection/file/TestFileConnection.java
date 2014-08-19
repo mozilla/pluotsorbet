@@ -58,6 +58,11 @@ public class TestFileConnection implements Testlet {
 
             dir.close();
             th.check(!dir.isOpen());
+
+            file = (FileConnection)Connector.open(dirPath + "prova");
+            file.delete();
+            th.check(!file.exists());
+            file.close();
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
