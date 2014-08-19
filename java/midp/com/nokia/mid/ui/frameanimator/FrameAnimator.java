@@ -14,12 +14,13 @@ public class FrameAnimator {
     protected int actionID;
 
     public FrameAnimator() {
-        throw new RuntimeException("FrameAnimator() not implemented");
+        System.out.println("warning: FrameAnimator() not implemented");
     }
 
     public boolean register(int x, int y, short maxFps, short maxPps, FrameAnimatorListener listener) {
-        throw new RuntimeException("FrameAnimator.register(IISSL…FrameAnimatorListener;)Z not implemented (" +
-                                   x + ", " + y + ", " + maxFps + ", " + maxPps + ", " + listener + ")");
+        System.out.println("warning: FrameAnimator.register(IISSL…FrameAnimatorListener;)Z not implemented (" +
+                           x + ", " + y + ", " + maxFps + ", " + maxPps + ", " + listener + ")");
+        return true;
     }
 
     public void unregister() {
@@ -46,7 +47,8 @@ public class FrameAnimator {
     }
 
     public boolean isRegistered() {
-        throw new RuntimeException("FrameAnimator.isRegistered()Z not implemented");
+        System.out.println("warning: FrameAnimator.isRegistered()Z not implemented");
+        return false;
     }
 
     public static int getNumRegisteredFrameAnimators() {

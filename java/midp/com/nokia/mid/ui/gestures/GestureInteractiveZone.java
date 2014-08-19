@@ -15,7 +15,7 @@ public class GestureInteractiveZone
     public static final int GESTURE_ALL = 0xC0FF;
 
     public GestureInteractiveZone(int gestures) throws java.lang.IllegalArgumentException {
-        throw new RuntimeException("GestureInteractiveZone(I) not implemented (" + gestures + ")");
+        System.out.println("warning: GestureInteractiveZone(I) not implemented (" + gestures + ")");
     }
     public GestureInteractiveZone(int gestures, int timeInterval) throws java.lang.IllegalArgumentException {
         throw new RuntimeException("GestureInteractiveZone(II) not implemented (" + gestures + ", " + timeInterval + ")");

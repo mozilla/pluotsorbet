@@ -1058,8 +1058,7 @@ Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stac
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
     var drawTrusted = stack.pop(), displayId = stack.pop(), _this = stack.pop();
-    console.warn("RecordStoreRegistry.stopAllRecordStoreListeners.(I)V not implemented (" +
-                 displayId + ", " + drawTrusted + ")");
+    console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + displayId + ", " + drawTrusted + ")");
 }
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(ctx, stack) {
