@@ -18,7 +18,7 @@ public class FrameAnimator {
     }
 
     public boolean register(int x, int y, short maxFps, short maxPps, FrameAnimatorListener listener) {
-        System.out.println("warning: FrameAnimator.register(IISSL…FrameAnimatorListener;)Z not implemented (" +
+        System.out.println("warning: FrameAnimator.register(IISSL...FrameAnimatorListener;)Z not implemented (" +
                            x + ", " + y + ", " + maxFps + ", " + maxPps + ", " + listener + ")");
         return true;
     }

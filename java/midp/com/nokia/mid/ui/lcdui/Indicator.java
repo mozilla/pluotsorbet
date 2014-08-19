@@ -4,7 +4,7 @@ import javax.microedition.lcdui.Image;
 
 public class Indicator {
     public Indicator(int aInt, Image aImage) {
-        throw new RuntimeException("Indicator(IL…Image;) not implemented (" + aInt + ", " + aImage + ")");
+        throw new RuntimeException("Indicator(IL...Image;) not implemented (" + aInt + ", " + aImage + ")");
     }
 
     public void setActive(boolean active) {
