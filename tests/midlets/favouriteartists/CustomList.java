@@ -164,7 +164,7 @@ public class CustomList implements GestureListener, FrameAnimatorListener{
         // Next the GestureInteractiveZone is registered to registration manager. Note that multiple zones
         // can be registered for a single container, reference to the affected zone is passed in the event callback.
         if(GestureRegistrationManager.register(owner, zone) != true){
-        	//throw new FavouriteArtistsException("GestureRegistrationManager.register() failed!");
+        	throw new FavouriteArtistsException("GestureRegistrationManager.register() failed!");
         }
         // Add a listener for gesture events.
         GestureRegistrationManager.setListener(owner, this);

@@ -348,7 +348,7 @@ public class FavouriteArtistsView extends Canvas implements GestureListener, Fra
         // can be registered for a single container, reference to the affected zone is passed in the event callback.
         if(GestureRegistrationManager.register(this, zone) != true){
         	// Throw an exception if register fails
-        	//throw new FavouriteArtistsException("GestureRegistrationManager.register() failed!");
+        	throw new FavouriteArtistsException("GestureRegistrationManager.register() failed!");
         }
         // Add a listener for gesture events for this container. A container can be either a Canvas or a CustomItem.
         // In this example, only one gesture zone that covers the whole canvas is used.
