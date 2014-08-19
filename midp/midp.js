@@ -528,24 +528,24 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
 
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
-    c.width = 320;
-    c.height = 480;
+    c.width = 240;
+    c.height = 320;
 
     // TODO These mouse event handlers only work on firefox right now,
     // because they use layerX and layerY.
 
     var mouse_is_down = false;
-    
+
     c.addEventListener("mousedown", function(ev) {
         mouse_is_down = true;
         MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
     });
-    
+
     c.addEventListener("mousemove", function(ev) {
         if (mouse_is_down)
             MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId)
     });
-    
+
     c.addEventListener("mouseup", function(ev) {
         mouse_is_down = false;
         MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
@@ -1338,7 +1338,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
             }
         }
 
-        var pathsArray = ctx.newArray("[B", files.length);
+        var pathsArray = ctx.newArray("[[B", files.length);
         for (var i = 0; i < files.length; i++) {
             var curPath = path + files[i];
             var bytesCurPath = new TextEncoder("utf-8").encode(curPath);

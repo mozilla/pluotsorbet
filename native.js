@@ -94,7 +94,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "GMT";
         break;
     case "com.nokia.keyboard.type":
-        value = "FullKeyboard";
+        value = "None";
         break;
     case "javax.microedition.io.Connector.protocolpath":
         value = "com.sun.cldc.io";
@@ -534,7 +534,7 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     if (len > remaining)
         len = remaining;
     for (var n = 0; n < len; ++n)
-        b[off+n] = data[n];
+        b[off+n] = data[handle.pos+n];
     handle.pos += len;
     stack.push((len > 0) ? len : -1);
 }

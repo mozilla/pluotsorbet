@@ -1,4 +1,4 @@
 *.jar
+*.jad
 *.class
 .DS_Store
-
