@@ -59,7 +59,7 @@ public class TestFileConnection implements Testlet {
             dir.close();
             th.check(!dir.isOpen());
         } catch (Exception e) {
-            th.fail("Unexpected exception");
+            th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
     }
