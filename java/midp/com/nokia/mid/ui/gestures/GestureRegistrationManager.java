@@ -28,7 +28,12 @@ public class GestureRegistrationManager {
             ZoneRegistration zoneReg = (ZoneRegistration)zoneRegistrations.elementAt(i);
 
             GestureInteractiveZone zone = zoneReg.zone;
+
             if (!zone.contains(event.getStartX(), event.getStartY())) {
+                continue;
+            }
+
+            if (!zone.supports(event.getType())) {
                 continue;
             }
 
