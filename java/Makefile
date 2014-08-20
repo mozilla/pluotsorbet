@@ -1,12 +1,14 @@
-SRCS=$(shell cd cldc1.1.1 && find . -name *.java) $(shell cd vm && find . -name *.java) $(shell cd midp && find . -name *.java)
+SRCS=$(shell find ./cldc1.1.1 -name *.java) $(shell find ./vm -name *.java) $(shell find ./midp -name *.java)
+CUSTOM_SRCS=$(shell find ./custom -name *.java)
 EXTRA=$(shell find . -name *.png) $(shell find . -name *.bin) $(shell find . -name *.xml)
 
-VPATH=./cldc1.1.1 ./vm ./midp
+VPATH=./cldc1.1.1 ./vm ./midp ./custom
 
-classes.jar: $(SRCS)
+classes.jar: $(SRCS) $(CUSTOM_SRCS)
 	rm -rf build
 	mkdir build
-	javac -sourcepath ./cldc1.1.1 -sourcepath ./vm -sourcepath ./midp -source 1.3 -target 1.3 -d ./build $^ > /dev/null
+	javac -cp cldc1.1.1:vm:midp -source 1.3 -target 1.3 -d ./build $(SRCS) > /dev/null
+	javac -sourcepath custom -cp build -source 1.3 -target 1.3 -d ./build $(CUSTOM_SRCS) > /dev/null
 	cd build && jar cvf ../classes.jar *
 	jar uvf classes.jar $(EXTRA)
 	rm -rf build

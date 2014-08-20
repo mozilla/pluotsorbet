@@ -1,0 +1,6 @@
+List of changes to phoneME:
+com/sun/midp/lcdui/DisplayEventConsumer.java - Added a handleGestureEvent function to the interface
+javax/microedition/lcdui/Display.java - Added a handleGestureEvent function to handle gesture events
+com/sun/midp/lcdui/DisplayEventListener.java - Added code to handle events with type=GESTURE_EVENT
+com/sun/midp/events/NativeEvent.java - Added some parameters to handle events with a higher number of parameters (like Gesture events)
+com/sun/midp/events/EventTypes.java - Added a new event type (GETURE_EVENT)

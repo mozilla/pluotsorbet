@@ -1,5 +1,12 @@
 package com.nokia.mid.ui.gestures;
 
+class GestureRectangle {
+    public int x;
+    public int y;
+    public int width;
+    public int height;
+}
+
 public class GestureInteractiveZone
 {
     public static final int GESTURE_TAP = 0x1;
@@ -14,15 +21,26 @@ public class GestureInteractiveZone
     public static final int GESTURE_RECOGNITION_END = 0x8000;
     public static final int GESTURE_ALL = 0xC0FF;
 
-    public GestureInteractiveZone(int gestures) throws java.lang.IllegalArgumentException {
-        System.out.println("warning: GestureInteractiveZone(I) not implemented (" + gestures + ")");
+    private int gestures;
+    private GestureRectangle rect = null;
+
+    public GestureInteractiveZone(int gestures) throws IllegalArgumentException {
+        this.gestures = gestures;
     }
-    public GestureInteractiveZone(int gestures, int timeInterval) throws java.lang.IllegalArgumentException {
+
+    public GestureInteractiveZone(int gestures, int timeInterval) throws IllegalArgumentException {
         throw new RuntimeException("GestureInteractiveZone(II) not implemented (" + gestures + ", " + timeInterval + ")");
     }
 
-    native public void setRectangle(int x, int y, int width, int height) throws java.lang.IllegalArgumentException;
-    native public void setLongPressTimeInterval(int timeInterval) throws java.lang.IllegalArgumentException;
+    public void setRectangle(int x, int y, int width, int height) throws IllegalArgumentException {
+        rect = new GestureRectangle();
+        rect.x = x;
+        rect.y = y;
+        rect.width = width;
+        rect.height = height;
+    }
+
+    native public void setLongPressTimeInterval(int timeInterval) throws IllegalArgumentException;
     native public int getGestures();
     native public void setGestures(int gestures);
     native public int getX();
@@ -31,4 +49,14 @@ public class GestureInteractiveZone
     native public int getHeight();
     native public int getLongPressTimeInterval();
     native public static boolean isSupported(int gestureEventIdentity);
+
+    public boolean contains(int x, int y) {
+        if (rect == null ||
+            x >= rect.x && x <= (rect.x+rect.width) &&
+            y >= rect.y && y <= (rect.y+rect.height)) {
+                return true;
+        }
+
+        return false;
+    }
 }
