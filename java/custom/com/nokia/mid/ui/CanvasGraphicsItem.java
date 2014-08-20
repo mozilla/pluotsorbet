@@ -5,7 +5,7 @@ import javax.microedition.lcdui.Graphics;
 
 public abstract class CanvasGraphicsItem extends CanvasItem {
     public CanvasGraphicsItem(int width, int height) throws IllegalArgumentException {
-        throw new RuntimeException("CanvasGraphicsItem::CanvasGraphicsItem(int,int) not implemented");
+        System.out.println("CanvasGraphicsItem::CanvasGraphicsItem(int,int) not implemented");
     }
 
     // Set the parent object of this CanvasItem.
