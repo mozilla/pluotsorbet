@@ -1208,6 +1208,8 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"
 
     var values = connection.split(',');
 
+    console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
+
     MIDP.pushRegistrations.push({
       connection: values[0],
       midlet: values[1],
