@@ -1134,12 +1134,6 @@ Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"]
     stack.push(ctx.newString(String.fromCharCode(keyCode)));
 }
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
-    var className = stack.pop(), suiteId = stack.pop();
-    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
-                 suiteId + ", " + className + ")");
-}
-
 MIDP.gameKeys = {
     119: 1,  // UP
     97: 2,   // LEFT
@@ -1173,9 +1167,9 @@ Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = f
     MIDP.foregroundIsolateId = isolateId;
 }
 
-var pushRegistrations = [];
-var alarms = [];
-var lastPushRegistrationId = -1;
+MIDP.pushRegistrations = [];
+MIDP.alarms = [];
+MIDP.lastPushRegistrationId = -1;
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
     var time = stack.pop2().toNumber(), _this = stack.pop();
@@ -1185,16 +1179,26 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
     setTimeout(function() {
         var id = -1;
 
-        for (var i = 0; i < alarms.length; i++) {
-            if (alarms[i].time < Date.now()) {
-                id = alarms[i].id;
+        for (var i = 0; i < MIDP.alarms.length; i++) {
+            if (MIDP.alarms[i].time < Date.now()) {
+                id = MIDP.alarms[i].id;
                 break;
             }
         }
 
+        if (id == -1) {
+          for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+              if (MIDP.pushRegistrations[i].notify) {
+                  MIDP.pushRegistrations[i].notify = false;
+                  id = MIDP.pushRegistrations[i].id;
+                  break;
+              }
+          }
+        }
+
         stack.push(id);
         ctx.resume();
-    }, 5000);
+    }, 2000);
 
     throw VM.Pause;
 }
@@ -1204,12 +1208,12 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"
 
     var values = connection.split(',');
 
-    pushRegistrations.push({
+    MIDP.pushRegistrations.push({
       connection: values[0],
       midlet: values[1],
       filter: values[2],
       suiteId: values[3],
-      id: ++lastPushRegistrationId,
+      id: ++MIDP.lastPushRegistrationId,
     });
 
     stack.push(0);
@@ -1219,13 +1223,13 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     var time = stack.pop2().toNumber(), midlet = util.decodeUtf8(stack.pop());
 
     var lastAlarm = 0;
-    for (var i = 0; i < alarms.length; i++) {
-        if(alarms[i].midlet == midlet) {
+    for (var i = 0; i < MIDP.alarms.length; i++) {
+        if (MIDP.alarms[i].midlet == midlet) {
             if (time != 0) {
-                lastAlarm = alarms[i].time;
-                alarms[i].time = time;
+                lastAlarm = MIDP.alarms[i].time;
+                MIDP.alarms[i].time = time;
             } else {
-                alarms.splice(i, 1);
+                MIDP.alarms.splice(i, 1);
             }
 
             break;
@@ -1233,9 +1237,9 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     }
 
     if (lastAlarm == 0 && time != 0) {
-      alarms.push({
+      MIDP.alarms.push({
         midlet: midlet,
-        id: ++lastPushRegistrationId,
+        id: ++MIDP.lastPushRegistrationId,
         time: time,
       });
     }
@@ -1244,16 +1248,44 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
 }
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(ctx, stack) {
-  var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
+    var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
 
-  var midlet = alarms[handle].midlet;
+    var str;
 
-  for (var i = 0; i < midlet.length; i++) {
-    regentry[i] = midlet.charCodeAt(i);
-  }
-  regentry[midlet.length] = 0;
+    if (MIDP.alarms[handle]) {
+      str = MIDP.alarms[handle].midlet + ", 0, 1";
+    } else if (MIDP.pushRegistrations[handle]) {
+      var reg = MIDP.pushRegistrations[handle];
+      str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
+    }
 
+    for (var i = 0; i < str.length; i++) {
+      regentry[i] = str.charCodeAt(i);
+    }
+    regentry[str.length] = 0;
+
+    stack.push(0);
+}
+
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
+    var className = stack.pop(), suiteId = stack.pop();
+    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
+                 suiteId + ", " + className + ")");
+}
+
+Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(ctx, stack) {
+  var name = util.decodeUtf8(stack.pop());
+  console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" +
+               name + ")");
   stack.push(0);
+}
+
+function pushNotify(protocolName) {
+    for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+        if (protocolName == MIDP.pushRegistrations[i].connection) {
+            MIDP.pushRegistrations[i].notify = true;
+        }
+    }
 }
 
 Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
@@ -1690,6 +1722,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 
     if (_this.server) {
         MIDP.LocalMsgConnections[_this.protocolName] = new LocalMsgConnection();
+        pushNotify("localmsg:" + _this.protocolName);
     } else {
         // Actually, there should always be a server, but we need this check
         // for apps that use the Nokia built-in servers (because we haven't
