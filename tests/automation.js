@@ -9,7 +9,7 @@ casper.test.begin("unit tests", 6, function(test) {
     casper
     .start("http://localhost:8000/index.html?main=RunTests")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 753 pass, 0 fail", "run unit tests");
+        test.assertTextExists("DONE: 758 pass, 0 fail", "run unit tests");
     });
 
     casper
