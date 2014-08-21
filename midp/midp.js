@@ -1259,6 +1259,10 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
     } else if (MIDP.pushRegistrations[handle]) {
       var reg = MIDP.pushRegistrations[handle];
       str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
+    } else {
+      console.warn("getMIDlet0 returns -1, this should never happen");
+      stack.push(-1);
+      return;
     }
 
     for (var i = 0; i < str.length; i++) {
