@@ -25,7 +25,7 @@ tests.jar: $(SRCS) Testlets.java
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar:$(BUILDTIME_SUPPORT_DIR) -d ./build $^ > /dev/null
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -d ./build $(RUNTIME_SUPPORT_SRCS) > /dev/null
 	jar cvfe tests.jar RunTests -C build/ .
-	jar uvf tests.jar gnu/testlet/vm/test.png midlets/test.png midlets/favouriteartists/images/* > /dev/null
+	jar uvf tests.jar gnu/testlet/vm/test.png midlets/test.png midlets/favouriteartists/images/* midlets/blogwriter/images/* > /dev/null
 	rm -rf build
 	rm -f Testlets.java
 
