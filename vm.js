@@ -911,7 +911,9 @@ VM.execute = function(ctx) {
             var obj = stack[stack.length - 1];
             if (obj) {
                 if (!obj.class.isAssignableTo(classInfo)) {
-                    ctx.raiseException("java/lang/ClassCastException");
+                    ctx.raiseException("java/lang/ClassCastException",
+                                       obj.class.className + " is not assignable to " +
+                                       classInfo.className);
                     break;
                 }
             }

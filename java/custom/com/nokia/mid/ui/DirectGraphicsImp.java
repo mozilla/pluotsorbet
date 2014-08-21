@@ -11,6 +11,7 @@ public class DirectGraphicsImp implements DirectGraphics {
         graphics = g;
     }
 
+    public native void drawElementBorder(int x, int y, int w, int h, int borderType, boolean withFocus);
     public native void drawImage(Image image, int x, int y, int anchor, int manipulation);
     public native void drawPixels(byte pixels[], byte transparencyMask[], int offset, int scanlength, int x, int y, int width,
 				  int height, int manipulation, int format);
