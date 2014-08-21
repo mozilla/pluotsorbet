@@ -1242,7 +1242,12 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(ctx, stack) {
     var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
 
-    var reg = MIDP.pushRegistrations[handle];
+    var reg;
+    for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+        if (MIDP.pushRegistrations[i].id == handle) {
+            reg = MIDP.pushRegistrations[i];
+        }
+    }
 
     if (!reg) {
         console.warn("getMIDlet0 returns -1, this should never happen");
