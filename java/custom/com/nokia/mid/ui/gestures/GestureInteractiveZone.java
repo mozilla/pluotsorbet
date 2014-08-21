@@ -59,4 +59,8 @@ public class GestureInteractiveZone
 
         return false;
     }
+
+    public boolean supports(int type) {
+        return (type & gestures) == type;
+    }
 }
