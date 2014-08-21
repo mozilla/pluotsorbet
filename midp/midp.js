@@ -1180,7 +1180,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
         var id = -1;
 
         for (var i = 0; i < MIDP.alarms.length; i++) {
-            if (MIDP.alarms[i].time < Date.now()) {
+            if (MIDP.alarms[i].time < time) {
                 id = MIDP.alarms[i].id;
                 break;
             }
