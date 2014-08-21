@@ -1167,8 +1167,10 @@ Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = f
     MIDP.foregroundIsolateId = isolateId;
 }
 
+// The lastRegistrationId is in common between alarms and push notifications
+MIDP.lastRegistrationId = -1;
+MIDP.alarms = [];
 MIDP.pushRegistrations = [];
-MIDP.lastPushRegistrationId = -1;
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
     var time = stack.pop2().toNumber(), _this = stack.pop();
@@ -1178,11 +1180,19 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
     setTimeout(function() {
         var id = -1;
 
-        for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-            if ((MIDP.pushRegistrations[i].time && MIDP.pushRegistrations[i].time < time) ||
-                MIDP.pushRegistrations[i].notify) {
-                id = MIDP.pushRegistrations[i].id;
-                break;
+        for (var i = 0; i < MIDP.alarms.length; i++) {
+          if (MIDP.alarms[i].time < time) {
+              id = MIDP.alarms[i].id;
+              break;
+          }
+        }
+
+        if (id == -1) {
+            for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+                if (MIDP.pushRegistrations[i].notify) {
+                    id = MIDP.pushRegistrations[i].id;
+                    break;
+                }
             }
         }
 
@@ -1205,7 +1215,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"
         midlet: values[1],
         filter: values[2],
         suiteId: values[3],
-        id: ++MIDP.lastPushRegistrationId,
+        id: ++MIDP.lastRegistrationId,
     });
 
     stack.push(0);
@@ -1215,13 +1225,13 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     var time = stack.pop2().toNumber(), midlet = util.decodeUtf8(stack.pop());
 
     var lastAlarm = 0;
-    for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-        if (MIDP.pushRegistrations[i].time && MIDP.pushRegistrations[i].midlet == midlet) {
+    for (var i = 0; i < MIDP.alarms.length; i++) {
+        if (MIDP.alarms[i].midlet == midlet) {
             if (time != 0) {
-                lastAlarm = MIDP.pushRegistrations[i].time;
-                MIDP.pushRegistrations[i].time = time;
+                lastAlarm = MIDP.alarms[i].time;
+                MIDP.alarms[i].time = time;
             } else {
-                MIDP.pushRegistrations[i].splice(i, 1);
+                MIDP.alarms[i].splice(i, 1);
             }
 
             break;
@@ -1229,10 +1239,10 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     }
 
     if (lastAlarm == 0 && time != 0) {
-        MIDP.pushRegistrations.push({
+        MIDP.alarms.push({
             midlet: midlet,
             time: time,
-            id: ++MIDP.lastPushRegistrationId,
+            id: ++MIDP.lastRegistrationId,
         });
     }
 
@@ -1243,9 +1253,17 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
     var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
 
     var reg;
-    for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-        if (MIDP.pushRegistrations[i].id == handle) {
-            reg = MIDP.pushRegistrations[i];
+    for (var i = 0; i < MIDP.alarms.length; i++) {
+        if (MIDP.alarms[i].id == handle) {
+            reg = MIDP.alarms[i];
+        }
+    }
+
+    if (!reg) {
+        for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+            if (MIDP.pushRegistrations[i].id == handle) {
+                reg = MIDP.pushRegistrations[i];
+            }
         }
     }
 
