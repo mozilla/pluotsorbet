@@ -1,7 +1,5 @@
 package com.nokia.mid.ui;
 
-import com.nokia.mid.ui.TextEditor;
-
 public interface TextEditorListener {
     public static final int ACTION_CONTENT_CHANGE = 1;
     public static final int ACTION_OPTIONS_CHANGE = 2;
