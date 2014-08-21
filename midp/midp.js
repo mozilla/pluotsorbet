@@ -1168,7 +1168,6 @@ Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = f
 }
 
 MIDP.pushRegistrations = [];
-MIDP.alarms = [];
 MIDP.lastPushRegistrationId = -1;
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
@@ -1179,20 +1178,11 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
     setTimeout(function() {
         var id = -1;
 
-        for (var i = 0; i < MIDP.alarms.length; i++) {
-            if (MIDP.alarms[i].time < time) {
-                id = MIDP.alarms[i].id;
+        for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+            if ((MIDP.pushRegistrations[i].time && MIDP.pushRegistrations[i].time < time) ||
+                MIDP.pushRegistrations[i].notify) {
+                id = MIDP.pushRegistrations[i].id;
                 break;
-            }
-        }
-
-        if (id == -1) {
-            for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-                if (MIDP.pushRegistrations[i].notify) {
-                    MIDP.pushRegistrations[i].notify = false;
-                    id = MIDP.pushRegistrations[i].id;
-                    break;
-                }
             }
         }
 
@@ -1225,13 +1215,13 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     var time = stack.pop2().toNumber(), midlet = util.decodeUtf8(stack.pop());
 
     var lastAlarm = 0;
-    for (var i = 0; i < MIDP.alarms.length; i++) {
-        if (MIDP.alarms[i].midlet == midlet) {
+    for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+        if (MIDP.pushRegistrations[i].time && MIDP.pushRegistrations[i].midlet == midlet) {
             if (time != 0) {
-                lastAlarm = MIDP.alarms[i].time;
-                MIDP.alarms[i].time = time;
+                lastAlarm = MIDP.pushRegistrations[i].time;
+                MIDP.pushRegistrations[i].time = time;
             } else {
-                MIDP.alarms.splice(i, 1);
+                MIDP.pushRegistrations[i].splice(i, 1);
             }
 
             break;
@@ -1239,10 +1229,10 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     }
 
     if (lastAlarm == 0 && time != 0) {
-        MIDP.alarms.push({
+        MIDP.pushRegistrations.push({
             midlet: midlet,
-            id: ++MIDP.lastPushRegistrationId,
             time: time,
+            id: ++MIDP.lastPushRegistrationId,
         });
     }
 
@@ -1252,17 +1242,20 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(ctx, stack) {
     var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
 
-    var str;
+    var reg = MIDP.pushRegistrations[handle];
 
-    if (MIDP.alarms[handle]) {
-        str = MIDP.alarms[handle].midlet + ", 0, 1";
-    } else if (MIDP.pushRegistrations[handle]) {
-        var reg = MIDP.pushRegistrations[handle];
-        str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
-    } else {
+    if (!reg) {
         console.warn("getMIDlet0 returns -1, this should never happen");
         stack.push(-1);
         return;
+    }
+
+    var str;
+
+    if (reg.time) {
+        str = reg.midlet + ", 0, 1";
+    } else {
+        str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
     }
 
     for (var i = 0; i < str.length; i++) {
