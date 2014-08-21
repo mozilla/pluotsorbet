@@ -84,4 +84,7 @@ window.onload = function() {
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
  };
+ document.getElementById("printAllExceptions").onclick = function() {
+   VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
+ };
 };

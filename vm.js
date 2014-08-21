@@ -9,6 +9,7 @@ VM.Yield = {};
 VM.Pause = {};
 
 VM.DEBUG = false;
+VM.DEBUG_PRINT_ALL_EXCEPTIONS = false;
 
 VM.execute = function(ctx) {
     var frame = ctx.current();
@@ -47,7 +48,18 @@ VM.execute = function(ctx) {
         return frame;
     }
 
-    function throw_(ex) {
+    function buildExceptionLog(ex, ctx) {
+        var className = ex.class.className;
+        var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "detailMessage", "Ljava/lang/String;", false).get(ex));
+        var dump = [];
+        ex.stackTrace.forEach(function(frame) {
+            dump.push(frame.className + "." + frame.methodName + ", bci=" + frame.offset);
+        });
+        dump = dump.join("\n");
+        return ctx.thread.pid + " " + className + " " + (detailMessage ? detailMessage : "") + "\n" + dump + "\n\n";
+    }
+
+    function throw_(ex, ctx) {
         var exClass = ex.class;
         do {
             var exception_table = frame.methodInfo.exception_table;
@@ -69,19 +81,17 @@ VM.execute = function(ctx) {
                 stack.length = 0;
                 stack.push(ex);
                 frame.ip = handler_pc;
+
+                if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
+                    console.log(buildExceptionLog(ex, ctx));
+                }
+
                 return;
             }
             popFrame(0);
         } while (frame.methodInfo);
         ctx.kill();
-        var className = ex.class.className;
-        var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "detailMessage", "Ljava/lang/String;", false).get(ex));
-        var dump = [];
-        ex.stackTrace.forEach(function(frame) {
-            dump.push(frame.className + "." + frame.methodName + ", bci=" + frame.offset);
-        });
-        dump = dump.join("\n");
-        throw new Error(className + " " + (detailMessage ? detailMessage : "") + "\n" + dump);
+        throw new Error(buildExceptionLog(ex, ctx));
     }
 
     function checkArrayAccess(refArray, idx) {
@@ -933,7 +943,7 @@ VM.execute = function(ctx) {
                 ctx.raiseException("java/lang/NullPointerException");
                 break;
             }
-            throw_(obj);
+            throw_(obj, ctx);
             break;
         case 0xc2: // monitorenter
             var obj = stack.pop();
@@ -1029,7 +1039,7 @@ VM.execute = function(ctx) {
                     if (!e.class) {
                         throw e;
                     }
-                    throw_(e);
+                    throw_(e, ctx);
                 }
                 break;
             }
