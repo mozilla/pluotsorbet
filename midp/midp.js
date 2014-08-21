@@ -557,6 +557,8 @@ MIDP.Context2D = (function() {
                                    intParam5: posX, intParam6: posY, floatParam1: 0.0, intParam7: 0, intParam8: 0, intParam9: 0,
                                    intParam10: 0, intParam11: 0, intParam12: 0, intParam13: 0, intParam14: 0, intParam15: 0, intParam16: 0 }, MIDP.foregroundIsolateId);
         }
+        posX = ev.layerX;
+        posY = ev.layerY;
     });
 
     c.addEventListener("mouseup", function(ev) {
