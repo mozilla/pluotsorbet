@@ -87,11 +87,21 @@ fs.init(function() {
   run(urlParams.main || "RunTests", urlParams.args);
 });
 
+function toggle(button) {
+  var isOff = button.textContent.contains("OFF");
+  button.textContent = button.textContent.replace(isOff ? "OFF" : "ON", isOff ? "ON" : "OFF");
+}
+
 window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    asyncStorage.clear();
  };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
+   toggle(this);
+ };
+ document.getElementById("printAllExceptions").onclick = function() {
+   VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
+   toggle(this);
  };
 };
