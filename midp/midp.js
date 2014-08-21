@@ -1187,13 +1187,13 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
         }
 
         if (id == -1) {
-          for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-              if (MIDP.pushRegistrations[i].notify) {
-                  MIDP.pushRegistrations[i].notify = false;
-                  id = MIDP.pushRegistrations[i].id;
-                  break;
-              }
-          }
+            for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
+                if (MIDP.pushRegistrations[i].notify) {
+                    MIDP.pushRegistrations[i].notify = false;
+                    id = MIDP.pushRegistrations[i].id;
+                    break;
+                }
+            }
         }
 
         stack.push(id);
@@ -1211,11 +1211,11 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
     MIDP.pushRegistrations.push({
-      connection: values[0],
-      midlet: values[1],
-      filter: values[2],
-      suiteId: values[3],
-      id: ++MIDP.lastPushRegistrationId,
+        connection: values[0],
+        midlet: values[1],
+        filter: values[2],
+        suiteId: values[3],
+        id: ++MIDP.lastPushRegistrationId,
     });
 
     stack.push(0);
@@ -1239,11 +1239,11 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     }
 
     if (lastAlarm == 0 && time != 0) {
-      MIDP.alarms.push({
-        midlet: midlet,
-        id: ++MIDP.lastPushRegistrationId,
-        time: time,
-      });
+        MIDP.alarms.push({
+            midlet: midlet,
+            id: ++MIDP.lastPushRegistrationId,
+            time: time,
+        });
     }
 
     stack.push2(Long.fromNumber(lastAlarm));
@@ -1255,18 +1255,18 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
     var str;
 
     if (MIDP.alarms[handle]) {
-      str = MIDP.alarms[handle].midlet + ", 0, 1";
+        str = MIDP.alarms[handle].midlet + ", 0, 1";
     } else if (MIDP.pushRegistrations[handle]) {
-      var reg = MIDP.pushRegistrations[handle];
-      str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
+        var reg = MIDP.pushRegistrations[handle];
+        str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
     } else {
-      console.warn("getMIDlet0 returns -1, this should never happen");
-      stack.push(-1);
-      return;
+        console.warn("getMIDlet0 returns -1, this should never happen");
+        stack.push(-1);
+        return;
     }
 
     for (var i = 0; i < str.length; i++) {
-      regentry[i] = str.charCodeAt(i);
+        regentry[i] = str.charCodeAt(i);
     }
     regentry[str.length] = 0;
 
@@ -1280,10 +1280,10 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/la
 }
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(ctx, stack) {
-  var name = util.decodeUtf8(stack.pop());
-  console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" +
-               name + ")");
-  stack.push(0);
+    var name = util.decodeUtf8(stack.pop());
+    console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" +
+                 name + ")");
+    stack.push(0);
 }
 
 function pushNotify(protocolName) {
