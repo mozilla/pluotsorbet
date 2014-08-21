@@ -48,7 +48,7 @@ function run(className, args) {
       midlet: urlParams.pushMidlet,
       filter: "*",
       suiteId: "1",
-      id: ++MIDP.lastPushRegistrationId,
+      id: ++MIDP.lastRegistrationId,
     });
   }
 
