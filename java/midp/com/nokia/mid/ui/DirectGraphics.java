@@ -46,6 +46,7 @@ public interface DirectGraphics {
     public static final int TYPE_INT_888_RGB = 888;
     public static final int TYPE_INT_8888_ARGB = 8888;
 
+    public void drawElementBorder(int x, int y, int w, int h, int borderType, boolean withFocus);
     public void drawImage(Image image, int x, int y, int anchor, int manipulation);
     public void drawPixels(byte pixels[], byte transparencyMask[], int offset, int scanlength, int x, int y, int width,
 			   int height, int manipulation, int format);
