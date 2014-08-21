@@ -42,6 +42,16 @@ function load(file, responseType, cb) {
 }
 
 function run(className, args) {
+  if (urlParams.pushConn && urlParams.pushMidlet) {
+    MIDP.pushRegistrations.push({
+      connection: urlParams.pushConn,
+      midlet: urlParams.pushMidlet,
+      filter: "*",
+      suiteId: "1",
+      id: ++MIDP.lastRegistrationId,
+    });
+  }
+
   var jvm = new JVM();
 
   var jars = ["java/classes.jar", "tests/tests.jar"];
