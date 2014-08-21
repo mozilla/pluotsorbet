@@ -1,4 +1,4 @@
-package com.sun.cldc.io.j2me.file;
+package com.sun.midp.io.j2me.file;
 
 import com.sun.cldc.io.ConnectionBaseInterface;
 import java.io.IOException;
