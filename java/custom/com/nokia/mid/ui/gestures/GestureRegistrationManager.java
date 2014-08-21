@@ -20,7 +20,11 @@ public class GestureRegistrationManager {
     private static Hashtable listenerRegistrations = new Hashtable();
 
     public static void setListener(Object container, GestureListener listener) throws IllegalArgumentException {
-        listenerRegistrations.put(container, listener);
+        if (listener != null) {
+            listenerRegistrations.put(container, listener);
+        } else {
+            listenerRegistrations.remove(container);
+        }
     }
 
     public static void callListener(GestureEvent event) {
@@ -38,7 +42,9 @@ public class GestureRegistrationManager {
             }
 
             GestureListener listener = (GestureListener)listenerRegistrations.get(zoneReg.container);
-            listener.gestureAction(zoneReg.container, zone, event);
+            if (listener != null) {
+                listener.gestureAction(zoneReg.container, zone, event);
+            }
         }
     }
 
@@ -47,11 +53,27 @@ public class GestureRegistrationManager {
         return true;
     }
 
-    native public static void unregister(Object container, GestureInteractiveZone gestureInteractiveZone)
-        throws IllegalArgumentException;
+    public static void unregister(Object container, GestureInteractiveZone gestureInteractiveZone) throws IllegalArgumentException {
+        for (int i = 0; i < zoneRegistrations.size(); i++) {
+            ZoneRegistration zoneReg = (ZoneRegistration)zoneRegistrations.elementAt(i);
 
-    native public static void unregisterAll(Object container)
-        throws IllegalArgumentException;
+            if (zoneReg.zone == gestureInteractiveZone && zoneReg.container == container) {
+                zoneRegistrations.removeElementAt(i);
+                i -= 1;
+            }
+        }
+    }
+
+    public static void unregisterAll(Object container) throws IllegalArgumentException {
+        for (int i = 0; i < zoneRegistrations.size(); i++) {
+            ZoneRegistration zoneReg = (ZoneRegistration)zoneRegistrations.elementAt(i);
+            
+            if (zoneReg.container == container) {
+                zoneRegistrations.removeElementAt(i);
+                i -= 1;
+            }
+        }
+    }
 
     native public static GestureInteractiveZone getInteractiveZone(Object container);
 }
