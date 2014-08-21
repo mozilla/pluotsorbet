@@ -97,10 +97,10 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "None";
         break;
     case "javax.microedition.io.Connector.protocolpath":
-        value = "com.sun.cldc.io";
+        value = "com.sun.midp.io";
         break;
     case "javax.microedition.io.Connector.protocolpath.fallback":
-        value = "com.sun.midp.io";
+        value = "com.sun.cldc.io";
         break;
     case "com.nokia.multisim.slots":
         value = "1";
