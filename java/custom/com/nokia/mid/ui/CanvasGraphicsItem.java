@@ -1,6 +1,5 @@
 package com.nokia.mid.ui;
 
-import com.nokia.mid.ui.CanvasItem;
 import javax.microedition.lcdui.Graphics;
 
 public abstract class CanvasGraphicsItem extends CanvasItem {
