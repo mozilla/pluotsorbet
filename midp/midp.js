@@ -1814,3 +1814,119 @@ Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function(ctx, 
         delete MIDP.LocalMsgConnections[_this.protocolName];
     }
 }
+
+Native["com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I"] = function(ctx, stack) {
+    var ipBytes = stack.pop(), host = stack.pop(), _this = stack.pop();
+    // We'd need to modify ipBytes, that is an array with length 0
+    // But we don't really need to do that, because getIpNumber0 is called only
+    // before open0. So we just need to store the host and pass it to
+    // mozTCPSocket::open.
+    _this.host = util.fromJavaString(host);
+    stack.push(0);
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;"] = function(ctx, stack) {
+    var local = stack.pop(), _this = stack.pop();
+    stack.push(ctx.newString((local) ? "127.0.0.1" : _this.socket.host));
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stack) {
+    var port = stack.pop(), ipBytes = stack.pop(), _this = stack.pop();
+
+    _this.socket = navigator.mozTCPSocket.open(_this.host, port, { binaryType: "arraybuffer" });
+    _this.data = new Uint8Array();
+    _this.waitingData = null;
+
+    _this.socket.onopen = function() {
+        ctx.resume();
+    }
+
+    _this.socket.onerror = function(event) {
+        console.warn("Socket error, should raise a IOException");
+    }
+
+    _this.socket.ondata = function(event) {
+        var receivedData = new Uint8Array(event.data);
+        var newArray = new Uint8Array(_this.data.byteLength + receivedData.byteLength);
+        newArray.set(_this.data);
+        newArray.set(receivedData, _this.data.byteLength);
+        _this.data = newArray;
+
+        if (_this.waitingData) {
+            _this.waitingData();
+        }
+    }
+
+    throw VM.Pause;
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
+    stack.push(_this.data.byteLength);
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, stack) {
+    var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
+
+    function copyData() {
+        var toRead = (length < _this.data.byteLength) ? length : _this.data.byteLength;
+
+        data.set(_this.data.subarray(0, toRead), offset);
+
+        _this.data = new Uint8Array(_this.data.buffer.slice(toRead));
+
+        stack.push(toRead);
+    }
+
+    if (_this.data.byteLength == 0) {
+        _this.waitingData = function() {
+            _this.waitingData = null;
+            copyData();
+            ctx.resume();
+        }
+        throw VM.Pause;
+    }
+
+    copyData();
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
+    var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
+
+    _this.socket.ondrain = function() {
+        _this.socket.ondrain = null;
+        stack.push(length);
+        ctx.resume();
+    };
+
+    if (!_this.socket.send(data.buffer, offset, length)) {
+        throw VM.Pause;
+    }
+
+    stack.push(length);
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V"] = function(ctx, stack) {
+    var value = stack.pop(), option = stack.pop(), _this = stack.pop();
+    console.warn("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V not implemented");
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+    _this.socket.close();
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V"] = function(ctx, stack) {
+    var _this = stack.pop()
+    console.warn("com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V not implemented");
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+    console.warn("com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V not implemented");
+}
+
+Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V"] = function(ctx, stack) {
+    var _this = stack.pop();
+    console.warn("com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V not implemented");
+}
