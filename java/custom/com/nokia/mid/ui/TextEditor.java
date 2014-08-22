@@ -5,7 +5,7 @@ import com.nokia.mid.ui.TextEditorListener;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.TextField;
 
-public class TextEditor {
+public class TextEditor extends CanvasItem {
     // This flag is a hint to the implementation that during text editing, the smiley key should be disabled on the virtual keyboard.
     public static final int DISABLE_SMILEY_MODE = 4194304;
     private TextEditorListener _listener;
