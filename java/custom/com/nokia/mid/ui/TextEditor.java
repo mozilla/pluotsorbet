@@ -144,6 +144,7 @@ public class TextEditor extends CanvasItem {
 
     // Gets the whole content height in this TextEditor in pixels.
     public int getContentHeight() {
+        System.out.println("warning: TextEditor::getContentHeight needs a more correct implementation");
         return getFont().getHeight();
     }
 
