@@ -654,6 +654,8 @@
         _this._textEditor = document.createElement("textarea");
         _this._textEditor.style.border = "none";
         _this._textEditor.style.resize = "none";
+        _this._textEditor.style.backgroundColor = "transparent";
+        _this._textEditor.style.color = "transparent";
         _this._textEditor.oninput = function(e) {
             wakeTextEditorThread(_this._textEditorId);
         }
