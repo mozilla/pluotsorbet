@@ -157,7 +157,7 @@ public class TextEditor extends CanvasItem {
 
     // Sets the index of the caret.
     public void setCaret(int index) {
-        System.out.println("TextEditor::setCaret(int) not implemented");
+        System.out.println("warning: TextEditor::setCaret(int) not implemented");
     }
 
     // Gets the current position of the caret in the editor.
@@ -233,14 +233,14 @@ public class TextEditor extends CanvasItem {
 
     // Returns the maximum size (number of characters) that can be stored in this TextEditor.
     public int getMaxSize() {
-        System.out.println("TextEditor::getMaxSize() not implemented");
+        System.out.println("warning: TextEditor::getMaxSize() not implemented");
         return _maxSize;
     }
 
     // Sets the maximum size (number of characters) that can be contained in this TextEditor.
     public int setMaxSize(int maxSize) {
         _maxSize = maxSize;
-        System.out.println("TextEditor::setMaxSize(int) not implemented");
+        System.out.println("warning: TextEditor::setMaxSize(int) not implemented");
         return maxSize;
     }
 
