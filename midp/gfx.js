@@ -633,4 +633,9 @@
             });
         });
     }
+
+    Native["com/nokia/mid/ui/TextEditor.setParent0.(Ljava/lang/Object;)V"] = function(ctx, stack) {
+        var parent = stack.pop();
+        console.log("setParent0");
+    }
 })(Native);
