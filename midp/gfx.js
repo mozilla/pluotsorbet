@@ -689,6 +689,22 @@
         stack.push(ctx.newString(_this._textEditor.value));
     }
 
+    Native["com/nokia/mid/ui/TextEditor.setContent0.(Ljava/lang/String;)V"] = function(ctx, stack) {
+        var str = stack.pop(), _this = stack.pop();
+        _this._textEditor.value = util.fromJavaString(str);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.insert0.(Ljava/lang/String;I)V"] = function(ctx, stack) {
+        var pos = stack.pop(), str = stack.pop(), _this = stack.pop(),
+            old = _this._textEditor.value;
+        _this._textEditor.value = old.slice(0, pos) + util.fromJavaString(str) + old.slice(pos);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.size0.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this._textEditor.value.length);
+    }
+
     Native["com/nokia/mid/ui/TextEditorThread.sleep.()V"] = function(ctx, stack) {
         var _this = stack.pop();
         if (!_dirtyEditors.length) {

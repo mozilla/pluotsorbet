@@ -42,6 +42,9 @@ public class TextEditor extends CanvasItem {
     private boolean _visible;
     private Object _parent;
     private boolean _focus;
+    private int _maxSize;
+    private int _width;
+    private int _height;
     private int _id;
     private static TextEditorThread _textEditorThread;
 
@@ -49,8 +52,11 @@ public class TextEditor extends CanvasItem {
     native void setParent0(Object theParent);
     native void setSize0(int width, int height);
     native String getContent0();
+    native void setContent0(String str);
+    native void insert0(String str, int pos);
+    native int size0();
 
-    protected TextEditor(String label, String text, int maxSize, int constraints) {
+    protected TextEditor(String label, String text, int maxSize, int constraints, int width, int height) {
         _listener = null;
         _backgroundColor = 0;
         _foregroundColor = 0;
@@ -58,6 +64,9 @@ public class TextEditor extends CanvasItem {
         _visible = true;
         _parent = null;
         _focus = false;
+        _maxSize = 0;
+        _width = width;
+        _height = height;
         _id = TextEditor0();
         if (_textEditorThread == null) {
             _textEditorThread = new TextEditorThread();
@@ -68,7 +77,7 @@ public class TextEditor extends CanvasItem {
 
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
     public static TextEditor createTextEditor(String text, int maxSize, int constraints, int width, int height) {
-        return new TextEditor("", text, maxSize, constraints);
+        return new TextEditor("", text, maxSize, constraints, width, height);
     }
 
     // Creates a new empty TextEditor with the given maximum size in characters, constraints and editor size as number of visible rows.
@@ -150,7 +159,7 @@ public class TextEditor extends CanvasItem {
 
     // Sets the index of the caret.
     public void setCaret(int index) {
-        throw new RuntimeException("TextEditor::setCaret(int) not implemented");
+        System.out.println("TextEditor::setCaret(int) not implemented");
     }
 
     // Gets the current position of the caret in the editor.
@@ -206,7 +215,7 @@ public class TextEditor extends CanvasItem {
 
     // Sets the content of the TextEditor as a string.
     public void setContent(String content) {
-        throw new RuntimeException("TextEditor::setContent(String) not implemented");
+        setContent0(content);
     }
 
     // Gets the string content in the TextEditor.
@@ -216,7 +225,7 @@ public class TextEditor extends CanvasItem {
 
     // Inserts a string into the content of the TextEditor.
     public void insert(String text, int position) {
-        throw new RuntimeException("TextEditor::insert(String,int) not implemented");
+        insert0(text, position);
     }
 
     // Deletes characters from the TextEditor.
@@ -226,17 +235,20 @@ public class TextEditor extends CanvasItem {
 
     // Returns the maximum size (number of characters) that can be stored in this TextEditor.
     public int getMaxSize() {
-        throw new RuntimeException("TextEditor::getMaxSize() not implemented");
+        System.out.println("TextEditor::getMaxSize() not implemented");
+        return _maxSize;
     }
 
     // Sets the maximum size (number of characters) that can be contained in this TextEditor.
     public int setMaxSize(int maxSize) {
-        throw new RuntimeException("TextEditor::setMaxSize(int) not implemented");
+        _maxSize = maxSize;
+        System.out.println("TextEditor::setMaxSize(int) not implemented");
+        return maxSize;
     }
 
     // Gets the number of characters that are currently stored in this TextEditor.
     public int size() {
-        throw new RuntimeException("TextEditor::size() not implemented");
+        return size0();
     }
 
     // Sets the input constraints of this TextEditor.
@@ -328,6 +340,14 @@ public class TextEditor extends CanvasItem {
     // Sets the caret in the Editor at x, y location.
     public void setCaretXY(int x, int y) {
         throw new RuntimeException("TextEditor::setCaretXY(int,int) not implemented");
+    }
+
+    public int getWidth() {
+        return _width;
+    }
+
+    public int getHeight() {
+        return _height;
     }
 }
 
