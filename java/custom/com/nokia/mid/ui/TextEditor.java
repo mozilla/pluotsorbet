@@ -107,6 +107,7 @@ public class TextEditor extends CanvasItem {
 
     // Sets the visibility value of TextEditor.
     public void setVisible(boolean visible) {
+        System.out.println("warning: TextEditor::setVisible(boolean) not implemented (" + visible + ")");
         _visible = visible;
     }
 
