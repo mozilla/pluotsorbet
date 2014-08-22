@@ -394,7 +394,25 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
         value = "com.sun.midp.io.j2me.datagram.ProtocolPushImpl";
         break;
     case "com.sun.midp.io.j2me.socket.buffersize":
-        value = 0;
+        value = null;
+        break;
+    case "com.sun.midp.io.http.proxy":
+        value = null;
+        break;
+    case "com.sun.midp.io.http.force_non_persistent":
+        value = null;
+        break;
+    case "com.sun.midp.io.http.max_persistent_connections":
+        value = null;
+        break;
+    case "com.sun.midp.io.http.persistent_connection_linger_time":
+        value = null;
+        break;
+    case "com.sun.midp.io.http.input_buffer_size":
+        value = null;
+        break;
+    case "com.sun.midp.io.http.output_buffer_size":
+        value = null;
         break;
     default:
         console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
