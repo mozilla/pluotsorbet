@@ -1,7 +1,5 @@
 package com.nokia.mid.ui;
 
-import com.nokia.mid.ui.CanvasItem;
-import com.nokia.mid.ui.TextEditorListener;
 import javax.microedition.lcdui.Font;
 import java.util.Hashtable;
 
