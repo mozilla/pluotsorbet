@@ -70,7 +70,7 @@ public class TextEditor extends CanvasItem {
 
     // Creates a new empty TextEditor with the given maximum size in characters, constraints and editor size as number of visible rows.
     public static TextEditor createTextEditor(int maxSize, int constraints, int width, int rows) {
-        return createTextEditor("", maxSize, constraints, width, rows);
+        return createTextEditor("", maxSize, constraints, width, Font.getDefaultFont().getHeight() * rows);
     }
 
     // Sets this TextEditor focused or removes keyboard focus.
