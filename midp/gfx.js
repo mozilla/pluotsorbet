@@ -634,8 +634,74 @@
         });
     }
 
+    var _textEditorId = 0,
+        _textEditorContext = null,
+        _dirtyEditors = [];
+
+    function wakeTextEditorThread(id) {
+        _dirtyEditors.push(id);
+        if (_textEditorContext) {
+            var ctx = _textEditorContext;
+            _textEditorContext = null;
+            ctx.resume();
+        }
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.TextEditor0.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(++_textEditorId);
+        _this._textEditorId = _textEditorId;
+        _this._textEditor = document.createElement("textarea");
+        _this._textEditor.style.border = "none";
+        _this._textEditor.style.resize = "none";
+        _this._textEditor.oninput = function(e) {
+            wakeTextEditorThread(_this._textEditorId);
+        }
+    }
+
     Native["com/nokia/mid/ui/TextEditor.setParent0.(Ljava/lang/Object;)V"] = function(ctx, stack) {
-        var parent = stack.pop();
-        console.log("setParent0");
+        var parent = stack.pop(), _this = stack.pop();
+        document.body.appendChild(_this._textEditor);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setSize0.(II)V"] = function(ctx, stack) {
+        var height = stack.pop(), width = stack.pop(), _this = stack.pop();
+        _this._textEditor.style.height = "" + height + "px";
+        _this._textEditor.style.width = "" + width + "px";
+        // hack
+        var top = 0, right = 0;
+        if (width === 35) {
+            top = 155;
+            right = 177;
+        } else if (width === 145) {
+            top = 155;
+            right = 28;
+        }
+        _this._textEditor.style.position = "absolute";
+        _this._textEditor.style.top = "" + top + "px";
+        _this._textEditor.style.right = "" + right + "px";
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.getContent0.()Ljava/lang/String;"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(ctx.newString(_this._textEditor.value));
+    }
+
+    Native["com/nokia/mid/ui/TextEditorThread.sleep.()V"] = function(ctx, stack) {
+        var _this = stack.pop();
+        if (!_dirtyEditors.length) {
+            _textEditorContext = ctx;
+            throw VM.Pause;
+        }
+    }
+
+    Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        if (!_dirtyEditors.length) {
+            console.error("ERROR: getNextDirtyEditor called but no dirty editors");
+            stack.push(0);
+        } else {
+            stack.push(_dirtyEditors.shift());
+        }
     }
 })(Native);

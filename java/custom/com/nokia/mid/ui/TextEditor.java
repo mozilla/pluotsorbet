@@ -4,19 +4,52 @@ import com.nokia.mid.ui.CanvasItem;
 import com.nokia.mid.ui.TextEditorListener;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.TextField;
+import java.util.Hashtable;
+
+class TextEditorThread implements Runnable {
+    // We need a thread to be able to wake from js when there is an async js keyboard event.
+    native void sleep();
+    native int getNextDirtyEditor();
+    
+    Hashtable _listeners;
+
+    TextEditorThread() {
+        _listeners = new Hashtable();
+    }
+
+    public void run() {
+        while (true) {
+            sleep();
+            int dirty = getNextDirtyEditor();
+            TextEditor t = (TextEditor)_listeners.get("" + dirty);
+            t._listener.inputAction(t, TextEditorListener.ACTION_CONTENT_CHANGE);
+        }
+    }
+
+    void register(int id, TextEditor t) {
+        _listeners.put("" + id, t);
+    }
+}
 
 public class TextEditor extends CanvasItem {
     // This flag is a hint to the implementation that during text editing, the smiley key should be disabled on the virtual keyboard.
     public static final int DISABLE_SMILEY_MODE = 4194304;
-    private TextEditorListener _listener;
+
+    protected TextEditorListener _listener;
+
     private int _backgroundColor;
     private int _foregroundColor;
     private boolean _multiline;
     private boolean _visible;
     private Object _parent;
     private boolean _focus;
+    private int _id;
+    private static TextEditorThread _textEditorThread;
 
+    native int TextEditor0();
     native void setParent0(Object theParent);
+    native void setSize0(int width, int height);
+    native String getContent0();
     
     protected TextEditor(String label, String text, int maxSize, int constraints) {
         _listener = null;
@@ -26,6 +59,12 @@ public class TextEditor extends CanvasItem {
         _visible = true;
         _parent = null;
         _focus = false;
+        _id = TextEditor0();
+        if (_textEditorThread == null) {
+            _textEditorThread = new TextEditorThread();
+            Thread t = new Thread(_textEditorThread);
+            t.start();
+        }
     }
     
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
@@ -51,7 +90,6 @@ public class TextEditor extends CanvasItem {
     
     // Set the parent object of this TextEditor.
     public void setParent(Object theParent) {
-        System.out.println("setParent " + theParent.getClass().getName());
         _parent = theParent;
         setParent0(theParent);
     }
@@ -63,6 +101,7 @@ public class TextEditor extends CanvasItem {
     
     // Sets the size of this TextEditor in pixels.
     public void setSize(int width, int height) {
+        setSize0(width, height);
     }
     
     // Sets the rendering position of this TextEditor.
@@ -173,7 +212,7 @@ public class TextEditor extends CanvasItem {
     
     // Gets the string content in the TextEditor.
     public String getContent() {
-        return "5555551212";
+        return getContent0();
     }
     
     // Inserts a string into the content of the TextEditor.
@@ -234,7 +273,7 @@ public class TextEditor extends CanvasItem {
     // Sets a listener for content changes in this TextEditor, replacing any previous TextEditorListener.
     public void setTextEditorListener(TextEditorListener listener) {
         _listener = listener;
-        listener.inputAction(this, TextEditorListener.ACTION_CONTENT_CHANGE);
+        _textEditorThread.register(_id, this);
     }
     
     // Returns the multiline state of the TextEditor.
