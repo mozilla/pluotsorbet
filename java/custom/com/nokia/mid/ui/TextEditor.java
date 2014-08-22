@@ -34,15 +34,15 @@ public class TextEditor extends CanvasItem {
 
     protected TextEditorListener _listener;
 
-    private int _backgroundColor;
-    private int _foregroundColor;
-    private boolean _multiline;
-    private boolean _visible;
-    private Object _parent;
-    private boolean _focus;
-    private int _maxSize;
-    private int _width;
-    private int _height;
+    private int _backgroundColor = 0;
+    private int _foregroundColor = 0;
+    private boolean _multiline = true;
+    private boolean _visible = true;
+    private Object _parent = null;
+    private boolean _focus = false;
+    private int _maxSize = 0;
+    private int _width = 0;
+    private int _height = 0;
     private int _id;
     private static TextEditorThread _textEditorThread;
 
@@ -55,16 +55,6 @@ public class TextEditor extends CanvasItem {
     native int size0();
 
     protected TextEditor(String label, String text, int maxSize, int constraints, int width, int height) {
-        _listener = null;
-        _backgroundColor = 0;
-        _foregroundColor = 0;
-        _multiline = true;
-        _visible = true;
-        _parent = null;
-        _focus = false;
-        _maxSize = 0;
-        _width = width;
-        _height = height;
         _id = TextEditor0();
         if (_textEditorThread == null) {
             _textEditorThread = new TextEditorThread();
