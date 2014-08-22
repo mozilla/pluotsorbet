@@ -3,7 +3,6 @@ package com.nokia.mid.ui;
 import com.nokia.mid.ui.CanvasItem;
 import com.nokia.mid.ui.TextEditorListener;
 import javax.microedition.lcdui.Font;
-import javax.microedition.lcdui.TextField;
 import java.util.Hashtable;
 
 class TextEditorThread implements Runnable {
