@@ -535,22 +535,39 @@ MIDP.Context2D = (function() {
     // because they use layerX and layerY.
 
     var mouse_is_down = false;
+    var mouse_moved = false;
+    var posX = 0;
+    var posY = 0;
 
     c.addEventListener("mousedown", function(ev) {
         mouse_is_down = true;
-        MIDP.sendNativeEvent({ type: MIDP.GESTURE_EVENT, intParam1: MIDP.GESTURE_TAP, intParam2: 0, intParam3: 0, intParam4: MIDP.displayId,
-                               intParam5: ev.layerX, intParam6: ev.layerY, floatParam1: 0.0, intParam7: 0, intParam8: 0, intParam9: 0,
-                               intParam10: 0, intParam11: 0, intParam12: 0, intParam13: 0, intParam14: 0, intParam15: 0, intParam16: 0 }, MIDP.foregroundIsolateId);
-        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+        mouse_moved = false;
+        posX = ev.layerX;
+        posY = ev.layerY;
+        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: posX, intParam3: posY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
     });
 
     c.addEventListener("mousemove", function(ev) {
-        if (mouse_is_down)
-            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId)
+        var distanceX = ev.layerX - posX;
+        var distanceY = ev.layerY - posY;
+        mouse_moved = true;
+        if (mouse_is_down) {
+            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+            MIDP.sendNativeEvent({ type: MIDP.GESTURE_EVENT, intParam1: MIDP.GESTURE_DRAG, intParam2: distanceX, intParam3: distanceY, intParam4: MIDP.displayId,
+                                   intParam5: posX, intParam6: posY, floatParam1: 0.0, intParam7: 0, intParam8: 0, intParam9: 0,
+                                   intParam10: 0, intParam11: 0, intParam12: 0, intParam13: 0, intParam14: 0, intParam15: 0, intParam16: 0 }, MIDP.foregroundIsolateId);
+        }
+        posX = ev.layerX;
+        posY = ev.layerY;
     });
 
     c.addEventListener("mouseup", function(ev) {
         mouse_is_down = false;
+        if (!mouse_moved) {
+            MIDP.sendNativeEvent({ type: MIDP.GESTURE_EVENT, intParam1: MIDP.GESTURE_TAP, intParam2: 0, intParam3: 0, intParam4: MIDP.displayId,
+                                   intParam5: ev.layerX, intParam6: ev.layerY, floatParam1: 0.0, intParam7: 0, intParam8: 0, intParam9: 0,
+                                   intParam10: 0, intParam11: 0, intParam12: 0, intParam13: 0, intParam14: 0, intParam15: 0, intParam16: 0 }, MIDP.foregroundIsolateId);
+        }
         MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
     });
 
@@ -981,6 +998,15 @@ MIDP.COMMAND_EVENT = 3;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 MIDP.GESTURE_EVENT = 71;
 MIDP.GESTURE_TAP = 0x1;
+MIDP.GESTURE_LONG_PRESS = 0x2;
+MIDP.GESTURE_DRAG = 0x4;
+MIDP.GESTURE_DROP = 0x8;
+MIDP.GESTURE_FLICK = 0x10;
+MIDP.GESTURE_LONG_PRESS_REPEATED = 0x20;
+MIDP.GESTURE_PINCH = 0x40;
+MIDP.GESTURE_DOUBLE_TAP = 0x80;
+MIDP.GESTURE_RECOGNITION_START = 0x4000;
+MIDP.GESTURE_RECOGNITION_END = 0x8000;
 
 MIDP.suppressKeyEvents = false;
 
