@@ -1,49 +1,119 @@
 package com.nokia.mid.ui;
 
 import javax.microedition.lcdui.Font;
+import java.util.Hashtable;
+
+class TextEditorThread implements Runnable {
+    // We need a thread to be able to wake from js when there is an async js keyboard event.
+    native void sleep();
+    native int getNextDirtyEditor();
+
+    Hashtable listeners;
+
+    TextEditorThread() {
+        listeners = new Hashtable();
+    }
+
+    public void run() {
+        while (true) {
+            sleep();
+            int dirty = getNextDirtyEditor();
+            TextEditor t = (TextEditor)listeners.get("" + dirty);
+            t.myListener.inputAction(t, TextEditorListener.ACTION_CONTENT_CHANGE);
+        }
+    }
+
+    void register(int id, TextEditor t) {
+        listeners.put("" + id, t);
+    }
+}
 
 public class TextEditor extends CanvasItem {
     // This flag is a hint to the implementation that during text editing, the smiley key should be disabled on the virtual keyboard.
     public static final int DISABLE_SMILEY_MODE = 4194304;
 
+    protected TextEditorListener myListener;
+
+    private int backgroundColor = 0;
+    private int foregroundColor = 0;
+    private boolean multiline = true;
+    private boolean visible = true;
+    private Object parent = null;
+    private boolean focus = false;
+    private int maxSize = 0;
+    private int width = 0;
+    private int height = 0;
+    private int myId;
+    private static TextEditorThread textEditorThread;
+
+    native int TextEditor0();
+    native void setParent0(Object theParent);
+    native void setSize0(int width, int height);
+    native String getContent0();
+    native void setContent0(String str);
+    native void insert0(String str, int pos);
+    native int size0();
+
+    protected TextEditor(String label, String text, int maxSize, int constraints, int width, int height) {
+        myId = TextEditor0();
+        if (textEditorThread == null) {
+            textEditorThread = new TextEditorThread();
+            Thread t = new Thread(textEditorThread);
+            t.start();
+        }
+    }
+
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
     public static TextEditor createTextEditor(String text, int maxSize, int constraints, int width, int height) {
-        throw new RuntimeException("TextEditor::createTextEditor(int,int,int,int) not implemented");
+        return new TextEditor("", text, maxSize, constraints, width, height);
     }
 
     // Creates a new empty TextEditor with the given maximum size in characters, constraints and editor size as number of visible rows.
     public static TextEditor createTextEditor(int maxSize, int constraints, int width, int rows) {
-        throw new RuntimeException("TextEditor::createTextEditor(int,int,int,int) not implemented");
+        return createTextEditor("", maxSize, constraints, width, Font.getDefaultFont().getHeight() * rows);
     }
 
     // Sets this TextEditor focused or removes keyboard focus.
     public void setFocus(boolean focused) {
-        throw new RuntimeException("TextEditor::setFocus(boolean) not implemented");
+        focus = focused;
+        System.out.println("warning: TextEditor::setFocus(boolean) not implemented (" + focused + ")");
     }
 
     // Returns the focus state of TextEditor.
     public boolean hasFocus() {
-        throw new RuntimeException("TextEditor::hasFocus() not implemented");
+        return focus;
     }
 
     // Set the parent object of this TextEditor.
     public void setParent(Object theParent) {
-        throw new RuntimeException("TextEditor::setParent(Object) not implemented");
+        parent = theParent;
+        setParent0(theParent);
+    }
+
+    // Get the parent object of this TextEditor.
+    public Object getParent() {
+        return parent;
     }
 
     // Sets the size of this TextEditor in pixels.
     public void setSize(int width, int height) {
-        throw new RuntimeException("TextEditor::setSize(int,int) not implemented");
+        setSize0(width, height);
     }
 
     // Sets the rendering position of this TextEditor.
     public void setPosition(int x, int y) {
-        throw new RuntimeException("TextEditor::setPosition(int,int) not implemented");
+        System.out.println("warning: TextEditor::setPosition(int,int) not implemented (" + x + ", " + y + ")");
     }
 
     // Sets the visibility value of TextEditor.
     public void setVisible(boolean visible) {
-        throw new RuntimeException("TextEditor::setVisible(boolean) not implemented");
+        System.out.println("warning: TextEditor::setVisible(boolean) not implemented (" + visible + ")");
+        visible = visible;
+    }
+
+    // Gets the visibility value of TextEditor.
+    public  boolean isVisible() {
+        return visible;
     }
 
     // Sets the Z-position, or the elevation, of the item.
@@ -68,17 +138,18 @@ public class TextEditor extends CanvasItem {
 
     // Gets the line margin height in this TextEditor in pixels.
     public int getLineMarginHeight() {
-        throw new RuntimeException("TextEditor::getLineMarginHeight() not implemented");
+        return getFont().getHeight();
     }
 
     // Gets the whole content height in this TextEditor in pixels.
     public int getContentHeight() {
-        throw new RuntimeException("TextEditor::getContentHeight() not implemented");
+        System.out.println("warning: TextEditor::getContentHeight needs a more correct implementation");
+        return getFont().getHeight();
     }
 
     // Sets the index of the caret.
     public void setCaret(int index) {
-        throw new RuntimeException("TextEditor::setCaret(int) not implemented");
+        System.out.println("warning: TextEditor::setCaret(int) not implemented");
     }
 
     // Gets the current position of the caret in the editor.
@@ -88,12 +159,13 @@ public class TextEditor extends CanvasItem {
 
     // Gets the topmost pixel position of the topmost visible line in the editor.
     public int getVisibleContentPosition() {
-        throw new RuntimeException("TextEditor::getVisibleContentPosition() not implemented");
+        System.out.println("warning: TextEditor::getVisibleContentPosition() not implemented");
+        return 0;
     }
 
     // Gets the font being used in rendering the text content in this TextEditor.
     public Font getFont() {
-        throw new RuntimeException("TextEditor::getFont() not implemented");
+        return Font.getDefaultFont();
     }
 
     // Sets the application preferred font for rendering the text content in this TextEditor.
@@ -103,22 +175,22 @@ public class TextEditor extends CanvasItem {
 
     // Gets the background color and alpha of this TextEditor.
     public int getBackgroundColor() {
-        throw new RuntimeException("TextEditor::getBackgroundColor() not implemented");
+        return backgroundColor;
     }
 
     // Gets the foreground color and alpha of this TextEditor.
     public int getForegroundColor() {
-        throw new RuntimeException("TextEditor::getForegroundColor() not implemented");
+        return foregroundColor;
     }
 
     // Sets the background color and alpha of this TextEditor to the specified values.
     public void setBackgroundColor(int color) {
-        throw new RuntimeException("TextEditor::setBackgroundColor(int) not implemented");
+        backgroundColor = color;
     }
 
     // Sets the foreground color and alpha of this TextEditor to the specified values.
     public void setForegroundColor(int color) {
-        throw new RuntimeException("TextEditor::setForegroundColor(int) not implemented");
+        foregroundColor = color;
     }
 
     // Sets the highlight background color.
@@ -133,17 +205,17 @@ public class TextEditor extends CanvasItem {
 
     // Sets the content of the TextEditor as a string.
     public void setContent(String content) {
-        throw new RuntimeException("TextEditor::setContent(String) not implemented");
+        setContent0(content);
     }
 
     // Gets the string content in the TextEditor.
     public String getContent() {
-        throw new RuntimeException("TextEditor::getContent() not implemented");
+        return getContent0();
     }
 
     // Inserts a string into the content of the TextEditor.
     public void insert(String text, int position) {
-        throw new RuntimeException("TextEditor::insert(String,int) not implemented");
+        insert0(text, position);
     }
 
     // Deletes characters from the TextEditor.
@@ -153,17 +225,20 @@ public class TextEditor extends CanvasItem {
 
     // Returns the maximum size (number of characters) that can be stored in this TextEditor.
     public int getMaxSize() {
-        throw new RuntimeException("TextEditor::getMazSize() not implemented");
+        System.out.println("warning: TextEditor::getMaxSize() not implemented");
+        return maxSize;
     }
 
     // Sets the maximum size (number of characters) that can be contained in this TextEditor.
     public int setMaxSize(int maxSize) {
-        throw new RuntimeException("TextEditor::setMaxSize(int) not implemented");
+        maxSize = maxSize;
+        System.out.println("warning: TextEditor::setMaxSize(int) not implemented");
+        return maxSize;
     }
 
     // Gets the number of characters that are currently stored in this TextEditor.
     public int size() {
-        throw new RuntimeException("TextEditor::size() not implemented");
+        return size0();
     }
 
     // Sets the input constraints of this TextEditor.
@@ -198,17 +273,18 @@ public class TextEditor extends CanvasItem {
 
     // Sets a listener for content changes in this TextEditor, replacing any previous TextEditorListener.
     public void setTextEditorListener(TextEditorListener listener) {
-        throw new RuntimeException("TextEditor::setTextEditorListener(TextEditorListener) not implemented");
+        myListener = listener;
+        textEditorThread.register(myId, this);
     }
 
     // Returns the multiline state of the TextEditor.
     public boolean isMultiline() {
-        throw new RuntimeException("TextEditor::isMultiline() not implemented");
+        return multiline;
     }
 
     // Sets the editor to be either multi-line (true) or single-line (false).
     public void setMultiline(boolean aMultiline) {
-        throw new RuntimeException("TextEditor::setMultiline(boolean) not implemented");
+        multiline = aMultiline;
     }
 
     // If the default indicator location is not used then sets the drawing location for input indicators relative to the TextEditor's parent.
@@ -254,6 +330,14 @@ public class TextEditor extends CanvasItem {
     // Sets the caret in the Editor at x, y location.
     public void setCaretXY(int x, int y) {
         throw new RuntimeException("TextEditor::setCaretXY(int,int) not implemented");
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 }
 
