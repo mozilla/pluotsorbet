@@ -73,10 +73,6 @@ Classes.prototype.loadClassFile = function(fileName) {
     var classInfo = this.loadClassBytes(bytes);
     if (classInfo.superClassName)
         classInfo.superClass = this.loadClass(classInfo.superClassName);
-    var interfaces = classInfo.interfaces;
-    interfaces.forEach(function (i, n) {
-        interfaces[n] = self.loadClass(i);
-    });
     var classes = classInfo.classes;
     classes.forEach(function (c, n) {
         classes[n] = self.loadClass(c);
