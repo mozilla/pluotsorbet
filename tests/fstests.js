@@ -454,6 +454,11 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  is(fs.getsize(1), 12, "file's size is 12");
+  next();
+});
+
+tests.push(function() {
   fs.close(1);
   next();
 });
