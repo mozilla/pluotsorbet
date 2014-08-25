@@ -1669,8 +1669,32 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = functi
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(ctx, stack) {
     var mode = stack.pop(), fileName = util.fromJavaString(stack.pop()), _this = stack.pop();
-    console.warn("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I: " + fileName);
-    stack.push(0);
+
+    function open() {
+        fs.open(path, function(fd) {
+            // throw IOException if opening failed
+            stack.push(fd);
+            ctx.resume();
+        });
+    }
+
+    fs.exists(path, function(exists) {
+        if (exists) {
+            open();
+        } else {
+            fs.create(path, function(created) {
+                if (created) {
+                    open();
+                } else {
+                    // throw IOException
+                    stack.push(-1);
+                    ctx.resume();
+                }
+            });
+        }
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = function(ctx, stack) {
