@@ -1667,6 +1667,11 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = functi
     fs.write(fd, byteArray.subarray(offset, offset+count));
 }
 
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(ctx, stack) {
+ var mode = stack.pop(), fileName = stack.pop();
+ console.warn("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I: " + fileName);
+}
+
 Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
     var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
     stack.push(1);
