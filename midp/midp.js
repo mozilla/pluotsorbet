@@ -1668,8 +1668,18 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = functi
 }
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(ctx, stack) {
- var mode = stack.pop(), fileName = stack.pop();
- console.warn("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I: " + fileName);
+    var mode = stack.pop(), fileName = util.fromJavaString(stack.pop()), _this = stack.pop();
+    console.warn("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I: " + fileName);
+    stack.push(0);
+}
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = function(ctx, stack) {
+    var length = stack.pop(), offset = stack.pop(), buffer = stack.pop(), handle = stack.pop();
+    stack.push(-1);
+}
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(ctx, stack) {
+    var handle = stack.pop();
 }
 
 Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
