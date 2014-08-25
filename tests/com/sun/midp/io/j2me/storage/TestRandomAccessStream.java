@@ -54,11 +54,12 @@ public class TestRandomAccessStream implements Testlet {
     }
 
     void cleanup() throws IOException {
-        File file = new File();
-        file.delete("afile");
+        FileConnection file = (FileConnection)Connector.open("file:///RandomAccessStream/afile");
+        file.delete();
+        file.close();
 
-        FileConnection dir = (FileConnection)Connector.open("file:///RandomAccessStream");
-        dir.delete();
-        dir.close();
+        file = (FileConnection)Connector.open("file:///RandomAccessStream");
+        file.delete();
+        file.close();
     }
 }
