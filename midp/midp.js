@@ -1672,8 +1672,17 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
 
     function open() {
         fs.open(path, function(fd) {
-            // throw IOException if opening failed
-            stack.push(fd);
+            if (fd == -1) {
+                try {
+                    ctx.raiseException("java/io/IOException",
+                                       "RandomAccessStream::open(" + fileName + ") failed opening the file");
+                } catch(ex) {
+                    // Catch and ignore the VM.Yield exception that Context.raiseException
+                    // throws so we reach ctx.resume() to resume the thread.
+                }
+            } else {
+                stack.push(fd);
+            }
             ctx.resume();
         });
     }
@@ -1686,8 +1695,13 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
                 if (created) {
                     open();
                 } else {
-                    // throw IOException
-                    stack.push(-1);
+                    try {
+                        ctx.raiseException("java/io/IOException",
+                                           "RandomAccessStream::open(" + fileName + ") failed creating the file");
+                    } catch(ex) {
+                        // Catch and ignore the VM.Yield exception that Context.raiseException
+                        // throws so we reach ctx.resume() to resume the thread.
+                    }
                     ctx.resume();
                 }
             });
