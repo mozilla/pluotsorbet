@@ -1919,13 +1919,13 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, sta
 Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
 
-    _this.socket.ondrain = function() {
-        _this.socket.ondrain = null;
-        stack.push(length);
-        ctx.resume();
-    };
-
     if (!_this.socket.send(data.buffer, offset, length)) {
+        _this.socket.ondrain = function() {
+            _this.socket.ondrain = null;
+            stack.push(length);
+            ctx.resume();
+        };
+
         throw VM.Pause;
     }
 
