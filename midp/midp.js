@@ -1822,3 +1822,8 @@ Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function(ctx, 
         delete MIDP.LocalMsgConnections[_this.protocolName];
     }
 }
+
+Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {
+    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
+        inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
+}
