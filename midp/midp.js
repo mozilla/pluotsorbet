@@ -1730,7 +1730,13 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = functi
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(ctx, stack) {
     var handle = stack.pop();
-    stack.push(fs.getsize(handle));
+
+    var size = fs.getsize(handle);
+    if (size == -1) {
+        ctx.raiseException("java/io/IOException", "RandomAccessStream::sizeOf(" + handle + ") failed");
+    } else {
+        stack.push(size);
+    }
 }
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(ctx, stack) {

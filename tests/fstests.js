@@ -459,6 +459,11 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  is(fs.getsize(2), -1, "getsize fails with an invalid fd");
+  next();
+});
+
+tests.push(function() {
   fs.close(1);
   next();
 });

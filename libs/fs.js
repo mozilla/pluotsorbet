@@ -142,7 +142,11 @@ var fs = (function() {
   }
 
   function getsize(fd) {
-      return openedFiles[fd].buffer.byteLength;
+    if (!openedFiles[fd]) {
+      return -1;
+    }
+
+    return openedFiles[fd].buffer.byteLength;
   }
 
   function flush(fd, cb) {
