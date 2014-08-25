@@ -1734,6 +1734,26 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = functi
     }
 }
 
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] = function(ctx, stack) {
+    var length = stack.pop(), offset = stack.pop(), buffer = stack.pop(), handle = stack.pop();
+    fs.write(handle, buffer.subarray(offset, offset + length));
+}
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"] = function(ctx, stack) {
+    var handle = stack.pop();
+
+    fs.flush(handle, function() {
+        ctx.resume();
+    });
+
+    throw VM.Pause;
+}
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V"] = function(ctx, stack) {
+    var position = stack.pop(), handle = stack.pop();
+    fs.setpos(handle, position);
+}
+
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(ctx, stack) {
     var handle = stack.pop();
 
