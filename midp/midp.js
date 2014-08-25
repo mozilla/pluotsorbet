@@ -1713,11 +1713,24 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), buffer = stack.pop(), handle = stack.pop();
-    stack.push(-1);
+
+    var from = fs.getpos(handle);
+    var to = from + length;
+    var readBytes = fs.read(handle, from, to);
+    if (readBytes.byteLength > 0) {
+        var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
+        for (var i = 0; i < readBytes.byteLength; i++) {
+            subBuffer[i] = readBytes[i];
+        }
+        stack.push(readBytes.byteLength);
+    } else {
+        stack.push(-1);
+    }
 }
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(ctx, stack) {
     var handle = stack.pop();
+    fs.close(handle);
 }
 
 Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
