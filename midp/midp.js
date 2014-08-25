@@ -1728,6 +1728,11 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = functi
     }
 }
 
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(ctx, stack) {
+    var handle = stack.pop();
+    stack.push(fs.getsize(handle));
+}
+
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(ctx, stack) {
     var handle = stack.pop();
     fs.close(handle);
