@@ -68,7 +68,7 @@ var fs = (function() {
         });
         reader.readAsArrayBuffer(blob);
       }
-    });    
+    });
   }
 
   function close(fd) {
@@ -139,6 +139,10 @@ var fs = (function() {
 
   function setpos(fd, pos) {
     openedFiles[fd].position = pos;
+  }
+
+  function getsize(fd) {
+      return openedFiles[fd].buffer.byteLength;
   }
 
   function flush(fd, cb) {
@@ -355,6 +359,7 @@ var fs = (function() {
     write: write,
     getpos: getpos,
     setpos: setpos,
+    getsize: getsize,
     flush: flush,
     list: list,
     exists: exists,
