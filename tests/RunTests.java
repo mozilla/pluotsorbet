@@ -1,6 +1,16 @@
 import gnu.testlet.*;
 
+import com.sun.j2me.security.AccessControlContext;
+import com.sun.j2me.security.AccessController;
+
 public class RunTests {
+  private static class StubAccessControlContext implements AccessControlContext {
+      // AccessControlContext stubs
+      public void checkPermission(String name) throws SecurityException {}
+      public void checkPermission(String name, String resource) throws SecurityException {}
+      public void checkPermission(String name, String resource, String extraValue) throws SecurityException {}
+  }
+
     private static class Harness extends TestHarness {
 	private String testName;
 	private int testNumber = 0;
@@ -45,6 +55,9 @@ public class RunTests {
     };
 
     public static void main(String args[]) {
+        StubAccessControlContext stubAcc = new StubAccessControlContext();
+        AccessController.setAccessControlContext(stubAcc);
+
 	int pass = 0, fail = 0;
 	for (int n = 0; n < Testlets.list.length; ++n) {
 	    String name = Testlets.list[n];
