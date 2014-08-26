@@ -11,4 +11,6 @@ java/classes.jar:
 	cd java && make
 
 clean:
-	rm -f j2me.js tests/*.jar java/*.jar `find . -name "*~"`
+	rm -f j2me.js `find . -name "*~"`
+	cd tests && make clean
+	cd java && make clean
