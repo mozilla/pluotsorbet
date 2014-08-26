@@ -1967,3 +1967,9 @@ Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V"] = functio
     var _this = stack.pop();
     console.warn("com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V not implemented");
 }
+
+Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack) {
+    var nbytes = stack.pop(), b = stack.pop();
+    window.crypto.getRandomValues(b.subarray(0,nbytes));
+    stack.push(1);
+}
