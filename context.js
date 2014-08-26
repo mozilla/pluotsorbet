@@ -103,8 +103,13 @@ Context.prototype.raiseException = function(className, message) {
   throw VM.Yield;
 }
 
+Context.prototype.raiseExceptionAndYield = function(className, message) {
+  this.raiseException(className, message);
+  throw VM.Yield;
+}
+
 Context.prototype.raiseRuntimeException = function(message) {
-  this.raiseException("java/lang/RuntimeException", message);
+  this.raiseExceptionAndYield("java/lang/RuntimeException", message);
 }
 
 Context.prototype.execute = function(stopFrame) {
@@ -204,7 +209,7 @@ Context.prototype.monitorEnter = function(obj) {
 Context.prototype.monitorExit = function(obj) {
   var lock = obj.lock;
   if (lock.thread !== this.thread)
-    this.raiseException("java/lang/IllegalMonitorStateException");
+    this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
   if (--lock.level > 0) {
     return;
   }
@@ -217,9 +222,9 @@ Context.prototype.monitorExit = function(obj) {
 Context.prototype.wait = function(obj, timeout) {
   var lock = obj.lock;
   if (!lock || lock.thread !== this.thread)
-    this.raiseException("java/lang/IllegalMonitorStateException");
+    this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
   if (timeout < 0)
-    this.raiseException("java/lang/IllegalArgumentException");
+    this.raiseExceptionAndYield("java/lang/IllegalArgumentException");
   var lockLevel = lock.level;
   while (lock.level > 0)
     this.monitorExit(obj);
@@ -241,7 +246,7 @@ Context.prototype.wait = function(obj, timeout) {
 
 Context.prototype.notify = function(obj, notifyAll) {
   if (!obj.lock || obj.lock.thread !== this.thread)
-    this.raiseException("java/lang/IllegalMonitorStateException");
+    this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
   this.unblock(obj, "waiting", notifyAll, function(ctx) {
     ctx.wakeup(obj);
   });

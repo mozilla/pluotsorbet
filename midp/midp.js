@@ -15,7 +15,7 @@ Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/la
     var entryName = util.fromJavaString(stack.pop()), jar = util.fromJavaString(stack.pop());
     var bytes = CLASSES.loadFileFromJar(jar, entryName);
     if (!bytes)
-        ctx.raiseException("java/io/IOException");
+        ctx.raiseExceptionAndYield("java/io/IOException");
     var length = bytes.byteLength;
     var data = new Uint8Array(bytes);
     var array = ctx.newPrimitiveArray("B", length);
@@ -414,7 +414,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFi
     var fileName = util.fromJavaString(stack.pop());
     var data = CLASSES.loadFile(fileName);
     if (!data)
-        ctx.raiseException("java/io/IOException");
+        ctx.raiseExceptionAndYield("java/io/IOException");
     MIDP.skinFileData = new DataView(data);
     MIDP.skinFilePos = 0;
 }
@@ -422,7 +422,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFi
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B"] = function(ctx, stack) {
     var len = stack.pop();
     if (!MIDP.skinFileData || (MIDP.skinFilePos + len) > MIDP.skinFileData.byteLength)
-        ctx.raiseException("java/lang/IllegalStateException");
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
     var bytes = ctx.newPrimitiveArray("B", len);
     for (var n = 0; n < len; ++n) {
         bytes[n] = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
@@ -432,13 +432,13 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I"] = function(ctx, stack) {
     if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        ctx.raiseException("java/lang/IllegalStateException");
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
     var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
     MIDP.skinFilePos += 4;
     var ints = ctx.newPrimitiveArray("I", len);
     for (var n = 0; n < len; ++n) {
         if ((MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-            ctx.raiseException("java/lang/IllegalStateException");
+            ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
         ints[n] = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
         MIDP.skinFilePos += 4;
     }
@@ -450,17 +450,17 @@ MIDP.STRING_ENCODING_UTF8 = 1;
 
 Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()[Ljava/lang/String;"] = function(ctx, stack) {
     if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        ctx.raiseException("java/lang/IllegalStateException");
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
     var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
     MIDP.skinFilePos += 4;
     var strings = ctx.newArray("[Ljava/lang/String;", len);
     for (var n = 0; n < len; ++n) {
         if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
-            ctx.raiseException("java/lang/IllegalStateException");
+            ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
         var strLen = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
         var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
         if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
-            ctx.raiseException("java/lang/IllegalStateException");
+            ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
         var bytes = MIDP.skinFileData.buffer.slice(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
         MIDP.skinFilePos += strLen;
         var str;
@@ -472,7 +472,7 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()
         } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
             str = util.decodeUtf8(bytes);
         } else {
-            ctx.raiseException("java/lang/IllegalStateException");
+            ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
         }
         strings[n] = ctx.newString(str);
     }
@@ -512,8 +512,8 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     var fileName = "assets/0/" + util.fromJavaString(stack.pop()).replace("_", ".").replace("_png", ".png");
     var data = CLASSES.loadFile(fileName);
     if (!data) {
-        console.log(fileName);
-        ctx.raiseException("java/io/IOException");
+        console.log("ResourceHandler::loadRomizedResource0: " + fileName);
+        ctx.raiseExceptionAndYield("java/io/IOException");
     }
     var len = data.byteLength;
     var bytes = ctx.newPrimitiveArray("B", len);
@@ -658,12 +658,7 @@ Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;
 
     function openCallback(fd) {
         if (fd == -1) {
-            try {
-              ctx.raiseException("java/io/IOException", "openRecordStoreFile: open failed");
-            } catch(ex) {
-              // Catch and ignore the VM.Yield exception that Context.raiseException
-              // throws so we reach ctx.resume() to resume the thread.
-            }
+            ctx.raiseException("java/io/IOException", "openRecordStoreFile: open failed");
         } else {
             stack.push(fd); // handle
         }
@@ -683,22 +678,12 @@ Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;
                             fs.open(path, openCallback);
                         }
                         else {
-                            try {
-                                ctx.raiseException("java/io/IOException", "openRecordStoreFile: create failed");
-                            } catch(ex) {
-                                // Catch and ignore the VM.Yield exception that Context.raiseException
-                                // throws so we reach ctx.resume() to resume the thread.
-                            }
+                            ctx.raiseException("java/io/IOException", "openRecordStoreFile: create failed");
                             ctx.resume();
                         }
                     });
                 } else {
-                    try {
-                        ctx.raiseException("java/io/IOException", "openRecordStoreFile: mkdirp failed");
-                    } catch(ex) {
-                        // Catch and ignore the VM.Yield exception that Context.raiseException
-                        // throws so we reach ctx.resume() to resume the thread.
-                    }
+                    ctx.raiseException("java/io/IOException", "openRecordStoreFile: mkdirp failed");
                     ctx.resume();
                 }
             });
@@ -720,15 +705,16 @@ Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(ctx, st
     var from = fs.getpos(handle);
     var to = from + numBytes;
     var readBytes = fs.read(handle, from, to);
-    if (readBytes.byteLength > 0) {
-        var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
-        for (var i = 0; i < readBytes.byteLength; i++) {
-            subBuffer[i] = readBytes[i];
-        }
-        stack.push(readBytes.byteLength);
-    } else {
-        ctx.raiseException("java/io/IOException", "handle invalid or segment indices out of bounds");
+
+    if (readBytes.byteLength <= 0) {
+        ctx.raiseExceptionAndYield("java/io/IOException", "handle invalid or segment indices out of bounds");
     }
+
+    var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
+    for (var i = 0; i < readBytes.byteLength; i++) {
+        subBuffer[i] = readBytes[i];
+    }
+    stack.push(readBytes.byteLength);
 }
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
@@ -797,11 +783,11 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = 
 
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        ctx.raiseException("java/lang/IllegalStateException", "invalid header lookup ID");
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "invalid header lookup ID");
     }
 
     if (!headerData) {
-      ctx.raiseException("java/lang/IllegalArgumentException", "header data is null");
+      ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "header data is null");
     }
 
     var size = headerDataSize;
@@ -819,11 +805,11 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] 
 
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        ctx.raiseException("java/lang/IllegalStateException", "invalid header lookup ID");
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "invalid header lookup ID");
     }
 
     if (!headerData) {
-      ctx.raiseException("java/lang/IllegalArgumentException", "header data is null");
+      ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "header data is null");
     }
 
     if (sharedHeader.headerVersion > headerVersion && sharedHeader.headerData) {
@@ -845,7 +831,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = f
 
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        ctx.raiseException("java/lang/IllegalStateException", "invalid header lookup ID");
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "invalid header lookup ID");
     }
 
     stack.push(sharedHeader.refCount);
@@ -1069,7 +1055,7 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
     });
     var data = CLASSES.loadFile("assets/0/en-US.xml");
     if (!data || !key)
-        ctx.raiseException("java/io/IOException");
+        ctx.raiseExceptionAndYield("java/io/IOException");
     var text = util.decodeUtf8(data);
     var xml = new window.DOMParser().parseFromString(text, "text/xml");
     var entries = xml.getElementsByTagName("localized_string");
@@ -1080,7 +1066,7 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
             return;
         }
     }
-    ctx.raiseException("java/lang/IllegalStateException");
+    ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
 }
 
 Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
@@ -1506,12 +1492,7 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
 
     fs.open(path, function(fd) {
       if (fd == -1) {
-        try {
-          ctx.raiseException("java/io/IOException", "truncate failed");
-        } catch(ex) {
-          // Catch and ignore the VM.Yield exception that Context.raiseException
-          // throws so we reach ctx.resume() to resume the thread.
-        }
+        ctx.raiseException("java/io/IOException", "truncate failed");
         ctx.resume();
       } else {
         var data = fs.read(fd);
@@ -1519,12 +1500,7 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
           if (truncated) {
             fs.write(fd, data.subarray(0, newLength));
           } else {
-            try {
-              ctx.raiseException("java/io/IOException", "truncate failed");
-            } catch(ex) {
-              // Catch and ignore the VM.Yield exception that Context.raiseException
-              // throws so we reach ctx.resume() to resume the thread.
-            }
+            ctx.raiseException("java/io/IOException", "truncate failed");
           }
           ctx.resume();
         });
@@ -1676,13 +1652,8 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
     function open() {
         fs.open(path, function(fd) {
             if (fd == -1) {
-                try {
-                    ctx.raiseException("java/io/IOException",
-                                       "RandomAccessStream::open(" + fileName + ") failed opening the file");
-                } catch(ex) {
-                    // Catch and ignore the VM.Yield exception that Context.raiseException
-                    // throws so we reach ctx.resume() to resume the thread.
-                }
+                ctx.raiseException("java/io/IOException",
+                                   "RandomAccessStream::open(" + fileName + ") failed opening the file");
             } else {
                 stack.push(fd);
             }
@@ -1700,13 +1671,8 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
                     if (created) {
                         open();
                     } else {
-                        try {
-                            ctx.raiseException("java/io/IOException",
-                                               "RandomAccessStream::open(" + fileName + ") failed creating the file");
-                        } catch(ex) {
-                            // Catch and ignore the VM.Yield exception that Context.raiseException
-                            // throws so we reach ctx.resume() to resume the thread.
-                        }
+                        ctx.raiseException("java/io/IOException",
+                                           "RandomAccessStream::open(" + fileName + ") failed creating the file");
                         ctx.resume();
                     }
                 });
@@ -1723,15 +1689,17 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = functi
     var from = fs.getpos(handle);
     var to = from + length;
     var readBytes = fs.read(handle, from, to);
-    if (readBytes.byteLength > 0) {
-        var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
-        for (var i = 0; i < readBytes.byteLength; i++) {
-            subBuffer[i] = readBytes[i];
-        }
-        stack.push(readBytes.byteLength);
-    } else {
+
+    if (readBytes.byteLength <= 0) {
         stack.push(-1);
+        return;
     }
+
+    var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
+    for (var i = 0; i < readBytes.byteLength; i++) {
+        subBuffer[i] = readBytes[i];
+    }
+    stack.push(readBytes.byteLength);
 }
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] = function(ctx, stack) {
@@ -1758,11 +1726,12 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function
     var handle = stack.pop();
 
     var size = fs.getsize(handle);
+
     if (size == -1) {
-        ctx.raiseException("java/io/IOException", "RandomAccessStream::sizeOf(" + handle + ") failed");
-    } else {
-        stack.push(size);
+        ctx.raiseExceptionAndYield("java/io/IOException", "RandomAccessStream::sizeOf(" + handle + ") failed");
     }
+
+    stack.push(size);
 }
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(ctx, stack) {
