@@ -1,14 +1,16 @@
-test: java/tests.jar java/classes.jar
+.PHONY: java tests
+
+test: java tests
 	killall python Python || true
 	python -m SimpleHTTPServer &
 	casperjs --verbose --log-level=debug --engine=slimerjs test `pwd`/tests/automation.js
 	killall python Python || true
 
-java/tests.jar: java/classes.jar
-	cd tests && make
+tests:
+	make -C tests
 
-java/classes.jar:
-	cd java && make
+java:
+	make -C java
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
