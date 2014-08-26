@@ -4,7 +4,6 @@
 'Use strict';
 
 const RECORD_STORE_BASE = "/RecordStore";
-const RANDOM_ACCESS_STREAM_BASE = "/RandomAccessStream";
 
 var MIDP = {
 };
@@ -1647,7 +1646,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = functi
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(ctx, stack) {
     var mode = stack.pop(), fileName = util.fromJavaString(stack.pop()), _this = stack.pop();
 
-    var path = RANDOM_ACCESS_STREAM_BASE + "/" + fileName;
+    var path = "/" + fileName;
 
     function open() {
         fs.open(path, function(fd) {
@@ -1665,17 +1664,14 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
         if (exists) {
             open();
         } else {
-            // We're doing this now and not at startup to avoid slowing down the startup.
-            fs.mkdir(RANDOM_ACCESS_STREAM_BASE, function(rootCreated) {
-                fs.create(path, new Blob(), function(created) {
-                    if (created) {
-                        open();
-                    } else {
-                        ctx.raiseException("java/io/IOException",
-                                           "RandomAccessStream::open(" + fileName + ") failed creating the file");
-                        ctx.resume();
-                    }
-                });
+            fs.create(path, new Blob(), function(created) {
+                if (created) {
+                    open();
+                } else {
+                    ctx.raiseException("java/io/IOException",
+                                       "RandomAccessStream::open(" + fileName + ") failed creating the file");
+                    ctx.resume();
+                }
             });
         }
     });
