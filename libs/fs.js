@@ -68,7 +68,7 @@ var fs = (function() {
         });
         reader.readAsArrayBuffer(blob);
       }
-    });    
+    });
   }
 
   function close(fd) {
@@ -86,16 +86,16 @@ var fs = (function() {
 
     var buffer = openedFiles[fd].buffer;
 
-    if (typeof from == "undefined") {
+    if (typeof from === "undefined") {
       from = openedFiles[fd].position;
     }
 
-    if (!to) {
+    if (!to || to > buffer.byteLength) {
       to = buffer.byteLength;
     }
 
-    if (from > buffer.byteLength || to > buffer.byteLength) {
-      return null;
+    if (from > buffer.byteLength) {
+      from = buffer.byteLength;
     }
 
     openedFiles[fd].position += to - from;
