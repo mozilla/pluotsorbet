@@ -316,18 +316,37 @@ tests.push(function() {
 
 tests.push(function() {
   var data = fs.read(1, 5);
-  is(data, null, "trying to read too much");
+  is(data.byteLength, 0, "trying to read empty file with from > file size");
   next();
 });
 
 tests.push(function() {
   var data = fs.read(1, 0, 5);
-  is(data, null, "trying to read too much");
+  is(data.byteLength, 0, "trying to read too much with empty file");
   next();
 });
 
 tests.push(function() {
   fs.write(1, new TextEncoder().encode("marco"));
+  next();
+});
+
+tests.push(function() {
+  var data = fs.read(1, 10);
+  is(data.byteLength, 0, "trying to read with from > file size");
+  next();
+});
+
+tests.push(function() {
+  var data = fs.read(1, 5);
+  is(data.byteLength, 0, "trying to read with from == file size");
+  next();
+});
+
+tests.push(function() {
+  var data = fs.read(1, 0, 10);
+  is(data.byteLength, 5, "trying to read too much");
+  is(new TextDecoder().decode(data), "marco", "read correct");
   next();
 });
 

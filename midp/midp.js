@@ -720,8 +720,8 @@ Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(ctx, st
     var from = fs.getpos(handle);
     var to = from + numBytes;
     var readBytes = fs.read(handle, from, to);
-    if (readBytes) {
-        var subBuffer = buf.subarray(offset, offset + numBytes);
+    if (readBytes.byteLength > 0) {
+        var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
         for (var i = 0; i < readBytes.byteLength; i++) {
             subBuffer[i] = readBytes[i];
         }
@@ -1554,7 +1554,7 @@ Native["com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I"] = function
 
     var data = fs.read(fd, curpos, curpos+1);
 
-    stack.push((data) ? data[0] : -1);
+    stack.push((data.byteLength > 0) ? data[0] : -1);
 }
 
 Native["com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V"] = function(ctx, stack) {
