@@ -17,6 +17,8 @@ public class RunTests {
         private String testNote = null;
         private int pass = 0;
         private int fail = 0;
+        private int knownFail = 0;
+        private int unknownPass = 0;
 
         public Harness(String note) {
             this.testName = note;
@@ -41,6 +43,15 @@ public class RunTests {
             setNote(null);
         }
 
+        public void todo(boolean ok) {
+            if (ok)
+                ++unknownPass;
+            else
+                ++knownFail;
+            ++testNumber;
+            setNote(null);
+        }
+
         public void report() {
             System.out.println(testName + ": " + pass + " pass, " + fail + " fail");
         }
@@ -52,13 +63,21 @@ public class RunTests {
         public int failed() {
             return fail;
         }
+
+        public int knownFailed() {
+            return knownFail;
+        }
+
+        public int unknownPassed() {
+            return unknownPass;
+        }
     };
 
     public static void main(String args[]) {
         StubAccessControlContext stubAcc = new StubAccessControlContext();
         AccessController.setAccessControlContext(stubAcc);
 
-        int pass = 0, fail = 0;
+        int pass = 0, fail = 0, knownFail = 0, unknownPass = 0;
         for (int n = 0; n < Testlets.list.length; ++n) {
             String name = Testlets.list[n];
             if (name == null)
@@ -85,7 +104,9 @@ public class RunTests {
                 harness.report();
             pass += harness.passed();
             fail += harness.failed();
+            knownFail += harness.knownFailed();
+            unknownPass += harness.unknownPassed();
         }
-        System.out.println("DONE: " + pass + " pass, " + fail + " fail");
+        System.out.println("DONE: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " + unknownPass + " unknown pass");
     }
 };
