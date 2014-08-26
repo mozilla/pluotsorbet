@@ -1859,7 +1859,12 @@ Native["com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;"] = 
 Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stack) {
     var port = stack.pop(), ipBytes = stack.pop(), _this = stack.pop();
 
-    _this.socket = navigator.mozTCPSocket.open(_this.host, port, { binaryType: "arraybuffer" });
+    try {
+        _this.socket = navigator.mozTCPSocket.open(_this.host, port, { binaryType: "arraybuffer" });
+    } catch (ex) {
+        ctx.raiseException("java/io/IOException");
+    }
+
     _this.data = new Uint8Array();
     _this.waitingData = null;
 
