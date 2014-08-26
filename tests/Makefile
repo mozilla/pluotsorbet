@@ -27,7 +27,6 @@ tests.jar: $(SRCS) Testlets.java
 	jar cvfe tests.jar RunTests -C build/ .
 	jar uvf tests.jar gnu/testlet/vm/test.png midlets/test.png midlets/favouriteartists/images/* midlets/blogwriter/images/* > /dev/null
 	rm -rf build
-	rm -f Testlets.java
 
 clean:
 	rm -f `find . -name "*.jar" -or -name "*~" -or -name "*.class"`
