@@ -2,3 +2,4 @@
 *.jad
 *.class
 .DS_Store
+tests/Testlets.java
