@@ -1826,4 +1826,5 @@ Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function(ctx, 
 Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack) {
     var nbytes = stack.pop(), b = stack.pop();
     window.crypto.getRandomValues(b.subarray(0,nbytes));
+    stack.push(1);
 }
