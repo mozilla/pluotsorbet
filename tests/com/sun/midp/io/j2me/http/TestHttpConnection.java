@@ -11,16 +11,16 @@ public class TestHttpConnection implements Testlet {
             HttpConnection hc = (HttpConnection)Connector.open("http://localhost:8000/");
 
             long len = hc.getLength();
-            th.check(len > 0);
+            th.todo(len > 0, "length is > 0");
 
             int responseCode = hc.getResponseCode();
-            th.check(responseCode, 200);
+            th.todo(responseCode, 200, "response code is 200");
 
             String responseMessage = hc.getResponseMessage();
-            th.check(responseMessage, "OK");
+            th.todo(responseMessage, "OK");
 
             String type = hc.getType();
-            th.check(type, "text/html");
+            th.todo(type, "text/html");
 
             InputStream is = hc.openInputStream();
 
@@ -31,12 +31,12 @@ public class TestHttpConnection implements Testlet {
             } while (buf[i-1] != -1 && buf[i-1] != '\r' && buf[i-1] != '\n' && i < buf.length);
 
             String firstLine = new String(buf, 0, i-1);
-            th.check(firstLine, "<!doctype html>");
+            th.todo(firstLine, "<!doctype html>");
 
             is.close();
             hc.close();
         } catch (Exception e) {
-            th.fail("Unexpected exception: " + e);
+            th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }
     }
