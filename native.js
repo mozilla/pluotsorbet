@@ -11,7 +11,7 @@ Native.invoke = function(ctx, methodInfo) {
         methodInfo.native = Native[key];
         if (!methodInfo.native) {
             console.log("Missing native: " + key);
-            ctx.raiseException("java/lang/RuntimeException", key + " not found");
+            ctx.raiseExceptionAndYield("java/lang/RuntimeException", key + " not found");
         }
     }
     methodInfo.native.call(null, ctx, ctx.current().stack);
@@ -20,23 +20,23 @@ Native.invoke = function(ctx, methodInfo) {
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(ctx, stack) {
     var length = stack.pop(), dstOffset = stack.pop(), dst = stack.pop(), srcOffset = stack.pop(), src = stack.pop();
     if (!src || !dst)
-        ctx.raiseException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+        ctx.raiseExceptionAndYield("java/lang/NullPointerException", "Cannot copy to/from a null array.");
     var srcClass = src.class;
     var dstClass = dst.class;
     if (!srcClass.isArrayClass || !dstClass.isArrayClass)
-        ctx.raiseException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
+        ctx.raiseExceptionAndYield("java/lang/ArrayStoreException", "Can only copy to/from array types.");
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
-        ctx.raiseException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
+        ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
     if ((!!srcClass.elementClass != !!dstClass.elementClass) ||
         (!srcClass.elementClass && srcClass != dstClass)) {
-        ctx.raiseException("java/lang/ArrayStoreException", "Incompatible component types.");
+        ctx.raiseExceptionAndYield("java/lang/ArrayStoreException", "Incompatible component types.");
     }
     if (dstClass.elementClass) {
         if (srcClass != dstClass && !srcClass.elementClass.isAssignableTo(dstClass.elementClass)) {
             function copy(to, from) {
                 var obj = src[from];
                 if (obj && !obj.class.isAssignableTo(dstClass.elementClass))
-                    ctx.raiseException("java/lang/ArrayStoreException", "Incompatible component types.");
+                    ctx.raiseExceptionAndYield("java/lang/ArrayStoreException", "Incompatible component types.");
                 dst[to] = obj;
             }
             if (dst !== src || dstOffset < srcOffset) {
@@ -225,7 +225,7 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
         classInfo = CLASSES.getClass(className);
     } catch (e) {
         if (e instanceof (Classes.ClassNotFoundException))
-            ctx.raiseException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+            ctx.raiseExceptionAndYield("java/lang/ClassNotFoundException", "'" + className + "' not found.");
         throw e;
     }
     stack.push(classInfo.getClassObject(ctx));
@@ -272,7 +272,7 @@ Native["java/lang/Class.isArray.()Z"] = function(ctx, stack) {
 Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(ctx, stack) {
     var fromClass = stack.pop(), classObject = stack.pop();
     if (!fromClass)
-        ctx.raiseException("java/lang/NullPointerException");
+        ctx.raiseExceptionAndYield("java/lang/NullPointerException");
     stack.push(fromClass.vmClass.isAssignableTo(classObject.vmClass) ? 1 : 0);
 }
 
@@ -428,7 +428,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
     if (thread === ctx.runtime.mainThread || thread.alive)
-        ctx.raiseException("java/lang/IllegalThreadStateException");
+        ctx.raiseExceptionAndYield("java/lang/IllegalThreadStateException");
     thread.alive = true;
     thread.pid = util.id();
     var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
