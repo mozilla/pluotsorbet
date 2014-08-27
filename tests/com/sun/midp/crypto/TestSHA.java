@@ -28,7 +28,7 @@ public class TestSHA implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.todo(bytesToHex(buf), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+        th.check(bytesToHex(buf), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
 
         sha.reset();
 
@@ -42,7 +42,7 @@ public class TestSHA implements Testlet {
             e.printStackTrace();
         }
 
-        th.todo(bytesToHex(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+        th.check(bytesToHex(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
 
         sha.reset();
 
@@ -61,7 +61,7 @@ public class TestSHA implements Testlet {
             e.printStackTrace();
         }
 
-        th.todo(bytesToHex(buf), "a9993e364706816aba3e25717850c26c9cd0d89d");
+        th.check(bytesToHex(buf), "a9993e364706816aba3e25717850c26c9cd0d89d");
 
         // Calculate another hash without calling sha.reset() (sha.digest should reset automatically)
 
@@ -75,7 +75,7 @@ public class TestSHA implements Testlet {
             e.printStackTrace();
         }
 
-        th.todo(bytesToHex(buf), "50abf5706a150990a08b2c5ea40fa0e585554732");
+        th.check(bytesToHex(buf), "50abf5706a150990a08b2c5ea40fa0e585554732");
 
         boolean exception = false;
         byte[] shortBuf = new byte[15];
