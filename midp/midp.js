@@ -1941,12 +1941,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stac
     }
 
     _this.socket.onerror = function(event) {
-        try {
-            ctx.raiseException("java/io/IOException", event.data.name);
-        } catch(ex) {
-            // Catch and ignore the VM.Yield exception that Context.raiseException
-            // throws so we reach ctx.resume() to resume the thread.
-        }
+        ctx.raiseException("java/io/IOException", event.data.name);
         ctx.resume();
     }
 
