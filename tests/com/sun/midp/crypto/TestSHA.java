@@ -85,5 +85,25 @@ public class TestSHA implements Testlet {
             exception = true;
         }
         th.check(exception);
+
+        sha.reset();
+
+        // Ensure we can calculate two digests simultaneously.
+        sha.update(part1.getBytes(), 0, part1.length());
+        SHA sha2 = new SHA();
+        sha2.update(part2.getBytes(), 0, part2.length());
+        byte[] buf2 = new byte[20];
+        try {
+            sha.digest(buf, 0, 20);
+            sha2.digest(buf2, 0, 20);
+        } catch (DigestException e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+        th.check(bytesToHex(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+        th.check(bytesToHex(buf2), "5bd138dc4bccbc9526f6575c21d5e66450cd257f");
+
+        sha.reset();
+        sha2.reset();
     }
 }

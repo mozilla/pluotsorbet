@@ -1974,7 +1974,7 @@ Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack)
     stack.push(1);
 }
 
-MIDP.hasher = null;
+MIDP.hashers = new Map();
 
 MIDP.getHasher = function(data) {
     var hasher;
@@ -1984,10 +1984,12 @@ MIDP.getHasher = function(data) {
     // That isn't what the data array is intended for, but it works well enough
     // for our purposes, and the non-native code doesn't use it for anything,
     // so it doesn't expect it to have any particular values.
+
     if (data[0] == 1) {
-        hasher = MIDP.hasher;
+        hasher = MIDP.hashers.get(data);
     } else {
-        hasher = MIDP.hasher = CryptoJS.algo.SHA1.create();
+        hasher = CryptoJS.algo.SHA1.create();
+        MIDP.hashers.set(data, hasher);
         data[0] = 1;
     }
 
@@ -2032,5 +2034,5 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
     // XXX Call the SHA.reset method instead to completely reset the object.
     data[0] = 0;
 
-    MIDP.hasher = null;
+    MIDP.hashers.delete(data);
 }
