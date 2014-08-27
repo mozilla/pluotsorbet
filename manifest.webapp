@@ -10,5 +10,11 @@
     "url": "http://mozilla.org"
   },
   "default_locale": "en",
-  "orientation": ["portrait-primary"]
+  "orientation": ["portrait-primary"],
+  "permissions": {
+    "tcp-socket": {
+      "description": "Required to connect to internet"
+    }
+  },
+  "type": "privileged"
 }
