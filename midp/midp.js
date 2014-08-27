@@ -1930,7 +1930,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stac
     try {
         _this.socket = navigator.mozTCPSocket.open(_this.host, port, { binaryType: "arraybuffer" });
     } catch (ex) {
-        ctx.raiseException("java/io/IOException");
+        ctx.raiseExceptionAndYield("java/io/IOException");
     }
 
     _this.data = new Uint8Array();

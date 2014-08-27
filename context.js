@@ -100,7 +100,6 @@ Context.prototype.raiseException = function(className, message) {
     exception_table: [],
   };
   this.pushFrame(syntheticMethod, 0);
-  throw VM.Yield;
 }
 
 Context.prototype.raiseExceptionAndYield = function(className, message) {
