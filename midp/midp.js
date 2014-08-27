@@ -1973,3 +1973,14 @@ Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack)
     window.crypto.getRandomValues(b.subarray(0,nbytes));
     stack.push(1);
 }
+
+Native["com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {
+    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
+      inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
+}
+
+Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
+    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
+        outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
+        inBuf = stack.pop();
+}
