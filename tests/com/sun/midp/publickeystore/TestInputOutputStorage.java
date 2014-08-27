@@ -7,6 +7,7 @@ import javax.microedition.io.file.FileConnection;
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.io.*;
+import com.sun.midp.io.j2me.storage.RandomAccessStream;
 
 public class TestInputOutputStorage implements Testlet {
     public void test(TestHarness th) {
@@ -15,7 +16,10 @@ public class TestInputOutputStorage implements Testlet {
             th.check(!file.exists());
             file.create();
 
-            OutputStream out = file.openOutputStream();
+            RandomAccessStream ras = new RandomAccessStream();
+            ras.connect("prova", Connector.READ_WRITE);
+
+            OutputStream out = ras.openOutputStream();
 
             OutputStorage outStorage = new OutputStorage(out);
             outStorage.writeValue((byte)1, "Marco");
@@ -26,7 +30,7 @@ public class TestInputOutputStorage implements Testlet {
 
             out.close();
 
-            InputStream in = file.openInputStream();
+            InputStream in = ras.openInputStream();
 
             InputStorage inStorage = new InputStorage(in);
             th.check(inStorage.readValue(new byte[] { 1 }), "Marco");
@@ -36,6 +40,8 @@ public class TestInputOutputStorage implements Testlet {
             th.check(inStorage.readValue(new byte[] { 5 }), new Boolean(true));
 
             in.close();
+
+            ras.disconnect();
 
             file.delete();
             file.close();
