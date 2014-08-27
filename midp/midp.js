@@ -2019,7 +2019,10 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
     var hasher = MIDP.getHasher(data);
 
     if (inBuf) {
-        hasher.update(bin2String(inBuf.subarray(inOff, inLen)));
+        // SHA.digest passes `null` for inBuf, and there are no other callers,
+        // so this should never happen; but I'm including it for completeness
+        // (and in case a subclass ever uses it).
+        hasher.update(MIDP.bin2String(inBuf.subarray(inOff + inLen)));
     }
 
     var hash = hasher.finalize();
