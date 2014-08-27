@@ -5,7 +5,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 6, function(test) {
+casper.test.begin("unit tests", 7, function(test) {
     casper
     .start("http://localhost:8000/index.html?main=RunTests")
     .waitForText("DONE", function then() {
@@ -40,6 +40,12 @@ casper.test.begin("unit tests", 6, function(test) {
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=javax.microedition.rms.TestRecordStore")
+    .waitForText("DONE", function then() {
+        test.assertTextExists("START\nDONE");
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=javax.microedition.lcdui.TestGraphicsClipping")
     .waitForText("DONE", function then() {
         test.assertTextExists("START\nDONE");
     });

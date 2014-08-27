@@ -75,6 +75,8 @@ public class TestGraphicsClipping extends MIDlet {
     }
 
     public void startApp() {
+        System.out.println("START");
+
         int[] unclippedData = new int[width*height];
         int[] clippedData = new int[width*height];
         
