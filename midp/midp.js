@@ -1429,7 +1429,7 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
 
         var pathsArray = ctx.newArray("[[B", files.length);
         for (var i = 0; i < files.length; i++) {
-            var curPath = path + files[i];
+            var curPath = path + "/" + files[i];
             var bytesCurPath = new TextEncoder("utf-8").encode(curPath);
             var pathArray = ctx.newPrimitiveArray("B", bytesCurPath.byteLength);
             for (var j = 0; j < bytesCurPath.byteLength; j++) {
