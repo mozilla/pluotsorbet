@@ -1841,6 +1841,14 @@ Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function(ctx, 
     }
 }
 
+const SOCKET_OPT = {
+  DELAY: 0,
+  LINGER: 1,
+  KEEPALIVE: 2,
+  RCVBUF: 3,
+  SNDBUF: 4,
+};
+
 Native["com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I"] = function(ctx, stack) {
     var ipBytes = stack.pop(), host = stack.pop(), _this = stack.pop();
     // We'd need to modify ipBytes, that is an array with length 0
@@ -1866,6 +1874,12 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stac
     }
 
     _this.options = {};
+    _this.options[SOCKET_OPT.DELAY] = 1;
+    _this.options[SOCKET_OPT.LINGER] = 0;
+    _this.options[SOCKET_OPT.KEEPALIVE] = 1;
+    _this.options[SOCKET_OPT.RCVBUF] = 8192;
+    _this.options[SOCKET_OPT.SNDBUF] = 8192;
+
     _this.data = new Uint8Array();
     _this.waitingData = null;
 
