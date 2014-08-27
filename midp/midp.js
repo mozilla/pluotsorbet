@@ -1960,12 +1960,22 @@ Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, st
 
 Native["com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V"] = function(ctx, stack) {
     var value = stack.pop(), option = stack.pop(), _this = stack.pop();
+
+    if (!(option in _this.options)) {
+        ctx.raiseException("java/lang/IllegalArgumentException", "Unsupported socket option");
+    }
+
     _this.options[option] = value;
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I"] = function(ctx, stack) {
     var option = stack.pop(), _this = stack.pop();
-    stack.push((_this.options[option]) ? _this.options[option] : 0);
+
+    if (!(option in _this.options)) {
+        ctx.raiseException("java/lang/IllegalArgumentException", "Unsupported socket option");
+    }
+
+    stack.push(_this.options[option]);
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack) {
