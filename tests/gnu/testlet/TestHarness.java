@@ -2,6 +2,7 @@ package gnu.testlet;
 
 public abstract class TestHarness {
     public abstract void check(boolean ok);
+    public abstract void todo(boolean ok);
     public abstract void debug(String msg);
     public abstract void setNote(String note);
 
@@ -73,5 +74,29 @@ public abstract class TestHarness {
 
     public void fail(Object note) {
 	check(false, "" + note);
+    }
+
+    public void todo(long result, long expected) {
+        boolean ok = (result == expected);
+        todo(ok);
+        if (ok)
+            debug("got (" + result + ")");
+    }
+
+    public void todo(Object result, Object expected) {
+        boolean ok = (result.toString().equals(expected.toString()));
+        todo(ok);
+        if (ok)
+            debug("got (" + result + ")");
+    }
+
+    public void todo(long result, long expected, String note) {
+        setNote(note);
+        todo(result, expected);
+    }
+
+    public void todo(boolean result, String note) {
+        setNote(note);
+        todo(result);
     }
 }
