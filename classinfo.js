@@ -41,7 +41,9 @@ var ClassInfo = function(classBytes) {
 
     this.interfaces = [];
     classImage.interfaces.forEach(function(i) {
-        self.interfaces.push(cp[cp[i].name_index].bytes);
+        var int = CLASSES.loadClass(cp[cp[i].name_index].bytes);
+        self.interfaces.push(int);
+        self.interfaces = self.interfaces.concat(int.interfaces);
     });
 
     this.fields = [];

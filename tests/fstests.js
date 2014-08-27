@@ -26,10 +26,9 @@ function ok(a, msg) {
 var tests = [];
 
 function next() {
-dump("next: " + tests.length);
   if (tests.length == 0) {
     ok(true, "TESTS COMPLETED");
-    console.log("DONE: " + passed + " pass, " + failed + " FAIL");
+    console.log("DONE: " + passed + " PASS, " + failed + " FAIL");
   } else {
     var test = tests.shift();
     test();
@@ -317,18 +316,37 @@ tests.push(function() {
 
 tests.push(function() {
   var data = fs.read(1, 5);
-  is(data, null, "trying to read too much");
+  is(data.byteLength, 0, "trying to read empty file with from > file size");
   next();
 });
 
 tests.push(function() {
   var data = fs.read(1, 0, 5);
-  is(data, null, "trying to read too much");
+  is(data.byteLength, 0, "trying to read too much with empty file");
   next();
 });
 
 tests.push(function() {
   fs.write(1, new TextEncoder().encode("marco"));
+  next();
+});
+
+tests.push(function() {
+  var data = fs.read(1, 10);
+  is(data.byteLength, 0, "trying to read with from > file size");
+  next();
+});
+
+tests.push(function() {
+  var data = fs.read(1, 5);
+  is(data.byteLength, 0, "trying to read with from == file size");
+  next();
+});
+
+tests.push(function() {
+  var data = fs.read(1, 0, 10);
+  is(data.byteLength, 5, "trying to read too much");
+  is(new TextDecoder().decode(data), "marco", "read correct");
   next();
 });
 
@@ -479,6 +497,69 @@ tests.push(function() {
     next();
   });
 });
+
+tests.push(function() {
+  fs.rename("/tmp/tmp.txt", "/tmp/tmp2.txt", function(renamed) {
+    ok(renamed, "File renamed");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.create("/file", new Blob([1,2,3,4]), function(created) {
+    ok(created, "File created");
+    fs.rename("/file", "/file2", function(renamed) {
+      ok(renamed, "File renamed");
+      fs.size("/file2", function(size) {
+        is(size, 4, "Renamed file size is correct");
+        fs.exists("/file", function(exists) {
+          ok(!exists, "file doesn't exist anymore");
+          next();
+        });
+      });
+    });
+  });
+});
+
+tests.push(function() {
+  fs.mkdir("/newdir", function(created) {
+    ok(created, "Directory created");
+    fs.rename("/newdir", "/newdir2", function(renamed) {
+      ok(renamed, "Directory renamed");
+      fs.exists("/newdir", function(exists) {
+        ok(!exists, "newdir doesn't exist anymore");
+        next();
+      });
+    });
+  });
+});
+
+tests.push(function() {
+  fs.rename("/tmp", "/tmp3", function(renamed) {
+    ok(!renamed, "Can't rename a non-empty directory");
+    fs.exists("/tmp", function(exists) {
+      ok(exists, "Directory still exists after an error while renaming");
+      next();
+    });
+  });
+});
+
+tests.push(function() {
+  fs.rename("/tmp", "/newdir2", function(renamed) {
+    ok(!renamed, "Can't rename a directory with a path to a directory that already exists");
+    fs.exists("/tmp", function(exists) {
+      ok(exists, "Directory still exists after an error while renaming");
+      next();
+    });
+  });
+});
+
+tests.push(function() {
+  fs.rename("/nonexisting", "/nonexising2", function(renamed) {
+    ok(!renamed, "Can't rename a non-existing file");
+    next();
+  });
+})
 
 asyncStorage.clear(function() {
   fs.init(function() {

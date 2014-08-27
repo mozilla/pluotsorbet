@@ -1,21 +1,17 @@
 package com.sun.midp.rms;
 
-import com.sun.j2me.security.AccessControlContext;
-import com.sun.j2me.security.AccessController;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
+import javax.microedition.io.Connector;
+import javax.microedition.io.file.FileConnection;
+import javax.microedition.rms.RecordStoreException;
 
-public class TestRecordStoreFileNatives implements Testlet, SuiteContainer, AccessControlContext {
+public class TestRecordStoreFileNatives implements Testlet, SuiteContainer {
     // SuiteContainer stubs
     public int getCallersSuiteId() { return 0; }
     public int getSuiteId(String vendorName, String suiteName) { return 0; }
     public String getSecureFilenameBase(int suiteId) { return "testBase"; }
     public int getStorageAreaId(int suiteId) { return 0; }
-
-    // AccessControlContext stubs
-    public void checkPermission(String name) throws SecurityException {}
-    public void checkPermission(String name, String resource) throws SecurityException {}
-    public void checkPermission(String name, String resource, String extraValue) throws SecurityException {}
 
     public void test(TestHarness th) {
         int suiteId = 0;
@@ -27,9 +23,8 @@ public class TestRecordStoreFileNatives implements Testlet, SuiteContainer, Acce
 
         int expectedSpaceAvailable = 50 * 1024 * 1024;
 
-        // Init stuff that uses our SuiteContainer and AccessControlContext
-        // stubs to give the midlet access to RecordStoreFile.
-        AccessController.setAccessControlContext(this);
+        // Init stuff that uses our SuiteContainer stubs to give the midlet
+        // access to RecordStoreFile.
         RmsEnvironment.init(this);
 
         th.check(RecordStoreFile.spaceAvailableNewRecordStore0(filenameBase, suiteId), expectedSpaceAvailable);
@@ -86,6 +81,27 @@ public class TestRecordStoreFileNatives implements Testlet, SuiteContainer, Acce
                 th.fail("attempt to read byte from truncated file succeeded");
             } catch(java.io.IOException ex) {
                 th.check(ex, "java.io.IOException: handle invalid or segment indices out of bounds");
+            }
+
+            // Clean up.
+            file.close();
+            try {
+                RecordStoreUtil.deleteFile(filenameBase, name, extension);
+            } catch(RecordStoreException ex) {
+                th.fail("record store file could not be deleted: " + ex);
+            }
+            try {
+                final String RECORD_STORE_BASE_URL = "file:///RecordStore";
+
+                FileConnection dir = (FileConnection)Connector.open(RECORD_STORE_BASE_URL + "/" + filenameBase);
+                dir.delete();
+                dir.close();
+
+                dir = (FileConnection)Connector.open(RECORD_STORE_BASE_URL);
+                dir.delete();
+                dir.close();
+            } catch(java.io.IOException ex) {
+                th.fail("record store dirs could not be deleted: " + ex);
             }
         } catch(java.io.IOException ex) {
             // We catch all expected exceptions, so any unexpected ones

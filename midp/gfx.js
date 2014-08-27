@@ -13,16 +13,19 @@
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(null);
+        console.warn("DisplayDevice.getDisplayName0.(I)L...String; not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(1);
+        console.warn("DisplayDevice.isDisplayPrimary0.(I)Z not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(1);
+        console.warn("DisplayDevice.isbuildInDisplay0.(I)Z not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
@@ -57,14 +60,18 @@
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
         var state = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.displayStateChanged0.(II)V not implemented (" + hardwareId + ", " + state + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(ctx, stack) {
         var mode = stack.pop(), displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.setFullScreen0.(IIZ)V not implemented (" +
+                     hardwareId + ", " + displayId + ", " + mode + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(ctx, stack) {
         var displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(ctx, stack) {
@@ -80,6 +87,8 @@
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
         var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(),
             displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+        console.warn("DisplayDevice.refresh0.(IIIIII)V not implemented (" +
+                     hardwareId + ", " + displayId + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ")");
     }
 
     function swapRB(pixel) {
@@ -388,6 +397,11 @@
         cb(dx, dy);
     }
 
+    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(ctx, stack) {
+        var color = stack.pop(), _this = stack.pop();
+        stack.push(color);
+    }
+
     Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
         var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
         stack.push(swapRB(rgb) | 0xff000000);
@@ -618,5 +632,94 @@
                 c.drawImage(texture, x, y);
             });
         });
+    }
+
+    var textEditorId = 0,
+        textEditorContext = null,
+        dirtyEditors = [];
+
+    function wakeTextEditorThread(id) {
+        dirtyEditors.push(id);
+        if (textEditorContext) {
+            var ctx = textEditorContext;
+            textEditorContext = null;
+            ctx.resume();
+        }
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.TextEditor0.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(++textEditorId);
+        _this.textEditorId = textEditorId;
+        _this.textEditor = document.createElement("textarea");
+        _this.textEditor.style.border = "none";
+        _this.textEditor.style.resize = "none";
+        _this.textEditor.style.backgroundColor = "transparent";
+        _this.textEditor.style.color = "transparent";
+        _this.textEditor.oninput = function(e) {
+            wakeTextEditorThread(_this.textEditorId);
+        }
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setParent0.(Ljava/lang/Object;)V"] = function(ctx, stack) {
+        var parent = stack.pop(), _this = stack.pop();
+        document.body.appendChild(_this.textEditor);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setSize0.(II)V"] = function(ctx, stack) {
+        var height = stack.pop(), width = stack.pop(), _this = stack.pop();
+        _this.textEditor.style.height = "" + height + "px";
+        _this.textEditor.style.width = "" + width + "px";
+        // hack
+        var top = 0, right = 0;
+        if (width === 35) {
+            top = 155;
+            right = 177;
+        } else if (width === 145) {
+            top = 155;
+            right = 28;
+        }
+        _this.textEditor.style.position = "absolute";
+        _this.textEditor.style.top = "" + top + "px";
+        _this.textEditor.style.right = "" + right + "px";
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.getContent0.()Ljava/lang/String;"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(ctx.newString(_this.textEditor.value));
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setContent0.(Ljava/lang/String;)V"] = function(ctx, stack) {
+        var str = stack.pop(), _this = stack.pop();
+        _this.textEditor.value = util.fromJavaString(str);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.insert0.(Ljava/lang/String;I)V"] = function(ctx, stack) {
+        var pos = stack.pop(), str = stack.pop(), _this = stack.pop(),
+            old = _this.textEditor.value;
+        _this.textEditor.value = old.slice(0, pos) + util.fromJavaString(str) + old.slice(pos);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.size0.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this.textEditor.value.length);
+    }
+
+    Native["com/nokia/mid/ui/TextEditorThread.sleep.()V"] = function(ctx, stack) {
+        var _this = stack.pop();
+        if (!dirtyEditors.length) {
+            textEditorContext = ctx;
+            throw VM.Pause;
+        }
+    }
+
+    Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        if (!dirtyEditors.length) {
+            console.error("ERROR: getNextDirtyEditor called but no dirty editors");
+            stack.push(0);
+        } else {
+            stack.push(dirtyEditors.shift());
+        }
     }
 })(Native);

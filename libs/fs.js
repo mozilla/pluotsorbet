@@ -68,7 +68,7 @@ var fs = (function() {
         });
         reader.readAsArrayBuffer(blob);
       }
-    });    
+    });
   }
 
   function close(fd) {
@@ -86,16 +86,16 @@ var fs = (function() {
 
     var buffer = openedFiles[fd].buffer;
 
-    if (typeof from == "undefined") {
+    if (typeof from === "undefined") {
       from = openedFiles[fd].position;
     }
 
-    if (!to) {
+    if (!to || to > buffer.byteLength) {
       to = buffer.byteLength;
     }
 
-    if (from > buffer.byteLength || to > buffer.byteLength) {
-      return null;
+    if (from > buffer.byteLength) {
+      from = buffer.byteLength;
     }
 
     openedFiles[fd].position += to - from;
@@ -312,6 +312,40 @@ var fs = (function() {
     });
   }
 
+  // Callers of this function should make sure
+  // newPath doesn't exist.
+  function rename(oldPath, newPath, cb) {
+    oldPath = normalizePath(oldPath);
+    newPath = normalizePath(newPath);
+
+    list(oldPath, function(files) {
+      if (files != null && files.length > 0) {
+        cb(false);
+        return;
+      }
+
+      asyncStorage.getItem(oldPath, function(data) {
+        if (data == null) {
+          cb(false);
+          return;
+        }
+
+        remove(oldPath, function(removed) {
+          if (!removed) {
+            cb(false);
+            return;
+          }
+
+          if (data instanceof Blob) {
+            create(newPath, data, cb);
+          } else {
+            mkdir(newPath, cb);
+          }
+        });
+      });
+    });
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -331,5 +365,6 @@ var fs = (function() {
     mkdir: mkdir,
     mkdirp: mkdirp,
     size: size,
+    rename: rename,
   };
 })();
