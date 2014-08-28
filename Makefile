@@ -1,4 +1,4 @@
-.PHONY: java tests
+.PHONY: java tests certs
 
 test: java tests
 	killall python Python || true
@@ -14,6 +14,9 @@ tests:
 
 java:
 	make -C java
+
+certs:
+	make -C certs
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
