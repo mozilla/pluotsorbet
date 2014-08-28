@@ -5,11 +5,11 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 7, function(test) {
+casper.test.begin("unit tests", 8, function(test) {
     casper
     .start("http://localhost:8000/index.html?main=RunTests")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 758 pass, 0 fail, 3 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 895 pass, 0 fail, 3 known fail, 0 unknown pass", "run unit tests");
     });
 
     casper
@@ -35,7 +35,7 @@ casper.test.begin("unit tests", 7, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 99 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 101 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
@@ -46,6 +46,12 @@ casper.test.begin("unit tests", 7, function(test) {
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=javax.microedition.lcdui.TestGraphicsClipping")
+    .waitForText("DONE", function then() {
+        test.assertTextExists("START\nDONE");
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=com.sun.midp.publickeystore.TestWebPublicKeyStore")
     .waitForText("DONE", function then() {
         test.assertTextExists("START\nDONE");
     });

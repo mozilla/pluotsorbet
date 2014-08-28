@@ -141,6 +141,14 @@ var fs = (function() {
     openedFiles[fd].position = pos;
   }
 
+  function getsize(fd) {
+    if (!openedFiles[fd]) {
+      return -1;
+    }
+
+    return openedFiles[fd].buffer.byteLength;
+  }
+
   function flush(fd, cb) {
     var blob = new Blob([openedFiles[fd].buffer]);
     asyncStorage.setItem(openedFiles[fd].path, blob, cb);
@@ -355,6 +363,7 @@ var fs = (function() {
     write: write,
     getpos: getpos,
     setpos: setpos,
+    getsize: getsize,
     flush: flush,
     list: list,
     exists: exists,
