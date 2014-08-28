@@ -84,5 +84,25 @@ public class TestMD5 implements Testlet {
         } catch (DigestException ex) {
             th.check(true, "Exception raised");
         }
+
+        md5.reset();
+
+        // Ensure we can calculate two digests simultaneously.
+        md5.update(part1.getBytes(), 0, part1.length());
+        MD5 md52 = new MD5();
+        md52.update(part2.getBytes(), 0, part2.length());
+        byte[] buf2 = new byte[16];
+        try {
+            md5.digest(buf, 0, 16);
+            md52.digest(buf2, 0, 16);
+        } catch (DigestException e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+        th.todo(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
+        th.todo(bytesToHex(buf2), "40309ea6baa09db375e49aa5edcb40a6");
+
+        md5.reset();
+        md52.reset();
     }
 }
