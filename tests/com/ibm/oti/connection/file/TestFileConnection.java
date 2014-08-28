@@ -22,8 +22,8 @@ public class TestFileConnection implements Testlet {
             dir.mkdir();
 
             th.check(dir.isOpen(), "Directory opened");
-            th.check(dir.exists(), "Directory doesn't exist");
-            th.check(dir.isDirectory(), "Directory isn't (yet) a directory");
+            th.check(dir.exists(), "Directory exists");
+            th.check(dir.isDirectory(), "Directory is a directory");
 
             Enumeration files = dir.list();
             th.check(!files.hasMoreElements(), "Directory is empty");
