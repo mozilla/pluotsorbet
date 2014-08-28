@@ -1917,7 +1917,8 @@ Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, s
 
 Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
     var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
-        outOff = stack.pop(), inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
+        outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
+        inBuf = stack.pop();
     console.warn("com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V not implemented");
 }
 
