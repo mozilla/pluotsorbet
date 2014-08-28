@@ -77,14 +77,13 @@ public class TestSHA implements Testlet {
 
         th.check(bytesToHex(buf), "50abf5706a150990a08b2c5ea40fa0e585554732");
 
-        boolean exception = false;
         byte[] shortBuf = new byte[15];
         try {
             sha.digest(buf, 0, 15);
+            th.fail("Should've raised an exception");
         } catch (DigestException ex) {
-            exception = true;
+            th.check(true, "Exception raised");
         }
-        th.check(exception);
 
         sha.reset();
 
