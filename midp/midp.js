@@ -1750,7 +1750,13 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(ctx, stack) {
     var handle = stack.pop();
-    fs.close(handle);
+
+    fs.flush(handle, function() {
+        fs.close(handle);
+        ctx.resume();
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
