@@ -52,34 +52,44 @@ function run(className, args) {
     });
   }
 
-  load("midp/_main.ks", "blob", function(data) {
-    fs.create("/_main.ks", data, function() {
-      var jvm = new JVM();
+  function startJVM() {
+    var jvm = new JVM();
 
-      var jars = ["java/classes.jar", "tests/tests.jar"];
-      if (urlParams.jars)
-        jars = jars.concat(urlParams.jars.split(":"));
+    var jars = ["java/classes.jar", "tests/tests.jar"];
+    if (urlParams.jars)
+      jars = jars.concat(urlParams.jars.split(":"));
 
-      (function loadNextJar() {
-        if (jars.length) {
-          var jar = jars.shift();
-          load(jar, "arraybuffer", function (data) {
-            jvm.addPath(jar, data);
-            loadNextJar();
+    (function loadNextJar() {
+      if (jars.length) {
+        var jar = jars.shift();
+        load(jar, "arraybuffer", function (data) {
+          jvm.addPath(jar, data);
+          loadNextJar();
+        });
+      } else {
+        jvm.initializeBuiltinClasses();
+        if (urlParams.jad) {
+          load(urlParams.jad, "text", function(data) {
+            parseManifest(data);
+            jvm.startIsolate0(className, args);
           });
         } else {
-          jvm.initializeBuiltinClasses();
-          if (urlParams.jad) {
-            load(urlParams.jad, "text", function(data) {
-              parseManifest(data);
-              jvm.startIsolate0(className, args);
-            });
-          } else {
-            jvm.startIsolate0(className, args);
-          }
+          jvm.startIsolate0(className, args);
         }
-      })();
-    });
+      }
+    })();
+  }
+
+  fs.exists("/_main.ks", function(exists) {
+    if (exists) {
+      startJVM();
+    } else {
+      load("midp/_main.ks", "blob", function(data) {
+        fs.create("/_main.ks", data, function() {
+          startJVM();
+        });
+      });
+    }
   });
 }
 
