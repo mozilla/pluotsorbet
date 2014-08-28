@@ -12,27 +12,28 @@ public class TestWebPublicKeyStore extends MIDlet {
     }
 
     public void startApp() {
+        System.out.println("START");
+
         WebPublicKeyStore cs = WebPublicKeyStore.getTrustedKeyStore();
-        System.out.println(cs.numberOfKeys());
+        if (cs.numberOfKeys() != 34) {
+            System.out.println("FAIL - Number of keys != 34");
+        }
+
         PublicKeyInfo keyInfo = cs.getKey(0);
-        // do some tests on keyInfo
-        X509Certificate[] certificates1 = cs.getCertificates(keyInfo.getOwner());
-        System.out.println(certificates1.length);
-        X509Certificate aCert = certificates1[0];
+        if (keyInfo.getOwner().length() == 0) {
+            System.out.println("FAIL - Owner must be a string with length > 0");
+        }
+
+        X509Certificate[] certificates = cs.getCertificates(keyInfo.getOwner());
+        X509Certificate aCert = certificates[0];
         try {
           aCert.verify(aCert.getPublicKey());
         } catch (CertificateException e) {
+            System.out.println("FAIL - Verification should succeed");
             e.printStackTrace();
         }
 
-
-        Vector keys = cs.getKeys();
-        for (int i = 0; i < keys.size(); i++) {
-            PublicKeyInfo key = (PublicKeyInfo)keys.elementAt(i);
-            X509Certificate[] certificates = cs.getCertificates(key.getOwner());
-            for (int j = 0; j < certificates.length; j++)
-                System.out.println(certificates[j].toString());
-        }
+        System.out.println("DONE");
     }
 
     public void pauseApp() {
