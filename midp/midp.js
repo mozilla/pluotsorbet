@@ -382,7 +382,7 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     var value;
     switch (util.fromJavaString(key)) {
     case "com.sun.midp.publickeystore.WebPublicKeyStore":
-        value = "web.pks";
+        value = "_main.ks";
         break;
     case "com.sun.midp.events.dispatchTableInitSize":
         value = "16";
