@@ -28,7 +28,7 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.todo(bytesToHex(buf), "d41d8cd98f00b204e9800998ecf8427e");
+        th.check(bytesToHex(buf), "d41d8cd98f00b204e9800998ecf8427e");
 
         md5.reset();
 
@@ -42,7 +42,7 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
 
-        th.todo(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
+        th.check(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
 
         md5.reset();
 
@@ -61,7 +61,7 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
 
-        th.todo(bytesToHex(buf), "900150983cd24fb0d6963f7d28e17f72");
+        th.check(bytesToHex(buf), "900150983cd24fb0d6963f7d28e17f72");
 
         // Calculate another hash without calling sha.reset() (sha.digest should reset automatically)
 
@@ -75,7 +75,7 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
 
-        th.todo(bytesToHex(buf), "57edf4a22be3c955ac49da2e2107b67a");
+        th.check(bytesToHex(buf), "57edf4a22be3c955ac49da2e2107b67a");
 
         byte[] shortBuf = new byte[15];
         try {
@@ -99,8 +99,9 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.todo(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
-        th.todo(bytesToHex(buf2), "40309ea6baa09db375e49aa5edcb40a6");
+        th.check(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
+        System.out.println("asdf");
+        th.check(bytesToHex(buf2), "40309ea6baa09db375e49aa5edcb40a6");
 
         md5.reset();
         md52.reset();
@@ -114,6 +115,7 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.todo(bytesToHex(buf), "40309ea6baa09db375e49aa5edcb40a6");
+        System.out.println("qwer");
+        th.check(bytesToHex(buf), "40309ea6baa09db375e49aa5edcb40a6");
     }
 }
