@@ -805,11 +805,6 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
     ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
 }
 
-Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
-    var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
-    stack.push(rgb);
-}
-
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
     var drawTrusted = stack.pop(), displayId = stack.pop(), _this = stack.pop();
     console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + displayId + ", " + drawTrusted + ")");
