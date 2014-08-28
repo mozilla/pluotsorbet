@@ -77,13 +77,12 @@ public class TestMD5 implements Testlet {
 
         th.todo(bytesToHex(buf), "57edf4a22be3c955ac49da2e2107b67a");
 
-        boolean exception = false;
         byte[] shortBuf = new byte[15];
         try {
             md5.digest(buf, 0, 15);
+            th.fail("Should've raised an exception");
         } catch (DigestException ex) {
-            exception = true;
+            th.check(true, "Exception raised");
         }
-        th.check(exception);
     }
 }
