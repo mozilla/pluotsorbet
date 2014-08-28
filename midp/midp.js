@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
-'use strict';
+'Use strict';
 
 var MIDP = {
 };
@@ -803,6 +803,11 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
         }
     }
     ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
+}
+
+Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
+    var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
+    stack.push(rgb);
 }
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {

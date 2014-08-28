@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
-'use strict';
+'Use strict';
 
 (function(Native) {
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
@@ -632,11 +632,6 @@
                 c.drawImage(texture, x, y);
             });
         });
-    }
-
-    Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
-        var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
-        stack.push(rgb);
     }
 
     var textEditorId = 0,
