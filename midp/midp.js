@@ -2142,7 +2142,7 @@ MIDP.createNativeFinal = function createNativeFinal(hasherGetter) {
             outBuf[outOff + i * 4 + 3] = hash.words[i] & 0xff;
         }
     
-        // XXX Call the SHA.reset method instead to completely reset the object.
+        // XXX Call the reset method instead to completely reset the object.
         data[0] = 0;
     
         MIDP.hashers.delete(data);
