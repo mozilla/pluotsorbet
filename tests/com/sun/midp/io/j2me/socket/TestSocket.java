@@ -25,6 +25,41 @@ public class TestSocket implements Testlet {
             String received = new String(buf, 0, i-1);
             th.todo(received, "HTTP/1.0 200 OK");
 
+            int keepAlive = client.getSocketOption(SocketConnection.KEEPALIVE);
+            th.check(keepAlive, 1);
+
+            int linger = client.getSocketOption(SocketConnection.LINGER);
+            th.check(linger, 0);
+
+            int sndbuf = client.getSocketOption(SocketConnection.SNDBUF);
+            th.check(sndbuf, 8192);
+
+            int rcvbuf = client.getSocketOption(SocketConnection.RCVBUF);
+            th.check(rcvbuf, 8192);
+
+            int delay = client.getSocketOption(SocketConnection.DELAY);
+            th.check(delay, 1);
+
+            client.setSocketOption(SocketConnection.KEEPALIVE, 0);
+            keepAlive = client.getSocketOption(SocketConnection.KEEPALIVE);
+            th.check(keepAlive, 0);
+
+            client.setSocketOption(SocketConnection.LINGER, 1);
+            linger = client.getSocketOption(SocketConnection.LINGER);
+            th.check(linger, 1);
+
+            client.setSocketOption(SocketConnection.SNDBUF, 4096);
+            sndbuf = client.getSocketOption(SocketConnection.SNDBUF);
+            th.check(sndbuf, 4096);
+
+            client.setSocketOption(SocketConnection.RCVBUF, 16384);
+            rcvbuf = client.getSocketOption(SocketConnection.RCVBUF);
+            th.check(rcvbuf, 16384);
+
+            client.setSocketOption(SocketConnection.DELAY, 0);
+            delay = client.getSocketOption(SocketConnection.DELAY);
+            th.check(delay, 0);
+
             client.close();
         } catch (Exception e) {
             th.todo(false, "Unexpected exception: " + e);
