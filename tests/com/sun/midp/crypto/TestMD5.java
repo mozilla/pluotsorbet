@@ -3,7 +3,7 @@ package com.sun.midp.crypto;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
-public class TestSHA implements Testlet {
+public class TestMD5 implements Testlet {
     protected static final char[] hexArray = "0123456789abcdef".toCharArray();
 
     public String bytesToHex(byte[] bytes) {
@@ -17,103 +17,103 @@ public class TestSHA implements Testlet {
     }
 
     public void test(TestHarness th) {
-        SHA sha = new SHA();
-        th.check(sha.getAlgorithm(), "SHA-1");
-        th.check(sha.getDigestLength(), 20);
+        MD5 md5 = new MD5();
+        th.check(md5.getAlgorithm(), "MD5");
+        th.check(md5.getDigestLength(), 16);
 
-        byte[] buf = new byte[20];
+        byte[] buf = new byte[16];
         try {
-            sha.digest(buf, 0, 20);
+            md5.digest(buf, 0, 16);
         } catch (DigestException e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+        th.todo(bytesToHex(buf), "d41d8cd98f00b204e9800998ecf8427e");
 
-        sha.reset();
+        md5.reset();
 
         String part1 = "a";
-        sha.update(part1.getBytes(), 0, part1.length());
+        md5.update(part1.getBytes(), 0, part1.length());
 
         try {
-            sha.digest(buf, 0, 20);
+            md5.digest(buf, 0, 16);
         } catch (DigestException e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+        th.todo(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
 
-        sha.reset();
+        md5.reset();
 
-        sha.update(part1.getBytes(), 0, part1.length());
+        md5.update(part1.getBytes(), 0, part1.length());
 
         String part2 = "NOb";
-        sha.update(part2.getBytes(), 2, part2.length()-2);
+        md5.update(part2.getBytes(), 2, part2.length()-2);
 
         String part3 = "NOcNO";
-        sha.update(part3.getBytes(), 2, part3.length()-4);
+        md5.update(part3.getBytes(), 2, part3.length()-4);
 
         try {
-            sha.digest(buf, 0, 20);
+            md5.digest(buf, 0, 16);
         } catch (DigestException e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "a9993e364706816aba3e25717850c26c9cd0d89d");
+        th.todo(bytesToHex(buf), "900150983cd24fb0d6963f7d28e17f72");
 
         // Calculate another hash without calling sha.reset() (sha.digest should reset automatically)
 
         String longStr = "12345678901234567890123456789012345678901234567890123456789012345678901234567890";
-        sha.update(longStr.getBytes(), 0, longStr.length());
+        md5.update(longStr.getBytes(), 0, longStr.length());
 
         try {
-            sha.digest(buf, 0, 20);
+            md5.digest(buf, 0, 16);
         } catch (DigestException e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "50abf5706a150990a08b2c5ea40fa0e585554732");
+        th.todo(bytesToHex(buf), "57edf4a22be3c955ac49da2e2107b67a");
 
         byte[] shortBuf = new byte[15];
         try {
-            sha.digest(buf, 0, 15);
+            md5.digest(buf, 0, 15);
             th.fail("Should've raised an exception");
         } catch (DigestException ex) {
             th.check(true, "Exception raised");
         }
 
-        sha.reset();
+        md5.reset();
 
         // Ensure we can calculate two digests simultaneously.
-        sha.update(part1.getBytes(), 0, part1.length());
-        SHA sha2 = new SHA();
-        sha2.update(part2.getBytes(), 0, part2.length());
-        byte[] buf2 = new byte[20];
+        md5.update(part1.getBytes(), 0, part1.length());
+        MD5 md52 = new MD5();
+        md52.update(part2.getBytes(), 0, part2.length());
+        byte[] buf2 = new byte[16];
         try {
-            sha.digest(buf, 0, 20);
-            sha2.digest(buf2, 0, 20);
+            md5.digest(buf, 0, 16);
+            md52.digest(buf2, 0, 16);
         } catch (DigestException e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
-        th.check(bytesToHex(buf2), "5bd138dc4bccbc9526f6575c21d5e66450cd257f");
+        th.todo(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
+        th.todo(bytesToHex(buf2), "40309ea6baa09db375e49aa5edcb40a6");
 
-        sha.reset();
-        sha2.reset();
+        md5.reset();
+        md52.reset();
 
-        sha.update(part1.getBytes(), 0, part1.length());
-        sha.reset();
-        sha.update(part2.getBytes(), 0, part2.length());
+        md5.update(part1.getBytes(), 0, part1.length());
+        md5.reset();
+        md5.update(part2.getBytes(), 0, part2.length());
         try {
-            sha.digest(buf, 0, 20);
+            md5.digest(buf, 0, 16);
         } catch (DigestException e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "5bd138dc4bccbc9526f6575c21d5e66450cd257f");
+        th.todo(bytesToHex(buf), "40309ea6baa09db375e49aa5edcb40a6");
     }
 }
