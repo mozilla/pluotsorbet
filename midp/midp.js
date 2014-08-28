@@ -2076,7 +2076,7 @@ Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack)
 MIDP.hashers = new Map();
 
 
-function createHasherGetter(algo) {
+MIDP.createHasherGetter = function createHasherGetter(algo) {
     return function (data) {
       var hasher;
   
@@ -2099,9 +2099,9 @@ function createHasherGetter(algo) {
 }
 
 
-MIDP.getSHA1Hasher = createHasherGetter(CryptoJS.algo.SHA1);
+MIDP.getSHA1Hasher = MIDP.createHasherGetter(CryptoJS.algo.SHA1);
 
-MIDP.getMD5Hasher = createHasherGetter(CryptoJS.algo.MD5);
+MIDP.getMD5Hasher = MIDP.createHasherGetter(CryptoJS.algo.MD5);
 
 MIDP.bin2String = function(array) {
   var result = "";
@@ -2118,34 +2118,38 @@ Native["com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, s
     MIDP.getSHA1Hasher(data).update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
 }
 
-Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
-    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
-        outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
-        inBuf = stack.pop();
-
-    var hasher = MIDP.getSHA1Hasher(data);
-
-    if (inBuf) {
-        // SHA.digest passes `null` for inBuf, and there are no other callers,
-        // so this should never happen; but I'm including it for completeness
-        // (and in case a subclass ever uses it).
-        hasher.update(MIDP.bin2String(inBuf.subarray(inOff + inLen)));
+MIDP.createNativeFinal = function createNativeFinal(hasherGetter) {
+    return function(ctx, stack) {
+        var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
+            outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
+            inBuf = stack.pop();
+    
+        var hasher = hasherGetter(data);
+    
+        if (inBuf) {
+            // SHA.digest passes `null` for inBuf, and there are no other callers,
+            // so this should never happen; but I'm including it for completeness
+            // (and in case a subclass ever uses it).
+            hasher.update(MIDP.bin2String(inBuf.subarray(inOff + inLen)));
+        }
+    
+        var hash = hasher.finalize();
+    
+        for (var i = 0; i < hash.words.length; i++) {
+            outBuf[outOff + i * 4] = (hash.words[i] >> 24) & 0xff;
+            outBuf[outOff + i * 4 + 1] = (hash.words[i] >> 16) & 0xff;
+            outBuf[outOff + i * 4 + 2] = (hash.words[i] >> 8) & 0xff;
+            outBuf[outOff + i * 4 + 3] = hash.words[i] & 0xff;
+        }
+    
+        // XXX Call the SHA.reset method instead to completely reset the object.
+        data[0] = 0;
+    
+        MIDP.hashers.delete(data);
     }
-
-    var hash = hasher.finalize();
-
-    for (var i = 0; i < hash.words.length; i++) {
-        outBuf[outOff + i * 4] = (hash.words[i] >> 24) & 0xff;
-        outBuf[outOff + i * 4 + 1] = (hash.words[i] >> 16) & 0xff;
-        outBuf[outOff + i * 4 + 2] = (hash.words[i] >> 8) & 0xff;
-        outBuf[outOff + i * 4 + 3] = hash.words[i] & 0xff;
-    }
-
-    // XXX Call the SHA.reset method instead to completely reset the object.
-    data[0] = 0;
-
-    MIDP.hashers.delete(data);
 }
+
+Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = MIDP.createNativeFinal(MIDP.getSHA1Hasher);
 
 Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {
     var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
@@ -2154,28 +2158,5 @@ Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, s
     MIDP.getMD5Hasher(data).update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
 }
 
-Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
-    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
-        outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
-        inBuf = stack.pop();
+Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = MIDP.createNativeFinal(MIDP.getMD5Hasher);
 
-    var hasher = MIDP.getMD5Hasher(data);
-
-    if (inBuf) {
-        hasher.update(MIDP.bin2String(inBuf.subarray(inOff + inLen)));
-    }
-
-    var hash = hasher.finalize();
-
-    for (var i = 0; i < hash.words.length; i++) {
-        outBuf[outOff + i * 4] = (hash.words[i] >> 24) & 0xff;
-        outBuf[outOff + i * 4 + 1] = (hash.words[i] >> 16) & 0xff;
-        outBuf[outOff + i * 4 + 2] = (hash.words[i] >> 8) & 0xff;
-        outBuf[outOff + i * 4 + 3] = hash.words[i] & 0xff;
-    }
-
-    // XXX Call the SHA.reset method instead to completely reset the object.
-    data[0] = 0;
-
-    MIDP.hashers.delete(data);
-}
