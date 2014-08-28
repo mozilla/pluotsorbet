@@ -96,11 +96,11 @@ VM.execute = function(ctx) {
 
     function checkArrayAccess(refArray, idx) {
         if (!refArray) {
-            ctx.raiseException("java/lang/NullPointerException");
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             return false;
         }
         if (idx < 0 || idx >= refArray.length) {
-            ctx.raiseException("java/lang/ArrayIndexOutOfBoundsException", idx);
+            ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
             return false;
         }
         return true;
@@ -143,7 +143,7 @@ VM.execute = function(ctx) {
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
             constant = CLASSES.getField(classInfo, fieldName, signature, (op === 0xb2 || op == 0xb3));
             if (!constant)
-                ctx.raiseException("java/lang/RuntimeException",
+                ctx.raiseExceptionAndYield("java/lang/RuntimeException",
                                    classInfo.className + "." + fieldName + "." + signature + " not found");
             break;
         case TAGS.CONSTANT_Methodref:
@@ -153,7 +153,7 @@ VM.execute = function(ctx) {
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
             constant = CLASSES.getMethod(classInfo, methodName, signature, op === 0xb8, op !== 0xb8);
             if (!constant)
-                ctx.raiseException("java/lang/RuntimeException",
+                ctx.raiseExceptionAndYield("java/lang/RuntimeException",
                                    classInfo.className + "." + methodName + "." + signature + " not found");
             break;
         default:
@@ -366,7 +366,7 @@ VM.execute = function(ctx) {
             if (!checkArrayAccess(refArray, idx))
                 break;
             if (val && !val.class.isAssignableTo(refArray.class.elementClass)) {
-                ctx.raiseException("java/lang/ArrayStoreException");
+                ctx.raiseExceptionAndYield("java/lang/ArrayStoreException");
                 break;
             }
             refArray[idx] = val;
@@ -479,7 +479,7 @@ VM.execute = function(ctx) {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push((a === util.INT_MIN && b === -1) ? a : ((a / b)|0));
@@ -488,7 +488,7 @@ VM.execute = function(ctx) {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push2(a.div(b));
@@ -507,7 +507,7 @@ VM.execute = function(ctx) {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push(a % b);
@@ -516,7 +516,7 @@ VM.execute = function(ctx) {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-                ctx.raiseException("java/lang/ArithmeticException", "/ by zero");
+                ctx.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
                 break;
             }
             stack.push2(a.modulo(b));
@@ -822,7 +822,7 @@ VM.execute = function(ctx) {
             var type = frame.read8();
             var size = stack.pop();
             if (size < 0) {
-                ctx.raiseException("java/lang/NegativeArraySizeException", size);
+                ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
                 break;
             }
             stack.push(ctx.newPrimitiveArray("????ZCFDBSIJ"[type], size));
@@ -834,7 +834,7 @@ VM.execute = function(ctx) {
                 classInfo = resolve(op, idx);
             var size = stack.pop();
             if (size < 0) {
-                ctx.raiseException("java/lang/NegativeArraySizeException", size);
+                ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
                 break;
             }
             var className = classInfo.className;
@@ -857,7 +857,7 @@ VM.execute = function(ctx) {
         case 0xbe: // arraylength
             var obj = stack.pop();
             if (!obj) {
-                ctx.raiseException("java/lang/NullPointerException");
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                 break;
             }
             stack.push(obj.length);
@@ -869,7 +869,7 @@ VM.execute = function(ctx) {
                 field = resolve(op, idx);
             var obj = stack.pop();
             if (!obj) {
-                ctx.raiseException("java/lang/NullPointerException");
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                 break;
             }
             stack.pushType(field.signature, field.get(obj));
@@ -882,7 +882,7 @@ VM.execute = function(ctx) {
             var val = stack.popType(field.signature);
             var obj = stack.pop();
             if (!obj) {
-                ctx.raiseException("java/lang/NullPointerException");
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                 break;
             }
             field.set(obj, val);
@@ -923,7 +923,7 @@ VM.execute = function(ctx) {
             var obj = stack[stack.length - 1];
             if (obj) {
                 if (!obj.class.isAssignableTo(classInfo)) {
-                    ctx.raiseException("java/lang/ClassCastException",
+                    ctx.raiseExceptionAndYield("java/lang/ClassCastException",
                                        obj.class.className + " is not assignable to " +
                                        classInfo.className);
                     break;
@@ -942,7 +942,7 @@ VM.execute = function(ctx) {
         case 0xbf: // athrow
             var obj = stack.pop();
             if (!obj) {
-                ctx.raiseException("java/lang/NullPointerException");
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                 break;
             }
             throw_(obj, ctx);
@@ -950,7 +950,7 @@ VM.execute = function(ctx) {
         case 0xc2: // monitorenter
             var obj = stack.pop();
             if (!obj) {
-                ctx.raiseException("java/lang/NullPointerException");
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                 break;
             }
             ctx.monitorEnter(obj);
@@ -958,7 +958,7 @@ VM.execute = function(ctx) {
         case 0xc3: // monitorexit
             var obj = stack.pop();
             if (!obj) {
-                ctx.raiseException("java/lang/NullPointerException");
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                 break;
             }
             ctx.monitorExit(obj);
@@ -1018,7 +1018,7 @@ VM.execute = function(ctx) {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
                 if (!obj) {
-                    ctx.raiseException("java/lang/NullPointerException");
+                    ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                     break;
                 }
                 switch (op) {
