@@ -84,7 +84,7 @@ function run(className, args) {
     if (exists) {
       startJVM();
     } else {
-      load("_main.ks", "blob", function(data) {
+      load("certs/_main.ks", "blob", function(data) {
         fs.create("/_main.ks", data, function() {
           startJVM();
         });
