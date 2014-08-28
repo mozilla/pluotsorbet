@@ -100,7 +100,6 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
         th.check(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
-        System.out.println("asdf");
         th.check(bytesToHex(buf2), "40309ea6baa09db375e49aa5edcb40a6");
 
         md5.reset();
@@ -115,7 +114,6 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        System.out.println("qwer");
         th.check(bytesToHex(buf), "40309ea6baa09db375e49aa5edcb40a6");
     }
 }
