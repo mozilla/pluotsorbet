@@ -48,7 +48,9 @@ casper.test.begin("unit tests", 8, function(test) {
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=javax.microedition.lcdui.TestGraphicsClipping")
     .waitForText("DONE", function then() {
         test.assertTextExists("START\nDONE");
-    });
+    }, function onTimeout() {
+        test.fail();
+    }, 10000);
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=com.sun.midp.publickeystore.TestWebPublicKeyStore")
