@@ -2,6 +2,7 @@ package com.sun.midp.publickeystore;
 
 import java.util.*;
 import javax.microedition.midlet.*;
+import javax.microedition.pki.CertificateException;
 import com.sun.midp.pki.*;
 import com.sun.midp.security.*;
 import com.sun.midp.main.Configuration;
@@ -17,6 +18,12 @@ public class TestWebPublicKeyStore extends MIDlet {
         // do some tests on keyInfo
         X509Certificate[] certificates = cs.getCertificates(keyInfo.getOwner());
         System.out.println(certificates.length);
+        X509Certificate aCert = certificates[0];
+        try {
+          aCert.verify(aCert.getPublicKey());
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        }
         Vector keys = cs.getKeys();
     }
 
