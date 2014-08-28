@@ -13,7 +13,13 @@ public class TestFileConnection implements Testlet {
         try {
             String dirPath = System.getProperty("fileconn.dir.private").substring(2);
 
-            FileConnection dir = (FileConnection)Connector.open(dirPath);
+            FileConnection dir = (FileConnection)Connector.open(dirPath + "provaDir");
+
+            th.check(dir.isOpen(), "Directory opened");
+            th.check(!dir.exists(), "Directory doesn't exist");
+            th.check(!dir.isDirectory(), "Directory isn't (yet) a directory");
+
+            dir.mkdir();
 
             th.check(dir.isOpen(), "Directory opened");
             th.check(dir.exists(), "Directory exists");
@@ -22,7 +28,7 @@ public class TestFileConnection implements Testlet {
             Enumeration files = dir.list();
             th.check(!files.hasMoreElements(), "Directory is empty");
 
-            FileConnection file = (FileConnection)Connector.open(dirPath + "prova");
+            FileConnection file = (FileConnection)Connector.open(dirPath + "provaDir/prova");
             th.check(file.isOpen(), "File opened");
             th.check(!file.exists(), "File doesn't exist");
             th.check(!file.isDirectory(), "File isn't a directory");
@@ -53,16 +59,21 @@ public class TestFileConnection implements Testlet {
 
             files = dir.list();
             th.check(files.hasMoreElements(), "Directory has one file");
-            th.check(files.nextElement(), "/prova");
+            th.check(files.nextElement(), "/provaDir/prova");
             th.check(!files.hasMoreElements(), "Directory has just one file");
 
             dir.close();
             th.check(!dir.isOpen());
 
-            file = (FileConnection)Connector.open(dirPath + "prova");
+            file = (FileConnection)Connector.open(dirPath + "provaDir/prova");
             file.delete();
             th.check(!file.exists());
             file.close();
+
+            dir = (FileConnection)Connector.open(dirPath + "provaDir");
+            dir.delete();
+            th.check(!dir.exists());
+            dir.close();
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
