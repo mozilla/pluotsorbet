@@ -93,3 +93,8 @@ Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, s
 }
 
 Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = MIDP.createNativeFinal(MIDP.getMD5Hasher);
+
+Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
+    var result = stack.pop(), modulus = stack.pop(), exponent = stack.pop(),
+        data = stack.pop();
+}
