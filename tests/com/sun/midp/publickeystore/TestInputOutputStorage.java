@@ -30,11 +30,15 @@ public class TestInputOutputStorage implements Testlet {
 
             out.close();
 
+            ras.setPosition(0);
+
             InputStream in = ras.openInputStream();
 
             InputStorage inStorage = new InputStorage(in);
             th.check(inStorage.readValue(new byte[] { 1 }), "Marco");
-            th.check(inStorage.readValue(new byte[] { 2 }), new byte[] { 1, 2 });
+            byte[] val = (byte[])inStorage.readValue(new byte[] { 2 });
+            th.check(val[0], (byte)1);
+            th.check(val[1], (byte)2);
             th.check(inStorage.readValue(new byte[] { 3 }), new Long(777777777));
             th.check(inStorage.readValue(new byte[] { 4 }), new Boolean(false));
             th.check(inStorage.readValue(new byte[] { 5 }), new Boolean(true));
