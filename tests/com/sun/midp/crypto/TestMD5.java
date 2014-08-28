@@ -104,5 +104,16 @@ public class TestMD5 implements Testlet {
 
         md5.reset();
         md52.reset();
+
+        md5.update(part1.getBytes(), 0, part1.length());
+        md5.reset();
+        md5.update(part2.getBytes(), 0, part2.length());
+        try {
+            md5.digest(buf, 0, 16);
+        } catch (DigestException e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+        th.check(bytesToHex(buf), "40309ea6baa09db375e49aa5edcb40a6");
     }
 }
