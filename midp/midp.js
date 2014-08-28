@@ -624,6 +624,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteImpl.unlockMIDletSuite.(I)V"] = func
 Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack) {
     var suiteSettings = stack.pop();
     suiteSettings.class.getField("pushInterruptSetting", "B").set(suiteSettings, 1);
+    console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
 }
 
 Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(ctx, stack) {
@@ -636,6 +637,7 @@ Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
     var _this = stack.pop();
     // The MIDlet has to be trusted for opening SSL connections using port 443.
     _this.class.getField("trusted", "Z").set(_this, 1);
+    console.warn("com/sun/midp/midletsuite/InstallInfo.load.()V incomplete");
 }
 
 Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(ctx, stack) {
