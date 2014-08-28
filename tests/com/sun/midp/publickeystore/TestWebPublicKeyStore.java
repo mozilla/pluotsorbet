@@ -15,8 +15,9 @@ public class TestWebPublicKeyStore extends MIDlet {
         System.out.println("START");
 
         WebPublicKeyStore cs = WebPublicKeyStore.getTrustedKeyStore();
-        if (cs.numberOfKeys() != 34) {
-            System.out.println("FAIL - Number of keys != 34");
+        int numberOfKeys = cs.numberOfKeys();
+        if (numberOfKeys != 1) {
+            System.out.println("FAIL - Number of keys (" + numberOfKeys + ") != 34");
         }
 
         PublicKeyInfo keyInfo = cs.getKey(0);
