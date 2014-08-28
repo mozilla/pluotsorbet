@@ -18,24 +18,19 @@ public class TestRSA implements Testlet {
         RSAPrivateKey privKey = new RSAPrivateKey(n, d);
 
         try {
-          Cipher rsa = Cipher.getInstance("RSA");
-          rsa.init(Cipher.ENCRYPT_MODE, privKey);
-          byte[] encMessage = new byte[privKey.getModulusLen()];
-          rsa.doFinal(message, 0, message.length, encMessage, 0);
+            Cipher rsa = Cipher.getInstance("RSA");
+            rsa.init(Cipher.ENCRYPT_MODE, privKey);
+            byte[] encMessage = new byte[privKey.getModulusLen()];
+            rsa.doFinal(message, 0, message.length, encMessage, 0);
 
-          Cipher rsa2 = Cipher.getInstance("RSA");
-          rsa2.init(Cipher.DECRYPT_MODE, pubKey);
-          byte[] decMessage = new byte[pubKey.getModulusLen()];
-          rsa2.doFinal(encMessage, 0, encMessage.length, decMessage, 0);
+            Cipher rsa2 = Cipher.getInstance("RSA");
+            rsa2.init(Cipher.DECRYPT_MODE, pubKey);
+            byte[] decMessage = new byte[pubKey.getModulusLen()];
+            rsa2.doFinal(encMessage, 0, encMessage.length, decMessage, 0);
 
-          boolean ok = true;
-          for (int i = 0; i < message.length; i++) {
-              if (message[i] != decMessage[i]) {
-                  ok = false;
-              }
-          }
-
-          th.todo(ok);
+            for (int i = 0; i < message.length; i++) {
+                th.check(decMessage[i], message[i]);
+            }
         } catch (Exception ex) {
             th.fail("Unexpected exception: " + ex);
             ex.printStackTrace();
