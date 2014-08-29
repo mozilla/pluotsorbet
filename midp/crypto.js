@@ -100,7 +100,8 @@ Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
     var bnBase = new BigInteger(data, 256);
     var bnExponent = new BigInteger(exponent, 256);
     var bnModulus = new BigInteger(modulus, 256);
-    var remainder = bnBase.modPow(bnExponent, bnModulus).toByteArray();
+    var bnRemainder = bnBase.modPow(bnExponent, bnModulus);
+    var remainder = bnRemainder.toByteArray();
 
     result.set(remainder);
     stack.push(remainder.length);
