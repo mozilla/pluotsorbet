@@ -97,4 +97,6 @@ Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = MIDP.createNa
 Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
     var result = stack.pop(), modulus = stack.pop(), exponent = stack.pop(),
         data = stack.pop();
+    console.warn("com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I not implemented");
+    stack.push(result.byteLength);
 }
