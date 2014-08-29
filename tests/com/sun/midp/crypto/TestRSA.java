@@ -9,11 +9,11 @@ public class TestRSA implements Testlet {
         byte[] message = messageStr.getBytes();
 
         // Generate these values using:
-        // openssl genrsa -out private_key.pem 64
+        // openssl genrsa -out private_key.pem 128
         // openssl rsa -text -in private_key.pem
-        byte[] n = new byte[] { (byte)0x00, (byte)0xb5, (byte)0xef, (byte)0xbf, (byte)0x6b, (byte)0xc3, (byte)0xcc, (byte)0x78, (byte)0x5f, (byte)0x59, (byte)0xa1, (byte)0xef, (byte)0x81, (byte)0x70, (byte)0x38, (byte)0xe7, (byte)0x25 };
+        byte[] n = new byte[] { (byte)0x75, (byte)0x22, (byte)0x46, (byte)0xf6, (byte)0x0d, (byte)0xe2, (byte)0x1d, (byte)0x71, (byte)0xd9, (byte)0x8f, (byte)0x2a, (byte)0xa9, (byte)0x96, (byte)0xad, (byte)0xd7, (byte)0x6f };
         byte[] e = new byte[] { (byte)0x01, (byte)0x00, (byte)0x01 };
-        byte[] d = new byte[] { (byte)0x00, (byte)0x8c, (byte)0x65, (byte)0xdc, (byte)0xe4, (byte)0x3e, (byte)0x8e, (byte)0xb5, (byte)0x7c, (byte)0x21, (byte)0xc7, (byte)0x99, (byte)0x21, (byte)0xbd, (byte)0x30, (byte)0x6d, (byte)0x41 };
+        byte[] d = new byte[] { (byte)0x15, (byte)0xfb, (byte)0x5f, (byte)0xcb, (byte)0xcf, (byte)0x61, (byte)0x2e, (byte)0xdb, (byte)0x2c, (byte)0x73, (byte)0xf5, (byte)0x28, (byte)0xbe, (byte)0x8c, (byte)0x6a, (byte)0xd1 };
         RSAPublicKey pubKey = new RSAPublicKey(n, e);
         RSAPrivateKey privKey = new RSAPrivateKey(n, d);
 
