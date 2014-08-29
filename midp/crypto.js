@@ -94,14 +94,41 @@ Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, s
 
 Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = MIDP.createNativeFinal(MIDP.getMD5Hasher);
 
+var hexEncodeArray = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', ];
+
+function bytesToHexString(array) {
+    var s = '';
+    for (var i = 0; i < array.length; i++) {
+      var code = array[i] & 0xFF;
+      s += hexEncodeArray[code >>> 4];
+      s += hexEncodeArray[code & 0x0F];
+    }
+    return s;
+}
+
+function hexStringToBytes(hex) {
+    var length = hex.length / 2;
+    if (length % 1 !== 0) {
+      hex = "0" + hex;
+    }
+
+    var bytes = new Int8Array(hex.length / 2);
+
+    for (var i = 0; i < hex.length; i += 2) {
+        bytes[i/2] = parseInt(hex.substr(i, 2), 16);
+    }
+
+    return bytes;
+}
+
 Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
     var result = stack.pop(), modulus = stack.pop(), exponent = stack.pop(), data = stack.pop();
 
-    var bnBase = new BigInteger(data, 256);
-    var bnExponent = new BigInteger(exponent, 256);
-    var bnModulus = new BigInteger(modulus, 256);
+    var bnBase = new BigInteger(bytesToHexString(data), 16);
+    var bnExponent = new BigInteger(bytesToHexString(exponent), 16);
+    var bnModulus = new BigInteger(bytesToHexString(modulus), 16);
     var bnRemainder = bnBase.modPow(bnExponent, bnModulus);
-    var remainder = bnRemainder.toByteArray();
+    var remainder = hexStringToBytes(bnRemainder.toString(16));
 
     result.set(remainder);
     stack.push(remainder.length);
