@@ -4,18 +4,6 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestMD5 implements Testlet {
-    protected static final char[] hexArray = "0123456789abcdef".toCharArray();
-
-    public String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for ( int j = 0; j < bytes.length; j++ ) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
-
     public void test(TestHarness th) {
         MD5 md5 = new MD5();
         th.check(md5.getAlgorithm(), "MD5");
@@ -28,7 +16,7 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "d41d8cd98f00b204e9800998ecf8427e");
+        th.check(Util.hexEncode(buf), "d41d8cd98f00b204e9800998ecf8427e");
 
         md5.reset();
 
@@ -42,7 +30,7 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
+        th.check(Util.hexEncode(buf), "0cc175b9c0f1b6a831c399e269772661");
 
         md5.reset();
 
@@ -61,7 +49,7 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "900150983cd24fb0d6963f7d28e17f72");
+        th.check(Util.hexEncode(buf), "900150983cd24fb0d6963f7d28e17f72");
 
         // Calculate another hash without calling sha.reset() (sha.digest should reset automatically)
 
@@ -75,7 +63,7 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "57edf4a22be3c955ac49da2e2107b67a");
+        th.check(Util.hexEncode(buf), "57edf4a22be3c955ac49da2e2107b67a");
 
         byte[] shortBuf = new byte[15];
         try {
@@ -99,8 +87,8 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "0cc175b9c0f1b6a831c399e269772661");
-        th.check(bytesToHex(buf2), "40309ea6baa09db375e49aa5edcb40a6");
+        th.check(Util.hexEncode(buf), "0cc175b9c0f1b6a831c399e269772661");
+        th.check(Util.hexEncode(buf2), "40309ea6baa09db375e49aa5edcb40a6");
 
         md5.reset();
         md52.reset();
@@ -114,6 +102,6 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "40309ea6baa09db375e49aa5edcb40a6");
+        th.check(Util.hexEncode(buf), "40309ea6baa09db375e49aa5edcb40a6");
     }
 }

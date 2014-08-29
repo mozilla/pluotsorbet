@@ -4,18 +4,6 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestSHA implements Testlet {
-    protected static final char[] hexArray = "0123456789abcdef".toCharArray();
-
-    public String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for ( int j = 0; j < bytes.length; j++ ) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
-
     public void test(TestHarness th) {
         SHA sha = new SHA();
         th.check(sha.getAlgorithm(), "SHA-1");
@@ -28,7 +16,7 @@ public class TestSHA implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+        th.check(Util.hexEncode(buf), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
 
         sha.reset();
 
@@ -42,7 +30,7 @@ public class TestSHA implements Testlet {
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+        th.check(Util.hexEncode(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
 
         sha.reset();
 
@@ -61,7 +49,7 @@ public class TestSHA implements Testlet {
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "a9993e364706816aba3e25717850c26c9cd0d89d");
+        th.check(Util.hexEncode(buf), "a9993e364706816aba3e25717850c26c9cd0d89d");
 
         // Calculate another hash without calling sha.reset() (sha.digest should reset automatically)
 
@@ -75,7 +63,7 @@ public class TestSHA implements Testlet {
             e.printStackTrace();
         }
 
-        th.check(bytesToHex(buf), "50abf5706a150990a08b2c5ea40fa0e585554732");
+        th.check(Util.hexEncode(buf), "50abf5706a150990a08b2c5ea40fa0e585554732");
 
         byte[] shortBuf = new byte[15];
         try {
@@ -99,8 +87,8 @@ public class TestSHA implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
-        th.check(bytesToHex(buf2), "5bd138dc4bccbc9526f6575c21d5e66450cd257f");
+        th.check(Util.hexEncode(buf), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+        th.check(Util.hexEncode(buf2), "5bd138dc4bccbc9526f6575c21d5e66450cd257f");
 
         sha.reset();
         sha2.reset();
@@ -114,6 +102,6 @@ public class TestSHA implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.check(bytesToHex(buf), "5bd138dc4bccbc9526f6575c21d5e66450cd257f");
+        th.check(Util.hexEncode(buf), "5bd138dc4bccbc9526f6575c21d5e66450cd257f");
     }
 }
