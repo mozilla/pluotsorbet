@@ -49,5 +49,19 @@ public class TestARC4 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
+
+        try {
+            testARC4(th, "Wiki", "pedia", "1021bf0420");
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+        
+        try {
+            testARC4(th, "Secret", "Attack at dawn", "45a01f645fc35b383552544b9bf5");
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
     }
 }
