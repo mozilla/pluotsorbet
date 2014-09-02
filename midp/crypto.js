@@ -124,7 +124,7 @@ MIDP.getMD5Hasher = function(data) {
         throw new Error("couldn't get existing hasher");
     }
 
-    hasher = CryptoJS.algo.MD5.create();
+    hasher = forge.md.md5.create();
     window.crypto.getRandomValues(data);
     MIDP.hashers.set(data, hasher);
     return hasher;
@@ -172,7 +172,7 @@ Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, s
     var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
         inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
 
-    MIDP.getMD5Hasher(data).update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
+    MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Uint8Array(inBuf.subarray(inOff, inOff + inLen))));
 }
 
 Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
@@ -189,14 +189,8 @@ Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
         hasher.update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
     }
 
-    var hash = hasher.finalize();
-
-    for (var i = 0; i < hash.words.length; i++) {
-        outBuf[outOff + i * 4] = (hash.words[i] >> 24) & 0xff;
-        outBuf[outOff + i * 4 + 1] = (hash.words[i] >> 16) & 0xff;
-        outBuf[outOff + i * 4 + 2] = (hash.words[i] >> 8) & 0xff;
-        outBuf[outOff + i * 4 + 3] = hash.words[i] & 0xff;
-    }
+    var hash = hasher.digest();
+    outBuf.set(hash, outOff);
 
     // XXX Call the reset method instead to completely reset the object.
     data.set(MIDP.emptyDataArray);
