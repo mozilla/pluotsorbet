@@ -57,6 +57,17 @@ public class TestRSA implements Testlet {
         }
 
         try {
+            testRSA(th,
+                    hexToBytes("c2b44ceb71a7db5fd4eafe0cc519c1eb"),
+                    hexToBytes("010001"),
+                    hexToBytes("121e9b65f1ded030725bb1fbccbcc369"),
+                    message.getBytes());
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+
+        try {
           testRSA(th,
                   hexToBytes("7877819a103272312a16c9dac9168a1a106410e061e0c8935a96300a00036cc4694e8bda5924bb0cce70e191e28b5fd4ae37483025e850a0599c70a079515287fb0360c65293144a5e8f952607c8721eda13fb61ec43567c81f9cf27af789bb8e39e0936370f72f4746b8c5eb76fe3dfe083a813d49b2aea7b1f11d57dd8be0f25c1e1115582baec3930807a85c7f809e4b74d2760777b20c895f57c42225710dd0021ac1b735057e4f4da6894d4cf69fd1c6a3ebb69612900b61eca673405e3c8fc88ceac8e2f7e98b93ac4d74646b89491ac2ad28497d6878dedd8e6c979edc96878699c03e411841ffc4fd56a98b804ce2f43a224186d4a695b2856198d43"),
                   hexToBytes("010001"),
