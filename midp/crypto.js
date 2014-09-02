@@ -33,7 +33,30 @@ MIDP.createHasherGetter = function createHasherGetter(algo) {
     }
 }
 
-MIDP.getSHA1Hasher = MIDP.createHasherGetter(CryptoJS.algo.SHA1);
+MIDP.getSHA1Hasher = function(data) {
+    var hasher;
+
+    // Use data[0] to determine the state of the hasher: if 1, we've created
+    // the hasher (and are in the process of hashing); otherwise, we haven't.
+    // That isn't what the data array is intended for, but it works well enough
+    // for our purposes, and the non-native code doesn't use it for anything,
+    // so it doesn't expect it to have any particular values.
+
+    if (data[0] == 1) {
+        hasher = MIDP.hashers.get(data);
+    } else {
+        hasher = {
+            str: "",
+            update: function(str) {
+              this.str += str;
+            },
+        };
+        MIDP.hashers.set(data, hasher);
+        data[0] = 1;
+    }
+
+    return hasher;
+};
 
 MIDP.getMD5Hasher = MIDP.createHasherGetter(CryptoJS.algo.MD5);
 
@@ -83,7 +106,34 @@ MIDP.createNativeFinal = function createNativeFinal(hasherGetter) {
     }
 }
 
-Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = MIDP.createNativeFinal(MIDP.getSHA1Hasher);
+Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
+    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
+        outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
+        inBuf = stack.pop();
+
+    var hasher = MIDP.getSHA1Hasher(data);
+
+    if (inBuf) {
+        // digest passes `null` for inBuf, and there are no other callers,
+        // so this should never happen; but I'm including it for completeness
+        // (and in case a subclass ever uses it).
+        hasher.update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
+    }
+
+    var hash = new Rusha().rawDigest(hasher.str);
+
+    for (var i = 0; i < hash.length; i++) {
+        outBuf[outOff + i * 4] = hash[i] & 0xff;
+        outBuf[outOff + i * 4 + 1] = (hash[i] >> 8) & 0xff;
+        outBuf[outOff + i * 4 + 2] = (hash[i] >> 16) & 0xff;
+        outBuf[outOff + i * 4 + 3] = (hash[i] >> 24) & 0xff;
+    }
+
+    // XXX Call the reset method instead to completely reset the object.
+    data[0] = 0;
+
+    MIDP.hashers.delete(data);
+}
 
 Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {
     var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
