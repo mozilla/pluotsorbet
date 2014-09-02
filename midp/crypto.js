@@ -133,3 +133,27 @@ Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
     result.set(remainder);
     stack.push(remainder.length);
 }
+
+Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] = function(ctx, stack) {
+    var outoff = stack.pop(), outbuf = stack.pop(), inlen = stack.pop(), inoff = stack.pop(),
+        inbuf = stack.pop(), Y = stack.pop(), X = stack.pop(), S = stack.pop();
+
+    var x = X[0];
+    var y = Y[0];
+
+    for (var i = 0; i < inlen; i++) {
+        x = (x + 1) & 0xff;
+        y = (y + S[x]) & 0xff;
+
+        var tx = S[x];
+        S[x] = S[y];
+        S[y] = tx;
+
+        var ty = S[x] + S[y] & 0xff;
+
+        outbuf[i+outoff] = S[ty] ^ inbuf[i+inoff];
+    }
+
+    X[0] = x;
+    Y[0] = y;
+}
