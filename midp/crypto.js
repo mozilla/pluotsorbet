@@ -46,9 +46,12 @@ MIDP.getSHA1Hasher = function(data) {
         hasher = MIDP.hashers.get(data);
     } else {
         hasher = {
-            str: "",
-            update: function(str) {
-              this.str += str;
+            buffer: new Int8Array(0),
+            update: function(newData) {
+              var oldData = this.buffer;
+              this.buffer = new Int8Array(oldData.length + newData.length);
+              this.buffer.set(oldData, 0);
+              this.buffer.set(newData, oldData.length);
             },
         };
         MIDP.hashers.set(data, hasher);
@@ -72,7 +75,7 @@ Native["com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, s
     var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
         inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
 
-    MIDP.getSHA1Hasher(data).update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
+    MIDP.getSHA1Hasher(data).update(inBuf.subarray(inOff, inOff + inLen));
 }
 
 MIDP.createNativeFinal = function createNativeFinal(hasherGetter) {
@@ -117,10 +120,10 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
         // digest passes `null` for inBuf, and there are no other callers,
         // so this should never happen; but I'm including it for completeness
         // (and in case a subclass ever uses it).
-        hasher.update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
+        hasher.update(inBuf.subarray(inOff, inOff + inLen));
     }
 
-    var hash = new Rusha().rawDigest(hasher.str);
+    var hash = new Rusha().rawDigest(hasher.buffer);
 
     for (var i = 0; i < hash.length; i++) {
         outBuf[outOff + i * 4] = hash[i] & 0xff;
