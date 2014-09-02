@@ -66,7 +66,7 @@ MIDP.compareTypedArrays = function(ary1, ary2) {
  * they've been populated with other values.  Also useful for resetting
  * data arrays back to their initial state.
  */
-MIDP.emptyDataArray = new Int8Array(16);
+MIDP.emptyDataArray = new Int32Array(16);
 
 MIDP.getSHA1Hasher = function(data) {
     var hasher;
