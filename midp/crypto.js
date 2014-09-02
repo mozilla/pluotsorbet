@@ -190,7 +190,10 @@ Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
     }
 
     var hash = hasher.digest();
-    outBuf.set(hash, outOff);
+
+    for (var i = 0; i < hash.length(); i++) {
+        outBuf[outOff + i] = hash.at(i);
+    }
 
     // XXX Call the reset method instead to completely reset the object.
     data.set(MIDP.emptyDataArray);
