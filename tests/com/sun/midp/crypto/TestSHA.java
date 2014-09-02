@@ -132,6 +132,6 @@ public class TestSHA implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.todo(Util.hexEncode(buf), "db433834d80013ac248c21b354b482890a8f9fc2");
+        th.check(Util.hexEncode(buf), "db433834d80013ac248c21b354b482890a8f9fc2");
     }
 }
