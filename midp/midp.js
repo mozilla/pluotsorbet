@@ -841,38 +841,52 @@ Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = f
     stack.push(ids);
 }
 
+MIDP.SYSTEM_KEY_CLEAR = 4;
+
 Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx, stack) {
     var key = stack.pop();
     /* We don't care about the system keys POWER, SEND, END, SELECT,
       SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
       but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
     */
-    if (key === 8) {
-        stack.push(4)
+    if (key === -8) {
+        stack.push(MIDP.SYSTEM_KEY_CLEAR);
     } else {
         stack.push(0);
     }
 }
 
 MIDP.keyMap = {
-    1: 33, // UP
-    2: 37, // LEFT
-    5: 39, // RIGHT
-    6: 40, // DOWN
+    1: 119, // UP
+    2: 97, // LEFT
+    5: 100, // RIGHT
+    6: 115, // DOWN
     8: 32, // FIRE
-    9: 49, // GAME_A
-    10: 50, // GAME_B
-    11: 51, // GAME_C
-    12: 52, // GAME_D
+    9: 113, // GAME_A
+    10: 101, // GAME_B
+    11: 122, // GAME_C
+    12: 99, // GAME_D
 };
 
 Native["javax/microedition/lcdui/KeyConverter.getKeyCode.(I)I"] = function(ctx, stack) {
-    stack.push(MIDP.keyMap[stack.pop()] | 0);
+    stack.push(MIDP.keyMap[stack.pop()] || 0);
 }
+
+MIDP.keyNames = {
+    119: "Up",
+    97: "Left",
+    100: "Right",
+    115: "Down",
+    32: "Select",
+    113: "Calendar",
+    101: "Addressbook",
+    122: "Menu",
+    99: "Mail",
+};
 
 Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var keyCode = stack.pop();
-    stack.push(ctx.newString(String.fromCharCode(keyCode)));
+    stack.push(ctx.newString((keyCode in MIDP.keyNames) ? MIDP.keyNames[keyCode] : String.fromCharCode(keyCode)));
 }
 
 MIDP.gameKeys = {
