@@ -133,7 +133,7 @@ MIDP.getMD5Hasher = function(data) {
 MIDP.bin2String = function(array) {
   var result = "";
   for (var i = 0; i < array.length; i++) {
-    result += String.fromCharCode(parseInt(array[i]));
+    result += String.fromCharCode(array[i] & 0xff);
   }
   return result;
 };
