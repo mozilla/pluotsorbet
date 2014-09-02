@@ -89,13 +89,7 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
     }
 
     var hash = new Rusha().rawDigest(hasher.buffer);
-
-    for (var i = 0; i < hash.length; i++) {
-        outBuf[outOff + i * 4] = hash[i] & 0xff;
-        outBuf[outOff + i * 4 + 1] = (hash[i] >> 8) & 0xff;
-        outBuf[outOff + i * 4 + 2] = (hash[i] >> 16) & 0xff;
-        outBuf[outOff + i * 4 + 3] = (hash[i] >> 24) & 0xff;
-    }
+    outBuf.set(new Uint8Array(hash.buffer), outOff);
 
     // XXX Call the reset method instead to completely reset the object.
     data[0] = 0;
