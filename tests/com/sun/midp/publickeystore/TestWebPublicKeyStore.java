@@ -38,7 +38,7 @@ public class TestWebPublicKeyStore extends MIDlet {
         X509Certificate rootCert = certificates[0];
 
         try {
-          rootCert.verify(rootCert.getPublicKey());
+            rootCert.verify(rootCert.getPublicKey());
         } catch (CertificateException e) {
             System.out.println("FAIL - Self verification should succeed");
             e.printStackTrace();
@@ -65,6 +65,17 @@ public class TestWebPublicKeyStore extends MIDlet {
 
         try {
             middleCert.verify(rootCert.getPublicKey());
+        } catch (CertificateException e) {
+            System.out.println("FAIL - Verification should succeed");
+            e.printStackTrace();
+            return;
+        }
+
+        try {
+            Vector certs = new Vector();
+            certs.addElement(endCert);
+            certs.addElement(middleCert);
+            X509Certificate.verifyChain(certs, -1, -1, cs);
         } catch (CertificateException e) {
             System.out.println("FAIL - Verification should succeed");
             e.printStackTrace();
