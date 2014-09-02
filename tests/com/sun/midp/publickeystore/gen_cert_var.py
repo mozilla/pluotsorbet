@@ -16,10 +16,8 @@ def file_byte_generator(filename, block_size = 512):
         break
 
 def create_header(array_name, in_filename):
-  hexified = ["0x" + binascii.hexlify(byte) for byte in file_byte_generator(in_filename)]
-  print "static final byte[] " + array_name + " = new byte[] {"
-  print ", (byte)".join(hexified)
-  print "};"
+  hexified = [binascii.hexlify(byte) for byte in file_byte_generator(in_filename)]
+  print "static final byte[] " + array_name + " = hexToBytes(\"" + "".join(hexified) + "\");"
   return 0
 
 if __name__ == '__main__':
