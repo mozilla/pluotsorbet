@@ -55,10 +55,6 @@ public class TestWebPublicKeyStore extends MIDlet {
             return;
         }
 
-        System.out.println("END: " + endCert);
-        System.out.println("MIDDLE: " + middleCert);
-        System.out.println("ROOT: " + rootCert);
-
         try {
             endCert.verify(middleCert.getPublicKey());
         } catch (CertificateException e) {
@@ -83,6 +79,18 @@ public class TestWebPublicKeyStore extends MIDlet {
 
         try {
             rootCert.verify(middleCert.getPublicKey());
+            System.out.println("FAIL - Verification shouldn't succeed");
+        } catch (CertificateException e) {
+        }
+
+        try {
+            rootCert.verify(endCert.getPublicKey());
+            System.out.println("FAIL - Verification shouldn't succeed");
+        } catch (CertificateException e) {
+        }
+
+        try {
+            endCert.verify(rootCert.getPublicKey());
             System.out.println("FAIL - Verification shouldn't succeed");
         } catch (CertificateException e) {
         }
