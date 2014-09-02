@@ -107,6 +107,9 @@ function bytesToHexString(array) {
 }
 
 function hexStringToBytes(hex) {
+    // The jsbn library (that provides BigInteger support) produces a
+    // hexadecimal string that doesn't contain a leading 0 (e.g. "010010" would
+    // be "10010").
     var length = hex.length / 2;
     if (length % 1 !== 0) {
       hex = "0" + hex;
@@ -123,6 +126,10 @@ function hexStringToBytes(hex) {
 
 Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
     var result = stack.pop(), modulus = stack.pop(), exponent = stack.pop(), data = stack.pop();
+
+    // The jsbn library doesn't work well with typed arrays, so we're using this
+    // hack of translating the numbers to hexadecimal strings before handing
+    // them to jsbn (and we're getting the result back in a hex string).
 
     var bnBase = new BigInteger(bytesToHexString(data), 16);
     var bnExponent = new BigInteger(bytesToHexString(exponent), 16);
