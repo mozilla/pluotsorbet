@@ -11,10 +11,6 @@ Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack)
 
 MIDP.hashers = new Map();
 
-MIDP.getRandomInt = function(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
-};
-
 /**
  * A constructor for a SHA-1 hasher.  To create a new hasher:
  *
@@ -46,22 +42,8 @@ MIDP.SHA1Hasher.prototype.clone = function() {
     return hasher;
 };
 
-MIDP.compareTypedArrays = function(ary1, ary2) {
-    if (ary1.length != ary2.length) {
-        return false;
-    }
-
-    for (var i = 0; i < ary1.length; i++) {
-        if (ary1[i] !== ary2[i]) {
-            return false;
-        }
-    }
-
-    return true;
-};
-
 /**
- * A 16-byte Int8Array whose values are all initialized to zero.
+ * A 16-byte Int32Array whose values are all initialized to zero.
  * Useful for comparing with other such arrays to determine whether or not
  * they've been populated with other values.  Also useful for resetting
  * data arrays back to their initial state.
@@ -71,7 +53,7 @@ MIDP.emptyDataArray = new Int32Array(16);
 MIDP.getSHA1Hasher = function(data) {
     var hasher;
 
-    if (!MIDP.compareTypedArrays(data, MIDP.emptyDataArray)) {
+    if (!util.compareTypedArrays(data, MIDP.emptyDataArray)) {
         hasher = MIDP.hashers.get(data);
 
         if (hasher) {
@@ -82,7 +64,7 @@ MIDP.getSHA1Hasher = function(data) {
         // for it, then it was cloned from the data of another native hasher,
         // so find the original and clone it.
         for (var [key, value] of MIDP.hashers) {
-            if (MIDP.compareTypedArrays(key, data)) {
+            if (util.compareTypedArrays(key, data)) {
                 hasher = value.clone();
                 window.crypto.getRandomValues(data);
                 MIDP.hashers.set(data, hasher);
@@ -102,7 +84,7 @@ MIDP.getSHA1Hasher = function(data) {
 MIDP.getMD5Hasher = function(data) {
     var hasher;
 
-    if (!MIDP.compareTypedArrays(data, MIDP.emptyDataArray)) {
+    if (!util.compareTypedArrays(data, MIDP.emptyDataArray)) {
         hasher = MIDP.hashers.get(data);
 
         if (hasher) {
@@ -113,7 +95,7 @@ MIDP.getMD5Hasher = function(data) {
         // for it, then it was cloned from the data of another native hasher,
         // so find the original and clone it.
         for (var [key, value] of MIDP.hashers) {
-            if (MIDP.compareTypedArrays(key, data)) {
+            if (util.compareTypedArrays(key, data)) {
                 hasher = value.clone();
                 window.crypto.getRandomValues(data);
                 MIDP.hashers.set(data, hasher);
