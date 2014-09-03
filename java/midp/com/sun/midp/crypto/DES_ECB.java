@@ -190,8 +190,6 @@ class DES_ECB extends BlockCipherBase {
         int keyCount = data.length >> 3;
         dkey = new byte[keyCount][];
         for (int i = 0; i < keyCount; i++) {
-            System.out.println("I: " + i);
-            System.out.println("I << 3: " + (i << 3));
             dkey[i] = expandKey(data, i << 3);
         }
     }
@@ -395,10 +393,12 @@ class DES_ECB extends BlockCipherBase {
         int pos = 0;
 
         for (int i = 0; i < 8; i++) {
+
             int octet = key[keyOffset++];
             int len;
 
             for (int j = 0; j < 7; j++)  {
+
                 len = expandData[pos++];
                 int offset = 0;
 
