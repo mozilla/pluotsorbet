@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
 
 casper.test.begin("unit tests", 6, function(test) {
     casper
-    .start("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=RunTests")
+    .start("http://localhost:8000/index.html")
     .waitForText("DONE", function then() {
         test.assertTextExists("DONE: 3260 pass, 0 fail, 161 known fail, 0 unknown pass", "run unit tests");
     }, function onTimeout() {
