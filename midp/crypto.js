@@ -11,10 +11,6 @@ Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack)
 
 MIDP.hashers = new Map();
 
-MIDP.getRandomInt = function(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
-};
-
 /**
  * A constructor for a SHA-1 hasher.  To create a new hasher:
  *
