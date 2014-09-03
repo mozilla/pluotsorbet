@@ -1,16 +1,8 @@
 import gnu.testlet.*;
 
-import com.sun.j2me.security.AccessControlContext;
-import com.sun.j2me.security.AccessController;
+import javax.microedition.midlet.*;
 
-public class RunTests {
-    private static class StubAccessControlContext implements AccessControlContext {
-        // AccessControlContext stubs
-        public void checkPermission(String name) throws SecurityException {}
-        public void checkPermission(String name, String resource) throws SecurityException {}
-        public void checkPermission(String name, String resource, String extraValue) throws SecurityException {}
-    }
-
+public class RunTests extends MIDlet {
     private static class Harness extends TestHarness {
         private String testName;
         private int testNumber = 0;
@@ -73,10 +65,7 @@ public class RunTests {
         }
     };
 
-    public static void main(String args[]) {
-        StubAccessControlContext stubAcc = new StubAccessControlContext();
-        AccessController.setAccessControlContext(stubAcc);
-
+    public void startApp() {
         int pass = 0, fail = 0, knownFail = 0, unknownPass = 0;
         for (int n = 0; n < Testlets.list.length; ++n) {
             String name = Testlets.list[n];
@@ -108,5 +97,11 @@ public class RunTests {
             unknownPass += harness.unknownPassed();
         }
         System.out.println("DONE: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " + unknownPass + " unknown pass");
+    }
+
+    public void pauseApp() {
+    }
+
+    public void destroyApp(boolean unconditional) {
     }
 };
