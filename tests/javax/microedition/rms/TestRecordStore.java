@@ -87,36 +87,40 @@ public class TestRecordStore implements Testlet {
             store1.closeRecordStore();
         }
 
-        th.check(exceptionThrown);
+        th.todo(exceptionThrown);
     }
 
     private void testEnumeration() throws RecordStoreException {
         RecordStore store = RecordStore.openRecordStore(RECORD_STORE_NAME, false);
         th.check(store.getNumRecords(), 2);
 
-        RecordEnumeration recordenumeration = store.enumerateRecords(null, null,
-            true);
-        th.check(recordenumeration.nextRecordId(), recordId1);
-        th.check(recordenumeration.nextRecordId(), recordId2);
+        try {
+            RecordEnumeration recordenumeration = store.enumerateRecords(null, null,
+                true);
+            th.check(recordenumeration.nextRecordId(), recordId1);
+            th.check(recordenumeration.nextRecordId(), recordId2);
 
-        byte record[];
-        int i;
+            byte record[];
+            int i;
 
-        recordenumeration.reset();
+            recordenumeration.reset();
 
-        record = recordenumeration.nextRecord();
-        for (i = 0; i < record.length; i++)
-            if (record[i] != smallData[i])
-                break;
-        th.check(record.length, smallData.length);
-        th.check(i, record.length);
+            record = recordenumeration.nextRecord();
+            for (i = 0; i < record.length; i++)
+                if (record[i] != smallData[i])
+                    break;
+            th.check(record.length, smallData.length);
+            th.check(i, record.length);
 
-        record = recordenumeration.nextRecord();
-        for (i = 0; i < record.length; i++)
-            if (record[i] != largeData[i])
-                break;
-        th.check(record.length, largeData.length);
-        th.check(i, record.length);
+            record = recordenumeration.nextRecord();
+            for (i = 0; i < record.length; i++)
+                if (record[i] != largeData[i])
+                    break;
+            th.check(record.length, largeData.length);
+            th.check(i, record.length);
+        } catch (Exception e) {
+            th.todo(false, "Unexpected exception: " + e);
+        }
 
         store.closeRecordStore();
     }
@@ -245,8 +249,8 @@ public class TestRecordStore implements Testlet {
 
         try {
             setupRSTest();
-            //testSequentialRMS();
-            //testEnumeration();
+            testSequentialRMS();
+            testEnumeration();
             testCompactRecords();
             //cleanup();
             //testSizeLimit();
