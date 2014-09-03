@@ -17,18 +17,18 @@ MIDP.hashers = new Map();
  *     var hasher = new MIDP.SHA1Hasher();
  */
 MIDP.SHA1Hasher = function() {
-    this.buffer = new Int8Array(0);
+    this.input = new Int8Array(0);
 };
 
 /**
  * Add data to the hasher.  Does not implement true progressive hashing,
  * but simulates it well enough for the Java API that uses these natives.
  */
-MIDP.SHA1Hasher.prototype.update = function(newData) {
-    var oldData = this.buffer;
-    this.buffer = new Int8Array(oldData.length + newData.length);
-    this.buffer.set(oldData, 0);
-    this.buffer.set(newData, oldData.length);
+MIDP.SHA1Hasher.prototype.update = function(newInput) {
+    var oldInput = this.input;
+    this.input = new Int8Array(oldInput.length + newInput.length);
+    this.input.set(oldInput, 0);
+    this.input.set(newInput, oldInput.length);
 };
 
 /**
@@ -38,8 +38,13 @@ MIDP.SHA1Hasher.prototype.update = function(newData) {
  */
 MIDP.SHA1Hasher.prototype.clone = function() {
     var hasher = new MIDP.SHA1Hasher();
-    hasher.update(this.buffer);
+    hasher.update(this.input);
     return hasher;
+};
+
+MIDP.SHA1Hasher.prototype.digest = function() {
+    var hash = new Rusha().rawDigest(this.input);
+    return hash;
 };
 
 /**
@@ -101,7 +106,7 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
         hasher.update(inBuf.subarray(inOff, inOff + inLen));
     }
 
-    var hash = new Rusha().rawDigest(hasher.buffer);
+    var hash = hasher.digest();
     outBuf.set(new Uint8Array(hash.buffer), outOff);
 
     // XXX Call the reset method instead to completely reset the object.
