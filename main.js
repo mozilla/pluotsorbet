@@ -8,6 +8,9 @@ console.log = function() {
   document.getElementById("log").textContent += s;
 }
 
+console.info = function() {}
+console.warn = function() {}
+
 var urlParams = {};
 location.search.substring(1).split("&").forEach(function (param) {
   param = param.split("=").map(function(v) {
