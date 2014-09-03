@@ -14,6 +14,12 @@ forge.md = forge.md || {};
 forge.md.algorithms = forge.md.algorithms || {};
 forge.md.md5 = forge.md.algorithms.md5 = md5;
 
+// A weak map from message digest objects to hashes containing their private
+// _state and _input variables.  We store them in this map so other message
+// digest objects can access them in md.clone.  They remain inaccessible outside
+// the module.
+var _privates = WeakMap();
+
 /**
  * Creates an MD5 message digest object.
  *
@@ -25,11 +31,13 @@ md5.create = function() {
     _init();
   }
 
-  // MD5 state contains four 32-bit integers
-  var _state = null;
+  var _private = {
+    // MD5 state contains four 32-bit integers
+    _state: null,
 
-  // input buffer
-  var _input = forge.util.createBuffer();
+    // input buffer
+    _input: forge.util.createBuffer()
+  };
 
   // used for word storage
   var _w = new Array(16);
@@ -45,6 +53,8 @@ md5.create = function() {
     messageLength64: [0, 0]
   };
 
+  _privates.set(md, _private);
+
   /**
    * Starts the digest.
    *
@@ -53,8 +63,8 @@ md5.create = function() {
   md.start = function() {
     md.messageLength = 0;
     md.messageLength64 = [0, 0];
-    _input = forge.util.createBuffer();
-    _state = {
+    _private._input = forge.util.createBuffer();
+    _private._state = {
       h0: 0x67452301,
       h1: 0xEFCDAB89,
       h2: 0x98BADCFE,
@@ -86,17 +96,45 @@ md5.create = function() {
     md.messageLength64[1] += msg.length >>> 0;
 
     // add bytes to input buffer
-    _input.putBytes(msg);
+    _private._input.putBytes(msg);
 
     // process bytes
-    _update(_state, _w, _input);
+    _update(_private._state, _w, _private._input);
 
     // compact input buffer every 2K or if empty
-    if(_input.read > 2048 || _input.length() === 0) {
-      _input.compact();
+    if(_private._input.read > 2048 || _private._input.length() === 0) {
+      _private._input.compact();
     }
 
     return md;
+  };
+
+  /**
+   * Clones this message digest object, returning a new message digest object
+   * whose state is identical to this object's state.
+   */
+  md.clone = function() {
+    var clone = md5.create();
+
+    clone.messageLength = md.messageLength;
+    clone.messageLength64[0] = md.messageLength64[0];
+    clone.messageLength64[1] = md.messageLength64[1];
+
+    var clonePrivate = _privates.get(clone);
+
+    if (clonePrivate) {
+      clonePrivate._input.putBytes(_private._input.bytes());
+      clonePrivate._state = {
+        h0: _private._state.h0,
+        h1: _private._state.h1,
+        h2: _private._state.h2,
+        h3: _private._state.h3
+      };
+    } else {
+      console.warn("MD5.clone: couldn't find private for clone");
+    }
+
+    return clone;
   };
 
   /**
@@ -129,7 +167,7 @@ md5.create = function() {
     // _padding starts with 1 byte with first bit is set in it which
     // is byte value 128, then there may be up to 63 other pad bytes
     var padBytes = forge.util.createBuffer();
-    padBytes.putBytes(_input.bytes());
+    padBytes.putBytes(_private._input.bytes());
     // 64 - (remaining msg + 8 bytes msg length) mod 64
     padBytes.putBytes(
       _padding.substr(0, 64 - ((md.messageLength64[1] + 8) & 0x3F)));
@@ -141,10 +179,10 @@ md5.create = function() {
     padBytes.putInt32Le(
       (md.messageLength64[0] << 3) | (md.messageLength64[0] >>> 28));
     var s2 = {
-      h0: _state.h0,
-      h1: _state.h1,
-      h2: _state.h2,
-      h3: _state.h3
+      h0: _private._state.h0,
+      h1: _private._state.h1,
+      h2: _private._state.h2,
+      h3: _private._state.h3
     };
     _update(s2, _w, padBytes);
     var rval = forge.util.createBuffer();
