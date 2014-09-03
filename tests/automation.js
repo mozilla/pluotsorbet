@@ -5,11 +5,11 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 6, function(test) {
+casper.test.begin("unit tests", 5, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 3261 pass, 0 fail, 166 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 3263 pass, 0 fail, 166 known fail, 0 unknown pass", "run unit tests");
     }, function onTimeout() {
         test.fail();
     }, 20000);
@@ -38,12 +38,6 @@ casper.test.begin("unit tests", 6, function(test) {
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function then() {
         test.assertTextExists("DONE: 101 PASS, 0 FAIL", "run fs.js unit tests");
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=com.sun.midp.publickeystore.TestWebPublicKeyStore")
-    .waitForText("DONE", function then() {
-        test.assertTextExists("START\nDONE");
     });
 
     casper
