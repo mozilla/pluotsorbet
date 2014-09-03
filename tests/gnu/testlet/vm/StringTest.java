@@ -218,6 +218,8 @@ public class StringTest implements Testlet {
 			th.check(String.valueOf(2000001000000L).equals("2000001000000"));
 			th.check(String.valueOf(1.5f).equals("1.5"));
 			th.check(String.valueOf(1.5555).equals("1.5555"));
+
+			th.check("\0".length(), 1);
 		} catch (Exception e) {
 			e.printStackTrace();
 			th.check(false);
