@@ -1,40 +1,42 @@
 /*
- *   
+ *
  *
  * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
  * 2 only, as published by the Free Software Foundation.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
  * included at /legal/license.txt).
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
- * 
+ *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
  * information or have any questions.
  */
 package javax.microedition.rms;
 
-import java.util.Random;
-import javax.microedition.midlet.*;
+import gnu.testlet.TestHarness;
+import gnu.testlet.Testlet;
 
-public class TestRecordStore extends MIDlet {
+import java.util.Random;
+
+public class TestRecordStore implements Testlet {
+    TestHarness th;
+
     final String RECORD_STORE_NAME = "testrms";
     byte[] smallData;
     byte[] largeData;
     int recordId1, recordId2;
-
-    int passed = 0, failed = 0;
 
     /**
      * Add a small record then a large record.
@@ -76,34 +78,26 @@ public class TestRecordStore extends MIDlet {
                 store2 = RecordStore.openForLockTesting(RECORD_STORE_NAME);
             } catch (RecordStoreException re) {
                 exceptionThrown = true;
-            } 
-            
-            if (store2 != null) {    
+            }
+
+            if (store2 != null) {
                 store2.closeRecordStore();
             }
         } finally {
             store1.closeRecordStore();
         }
 
-        if (!exceptionThrown) {
-            System.out.println("RecordStoreException not thrown");
-        }
+        th.check(exceptionThrown);
     }
 
     private void testEnumeration() throws RecordStoreException {
         RecordStore store = RecordStore.openRecordStore(RECORD_STORE_NAME, false);
-        if (store.getNumRecords() != 2) {
-            System.out.println("Number of records != 2");
-        }
+        th.check(store.getNumRecords(), 2);
 
         RecordEnumeration recordenumeration = store.enumerateRecords(null, null,
             true);
-        if (recordenumeration.nextRecordId() != recordId1) {
-            System.out.println("First record wrong");
-        }
-        if (recordenumeration.nextRecordId() != recordId2) {
-            System.out.println("Second record wrong");
-        }
+        th.check(recordenumeration.nextRecordId(), recordId1);
+        th.check(recordenumeration.nextRecordId(), recordId2);
 
         byte record[];
         int i;
@@ -114,17 +108,15 @@ public class TestRecordStore extends MIDlet {
         for (i = 0; i < record.length; i++)
             if (record[i] != smallData[i])
                 break;
-        if (record.length != smallData.length || i != record.length) {
-            System.out.println("First record length wrong");
-        }
+        th.check(record.length, smallData.length);
+        th.check(i, record.length);
 
         record = recordenumeration.nextRecord();
         for (i = 0; i < record.length; i++)
             if (record[i] != largeData[i])
                 break;
-        if (record.length != largeData.length || i != record.length) {
-            System.out.println("Second record length wrong");
-        }
+        th.check(record.length, largeData.length);
+        th.check(i, record.length);
 
         store.closeRecordStore();
     }
@@ -140,7 +132,7 @@ public class TestRecordStore extends MIDlet {
 
         // Reopen and check for the large record
         store = RecordStore.openRecordStore(RECORD_STORE_NAME, false);
-        
+
         byte record[] = store.getRecord(recordId2);
         int i;
 
@@ -148,9 +140,8 @@ public class TestRecordStore extends MIDlet {
             if (record[i] != largeData[i])
                 break;
 
-        if (record.length != largeData.length || i != record.length) {
-            System.out.println("Compacted record length wrong");
-        }
+        th.check(record.length, largeData.length);
+        th.check(i, record.length);
 
         store.closeRecordStore();
     }
@@ -215,9 +206,7 @@ public class TestRecordStore extends MIDlet {
             }
         } catch (RecordStoreFullException e) {
             // Ok, the record store is full, now deleting two short records
-            if (id1 == id2) {
-                System.out.println("Failed adding two distinct records");
-            }
+            th.check(id1 != id2);
             store.deleteRecord(id1);
             store.deleteRecord(id2);
 
@@ -238,12 +227,9 @@ public class TestRecordStore extends MIDlet {
                     }
                 }
 
-                if (damaged) {
-                    System.out.println("Data damaged");
-                }
-
+                th.check(!damaged);
             } catch (Throwable t) {
-                System.out.println("Failed adding a record to freed space: " + t);
+                th.fail("Failed adding a record to freed space: " + t);
             }
         }
 
@@ -254,11 +240,8 @@ public class TestRecordStore extends MIDlet {
         RecordStore.deleteRecordStore(RECORD_STORE_NAME);
     }
 
-    public TestRecordStore() {
-    }
-
-    public void startApp() {
-        System.out.println("START");
+    public void test(TestHarness th) {
+        this.th = th;
 
         try {
             setupRSTest();
@@ -268,22 +251,14 @@ public class TestRecordStore extends MIDlet {
             //cleanup();
             //testSizeLimit();
         } catch (Throwable t) {
+            th.fail("Unexpected exception: " + t);
             t.printStackTrace();
-            System.out.println("Unexpected exception");
         } finally {
             try {
                 cleanup();
             } catch (Exception e) {
-                System.out.println("Unexpected exception while cleaning up");
+                th.fail("Unexpected exception while cleaning up: " + e);
             }
         }
-
-        System.out.println("DONE");
-    }
-
-    public void pauseApp() {
-    }
-
-    public void destroyApp(boolean unconditional) {
     }
 }
