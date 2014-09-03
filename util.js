@@ -83,6 +83,35 @@ var util = (function () {
     return obj.tag;
   }
 
+  /**
+   * Compare two typed arrays, returning *true* if they have the same length
+   * and values, *false* otherwise.  Note that we compare by value, not by byte,
+   * so:
+   *     compareTypedArrays(new Uint8Array([0x00, 0xFF]), new Uint8Array[0x00, 0xFF])
+   * returns *true*;
+   *
+   * and:
+   *     compareTypedArrays(new Uint8Array([0x00, 0xFF]), new Uint32Array[0x00000000, 0x000000FF])
+   * also returns *true*;
+   *
+   * but:
+   *     compareTypedArrays(new Uint8Array([0x00, 0xFF]), new Uint16Array([0x00FF]))
+   * returns *false*.
+   */
+  function compareTypedArrays(ary1, ary2) {
+    if (ary1.length != ary2.length) {
+      return false;
+    }
+
+    for (var i = 0; i < ary1.length; i++) {
+      if (ary1[i] !== ary2[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -99,5 +128,6 @@ var util = (function () {
     fromJavaString: fromJavaString,
     id: id,
     tag: tag,
+    compareTypedArrays: compareTypedArrays,
   };
 })();
