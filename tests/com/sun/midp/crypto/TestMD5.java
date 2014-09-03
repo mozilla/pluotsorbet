@@ -130,7 +130,7 @@ public class TestMD5 implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
-        th.todo(Util.hexEncode(buf), "3fd0fac5027a9cd891c2dc778c88167a");
+        th.check(Util.hexEncode(buf), "3fd0fac5027a9cd891c2dc778c88167a");
 
         try {
             this.testClone(th);
