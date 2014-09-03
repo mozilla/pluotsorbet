@@ -101,7 +101,10 @@ function run(className, args) {
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
 
 fs.init(function() {
-  run(urlParams.main || "RunTests", urlParams.args);
+  var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
+  MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
+
+  run(main, urlParams.args);
 });
 
 function toggle(button) {
