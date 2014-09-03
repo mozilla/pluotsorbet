@@ -141,25 +141,32 @@ public class TestMD5 implements Testlet {
     }
 
     private void testClone(TestHarness th) throws DigestException {
-        MD5 md51 = new MD5();
+        MD5 hasher1 = new MD5();
         byte[] buf1 = new byte[16];
-        String part1 = "a";
-        md51.update(part1.getBytes(), 0, part1.length());
 
-        MD5 md52 = (MD5)md51.clone();
+        String partA = "a";
+        hasher1.update(partA.getBytes(), 0, partA.length());
+
+        MD5 hasher2 = (MD5)hasher1.clone();
         byte[] buf2 = new byte[16];
-        String part2 = "b";
-        md52.update(part2.getBytes(), 0, part2.length());
 
-        // md51 should be unaffected by the update to md52.
-        md51.digest(buf1, 0, 16);
-        th.check(Util.hexEncode(buf1), "0cc175b9c0f1b6a831c399e269772661");
+        String partB = "b";
+        hasher1.update(partB.getBytes(), 0, partB.length());
 
-        // md52 should now hash "ab", the concatenation of part1 and part2.
-        md52.digest(buf2, 0, 16);
-        th.check(Util.hexEncode(buf2), "187ef4436122d1cc2f40dc2b92f0eba0");
+        String partC = "c";
+        hasher2.update(partC.getBytes(), 0, partC.length());
 
-        md51.reset();
-        md52.reset();
+        // hasher1 should be unaffected by the update to hasher2.
+        // It should hash "ab", the concatenation of partA and partB.
+        hasher1.digest(buf1, 0, 16);
+        th.check(Util.hexEncode(buf1), "187ef4436122d1cc2f40dc2b92f0eba0");
+
+        // hasher2 should be unaffected by the update to hasher1.
+        // It should hash "ac", the concatenation of partA and partC.
+        hasher2.digest(buf2, 0, 16);
+        th.check(Util.hexEncode(buf2), "e2075474294983e013ee4dd2201c7a73");
+
+        hasher1.reset();
+        hasher2.reset();
     }
 }
