@@ -11,58 +11,76 @@ Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack)
 
 MIDP.hashers = new Map();
 
+/**
+ * A constructor for a SHA-1 hasher.  To create a new hasher:
+ *
+ *     var hasher = new MIDP.SHA1Hasher();
+ */
+MIDP.SHA1Hasher = function() {
+    this.input = new Int8Array(0);
+};
+
+/**
+ * Add data to the hasher.  Does not implement true progressive hashing,
+ * but simulates it well enough for the Java API that uses these natives.
+ */
+MIDP.SHA1Hasher.prototype.update = function(newInput) {
+    var oldInput = this.input;
+    this.input = new Int8Array(oldInput.length + newInput.length);
+    this.input.set(oldInput, 0);
+    this.input.set(newInput, oldInput.length);
+};
+
+/**
+ * Clone this hasher.
+ *
+ * @returns {MIDP.SHA1Hasher} the cloned hasher
+ */
+MIDP.SHA1Hasher.prototype.clone = function() {
+    var hasher = new MIDP.SHA1Hasher();
+    hasher.update(this.input);
+    return hasher;
+};
+
+MIDP.SHA1Hasher.prototype.digest = function() {
+    var hash = new Rusha().rawDigest(this.input);
+    return hash;
+};
+
+/**
+ * A 16-byte Int32Array whose values are all initialized to zero.
+ * Useful for comparing with other such arrays to determine whether or not
+ * they've been populated with other values.  Also useful for resetting
+ * data arrays back to their initial state.
+ */
+MIDP.emptyDataArray = new Int32Array(16);
+
 MIDP.getSHA1Hasher = function(data) {
-    var hasher;
-
-    // Use data[0] to determine the state of the hasher: if 1, we've created
-    // the hasher (and are in the process of hashing); otherwise, we haven't.
-    // That isn't what the data array is intended for, but it works well enough
-    // for our purposes, and the non-native code doesn't use it for anything,
-    // so it doesn't expect it to have any particular values.
-
-    if (data[0] == 1) {
-        hasher = MIDP.hashers.get(data);
-    } else {
-        hasher = {
-            buffer: new Int8Array(0),
-            update: function(newData) {
-              var oldData = this.buffer;
-              this.buffer = new Int8Array(oldData.length + newData.length);
-              this.buffer.set(oldData, 0);
-              this.buffer.set(newData, oldData.length);
-            },
-        };
-        MIDP.hashers.set(data, hasher);
-        data[0] = 1;
+    if (!util.compareTypedArrays(data, MIDP.emptyDataArray)) {
+        return MIDP.hashers.get(data);
     }
 
+    var hasher = new MIDP.SHA1Hasher();
+    window.crypto.getRandomValues(data);
+    MIDP.hashers.set(data, hasher);
     return hasher;
 };
 
 MIDP.getMD5Hasher = function(data) {
-    var hasher;
-
-    // Use data[0] to determine the state of the hasher: if 1, we've created
-    // the hasher (and are in the process of hashing); otherwise, we haven't.
-    // That isn't what the data array is intended for, but it works well enough
-    // for our purposes, and the non-native code doesn't use it for anything,
-    // so it doesn't expect it to have any particular values.
-
-    if (data[0] == 1) {
-        hasher = MIDP.hashers.get(data);
-    } else {
-        hasher = CryptoJS.algo.MD5.create();
-        MIDP.hashers.set(data, hasher);
-        data[0] = 1;
+    if (!util.compareTypedArrays(data, MIDP.emptyDataArray)) {
+        return MIDP.hashers.get(data);
     }
 
+    var hasher = forge.md.md5.create();
+    window.crypto.getRandomValues(data);
+    MIDP.hashers.set(data, hasher);
     return hasher;
 };
 
 MIDP.bin2String = function(array) {
   var result = "";
   for (var i = 0; i < array.length; i++) {
-    result += String.fromCharCode(parseInt(array[i]));
+    result += String.fromCharCode(array[i] & 0xff);
   }
   return result;
 };
@@ -88,20 +106,32 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
         hasher.update(inBuf.subarray(inOff, inOff + inLen));
     }
 
-    var hash = new Rusha().rawDigest(hasher.buffer);
+    var hash = hasher.digest();
     outBuf.set(new Uint8Array(hash.buffer), outOff);
 
     // XXX Call the reset method instead to completely reset the object.
-    data[0] = 0;
+    data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
+}
+
+Native["com/sun/midp/crypto/SHA.nativeClone.([I)V"] = function(ctx, stack) {
+    var data = stack.pop();
+    for (var [key, value] of MIDP.hashers) {
+        if (util.compareTypedArrays(key, data)) {
+            var hasher = value.clone();
+            window.crypto.getRandomValues(data);
+            MIDP.hashers.set(data, hasher);
+            break;
+        }
+    }
 }
 
 Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {
     var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
         inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
 
-    MIDP.getMD5Hasher(data).update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
+    MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Uint8Array(inBuf.subarray(inOff, inOff + inLen))));
 }
 
 Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
@@ -118,19 +148,28 @@ Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
         hasher.update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
     }
 
-    var hash = hasher.finalize();
+    var hash = hasher.digest();
 
-    for (var i = 0; i < hash.words.length; i++) {
-        outBuf[outOff + i * 4] = (hash.words[i] >> 24) & 0xff;
-        outBuf[outOff + i * 4 + 1] = (hash.words[i] >> 16) & 0xff;
-        outBuf[outOff + i * 4 + 2] = (hash.words[i] >> 8) & 0xff;
-        outBuf[outOff + i * 4 + 3] = hash.words[i] & 0xff;
+    for (var i = 0; i < hash.length(); i++) {
+        outBuf[outOff + i] = hash.at(i);
     }
 
     // XXX Call the reset method instead to completely reset the object.
-    data[0] = 0;
+    data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
+}
+
+Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(ctx, stack) {
+    var data = stack.pop();
+    for (var [key, value] of MIDP.hashers) {
+        if (util.compareTypedArrays(key, data)) {
+            var hasher = value.clone();
+            window.crypto.getRandomValues(data);
+            MIDP.hashers.set(data, hasher);
+            break;
+        }
+    }
 }
 
 var hexEncodeArray = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', ];
