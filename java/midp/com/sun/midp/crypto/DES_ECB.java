@@ -394,17 +394,11 @@ class DES_ECB extends BlockCipherBase {
         byte ek[] = new byte[128];
         int pos = 0;
 
-
-        System.out.println(Util.hexEncode(expandData));
-        System.out.println(Util.hexEncode(key));
-
         for (int i = 0; i < 8; i++) {
-            System.out.println("KEYOFFSET: " + keyOffset);
             int octet = key[keyOffset++];
             int len;
 
             for (int j = 0; j < 7; j++)  {
-                System.out.println("pos1: " + pos);
                 len = expandData[pos++];
                 int offset = 0;
 
@@ -412,17 +406,9 @@ class DES_ECB extends BlockCipherBase {
 
                     while (len-- > 0) {
                         int v;
-                        System.out.println("pos2: " + pos);
-                        v = expandData[pos];
-                        System.out.println("v: " + v);
-                        pos++;
-                        if (v == 125) {
+                        if ((v = expandData[pos++]) == 125) {
                             offset += 16;
                         } else {
-                            System.out.println("offset: " + offset);
-                            System.out.println("v: " + v);
-                            System.out.println("v >> 3: " + (v >> 3));
-                            System.out.println("total: " + (offset + (v >> 3)));
                             ek[offset += (v >> 3)] |= (1 << (v & 0x7));
                         }
                     }
