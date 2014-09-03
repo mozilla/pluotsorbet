@@ -9,7 +9,7 @@ casper.test.begin("unit tests", 6, function(test) {
     casper
     .start("file:///Users/mozilla/Desktop/j2me.js/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=RunTests")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 3248 pass, 0 fail, 160 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 3260 pass, 0 fail, 161 known fail, 0 unknown pass", "run unit tests");
     }, function onTimeout() {
         test.fail();
     }, 10000);
