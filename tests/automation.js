@@ -5,11 +5,11 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 8, function(test) {
+casper.test.begin("unit tests", 6, function(test) {
     casper
-    .start("http://localhost:8000/index.html?main=RunTests")
+    .start("file:///Users/mozilla/Desktop/j2me.js/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=RunTests")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 1427 pass, 0 fail, 8 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 3248 pass, 0 fail, 160 known fail, 0 unknown pass", "run unit tests");
     }, function onTimeout() {
         test.fail();
     }, 10000);
@@ -39,20 +39,6 @@ casper.test.begin("unit tests", 8, function(test) {
     .waitForText("DONE", function then() {
         test.assertTextExists("DONE: 101 PASS, 0 FAIL", "run fs.js unit tests");
     });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=javax.microedition.rms.TestRecordStore")
-    .waitForText("DONE", function then() {
-        test.assertTextExists("START\nDONE");
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=javax.microedition.lcdui.TestGraphicsClipping")
-    .waitForText("DONE", function then() {
-        test.assertTextExists("START\nDONE");
-    }, function onTimeout() {
-        test.fail();
-    }, 10000);
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=com.sun.midp.publickeystore.TestWebPublicKeyStore")
