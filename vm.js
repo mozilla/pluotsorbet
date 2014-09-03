@@ -100,8 +100,6 @@ VM.execute = function(ctx) {
             return false;
         }
         if (idx < 0 || idx >= refArray.length) {
-            console.error("AH MAMMT: " + idx + ", " + refArray.length);
-            console.trace();
             ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
             return false;
         }
@@ -280,7 +278,7 @@ VM.execute = function(ctx) {
         case 0x32: // aaload
         case 0x33: // baload
         case 0x34: // caload
-        case 0x35: // saload (HERE)
+        case 0x35: // saload
             var idx = stack.pop();
             var refArray = stack.pop();
             if (!checkArrayAccess(refArray, idx))
