@@ -49,6 +49,7 @@ Reader.prototype.readDouble = function() {
 }
 
 // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
+// http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
 function javaUTF8Decode(buf) {
   var rv = '';
 
