@@ -131,5 +131,35 @@ public class TestMD5 implements Testlet {
             e.printStackTrace();
         }
         th.todo(Util.hexEncode(buf), "3fd0fac5027a9cd891c2dc778c88167a");
+
+        try {
+            this.testClone(th);
+        } catch (DigestException e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+    }
+
+    private void testClone(TestHarness th) throws DigestException {
+        MD5 md51 = new MD5();
+        byte[] buf1 = new byte[16];
+        String part1 = "a";
+        md51.update(part1.getBytes(), 0, part1.length());
+
+        MD5 md52 = (MD5)md51.clone();
+        byte[] buf2 = new byte[16];
+        String part2 = "b";
+        md52.update(part2.getBytes(), 0, part2.length());
+
+        // md51 should be unaffected by the update to md52.
+        md51.digest(buf1, 0, 16);
+        th.check(Util.hexEncode(buf1), "0cc175b9c0f1b6a831c399e269772661");
+
+        // md52 should now hash "ab", the concatenation of part1 and part2.
+        md52.digest(buf2, 0, 16);
+        th.check(Util.hexEncode(buf2), "187ef4436122d1cc2f40dc2b92f0eba0");
+
+        md51.reset();
+        md52.reset();
     }
 }
