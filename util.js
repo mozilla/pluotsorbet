@@ -110,7 +110,7 @@ var util = (function () {
     }
 
     return true;
-  };
+  }
 
   return {
     INT_MAX: INT_MAX,
@@ -128,6 +128,6 @@ var util = (function () {
     fromJavaString: fromJavaString,
     id: id,
     tag: tag,
-    compareTypedArrays,
+    compareTypedArrays: compareTypedArrays,
   };
 })();
