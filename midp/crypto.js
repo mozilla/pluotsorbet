@@ -51,31 +51,11 @@ MIDP.SHA1Hasher.prototype.clone = function() {
 MIDP.emptyDataArray = new Int32Array(16);
 
 MIDP.getSHA1Hasher = function(data) {
-    var hasher;
-
     if (!util.compareTypedArrays(data, MIDP.emptyDataArray)) {
-        hasher = MIDP.hashers.get(data);
-
-        if (hasher) {
-            return hasher;
-        }
-
-        // If data contains a value, but we don't yet have a native hasher
-        // for it, then it was cloned from the data of another native hasher,
-        // so find the original and clone it.
-        for (var [key, value] of MIDP.hashers) {
-            if (util.compareTypedArrays(key, data)) {
-                hasher = value.clone();
-                window.crypto.getRandomValues(data);
-                MIDP.hashers.set(data, hasher);
-                return hasher;
-            }
-        }
-
-        throw new Error("couldn't get existing hasher");
+        return MIDP.hashers.get(data);
     }
 
-    hasher = new MIDP.SHA1Hasher();
+    var hasher = new MIDP.SHA1Hasher();
     window.crypto.getRandomValues(data);
     MIDP.hashers.set(data, hasher);
     return hasher;
@@ -148,6 +128,18 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
     data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
+}
+
+Native["com/sun/midp/crypto/SHA.nativeClone.([I)V"] = function(ctx, stack) {
+    var data = stack.pop();
+    for (var [key, value] of MIDP.hashers) {
+        if (util.compareTypedArrays(key, data)) {
+            var hasher = value.clone();
+            window.crypto.getRandomValues(data);
+            MIDP.hashers.set(data, hasher);
+            break;
+        }
+    }
 }
 
 Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {

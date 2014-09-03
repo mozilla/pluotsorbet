@@ -145,21 +145,28 @@ public class TestSHA implements Testlet {
     private void testClone(TestHarness th) throws DigestException {
         SHA sha1 = new SHA();
         byte[] buf1 = new byte[20];
-        String part1 = "a";
-        sha1.update(part1.getBytes(), 0, part1.length());
+
+        String partA = "a";
+        sha1.update(partA.getBytes(), 0, partA.length());
 
         SHA sha2 = (SHA)sha1.clone();
         byte[] buf2 = new byte[20];
-        String part2 = "b";
-        sha2.update(part2.getBytes(), 0, part2.length());
+
+        String partB = "b";
+        sha1.update(partB.getBytes(), 0, partB.length());
+
+        String partC = "c";
+        sha2.update(partC.getBytes(), 0, partC.length());
 
         // sha1 should be unaffected by the update to sha2.
+        // It should hash "ab", the concatenation of partA and partB.
         sha1.digest(buf1, 0, 20);
-        th.check(Util.hexEncode(buf1), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+        th.check(Util.hexEncode(buf1), "da23614e02469a0d7c7bd1bdab5c9c474b1904dc");
 
-        // sha2 should now hash "ab", the concatenation of part1 and part2.
+        // sha2 should be unaffected by the update to sha1.
+        // It should hash "ac", the concatenation of partA and partC.
         sha2.digest(buf2, 0, 20);
-        th.check(Util.hexEncode(buf2), "da23614e02469a0d7c7bd1bdab5c9c474b1904dc");
+        th.check(Util.hexEncode(buf2), "0c11d463c749db5838e2c0e489bf869d531e5403");
 
         sha1.reset();
         sha2.reset();
