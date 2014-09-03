@@ -133,5 +133,35 @@ public class TestSHA implements Testlet {
             e.printStackTrace();
         }
         th.check(Util.hexEncode(buf), "db433834d80013ac248c21b354b482890a8f9fc2");
+
+        try {
+            this.testClone(th);
+        } catch (DigestException e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+    }
+
+    private void testClone(TestHarness th) throws DigestException {
+        SHA sha1 = new SHA();
+        byte[] buf1 = new byte[20];
+        String part1 = "a";
+        sha1.update(part1.getBytes(), 0, part1.length());
+
+        SHA sha2 = (SHA)sha1.clone();
+        byte[] buf2 = new byte[20];
+        String part2 = "b";
+        sha2.update(part2.getBytes(), 0, part2.length());
+
+        // sha1 should be unaffected by the update to sha2.
+        sha1.digest(buf1, 0, 20);
+        th.check(Util.hexEncode(buf1), "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+
+        // sha2 should now hash "ab", the concatenation of part1 and part2.
+        sha2.digest(buf2, 0, 20);
+        th.check(Util.hexEncode(buf2), "da23614e02469a0d7c7bd1bdab5c9c474b1904dc");
+
+        sha1.reset();
+        sha2.reset();
     }
 }
