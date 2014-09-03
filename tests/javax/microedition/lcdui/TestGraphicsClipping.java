@@ -47,6 +47,8 @@ public class TestGraphicsClipping implements Testlet {
                 int index = y*width + x;
                 if (y >= cy && y < cy+ch && x >= cx && x < cx + cw) {
                     /* should match unclipped version when alpha is ignored */
+                    // We're not using th.check here because it would hang the test,
+                    // probably because there are 6 nested loops.
                     if ((clippedData[index]) != (unclippedData[index])) {
                         System.out.println("FAILURE: inside clip (" + x + "," + y + ")" +
                               " clipped=" +
@@ -57,6 +59,8 @@ public class TestGraphicsClipping implements Testlet {
                     }
                 } else {
                     /* should be background color when alpha is ignored */
+                    // We're not using th.check here because it would hang the test,
+                    // probably because there are 6 nested loops.
                     if ((clippedData[index]&0x00ffffff) != (backgroundColor&0xffffff)) {
                         System.out.println("FAILURE: outside clip (" + x + "," + y + ")" +
                               " clipped=" +
