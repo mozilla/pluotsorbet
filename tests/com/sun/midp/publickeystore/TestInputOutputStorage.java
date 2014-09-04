@@ -50,7 +50,7 @@ public class TestInputOutputStorage implements Testlet {
             file.delete();
             file.close();
         } catch (Exception e) {
-            th.todo(false, "Unexpected exception: " + e);
+            th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
     }

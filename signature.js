@@ -5,29 +5,29 @@
 
 var Signature = {};
 
-Signature.TYPE = {
-    boolean:    'Z',
-    byte:       'B',
-    char:       'C',
-    double:     'D',
-    float:      'F',
-    int:        'I',
-    long:       'J',
-    object:     'L',
-    short:      'S',
-    void:       'V',
-    array:      '[',
-    toString: function(s) {
-        for(var type in this) {
-            if (this[type] === s) {
-                return type;
-            }
-        }
-        return null;
-    }
-};
-
 Signature.parse = (function () {
+    var TYPE = {
+        boolean:    'Z',
+        byte:       'B',
+        char:       'C',
+        double:     'D',
+        float:      'F',
+        int:        'I',
+        long:       'J',
+        object:     'L',
+        short:      'S',
+        void:       'V',
+        array:      '[',
+        toString: function(s) {
+            for(var type in this) {
+                if (this[type] === s) {
+                    return type;
+                }
+            }
+            return null;
+        }
+    };
+
     function _parse(part) {
         var res = [];
         var slots = 0;
