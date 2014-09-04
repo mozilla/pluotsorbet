@@ -41,26 +41,26 @@ public class NestedExceptionTest implements Testlet {
     }
 
     int returnInFinally() {
-  		try {
+      try {
       } finally {
-  			return 42;
-  		}
-  	}
+        return 42;
+      }
+    }
 
-  	void throwInFinally() throws Exception {
-  		try {
-  		} finally {
-  			throw new Exception("finally");
-  		}
-  	}
+    void throwInFinally() throws Exception {
+      try {
+      } finally {
+        throw new Exception("finally");
+      }
+    }
 
-  	void throwInBoth() throws Exception {
-  		try {
-  			throw new Exception("try");
-  		} finally {
-  			throw new Exception("finally");
-  		}
-  	}
+    void throwInBoth() throws Exception {
+      try {
+        throw new Exception("try");
+      } finally {
+        throw new Exception("finally");
+      }
+    }
 
     public void test(TestHarness th) {
         try {
