@@ -48,19 +48,17 @@ VM.execute = function(ctx) {
         return frame;
     }
 
-    function buildExceptionLog(ex, ctx) {
+    function buildExceptionLog(ex, stackTrace) {
         var className = ex.class.className;
         var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "detailMessage", "Ljava/lang/String;", false).get(ex));
-        var dump = [];
-        ex.stackTrace.forEach(function(frame) {
-            dump.push(frame.className + "." + frame.methodName + ", bci=" + frame.offset);
-        });
-        dump = dump.join("\n");
-        return ctx.thread.pid + " " + className + " " + (detailMessage ? detailMessage : "") + "\n" + dump + "\n\n";
+        return className + ": " + (detailMessage || "") + "\n" + stackTrace.join("\n") + "\n\n";
     }
 
     function throw_(ex, ctx) {
         var exClass = ex.class;
+
+        var stackTrace = [];
+
         do {
             var exception_table = frame.methodInfo.exception_table;
             var handler_pc = null;
@@ -77,13 +75,19 @@ VM.execute = function(ctx) {
                     }
                 }
             }
+
+            var classInfo = frame.methodInfo.classInfo;
+            if (classInfo && classInfo.className) {
+                stackTrace.push(" - " + classInfo.className + "." + frame.methodInfo.name + "(), bci=" + frame.ip);
+            }
+
             if (handler_pc != null) {
                 stack.length = 0;
                 stack.push(ex);
                 frame.ip = handler_pc;
 
                 if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
-                    console.log(buildExceptionLog(ex, ctx));
+                    console.log(buildExceptionLog(ex, stackTrace));
                 }
 
                 return;
@@ -91,7 +95,7 @@ VM.execute = function(ctx) {
             popFrame(0);
         } while (frame.methodInfo);
         ctx.kill();
-        throw new Error(buildExceptionLog(ex, ctx));
+        throw new Error(buildExceptionLog(ex, stackTrace));
     }
 
     function checkArrayAccess(refArray, idx) {
