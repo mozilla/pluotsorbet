@@ -66,7 +66,7 @@ public class TestJSON implements Testlet {
                 array = new JSONArray(jsonStr);
                 th.fail("Exception expected");
             } catch (JSONException e) {
-                th.check(e.getMessage(), "Expected a ',' or ']' at character 25 of [[null, 123.45, \"a\	b c\"}, true]");
+                th.check(e.getMessage(), "Expected a ',' or ']' at character 25 of [[null, 123.45, \"a\\	b c\"}, true]");
             }
 
             array = new JSONArray();
