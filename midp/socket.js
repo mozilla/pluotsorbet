@@ -157,13 +157,12 @@ Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack)
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V"] = function(ctx, stack) {
-    var _this = stack.pop()
-    console.warn("com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V not implemented");
+    var _this = stack.pop();
 
     // We don't have the ability to close the output stream independently
-    // of the connection as a whole.  But we probably don't have to do anything
-    // here, since this only gets called twice: first, in Protocol.disconnect,
-    // right before closing the socket; second, in Protocol.closeOutputStream,
+    // of the connection as a whole.  But we don't seem to have to do anything
+    // here, since this has just two call sites: one in Protocol.disconnect,
+    // right before closing the socket; the other in Protocol.closeOutputStream,
     // which says it will be "called once by the child output stream," although
     // I can't find an actual caller.
 }
