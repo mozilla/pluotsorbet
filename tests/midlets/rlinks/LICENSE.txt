@@ -7,7 +7,7 @@ or trade names of their respective owners.
 Subject to the conditions below, you may, without charge:
 
 *  Use, copy, modify and/or merge copies of this software and 
-   associated content and documentation files (the �Software�)
+   associated content and documentation files (the "Software")
 
 *  Publish, distribute, sub-licence and/or sell new software 
    derived from or incorporating the Software.
