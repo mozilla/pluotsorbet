@@ -290,15 +290,20 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 }
 
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
-    var byteArray = stack.pop(), _this = stack.pop();
+    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
     stack.push(1);
-    console.warn("Connection.isValidFilenameImpl.([B)Z not implemented (" + util.decodeUtf8(byteArray) + ")");
+    console.warn("Connection.isValidFilenameImpl.([B)Z not implemented (" + path + ")");
 }
 
 Native["com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J"] = function(ctx, stack) {
     var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
     // Pretend there is 1 GB available
     stack.push2(Long.fromNumber(1024 * 1024 * 1024));
+}
+
+Native["com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V"] = function(ctx, stack) {
+    var value = stack.pop(), path = util.decodeUtf8(stack.pop()), _this = stack.pop();
+    console.warn("Connection.setHiddenImpl.([BZ)V not implemented (" + path + ")");
 }
 
 Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
