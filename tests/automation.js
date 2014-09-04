@@ -9,10 +9,10 @@ casper.test.begin("unit tests", 5, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 4271 pass, 0 fail, 165 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 4277 pass, 0 fail, 164 known fail, 0 unknown pass", "run unit tests");
     }, function onTimeout() {
         test.fail();
-    }, 20000);
+    }, 30000);
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate")
