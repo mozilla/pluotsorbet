@@ -12,7 +12,7 @@ casper.test.begin("unit tests", 5, function(test) {
         test.assertTextExists("DONE: 4258 pass, 0 fail, 165 known fail, 0 unknown pass", "run unit tests");
     }, function onTimeout() {
         test.fail();
-    }, 20000);
+    }, 30000);
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate")
