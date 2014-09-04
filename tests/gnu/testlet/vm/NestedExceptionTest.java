@@ -5,7 +5,9 @@ import gnu.testlet.*;
 public class NestedExceptionTest implements Testlet {
     private static boolean firstFinallyCalled = false;
     private static boolean finallyReturnCalled = false;
+    private static boolean finallyReturnReturned = false;
     private static boolean finallyThrowCalled = false;
+    private static boolean finallyThrowCaught = false;
 
     void throw1(TestHarness th) {
         try {
@@ -18,23 +20,47 @@ public class NestedExceptionTest implements Testlet {
         }
     }
 
-    int finallyReturn() throws Throwable {
+    int finallyReturn(TestHarness th) throws Throwable {
         try {
             return 42;
         } catch (Throwable e) {
             throw e;
         } finally {
             finallyReturnCalled = true;
+            th.check(!finallyReturnReturned, "finallyReturn hasn't yet returned a value");
         }
     }
 
-    void finallyThrow() throws Throwable {
+    void finallyThrow(TestHarness th) throws Throwable {
         try {
             throw new Throwable();
         } finally {
             finallyThrowCalled = true;
+            th.check(!finallyThrowCaught, "finallyThrow hasn't yet thrown an exception");
         }
     }
+
+    int returnInFinally() {
+  		try {
+      } finally {
+  			return 42;
+  		}
+  	}
+
+  	void throwInFinally() throws Exception {
+  		try {
+  		} finally {
+  			throw new Exception("finally");
+  		}
+  	}
+
+  	void throwInBoth() throws Exception {
+  		try {
+  			throw new Exception("try");
+  		} finally {
+  			throw new Exception("finally");
+  		}
+  	}
 
     public void test(TestHarness th) {
         try {
@@ -46,17 +72,33 @@ public class NestedExceptionTest implements Testlet {
         }
 
         try {
-            th.check(finallyReturn(), 42);
+            th.check(finallyReturn(th), 42);
+            finallyReturnReturned = true;
             th.check(finallyReturnCalled);
         } catch (Throwable e) {
             th.fail("Unexpected exception: " + e);
         }
 
         try {
-            finallyThrow();
+            finallyThrow(th);
             th.fail("Exception expected");
         } catch (Throwable e) {
+            finallyThrowCaught = true;
             th.check(finallyThrowCalled, "Exception expected");
+        }
+
+        th.check(returnInFinally(), 42);
+
+        try {
+            throwInFinally();
+        } catch (Exception e) {
+            th.check(e.getMessage(), "finally");
+        }
+
+        try {
+            throwInBoth();
+        } catch (Exception e) {
+            th.check(e.getMessage(), "finally");
         }
     }
 }
