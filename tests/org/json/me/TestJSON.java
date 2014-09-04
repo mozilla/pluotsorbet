@@ -40,7 +40,7 @@ public class TestJSON implements Testlet {
                 obj = new JSONObject(jsonStr);
                 th.fail("Exception expected");
             } catch (JSONException e) {
-                th.check(true, "Exception expected");
+                th.check(e.getMessage(), "Missing value. at character 7 of {\"name\":");
             }
 
             jsonStr = "{\"name\":}";
@@ -48,7 +48,7 @@ public class TestJSON implements Testlet {
                 obj = new JSONObject(jsonStr);
                 th.fail("Exception expected");
             } catch (JSONException e) {
-                th.check(true, "Exception expected");
+                th.check(e.getMessage(), "Missing value. at character 8 of {\"name\":}");
             }
 
 
@@ -57,7 +57,7 @@ public class TestJSON implements Testlet {
                 obj = new JSONObject(jsonStr);
                 th.fail("Exception expected");
             } catch (JSONException e) {
-                th.check(true, "Exception expected");
+                th.check(e.getMessage(), "Unterminated string at character 6 of {\"name");
             }
 
 
@@ -66,7 +66,7 @@ public class TestJSON implements Testlet {
                 array = new JSONArray(jsonStr);
                 th.fail("Exception expected");
             } catch (JSONException e) {
-                th.check(true, "Exception expected");
+                th.check(e.getMessage(), "Expected a ',' or ']' at character 25 of [[null, 123.45, \"a\	b c\"}, true]");
             }
 
             array = new JSONArray();
