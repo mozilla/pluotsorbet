@@ -278,6 +278,12 @@ Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/
                  suiteId + ", " + storeName + ", " + changeType + ", " + recordId + ")");
 }
 
+Native["com/sun/midp/rms/RecordStoreRegistry.startRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
+    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+    console.warn("RecordStoreRegistry.startRecordStoreListening.(IL...String;)V not implemented (" +
+                 suiteId + ", " + storeName + ")");
+}
+
 Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
     var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
     console.warn("RecordStoreRegistry.stopRecordStoreListening.(IL...String;)V not implemented (" +
