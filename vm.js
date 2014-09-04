@@ -51,7 +51,7 @@ VM.execute = function(ctx) {
     function buildExceptionLog(ex, stackTrace) {
         var className = ex.class.className;
         var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "detailMessage", "Ljava/lang/String;", false).get(ex));
-        return className + ": " + (detailMessage ? detailMessage : "") + "\n" + stackTrace.join("\n") + "\n\n";
+        return className + ": " + (detailMessage || "") + "\n" + stackTrace.join("\n") + "\n\n";
     }
 
     function throw_(ex, ctx) {
