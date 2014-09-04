@@ -87,6 +87,12 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "fileconn.dir.private":
         value = "fcfile:///";
         break;
+    case "fileconn.dir.applications.bookmarks":
+        value = "fcfile:///";
+        break;
+    case "fileconn.dir.received":
+        value = "fcfile:///";
+        break;
     case "file.separator":
         value = "/";
         break;
