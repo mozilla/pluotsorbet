@@ -93,28 +93,33 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "com.sun.cldc.util.j2me.TimeZoneImpl.timezone":
         value = "GMT";
         break;
-    case "com.nokia.keyboard.type":
-        value = "None";
-        break;
     case "javax.microedition.io.Connector.protocolpath":
         value = "com.sun.midp.io";
         break;
     case "javax.microedition.io.Connector.protocolpath.fallback":
         value = "com.sun.cldc.io";
         break;
+    case "com.nokia.keyboard.type":
+        value = "None";
+        break;
     case "com.nokia.multisim.slots":
+        console.warn("Property 'com.nokia.multisim.slots' is a stub");
         value = "1";
         break;
     case "com.nokia.mid.imsi":
+        console.warn("Property 'com.nokia.mid.imsi' is a stub");
         value = "000000000000000";
         break;
     case "com.nokia.mid.ui.version":
+        console.warn("Property 'com.nokia.mid.ui.version' is a stub");
         value = "1.6";
         break;
     case "com.nokia.mid.networkID":
+        console.warn("Property 'com.nokia.mid.networkID' is a stub");
         value = mobileInfo.networkID;
         break;
     case "com.nokia.mid.mnc":
+        console.warn("Property 'com.nokia.mid.mnc' is a stub");
         value = mobileInfo.mnc;
         break;
     case "classpathext":
