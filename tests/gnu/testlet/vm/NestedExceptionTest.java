@@ -56,7 +56,7 @@ public class NestedExceptionTest implements Testlet {
             finallyThrow();
             th.fail("Exception expected");
         } catch (Throwable e) {
-            th.check(true, "Exception expected");
+            th.check(finallyThrowCalled, "Exception expected");
         }
     }
 }
