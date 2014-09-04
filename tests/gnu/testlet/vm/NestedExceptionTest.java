@@ -41,25 +41,51 @@ public class NestedExceptionTest implements Testlet {
     }
 
     int returnInFinally() {
-      try {
-      } finally {
-        return 42;
-      }
+        try {
+        } finally {
+            return 42;
+        }
+    }
+
+    int returnInFinallyAfterThrow() throws Exception {
+        try {
+            throw new Exception("try");
+        } finally {
+            return 42;
+        }
     }
 
     void throwInFinally() throws Exception {
-      try {
-      } finally {
-        throw new Exception("finally");
-      }
+        try {
+        } finally {
+            throw new Exception("finally");
+        }
     }
 
     void throwInBoth() throws Exception {
+        try {
+            throw new Exception("try");
+        } finally {
+            throw new Exception("finally");
+        }
+    }
+
+    void tryAndCatchBothThrow() throws Exception {
       try {
-        throw new Exception("try");
-      } finally {
-        throw new Exception("finally");
+          throw new Exception("try");
+      } catch (Exception e) {
+          throw new Exception("catch");
       }
+    }
+
+    int tryAndCatchBothThrowWithFinally() throws Exception {
+        try {
+            throw new Exception("try");
+        } catch (Exception e) {
+            throw new Exception("catch");
+        } finally {
+            return 42;
+        }
     }
 
     public void test(TestHarness th) {
@@ -90,15 +116,36 @@ public class NestedExceptionTest implements Testlet {
         th.check(returnInFinally(), 42);
 
         try {
+            th.check(returnInFinallyAfterThrow(), 42);
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+        }
+
+        try {
             throwInFinally();
+            th.fail("Expected exception");
         } catch (Exception e) {
             th.check(e.getMessage(), "finally");
         }
 
         try {
             throwInBoth();
+            th.fail("Expected exception");
         } catch (Exception e) {
             th.check(e.getMessage(), "finally");
+        }
+
+        try {
+            tryAndCatchBothThrow();
+            th.fail("Expected exception");
+        } catch (Exception e) {
+            th.check(e.getMessage(), "catch");
+        }
+
+        try {
+            th.check(tryAndCatchBothThrowWithFinally(), 42);
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
         }
     }
 }
