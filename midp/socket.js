@@ -137,7 +137,23 @@ Native["com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I"] = function(ctx, 
 
 Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack) {
     var _this = stack.pop();
-    _this.socket.close();
+
+    if (_this.socket.readyState == "closed") {
+        return;
+    }
+
+    _this.socket.onclose = function() {
+        _this.socket.onclose = null;
+        ctx.resume();
+    }
+
+    // If it's already closing, we don't need to close it, we just need to wait
+    // for it to close; otherwise, we need to close it.
+    if (_this.socket.readyState != "closing") {
+        _this.socket.close();
+    }
+
+    throw VM.Pause;
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V"] = function(ctx, stack) {
