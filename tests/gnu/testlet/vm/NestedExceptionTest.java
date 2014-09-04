@@ -71,11 +71,11 @@ public class NestedExceptionTest implements Testlet {
     }
 
     void tryAndCatchBothThrow() throws Exception {
-      try {
-          throw new Exception("try");
-      } catch (Exception e) {
-          throw new Exception("catch");
-      }
+        try {
+            throw new Exception("try");
+        } catch (Exception e) {
+            throw new Exception("catch");
+        }
     }
 
     int tryAndCatchBothThrowWithFinally() throws Exception {
