@@ -101,7 +101,9 @@ fs.init(function() {
   var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
   MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
 
-  run(main, urlParams.args);
+  fs.mkdir("/Persistent", function() {
+    run(main, urlParams.args);
+  });
 });
 
 function toggle(button) {
