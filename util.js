@@ -112,6 +112,10 @@ var util = (function () {
     return true;
   }
 
+  function pad(num, len) {
+    return "0".repeat(len - num.toString().length) + num;
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -129,5 +133,6 @@ var util = (function () {
     id: id,
     tag: tag,
     compareTypedArrays: compareTypedArrays,
+    pad: pad,
   };
 })();

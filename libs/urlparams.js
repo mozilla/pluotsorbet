@@ -7,12 +7,15 @@
  * The URL query parameters.  One or more of the following:
  *
  *    args (gets split from comma-separated list to Array)
+ *    icc_mcc
+ *    icc_mnc
+ *    icc_msisdn
  *    jad
  *    jars
  *    main
- *    mcc
  *    midletClassName
- *    mnc
+ *    network_mcc
+ *    network_mnc
  *    pushConn
  *    pushMidlet
  *
