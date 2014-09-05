@@ -8,16 +8,6 @@ console.log = function() {
   document.getElementById("log").textContent += s;
 }
 
-var urlParams = {};
-location.search.substring(1).split("&").forEach(function (param) {
-  param = param.split("=").map(function(v) {
-      return v.replace(/\+/g, " ");
-  }).map(decodeURIComponent);
-  urlParams[param[0]] = param[1];
-});
-
-urlParams.args = (urlParams.args || "").split(",");
-
 function parseManifest(data) {
   data
   .replace(/\r\n|\r/g, "\n")
