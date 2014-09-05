@@ -11,6 +11,13 @@ VM.Pause = {};
 VM.DEBUG = false;
 VM.DEBUG_PRINT_ALL_EXCEPTIONS = false;
 
+VM.traceLog = "";
+VM.trace = function(type, pid, methodInfo, returnVal) {
+    VM.traceLog += type + " " + pid + " " + methodInfo.classInfo.className + "." +
+                   methodInfo.name + ":" + methodInfo.signature +
+                   (returnVal ? (" " + returnVal) : "") + "\n";
+}
+
 VM.execute = function(ctx) {
     var frame = ctx.current();
 
@@ -1033,11 +1040,11 @@ VM.execute = function(ctx) {
                     break;
                 }
             }
-            if (VM.DEBUG &&
-                (methodInfo.classInfo.className.indexOf("Graphics") > 0 || methodInfo.classInfo.className.indexOf("Image") > 0)) {
-                console.log("invoke", methodInfo.classInfo.className, methodInfo.name, methodInfo.signature,
-                            (op !== OPCODES.invokestatic) ? obj.class.className : "static", consumes, stack.join(","));
+
+            if (VM.DEBUG) {
+                VM.trace("invoke", ctx.thread.pid, methodInfo);
             }
+
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
                 try {
                     Native.invoke(ctx, methodInfo);
@@ -1052,6 +1059,9 @@ VM.execute = function(ctx) {
             pushFrame(methodInfo, consumes);
             break;
         case 0xb1: // return
+            if (VM.DEBUG) {
+                VM.trace("return", ctx.thread.pid, frame.methodInfo);
+            }
             popFrame(0);
             if (!frame.methodInfo)
                 return;
@@ -1059,12 +1069,18 @@ VM.execute = function(ctx) {
         case 0xac: // ireturn
         case 0xae: // freturn
         case 0xb0: // areturn
+            if (VM.DEBUG) {
+                VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
+            }
             popFrame(1);
             if (!frame.methodInfo)
                 return;
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
+            if (VM.DEBUG) {
+                VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
+            }
             popFrame(2);
             if (!frame.methodInfo)
                 return;
