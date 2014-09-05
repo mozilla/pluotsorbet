@@ -16,8 +16,14 @@ var mobileInfo = (function() {
 
   if (mobileConnections) {
     var networkInfo = mobileConnections[0].voice.network;
-    mcc = networkInfo.mcc;
-    mnc = networkInfo.mnc;
+
+    var pad = function(num, len) {
+      return "0".repeat(len - num.toString().length) + num;
+    };
+
+    mcc = pad(networkInfo.mcc, 3);
+    mnc = pad(networkInfo.mnc, 3);
+
     networkID = mnc + " (" + networkInfo.shortName + ")";
   }
 
