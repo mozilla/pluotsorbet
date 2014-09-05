@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
-'Use strict';
+'use strict';
 
 var Native = {};
 
@@ -33,7 +33,7 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
     }
     if (dstClass.elementClass) {
         if (srcClass != dstClass && !srcClass.elementClass.isAssignableTo(dstClass.elementClass)) {
-            function copy(to, from) {
+            var copy = function(to, from) {
                 var obj = src[from];
                 if (obj && !obj.class.isAssignableTo(dstClass.elementClass))
                     ctx.raiseExceptionAndYield("java/lang/ArrayStoreException", "Incompatible component types.");
