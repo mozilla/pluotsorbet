@@ -120,14 +120,13 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         console.warn("Property 'com.nokia.mid.ui.version' is a stub");
         value = "1.6";
         break;
-    case "com.nokia.mid.networkID":
-        console.warn("Property 'com.nokia.mid.networkID' is a stub");
-        value = mobileInfo.networkID;
-        break;
     case "com.nokia.mid.mnc":
-        // On Nokia devices, this value is the concatenation of the MCC and MNC
-        // values.
-        value = mobileInfo.mcc + mobileInfo.mnc;
+        // The concatenation of the MCC and MNC for the ICC (i.e. SIM card).
+        value = mobileInfo.icc.mcc + mobileInfo.icc.mnc;
+        break;
+    case "com.nokia.mid.networkID":
+        // The concatenation of MCC and MNC for the network.
+        value = mobileInfo.network.mcc + mobileInfo.network.mnc;
         break;
     case "com.nokia.mid.ui.customfontsize":
         console.warn("Property 'com.nokia.mid.ui.customfontsize' is a stub");
