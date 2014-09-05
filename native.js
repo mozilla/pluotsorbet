@@ -125,8 +125,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = mobileInfo.networkID;
         break;
     case "com.nokia.mid.mnc":
-        console.warn("Property 'com.nokia.mid.mnc' is a stub");
-        value = mobileInfo.mnc;
+        // On Nokia devices, this value is the concatenation of the MCC and MNC
+        // values.
+        value = mobileInfo.mcc + mobileInfo.mnc;
         break;
     case "com.nokia.mid.ui.customfontsize":
         console.warn("Property 'com.nokia.mid.ui.customfontsize' is a stub");
