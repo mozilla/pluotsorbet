@@ -83,6 +83,12 @@ LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, data) {
 }
 
 MIDP.LocalMsgConnections = {};
+MIDP.LocalMsgConnections["nokia.phone-status"] = new LocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.active-standby"] = new LocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.profile"] = new LocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.connectivity-settings"] = new LocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.contacts"] = new LocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.messaging"] = new LocalMsgConnection();
 
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop()), _this = stack.pop();
@@ -98,6 +104,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         // for apps that use the Nokia built-in servers (because we haven't
         // implemented them yet).
         if (!MIDP.LocalMsgConnections[_this.protocolName]) {
+            console.warn("localmsg server (" + _this.protocolName + ") unimplemented");
             throw VM.Pause;
         }
 
