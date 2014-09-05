@@ -178,11 +178,26 @@ Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V"] = function
 Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V"] = function(ctx, stack) {
     var _this = stack.pop();
 
-    // We should flush the output stream, but mozTCPSocket doesn't appear
-    // to support that, so the best we can do is resume the thread by calling
-    // the ondrain handler.
-
-    if (_this.socket.ondrain) {
-        _this.socket.ondrain();
+    // If there's no thread to resume, then simply return early.
+    if (!_this.socket.ondrain) {
+        return;
     }
+
+    // If there's buffered output, ensure it gets written to the stream first.
+    if (_this.socket.bufferedAmount > 0) {
+        // We should flush the output stream, but mozTCPSocket doesn't support
+        // that, so the best we can do is wait for the buffer to drain.
+        var originalHandler = _this.socket.ondrain;
+        _this.socket.ondrain = function() {
+            _this.socket.ondrain = originalHandler;
+            originalHandler();
+            ctx.resume();
+        };
+        throw VM.Pause;
+    }
+
+    // Resume the thread immediately.  In theory, this should never happen,
+    // as the thread should have resumed when the buffer last drained; but we
+    // call it here just in case.
+    _this.socket.ondrain();
 }
