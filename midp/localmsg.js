@@ -85,8 +85,8 @@ LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, data) {
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
-// MIDlets are usually happy even if the server doesn't reply, but we should
-// remember to implement these server in case they will be needed.
+// MIDlets are usually happy even if the servers don't reply, but we should
+// remember to implement them in case they will be needed.
 MIDP.LocalMsgConnections["nokia.phone-status"] = new LocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.active-standby"] = new LocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.profile"] = new LocalMsgConnection();
