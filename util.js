@@ -52,13 +52,13 @@ var util = (function () {
 
   function fromJavaChars(chars, offset, count) {
     var s = "";
-    if (!count)
+    if (typeof count !== 'number')
       count = chars.length;
-    if (!offset)
+    if (typeof offset !== 'number')
       offset = 0;
     for (var n = 0; n < count; ++n)
       s += String.fromCharCode(chars[offset+n]);
-    return s;      
+    return s;
   }
 
   function fromJavaString(str) {
