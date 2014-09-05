@@ -128,6 +128,10 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         console.warn("Property 'com.nokia.mid.mnc' is a stub");
         value = mobileInfo.mnc;
         break;
+    case "com.nokia.mid.ui.customfontsize":
+        console.warn("Property 'com.nokia.mid.ui.customfontsize' is a stub");
+        value = "false";
+        break;
     case "classpathext":
         value = null;
         break;
