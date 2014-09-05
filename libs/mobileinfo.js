@@ -19,7 +19,7 @@ var mobileInfo = (function() {
 
     var pad = function(num, len) {
       return "0".repeat(len - num.toString().length) + num;
-    }
+    };
 
     mcc = pad(networkInfo.mcc, 3);
     mnc = pad(networkInfo.mnc, 3);
