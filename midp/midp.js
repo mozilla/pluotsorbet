@@ -944,6 +944,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
         if (id == -1) {
             for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
                 if (MIDP.pushRegistrations[i].notify) {
+                    MIDP.pushRegistrations[i].notify = false;
                     id = MIDP.pushRegistrations[i].id;
                     break;
                 }
