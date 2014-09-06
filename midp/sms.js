@@ -6,11 +6,7 @@
 MIDP.lastSMSConnection = -1;
 
 Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(ctx, stack) {
-    var port = stack.pop(), msid = stack.pop(), host = stack.pop(), _this = stack.pop();
-
-    if (host) {
-        host = util.fromJavaString(host);
-    }
+    var port = stack.pop(), msid = stack.pop(), host = util.fromJavaString(stack.pop()), _this = stack.pop();
 
     console.warn("com/sun/midp/io/j2me/sms/Protocol.open0.(L...String;II)I not implemented + (" + host + ", " + msid + ", " + port + ")");
 
