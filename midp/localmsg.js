@@ -84,6 +84,16 @@ LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, data) {
 
 MIDP.LocalMsgConnections = {};
 
+// Add some fake servers because some MIDlets assume they exist.
+// MIDlets are usually happy even if the servers don't reply, but we should
+// remember to implement them in case they will be needed.
+MIDP.FakeLocalMsgServers = [ "nokia.phone-status", "nokia.active-standby", "nokia.profile",
+                             "nokia.connectivity-settings", "nokia.contacts",
+                             "nokia.messaging" ];
+MIDP.FakeLocalMsgServers.forEach(function(server) {
+    MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
+});
+
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop()), _this = stack.pop();
 
@@ -98,7 +108,12 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         // for apps that use the Nokia built-in servers (because we haven't
         // implemented them yet).
         if (!MIDP.LocalMsgConnections[_this.protocolName]) {
+            console.warn("localmsg server (" + _this.protocolName + ") unimplemented");
             throw VM.Pause;
+        }
+
+        if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
+            console.warn("connect to an unimplemented localmsg server (" + _this.protocolName + ")");
         }
 
         MIDP.LocalMsgConnections[_this.protocolName].notifyConnection();
@@ -123,6 +138,10 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(ctx, sta
     if (_this.server) {
         MIDP.LocalMsgConnections[_this.protocolName].sendMessageToClient(message);
     } else {
+        if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
+            console.warn("sendData to an unimplemented localmsg server (" + _this.protocolName + ")");
+        }
+
         MIDP.LocalMsgConnections[_this.protocolName].sendMessageToServer(message);
     }
 }
@@ -133,6 +152,10 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)V"] = function(ctx, st
     if (_this.server) {
         MIDP.LocalMsgConnections[_this.protocolName].serverReceiveMessage(ctx, data);
     } else {
+        if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
+            console.warn("receiveData from an unimplemented localmsg server (" + _this.protocolName + ")");
+        }
+
         MIDP.LocalMsgConnections[_this.protocolName].clientReceiveMessage(ctx, data);
     }
 }
