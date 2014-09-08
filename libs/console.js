@@ -6,6 +6,17 @@
 (function() {
   var windowConsole = window.console;
 
+  var levels = {
+    trace: 0,
+    log: 1,
+    info: 2,
+    warn: 3,
+    error: 4,
+    silent: 5,
+  };
+
+  var logLevel = urlParams.logLevel || "log";
+
   /**
    * The console(s) to which messages should be output.  A comma-separated list
    * of one or more of these targets:
@@ -15,12 +26,16 @@
    */
   var targets = urlParams.logTarget ? urlParams.logTarget.split(",") : ["web"];
 
-  var log = function(level) {
+  var log = function(messageLevel) {
+    if (levels[messageLevel] < levels[logLevel]) {
+      return;
+    };
+
     if (targets.indexOf("web") != -1) {
-      windowConsole[level].apply(windowConsole, Array.slice(arguments, 1));
+      windowConsole[messageLevel].apply(windowConsole, Array.slice(arguments, 1));
     }
 
-    var tag = level[0].toUpperCase();
+    var tag = messageLevel[0].toUpperCase();
     var message = [tag].concat(Array.slice(arguments, 1)).join(" ") + "\n";
 
     if (targets.indexOf("page") != -1) {

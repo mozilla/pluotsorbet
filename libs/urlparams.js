@@ -12,6 +12,7 @@
  *    icc_msisdn
  *    jad
  *    jars
+ *    logLevel
  *    logTarget
  *    main
  *    midletClassName
