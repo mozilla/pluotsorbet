@@ -20,7 +20,7 @@
       windowConsole[level].apply(windowConsole, Array.slice(arguments, 1));
     }
 
-    var tag = level.toUpperCase();
+    var tag = level[0].toUpperCase();
     var message = [tag].concat(Array.slice(arguments, 1)).join(" ") + "\n";
 
     if (targets.indexOf("page") != -1) {
