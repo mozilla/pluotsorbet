@@ -7,11 +7,11 @@
   var windowConsole = window.console;
 
   /**
-   * The console(s) to target.  A comma-separated list of one or more of these
-   * possible values:
-   *    web:    browser's Web Console (default)
-   *    page:   in-page console
-   *    native: native console
+   * The console(s) to which messages should be output.  A comma-separated list
+   * of one or more of these targets:
+   *    web: the browser's Web Console (default)
+   *    page: the in-page console (an HTML element with ID "console")
+   *    native: the native console (via the *dump* function)
    */
   var targets = urlParams.logTarget ? urlParams.logTarget.split(",") : ["web"];
 
