@@ -159,8 +159,8 @@ private String getPlatformPath(String path) {
 }
 
 private void checkSecurity(String path) {
-    // This code is commented out because in J2ME there isn't the
-    // System::getSecurityManager function.
+	// This code is commented out because in J2ME there isn't the
+	// System::getSecurityManager function.
 	/*SecurityManager security = System.getSecurityManager();
 	if (security != null) {
 		if (accessMode == Connector.READ_WRITE) {
