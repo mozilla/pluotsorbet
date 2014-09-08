@@ -36,8 +36,16 @@
     }
 
     var tag = messageLevel[0].toUpperCase();
-    var message = messageLevel == "trace" ? new Error().stack
-                                          : [tag].concat(Array.slice(arguments, 1)).join(" ") + "\n";
+
+    var message = tag + " ";
+    if (messageLevel == "trace") {
+      var stack = new Error().stack;
+      // Strip the first frame, which is this log function itself.
+      message += stack.substring(stack.indexOf("\n") + 1);
+    } else {
+      message += Array.slice(arguments, 1).join(" ");
+    }
+    message += "\n";
 
     if (targets.indexOf("page") != -1) {
       document.getElementById("console").textContent += message;
