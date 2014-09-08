@@ -32,6 +32,8 @@ LocalMsgConnection.prototype.copyMessage = function(messageQueue, data) {
     for (var i = 0; i < msg.length; i++) {
         data[i] = msg.data[i + msg.offset];
     }
+
+    return msg.length;
 }
 
 LocalMsgConnection.prototype.sendMessageToClient = function(message) {
@@ -42,12 +44,12 @@ LocalMsgConnection.prototype.sendMessageToClient = function(message) {
     }
 }
 
-LocalMsgConnection.prototype.clientReceiveMessage = function(ctx, data) {
+LocalMsgConnection.prototype.clientReceiveMessage = function(ctx, stack, data) {
     if (this.clientMessages.length == 0) {
         this.clientWaiting = function() {
             this.clientWaiting = null;
 
-            this.copyMessage(this.clientMessages, data);
+            stack.push(this.copyMessage(this.clientMessages, data));
 
             ctx.resume();
         }
@@ -55,7 +57,7 @@ LocalMsgConnection.prototype.clientReceiveMessage = function(ctx, data) {
         throw VM.Pause;
     }
 
-    this.copyMessage(this.clientMessages, data);
+    stack.push(this.copyMessage(this.clientMessages, data));
 }
 
 LocalMsgConnection.prototype.sendMessageToServer = function(message) {
@@ -66,12 +68,12 @@ LocalMsgConnection.prototype.sendMessageToServer = function(message) {
     }
 }
 
-LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, data) {
+LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, stack, data) {
     if (this.serverMessages.length == 0) {
         this.serverWaiting = function() {
             this.serverWaiting = null;
 
-            this.copyMessage(this.serverMessages, data);
+            stack.push(this.copyMessage(this.serverMessages, data));
 
             ctx.resume();
         }
@@ -79,7 +81,7 @@ LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, data) {
         throw VM.Pause;
     }
 
-    this.copyMessage(this.serverMessages, data);
+    stack.push(this.copyMessage(this.serverMessages, data));
 }
 
 MIDP.LocalMsgConnections = {};
@@ -146,17 +148,17 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(ctx, sta
     }
 }
 
-Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)V"] = function(ctx, stack) {
+Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(ctx, stack) {
     var data = stack.pop(), _this = stack.pop();
 
     if (_this.server) {
-        MIDP.LocalMsgConnections[_this.protocolName].serverReceiveMessage(ctx, data);
+        MIDP.LocalMsgConnections[_this.protocolName].serverReceiveMessage(ctx, stack, data);
     } else {
         if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
             console.warn("receiveData from an unimplemented localmsg server (" + _this.protocolName + ")");
         }
 
-        MIDP.LocalMsgConnections[_this.protocolName].clientReceiveMessage(ctx, data);
+        MIDP.LocalMsgConnections[_this.protocolName].clientReceiveMessage(ctx, stack, data);
     }
 }
 
