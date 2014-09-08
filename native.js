@@ -10,7 +10,7 @@ Native.invoke = function(ctx, methodInfo) {
         var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
         methodInfo.native = Native[key];
         if (!methodInfo.native) {
-            console.log("Missing native: " + key);
+            console.error("Missing native: " + key);
             ctx.raiseExceptionAndYield("java/lang/RuntimeException", key + " not found");
         }
     }
@@ -136,7 +136,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = null;
         break;
     default:
-        console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
+        console.warn("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         break;
     }
     stack.push(value ? ctx.newString(value) : null);

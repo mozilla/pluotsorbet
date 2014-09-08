@@ -94,7 +94,7 @@ VM.execute = function(ctx) {
                 frame.ip = handler_pc;
 
                 if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
-                    console.log(buildExceptionLog(ex, stackTrace));
+                    console.error(buildExceptionLog(ex, stackTrace));
                 }
 
                 return;
@@ -175,7 +175,7 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
+        // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;

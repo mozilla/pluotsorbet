@@ -412,7 +412,7 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
         value = null;
         break;
     default:
-        console.log("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
+        console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
         break;
     }
@@ -521,7 +521,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     var fileName = "assets/0/" + util.fromJavaString(stack.pop()).replace("_", ".").replace("_png", ".png");
     var data = CLASSES.loadFile(fileName);
     if (!data) {
-        console.log("ResourceHandler::loadRomizedResource0: " + fileName);
+        console.error("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
         ctx.raiseExceptionAndYield("java/io/IOException");
     }
     var len = data.byteLength;
@@ -824,7 +824,7 @@ Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/Comm
 }
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack) {
-    console.log("Exit: " + stack.pop());
+    console.info("Exit: " + stack.pop());
     throw VM.Pause;
 }
 
