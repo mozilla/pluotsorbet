@@ -36,7 +36,8 @@
     }
 
     var tag = messageLevel[0].toUpperCase();
-    var message = [tag].concat(Array.slice(arguments, 1)).join(" ") + "\n";
+    var message = messageLevel == "trace" ? new Error().stack
+                                          : [tag].concat(Array.slice(arguments, 1)).join(" ") + "\n";
 
     if (targets.indexOf("page") != -1) {
       document.getElementById("console").textContent += message;
