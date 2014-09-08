@@ -31,8 +31,10 @@ public class TestWebPublicKeyStore implements Testlet {
 
         PublicKeyInfo keyInfo = cs.getKey(0);
         th.check(keyInfo.getOwner().length() > 0);
+        keyInfo = cs.getKey(1);
+        th.check(keyInfo.getOwner().length() > 0);
 
-        X509Certificate[] certificates = cs.getCertificates(keyInfo.getOwner());
+        X509Certificate[] certificates = cs.getCertificates("C=US;O=The Go Daddy Group, Inc.;OU=Go Daddy Class 2 Certification Authority");
         X509Certificate rootCert = certificates[0];
 
         try {
