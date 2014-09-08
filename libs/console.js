@@ -34,7 +34,7 @@
 
   window.console = {
     trace: log.bind(null, "trace"),
-    debug: log.bind(null, "debug"),
+    log: log.bind(null, "log"),
     info: log.bind(null, "info"),
     warn: log.bind(null, "warn"),
     error: log.bind(null, "error"),
