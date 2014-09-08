@@ -506,18 +506,10 @@ Native["java/lang/Thread.activeCount.()I"] = function(ctx, stack) {
     stack.push(ctx.runtime.threadCount);
 }
 
-Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
-    var s = "";
-    return function(ctx, stack) {
-        var ch = stack.pop(), obj = stack.pop();
-        if (ch === 10) {
-            console.info(s);
-            s = "";
-            return;
-        }
-        s += String.fromCharCode(ch);
-    };
-})();
+Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ctx, stack) {
+    var ch = stack.pop(), obj = stack.pop();
+    console.print(ch);
+};
 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(ctx, stack) {
     var name = stack.pop();

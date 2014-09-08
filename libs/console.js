@@ -6,6 +6,16 @@
 (function() {
   var windowConsole = window.console;
 
+  var output = "";
+  var print = function(char) {
+    if (char === 10) {
+      console.info(output);
+      output = "";
+    } else {
+      output += String.fromCharCode(char);
+    }
+  };
+
   /**
    * The console(s) to which messages should be output.  A comma-separated list
    * of one or more of these targets:
@@ -18,7 +28,7 @@
   // If we're only targeting the web console, then we use the original console
   // object, so file/line number references show up correctly in it.
   if (targets.every(function(v) { return v == "web" })) {
-    return;
+    console.print = print;
   }
 
   var levels = {
@@ -36,6 +46,13 @@
     if (levels[messageLevel] < levels[logLevel]) {
       return;
     };
+
+    if (output.length > 0) {
+      // Flush the output buffer to preserve the order in which messages appear.
+      var temp = output;
+      output = "";
+      console.info(temp);
+    }
 
     if (targets.indexOf("web") != -1) {
       windowConsole[messageLevel].apply(windowConsole, Array.slice(arguments, 1));
@@ -68,5 +85,6 @@
     info: log.bind(null, "info"),
     warn: log.bind(null, "warn"),
     error: log.bind(null, "error"),
+    print: print,
   };
 })();
