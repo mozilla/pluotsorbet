@@ -511,7 +511,7 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
     return function(ctx, stack) {
         var ch = stack.pop(), obj = stack.pop();
         if (ch === 10) {
-            document.getElementById("output").textContent += s + "\n";
+            console.info(s);
             s = "";
             return;
         }
