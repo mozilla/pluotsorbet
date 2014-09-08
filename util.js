@@ -13,16 +13,6 @@ var util = (function () {
     return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
   }
 
-  var out = "";
-  function print(s) {
-    out += s;
-    var n;
-    while ((n = out.indexOf("\n")) != -1) {
-      console.log(out.substr(0, n));
-      out = out.substr(n+1);
-    }
-  }
-
   function defaultValue(type) {
     if (type === 'J')
       return Long.ZERO;
@@ -119,11 +109,6 @@ var util = (function () {
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
-    print: print,
-    debug: console.info.bind(console),
-    error: console.error.bind(console),
-    info: console.info.bind(console),
-    warn: console.warn.bind(console),
     decodeUtf8: decodeUtf8,
     defaultValue: defaultValue,
     double2int: double2int,
