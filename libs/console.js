@@ -9,8 +9,9 @@
   var output = "";
   var print = function(char) {
     if (char === 10) {
-      console.info(output);
+      var temp = output;
       output = "";
+      console.info(temp);
     } else {
       output += String.fromCharCode(char);
     }
