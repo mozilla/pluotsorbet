@@ -6,6 +6,21 @@
 (function() {
   var windowConsole = window.console;
 
+  /**
+   * The console(s) to which messages should be output.  A comma-separated list
+   * of one or more of these targets:
+   *    web: the browser's Web Console (default)
+   *    page: the in-page console (an HTML element with ID "console")
+   *    native: the native console (via the *dump* function)
+   */
+  var targets = urlParams.logTarget ? urlParams.logTarget.split(",") : ["web"];
+
+  // If we're only targeting the web console, then we use the original console
+  // object, so file/line number references show up correctly in it.
+  if (targets.every(function(v) { return v == "web" })) {
+    return;
+  }
+
   var levels = {
     trace: 0,
     log: 1,
@@ -16,15 +31,6 @@
   };
 
   var logLevel = urlParams.logLevel || "log";
-
-  /**
-   * The console(s) to which messages should be output.  A comma-separated list
-   * of one or more of these targets:
-   *    web: the browser's Web Console (default)
-   *    page: the in-page console (an HTML element with ID "console")
-   *    native: the native console (via the *dump* function)
-   */
-  var targets = urlParams.logTarget ? urlParams.logTarget.split(",") : ["web"];
 
   var log = function(messageLevel) {
     if (levels[messageLevel] < levels[logLevel]) {
