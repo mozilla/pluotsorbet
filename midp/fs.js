@@ -296,9 +296,20 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 }
 
 Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
+    var path = stack.pop(), _this = stack.pop();
+
+    var invalid = ['<', '>', ':', '"', '/', '\\', '|', '*', '?'].map(function(char) {
+      return char.charCodeAt(0);
+    });
+
+    for (var i = 0; i < path.length; i++) {
+        if (path[i] <= 31 || invalid.indexOf(path[i]) != -1) {
+            stack.push(0);
+            return;
+        }
+    }
+
     stack.push(1);
-    console.warn("Connection.isValidFilenameImpl.([B)Z not implemented (" + path + ")");
 }
 
 Native["com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J"] = function(ctx, stack) {

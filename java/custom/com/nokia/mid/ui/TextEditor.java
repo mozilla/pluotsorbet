@@ -220,7 +220,7 @@ public class TextEditor extends CanvasItem {
 
     // Deletes characters from the TextEditor.
     public void delete(int offset, int length) {
-        throw new RuntimeException("TextEditor::delete(int,int) not implemented");
+        System.out.println("TextEditor::delete(int,int) not implemented");
     }
 
     // Returns the maximum size (number of characters) that can be stored in this TextEditor.
