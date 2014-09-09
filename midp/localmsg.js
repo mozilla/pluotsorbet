@@ -84,6 +84,17 @@ LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, stack, data) {
     stack.push(this.copyMessage(this.serverMessages, data));
 }
 
+var FakeServer = function() {
+    LocalMsgConnection.call(this);
+}
+
+FakeServer.prototype = Object.create(LocalMsgConnection.prototype);
+
+FakeServer.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+  console.log("RECEIVED: " + JSON.stringify(decoder.data));
+}
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
@@ -95,6 +106,8 @@ MIDP.FakeLocalMsgServers = [ "nokia.phone-status", "nokia.active-standby", "noki
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
 });
+
+MIDP.LocalMsgConnections["nokia.connectivity-settings"] = new FakeServer();
 
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop()), _this = stack.pop();
