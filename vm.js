@@ -25,7 +25,9 @@ VM.execute = function(ctx) {
     var stack = frame.stack;
 
     function pushFrame(methodInfo, consumes) {
+        var caller = frame;
         frame = ctx.pushFrame(methodInfo, consumes);
+        Instrument.callEnterHooks(methodInfo, caller, frame /* callee */);
         stack = frame.stack;
         cp = frame.cp;
         if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
@@ -52,6 +54,7 @@ VM.execute = function(ctx) {
             stack.push(callee.stack.pop());
             break;
         }
+        Instrument.callExitHooks(callee.methodInfo, frame /* caller */, callee);
         return frame;
     }
 

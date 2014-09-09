@@ -6,6 +6,18 @@
 var Instrument = {
   enter: {},
   exit: {},
+  callEnterHooks: function(methodInfo, caller, callee) {
+    var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+    if (Instrument.enter[key]) {
+      Instrument.enter[key](caller, callee);
+    }
+  },
+  callExitHooks: function(methodInfo, caller, callee) {
+    var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+    if (Instrument.exit[key]) {
+      Instrument.exit[key](caller, callee);
+    }
+  },
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.(I)V"] = function(caller, callee) {
@@ -24,7 +36,7 @@ Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
-  console.print(callee.stack[0]);
+  console.print(caller.stack[caller.stack.length - 1]);
 };
 
 Instrument.enter["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {

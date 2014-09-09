@@ -21,12 +21,6 @@ Context.prototype.current = function() {
 Context.prototype.pushFrame = function(methodInfo, consumes) {
   var caller = this.current();
   var callee = new Frame(methodInfo);
-
-  var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
-  if (Instrument.enter[key]) {
-    Instrument.enter[key](caller, callee);
-  }
-
   callee.locals = caller.stack;
   callee.localsBase = caller.stack.length - consumes;
   this.frames.push(callee);
@@ -36,12 +30,6 @@ Context.prototype.pushFrame = function(methodInfo, consumes) {
 Context.prototype.popFrame = function() {
   var callee = this.frames.pop();
   var caller = this.current();
-
-  var key = callee.methodInfo.classInfo.className + "." + callee.methodInfo.name + "." + callee.methodInfo.signature;
-  if (Instrument.exit[key]) {
-    Instrument.exit[key](caller, callee);
-  }
-
   if (callee.localsBase)
     caller.stack.length = callee.localsBase;
   return caller;
