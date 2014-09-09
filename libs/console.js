@@ -24,7 +24,7 @@
    *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
    */
-  var consoles = urlParams.logConsole ? urlParams.logConsole.split(",") : ["web"];
+  var consoles = urlParams.logConsole ? urlParams.logConsole.split(",") : ["page"];
 
   // If we're only printing to the web console, then we use the original console
   // object, so file/line number references show up correctly in it.
