@@ -26,26 +26,40 @@ var Instrument = {
   },
 };
 
+Instrument.sslOutput = "";
+
 Instrument.enter["com/sun/midp/ssl/Out.write.(I)V"] = function(caller, callee) {
-  console.print(String.fromCharCode(caller.stack.read(1)) & 0xff);
+  Instrument.sslOutput += String.fromCharCode(caller.stack.read(1) & 0xff);
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee) {
   var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
-    console.print(range[i] & 0xff);
+    Instrument.sslOutput += String.fromCharCode(range[i] & 0xff);
   }
 };
 
-Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
-  console.print(caller.stack.read(1));
+Instrument.enter["com/sun/midp/ssl/Out.close.()V"] = function(caller, callee) {
+  console.info("SSL Output:\n" + Instrument.sslOutput);
+  Instrument.sslOutput = "";
 };
 
-Instrument.enter["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
+Instrument.sslInput = "";
+
+Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
+  Instrument.sslInput += String.fromCharCode(caller.stack.read(1) & 0xff);
+};
+
+Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
   var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
-    console.print(range[i] & 0xff);
+    Instrument.sslInput += String.fromCharCode(range[i] & 0xff);
   }
+};
+
+Instrument.enter["com/sun/midp/ssl/In.close.()V"] = function(caller, callee) {
+  console.info("SSL Input:\n" + Instrument.sslInput);
+  Instrument.sslInput = "";
 };
