@@ -29,7 +29,8 @@
   // If we're only printing to the web console, then we use the original console
   // object, so file/line number references show up correctly in it.
   if (consoles.every(function(v) { return v == "web" })) {
-    console.print = print;
+    window.console.print = print;
+    return;
   }
 
   var levels = {
