@@ -65,7 +65,6 @@ Classes.prototype.loadClassBytes = function(bytes) {
 }
 
 Classes.prototype.loadClassFile = function(fileName) {
-    console.log("loading " + fileName + " ...");
     var bytes = this.loadFile(fileName);
     if (!bytes)
         throw new (Classes.ClassNotFoundException)(fileName);
