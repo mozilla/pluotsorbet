@@ -19,16 +19,16 @@
 
   /**
    * The console(s) to which messages should be output.  A comma-separated list
-   * of one or more of these targets:
+   * of one or more of these consoles:
    *    web: the browser's Web Console (default)
    *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
    */
-  var targets = urlParams.logTarget ? urlParams.logTarget.split(",") : ["web"];
+  var consoles = urlParams.logConsole ? urlParams.logConsole.split(",") : ["web"];
 
-  // If we're only targeting the web console, then we use the original console
+  // If we're only printing to the web console, then we use the original console
   // object, so file/line number references show up correctly in it.
-  if (targets.every(function(v) { return v == "web" })) {
+  if (consoles.every(function(v) { return v == "web" })) {
     console.print = print;
   }
 
@@ -55,7 +55,7 @@
       console.info(temp);
     }
 
-    if (targets.indexOf("web") != -1) {
+    if (consoles.indexOf("web") != -1) {
       windowConsole[messageLevel].apply(windowConsole, Array.slice(arguments, 1));
     }
 
@@ -71,11 +71,11 @@
     }
     message += "\n";
 
-    if (targets.indexOf("page") != -1) {
+    if (consoles.indexOf("page") != -1) {
       document.getElementById("console").textContent += message;
     }
 
-    if (targets.indexOf("native") != -1) {
+    if (consoles.indexOf("native") != -1) {
       dump(message);
     }
   };
