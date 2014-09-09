@@ -25,7 +25,7 @@ public class LocalMsgConnection implements LocalMessageProtocolConnection, Local
       closeConnection();
     }
 
-    public native void receiveData(byte[] message);
+    public native int receiveData(byte[] message);
 
     public int receive(byte[] message) {
         receiveData(message);
@@ -33,7 +33,11 @@ public class LocalMsgConnection implements LocalMessageProtocolConnection, Local
     }
 
     public void receive(LocalMessageProtocolMessage message) throws IOException {
-        throw new IOException("LocalMsgConnection::receive(LocalMessageProtocolMessage) not implemented yet");
+        byte[] msg = new byte[4096];
+        int length = receiveData(msg);
+        byte[] data = new byte[length];
+        System.arraycopy(msg, 0, data, 0, length);
+        message.setData(data);
     }
 
     public native void sendData(byte[] message, int offset, int length);

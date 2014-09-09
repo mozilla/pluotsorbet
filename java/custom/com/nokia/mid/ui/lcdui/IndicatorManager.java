@@ -12,6 +12,7 @@ public class IndicatorManager {
     }
 
     public int appendIndicator(Indicator indicator, boolean paramBoolean) {
-        throw new RuntimeException("IndicatorManager.appendIndicator(L...Indicator;Z)I not implemented");
+        System.out.println("IndicatorManager.appendIndicator(L...Indicator;Z)I not implemented");
+        return 0;
     }
 }

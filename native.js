@@ -112,6 +112,10 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         console.warn("Property 'com.nokia.multisim.slots' is a stub");
         value = "1";
         break;
+    case "com.nokia.multisim.imsi.sim2":
+        console.warn("Property 'com.nokia.multisim.imsi.sim2' is a stub");
+        value = null;
+        break;
     case "com.nokia.mid.imsi":
         console.warn("Property 'com.nokia.mid.imsi' is a stub");
         value = "000000000000000";
