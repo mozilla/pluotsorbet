@@ -74,6 +74,13 @@ public class TestFileConnection implements Testlet {
             dir.delete();
             th.check(!dir.exists());
             dir.close();
+
+            try {
+                file = (FileConnection)Connector.open(dirPath + "prov>");
+                th.fail("Exception expected");
+            } catch (IllegalArgumentException e) {
+                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///prov>");
+            }
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
