@@ -14,7 +14,7 @@ button {
   display: none;
 }
 
-#clearstorage,#trace,#printAllExceptions {
+#clearstorage,#trace,#printAllExceptions,#sms_receive {
   display: inline;
 }
 
@@ -90,6 +90,9 @@ button {
   <button id="clearstorage">Clear storage</button>
   <button id="trace">Trace: OFF</button>
   <button id="printAllExceptions">Print all exceptions: OFF</button>
+  <input id="sms_text" type="text" value="SMS text" disabled="true"></input>
+  <input id="sms_addr" type="text" value="SMS phone number" disabled="true"></input>
+  <button id="sms_receive" disabled="true">Receive SMS</button>
   <canvas id="canvas">
   </canvas>
   <div>
