@@ -666,7 +666,6 @@
         var parent = stack.pop(), _this = stack.pop();
         document.body.appendChild(_this.textEditor);
         _this.visible = true;
-        console.log("set visible to true");
     }
 
     Native["com/nokia/mid/ui/TextEditor.setSize0.(II)V"] = function(ctx, stack) {
