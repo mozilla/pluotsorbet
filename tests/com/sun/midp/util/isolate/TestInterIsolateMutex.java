@@ -6,11 +6,9 @@ import com.sun.cldc.isolate.Isolate;
 import com.sun.midp.security.*;
 
 class SecurityTokenProvider {
-    static private class SecurityTrusted
-    implements ImplicitlyTrustedClass {};
+    static private class SecurityTrusted implements ImplicitlyTrustedClass {};
     
-    private static SecurityToken token =
-    SecurityInitializer.requestToken(new SecurityTrusted());
+    private static SecurityToken token = SecurityInitializer.requestToken(new SecurityTrusted());
     
     static SecurityToken getToken() {
         return token;
