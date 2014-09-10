@@ -39,7 +39,6 @@ public class TextEditor extends CanvasItem {
     private boolean multiline = true;
     private boolean visible = true;
     private Object parent = null;
-    private boolean focus = false;
     private int maxSize = 0;
     private int width = 0;
     private int height = 0;
@@ -76,15 +75,10 @@ public class TextEditor extends CanvasItem {
     }
 
     // Sets this TextEditor focused or removes keyboard focus.
-    public void setFocus(boolean focused) {
-        focus = focused;
-        System.out.println("warning: TextEditor::setFocus(boolean) not implemented (" + focused + ")");
-    }
+    native public void setFocus(boolean focused);
 
     // Returns the focus state of TextEditor.
-    public boolean hasFocus() {
-        return focus;
-    }
+    native public boolean hasFocus();
 
     // Set the parent object of this TextEditor.
     public void setParent(Object theParent) {

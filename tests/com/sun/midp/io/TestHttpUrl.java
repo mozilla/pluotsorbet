@@ -32,7 +32,7 @@ public class TestHttpUrl implements Testlet {
      */
     public void test(TestHarness th) {
         testAbsUrl(th);
-        //testRelUrl(th);
+        testRelUrl(th);
     }
 
     /**

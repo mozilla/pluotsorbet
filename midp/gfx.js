@@ -13,7 +13,6 @@
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(null);
-        console.warn("DisplayDevice.getDisplayName0.(I)L...String; not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
@@ -25,7 +24,6 @@
     Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(1);
-        console.warn("DisplayDevice.isbuildInDisplay0.(I)Z not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
@@ -653,6 +651,7 @@
         _this.textEditorId = textEditorId;
         _this.textEditor = document.createElement("textarea");
         _this.visible = false;
+        _this.focused = false;
         _this.textEditor.style.border = "none";
         _this.textEditor.style.resize = "none";
         _this.textEditor.style.backgroundColor = "transparent";
@@ -688,11 +687,25 @@
         var visible = stack.pop(), _this = stack.pop();
         if (visible) {
             document.body.appendChild(_this.textEditor);
-            _this.textEditor.focus();
         } else if (_this.visible) {
             document.body.removeChild(_this.textEditor);
         }
         _this.visible = visible;
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(ctx, stack) {
+        var focused = stack.pop(), _this = stack.pop();
+        if (focused) {
+            _this.textEditor.focus();
+        } else {
+            _this.textEditor.blur();
+        }
+        _this.focused = focused;
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.hasFocus.()Z"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this.focused);
     }
 
     Native["com/nokia/mid/ui/TextEditor.getContent0.()Ljava/lang/String;"] = function(ctx, stack) {
