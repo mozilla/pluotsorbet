@@ -12,6 +12,8 @@
  *    icc_msisdn
  *    jad
  *    jars
+ *    logConsole
+ *    logLevel
  *    main
  *    midletClassName
  *    network_mcc

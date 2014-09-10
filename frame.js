@@ -40,6 +40,11 @@ var Frame = function(methodInfo) {
         this.ip = 0;
     }
     this.stack = [];
+
+    // A convenience function for retrieving values in reverse order
+    // from the end of the stack.  stack.read(1) returns the topmost item
+    // on the stack, while stack.read(2) returns the one underneath it.
+    this.stack.read = function(i) { return this[this.length - i] };
 }
 
 Frame.prototype.getLocal = function(idx) {
