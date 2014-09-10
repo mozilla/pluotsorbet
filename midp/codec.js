@@ -127,31 +127,50 @@ Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(ctx, stack
 Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
   _this.decoder.getStart(tag);
+  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
   _this.decoder.getEnd(tag);
+  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
-// Throw IOException if not found
 Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
-  stack.push(ctx.newString(_this.decoder.getValue(tag)));
+  var str = _this.decoder.getValue(tag);
+  if (str === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
+  }
+  stack.push(ctx.newString(str));
+  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
 // Throw IOException if not found
 Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
-  stack.push2(Long.fromNumber(_this.decoder.getValue(tag)));
+  var num = _this.decoder.getValue(tag);
+  if (num === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
+  }
+  stack.push2(Long.fromNumber());
+  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = function(ctx, stack) {
   var _this = stack.pop();
-  stack.push(ctx.newString(_this.decoder.getName()));
+  var name = _this.decoder.getName();
+  if (name === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException");
+  }
+  stack.push(ctx.newString(name));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function(ctx, stack) {
   var _this = stack.pop();
-  stack.push(_this.decoder.getTag());
+  var tag = _this.decoder.getTag();
+  if (tag === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException");
+  }
+  stack.push(tag);
 }

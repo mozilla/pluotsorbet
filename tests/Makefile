@@ -10,14 +10,7 @@ all: tests.jar
 ../java/classes.jar:
 	cd ../java && make
 
-Testlets.java: $(SRCS) Makefile
-	echo "public class Testlets {" > $@
-	echo "  static String[] list = {" >> $@
-	grep "implements Testlet" `find . -name "*.java"` | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
-	echo "  null};" >> $@
-	echo "};" >> $@
-
-tests.jar: $(SRCS) Testlets.java
+tests.jar: $(SRCS)
 	rm -rf build
 	mkdir build
 	# Build the buildtime support classes in-place, not in ./build, so they aren't available at runtime.
@@ -29,4 +22,4 @@ tests.jar: $(SRCS) Testlets.java
 	rm -rf build
 
 clean:
-	rm -f `find . -name "*.jar" -or -name "*~" -or -name "*.class"` Testlets.java
+	rm -f `find . -name "*.jar" -or -name "*~" -or -name "*.class"`
