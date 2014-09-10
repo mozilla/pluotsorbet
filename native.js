@@ -10,7 +10,7 @@ Native.invoke = function(ctx, methodInfo) {
         var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
         methodInfo.native = Native[key];
         if (!methodInfo.native) {
-            console.log("Missing native: " + key);
+            console.error("Missing native: " + key);
             ctx.raiseExceptionAndYield("java/lang/RuntimeException", key + " not found");
         }
     }
@@ -140,7 +140,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = null;
         break;
     default:
-        console.log("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
+        console.warn("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         break;
     }
     stack.push(value ? ctx.newString(value) : null);
@@ -510,18 +510,10 @@ Native["java/lang/Thread.activeCount.()I"] = function(ctx, stack) {
     stack.push(ctx.runtime.threadCount);
 }
 
-Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = (function() {
-    var s = "";
-    return function(ctx, stack) {
-        var ch = stack.pop(), obj = stack.pop();
-        if (ch === 10) {
-            document.getElementById("output").textContent += s + "\n";
-            s = "";
-            return;
-        }
-        s += String.fromCharCode(ch);
-    };
-})();
+Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ctx, stack) {
+    var ch = stack.pop(), obj = stack.pop();
+    console.print(ch);
+};
 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(ctx, stack) {
     var name = stack.pop();
