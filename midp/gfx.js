@@ -664,6 +664,13 @@
 
     Native["com/nokia/mid/ui/TextEditor.setParent0.(Ljava/lang/Object;)V"] = function(ctx, stack) {
         var parent = stack.pop(), _this = stack.pop();
+
+        if (parent && _this.parent && parent !== _this.parent) {
+            ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "TextEditor already associated with parent");
+        }
+        // XXX throw java.lang.IllegalArgumentException if parent is invalid
+
+        _this.parent = parent;
         document.body.appendChild(_this.textEditor);
         _this.visible = true;
     }
