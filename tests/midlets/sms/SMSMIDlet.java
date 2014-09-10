@@ -16,11 +16,11 @@ class J2MEAPIClass implements Runnable {
         try {
             MessageConnection conn = (MessageConnection)Connector.open("sms://:5000");
             TextMessage message = (TextMessage)conn.receive();
-            
+
             if (!message.getPayloadText().equals("Prova SMS")) {
                 System.out.println("FAIL - Wrong SMS text: " + message.getPayloadText());
             }
-            
+
             if (!message.getAddress().equals("sms://+77777777777:5000")) {
                 System.out.println("FAIL - Wrong SMS address: " + message.getAddress());
             }
@@ -46,14 +46,14 @@ class NokiaAPIClass implements Runnable {
             dataEncoder.putEnd(14, "message");
             dataEncoder.putEnd(14, "event");
             byte[] sendData = dataEncoder.getData();
-            
+
             client.send(sendData, 0, sendData.length);
-            
+
             // Receive protocol version message
             LocalMessageProtocolMessage msg = client.newMessage(null);
             client.receive(msg);
             byte[] clientData = msg.getData();
-            
+
             DataDecoder dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
             dataDecoder.getStart(14);
             String name = dataDecoder.getString(13);
@@ -84,14 +84,14 @@ class NokiaAPIClass implements Runnable {
             dataEncoder.put(5, "trans_id", (long)(short)(System.currentTimeMillis() % 255));
             dataEncoder.putEnd(14, "event");
             sendData = dataEncoder.getData();
-            
+
             client.send(sendData, 0, sendData.length);
-            
+
             // Receive subscription OK message
             msg = client.newMessage(null);
             client.receive(msg);
             clientData = msg.getData();
-            
+
             dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
             dataDecoder.getStart(14);
             if (!dataDecoder.getString(13).toLowerCase().equals("subscribemessages")) {
@@ -101,7 +101,7 @@ class NokiaAPIClass implements Runnable {
             if (!dataDecoder.getString(10).toLowerCase().equals("ok")) {
                 System.out.println("FAIL - Expected 'ok'");
             }
-            
+
             // Wait for a new message to arrive
             msg = client.newMessage(null);
             client.receive(msg);
