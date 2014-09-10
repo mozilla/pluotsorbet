@@ -153,7 +153,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(ctx, st
   if (num === undefined) {
     ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
   }
-  stack.push2(Long.fromNumber());
+  stack.push2(Long.fromNumber(num));
   console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
