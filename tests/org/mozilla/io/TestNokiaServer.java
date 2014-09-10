@@ -43,7 +43,76 @@ public class TestNokiaServer implements Testlet {
         th.check(string.startsWith("ProtocolVersion:"));
         th.check(string.indexOf(58) + 1 != -1);
         System.out.println(string.substring(string.indexOf(58) + 1));
-        th.check(string.substring(string.indexOf(58) + 1).length > 0);
+        th.check(string.substring(string.indexOf(58) + 1).length() > 0);
+    }
+
+    public void testSubscribeMessages(TestHarness th) throws IOException {
+        DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
+        dataEncoder.putStart(14, "event");
+        dataEncoder.put(13, "name", "SubscribeMessages");
+        dataEncoder.put(5, "trans_id", (long)(short)(System.currentTimeMillis() % 255));
+        dataEncoder.putEnd(14, "event");
+        byte[] sendData = dataEncoder.getData();
+        
+        client.send(sendData, 0, sendData.length);
+        
+        // Client receives data
+        LocalMessageProtocolMessage msg = client.newMessage(null);
+        client.receive(msg);
+        byte[] clientData = msg.getData();
+        
+        DataDecoder dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(13).toLowerCase(), "subscribemessages");
+        dataDecoder.getInteger(5);
+        th.check(dataDecoder.getString(10).toLowerCase(), "ok");
+
+        // TO REMOVE
+        msg = client.newMessage(null);
+        client.receive(msg);
+        clientData = msg.getData();
+        dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(13).toLowerCase(), "messagenotify");
+        long message_id = dataDecoder.getInteger(7);
+        th.check(dataDecoder.getString(10), "SMS");
+
+        dataEncoder = new DataEncoder("Conv-BEB");
+        dataEncoder.putStart(14, "event");
+        dataEncoder.put(13, "name", "GetMessageEntity");
+        dataEncoder.put(5, "trans_id", (long)(short)(System.currentTimeMillis() % 255));
+        dataEncoder.put(7, "message_id", message_id);
+        dataEncoder.putStart(16, "entries");
+        dataEncoder.put(10, "entity_element", "body_text");
+        dataEncoder.put(10, "entity_element", "address");
+        dataEncoder.putEnd(16, "entries");
+        dataEncoder.putEnd(14, "event");
+        sendData = dataEncoder.getData();
+        client.send(sendData, 0, sendData.length);
+
+        msg = client.newMessage(null);
+        client.receive(msg);
+        clientData = msg.getData();
+        dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(13).toLowerCase(), "getmessageentity");
+        dataDecoder.getInteger(5);
+        th.check(dataDecoder.getString(10).toLowerCase(), "ok");
+        long message_id_2 = dataDecoder.getInteger(7);
+        dataDecoder.getStart(15);
+        String sms_text = dataDecoder.getString(11);
+        dataDecoder.getString(10);
+        
+        dataEncoder = new DataEncoder("Conv-BEB");
+        dataEncoder.putStart(14, "event");
+        dataEncoder.put(13, "name", "DeleteMessages");
+        dataEncoder.put(5, "trans_id", (long)(short)(System.currentTimeMillis() % 255));
+        dataEncoder.putStart(16, "entries");
+        dataEncoder.put(7, "message_id", message_id_2);
+        dataEncoder.putEnd(16, "entries");
+        dataEncoder.putEnd(14, "event");
+        sendData = dataEncoder.getData();
+        client.send(sendData, 0, sendData.length);
     }
 
     public void test(TestHarness th) {
@@ -51,7 +120,7 @@ public class TestNokiaServer implements Testlet {
             client = (LocalMessageProtocolConnection)Connector.open("localmsg://"+PROTO_NAME);
 
             testProtocolVersion(th);
-            //testSubscribeMessages(th);
+            testSubscribeMessages(th);
 
             client.close();
         } catch (IOException ioe) {
