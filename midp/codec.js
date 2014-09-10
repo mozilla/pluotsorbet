@@ -28,15 +28,7 @@ DataEncoder.prototype.putEnd = function(tag, name) {
   })
 }
 
-DataEncoder.prototype.putString = function(tag, name, value) {
-  this.data.push({
-    tag: tag,
-    name: name,
-    value: value,
-  });
-}
-
-DataEncoder.prototype.putLong = function(tag, name, value) {
+DataEncoder.prototype.put = function(tag, name, value) {
   this.data.push({
     tag: tag,
     name: name,
@@ -93,12 +85,12 @@ Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = 
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V"] = function(ctx, stack) {
   var value = util.fromJavaString(stack.pop()), name = util.fromJavaString(stack.pop()), tag = stack.pop(), _this = stack.pop();
-  _this.encoder.putString(tag, name, value);
+  _this.encoder.put(tag, name, value);
 }
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(ctx, stack) {
   var value = stack.pop2().toNumber(), name = util.fromJavaString(stack.pop()), tag = stack.pop(), _this = stack.pop();
-  _this.encoder.putLong(tag, name, value);
+  _this.encoder.put(tag, name, value);
 }
 
 Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(ctx, stack) {
