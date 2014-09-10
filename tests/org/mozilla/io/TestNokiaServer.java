@@ -40,7 +40,6 @@ public class TestNokiaServer implements Testlet {
         dataDecoder.getEnd(14);
         th.check(string.startsWith("ProtocolVersion:"));
         th.check(string.indexOf(58) + 1 != -1);
-        System.out.println(string.substring(string.indexOf(58) + 1));
         th.check(string.substring(string.indexOf(58) + 1).length() > 0);
     }
 
