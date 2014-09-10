@@ -3,6 +3,17 @@
 
 'use strict';
 
+var DataType = {
+  USHORT: 5,
+  ULONG: 7,
+  STRING: 10,
+  WSTRING: 11,
+  METHOD: 13,
+  STRUCT: 14,
+  LIST: 15,
+  ARRAY: 16,
+};
+
 var DataEncoder = function() {
   this.data = [];
 }
