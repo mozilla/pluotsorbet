@@ -132,13 +132,13 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
     case "SubscribeMessages":
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "SubscribeMessages");
-      encoder.put(DataType.USHORT, "unknown", 0); // The meaning of this field is unknown
+      encoder.put(DataType.USHORT, "trans_id", decoder.getValue(DataType.USHORT)); // The meaning of this field is unknown
       encoder.put(DataType.STRING, "result", "OK"); // The name of this field is unknown
       encoder.putEnd(DataType.STRUCT, "event");
     break;
 
     case "GetMessageEntity":
-      decoder.getValue(DataType.USHORT);
+      var trans_id = decoder.getValue(DataType.USHORT);
       var sms_id = decoder.getValue(DataType.ULONG);
 
       var sms;
@@ -151,7 +151,7 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
 
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "GetMessageEntity");
-      encoder.put(DataType.USHORT, "unknown", 0); // The meaning of this field is unknown
+      encoder.put(DataType.USHORT, "trans_id", trans_id); // The meaning of this field is unknown
       encoder.put(DataType.STRING, "result", "OK"); // The name of this field is unknown
       encoder.put(DataType.ULONG, "message_id", sms_id);
       encoder.putStart(DataType.LIST, "list_name_unknown"); // The name of this field is unknown
