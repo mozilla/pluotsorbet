@@ -113,12 +113,9 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
 
   var decoder = new DataDecoder(message.data, message.offset, message.length);
 
-  console.log("RECEIVED1: " + JSON.stringify(decoder.data));
-
   decoder.getStart(DataType.STRUCT);
-  console.log("RECEIVED2: " + JSON.stringify(decoder.data));
   var name = decoder.getValue(DataType.METHOD);
-  console.log("RECEIVED3: " + JSON.stringify(decoder.data));
+
   switch (name) {
     case "Common":
       encoder.putStart(DataType.STRUCT, "event");
@@ -177,8 +174,6 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
       console.error("(nokia.messaging) event " + name + " not implemented");
       return;
   }
-
-  console.info("SEND: " + encoder.getData());
 
   var data = new TextEncoder().encode(encoder.getData());
   this.sendMessageToClient({

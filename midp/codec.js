@@ -127,13 +127,11 @@ Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(ctx, stack
 Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
   _this.decoder.getStart(tag);
-  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
   _this.decoder.getEnd(tag);
-  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = function(ctx, stack) {
@@ -143,7 +141,6 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = 
     ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
   }
   stack.push(ctx.newString(str));
-  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
 // Throw IOException if not found
@@ -154,7 +151,6 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(ctx, st
     ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
   }
   stack.push2(Long.fromNumber(num));
-  console.log("Rimanente: " + JSON.stringify(_this.decoder.data));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = function(ctx, stack) {
