@@ -55,8 +55,9 @@ public class TextEditor extends CanvasItem {
     native void insert0(String str, int pos);
     native int size0();
 
-    protected TextEditor(String label, String text, int maxSize, int constraints, int width, int height) {
+    protected TextEditor(String label, String text, int aMaxSize, int constraints, int width, int height) {
         myId = TextEditor0();
+        maxSize = aMaxSize;
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
             Thread t = new Thread(textEditorThread);
