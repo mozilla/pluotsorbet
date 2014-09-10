@@ -652,6 +652,7 @@
         stack.push(++textEditorId);
         _this.textEditorId = textEditorId;
         _this.textEditor = document.createElement("textarea");
+        _this.visible = false;
         _this.textEditor.style.border = "none";
         _this.textEditor.style.resize = "none";
         _this.textEditor.style.backgroundColor = "transparent";
@@ -664,6 +665,7 @@
     Native["com/nokia/mid/ui/TextEditor.setParent0.(Ljava/lang/Object;)V"] = function(ctx, stack) {
         var parent = stack.pop(), _this = stack.pop();
         document.body.appendChild(_this.textEditor);
+        _this.visible = true;
     }
 
     Native["com/nokia/mid/ui/TextEditor.setSize0.(II)V"] = function(ctx, stack) {
@@ -682,6 +684,22 @@
         _this.textEditor.style.position = "absolute";
         _this.textEditor.style.top = "" + top + "px";
         _this.textEditor.style.right = "" + right + "px";
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setPosition0.(II)V"] = function(ctx, stack) {
+        var y = stack.pop(), x = stack.pop(), _this = stack.pop();
+        console.log("TextEditor::setPosition0(int, int) not implemented", _this.textEditorId, x, y);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setVisible0.(Z)V"] = function(ctx, stack) {
+        var visible = stack.pop(), _this = stack.pop();
+        if (visible) {
+            document.body.appendChild(_this.textEditor);
+            _this.textEditor.focus();
+        } else if (_this.visible) {
+            document.body.removeChild(_this.textEditor);
+        }
+        _this.visible = visible;
     }
 
     Native["com/nokia/mid/ui/TextEditor.getContent0.()Ljava/lang/String;"] = function(ctx, stack) {
