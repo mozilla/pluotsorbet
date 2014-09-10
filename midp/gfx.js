@@ -13,7 +13,6 @@
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(null);
-        console.warn("DisplayDevice.getDisplayName0.(I)L...String; not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
