@@ -653,6 +653,7 @@
         _this.textEditorId = textEditorId;
         _this.textEditor = document.createElement("textarea");
         _this.visible = false;
+        _this.focused = false;
         _this.textEditor.style.border = "none";
         _this.textEditor.style.resize = "none";
         _this.textEditor.style.backgroundColor = "transparent";
@@ -681,11 +682,25 @@
         var visible = stack.pop(), _this = stack.pop();
         if (visible) {
             document.body.appendChild(_this.textEditor);
-            _this.textEditor.focus();
         } else if (_this.visible) {
             document.body.removeChild(_this.textEditor);
         }
         _this.visible = visible;
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(ctx, stack) {
+        var focused = stack.pop(), _this = stack.pop();
+        if (focused) {
+            _this.textEditor.focus();
+        } else {
+            _this.textEditor.blur();
+        }
+        _this.focused = focused;
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.hasFocus.()Z"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this.focused);
     }
 
     Native["com/nokia/mid/ui/TextEditor.getContent0.()Ljava/lang/String;"] = function(ctx, stack) {
