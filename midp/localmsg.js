@@ -140,9 +140,10 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
       var sms_id = decoder.getValue(DataType.ULONG);
 
       var sms;
-      for (var i = 0; i < MIDP.NokiaSMSMessages.length; i++) {
-        if (MIDP.NokiaSMSMessages[i].id == sms_id) {
-          sms = MIDP.NokiaSMSMessages[i];
+      for (var i = 0; i < MIDP.nokiaSMSMessages.length; i++) {
+        if (MIDP.nokiaSMSMessages[i].id == sms_id) {
+          sms = MIDP.nokiaSMSMessages[i];
+          break;
         }
       }
 
@@ -163,9 +164,10 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
       decoder.getStart(DataType.ARRAY);
       var sms_id = decoder.getValue(DataType.ULONG);
 
-      for (var i = 0; i < MIDP.NokiaSMSMessages.length; i++) {
-        if (MIDP.NokiaSMSMessages[i].id == sms_id) {
-          MIDP.NokiaSMSMessages.splice(i, 1);
+      for (var i = 0; i < MIDP.nokiaSMSMessages.length; i++) {
+        if (MIDP.nokiaSMSMessages[i].id == sms_id) {
+          MIDP.nokiaSMSMessages.splice(i, 1);
+          break;
         }
       }
     break;
