@@ -16,48 +16,18 @@ public class FrameAnimator {
     protected static int _numRegistered;
 
     public FrameAnimator() {
-        System.out.println("warning: FrameAnimator() not implemented");
+        init();
     }
 
-    public boolean register(int x, int y, short maxFps, short maxPps, FrameAnimatorListener listener) {
-        System.out.println("warning: FrameAnimator.register(IISSL...FrameAnimatorListener;)Z not implemented (" +
-                           x + ", " + y + ", " + maxFps + ", " + maxPps + ", " + listener + ")");
-        _numRegistered++;
-        return true;
-    }
+    private native void init();
 
-    public void unregister() {
-        System.out.println("warning: FrameAnimator.unregister()V not implemented");
-        _numRegistered--;
-    }
-
-    public void drag(int x, int y) {
-        System.out.println("warning: FrameAnimator.drag(II)V not implemented (" + x + ", " + y + ")");
-    }
-
-    public void kineticScroll(int speed, int direction, int friction, float angle) {
-        System.out.println("warning: FrameAnimator.kineticScroll(IIIF)V not implemented (" +
-                           speed + ", " + direction + ", " + friction + ", " + angle + ")");
-    }
-
-    public void limitedKineticScroll(int speed, int direction, int friction, float angle, int limitUp, int limitDown) {
-        System.out.println("warning: FrameAnimator.limitedKineticScroll(IIIFII)V not implemented (" +
-                           speed + ", " + direction + ", " + friction + ", " + angle + ", " + limitUp + ", " +
-                           limitDown + ")");
-    }
-
-    public void stop() {
-        System.out.println("warning: FrameAnimator.stop()V not implemented");
-    }
-
-    public boolean isRegistered() {
-        System.out.println("warning: FrameAnimator.isRegistered()Z not implemented");
-        return true;
-    }
-
-    public static int getNumRegisteredFrameAnimators() {
-        System.out.println("warning: FrameAnimator.getNumRegisteredFrameAnimators()I not implemented");
-        return _numRegistered;
-    }
-
+    public native boolean register(int x, int y, short maxFps, short maxPps, FrameAnimatorListener listener)
+        throws IllegalStateException, NullPointerException, IllegalArgumentException;
+    public native void unregister() throws IllegalStateException;
+    public native void drag(int x, int y);
+    public native void kineticScroll(int speed, int direction, int friction, float angle);
+    public native void limitedKineticScroll(int speed, int direction, int friction, float angle, int limitUp, int limitDown);
+    public native void stop();
+    public native boolean isRegistered();
+    public native static int getNumRegisteredFrameAnimators();
 }
