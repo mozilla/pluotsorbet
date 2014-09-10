@@ -670,20 +670,6 @@
 
     Native["com/nokia/mid/ui/TextEditor.setSize0.(II)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), _this = stack.pop();
-        _this.textEditor.style.height = "" + height + "px";
-        _this.textEditor.style.width = "" + width + "px";
-        // hack
-        var top = 0, right = 0;
-        if (width === 35) {
-            top = 155;
-            right = 177;
-        } else if (width === 145) {
-            top = 155;
-            right = 28;
-        }
-        _this.textEditor.style.position = "absolute";
-        _this.textEditor.style.top = "" + top + "px";
-        _this.textEditor.style.right = "" + right + "px";
     }
 
     Native["com/nokia/mid/ui/TextEditor.setPosition0.(II)V"] = function(ctx, stack) {

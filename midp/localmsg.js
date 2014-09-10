@@ -84,17 +84,119 @@ LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, stack, data) {
     stack.push(this.copyMessage(this.serverMessages, data));
 }
 
+var NokiaMessagingLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+}
+
+NokiaMessagingLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaMessagingLocalMsgConnection.prototype.receiveSMS = function(sms) {
+  var encoder = new DataEncoder();
+
+  encoder.putStart(DataType.STRUCT, "event");
+  encoder.put(DataType.METHOD, "name", "MessageNotify");
+  encoder.put(DataType.USHORT, "trans_id", Date.now() % 255); // The meaning of this field is unknown
+  encoder.put(DataType.STRING, "type", "SMS"); // The name of this field is unknown
+  encoder.put(DataType.ULONG, "message_id", sms.id);
+  encoder.putEnd(DataType.STRUCT, "event");
+
+  var data = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient({
+    data: data,
+    length: data.length,
+    offset: 0,
+  });
+}
+
+NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var encoder = new DataEncoder();
+
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  switch (name) {
+    case "Common":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "2.[0-10]");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+    break;
+
+    case "SubscribeMessages":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "SubscribeMessages");
+      encoder.put(DataType.USHORT, "trans_id", decoder.getValue(DataType.USHORT)); // The meaning of this field is unknown
+      encoder.put(DataType.STRING, "result", "OK"); // The name of this field is unknown
+      encoder.putEnd(DataType.STRUCT, "event");
+    break;
+
+    case "GetMessageEntity":
+      var trans_id = decoder.getValue(DataType.USHORT);
+      var sms_id = decoder.getValue(DataType.ULONG);
+
+      var sms;
+      for (var i = 0; i < MIDP.nokiaSMSMessages.length; i++) {
+        if (MIDP.nokiaSMSMessages[i].id == sms_id) {
+          sms = MIDP.nokiaSMSMessages[i];
+          break;
+        }
+      }
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "GetMessageEntity");
+      encoder.put(DataType.USHORT, "trans_id", trans_id); // The meaning of this field is unknown
+      encoder.put(DataType.STRING, "result", "OK"); // The name of this field is unknown
+      encoder.put(DataType.ULONG, "message_id", sms_id);
+      encoder.putStart(DataType.LIST, "list_name_unknown"); // The name of this field is unknown
+      encoder.put(DataType.WSTRING, "body_text", sms.text);
+      encoder.put(DataType.STRING, "address", sms.addr);
+      encoder.putEnd(DataType.LIST);
+      encoder.putEnd(DataType.STRUCT, "event");
+    break;
+
+    case "DeleteMessages":
+      decoder.getValue(DataType.USHORT);
+      decoder.getStart(DataType.ARRAY);
+      var sms_id = decoder.getValue(DataType.ULONG);
+
+      for (var i = 0; i < MIDP.nokiaSMSMessages.length; i++) {
+        if (MIDP.nokiaSMSMessages[i].id == sms_id) {
+          MIDP.nokiaSMSMessages.splice(i, 1);
+          break;
+        }
+      }
+    break;
+
+    default:
+      console.error("(nokia.messaging) event " + name + " not implemented");
+      return;
+  }
+
+  var data = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient({
+    data: data,
+    length: data.length,
+    offset: 0,
+  });
+}
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
 MIDP.FakeLocalMsgServers = [ "nokia.phone-status", "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings", "nokia.contacts",
-                             "nokia.messaging" ];
+                             "nokia.connectivity-settings", "nokia.contacts" ];
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
 });
+
+MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop()), _this = stack.pop();
