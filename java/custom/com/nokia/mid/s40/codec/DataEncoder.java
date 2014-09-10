@@ -7,7 +7,7 @@ public class DataEncoder {
         init();
     }
 
-    public native void init();
+    private native void init();
 
     public native byte[] getData() throws IOException;
 
