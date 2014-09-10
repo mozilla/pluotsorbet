@@ -56,7 +56,7 @@ public class TestNokiaServer implements Testlet {
         LocalMessageProtocolMessage msg = client.newMessage(null);
         client.receive(msg);
         byte[] clientData = msg.getData();
-        
+
         DataDecoder dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
         dataDecoder.getStart(14);
         th.check(dataDecoder.getString(13).toLowerCase(), "subscribemessages");
