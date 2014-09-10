@@ -111,10 +111,11 @@ class NokiaAPIClass implements Runnable {
             if (!dataDecoder.getString(13).toLowerCase().equals("messagenotify")) {
                 System.out.println("FAIL - Expected 'messagenotify'");
             }
-            long message_id = dataDecoder.getInteger(7);
+            dataDecoder.getInteger(5);
             if (!dataDecoder.getString(10).equals("SMS")) {
                 System.out.println("FAIL - Expected 'SMS'");
             }
+            long message_id = dataDecoder.getInteger(7);
 
             // Ask for message details
             dataEncoder = new DataEncoder("Conv-BEB");
