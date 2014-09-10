@@ -95,8 +95,8 @@ NokiaMessagingLocalMsgConnection.prototype.receiveSMS = function(sms) {
 
   encoder.putStart(DataType.STRUCT, "event");
   encoder.put(DataType.METHOD, "name", "MessageNotify");
-  encoder.put(DataType.ULONG, "message_id", sms.id);
   encoder.put(DataType.STRING, "type", "SMS"); // The name of this field is unknown
+  encoder.put(DataType.ULONG, "message_id", sms.id);
   encoder.putEnd(DataType.STRUCT, "event");
 
   var data = new TextEncoder().encode(encoder.getData());
