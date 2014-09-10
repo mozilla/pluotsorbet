@@ -25,7 +25,9 @@ VM.execute = function(ctx) {
     var stack = frame.stack;
 
     function pushFrame(methodInfo, consumes) {
+        var caller = frame;
         frame = ctx.pushFrame(methodInfo, consumes);
+        Instrument.callEnterHooks(methodInfo, caller, frame /* callee */);
         stack = frame.stack;
         cp = frame.cp;
         if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
@@ -52,6 +54,7 @@ VM.execute = function(ctx) {
             stack.push(callee.stack.pop());
             break;
         }
+        Instrument.callExitHooks(callee.methodInfo, frame /* caller */, callee);
         return frame;
     }
 
@@ -94,7 +97,7 @@ VM.execute = function(ctx) {
                 frame.ip = handler_pc;
 
                 if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
-                    console.log(buildExceptionLog(ex, stackTrace));
+                    console.error(buildExceptionLog(ex, stackTrace));
                 }
 
                 return;
@@ -175,7 +178,7 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // console.log(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
+        // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;

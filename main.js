@@ -3,11 +3,6 @@
 
 'use strict';
 
-console.log = function() {
-  var s = Array.prototype.join.call(arguments, ",") +"\n";
-  document.getElementById("log").textContent += s;
-}
-
 function parseManifest(data) {
   data
   .replace(/\r\n|\r/g, "\n")
