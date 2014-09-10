@@ -49,6 +49,8 @@ public class TextEditor extends CanvasItem {
     native int TextEditor0();
     native void setParent0(Object theParent);
     native void setSize0(int width, int height);
+    native void setPosition0(int x, int y);
+    native void setVisible0(boolean visible);
     native String getContent0();
     native void setContent0(String str);
     native void insert0(String str, int pos);
@@ -102,12 +104,12 @@ public class TextEditor extends CanvasItem {
 
     // Sets the rendering position of this TextEditor.
     public void setPosition(int x, int y) {
-        System.out.println("warning: TextEditor::setPosition(int,int) not implemented (" + x + ", " + y + ")");
+        setPosition0(x, y);
     }
 
     // Sets the visibility value of TextEditor.
     public void setVisible(boolean visible) {
-        System.out.println("warning: TextEditor::setVisible(boolean) not implemented (" + visible + ")");
+        setVisible0(visible);
         visible = visible;
     }
 
