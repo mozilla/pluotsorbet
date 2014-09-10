@@ -141,7 +141,7 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(ctx, sta
         MIDP.LocalMsgConnections[_this.protocolName].sendMessageToClient(message);
     } else {
         if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
-            console.warn("sendData to an unimplemented localmsg server (" + _this.protocolName + ")");
+            console.warn("sendData (" + util.decodeUtf8(new Uint8Array(data.buffer, offset, length)) + ") to an unimplemented localmsg server (" + _this.protocolName + ")");
         }
 
         MIDP.LocalMsgConnections[_this.protocolName].sendMessageToServer(message);

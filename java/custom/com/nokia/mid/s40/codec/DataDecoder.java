@@ -4,36 +4,26 @@ import java.io.IOException;
 
 public class DataDecoder {
     public DataDecoder(String name, byte[] data, int offset, int length) throws IOException {
-        throw new RuntimeException("DataDecoder not implemented");
+        init(data, offset, length);
     }
 
-    public String getName() throws IOException {
-        throw new RuntimeException("DataDecoder::getName() not implemented");
-    }
+    private native void init(byte[] data, int offset, int length);
 
-    public int getType() throws IOException {
-        throw new RuntimeException("DataDecoder::getType() not implemented");
-    }
+    public native String getName() throws IOException;
+
+    public native int getType() throws IOException;
 
     public boolean listHasMoreItems() throws IOException {
         throw new RuntimeException("DataDecoder::listHasMoreItems() not implemented");
     }
 
-    public void getStart(int tag) throws IOException {
-        throw new RuntimeException("DataDecoder::getStart(int) not implemented");
-    }
+    public native void getStart(int tag) throws IOException;
 
-    public void getEnd(int tag) throws IOException {
-        throw new RuntimeException("DataDecoder::getEnd(int) not implemented");
-    }
+    public native void getEnd(int tag) throws IOException;
 
-    public String getString(int tag) throws IOException {
-        throw new RuntimeException("DataDecoder::getString(int) not implemented");
-    }
+    public native String getString(int tag) throws IOException;
 
-    public long getInteger(int tag) throws IOException {
-        throw new RuntimeException("DataDecoder::getInteger(int) not implemented");
-    }
+    public native long getInteger(int tag) throws IOException;
 
     public double getFloat(int tag) throws IOException {
         throw new RuntimeException("DataDecoder::getName(int) not implemented");
