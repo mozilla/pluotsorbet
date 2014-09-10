@@ -76,10 +76,10 @@ public class TestKeyConverter implements Testlet {
      * NOTE: this test includes device-dependent keycode values.
      */
     void testGetSystemKey() {
-        th.todo(EventConstants.SYSTEM_KEY_POWER, KeyConverter.getSystemKey(-12));
-        th.todo(EventConstants.SYSTEM_KEY_SEND, KeyConverter.getSystemKey(-10));
-        th.todo(EventConstants.SYSTEM_KEY_END, KeyConverter.getSystemKey(-11));
-        th.check(EventConstants.SYSTEM_KEY_CLEAR, KeyConverter.getSystemKey(-8));
+        th.check(EventConstants.SYSTEM_KEY_POWER, KeyConverter.getSystemKey(112));
+        th.check(EventConstants.SYSTEM_KEY_SEND, KeyConverter.getSystemKey(116));
+        th.check(EventConstants.SYSTEM_KEY_END, KeyConverter.getSystemKey(114));
+        th.check(EventConstants.SYSTEM_KEY_CLEAR, KeyConverter.getSystemKey(8));
     }
 
 

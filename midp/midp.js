@@ -840,19 +840,25 @@ Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = f
     stack.push(ids);
 }
 
+/* We don't care about the system keys SELECT,
+  SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
+  but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
+*/
+
+MIDP.SYSTEM_KEY_POWER = 1;
+MIDP.SYSTEM_KEY_SEND = 2;
+MIDP.SYSTEM_KEY_END = 3;
 MIDP.SYSTEM_KEY_CLEAR = 4;
 
+MIDP.systemKeyMap = {
+  8: MIDP.SYSTEM_KEY_CLEAR, // Backspace
+  112: MIDP.SYSTEM_KEY_POWER, // F1
+  116: MIDP.SYSTEM_KEY_SEND, // F5
+  114: MIDP.SYSTEM_KEY_END, // F3
+};
+
 Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx, stack) {
-    var key = stack.pop();
-    /* We don't care about the system keys POWER, SEND, END, SELECT,
-      SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
-      but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
-    */
-    if (key === -8) {
-        stack.push(MIDP.SYSTEM_KEY_CLEAR);
-    } else {
-        stack.push(0);
-    }
+    stack.push(MIDP.systemKeyMap[stack.pop()] || 0);
 }
 
 MIDP.keyMap = {
