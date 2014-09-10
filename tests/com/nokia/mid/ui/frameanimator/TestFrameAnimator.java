@@ -17,28 +17,28 @@ public class TestFrameAnimator implements Testlet, FrameAnimatorListener {
         }
 
         try {
-            animator.register(-65536, 0, (short) 0, (short) 0, listener);
+            animator.register(-65536, 0, (short) 0, (short) 0, this);
             th.fail("coordinate out of bounds");
         } catch (Exception e) {
             th.check(e.getMessage(), "coordinate out of bounds");
         }
 
         try {
-            animator.register(65536, 0, (short) 0, (short) 0, listener);
+            animator.register(65536, 0, (short) 0, (short) 0, this);
             th.fail("coordinate out of bounds");
         } catch (Exception e) {
             th.check(e.getMessage(), "coordinate out of bounds");
         }
 
         try {
-            animator.register(0, -65536, (short) 0, (short) 0, listener);
+            animator.register(0, -65536, (short) 0, (short) 0, this);
             th.fail("coordinate out of bounds");
         } catch (Exception e) {
             th.check(e.getMessage(), "coordinate out of bounds");
         }
 
         try {
-            animator.register(0, 65536, (short) 0, (short) 0, listener);
+            animator.register(0, 65536, (short) 0, (short) 0, this);
             th.fail("coordinate out of bounds");
         } catch (Exception e) {
             th.check(e.getMessage(), "coordinate out of bounds");
