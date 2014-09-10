@@ -658,20 +658,92 @@ Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImage
                  "not implemented (" + imageData + ", " + suiteId + ", " + fileName + ")");
 }
 
+MIDP.InterIsolateMutexes = [];
+MIDP.LastInterIsolateMutexID = -1;
+
 Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(ctx, stack) {
     var name = util.fromJavaString(stack.pop());
-    stack.push(0);
-    console.warn("InterIsolateMutex.getID0.(L...String;)I not implemented (" + name + ")");
+
+    var mutex;
+    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
+        if (MIDP.InterIsolateMutexes[i].name === name) {
+            mutex = MIDP.InterIsolateMutexes[i];
+        }
+    }
+
+    if (!mutex) {
+      mutex = {
+        name: name,
+        id: MIDP.LastInterIsolateMutexID,
+        locked: false,
+        waiting: [],
+      };
+      MIDP.InterIsolateMutexes.push(mutex);
+    }
+
+    stack.push(mutex.id);
 }
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx, stack) {
     var id = stack.pop();
-    console.warn("InterIsolateMutex.lock0.(I)V not implemented (" + id + ")");
+
+    var mutex;
+    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
+        if (MIDP.InterIsolateMutexes[i].id == id) {
+            mutex = MIDP.InterIsolateMutexes[i]
+        }
+    }
+
+    if (!mutex) {
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "Invalid mutex ID");
+    }
+
+    if (!mutex.locked) {
+        mutex.locked = true;
+        mutex.holder = ctx.runtime.isolate.id;
+    } else {
+        if (mutex.holder == ctx.runtime.isolate.id) {
+            ctx.raiseExceptionAndYield("java/lang/RuntimeException", "Attempting to lock mutex twice within the same Isolate")
+        }
+
+        mutex.waiting.push(function() {
+            mutex.locked = true;
+            mutex.holder = ctx.runtime.isolate.id;
+            ctx.resume();
+        });
+
+        throw VM.Pause;
+    }
 }
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ctx, stack) {
     var id = stack.pop();
-    console.warn("InterIsolateMutex.unlock0.(I)V not implemented (" + id + ")");
+
+    var mutex;
+    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
+        if (MIDP.InterIsolateMutexes[i].id == id) {
+            mutex = MIDP.InterIsolateMutexes[i]
+        }
+    }
+
+    if (!mutex) {
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "Invalid mutex ID");
+    }
+
+    if (!mutex.locked) {
+        ctx.raiseExceptionAndYield("java/lang/RuntimeException", "Mutex is not locked");
+    }
+
+    if (mutex.holder !== ctx.runtime.isolate.id) {
+        ctx.raiseExceptionAndYield("java/lang/RuntimeException", "Mutex is locked by different Isolate")
+    }
+
+    mutex.locked = false;
+
+    var firstWaiting = mutex.waiting.shift();
+    if (firstWaiting) {
+        firstWaiting();
+    }
 }
 
 // The foreground isolate will get the user events (keypresses, etc.)
