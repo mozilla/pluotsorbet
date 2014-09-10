@@ -24,7 +24,6 @@
     Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
         var id = stack.pop(), _this = stack.pop();
         stack.push(1);
-        console.warn("DisplayDevice.isbuildInDisplay0.(I)Z not implemented (" + id + ")");
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
