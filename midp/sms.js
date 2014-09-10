@@ -5,10 +5,10 @@
 
 MIDP.lastSMSConnection = -1;
 MIDP.lastSMSID = -1;
-MIDP.SMSConnections = {};
-MIDP.J2MESMSMessages = [];
-MIDP.J2MESMSWaiting = null;
-MIDP.NokiaSMSMessages = [];
+MIDP.smsConnections = {};
+MIDP.j2meSMSMessages = [];
+MIDP.j2meSMSWaiting = null;
+MIDP.nokiaSMSMessages = [];
 
 document.getElementById("sms_receive").onclick = function() {
     var text = document.getElementById("sms_text").value;
@@ -23,20 +23,20 @@ document.getElementById("sms_receive").onclick = function() {
       id: ++MIDP.lastSMSID,
     };
 
-    MIDP.NokiaSMSMessages.push(sms);
-    MIDP.J2MESMSMessages.push(sms);
+    MIDP.nokiaSMSMessages.push(sms);
+    MIDP.j2meSMSMessages.push(sms);
 
     MIDP.LocalMsgConnections["nokia.messaging"].receiveSMS(sms);
 
-    if (MIDP.J2MESMSWaiting) {
-      MIDP.J2MESMSWaiting();
+    if (MIDP.j2meSMSWaiting) {
+      MIDP.j2meSMSWaiting();
     }
 }
 
 Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(ctx, stack) {
     var port = stack.pop(), msid = stack.pop(), host = util.fromJavaString(stack.pop()), _this = stack.pop();
 
-    MIDP.SMSConnections[++MIDP.lastSMSConnection] = {
+    MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
       host: host,
@@ -49,7 +49,7 @@ Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms
     var smsPacket = stack.pop(), handle = stack.pop(), msid = stack.pop(), port = stack.pop(), _this = stack.pop();
 
     function receiveSMS() {
-        var sms = MIDP.J2MESMSMessages.shift();
+        var sms = MIDP.j2meSMSMessages.shift();
         var text = sms.text;
         var addr = sms.addr;
 
@@ -72,11 +72,11 @@ Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms
         stack.push(text.length);
     }
 
-    if (MIDP.J2MESMSMessages.length > 0) {
+    if (MIDP.j2meSMSMessages.length > 0) {
       receiveSMS();
     } else {
-      MIDP.J2MESMSWaiting = function() {
-        MIDP.J2MESMSWaiting = null;
+      MIDP.j2meSMSWaiting = function() {
+        MIDP.j2meSMSWaiting = null;
         receiveSMS();
         ctx.resume();
       }
@@ -88,7 +88,7 @@ Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms
 Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(ctx, stack) {
     var deRegister = stack.pop(), handle = stack.pop(), port = stack.pop(), _this = stack.pop();
 
-    delete MIDP.SMSConnections[handle];
+    delete MIDP.smsConnections[handle];
 
     stack.push(0);
 }
