@@ -227,7 +227,7 @@ public class TextEditor extends CanvasItem {
 
     // Sets the maximum size (number of characters) that can be contained in this TextEditor.
     public int setMaxSize(int maxSize) {
-        maxSize = maxSize;
+        this.maxSize = maxSize;
         System.out.println("warning: TextEditor::setMaxSize(int) not implemented");
         return maxSize;
     }
