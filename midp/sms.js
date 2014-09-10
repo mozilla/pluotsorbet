@@ -4,12 +4,39 @@
 'use strict';
 
 MIDP.lastSMSConnection = -1;
-MIDP.SMSConnections = {};
+MIDP.lastSMSID = -1;
+MIDP.smsConnections = {};
+MIDP.j2meSMSMessages = [];
+MIDP.j2meSMSWaiting = null;
+MIDP.nokiaSMSMessages = [];
+
+document.getElementById("sms_receive").onclick = function() {
+    var text = document.getElementById("sms_text").value;
+    var addr = document.getElementById("sms_addr").value;
+
+    document.getElementById("sms_text").value = "SMS text";
+    document.getElementById("sms_addr").value = "SMS phone number";
+
+    var sms = {
+      text: text,
+      addr: addr,
+      id: ++MIDP.lastSMSID,
+    };
+
+    MIDP.nokiaSMSMessages.push(sms);
+    MIDP.j2meSMSMessages.push(sms);
+
+    MIDP.LocalMsgConnections["nokia.messaging"].receiveSMS(sms);
+
+    if (MIDP.j2meSMSWaiting) {
+      MIDP.j2meSMSWaiting();
+    }
+}
 
 Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(ctx, stack) {
     var port = stack.pop(), msid = stack.pop(), host = util.fromJavaString(stack.pop()), _this = stack.pop();
 
-    MIDP.SMSConnections[++MIDP.lastSMSConnection] = {
+    MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
       host: host,
@@ -21,20 +48,10 @@ Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = func
 Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] = function(ctx, stack) {
     var smsPacket = stack.pop(), handle = stack.pop(), msid = stack.pop(), port = stack.pop(), _this = stack.pop();
 
-    document.getElementById("sms_receive").disabled = false;
-    document.getElementById("sms_text").disabled = false;
-    document.getElementById("sms_addr").disabled = false;
-
-    document.getElementById("sms_receive").onclick = function() {
-        document.getElementById("sms_receive").disabled = true;
-        document.getElementById("sms_text").disabled = true;
-        document.getElementById("sms_addr").disabled = true;
-
-        var text = document.getElementById("sms_text").value;
-        var addr = document.getElementById("sms_addr").value;
-
-        document.getElementById("sms_text").value = "SMS text";
-        document.getElementById("sms_addr").value = "SMS phone number";
+    function receiveSMS() {
+        var sms = MIDP.j2meSMSMessages.shift();
+        var text = sms.text;
+        var addr = sms.addr;
 
         var message = ctx.newPrimitiveArray("B", text.length);
         for (var i = 0; i < text.length; i++) {
@@ -53,17 +70,25 @@ Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms
         smsPacket.class.getField("messageType", "I").set(smsPacket, 0); // GSM_TEXT
 
         stack.push(text.length);
-        ctx.resume();
     }
 
-    // Block until a message is received
+    if (MIDP.j2meSMSMessages.length > 0) {
+      receiveSMS();
+    } else {
+      MIDP.j2meSMSWaiting = function() {
+        MIDP.j2meSMSWaiting = null;
+        receiveSMS();
+        ctx.resume();
+      }
+    }
+
     throw VM.Pause;
 }
 
 Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(ctx, stack) {
     var deRegister = stack.pop(), handle = stack.pop(), port = stack.pop(), _this = stack.pop();
 
-    delete MIDP.SMSConnections[handle];
+    delete MIDP.smsConnections[handle];
 
     stack.push(0);
 }

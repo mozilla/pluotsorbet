@@ -3,6 +3,17 @@
 
 'use strict';
 
+var DataType = {
+  USHORT: 5,
+  ULONG: 7,
+  STRING: 10,
+  WSTRING: 11,
+  METHOD: 13,
+  STRUCT: 14,
+  LIST: 15,
+  ARRAY: 16,
+};
+
 var DataEncoder = function() {
   this.data = [];
 }
@@ -123,24 +134,39 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V"] = function(ctx, stack)
   _this.decoder.getEnd(tag);
 }
 
-// Throw IOException if not found
 Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
-  stack.push(ctx.newString(_this.decoder.getValue(tag)));
+  var str = _this.decoder.getValue(tag);
+  if (str === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
+  }
+  stack.push(ctx.newString(str));
 }
 
 // Throw IOException if not found
 Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
-  stack.push2(Long.fromNumber(_this.decoder.getValue(tag)));
+  var num = _this.decoder.getValue(tag);
+  if (num === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
+  }
+  stack.push2(Long.fromNumber(num));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = function(ctx, stack) {
   var _this = stack.pop();
-  stack.push(ctx.newString(_this.decoder.getName()));
+  var name = _this.decoder.getName();
+  if (name === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException");
+  }
+  stack.push(ctx.newString(name));
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function(ctx, stack) {
   var _this = stack.pop();
-  stack.push(_this.decoder.getTag());
+  var tag = _this.decoder.getTag();
+  if (tag === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException");
+  }
+  stack.push(tag);
 }
