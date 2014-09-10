@@ -1,4 +1,4 @@
-aSRCS=$(shell find . -not -path "./support/*" -name "*.java")
+SRCS=$(shell find . -not -path "./support/*" -name "*.java")
 
 BUILDTIME_SUPPORT_DIR=support/buildtime
 RUNTIME_SUPPORT_DIR=support/runtime
