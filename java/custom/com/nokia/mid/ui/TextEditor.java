@@ -108,9 +108,9 @@ public class TextEditor extends CanvasItem {
     }
 
     // Sets the visibility value of TextEditor.
-    public void setVisible(boolean visible) {
-        setVisible0(visible);
-        visible = visible;
+    public void setVisible(boolean vis) {
+        setVisible0(vis);
+        visible = vis;
     }
 
     // Gets the visibility value of TextEditor.
