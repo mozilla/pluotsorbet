@@ -670,8 +670,6 @@
         // XXX throw java.lang.IllegalArgumentException if parent is invalid
 
         _this.parent = parent;
-        document.body.appendChild(_this.textEditor);
-        _this.visible = true;
     }
 
     Native["com/nokia/mid/ui/TextEditor.setSize0.(II)V"] = function(ctx, stack) {
