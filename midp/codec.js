@@ -3,42 +3,44 @@
 
 'use strict';
 
+var CODEC = {
+  START: 1,
+  END: 2,
+}
+
 var DataEncoder = function() {
-  this.current = this.data = {
-    children: [],
-  }
-  this.parents = [];
+  this.data = [];
 }
 
 DataEncoder.prototype.putStart = function(tag, name) {
-  var newElem = {
-    name: name,
+  this.data.push({
+    type: CODEC.START,
     tag: tag,
-    children: [],
-  };
-
-  this.current.children.push(newElem);
-  this.parents.push(this.current);
-  this.current = newElem;
+    name: name,
+  });
 }
 
 DataEncoder.prototype.putEnd = function(tag, name) {
-  this.current = this.parents.pop();
+  this.data.push({
+    type: CODEC.END,
+    tag: tag,
+    name: name,
+  })
 }
 
 DataEncoder.prototype.putString = function(tag, name, value) {
-  this.current.children.push({
+  this.data.push({
+    tag: tag,
     name: name,
     value: value,
-    tag: tag,
   });
 }
 
 DataEncoder.prototype.putLong = function(tag, name, value) {
-  this.current.children.push({
+  this.data.push({
+    tag: tag,
     name: name,
     value: value,
-    tag: tag,
   });
 }
 
@@ -48,41 +50,35 @@ DataEncoder.prototype.getData = function() {
 
 var DataDecoder = function(data, offset, length) {
   this.data = JSON.parse(util.decodeUtf8(new Uint8Array(data.buffer, offset, length)));
-  this.currentElem = this.current = this.data;
-  this.parents = [];
 }
 
-DataDecoder.prototype.getStart = function(tag) {
-  for (var i = 0; i < this.current.children.length; i++) {
-    if (this.current.children[i].tag == tag) {
-      this.parents.push(this.current);
-      this.currentElem = this.current = this.current.children[i];
-      break;
+DataDecoder.prototype.find = function(tag, type) {
+  var elem;
+  while (elem = this.data.shift()) {
+    if ((!type || elem.type == type) && elem.tag == tag) {
+      return elem.value;
     }
   }
 }
 
+DataDecoder.prototype.getStart = function(tag) {
+  this.find(tag, CODEC.START);
+}
+
 DataDecoder.prototype.getEnd = function(tag) {
-  this.currentElem = this.current = this.parents.pop();
+  this.find(tag, CODEC.END);
 }
 
 DataDecoder.prototype.getValue = function(tag) {
-  for (var i = 0; i < this.current.children.length; i++) {
-      if (this.current.children[i].tag == tag) {
-          this.currentElem = this.current.children[i];
-          return this.currentElem.value;
-      }
-  }
-
-  return null;
+  return this.find(tag);
 }
 
 DataDecoder.prototype.getName = function() {
-  return this.currentElem.name;
+  return this.data[0].name;
 }
 
 DataDecoder.prototype.getTag = function() {
-  return this.currentElem.tag;
+  return this.data[0].tag;
 }
 
 Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function(ctx, stack) {
