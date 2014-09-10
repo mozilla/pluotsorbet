@@ -690,7 +690,8 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx,
     var mutex;
     for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
         if (MIDP.InterIsolateMutexes[i].id == id) {
-            mutex = MIDP.InterIsolateMutexes[i]
+            mutex = MIDP.InterIsolateMutexes[i];
+            break;
         }
     }
 
@@ -703,7 +704,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(ctx,
         mutex.holder = ctx.runtime.isolate.id;
     } else {
         if (mutex.holder == ctx.runtime.isolate.id) {
-            ctx.raiseExceptionAndYield("java/lang/RuntimeException", "Attempting to lock mutex twice within the same Isolate")
+            ctx.raiseExceptionAndYield("java/lang/RuntimeException", "Attempting to lock mutex twice within the same Isolate");
         }
 
         mutex.waiting.push(function() {
@@ -722,7 +723,8 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ct
     var mutex;
     for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
         if (MIDP.InterIsolateMutexes[i].id == id) {
-            mutex = MIDP.InterIsolateMutexes[i]
+            mutex = MIDP.InterIsolateMutexes[i];
+            break;
         }
     }
 
@@ -735,7 +737,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(ct
     }
 
     if (mutex.holder !== ctx.runtime.isolate.id) {
-        ctx.raiseExceptionAndYield("java/lang/RuntimeException", "Mutex is locked by different Isolate")
+        ctx.raiseExceptionAndYield("java/lang/RuntimeException", "Mutex is locked by different Isolate");
     }
 
     mutex.locked = false;
