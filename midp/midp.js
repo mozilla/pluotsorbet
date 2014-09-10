@@ -674,7 +674,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I
     if (!mutex) {
       mutex = {
         name: name,
-        id: MIDP.LastInterIsolateMutexID,
+        id: ++MIDP.LastInterIsolateMutexID,
         locked: false,
         waiting: [],
       };
