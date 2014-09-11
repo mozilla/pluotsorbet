@@ -643,12 +643,10 @@ Native["com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V"] = function(ct
 Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = function(ctx, stack) {
     var fd = stack.pop(), val = stack.pop(), _this = stack.pop();
 
-    var intBuf = new Uint32Array(1);
-    intBuf[0] = val;
+    var buf = new Uint8Array(1);
+    buf[0] = val & 0xFF;
 
-    var buf = new Uint8Array(intBuf.buffer);
-
-    fs.write(fd, buf.subarray(3, 4));
+    fs.write(fd, buf);
 }
 
 Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = function(ctx, stack) {
