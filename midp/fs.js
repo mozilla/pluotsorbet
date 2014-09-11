@@ -507,7 +507,7 @@ Native["com/ibm/oti/connection/file/FCInputStream.readImpl.([BIII)I"] = function
 
     if (offset < 0 || count < 0 || offset > buffer.byteLength || (buffer.byteLength - offset) < count) {
         ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
-	  }
+    }
 
     if (buffer.byteLength == 0 || count == 0) {
         stack.push(0);
