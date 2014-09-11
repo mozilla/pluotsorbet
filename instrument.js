@@ -52,7 +52,7 @@ Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
-  var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3);
+  var rv = caller.stack.read(1), len = caller.stack.read(2), off = caller.stack.read(3), b = caller.stack.read(4);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
     Instrument.sslInput += String.fromCharCode(range[i] & 0xff);
