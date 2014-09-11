@@ -508,16 +508,16 @@ Native["com/ibm/oti/connection/file/FCInputStream.availableImpl.(I)I"] = functio
 }
 
 Native["com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J"] = function(ctx, stack) {
-    var fd = stack.pop(), count = stack.pop2().toNumber(), _this = stack.pop();
+    var fd = stack.pop(), count = stack.pop2(), _this = stack.pop();
 
     var curpos = fs.getpos(fd);
     var size = fs.getsize(fd);
-    if (curpos + count > size) {
+    if (curpos + count.toNumber() > size) {
         fs.setpos(fd, size);
         stack.push2(Long.fromNumber(size - curpos));
     } else {
         fs.setpos(fd, curpos + count);
-        stack.push2(Long.fromNumber(count));
+        stack.push2(count);
     }
 }
 
