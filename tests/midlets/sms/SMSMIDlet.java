@@ -60,7 +60,7 @@ class NokiaAPIClass implements Runnable {
             dataDecoder.getStart(14);
             String name = dataDecoder.getString(13);
             if (!name.equals("Common")) {
-                System.out.println("FAIL - Expected 'Common', got " + name)
+                System.out.println("FAIL - Expected 'Common', got " + name);
             }
             String struct_name = dataDecoder.getName();
             if (!struct_name.equals("message")) {
