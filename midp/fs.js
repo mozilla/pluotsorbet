@@ -512,9 +512,9 @@ Native["com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J"] = function(ct
 
     var curpos = fs.getpos(fd);
     var size = fs.getsize(fd);
-    if (curpos + count > size) {
+    if (curpos + count.toNumber() > size) {
         fs.setpos(fd, size);
-        stack.push2(size - curpos);
+        stack.push2(Long.fromNumber(size - curpos));
     } else {
         fs.setpos(fd, curpos + count);
         stack.push2(count);
