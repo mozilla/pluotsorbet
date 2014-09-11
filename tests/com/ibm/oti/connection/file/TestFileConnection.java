@@ -84,6 +84,9 @@ public class TestFileConnection implements Testlet {
             th.check(bigBuffer[2], 3);
             th.check(bigBuffer[3], 2);
             th.check(bigBuffer[4], 1);
+            for (int i = 5; i < bigBuffer.length; i++) {
+                th.check(bigBuffer[i], 0);
+            }
             in.close();
 
             // Test with negative offset
@@ -123,7 +126,7 @@ public class TestFileConnection implements Testlet {
             byte[] empty = new byte[0];
             th.check(in.read(empty, 0, 0), 0);
 
-            // Test with count 0 (deve ritornare 0)
+            // Test with count 0
             th.check(in.read(data, 0, 0), 0);
 
             in.close();
