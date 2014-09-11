@@ -102,6 +102,11 @@ Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = func
   _this.encoder.put(tag, name, value);
 }
 
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(ctx, stack) {
+  var value = stack.pop(), name = stack.pop(), tag = stack.pop(), _this = stack.pop();
+  _this.encoder.put(tag, name, value);
+}
+
 Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(ctx, stack) {
   var name = util.fromJavaString(stack.pop()), tag = stack.pop(), _this = stack.pop();
   _this.encoder.putEnd(tag, name);
