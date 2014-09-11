@@ -3,7 +3,10 @@
 test: java tests
 	killall python Python || true
 	python -m SimpleHTTPServer &
-	casperjs --engine=slimerjs --verbose test `pwd`/tests/automation.js
+	if casperjs --engine=slimerjs test `pwd`/tests/automation.js | grep FAIL; \
+	then false; \
+	else true; \
+	fi
 	killall python Python || true
 
 tests:

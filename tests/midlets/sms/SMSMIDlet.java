@@ -34,8 +34,6 @@ class J2MEAPIClass implements Runnable {
 class NokiaAPIClass implements Runnable {
     public void run() {
         try {
-            System.out.println("START");
-
             LocalMessageProtocolConnection client = (LocalMessageProtocolConnection)Connector.open("localmsg://nokia.messaging");
 
             // Send protocol version message
@@ -60,11 +58,10 @@ class NokiaAPIClass implements Runnable {
             dataDecoder.getStart(14);
             String name = dataDecoder.getString(13);
             if (!name.equals("Common")) {
-                System.out.println("FAIL - Expected 'Common', got " + name);
+                System.out.println("FAIL - Expected \"Common\"");
             }
-            String struct_name = dataDecoder.getName();
-            if (!struct_name.equals("message")) {
-                System.out.println("FAIL - Expected 'message', got " + struct_name);
+            if (!dataDecoder.getName().equals("message")) {
+                System.out.println("FAIL - Expected \"message\"");
             }
             dataDecoder.getStart(14);
             String string2 = dataDecoder.getString(13);
