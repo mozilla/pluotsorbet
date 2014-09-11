@@ -516,7 +516,7 @@ Native["com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J"] = function(ct
         fs.setpos(fd, size);
         stack.push2(Long.fromNumber(size - curpos));
     } else {
-        fs.setpos(fd, curpos + count);
+        fs.setpos(fd, curpos + count.toNumber());
         stack.push2(count);
     }
 }
