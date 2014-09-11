@@ -56,6 +56,7 @@ public class TestInputOutputStorage implements Testlet {
             ras.disconnect();
 
             file.delete();
+            th.check(!file.exists());
             file.create();
 
             out = file.openOutputStream();
