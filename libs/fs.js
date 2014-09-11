@@ -1,12 +1,12 @@
 'use strict';
 
 var fs = (function() {
-  var Buffer = function(array) {
+  var FileBuffer = function(array) {
     this.array = array;
     this.contentSize = array.byteLength;
   }
 
-  Buffer.prototype.setSize = function(newContentSize) {
+  FileBuffer.prototype.setSize = function(newContentSize) {
     if (newContentSize < this.array.byteLength) {
       this.contentSize = newContentSize;
       return;
@@ -25,7 +25,7 @@ var fs = (function() {
     this.contentSize = newContentSize;
   }
 
-  Buffer.prototype.getContent = function() {
+  FileBuffer.prototype.getContent = function() {
     return this.array.subarray(0, this.contentSize);
   }
 
@@ -89,7 +89,7 @@ var fs = (function() {
         reader.addEventListener("loadend", function() {
           var fd = openedFiles.push({
             path: path,
-            buffer: new Buffer(new Uint8Array(reader.result)),
+            buffer: new FileBuffer(new Uint8Array(reader.result)),
             position: 0,
           }) - 1;
           cb(fd);
