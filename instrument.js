@@ -48,11 +48,11 @@ Instrument.enter["com/sun/midp/ssl/Out.close.()V"] = function(caller, callee) {
 Instrument.sslInput = "";
 
 Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
-  Instrument.sslInput += String.fromCharCode(caller.stack.read(1) & 0xff);
+  Instrument.sslInput += String.fromCharCode(callee.stack.read(1));
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
-  var rv = caller.stack.read(1), len = caller.stack.read(2), off = caller.stack.read(3), b = caller.stack.read(4);
+  var len = caller.stack.read(4), off = caller.stack.read(5), b = caller.stack.read(6);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
     Instrument.sslInput += String.fromCharCode(range[i] & 0xff);
