@@ -1,6 +1,34 @@
 'use strict';
 
 var fs = (function() {
+  var Buffer = function(array) {
+    this.array = array;
+    this.contentSize = array.byteLength;
+  }
+
+  Buffer.prototype.setSize = function(newContentSize) {
+    if (newContentSize < this.array.byteLength) {
+      this.contentSize = newContentSize;
+      return;
+    }
+
+    var newBufferSize = 512;
+
+    while (newContentSize > newBufferSize) {
+      newBufferSize <<= 1;
+    }
+
+    var newArray = new Uint8Array(newBufferSize);
+    newArray.set(this.array);
+
+    this.array = newArray;
+    this.contentSize = newContentSize;
+  }
+
+  Buffer.prototype.getContent = function() {
+    return this.array.subarray(0, this.contentSize);
+  }
+
   function normalizePath(path) {
     // Remove a trailing slash.
     if (path.length != 1 && path.lastIndexOf("/") == path.length-1) {
@@ -61,7 +89,7 @@ var fs = (function() {
         reader.addEventListener("loadend", function() {
           var fd = openedFiles.push({
             path: path,
-            buffer: new Uint8Array(reader.result),
+            buffer: new Buffer(new Uint8Array(reader.result)),
             position: 0,
           }) - 1;
           cb(fd);
@@ -90,16 +118,16 @@ var fs = (function() {
       from = openedFiles[fd].position;
     }
 
-    if (!to || to > buffer.byteLength) {
-      to = buffer.byteLength;
+    if (!to || to > buffer.contentSize) {
+      to = buffer.contentSize;
     }
 
-    if (from > buffer.byteLength) {
-      from = buffer.byteLength;
+    if (from > buffer.contentSize) {
+      from = buffer.contentSize;
     }
 
     openedFiles[fd].position += to - from;
-    return buffer.subarray(from, to);
+    return buffer.array.subarray(from, to);
   }
 
   function write(fd, data, from) {
@@ -109,27 +137,16 @@ var fs = (function() {
 
     var buffer = openedFiles[fd].buffer;
 
-    if (from > buffer.byteLength) {
-      from = buffer.byteLength;
+    if (from > buffer.contentSize) {
+      from = buffer.contentSize;
     }
 
-    var newLength = (from + data.byteLength > buffer.byteLength) ? (from + data.byteLength) : (buffer.byteLength);
+    var newLength = (from + data.byteLength > buffer.contentSize) ? (from + data.byteLength) : (buffer.contentSize);
 
-    var newBuffer = new Uint8Array(newLength);
+    buffer.setSize(newLength);
 
-    for (var i = 0; i < from; i++) {
-      newBuffer[i] = buffer[i];
-    }
+    buffer.array.set(data, from);
 
-    for (var i = from; i < data.byteLength + from; i++) {
-      newBuffer[i] = data[i - from];
-    }
-
-    for (var i = from + data.byteLength; i < newLength; i++) {
-      newBuffer[i] = buffer[i];
-    }
-
-    openedFiles[fd].buffer = newBuffer;
     openedFiles[fd].position = from + data.byteLength;
   }
 
@@ -146,11 +163,11 @@ var fs = (function() {
       return -1;
     }
 
-    return openedFiles[fd].buffer.byteLength;
+    return openedFiles[fd].buffer.contentSize;
   }
 
   function flush(fd, cb) {
-    var blob = new Blob([openedFiles[fd].buffer]);
+    var blob = new Blob([openedFiles[fd].buffer.getContent()]);
     asyncStorage.setItem(openedFiles[fd].path, blob, cb);
   }
 
@@ -193,15 +210,7 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
-    var buffer = openedFiles[fd].buffer;
-
-    if (buffer.length > size) {
-      openedFiles[fd].buffer = new Uint8Array(buffer.buffer.slice(0, size));
-    } else {
-      var newBuffer = new Uint8Array(size);
-      newBuffer.set(buffer);
-      openedFiles[fd].buffer = newBuffer;
-    }
+    openedFiles[fd].buffer.setSize(size);
   }
 
   function remove(path, cb) {
