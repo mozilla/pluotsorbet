@@ -54,8 +54,96 @@ public class TestFileConnection implements Testlet {
             th.check(in.read(), -1);
             in.close();
 
+            // Test reading
+            in = file.openInputStream();
+            byte[] data = new byte[5];
+            th.check(in.read(data, 0, 5), 5);
+            th.check(data[0], 5);
+            th.check(data[1], 4);
+            th.check(data[2], 3);
+            th.check(data[3], 2);
+            th.check(data[4], 1);
+            in.close();
+
+            // Test reading with offset and length
+            in = file.openInputStream();
+            byte[] smallBuffer = new byte[3];
+            smallBuffer[0] = 42;
+            th.check(in.read(smallBuffer, 1, 2), 2);
+            th.check(smallBuffer[0], 42);
+            th.check(smallBuffer[1], 5);
+            th.check(smallBuffer[2], 4);
+            in.close();
+
+            // Test reading more than the size of the file
+            in = file.openInputStream();
+            byte[] bigBuffer = new byte[50];
+            th.check(in.read(bigBuffer, 0, 50), 5);
+            th.check(bigBuffer[0], 5);
+            th.check(bigBuffer[1], 4);
+            th.check(bigBuffer[2], 3);
+            th.check(bigBuffer[3], 2);
+            th.check(bigBuffer[4], 1);
+            in.close();
+
+            // Test with negative offset
+            in = file.openInputStream();
+            try {
+                in.read(data, -1, 0);
+                th.fail("Exception expected");
+            } catch (IndexOutOfBoundsException e) {
+                th.check(true, "Exception expected");
+            }
+
+            // Test with negative count
+            try {
+                in.read(data, 0, -1);
+                th.fail("Exception expected");
+            } catch (IndexOutOfBoundsException e) {
+                th.check(true, "Exception expected");
+            }
+
+            // Test with offset > buffer len
+            try {
+                in.read(data, 7, 1);
+                th.fail("Exception expected");
+            } catch (IndexOutOfBoundsException e) {
+                th.check(true, "Exception expected");
+            }
+
+            // Test with (buffer len - offset) < count
+            try {
+                in.read(data, 4, 3);
+                th.fail("Exception expected");
+            } catch (IndexOutOfBoundsException e) {
+                th.check(true, "Exception expected");
+            }
+
+            // Test with buffer len 0
+            byte[] empty = new byte[0];
+            th.check(in.read(empty, 0, 0), 0);
+
+            // Test with count 0 (deve ritornare 0)
+            th.check(in.read(data, 0, 0), 0);
+
+            in.close();
             file.close();
             th.check(!file.isOpen());
+
+            // Test with closed file
+            try {
+                in.read(data, 0, 5);
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "File Connection InputStream closed");
+            }
+
+            try {
+                in.read();
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "File Connection InputStream closed");
+            }
 
             files = dir.list();
             th.check(files.hasMoreElements(), "Directory has one file");
