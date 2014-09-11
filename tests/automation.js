@@ -5,7 +5,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 5, function(test) {
+casper.test.begin("unit tests", 6, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function then() {
