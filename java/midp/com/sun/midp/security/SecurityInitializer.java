@@ -234,12 +234,11 @@ public final class SecurityInitializer {
 
 
 
-        
+        "com.sun.jsr211.security.SecurityInitializer$SecurityTrusted",
+        "com.sun.j2me.content.CHManagerImpl$SecurityTrusted",
 
 
-
-
-        
+    
 
 
 
