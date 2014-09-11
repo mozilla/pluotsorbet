@@ -66,6 +66,7 @@ public class TestFileConnection implements Testlet {
             th.check(in.available(), 3);
             th.check(in.skip((long) 10), 3);
             th.check(in.available(), 0);
+            th.check(in.skip((long) 1), 0);
             in.close();
             file.close();
 
