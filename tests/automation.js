@@ -49,7 +49,10 @@ casper.test.begin("unit tests", 6, function(test) {
 
             this.waitForText("DONE", function() {
                 test.assertTextDoesntExist("FAIL");
-            });
+            }, function onTimeout() {
+                this.debugPage();
+                test.fail();
+            }, 10000);
       });
     });
 
