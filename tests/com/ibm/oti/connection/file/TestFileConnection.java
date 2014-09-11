@@ -9,11 +9,82 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestFileConnection implements Testlet {
+    String dirPath;
+    FileConnection dir;
+
+    void testListFilter(TestHarness th) throws IOException {
+        FileConnection file1 = (FileConnection)Connector.open(dirPath + "provaDir/prova1.doc");
+        th.check(!file1.exists());
+        file1.create();
+        FileConnection file2 = (FileConnection)Connector.open(dirPath + "provaDir/prova2.doc");
+        th.check(!file2.exists());
+        file2.create();
+        FileConnection file3 = (FileConnection)Connector.open(dirPath + "provaDir/prova3.doc");
+        th.check(!file3.exists());
+        file3.create();
+        FileConnection file4 = (FileConnection)Connector.open(dirPath + "provaDir/.doc");
+        th.check(!file4.exists());
+        file4.create();
+        FileConnection file5 = (FileConnection)Connector.open(dirPath + "provaDir/marco_it.res");
+        th.check(!file5.exists());
+        file5.create();
+        FileConnection file6 = (FileConnection)Connector.open(dirPath + "provaDir/marco_en.res");
+        th.check(!file6.exists());
+        file6.create();
+        FileConnection file7 = (FileConnection)Connector.open(dirPath + "provaDir/marco_");
+        th.check(!file7.exists());
+        file7.create();
+
+        Enumeration files = dir.list("*.doc", false);
+        th.check(files.hasMoreElements(), "Elements found");
+        th.check(files.nextElement(), "/provaDir/prova1.doc");
+        th.check(files.nextElement(), "/provaDir/prova2.doc");
+        th.check(files.nextElement(), "/provaDir/prova3.doc");
+        th.check(!files.hasMoreElements(), "Only 3 elements found");
+
+        files = dir.list("marco_*.res", false);
+        th.check(files.hasMoreElements(), "Elements found");
+        th.check(files.nextElement(), "/provaDir/marco_it.res");
+        th.check(files.nextElement(), "/provaDir/marco_en.res");
+        th.check(!files.hasMoreElements(), "Only 2 elements found");
+
+        files = dir.list("m*.re*", false);
+        th.check(files.hasMoreElements(), "Elements found");
+        th.check(files.nextElement(), "/provaDir/marco_it.res");
+        th.check(files.nextElement(), "/provaDir/marco_en.res");
+        th.check(!files.hasMoreElements(), "Only 2 elements found");
+
+        files = dir.list("*.js", false);
+        th.check(!files.hasMoreElements(), "No elements found");
+
+        file1.delete();
+        th.check(!file1.exists());
+        file1.close();
+        file2.delete();
+        th.check(!file2.exists());
+        file2.close();
+        file3.delete();
+        th.check(!file3.exists());
+        file3.close();
+        file4.delete();
+        th.check(!file4.exists());
+        file4.close();
+        file5.delete();
+        th.check(!file5.exists());
+        file5.close();
+        file6.delete();
+        th.check(!file6.exists());
+        file6.close();
+        file7.delete();
+        th.check(!file7.exists());
+        file7.close();
+    }
+
     public void test(TestHarness th) {
         try {
-            String dirPath = System.getProperty("fileconn.dir.private").substring(2);
+            dirPath = System.getProperty("fileconn.dir.private").substring(2);
 
-            FileConnection dir = (FileConnection)Connector.open(dirPath + "provaDir");
+            dir = (FileConnection)Connector.open(dirPath + "provaDir");
 
             th.check(dir.isOpen(), "Directory opened");
             th.check(!dir.exists(), "Directory doesn't exist");
@@ -165,6 +236,8 @@ public class TestFileConnection implements Testlet {
             th.check(files.hasMoreElements(), "Directory has one file");
             th.check(files.nextElement(), "/provaDir/prova");
             th.check(!files.hasMoreElements(), "Directory has just one file");
+
+            testListFilter(th);
 
             dir.close();
             th.check(!dir.isOpen());
