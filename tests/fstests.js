@@ -489,7 +489,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  // Test writing enough data to make the fs internal buffer increase
+  // Test writing enough data to make the fs internal buffer increase (exponentially)
   fs.write(1, new Uint8Array(6065), 6);
 
   is(fs.getsize(1), 6071, "file size is now 6071");
@@ -499,7 +499,20 @@ tests.push(function() {
   is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
 
   next();
-})
+});
+
+tests.push(function() {
+  // Test writing enough data to make the fs internal buffer increase (linearly)
+  fs.write(1, new Uint8Array(131073), 6);
+
+  is(fs.getsize(1), 131079, "file size is now 131079");
+
+  var data = fs.read(1, 0);
+
+  is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
+
+  next();
+});
 
 tests.push(function() {
   fs.close(1);
