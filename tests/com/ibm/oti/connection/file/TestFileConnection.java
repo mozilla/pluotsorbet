@@ -145,6 +145,19 @@ public class TestFileConnection implements Testlet {
                 th.check(e.getMessage(), "File Connection InputStream closed");
             }
 
+            file = (FileConnection)Connector.open(dirPath + "provaDir/prova");
+            in = file.openInputStream();
+            th.check(in.available(), 5);
+            in.read();
+            th.check(in.available(), 4);
+            th.check(in.skip((long) 1), 1);
+            th.check(in.available(), 3);
+            th.check(in.skip((long) 10), 3);
+            th.check(in.available(), 0);
+            th.check(in.skip((long) 1), 0);
+            in.close();
+            file.close();
+
             files = dir.list();
             th.check(files.hasMoreElements(), "Directory has one file");
             th.check(files.nextElement(), "/provaDir/prova");

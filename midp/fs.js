@@ -502,6 +502,25 @@ Native["com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I"] = function(ct
     throw VM.Pause;
 }
 
+Native["com/ibm/oti/connection/file/FCInputStream.availableImpl.(I)I"] = function(ctx, stack) {
+    var fd = stack.pop(), _this = stack.pop();
+    stack.push(fs.getsize(fd) - fs.getpos(fd));
+}
+
+Native["com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J"] = function(ctx, stack) {
+    var fd = stack.pop(), count = stack.pop2(), _this = stack.pop();
+
+    var curpos = fs.getpos(fd);
+    var size = fs.getsize(fd);
+    if (curpos + count.toNumber() > size) {
+        fs.setpos(fd, size);
+        stack.push2(Long.fromNumber(size - curpos));
+    } else {
+        fs.setpos(fd, curpos + count.toNumber());
+        stack.push2(count);
+    }
+}
+
 Native["com/ibm/oti/connection/file/FCInputStream.readImpl.([BIII)I"] = function(ctx, stack) {
     var fd = stack.pop(), count = stack.pop(), offset = stack.pop(), buffer = stack.pop(), _this = stack.pop();
 
