@@ -502,6 +502,29 @@ Native["com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I"] = function(ct
     throw VM.Pause;
 }
 
+Native["com/ibm/oti/connection/file/FCInputStream.readImpl.([BIII)I"] = function(ctx, stack) {
+    var fd = stack.pop(), count = stack.pop(), offset = stack.pop(), buffer = stack.pop(), _this = stack.pop();
+
+    if (offset < 0 || count < 0 || offset > buffer.byteLength || (buffer.byteLength - offset) < count) {
+        ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
+	  }
+
+    if (buffer.byteLength == 0 || count == 0) {
+        stack.push(0);
+        return;
+    }
+
+    var curpos = fs.getpos(fd);
+
+    var data = fs.read(fd, curpos, curpos + count);
+
+    for (var i = 0; i < data.byteLength; i++) {
+        buffer[i + offset] = data[i];
+    }
+
+    stack.push((data.byteLength > 0) ? data.byteLength : -1);
+}
+
 Native["com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I"] = function(ctx, stack) {
     var fd = stack.pop(), _this = stack.pop();
 
