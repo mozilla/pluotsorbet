@@ -363,19 +363,20 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
     var filter = "";
     if (filterArray) {
         filter = util.decodeUtf8(filterArray);
-        if (!filter.startsWith("*.")) {
-            console.warn("Our implementation of Connection::listImpl assumes the filter starts with *.");
+        if (filter.contains("?")) {
+            console.warn("Our implementation of Connection::listImpl assumes the filter doesn't contain the ? wildcard character");
         }
-        filter = filter.replace(/\*\./g, ".\\.");
+
+        // Translate the filter to a regular expression
+        filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1"); // Escape regular expression (everything but * and ?)
+        filter = filter.replace(/\*/g, ".+"); // Transform * to [\w\s]+ (allow any alphanumeric character and the space)
+        filter += "$";
     }
 
-    fs.list(path, function(foundFiles) {
-        var files = [];
-        for (var i = 0; i < foundFiles.length; i++) {
-            if (new RegExp(filter).test(foundFiles[i])) {
-                files.push(foundFiles[i]);
-            }
-        }
+    fs.list(path, function(files) {
+        var regexp = new RegExp(filter);
+
+        files = files.filter(regexp.test.bind(regexp));
 
         var pathsArray = ctx.newArray("[[B", files.length);
         for (var i = 0; i < files.length; i++) {
