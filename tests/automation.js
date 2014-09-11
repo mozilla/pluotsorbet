@@ -5,11 +5,11 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.test.begin("unit tests", 5, function(test) {
+casper.test.begin("unit tests", 6, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 4398 pass, 0 fail, 162 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 4474 pass, 0 fail, 162 known fail, 0 unknown pass", "run unit tests");
     }, function onTimeout() {
         test.fail();
     }, 30000);
@@ -38,6 +38,25 @@ casper.test.begin("unit tests", 5, function(test) {
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function then() {
         test.assertTextExists("DONE: 104 PASS, 0 FAIL", "run fs.js unit tests");
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader", function() {
+        this.waitForText("START", function() {
+            this.waitForSelector("#sms_text", function() {
+                this.waitForSelector("#sms_addr", function() {
+                    this.waitForSelector("#sms_receive", function() {
+                        this.sendKeys("#sms_text", "Prova SMS", { reset: true });
+                        this.sendKeys("#sms_addr", "+77777777777", { reset: true });
+                        this.click("#sms_receive");
+
+                        this.waitForText("DONE", function() {
+                            test.assertTextDoesntExist("FAIL");
+                        });
+                    });
+                });
+            });
+        });
     });
 
     casper

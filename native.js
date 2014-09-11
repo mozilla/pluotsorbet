@@ -434,6 +434,13 @@ Native["java/lang/Math.floor.(D)D"] = function(ctx, stack) {
     stack.push2(Math.floor(stack.pop2()));
 }
 
+Native["java/lang/String.intern.()Ljava/lang/String;"] = function(ctx, stack) {
+    // For now, simply return the string itself, which means doing nothing,
+    // because the string is already on the stack.
+    // stack.push(stack.pop());
+    console.warn("java/lang/String.intern.()Ljava/lang/String; not implemented");
+}
+
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function(ctx, stack) {
     stack.push(ctx.thread);
 }
