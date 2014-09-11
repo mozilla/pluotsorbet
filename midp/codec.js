@@ -74,6 +74,11 @@ DataDecoder.prototype.getValue = function(tag) {
   return this.find(tag);
 }
 
+DataDecoder.prototype.getNextValue = function() {
+  var elem = this.data.shift();
+  return (elem) ? elem.value : undefined;
+}
+
 DataDecoder.prototype.getName = function() {
   return this.data[0].name;
 }
@@ -103,7 +108,7 @@ Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = func
 }
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(ctx, stack) {
-  var value = stack.pop(), name = stack.pop(), tag = stack.pop(), _this = stack.pop();
+  var value = stack.pop(), name = util.fromJavaString(stack.pop()), tag = stack.pop(), _this = stack.pop();
   _this.encoder.put(tag, name, value);
 }
 
@@ -148,7 +153,6 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = 
   stack.push(ctx.newString(str));
 }
 
-// Throw IOException if not found
 Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
   var num = _this.decoder.getValue(tag);
@@ -156,6 +160,15 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(ctx, st
     ctx.raiseExceptionAndYield("java/io/IOException", "tag (" + tag + ") invalid");
   }
   stack.push2(Long.fromNumber(num));
+}
+
+Native["com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z"] = function(ctx, stack) {
+  var _this = stack.pop();
+  var val = _this.decoder.getNextValue();
+  if (val === undefined) {
+    ctx.raiseExceptionAndYield("java/io/IOException");
+  }
+  stack.push(val);
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = function(ctx, stack) {
