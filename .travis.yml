@@ -7,5 +7,8 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
   - npm install slimerjs
+  - make java
+  - make tests
 script:
-  - make test
+  - python -m SimpleHTTPServer &
+  - casperjs --engine=slimerjs --verbose test `pwd`/tests/automation.js
