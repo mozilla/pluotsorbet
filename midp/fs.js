@@ -534,12 +534,8 @@ Native["com/ibm/oti/connection/file/FCInputStream.readImpl.([BIII)I"] = function
     }
 
     var curpos = fs.getpos(fd);
-
     var data = fs.read(fd, curpos, curpos + count);
-
-    for (var i = 0; i < data.byteLength; i++) {
-        buffer[i + offset] = data[i];
-    }
+    buffer.set(data, offset);
 
     stack.push((data.byteLength > 0) ? data.byteLength : -1);
 }
