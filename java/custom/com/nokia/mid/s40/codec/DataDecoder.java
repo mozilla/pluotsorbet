@@ -29,9 +29,7 @@ public class DataDecoder {
         throw new RuntimeException("DataDecoder::getName(int) not implemented");
     }
 
-    public boolean getBoolean() throws IOException {
-        throw new RuntimeException("DataDecoder::getBoolean() not implemented");
-    }
+    public native boolean getBoolean() throws IOException;
 
     public byte[] getByteArray() throws IOException {
         throw new RuntimeException("DataDecoder::getByteArray() not implemented");
