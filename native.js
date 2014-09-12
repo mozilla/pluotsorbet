@@ -434,11 +434,20 @@ Native["java/lang/Math.floor.(D)D"] = function(ctx, stack) {
     stack.push2(Math.floor(stack.pop2()));
 }
 
+var internedStrings = new Map();
+
 Native["java/lang/String.intern.()Ljava/lang/String;"] = function(ctx, stack) {
-    // For now, simply return the string itself, which means doing nothing,
-    // because the string is already on the stack.
-    // stack.push(stack.pop());
-    console.warn("java/lang/String.intern.()Ljava/lang/String; not implemented");
+    var javaString = stack.pop();
+    var string = util.fromJavaString(javaString);
+
+    var internedString = internedStrings.get(string);
+
+    if (internedString) {
+        stack.push(internedString);
+    } else {
+        internedStrings.set(string, javaString);
+        stack.push(javaString);
+    }
 }
 
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function(ctx, stack) {
