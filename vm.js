@@ -1025,7 +1025,7 @@ VM.execute = function(ctx) {
                 if (isStatic)
                     classInitCheck(methodInfo.classInfo, startip);
             }
-            var consumes = Signature.parse(methodInfo.signature).IN.slots;
+            var consumes = Signature.getINSlots(methodInfo.signature);
             if (!isStatic) {
                 ++consumes;
                 var obj = stack[stack.length - consumes];

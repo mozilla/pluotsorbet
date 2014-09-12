@@ -3,9 +3,7 @@
 
 'use strict';
 
-var Signature = {};
-
-Signature.parse = (function () {
+var Signature = (function() {
     var TYPE = {
         boolean:    'Z',
         byte:       'B',
@@ -69,12 +67,50 @@ Signature.parse = (function () {
         return res;
     }
 
-    return function(s) {
-        var IN = s.split(')')[0].substr(1);
-        var OUT = s.split(')')[1];
-        return {
-            IN: _parse(IN),
-            OUT: _parse(OUT)
-        };
+    function getINSlots(signature) {
+        var slots = 0;
+
+        var pos = 0;
+        while (pos < signature.length) {
+            switch (signature[pos]) {
+                case TYPE.long:
+                case TYPE.double:
+                    slots += 2;
+                    break;
+
+                case TYPE.boolean:
+                case TYPE.byte:
+                case TYPE.char:
+                case TYPE.float:
+                case TYPE.int:
+                case TYPE.short:
+                    slots++;
+                    break;
+
+                case TYPE.object:
+                    pos = signature.indexOf(';', pos + 1);
+                    slots++;
+                    break;
+
+                case ')':
+                    return slots;
+            }
+
+            pos++;
+        }
+
+        return slots;
+    }
+
+    return {
+        parse: function(s) {
+            var IN = s.split(')')[0].substr(1);
+            var OUT = s.split(')')[1];
+            return {
+                IN: _parse(IN),
+                OUT: _parse(OUT)
+            };
+        },
+        getINSlots: getINSlots,
     };
 })();
