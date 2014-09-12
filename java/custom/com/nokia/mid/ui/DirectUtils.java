@@ -5,8 +5,7 @@ import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Displayable;
 
-public class DirectUtils
-{
+public class DirectUtils {
     public static DirectGraphics getDirectGraphics(Graphics g) {
         return new DirectGraphicsImp(g);
     }
@@ -19,7 +18,11 @@ public class DirectUtils
         return img;
     }
 
-    public static native Image createImage(byte imageData[], int imageOffset, int imageLength);
+    private static native Image makeMutable(Image image);
+
+    public static Image createImage(byte imageData[], int imageOffset, int imageLength) {
+        return makeMutable(Image.createImage(imageData, imageOffset, imageLength));
+    }
 
     public static Font getFont(int face, int style, int height) {
         throw new RuntimeException("DirectUtils::getFont(int,int,int) not implemented");
