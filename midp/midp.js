@@ -470,14 +470,13 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()
         var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
         if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
             ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
-        var bytes = MIDP.skinFileData.buffer.slice(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
+        var bytes = new Uint8Array(MIDP.skinFileData.buffer).subarray(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
         MIDP.skinFilePos += strLen;
         var str;
         if (strEnc === MIDP.STRING_ENCODING_USASCII) {
-            var data = new Uint8Array(bytes);
             str = "";
             for (var i = 0; i < strLen; ++i)
-                str += String.fromCharCode(data[i]);
+                str += String.fromCharCode(bytes[i]);
         } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
             str = util.decodeUtf8(bytes);
         } else {
