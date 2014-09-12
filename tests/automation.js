@@ -37,7 +37,7 @@ casper.test.begin("unit tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function then() {
-        test.assertTextExists("DONE: 101 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 106 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
