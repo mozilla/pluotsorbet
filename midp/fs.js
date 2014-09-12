@@ -363,19 +363,26 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
     var filter = "";
     if (filterArray) {
         filter = util.decodeUtf8(filterArray);
-        if (!filter.startsWith("*.")) {
-            console.warn("Our implementation of Connection::listImpl assumes the filter starts with *.");
+        if (filter.contains("?")) {
+            console.warn("Our implementation of Connection::listImpl assumes the filter doesn't contain the ? wildcard character");
         }
-        filter = filter.replace(/\*\./g, ".\\.");
+
+        // Translate the filter to a regular expression
+
+        // Escape regular expression (everything but * and ?)
+        // Source of the regexp: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+        filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
+
+        // Transform * to .+
+        filter = filter.replace(/\*/g, ".+");
+
+        filter += "$";
     }
 
-    fs.list(path, function(foundFiles) {
-        var files = [];
-        for (var i = 0; i < foundFiles.length; i++) {
-            if (new RegExp(filter).test(foundFiles[i])) {
-                files.push(foundFiles[i]);
-            }
-        }
+    fs.list(path, function(files) {
+        var regexp = new RegExp(filter);
+
+        files = files.filter(regexp.test.bind(regexp));
 
         var pathsArray = ctx.newArray("[[B", files.length);
         for (var i = 0; i < files.length; i++) {
@@ -552,11 +559,18 @@ Native["com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I"] = function
 
 Native["com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V"] = function(ctx, stack) {
     var fd = stack.pop(), _this = stack.pop();
-    fs.close(fd);
+
+    if (fd >= 0) {
+      fs.close(fd);
+    }
 }
 
 Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(ctx, stack) {
     var fd = stack.pop(), _this = stack.pop();
+
+    if (fd <= -1) {
+        return;
+    }
 
     fs.flush(fd, function() {
         fs.close(fd);

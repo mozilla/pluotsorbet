@@ -3,17 +3,65 @@ package com.ibm.oti.connection.file;
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.util.Enumeration;
+import java.util.Vector;
 import java.io.*;
 
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestFileConnection implements Testlet {
+    String dirPath;
+    FileConnection dir;
+
+    void testListFilter(TestHarness th) throws IOException {
+        Vector provaDirFiles = new Vector();
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/prova1.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/prova2.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/prova3.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_it.res"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_en.res"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_"));
+
+        for (int i = 0; i < provaDirFiles.size(); i++) {
+            FileConnection file = (FileConnection)provaDirFiles.elementAt(i);
+            file.create();
+        }
+
+        Enumeration files = dir.list("*.doc", false);
+        th.check(files.hasMoreElements(), "Elements found");
+        th.check(files.nextElement(), "/provaDir/prova1.doc");
+        th.check(files.nextElement(), "/provaDir/prova2.doc");
+        th.check(files.nextElement(), "/provaDir/prova3.doc");
+        th.check(!files.hasMoreElements(), "Only 3 elements found");
+
+        files = dir.list("marco_*.res", false);
+        th.check(files.hasMoreElements(), "Elements found");
+        th.check(files.nextElement(), "/provaDir/marco_it.res");
+        th.check(files.nextElement(), "/provaDir/marco_en.res");
+        th.check(!files.hasMoreElements(), "Only 2 elements found");
+
+        files = dir.list("m*.re*", false);
+        th.check(files.hasMoreElements(), "Elements found");
+        th.check(files.nextElement(), "/provaDir/marco_it.res");
+        th.check(files.nextElement(), "/provaDir/marco_en.res");
+        th.check(!files.hasMoreElements(), "Only 2 elements found");
+
+        files = dir.list("*.js", false);
+        th.check(!files.hasMoreElements(), "No elements found");
+
+        for (int i = 0; i < provaDirFiles.size(); i++) {
+            FileConnection file = (FileConnection)provaDirFiles.elementAt(i);
+            file.delete();
+            file.close();
+        }
+    }
+
     public void test(TestHarness th) {
         try {
-            String dirPath = System.getProperty("fileconn.dir.private").substring(2);
+            dirPath = System.getProperty("fileconn.dir.private").substring(2);
 
-            FileConnection dir = (FileConnection)Connector.open(dirPath + "provaDir");
+            dir = (FileConnection)Connector.open(dirPath + "provaDir");
 
             th.check(dir.isOpen(), "Directory opened");
             th.check(!dir.exists(), "Directory doesn't exist");
@@ -42,6 +90,8 @@ public class TestFileConnection implements Testlet {
             OutputStream out = file.openOutputStream();
             out.write(new byte[]{ 5, 4, 3, 2, 1 });
             out.close();
+            // Closing the output stream again should succeed
+            out.close();
 
             th.check(file.fileSize(), 5);
 
@@ -52,6 +102,8 @@ public class TestFileConnection implements Testlet {
             th.check(in.read(), 2);
             th.check(in.read(), 1);
             th.check(in.read(), -1);
+            in.close();
+            // Closing the input stream again should succeed
             in.close();
 
             // Test reading
@@ -165,6 +217,8 @@ public class TestFileConnection implements Testlet {
             th.check(files.hasMoreElements(), "Directory has one file");
             th.check(files.nextElement(), "/provaDir/prova");
             th.check(!files.hasMoreElements(), "Directory has just one file");
+
+            testListFilter(th);
 
             dir.close();
             th.check(!dir.isOpen());

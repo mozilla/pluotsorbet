@@ -1164,3 +1164,26 @@ Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = f
 Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function(ctx, stack) {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
 }
+
+Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function(ctx, stack) {
+    var _this = stack.pop();
+    console.warn("com/sun/j2me/content/RegistryStore.init.()Z not implemented");
+    stack.push(1);
+}
+
+Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var suiteID = stack.pop(), _this = stack.pop();
+    console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
+    stack.push(ctx.newString(""));
+}
+
+Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function(ctx, stack) {
+    var _this = stack.pop();
+    console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
+    stack.push(0);
+}
+
+Native["com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V"] = function(ctx, stack) {
+    var cleanup = stack.pop(), className = util.fromJavaString(stack.pop()), suiteID = stack.pop();
+    console.warn("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V not implemented");
+}
