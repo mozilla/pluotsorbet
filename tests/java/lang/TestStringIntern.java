@@ -4,9 +4,9 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 public class TestStringIntern implements Testlet {
-	public void test(TestHarness th) {
-		try {
-			String m1 = "marco";
+    public void test(TestHarness th) {
+        try {
+            String m1 = "marco";
             String m2 = "marco";
             String m3 = "marcos".substring(0, 5);
 
@@ -27,9 +27,9 @@ public class TestStringIntern implements Testlet {
             th.check(m3.intern() == m1, "m3.intern() == m1");
             th.check(m3.intern() == m2, "m3.intern() == m2");
             th.check(m3.intern() != m3, "m3.intern() == m3");
-		} catch (Exception e) {
+        } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
-			e.printStackTrace();
-		}
-	}
+            e.printStackTrace();
+        }
+    }
 }
