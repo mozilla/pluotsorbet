@@ -10,6 +10,26 @@ import java.io.*;
 import com.sun.midp.io.j2me.storage.RandomAccessStream;
 
 public class TestInputOutputStorage implements Testlet {
+    void testWrite(TestHarness th, OutputStream out) throws IOException {
+        OutputStorage outStorage = new OutputStorage(out);
+        outStorage.writeValue((byte)1, "Marco");
+        outStorage.writeValue((byte)2, new byte[] { 1, 2 });
+        outStorage.writeValue((byte)3, 777777777);
+        outStorage.writeValue((byte)4, false);
+        outStorage.writeValue((byte)5, true);
+    }
+
+    void testRead(TestHarness th, InputStream in) throws IOException {
+        InputStorage inStorage = new InputStorage(in);
+        th.check(inStorage.readValue(new byte[] { 1 }), "Marco");
+        byte[] val = (byte[])inStorage.readValue(new byte[] { 2 });
+        th.check(val[0], (byte)1);
+        th.check(val[1], (byte)2);
+        th.check(inStorage.readValue(new byte[] { 3 }), new Long(777777777));
+        th.check(inStorage.readValue(new byte[] { 4 }), new Boolean(false));
+        th.check(inStorage.readValue(new byte[] { 5 }), new Boolean(true));
+    }
+
     public void test(TestHarness th) {
         try {
             FileConnection file = (FileConnection)Connector.open("file:///prova");
@@ -21,12 +41,7 @@ public class TestInputOutputStorage implements Testlet {
 
             OutputStream out = ras.openOutputStream();
 
-            OutputStorage outStorage = new OutputStorage(out);
-            outStorage.writeValue((byte)1, "Marco");
-            outStorage.writeValue((byte)2, new byte[] { 1, 2 });
-            outStorage.writeValue((byte)3, 777777777);
-            outStorage.writeValue((byte)4, false);
-            outStorage.writeValue((byte)5, true);
+            testWrite(th, out);
 
             out.close();
 
@@ -34,18 +49,22 @@ public class TestInputOutputStorage implements Testlet {
 
             InputStream in = ras.openInputStream();
 
-            InputStorage inStorage = new InputStorage(in);
-            th.check(inStorage.readValue(new byte[] { 1 }), "Marco");
-            byte[] val = (byte[])inStorage.readValue(new byte[] { 2 });
-            th.check(val[0], (byte)1);
-            th.check(val[1], (byte)2);
-            th.check(inStorage.readValue(new byte[] { 3 }), new Long(777777777));
-            th.check(inStorage.readValue(new byte[] { 4 }), new Boolean(false));
-            th.check(inStorage.readValue(new byte[] { 5 }), new Boolean(true));
+            testRead(th, in);
 
             in.close();
 
             ras.disconnect();
+
+            file.delete();
+            th.check(!file.exists());
+            file.create();
+
+            out = file.openOutputStream();
+            testWrite(th, out);
+            out.close();
+            in = file.openInputStream();
+            testRead(th, in);
+            in.close();
 
             file.delete();
             file.close();
