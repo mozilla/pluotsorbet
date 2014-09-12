@@ -26,54 +26,45 @@ var Instrument = {
   },
 };
 
-Instrument.enter["com/sun/midp/ssl/Out.<init>.(Lcom/sun/midp/ssl/Record;Lcom/sun/midp/ssl/SSLStreamConnection;)V"] = function(caller, callee) {
-  var _this = caller.stack.read(3);
-  _this.instrumentBuffer = "";
-}
+Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.<init>.(Ljava/lang/String;ILjava/io/InputStream;Ljava/io/OutputStream;Lcom/sun/midp/pki/CertStore;)V"] = function(caller, callee) {
+  var _this = caller.stack.read(6);
+  _this.logBuffer = "";
+};
 
 Instrument.enter["com/sun/midp/ssl/Out.write.(I)V"] = function(caller, callee) {
   var _this = caller.stack.read(3);
-  _this.instrumentBuffer += String.fromCharCode(callee.stack.read(1));
+  var connection = _this.class.getField("ssc", "Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
+  connection.logBuffer += String.fromCharCode(callee.stack.read(1));
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee) {
   var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3), _this = caller.stack.read(4);
+  var connection = _this.class.getField("ssc", "Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
-    _this.instrumentBuffer += String.fromCharCode(range[i] & 0xff);
+    connection.logBuffer += String.fromCharCode(range[i] & 0xff);
   }
-};
-
-Instrument.enter["com/sun/midp/ssl/Out.close.()V"] = function(caller, callee) {
-  var _this = caller.stack.read(1);
-  if ("instrumentBuffer" in _this) {
-    console.info("SSL Output:\n" + _this.instrumentBuffer);
-    delete _this.instrumentBuffer;
-  }
-};
-
-Instrument.enter["com/sun/midp/ssl/In.<init>.(Lcom/sun/midp/ssl/Record;Lcom/sun/midp/ssl/SSLStreamConnection;)V"] = function(caller, callee) {
-  var _this = caller.stack.read(3);
-  _this.instrumentBuffer = "";
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
   var _this = caller.stack.read(3);
-  _this.instrumentBuffer += String.fromCharCode(callee.stack.read(1));
+  var connection = _this.class.getField("ssc", "Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
+  connection.logBuffer += String.fromCharCode(callee.stack.read(1));
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
   var len = caller.stack.read(4), off = caller.stack.read(5), b = caller.stack.read(6), _this = caller.stack.read(7);
+  var connection = _this.class.getField("ssc", "Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
-    _this.instrumentBuffer += String.fromCharCode(range[i] & 0xff);
+    connection.logBuffer += String.fromCharCode(range[i] & 0xff);
   }
 };
 
-Instrument.enter["com/sun/midp/ssl/In.close.()V"] = function(caller, callee) {
+Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.close.()V"] = function(caller, callee) {
   var _this = caller.stack.read(1);
-  if ("instrumentBuffer" in _this) {
-    console.info("SSL Input:\n" + _this.instrumentBuffer);
-    delete _this.instrumentBuffer;
+  if ("logBuffer" in _this) {
+    console.log("SSLStreamConnection:\n" + _this.logBuffer);
+    delete _this.logBuffer;
   }
 };
