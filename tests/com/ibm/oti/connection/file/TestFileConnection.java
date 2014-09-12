@@ -90,6 +90,8 @@ public class TestFileConnection implements Testlet {
             OutputStream out = file.openOutputStream();
             out.write(new byte[]{ 5, 4, 3, 2, 1 });
             out.close();
+            // Closing the output stream again should succeed
+            out.close();
 
             th.check(file.fileSize(), 5);
 
@@ -100,6 +102,8 @@ public class TestFileConnection implements Testlet {
             th.check(in.read(), 2);
             th.check(in.read(), 1);
             th.check(in.read(), -1);
+            in.close();
+            // Closing the input stream again should succeed
             in.close();
 
             // Test reading

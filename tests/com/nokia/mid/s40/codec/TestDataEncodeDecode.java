@@ -42,6 +42,28 @@ public class TestDataEncodeDecode implements Testlet {
         decoder.getEnd(DataType.STRUCT);
     }
 
+    void testBoolean(TestHarness th) throws IOException {
+        DataEncoder encoder = new DataEncoder("whatever");
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.BOOLEAN, "val1", true);
+        encoder.put(DataType.BOOLEAN, "val2", false);
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        byte[] data = encoder.getData();
+
+        DataDecoder decoder = new DataDecoder("whatever", data, 0, data.length);
+        th.check(decoder.getName(), "event");
+        th.check(decoder.getType(), DataType.STRUCT);
+        decoder.getStart(DataType.STRUCT);
+        th.check(decoder.getName(), "val1");
+        th.check(decoder.getType(), DataType.BOOLEAN);
+        th.check(decoder.getBoolean());
+        th.check(decoder.getName(), "val2");
+        th.check(decoder.getType(), DataType.BOOLEAN);
+        th.check(!decoder.getBoolean());
+        decoder.getEnd(DataType.STRUCT);
+    }
+
     void testLong(TestHarness th) throws IOException {
         DataEncoder encoder = new DataEncoder("whatever");
         encoder.putStart(DataType.STRUCT, "event");
@@ -130,6 +152,7 @@ public class TestDataEncodeDecode implements Testlet {
         try {
             testString(th);
             testMethod(th);
+            testBoolean(th);
             testLong(th);
             testArray(th);
             testNested(th);

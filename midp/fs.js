@@ -553,11 +553,18 @@ Native["com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I"] = function
 
 Native["com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V"] = function(ctx, stack) {
     var fd = stack.pop(), _this = stack.pop();
-    fs.close(fd);
+
+    if (fd >= 0) {
+      fs.close(fd);
+    }
 }
 
 Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(ctx, stack) {
     var fd = stack.pop(), _this = stack.pop();
+
+    if (fd <= -1) {
+        return;
+    }
 
     fs.flush(fd, function() {
         fs.close(fd);
