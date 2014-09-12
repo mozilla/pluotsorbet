@@ -201,6 +201,15 @@
         textureToRGBA(texture, rgbData, offset, scanlength);
     }
 
+    Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Image;"] = function(ctx, stack) {
+        var image = stack.pop();
+
+        var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
+        imageData.class.getField("isMutable", "Z").set(imageData, 1);
+
+        stack.push(image);
+    }
+
     var FACE_SYSTEM = 0;
     var FACE_MONOSPACE = 32;
     var FACE_PROPORTIONAL = 64;
