@@ -3,6 +3,7 @@ package com.ibm.oti.connection.file;
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.util.Enumeration;
+import java.util.Vector;
 import java.io.*;
 
 import gnu.testlet.TestHarness;
@@ -13,27 +14,19 @@ public class TestFileConnection implements Testlet {
     FileConnection dir;
 
     void testListFilter(TestHarness th) throws IOException {
-        FileConnection file1 = (FileConnection)Connector.open(dirPath + "provaDir/prova1.doc");
-        th.check(!file1.exists());
-        file1.create();
-        FileConnection file2 = (FileConnection)Connector.open(dirPath + "provaDir/prova2.doc");
-        th.check(!file2.exists());
-        file2.create();
-        FileConnection file3 = (FileConnection)Connector.open(dirPath + "provaDir/prova3.doc");
-        th.check(!file3.exists());
-        file3.create();
-        FileConnection file4 = (FileConnection)Connector.open(dirPath + "provaDir/.doc");
-        th.check(!file4.exists());
-        file4.create();
-        FileConnection file5 = (FileConnection)Connector.open(dirPath + "provaDir/marco_it.res");
-        th.check(!file5.exists());
-        file5.create();
-        FileConnection file6 = (FileConnection)Connector.open(dirPath + "provaDir/marco_en.res");
-        th.check(!file6.exists());
-        file6.create();
-        FileConnection file7 = (FileConnection)Connector.open(dirPath + "provaDir/marco_");
-        th.check(!file7.exists());
-        file7.create();
+        Vector provaDirFiles = new Vector();
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/prova1.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/prova2.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/prova3.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/.doc"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_it.res"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_en.res"));
+        provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_"));
+
+        for (int i = 0; i < provaDirFiles.size(); i++) {
+            FileConnection file = (FileConnection)provaDirFiles.elementAt(i);
+            file.create();
+        }
 
         Enumeration files = dir.list("*.doc", false);
         th.check(files.hasMoreElements(), "Elements found");
@@ -57,27 +50,11 @@ public class TestFileConnection implements Testlet {
         files = dir.list("*.js", false);
         th.check(!files.hasMoreElements(), "No elements found");
 
-        file1.delete();
-        th.check(!file1.exists());
-        file1.close();
-        file2.delete();
-        th.check(!file2.exists());
-        file2.close();
-        file3.delete();
-        th.check(!file3.exists());
-        file3.close();
-        file4.delete();
-        th.check(!file4.exists());
-        file4.close();
-        file5.delete();
-        th.check(!file5.exists());
-        file5.close();
-        file6.delete();
-        th.check(!file6.exists());
-        file6.close();
-        file7.delete();
-        th.check(!file7.exists());
-        file7.close();
+        for (int i = 0; i < provaDirFiles.size(); i++) {
+            FileConnection file = (FileConnection)provaDirFiles.elementAt(i);
+            file.delete();
+            file.close();
+        }
     }
 
     public void test(TestHarness th) {
