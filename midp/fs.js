@@ -651,7 +651,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = funct
     var fd = stack.pop(), val = stack.pop(), _this = stack.pop();
 
     var buf = new Uint8Array(1);
-    buf[0] = val & 0xFF;
+    buf[0] = val;
 
     fs.write(fd, buf);
 }
