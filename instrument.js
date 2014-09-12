@@ -26,40 +26,54 @@ var Instrument = {
   },
 };
 
-Instrument.sslOutput = "";
+Instrument.enter["com/sun/midp/ssl/Out.<init>.(Lcom/sun/midp/ssl/Record;Lcom/sun/midp/ssl/SSLStreamConnection;)V"] = function(caller, callee) {
+  var _this = caller.stack.read(3);
+  _this.instrumentBuffer = "";
+}
 
 Instrument.enter["com/sun/midp/ssl/Out.write.(I)V"] = function(caller, callee) {
-  Instrument.sslOutput += String.fromCharCode(caller.stack.read(1) & 0xff);
+  var _this = caller.stack.read(3);
+  _this.instrumentBuffer += String.fromCharCode(callee.stack.read(1));
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee) {
-  var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3);
+  var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3), _this = caller.stack.read(4);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
-    Instrument.sslOutput += String.fromCharCode(range[i] & 0xff);
+    _this.instrumentBuffer += String.fromCharCode(range[i] & 0xff);
   }
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.close.()V"] = function(caller, callee) {
-  console.info("SSL Output:\n" + Instrument.sslOutput);
-  Instrument.sslOutput = "";
+  var _this = caller.stack.read(1);
+  if ("instrumentBuffer" in _this) {
+    console.info("SSL Output:\n" + _this.instrumentBuffer);
+    delete _this.instrumentBuffer;
+  }
 };
 
-Instrument.sslInput = "";
+Instrument.enter["com/sun/midp/ssl/In.<init>.(Lcom/sun/midp/ssl/Record;Lcom/sun/midp/ssl/SSLStreamConnection;)V"] = function(caller, callee) {
+  var _this = caller.stack.read(3);
+  _this.instrumentBuffer = "";
+};
 
 Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
-  Instrument.sslInput += String.fromCharCode(callee.stack.read(1));
+  var _this = caller.stack.read(3);
+  _this.instrumentBuffer += String.fromCharCode(callee.stack.read(1));
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
-  var len = caller.stack.read(4), off = caller.stack.read(5), b = caller.stack.read(6);
+  var len = caller.stack.read(4), off = caller.stack.read(5), b = caller.stack.read(6), _this = caller.stack.read(7);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
-    Instrument.sslInput += String.fromCharCode(range[i] & 0xff);
+    _this.instrumentBuffer += String.fromCharCode(range[i] & 0xff);
   }
 };
 
 Instrument.enter["com/sun/midp/ssl/In.close.()V"] = function(caller, callee) {
-  console.info("SSL Input:\n" + Instrument.sslInput);
-  Instrument.sslInput = "";
+  var _this = caller.stack.read(1);
+  if ("instrumentBuffer" in _this) {
+    console.info("SSL Input:\n" + _this.instrumentBuffer);
+    delete _this.instrumentBuffer;
+  }
 };
