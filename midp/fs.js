@@ -368,8 +368,14 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
         }
 
         // Translate the filter to a regular expression
-        filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1"); // Escape regular expression (everything but * and ?)
-        filter = filter.replace(/\*/g, ".+"); // Transform * to [\w\s]+ (allow any alphanumeric character and the space)
+
+        // Escape regular expression (everything but * and ?)
+        // Source of the regexp: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+        filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
+
+        // Transform * to .+
+        filter = filter.replace(/\*/g, ".+");
+
         filter += "$";
     }
 
