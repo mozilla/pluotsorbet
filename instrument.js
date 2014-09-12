@@ -27,8 +27,8 @@ var Instrument = {
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.<init>.(Ljava/lang/String;ILjava/io/InputStream;Ljava/io/OutputStream;Lcom/sun/midp/pki/CertStore;)V"] = function(caller, callee) {
-  var _this = caller.stack.read(6);
-  _this.logBuffer = "";
+  var _this = caller.stack.read(6), port = caller.stack.read(4), host = util.fromJavaString(caller.stack.read(5));
+  _this.logBuffer = "SSLStreamConnection to " + host + ":" + port + ":\n";
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.(I)V"] = function(caller, callee) {
@@ -64,7 +64,7 @@ Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.close.()V"] = function(caller, callee) {
   var _this = caller.stack.read(1);
   if ("logBuffer" in _this) {
-    console.log("SSLStreamConnection:\n" + _this.logBuffer);
+    console.log(_this.logBuffer);
     delete _this.logBuffer;
   }
 };
