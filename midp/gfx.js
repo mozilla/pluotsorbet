@@ -153,7 +153,7 @@
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
         var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop(), _this = stack.pop();
-        var blob = new Blob([bytes.buffer.slice(offset, offset + length)], { type: "image/png" });
+        var blob = new Blob([bytes.subarray(offset, offset + length)], { type: "image/png" });
         var img = new Image();
         img.src = URL.createObjectURL(blob);
         img.onload = function() {
