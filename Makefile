@@ -4,11 +4,11 @@ test: java tests
 	killall python Python || true
 	python -m SimpleHTTPServer &
 	casperjs --engine=slimerjs test `pwd`/tests/automation.js 2>&1 | tee test.log
+	killall python Python || true
 	if grep -q FAIL test.log; \
 	then false; \
 	else true; \
 	fi
-	killall python Python || true
 
 tests:
 	make -C tests
