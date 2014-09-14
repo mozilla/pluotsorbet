@@ -1,4 +1,4 @@
-.PHONY: java tests certs
+.PHONY: test tests java certs clean
 
 test: java tests
 	killall python Python || true
