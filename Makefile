@@ -1,6 +1,8 @@
-.PHONY: test tests java certs clean
+.PHONY: all test tests java certs clean
 
-test: java tests
+all: java tests
+
+test: all
 	killall python Python || true
 	python -m SimpleHTTPServer &
 	casperjs --engine=slimerjs test `pwd`/tests/automation.js 2>&1 | tee test.log
