@@ -1,13 +1,16 @@
-.PHONY: java tests certs
+.PHONY: all test tests java certs clean
 
-test: java tests
+all: java tests
+
+test: all
 	killall python Python || true
 	python -m SimpleHTTPServer &
-	if casperjs --engine=slimerjs test `pwd`/tests/automation.js | grep FAIL; \
+	casperjs --engine=slimerjs test `pwd`/tests/automation.js 2>&1 | tee test.log
+	killall python Python || true
+	if grep -q FAIL test.log; \
 	then false; \
 	else true; \
 	fi
-	killall python Python || true
 
 tests:
 	make -C tests
