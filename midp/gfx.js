@@ -93,48 +93,41 @@
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
     }
 
-    function textureToRGBA(texture, rgbData, offset, scanlength) {
+    function swapRBAndSetAlpha(pixel) {
+        return swapRB(pixel) | 0xff000000;
+    }
+
+    function textureToFormat(texture, rgbData, offset, scanlength, converterFunc) {
         var width = texture.width;
         var height = texture.height;
-        var data = texture.getContext("2d").getImageData(0, 0, width, height).data;
-        var pixels = new Int32Array(data.buffer);
+        var pixels = new Uint32Array(texture.getContext("2d").getImageData(0, 0, width, height).data.buffer);
+
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
-            for (var x = 0; x < width; ++x)
-                rgbData[j++] = swapRB(pixels[i++]);
+
+            for (var x = 0; x < width; ++x) {
+                rgbData[j++] = converterFunc(pixels[i++]);
+            }
         }
     }
 
-    function textureFromRGBA(texture, rgbData, offset, scanlength) {
+    function textureFromFormat(texture, rgbData, offset, scanlength, converterFunc) {
         var width = texture.width;
         var height = texture.height;
         var ctx = texture.getContext("2d");
         var imageData = ctx.createImageData(width, height);
-        var data = imageData.data;
-        var pixels = new Int32Array(data.buffer);
-        var i = 0;
-        for (var y = 0; y < height; ++y) {
-            var j = offset + y * scanlength;
-            for (var x = 0; x < width; ++x)
-                pixels[i++] = swapRB(rgbData[j++]);
-        }
-        ctx.putImageData(imageData, 0, 0);
-    }
+        var pixels = new Uint32Array(imageData.data.buffer);
 
-    function textureFromRGB(texture, rgbData, offset, scanlength) {
-        var width = texture.width;
-        var height = texture.height;
-        var ctx = texture.getContext("2d");
-        var imageData = ctx.createImageData(width, height);
-        var data = imageData.data;
-        var pixels = new Int32Array(data.buffer);
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
-            for (var x = 0; x < width; ++x)
-                pixels[i++] = swapRB(rgbData[j++]) | 0xff000000;
+
+            for (var x = 0; x < width; ++x) {
+                pixels[i++] = converterFunc(rgbData[j++]);
+            }
         }
+
         ctx.putImageData(imageData, 0, 0);
     }
 
@@ -180,7 +173,7 @@
         var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), rgbData = stack.pop(),
             imageData = stack.pop(), _this = stack.pop();
         var texture = createTexture(width, height);
-        (processAlpha ? textureFromRGBA : textureFromRGB)(texture, rgbData, 0, width);
+        textureFromFormat(texture, rgbData, 0, width, processAlpha ? swapRB : swapRBAndSetAlpha);
         setImageData(imageData, width, height, texture);
 
     }
@@ -199,7 +192,7 @@
             texture = canvas;
             _this.nativeImageData = texture;
         }
-        textureToRGBA(texture, rgbData, offset, scanlength);
+        textureToFormat(texture, rgbData, offset, scanlength, swapRB);
     }
 
     Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Image;"] = function(ctx, stack) {
@@ -641,7 +634,7 @@
         var texture = document.createElement("canvas");
         texture.width = width;
         texture.height = height;
-        (processAlpha ? textureFromRGBA : textureFromRGB)(texture, rgbData, offset, scanlength);
+        textureFromFormat(texture, rgbData, offset, scanlength, processAlpha ? swapRB : swapRBAndSetAlpha);
         withGraphics(_this, function(c) {
             withClip(_this, c, x, y, function(x, y) {
                 c.drawImage(texture, x, y);
