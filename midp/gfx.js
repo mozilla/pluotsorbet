@@ -432,6 +432,12 @@
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.nativeImageData;
 
+        if (!texture) {
+            console.warn("Graphics.render: image missing native data");
+            stack.push(1);
+            return;
+        }
+
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
                 c.drawImage(texture, x, y);
