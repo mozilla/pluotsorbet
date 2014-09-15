@@ -46,7 +46,6 @@ public class TextEditor extends CanvasItem {
     private static TextEditorThread textEditorThread;
 
     native int TextEditor0();
-    native void setParent0(Object theParent);
     native void setSize0(int width, int height);
     native void setPosition0(int x, int y);
     native void setVisible0(boolean visible);
@@ -83,8 +82,11 @@ public class TextEditor extends CanvasItem {
 
     // Set the parent object of this TextEditor.
     public void setParent(Object theParent) {
+        if (theParent != null && parent != null && theParent != parent) {
+            throw new IllegalArgumentException("TextEditor already associated with parent");
+        }
+
         parent = theParent;
-        setParent0(theParent);
     }
 
     // Get the parent object of this TextEditor.
