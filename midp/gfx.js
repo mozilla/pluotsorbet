@@ -717,6 +717,11 @@
         stack.push(_this.focused);
     }
 
+    Native["com/nokia/mid/ui/TextEditor.getCaretPosition.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this.textEditor.selectionStart);
+    }
+
     Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(ctx.newString(_this.textEditor.value));
