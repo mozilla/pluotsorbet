@@ -724,8 +724,14 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.init.(III)I"] = function(ctx, stack) {
-        var height = stack.pop(), width = stack.pop(), maxSize = stack.pop(), _this = stack.pop();
+    Native["com/nokia/mid/ui/TextEditor.init.(IIII)I"] = function(ctx, stack) {
+        var height = stack.pop(), width = stack.pop(), constraints = stack.pop(), maxSize = stack.pop(),
+            _this = stack.pop();
+
+        if (constraints != 0) {
+            console.warn("TextEditor.constraints not implemented");
+        }
+
         stack.push(++textEditorId);
         _this.textEditorId = textEditorId;
         _this.textEditor = document.createElement("textarea");

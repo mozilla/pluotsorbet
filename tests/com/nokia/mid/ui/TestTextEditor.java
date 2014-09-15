@@ -7,6 +7,21 @@ public class TestTextEditor implements Testlet {
     public void test(TestHarness th) {
         TextEditor textEditor = new TextEditor("", "", 20, 0, 100, 24);
         th.check(textEditor.getMaxSize(), 20);
+
+        try {
+            textEditor.getConstraints();
+            th.fail("TextEditor::getConstraints() not implemented");
+        } catch(RuntimeException ex) {
+            th.check(ex.getMessage(), "TextEditor::getConstraints() not implemented");
+        }
+
+        try {
+            textEditor.setConstraints(0);
+            th.fail("TextEditor::setConstraints(int) not implemented");
+        } catch(RuntimeException ex) {
+            th.check(ex.getMessage(), "TextEditor::setConstraints(int) not implemented");
+        }
+
         th.check(textEditor.getWidth(), 100);
         th.check(textEditor.getHeight(), 24);
 
