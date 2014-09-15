@@ -724,9 +724,9 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.init.(IIII)I"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.init.(Ljava/lang/String;IIII)I"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), constraints = stack.pop(), maxSize = stack.pop(),
-            _this = stack.pop();
+            text = stack.pop(), _this = stack.pop();
 
         if (constraints != 0) {
             console.warn("TextEditor.constraints not implemented");
@@ -741,9 +741,10 @@
         _this.textEditor.style.resize = "none";
         _this.textEditor.style.backgroundColor = "transparent";
         _this.textEditor.style.color = "transparent";
+        _this.textEditor.value = util.fromJavaString(text);
+        _this.textEditor.setAttribute("maxlength", maxSize);
         _this.textEditor.style.width = width + "px";
         _this.textEditor.style.height = height + "px";
-        _this.textEditor.setAttribute("maxlength", maxSize);
         _this.textEditor.oninput = function(e) {
             wakeTextEditorThread(_this.textEditorId);
         }
