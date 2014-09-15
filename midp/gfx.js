@@ -731,6 +731,17 @@
         _this.textEditor.value = old.slice(0, pos) + util.fromJavaString(str) + old.slice(pos);
     }
 
+    Native["com/nokia/mid/ui/TextEditor.delete.(II)V"] = function(ctx, stack) {
+        var length = stack.pop(), offset = stack.pop(), _this = stack.pop(),
+            old = _this.textEditor.value;
+
+        if (offset < 0 || offset > old.length || length < 0 || offset + length > old.length) {
+            ctx.raiseExceptionAndYield("java.lang.StringIndexOutOfBoundsException", "offset/length invalid");
+        }
+
+        _this.textEditor.value = old.slice(0, offset) + old.slice(offset + length);
+    }
+
     Native["com/nokia/mid/ui/TextEditor.size0.()I"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(_this.textEditor.value.length);
