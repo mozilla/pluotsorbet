@@ -6,6 +6,8 @@ public abstract class CanvasItem {
     public static final int SCALE_AVERAGE = 2;
 
     Object parent = null;
+    int width = 0;
+    int height = 0;
 
     // Set the parent object of this CanvasItem.
     public void setParent(Object theParent) {
@@ -22,14 +24,14 @@ public abstract class CanvasItem {
         throw new RuntimeException("CanvasItem::setSize(int,int,int,int) not implemented");
     }
 
-    // Gets the height of this CanvasItem in pixels.
-    public int getHeight() {
-        throw new RuntimeException("CanvasItem::getHeight() not implemented");
-    }
-
     // Gets the width of this CanvasItem in pixels.
     public int getWidth() {
-        throw new RuntimeException("CanvasItem::getWidth() not implemented");
+        return width;
+    }
+
+    // Gets the height of this CanvasItem in pixels.
+    public int getHeight() {
+        return height;
     }
 
     // Sets the rendering position of this CanvasItem.

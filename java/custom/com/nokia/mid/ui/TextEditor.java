@@ -38,14 +38,14 @@ public class TextEditor extends CanvasItem {
     private int foregroundColor = 0;
     private boolean multiline = true;
     private int maxSize = 0;
-    private int width = 0;
-    private int height = 0;
     private int myId;
     private static TextEditorThread textEditorThread;
 
-    protected TextEditor(String label, String text, int aMaxSize, int constraints, int width, int height) {
+    protected TextEditor(String label, String text, int aMaxSize, int constraints, int aWidth, int aHeight) {
         myId = init();
         maxSize = aMaxSize;
+        width = aWidth;
+        height = aHeight;
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
             Thread t = new Thread(textEditorThread);
@@ -293,13 +293,4 @@ public class TextEditor extends CanvasItem {
     public void setCaretXY(int x, int y) {
         throw new RuntimeException("TextEditor::setCaretXY(int,int) not implemented");
     }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
 }
-
