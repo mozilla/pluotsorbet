@@ -5,6 +5,8 @@ public abstract class CanvasItem {
     public static final int SCALE_NEAREST = 1;
     public static final int SCALE_AVERAGE = 2;
 
+    Object parent = null;
+
     // Set the parent object of this CanvasItem.
     public void setParent(Object theParent) {
         throw new RuntimeException("CanvasItem::setParent(Object) not implemented");
@@ -82,7 +84,7 @@ public abstract class CanvasItem {
 
     // Gets the current parent of this CanvasItem.
     public Object getParent() {
-        throw new RuntimeException("CanvasItem::getParent() not implemented");
+        return parent;
     }
 
     // Tests whether anchor has valid values

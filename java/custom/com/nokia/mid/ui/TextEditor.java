@@ -37,7 +37,6 @@ public class TextEditor extends CanvasItem {
     private int backgroundColor = 0;
     private int foregroundColor = 0;
     private boolean multiline = true;
-    private Object parent = null;
     private int maxSize = 0;
     private int width = 0;
     private int height = 0;
@@ -80,11 +79,6 @@ public class TextEditor extends CanvasItem {
         }
 
         parent = theParent;
-    }
-
-    // Get the parent object of this TextEditor.
-    public Object getParent() {
-        return parent;
     }
 
     // Sets the size of this TextEditor in pixels.
