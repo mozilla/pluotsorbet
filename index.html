@@ -3,11 +3,17 @@
 
 <head>
   <style type="text/css">
+
+body {
+  margin: 0;
+}
+
 #canvas {
-  position: absolute;
+  float: left;
   top: 0px;
-  right: 0px;
-  border: 1px solid #ababab;
+  left: 0px;
+  border-right: 1px solid #ababab;
+  border-bottom: 1px solid #ababab;
 }
 
 button {
@@ -90,6 +96,8 @@ button {
 </head>
 
 <body>
+  <canvas id="canvas">
+  </canvas>
   <div>x,y <span id="xy"></span></div>
   <button id="clearstorage">Clear storage</button>
   <button id="trace">Trace: OFF</button>
@@ -97,8 +105,6 @@ button {
   <input id="sms_text" type="text" value="SMS text"></input>
   <input id="sms_addr" type="text" value="SMS phone number"></input>
   <button id="sms_receive">Receive SMS</button>
-  <canvas id="canvas">
-  </canvas>
   <div>
     Console:
     <pre id="console"></pre>

@@ -745,6 +745,7 @@
         _this.textEditor.setAttribute("maxlength", maxSize);
         _this.textEditor.style.width = width + "px";
         _this.textEditor.style.height = height + "px";
+        _this.textEditor.style.position = "absolute";
         _this.textEditor.oninput = function(e) {
             wakeTextEditorThread(_this.textEditorId);
         }
@@ -758,7 +759,8 @@
 
     Native["com/nokia/mid/ui/TextEditor.setPosition.(II)V"] = function(ctx, stack) {
         var y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        console.log("TextEditor::setPosition(int, int) not implemented", _this.textEditorId, x, y);
+        _this.textEditor.style.left = x + "px";
+        _this.textEditor.style.top = y + "px";
     }
 
     Native["com/nokia/mid/ui/TextEditor.setVisible.(Z)V"] = function(ctx, stack) {
