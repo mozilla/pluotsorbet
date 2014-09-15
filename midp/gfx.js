@@ -724,8 +724,8 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.init.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
+    Native["com/nokia/mid/ui/TextEditor.init.(II)I"] = function(ctx, stack) {
+        var height = stack.pop(), width = stack.pop(), _this = stack.pop();
         stack.push(++textEditorId);
         _this.textEditorId = textEditorId;
         _this.textEditor = document.createElement("textarea");
@@ -735,6 +735,8 @@
         _this.textEditor.style.resize = "none";
         _this.textEditor.style.backgroundColor = "transparent";
         _this.textEditor.style.color = "transparent";
+        _this.textEditor.style.width = width + "px";
+        _this.textEditor.style.height = height + "px";
         _this.textEditor.oninput = function(e) {
             wakeTextEditorThread(_this.textEditorId);
         }
@@ -742,6 +744,8 @@
 
     Native["com/nokia/mid/ui/TextEditor.setSize.(II)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), _this = stack.pop();
+        _this.textEditor.style.width = width + "px";
+        _this.textEditor.style.height = height + "px";
     }
 
     Native["com/nokia/mid/ui/TextEditor.setPosition.(II)V"] = function(ctx, stack) {
@@ -757,6 +761,16 @@
             document.body.removeChild(_this.textEditor);
         }
         _this.visible = visible;
+    }
+
+    Native["com/nokia/mid/ui/CanvasItem.getWidth.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(parseInt(_this.textEditor.style.width));
+    }
+
+    Native["com/nokia/mid/ui/CanvasItem.getHeight.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(parseInt(_this.textEditor.style.height));
     }
 
     Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function(ctx, stack) {

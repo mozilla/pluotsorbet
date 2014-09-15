@@ -6,8 +6,6 @@ public abstract class CanvasItem {
     public static final int SCALE_AVERAGE = 2;
 
     Object parent = null;
-    int width = 0;
-    int height = 0;
 
     // Set the parent object of this CanvasItem.
     public void setParent(Object theParent) {
@@ -25,14 +23,10 @@ public abstract class CanvasItem {
     }
 
     // Gets the width of this CanvasItem in pixels.
-    public int getWidth() {
-        return width;
-    }
+    native public int getWidth();
 
     // Gets the height of this CanvasItem in pixels.
-    public int getHeight() {
-        return height;
-    }
+    native public int getHeight();
 
     // Sets the rendering position of this CanvasItem.
     public void setPosition(int x, int y) {
