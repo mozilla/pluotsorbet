@@ -37,13 +37,11 @@ public class TextEditor extends CanvasItem {
     private int backgroundColor = 0;
     private int foregroundColor = 0;
     private boolean multiline = true;
-    private int maxSize = 0;
     private int myId;
     private static TextEditorThread textEditorThread;
 
-    protected TextEditor(String label, String text, int aMaxSize, int constraints, int width, int height) {
-        myId = init(width, height);
-        maxSize = aMaxSize;
+    protected TextEditor(String label, String text, int maxSize, int constraints, int width, int height) {
+        myId = init(maxSize, width, height);
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
             Thread t = new Thread(textEditorThread);
@@ -52,7 +50,7 @@ public class TextEditor extends CanvasItem {
     }
 
     // Initialize the native representation.
-    native private int init(int width, int height);
+    native private int init(int maxSize, int width, int height);
 
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
     public static TextEditor createTextEditor(String text, int maxSize, int constraints, int width, int height) {
@@ -186,17 +184,10 @@ public class TextEditor extends CanvasItem {
     native public void delete(int offset, int length);
 
     // Returns the maximum size (number of characters) that can be stored in this TextEditor.
-    public int getMaxSize() {
-        System.out.println("warning: TextEditor::getMaxSize() not implemented");
-        return maxSize;
-    }
+    native public int getMaxSize();
 
     // Sets the maximum size (number of characters) that can be contained in this TextEditor.
-    public int setMaxSize(int maxSize) {
-        this.maxSize = maxSize;
-        System.out.println("warning: TextEditor::setMaxSize(int) not implemented");
-        return maxSize;
-    }
+    native public int setMaxSize(int maxSize);
 
     // Gets the number of characters that are currently stored in this TextEditor.
     native public int size();

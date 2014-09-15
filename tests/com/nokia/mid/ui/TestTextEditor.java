@@ -5,9 +5,13 @@ import gnu.testlet.Testlet;
 
 public class TestTextEditor implements Testlet {
     public void test(TestHarness th) {
-        TextEditor textEditor = new TextEditor("", "", 5, 0, 100, 24);
+        TextEditor textEditor = new TextEditor("", "", 20, 0, 100, 24);
+        th.check(textEditor.getMaxSize(), 20);
         th.check(textEditor.getWidth(), 100);
         th.check(textEditor.getHeight(), 24);
+
+        th.check(textEditor.setMaxSize(22), 22);
+        th.check(textEditor.getMaxSize(), 22);
 
         textEditor.setSize(120, 28);
         th.check(textEditor.getWidth(), 120);

@@ -724,8 +724,8 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.init.(II)I"] = function(ctx, stack) {
-        var height = stack.pop(), width = stack.pop(), _this = stack.pop();
+    Native["com/nokia/mid/ui/TextEditor.init.(III)I"] = function(ctx, stack) {
+        var height = stack.pop(), width = stack.pop(), maxSize = stack.pop(), _this = stack.pop();
         stack.push(++textEditorId);
         _this.textEditorId = textEditorId;
         _this.textEditor = document.createElement("textarea");
@@ -737,6 +737,7 @@
         _this.textEditor.style.color = "transparent";
         _this.textEditor.style.width = width + "px";
         _this.textEditor.style.height = height + "px";
+        _this.textEditor.setAttribute("maxlength", maxSize);
         _this.textEditor.oninput = function(e) {
             wakeTextEditorThread(_this.textEditorId);
         }
@@ -823,6 +824,21 @@
         }
 
         _this.textEditor.value = old.slice(0, offset) + old.slice(offset + length);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.getMaxSize.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(parseInt(_this.textEditor.getAttribute("maxlength")));
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.setMaxSize.(I)I"] = function(ctx, stack) {
+        var maxSize = stack.pop(), _this = stack.pop();
+        _this.textEditor.setAttribute("maxlength", maxSize);
+
+        // The return value is the assigned size, which could be less than
+        // the size that was requested, although in this case we always set it
+        // to the requested size.
+        stack.push(maxSize);
     }
 
     Native["com/nokia/mid/ui/TextEditor.size.()I"] = function(ctx, stack) {
