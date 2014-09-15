@@ -55,8 +55,9 @@ public class TextEditor extends CanvasItem {
     native void insert0(String str, int pos);
     native int size0();
 
-    protected TextEditor(String label, String text, int maxSize, int constraints, int width, int height) {
+    protected TextEditor(String label, String text, int aMaxSize, int constraints, int width, int height) {
         myId = TextEditor0();
+        maxSize = aMaxSize;
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
             Thread t = new Thread(textEditorThread);
@@ -166,7 +167,7 @@ public class TextEditor extends CanvasItem {
 
     // Sets the application preferred font for rendering the text content in this TextEditor.
     public void setFont(Font font) {
-        throw new RuntimeException("TextEditor::setFont(Font) not implemented");
+        System.out.println("TextEditor::setFont(Font) not implemented");
     }
 
     // Gets the background color and alpha of this TextEditor.
@@ -227,7 +228,7 @@ public class TextEditor extends CanvasItem {
 
     // Sets the maximum size (number of characters) that can be contained in this TextEditor.
     public int setMaxSize(int maxSize) {
-        maxSize = maxSize;
+        this.maxSize = maxSize;
         System.out.println("warning: TextEditor::setMaxSize(int) not implemented");
         return maxSize;
     }

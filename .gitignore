@@ -3,3 +3,4 @@
 *.class
 .DS_Store
 tests/Testlets.java
+test.log

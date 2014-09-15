@@ -470,14 +470,13 @@ Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()
         var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
         if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
             ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
-        var bytes = MIDP.skinFileData.buffer.slice(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
+        var bytes = new Uint8Array(MIDP.skinFileData.buffer).subarray(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
         MIDP.skinFilePos += strLen;
         var str;
         if (strEnc === MIDP.STRING_ENCODING_USASCII) {
-            var data = new Uint8Array(bytes);
             str = "";
             for (var i = 0; i < strLen; ++i)
-                str += String.fromCharCode(data[i]);
+                str += String.fromCharCode(bytes[i]);
         } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
             str = util.decodeUtf8(bytes);
         } else {
@@ -1163,4 +1162,27 @@ Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = f
 
 Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function(ctx, stack) {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
+}
+
+Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function(ctx, stack) {
+    var _this = stack.pop();
+    console.warn("com/sun/j2me/content/RegistryStore.init.()Z not implemented");
+    stack.push(1);
+}
+
+Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(ctx, stack) {
+    var suiteID = stack.pop(), _this = stack.pop();
+    console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
+    stack.push(ctx.newString(""));
+}
+
+Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function(ctx, stack) {
+    var _this = stack.pop();
+    console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
+    stack.push(0);
+}
+
+Native["com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V"] = function(ctx, stack) {
+    var cleanup = stack.pop(), className = util.fromJavaString(stack.pop()), suiteID = stack.pop();
+    console.warn("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V not implemented");
 }

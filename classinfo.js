@@ -26,6 +26,10 @@ FieldInfo.prototype.set = function(obj, value) {
     obj[this.id] = value;
 }
 
+FieldInfo.prototype.toString = function() {
+    return "[field " + this.name + "]";
+}
+
 var ClassInfo = function(classBytes) {
     var classImage = getClassImage(classBytes, this);
     var cp = classImage.constant_pool;
@@ -36,6 +40,9 @@ var ClassInfo = function(classBytes) {
     this.constructor = function () {
     }
     this.constructor.prototype.class = this;
+    this.constructor.prototype.toString = function() {
+        return "[instance " + this.class.className + "]";
+    }
 
     var self = this;
 
@@ -123,6 +130,10 @@ ClassInfo.prototype.getClassObject = function(ctx) {
 
 ClassInfo.prototype.getField = function(name, signature, isStatic) {
     return CLASSES.getField(this, name, signature, isStatic);
+}
+
+ClassInfo.prototype.toString = function() {
+    return "[class " + this.className + "]";
 }
 
 var ArrayClass = function(className, elementClass) {

@@ -27,7 +27,6 @@ VM.execute = function(ctx) {
     function pushFrame(methodInfo, consumes) {
         var caller = frame;
         frame = ctx.pushFrame(methodInfo, consumes);
-        Instrument.callEnterHooks(methodInfo, caller, frame /* callee */);
         stack = frame.stack;
         cp = frame.cp;
         if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
@@ -54,7 +53,6 @@ VM.execute = function(ctx) {
             stack.push(callee.stack.pop());
             break;
         }
-        Instrument.callExitHooks(callee.methodInfo, frame /* caller */, callee);
         return frame;
     }
 
@@ -1027,7 +1025,7 @@ VM.execute = function(ctx) {
                 if (isStatic)
                     classInitCheck(methodInfo.classInfo, startip);
             }
-            var consumes = Signature.parse(methodInfo.signature).IN.slots;
+            var consumes = Signature.getINSlots(methodInfo.signature);
             if (!isStatic) {
                 ++consumes;
                 var obj = stack[stack.length - consumes];
