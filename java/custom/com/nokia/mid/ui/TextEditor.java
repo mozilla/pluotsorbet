@@ -30,7 +30,7 @@ class TextEditorThread implements Runnable {
 
 public class TextEditor extends CanvasItem {
     // This flag is a hint to the implementation that during text editing, the smiley key should be disabled on the virtual keyboard.
-    public static final int DISABLE_SMILEY_MODE = 4194304;
+    public static final int DISABLE_SMILEY_MODE = 4194304; // 0x400000
 
     protected TextEditorListener myListener;
 
