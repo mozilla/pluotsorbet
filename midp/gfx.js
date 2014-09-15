@@ -460,8 +460,8 @@
     }
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] = function(ctx, stack) {
-        var format = stack.pop(), manipulation = stack.pop(), height = stack.pop(), width = stack.pop(), x = stack.pop(),
-            y = stack.pop(), scanlength = stack.pop(), offset = stack.pop(), transparency = stack.pop(),
+        var format = stack.pop(), manipulation = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(),
+            x = stack.pop(), scanlength = stack.pop(), offset = stack.pop(), transparency = stack.pop(),
             pixels = stack.pop(), _this = stack.pop();
 
         if (pixels == null) {
