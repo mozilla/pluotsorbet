@@ -419,6 +419,52 @@
         stack.push((pixel >> 24) & 0xff);
     }
 
+    Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] = function(ctx, stack) {
+        var format = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
+            scanlength = stack.pop(), offset = stack.pop(), pixels = stack.pop(), _this = stack.pop();
+
+        if (pixels == null) {
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+        }
+
+        var converterFunction = null;
+        if (format == 4444) { // TYPE_USHORT_4444_ARGB
+            converterFunction = function(rgba) {
+                var r = (rgba & 0xF0000000) >>> 20;
+                var g = (rgba & 0x00F00000) >> 16;
+                var b = (rgba & 0x0000F000) >> 12;
+                var a = (rgba & 0x000000F0) << 8;
+                return (a | r | g | b);
+            };
+        } else if (format == 565) { // TYPE_USHORT_565_RGB
+            converterFunction = function(rgba) {
+                var r = (rgba & 0b11111000000000000000000000000000) >>> 16;
+                var g = (rgba & 0b00000000111111000000000000000000) >>> 13;
+                var b = (rgba & 0b00000000000000001111100000000000) >>> 11;
+                return (r | g | b);
+            };
+        } else {
+            ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "Format unsupported");
+        }
+
+        var graphics = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var image = graphics.class.getField("img", "Ljavax/microedition/lcdui/Image;").get(graphics);
+        var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
+
+        var texture = imageData.nativeImageData;
+        // If nativeImageData is not a canvas texture already, then convert it now.
+        if (!(texture instanceof HTMLCanvasElement)) {
+            var canvas = document.createElement("canvas");
+            canvas.width = texture.width;
+            canvas.height = texture.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(texture, 0, 0);
+            texture = canvas;
+            imageData.nativeImageData = texture;
+        }
+        textureToFormat(texture, pixels, offset, scanlength, converterFunction);
+    }
+
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
