@@ -21,6 +21,8 @@ public class DirectUtils {
     private static native Image makeMutable(Image image);
 
     public static Image createImage(byte imageData[], int imageOffset, int imageLength) {
+        // There's a suggested method to create mutable images from immutable ones in
+        // javax/microedition/lcdui/Image.java, but it looks pretty slower.
         return makeMutable(Image.createImage(imageData, imageOffset, imageLength));
     }
 
