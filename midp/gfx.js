@@ -184,9 +184,7 @@
         var texture = _this.nativeImageData;
         // If nativeImageData is not a canvas texture already, then convert it now.
         if (!(texture instanceof HTMLCanvasElement)) {
-            var canvas = document.createElement("canvas");
-            canvas.width = texture.width;
-            canvas.height = texture.height;
+            var canvas = createTexture(texture.width, texture.height);
             var ctx = canvas.getContext("2d");
             ctx.drawImage(texture, 0, 0);
             texture = canvas;
@@ -631,9 +629,7 @@
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] = function(ctx, stack) {
         var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
             scanlength = stack.pop(), offset = stack.pop(), rgbData = stack.pop(), _this = stack.pop();
-        var texture = document.createElement("canvas");
-        texture.width = width;
-        texture.height = height;
+        var texture = createTexture(width, height);
         textureFromFormat(texture, rgbData, offset, scanlength, processAlpha ? swapRB : swapRBAndSetAlpha);
         withGraphics(_this, function(c) {
             withClip(_this, c, x, y, function(x, y) {
