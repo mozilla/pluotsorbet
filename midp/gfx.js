@@ -662,7 +662,7 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.TextEditor0.()I"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.init.()I"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(++textEditorId);
         _this.textEditorId = textEditorId;
@@ -678,22 +678,16 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.setParent0.(Ljava/lang/Object;)V"] = function(ctx, stack) {
-        var parent = stack.pop(), _this = stack.pop();
-        document.body.appendChild(_this.textEditor);
-        _this.visible = true;
-    }
-
-    Native["com/nokia/mid/ui/TextEditor.setSize0.(II)V"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.setSize.(II)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), _this = stack.pop();
     }
 
-    Native["com/nokia/mid/ui/TextEditor.setPosition0.(II)V"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.setPosition.(II)V"] = function(ctx, stack) {
         var y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        console.log("TextEditor::setPosition0(int, int) not implemented", _this.textEditorId, x, y);
+        console.log("TextEditor::setPosition(int, int) not implemented", _this.textEditorId, x, y);
     }
 
-    Native["com/nokia/mid/ui/TextEditor.setVisible0.(Z)V"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.setVisible.(Z)V"] = function(ctx, stack) {
         var visible = stack.pop(), _this = stack.pop();
         if (visible) {
             document.body.appendChild(_this.textEditor);
@@ -701,6 +695,11 @@
             document.body.removeChild(_this.textEditor);
         }
         _this.visible = visible;
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.isVisible.()Z"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this.visible ? 1 : 0);
     }
 
     Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(ctx, stack) {
@@ -718,23 +717,34 @@
         stack.push(_this.focused);
     }
 
-    Native["com/nokia/mid/ui/TextEditor.getContent0.()Ljava/lang/String;"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(ctx.newString(_this.textEditor.value));
     }
 
-    Native["com/nokia/mid/ui/TextEditor.setContent0.(Ljava/lang/String;)V"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V"] = function(ctx, stack) {
         var str = stack.pop(), _this = stack.pop();
         _this.textEditor.value = util.fromJavaString(str);
     }
 
-    Native["com/nokia/mid/ui/TextEditor.insert0.(Ljava/lang/String;I)V"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V"] = function(ctx, stack) {
         var pos = stack.pop(), str = stack.pop(), _this = stack.pop(),
             old = _this.textEditor.value;
         _this.textEditor.value = old.slice(0, pos) + util.fromJavaString(str) + old.slice(pos);
     }
 
-    Native["com/nokia/mid/ui/TextEditor.size0.()I"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/TextEditor.delete.(II)V"] = function(ctx, stack) {
+        var length = stack.pop(), offset = stack.pop(), _this = stack.pop(),
+            old = _this.textEditor.value;
+
+        if (offset < 0 || offset > old.length || length < 0 || offset + length > old.length) {
+            ctx.raiseExceptionAndYield("java.lang.StringIndexOutOfBoundsException", "offset/length invalid");
+        }
+
+        _this.textEditor.value = old.slice(0, offset) + old.slice(offset + length);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.size.()I"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(_this.textEditor.value.length);
     }
