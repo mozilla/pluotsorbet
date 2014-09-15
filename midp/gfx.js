@@ -429,7 +429,7 @@
             scanlength = stack.pop(), offset = stack.pop(), pixels = stack.pop(), _this = stack.pop();
 
         if (pixels == null) {
-            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException", "Pixels array is null");
         }
 
         var converterFunc = null;
@@ -465,7 +465,7 @@
             pixels = stack.pop(), _this = stack.pop();
 
         if (pixels == null) {
-            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException", "Pixels array is null");
         }
 
         var converterFunc = null;
