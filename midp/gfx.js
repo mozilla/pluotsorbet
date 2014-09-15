@@ -465,6 +465,41 @@
         textureToFormat(texture, pixels, offset, scanlength, converterFunction);
     }
 
+    Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] = function(ctx, stack) {
+        var format = stack.pop(), manipulation = stack.pop(), height = stack.pop(), width = stack.pop(), x = stack.pop(),
+            y = stack.pop(), scanlength = stack.pop(), offset = stack.pop(), transparency = stack.pop(),
+            pixels = stack.pop(), _this = stack.pop();
+
+        if (pixels == null) {
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+        }
+
+        var converterFunction = null;
+        if (format == 4444 && transparency && !manipulation) {
+            converterFunction = function(argb) {
+                var a = (argb & 0xF000) >>> 8;
+                var r = (argb & 0x0F00) << 20;
+                var g = (argb & 0x00F0) << 16;
+                var b = (argb & 0x000F) << 12;
+                return (r | g | b | a);
+            };
+        } else {
+            ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "Format unsupported");
+        }
+
+        var graphics = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
+
+        var texture = document.createElement("canvas");
+        texture.width = width;
+        texture.height = height;
+        textureFromFormat(texture, pixels, offset, scanlength, converterFunction);
+        withGraphics(graphics, function(c) {
+            withClip(graphics, c, x, y, function(x, y) {
+                c.drawImage(texture, x, y);
+            });
+        });
+    }
+
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
