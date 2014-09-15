@@ -432,9 +432,9 @@
             ctx.raiseExceptionAndYield("java/lang/NullPointerException");
         }
 
-        var converterFunction = null;
+        var converterFunc = null;
         if (format == 4444) { // TYPE_USHORT_4444_ARGB
-            converterFunction = function(rgba) {
+            converterFunc = function(rgba) {
                 var r = (rgba & 0xF0000000) >>> 20;
                 var g = (rgba & 0x00F00000) >> 16;
                 var b = (rgba & 0x0000F000) >> 12;
@@ -442,7 +442,7 @@
                 return (a | r | g | b);
             };
         } else if (format == 565) { // TYPE_USHORT_565_RGB
-            converterFunction = function(rgba) {
+            converterFunc = function(rgba) {
                 var r = (rgba & 0b11111000000000000000000000000000) >>> 16;
                 var g = (rgba & 0b00000000111111000000000000000000) >>> 13;
                 var b = (rgba & 0b00000000000000001111100000000000) >>> 11;
@@ -456,7 +456,7 @@
         var image = graphics.class.getField("img", "Ljavax/microedition/lcdui/Image;").get(graphics);
         var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
 
-        textureToFormat(convertNativeImageData(imageData), pixels, offset, scanlength, converterFunction);
+        textureToFormat(convertNativeImageData(imageData), pixels, offset, scanlength, converterFunc);
     }
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] = function(ctx, stack) {
@@ -468,9 +468,9 @@
             ctx.raiseExceptionAndYield("java/lang/NullPointerException");
         }
 
-        var converterFunction = null;
+        var converterFunc = null;
         if (format == 4444 && transparency && !manipulation) {
-            converterFunction = function(argb) {
+            converterFunc = function(argb) {
                 var a = (argb & 0xF000) >>> 8;
                 var r = (argb & 0x0F00) << 20;
                 var g = (argb & 0x00F0) << 16;
@@ -484,7 +484,7 @@
         var graphics = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
 
         var texture = createTexture(width, height);
-        textureFromFormat(texture, pixels, offset, scanlength, converterFunction);
+        textureFromFormat(texture, pixels, offset, scanlength, converterFunc);
         withGraphics(graphics, function(c) {
             withClip(graphics, c, x, y, function(x, y) {
                 c.drawImage(texture, x, y);
