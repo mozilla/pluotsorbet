@@ -759,7 +759,7 @@
         _this.visible = visible;
     }
 
-    Native["com/nokia/mid/ui/TextEditor.isVisible.()Z"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(_this.visible ? 1 : 0);
     }

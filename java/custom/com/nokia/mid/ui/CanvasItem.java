@@ -63,9 +63,7 @@ public abstract class CanvasItem {
     }
 
     // Returns the current visibility of this CanvasItem.
-    public boolean isVisible() {
-        throw new RuntimeException("CanvasItem::isVisible() not implemented");
-    }
+    native public boolean isVisible();
 
     // Scales CanvasItem to the specified size as per current scaling mode.
     public void scale(int width, int height) {

@@ -90,9 +90,6 @@ public class TextEditor extends CanvasItem {
     // Sets the visibility value of TextEditor.
     native public void setVisible(boolean vis);
 
-    // Gets the visibility value of TextEditor.
-    native public boolean isVisible();
-
     // Sets the Z-position, or the elevation, of the item.
     public void setZPosition(int z) {
         throw new RuntimeException("TextEditor::setZPosition(int) not implemented");
