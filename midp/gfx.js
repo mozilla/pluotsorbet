@@ -841,6 +841,7 @@
     Native["com/nokia/mid/ui/TextEditor.setMaxSize.(I)I"] = function(ctx, stack) {
         var maxSize = stack.pop(), _this = stack.pop();
         _this.textEditor.setAttribute("maxlength", maxSize);
+        _this.textEditor.value = _this.textEditor.value.substring(0, maxSize);
 
         // The return value is the assigned size, which could be less than
         // the size that was requested, although in this case we always set it

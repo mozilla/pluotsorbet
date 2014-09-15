@@ -32,6 +32,9 @@ public class TestTextEditor implements Testlet {
 
         th.check(textEditor.setMaxSize(22), 22);
         th.check(textEditor.getMaxSize(), 22);
+        th.check(textEditor.getContent(), "Helló, világ!");
+        th.check(textEditor.setMaxSize(5), 5);
+        th.check(textEditor.getContent(), "Helló");
 
         textEditor.setSize(120, 28);
         th.check(textEditor.getWidth(), 120);
