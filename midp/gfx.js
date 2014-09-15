@@ -161,6 +161,7 @@
             ctx.resume();
         }
         img.onerror = function(e) {
+            ctx.raiseException("java/lang/IllegalArgumentException", "error decoding image");
             ctx.resume();
         }
         throw VM.Pause;
