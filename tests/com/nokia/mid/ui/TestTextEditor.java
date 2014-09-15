@@ -5,7 +5,7 @@ import gnu.testlet.Testlet;
 
 public class TestTextEditor implements Testlet {
     public void test(TestHarness th) {
-        TextEditor textEditor = new TextEditor("", "", 20, 0, 100, 24);
+        TextEditor textEditor = new TextEditor("", 20, 0, 100, 24);
         th.check(textEditor.getMaxSize(), 20);
 
         try {

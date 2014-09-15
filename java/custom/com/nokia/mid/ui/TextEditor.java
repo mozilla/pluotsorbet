@@ -40,7 +40,7 @@ public class TextEditor extends CanvasItem {
     private int myId;
     private static TextEditorThread textEditorThread;
 
-    protected TextEditor(String label, String text, int maxSize, int constraints, int width, int height) {
+    protected TextEditor(String text, int maxSize, int constraints, int width, int height) {
         myId = init(maxSize, constraints, width, height);
 
         if (textEditorThread == null) {
@@ -55,7 +55,7 @@ public class TextEditor extends CanvasItem {
 
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
     public static TextEditor createTextEditor(String text, int maxSize, int constraints, int width, int height) {
-        return new TextEditor("", text, maxSize, constraints, width, height);
+        return new TextEditor(text, maxSize, constraints, width, height);
     }
 
     // Creates a new empty TextEditor with the given maximum size in characters, constraints and editor size as number of visible rows.
