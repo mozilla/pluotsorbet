@@ -148,7 +148,7 @@
     function setImageData(imageData, width, height, data) {
         imageData.class.getField("width", "I").set(imageData, width);
         imageData.class.getField("height", "I").set(imageData, height);
-        imageData.class.getField("nativeImageData", "I").set(imageData, data);
+        imageData.nativeImageData = data;
     }
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
@@ -161,6 +161,7 @@
             ctx.resume();
         }
         img.onerror = function(e) {
+            ctx.raiseException("java/lang/IllegalArgumentException", "error decoding image");
             ctx.resume();
         }
         throw VM.Pause;
@@ -187,7 +188,7 @@
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), scanlength = stack.pop(), offset = stack.pop(),
             rgbData = stack.pop(), _this = stack.pop();
-        var texture = _this.class.getField("nativeImageData", "I").get(_this);
+        var texture = _this.nativeImageData;
         // If nativeImageData is not a canvas texture already, then convert it now.
         if (!(texture instanceof HTMLCanvasElement)) {
             var canvas = document.createElement("canvas");
@@ -196,7 +197,7 @@
             var ctx = canvas.getContext("2d");
             ctx.drawImage(texture, 0, 0);
             texture = canvas;
-            _this.class.getField("nativeImageData", "I").set(_this, texture);
+            _this.nativeImageData = texture;
         }
         textureToRGBA(texture, rgbData, offset, scanlength);
     }
@@ -301,7 +302,7 @@
             c = MIDP.Context2D;
         } else {
             var imgData = img.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(img),
-                canvas = imgData.class.getField("nativeImageData", "I").get(imgData);
+                canvas = imgData.nativeImageData;
             c = canvas.getContext("2d");
             c.globalCompositeOperation = "copy";
         }
@@ -430,7 +431,14 @@
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
-            texture = imgData.class.getField("nativeImageData", "I").get(imgData);
+            texture = imgData.nativeImageData;
+
+        if (!texture) {
+            console.warn("Graphics.render: image missing native data");
+            stack.push(1);
+            return;
+        }
+
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
                 c.drawImage(texture, x, y);
@@ -587,7 +595,7 @@
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
             transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
-            texture = imgData.class.getField("nativeImageData", "I").get(imgData);
+            texture = imgData.nativeImageData;
         var w = sw, h = sh;
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, w, h, function(x, y) {
