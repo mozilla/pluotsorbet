@@ -2,8 +2,10 @@ package com.nokia.mid.ui;
 
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
+import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Graphics;
 
-public class TestTextEditor implements Testlet {
+public class TestTextEditor extends Canvas implements Testlet {
     public void test(TestHarness th) {
         TextEditor textEditor = new TextEditor("Hello, world!", 20, 0, 100, 24);
 
@@ -45,5 +47,10 @@ public class TestTextEditor implements Testlet {
         th.check(textEditor.isVisible(), true);
         textEditor.setVisible(false);
         th.check(textEditor.isVisible(), false);
+
+        textEditor.setParent(this);
+        th.check(textEditor.getParent(), this);
     }
+
+    protected void paint(Graphics graphics) {}
 }
