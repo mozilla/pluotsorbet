@@ -144,6 +144,20 @@
         imageData.nativeImageData = data;
     }
 
+    function convertNativeImageData(imageData) {
+        var texture = imageData.nativeImageData;
+
+        if (!(texture instanceof HTMLCanvasElement)) {
+            var canvas = createTexture(texture.width, texture.height);
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(texture, 0, 0);
+            texture = canvas;
+            imageData.nativeImageData = texture;
+        }
+
+        return texture;
+    }
+
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
         var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop(), _this = stack.pop();
         var blob = new Blob([bytes.subarray(offset, offset + length)], { type: "image/png" });
@@ -181,16 +195,7 @@
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), scanlength = stack.pop(), offset = stack.pop(),
             rgbData = stack.pop(), _this = stack.pop();
-        var texture = _this.nativeImageData;
-        // If nativeImageData is not a canvas texture already, then convert it now.
-        if (!(texture instanceof HTMLCanvasElement)) {
-            var canvas = createTexture(texture.width, texture.height);
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(texture, 0, 0);
-            texture = canvas;
-            _this.nativeImageData = texture;
-        }
-        textureToFormat(texture, rgbData, offset, scanlength, swapRB);
+        textureToFormat(convertNativeImageData(_this), rgbData, offset, scanlength, swapRB);
     }
 
     Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Image;"] = function(ctx, stack) {
@@ -451,18 +456,7 @@
         var image = graphics.class.getField("img", "Ljavax/microedition/lcdui/Image;").get(graphics);
         var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
 
-        var texture = imageData.nativeImageData;
-        // If nativeImageData is not a canvas texture already, then convert it now.
-        if (!(texture instanceof HTMLCanvasElement)) {
-            var canvas = document.createElement("canvas");
-            canvas.width = texture.width;
-            canvas.height = texture.height;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(texture, 0, 0);
-            texture = canvas;
-            imageData.nativeImageData = texture;
-        }
-        textureToFormat(texture, pixels, offset, scanlength, converterFunction);
+        textureToFormat(convertNativeImageData(imageData), pixels, offset, scanlength, converterFunction);
     }
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] = function(ctx, stack) {
@@ -489,9 +483,7 @@
 
         var graphics = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
 
-        var texture = document.createElement("canvas");
-        texture.width = width;
-        texture.height = height;
+        var texture = createTexture(width, height);
         textureFromFormat(texture, pixels, offset, scanlength, converterFunction);
         withGraphics(graphics, function(c) {
             withClip(graphics, c, x, y, function(x, y) {
