@@ -37,7 +37,6 @@ public class TextEditor extends CanvasItem {
     private int backgroundColor = 0;
     private int foregroundColor = 0;
     private boolean multiline = true;
-    private boolean visible = true;
     private Object parent = null;
     private int maxSize = 0;
     private int width = 0;
@@ -45,17 +44,8 @@ public class TextEditor extends CanvasItem {
     private int myId;
     private static TextEditorThread textEditorThread;
 
-    native int TextEditor0();
-    native void setSize0(int width, int height);
-    native void setPosition0(int x, int y);
-    native void setVisible0(boolean visible);
-    native String getContent0();
-    native void setContent0(String str);
-    native void insert0(String str, int pos);
-    native int size0();
-
     protected TextEditor(String label, String text, int aMaxSize, int constraints, int width, int height) {
-        myId = TextEditor0();
+        myId = init();
         maxSize = aMaxSize;
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
@@ -63,6 +53,9 @@ public class TextEditor extends CanvasItem {
             t.start();
         }
     }
+
+    // Initialize the native representation.
+    native private int init();
 
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
     public static TextEditor createTextEditor(String text, int maxSize, int constraints, int width, int height) {
@@ -95,25 +88,16 @@ public class TextEditor extends CanvasItem {
     }
 
     // Sets the size of this TextEditor in pixels.
-    public void setSize(int width, int height) {
-        setSize0(width, height);
-    }
+    native public void setSize(int width, int height);
 
     // Sets the rendering position of this TextEditor.
-    public void setPosition(int x, int y) {
-        setPosition0(x, y);
-    }
+    native public void setPosition(int x, int y);
 
     // Sets the visibility value of TextEditor.
-    public void setVisible(boolean vis) {
-        setVisible0(vis);
-        visible = vis;
-    }
+    native public void setVisible(boolean vis);
 
     // Gets the visibility value of TextEditor.
-    public  boolean isVisible() {
-        return visible;
-    }
+    native public boolean isVisible();
 
     // Sets the Z-position, or the elevation, of the item.
     public void setZPosition(int z) {
@@ -203,19 +187,13 @@ public class TextEditor extends CanvasItem {
     }
 
     // Sets the content of the TextEditor as a string.
-    public void setContent(String content) {
-        setContent0(content);
-    }
+    native public void setContent(String content);
 
     // Gets the string content in the TextEditor.
-    public String getContent() {
-        return getContent0();
-    }
+    native public String getContent();
 
     // Inserts a string into the content of the TextEditor.
-    public void insert(String text, int position) {
-        insert0(text, position);
-    }
+    native public void insert(String text, int position);
 
     // Deletes characters from the TextEditor.
     native public void delete(int offset, int length);
@@ -234,9 +212,7 @@ public class TextEditor extends CanvasItem {
     }
 
     // Gets the number of characters that are currently stored in this TextEditor.
-    public int size() {
-        return size0();
-    }
+    native public int size();
 
     // Sets the input constraints of this TextEditor.
     public void setConstraints(int constraints) {
