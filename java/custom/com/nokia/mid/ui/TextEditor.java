@@ -136,9 +136,7 @@ public class TextEditor extends CanvasItem {
     }
 
     // Gets the current position of the caret in the editor.
-    public int getCaretPosition() {
-        throw new RuntimeException("TextEditor::getCaretPosition() not implemented");
-    }
+    native public int getCaretPosition();
 
     // Gets the topmost pixel position of the topmost visible line in the editor.
     public int getVisibleContentPosition() {
