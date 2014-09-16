@@ -30,23 +30,17 @@ class TextEditorThread implements Runnable {
 
 public class TextEditor extends CanvasItem {
     // This flag is a hint to the implementation that during text editing, the smiley key should be disabled on the virtual keyboard.
-    public static final int DISABLE_SMILEY_MODE = 4194304;
+    public static final int DISABLE_SMILEY_MODE = 4194304; // 0x400000
 
     protected TextEditorListener myListener;
 
-    private int backgroundColor = 0;
-    private int foregroundColor = 0;
-    private boolean multiline = true;
-    private Object parent = null;
-    private int maxSize = 0;
-    private int width = 0;
-    private int height = 0;
+    private boolean multiline = false;
     private int myId;
     private static TextEditorThread textEditorThread;
 
-    protected TextEditor(String label, String text, int aMaxSize, int constraints, int width, int height) {
-        myId = init();
-        maxSize = aMaxSize;
+    protected TextEditor(String text, int maxSize, int constraints, int width, int height) {
+        myId = init(text, maxSize, constraints, width, height);
+
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
             Thread t = new Thread(textEditorThread);
@@ -55,11 +49,11 @@ public class TextEditor extends CanvasItem {
     }
 
     // Initialize the native representation.
-    native private int init();
+    native private int init(String text, int maxSize, int constraints, int width, int height);
 
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
     public static TextEditor createTextEditor(String text, int maxSize, int constraints, int width, int height) {
-        return new TextEditor("", text, maxSize, constraints, width, height);
+        return new TextEditor(text, maxSize, constraints, width, height);
     }
 
     // Creates a new empty TextEditor with the given maximum size in characters, constraints and editor size as number of visible rows.
@@ -72,32 +66,6 @@ public class TextEditor extends CanvasItem {
 
     // Returns the focus state of TextEditor.
     native public boolean hasFocus();
-
-    // Set the parent object of this TextEditor.
-    public void setParent(Object theParent) {
-        if (theParent != null && parent != null && theParent != parent) {
-            throw new IllegalArgumentException("TextEditor already associated with parent");
-        }
-
-        parent = theParent;
-    }
-
-    // Get the parent object of this TextEditor.
-    public Object getParent() {
-        return parent;
-    }
-
-    // Sets the size of this TextEditor in pixels.
-    native public void setSize(int width, int height);
-
-    // Sets the rendering position of this TextEditor.
-    native public void setPosition(int x, int y);
-
-    // Sets the visibility value of TextEditor.
-    native public void setVisible(boolean vis);
-
-    // Gets the visibility value of TextEditor.
-    native public boolean isVisible();
 
     // Sets the Z-position, or the elevation, of the item.
     public void setZPosition(int z) {
@@ -120,32 +88,51 @@ public class TextEditor extends CanvasItem {
     }
 
     // Gets the line margin height in this TextEditor in pixels.
+    // This is in addition to the normal font height (i.e. Font.getHeight()),
+    // which already includes leading (margin below the text).  So we set this
+    // to zero, although this will be inaccurate if the native implementation
+    // adds a line margin.
     public int getLineMarginHeight() {
-        return getFont().getHeight();
+        System.out.println("TextEditor::getLineMarginHeight needs a more correct implementation");
+        return 0;
     }
 
-    // Gets the whole content height in this TextEditor in pixels.
+    // Gets the whole content height in this TextEditor in pixels. We calculate
+    // this from the height of the font, which includes leading (margin below
+    // the text), although this will be inaccurate if the native implementation
+    // uses a different font.
     public int getContentHeight() {
-        System.out.println("warning: TextEditor::getContentHeight needs a more correct implementation");
-        return getFont().getHeight();
+        System.out.println("TextEditor::getContentHeight needs a more correct implementation");
+        int lineHeight = getFont().getHeight();
+        int numLines = 1;
+
+        if (isMultiline()) {
+            String content = getContent();
+            for (int i = 0; i < content.length(); i++) {
+                if (content.charAt(i) == '\n') {
+                    numLines++;
+                }
+            }
+        }
+
+        return lineHeight * numLines;
     }
 
     // Sets the index of the caret.
-    public void setCaret(int index) {
-        System.out.println("warning: TextEditor::setCaret(int) not implemented");
-    }
+    native public void setCaret(int index);
 
     // Gets the current position of the caret in the editor.
     native public int getCaretPosition();
 
     // Gets the topmost pixel position of the topmost visible line in the editor.
     public int getVisibleContentPosition() {
-        System.out.println("warning: TextEditor::getVisibleContentPosition() not implemented");
+        System.out.println("TextEditor::getVisibleContentPosition() not implemented");
         return 0;
     }
 
     // Gets the font being used in rendering the text content in this TextEditor.
     public Font getFont() {
+        System.out.println("TextEditor::getFont(Font) not implemented");
         return Font.getDefaultFont();
     }
 
@@ -155,24 +142,16 @@ public class TextEditor extends CanvasItem {
     }
 
     // Gets the background color and alpha of this TextEditor.
-    public int getBackgroundColor() {
-        return backgroundColor;
-    }
+    native public int getBackgroundColor();
 
     // Gets the foreground color and alpha of this TextEditor.
-    public int getForegroundColor() {
-        return foregroundColor;
-    }
+    native public int getForegroundColor();
 
     // Sets the background color and alpha of this TextEditor to the specified values.
-    public void setBackgroundColor(int color) {
-        backgroundColor = color;
-    }
+    native public void setBackgroundColor(int color);
 
     // Sets the foreground color and alpha of this TextEditor to the specified values.
-    public void setForegroundColor(int color) {
-        foregroundColor = color;
-    }
+    native public void setForegroundColor(int color);
 
     // Sets the highlight background color.
     public void setHighlightBackgroundColor(int color) {
@@ -197,17 +176,10 @@ public class TextEditor extends CanvasItem {
     native public void delete(int offset, int length);
 
     // Returns the maximum size (number of characters) that can be stored in this TextEditor.
-    public int getMaxSize() {
-        System.out.println("warning: TextEditor::getMaxSize() not implemented");
-        return maxSize;
-    }
+    native public int getMaxSize();
 
     // Sets the maximum size (number of characters) that can be contained in this TextEditor.
-    public int setMaxSize(int maxSize) {
-        this.maxSize = maxSize;
-        System.out.println("warning: TextEditor::setMaxSize(int) not implemented");
-        return maxSize;
-    }
+    native public int setMaxSize(int maxSize);
 
     // Gets the number of characters that are currently stored in this TextEditor.
     native public int size();
@@ -255,6 +227,8 @@ public class TextEditor extends CanvasItem {
 
     // Sets the editor to be either multi-line (true) or single-line (false).
     public void setMultiline(boolean aMultiline) {
+        // XXX If the caller is disabling multiline, then we may need to make
+        // the native widget pass "enter" keystrokes to the parent object.
         multiline = aMultiline;
     }
 
@@ -302,13 +276,4 @@ public class TextEditor extends CanvasItem {
     public void setCaretXY(int x, int y) {
         throw new RuntimeException("TextEditor::setCaretXY(int,int) not implemented");
     }
-
-    public int getWidth() {
-        return width;
-    }
-
-    public int getHeight() {
-        return height;
-    }
 }
-
