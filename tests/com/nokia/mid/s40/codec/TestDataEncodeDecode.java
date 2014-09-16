@@ -148,6 +148,39 @@ public class TestDataEncodeDecode implements Testlet {
         decoder.getEnd(DataType.STRUCT);
     }
 
+    void testList(TestHarness th) throws IOException {
+        DataEncoder encoder = new DataEncoder("whatever");
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.putStart(DataType.LIST, "list");
+        encoder.put(DataType.STRING, "str1", "val1");
+        encoder.put(DataType.STRING, "str2", "val2");
+        encoder.putEnd(DataType.ARRAY, "list");
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        byte[] data = encoder.getData();
+
+        DataDecoder decoder = new DataDecoder("whatever", data, 0, data.length);
+        th.check(decoder.getName(), "event");
+        th.check(decoder.getType(), DataType.STRUCT);
+        decoder.getStart(DataType.STRUCT);
+        th.check(decoder.getName(), "list");
+        th.check(decoder.getType(), DataType.LIST);
+        decoder.getStart(DataType.LIST);
+        th.check(decoder.listHasMoreItems());
+        th.check(decoder.listHasMoreItems());
+        th.check(decoder.listHasMoreItems());
+        th.check(decoder.getName(), "str1");
+        th.check(decoder.getType(), DataType.STRING);
+        th.check(decoder.getString(DataType.STRING), "val1");
+        th.check(decoder.listHasMoreItems());
+        th.check(decoder.getName(), "str2");
+        th.check(decoder.getType(), DataType.STRING);
+        th.check(decoder.getString(DataType.STRING), "val2");
+        th.check(!decoder.listHasMoreItems());
+        decoder.getEnd(DataType.LIST);
+        decoder.getEnd(DataType.STRUCT);
+    }
+
     public void test(TestHarness th) {
         try {
             testString(th);
@@ -156,6 +189,7 @@ public class TestDataEncodeDecode implements Testlet {
             testLong(th);
             testArray(th);
             testNested(th);
+            testList(th);
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
