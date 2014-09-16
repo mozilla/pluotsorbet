@@ -624,6 +624,7 @@ tests.push(function() {
               ok(afterWrite.mtime >= afterCreate.mtime, "file write updates modification time");
               ok(afterClose.mtime == afterWrite.mtime, "file close doesn't update modification time");
 
+              next();
             });
           });
         });
