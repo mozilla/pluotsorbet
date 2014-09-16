@@ -134,9 +134,7 @@ public class TextEditor extends CanvasItem {
     }
 
     // Sets the index of the caret.
-    public void setCaret(int index) {
-        System.out.println("warning: TextEditor::setCaret(int) not implemented");
-    }
+    native public void setCaret(int index);
 
     // Gets the current position of the caret in the editor.
     native public int getCaretPosition();

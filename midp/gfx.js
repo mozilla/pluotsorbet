@@ -818,6 +818,17 @@
         stack.push(_this.focused);
     }
 
+    Native["com/nokia/mid/ui/TextEditor.setCaret.(I)V"] = function(ctx, stack) {
+        var index = stack.pop(), _this = stack.pop();
+
+        if (!_this.visible) {
+            console.warn("setCaret ignored when TextEditor is invisible");
+            return;
+        }
+
+        _this.textEditor.setSelectionRange(index, index);
+    }
+
     Native["com/nokia/mid/ui/TextEditor.getCaretPosition.()I"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(_this.textEditor.selectionStart);

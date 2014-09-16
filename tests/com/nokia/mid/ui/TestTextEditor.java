@@ -85,6 +85,16 @@ public class TestTextEditor extends Canvas implements Testlet {
         textEditor.setPosition(-10, -20);
         th.check(textEditor.getPositionX(), -10);
         th.check(textEditor.getPositionY(), -20);
+
+        textEditor.setVisible(true);
+        textEditor.setContent("XYZYZ");
+        th.check(textEditor.getCaretPosition(), 0);
+        textEditor.setCaret(3);
+        th.check(textEditor.getCaretPosition(), 3);
+        textEditor.setCaret(6);
+        th.check(textEditor.getCaretPosition(), 5);
+        textEditor.setCaret(0);
+        th.check(textEditor.getCaretPosition(), 0);
     }
 
     protected void paint(Graphics graphics) {}
