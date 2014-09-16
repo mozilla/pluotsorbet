@@ -53,38 +53,40 @@ casper.test.begin("unit tests", 6, function(test) {
 
     // Graphics tests
 
-    casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=gfx/CanvasTest")
-    .waitForText("PAINTED", function() {
-        this.waitForSelector("#canvas", function() {
-            var got = this.evaluate(function() {
-                var dataURL = document.getElementById('canvas').toDataURL();
+    [ "gfx/CanvasTest" ].forEach(function(testName) {
+        casper
+        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testName)
+        .waitForText("PAINTED", function() {
+            this.waitForSelector("#canvas", function() {
+                var got = this.evaluate(function(testName) {
+                    var dataURL = document.getElementById("canvas").toDataURL();
 
-                var img = new Image();
-                img.src = "tests/gfx/CanvasTest.png";
+                    var img = new Image();
+                    img.src = "tests/" + testName + ".png";
 
-                img.onload = function() {
-                    var canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    canvas.getContext('2d').drawImage(img, 0, 0);
-                    if (canvas.toDataURL() == dataURL) {
-                        console.log("DONE");
-                    } else {
-                        console.log(canvas.toDataURL());
-                        console.log(dataURL);
+                    img.onload = function() {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        canvas.getContext("2d").drawImage(img, 0, 0);
+                        if (canvas.toDataURL() == dataURL) {
+                            console.log("DONE");
+                        } else {
+                            console.log(canvas.toDataURL());
+                            console.log(dataURL);
+                            console.log("FAIL");
+                        }
+                    };
+
+                    img.onerror = function() {
+                        console.log("Error while loading test image");
                         console.log("FAIL");
-                    }
-                };
+                    };
+                }, testName);
 
-                img.onerror = function() {
-                    console.log("Error while loading test image");
-                    console.log("FAIL");
-                };
-            });
-
-            this.waitForText("DONE", function() {
-                test.assertTextDoesntExist("FAIL");
+                this.waitForText("DONE", function() {
+                    test.assertTextDoesntExist("FAIL");
+                });
             });
         });
     });
