@@ -14,28 +14,28 @@ public abstract class TestHarness {
 	boolean ok = (result == expected);
 	check(ok);
 	if (!ok)
-	    debug("got (" + result + "), expected(" + expected + ")");
+	    debug("got (" + result + "), expected (" + expected + ")");
     }
 
     public void check(long result, long expected) {
 	boolean ok = (result == expected);
 	check(ok);
 	if (!ok)
-	    debug("got (" + result + "), expected(" + expected + ")");
+	    debug("got (" + result + "), expected (" + expected + ")");
     }
 
     public void check(Object result, Object expected) {
 	boolean ok = (result.toString().equals(expected.toString()));
 	check(ok);
 	if (!ok)
-	    debug("got (" + result + "), expected(" + expected + ")");
+	    debug("got (" + result + "), expected (" + expected + ")");
     }
 
     public void check(float result, float expected) {
         boolean ok = (result == expected);
         check(ok);
         if (!ok) {
-            debug("got (" + result + "), expected(" + expected + ")");
+            debug("got (" + result + "), expected (" + expected + ")");
         }
     }
 
@@ -43,7 +43,7 @@ public abstract class TestHarness {
 	boolean ok = (result == expected);
 	check(ok);
 	if (!ok)
-	    debug("got (" + result + "), expected(" + expected + ")");
+	    debug("got (" + result + "), expected (" + expected + ")");
     }
 
     public void check(boolean ok, String note) {
@@ -65,7 +65,7 @@ public abstract class TestHarness {
 	boolean ok = result.equals(expected);
 	check(ok);
 	if (!ok)
-	    debug("got (" + result + "), expected(" + expected + ")");
+	    debug("got (" + result + "), expected (" + expected + ")");
     }
     
     public void pass() {
