@@ -3,7 +3,7 @@
 all: java tests
 
 test: all
-	rm test.log
+	rm -f test.log
 	killall python Python || true
 	python -m SimpleHTTPServer &
 	casperjs --no-colors --engine=slimerjs test `pwd`/tests/automation.js > test.log 2>&1
