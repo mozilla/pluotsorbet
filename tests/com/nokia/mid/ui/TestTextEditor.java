@@ -50,6 +50,12 @@ public class TestTextEditor extends Canvas implements Testlet {
 
         textEditor.setParent(this);
         th.check(textEditor.getParent(), this);
+
+        th.check(textEditor.isMultiline(), false);
+        textEditor.setMultiline(true);
+        th.check(textEditor.isMultiline(), true);
+        textEditor.setMultiline(false);
+        th.check(textEditor.isMultiline(), false);
     }
 
     protected void paint(Graphics graphics) {}
