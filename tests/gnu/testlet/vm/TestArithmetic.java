@@ -142,28 +142,19 @@ class TestArithmetic implements Testlet {
 
         a = long_3;
 
-        System.out.print("Expected: -1 Actual: ");
-        System.out.println(a + 2);  // ladd
-        System.out.print("Expected: -5 Actual: ");
-        System.out.println(a - 2);  // lsub
-        System.out.print("Expected: -9 Actual: ");
-        System.out.println(a * 3);  // lmul
-        System.out.print("Expected: -1 Actual: ");
-        System.out.println(a / 2);  // ldiv
-        System.out.print("Expected: -1 Actual: ");
-        System.out.println(a % 2);  // lrem
-        System.out.print("Expected: 3 Actual: ");
-        System.out.println(-a);  // lneg
+        th.check(a + 2, -1);
+        th.check(a - 2, -5);
+        th.check(a * 3, -9);
+        th.check(a / 2, -1);
+        th.check(a % 2, -1);
+        th.check(-a, 3);
 
         a = long0x0110000000000011;
         b = long0x1010000000000101;
 
-        System.out.print("Expected: 4503599627370497 Actual: ");
-        System.out.println(a & b);  // land
-        System.out.print("Expected: 1229482698272145681 Actual: ");
-        System.out.println(a | b);  // lor
-        System.out.print("Expected: 1224979098644775184 Actual: ");
-        System.out.println(a ^ b);  // lxor
+        th.check(a & b, 4503599627370497);
+        th.check(a | b, 1229482698272145681);
+        th.check(a ^ b, 1224979098644775184);
 
         // bit patterns that can be optimized for certain operators if converting
         // long operators into int operators
@@ -176,18 +167,12 @@ class TestArithmetic implements Testlet {
 
         a = long_1;
 
-        System.out.print("Expected: -4294967295 Actual: ");
-        System.out.println(a * long0x00000000FFFFFFFF);
-        System.out.print("Expected: 4294967296 Actual: ");
-        System.out.println(a * long0xFFFFFFFF00000000);
-        System.out.print("Expected: -8589934591 Actual: ");
-        System.out.println(a * long0x00000001FFFFFFFF);
-        System.out.print("Expected: 4294967295 Actual: ");
-        System.out.println(a * long0xFFFFFFFF00000001);
-        System.out.print("Expected: -4294967296 Actual: ");
-        System.out.println(a * long0x0000000100000000);
-        System.out.print("Expected: -4294967297 Actual: ");
-        System.out.println(a * long0x0000000100000001);
+        th.check(a * long0x00000000FFFFFFFF, -4294967295);
+        th.check(a * long0xFFFFFFFF00000000, 4294967296);
+        System.out.println(a * long0x00000001FFFFFFFF, -8589934591);
+        System.out.println(a * long0xFFFFFFFF00000001, 4294967295);
+        System.out.println(a * long0x0000000100000000, -4294967296);
+        System.out.println(a * long0x0000000100000001, -4294967297);
 
         System.out.print("Expected: 4294967295 Actual: ");
         System.out.println(a & long0x00000000FFFFFFFF);
