@@ -222,9 +222,10 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
-    openedFiles[fd].buffer.setSize(size);
-
-    updateMtime(openedFiles[fd].path);
+    if (size != openedFiles[fd].buffer.contentSize) {
+      openedFiles[fd].buffer.setSize(size);
+      updateMtime(openedFiles[fd].path);
+    }
   }
 
   function remove(path, cb) {
