@@ -158,10 +158,7 @@ var fs = (function() {
 
     openedFiles[fd].position = from + data.byteLength;
 
-    var stat = {
-      mtime: Date.now(),
-    };
-    asyncStorage.setItem("!" + openedFiles[fd].path, stat);
+    updateMtime(openedFiles[fd].path);
   }
 
   function getpos(fd) {
@@ -217,11 +214,7 @@ var fs = (function() {
         cb(false);
       } else {
         asyncStorage.setItem(path, new Blob(), function() {
-          var stat = {
-            mtime: Date.now(),
-          };
-          asyncStorage.setItem("!" + path, stat);
-
+          updateMtime(path);
           cb(true);
         });
       }
@@ -231,10 +224,7 @@ var fs = (function() {
   function ftruncate(fd, size) {
     openedFiles[fd].buffer.setSize(size);
 
-    var stat = {
-      mtime: Date.now(),
-    };
-    asyncStorage.setItem("!" + openedFiles[fd].path, stat);
+    updateMtime(openedFiles[fd].path);
   }
 
   function remove(path, cb) {
@@ -282,11 +272,7 @@ var fs = (function() {
       files.push(name);
       asyncStorage.setItem(dir, files, function() {
         asyncStorage.setItem(path, data, function() {
-          var stat = {
-            mtime: Date.now(),
-          };
-          asyncStorage.setItem("!" + path, stat);
-
+          updateMtime(path);
           cb(true);
         });
       });
@@ -392,6 +378,14 @@ var fs = (function() {
     });
   }
 
+  function updateMtime(path) {
+    var stat = {
+      mtime: Date.now(),
+    };
+    asyncStorage.setItem("!" + path, stat);
+    return stat;
+  }
+
   function stat(path, cb) {
     path = normalizePath(path);
 
@@ -399,13 +393,11 @@ var fs = (function() {
       if (exists) {
         asyncStorage.getItem("!" + path, function(stat) {
           // If we don't have a stat for this file, make one up.
+          // This only matters for files that were created before we started
+          // storing file stats in the stat structure.
           if (stat == null) {
-            stat = {
-              mtime: Date.now(),
-            };
-            asyncStorage.setItem("!" + path, stat);
+            stat = updateMtime(path);
           }
-
           cb(stat);
         });
       } else {
