@@ -93,7 +93,7 @@ public class TextEditor extends CanvasItem {
     // to zero, although this will be inaccurate if the native implementation
     // adds a line margin.
     public int getLineMarginHeight() {
-        System.out.println("warning: TextEditor::getLineMarginHeight needs a more correct implementation");
+        System.out.println("TextEditor::getLineMarginHeight needs a more correct implementation");
         return 0;
     }
 
@@ -102,7 +102,7 @@ public class TextEditor extends CanvasItem {
     // the text), although this will be inaccurate if the native implementation
     // uses a different font.
     public int getContentHeight() {
-        System.out.println("warning: TextEditor::getContentHeight needs a more correct implementation");
+        System.out.println("TextEditor::getContentHeight needs a more correct implementation");
         int lineHeight = getFont().getHeight();
         int numLines = 1;
 
@@ -126,7 +126,7 @@ public class TextEditor extends CanvasItem {
 
     // Gets the topmost pixel position of the topmost visible line in the editor.
     public int getVisibleContentPosition() {
-        System.out.println("warning: TextEditor::getVisibleContentPosition() not implemented");
+        System.out.println("TextEditor::getVisibleContentPosition() not implemented");
         return 0;
     }
 
