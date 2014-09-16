@@ -603,6 +603,35 @@ tests.push(function() {
   });
 });
 
+tests.push(function() {
+  var startTime = Date.now(), beforeCreate, afterCreate, afterWrite, afterClose;
+
+  fs.stat("/tmp/stat.txt", function(stat) {
+    beforeCreate = stat;
+    fs.create("/tmp/stat.txt", new Blob(), function(created) {
+      fs.stat("/tmp/stat.txt", function(stat) {
+        afterCreate = stat;
+        fs.open("/tmp/stat.txt", function(fd) {
+          fs.write(fd, new TextEncoder().encode("misc"));
+          fs.stat("/tmp/stat.txt", function(stat) {
+            afterWrite = stat;
+            fs.close(fd);
+            fs.stat("/tmp/stat.txt", function(stat) {
+              afterClose = stat;
+
+              is(beforeCreate, null, "no stat for nonexistent file");
+              ok(afterCreate.mtime >= startTime, "file creation updates modification time");
+              ok(afterWrite.mtime >= afterCreate.mtime, "file write updates modification time");
+              ok(afterClose.mtime == afterWrite.mtime, "file close doesn't update modification time");
+
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
 asyncStorage.clear(function() {
   fs.init(function() {
     next();

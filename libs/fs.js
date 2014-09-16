@@ -157,6 +157,11 @@ var fs = (function() {
     buffer.array.set(data, from);
 
     openedFiles[fd].position = from + data.byteLength;
+
+    var stat = {
+      mtime: Date.now(),
+    };
+    asyncStorage.setItem("!" + openedFiles[fd].path, stat);
   }
 
   function getpos(fd) {
@@ -267,6 +272,11 @@ var fs = (function() {
       files.push(name);
       asyncStorage.setItem(dir, files, function() {
         asyncStorage.setItem(path, data, function() {
+          var stat = {
+            mtime: Date.now(),
+          };
+          asyncStorage.setItem("!" + path, stat);
+
           cb(true);
         });
       });
@@ -372,6 +382,29 @@ var fs = (function() {
     });
   }
 
+  function stat(path, cb) {
+    path = normalizePath(path);
+
+    exists(path, function(exists) {
+      if (exists) {
+        asyncStorage.getItem("!" + path, function(stat) {
+          // If we don't have a stat for this file, make one up.
+          if (stat == null) {
+            stat = {
+              mtime: Date.now(),
+            };
+            asyncStorage.setItem("!" + path, stat);
+          }
+
+          cb(stat);
+        });
+      } else {
+        // The file doesn't exist, so it can't have a stat.
+        cb(null);
+      }
+    });
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -393,5 +426,6 @@ var fs = (function() {
     mkdirp: mkdirp,
     size: size,
     rename: rename,
+    stat: stat,
   };
 })();
