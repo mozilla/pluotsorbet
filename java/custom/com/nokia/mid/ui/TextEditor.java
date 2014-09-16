@@ -147,6 +147,7 @@ public class TextEditor extends CanvasItem {
 
     // Gets the font being used in rendering the text content in this TextEditor.
     public Font getFont() {
+        System.out.println("TextEditor::getFont(Font) not implemented");
         return Font.getDefaultFont();
     }
 
