@@ -9,5 +9,3 @@ before_script:
   - npm install slimerjs
 script:
   - make test
-after_script:
-  - cat test.log
