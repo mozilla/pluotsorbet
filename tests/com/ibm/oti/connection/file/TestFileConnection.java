@@ -57,6 +57,55 @@ public class TestFileConnection implements Testlet {
         }
     }
 
+    void testLastModified(TestHarness th) throws IOException {
+        FileConnection file = (FileConnection)Connector.open(dirPath + "provaDir/stat.txt");
+
+        // FileConnection.lastModified returns microseconds for some reason,
+        // so we have to convert this value from millis to micros.
+        long startTime = System.currentTimeMillis() * 1000;
+
+        try {
+            file.lastModified();
+            th.fail("nonexistent path: /provaDir/stat.txt");
+        } catch(IllegalArgumentException e) {
+            th.check(e.getMessage(), "nonexistent path: /provaDir/stat.txt");
+        }
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.create();
+        long afterCreate = file.lastModified();
+        th.check(afterCreate > startTime, "create updates mtime");
+
+        // Merely opening the output stream shouldn't update the mtime, but it
+        // truncates the file, which updates the mtime.
+        try { Thread.sleep(1); } catch (Exception e) {}
+        OutputStream out = file.openOutputStream();
+        long afterOpenOutputStream = file.lastModified();
+        th.todo(afterOpenOutputStream, afterCreate, "open output stream doesn't update mtime");
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        out.write(new byte[]{ 5, 4, 3, 2, 1 });
+        out.close();
+        long afterWrite = file.lastModified();
+        th.check(afterWrite > afterOpenOutputStream, "write updates mtime");
+
+        // Truncating a file to the same size it was before shouldn't update
+        // the mtime, but it truncates (and rewrites) the file, which updates
+        // the mtime.
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.truncate(5);
+        long afterTruncateToSameSize = file.lastModified();
+        th.todo(afterTruncateToSameSize, afterWrite, "truncate to same size doesn't update mtime");
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.truncate(4);
+        long afterTruncate = file.lastModified();
+        th.todo(afterTruncate > afterTruncateToSameSize, "truncate updates mtime");
+
+        file.delete();
+        file.close();
+    }
+
     public void test(TestHarness th) {
         try {
             dirPath = System.getProperty("fileconn.dir.private").substring(2);
@@ -219,6 +268,7 @@ public class TestFileConnection implements Testlet {
             th.check(!files.hasMoreElements(), "Directory has just one file");
 
             testListFilter(th);
+            testLastModified(th);
 
             dir.close();
             th.check(!dir.isOpen());
