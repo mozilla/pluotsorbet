@@ -756,13 +756,13 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.setSize.(II)V"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/CanvasItem.setSize.(II)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), _this = stack.pop();
         _this.textEditor.style.width = width + "px";
         _this.textEditor.style.height = height + "px";
     }
 
-    Native["com/nokia/mid/ui/TextEditor.setVisible.(Z)V"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/CanvasItem.setVisible.(Z)V"] = function(ctx, stack) {
         var visible = stack.pop(), _this = stack.pop();
         if (visible) {
             document.getElementById("display").appendChild(_this.textEditor);

@@ -9,13 +9,15 @@ public abstract class CanvasItem {
 
     // Set the parent object of this CanvasItem.
     public void setParent(Object theParent) {
-        throw new RuntimeException("CanvasItem::setParent(Object) not implemented");
+        if (theParent != null && parent != null && theParent != parent) {
+            throw new IllegalArgumentException("CanvasItem already associated with parent");
+        }
+
+        parent = theParent;
     }
 
-    // Sets the size of this Window in pixels.
-    public void setSize(int width, int height) throws IllegalArgumentException {
-        throw new RuntimeException("CanvasItem::setSize(int,int) not implemented");
-    }
+    // Sets the size of this CanvasItem in pixels.
+    native public void setSize(int width, int height);
 
     // Sets the size of this Window in pixels and resets the current anchor position.
     public void setSize(int x, int y, int width, int height) {
@@ -48,9 +50,7 @@ public abstract class CanvasItem {
     }
 
     // Sets the visibility value of CanvasItem.
-    public void setVisible(boolean visible) {
-        throw new RuntimeException("CanvasItem::setVisible(boolean) not implemented");
-    }
+    native public void setVisible(boolean vis);
 
     // Returns the current visibility of this CanvasItem.
     native public boolean isVisible();

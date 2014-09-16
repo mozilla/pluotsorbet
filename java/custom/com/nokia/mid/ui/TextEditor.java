@@ -67,21 +67,6 @@ public class TextEditor extends CanvasItem {
     // Returns the focus state of TextEditor.
     native public boolean hasFocus();
 
-    // Set the parent object of this TextEditor.
-    public void setParent(Object theParent) {
-        if (theParent != null && parent != null && theParent != parent) {
-            throw new IllegalArgumentException("TextEditor already associated with parent");
-        }
-
-        parent = theParent;
-    }
-
-    // Sets the size of this TextEditor in pixels.
-    native public void setSize(int width, int height);
-
-    // Sets the visibility value of TextEditor.
-    native public void setVisible(boolean vis);
-
     // Sets the Z-position, or the elevation, of the item.
     public void setZPosition(int z) {
         throw new RuntimeException("TextEditor::setZPosition(int) not implemented");
