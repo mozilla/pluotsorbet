@@ -12,7 +12,9 @@ casper.options.onWaitTimeout = function() {
     this.debugPage();
 };
 
-casper.test.begin("unit tests", 6, function(test) {
+var gfxTests = [ "gfx/CanvasTest" ];
+
+casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function() {
@@ -58,7 +60,7 @@ casper.test.begin("unit tests", 6, function(test) {
 
     // Graphics tests
 
-    [ "gfx/CanvasTest" ].forEach(function(testName) {
+    gfxTests.forEach(function(testName) {
         casper
         .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testName)
         .waitForText("PAINTED", function() {
@@ -91,18 +93,20 @@ casper.test.begin("unit tests", 6, function(test) {
                                 if (expectedPixels[i] !== gotPixels[i]) {
                                     different++;
                                 }
+
                                 i++;
                             }
                         }
 
-                        var maxDifferent = gotCanvas.width * gotCanvas.height * 0.01;
+                        // Allow 0.5% of different pixels
+                        var maxDifferent = gotCanvas.width * gotCanvas.height * 0.005;
 
                         if (different > maxDifferent) {
                             console.log(gotCanvas.toDataURL());
                             console.log("FAIL");
                         }
 
-                        console.log("DONE");
+                        console.log("DONE - " + different);
                     };
 
                     img.onerror = function() {
