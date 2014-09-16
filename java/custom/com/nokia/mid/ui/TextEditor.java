@@ -236,6 +236,8 @@ public class TextEditor extends CanvasItem {
 
     // Sets the editor to be either multi-line (true) or single-line (false).
     public void setMultiline(boolean aMultiline) {
+        // XXX If the caller is disabling multiline, then we may need to make
+        // the native widget pass "enter" keystrokes to the parent object.
         multiline = aMultiline;
     }
 
