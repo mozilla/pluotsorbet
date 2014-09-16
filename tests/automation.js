@@ -7,6 +7,11 @@ casper.on('remote.message', function(message) {
 
 casper.options.waitTimeout = 35000;
 
+casper.options.onWaitTimeout = function() {
+    this.echo("Timeout");
+    this.debugPage();
+};
+
 casper.test.begin("unit tests", 6, function(test) {
     casper
     .start("http://localhost:8000/index.html")
