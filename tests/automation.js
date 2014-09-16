@@ -14,7 +14,10 @@ casper.options.onWaitTimeout = function() {
     this.debugPage();
 };
 
-var gfxTests = [ "gfx/CanvasTest" ];
+var gfxTests = [
+    "gfx/CanvasTest",
+    "gfx/ImageRenderingTest"
+];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
