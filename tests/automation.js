@@ -21,12 +21,6 @@ casper.test.begin("unit tests", 6, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=gfx/CanvasTest")
-    .waitForText("PAINTED", function() {
-        test.assert(true);
-    });
-
-    casper
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad")
     .waitForText("Hello World from MIDlet2", function() {
         test.assert(true);
@@ -53,6 +47,44 @@ casper.test.begin("unit tests", 6, function(test) {
                         });
                     });
                 });
+            });
+        });
+    });
+
+    // Graphics tests
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=gfx/CanvasTest")
+    .waitForText("PAINTED", function() {
+        this.waitForSelector("#canvas", function() {
+            var got = this.evaluate(function() {
+                var dataURL = document.getElementById('canvas').toDataURL();
+
+                var img = new Image();
+                img.src = "tests/gfx/CanvasTest.png";
+
+                img.onload = function() {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    canvas.getContext('2d').drawImage(img, 0, 0);
+                    if (canvas.toDataURL() == dataURL) {
+                        console.log("DONE");
+                    } else {
+                        console.log(canvas.toDataURL());
+                        console.log(dataURL);
+                        console.log("FAIL");
+                    }
+                };
+
+                img.onerror = function() {
+                    console.log("Error while loading test image");
+                    console.log("FAIL");
+                };
+            });
+
+            this.waitForText("DONE", function() {
+                test.assertTextDoesntExist("FAIL");
             });
         });
     });
