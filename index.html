@@ -3,11 +3,13 @@
 
 <head>
   <style type="text/css">
-#canvas {
+#display {
   position: absolute;
   top: 0px;
   right: 0px;
   border: 1px solid #ababab;
+  width: 240px;
+  height: 320px;
 }
 
 button {
@@ -19,7 +21,7 @@ button {
 }
 
 @media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
-  #canvas {
+  #display {
     bottom: 0px;
     left: 0px;
     border: none;
@@ -97,8 +99,7 @@ button {
   <input id="sms_text" type="text" value="SMS text"></input>
   <input id="sms_addr" type="text" value="SMS phone number"></input>
   <button id="sms_receive">Receive SMS</button>
-  <canvas id="canvas">
-  </canvas>
+  <div id="display"><canvas id="canvas"></canvas></div>
   <div>
     Console:
     <pre id="console"></pre>
