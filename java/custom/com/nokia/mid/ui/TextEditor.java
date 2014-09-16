@@ -79,9 +79,6 @@ public class TextEditor extends CanvasItem {
     // Sets the size of this TextEditor in pixels.
     native public void setSize(int width, int height);
 
-    // Sets the rendering position of this TextEditor.
-    native public void setPosition(int x, int y);
-
     // Sets the visibility value of TextEditor.
     native public void setVisible(boolean vis);
 

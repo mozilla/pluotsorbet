@@ -76,6 +76,15 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 2);
         textEditor.setContent("A\nB\nC");
         th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 3);
+
+        th.check(textEditor.getPositionX(), 0);
+        th.check(textEditor.getPositionY(), 0);
+        textEditor.setPosition(10, 20);
+        th.check(textEditor.getPositionX(), 10);
+        th.check(textEditor.getPositionY(), 20);
+        textEditor.setPosition(-10, -20);
+        th.check(textEditor.getPositionX(), -10);
+        th.check(textEditor.getPositionY(), -20);
     }
 
     protected void paint(Graphics graphics) {}

@@ -29,9 +29,7 @@ public abstract class CanvasItem {
     native public int getHeight();
 
     // Sets the rendering position of this CanvasItem.
-    public void setPosition(int x, int y) {
-        throw new RuntimeException("CanvasItem::setPosition(int,int) not implemented");
-    }
+    native public void setPosition(int x, int y);
 
     // Sets the Z-position, or the elevation, of the item.
     public void setZPosition(int z) throws IllegalArgumentException {
@@ -39,14 +37,10 @@ public abstract class CanvasItem {
     }
 
     // Gets the rendering position of this CanvasItem.
-    public int getPositionX() {
-        throw new RuntimeException("CanvasItem::getPositionX() not implemented");
-    }
+    native public int getPositionX();
 
     // Gets the rendering position of this CanvasItem.
-    public int getPositionY() {
-        throw new RuntimeException("CanvasItem::getPositionY(int) not implemented");
-    }
+    native public int getPositionY();
 
     // Returns the Z-position, or the elevation, of the item.
     public int getZPosition() {

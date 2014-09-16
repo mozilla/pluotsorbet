@@ -762,12 +762,6 @@
         _this.textEditor.style.height = height + "px";
     }
 
-    Native["com/nokia/mid/ui/TextEditor.setPosition.(II)V"] = function(ctx, stack) {
-        var y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        _this.textEditor.style.left = x + "px";
-        _this.textEditor.style.top = y + "px";
-    }
-
     Native["com/nokia/mid/ui/TextEditor.setVisible.(Z)V"] = function(ctx, stack) {
         var visible = stack.pop(), _this = stack.pop();
         if (visible) {
@@ -786,6 +780,22 @@
     Native["com/nokia/mid/ui/CanvasItem.getHeight.()I"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(parseInt(_this.textEditor.style.height));
+    }
+
+    Native["com/nokia/mid/ui/CanvasItem.setPosition.(II)V"] = function(ctx, stack) {
+        var y = stack.pop(), x = stack.pop(), _this = stack.pop();
+        _this.textEditor.style.left = x + "px";
+        _this.textEditor.style.top = y + "px";
+    }
+
+    Native["com/nokia/mid/ui/CanvasItem.getPositionX.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(parseInt(_this.textEditor.style.left));
+    }
+
+    Native["com/nokia/mid/ui/CanvasItem.getPositionY.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(parseInt(_this.textEditor.style.top));
     }
 
     Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function(ctx, stack) {
