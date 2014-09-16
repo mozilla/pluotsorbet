@@ -239,9 +239,9 @@
         if (face & FACE_MONOSPACE)
             face = "monospace";
         else if (face & FACE_PROPORTIONAL)
-            face = "san-serif";
+            face = "sans-serif";
         else
-            face = "arial";
+            face = "Arial, Helvetica, sans-serif";
 
         _this.class.getField("baseline", "I").set(_this, (size/2)|0);
         _this.class.getField("height", "I").set(_this, (size * 1.3)|0);
