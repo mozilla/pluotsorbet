@@ -363,15 +363,18 @@
         });
     }
 
-    function withPixel(g, c, cb) {
-        var pixel = g.class.getField("pixel", "I").get(g);
-        c.save();
+    function abgrIntToCSS(pixel) {
         var a = (pixel >> 24) & 0xff;
         var b = (pixel >> 16) & 0xff;
         var g = (pixel >> 8) & 0xff;
         var r = pixel & 0xff;
-        var style = "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
-        c.fillStyle = c.strokeStyle = style;
+        return "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
+    };
+
+    function withPixel(g, c, cb) {
+        var pixel = g.class.getField("pixel", "I").get(g);
+        c.save();
+        c.fillStyle = c.strokeStyle = abgrIntToCSS(pixel);
         cb();
         c.restore();
     }
@@ -737,10 +740,12 @@
         _this.textEditor = document.createElement("textarea");
         _this.visible = false;
         _this.focused = false;
+        _this.backgroundColor = 0xFFFFFFFF | 0; // opaque white
+        _this.foregroundColor = 0xFF000000 | 0; // opaque black
         _this.textEditor.style.border = "none";
         _this.textEditor.style.resize = "none";
-        _this.textEditor.style.backgroundColor = "transparent";
-        _this.textEditor.style.color = "transparent";
+        _this.textEditor.style.backgroundColor = abgrIntToCSS(_this.backgroundColor);
+        _this.textEditor.style.color = abgrIntToCSS(_this.foregroundColor);
         _this.textEditor.value = util.fromJavaString(text);
         _this.textEditor.setAttribute("maxlength", maxSize);
         _this.textEditor.style.width = width + "px";
@@ -806,6 +811,25 @@
     Native["com/nokia/mid/ui/TextEditor.getCaretPosition.()I"] = function(ctx, stack) {
         var _this = stack.pop();
         stack.push(_this.textEditor.selectionStart);
+    }
+
+    Native["com/nokia/mid/ui/TextEditor.getBackgroundColor.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this.backgroundColor);
+    }
+    Native["com/nokia/mid/ui/TextEditor.getForegroundColor.()I"] = function(ctx, stack) {
+        var _this = stack.pop();
+        stack.push(_this.foregroundColor);
+    }
+    Native["com/nokia/mid/ui/TextEditor.setBackgroundColor.(I)V"] = function(ctx, stack) {
+        var backgroundColor = stack.pop(), _this = stack.pop();
+        _this.backgroundColor = backgroundColor;
+        _this.textEditor.style.backgroundColor = abgrIntToCSS(backgroundColor);
+    }
+    Native["com/nokia/mid/ui/TextEditor.setForegroundColor.(I)V"] = function(ctx, stack) {
+        var foregroundColor = stack.pop(), _this = stack.pop();
+        _this.foregroundColor = foregroundColor;
+        _this.textEditor.style.color = abgrIntToCSS(foregroundColor);
     }
 
     Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function(ctx, stack) {

@@ -56,6 +56,14 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.isMultiline(), true);
         textEditor.setMultiline(false);
         th.check(textEditor.isMultiline(), false);
+
+        th.check(textEditor.getBackgroundColor(), 0xFFFFFFFF);
+        textEditor.setBackgroundColor(0xBBBBBBBB);
+        th.check(textEditor.getBackgroundColor(), 0xBBBBBBBB);
+
+        th.check(textEditor.getForegroundColor(), 0xFF000000);
+        textEditor.setForegroundColor(0x33333333);
+        th.check(textEditor.getForegroundColor(), 0x33333333);
     }
 
     protected void paint(Graphics graphics) {}

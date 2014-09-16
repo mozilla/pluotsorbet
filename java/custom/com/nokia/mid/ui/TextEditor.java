@@ -34,8 +34,6 @@ public class TextEditor extends CanvasItem {
 
     protected TextEditorListener myListener;
 
-    private int backgroundColor = 0;
-    private int foregroundColor = 0;
     private boolean multiline = false;
     private int myId;
     private static TextEditorThread textEditorThread;
@@ -143,24 +141,16 @@ public class TextEditor extends CanvasItem {
     }
 
     // Gets the background color and alpha of this TextEditor.
-    public int getBackgroundColor() {
-        return backgroundColor;
-    }
+    native public int getBackgroundColor();
 
     // Gets the foreground color and alpha of this TextEditor.
-    public int getForegroundColor() {
-        return foregroundColor;
-    }
+    native public int getForegroundColor();
 
     // Sets the background color and alpha of this TextEditor to the specified values.
-    public void setBackgroundColor(int color) {
-        backgroundColor = color;
-    }
+    native public void setBackgroundColor(int color);
 
     // Sets the foreground color and alpha of this TextEditor to the specified values.
-    public void setForegroundColor(int color) {
-        foregroundColor = color;
-    }
+    native public void setForegroundColor(int color);
 
     // Sets the highlight background color.
     public void setHighlightBackgroundColor(int color) {
