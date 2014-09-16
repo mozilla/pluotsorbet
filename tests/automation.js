@@ -59,29 +59,45 @@ casper.test.begin("unit tests", 6, function(test) {
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
                 var got = this.evaluate(function(testName) {
-                    var dataURL = document.getElementById("canvas").toDataURL();
+                    var gotCanvas = document.getElementById("canvas");
+                    var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
                     var img = new Image();
                     img.src = "tests/" + testName + ".png";
 
                     img.onload = function() {
-                        var canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        canvas.getContext("2d").drawImage(img, 0, 0);
-                        var canvasDataURL = canvas.toDataURL();
-                        for (var i = 0; i < dataURL.length; i++) {
-                            if (canvasDataURL[i] != dataURL[i]) {
-                                console.log("diff " + i + ", " + dataURL[i] + ", " + canvasDataURL[i]);
+                        var expectedCanvas = document.createElement('canvas');
+                        expectedCanvas.width = img.width;
+                        expectedCanvas.height = img.height;
+                        expectedCanvas.getContext("2d").drawImage(img, 0, 0);
+
+                        var expectedPixels = new Uint32Array(expectedCanvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
+
+                        if (expectedCanvas.width !== gotCanvas.width || expectedCanvas.height !== gotCanvas.height) {
+                            console.log("Canvas dimensions are wrong");
+                            console.log("FAIL");
+                            return;
+                        }
+
+                        var different = 0;
+                        var i = 0;
+                        for (var x = 0; x < gotCanvas.width; x++) {
+                            for (var y = 0; y < gotCanvas.height; y++) {
+                                if (expectedPixels[i] !== gotPixels[i]) {
+                                    different++;
+                                }
+                                i++;
                             }
                         }
-                        if (canvasDataURL == dataURL) {
-                            console.log("DONE");
-                        } else {
-                            console.log(canvasDataURL);
-                            console.log(dataURL);
+
+                        var maxDifferent = gotCanvas.width * gotCanvas.height * 0.01;
+
+                        if (different > maxDifferent) {
+                            console.log(gotCanvas.toDataURL());
                             console.log("FAIL");
                         }
+
+                        console.log("DONE");
                     };
 
                     img.onerror = function() {
@@ -92,8 +108,6 @@ casper.test.begin("unit tests", 6, function(test) {
 
                 this.waitForText("DONE", function() {
                     test.assertTextDoesntExist("FAIL");
-                }, function() {
-                    this.debugPage();
                 });
             });
         });
