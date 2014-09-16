@@ -106,14 +106,34 @@ public class TextEditor extends CanvasItem {
     }
 
     // Gets the line margin height in this TextEditor in pixels.
+    // This is in addition to the normal font height (i.e. Font.getHeight()),
+    // which already includes leading (margin below the text).  So we set this
+    // to zero, although this will be inaccurate if the native implementation
+    // adds a line margin.
     public int getLineMarginHeight() {
-        return getFont().getHeight();
+        System.out.println("warning: TextEditor::getLineMarginHeight needs a more correct implementation");
+        return 0;
     }
 
-    // Gets the whole content height in this TextEditor in pixels.
+    // Gets the whole content height in this TextEditor in pixels. We calculate
+    // this from the height of the font, which includes leading (margin below
+    // the text), although this will be inaccurate if the native implementation
+    // uses a different font.
     public int getContentHeight() {
         System.out.println("warning: TextEditor::getContentHeight needs a more correct implementation");
-        return getFont().getHeight();
+        int lineHeight = getFont().getHeight();
+        int numLines = 1;
+
+        if (isMultiline()) {
+            String content = getContent();
+            for (int i = 0; i < content.length(); i++) {
+                if (content.charAt(i) == '\n') {
+                    numLines++;
+                }
+            }
+        }
+
+        return lineHeight * numLines;
     }
 
     // Sets the index of the caret.

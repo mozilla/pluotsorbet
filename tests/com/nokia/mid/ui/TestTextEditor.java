@@ -3,6 +3,7 @@ package com.nokia.mid.ui;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
 public class TestTextEditor extends Canvas implements Testlet {
@@ -64,6 +65,17 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getForegroundColor(), 0xFF000000);
         textEditor.setForegroundColor(0x33333333);
         th.check(textEditor.getForegroundColor(), 0x33333333);
+
+        th.check(textEditor.getLineMarginHeight(), 0);
+        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight());
+        textEditor.setMultiline(true);
+        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight());
+        textEditor.setContent("A\nB");
+        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 2);
+        textEditor.setContent("A\r\nB");
+        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 2);
+        textEditor.setContent("A\nB\nC");
+        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 3);
     }
 
     protected void paint(Graphics graphics) {}
