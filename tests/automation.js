@@ -69,10 +69,16 @@ casper.test.begin("unit tests", 6, function(test) {
                         canvas.width = img.width;
                         canvas.height = img.height;
                         canvas.getContext("2d").drawImage(img, 0, 0);
-                        if (canvas.toDataURL() == dataURL) {
+                        var canvasDataURL = canvas.toDataURL();
+                        for (var i = 0; i < dataURL.length; i++) {
+                            if (canvasDataURL[i] != dataURL[i]) {
+                                console.log("diff " + i + ", " + dataURL[i] + ", " + canvasDataURL[i]);
+                            }
+                        }
+                        if (canvasDataURL == dataURL) {
                             console.log("DONE");
                         } else {
-                            console.log(canvas.toDataURL());
+                            console.log(canvasDataURL);
                             console.log(dataURL);
                             console.log("FAIL");
                         }
