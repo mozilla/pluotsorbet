@@ -11,7 +11,7 @@ casper.test.begin("unit tests", 6, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 4516 pass, 0 fail, 162 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 4516 pass, 0 fail, 163 known fail, 0 unknown pass", "run unit tests");
     });
 
     casper
