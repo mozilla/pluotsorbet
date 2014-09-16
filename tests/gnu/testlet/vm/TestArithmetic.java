@@ -309,11 +309,13 @@ class TestArithmetic implements Testlet {
         th.check(Integer.toHexString(Float.floatToIntBits(a + b)), Integer.toHexString(Float.floatToIntBits(3.0F)));  // fadd
         th.check(Integer.toHexString(Float.floatToIntBits(a - b)), Integer.toHexString(Float.floatToIntBits(-1.0F)));  // fsub
         th.check(Integer.toHexString(Float.floatToIntBits(a * b)), Integer.toHexString(Float.floatToIntBits(2.0F)));  // fmul
+        System.out.println("Test commented out in TestArithmetic::ftest(): " + Integer.toHexString(Float.floatToIntBits(a / b)).equals(Integer.toHexString(Float.floatToIntBits(0.5F))));
         //th.check(Integer.toHexString(Float.floatToIntBits(a / b)), Integer.toHexString(Float.floatToIntBits(0.5F)));  // fdiv
         th.check(Integer.toHexString(Float.floatToIntBits(-a)), Integer.toHexString(Float.floatToIntBits(-1.0F)));  // fneg
 
         a = float1_5;
         b = float0_9;
+        System.out.println("Test commented out in TestArithmetic::ftest(): " + Integer.toHexString(Float.floatToIntBits(a % b)).equals(Integer.toHexString(Float.floatToIntBits(0.6F))));
         //th.check(Integer.toHexString(Float.floatToIntBits(a % b)), Integer.toHexString(Float.floatToIntBits(0.6F)));  // frem
 
         th.check(String.valueOf(float0/float0), "NaN");
