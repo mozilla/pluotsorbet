@@ -5,9 +5,9 @@ all: java tests
 test: all
 	killall python Python || true
 	python -m SimpleHTTPServer &
-	casperjs --no-colors --engine=slimerjs test `pwd`/tests/automation.js 2>&1 > test.log
+	casperjs --engine=slimerjs test `pwd`/tests/automation.js 2>&1 > test.log
 	killall python Python || true
-	strings test.log || true
+	cat test.log || true
 	if grep -q FAIL test.log; \
 	then false; \
 	else true; \
