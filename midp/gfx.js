@@ -771,9 +771,9 @@
     Native["com/nokia/mid/ui/TextEditor.setVisible.(Z)V"] = function(ctx, stack) {
         var visible = stack.pop(), _this = stack.pop();
         if (visible) {
-            document.body.appendChild(_this.textEditor);
+            document.getElementById("display").appendChild(_this.textEditor);
         } else if (_this.visible) {
-            document.body.removeChild(_this.textEditor);
+            document.getElementById("display").removeChild(_this.textEditor);
         }
         _this.visible = visible;
     }
