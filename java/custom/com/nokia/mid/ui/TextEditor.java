@@ -36,7 +36,7 @@ public class TextEditor extends CanvasItem {
 
     private int backgroundColor = 0;
     private int foregroundColor = 0;
-    private boolean multiline = true;
+    private boolean multiline = false;
     private int myId;
     private static TextEditorThread textEditorThread;
 
