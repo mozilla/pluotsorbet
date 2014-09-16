@@ -7,7 +7,7 @@ test: all
 	python -m SimpleHTTPServer &
 	casperjs --no-colors --engine=slimerjs test `pwd`/tests/automation.js 2>&1 > test.log
 	killall python Python || true
-	strings test.log
+	strings test.log || true
 	if grep -q FAIL test.log; \
 	then false; \
 	else true; \
