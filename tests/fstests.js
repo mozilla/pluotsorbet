@@ -604,32 +604,55 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  var startTime = Date.now(), beforeCreate, afterCreate, afterWrite, afterClose;
+  var startTime = Date.now();
+
+  var beforeCreate, afterCreate, afterWrite, afterFtruncate, afterClose, afterTruncate;
 
   fs.stat("/tmp/stat.txt", function(stat) {
     beforeCreate = stat;
-    fs.create("/tmp/stat.txt", new Blob(), function(created) {
-      fs.stat("/tmp/stat.txt", function(stat) {
-        afterCreate = stat;
-        fs.open("/tmp/stat.txt", function(fd) {
-          fs.write(fd, new TextEncoder().encode("misc"));
-          fs.stat("/tmp/stat.txt", function(stat) {
-            afterWrite = stat;
-            fs.close(fd);
-            fs.stat("/tmp/stat.txt", function(stat) {
-              afterClose = stat;
+    window.setTimeout(function() {
+      fs.create("/tmp/stat.txt", new Blob(), function(created) {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          afterCreate = stat;
+          window.setTimeout(function() {
+            fs.open("/tmp/stat.txt", function(fd) {
+              fs.write(fd, new TextEncoder().encode("misc"));
+              fs.stat("/tmp/stat.txt", function(stat) {
+                afterWrite = stat;
+                window.setTimeout(function() {
+                  fs.ftruncate(fd, 2);
+                  fs.stat("/tmp/stat.txt", function(stat) {
+                    afterFtruncate = stat;
+                    window.setTimeout(function() {
+                      fs.close(fd);
+                      fs.stat("/tmp/stat.txt", function(stat) {
+                        afterClose = stat;
+                        window.setTimeout(function() {
+                          fs.truncate("/tmp/stat.txt", function() {
+                            fs.stat("/tmp/stat.txt", function(stat) {
+                              afterTruncate = stat;
 
-              is(beforeCreate, null, "no stat for nonexistent file");
-              ok(afterCreate.mtime >= startTime, "file creation updates modification time");
-              ok(afterWrite.mtime >= afterCreate.mtime, "file write updates modification time");
-              ok(afterClose.mtime == afterWrite.mtime, "file close doesn't update modification time");
+                              is(beforeCreate, null, "nonexistent file doesn't have stat");
+                              ok(afterCreate.mtime > startTime, "create updates mtime");
+                              ok(afterWrite.mtime > afterCreate.mtime, "write updates mtime");
+                              ok(afterFtruncate.mtime > afterWrite.mtime, "ftruncate updates mtime");
+                              ok(afterClose.mtime == afterFtruncate.mtime, "close doesn't update mtime");
+                              ok(afterTruncate.mtime > afterFtruncate.mtime, "truncate updates mtime");
 
-              next();
+                              next();
+                            });
+                          });
+                        }, 1);
+                      });
+                    }, 1);
+                  });
+                }, 1);
+              });
             });
-          });
+          }, 1);
         });
       });
-    });
+    }, 1);
   });
 });
 

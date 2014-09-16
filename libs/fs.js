@@ -217,6 +217,11 @@ var fs = (function() {
         cb(false);
       } else {
         asyncStorage.setItem(path, new Blob(), function() {
+          var stat = {
+            mtime: Date.now(),
+          };
+          asyncStorage.setItem("!" + path, stat);
+
           cb(true);
         });
       }
@@ -225,6 +230,11 @@ var fs = (function() {
 
   function ftruncate(fd, size) {
     openedFiles[fd].buffer.setSize(size);
+
+    var stat = {
+      mtime: Date.now(),
+    };
+    asyncStorage.setItem("!" + openedFiles[fd].path, stat);
   }
 
   function remove(path, cb) {
