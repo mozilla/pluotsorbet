@@ -108,7 +108,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
 
                         if (different > maxDifferent) {
                             console.log(gotCanvas.toDataURL());
-                            console.log("FAIL");
+                            console.log("FAIL - " + different);
                         }
 
                         console.log("DONE - " + different);
@@ -121,8 +121,8 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                 }, testName);
 
                 this.waitForText("DONE", function() {
-                    test.assertTextDoesntExist("FAIL");
                     this.debugPage();
+                    test.assertTextDoesntExist("FAIL");
                 });
             });
         });
