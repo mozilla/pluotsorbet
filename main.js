@@ -86,13 +86,6 @@ fs.init(function() {
   var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
   MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
 
-  if (MIDP.midletClassName == "RunTests") {
-    var element = document.createElement('script');
-    element.setAttribute("type","text/javascript");
-    element.setAttribute("src", "tests/native.js");
-    document.getElementsByTagName("head")[0].appendChild(element);
-  }
-
   fs.mkdir("/Persistent", function() {
     run(main, urlParams.args);
   });
