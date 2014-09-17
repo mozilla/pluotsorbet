@@ -308,7 +308,6 @@
         } else {
             var imgData = img.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(img),
                 c = imgData.nativeImageData;
-            c.globalCompositeOperation = "copy";
         }
         cb(c);
     }
