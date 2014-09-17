@@ -7,6 +7,8 @@ casper.on('remote.message', function(message) {
 
 casper.options.waitTimeout = 35000;
 
+casper.options.clientScripts = ["tests/native.js"];
+
 casper.options.onWaitTimeout = function() {
     this.echo("Timeout");
     this.debugPage();
