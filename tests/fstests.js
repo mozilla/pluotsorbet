@@ -706,6 +706,15 @@ tests.push(function() {
       });
     }, 1);
   });
+
+  tests.push(function() {
+    fs.remove("/tmp/stat.txt", function() {
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat, null, "removed file no longer has stat");
+        next();
+      });
+    });
+  });
 })();
 
 asyncStorage.clear(function() {

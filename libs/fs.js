@@ -158,7 +158,7 @@ var fs = (function() {
 
     openedFiles[fd].position = from + data.byteLength;
 
-    updateMtime(openedFiles[fd].path);
+    setStat(openedFiles[fd].path, { mtime: Date.now() });
   }
 
   function getpos(fd) {
@@ -214,7 +214,7 @@ var fs = (function() {
         cb(false);
       } else {
         asyncStorage.setItem(path, new Blob(), function() {
-          updateMtime(path);
+          setStat(path, { mtime: Date.now() });
           cb(true);
         });
       }
@@ -224,7 +224,7 @@ var fs = (function() {
   function ftruncate(fd, size) {
     if (size != openedFiles[fd].buffer.contentSize) {
       openedFiles[fd].buffer.setSize(size);
-      updateMtime(openedFiles[fd].path);
+      setStat(openedFiles[fd].path, { mtime: Date.now() });
     }
   }
 
@@ -251,6 +251,7 @@ var fs = (function() {
         files.splice(index, 1);
         asyncStorage.setItem(dir, files, function() {
           asyncStorage.removeItem(path, function() {
+            removeStat(path);
             cb(true);
           });
         });
@@ -273,7 +274,7 @@ var fs = (function() {
       files.push(name);
       asyncStorage.setItem(dir, files, function() {
         asyncStorage.setItem(path, data, function() {
-          updateMtime(path);
+          setStat(path, { mtime: Date.now() });
           cb(true);
         });
       });
@@ -379,33 +380,17 @@ var fs = (function() {
     });
   }
 
-  function updateMtime(path) {
-    var stat = {
-      mtime: Date.now(),
-    };
+  function setStat(path, stat) {
     asyncStorage.setItem("!" + path, stat);
-    return stat;
+  }
+
+  function removeStat(path) {
+    asyncStorage.removeItem("!" + path);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
-
-    exists(path, function(exists) {
-      if (exists) {
-        asyncStorage.getItem("!" + path, function(stat) {
-          // If we don't have a stat for this file, make one up.
-          // This only matters for files that were created before we started
-          // storing file stats in the stat structure.
-          if (stat == null) {
-            stat = updateMtime(path);
-          }
-          cb(stat);
-        });
-      } else {
-        // The file doesn't exist, so it can't have a stat.
-        cb(null);
-      }
-    });
+    asyncStorage.getItem("!" + path, cb);
   }
 
   return {

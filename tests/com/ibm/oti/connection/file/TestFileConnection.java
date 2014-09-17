@@ -113,6 +113,11 @@ public class TestFileConnection implements Testlet {
         lastTime = modifiedTime;
 
         file.delete();
+
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, 0L, "deleted file has '0' mtime");
+        lastTime = modifiedTime;
+
         file.close();
     }
 
