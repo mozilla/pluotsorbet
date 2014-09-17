@@ -87,22 +87,32 @@ public class TestFileConnection implements Testlet {
         lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
-        out.write(new byte[]{ 5, 4, 3, 2, 1 });
+        out.write(new byte[]{ 4, 3, 2, 1 });
         out.close();
         modifiedTime = file.lastModified();
         th.check(modifiedTime > lastTime, "write updates mtime");
         lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
-        file.truncate(5);
+        file.truncate(4);
         modifiedTime = file.lastModified();
         th.check(modifiedTime, lastTime, "truncate to same size doesn't update mtime");
         lastTime = modifiedTime;
 
+        // FileConnection.truncate behaves differently from ftruncate
+        // when the new size is greater than the existing size of the file.
+        // In that case, ftruncate increases the size of the file,
+        // while FileConnection.truncate returns early without changing it.
         try { Thread.sleep(1); } catch (Exception e) {}
-        file.truncate(4);
+        file.truncate(5);
         modifiedTime = file.lastModified();
-        th.check(modifiedTime > lastTime, "truncate updates mtime");
+        th.check(modifiedTime, lastTime, "truncate to larger size doesn't update mtime");
+        lastTime = modifiedTime;
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.truncate(3);
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime > lastTime, "truncate to smaller size updates mtime");
         lastTime = modifiedTime;
 
         file.delete();
