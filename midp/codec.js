@@ -52,32 +52,60 @@ DataEncoder.prototype.getData = function() {
 
 var DataDecoder = function(data, offset, length) {
   this.data = JSON.parse(util.decodeUtf8(new Uint8Array(data.buffer, offset, length)));
+  this.current = [];
 }
 
 DataDecoder.prototype.find = function(tag, type) {
   var elem;
-  while (elem = this.data.shift()) {
+  var i = 0;
+  while (elem = this.data[i++]) {
     if ((!type || elem.type == type) && elem.tag == tag) {
-      return elem.value;
+      this.data = this.data.slice(i);
+      return elem;
+    }
+
+    if (elem.type == DataEncoder.END) {
+      break;
     }
   }
 }
 
 DataDecoder.prototype.getStart = function(tag) {
-  this.find(tag, DataEncoder.START);
+  var elem = this.find(tag, DataEncoder.START);
+  if (!elem) {
+    return false;
+  }
+
+  this.current.push(elem);
+
+  return true;
 }
 
 DataDecoder.prototype.getEnd = function(tag) {
-  this.find(tag, DataEncoder.END);
+  var elem = this.find(tag, DataEncoder.END);
+  if (!elem) {
+    return false;
+  }
+
+  // If this happens, a father has ended before a child
+  if (elem.tag != this.current[this.current.length - 1].tag ||
+      elem.name != this.current[this.current.length - 1].name) {
+    return false;
+  }
+
+  this.current.pop();
+
+  return true;
 }
 
 DataDecoder.prototype.getValue = function(tag) {
-  return this.find(tag);
+  var elem = this.find(tag);
+  return elem ? elem.value : undefined;
 }
 
 DataDecoder.prototype.getNextValue = function() {
   var elem = this.data.shift();
-  return (elem) ? elem.value : undefined;
+  return elem ? elem.value : undefined;
 }
 
 DataDecoder.prototype.getName = function() {
@@ -141,12 +169,16 @@ Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(ctx, stack
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
-  _this.decoder.getStart(tag);
+  if (!_this.decoder.getStart(tag)) {
+    ctx.raiseExceptionAndYield("java/io/IOException", "no start found " + tag);
+  }
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V"] = function(ctx, stack) {
   var tag = stack.pop(), _this = stack.pop();
-  _this.decoder.getEnd(tag);
+  if (!_this.decoder.getEnd(tag)) {
+    ctx.raiseExceptionAndYield("java/io/IOException", "no end found " + tag);
+  }
 }
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = function(ctx, stack) {
