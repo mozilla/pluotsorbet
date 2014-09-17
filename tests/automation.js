@@ -18,7 +18,7 @@ var gfxTests = [
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
   { name: "gfx/DrawStringTest", maxDifferent: 342 },
-  { name: "gfx/DrawRedStringTest", maxDifferent: 342 },
+  { name: "gfx/DrawRedStringTest", maxDifferent: 491 },
   { name: "gfx/TextBoxTest", maxDifferent: 4677 },
   { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
