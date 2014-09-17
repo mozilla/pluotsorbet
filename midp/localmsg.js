@@ -214,9 +214,18 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "Notify");
       encoder.put(DataType.ULONG, "trans_id", decoder.getValue(DataType.ULONG)); // The meaning of this field is unknown
-      encoder.put(DataType.BYTE, "type", 0); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
+      encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
       encoder.putStart(DataType.LIST, "Contact");
+      encoder.put(DataType.WSTRING, "ContactID", "1");
+      encoder.put(DataType.WSTRING, "FirstName", "Test");
+      encoder.put(DataType.WSTRING, "LastName", "Contact");
+      encoder.putStart(DataType.ARRAY, "Numbers");
+      encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
+      encoder.put(DataType.WSTRING, "number", "+16508642424");
+      encoder.putEnd(DataType.LIST, "NumbersList");
+      encoder.putEnd(DataType.ARRAY, "Numbers");
       encoder.putEnd(DataType.LIST, "Contact");
+      encoder.putEnd(DataType.STRUCT, "event");
     break;
 
     default:
