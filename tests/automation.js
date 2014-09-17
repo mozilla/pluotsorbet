@@ -18,10 +18,12 @@ var gfxTests = [
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
   { name: "gfx/DrawStringTest", maxDifferent: 342 },
+  { name: "gfx/DrawRedStringTest", maxDifferent: 342 },
   { name: "gfx/TextBoxTest", maxDifferent: 4677 },
   { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0, todo: true },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0, todo: true },
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0, todo: true },
+  { name: "gfx/ARGBColorTest", maxDifferent: 0 },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
