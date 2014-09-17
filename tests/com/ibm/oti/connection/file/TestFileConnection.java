@@ -79,7 +79,9 @@ public class TestFileConnection implements Testlet {
         lastTime = modifiedTime;
 
         // Merely opening the output stream shouldn't update the mtime, but our
-        // implementation eagerly truncates the file, which updates the mtime.
+        // implementation of FCOutputStream.openImpl eagerly truncates the file,
+        // which updates the mtime, so this test is a TODO pending resolution
+        // of that issue.
         try { Thread.sleep(1); } catch (Exception e) {}
         OutputStream out = file.openOutputStream();
         modifiedTime = file.lastModified();
