@@ -13,9 +13,7 @@ public class DataDecoder {
 
     public native int getType() throws IOException;
 
-    public boolean listHasMoreItems() throws IOException {
-        throw new RuntimeException("DataDecoder::listHasMoreItems() not implemented");
-    }
+    public native boolean listHasMoreItems() throws IOException;
 
     public native void getStart(int tag) throws IOException;
 

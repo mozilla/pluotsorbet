@@ -4,6 +4,7 @@
 'use strict';
 
 var DataType = {
+  BYTE: 2,
   USHORT: 5,
   ULONG: 7,
   STRING: 10,
@@ -85,6 +86,10 @@ DataDecoder.prototype.getName = function() {
 
 DataDecoder.prototype.getTag = function() {
   return this.data[0].tag;
+}
+
+DataDecoder.prototype.getType = function() {
+  return this.data[0].type || -1;
 }
 
 Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function(ctx, stack) {
@@ -187,4 +192,9 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function(ctx, stack)
     ctx.raiseExceptionAndYield("java/io/IOException");
   }
   stack.push(tag);
+}
+
+Native["com/nokia/mid/s40/codec/DataDecoder.listHasMoreItems.()Z"] = function(ctx, stack) {
+  var _this = stack.pop();
+  stack.push((_this.decoder.getType() != DataEncoder.END) ? 1 : 0);
 }
