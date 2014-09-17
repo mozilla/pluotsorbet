@@ -12,11 +12,12 @@ casper.options.onWaitTimeout = function() {
     this.debugPage();
 };
 
-var gfxTests = [ "gfx/CanvasTest",
-                 "gfx/ImageRenderingTest",
-                 "gfx/FillRectTest",
-                 "gfx/DrawStringTest",
-                 "gfx/TextBoxTest",
+var gfxTests = [
+  { name: "gfx/CanvasTest", maxDifferent: 268 },
+  { name: "gfx/ImageRenderingTest", maxDifferent: 181 },
+  { name: "gfx/FillRectTest", maxDifferent: 0 },
+  { name: "gfx/DrawStringTest", maxDifferent: 342 },
+  { name: "gfx/TextBoxTest", maxDifferent: 4677 },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
@@ -67,7 +68,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testName) {
         casper
-        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testName)
+        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + test.name)
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
                 var got = this.evaluate(function(testName) {
@@ -75,7 +76,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
                     var img = new Image();
-                    img.src = "tests/" + testName + ".png";
+                    img.src = "tests/" + test.name + ".png";
 
                     img.onload = function() {
                         var expectedCanvas = document.createElement('canvas');
@@ -103,10 +104,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                             }
                         }
 
-                        // Allow 0.5% of different pixels
-                        var maxDifferent = gotCanvas.width * gotCanvas.height * 0.005;
-
-                        if (different > maxDifferent) {
+                        if (different > test.maxDifferent) {
                             console.log(gotCanvas.toDataURL());
                             console.log("FAIL - " + different);
                         }
