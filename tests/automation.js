@@ -20,9 +20,9 @@ var gfxTests = [
   { name: "gfx/DrawStringTest", maxDifferent: 342 },
   { name: "gfx/DrawRedStringTest", maxDifferent: 342 },
   { name: "gfx/TextBoxTest", maxDifferent: 4677 },
-  { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0, todo: true },
-  { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0, todo: true },
-  { name: "gfx/OffScreenCanvasTest", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
+  { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
+  { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
   { name: "gfx/ARGBColorTest", maxDifferent: 0 },
 ];
 
