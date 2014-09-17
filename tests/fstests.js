@@ -603,6 +603,120 @@ tests.push(function() {
   });
 });
 
+// stat/mtime tests
+// These are meant to be run in order, so be careful when changing them!
+(function() {
+  var lastTime = Date.now();
+  var fd;
+
+  tests.push(function() {
+    fs.stat("/tmp/stat.txt", function(stat) {
+      is(stat, null, "nonexistent file doesn't have stat");
+      next();
+    });
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.create("/tmp/stat.txt", new Blob(), function(created) {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          ok(stat.mtime > lastTime, "create updates mtime");
+          lastTime = stat.mtime;
+          next();
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.open("/tmp/stat.txt", function(aFD) {
+        fd = aFD;
+        fs.stat("/tmp/stat.txt", function(stat) {
+          is(stat.mtime, lastTime, "open doesn't update mtime");
+          lastTime = stat.mtime;
+          next();
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.write(fd, new TextEncoder().encode("misc"));
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "write updates mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.ftruncate(fd, 4);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "ftruncate to same size doesn't update mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.ftruncate(fd, 5);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "ftruncate to larger size updates mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.ftruncate(fd, 3);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "ftruncate to smaller size updates mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.close(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "close doesn't update mtime");
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.truncate("/tmp/stat.txt", function() {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          ok(stat.mtime > lastTime, "truncate updates mtime");
+          lastTime = stat.mtime;
+          next();
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    fs.remove("/tmp/stat.txt", function() {
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat, null, "removed file no longer has stat");
+        next();
+      });
+    });
+  });
+})();
+
 asyncStorage.clear(function() {
   fs.init(function() {
     next();

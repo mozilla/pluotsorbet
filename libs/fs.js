@@ -157,6 +157,8 @@ var fs = (function() {
     buffer.array.set(data, from);
 
     openedFiles[fd].position = from + data.byteLength;
+
+    setStat(openedFiles[fd].path, { mtime: Date.now() });
   }
 
   function getpos(fd) {
@@ -212,6 +214,7 @@ var fs = (function() {
         cb(false);
       } else {
         asyncStorage.setItem(path, new Blob(), function() {
+          setStat(path, { mtime: Date.now() });
           cb(true);
         });
       }
@@ -219,7 +222,10 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
-    openedFiles[fd].buffer.setSize(size);
+    if (size != openedFiles[fd].buffer.contentSize) {
+      openedFiles[fd].buffer.setSize(size);
+      setStat(openedFiles[fd].path, { mtime: Date.now() });
+    }
   }
 
   function remove(path, cb) {
@@ -245,6 +251,7 @@ var fs = (function() {
         files.splice(index, 1);
         asyncStorage.setItem(dir, files, function() {
           asyncStorage.removeItem(path, function() {
+            removeStat(path);
             cb(true);
           });
         });
@@ -267,6 +274,7 @@ var fs = (function() {
       files.push(name);
       asyncStorage.setItem(dir, files, function() {
         asyncStorage.setItem(path, data, function() {
+          setStat(path, { mtime: Date.now() });
           cb(true);
         });
       });
@@ -372,6 +380,19 @@ var fs = (function() {
     });
   }
 
+  function setStat(path, stat) {
+    asyncStorage.setItem("!" + path, stat);
+  }
+
+  function removeStat(path) {
+    asyncStorage.removeItem("!" + path);
+  }
+
+  function stat(path, cb) {
+    path = normalizePath(path);
+    asyncStorage.getItem("!" + path, cb);
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -393,5 +414,6 @@ var fs = (function() {
     mkdirp: mkdirp,
     size: size,
     rename: rename,
+    stat: stat,
   };
 })();
