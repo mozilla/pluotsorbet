@@ -603,58 +603,87 @@ tests.push(function() {
   });
 });
 
-tests.push(function() {
-  var startTime = Date.now();
+// stat/mtime tests
+// These are meant to be run in order, so be careful when changing them!
+(function() {
+  var lastTime = Date.now();
+  var fd;
 
-  var beforeCreate, afterCreate, afterWrite, afterFtruncate, afterClose, afterTruncate;
+  tests.push(function() {
+    fs.stat("/tmp/stat.txt", function(stat) {
+      is(stat, null, "nonexistent file doesn't have stat");
+      next();
+    });
+  });
 
-  fs.stat("/tmp/stat.txt", function(stat) {
-    beforeCreate = stat;
+  tests.push(function() {
     window.setTimeout(function() {
       fs.create("/tmp/stat.txt", new Blob(), function(created) {
         fs.stat("/tmp/stat.txt", function(stat) {
-          afterCreate = stat;
-          window.setTimeout(function() {
-            fs.open("/tmp/stat.txt", function(fd) {
-              fs.write(fd, new TextEncoder().encode("misc"));
-              fs.stat("/tmp/stat.txt", function(stat) {
-                afterWrite = stat;
-                window.setTimeout(function() {
-                  fs.ftruncate(fd, 2);
-                  fs.stat("/tmp/stat.txt", function(stat) {
-                    afterFtruncate = stat;
-                    window.setTimeout(function() {
-                      fs.close(fd);
-                      fs.stat("/tmp/stat.txt", function(stat) {
-                        afterClose = stat;
-                        window.setTimeout(function() {
-                          fs.truncate("/tmp/stat.txt", function() {
-                            fs.stat("/tmp/stat.txt", function(stat) {
-                              afterTruncate = stat;
-
-                              is(beforeCreate, null, "nonexistent file doesn't have stat");
-                              ok(afterCreate.mtime > startTime, "create updates mtime");
-                              ok(afterWrite.mtime > afterCreate.mtime, "write updates mtime");
-                              ok(afterFtruncate.mtime > afterWrite.mtime, "ftruncate updates mtime");
-                              ok(afterClose.mtime == afterFtruncate.mtime, "close doesn't update mtime");
-                              ok(afterTruncate.mtime > afterFtruncate.mtime, "truncate updates mtime");
-
-                              next();
-                            });
-                          });
-                        }, 1);
-                      });
-                    }, 1);
-                  });
-                }, 1);
-              });
-            });
-          }, 1);
+          ok(stat.mtime > lastTime, "create updates mtime");
+          lastTime = stat.mtime;
+          next();
         });
       });
     }, 1);
   });
-});
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.open("/tmp/stat.txt", function(aFD) {
+        fd = aFD;
+        fs.stat("/tmp/stat.txt", function(stat) {
+          is(stat.mtime, lastTime, "open doesn't update mtime");
+          next();
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.write(fd, new TextEncoder().encode("misc"));
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "write updates mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.ftruncate(fd, 2);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "ftruncate updates mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.close(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "close doesn't update mtime");
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.truncate("/tmp/stat.txt", function() {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          ok(stat.mtime > lastTime, "truncate updates mtime");
+          lastTime = stat.mtime;
+          next();
+        });
+      });
+    }, 1);
+  });
+})();
 
 asyncStorage.clear(function() {
   fs.init(function() {
