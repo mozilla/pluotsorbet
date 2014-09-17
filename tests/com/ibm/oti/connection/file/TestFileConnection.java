@@ -30,21 +30,21 @@ public class TestFileConnection implements Testlet {
 
         Enumeration files = dir.list("*.doc", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "/provaDir/prova1.doc");
-        th.check(files.nextElement(), "/provaDir/prova2.doc");
-        th.check(files.nextElement(), "/provaDir/prova3.doc");
+        th.check(files.nextElement(), "provaDir/prova1.doc");
+        th.check(files.nextElement(), "provaDir/prova2.doc");
+        th.check(files.nextElement(), "provaDir/prova3.doc");
         th.check(!files.hasMoreElements(), "Only 3 elements found");
 
         files = dir.list("marco_*.res", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "/provaDir/marco_it.res");
-        th.check(files.nextElement(), "/provaDir/marco_en.res");
+        th.check(files.nextElement(), "provaDir/marco_it.res");
+        th.check(files.nextElement(), "provaDir/marco_en.res");
         th.check(!files.hasMoreElements(), "Only 2 elements found");
 
         files = dir.list("m*.re*", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "/provaDir/marco_it.res");
-        th.check(files.nextElement(), "/provaDir/marco_en.res");
+        th.check(files.nextElement(), "provaDir/marco_it.res");
+        th.check(files.nextElement(), "provaDir/marco_en.res");
         th.check(!files.hasMoreElements(), "Only 2 elements found");
 
         files = dir.list("*.js", false);
@@ -215,7 +215,7 @@ public class TestFileConnection implements Testlet {
 
             files = dir.list();
             th.check(files.hasMoreElements(), "Directory has one file");
-            th.check(files.nextElement(), "/provaDir/prova");
+            th.check(files.nextElement(), "provaDir/prova");
             th.check(!files.hasMoreElements(), "Directory has just one file");
 
             testListFilter(th);
