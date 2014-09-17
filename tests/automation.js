@@ -8,13 +8,20 @@ casper.on('remote.message', function(message) {
 casper.options.waitTimeout = 35000;
 
 casper.options.onWaitTimeout = function() {
-    this.echo("Timeout");
     this.debugPage();
+    this.echo(this.captureBase64('png'));
+    this.test.fail("Timeout");
 };
 
 var gfxTests = [
-    "gfx/CanvasTest",
-    "gfx/ImageRenderingTest"
+  { name: "gfx/CanvasTest", maxDifferent: 268 },
+  { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
+  { name: "gfx/FillRectTest", maxDifferent: 0 },
+  { name: "gfx/DrawStringTest", maxDifferent: 342 },
+  { name: "gfx/TextBoxTest", maxDifferent: 4677 },
+  { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0, todo: true },
+  { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0, todo: true },
+  { name: "gfx/OffScreenCanvasTest", maxDifferent: 0, todo: true },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
@@ -63,17 +70,17 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
 
     // Graphics tests
 
-    gfxTests.forEach(function(testName) {
+    gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testName)
+        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name)
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
-                var got = this.evaluate(function(testName) {
+                var got = this.evaluate(function(testCase) {
                     var gotCanvas = document.getElementById("canvas");
                     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
                     var img = new Image();
-                    img.src = "tests/" + testName + ".png";
+                    img.src = "tests/" + testCase.name + ".png";
 
                     img.onload = function() {
                         var expectedCanvas = document.createElement('canvas');
@@ -101,22 +108,29 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                             }
                         }
 
-                        // Allow 0.5% of different pixels
-                        var maxDifferent = gotCanvas.width * gotCanvas.height * 0.005;
-
-                        if (different > maxDifferent) {
+                        if (different > testCase.maxDifferent) {
                             console.log(gotCanvas.toDataURL());
-                            console.log("FAIL");
+                            if (!testCase.todo) {
+                              console.log("FAIL - " + different);
+                            } else {
+                              console.log("TODO - " + different);
+                            }
+                        } else {
+                            if (!testCase.todo) {
+                                console.log("PASS - " + different);
+                            } else {
+                                console.log("FAIL - UNEXPECTED PASS - " + different);
+                            }
                         }
 
-                        console.log("DONE - " + different);
+                        console.log("DONE");
                     };
 
                     img.onerror = function() {
                         console.log("Error while loading test image");
                         console.log("FAIL");
                     };
-                }, testName);
+                }, testCase);
 
                 this.waitForText("DONE", function() {
                     test.assertTextDoesntExist("FAIL");
