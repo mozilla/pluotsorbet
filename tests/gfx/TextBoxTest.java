@@ -21,9 +21,9 @@ public class TextBoxTest extends MIDlet implements CommandListener {
 
         try {
             do {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } while (!textBox.isShown());
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             System.out.println("FAIL");
         }
 
