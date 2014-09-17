@@ -470,7 +470,7 @@ Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = functi
 
     fs.stat(path, function(stat) {
         if (stat == null) {
-            ctx.raiseException("java/lang/IllegalArgumentException", "nonexistent path: " + path);
+            stack.push2(Long.fromNumber(0));
         } else {
             stack.push2(Long.fromNumber(stat.mtime));
         }

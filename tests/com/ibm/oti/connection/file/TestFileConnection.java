@@ -60,15 +60,12 @@ public class TestFileConnection implements Testlet {
     void testLastModified(TestHarness th) throws IOException {
         FileConnection file = (FileConnection)Connector.open(dirPath + "provaDir/stat.txt");
 
-        long lastTime = System.currentTimeMillis();
+        long lastTime;
         long modifiedTime;
 
-        try {
-            file.lastModified();
-            th.fail("nonexistent path: /provaDir/stat.txt");
-        } catch(IllegalArgumentException e) {
-            th.check(e.getMessage(), "nonexistent path: /provaDir/stat.txt");
-        }
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, 0L, "nonexistent file has '0' mtime");
+        lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
         file.create();
