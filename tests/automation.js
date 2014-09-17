@@ -10,6 +10,8 @@ casper.options.waitTimeout = 35000;
 casper.options.onWaitTimeout = function() {
     this.echo("Timeout");
     this.debugPage();
+    this.echo(this.captureBase64('png'));
+    this.test.assert(false);
 };
 
 var gfxTests = [
