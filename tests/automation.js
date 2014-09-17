@@ -24,6 +24,7 @@ var gfxTests = [
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
   { name: "gfx/ARGBColorTest", maxDifferent: 0 },
+  { name: "gfx/GetRGBDrawRGBTest", maxDifferent: 0 },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
