@@ -57,6 +57,70 @@ public class TestFileConnection implements Testlet {
         }
     }
 
+    void testLastModified(TestHarness th) throws IOException {
+        FileConnection file = (FileConnection)Connector.open(dirPath + "provaDir/stat.txt");
+
+        long lastTime;
+        long modifiedTime;
+
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, 0L, "nonexistent file has '0' mtime");
+        lastTime = modifiedTime;
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.create();
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime > lastTime, "create updates mtime");
+        lastTime = modifiedTime;
+
+        // Merely opening the output stream shouldn't update the mtime, but our
+        // implementation of FCOutputStream.openImpl eagerly truncates the file,
+        // which updates the mtime, so this test is a TODO pending resolution
+        // of that issue.
+        try { Thread.sleep(1); } catch (Exception e) {}
+        OutputStream out = file.openOutputStream();
+        modifiedTime = file.lastModified();
+        th.todo(modifiedTime, lastTime, "open output stream doesn't update mtime");
+        lastTime = modifiedTime;
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        out.write(new byte[]{ 4, 3, 2, 1 });
+        out.close();
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime > lastTime, "write updates mtime");
+        lastTime = modifiedTime;
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.truncate(4);
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, lastTime, "truncate to same size doesn't update mtime");
+        lastTime = modifiedTime;
+
+        // FileConnection.truncate behaves differently from ftruncate
+        // when the new size is greater than the existing size of the file.
+        // In that case, ftruncate increases the size of the file,
+        // while FileConnection.truncate returns early without changing it.
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.truncate(5);
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, lastTime, "truncate to larger size doesn't update mtime");
+        lastTime = modifiedTime;
+
+        try { Thread.sleep(1); } catch (Exception e) {}
+        file.truncate(3);
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime > lastTime, "truncate to smaller size updates mtime");
+        lastTime = modifiedTime;
+
+        file.delete();
+
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, 0L, "deleted file has '0' mtime");
+        lastTime = modifiedTime;
+
+        file.close();
+    }
+
     public void test(TestHarness th) {
         try {
             dirPath = System.getProperty("fileconn.dir.private").substring(2);
@@ -219,6 +283,7 @@ public class TestFileConnection implements Testlet {
             th.check(!files.hasMoreElements(), "Directory has just one file");
 
             testListFilter(th);
+            testLastModified(th);
 
             dir.close();
             th.check(!dir.isOpen());

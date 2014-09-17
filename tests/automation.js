@@ -18,7 +18,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 4861 pass, 0 fail, 163 known fail, 0 unknown pass", "run unit tests");
+        test.assertTextExists("DONE: 4868 pass, 0 fail, 164 known fail, 0 unknown pass", "run unit tests");
     });
 
     casper
@@ -36,7 +36,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 106 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 116 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper

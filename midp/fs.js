@@ -467,8 +467,17 @@ Native["com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z"] = functio
 
 Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = function(ctx, stack) {
     var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    stack.push2(Long.fromNumber(Date.now()));
-    console.warn("Connection.lastModifiedImpl.([B)J not implemented");
+
+    fs.stat(path, function(stat) {
+        if (stat == null) {
+            stack.push2(Long.fromNumber(0));
+        } else {
+            stack.push2(Long.fromNumber(stat.mtime));
+        }
+        ctx.resume();
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(ctx, stack) {
