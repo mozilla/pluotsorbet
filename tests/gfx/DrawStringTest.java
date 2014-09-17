@@ -9,7 +9,7 @@ public class DrawStringTest extends MIDlet {
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
-            g.setColor(0x00FFFFFF);;
+            g.setColor(0x00FFFFFF);
             g.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
             g.setColor(0);
             g.setStrokeStyle(Graphics.SOLID);
