@@ -710,6 +710,17 @@ public InputStream openInputStream() throws IOException {
 		checkRead();
 		
 		long lastModified = lastModifiedImpl(properPath);
+
+		// The FileConnection docs say Connection.lastModified() returns "a long
+		// value representing the time the file was last modified, measured in
+		// milliseconds since the epoch," and the code comment on lastModifiedImpl()
+		// below says it "returns the last modification time in milliseconds."
+		//
+		// But this method was taking that value and multiplying it by 1000!  As if
+		// it expected it to be in seconds (which it may well be on some native
+		// implementations).  Which caused it to return microseconds rather than
+		// milliseconds.  So I modified this line to stop multiplying the value.
+		//
 		return lastModified;
 }
 
