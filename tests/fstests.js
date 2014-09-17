@@ -634,6 +634,7 @@ tests.push(function() {
         fd = aFD;
         fs.stat("/tmp/stat.txt", function(stat) {
           is(stat.mtime, lastTime, "open doesn't update mtime");
+          lastTime = stat.mtime;
           next();
         });
       });
@@ -653,9 +654,31 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.ftruncate(fd, 2);
+      fs.ftruncate(fd, 4);
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "ftruncate updates mtime");
+        is(stat.mtime, lastTime, "ftruncate to same size doesn't update mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.ftruncate(fd, 5);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "ftruncate to larger size updates mtime");
+        lastTime = stat.mtime;
+        next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.ftruncate(fd, 3);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "ftruncate to smaller size updates mtime");
         lastTime = stat.mtime;
         next();
       });
