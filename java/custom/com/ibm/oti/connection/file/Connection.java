@@ -710,7 +710,7 @@ public InputStream openInputStream() throws IOException {
 		checkRead();
 		
 		long lastModified = lastModifiedImpl(properPath);
-		return lastModified * 1000;
+		return lastModified;
 }
 
 	/* returns the last modification time in milliseconds	

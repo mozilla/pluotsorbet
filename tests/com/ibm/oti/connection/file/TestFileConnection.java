@@ -60,9 +60,7 @@ public class TestFileConnection implements Testlet {
     void testLastModified(TestHarness th) throws IOException {
         FileConnection file = (FileConnection)Connector.open(dirPath + "provaDir/stat.txt");
 
-        // FileConnection.lastModified returns microseconds for some reason,
-        // so we have to convert this value from millis to micros.
-        long lastTime = System.currentTimeMillis() * 1000;
+        long lastTime = System.currentTimeMillis();
         long modifiedTime;
 
         try {
