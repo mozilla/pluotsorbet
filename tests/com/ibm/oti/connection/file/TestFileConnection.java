@@ -62,7 +62,8 @@ public class TestFileConnection implements Testlet {
 
         // FileConnection.lastModified returns microseconds for some reason,
         // so we have to convert this value from millis to micros.
-        long startTime = System.currentTimeMillis() * 1000;
+        long lastTime = System.currentTimeMillis() * 1000;
+        long modifiedTime;
 
         try {
             file.lastModified();
@@ -73,31 +74,36 @@ public class TestFileConnection implements Testlet {
 
         try { Thread.sleep(1); } catch (Exception e) {}
         file.create();
-        long afterCreate = file.lastModified();
-        th.check(afterCreate > startTime, "create updates mtime");
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime > lastTime, "create updates mtime");
+        lastTime = modifiedTime;
 
         // Merely opening the output stream shouldn't update the mtime, but our
         // implementation eagerly truncates the file, which updates the mtime.
         try { Thread.sleep(1); } catch (Exception e) {}
         OutputStream out = file.openOutputStream();
-        long afterOpenOutputStream = file.lastModified();
-        th.todo(afterOpenOutputStream, afterCreate, "open output stream doesn't update mtime");
+        modifiedTime = file.lastModified();
+        th.todo(modifiedTime, lastTime, "open output stream doesn't update mtime");
+        lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
         out.write(new byte[]{ 5, 4, 3, 2, 1 });
         out.close();
-        long afterWrite = file.lastModified();
-        th.check(afterWrite > afterOpenOutputStream, "write updates mtime");
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime > lastTime, "write updates mtime");
+        lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
         file.truncate(5);
-        long afterTruncateToSameSize = file.lastModified();
-        th.check(afterTruncateToSameSize, afterWrite, "truncate to same size doesn't update mtime");
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, lastTime, "truncate to same size doesn't update mtime");
+        lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
         file.truncate(4);
-        long afterTruncate = file.lastModified();
-        th.check(afterTruncate > afterTruncateToSameSize, "truncate updates mtime");
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime > lastTime, "truncate updates mtime");
+        lastTime = modifiedTime;
 
         file.delete();
         file.close();
