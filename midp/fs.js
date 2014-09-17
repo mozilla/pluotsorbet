@@ -388,9 +388,9 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
         for (var i = 0; i < files.length; i++) {
             var curPath = "";
             if (path == "/") {
-                curPath += files[i];
+                curPath = files[i];
             } else {
-                curPath += path.substring(1) + "/" + files[i];
+                curPath = path.substring(1) + "/" + files[i];
             }
 
             var bytesCurPath = new TextEncoder("utf-8").encode(curPath);
