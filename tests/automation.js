@@ -78,6 +78,8 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
                 var got = this.evaluate(function(testCase) {
+                    console.log(testCase.name);
+
                     var gotCanvas = document.getElementById("canvas");
                     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
