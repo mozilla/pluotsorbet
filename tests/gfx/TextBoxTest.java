@@ -19,8 +19,12 @@ public class TextBoxTest extends MIDlet implements CommandListener {
         textBox.setCommandListener(this);
         display.setCurrent(textBox);
 
-        while (!textBox.isShown()) {
-            Thread.yield();
+        try {
+            do {
+                Thread.sleep(1000);
+            } while (!textBox.isShown());
+        } catch (Exception e) {
+            System.out.println("FAIL");
         }
 
         System.out.println("PAINTED");

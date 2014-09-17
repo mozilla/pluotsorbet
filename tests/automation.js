@@ -117,6 +117,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
 
                 this.waitForText("DONE", function() {
                     test.assertTextDoesntExist("FAIL");
+                    this.debugPage();
                 });
             });
         });
