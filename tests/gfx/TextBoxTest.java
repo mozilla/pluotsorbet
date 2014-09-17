@@ -18,6 +18,11 @@ public class TextBoxTest extends MIDlet implements CommandListener {
         textBox.addCommand(quitCommand);
         textBox.setCommandListener(this);
         display.setCurrent(textBox);
+
+        while (!textBox.isShown()) {
+            Thread.yield();
+        }
+
         System.out.println("PAINTED");
     }
 
