@@ -14,7 +14,7 @@ public class DirectUtilsCreateImageTest extends MIDlet {
             Graphics g = image.getGraphics();
 
             g.setColor(255, 0, 0);
-            g.fillRect(10, 10, getWidth()-100, getHeight()-100);
+            g.fillRect(0, 0, getWidth(), getHeight());
             g.setColor(0, 0, 255);
             g.fillRect(20, 30, 200, 80);
 
