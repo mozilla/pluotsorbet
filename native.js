@@ -97,7 +97,17 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "/";
         break;
     case "com.sun.cldc.util.j2me.TimeZoneImpl.timezone":
-        value = "GMT";
+        // Date.toString() returns something like the following:
+        //    "Wed Sep 17 2014 12:11:23 GMT-0700 (PDT)"
+        //
+        // Per http://www.spectrum3847.org/frc2013api/com/sun/cldc/util/j2me/TimeZoneImpl.html,
+        // timezones can be of the format GMT+0600, which is what this
+        // regex currently matches. (Those actually in GMT would not
+        // match the regex, causing the default "GMT" to be returned.)
+        // If we find this to be a problem, we could alternately return the
+        // zone name as provided in parenthesis, but that seems locale-specific.
+        var match = /GMT[+-]\d+/.exec(new Date().toString());
+        value = (match && match[0]) || "GMT";
         break;
     case "javax.microedition.io.Connector.protocolpath":
         value = "com.sun.midp.io";
