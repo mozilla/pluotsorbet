@@ -76,8 +76,8 @@ public class TestFileConnection implements Testlet {
         long afterCreate = file.lastModified();
         th.check(afterCreate > startTime, "create updates mtime");
 
-        // Merely opening the output stream shouldn't update the mtime, but it
-        // truncates the file, which updates the mtime.
+        // Merely opening the output stream shouldn't update the mtime, but our
+        // implementation eagerly truncates the file, which updates the mtime.
         try { Thread.sleep(1); } catch (Exception e) {}
         OutputStream out = file.openOutputStream();
         long afterOpenOutputStream = file.lastModified();
@@ -89,18 +89,15 @@ public class TestFileConnection implements Testlet {
         long afterWrite = file.lastModified();
         th.check(afterWrite > afterOpenOutputStream, "write updates mtime");
 
-        // Truncating a file to the same size it was before shouldn't update
-        // the mtime, but it truncates (and rewrites) the file, which updates
-        // the mtime.
         try { Thread.sleep(1); } catch (Exception e) {}
         file.truncate(5);
         long afterTruncateToSameSize = file.lastModified();
-        th.todo(afterTruncateToSameSize, afterWrite, "truncate to same size doesn't update mtime");
+        th.check(afterTruncateToSameSize, afterWrite, "truncate to same size doesn't update mtime");
 
         try { Thread.sleep(1); } catch (Exception e) {}
         file.truncate(4);
         long afterTruncate = file.lastModified();
-        th.todo(afterTruncate > afterTruncateToSameSize, "truncate updates mtime");
+        th.check(afterTruncate > afterTruncateToSameSize, "truncate updates mtime");
 
         file.delete();
         file.close();
