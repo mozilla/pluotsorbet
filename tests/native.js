@@ -4,3 +4,8 @@
 Native["gnu/testlet/vm/NativeTest.getInt.()I"] = function(ctx, stack) {
   stack.push(0xFFFFFFFF);
 }
+
+Native["gnu/testlet/vm/NativeTest.fromJavaString.(Ljava/lang/String;)I"] = function(ctx, stack) {
+  var str = util.fromJavaString(stack.pop());
+  stack.push(str.length);
+}
