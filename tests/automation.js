@@ -26,7 +26,7 @@ var gfxTests = [
   { name: "gfx/ARGBColorTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBWidthHeightTest", maxDifferent: 0 },
-  { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0, todo: true },
+  { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
 ];
 
