@@ -1,0 +1,111 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+#display {
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  border-bottom: 1px solid #ababab;
+  width: 240px;
+  height: 320px;
+  z-index: 1;
+  background: black;
+}
+
+button {
+  display: none;
+}
+
+#settings {
+  background: #f4f4f4;
+  box-sizing: border-box;
+  position: fixed;
+  bottom: 0;
+  top: 0;
+  right: 1px;
+  width: 240px;
+  padding: 320px 0 0;
+  border-left: 1px solid #ababab;
+  overflow-y: auto;
+}
+
+#settings section {
+  margin: 0;
+  border-bottom: 1px solid #ababab;
+  overflow: hidden;
+  padding: 0.5rem 0;
+}
+
+#settings section > div,
+#settings section > button,
+#settings section > select,
+#settings section > label,
+#settings section > input {
+  display: block;
+  width: 80%;
+  margin: 0.5rem auto;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  font-size: 12px;
+}
+
+#console {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 240px;
+  margin: 0;
+  padding: 0.5rem;
+  overflow: auto;
+}
+
+
+.log-item-log {
+  color: #555;
+}
+
+.log-item-warn {
+  color: #c70;
+}
+
+.log-item-error {
+  color: red;
+  font-weight: bold;
+}
+
+.log-item-trace:before { content: 'T'; padding-right: 1rem; font-weight: bold; }
+.log-item-log:before { content: 'L'; padding-right: 1rem; font-weight: bold; }
+.log-item-info:before { content: 'I'; padding-right: 1rem; font-weight: bold; }
+.log-item-warn:before { content: 'W'; padding-right: 1rem; font-weight: bold; }
+.log-item-error:before { content: 'E'; padding-right: 1rem; font-weight: bold; }
+
+
+@media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+  #settings {
+    display: none;
+  }
+
+  #display {
+    bottom: 0px;
+    left: 0px;
+    border: none;
+  }
+
+  button {
+    display: block;
+    position: absolute;
+    height: 40px;
+    width: 40px;
+  }
+
+  #up { left: 75px; bottom: 40px; }
+  #down { left: 75px; bottom: 0px; }
+  #left { left: 25px; bottom: 20px; }
+  #right { left: 125px; bottom: 20px; }
+  #fire { left: 250px; bottom: 20px; }
+
+}
