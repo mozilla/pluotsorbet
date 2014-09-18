@@ -82,8 +82,6 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
                 var got = this.evaluate(function(testCase) {
-                    console.log(testCase.name);
-
                     var gotCanvas = document.getElementById("canvas");
                     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
@@ -127,7 +125,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                             if (!testCase.todo) {
                                 console.log("PASS - " + different);
                             } else {
-                                console.log("FAIL - UNEXPECTED PASS - " + different);
+                                console.log("UNEXPECTED PASS - " + different);
                             }
                         }
 
@@ -143,20 +141,19 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                 this.waitForText("DONE", function() {
                     var content = this.getPageContent();
                     var fail = content.contains("FAIL");
+                    var todo = content.contains("TODO");
+                    var unexpected = content.contains("UNEXPECTED");
+
                     if (fail) {
-                        if (!testCase.todo) {
-                            this.echo(content);
-                            test.fail("Failure");
-                        } else {
-                            test.pass("Todo");
-                        }
+                        this.echo(content);
+                        test.fail(testCase.name + " - Failure");
+                    } else if (unexpected) {
+                        this.echo(content);
+                        test.fail(testCase.name + " - Unexpected pass");
+                    } else if (todo) {
+                        test.skip(1, testCase.name + " - Todo");
                     } else {
-                        if (!testCase.todo) {
-                            test.pass("Pass");
-                        } else {
-                            this.echo(content);
-                            test.fail("Unexpected pass");
-                        }
+                        test.pass(testCase.name + " - Pass");
                     }
                 });
             });
