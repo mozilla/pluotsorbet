@@ -32,7 +32,7 @@ public class GetRGBDrawRGBNoAlphaTest extends MIDlet {
             image2.getRGB(pixels2, 0, 160, 0, 0, 160, 40);
 
             if (pixels2[0] != 0x0000FF00) {
-                System.out.println("FAIL - Pixel is " + pixels2[0]);
+                System.out.println("TODO - Pixel is " + pixels2[0]);
             }
 
             screenG.drawRGB(pixels2, 0, 160, 40, 50, 160, 40, false);
