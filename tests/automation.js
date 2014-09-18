@@ -25,6 +25,9 @@ var gfxTests = [
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
   { name: "gfx/ARGBColorTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBTest", maxDifferent: 0 },
+  { name: "gfx/GetRGBDrawRGBWidthHeightTest", maxDifferent: 0 },
+  { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0, todo: true },
+  { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
@@ -141,9 +144,20 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                     var content = this.getPageContent();
                     var fail = content.contains("FAIL");
                     if (fail) {
-                        this.echo(content);
+                        if (!testCase.todo) {
+                            this.echo(content);
+                            test.fail("Failure");
+                        } else {
+                            test.pass("Todo");
+                        }
+                    } else {
+                        if (!testCase.todo) {
+                            test.pass("Pass");
+                        } else {
+                            this.echo(content);
+                            test.fail("Unexpected pass");
+                        }
                     }
-                    test.assert(!fail);
                 });
             });
         });
