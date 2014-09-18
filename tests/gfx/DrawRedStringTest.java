@@ -10,7 +10,7 @@ public class DrawRedStringTest extends MIDlet {
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
             g.setColor(0x00FFFFFF);
-            g.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
+            g.fillRect(0, 0, getWidth(), getHeight());
             g.setColor(0x00FF0000);
             g.setStrokeStyle(Graphics.SOLID);
             g.drawString("Red top left", 0, 0, Graphics.TOP | Graphics.LEFT);
