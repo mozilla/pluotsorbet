@@ -101,11 +101,12 @@
      * Extract the image data from `context` and place it in `rgbData`.
      */
     function contextToRgbData(context, rgbData, offset, scanlength, x, y, width, height, converterFunc) {
-        var pixels = new Uint32Array(context.getImageData(0, 0, width, height).data.buffer);
+        var pixels = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
 
+        var i = 0;
         for (var y1 = y; y1 < y + height; y1++) {
             for (var x1 = x; x1 < x + width; x1++) {
-                rgbData[offset + (x1 - x) + (y1 - y) * scanlength] = converterFunc(pixels[x1 + y1 * width]);
+                rgbData[offset + (x1 - x) + (y1 - y) * scanlength] = converterFunc(pixels[i++]);
             }
         }
     }
