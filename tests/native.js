@@ -10,7 +10,7 @@ Native["gnu/testlet/vm/NativeTest.fromJavaString.(Ljava/lang/String;)I"] = funct
   stack.push(str.length);
 }
 
-Native["gnu/testlet/vm/NativeTest.utf8Test.([B)I"] = function(ctx, stack) {
+Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(ctx, stack) {
   var str = util.decodeUtf8(stack.pop());
   stack.push(str.length);
 }
