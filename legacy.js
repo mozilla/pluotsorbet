@@ -7,7 +7,7 @@ if (!Math.fround) {
     Math.fround = (function() {
         var fa = new Float32Array(1);
         return function(v) {
-            fa[0] = Math.round(v);
+            fa[0] = v;
             return fa[0];
         }
     })();

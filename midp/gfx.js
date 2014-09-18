@@ -97,10 +97,13 @@
         return swapRB(pixel) | 0xff000000;
     }
 
-    function textureToFormat(texture, rgbData, offset, scanlength, converterFunc) {
-        var width = texture.width;
-        var height = texture.height;
-        var pixels = new Uint32Array(texture.getContext("2d").getImageData(0, 0, width, height).data.buffer);
+    /**
+     * Extract the image data from `context` and place it in `rgbData`.
+     */
+    function contextToRgbData(context, rgbData, offset, scanlength, converterFunc) {
+        var width = context.canvas.width;
+        var height = context.canvas.height;
+        var pixels = new Uint32Array(context.getImageData(0, 0, width, height).data.buffer);
 
         var i = 0;
         for (var y = 0; y < height; ++y) {
@@ -112,11 +115,13 @@
         }
     }
 
-    function textureFromFormat(texture, rgbData, offset, scanlength, converterFunc) {
-        var width = texture.width;
-        var height = texture.height;
-        var ctx = texture.getContext("2d");
-        var imageData = ctx.createImageData(width, height);
+    /**
+     * Insert `rgbData` into `context`.
+     */
+    function rgbDataToContext(context, rgbData, offset, scanlength, converterFunc) {
+        var width = context.canvas.width;
+        var height = context.canvas.height;
+        var imageData = context.createImageData(width, height);
         var pixels = new Uint32Array(imageData.data.buffer);
 
         var i = 0;
@@ -128,14 +133,14 @@
             }
         }
 
-        ctx.putImageData(imageData, 0, 0);
+        context.putImageData(imageData, 0, 0);
     }
 
-    function createTexture(width, height) {
-        var texture = document.createElement("canvas");
-        texture.width = width;
-        texture.height = height;
-        return texture;
+    function createContext2d(width, height) {
+        var canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        return canvas.getContext("2d");
     }
 
     function setImageData(imageData, width, height, data) {
@@ -144,18 +149,23 @@
         imageData.nativeImageData = data;
     }
 
+    /**
+     * Ensure the nativeImageData of the given image points to a
+     * Canvas Context2D, converting (and saving) it if necessary.
+     *
+     * @return {CanvasRenderingContext2D} context
+     */
     function convertNativeImageData(imageData) {
-        var texture = imageData.nativeImageData;
+        var data = imageData.nativeImageData;
 
-        if (!(texture instanceof HTMLCanvasElement)) {
-            var canvas = createTexture(texture.width, texture.height);
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(texture, 0, 0);
-            texture = canvas;
-            imageData.nativeImageData = texture;
+        if (!(data instanceof CanvasRenderingContext2D)) {
+            // Assume it's an image.
+            var context = createContext2d(data.width, data.height);
+            context.drawImage(data, 0, 0);
+            imageData.nativeImageData = data = context;
         }
 
-        return texture;
+        return data;
     }
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
@@ -176,26 +186,25 @@
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), imageData = stack.pop(), _this = stack.pop();
-        var texture = createTexture(width, height);
-        var ctx = texture.getContext("2d");
-        ctx.fillStyle = "rgb(255,255,255)"; // white
-        ctx.fillRect(0, 0, texture.width, texture.height);
-        setImageData(imageData, width, height, texture);
+        var context = createContext2d(width, height);
+        context.fillStyle = "rgb(255,255,255)"; // white
+        context.fillRect(0, 0, width, height);
+        setImageData(imageData, width, height, context);
     }
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] = function(ctx, stack) {
         var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), rgbData = stack.pop(),
             imageData = stack.pop(), _this = stack.pop();
-        var texture = createTexture(width, height);
-        textureFromFormat(texture, rgbData, 0, width, processAlpha ? swapRB : swapRBAndSetAlpha);
-        setImageData(imageData, width, height, texture);
+        var context = createContext2d(width, height);
+        rgbDataToContext(context, rgbData, 0, width, processAlpha ? swapRB : swapRBAndSetAlpha);
+        setImageData(imageData, width, height, context);
 
     }
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(ctx, stack) {
         var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), scanlength = stack.pop(), offset = stack.pop(),
             rgbData = stack.pop(), _this = stack.pop();
-        textureToFormat(convertNativeImageData(_this), rgbData, offset, scanlength, swapRB);
+        contextToRgbData(convertNativeImageData(_this), rgbData, offset, scanlength, swapRB);
     }
 
     Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Image;"] = function(ctx, stack) {
@@ -298,9 +307,7 @@
             c = MIDP.Context2D;
         } else {
             var imgData = img.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(img),
-                canvas = imgData.nativeImageData;
-            c = canvas.getContext("2d");
-            c.globalCompositeOperation = "copy";
+                c = imgData.nativeImageData;
         }
         cb(c);
     }
@@ -459,7 +466,7 @@
         var image = graphics.class.getField("img", "Ljavax/microedition/lcdui/Image;").get(graphics);
         var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
 
-        textureToFormat(convertNativeImageData(imageData), pixels, offset, scanlength, converterFunc);
+        contextToRgbData(convertNativeImageData(imageData), pixels, offset, scanlength, converterFunc);
     }
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] = function(ctx, stack) {
@@ -486,11 +493,11 @@
 
         var graphics = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
 
-        var texture = createTexture(width, height);
-        textureFromFormat(texture, pixels, offset, scanlength, converterFunc);
+        var context = createContext2d(width, height);
+        rgbDataToContext(context, pixels, offset, scanlength, converterFunc);
         withGraphics(graphics, function(c) {
             withClip(graphics, c, x, y, function(x, y) {
-                c.drawImage(texture, x, y);
+                c.drawImage(context.canvas, x, y);
             });
         });
     }
@@ -504,6 +511,10 @@
             console.warn("Graphics.render: image missing native data");
             stack.push(1);
             return;
+        }
+
+        if (texture instanceof CanvasRenderingContext2D) {
+            texture = texture.canvas; // Render the canvas, not the context.
         }
 
         withGraphics(_this, function(c) {
@@ -663,6 +674,11 @@
             transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
             imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.nativeImageData;
+
+        if (texture instanceof CanvasRenderingContext2D) {
+            texture = texture.canvas; // Render the canvas, not the context.
+        }
+
         var w = sw, h = sh;
         withGraphics(_this, function(c) {
             withAnchor(_this, c, anchor, x, y, w, h, function(x, y) {
@@ -705,11 +721,11 @@
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] = function(ctx, stack) {
         var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
             scanlength = stack.pop(), offset = stack.pop(), rgbData = stack.pop(), _this = stack.pop();
-        var texture = createTexture(width, height);
-        textureFromFormat(texture, rgbData, offset, scanlength, processAlpha ? swapRB : swapRBAndSetAlpha);
+        var context = createContext2d(width, height);
+        rgbDataToContext(context, rgbData, offset, scanlength, processAlpha ? swapRB : swapRBAndSetAlpha);
         withGraphics(_this, function(c) {
             withClip(_this, c, x, y, function(x, y) {
-                c.drawImage(texture, x, y);
+                c.drawImage(context.canvas, x, y);
             });
         });
     }

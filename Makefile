@@ -6,8 +6,9 @@ test: all
 	rm -f test.log
 	killall python Python || true
 	python -m SimpleHTTPServer &
-	casperjs --engine=slimerjs test `pwd`/tests/automation.js | tee test.log
+	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
 	killall python Python || true
+	python dumplog.py
 	if grep -q FAIL test.log; \
 	then false; \
 	else true; \

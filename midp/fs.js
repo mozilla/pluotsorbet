@@ -386,12 +386,18 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
 
         var pathsArray = ctx.newArray("[[B", files.length);
         for (var i = 0; i < files.length; i++) {
-            var curPath = path + "/" + files[i];
-            var bytesCurPath = new TextEncoder("utf-8").encode(curPath);
-            var pathArray = ctx.newPrimitiveArray("B", bytesCurPath.byteLength);
-            for (var j = 0; j < bytesCurPath.byteLength; j++) {
-                pathArray[j] = bytesCurPath[j];
+            var curPath = "";
+            if (path == "/") {
+                curPath = files[i];
+            } else {
+                curPath = path.substring(1) + "/" + files[i];
             }
+
+            var bytesCurPath = new TextEncoder("utf-8").encode(curPath);
+
+            var pathArray = ctx.newPrimitiveArray("B", bytesCurPath.byteLength);
+            pathArray.set(bytesCurPath);
+
             pathsArray[i] = pathArray;
         }
 
@@ -461,8 +467,17 @@ Native["com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z"] = functio
 
 Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = function(ctx, stack) {
     var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    stack.push2(Long.fromNumber(Date.now()));
-    console.warn("Connection.lastModifiedImpl.([B)J not implemented");
+
+    fs.stat(path, function(stat) {
+        if (stat == null) {
+            stack.push2(Long.fromNumber(0));
+        } else {
+            stack.push2(Long.fromNumber(stat.mtime));
+        }
+        ctx.resume();
+    });
+
+    throw VM.Pause;
 }
 
 Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(ctx, stack) {
