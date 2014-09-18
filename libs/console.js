@@ -6,15 +6,13 @@
 (function() {
   var windowConsole = window.console;
 
-  var output = "";
-  var print = function(char) {
-    if (char === 10) {
-      var temp = output;
-      output = "";
-      console.info(temp);
-    } else {
-      output += String.fromCharCode(char);
-    }
+  var LOG_LEVELS = {
+    trace: 0,
+    log: 1,
+    info: 2,
+    warn: 3,
+    error: 4,
+    silent: 5,
   };
 
   /**
@@ -24,69 +22,240 @@
    *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
    */
-  var consoles = urlParams.logConsole ? urlParams.logConsole.split(",") : ["page"];
+  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "page").split(",");
+  var minLogLevel = LOG_LEVELS[urlParams.logLevel || "log"];
 
-  // If we're only printing to the web console, then we use the original console
-  // object, so file/line number references show up correctly in it.
-  if (consoles.every(function(v) { return v == "web" })) {
-    window.console.print = print;
+
+  //================================================================
+
+
+  /**
+   * Every log entry serializes itself into a LogItem, so that it can
+   * subsequently be piped to various consoles.
+   */
+  function LogItem(levelName, args) {
+    if (levelName === "trace") {
+      // If logging a trace, save the stack (minus uninteresting parts):
+      this.stack = new Error().stack.split('\n').filter(function(line) {
+        return line.indexOf("console.js") !== -1;
+      }).join('\n');
+    }
+
+    this.levelName = levelName;
+    this.logLevel = LOG_LEVELS[levelName];
+    this.args = args;
+  }
+
+  LogItem.prototype = {
+
+    get message() {
+      if (this._message === undefined) {
+        this._message = this.args.join(" ");
+      }
+      return this._message;
+    },
+
+    get searchPredicate() {
+      if (this._searchPredicate === undefined) {
+        this._searchPredicate = this.message.toLowerCase();
+      }
+      return this._searchPredicate;
+    },
+
+    /**
+     * Return this log item as an HTML node suitable for insertion
+     * into the page console, caching the node for performance when
+     * doing live filtering.
+     */
+    toHtmlElement: function() {
+      if (this._cachedElement === undefined) {
+        var div = document.createElement("div");
+        div.classList.add("log-item");
+        div.classList.add("log-item-" + this.levelName);
+        div.textContent = this.message;
+        this._cachedElement = div;
+      }
+      return this._cachedElement;
+    },
+
+    matchesCurrentFilters: function() {
+      return (this.logLevel >= minLogLevel &&
+              (CONSOLES.page.currentFilterText === "" ||
+               this.searchPredicate.indexOf(CONSOLES.page.currentFilterText) !== -1));
+    }
+  };
+
+
+  //================================================================
+  // Console Implementations
+
+
+  /**
+   * In-page console, providing dynamic filtering and colored output.
+   * Renders to the document's "console" element.
+   */
+  function PageConsole(selector) {
+    this.el = document.querySelector(selector);
+    this.items = [];
+    this.shouldAutoScroll = true;
+    this.currentFilterText = "";
+    window.addEventListener(
+      'console-filters-changed', this.onFiltersChanged.bind(this));
+  }
+
+  PageConsole.prototype = {
+    push: function(item) {
+      this.items.push(item);
+      if (item.matchesCurrentFilters(item)) {
+        var wasAtBottom = this.isScrolledToBottom();
+        this.el.appendChild(item.toHtmlElement());
+        if (this.shouldAutoScroll && wasAtBottom) {
+          this.el.scrollTop = this.el.scrollHeight;
+        }
+      }
+    },
+
+    isScrolledToBottom: function() {
+      var fudgeFactor = 10; // Match the intent, not the pixel-perfect value
+      return this.el.scrollTop + this.el.clientHeight > this.el.scrollHeight - fudgeFactor;
+    },
+    
+    onFiltersChanged: function() {
+      var fragment = document.createDocumentFragment();
+      this.items.forEach(function(item) {
+        if (item.matchesCurrentFilters()) {
+          fragment.appendChild(item.toHtmlElement());
+        }
+      }, this);
+      this.el.innerHTML = "";
+      this.el.appendChild(fragment);
+    }
+
+  };
+
+
+  /**
+   * WebConsole: The standard console.log() and friends.
+   */
+  function WebConsole() {
+    this.buffer = "";
+  }
+
+  WebConsole.prototype = {
+    flush: function() {
+      if (this.buffer.length) {
+        var temp = this.buffer;
+        this.buffer = "";
+        console.info(temp);
+      }
+    },
+
+    push: function(item) {
+      if (item.matchesCurrentFilters()) {
+        this.flush(); // Preserve order w/r/t console.print().
+        windowConsole[item.levelName].apply(windowConsole, item.rawArguments);
+      }
+    },
+
+    /** Print one character to the output (buffered). */
+    print: function(ch) {
+      if (ch === 10) {
+        this.flush();
+      } else {
+        this.buffer += String.fromCharCode(ch);
+      }
+    }
+  };
+
+  /**
+   * NativeConsole: Throws logs at Gecko's dump().
+   */
+  function NativeConsole() {
+  }
+
+  NativeConsole.prototype = {
+    push: function(item) {
+      if (item.matchesCurrentFilters()) {
+        dump(item.message);
+      }
+    }
+  };
+
+  /**
+   * RawConsoleForTests: Spits text directly into a textarea, for
+   * simpler CasperJS-style output testing.
+   */
+  function RawConsoleForTests(selector) {
+    this.el = document.querySelector(selector);
+  }
+
+  RawConsoleForTests.prototype = {
+    push: function(item) {
+      if (item.matchesCurrentFilters()) {
+        this.el.textContent += item.levelName[0].toUpperCase() + ' ' + item.message + '\n';
+      }
+    }
+  };
+
+  var CONSOLES = {
+    page: new PageConsole("#console"),
+    web: new WebConsole(),
+    native: new NativeConsole(),
+    raw: new RawConsoleForTests("#raw-console")
+  };
+
+  var print = CONSOLES.web.print.bind(CONSOLES.web);
+
+  // If we're only printing to the web console, then use the original console
+  // object, so that file/line number references show up correctly in it.
+  if (ENABLED_CONSOLE_TYPES.length === 1 && ENABLED_CONSOLE_TYPES[0] === "web") {
+    windowConsole.print = print;
     return;
   }
 
-  var levels = {
-    trace: 0,
-    log: 1,
-    info: 2,
-    warn: 3,
-    error: 4,
-    silent: 5,
-  };
 
-  var logLevel = urlParams.logLevel || "log";
+  //================================================================
+  // Filtering & Runtime Page Console Options
 
-  var log = function(messageLevel) {
-    if (levels[messageLevel] < levels[logLevel]) {
-      return;
-    };
+  var logLevelSelect = document.querySelector('#loglevel');
+  var consoleFilterTextInput = document.querySelector('#console-filter-input');
+  var autoScrollCheckbox = document.querySelector('#auto-scroll');
 
-    if (output.length > 0) {
-      // Flush the output buffer to preserve the order in which messages appear.
-      var temp = output;
-      output = "";
-      console.info(temp);
-    }
+  function updateFilters() {
+    minLogLevel = logLevelSelect.value;
+    CONSOLES.page.currentFilterText = consoleFilterTextInput.value.toLowerCase();
+    window.dispatchEvent(new CustomEvent('console-filters-changed'));
+  }
 
-    if (consoles.indexOf("web") != -1) {
-      windowConsole[messageLevel].apply(windowConsole, Array.slice(arguments, 1));
-    }
+  logLevelSelect.value = minLogLevel;
+  logLevelSelect.addEventListener('change', updateFilters);
 
-    var tag = messageLevel[0].toUpperCase();
+  consoleFilterTextInput.value = "";
+  consoleFilterTextInput.addEventListener('input', updateFilters);
 
-    var message = tag + " ";
-    if (messageLevel == "trace") {
-      var stack = new Error().stack;
-      // Strip the first frame, which is this log function itself.
-      message += stack.substring(stack.indexOf("\n") + 1);
-    } else {
-      message += Array.slice(arguments, 1).join(" ");
-    }
-    message += "\n";
+  autoScrollCheckbox.checked = CONSOLES.page.shouldAutoScroll;
+  autoScrollCheckbox.addEventListener('change', function() {
+    CONSOLES.page.shouldAutoScroll = autoScrollCheckbox.checked;
+  });
 
-    if (consoles.indexOf("page") != -1) {
-      document.getElementById("console").textContent += message;
-    }
 
-    if (consoles.indexOf("native") != -1) {
-      dump(message);
-    }
+  //----------------------------------------------------------------
+
+
+  var logAtLevel = function(levelName) {
+    var item = new LogItem(levelName, Array.slice(arguments, 1));
+    ENABLED_CONSOLE_TYPES.forEach(function(consoleType) {
+      CONSOLES[consoleType].push(item);
+    });
   };
 
   window.console = {
-    trace: log.bind(null, "trace"),
-    log: log.bind(null, "log"),
-    info: log.bind(null, "info"),
-    warn: log.bind(null, "warn"),
-    error: log.bind(null, "error"),
-    print: print,
+    trace: logAtLevel.bind(null, "trace"),
+    log: logAtLevel.bind(null, "log"),
+    info: logAtLevel.bind(null, "info"),
+    warn: logAtLevel.bind(null, "warn"),
+    error: logAtLevel.bind(null, "error"),
+    print: print
   };
+
 })();

@@ -384,24 +384,17 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
 
         files = files.filter(regexp.test.bind(regexp));
 
-        var pathsArray = ctx.newArray("[[B", files.length);
+        var filesArray = ctx.newArray("[[B", files.length);
         for (var i = 0; i < files.length; i++) {
-            var curPath = "";
-            if (path == "/") {
-                curPath = files[i];
-            } else {
-                curPath = path.substring(1) + "/" + files[i];
-            }
+            var bytesFile = new TextEncoder("utf-8").encode(files[i]);
 
-            var bytesCurPath = new TextEncoder("utf-8").encode(curPath);
+            var fileArray = ctx.newPrimitiveArray("B", bytesFile.byteLength);
+            fileArray.set(bytesFile);
 
-            var pathArray = ctx.newPrimitiveArray("B", bytesCurPath.byteLength);
-            pathArray.set(bytesCurPath);
-
-            pathsArray[i] = pathArray;
+            filesArray[i] = fileArray;
         }
 
-        stack.push(pathsArray);
+        stack.push(filesArray);
         ctx.resume();
     });
 
