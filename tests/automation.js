@@ -18,10 +18,13 @@ var gfxTests = [
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
   { name: "gfx/DrawStringTest", maxDifferent: 342 },
+  { name: "gfx/DrawRedStringTest", maxDifferent: 491 },
   { name: "gfx/TextBoxTest", maxDifferent: 4677 },
-  { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0, todo: true },
-  { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0, todo: true },
-  { name: "gfx/OffScreenCanvasTest", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
+  { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
+  { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
+  { name: "gfx/ARGBColorTest", maxDifferent: 0 },
+  { name: "gfx/GetRGBDrawRGBTest", maxDifferent: 0 },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
@@ -76,6 +79,8 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
                 var got = this.evaluate(function(testCase) {
+                    console.log(testCase.name);
+
                     var gotCanvas = document.getElementById("canvas");
                     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
@@ -133,7 +138,12 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                 }, testCase);
 
                 this.waitForText("DONE", function() {
-                    test.assertTextDoesntExist("FAIL");
+                    var content = this.getPageContent();
+                    var fail = content.contains("FAIL");
+                    if (fail) {
+                        this.echo(content);
+                    }
+                    test.assert(!fail);
                 });
             });
         });

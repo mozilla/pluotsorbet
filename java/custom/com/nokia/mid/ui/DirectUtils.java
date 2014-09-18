@@ -11,11 +11,16 @@ public class DirectUtils {
     }
 
     public static Image createImage(int width, int height, int argb) {
-        Image img = Image.createImage(width, height);
-        Graphics g = img.getGraphics();
-        getDirectGraphics(g).setARGBColor(argb);
-        g.fillRect(0, 0, width, height);
-        return img;
+        int[] pixels = new int[width * height];
+
+        int i = 0;
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                pixels[i++] = argb;
+            }
+        }
+
+        return makeMutable(Image.createRGBImage(pixels, width, height, true));
     }
 
     private static native Image makeMutable(Image image);
