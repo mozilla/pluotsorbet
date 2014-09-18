@@ -22,6 +22,8 @@ public class TestFileConnection implements Testlet {
         provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_it.res"));
         provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_en.res"));
         provaDirFiles.addElement(Connector.open(dirPath + "provaDir/marco_"));
+        FileConnection subDir = (FileConnection)Connector.open(dirPath + "provaDir/subDir");
+        subDir.mkdir();
 
         for (int i = 0; i < provaDirFiles.size(); i++) {
             FileConnection file = (FileConnection)provaDirFiles.elementAt(i);
@@ -30,31 +32,38 @@ public class TestFileConnection implements Testlet {
 
         Enumeration files = dir.list("*.doc", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "provaDir/prova1.doc");
-        th.check(files.nextElement(), "provaDir/prova2.doc");
-        th.check(files.nextElement(), "provaDir/prova3.doc");
+        th.check(files.nextElement(), "prova1.doc");
+        th.check(files.nextElement(), "prova2.doc");
+        th.check(files.nextElement(), "prova3.doc");
         th.check(!files.hasMoreElements(), "Only 3 elements found");
 
         files = dir.list("marco_*.res", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "provaDir/marco_it.res");
-        th.check(files.nextElement(), "provaDir/marco_en.res");
+        th.check(files.nextElement(), "marco_it.res");
+        th.check(files.nextElement(), "marco_en.res");
         th.check(!files.hasMoreElements(), "Only 2 elements found");
 
         files = dir.list("m*.re*", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "provaDir/marco_it.res");
-        th.check(files.nextElement(), "provaDir/marco_en.res");
+        th.check(files.nextElement(), "marco_it.res");
+        th.check(files.nextElement(), "marco_en.res");
         th.check(!files.hasMoreElements(), "Only 2 elements found");
 
         files = dir.list("*.js", false);
         th.check(!files.hasMoreElements(), "No elements found");
+
+        files = dir.list("sub*", false);
+        th.check(files.hasMoreElements(), "Element found");
+        th.todo(files.nextElement(), "subDir/");
+        th.check(!files.hasMoreElements(), "Only 1 elements found");
 
         for (int i = 0; i < provaDirFiles.size(); i++) {
             FileConnection file = (FileConnection)provaDirFiles.elementAt(i);
             file.delete();
             file.close();
         }
+        subDir.delete();
+        subDir.close();
     }
 
     void testLastModified(TestHarness th) throws IOException {
@@ -279,7 +288,7 @@ public class TestFileConnection implements Testlet {
 
             files = dir.list();
             th.check(files.hasMoreElements(), "Directory has one file");
-            th.check(files.nextElement(), "provaDir/prova");
+            th.check(files.nextElement(), "prova");
             th.check(!files.hasMoreElements(), "Directory has just one file");
 
             testListFilter(th);
