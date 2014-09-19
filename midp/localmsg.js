@@ -173,7 +173,8 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
     break;
 
     default:
-      console.error("(nokia.messaging) event " + name + " not implemented");
+      console.error("(nokia.messaging) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       return;
   }
 
@@ -185,17 +186,94 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
   });
 }
 
+var NokiaContactsLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+}
+
+NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
+    var encoder = new DataEncoder();
+    encoder.putStart(DataType.STRUCT, "event");
+    encoder.put(DataType.METHOD, "name", "Notify");
+    encoder.put(DataType.ULONG, "trans_id", trans_id); // The meaning of this field is unknown
+    encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
+    encoder.putStart(DataType.LIST, "Contact");
+
+    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString());
+
+    encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
+
+    encoder.putStart(DataType.ARRAY, "Numbers");
+    contact.tel.forEach(function(tel) {
+        encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
+        // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
+        encoder.put(DataType.WSTRING, "Number", tel.value);
+        encoder.putEnd(DataType.LIST, "NumbersList");
+    });
+    encoder.putEnd(DataType.ARRAY, "Numbers");
+
+    encoder.putEnd(DataType.LIST, "Contact");
+    encoder.putEnd(DataType.STRUCT, "event");
+
+    var data = new TextEncoder().encode(encoder.getData());
+    this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+    });
+};
+
+NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  switch (name) {
+    case "Common":
+      var encoder = new DataEncoder();
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "2.[0-10]");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+      });
+    break;
+
+    case "NotifySubscribe":
+      contacts.forEach(this.sendContact.bind(this, decoder.getValue(DataType.ULONG)));
+    break;
+
+    default:
+      console.error("(nokia.contacts) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+}
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
 MIDP.FakeLocalMsgServers = [ "nokia.phone-status", "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings", "nokia.contacts", "nokia.file-ui" ];
+                             "nokia.connectivity-settings", "nokia.file-ui" ];
+
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
 });
 
+MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(ctx, stack) {

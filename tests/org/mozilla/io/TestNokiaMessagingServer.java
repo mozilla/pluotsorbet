@@ -9,7 +9,7 @@ import com.nokia.mid.s40.codec.DataDecoder;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
-public class TestNokiaServer implements Testlet {
+public class TestNokiaMessagingServer implements Testlet {
     LocalMessageProtocolConnection client;
     static final String PROTO_NAME = "nokia.messaging";
 
