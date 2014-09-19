@@ -105,13 +105,13 @@ public class TestNokiaContactsServer implements Testlet {
         dataDecoder.getStart(15);
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "Number");
-        th.check(dataDecoder.getString(11), "+11111111111");
+        th.check(dataDecoder.getString(11), "+16505550100");
         th.check(!dataDecoder.listHasMoreItems());
         dataDecoder.getEnd(15);
         dataDecoder.getStart(15);
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "Number");
-        th.check(dataDecoder.getString(11), "+12222222222");
+        th.check(dataDecoder.getString(11), "+16505550101");
         th.check(!dataDecoder.listHasMoreItems());
         dataDecoder.getEnd(15);
         try {

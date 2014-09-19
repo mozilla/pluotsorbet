@@ -7,13 +7,13 @@ var fakeContacts = [{
   tel: [{
     type: ["home"],
     pref: true,
-    value: "+11111111111",
+    value: "+16505550100",
     carrier: "C1",
   },
   {
     type: ["work"],
     pref: false,
-    value: "+12222222222",
+    value: "+16505550101",
     carrier: "C2",
   },],
 }];
