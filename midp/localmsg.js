@@ -191,9 +191,39 @@ var NokiaContactsLocalMsgConnection = function() {
 
 NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message) {
-  var encoder = new DataEncoder();
+NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
+    var encoder = new DataEncoder();
+    encoder.putStart(DataType.STRUCT, "event");
+    encoder.put(DataType.METHOD, "name", "Notify");
+    encoder.put(DataType.ULONG, "trans_id", trans_id); // The meaning of this field is unknown
+    encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
+    encoder.putStart(DataType.LIST, "Contact");
 
+    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString());
+
+    encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
+
+    encoder.putStart(DataType.ARRAY, "Numbers");
+    contact.tel.forEach(function(tel) {
+        encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
+        // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
+        encoder.put(DataType.WSTRING, "Number", tel.value);
+        encoder.putEnd(DataType.LIST, "NumbersList");
+    });
+    encoder.putEnd(DataType.ARRAY, "Numbers");
+
+    encoder.putEnd(DataType.LIST, "Contact");
+    encoder.putEnd(DataType.STRUCT, "event");
+
+    var data = new TextEncoder().encode(encoder.getData());
+    this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+    });
+};
+
+NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message) {
   var decoder = new DataDecoder(message.data, message.offset, message.length);
 
   decoder.getStart(DataType.STRUCT);
@@ -201,6 +231,8 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
 
   switch (name) {
     case "Common":
+      var encoder = new DataEncoder();
+
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "Common");
       encoder.putStart(DataType.STRUCT, "message");
@@ -208,37 +240,23 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       encoder.put(DataType.STRING, "version", "2.[0-10]");
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+      });
     break;
 
     case "NotifySubscribe":
-      encoder.putStart(DataType.STRUCT, "event");
-      encoder.put(DataType.METHOD, "name", "Notify");
-      encoder.put(DataType.ULONG, "trans_id", decoder.getValue(DataType.ULONG)); // The meaning of this field is unknown
-      encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
-      encoder.putStart(DataType.LIST, "Contact");
-      encoder.put(DataType.WSTRING, "ContactID", "1");
-      encoder.put(DataType.WSTRING, "FirstName", "Test");
-      encoder.put(DataType.WSTRING, "LastName", "Contact");
-      encoder.putStart(DataType.ARRAY, "Numbers");
-      encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
-      encoder.put(DataType.WSTRING, "number", "+16508642424");
-      encoder.putEnd(DataType.LIST, "NumbersList");
-      encoder.putEnd(DataType.ARRAY, "Numbers");
-      encoder.putEnd(DataType.LIST, "Contact");
-      encoder.putEnd(DataType.STRUCT, "event");
+      contacts.forEach(this.sendContact.bind(this, decoder.getValue(DataType.ULONG)));
     break;
 
     default:
       console.error("(nokia.messaging) event " + name + " not implemented");
       return;
   }
-
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-    data: data,
-    length: data.length,
-    offset: 0,
-  });
 }
 
 MIDP.LocalMsgConnections = {};
