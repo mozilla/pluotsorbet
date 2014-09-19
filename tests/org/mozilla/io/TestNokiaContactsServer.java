@@ -47,7 +47,7 @@ public class TestNokiaContactsServer implements Testlet {
         DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
         dataEncoder.putStart(14, "event");
         dataEncoder.put(13, "name", "NotifySubscribe");
-        dataEncoder.put(5, "trans_id", System.currentTimeMillis());
+        dataEncoder.put(7, "trans_id", System.currentTimeMillis());
         dataEncoder.putEnd(14, "event");
         byte[] sendData = dataEncoder.getData();
         client.send(sendData, 0, sendData.length);
@@ -60,35 +60,115 @@ public class TestNokiaContactsServer implements Testlet {
         dataDecoder.getStart(14);
         th.check(dataDecoder.getString(13), "Notify");
         dataDecoder.getInteger(7);
-        byte by = dataDecoder.getInteger(2);
-        th.check(by == 1 || by == 2 || by == 3);
+        byte by = (byte)dataDecoder.getInteger(2);
+        th.check(by == 1 || by == 2 || by == 3); // We should understand the meaning of this byte
         th.check(dataDecoder.getName(), "Contact");
         dataDecoder.getStart(15);
-        dataDecoder.listHasMoreItems();
-        dataDecoder.getName();
-        // contactid
-        // firstname
-        // lastname
-        // nickname
-        // displayname
-        // title
-        // company
-        // notes
-        // groupnames
-        // numbers
-        // defaultnumber
-        // defaultemail
-        // emails
-        // source
-        // pictureurl
-        // weburl
-        // ringtoneurl
-        // animatedtoneurl
-        // postaladdress
-        // otheraddresses
-        // birthday
-        // anniversary
-        // imaddresses
+
+        th.check(dataDecoder.listHasMoreItems());
+        th.check(dataDecoder.getName(), "ContactID"); // mozContact.id
+        th.check(dataDecoder.getString(11), "1");
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "FirstName"); // mozContact.givenName [array]
+        //th.check(dataDecoder.getString(11), "Test");
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "LastName"); // mozContact.familyName [array]
+        //th.check(dataDecoder.getString(11), "Contact");
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "NickName"); // mozContact.nickname [array]
+        //th.check(dataDecoder.getString(11), "");
+
+        th.check(dataDecoder.listHasMoreItems());
+        th.check(dataDecoder.getName(), "DisplayName"); // mozContact.name [array]
+        th.check(dataDecoder.getString(11), "Test Contact 1");
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "Title"); // mozContact.jobTitle [array]
+        //th.check(dataDecoder.getString(11), "");
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "Company"); // mozContact.org [array]
+        //th.check(dataDecoder.getString(11), "");
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "Notes"); // mozContact.note [array]
+        //th.check(dataDecoder.getString(11), "");
+
+        // groupnames (???)
+
+        th.check(dataDecoder.listHasMoreItems());
+        th.check(dataDecoder.getName(), "Numbers"); // mozContact.tel [array]
+        dataDecoder.getStart(16);
+        dataDecoder.getStart(15);
+        th.check(dataDecoder.listHasMoreItems());
+        th.check(dataDecoder.getName(), "Number");
+        th.check(dataDecoder.getString(11), "+11111111111");
+        th.check(!dataDecoder.listHasMoreItems());
+        dataDecoder.getEnd(15);
+        dataDecoder.getStart(15);
+        th.check(dataDecoder.listHasMoreItems());
+        th.check(dataDecoder.getName(), "Number");
+        th.check(dataDecoder.getString(11), "+12222222222");
+        th.check(!dataDecoder.listHasMoreItems());
+        dataDecoder.getEnd(15);
+        try {
+            dataDecoder.getStart(15);
+        } catch (IOException e) {
+            th.check(e.getMessage(), "no start found 15");
+        }
+
+        dataDecoder.getEnd(16);
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "DefaultNumber"); // mozContact.tel [array]
+        // get default numbers
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "DefaultEmail"); // mozContact.email [array]
+        //th.check(dataDecoder.getString(11), "");
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "Emails"); // mozContact.email [array]
+        // get emails
+
+        // source (???)
+
+        // pictureurl (???)
+
+        // mozContact.url [array]
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "WebURL"); // mozContact.url [array]
+        //th.check(dataDecoder.getString(11), "");
+
+        // ringtoneurl (???)
+
+        // animatedtoneurl (???)
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "PostalAddresses"); // mozContact.adr [array]
+        // get postal addresses
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "OtherAddresses"); // mozContact.adr [array]
+        // get other addresses
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "Birthday"); // mozContact.bday
+        // get birthday
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "Anniversary"); // mozContact.anniversary
+        // get anniversary
+
+        // imaddresses (mozContact.impp [array])
+
+        //th.check(dataDecoder.listHasMoreItems());
+        //th.check(dataDecoder.getName(), "IMAddresses"); // mozContact.impp [array]
+        // get IM addresses
+
         dataDecoder.getEnd(15);
     }
 
