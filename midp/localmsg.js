@@ -173,7 +173,8 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
     break;
 
     default:
-      console.error("(nokia.messaging) event " + name + " not implemented");
+      console.error("(nokia.messaging) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       return;
   }
 
@@ -254,7 +255,8 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
     break;
 
     default:
-      console.error("(nokia.messaging) event " + name + " not implemented");
+      console.error("(nokia.contacts) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       return;
   }
 }
