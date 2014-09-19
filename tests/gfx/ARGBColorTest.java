@@ -33,6 +33,17 @@ public class ARGBColorTest extends MIDlet {
             }
             g.fillRect(40, 50, 160, 40);
 
+            // setARGBColor updates rgb color and gray color
+            int grayBefore = g.getGrayScale();
+            DirectUtils.getDirectGraphics(g).setARGBColor(0x00007700);
+            if (g.getColor() != 0x00007700) {
+                System.out.println("FAIL");
+            }
+            // Gray scale is computed, so only ensure it changed.
+            if (g.getGrayScale() == grayBefore) {
+                System.out.println("FAIL");
+            }
+
             System.out.println("PAINTED");
         }
     }

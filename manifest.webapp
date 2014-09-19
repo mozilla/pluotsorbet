@@ -1,7 +1,7 @@
 {
   "name": "j2me.js",
   "description": "j2me interpreter for firefox os",
-  "launch_path": "/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=asteroids.Game",
+  "launch_path": "/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=asteroids.Game&autosize=1&logConsole=web",
   "icons": {
     "128": "/img/icon-128.png"
   },
@@ -17,7 +17,7 @@
     },
     "contacts": {
       "description": "Required to manage contacts",
-      "access": "readwrite"
+      "access": "readonly"
     }
   },
   "type": "privileged"

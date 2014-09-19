@@ -20,6 +20,7 @@
  *    network_mnc
  *    pushConn
  *    pushMidlet
+ *    autosize
  *
  * Keep this list up-to-date!
  */
