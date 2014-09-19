@@ -537,8 +537,15 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
 
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
-    c.width = 240;
-    c.height = 320;
+
+    if (urlParams.autosize && !/no|0/.test(urlParams.autosize)) {
+      c.width = window.innerWidth;
+      c.height = window.innerHeight;
+      document.documentElement.classList.add('autosize');
+    } else {
+      c.width = 240;
+      c.height = 320;
+    }
 
     // TODO These mouse event handlers only work on firefox right now,
     // because they use layerX and layerY.
