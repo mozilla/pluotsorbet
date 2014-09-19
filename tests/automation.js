@@ -27,7 +27,6 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBWidthHeightTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
-  { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
