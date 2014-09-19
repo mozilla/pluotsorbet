@@ -50,6 +50,10 @@
   <script type="text/javascript" src="game-ui.js" defer></script>
   <script type="text/javascript" src="desktop-ui.js" defer></script>
   <script type="text/javascript" src="main.js" defer></script>
+
+  <!-- Include shared building blocks -->
+  <link rel="stylesheet" type="text/css" href="style/confirm.css">
+  <link rel="stylesheet" type="text/css" href="style/input_areas.css">
 </head>
 
 <body>
@@ -93,6 +97,19 @@
     <button id="right">right</button>
     <button id="fire">fire</button>
   </div>
+
+  <form role="dialog" data-type="confirm" id="sms-listener-prompt" style="display: none">
+    <section>
+      <h1>SMS Verification Requested</h1>
+      <p>This app sent you an SMS. Type the message you received here:</p>
+      <p><input type="text" placeholder="Type SMS Verification Code Here">
+    </section>
+    <menu>
+      <button class="cancel">Cancel</button>
+      <button class="recommend">Done</button>
+    </menu>
+  </form>
+
 </body>
 
 </html>
