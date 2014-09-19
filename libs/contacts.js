@@ -4,50 +4,30 @@
 'use strict';
 
 var contacts = (function() {
-  navigator.mozContacts.oncontactchange = function(event) {
-    if (event.reason == "create" || event.reason == "update") {
-      var contactID = event.contactID;
+  var contacts = [{
+    id: 1,
+    name: ["Test Contact 1"],
+    tel: [{
+      type: "home",
+      pref: true,
+      value: "+11111111111",
+      carrier: "C1",
+    },
+    {
+      type: "work",
+      pref: false,
+      value: "+12222222222",
+      carrier: "C2",
+    },],
+  }];
 
-      var req = navigator.mozContacts.find({
-        filterBy: ["id"],
-        filterOp: "equals",
-        filterValue: contactID
-      });
-
-      req.onsuccess = function () {
-        var contact = req.result[0];
-        // Notify listeners
-      }
-
-      req.onerror = function() {
-        console.error("Error while reading contact");
-      }
-    } else if (event.reason == "remove") {
-      delete contacts[event.contactID];
-    }
-  }
-
-  function getAll(callback) {
-    var contacts = [];
-
-    var req = navigator.mozContacts.getAll();
-
-    req.onsuccess = function(event) {
-      var contact = req.result;
-      if (contact) {
-        contacts.push(contact);
-        req.continue();
-      } else {
-        callback(contacts);
-      }
-    }
-
-    req.onerror = function() {
-      console.error("Error while reading contacts");
+  function forEach(callback) {
+    for (var i = 0; i < contacts.length; i++) {
+        callback(contacts[i]);
     }
   }
 
   return {
-    getAll: getAll,
+    forEach: forEach,
   };
 })();
