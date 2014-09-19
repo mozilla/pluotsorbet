@@ -419,7 +419,13 @@
     Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(ctx, stack) {
         var rgba = stack.pop(), _this = stack.pop();
         var g = _this.class.getField("graphics", "Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var red = (rgba >> 16) & 0xff;
+        var green = (rgba >> 8) & 0xff;
+        var blue = rgba & 0xff;
         g.class.getField("pixel", "I").set(g, swapRB(rgba));
+        g.class.getField("rgbColor", "I").set(g, rgba & 0x00ffffff);
+        // Conversion matches Graphics#grayVal(int, int, int).
+        g.class.getField("gray", "I").set(g, (red * 76 + green * 150 + blue * 29) >> 8);
     }
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function(ctx, stack) {
