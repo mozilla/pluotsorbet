@@ -67,7 +67,7 @@ public class TestNokiaContactsServer implements Testlet {
 
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "ContactID"); // mozContact.id
-        th.check(dataDecoder.getString(11), "1");
+        th.check(dataDecoder.getString(11).length() > 0);
 
         //th.check(dataDecoder.listHasMoreItems());
         //th.check(dataDecoder.getName(), "FirstName"); // mozContact.givenName [array]
