@@ -25,6 +25,8 @@ var gfxTests = [
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
   { name: "gfx/ARGBColorTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBTest", maxDifferent: 0 },
+  { name: "gfx/GetRGBDrawRGBWidthHeightTest", maxDifferent: 0 },
+  { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
 ];
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
@@ -79,8 +81,6 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
                 var got = this.evaluate(function(testCase) {
-                    console.log(testCase.name);
-
                     var gotCanvas = document.getElementById("canvas");
                     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
@@ -124,7 +124,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                             if (!testCase.todo) {
                                 console.log("PASS - " + different);
                             } else {
-                                console.log("FAIL - UNEXPECTED PASS - " + different);
+                                console.log("UNEXPECTED PASS - " + different);
                             }
                         }
 
@@ -140,10 +140,20 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                 this.waitForText("DONE", function() {
                     var content = this.getPageContent();
                     var fail = content.contains("FAIL");
+                    var todo = content.contains("TODO");
+                    var unexpected = content.contains("UNEXPECTED");
+
                     if (fail) {
                         this.echo(content);
+                        test.fail(testCase.name + " - Failure");
+                    } else if (unexpected) {
+                        this.echo(content);
+                        test.fail(testCase.name + " - Unexpected pass");
+                    } else if (todo) {
+                        test.skip(1, testCase.name + " - Todo");
+                    } else {
+                        test.pass(testCase.name + " - Pass");
                     }
-                    test.assert(!fail);
                 });
             });
         });
