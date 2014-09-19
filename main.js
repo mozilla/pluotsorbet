@@ -89,12 +89,12 @@ fs.init(function() {
 
     if (MIDP.midletClassName == "RunTests") {
       var element = document.createElement('script');
-      element.setAttribute("type","text/javascript");
+      element.setAttribute("type", "text/javascript");
       element.setAttribute("src", "tests/native.js");
       document.getElementsByTagName("head")[0].appendChild(element);
 
       var testContactsScript = document.createElement('script');
-      testContactsScript.setAttribute("type","text/javascript");
+      testContactsScript.setAttribute("type", "text/javascript");
       testContactsScript.setAttribute("src", "tests/contacts.js");
       document.getElementsByTagName("head")[0].appendChild(testContactsScript);
 
