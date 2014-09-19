@@ -2,47 +2,8 @@
 <html>
 
 <head>
-  <style type="text/css">
-#display {
-  position: absolute;
-  top: 0px;
-  right: 0px;
-  border: 1px solid #ababab;
-  width: 240px;
-  height: 320px;
-}
-
-button {
-  display: none;
-}
-
-#clearstorage,#trace,#printAllExceptions,#sms_receive {
-  display: inline;
-}
-
-@media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
-  #display {
-    bottom: 0px;
-    left: 0px;
-    border: none;
-  }
-
-  button {
-    display: block;
-    position: absolute;
-    height: 40px;
-    width: 40px;
-  }
-
-  #up { left: 75px; bottom: 40px; }
-  #down { left: 75px; bottom: 0px; }
-  #left { left: 25px; bottom: 20px; }
-  #right { left: 125px; bottom: 20px; }
-  #fire { left: 250px; bottom: 20px; }
-
-}
-  </style>
   <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="style.css">
   <meta name="viewport" content="initial-scale=1.0">
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
@@ -93,18 +54,39 @@ button {
 </head>
 
 <body>
-  <div>x,y <span id="xy"></span></div>
-  <button id="clearstorage">Clear storage</button>
-  <button id="trace">Trace: OFF</button>
-  <button id="printAllExceptions">Print all exceptions: OFF</button>
-  <input id="sms_text" type="text" value="SMS text"></input>
-  <input id="sms_addr" type="text" value="SMS phone number"></input>
-  <button id="sms_receive">Receive SMS</button>
-  <div id="display"><canvas id="canvas"></canvas></div>
-  <div>
-    Console:
-    <pre id="console"></pre>
+  <pre id="console"></pre>
+
+  <!-- The raw console is used for unit tests, so it's not visible by default: -->
+  <pre id="raw-console" style="display: none"></pre>
+
+  <div id="settings">
+    <section>
+      <div>x,y <span id="xy"></span></div>
+    </section>
+    <section>
+      <select id="loglevel">
+        <option value="0">Log Level: Trace
+        <option value="1">Log Level: Log
+        <option value="2">Log Level: Info
+        <option value="3">Log Level: Warn
+        <option value="4">Log Level: Error
+        <option value="5">Log Level: Silent
+      </select>
+      <input id="console-filter-input" type="text" placeholder="Filter Console Output" value="">
+      <label><input type="checkbox" id="auto-scroll" checked>Auto-Scroll At Bottom</label>
+    </section>
+    <section>
+      <button id="clearstorage">Clear storage</button>
+      <button id="trace">Trace: OFF</button>
+      <button id="printAllExceptions">Print all exceptions: OFF</button>
+    </section>
+    <section>
+      <input id="sms_text" type="text" placeholder="SMS text"></input>
+      <input id="sms_addr" type="text" placeholder="SMS phone number"></input>
+      <button id="sms_receive">Receive SMS</button>
+    </section>
   </div>
+  <div id="display"><canvas id="canvas"></canvas></div>
   <button id="up">up</button>
   <button id="down">down</button>
   <button id="left">left</button>
