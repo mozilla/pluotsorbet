@@ -98,7 +98,16 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "Memory card;Phone memory;Private"
         break;
     case "fileconn.dir.roots.external":
-        value = "/MemoryCard;/;/";
+        value = "fcfile:///MemoryCard;fcfile:///;fcfile:///";
+        break;
+    case "fileconn.dir.photos.name":
+        value = "Photos";
+        break;
+    case "fileconn.dir.videos.name":
+        value = "Videos";
+        break;
+    case "fileconn.dir.recordings.name":
+        value = "Recordings";
         break;
     case "file.separator":
         value = "/";
