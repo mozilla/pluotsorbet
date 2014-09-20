@@ -2,7 +2,6 @@ package gfx;
 
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
-import com.nokia.mid.ui.*;
 
 public class ClippingTest extends MIDlet {
     private Command quitCommand;
