@@ -67,7 +67,7 @@ public class TestNokiaContactsServer implements Testlet {
 
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "ContactID"); // mozContact.id
-        th.check(dataDecoder.getString(11), "1");
+        th.check(dataDecoder.getString(11).length() > 0);
 
         // The following commented out tests are meant for future reference.
         // This is all the data that we've seen requested by MIDlets to the
@@ -109,13 +109,13 @@ public class TestNokiaContactsServer implements Testlet {
         dataDecoder.getStart(15);
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "Number");
-        th.check(dataDecoder.getString(11), "+11111111111");
+        th.check(dataDecoder.getString(11), "+16505550100");
         th.check(!dataDecoder.listHasMoreItems());
         dataDecoder.getEnd(15);
         dataDecoder.getStart(15);
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "Number");
-        th.check(dataDecoder.getString(11), "+12222222222");
+        th.check(dataDecoder.getString(11), "+16505550101");
         th.check(!dataDecoder.listHasMoreItems());
         dataDecoder.getEnd(15);
         try {

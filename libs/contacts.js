@@ -4,26 +4,19 @@
 'use strict';
 
 var contacts = (function() {
-  var contacts = [{
-    id: 1,
-    name: ["Test Contact 1"],
-    tel: [{
-      type: "home",
-      pref: true,
-      value: "+11111111111",
-      carrier: "C1",
-    },
-    {
-      type: "work",
-      pref: false,
-      value: "+12222222222",
-      carrier: "C2",
-    },],
-  }];
-
   function forEach(callback) {
-    for (var i = 0; i < contacts.length; i++) {
-        callback(contacts[i]);
+    var req = navigator.mozContacts.getAll();
+
+    req.onsuccess = function() {
+      var contact = req.result;
+      if (contact) {
+        callback(contact);
+        req.continue();
+      }
+    }
+
+    req.onerror = function() {
+      console.error("Error while reading contacts");
     }
   }
 
