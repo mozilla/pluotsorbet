@@ -7,6 +7,8 @@ var Instrument = {
   enter: {},
   exit: {},
 
+  profile: {},
+
   getKey: function(methodInfo) {
     return methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
   },
@@ -16,6 +18,12 @@ var Instrument = {
     if (Instrument.enter[key]) {
       Instrument.enter[key](caller, callee);
     }
+
+    var profile = this.profile[key] || (this.profile[key] = {
+      calls: new Map(),
+      times: [],
+    });
+    profile.calls.set(callee, Date.now());
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
@@ -23,7 +31,30 @@ var Instrument = {
     if (Instrument.exit[key]) {
       Instrument.exit[key](caller, callee);
     }
+
+    var profile = this.profile[key];
+    profile.times.push(Date.now() - profile.calls.get(callee));
+    profile.calls.delete(callee);
   },
+
+  reportProfile: function() {
+    var methods = [];
+
+    for (var key in this.profile) {
+      var time = this.profile[key].times.reduce(function(p, c) { return p + c }, 0);
+      methods.push({
+        key: key,
+        count: this.profile[key].times.length,
+        time: time,
+      });
+    }
+
+    methods.sort(function(a, b) { return b.time - a.time });
+
+    methods.forEach(function(method) {
+      console.log(method.time + " " + method.count + " " + method.key);
+    });
+  }
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.<init>.(Ljava/lang/String;ILjava/io/InputStream;Ljava/io/OutputStream;Lcom/sun/midp/pki/CertStore;)V"] = function(caller, callee) {

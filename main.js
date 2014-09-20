@@ -122,4 +122,7 @@ window.onload = function() {
    VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
    toggle(this);
  };
+ document.getElementById("reportProfile").onclick = function() {
+   Instrument.reportProfile();
+ };
 };
