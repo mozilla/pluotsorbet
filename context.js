@@ -120,8 +120,7 @@ Context.prototype.execute = function(stopFrame) {
       switch (e) {
       case VM.Yield:
         // We don't call Instrument.callPauseHooks here because this branch
-        // doesn't actually yield the thread, it simply continues executing it.
-        // Is that a bug?
+        // doesn't actually yield the thread, it continues executing it.
         break;
       case VM.Pause:
         Instrument.callPauseHooks(this.current());
