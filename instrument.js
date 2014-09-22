@@ -43,8 +43,9 @@ var Instrument = {
 
       if (callee.profileData) {
         callee.profileData.cost += now - callee.profileData.then;
-        var times = this.profile[key] || (this.profile[key] = []);
-        times.push(callee.profileData.cost);
+        var methodProfileData = this.profile[key] || (this.profile[key] = { count: 0, cost: 0 });
+        methodProfileData.count++;
+        methodProfileData.cost += callee.profileData.cost;
       }
 
       if (caller.profileData) {
@@ -78,19 +79,18 @@ var Instrument = {
     var methods = [];
 
     for (var key in this.profile) {
-      var time = this.profile[key].reduce(function(p, c) { return p + c }, 0);
       methods.push({
         key: key,
-        count: this.profile[key].length,
-        time: time,
+        count: this.profile[key].count,
+        cost: this.profile[key].cost,
       });
     }
 
-    methods.sort(function(a, b) { return b.time - a.time });
+    methods.sort(function(a, b) { return b.cost - a.cost });
 
     console.log("Profile:");
     methods.forEach(function(method) {
-      console.log(Math.round(method.time) + "ms " + method.count + " " + method.key);
+      console.log(Math.round(method.cost) + "ms " + method.count + " " + method.key);
     });
 
     this.profiling = false;
