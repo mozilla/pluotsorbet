@@ -19,32 +19,50 @@ var Instrument = {
       Instrument.enter[key](caller, callee);
     }
 
-    var profile = this.profile[key] || (this.profile[key] = {
-      calls: new Map(),
-      times: [],
-    });
-    profile.calls.set(callee, Date.now());
+    var now = Date.now();
+
+    // Since we're (temporarily) exiting the caller, calculate how much time
+    // we've spent in it so far.
+    if (caller.profileData) {
+      caller.profileData.callTime += now - caller.profileData.lastTime;
+    }
+
+    // Now initialize the profile data structure for the callee we're entering.
+    callee.profileData = {
+      callTime: 0,
+      lastTime: now,
+    };
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
     var key = this.getKey(methodInfo);
+    var now = Date.now();
+
+    // Now that we're exiting the callee, calculate the last amount of time
+    // we spent in it and then record the total time.
+    callee.profileData.callTime += now - callee.profileData.lastTime;
+    var times = this.profile[key] || (this.profile[key] = []);
+    times.push(callee.profileData.callTime);
+
+    // Now that we're re-entering the caller, start tracking the amount of time
+    // we spend in it again.
+    if (caller.profileData) {
+      caller.profileData.lastTime = now;
+    }
+
     if (Instrument.exit[key]) {
       Instrument.exit[key](caller, callee);
     }
-
-    var profile = this.profile[key];
-    profile.times.push(Date.now() - profile.calls.get(callee));
-    profile.calls.delete(callee);
   },
 
   reportProfile: function() {
     var methods = [];
 
     for (var key in this.profile) {
-      var time = this.profile[key].times.reduce(function(p, c) { return p + c }, 0);
+      var time = this.profile[key].reduce(function(p, c) { return p + c }, 0);
       methods.push({
         key: key,
-        count: this.profile[key].times.length,
+        count: this.profile[key].length,
         time: time,
       });
     }
