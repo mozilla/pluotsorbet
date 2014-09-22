@@ -319,8 +319,8 @@ var fs = (function() {
 
       exists(partPath, function(exists) {
         if (exists) {
-          list(partPath, function(files) {
-            if (files) {
+          stat(partPath, function(stat) {
+            if (stat.isDir) {
               // The part exists and is a directory; continue to next part.
               mkpart(true);
             }
