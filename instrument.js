@@ -7,8 +7,12 @@ var Instrument = {
   enter: {},
   exit: {},
 
+  profiling: false,
+  profile: null,
+
   getKey: function(methodInfo) {
-    return methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+    return "name" in methodInfo ? methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature
+                                : methodInfo.syntheticKey;
   },
 
   callEnterHooks: function(methodInfo, caller, callee) {
@@ -16,13 +20,80 @@ var Instrument = {
     if (Instrument.enter[key]) {
       Instrument.enter[key](caller, callee);
     }
+
+    if (this.profiling) {
+      var now = performance.now();
+
+      if (caller.profileData) {
+        caller.profileData.cost += now - caller.profileData.then;
+      }
+
+      callee.profileData = {
+        cost: 0,
+        then: now,
+      };
+    }
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
     var key = this.getKey(methodInfo);
+
+    if (this.profiling) {
+      var now = performance.now();
+
+      if (callee.profileData) {
+        callee.profileData.cost += now - callee.profileData.then;
+        var methodProfileData = this.profile[key] || (this.profile[key] = { count: 0, cost: 0 });
+        methodProfileData.count++;
+        methodProfileData.cost += callee.profileData.cost;
+      }
+
+      if (caller.profileData) {
+        caller.profileData.then = now;
+      }
+    }
+
     if (Instrument.exit[key]) {
       Instrument.exit[key](caller, callee);
     }
+  },
+
+  callPauseHooks: function(frame) {
+    if (this.profiling && frame.profileData) {
+      frame.profileData.cost += performance.now() - frame.profileData.then;
+    }
+  },
+
+  callResumeHooks: function(frame) {
+    if (this.profiling && frame.profileData) {
+      frame.profileData.then = performance.now();
+    }
+  },
+
+  startProfile: function() {
+    this.profile = {};
+    this.profiling = true;
+  },
+
+  stopProfile: function() {
+    var methods = [];
+
+    for (var key in this.profile) {
+      methods.push({
+        key: key,
+        count: this.profile[key].count,
+        cost: this.profile[key].cost,
+      });
+    }
+
+    methods.sort(function(a, b) { return b.cost - a.cost });
+
+    console.log("Profile:");
+    methods.forEach(function(method) {
+      console.log(Math.round(method.cost) + "ms " + method.count + " " + method.key);
+    });
+
+    this.profiling = false;
   },
 };
 

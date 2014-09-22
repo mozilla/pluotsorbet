@@ -42,6 +42,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     return;
   classInfo.thread = this.thread;
   var syntheticMethod = {
+    syntheticKey: "ClassInitSynthetic:" + classInfo.className,
     classInfo: {
       constant_pool: [
         null,
@@ -79,6 +80,7 @@ Context.prototype.raiseException = function(className, message) {
     message = "";
   message = "" + message;
   var syntheticMethod = {
+    syntheticKey: "RaiseExceptionSynthetic",
     classInfo: {
       constant_pool: [
         null,
@@ -110,14 +112,18 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
 }
 
 Context.prototype.execute = function(stopFrame) {
+  Instrument.callResumeHooks(this.current());
   while (this.current() !== stopFrame) {
     try {
       VM.execute(this);
     } catch (e) {
       switch (e) {
       case VM.Yield:
+        // We don't call Instrument.callPauseHooks here because this branch
+        // doesn't actually yield the thread, it continues executing it.
         break;
       case VM.Pause:
+        Instrument.callPauseHooks(this.current());
         return;
       default:
         throw e;
@@ -131,6 +137,7 @@ Context.prototype.start = function(stopFrame) {
     this.kill();
     return;
   }
+  Instrument.callResumeHooks(this.current());
   var ctx = this;
   ctx.stopFrame = stopFrame;
   window.setZeroTimeout(function() {
@@ -139,8 +146,10 @@ Context.prototype.start = function(stopFrame) {
     } catch (e) {
       switch (e) {
       case VM.Yield:
+        Instrument.callPauseHooks(ctx.current());
         break;
       case VM.Pause:
+        Instrument.callPauseHooks(ctx.current());
         return;
       default:
         console.info(e);
