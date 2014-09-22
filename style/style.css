@@ -8,6 +8,8 @@ html {
 body {
   margin: 0;
   padding: 0;
+  width: 100%;
+  height: 100%;
 }
 
 #display {
@@ -145,4 +147,39 @@ button {
   width: 100%;
   font-size: 1.6rem;
   padding: 0.5rem;
+}
+
+/**
+ * STYLE OVERRIDES FOR DEBUG MODE:
+ *
+ * These styles override the default dialog style so that (a) the
+ * dialog fits in our small 240x320 debug-mode canvas, and (b) so that
+ * the dialog, which normally overlays the entire screen, only covers
+ * the same area as the canvas (only for debugging).
+ *
+ * Note: The absurd selector is absurd so that we can override the
+ * built-in styles, which refer to all of those attributes, without
+ * modifying the original dialog CSS, for future maintainability.
+ */
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt {
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  left: auto;
+  bottom: auto;
+  width: 240px;
+  height: 320px;
+  z-index: 2;
+  background: black;
+  box-sizing: border-box;
+}
+
+/* Hide the unnecessary scroll bar in the SMS verification dialog. */
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt section {
+  overflow: hidden;
+}
+/* Trim down fonts to fix on our 240x320 debug-mode canvas. */
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt p {
+  font-size: 12px;
+  line-height: 1.2;
 }

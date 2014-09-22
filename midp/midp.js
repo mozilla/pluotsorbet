@@ -543,6 +543,7 @@ MIDP.Context2D = (function() {
       c.height = window.innerHeight;
       document.documentElement.classList.add('autosize');
     } else {
+      document.documentElement.classList.add('debug-mode');
       c.width = 240;
       c.height = 320;
     }

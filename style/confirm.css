@@ -1,4 +1,4 @@
-// Source: http://github.com/mozilla-b2g/gaia. Apache 2.0 License.
+/* Source: http://github.com/mozilla-b2g/gaia. Apache 2.0 License. */
 
 /* ----------------------------------
  * Confirm
@@ -17,7 +17,7 @@ form[role="dialog"][data-type="confirm"] {
   padding-bottom: 7rem;
   font-size: 0;
   /* Using font-size: 0; we avoid the unwanted visual space (about 3px)
-  created by white-spaces and break lines in the code betewen inline-block elements */
+  created by white-spaces and break lines in the code between inline-block elements */
   color: #fff;
   text-align: left;
 }
