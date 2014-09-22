@@ -21,16 +21,13 @@ var Instrument = {
 
     var now = Date.now();
 
-    // Since we're (temporarily) exiting the caller, calculate how much time
-    // we've spent in it so far.
     if (caller.profileData) {
-      caller.profileData.callTime += now - caller.profileData.lastTime;
+      caller.profileData.cost += now - caller.profileData.then;
     }
 
-    // Now initialize the profile data structure for the callee we're entering.
     callee.profileData = {
-      callTime: 0,
-      lastTime: now,
+      cost: 0,
+      then: now,
     };
   },
 
@@ -38,16 +35,12 @@ var Instrument = {
     var key = this.getKey(methodInfo);
     var now = Date.now();
 
-    // Now that we're exiting the callee, calculate the last amount of time
-    // we spent in it and then record the total time.
-    callee.profileData.callTime += now - callee.profileData.lastTime;
+    callee.profileData.cost += now - callee.profileData.then;
     var times = this.profile[key] || (this.profile[key] = []);
-    times.push(callee.profileData.callTime);
+    times.push(callee.profileData.cost);
 
-    // Now that we're re-entering the caller, start tracking the amount of time
-    // we spend in it again.
     if (caller.profileData) {
-      caller.profileData.lastTime = now;
+      caller.profileData.then = now;
     }
 
     if (Instrument.exit[key]) {
@@ -57,13 +50,13 @@ var Instrument = {
 
   callPauseHooks: function(frame) {
     if (frame.profileData) {
-      frame.profileData.callTime += Date.now() - frame.profileData.lastTime;
+      frame.profileData.cost += Date.now() - frame.profileData.then;
     }
   },
 
   callResumeHooks: function(frame) {
     if (frame.profileData) {
-      frame.profileData.lastTime = Date.now();
+      frame.profileData.then = Date.now();
     }
   },
 
