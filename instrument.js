@@ -11,7 +11,8 @@ var Instrument = {
   profile: null,
 
   getKey: function(methodInfo) {
-    return methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+    return "name" in methodInfo ? methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature
+                                : methodInfo.syntheticKey;
   },
 
   callEnterHooks: function(methodInfo, caller, callee) {

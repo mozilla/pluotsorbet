@@ -42,6 +42,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     return;
   classInfo.thread = this.thread;
   var syntheticMethod = {
+    syntheticKey: "ClassInitSynthetic." + classInfo.className,
     classInfo: {
       constant_pool: [
         null,
@@ -79,6 +80,7 @@ Context.prototype.raiseException = function(className, message) {
     message = "";
   message = "" + message;
   var syntheticMethod = {
+    syntheticKey: "RaiseExceptionSynthetic",
     classInfo: {
       constant_pool: [
         null,
