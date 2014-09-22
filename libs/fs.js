@@ -80,7 +80,9 @@ var fs = (function() {
       if (data) {
         cb();
       } else {
-        asyncStorage.setItem("/", [], cb);
+        asyncStorage.setItem("/", [], function() {
+          setStat("/", { mtime: Date.now(), isDir: true }, cb);
+        });
       }
     });
   }
@@ -158,7 +160,7 @@ var fs = (function() {
 
     openedFiles[fd].position = from + data.byteLength;
 
-    setStat(openedFiles[fd].path, { mtime: Date.now() });
+    setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
   }
 
   function getpos(fd) {
@@ -197,12 +199,8 @@ var fs = (function() {
   function exists(path, cb) {
     path = normalizePath(path);
 
-    asyncStorage.getItem(path, function(data) {
-      if (data == null) {
-        cb(false);
-      } else {
-        cb(true);
-      }
+    stat(path, function(stat) {
+      cb(stat ? true : false);
     });
   }
 
@@ -214,7 +212,7 @@ var fs = (function() {
         cb(false);
       } else {
         asyncStorage.setItem(path, new Blob(), function() {
-          setStat(path, { mtime: Date.now() });
+          setStat(path, { mtime: Date.now(), isDir: false });
           cb(true);
         });
       }
@@ -224,7 +222,7 @@ var fs = (function() {
   function ftruncate(fd, size) {
     if (size != openedFiles[fd].buffer.contentSize) {
       openedFiles[fd].buffer.setSize(size);
-      setStat(openedFiles[fd].path, { mtime: Date.now() });
+      setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
     }
   }
 
@@ -251,8 +249,9 @@ var fs = (function() {
         files.splice(index, 1);
         asyncStorage.setItem(dir, files, function() {
           asyncStorage.removeItem(path, function() {
-            removeStat(path);
-            cb(true);
+            removeStat(path, function() {
+              cb(true);
+            });
           });
         });
       });
@@ -274,7 +273,6 @@ var fs = (function() {
       files.push(name);
       asyncStorage.setItem(dir, files, function() {
         asyncStorage.setItem(path, data, function() {
-          setStat(path, { mtime: Date.now() });
           cb(true);
         });
       });
@@ -282,11 +280,19 @@ var fs = (function() {
   }
 
   function create(path, blob, cb) {
-    createInternal(path, blob, cb);
+    createInternal(path, blob, function(created) {
+      setStat(path, { mtime: Date.now(), isDir: false }, function() {
+        cb(created);
+      });
+    });
   }
 
   function mkdir(path, cb) {
-    createInternal(path, [], cb);
+    createInternal(path, [], function(created) {
+      setStat(path, { mtime: Date.now(), isDir: true }, function() {
+        cb(created);
+      });
+    });
   }
 
   function mkdirp(path, cb) {
@@ -311,22 +317,19 @@ var fs = (function() {
 
       partPath += "/" + parts.shift();
 
-      exists(partPath, function(exists) {
-        if (exists) {
-          list(partPath, function(files) {
-            if (files) {
-              // The part exists and is a directory; continue to next part.
-              mkpart(true);
-            }
-            else {
-              // The part exists but isn't a directory; fail.
-              console.error("mkdirp called on path with non-dir part: " + partPath);
-              cb(false);
-            }
-          });
-        } else {
+      stat(partPath, function(stat) {
+        if (!stat) {
           // The part doesn't exist; make it, then continue to next part.
           mkdir(partPath, mkpart);
+        }
+        else if (stat.isDir) {
+          // The part exists and is a directory; continue to next part.
+          mkpart(true);
+        }
+        else {
+          // The part exists but isn't a directory; fail.
+          console.error("mkdirp called on path with non-dir part: " + partPath);
+          cb(false);
         }
       });
     }
@@ -380,17 +383,41 @@ var fs = (function() {
     });
   }
 
-  function setStat(path, stat) {
-    asyncStorage.setItem("!" + path, stat);
+  function setStat(path, stat, cb) {
+    asyncStorage.setItem("!" + path, stat, cb);
   }
 
-  function removeStat(path) {
-    asyncStorage.removeItem("!" + path);
+  function removeStat(path, cb) {
+    asyncStorage.removeItem("!" + path, cb);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
-    asyncStorage.getItem("!" + path, cb);
+    asyncStorage.getItem("!" + path, function(statData) {
+      if (statData) {
+        cb(statData);
+        return;
+      }
+
+      // This transitioning code is expensive, we should get rid of it after
+      // a while.
+      statData = { mtime: Date.now() };
+
+      asyncStorage.getItem(path, function(data) {
+        if (!data) {
+          cb(null);
+          return;
+        } else if (data instanceof Blob) {
+          statData.isDir = false;
+        } else {
+          statData.isDir = true;
+        }
+
+        setStat(path, statData, function() {
+          cb(statData);
+        });
+      });
+    });
   }
 
   return {

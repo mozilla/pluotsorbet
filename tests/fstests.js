@@ -43,6 +43,13 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  fs.stat("/", function(stat) {
+    ok(stat.isDir, "/ is a directory");
+    next();
+  });
+});
+
+tests.push(function() {
   fs.list("/", function(files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
@@ -716,6 +723,56 @@ tests.push(function() {
     });
   });
 })();
+
+tests.push(function() {
+  fs.mkdir("/statDir", function() {
+    fs.stat("/statDir", function(stat) {
+      ok(stat.isDir, "/statDir is a directory");
+      next();
+    });
+  });
+});
+
+tests.push(function() {
+  fs.create("/statDir/file", new Blob(), function() {
+    fs.stat("/statDir/file", function(stat) {
+      ok(!stat.isDir, "/statDir/file isn't a directory");
+      next();
+    });
+  });
+});
+
+// The following two tests modify internal data that is normally managed
+// by the fs module. They test if we're correctly performing the transition
+// from the old data format that didn't have stat.
+
+tests.push(function() {
+  fs.list("/", function(files) {
+    files.push("statDirWithoutStat");
+    asyncStorage.setItem("/", files, function() {
+      asyncStorage.setItem("/statDirWithoutStat", [], function() {
+        fs.stat("/statDirWithoutStat", function(stat) {
+          ok(stat.isDir, "/statDirWithoutStat is a directory");
+          next();
+        });
+      });
+    });
+  });
+});
+
+tests.push(function() {
+  fs.list("/statDirWithoutStat", function(files) {
+    files.push("fileWithoutStat");
+    asyncStorage.setItem("/statDirWithoutStat", files, function() {
+      asyncStorage.setItem("/statDirWithoutStat/fileWithoutStat", new Blob(), function() {
+        fs.stat("/statDirWithoutStat/fileWithoutStat", function(stat) {
+          ok(!stat.isDir, "/statDirWithoutStat/fileWithoutStat isn't a directory");
+          next();
+        });
+      });
+    });
+  });
+});
 
 asyncStorage.clear(function() {
   fs.init(function() {

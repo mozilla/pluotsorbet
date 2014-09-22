@@ -348,8 +348,8 @@ Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(c
 Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = function(ctx, stack) {
     var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
 
-    fs.list(path, function(files) {
-        stack.push(files ? 1 : 0);
+    fs.stat(path, function(stat) {
+        stack.push((stat && stat.isDir) ? 1 : 0);
         ctx.resume();
     });
 
