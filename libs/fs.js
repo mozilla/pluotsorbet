@@ -249,8 +249,9 @@ var fs = (function() {
         files.splice(index, 1);
         asyncStorage.setItem(dir, files, function() {
           asyncStorage.removeItem(path, function() {
-            removeStat(path);
-            cb(true);
+            removeStat(path, function() {
+              cb(true);
+            });
           });
         });
       });
@@ -389,8 +390,8 @@ var fs = (function() {
     asyncStorage.setItem("!" + path, stat, cb);
   }
 
-  function removeStat(path) {
-    asyncStorage.removeItem("!" + path);
+  function removeStat(path, cb) {
+    asyncStorage.removeItem("!" + path, cb);
   }
 
   function stat(path, cb) {
