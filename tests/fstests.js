@@ -43,6 +43,13 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  fs.stat("/", function(stat) {
+    ok(stat.isDir, "/ is a directory");
+    next();
+  });
+});
+
+tests.push(function() {
   fs.list("/", function(files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
