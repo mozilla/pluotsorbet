@@ -717,6 +717,24 @@ tests.push(function() {
   });
 })();
 
+tests.push(function() {
+  fs.mkdir("/statDir", function() {
+    fs.stat("/statDir", function(stat) {
+      ok(stat.isDir, "/statDir is a directory");
+      next();
+    });
+  });
+});
+
+tests.push(function() {
+  fs.create("/statDir/file", new Blob(), function() {
+    fs.stat("/statDir/file", function(stat) {
+      ok(!stat.isDir, "/statDir/file isn't a directory");
+      next();
+    });
+  });
+});
+
 asyncStorage.clear(function() {
   fs.init(function() {
     next();
