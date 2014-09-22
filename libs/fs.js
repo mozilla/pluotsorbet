@@ -80,7 +80,9 @@ var fs = (function() {
       if (data) {
         cb();
       } else {
-        asyncStorage.setItem("/", [], cb);
+        asyncStorage.setItem("/", [], function() {
+          setStat("/", { mtime: Date.now(), isDir: true }, cb);
+        });
       }
     });
   }
