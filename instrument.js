@@ -55,6 +55,18 @@ var Instrument = {
     }
   },
 
+  callPauseHooks: function(frame) {
+    if (frame.profileData) {
+      frame.profileData.callTime += Date.now() - frame.profileData.lastTime;
+    }
+  },
+
+  callResumeHooks: function(frame) {
+    if (frame.profileData) {
+      frame.profileData.lastTime = Date.now();
+    }
+  },
+
   reportProfile: function() {
     var methods = [];
 

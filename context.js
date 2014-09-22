@@ -118,6 +118,7 @@ Context.prototype.execute = function(stopFrame) {
       case VM.Yield:
         break;
       case VM.Pause:
+        Instrument.callPauseHooks(this.current());
         return;
       default:
         throw e;
@@ -141,6 +142,7 @@ Context.prototype.start = function(stopFrame) {
       case VM.Yield:
         break;
       case VM.Pause:
+        Instrument.callPauseHooks(ctx.current());
         return;
       default:
         console.info(e);
@@ -152,6 +154,7 @@ Context.prototype.start = function(stopFrame) {
 }
 
 Context.prototype.resume = function() {
+  Instrument.callResumeHooks(this.current());
   this.start(this.stopFrame);
 }
 
