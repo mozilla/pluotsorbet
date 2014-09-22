@@ -105,8 +105,11 @@ fs.init(function() {
   });
 });
 
+function getIsOff(button) {
+  return button.textContent.contains("OFF");
+}
 function toggle(button) {
-  var isOff = button.textContent.contains("OFF");
+  var isOff = getIsOff(button);
   button.textContent = button.textContent.replace(isOff ? "OFF" : "ON", isOff ? "ON" : "OFF");
 }
 
@@ -122,4 +125,19 @@ window.onload = function() {
    VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
    toggle(this);
  };
+ document.getElementById("profile").onclick = function() {
+   if (getIsOff(this)) {
+     Instrument.startProfile();
+   } else {
+     Instrument.stopProfile();
+   }
+   toggle(this);
+ };
+ if (Instrument.profiling) {
+   toggle(document.getElementById("profile"));
+ }
 };
+
+if (urlParams.profile && !/no|0/.test(urlParams.profile)) {
+  Instrument.startProfile();
+}
