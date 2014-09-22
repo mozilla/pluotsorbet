@@ -134,7 +134,7 @@ window.onload = function() {
    toggle(this);
  };
  if (Instrument.profiling) {
-  toggle(document.getElementById("profile"));
+   toggle(document.getElementById("profile"));
  }
 };
 
