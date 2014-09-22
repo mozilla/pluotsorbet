@@ -110,12 +110,16 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
 }
 
 Context.prototype.execute = function(stopFrame) {
+  Instrument.callResumeHooks(this.current());
   while (this.current() !== stopFrame) {
     try {
       VM.execute(this);
     } catch (e) {
       switch (e) {
       case VM.Yield:
+        // We don't call Instrument.callPauseHooks here because this branch
+        // doesn't actually yield the thread, it simply continues executing it.
+        // Is that a bug?
         break;
       case VM.Pause:
         Instrument.callPauseHooks(this.current());
@@ -132,6 +136,7 @@ Context.prototype.start = function(stopFrame) {
     this.kill();
     return;
   }
+  Instrument.callResumeHooks(this.current());
   var ctx = this;
   ctx.stopFrame = stopFrame;
   window.setZeroTimeout(function() {
@@ -140,6 +145,7 @@ Context.prototype.start = function(stopFrame) {
     } catch (e) {
       switch (e) {
       case VM.Yield:
+        Instrument.callPauseHooks(ctx.current());
         break;
       case VM.Pause:
         Instrument.callPauseHooks(ctx.current());
@@ -154,7 +160,6 @@ Context.prototype.start = function(stopFrame) {
 }
 
 Context.prototype.resume = function() {
-  Instrument.callResumeHooks(this.current());
   this.start(this.stopFrame);
 }
 
