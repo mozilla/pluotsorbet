@@ -42,7 +42,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     return;
   classInfo.thread = this.thread;
   var syntheticMethod = {
-    syntheticKey: "ClassInitSynthetic." + classInfo.className,
+    syntheticKey: "ClassInitSynthetic:" + classInfo.className,
     classInfo: {
       constant_pool: [
         null,
