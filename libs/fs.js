@@ -317,22 +317,19 @@ var fs = (function() {
 
       partPath += "/" + parts.shift();
 
-      exists(partPath, function(exists) {
-        if (exists) {
-          stat(partPath, function(stat) {
-            if (stat.isDir) {
-              // The part exists and is a directory; continue to next part.
-              mkpart(true);
-            }
-            else {
-              // The part exists but isn't a directory; fail.
-              console.error("mkdirp called on path with non-dir part: " + partPath);
-              cb(false);
-            }
-          });
-        } else {
+      stat(partPath, function(stat) {
+        if (!stat) {
           // The part doesn't exist; make it, then continue to next part.
           mkdir(partPath, mkpart);
+        }
+        else if (stat.isDir) {
+          // The part exists and is a directory; continue to next part.
+          mkpart(true);
+        }
+        else {
+          // The part exists but isn't a directory; fail.
+          console.error("mkdirp called on path with non-dir part: " + partPath);
+          cb(false);
         }
       });
     }
