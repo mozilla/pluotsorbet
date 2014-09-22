@@ -3,8 +3,10 @@
 
 <head>
   <meta charset="UTF-8">
-  <link rel="stylesheet" type="text/css" href="style.css">
-  <meta name="viewport" content="initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="style/style.css">
+  <link rel="stylesheet" type="text/css" href="style/confirm.css">
+
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
@@ -81,11 +83,6 @@
       <button id="printAllExceptions">Print all exceptions: OFF</button>
       <button id="profile">Profile: OFF</button>
     </section>
-    <section>
-      <input id="sms_text" type="text" placeholder="SMS text"></input>
-      <input id="sms_addr" type="text" placeholder="SMS phone number"></input>
-      <button id="sms_receive">Receive SMS</button>
-    </section>
   </div>
   <div id="display"><canvas id="canvas"></canvas></div>
   <div id="gamepad">
@@ -95,6 +92,21 @@
     <button id="right">right</button>
     <button id="fire">fire</button>
   </div>
+
+  <form role="dialog" data-type="confirm"
+        class="sms-listener-prompt"
+        id="sms-listener-prompt" style="display: none">
+    <section>
+      <h1>SMS Verification Requested</h1>
+      <p>This app sent you an SMS. Type the message you received here:
+        <input type="text" placeholder="Type SMS Here">
+    </section>
+    <menu>
+      <button class="cancel">Cancel</button>
+      <button class="recommend">Done</button>
+    </menu>
+  </form>
+
 </body>
 
 </html>

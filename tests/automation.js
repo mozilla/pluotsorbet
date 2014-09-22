@@ -59,17 +59,14 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader", function() {
         this.waitForText("START", function() {
-            this.waitForSelector("#sms_text", function() {
-                this.waitForSelector("#sms_addr", function() {
-                    this.waitForSelector("#sms_receive", function() {
-                        this.sendKeys("#sms_text", "Prova SMS", { reset: true });
-                        this.sendKeys("#sms_addr", "+77777777777", { reset: true });
-                        this.click("#sms_receive");
-
-                        this.waitForText("DONE", function() {
-                            test.assertTextDoesntExist("FAIL");
-                        });
-                    });
+            this.evaluate(function() {
+                promptForMessageText();
+            });
+            this.waitUntilVisible(".sms-listener-prompt", function() {
+                this.sendKeys(".sms-listener-prompt.visible input", "Prova SMS", { reset: true });
+                this.click(".sms-listener-prompt.visible button.recommend");
+                this.waitForText("DONE", function() {
+                    test.assertTextDoesntExist("FAIL");
                 });
             });
         });

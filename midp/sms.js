@@ -10,13 +10,11 @@ MIDP.j2meSMSMessages = [];
 MIDP.j2meSMSWaiting = null;
 MIDP.nokiaSMSMessages = [];
 
-document.getElementById("sms_receive").onclick = function() {
-    var text = document.getElementById("sms_text").value;
-    var addr = document.getElementById("sms_addr").value;
-
-    document.getElementById("sms_text").value = "SMS text";
-    document.getElementById("sms_addr").value = "SMS phone number";
-
+/**
+ * Simulate a received SMS with the given text, sent to the specified addr.
+ * (It appears the value of `addr` is unimportant for most apps.)
+ */
+function receiveSms(text, addr) {
     var sms = {
       text: text,
       addr: addr,
@@ -33,6 +31,43 @@ document.getElementById("sms_receive").onclick = function() {
     }
 }
 
+/**
+ * This app is listening for SMS messages; for most apps, that means
+ * they're looking for the content of a message the app's servers just
+ * sent. Prompt the user to enter that code here, and forward it to
+ * the app.
+ */
+function promptForMessageText() {
+    var el = document.getElementById('sms-listener-prompt').cloneNode(true);
+    el.style.display = 'block';
+    el.classList.add('visible');
+
+    var input = el.querySelector('input');
+    var btnCancel = el.querySelector('button.cancel');
+    var btnDone = el.querySelector('button.recommend');
+
+    btnDone.disabled = true; // Wait for input before enabling.
+    input.addEventListener('input', function() {
+       btnDone.disabled = (input.value.length === 0);
+    });
+
+    btnCancel.addEventListener('click', function() {
+       console.warn('SMS prompt canceled.');
+       el.parentElement.removeChild(el);
+    });
+
+    btnDone.addEventListener('click', function() {
+       el.parentElement.removeChild(el);
+       console.log('SMS prompt filled out:', input.value);
+       // We don't have easy access to our own phone number; use a
+       // dummy unknown value instead.
+       receiveSms(input.value, 'unknown');
+    });
+
+    document.body.appendChild(el);
+    input.focus();
+}
+
 Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(ctx, stack) {
     var port = stack.pop(), msid = stack.pop(), host = util.fromJavaString(stack.pop()), _this = stack.pop();
 
@@ -41,6 +76,8 @@ Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = func
       msid: msid,
       host: host,
     };
+
+    promptForMessageText();
 
     stack.push(++MIDP.lastSMSConnection);
 }
