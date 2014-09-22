@@ -18,6 +18,7 @@
  *    midletClassName
  *    network_mcc
  *    network_mnc
+ *    profile
  *    pushConn
  *    pushMidlet
  *    autosize

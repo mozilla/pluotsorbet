@@ -7,7 +7,8 @@ var Instrument = {
   enter: {},
   exit: {},
 
-  profile: {},
+  profiling: false,
+  profile: null,
 
   getKey: function(methodInfo) {
     return methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
@@ -19,28 +20,35 @@ var Instrument = {
       Instrument.enter[key](caller, callee);
     }
 
-    var now = Date.now();
+    if (this.profiling) {
+      var now = Date.now();
 
-    if (caller.profileData) {
-      caller.profileData.cost += now - caller.profileData.then;
+      if (caller.profileData) {
+        caller.profileData.cost += now - caller.profileData.then;
+      }
+
+      callee.profileData = {
+        cost: 0,
+        then: now,
+      };
     }
-
-    callee.profileData = {
-      cost: 0,
-      then: now,
-    };
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
     var key = this.getKey(methodInfo);
-    var now = Date.now();
 
-    callee.profileData.cost += now - callee.profileData.then;
-    var times = this.profile[key] || (this.profile[key] = []);
-    times.push(callee.profileData.cost);
+    if (this.profiling) {
+      var now = Date.now();
 
-    if (caller.profileData) {
-      caller.profileData.then = now;
+      if (callee.profileData) {
+        callee.profileData.cost += now - callee.profileData.then;
+        var times = this.profile[key] || (this.profile[key] = []);
+        times.push(callee.profileData.cost);
+      }
+
+      if (caller.profileData) {
+        caller.profileData.then = now;
+      }
     }
 
     if (Instrument.exit[key]) {
@@ -49,18 +57,23 @@ var Instrument = {
   },
 
   callPauseHooks: function(frame) {
-    if (frame.profileData) {
+    if (this.profiling && frame.profileData) {
       frame.profileData.cost += Date.now() - frame.profileData.then;
     }
   },
 
   callResumeHooks: function(frame) {
-    if (frame.profileData) {
+    if (this.profiling && frame.profileData) {
       frame.profileData.then = Date.now();
     }
   },
 
-  reportProfile: function() {
+  startProfile: function() {
+    this.profile = {};
+    this.profiling = true;
+  },
+
+  stopProfile: function() {
     var methods = [];
 
     for (var key in this.profile) {
@@ -74,10 +87,13 @@ var Instrument = {
 
     methods.sort(function(a, b) { return b.time - a.time });
 
+    console.log("Profile:");
     methods.forEach(function(method) {
       console.log(method.time + " " + method.count + " " + method.key);
     });
-  }
+
+    this.profiling = false;
+  },
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.<init>.(Ljava/lang/String;ILjava/io/InputStream;Ljava/io/OutputStream;Lcom/sun/midp/pki/CertStore;)V"] = function(caller, callee) {
