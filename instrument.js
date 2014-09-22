@@ -22,7 +22,7 @@ var Instrument = {
     }
 
     if (this.profiling) {
-      var now = Date.now();
+      var now = performance.now();
 
       if (caller.profileData) {
         caller.profileData.cost += now - caller.profileData.then;
@@ -39,7 +39,7 @@ var Instrument = {
     var key = this.getKey(methodInfo);
 
     if (this.profiling) {
-      var now = Date.now();
+      var now = performance.now();
 
       if (callee.profileData) {
         callee.profileData.cost += now - callee.profileData.then;
@@ -59,13 +59,13 @@ var Instrument = {
 
   callPauseHooks: function(frame) {
     if (this.profiling && frame.profileData) {
-      frame.profileData.cost += Date.now() - frame.profileData.then;
+      frame.profileData.cost += performance.now() - frame.profileData.then;
     }
   },
 
   callResumeHooks: function(frame) {
     if (this.profiling && frame.profileData) {
-      frame.profileData.then = Date.now();
+      frame.profileData.then = performance.now();
     }
   },
 
@@ -90,7 +90,7 @@ var Instrument = {
 
     console.log("Profile:");
     methods.forEach(function(method) {
-      console.log(method.time + "ms " + method.count + " " + method.key);
+      console.log(Math.round(method.time) + "ms " + method.count + " " + method.key);
     });
 
     this.profiling = false;
