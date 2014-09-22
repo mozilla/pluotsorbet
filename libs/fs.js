@@ -393,7 +393,31 @@ var fs = (function() {
 
   function stat(path, cb) {
     path = normalizePath(path);
-    asyncStorage.getItem("!" + path, cb);
+    asyncStorage.getItem("!" + path, function(statData) {
+      if (statData) {
+        cb(statData);
+        return;
+      }
+
+      // This transitioning code is expensive, we should get rid of it after
+      // a while.
+      statData = { mtime: Date.now() };
+
+      asyncStorage.getItem(path, function(data) {
+        if (!data) {
+          cb(null);
+          return;
+        } else if (data instanceof Blob) {
+          statData.isDir = false;
+        } else {
+          statData.isDir = true;
+        }
+
+        setStat(path, statData, function() {
+          cb(statData);
+        });
+      });
+    });
   }
 
   return {
