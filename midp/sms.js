@@ -40,6 +40,7 @@ function receiveSms(text, addr) {
 function promptForMessageText() {
     var el = document.getElementById('sms-listener-prompt').cloneNode(true);
     el.style.display = 'block';
+    el.classList.add('visible');
 
     var input = el.querySelector('input');
     var btnCancel = el.querySelector('button.cancel');

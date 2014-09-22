@@ -21,7 +21,7 @@ class J2MEAPIClass implements Runnable {
                 System.out.println("FAIL - Wrong SMS text: " + message.getPayloadText());
             }
 
-            if (!message.getAddress().equals("sms://+77777777777:5000")) {
+            if (!message.getAddress().equals("sms://unknown:5000")) {
                 System.out.println("FAIL - Wrong SMS address: " + message.getAddress());
             }
         } catch (Exception e) {
