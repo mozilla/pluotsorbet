@@ -90,7 +90,7 @@ var Instrument = {
 
     console.log("Profile:");
     methods.forEach(function(method) {
-      console.log(method.time + " " + method.count + " " + method.key);
+      console.log(method.time + "ms " + method.count + " " + method.key);
     });
 
     this.profiling = false;
