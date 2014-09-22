@@ -385,17 +385,40 @@ Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(
         files = files.filter(regexp.test.bind(regexp));
 
         var filesArray = ctx.newArray("[[B", files.length);
-        for (var i = 0; i < files.length; i++) {
-            var bytesFile = new TextEncoder("utf-8").encode(files[i]);
 
-            var fileArray = ctx.newPrimitiveArray("B", bytesFile.byteLength);
-            fileArray.set(bytesFile);
+        var added = 0;
 
-            filesArray[i] = fileArray;
+        function checkDone() {
+            if (added === files.length) {
+                stack.push(filesArray);
+                ctx.resume();
+
+                return true;
+            }
+
+            return false;
         }
 
-        stack.push(filesArray);
-        ctx.resume();
+        if (checkDone()) {
+            return;
+        }
+
+        files.forEach(function(file) {
+          fs.stat(path + "/" + file, function(stat) {
+              if (stat.isDir) {
+                  file += "/";
+              }
+
+              var bytesFile = new TextEncoder("utf-8").encode(file);
+
+              var fileArray = ctx.newPrimitiveArray("B", bytesFile.byteLength);
+              fileArray.set(bytesFile);
+
+              filesArray[added++] = fileArray;
+
+              checkDone();
+          });
+        });
     });
 
     throw VM.Pause;
