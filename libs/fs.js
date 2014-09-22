@@ -158,7 +158,7 @@ var fs = (function() {
 
     openedFiles[fd].position = from + data.byteLength;
 
-    setStat(openedFiles[fd].path, { mtime: Date.now() });
+    setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
   }
 
   function getpos(fd) {
@@ -214,7 +214,7 @@ var fs = (function() {
         cb(false);
       } else {
         asyncStorage.setItem(path, new Blob(), function() {
-          setStat(path, { mtime: Date.now() });
+          setStat(path, { mtime: Date.now(), isDir: false });
           cb(true);
         });
       }
@@ -224,7 +224,7 @@ var fs = (function() {
   function ftruncate(fd, size) {
     if (size != openedFiles[fd].buffer.contentSize) {
       openedFiles[fd].buffer.setSize(size);
-      setStat(openedFiles[fd].path, { mtime: Date.now() });
+      setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
     }
   }
 
@@ -274,7 +274,6 @@ var fs = (function() {
       files.push(name);
       asyncStorage.setItem(dir, files, function() {
         asyncStorage.setItem(path, data, function() {
-          setStat(path, { mtime: Date.now() });
           cb(true);
         });
       });
@@ -282,11 +281,19 @@ var fs = (function() {
   }
 
   function create(path, blob, cb) {
-    createInternal(path, blob, cb);
+    createInternal(path, blob, function(created) {
+      setStat(path, { mtime: Date.now(), isDir: false}, function() {
+        cb(created);
+      });
+    });
   }
 
   function mkdir(path, cb) {
-    createInternal(path, [], cb);
+    createInternal(path, [], function(created) {
+      setStat(path, { mtime: Date.now(), isDir: true }, function() {
+        cb(created);
+      });
+    });
   }
 
   function mkdirp(path, cb) {
@@ -380,8 +387,8 @@ var fs = (function() {
     });
   }
 
-  function setStat(path, stat) {
-    asyncStorage.setItem("!" + path, stat);
+  function setStat(path, stat, cb) {
+    asyncStorage.setItem("!" + path, stat, cb);
   }
 
   function removeStat(path) {
