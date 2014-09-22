@@ -281,7 +281,7 @@ var fs = (function() {
 
   function create(path, blob, cb) {
     createInternal(path, blob, function(created) {
-      setStat(path, { mtime: Date.now(), isDir: false}, function() {
+      setStat(path, { mtime: Date.now(), isDir: false }, function() {
         cb(created);
       });
     });
