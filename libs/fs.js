@@ -199,12 +199,8 @@ var fs = (function() {
   function exists(path, cb) {
     path = normalizePath(path);
 
-    asyncStorage.getItem(path, function(data) {
-      if (data == null) {
-        cb(false);
-      } else {
-        cb(true);
-      }
+    stat(path, function(stat) {
+      cb(stat ? true : false);
     });
   }
 
