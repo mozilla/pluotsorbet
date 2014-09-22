@@ -10,16 +10,10 @@ MIDP.j2meSMSMessages = [];
 MIDP.j2meSMSWaiting = null;
 MIDP.nokiaSMSMessages = [];
 
-document.getElementById("sms_receive").onclick = function() {
-    var text = document.getElementById("sms_text").value;
-    var addr = document.getElementById("sms_addr").value;
-
-    document.getElementById("sms_text").value = "SMS text";
-    document.getElementById("sms_addr").value = "SMS phone number";
-
-    receiveSms(text, addr);
-}
-
+/**
+ * Simulate a received SMS with the given text, sent to the specified addr.
+ * (It appears the value of `addr` is unimportant for most apps.)
+ */
 function receiveSms(text, addr) {
     var sms = {
       text: text,
@@ -64,7 +58,9 @@ function promptForMessageText() {
     btnDone.addEventListener('click', function() {
        el.parentElement.removeChild(el);
        console.log('SMS prompt filled out:', input.value);
-       receiveSms(input.value, 'unknown'); // XXX: We don't know who sent it...
+       // We don't have easy access to our own phone number; use a
+       // dummy unknown value instead.
+       receiveSms(input.value, 'unknown');
     });
 
     document.body.appendChild(el);
