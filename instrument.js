@@ -25,8 +25,8 @@ var Instrument = {
       var now = performance.now();
 
       if (caller.profileData && caller.profileData.then) {
-          caller.profileData.cost += now - caller.profileData.then;
-          caller.profileData.then = null;
+        caller.profileData.cost += now - caller.profileData.then;
+        caller.profileData.then = null;
       }
 
       callee.profileData = {
