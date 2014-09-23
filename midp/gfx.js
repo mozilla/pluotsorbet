@@ -219,7 +219,7 @@
         var ctx = createContext2d(width, height);
         setImageData(imageData, width, height, ctx);
 
-        var ctxImageData = ctx.createImageData(width, height)
+        var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Uint32Array(ctxImageData.data.buffer);
 
         var color = swapRB(argb);
