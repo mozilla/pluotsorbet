@@ -37,47 +37,48 @@ if (urlParams.pushConn && urlParams.pushMidlet) {
   });
 }
 
-var nodes = new Set();
+var initSteps = new Set();
 
-function executeNextBatch(completedNode) {
-  nodes.delete(completedNode);
+function executeNextBatch(completedStep) {
+  initSteps.delete(completedStep);
 
-  nodes.forEach(function(node) {
-    if (node.parents.size === 0) {
-      node.execute();
-    } else if (node.parents.has(completedNode)) {
-      node.parentDone(completedNode);
-    }
+  initSteps.forEach(function(initStep) {
+    initStep.dependencyResolved(completedStep)
   });
 }
 
-var InitNode = function(func, parents) {
+var InitStep = function(func, deps) {
   this.func = func;
-  this.parents = parents;
-  this.parentsDone = 0;
+  this.deps = deps;
+  this.depsResolved = 0;
 
-  nodes.add(this);
+  initSteps.add(this);
 }
 
-InitNode.prototype.execute = function() {
+InitStep.prototype.execute = function() {
   this.func(executeNextBatch.bind(null, this));
 }
 
-InitNode.prototype.parentDone = function(parent) {
-  if (++this.parentsDone === this.parents.size) {
+InitStep.prototype.addDependency = function(dependency) {
+  this.deps.add(dependency)
+}
+
+InitStep.prototype.dependencyResolved = function(dependency) {
+  if (this.deps.size === 0 ||
+      (this.deps.has(dependency) && ++this.depsResolved === this.deps.size)) {
     this.execute();
   }
 }
 
-var initFS = new InitNode(function(callback) {
+var initFS = new InitStep(function(callback) {
   fs.init(callback);
 }, new Set());
 
-var mkdirPersistent = new InitNode(function(callback) {
+var mkdirPersistent = new InitStep(function(callback) {
   fs.mkdir("/Persistent", callback);
 }, new Set([ initFS ]));
 
-var createKeystore = new InitNode(function(callback) {
+var createKeystore = new InitStep(function(callback) {
   fs.exists("/_main.ks", function(exists) {
     if (exists) {
       callback();
@@ -91,13 +92,13 @@ var createKeystore = new InitNode(function(callback) {
   });
 }, new Set([ initFS ]));
 
-var startJVM = new InitNode(function(callback) {
+var startJVM = new InitStep(function(callback) {
   jvm.initializeBuiltinClasses();
   jvm.startIsolate0(main, urlParams.args);
 }, new Set([ mkdirPersistent, createKeystore ]));
 
 jars.forEach(function(jar) {
-  startJVM.parents.add(new InitNode(function(callback) {
+  startJVM.addDependency(new InitStep(function(callback) {
     load(jar, "arraybuffer", function(data) {
       jvm.addPath(jar, data);
       callback();
@@ -106,7 +107,7 @@ jars.forEach(function(jar) {
 });
 
 if (MIDP.midletClassName == "RunTests") {
-  startJVM.parents.add(new InitNode(function(callback) {
+  startJVM.addDependency(new InitStep(function(callback) {
     var element = document.createElement('script');
     element.setAttribute("type", "text/javascript");
     element.setAttribute("src", "tests/native.js");
@@ -122,7 +123,7 @@ if (MIDP.midletClassName == "RunTests") {
 }
 
 if (urlParams.jad) {
-  startJVM.parents.add(new InitNode(function(callback) {
+  startJVM.addDependency(new InitStep(function(callback) {
     load(urlParams.jad, "text", function(data) {
       data
       .replace(/\r\n|\r/g, "\n")
