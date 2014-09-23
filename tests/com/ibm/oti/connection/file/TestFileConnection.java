@@ -4,6 +4,7 @@ import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.Hashtable;
 import java.io.*;
 
 import gnu.testlet.TestHarness;
@@ -30,32 +31,50 @@ public class TestFileConnection implements Testlet {
             file.create();
         }
 
+        Hashtable expected = new Hashtable();
+
         Enumeration files = dir.list("*.doc", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "prova1.doc");
-        th.check(files.nextElement(), "prova2.doc");
-        th.check(files.nextElement(), "prova3.doc");
-        th.check(!files.hasMoreElements(), "Only 3 elements found");
+        expected.put("prova1.doc", "");
+        expected.put("prova2.doc", "");
+        expected.put("prova3.doc", "");
+        while (files.hasMoreElements()) {
+            String file = (String)files.nextElement();
+            th.check(expected.remove(file) != null);
+        }
+        th.check(expected.isEmpty(), "Only 3 elements found");
 
         files = dir.list("marco_*.res", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "marco_it.res");
-        th.check(files.nextElement(), "marco_en.res");
-        th.check(!files.hasMoreElements(), "Only 2 elements found");
+        expected.put("marco_it.res", "");
+        expected.put("marco_en.res", "");
+        while (files.hasMoreElements()) {
+            String file = (String)files.nextElement();
+            th.check(expected.remove(file) != null);
+        }
+        th.check(expected.isEmpty(), "Only 2 elements found");
 
         files = dir.list("m*.re*", false);
         th.check(files.hasMoreElements(), "Elements found");
-        th.check(files.nextElement(), "marco_it.res");
-        th.check(files.nextElement(), "marco_en.res");
-        th.check(!files.hasMoreElements(), "Only 2 elements found");
+        expected.put("marco_it.res", "");
+        expected.put("marco_en.res", "");
+        while (files.hasMoreElements()) {
+            String file = (String)files.nextElement();
+            th.check(expected.remove(file) != null);
+        }
+        th.check(expected.isEmpty(), "Only 2 elements found");
 
         files = dir.list("*.js", false);
         th.check(!files.hasMoreElements(), "No elements found");
 
         files = dir.list("sub*", false);
-        th.check(files.hasMoreElements(), "Element found");
-        th.check(files.nextElement(), "subDir/");
-        th.check(!files.hasMoreElements(), "Only 1 elements found");
+        th.check(files.hasMoreElements(), "Elements found");
+        expected.put("subDir/", "");
+        while (files.hasMoreElements()) {
+            String file = (String)files.nextElement();
+            th.check(expected.remove(file) != null);
+        }
+        th.check(expected.isEmpty(), "Only 1 element found");
 
         for (int i = 0; i < provaDirFiles.size(); i++) {
             FileConnection file = (FileConnection)provaDirFiles.elementAt(i);
