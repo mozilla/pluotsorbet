@@ -202,13 +202,36 @@
         contextToRgbData(convertNativeImageData(_this), rgbData, offset, scanlength, x, y, width, height, swapRB);
     }
 
-    Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Image;"] = function(ctx, stack) {
+    Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(ctx, stack) {
         var image = stack.pop();
 
         var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
         imageData.class.getField("isMutable", "Z").set(imageData, 1);
+    }
 
-        stack.push(image);
+    Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(ctx, stack) {
+        var argb = stack.pop(), image = stack.pop();
+
+        var width = image.class.getField("width", "I").get(image);
+        var height = image.class.getField("height", "I").get(image);
+        var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
+
+        var ctx = createContext2d(width, height);
+        setImageData(imageData, width, height, ctx);
+
+        var ctxImageData = ctx.createImageData(width, height)
+        var pixels = new Uint32Array(ctxImageData.data.buffer);
+
+        var color = swapRB(argb);
+
+        var i = 0;
+        for (var y = 0; y < height; ++y) {
+            for (var x = 0; x < width; ++x) {
+                pixels[i++] = color;
+            }
+        }
+
+        ctx.putImageData(ctxImageData, 0, 0);
     }
 
     var FACE_SYSTEM = 0;
