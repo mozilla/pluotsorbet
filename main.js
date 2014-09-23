@@ -3,19 +3,6 @@
 
 'use strict';
 
-function parseManifest(data) {
-  data
-  .replace(/\r\n|\r/g, "\n")
-  .replace(/\n /g, "")
-  .split("\n")
-  .forEach(function(entry) {
-    if (entry) {
-      var keyval = entry.split(':');
-      MIDP.manifest[keyval[0]] = keyval[1].trim();
-    }
-  });
-}
-
 function load(file, responseType, cb) {
   var xhr = new XMLHttpRequest();
   xhr.open("GET", file, true);
@@ -26,84 +13,134 @@ function load(file, responseType, cb) {
   xhr.send(null);
 }
 
-function run(className, args) {
-  if (urlParams.pushConn && urlParams.pushMidlet) {
-    MIDP.pushRegistrations.push({
-      connection: urlParams.pushConn,
-      midlet: urlParams.pushMidlet,
-      filter: "*",
-      suiteId: "1",
-      id: ++MIDP.lastRegistrationId,
-    });
-  }
-
-  function startJVM() {
-    var jvm = new JVM();
-
-    var jars = ["java/classes.jar", "tests/tests.jar"];
-    if (urlParams.jars)
-      jars = jars.concat(urlParams.jars.split(":"));
-
-    (function loadNextJar() {
-      if (jars.length) {
-        var jar = jars.shift();
-        load(jar, "arraybuffer", function (data) {
-          jvm.addPath(jar, data);
-          loadNextJar();
-        });
-      } else {
-        jvm.initializeBuiltinClasses();
-        if (urlParams.jad) {
-          load(urlParams.jad, "text", function(data) {
-            parseManifest(data);
-            jvm.startIsolate0(className, args);
-          });
-        } else {
-          jvm.startIsolate0(className, args);
-        }
-      }
-    })();
-  }
-
-  fs.exists("/_main.ks", function(exists) {
-    if (exists) {
-      startJVM();
-    } else {
-      load("certs/_main.ks", "blob", function(data) {
-        fs.create("/_main.ks", data, function() {
-          startJVM();
-        });
-      });
-    }
-  });
-}
-
 // To launch the unit tests: ?main=RunTests
 // To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
 
-fs.init(function() {
-  fs.mkdir("/Persistent", function() {
-    var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
-    MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
+var jvm = new JVM();
 
-    if (MIDP.midletClassName == "RunTests") {
-      var element = document.createElement('script');
-      element.setAttribute("type", "text/javascript");
-      element.setAttribute("src", "tests/native.js");
-      document.getElementsByTagName("head")[0].appendChild(element);
+var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
+MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
 
-      var testContactsScript = document.createElement('script');
-      testContactsScript.setAttribute("type", "text/javascript");
-      testContactsScript.setAttribute("src", "tests/contacts.js");
-      document.getElementsByTagName("head")[0].appendChild(testContactsScript);
+var jars = ["java/classes.jar", "tests/tests.jar"];
+if (urlParams.jars) {
+  jars = jars.concat(urlParams.jars.split(":"));
+}
 
-      testContactsScript.onload = run.bind(null, main, urlParams.args);
-    } else {
-      run(main, urlParams.args);
+if (urlParams.pushConn && urlParams.pushMidlet) {
+  MIDP.pushRegistrations.push({
+    connection: urlParams.pushConn,
+    midlet: urlParams.pushMidlet,
+    filter: "*",
+    suiteId: "1",
+    id: ++MIDP.lastRegistrationId,
+  });
+}
+
+var nodes = new Set();
+
+function executeNextBatch(completedNode) {
+  nodes.delete(completedNode);
+
+  nodes.forEach(function(node) {
+    if (node.parents.size === 0) {
+      node.execute();
+    } else if (node.parents.has(completedNode)) {
+      node.parentDone(completedNode);
     }
   });
+}
+
+var InitNode = function(func, parents) {
+  this.func = func;
+  this.parents = parents;
+  this.parentsDone = 0;
+
+  nodes.add(this);
+}
+
+InitNode.prototype.execute = function() {
+  this.func(executeNextBatch.bind(null, this));
+}
+
+InitNode.prototype.parentDone = function(parent) {
+  if (++this.parentsDone === this.parents.size) {
+    this.execute();
+  }
+}
+
+var initFS = new InitNode(function(callback) {
+  fs.init(callback);
+}, new Set());
+
+var mkdirPersistent = new InitNode(function(callback) {
+  fs.mkdir("/Persistent", callback);
+}, new Set([ initFS ]));
+
+var createKeystore = new InitNode(function(callback) {
+  fs.exists("/_main.ks", function(exists) {
+    if (exists) {
+      callback();
+    } else {
+      load("certs/_main.ks", "blob", function(data) {
+        fs.create("/_main.ks", data, function() {
+          callback();
+        });
+      });
+    }
+  });
+}, new Set([ initFS ]));
+
+var startJVM = new InitNode(function(callback) {
+  jvm.initializeBuiltinClasses();
+  jvm.startIsolate0(main, urlParams.args);
+}, new Set([ mkdirPersistent, createKeystore ]));
+
+jars.forEach(function(jar) {
+  startJVM.parents.add(new InitNode(function(callback) {
+    load(jar, "arraybuffer", function(data) {
+      jvm.addPath(jar, data);
+      callback();
+    });
+  }, new Set()));
 });
+
+if (MIDP.midletClassName == "RunTests") {
+  startJVM.parents.add(new InitNode(function(callback) {
+    var element = document.createElement('script');
+    element.setAttribute("type", "text/javascript");
+    element.setAttribute("src", "tests/native.js");
+    document.getElementsByTagName("head")[0].appendChild(element);
+
+    var testContactsScript = document.createElement('script');
+    testContactsScript.setAttribute("type", "text/javascript");
+    testContactsScript.setAttribute("src", "tests/contacts.js");
+    document.getElementsByTagName("head")[0].appendChild(testContactsScript);
+
+    testContactsScript.onload = callback;
+  }, new Set()));
+}
+
+if (urlParams.jad) {
+  startJVM.parents.add(new InitNode(function(callback) {
+    load(urlParams.jad, "text", function(data) {
+      data
+      .replace(/\r\n|\r/g, "\n")
+      .replace(/\n /g, "")
+      .split("\n")
+      .forEach(function(entry) {
+        if (entry) {
+          var keyval = entry.split(':');
+          MIDP.manifest[keyval[0]] = keyval[1].trim();
+        }
+      });
+
+      callback();
+    });
+  }, new Set()));
+}
+
+executeNextBatch();
 
 function getIsOff(button) {
   return button.textContent.contains("OFF");
