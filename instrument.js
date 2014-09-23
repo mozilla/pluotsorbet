@@ -24,8 +24,9 @@ var Instrument = {
     if (this.profiling) {
       var now = performance.now();
 
-      if (caller.profileData) {
-        caller.profileData.cost += now - caller.profileData.then;
+      if (caller.profileData && caller.profileData.then) {
+          caller.profileData.cost += now - caller.profileData.then;
+          caller.profileData.then = null;
       }
 
       callee.profileData = {
@@ -42,7 +43,11 @@ var Instrument = {
       var now = performance.now();
 
       if (callee.profileData) {
-        callee.profileData.cost += now - callee.profileData.then;
+        if (callee.profileData.then) {
+          callee.profileData.cost += now - callee.profileData.then;
+          callee.profileData.then = null;
+        }
+
         var methodProfileData = this.profile[key] || (this.profile[key] = { count: 0, cost: 0 });
         methodProfileData.count++;
         methodProfileData.cost += callee.profileData.cost;
@@ -59,8 +64,9 @@ var Instrument = {
   },
 
   callPauseHooks: function(frame) {
-    if (this.profiling && frame.profileData) {
-      frame.profileData.cost += performance.now() - frame.profileData.then;
+    if (this.profiling && frame.profileData && frame.profileData.then) {
+        frame.profileData.cost += performance.now() - frame.profileData.then;
+        frame.profileData.then = null;
     }
   },
 
