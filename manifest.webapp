@@ -18,6 +18,9 @@
     "contacts": {
       "description": "Required to manage contacts",
       "access": "readonly"
+    },
+    "mobilenetwork": {
+      "description:": "Required to verify your phone number"
     }
   },
   "type": "privileged"
