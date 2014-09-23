@@ -54,7 +54,7 @@ public class TestFileConnection implements Testlet {
 
         files = dir.list("sub*", false);
         th.check(files.hasMoreElements(), "Element found");
-        th.todo(files.nextElement(), "subDir/");
+        th.check(files.nextElement(), "subDir/");
         th.check(!files.hasMoreElements(), "Only 1 elements found");
 
         for (int i = 0; i < provaDirFiles.size(); i++) {
