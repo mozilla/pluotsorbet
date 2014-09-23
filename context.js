@@ -119,8 +119,7 @@ Context.prototype.execute = function(stopFrame) {
     } catch (e) {
       switch (e) {
       case VM.Yield:
-        // We don't call Instrument.callPauseHooks here because this branch
-        // doesn't actually yield the thread, it continues executing it.
+        // Ignore the yield and continue executing instructions on this thread.
         break;
       case VM.Pause:
         Instrument.callPauseHooks(this.current());
@@ -137,16 +136,15 @@ Context.prototype.start = function(stopFrame) {
     this.kill();
     return;
   }
-  Instrument.callResumeHooks(this.current());
   var ctx = this;
   ctx.stopFrame = stopFrame;
   window.setZeroTimeout(function() {
+    Instrument.callResumeHooks(ctx.current());
     try {
       VM.execute(ctx);
     } catch (e) {
       switch (e) {
       case VM.Yield:
-        Instrument.callPauseHooks(ctx.current());
         break;
       case VM.Pause:
         Instrument.callPauseHooks(ctx.current());
@@ -156,6 +154,7 @@ Context.prototype.start = function(stopFrame) {
         throw e;
       }
     }
+    Instrument.callPauseHooks(ctx.current());
     ctx.start(stopFrame);
   });
 }
