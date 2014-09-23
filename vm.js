@@ -1048,8 +1048,11 @@ VM.execute = function(ctx) {
 
             if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
                 try {
+                    Instrument.callPauseHooks(ctx.current());
                     Native.invoke(ctx, methodInfo);
+                    Instrument.callResumeHooks(ctx.current());
                 } catch (e) {
+                    Instrument.callResumeHooks(ctx.current());
                     if (!e.class) {
                         throw e;
                     }
