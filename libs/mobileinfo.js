@@ -27,13 +27,17 @@ var mobileInfo = (function() {
   // If we have access to the Mobile Connection API, then we use it to get
   // the actual values.
   if (mobileConnections) {
-    var networkInfo = mobileConnections[0].voice.network;
+    // Then the only part of the Mobile Connection API that is accessible
+    // to privileged apps is lastKnownNetwork and lastKnownHomeNetwork, which
+    // is fortunately all we need.  lastKnownNetwork is a string of format
+    // "<mcc>-<mnc>", while lastKnownHomeNetwork is "<mcc>-<mnc>[-<spn>]".
+    var lastKnownNetwork = mobileConnections[0].lastKnownNetwork.split("-");
+    mobileInfo.network.mcc = lastKnownNetwork[0];
+    mobileInfo.network.mnc = lastKnownNetwork[1];
 
-    mobileInfo.network.mcc = networkInfo.mcc.toString();
-    mobileInfo.network.mnc = networkInfo.mnc.toString();
-
-    // XXX If we're a certified app, then get the ICC (i.e. SIM) values too
-    // from mobileConnections[0].iccInfo.
+    var lastKnownHomeNetwork = mobileConnections[0].lastKnownHomeNetwork.split("-");
+    mobileInfo.icc.mcc = lastKnownHomeNetwork[0];
+    mobileInfo.icc.mnc = lastKnownHomeNetwork[1];
   }
 
   return mobileInfo;
