@@ -1350,10 +1350,11 @@ VM.execute = function(ctx) {
                 VM.trace("invoke", ctx.thread.pid, methodInfo);
             }
 
-            if (ACCESS_FLAGS.isNative(methodInfo.access_flags)) {
+            var Alt = ACCESS_FLAGS.isNative(methodInfo.access_flags) ? Native : Override.hasMethod(methodInfo) ? Override : null;
+            if (Alt) {
                 try {
                     Instrument.callPauseHooks(ctx.current());
-                    Native.invoke(ctx, methodInfo);
+                    Alt.invoke(ctx, methodInfo);
                     Instrument.callResumeHooks(ctx.current());
                 } catch (e) {
                     Instrument.callResumeHooks(ctx.current());

@@ -108,17 +108,19 @@ jars.forEach(function(jar) {
 
 if (MIDP.midletClassName == "RunTests") {
   startJVM.addDependency(new InitStep(function(callback) {
-    var element = document.createElement('script');
-    element.setAttribute("type", "text/javascript");
-    element.setAttribute("src", "tests/native.js");
-    document.getElementsByTagName("head")[0].appendChild(element);
+    function loadScript(path, loadCallback) {
+      var element = document.createElement('script');
+      element.setAttribute("type", "text/javascript");
+      element.setAttribute("src", path);
+      document.getElementsByTagName("head")[0].appendChild(element);
+      if (loadCallback) {
+        element.onload = loadCallback;
+      }
+    }
 
-    var testContactsScript = document.createElement('script');
-    testContactsScript.setAttribute("type", "text/javascript");
-    testContactsScript.setAttribute("src", "tests/contacts.js");
-    document.getElementsByTagName("head")[0].appendChild(testContactsScript);
-
-    testContactsScript.onload = callback;
+    loadScript("tests/native.js");
+    loadScript("tests/contacts.js");
+    loadScript("tests/override.js", callback);
   }, new Set()));
 }
 
