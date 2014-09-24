@@ -1343,24 +1343,18 @@ VM.execute = function(ctx) {
       0xb6: function() {
         var startip = frame.ip - 1;
         var idx = frame.read16();
-        var isStatic = false;
         var methodInfo = cp[idx];
         if (methodInfo.tag) {
             methodInfo = resolve(0xb6, idx);
-            if (isStatic)
-                classInitCheck(methodInfo.classInfo, startip);
         }
-        var consumes = Signature.getINSlots(methodInfo.signature);
-        if (!isStatic) {
-            ++consumes;
-            var obj = stack[stack.length - consumes];
-            if (!obj) {
-                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-                return;
-            }
-            if (methodInfo.classInfo != obj.class)
-                methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, false, true);
+        var consumes = Signature.getINSlots(methodInfo.signature) + 1;
+        var obj = stack[stack.length - consumes];
+        if (!obj) {
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+            return;
         }
+        if (methodInfo.classInfo != obj.class)
+            methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, false, true);
 
         if (VM.DEBUG) {
             VM.trace("invoke", ctx.thread.pid, methodInfo);
@@ -1387,21 +1381,15 @@ VM.execute = function(ctx) {
       0xb7: function() {
         var startip = frame.ip - 1;
         var idx = frame.read16();
-        var isStatic = false;
         var methodInfo = cp[idx];
         if (methodInfo.tag) {
             methodInfo = resolve(0xb7, idx);
-            if (isStatic)
-                classInitCheck(methodInfo.classInfo, startip);
         }
-        var consumes = Signature.getINSlots(methodInfo.signature);
-        if (!isStatic) {
-            ++consumes;
-            var obj = stack[stack.length - consumes];
-            if (!obj) {
-                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-                return;
-            }
+        var consumes = Signature.getINSlots(methodInfo.signature) + 1;
+        var obj = stack[stack.length - consumes];
+        if (!obj) {
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+            return;
         }
 
         if (VM.DEBUG) {
@@ -1429,22 +1417,12 @@ VM.execute = function(ctx) {
       0xb8: function() {
         var startip = frame.ip - 1;
         var idx = frame.read16();
-        var isStatic = true;
         var methodInfo = cp[idx];
         if (methodInfo.tag) {
             methodInfo = resolve(0xb8, idx);
-            if (isStatic)
-                classInitCheck(methodInfo.classInfo, startip);
+            classInitCheck(methodInfo.classInfo, startip);
         }
         var consumes = Signature.getINSlots(methodInfo.signature);
-        if (!isStatic) {
-            ++consumes;
-            var obj = stack[stack.length - consumes];
-            if (!obj) {
-                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-                return;
-            }
-        }
 
         if (VM.DEBUG) {
             VM.trace("invoke", ctx.thread.pid, methodInfo);
@@ -1473,24 +1451,18 @@ VM.execute = function(ctx) {
         var idx = frame.read16();
         var argsNumber = frame.read8();
         var zero = frame.read8();
-        var isStatic = false;
         var methodInfo = cp[idx];
         if (methodInfo.tag) {
             methodInfo = resolve(0xb9, idx);
-            if (isStatic)
-                classInitCheck(methodInfo.classInfo, startip);
         }
-        var consumes = Signature.getINSlots(methodInfo.signature);
-        if (!isStatic) {
-            ++consumes;
-            var obj = stack[stack.length - consumes];
-            if (!obj) {
-                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-                return;
-            }
-            if (methodInfo.classInfo != obj.class)
-                methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, false, true);
+        var consumes = Signature.getINSlots(methodInfo.signature) + 1;
+        var obj = stack[stack.length - consumes];
+        if (!obj) {
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+            return;
         }
+        if (methodInfo.classInfo != obj.class)
+            methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, false, true);
 
         if (VM.DEBUG) {
             VM.trace("invoke", ctx.thread.pid, methodInfo);
