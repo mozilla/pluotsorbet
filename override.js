@@ -14,13 +14,13 @@ Override.hasMethod = function(methodInfo) {
 }
 
 Override.invoke = function(ctx, methodInfo) {
+  if (!methodInfo.override) {
+    var key = Override.getKey(methodInfo);
+    methodInfo.override = Override[key];
     if (!methodInfo.override) {
-        var key = Override.getKey(methodInfo);
-        methodInfo.override = Override[key];
-        if (!methodInfo.override) {
-            console.error("Missing override: " + key);
-            ctx.raiseExceptionAndYield("java/lang/RuntimeException", key + " not found");
-        }
+      console.error("Missing override: " + key);
+      ctx.raiseExceptionAndYield("java/lang/RuntimeException", key + " not found");
     }
-    methodInfo.override.call(null, ctx, ctx.current().stack);
+  }
+  methodInfo.override.call(null, ctx, ctx.current().stack);
 }
