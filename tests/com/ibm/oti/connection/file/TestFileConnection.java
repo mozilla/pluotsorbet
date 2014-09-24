@@ -321,6 +321,14 @@ public class TestFileConnection implements Testlet {
             th.check(!file.exists());
             file.close();
 
+            file = (FileConnection)Connector.open(dirPath + "provaDir/prova%2B");
+            file.create();
+            file.close();
+            file = (FileConnection)Connector.open(dirPath + "provaDir/prova+");
+            th.check(file.exists(), "File 'prova+' exists");
+            file.delete();
+            file.close();
+
             dir = (FileConnection)Connector.open(dirPath + "provaDir");
             dir.delete();
             th.check(!dir.exists());
