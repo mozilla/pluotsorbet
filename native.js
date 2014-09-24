@@ -192,9 +192,9 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Lja
 }
 
 Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = (function() {
-    var start = Date.now();
+    var start = performance.now();
     return function(ctx, stack) {
-        stack.push2(Long.fromNumber(Date.now() - start));
+        stack.push2(Long.fromNumber(performance.now() - start));
     };
 })();
 
