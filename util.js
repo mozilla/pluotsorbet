@@ -41,14 +41,11 @@ var util = (function () {
   }
 
   function fromJavaChars(chars, offset, count) {
-    var s = "";
     if (typeof count !== 'number')
       count = chars.length;
     if (typeof offset !== 'number')
       offset = 0;
-    for (var n = 0; n < count; ++n)
-      s += String.fromCharCode(chars[offset+n]);
-    return s;
+    return String.fromCharCode.apply(null, chars.subarray(offset, offset + count));
   }
 
   function fromJavaString(str) {
