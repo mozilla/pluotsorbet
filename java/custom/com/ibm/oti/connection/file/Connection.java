@@ -781,7 +781,8 @@ public static String encode(String s) {
  * @return		java.lang.String
  *					The decoded version.
  */
-public static String decode(String s) {
+/* This function has been replaced by a JS native */
+public native static String decode(String s); /*{
 	StringBuffer result = new StringBuffer(s.length());
 	ByteArrayOutputStream out = new ByteArrayOutputStream();
 	for (int i = 0; i < s.length();) {
@@ -804,7 +805,7 @@ public static String decode(String s) {
 		i++;
 	}
 	return result.toString();
-}
+}*/
 
 private native boolean isAbsoluteImpl(byte[] path);
 
