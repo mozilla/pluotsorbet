@@ -276,3 +276,7 @@ Context.prototype.newObject = function(classInfo) {
 Context.prototype.newString = function(s) {
   return this.runtime.newString(s);
 }
+
+Context.prototype.newStringFromUint16Array = function(s) {
+  return this.runtime.newStringFromUint16Array(s);
+}
