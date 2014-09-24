@@ -179,51 +179,81 @@ VM.execute = function(ctx) {
         // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
+        (function nop(){
+        })();
             break;
         case 0x01: // aconst_null
+        (function aconst_null(){
             stack.push(null);
+        })();
             break;
         case 0x02: // aconst_m1
+        (function aconst_m1(){
             stack.push(-1);
+        })();
             break;
         case 0x03: // iconst_0
         case 0x0b: // fconst_0
+        (function iconst_0(){
             stack.push(0);
+        })();
             break;
         case 0x0e: // dconst_0
+        (function dconst_0(){
             stack.push2(0);
+        })();
             break;
         case 0x04: // iconst_1
         case 0x0c: // fconst_1
+        (function iconst_1(){
             stack.push(1);
+        })();
             break;
         case 0x0f: // dconst_1
+        (function dconst_1(){
             stack.push2(1);
+        })();
             break;
         case 0x05: // iconst_2
         case 0x0d: // fconst_2
+        (function iconst_2(){
             stack.push(2);
+        })();
             break;
         case 0x06: // iconst_3
+        (function iconst_3(){
             stack.push(3);
+        })();
             break;
         case 0x07: // iconst_4
+        (function iconst_4(){
             stack.push(4);
+        })();
             break;
         case 0x08: // iconst_5
+        (function iconst_5(){
             stack.push(5);
+        })();
             break;
         case 0x09: // lconst_0
+        (function lconst_0(){
             stack.push2(Long.fromInt(0));
+        })();
             break;
         case 0x0a: // lconst_1
+        (function lconst_1(){
             stack.push2(Long.fromInt(1));
+        })();
             break;
         case 0x10: // bipush
+        (function bipush(){
             stack.push(frame.read8signed());
+        })();
             break;
         case 0x11: // sipush
+        (function sipush(){
             stack.push(frame.read16signed());
+        })();
             break;
         case 0x12: // ldc
         case 0x13: // ldc_w
@@ -831,7 +861,9 @@ VM.execute = function(ctx) {
         case 0x9a: // ifne
         (function ifne(){
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() !== 0 ? jmp : frame.ip;
+            if (stack.pop() !== 0) {
+              frame.ip = jmp;
+            }
         })();
             break;
         case 0x9b: // iflt
@@ -915,7 +947,9 @@ VM.execute = function(ctx) {
         case 0xc7: // ifnonnull
         (function ifnonnull(){
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() ? jmp : frame.ip;
+            if (stack.pop()) {
+              frame.ip = jmp;
+            }
         })();
             break;
         case 0xa7: // goto
