@@ -10,7 +10,7 @@ Override.getKey = function(methodInfo) {
 }
 
 Override.hasMethod = function(methodInfo) {
-  return (Override.getKey(methodInfo) in Override);
+  return ("override" in methodInfo || Override.getKey(methodInfo) in Override);
 }
 
 Override.invoke = function(ctx, methodInfo) {
