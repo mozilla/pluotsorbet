@@ -1050,7 +1050,16 @@ VM.execute = function(ctx) {
             if (Alt) {
                 try {
                     Instrument.callPauseHooks(ctx.current());
-                    Alt.invoke(ctx, methodInfo);
+                    if (Instrument.profiling) {
+                        var then = performance.now();
+                        Alt.invoke(ctx, methodInfo);
+                        var key = Instrument.getKey(methodInfo);
+                        var methodProfileData = Instrument.profile[key] || (Instrument.profile[key] = { count: 0, cost: 0 });
+                        methodProfileData.count++;
+                        methodProfileData.cost += performance.now() - then;
+                    } else {
+                        Alt.invoke(ctx, methodInfo);
+                    }
                     Instrument.callResumeHooks(ctx.current());
                 } catch (e) {
                     Instrument.callResumeHooks(ctx.current());
