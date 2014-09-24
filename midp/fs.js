@@ -700,11 +700,6 @@ Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = functi
     fs.write(fd, byteArray.subarray(offset, offset+count));
 }
 
-Native["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
-    var string = util.fromJavaString(stack.pop());
-    stack.push(ctx.newString(decodeURIComponent(string)));
-}
-
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(ctx, stack) {
     var mode = stack.pop(), fileName = util.fromJavaString(stack.pop()), _this = stack.pop();
 
