@@ -5,9 +5,17 @@
 
 var Override = {};
 
+Override.getKey = function(methodInfo) {
+  return methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+}
+
+Override.hasMethod = function(methodInfo) {
+  return (Override.getKey(methodInfo) in Override);
+}
+
 Override.invoke = function(ctx, methodInfo) {
     if (!methodInfo.override) {
-        var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+        var key = Override.getKey(methodInfo);
         methodInfo.override = Override[key];
         if (!methodInfo.override) {
             console.error("Missing override: " + key);
