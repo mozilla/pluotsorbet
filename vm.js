@@ -861,9 +861,7 @@ VM.execute = function(ctx) {
         case 0x9a: // ifne
         (function ifne(){
             var jmp = frame.ip - 1 + frame.read16signed();
-            if (stack.pop() !== 0) {
-              frame.ip = jmp;
-            }
+            frame.ip = stack.pop() !== 0 ? jmp : frame.ip;
         })();
             break;
         case 0x9b: // iflt
@@ -947,9 +945,7 @@ VM.execute = function(ctx) {
         case 0xc7: // ifnonnull
         (function ifnonnull(){
             var jmp = frame.ip - 1 + frame.read16signed();
-            if (stack.pop()) {
-              frame.ip = jmp;
-            }
+            frame.ip = stack.pop() ? jmp : frame.ip;
         })();
             break;
         case 0xa7: // goto
