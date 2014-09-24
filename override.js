@@ -24,3 +24,8 @@ Override.invoke = function(ctx, methodInfo) {
   }
   methodInfo.override.call(null, ctx, ctx.current().stack);
 }
+
+Override["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
+    var string = util.fromJavaString(stack.pop());
+    stack.push(ctx.newString(decodeURIComponent(string)));
+}
