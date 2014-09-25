@@ -43,8 +43,9 @@ var ClassInfo = function(classBytes) {
     this.constructor.prototype.toString = function() {
         return "[instance " + this.class.className + "]";
     }
-    // Cache for virtual methods
+    // Cache for virtual methods and fields
     this.vmc = {};
+    this.vfc = {};
 
     var self = this;
 
