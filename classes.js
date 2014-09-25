@@ -162,22 +162,41 @@ Classes.prototype.getField = function(classInfo, fieldName, signature, staticFla
 
 Classes.prototype.getMethod = function(classInfo, methodName, signature, staticFlag, inheritFlag) {
     var c = classInfo;
+
+    var key = methodName + signature;
+
+    // Check if the method is already in the virtual method cache
+    if (classInfo.vmc && classInfo.vmc[key]) {
+      return classInfo.vmc[key];
+    }
+
     do {
         var methods = c.methods;
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
             if (ACCESS_FLAGS.isStatic(method.access_flags) === !!staticFlag) {
-                if (method.name === methodName && method.signature === signature)
+                if (method.name === methodName && method.signature === signature) {
+                    if (classInfo.vmc) {
+                        classInfo.vmc[key] = method;
+                    }
+
                     return method;
+                }
             }
         }
         c = c.superClass;
     } while (c);
+
     if (ACCESS_FLAGS.isInterface(classInfo.access_flags)) {
         for (var n = 0; n < classInfo.interfaces.length; ++n) {
             var method = this.getMethod(classInfo.interfaces[n], methodName, signature, staticFlag, inheritFlag);
-            if (method)
+            if (method) {
+                if (classInfo.vmc) {
+                    classInfo.vmc[key] = method;
+                }
+
                 return method;
+            }
         }
     }
 };
