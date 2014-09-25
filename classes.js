@@ -140,22 +140,38 @@ Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
 }
 
 Classes.prototype.getField = function(classInfo, fieldName, signature, staticFlag) {
+    var fieldKey = ~~!!staticFlag + "." + fieldName + "." + signature;
+    if (classInfo.vfc && classInfo.vfc[fieldKey]) {
+        return classInfo.vfc[fieldKey];
+    }
+
     do {
         var fields = classInfo.fields;
         for (var i=0; i<fields.length; ++i) {
             var field = fields[i];
-            if (ACCESS_FLAGS.isStatic(field.access_flags) === !!staticFlag) {
-                if (field.name === fieldName && field.signature === signature)
-                    return field;
+            if (!field.key) {
+                field.key = ~~(ACCESS_FLAGS.isStatic(field.access_flags)) + "." + field.name + "." + field.signature;
+            }
+            if (field.key === fieldKey) {
+                if (classInfo.vfc) {
+                    classInfo.vfc[fieldKey] = field;
+                }
+                return field;
             }
         }
+
         if (staticFlag) {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
                 var field = this.getField(classInfo.interfaces[n], fieldName, signature, staticFlag);
-                if (field)
+                if (field) {
+                    if (classInfo.vfc) {
+                        classInfo.vfc[fieldKey] = field;
+                    }
                     return field;
+                }
             }
         }
+
         classInfo = classInfo.superClass;
     } while (classInfo);
 };

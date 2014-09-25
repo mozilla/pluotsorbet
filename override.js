@@ -34,3 +34,8 @@ Override["com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljav
   var string = util.fromJavaString(stack.pop());
   stack.push(ctx.newString(string.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent)));
 }
+
+Override["java/lang/Math.min.(II)I"] = function(ctx, stack) {
+  var b = stack.pop(), a = stack.pop();
+  stack.push(a <= b ? a : b);
+}
