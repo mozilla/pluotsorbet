@@ -573,13 +573,25 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     stack.push(obj);
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(ctx, stack) {
-    var handle = stack.pop();
+Override["com/sun/cldc/io/ResourceInputStream.available.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
+    var handle = _this.class.getField("fileDecoder", "Ljava/lang/Object;").get(_this);
+
+    if (!handle) {
+        ctx.raiseExceptionAndYield("java/io/IOException");
+    }
+
     stack.push(handle.data.length - handle.pos);
 }
 
-Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(ctx, stack) {
-    var handle = stack.pop();
+Override["com/sun/cldc/io/ResourceInputStream.read.()I"] = function(ctx, stack) {
+    var _this = stack.pop();
+    var handle = _this.class.getField("fileDecoder", "Ljava/lang/Object;").get(_this);
+
+    if (!handle) {
+        ctx.raiseExceptionAndYield("java/io/IOException");
+    }
+
     stack.push((handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1);
 }
 
