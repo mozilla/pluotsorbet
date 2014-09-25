@@ -693,10 +693,15 @@
     var TRANS_ROT270 = 6;
     var TRANS_MIRROR_ROT90 = 7;
 
-    Native["javax/microedition/lcdui/Graphics.renderRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)Z"] = function(ctx, stack) {
+    Override["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
-            transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop(),
-            imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
+            transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop();
+
+        if (!image) {
+            ctx.raiseExceptionAndYield("java/lang/NullPointerException", "src image is null");
+        }
+
+        var imgData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.nativeImageData;
 
         if (texture instanceof CanvasRenderingContext2D) {
@@ -720,7 +725,6 @@
                 c.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
             });
         });
-        stack.push(1);
     }
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(ctx, stack) {
