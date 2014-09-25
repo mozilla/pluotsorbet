@@ -494,7 +494,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
         ctx.raiseExceptionAndYield("java/lang/IllegalThreadStateException");
     thread.alive = true;
     thread.pid = util.id();
-    var run = CLASSES.getMethod(thread.class, "run.()V", false, true);
+    var run = CLASSES.getMethod(thread.class, "run.()V", false);
     // Create a context for the thread and start it.
     var ctx = new Context(ctx.runtime);
     ctx.thread = thread;

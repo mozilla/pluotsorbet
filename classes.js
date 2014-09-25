@@ -160,7 +160,7 @@ Classes.prototype.getField = function(classInfo, fieldName, signature, staticFla
     } while (classInfo);
 };
 
-Classes.prototype.getMethod = function(classInfo, methodKey, staticFlag, inheritFlag) {
+Classes.prototype.getMethod = function(classInfo, methodKey, staticFlag) {
     var c = classInfo;
 
     // Check if the method is already in the virtual method cache
@@ -188,7 +188,7 @@ Classes.prototype.getMethod = function(classInfo, methodKey, staticFlag, inherit
 
     if (ACCESS_FLAGS.isInterface(classInfo.access_flags)) {
         for (var n = 0; n < classInfo.interfaces.length; ++n) {
-            var method = this.getMethod(classInfo.interfaces[n], methodKey, staticFlag, inheritFlag);
+            var method = this.getMethod(classInfo.interfaces[n], methodKey, staticFlag);
             if (method) {
                 if (classInfo.vmc) {
                     classInfo.vmc[methodKey] = method;
