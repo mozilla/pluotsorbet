@@ -32,19 +32,5 @@ Override["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljav
 
 Override["com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
   var string = util.fromJavaString(stack.pop());
-
-  var ret = "";
-
-  for (var i = 0; i < string.length; i++) {
-    var ch = string[i];
-
-    if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
-      (ch >= '0' && ch <= '9') || "-_.!~*\'()//:".indexOf(ch) != -1) {
-      ret += ch;
-    } else {
-      ret += encodeURIComponent(ch);
-    }
-  }
-
-  stack.push(ctx.newString(ret));
+  stack.push(ctx.newString(string.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent)));
 }
