@@ -737,3 +737,25 @@ Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/s
     console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
     throw VM.Pause;
 }
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V"] = function(ctx, stack) {
+    var data = stack.pop(), _this = stack.pop();
+    _this.decoded = new TextDecoder("UTF-8").decode(data);
+}
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I"] = function(ctx, stack) {
+    var len = stack.pop(), off = stack.pop(), cbuf = stack.pop(), _this = stack.pop();
+
+    if (_this.decoded.length === 0) {
+      stack.push(-1);
+      return;
+    }
+
+    for (var i = 0; i < len; i++) {
+      cbuf[i + off] = _this.decoded.charCodeAt(i);
+    }
+
+    _this.decoded = _this.decoded.substring(len);
+
+    stack.push(len);
+}
