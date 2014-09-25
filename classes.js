@@ -163,11 +163,6 @@ Classes.prototype.getField = function(classInfo, fieldName, signature, staticFla
 Classes.prototype.getMethod = function(classInfo, methodKey) {
     var c = classInfo;
 
-    // Check if the method is already in the virtual method cache
-    if (classInfo.vmc && classInfo.vmc[methodKey]) {
-      return classInfo.vmc[methodKey];
-    }
-
     do {
         var methods = c.methods;
         for (var i=0; i<methods.length; ++i) {
