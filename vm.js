@@ -163,7 +163,7 @@ VM.execute = function(ctx) {
             var classInfo = resolve(op, constant.class_index);
             var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getMethod(classInfo, methodName, signature, op === 0xb8, op !== 0xb8);
+            constant = CLASSES.getMethod(classInfo, ~~(op === 0xb8) + "." + methodName + "." + signature);
             if (!constant)
                 ctx.raiseExceptionAndYield("java/lang/RuntimeException",
                                    classInfo.className + "." + methodName + "." + signature + " not found");
@@ -1036,8 +1036,18 @@ VM.execute = function(ctx) {
                 switch (op) {
                 case OPCODES.invokevirtual:
                 case OPCODES.invokeinterface:
-                    if (methodInfo.classInfo != obj.class)
-                        methodInfo = CLASSES.getMethod(obj.class, methodInfo.name, methodInfo.signature, false, true);
+                    if (methodInfo.classInfo != obj.class) {
+                        if (!methodInfo.key) {
+                            methodInfo.key = "0." + methodInfo.name + "." + methodInfo.signature;
+                        }
+
+                        // Check if the method is already in the virtual method cache
+                        if (obj.class.vmc && obj.class.vmc[methodInfo.key]) {
+                          methodInfo = obj.class.vmc[methodInfo.key];
+                        } else {
+                          methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);
+                        }
+                    }
                     break;
                 }
             }

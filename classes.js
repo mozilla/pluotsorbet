@@ -160,24 +160,37 @@ Classes.prototype.getField = function(classInfo, fieldName, signature, staticFla
     } while (classInfo);
 };
 
-Classes.prototype.getMethod = function(classInfo, methodName, signature, staticFlag, inheritFlag) {
+Classes.prototype.getMethod = function(classInfo, methodKey) {
     var c = classInfo;
+
     do {
         var methods = c.methods;
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
-            if (ACCESS_FLAGS.isStatic(method.access_flags) === !!staticFlag) {
-                if (method.name === methodName && method.signature === signature)
-                    return method;
+            if (!method.key) {
+              method.key = ~~(ACCESS_FLAGS.isStatic(method.access_flags)) + "." + method.name + "." + method.signature;
+            }
+            if (method.key === methodKey) {
+                if (classInfo.vmc) {
+                    classInfo.vmc[methodKey] = method;
+                }
+
+                return method;
             }
         }
         c = c.superClass;
     } while (c);
+
     if (ACCESS_FLAGS.isInterface(classInfo.access_flags)) {
         for (var n = 0; n < classInfo.interfaces.length; ++n) {
-            var method = this.getMethod(classInfo.interfaces[n], methodName, signature, staticFlag, inheritFlag);
-            if (method)
+            var method = this.getMethod(classInfo.interfaces[n], methodKey);
+            if (method) {
+                if (classInfo.vmc) {
+                    classInfo.vmc[methodKey] = method;
+                }
+
                 return method;
+            }
         }
     }
 };

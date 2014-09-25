@@ -238,7 +238,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
         // The very first isolate is granted access to the isolate API.
         ctx.runtime.setStatic(CLASSES.getField(classInfo, "_API_access_ok", "I", true), 1);
     }
-    var clinit = CLASSES.getMethod(classInfo, "<clinit>", "()V", true);
+    var clinit = CLASSES.getMethod(classInfo, "1.<clinit>.()V");
     if (clinit)
         ctx.pushFrame(clinit, 0);
     if (classInfo.superClass)
@@ -494,7 +494,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
         ctx.raiseExceptionAndYield("java/lang/IllegalThreadStateException");
     thread.alive = true;
     thread.pid = util.id();
-    var run = CLASSES.getMethod(thread.class, "run", "()V", false, true);
+    var run = CLASSES.getMethod(thread.class, "0.run.()V");
     // Create a context for the thread and start it.
     var ctx = new Context(ctx.runtime);
     ctx.thread = thread;
