@@ -174,14 +174,13 @@ Classes.prototype.getMethod = function(classInfo, methodName, signature, staticF
         var methods = c.methods;
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
-            if (ACCESS_FLAGS.isStatic(method.access_flags) === !!staticFlag) {
-                if (method.name === methodName && method.signature === signature) {
-                    if (classInfo.vmc) {
-                        classInfo.vmc[key] = method;
-                    }
-
-                    return method;
+            if (ACCESS_FLAGS.isStatic(method.access_flags) === !!staticFlag &&
+                method.name === methodName && method.signature === signature) {
+                if (classInfo.vmc) {
+                    classInfo.vmc[key] = method;
                 }
+
+                return method;
             }
         }
         c = c.superClass;
