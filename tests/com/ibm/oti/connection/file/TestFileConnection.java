@@ -322,6 +322,8 @@ public class TestFileConnection implements Testlet {
             file.close();
 
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova%2B");
+            th.check(file.getName(), "prova+");
+            th.check(file.getURL(), "file:////provaDir/prova%2B");
             file.create();
             file.close();
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova+");

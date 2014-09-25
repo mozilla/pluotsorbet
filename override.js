@@ -26,6 +26,11 @@ Override.invoke = function(ctx, methodInfo) {
 }
 
 Override["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
-    var string = util.fromJavaString(stack.pop());
-    stack.push(ctx.newString(decodeURIComponent(string)));
+  var string = util.fromJavaString(stack.pop());
+  stack.push(ctx.newString(decodeURIComponent(string)));
+}
+
+Override["com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
+  var string = util.fromJavaString(stack.pop());
+  stack.push(ctx.newString(string.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent)));
 }
