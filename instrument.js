@@ -101,6 +101,19 @@ var Instrument = {
 
     this.profiling = false;
   },
+
+  measure: function(Alt, ctx, methodInfo) {
+    if (this.profiling) {
+      var then = performance.now();
+      Alt.invoke(ctx, methodInfo);
+      var key = this.getKey(methodInfo);
+      var methodProfileData = this.profile[key] || (this.profile[key] = { count: 0, cost: 0 });
+      methodProfileData.count++;
+      methodProfileData.cost += performance.now() - then;
+    } else {
+      Alt.invoke(ctx, methodInfo);
+    }
+  },
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.<init>.(Ljava/lang/String;ILjava/io/InputStream;Ljava/io/OutputStream;Lcom/sun/midp/pki/CertStore;)V"] = function(caller, callee) {

@@ -57,6 +57,22 @@ var util = (function () {
     return fromJavaChars(chars, offset, count);
   }
 
+  /**
+   * Returns an ArrayBufferView of the underlying code points
+   * represented by the given Java string.
+   *
+   * NOTE: Do not modify the ArrayBuffer; it may be shared between
+   * multiple string instances.
+   */
+  function javaStringToArrayBuffer(str) {
+    if (!str)
+      return null;
+    var chars = CLASSES.java_lang_String.getField("value", "[C").get(str);
+    var offset = CLASSES.java_lang_String.getField("offset", "I").get(str);
+    var count = CLASSES.java_lang_String.getField("count", "I").get(str);
+    return chars.subarray(offset, offset + count);
+  }
+
   var id = (function() {
     var gen = 0;
     return function() {
@@ -112,6 +128,7 @@ var util = (function () {
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
+    javaStringToArrayBuffer: javaStringToArrayBuffer,
     id: id,
     tag: tag,
     compareTypedArrays: compareTypedArrays,

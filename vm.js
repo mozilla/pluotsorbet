@@ -1050,7 +1050,7 @@ VM.execute = function(ctx) {
             if (Alt) {
                 try {
                     Instrument.callPauseHooks(ctx.current());
-                    Alt.invoke(ctx, methodInfo);
+                    Instrument.measure(Alt, ctx, methodInfo);
                     Instrument.callResumeHooks(ctx.current());
                 } catch (e) {
                     Instrument.callResumeHooks(ctx.current());
