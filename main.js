@@ -37,95 +37,46 @@ if (urlParams.pushConn && urlParams.pushMidlet) {
   });
 }
 
-var initSteps = new Set();
-
-function executeNextBatch(completedStep) {
-  initSteps.delete(completedStep);
-
-  initSteps.forEach(function(initStep) {
-    initStep.dependencyResolved(completedStep)
-  });
-}
-
-var InitStep = function(func, deps) {
-  this.func = func;
-  this.deps = deps;
-  this.depsResolved = 0;
-
-  initSteps.add(this);
-}
-
-InitStep.prototype.execute = function() {
-  this.func(executeNextBatch.bind(null, this));
-}
-
-InitStep.prototype.addDependency = function(dependency) {
-  this.deps.add(dependency)
-}
-
-InitStep.prototype.dependencyResolved = function(dependency) {
-  if (this.deps.size === 0 ||
-      (this.deps.has(dependency) && ++this.depsResolved === this.deps.size)) {
-    this.execute();
-  }
-}
-
-var initFS = new InitStep(function(callback) {
-  fs.init(callback);
-}, new Set());
-
-var mkdirPersistent = new InitStep(function(callback) {
-  fs.mkdir("/Persistent", callback);
-}, new Set([ initFS ]));
-
-var createKeystore = new InitStep(function(callback) {
-  fs.exists("/_main.ks", function(exists) {
-    if (exists) {
-      callback();
-    } else {
-      load("certs/_main.ks", "blob", function(data) {
-        fs.create("/_main.ks", data, function() {
-          callback();
-        });
+new Promise(function(resolve, reject) {
+  fs.init(resolve);
+}).then(function() {
+  return Promise.all([
+    new Promise(function(resolve, reject) {
+      fs.mkdir("/Persistent", resolve);
+    }),
+    new Promise(function(resolve, reject) {
+      fs.exists("/_main.ks", function(exists) {
+        if (exists) {
+          resolve();
+        } else {
+          load("certs/_main.ks", "blob", function(data) {
+            fs.create("/_main.ks", data, function() {
+              resolve();
+            });
+          });
+        }
       });
-    }
+    })
+  ]);
+}).then(function() {
+  var jarPromises = [];
+  jars.forEach(function(jar) {
+      jarPromises.push(new Promise(function(resolve, reject) {
+        load(jar, "arraybuffer", function(data) {
+          console.log('loaded jar: ' + jar);
+          jvm.addPath(jar, data);
+          resolve();
+        });
+      }));
   });
-}, new Set([ initFS ]));
 
-var startJVM = new InitStep(function(callback) {
-  jvm.initializeBuiltinClasses();
-  jvm.startIsolate0(main, urlParams.args);
-}, new Set([ mkdirPersistent, createKeystore ]));
-
-jars.forEach(function(jar) {
-  startJVM.addDependency(new InitStep(function(callback) {
-    load(jar, "arraybuffer", function(data) {
-      jvm.addPath(jar, data);
-      callback();
-    });
-  }, new Set()));
-});
-
-if (MIDP.midletClassName == "RunTests") {
-  startJVM.addDependency(new InitStep(function(callback) {
-    function loadScript(path, loadCallback) {
-      var element = document.createElement('script');
-      element.setAttribute("type", "text/javascript");
-      element.setAttribute("src", path);
-      document.getElementsByTagName("head")[0].appendChild(element);
-      if (loadCallback) {
-        element.onload = loadCallback;
-      }
-    }
-
+  if (MIDP.midletClassName == "RunTests") {
     loadScript("tests/native.js");
     loadScript("tests/contacts.js");
-    loadScript("tests/override.js", callback);
-  }, new Set()));
-}
+    loadScript("tests/override.js");
+  }
 
-if (urlParams.jad) {
-  startJVM.addDependency(new InitStep(function(callback) {
+  if (urlParams.jad) {
     load(urlParams.jad, "text", function(data) {
       data
       .replace(/\r\n|\r/g, "\n")
@@ -137,14 +88,24 @@ if (urlParams.jad) {
           MIDP.manifest[keyval[0]] = keyval[1].trim();
         }
       });
-
-      callback();
     });
-  }, new Set()));
+  }
+
+  return Promise.all(jarPromises);
+}).then(function() {
+  jvm.initializeBuiltinClasses();
+  jvm.startIsolate0(main, urlParams.args);
+});
+
+function loadScript(path, loadCallback) {
+  var element = document.createElement('script');
+  element.setAttribute("type", "text/javascript");
+  element.setAttribute("src", path);
+  document.getElementsByTagName("head")[0].appendChild(element);
+  if (loadCallback) {
+    element.onload = loadCallback;
+  }
 }
-
-executeNextBatch();
-
 function getIsOff(button) {
   return button.textContent.contains("OFF");
 }
