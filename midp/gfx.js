@@ -205,7 +205,7 @@
     Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(ctx, stack) {
         var image = stack.pop();
 
-        var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
+        var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
         imageData.class.getField("I.isMutable.Z").set(imageData, 1);
     }
 
