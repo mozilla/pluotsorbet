@@ -39,3 +39,19 @@ Override["java/lang/Math.min.(II)I"] = function(ctx, stack) {
   var b = stack.pop(), a = stack.pop();
   stack.push(a <= b ? a : b);
 }
+
+Override["java/io/ByteArrayInputStream.read.()I"] = function(ctx, stack) {
+  var _this = stack.pop();
+
+  var pos = _this.class.getField("pos", "I").get(_this);
+  var count = _this.class.getField("count", "I").get(_this);
+  var buf = _this.class.getField("buf", "[B").get(_this);
+
+  if (pos < count) {
+      var value = buf[pos++] & 0xFF;
+      _this.class.getField("pos", "I").set(_this, pos);
+      stack.push(value);
+  } else {
+      stack.push(-1);
+  }
+}
