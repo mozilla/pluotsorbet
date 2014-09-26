@@ -53,8 +53,8 @@ JVM.prototype.startIsolate0 = function(className, args) {
 }
 
 JVM.prototype.startIsolate = function(isolate) {
-    var mainClass = util.fromJavaString(isolate.class.getField("_mainClass", "Ljava/lang/String;", false).get(isolate)).replace(/\./g, "/");
-    var mainArgs = isolate.class.getField("_mainArgs", "[Ljava/lang/String;", false).get(isolate);
+    var mainClass = util.fromJavaString(isolate.class.getField("0._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
+    var mainArgs = isolate.class.getField("0._mainArgs.[Ljava/lang/String;").get(isolate);
     mainArgs.forEach(function(str, n) {
         mainArgs[n] = util.fromJavaString(str);
     });

@@ -236,7 +236,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function(ctx, stack) {
     runtime.pending[className] = true;
     if (className === "com/sun/cldc/isolate/Isolate") {
         // The very first isolate is granted access to the isolate API.
-        ctx.runtime.setStatic(CLASSES.getField(classInfo, "_API_access_ok", "I", true), 1);
+        ctx.runtime.setStatic(CLASSES.getField(classInfo, "1._API_access_ok.I"), 1);
     }
     var clinit = CLASSES.getMethod(classInfo, "1.<clinit>.()V");
     if (clinit)
@@ -575,7 +575,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
 
 Override["com/sun/cldc/io/ResourceInputStream.available.()I"] = function(ctx, stack) {
     var _this = stack.pop();
-    var handle = _this.class.getField("fileDecoder", "Ljava/lang/Object;").get(_this);
+    var handle = _this.class.getField("0.fileDecoder.Ljava/lang/Object;").get(_this);
 
     if (!handle) {
         ctx.raiseExceptionAndYield("java/io/IOException");
@@ -586,7 +586,7 @@ Override["com/sun/cldc/io/ResourceInputStream.available.()I"] = function(ctx, st
 
 Override["com/sun/cldc/io/ResourceInputStream.read.()I"] = function(ctx, stack) {
     var _this = stack.pop();
-    var handle = _this.class.getField("fileDecoder", "Ljava/lang/Object;").get(_this);
+    var handle = _this.class.getField("0.fileDecoder.Ljava/lang/Object;").get(_this);
 
     if (!handle) {
         ctx.raiseExceptionAndYield("java/io/IOException");
@@ -707,8 +707,8 @@ Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] 
     var isolateId = ctx.runtime.isolate.id;
 
     for (var i = 0; i < links[isolateId].length; i++) {
-        var nativePointer = links[isolateId][i].class.getField("nativePointer", "I").get(links[isolateId][i]);
-        linkArray[i].class.getField("nativePointer", "I").set(linkArray[i], nativePointer);
+        var nativePointer = links[isolateId][i].class.getField("0.nativePointer.I").get(links[isolateId][i]);
+        linkArray[i].class.getField("0.nativePointer.I").set(linkArray[i], nativePointer);
         linkArray[i].sender = links[isolateId][i].sender;
         linkArray[i].receiver = links[isolateId][i].receiver;
     }
@@ -728,7 +728,7 @@ Native["com/sun/midp/links/Link.init0.(II)V"] = function(ctx, stack) {
     var receiver = stack.pop(), sender = stack.pop(), _this = stack.pop();
     _this.sender = sender;
     _this.receiver = receiver;
-    _this.class.getField("nativePointer", "I").set(_this, util.id());
+    _this.class.getField("0.nativePointer.I").set(_this, util.id());
 }
 
 Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {

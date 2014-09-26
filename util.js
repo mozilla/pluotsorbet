@@ -51,9 +51,9 @@ var util = (function () {
   function fromJavaString(str) {
     if (!str)
       return null;
-    var chars = CLASSES.java_lang_String.getField("value", "[C").get(str);
-    var offset = CLASSES.java_lang_String.getField("offset", "I").get(str);
-    var count = CLASSES.java_lang_String.getField("count", "I").get(str);
+    var chars = CLASSES.java_lang_String.getField("0.value.[C").get(str);
+    var offset = CLASSES.java_lang_String.getField("0.offset.I").get(str);
+    var count = CLASSES.java_lang_String.getField("0.count.I").get(str);
     return fromJavaChars(chars, offset, count);
   }
 
@@ -67,9 +67,9 @@ var util = (function () {
   function javaStringToArrayBuffer(str) {
     if (!str)
       return null;
-    var chars = CLASSES.java_lang_String.getField("value", "[C").get(str);
-    var offset = CLASSES.java_lang_String.getField("offset", "I").get(str);
-    var count = CLASSES.java_lang_String.getField("count", "I").get(str);
+    var chars = CLASSES.java_lang_String.getField("0.value.[C").get(str);
+    var offset = CLASSES.java_lang_String.getField("0.offset.I").get(str);
+    var count = CLASSES.java_lang_String.getField("0.count.I").get(str);
     return chars.subarray(offset, offset + count);
   }
 

@@ -132,7 +132,7 @@ ClassInfo.prototype.getClassObject = function(ctx) {
 }
 
 ClassInfo.prototype.getField = function(name, signature, isStatic) {
-    return CLASSES.getField(this, name, signature, isStatic);
+    return CLASSES.getField(this, ~~isStatic + "." + name + "." + signature);
 }
 
 ClassInfo.prototype.toString = function() {

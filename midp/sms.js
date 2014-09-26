@@ -100,11 +100,11 @@ Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms
             address[i] = addr.charCodeAt(i);
         }
 
-        smsPacket.class.getField("message", "[B").set(smsPacket, message);
-        smsPacket.class.getField("address", "[B").set(smsPacket, address);
-        smsPacket.class.getField("port", "I").set(smsPacket, port);
-        smsPacket.class.getField("sentAt", "J").set(smsPacket, Long.fromNumber(Date.now()));
-        smsPacket.class.getField("messageType", "I").set(smsPacket, 0); // GSM_TEXT
+        smsPacket.class.getField("0.message.[B").set(smsPacket, message);
+        smsPacket.class.getField("0.address.[B").set(smsPacket, address);
+        smsPacket.class.getField("0.port.I").set(smsPacket, port);
+        smsPacket.class.getField("0.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
+        smsPacket.class.getField("0.messageType.I").set(smsPacket, 0); // GSM_TEXT
 
         stack.push(text.length);
     }

@@ -82,9 +82,9 @@ Runtime.prototype.newString = function(s) {
   var chars = this.newPrimitiveArray("C", length);
   for (var n = 0; n < length; ++n)
     chars[n] = s.charCodeAt(n);
-  CLASSES.java_lang_String.getField("value", "[C").set(obj, chars);
-  CLASSES.java_lang_String.getField("offset", "I").set(obj, 0);
-  CLASSES.java_lang_String.getField("count", "I").set(obj, length);
+  CLASSES.java_lang_String.getField("0.value.[C").set(obj, chars);
+  CLASSES.java_lang_String.getField("0.offset.I").set(obj, 0);
+  CLASSES.java_lang_String.getField("0.count.I").set(obj, length);
   return obj;
 }
 
@@ -93,9 +93,9 @@ Runtime.prototype.newStringFromUint16Array = function(buf) {
       throw new Error('buf must be an instanceof Uint16Array, was ' + buf);
   }
   var obj = this.newObject(CLASSES.java_lang_String);
-  CLASSES.java_lang_String.getField("value", "[C").set(obj, buf);
-  CLASSES.java_lang_String.getField("offset", "I").set(obj, 0);
-  CLASSES.java_lang_String.getField("count", "I").set(obj, buf.length);
+  CLASSES.java_lang_String.getField("0.value.[C").set(obj, buf);
+  CLASSES.java_lang_String.getField("0.offset.I").set(obj, 0);
+  CLASSES.java_lang_String.getField("0.count.I").set(obj, buf.length);
   return obj;
 }
 
