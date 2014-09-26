@@ -139,8 +139,7 @@ Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
     return classInfo;
 }
 
-Classes.prototype.getField = function(classInfo, fieldName, signature, staticFlag) {
-    var fieldKey = ~~!!staticFlag + "." + fieldName + "." + signature;
+Classes.prototype.getField = function(classInfo, fieldKey) {
     if (classInfo.vfc && classInfo.vfc[fieldKey]) {
         return classInfo.vfc[fieldKey];
     }
@@ -160,9 +159,9 @@ Classes.prototype.getField = function(classInfo, fieldName, signature, staticFla
             }
         }
 
-        if (staticFlag) {
+        if (fieldKey[0] == '1') {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
-                var field = this.getField(classInfo.interfaces[n], fieldName, signature, staticFlag);
+                var field = this.getField(classInfo.interfaces[n], fieldKey);
                 if (field) {
                     if (classInfo.vfc) {
                         classInfo.vfc[fieldKey] = field;
