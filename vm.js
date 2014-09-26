@@ -58,7 +58,7 @@ VM.execute = function(ctx) {
 
     function buildExceptionLog(ex, stackTrace) {
         var className = ex.class.className;
-        var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "0.detailMessage.Ljava/lang/String;").get(ex));
+        var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "I.detailMessage.Ljava/lang/String;").get(ex));
         return className + ": " + (detailMessage || "") + "\n" + stackTrace.join("\n") + "\n\n";
     }
 
@@ -153,7 +153,7 @@ VM.execute = function(ctx) {
             var classInfo = resolve(op, constant.class_index);
             var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getField(classInfo, ~~(op === 0xb2 || op === 0xb3) + "." + fieldName + "." + signature);
+            constant = CLASSES.getField(classInfo, ((op === 0xb2 || op === 0xb3) ? "S" : "I") + "." + fieldName + "." + signature);
             if (!constant)
                 ctx.raiseExceptionAndYield("java/lang/RuntimeException",
                                    classInfo.className + "." + fieldName + "." + signature + " not found");
@@ -163,7 +163,7 @@ VM.execute = function(ctx) {
             var classInfo = resolve(op, constant.class_index);
             var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getMethod(classInfo, ~~(op === 0xb8) + "." + methodName + "." + signature);
+            constant = CLASSES.getMethod(classInfo, ((op === 0xb8) ? "S" : "I") + "." + methodName + "." + signature);
             if (!constant)
                 ctx.raiseExceptionAndYield("java/lang/RuntimeException",
                                    classInfo.className + "." + methodName + "." + signature + " not found");
@@ -1038,7 +1038,7 @@ VM.execute = function(ctx) {
                 case OPCODES.invokeinterface:
                     if (methodInfo.classInfo != obj.class) {
                         if (!methodInfo.key) {
-                            methodInfo.key = "0." + methodInfo.name + "." + methodInfo.signature;
+                            methodInfo.key = "I." + methodInfo.name + "." + methodInfo.signature;
                         }
 
                         // Check if the method is already in the virtual method cache

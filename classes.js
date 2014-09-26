@@ -149,7 +149,7 @@ Classes.prototype.getField = function(classInfo, fieldKey) {
         for (var i=0; i<fields.length; ++i) {
             var field = fields[i];
             if (!field.key) {
-                field.key = ~~(ACCESS_FLAGS.isStatic(field.access_flags)) + "." + field.name + "." + field.signature;
+                field.key = (ACCESS_FLAGS.isStatic(field.access_flags) ? "S" : "I") + "." + field.name + "." + field.signature;
             }
             if (field.key === fieldKey) {
                 if (classInfo.vfc) {
@@ -159,7 +159,7 @@ Classes.prototype.getField = function(classInfo, fieldKey) {
             }
         }
 
-        if (fieldKey[0] | 0) {
+        if (fieldKey[0] === 'S') {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
                 var field = this.getField(classInfo.interfaces[n], fieldKey);
                 if (field) {
@@ -183,7 +183,7 @@ Classes.prototype.getMethod = function(classInfo, methodKey) {
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
             if (!method.key) {
-              method.key = ~~(ACCESS_FLAGS.isStatic(method.access_flags)) + "." + method.name + "." + method.signature;
+              method.key = (ACCESS_FLAGS.isStatic(method.access_flags) ? "S" : "I") + "." + method.name + "." + method.signature;
             }
             if (method.key === methodKey) {
                 if (classInfo.vmc) {

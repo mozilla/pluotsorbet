@@ -229,12 +229,12 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
     var state = stack.pop();
     var suiteId = (MIDP.midletClassName === "internal") ? -1 : 1;
-    state.class.getField("0.suiteId.I").set(state, suiteId);
-    state.class.getField("0.midletClassName.Ljava/lang/String;").set(state, ctx.newString(MIDP.midletClassName));
+    state.class.getField("I.suiteId.I").set(state, suiteId);
+    state.class.getField("I.midletClassName.Ljava/lang/String;").set(state, ctx.newString(MIDP.midletClassName));
     var args = urlParams.args;
-    state.class.getField("0.arg0.Ljava/lang/String;").set(state, ctx.newString((args.length > 0) ? args[0] : ""));
-    state.class.getField("0.arg1.Ljava/lang/String;").set(state, ctx.newString((args.length > 1) ? args[1] : ""));
-    state.class.getField("0.arg2.Ljava/lang/String;").set(state, ctx.newString((args.length > 2) ? args[2] : ""));
+    state.class.getField("I.arg0.Ljava/lang/String;").set(state, ctx.newString((args.length > 0) ? args[0] : ""));
+    state.class.getField("I.arg1.Ljava/lang/String;").set(state, ctx.newString((args.length > 1) ? args[1] : ""));
+    state.class.getField("I.arg2.Ljava/lang/String;").set(state, ctx.newString((args.length > 2) ? args[2] : ""));
 }
 
 MIDP.domainTBL = [
@@ -629,7 +629,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteImpl.unlockMIDletSuite.(I)V"] = func
 
 Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function(ctx, stack) {
     var suiteSettings = stack.pop();
-    suiteSettings.class.getField("0.pushInterruptSetting.B").set(suiteSettings, 1);
+    suiteSettings.class.getField("I.pushInterruptSetting.B").set(suiteSettings, 1);
     console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
 }
 
@@ -642,7 +642,7 @@ Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(ctx, 
 Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(ctx, stack) {
     var _this = stack.pop();
     // The MIDlet has to be trusted for opening SSL connections using port 443.
-    _this.class.getField("0.trusted.Z").set(_this, 1);
+    _this.class.getField("I.trusted.Z").set(_this, 1);
     console.warn("com/sun/midp/midletsuite/InstallInfo.load.()V incomplete");
 }
 
@@ -762,7 +762,7 @@ MIDP.waitingNativeEventContexts = {};
 
 MIDP.copyEvent = function(obj, isolateId) {
     var e = MIDP.nativeEventQueues[isolateId].shift();
-    obj.class.getField("0.type.I").set(obj, e.type);
+    obj.class.getField("I.type.I").set(obj, e.type);
     obj.class.fields.forEach(function(field) {
         field.set(obj, e[field.name]);
     });
@@ -777,7 +777,7 @@ MIDP.deliverWaitForNativeEventResult = function(ctx, isolateId) {
 }
 
 MIDP.sendEvent = function(obj, isolateId) {
-    var e = { type: obj.class.getField("0.type.I").get(obj) };
+    var e = { type: obj.class.getField("I.type.I").get(obj) };
     obj.class.fields.forEach(function(field) {
         e[field.name] = field.get(obj);
     });
@@ -895,7 +895,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
     var _this = stack.pop();
     var obj = ctx.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
-    obj.class.getField("0.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
+    obj.class.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
     MIDP.sendEvent(obj);
 }
 

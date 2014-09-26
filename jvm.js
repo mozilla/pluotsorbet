@@ -44,17 +44,17 @@ JVM.prototype.startIsolate0 = function(className, args) {
     caller.stack.push(isolate);
     caller.stack.push(ctx.newString(className.replace(/\./g, "/")));
     caller.stack.push(array);
-    ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "0.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"), 3);
+    ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"), 3);
     ctx.execute(caller);
 
     caller.stack.push(isolate);
-    ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "0.start.()V"), 1);
+    ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.start.()V"), 1);
     ctx.start(caller);
 }
 
 JVM.prototype.startIsolate = function(isolate) {
-    var mainClass = util.fromJavaString(isolate.class.getField("0._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
-    var mainArgs = isolate.class.getField("0._mainArgs.[Ljava/lang/String;").get(isolate);
+    var mainClass = util.fromJavaString(isolate.class.getField("I._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
+    var mainArgs = isolate.class.getField("I._mainArgs.[Ljava/lang/String;").get(isolate);
     mainArgs.forEach(function(str, n) {
         mainArgs[n] = util.fromJavaString(str);
     });
@@ -83,7 +83,7 @@ JVM.prototype.startIsolate = function(isolate) {
     ctx.thread.alive = true;
     caller.stack.push(runtime.mainThread);
     caller.stack.push(ctx.newString("main"));
-    ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "0.<init>.(Ljava/lang/String;)V"), 2);
+    ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"), 2);
     ctx.execute(caller);
 
     var args = ctx.newArray("[Ljava/lang/String;", mainArgs.length);

@@ -140,8 +140,8 @@
     }
 
     function setImageData(imageData, width, height, data) {
-        imageData.class.getField("0.width.I").set(imageData, width);
-        imageData.class.getField("0.height.I").set(imageData, height);
+        imageData.class.getField("I.width.I").set(imageData, width);
+        imageData.class.getField("I.height.I").set(imageData, height);
         imageData.nativeImageData = data;
     }
 
@@ -206,15 +206,15 @@
         var image = stack.pop();
 
         var imageData = image.class.getField("imageData", "Ljavax/microedition/lcdui/ImageData;").get(image);
-        imageData.class.getField("0.isMutable.Z").set(imageData, 1);
+        imageData.class.getField("I.isMutable.Z").set(imageData, 1);
     }
 
     Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(ctx, stack) {
         var argb = stack.pop(), image = stack.pop();
 
-        var width = image.class.getField("0.width.I").get(image);
-        var height = image.class.getField("0.height.I").get(image);
-        var imageData = image.class.getField("0.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
+        var width = image.class.getField("I.width.I").get(image);
+        var height = image.class.getField("I.height.I").get(image);
+        var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
         var ctx = createContext2d(width, height);
         setImageData(imageData, width, height, ctx);
@@ -270,8 +270,8 @@
         else
             face = "Arial, Helvetica, sans-serif";
 
-        _this.class.getField("0.baseline.I").set(_this, (size/2)|0);
-        _this.class.getField("0.height.I").set(_this, (size * 1.3)|0);
+        _this.class.getField("I.baseline.I").set(_this, (size/2)|0);
+        _this.class.getField("I.height.I").set(_this, (size * 1.3)|0);
         _this.css = style + " " + size + "pt " + face;
     }
 
@@ -318,26 +318,26 @@
     var BASELINE = 64;
 
     function withGraphics(g, cb) {
-        var img = g.class.getField("0.img.Ljavax/microedition/lcdui/Image;").get(g),
+        var img = g.class.getField("I.img.Ljavax/microedition/lcdui/Image;").get(g),
             c = null;
 
         if (img === null) {
             c = MIDP.Context2D;
         } else {
-            var imgData = img.class.getField("0.imageData.Ljavax/microedition/lcdui/ImageData;").get(img),
+            var imgData = img.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(img),
                 c = imgData.nativeImageData;
         }
         cb(c);
     }
 
     function withClip(g, c, x, y, cb) {
-        var clipX1 = g.class.getField("0.clipX1.S").get(g),
-            clipY1 = g.class.getField("0.clipY1.S").get(g),
-            clipX2 = g.class.getField("0.clipX2.S").get(g),
-            clipY2 = g.class.getField("0.clipY2.S").get(g),
-            clipped = g.class.getField("0.clipped.Z").get(g),
-            transX = g.class.getField("0.transX.I").get(g),
-            transY = g.class.getField("0.transY.I").get(g);
+        var clipX1 = g.class.getField("I.clipX1.S").get(g),
+            clipY1 = g.class.getField("I.clipY1.S").get(g),
+            clipX2 = g.class.getField("I.clipX2.S").get(g),
+            clipY2 = g.class.getField("I.clipY2.S").get(g),
+            clipped = g.class.getField("I.clipped.Z").get(g),
+            transX = g.class.getField("I.transX.I").get(g),
+            transY = g.class.getField("I.transY.I").get(g);
         c.save();
         if (clipped) {
             c.beginPath();
@@ -370,7 +370,7 @@
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
         withClip(g, c, x, y, function(x, y) {
-            withFont(g.class.getField("0.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str, function(w, c) {
+            withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str, function(w, c) {
                 c.textAlign = "left";
                 c.textBaseline = "top";
                 if (anchor & RIGHT)
@@ -397,7 +397,7 @@
     };
 
     function withPixel(g, c, cb) {
-        var pixel = g.class.getField("0.pixel.I").get(g);
+        var pixel = g.class.getField("I.pixel.I").get(g);
         c.save();
         c.fillStyle = c.strokeStyle = abgrIntToCSS(pixel);
         cb();
@@ -410,7 +410,7 @@
      * incorrectly, although we should actually figure out why that's happening.
      */
     function withOpaquePixel(g, c, cb) {
-        var pixel = g.class.getField("0.pixel.I").get(g);
+        var pixel = g.class.getField("I.pixel.I").get(g);
         c.save();
         var b = (pixel >> 16) & 0xff;
         var g = (pixel >> 8) & 0xff;
@@ -441,20 +441,20 @@
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(ctx, stack) {
         var rgba = stack.pop(), _this = stack.pop();
-        var g = _this.class.getField("0.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var g = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
         var red = (rgba >> 16) & 0xff;
         var green = (rgba >> 8) & 0xff;
         var blue = rgba & 0xff;
-        g.class.getField("0.pixel.I").set(g, swapRB(rgba));
-        g.class.getField("0.rgbColor.I").set(g, rgba & 0x00ffffff);
+        g.class.getField("I.pixel.I").set(g, swapRB(rgba));
+        g.class.getField("I.rgbColor.I").set(g, rgba & 0x00ffffff);
         // Conversion matches Graphics#grayVal(int, int, int).
-        g.class.getField("0.gray.I").set(g, (red * 76 + green * 150 + blue * 29) >> 8);
+        g.class.getField("I.gray.I").set(g, (red * 76 + green * 150 + blue * 29) >> 8);
     }
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function(ctx, stack) {
         var _this = stack.pop();
-        var g = _this.class.getField("0.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
-        var pixel = g.class.getField("0.pixel.I").get(g);
+        var g = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var pixel = g.class.getField("I.pixel.I").get(g);
         stack.push((pixel >> 24) & 0xff);
     }
 
@@ -486,9 +486,9 @@
             ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "Format unsupported");
         }
 
-        var graphics = _this.class.getField("0.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
-        var image = graphics.class.getField("0.img.Ljavax/microedition/lcdui/Image;").get(graphics);
-        var imageData = image.class.getField("0.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
+        var graphics = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var image = graphics.class.getField("I.img.Ljavax/microedition/lcdui/Image;").get(graphics);
+        var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
         contextToRgbData(convertNativeImageData(imageData), pixels, offset, scanlength, x, y, width, height, converterFunc);
     }
@@ -515,7 +515,7 @@
             ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "Format unsupported");
         }
 
-        var graphics = _this.class.getField("0.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var graphics = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
 
         var context = createContext2d(width, height);
         rgbDataToContext(context, pixels, offset, scanlength, converterFunc);
@@ -528,7 +528,7 @@
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
         var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
-            imgData = image.class.getField("0.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
+            imgData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.nativeImageData;
 
         if (!texture) {
@@ -701,7 +701,7 @@
             ctx.raiseExceptionAndYield("java/lang/NullPointerException", "src image is null");
         }
 
-        var imgData = image.class.getField("0.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
+        var imgData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.nativeImageData;
 
         if (texture instanceof CanvasRenderingContext2D) {

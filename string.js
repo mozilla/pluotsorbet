@@ -48,9 +48,9 @@ Override["java/lang/String.indexOf.(Ljava/lang/String;I)I"] = function(ctx, stac
 Override["java/lang/String.indexOf.(II)I"] = function(ctx, stack) {
   var fromIndex = stack.pop(), ch = stack.pop(), _this = stack.pop();
 
-  var value = CLASSES.java_lang_String.getField("0.value.[C").get(_this);
-  var offset = CLASSES.java_lang_String.getField("0.offset.I").get(_this);
-  var count = CLASSES.java_lang_String.getField("0.count.I").get(_this);
+  var value = CLASSES.java_lang_String.getField("I.value.[C").get(_this);
+  var offset = CLASSES.java_lang_String.getField("I.offset.I").get(_this);
+  var count = CLASSES.java_lang_String.getField("I.count.I").get(_this);
   var max = offset + count;
 
   if (fromIndex < 0) {
