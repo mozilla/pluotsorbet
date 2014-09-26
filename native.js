@@ -836,3 +836,53 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx
 
   stack.push(res);
 }
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(ctx, stack) {
+  var len = stack.pop(), off = stack.pop(), cbuf = stack.pop(), _this = stack.pop();
+
+  var inputChar = 0;
+  var outputSize = 0;
+  var outputCount = 0;
+  var count = 0;
+  var localPendingSurrogate = _this.class.getField("pendingSurrogate", "I").get(_this);
+  while (count < length) {
+    inputChar = 0xffff & cbuf[offset + count];
+    if (0 != localPendingSurrogate) {
+      if (0xdc00<=inputChar && inputChar<=0xdfff) {
+        //000u uuuu xxxx xxxx xxxx xxxx
+        //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
+        var highHalf = (localPendingSurrogate & 0x03ff) + 0x0040;
+        var lowHalf = inputChar & 0x03ff;
+        inputChar = (highHalf << 10) | lowHalf;
+      } else {
+        // going to write replacement value instead of unpaired surrogate
+        outputSize = 1;
+        outputCount += outputSize;
+      }
+      localPendingSurrogate = 0;
+    }
+    if (inputChar < 0x80) {
+      outputSize = 1;
+    } else if (inputChar < 0x800) {
+      outputSize = 2;
+    } else if (0xd800<=inputChar && inputChar<=0xdbff) {
+      localPendingSurrogate = inputChar;
+      outputSize = 0;
+    } else if (0xdc00<=inputChar && inputChar<=0xdfff) {
+      // unpaired surrogate
+      // going to output replacementValue;
+      outputSize = 1;
+    } else if (inputChar < 0x10000) {
+      outputSize = 3;
+    } else {
+      /* 21 bits: 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+       * a aabb  bbbb cccc  ccdd dddd
+       */
+      outputSize = 4;
+    }
+    outputCount += outputSize;
+    count++;
+  }
+
+  return outputCount;
+}
