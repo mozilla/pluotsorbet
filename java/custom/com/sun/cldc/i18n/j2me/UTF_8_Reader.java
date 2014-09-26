@@ -43,7 +43,6 @@ public class UTF_8_Reader extends StreamReader {
         // Read the whole stream in memory
         byte[] buffer = new byte[1024];
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        boolean error = false;
         try {
             int numRead = 0;
             while ((numRead = in.read(buffer)) > -1) {
