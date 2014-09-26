@@ -41,6 +41,9 @@ var util = (function () {
   }
 
   function fromJavaChars(chars, offset, count) {
+    if (!chars) {
+      return null;
+    }
     if (typeof count !== 'number')
       count = chars.length;
     if (typeof offset !== 'number')
@@ -48,13 +51,10 @@ var util = (function () {
     return String.fromCharCode.apply(null, chars.subarray(offset, offset + count));
   }
 
-  function fromJavaString(str) {
-    if (!str)
+  function fromJavaString(jStr) {
+    if (!jStr)
       return null;
-    var chars = CLASSES.java_lang_String.getField("I.value.[C").get(str);
-    var offset = CLASSES.java_lang_String.getField("I.offset.I").get(str);
-    var count = CLASSES.java_lang_String.getField("I.count.I").get(str);
-    return fromJavaChars(chars, offset, count);
+    return jStr.str;
   }
 
   /**
@@ -64,13 +64,14 @@ var util = (function () {
    * NOTE: Do not modify the ArrayBuffer; it may be shared between
    * multiple string instances.
    */
-  function javaStringToArrayBuffer(str) {
-    if (!str)
+  function javaStringToArrayBuffer(jStr) {
+    if (!jStr)
       return null;
-    var chars = CLASSES.java_lang_String.getField("I.value.[C").get(str);
-    var offset = CLASSES.java_lang_String.getField("I.offset.I").get(str);
-    var count = CLASSES.java_lang_String.getField("I.count.I").get(str);
-    return chars.subarray(offset, offset + count);
+    var arr = new Uint16Array(jStr.str.length);
+    for (var i = 0; i < jStr.str.length; i++) {
+      arr[i] = jStr.str.charCodeAt(i);
+    }
+    return arr;
   }
 
   var id = (function() {
