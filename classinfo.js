@@ -144,6 +144,8 @@ var ArrayClass = function(className, elementClass) {
     this.superClassName = "java/lang/Object";
     this.access_flags = 0;
     this.elementClass = elementClass;
+    this.vmc = {};
+    this.vfc = {};
 }
 
 ArrayClass.prototype.methods = [];

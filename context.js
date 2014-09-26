@@ -44,6 +44,8 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
   var syntheticMethod = {
     syntheticKey: "ClassInitSynthetic:" + classInfo.className,
     classInfo: {
+      vmc: {},
+      vfc: {},
       constant_pool: [
         null,
         { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
@@ -82,6 +84,8 @@ Context.prototype.raiseException = function(className, message) {
   var syntheticMethod = {
     syntheticKey: "RaiseExceptionSynthetic",
     classInfo: {
+      vmc: {},
+      vfc: {},
       constant_pool: [
         null,
         { tag: TAGS.CONSTANT_Class, name_index: 2 },
