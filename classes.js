@@ -159,7 +159,7 @@ Classes.prototype.getField = function(classInfo, fieldKey) {
             }
         }
 
-        if (fieldKey[0] == '1') {
+        if (fieldKey[0] | 0) {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
                 var field = this.getField(classInfo.interfaces[n], fieldKey);
                 if (field) {
