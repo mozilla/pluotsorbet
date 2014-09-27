@@ -763,3 +763,130 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I"] = function(ctx, stack
 
     stack.push(len);
 }
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx, stack) {
+  var len = stack.pop(), off = stack.pop(), cbuf = stack.pop(), _this = stack.pop();
+
+  var outputArray = [];
+
+  var pendingSurrogate = _this.class.getField("I.pendingSurrogate.I").get(_this);
+
+  var inputChar = 0;
+  var outputSize = 0;
+  var count = 0;
+
+  while (count < len) {
+    var outputByte = new Uint8Array(4);     // Never more than 4 encoded bytes
+    inputChar = 0xffff & cbuf[off + count];
+    if (0 != pendingSurrogate) {
+      if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+        //000u uuuu xxxx xxxx xxxx xxxx
+        //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
+        var highHalf = (pendingSurrogate & 0x03ff) + 0x0040;
+        var lowHalf = inputChar & 0x03ff;
+        inputChar = (highHalf << 10) | lowHalf;
+      } else {
+        // write replacement value instead of unpaired surrogate
+        outputByte[0] = replacementValue;
+        outputSize = 1;
+        outputArray.push(outputByte.subarray(0, outputSize));
+      }
+      pendingSurrogate = 0;
+    }
+    if (inputChar < 0x80) {
+      outputByte[0] = inputChar;
+      outputSize = 1;
+    } else if (inputChar < 0x800) {
+      outputByte[0] = 0xc0 | ((inputChar >> 6) & 0x1f);
+      outputByte[1] = 0x80 | (inputChar & 0x3f);
+      outputSize = 2;
+    } else if (0xd800 <= inputChar && inputChar <= 0xdbff) {
+      pendingSurrogate = inputChar;
+      outputSize = 0;
+    } else if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+      // unpaired surrogate
+      outputByte[0] = replacementValue;
+      outputSize = 1;
+    } else if (inputChar < 0x10000) {
+      outputByte[0] = 0xe0 | ((inputChar >> 12) & 0x0f);
+      outputByte[1] = 0x80 | ((inputChar >> 6) & 0x3f);
+      outputByte[2] = 0x80 | (inputChar & 0x3f);
+      outputSize = 3;
+    } else {
+      /* 21 bits: 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+       * a aabb  bbbb cccc  ccdd dddd
+       */
+      outputByte[0] = 0xf0 | ((inputChar >> 18) & 0x07);
+      outputByte[1] = 0x80 | ((inputChar >> 12) & 0x3f);
+      outputByte[2] = 0x80 | ((inputChar >> 6) & 0x3f);
+      outputByte[3] = 0x80 | (inputChar & 0x3f);
+      outputSize = 4;
+    }
+    outputArray.push(outputByte.subarray(0, outputSize));
+    count++;
+  }
+
+  _this.class.getField("I.pendingSurrogate.I").set(_this, pendingSurrogate);
+
+  var totalSize = outputArray.reduce(function(total, cur) {
+    return total + cur.length;
+  }, 0);
+
+  var res = ctx.newPrimitiveArray("B", totalSize);
+  outputArray.reduce(function(total, cur) {
+    res.set(cur, total);
+    return total + cur.length;
+  }, 0);
+
+  stack.push(res);
+}
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(ctx, stack) {
+  var len = stack.pop(), off = stack.pop(), cbuf = stack.pop(), _this = stack.pop();
+
+  var inputChar = 0;
+  var outputSize = 0;
+  var outputCount = 0;
+  var count = 0;
+  var localPendingSurrogate = _this.class.getField("I.pendingSurrogate.I").get(_this);
+  while (count < length) {
+    inputChar = 0xffff & cbuf[offset + count];
+    if (0 != localPendingSurrogate) {
+      if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+        //000u uuuu xxxx xxxx xxxx xxxx
+        //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
+        var highHalf = (localPendingSurrogate & 0x03ff) + 0x0040;
+        var lowHalf = inputChar & 0x03ff;
+        inputChar = (highHalf << 10) | lowHalf;
+      } else {
+        // going to write replacement value instead of unpaired surrogate
+        outputSize = 1;
+        outputCount += outputSize;
+      }
+      localPendingSurrogate = 0;
+    }
+    if (inputChar < 0x80) {
+      outputSize = 1;
+    } else if (inputChar < 0x800) {
+      outputSize = 2;
+    } else if (0xd800 <= inputChar && inputChar <= 0xdbff) {
+      localPendingSurrogate = inputChar;
+      outputSize = 0;
+    } else if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+      // unpaired surrogate
+      // going to output replacementValue;
+      outputSize = 1;
+    } else if (inputChar < 0x10000) {
+      outputSize = 3;
+    } else {
+      /* 21 bits: 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+       * a aabb  bbbb cccc  ccdd dddd
+       */
+      outputSize = 4;
+    }
+    outputCount += outputSize;
+    count++;
+  }
+
+  return outputCount;
+}
