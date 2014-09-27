@@ -196,25 +196,28 @@ var fs = (function() {
     });
   }
 
-  function exists(path, cb) {
-    path = normalizePath(path);
-
+  function existsInternal(path, cb) {
     stat(path, function(stat) {
       cb(stat ? true : false);
     });
   }
 
+  function exists(path, cb) {
+    path = normalizePath(path);
+    existsInternal(path, cb);
+  }
+
   function truncate(path, cb) {
     path = normalizePath(path);
 
-    asyncStorage.getItem(path, function(data) {
-      if (data == null || !(data instanceof Blob)) {
-        cb(false);
-      } else {
+    existsInternal(path, function(exists) {
+      if (exists) {
         asyncStorage.setItem(path, new Blob(), function() {
           setStat(path, { mtime: Date.now(), isDir: false });
           cb(true);
         });
+      } else {
+        cb(false);
       }
     });
   }
