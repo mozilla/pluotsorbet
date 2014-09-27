@@ -331,6 +331,18 @@ public class TestFileConnection implements Testlet {
             file.delete();
             file.close();
 
+            // Opening an output stream to a nonexistent file should create it.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            th.check(!file.exists());
+            // Create the stream ourselves because Connection.openOutputStream
+            // raises an exception when the file doesn't exist.
+            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
+            th.check(file.exists());
+            th.check(file.fileSize(), 0, "Check file size");
+            out.close();
+            file.delete();
+            file.close();
+
             dir = (FileConnection)Connector.open(dirPath + "provaDir");
             dir.delete();
             th.check(!dir.exists());
