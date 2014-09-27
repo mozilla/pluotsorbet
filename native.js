@@ -769,7 +769,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx
 
   var outputArray = [];
 
-  var pendingSurrogate = _this.class.getField("pendingSurrogate", "I").get(_this);
+  var pendingSurrogate = _this.class.getField("I.pendingSurrogate.I").get(_this);
 
   var inputChar = 0;
   var outputSize = 0;
@@ -826,7 +826,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx
     count++;
   }
 
-  _this.class.getField("pendingSurrogate", "I").set(_this, pendingSurrogate);
+  _this.class.getField("I.pendingSurrogate.I").set(_this, pendingSurrogate);
 
   var totalSize = outputArray.reduce(function(total, cur) {
     return total + cur.length;
@@ -848,7 +848,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(ctx, sta
   var outputSize = 0;
   var outputCount = 0;
   var count = 0;
-  var localPendingSurrogate = _this.class.getField("pendingSurrogate", "I").get(_this);
+  var localPendingSurrogate = _this.class.getField("I.pendingSurrogate.I").get(_this);
   while (count < length) {
     inputChar = 0xffff & cbuf[offset + count];
     if (0 != localPendingSurrogate) {
