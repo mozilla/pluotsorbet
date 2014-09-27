@@ -95,9 +95,15 @@ var Instrument = {
     methods.sort(function(a, b) { return b.cost - a.cost });
 
     console.log("Profile:");
-    methods.forEach(function(method) {
+    // The Web Console displays a maximum of 200 lines, so we need to limit
+    // the number of lines we log to it, or our top offenders will scroll off
+    // the console before we get a chance to see them.
+    var MAX_LENGTH = urlParams.logConsole === "web" ? 100 : 1000;
+    var len = (methods.length > MAX_LENGTH) ? MAX_LENGTH : methods.length;
+    for (var i = 0; i < len; i++) {
+      var method = methods[i];
       console.log(Math.round(method.cost) + "ms " + method.count + " " + method.key);
-    });
+    }
 
     this.profiling = false;
   },
