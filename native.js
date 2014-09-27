@@ -779,7 +779,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx
     var outputByte = new Uint8Array(4);     // Never more than 4 encoded bytes
     inputChar = 0xffff & cbuf[off + count];
     if (0 != pendingSurrogate) {
-      if (0xdc00<=inputChar && inputChar<=0xdfff) {
+      if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
         //000u uuuu xxxx xxxx xxxx xxxx
         //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
         var highHalf = (pendingSurrogate & 0x03ff) + 0x0040;
@@ -800,10 +800,10 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx
       outputByte[0] = 0xc0 | ((inputChar >> 6) & 0x1f);
       outputByte[1] = 0x80 | (inputChar & 0x3f);
       outputSize = 2;
-    } else if (0xd800<=inputChar && inputChar<=0xdbff) {
+    } else if (0xd800 <= inputChar && inputChar <= 0xdbff) {
       pendingSurrogate = inputChar;
       outputSize = 0;
-    } else if (0xdc00<=inputChar && inputChar<=0xdfff) {
+    } else if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
       // unpaired surrogate
       outputByte[0] = replacementValue;
       outputSize = 1;
@@ -852,7 +852,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(ctx, sta
   while (count < length) {
     inputChar = 0xffff & cbuf[offset + count];
     if (0 != localPendingSurrogate) {
-      if (0xdc00<=inputChar && inputChar<=0xdfff) {
+      if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
         //000u uuuu xxxx xxxx xxxx xxxx
         //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
         var highHalf = (localPendingSurrogate & 0x03ff) + 0x0040;
@@ -869,10 +869,10 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(ctx, sta
       outputSize = 1;
     } else if (inputChar < 0x800) {
       outputSize = 2;
-    } else if (0xd800<=inputChar && inputChar<=0xdbff) {
+    } else if (0xd800 <= inputChar && inputChar <= 0xdbff) {
       localPendingSurrogate = inputChar;
       outputSize = 0;
-    } else if (0xdc00<=inputChar && inputChar<=0xdfff) {
+    } else if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
       // unpaired surrogate
       // going to output replacementValue;
       outputSize = 1;
