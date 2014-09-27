@@ -40,6 +40,33 @@ Override["java/lang/Math.min.(II)I"] = function(ctx, stack) {
   stack.push(a <= b ? a : b);
 }
 
+Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(ctx, stack) {
+  var len = stack.pop(), off = stack.pop(), b = stack.pop(), _this = stack.pop();
+
+  if ((off < 0) || (off > b.length) || (len < 0) ||
+      ((off + len) > b.length)) {
+      ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
+  }
+
+  if (len == 0) {
+      return;
+  }
+
+  var count = _this.class.getField("I.count.I").get(_this);
+  var buf = _this.class.getField("I.buf.[B").get(_this);
+
+  var newcount = count + len;
+  if (newcount > buf.length) {
+    var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    newbuf.set(buf);
+    buf = newbuf;
+    _this.class.getField("I.buf.[B").set(_this, buf);
+  }
+
+  buf.set(b.subarray(off, off + len), count);
+  _this.class.getField("I.count.I").set(_this, newcount);
+}
+
 Override["java/io/ByteArrayInputStream.<init>.([B)V"] = function(ctx, stack) {
   var buf = stack.pop(), _this = stack.pop();
 
