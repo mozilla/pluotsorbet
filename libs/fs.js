@@ -196,22 +196,19 @@ var fs = (function() {
     });
   }
 
-  function existsInternal(path, cb) {
+  function exists(path, cb) {
+    path = normalizePath(path);
+
     stat(path, function(stat) {
       cb(stat ? true : false);
     });
   }
 
-  function exists(path, cb) {
-    path = normalizePath(path);
-    existsInternal(path, cb);
-  }
-
   function truncate(path, cb) {
     path = normalizePath(path);
 
-    existsInternal(path, function(exists) {
-      if (exists) {
+    stat(path, function(stat) {
+      if (stat && !stat.isDir) {
         asyncStorage.setItem(path, new Blob(), function() {
           setStat(path, { mtime: Date.now(), isDir: false });
           cb(true);
