@@ -632,7 +632,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(c
                 }
             });
         } else {
-            fs.create(path, function(created) {
+            fs.create(path, new Blob(), function(created) {
                 if (created) {
                     open();
                 } else {
@@ -661,7 +661,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"] = fun
         if (exists) {
             open();
         } else {
-            fs.create(path, function(created) {
+            fs.create(path, new Blob(), function(created) {
                 if (created) {
                     open();
                 } else {

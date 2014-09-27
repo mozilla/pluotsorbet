@@ -207,14 +207,14 @@ var fs = (function() {
   function truncate(path, cb) {
     path = normalizePath(path);
 
-    asyncStorage.getItem(path, function(data) {
-      if (data == null || !(data instanceof Blob)) {
-        cb(false);
-      } else {
+    stat(path, function(stat) {
+      if (stat && !stat.isDir) {
         asyncStorage.setItem(path, new Blob(), function() {
           setStat(path, { mtime: Date.now(), isDir: false });
           cb(true);
         });
+      } else {
+        cb(false);
       }
     });
   }
@@ -281,17 +281,25 @@ var fs = (function() {
 
   function create(path, blob, cb) {
     createInternal(path, blob, function(created) {
-      setStat(path, { mtime: Date.now(), isDir: false }, function() {
+      if (created) {
+        setStat(path, { mtime: Date.now(), isDir: false }, function() {
+          cb(created);
+        });
+      } else {
         cb(created);
-      });
+      }
     });
   }
 
   function mkdir(path, cb) {
     createInternal(path, [], function(created) {
-      setStat(path, { mtime: Date.now(), isDir: true }, function() {
+      if (created) {
+        setStat(path, { mtime: Date.now(), isDir: true }, function() {
+          cb(created);
+        });
+      } else {
         cb(created);
-      });
+      }
     });
   }
 
