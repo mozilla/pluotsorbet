@@ -281,17 +281,25 @@ var fs = (function() {
 
   function create(path, blob, cb) {
     createInternal(path, blob, function(created) {
-      setStat(path, { mtime: Date.now(), isDir: false }, function() {
+      if (created) {
+        setStat(path, { mtime: Date.now(), isDir: false }, function() {
+          cb(created);
+        });
+      } else {
         cb(created);
-      });
+      }
     });
   }
 
   function mkdir(path, cb) {
     createInternal(path, [], function(created) {
-      setStat(path, { mtime: Date.now(), isDir: true }, function() {
+      if (created) {
+        setStat(path, { mtime: Date.now(), isDir: true }, function() {
+          cb(created);
+        });
+      } else {
         cb(created);
-      });
+      }
     });
   }
 

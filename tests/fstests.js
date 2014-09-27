@@ -108,8 +108,22 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  fs.stat("/tmp", function(stat) {
+    ok(stat.isDir, "/tmp is a directory");
+    next();
+  });
+});
+
+tests.push(function() {
   fs.create("/tmp", new Blob(), function(created) {
     is(created, false, "can't create a file with the same path of an already existing directory");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.stat("/tmp", function(stat) {
+    ok(stat.isDir, "/tmp is still a directory");
     next();
   });
 });
@@ -129,8 +143,22 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  fs.stat("/tmp/tmp.txt", function(stat) {
+    ok(!stat.isDir, "/tmp/tmp.txt is not a directory");
+    next();
+  });
+});
+
+tests.push(function() {
   fs.mkdir("/tmp/tmp.txt", function(created) {
     is(created, false, "can't create a directory with the same path of an already existing file");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.stat("/tmp/tmp.txt", function(stat) {
+    ok(!stat.isDir, "/tmp/tmp.txt is still not a directory");
     next();
   });
 });
