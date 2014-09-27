@@ -74,8 +74,10 @@ Override["java/io/ByteArrayInputStream.read.([BII)I"] = function(ctx, stack) {
 
   if (!b) {
     ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-  } else if ((off < 0) || (off > b.length) || (len < 0) ||
-             ((off + len) > b.length) || ((off + len) < 0)) {
+  }
+
+  if ((off < 0) || (off > b.length) || (len < 0) ||
+      ((off + len) > b.length)) {
     ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
   }
 
@@ -86,7 +88,7 @@ Override["java/io/ByteArrayInputStream.read.([BII)I"] = function(ctx, stack) {
   if (_this.pos + len > _this.count) {
     len = _this.count - _this.pos;
   }
-  if (len <= 0) {
+  if (len === 0) {
     stack.push(0);
     return;
   }
@@ -98,9 +100,7 @@ Override["java/io/ByteArrayInputStream.read.([BII)I"] = function(ctx, stack) {
 }
 
 Override["java/io/ByteArrayInputStream.skip.(J)J"] = function(ctx, stack) {
-  var nLong = stack.pop2(), _this = stack.pop();
-
-  var n = nLong.toNumber();
+  var n = stack.pop2().toNumber(), _this = stack.pop();
 
   if (_this.pos + n > _this.count) {
       n = _this.count - _this.pos;
@@ -113,7 +113,7 @@ Override["java/io/ByteArrayInputStream.skip.(J)J"] = function(ctx, stack) {
 
   _this.pos += n;
 
-  stack.push2(nLong);
+  stack.push2(Long.fromNumber(n));
 }
 
 Override["java/io/ByteArrayInputStream.available.()I"] = function(ctx, stack) {
