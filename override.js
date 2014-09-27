@@ -44,9 +44,11 @@ Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(ctx, stack) {
   var len = stack.pop(), off = stack.pop(), b = stack.pop(), _this = stack.pop();
 
   if ((off < 0) || (off > b.length) || (len < 0) ||
-      ((off + len) > b.length) || ((off + len) < 0)) {
+      ((off + len) > b.length)) {
       ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
-  } else if (len == 0) {
+  }
+
+  if (len == 0) {
       return;
   }
 
