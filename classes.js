@@ -139,8 +139,7 @@ Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
     return classInfo;
 }
 
-Classes.prototype.getField = function(classInfo, fieldName, signature, staticFlag) {
-    var fieldKey = ~~!!staticFlag + "." + fieldName + "." + signature;
+Classes.prototype.getField = function(classInfo, fieldKey) {
     if (classInfo.vfc[fieldKey]) {
         return classInfo.vfc[fieldKey];
     }
@@ -150,16 +149,16 @@ Classes.prototype.getField = function(classInfo, fieldName, signature, staticFla
         for (var i=0; i<fields.length; ++i) {
             var field = fields[i];
             if (!field.key) {
-                field.key = ~~(ACCESS_FLAGS.isStatic(field.access_flags)) + "." + field.name + "." + field.signature;
+                field.key = (ACCESS_FLAGS.isStatic(field.access_flags) ? "S" : "I") + "." + field.name + "." + field.signature;
             }
             if (field.key === fieldKey) {
                 return classInfo.vfc[fieldKey] = field;
             }
         }
 
-        if (staticFlag) {
+        if (fieldKey[0] === 'S') {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
-                var field = this.getField(classInfo.interfaces[n], fieldName, signature, staticFlag);
+                var field = this.getField(classInfo.interfaces[n], fieldKey);
                 if (field) {
                     return classInfo.vfc[fieldKey] = field;
                 }
@@ -178,7 +177,7 @@ Classes.prototype.getMethod = function(classInfo, methodKey) {
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
             if (!method.key) {
-              method.key = ~~(ACCESS_FLAGS.isStatic(method.access_flags)) + "." + method.name + "." + method.signature;
+              method.key = (ACCESS_FLAGS.isStatic(method.access_flags) ? "S" : "I") + "." + method.name + "." + method.signature;
             }
             if (method.key === methodKey) {
                 return classInfo.vmc[methodKey] = method;
