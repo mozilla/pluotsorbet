@@ -343,6 +343,24 @@ public class TestFileConnection implements Testlet {
             file.delete();
             file.close();
 
+            // Opening an output stream to a nonexistent file should create it
+            // even if we specify an offset.  FCOutputStream doesn't say what to
+            // do if offset > fileSize, and our impl simply ignores the problem,
+            // although Connection sets offset to fileSize in that case,
+            // and presumably all callers are going to go through Connection
+            // rather than instantiating FCOutputStream directly, so our impl
+            // should be ok.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            th.check(!file.exists());
+            // Create the stream ourselves because Connection.openOutputStream
+            // raises an exception when the file doesn't exist.
+            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), 5, null);
+            th.check(file.exists());
+            th.check(file.fileSize(), 0, "Check file size");
+            out.close();
+            file.delete();
+            file.close();
+
             dir = (FileConnection)Connector.open(dirPath + "provaDir");
             dir.delete();
             th.check(!dir.exists());
