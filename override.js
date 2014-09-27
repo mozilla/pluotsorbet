@@ -52,19 +52,19 @@ Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(ctx, stack) {
       return;
   }
 
-  var count = _this.class.getField("count", "I").get(_this);
-  var buf = _this.class.getField("buf", "[B").get(_this);
+  var count = _this.class.getField("0.count.I").get(_this);
+  var buf = _this.class.getField("0.buf.[B").get(_this);
 
   var newcount = count + len;
   if (newcount > buf.length) {
     var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
-    _this.class.getField("buf", "[B").set(_this, buf);
+    _this.class.getField("0.buf.[B").set(_this, buf);
   }
 
   buf.set(b.subarray(off, off + len), count);
-  _this.class.getField("count", "I").set(_this, newcount);
+  _this.class.getField("0.count.I").set(_this, newcount);
 }
 
 Override["java/io/ByteArrayInputStream.<init>.([B)V"] = function(ctx, stack) {
