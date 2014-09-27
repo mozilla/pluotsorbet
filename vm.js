@@ -1042,7 +1042,7 @@ VM.execute = function(ctx) {
                         }
 
                         // Check if the method is already in the virtual method cache
-                        if (obj.class.vmc && obj.class.vmc[methodInfo.key]) {
+                        if (obj.class.vmc[methodInfo.key]) {
                           methodInfo = obj.class.vmc[methodInfo.key];
                         } else {
                           methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);

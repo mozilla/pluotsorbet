@@ -140,7 +140,7 @@ Classes.prototype.initPrimitiveArrayType = function(typeName, constructor) {
 }
 
 Classes.prototype.getField = function(classInfo, fieldKey) {
-    if (classInfo.vfc && classInfo.vfc[fieldKey]) {
+    if (classInfo.vfc[fieldKey]) {
         return classInfo.vfc[fieldKey];
     }
 
@@ -152,10 +152,7 @@ Classes.prototype.getField = function(classInfo, fieldKey) {
                 field.key = (ACCESS_FLAGS.isStatic(field.access_flags) ? "S" : "I") + "." + field.name + "." + field.signature;
             }
             if (field.key === fieldKey) {
-                if (classInfo.vfc) {
-                    classInfo.vfc[fieldKey] = field;
-                }
-                return field;
+                return classInfo.vfc[fieldKey] = field;
             }
         }
 
@@ -163,10 +160,7 @@ Classes.prototype.getField = function(classInfo, fieldKey) {
             for (var n = 0; n < classInfo.interfaces.length; ++n) {
                 var field = this.getField(classInfo.interfaces[n], fieldKey);
                 if (field) {
-                    if (classInfo.vfc) {
-                        classInfo.vfc[fieldKey] = field;
-                    }
-                    return field;
+                    return classInfo.vfc[fieldKey] = field;
                 }
             }
         }
@@ -186,11 +180,7 @@ Classes.prototype.getMethod = function(classInfo, methodKey) {
               method.key = (ACCESS_FLAGS.isStatic(method.access_flags) ? "S" : "I") + "." + method.name + "." + method.signature;
             }
             if (method.key === methodKey) {
-                if (classInfo.vmc) {
-                    classInfo.vmc[methodKey] = method;
-                }
-
-                return method;
+                return classInfo.vmc[methodKey] = method;
             }
         }
         c = c.superClass;
@@ -200,11 +190,7 @@ Classes.prototype.getMethod = function(classInfo, methodKey) {
         for (var n = 0; n < classInfo.interfaces.length; ++n) {
             var method = this.getMethod(classInfo.interfaces[n], methodKey);
             if (method) {
-                if (classInfo.vmc) {
-                    classInfo.vmc[methodKey] = method;
-                }
-
-                return method;
+                return classInfo.vmc[methodKey] = method;
             }
         }
     }
