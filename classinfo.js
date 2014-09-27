@@ -131,8 +131,8 @@ ClassInfo.prototype.getClassObject = function(ctx) {
     return classObject;
 }
 
-ClassInfo.prototype.getField = function(name, signature, isStatic) {
-    return CLASSES.getField(this, name, signature, isStatic);
+ClassInfo.prototype.getField = function(fieldKey) {
+    return CLASSES.getField(this, fieldKey);
 }
 
 ClassInfo.prototype.toString = function() {
@@ -144,6 +144,8 @@ var ArrayClass = function(className, elementClass) {
     this.superClassName = "java/lang/Object";
     this.access_flags = 0;
     this.elementClass = elementClass;
+    this.vmc = {};
+    this.vfc = {};
 }
 
 ArrayClass.prototype.methods = [];
