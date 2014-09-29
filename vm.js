@@ -18,166 +18,13 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
-function prova() {
-  var table = {};
-  var done = false;
-  var src = VM.execute.toSource();
-  var cases = src.substring(src.indexOf("switch (op) {") + 14, src.lastIndexOf("default"));
-
-  var curOpcodes = [];
-  var insideCase = false;
-
-  function readLine(consuming) {
-    var lineEnd = cases.indexOf("\n");
-    if (lineEnd == -1) {
-      return null;
-    }
-
-    var line = cases.substring(0, lineEnd).trim();
-
-    if (consuming) {
-      cases = cases.substring(lineEnd + 1);
-    }
-
-    return line;
-  }
-
-  while (true) {
-    var line = readLine(true);
-    if (line == null) {
-      break;
-    }
-
-    var nextLine = readLine(false);
-
-    console.log("LINE: " + line);
-    console.log("NEXT: " + readLine());
-
-    if (!insideCase && line.startsWith("case")) {
-      console.log("IS AN OPCODE");
-      curOpcodes.push(parseInt(line.substring(5, 9), 16));
-    } else if (line.startsWith("break") && nextLine && nextLine.startsWith("case")) {
-      console.log("BREAKS THE CURRENT CASE")
-      insideCase = false;
-      curOpcodes = [];
-    } else {
-      insideCase = true;
-
-      curOpcodes.forEach(function(opcode) {
-        if (!table[opcode]) {
-          table[opcode] = "";
-        }
-
-        table[opcode] += line + "\n";
-      });
-    }
-  }
-}
-
-function compile(methodInfo) {
-  var depth = 0, maxDepth = 0;
-  var locals = 0;
-  var ip = 0;
-
-  var methodInfo = {
-    name: "NOME",
-    signature: "(Lasd;)V",
-    classInfo: {
-      className: "CLASS",
-      vmc: {},
-      vfc: {},
-      constant_pool: [
-        null,
-        { tag: TAGS.CONSTANT_Class, name_index: 2 },
-        { bytes: "Ciao" },
-        { tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 4 },
-        { name_index: 5, signature_index: 6 },
-        { bytes: "<init>" },
-        { bytes: "()V" },
-      ]
-    },
-    code: [
-      0x00, // nop
-      0x00, // nop
-      0x01, // aconst_null
-      0xc6, 0xFF, 0xFD, // ifnull
-      0xb6, 0x00, 0x03, // invokevirtual
-      0xb1              // return
-    ],
-  };
-
-  var casesToGenerate = {};
-
-  var frame = new Frame(methodInfo);
-  while (true) {
-    var op = frame.read8();
-    console.log("OPCODE: " + op.toString(16))
-    var code = table[op];
-    console.log("1 CODE TO REPLACE: " + code);
-
-    code = code.replace("frame.ip", "ip", 'g');
-    code = code.replace("frame.read16signed()", frame.read16signed.bind(frame), 'g');
-    code = code.replace("frame.read16()", frame.read16.bind(frame), 'g');
-    code = code.replace("frame.read8()", frame.read8.bind(frame), 'g');
-    code = code.replace(/\bop\b/g, op);
-
-    console.log("2 CODE TO REPLACE: " + code);
-
-    while (true) {
-      var push = code.indexOf("stack.push");
-      var pop = code.indexOf("stack.pop");
-
-      if (pop != -1 && (pop < push || push == -1)) {
-        depth--;
-        code = code.replace(/stack.pop\(\)/, "stack[" + depth + "]");
-      } else if (push != -1) {
-        code = code.replace(/stack.push\(([^\)]+)\)/, "stack[" + depth + "] = $1");
-        depth++;
-        if (depth > maxDepth) {
-          maxDepth = depth;
-        }
-      } else {
-        break;
-      }
-
-      console.log("CODE IS " + code)
-    }
-
-    casesToGenerate[frame.ip] = code;
-
-    if (op == 0xb1) {
-      break;
-    }
-  }
-
-  function hashCode(s){
-    return s.split("").reduce(function(a,b) {
-      a = ((a<<5) - a) + b.charCodeAt(0);
-      return a & a
-    }, 0);
-  }
-
-  var generatedCode = "function " + hashCode(methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature) + "(ctx) {\n";
-  generatedCode += "  var frame = ctx.current();\n";
-  generatedCode += "  var cp = frame.cp;\n";
-  generatedCode += "  var stack = new Array(" + maxDepth + ");\n";
-  generatedCode += "  var ip = 0;\n";
-  generatedCode += "  while (true) {\n";
-  generatedCode += "    switch (ip) {\n"
-  for (var caseToGenerate in casesToGenerate) {
-    generatedCode += "      case " + caseToGenerate + ":\n";
-    casesToGenerate[caseToGenerate].split("\n").forEach(function(line) {
-      generatedCode += "        " + line + "\n";
-    });
-  }
-  generatedCode += "    }\n";
-  generatedCode += "  }\n";
-  generatedCode += "}";
-
-  console.log(generatedCode);
-}
+VM.JITTable = null;
 
 VM.execute = function(ctx) {
+    if (!VM.JITTable) {
+      generateJITTable();
+    }
+
     var frame = ctx.current();
 
     var cp = frame.cp;
@@ -1269,47 +1116,110 @@ VM.execute = function(ctx) {
                 break;
             }
             pushFrame(methodInfo, consumes);
+            if (methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature ==
+                "gnu/testlet/JITTest.ciao.()V") {
+                console.log(compile(methodInfo));
+            }
+            if (methodInfo.compiled) {
+              // If the method is compiled, directly call it
+              methodInfo.compiled(ctx);
+            } else if (frame.methodInfo.compiled) {
+              // If the caller is compiled, need to call the interpreter
+              VM.execute(ctx);
+              return;
+            }
             break;
         case 0xb7: // invokespecial
+          var idx = frame.read16();
+          var methodInfo = cp[idx];
+          if (methodInfo.tag) {
+              methodInfo = resolve(op, idx);
+          }
+          var consumes = Signature.getINSlots(methodInfo.signature);
+          ++consumes;
+          var obj = stack[stack.length - consumes];
+          if (!obj) {
+              ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+              break;
+          }
+
+          if (VM.DEBUG) {
+              VM.trace("invoke", ctx.thread.pid, methodInfo);
+          }
+
+          var Alt = ACCESS_FLAGS.isNative(methodInfo.access_flags) ? Native : Override.hasMethod(methodInfo) ? Override : null;
+          if (Alt) {
+              try {
+                  Instrument.callPauseHooks(ctx.current());
+                  Instrument.measure(Alt, ctx, methodInfo);
+                  Instrument.callResumeHooks(ctx.current());
+              } catch (e) {
+                  Instrument.callResumeHooks(ctx.current());
+                  if (!e.class) {
+                      throw e;
+                  }
+                  throw_(e, ctx);
+              }
+              break;
+          }
+          pushFrame(methodInfo, consumes);
+          break;
         case 0xb8: // invokestatic
+          var startip = frame.ip - 1;
+          var idx = frame.read16();
+          var methodInfo = cp[idx];
+          if (methodInfo.tag) {
+              methodInfo = resolve(op, idx);
+              classInitCheck(methodInfo.classInfo, startip);
+          }
+          var consumes = Signature.getINSlots(methodInfo.signature);
+
+          if (VM.DEBUG) {
+              VM.trace("invoke", ctx.thread.pid, methodInfo);
+          }
+
+          var Alt = ACCESS_FLAGS.isNative(methodInfo.access_flags) ? Native : Override.hasMethod(methodInfo) ? Override : null;
+          if (Alt) {
+              try {
+                  Instrument.callPauseHooks(ctx.current());
+                  Instrument.measure(Alt, ctx, methodInfo);
+                  Instrument.callResumeHooks(ctx.current());
+              } catch (e) {
+                  Instrument.callResumeHooks(ctx.current());
+                  if (!e.class) {
+                      throw e;
+                  }
+                  throw_(e, ctx);
+              }
+              break;
+          }
+          pushFrame(methodInfo, consumes);
+          break;
         case 0xb9: // invokeinterface
-            var startip = frame.ip - 1;
             var idx = frame.read16();
-            if (op === 0xb9) {
-                var argsNumber = frame.read8();
-                var zero = frame.read8();
-            }
-            var isStatic = (op === 0xb8);
+            /*var argsNumber =*/ frame.read8();
+            /*var zero =*/ frame.read8();
             var methodInfo = cp[idx];
             if (methodInfo.tag) {
                 methodInfo = resolve(op, idx);
-                if (isStatic)
-                    classInitCheck(methodInfo.classInfo, startip);
             }
             var consumes = Signature.getINSlots(methodInfo.signature);
-            if (!isStatic) {
-                ++consumes;
-                var obj = stack[stack.length - consumes];
-                if (!obj) {
-                    ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-                    break;
+            ++consumes;
+            var obj = stack[stack.length - consumes];
+            if (!obj) {
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+                break;
+            }
+            if (methodInfo.classInfo != obj.class) {
+                if (!methodInfo.key) {
+                    methodInfo.key = "I." + methodInfo.name + "." + methodInfo.signature;
                 }
-                switch (op) {
-                case OPCODES.invokevirtual:
-                case OPCODES.invokeinterface:
-                    if (methodInfo.classInfo != obj.class) {
-                        if (!methodInfo.key) {
-                            methodInfo.key = "I." + methodInfo.name + "." + methodInfo.signature;
-                        }
 
-                        // Check if the method is already in the virtual method cache
-                        if (obj.class.vmc[methodInfo.key]) {
-                          methodInfo = obj.class.vmc[methodInfo.key];
-                        } else {
-                          methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);
-                        }
-                    }
-                    break;
+                // Check if the method is already in the virtual method cache
+                if (obj.class.vmc[methodInfo.key]) {
+                    methodInfo = obj.class.vmc[methodInfo.key];
+                } else {
+                    methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);
                 }
             }
 
@@ -1339,7 +1249,8 @@ VM.execute = function(ctx) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo);
             }
             popFrame(0);
-            if (!frame.methodInfo)
+            // Return if the caller is compiled
+            if (!frame.methodInfo || frame.methodInfo.compiled)
                 return;
             break;
         case 0xac: // ireturn
@@ -1349,7 +1260,8 @@ VM.execute = function(ctx) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
             popFrame(1);
-            if (!frame.methodInfo)
+            // Return if the caller is compiled
+            if (!frame.methodInfo || frame.methodInfo.compiled)
                 return;
             break;
         case 0xad: // lreturn
@@ -1358,7 +1270,8 @@ VM.execute = function(ctx) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
             popFrame(2);
-            if (!frame.methodInfo)
+            // Return if the caller is compiled
+            if (!frame.methodInfo || frame.methodInfo.compiled)
                 return;
             break;
         default:
@@ -1366,4 +1279,152 @@ VM.execute = function(ctx) {
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
     };
+}
+
+function generateJITTable() {
+  VM.JITTable = {};
+
+  var src = VM.execute.toSource();
+  var cases = src.substring(src.indexOf("switch (op) {") + 14, src.lastIndexOf("default"));
+
+  var curOpcodes = [];
+  var insideCase = false;
+
+  function readLine(consuming) {
+    var lineEnd = cases.indexOf("\n");
+    if (lineEnd == -1) {
+      return null;
+    }
+
+    var line = cases.substring(0, lineEnd).trim();
+
+    if (consuming) {
+      cases = cases.substring(lineEnd + 1);
+    }
+
+    return line;
+  }
+
+  while (true) {
+    var line = readLine(true);
+    if (line == null) {
+      break;
+    }
+
+    var nextLine = readLine(false);
+
+    if (!insideCase && line.startsWith("case")) {
+      curOpcodes.push(parseInt(line.substring(5, 9), 16));
+    } else if (line.startsWith("break") && nextLine && nextLine.startsWith("case")) {
+      insideCase = false;
+      curOpcodes = [];
+    } else {
+      insideCase = true;
+
+      curOpcodes.forEach(function(opcode) {
+        if (!VM.JITTable[opcode]) {
+          VM.JITTable[opcode] = "";
+        }
+
+        VM.JITTable[opcode] += line + "\n";
+      });
+    }
+  }
+
+  VM.JITTable[0] = ""; // nop
+}
+
+function compile(methodInfo) {
+  var depth = 0, maxDepth = 0;
+  var locals = 0;
+  var ip = 0;
+
+  var casesToGenerate = {};
+
+  var frame = new Frame(methodInfo);
+  while (true) {
+    var op = frame.read8();
+    var code = VM.JITTable[op];
+
+    //code = code.replace("frame.ip", "ip", 'g');
+    code = code.replace("frame.read16signed()", frame.read16signed.bind(frame), 'g');
+    code = code.replace("frame.read16()", frame.read16.bind(frame), 'g');
+    code = code.replace("frame.read8()", frame.read8.bind(frame), 'g');
+    code = code.replace(/\bop\b/g, op);
+
+    //console.log("1 CODE IS " + code);
+
+    /*while (true) {
+      var push = code.indexOf("stack.push(");
+      var pop = code.indexOf("stack.pop()");
+      var push2 = code.indexOf("stack.push2(");
+      var pushType = code.indexOf("stack.pushType(");
+
+      if (pop != -1 && (pop < push || push == -1)) {
+        depth--;
+        code = code.replace(/stack.pop\(\)/, "stack[" + depth + "]");
+      } else if (push != -1) {
+        code = code.replace(/stack.push\(([^\)]+)\)/, "stack[" + depth + "] = $1");
+        depth++;
+        if (depth > maxDepth) {
+          maxDepth = depth;
+        }
+      } else if (push2 != -1) {
+        code = code.replace(/stack.push2\(([^\)]+)\)/, "stack[" + depth + "] = $1");
+        depth++;
+        if (depth > maxDepth) {
+          maxDepth = depth;
+        }
+      } else if (pushType != -1) {
+        var args = /stack.pushType\(([^\)]+)\)/.exec(code);*/
+        //args = args[1].split(/\s*,\s*/);
+        /*code = code.replace(/stack.pushType\(([^\)]+)\)/, "stack[" + depth + "] = value;");
+        depth++;
+        if (depth > maxDepth) {
+          maxDepth = depth;
+        }
+      } else {
+        break;
+      }
+
+      //console.log("2 CODE IS " + code);
+    }*/
+
+    casesToGenerate[ip] = code;
+    ip = frame.ip;
+
+    if (op == 0xb1) {
+      break;
+    }
+  }
+
+  function hashCode(s){
+    return s.split("").reduce(function(a,b) {
+      a = ((a<<5) - a) + b.charCodeAt(0);
+      return a & a
+    }, 0);
+  }
+
+  var generatedCode = "function " + hashCode(methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature) + "(ctx) {\n";
+  generatedCode += "  var frame = ctx.current();\n";
+  generatedCode += "  var cp = frame.cp;\n";
+  generatedCode += "  var stack = frame.stack;\n";//"new Array(" + maxDepth + ");\n";
+  generatedCode += "  while (true) {\n";
+  generatedCode += "    switch (frame.ip) {\n"
+  for (var caseToGenerate in casesToGenerate) {
+    generatedCode += "      case " + caseToGenerate + ":\n";
+    casesToGenerate[caseToGenerate].split("\n").forEach(function(line) {
+      generatedCode += "        " + line + "\n";
+    });
+  }
+  generatedCode += "    }\n";
+  generatedCode += "  }\n";
+  /*if (methodInfo.signature[methodInfo.signature.length - 1] == 'J' || methodInfo.signature[methodInfo.signature.length - 1] == 'D') {
+    generatedCode += "  frame.stack.push2(stack[0]);\n";
+  } else if (methodInfo.signature[methodInfo.signature.length - 1] != 'V') {
+    generatedCode += "  frame.stack.push(stack[0]);\n"
+  }*/
+  generatedCode += "}";
+
+  return generatedCode;
 }
