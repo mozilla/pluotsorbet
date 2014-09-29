@@ -2,170 +2,338 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 'use strict';
 
-Override["java/lang/String.equals.(Ljava/lang/Object;)Z"] = function(ctx, stack) {
-  var str = stack.pop(), _this = stack.pop();
-  if (str && str.class === _this.class) {
-    stack.push(
-      util.compareTypedArrays(
-        util.javaStringToArrayBuffer(str),
-        util.javaStringToArrayBuffer(_this))
-        ? 1 : 0);
-  } else {
-    stack.push(0);
+/**
+ * These methods reimplement java.lang.String using native JS strings,
+ * stored as the `str` property on the java.lang.String instance.
+ *
+ * All methods on java.lang.String are implemented here in the same
+ * order as java.lang.String, with the exception of a couple of the
+ * String.valueOf() methods, whose absence is documented below.
+ */
+
+function isString(obj) {
+  return obj && obj.str !== undefined;
+}
+
+
+//****************************************************************
+// Constructors
+
+Override.simple("java/lang/String.<init>.()V", function() {
+  this.str = "";
+});
+
+Override.simple("java/lang/String.<init>.(Ljava/lang/String;)V", function(jStr) {
+  if (!jStr) {
+    throw new JavaException("java/lang/NullPointerException");
   }
-};
+  this.str = jStr.str;
+});
 
-Override["java/lang/String.indexOf.(Ljava/lang/String;I)I"] = function(ctx, stack) {
-  var fromIndex = stack.pop(), str = stack.pop(), _this = stack.pop();
-
-  if (!str) {
-    ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-    return;
+Override.simple("java/lang/String.<init>.([C)V", function(chars) {
+  if (!chars) {
+    throw new JavaException("java/lang/NullPointerException");
   }
+  this.str = util.fromJavaChars(chars);
+});
 
-  var needle = util.javaStringToArrayBuffer(str);
-  var haystack = util.javaStringToArrayBuffer(_this);
+Override.simple("java/lang/String.<init>.([CII)V", function(value, offset, count) {
+  if (offset < 0 || count < 0 || offset > value.length - count) {
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
+  }
+  this.str = util.fromJavaChars(value, offset, count);
+});
 
-  if (fromIndex >= haystack.length) {
-    if (haystack.length === 0 && fromIndex === 0 && needle.length === 0) {
-      stack.push(0);
-    } else {
-      stack.push(-1);
+// Several constructors below share this implementation:
+function constructFromByteArray(bytes, off, len, enc) {
+  enc = normalizeEncoding(enc);
+  bytes = bytes.subarray(off, off + len);
+  try {
+    this.str = new TextDecoder(enc).decode(bytes);
+  } catch(e) {
+    throw new JavaException("java/io/UnsupportedEncodingException");
+  }
+}
+
+Override.simple(
+  "java/lang/String.<init>.([BIILjava/lang/String;)V",
+  function(bytes, off, len, enc) {
+    constructFromByteArray.call(this, bytes, off, len, enc.str);
+  });
+
+Override.simple(
+  "java/lang/String.<init>.([BLjava/lang/String;)V",
+  function(bytes, enc) {
+    constructFromByteArray.call(this, bytes, 0, bytes.length, enc.str);
+  });
+
+Override.simple(
+  "java/lang/String.<init>.([BII)V",
+  function(bytes, offset, len) {
+    constructFromByteArray.call(this, bytes, offset, len, "UTF-8");
+  });
+
+Override.simple(
+  "java/lang/String.<init>.([B)V",
+  function(bytes) {
+    constructFromByteArray.call(this, bytes, 0, bytes.length, "UTF-8");
+  });
+
+Override.simple(
+  "java/lang/String.<init>.(Ljava/lang/StringBuffer;)V",
+  function(buffer) {
+    var value = buffer.class.getField("I.value.[C").get(buffer);
+    var count = buffer.class.getField("I.count.I").get(buffer);
+    this.str = util.fromJavaChars(value, 0, count);
+  });
+
+Override.simple(
+  "java/lang/String.<init>.(II[C)V",
+  function(offset, count, value) {
+    this.str = util.fromJavaChars(value, offset, count);
+  });
+
+//****************************************************************
+// Methods
+
+Override.simple("java/lang/String.length.()I", function() {
+  return this.str.length;
+});
+
+Override.simple("java/lang/String.charAt.(I)C", function(index) {
+  if (index < 0 || index >= this.str.length) {
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
+  }
+  return this.str.charCodeAt(index);
+});
+
+Override.simple("java/lang/String.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
+  if (srcBegin < 0 || srcEnd > this.str.length || srcBegin > srcEnd ||
+      dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
+  }
+  var len = srcEnd - srcBegin;
+  for (var i = 0; i < len; i++) {
+    dst[dstBegin + i] = this.str.charCodeAt(srcBegin + i);
+  }
+});
+
+// Java returns encodings like "UTF_16"; TextEncoder and friends only
+// like hyphens, not underscores.
+function normalizeEncoding(enc) {
+  var encoding = enc.toLowerCase().replace(/_/g, '-');
+  if (encoding == "utf-16") {
+    encoding = "utf-16be"; // Java defaults to big-endian, JS to little-endian.
+  }
+  return encoding;
+}
+
+Override.simple("java/lang/String.getBytes.(Ljava/lang/String;)[B", function(jEnc) {
+  try {
+    var encoding = normalizeEncoding(jEnc.str);
+    return new Int8Array(new TextEncoder(encoding).encode(this.str));
+  } catch (e) {
+    throw new JavaException("java/io/UnsupportedEncodingException");
+  }
+});
+
+Override.simple("java/lang/String.getBytes.()[B", function() {
+  return new Int8Array(new TextEncoder("utf-8").encode(this.str));
+});
+
+Override.simple("java/lang/String.equals.(Ljava/lang/Object;)Z", function(anObject) {
+  return (isString(anObject) && anObject.str === this.str) ? 1 : 0;
+});
+
+Override.simple("java/lang/String.equalsIgnoreCase.(Ljava/lang/String;)Z", function(anotherString) {
+  return (isString(anotherString) && (anotherString.str.toLowerCase() === this.str.toLowerCase())) ? 1 : 0;
+});
+
+Override.simple("java/lang/String.compareTo.(Ljava/lang/String;)I", function(anotherString) {
+  // Sadly, JS String doesn't have a compareTo() method, so we must
+  // replicate the Java algorithm. (There is String.localeCompare, but
+  // that only returns {-1, 0, 1}, not a distance measure, which this
+  // requires.
+  var len1 = this.str.length;
+  var len2 = anotherString.str.length;
+  var n = Math.min(len1, len2);
+  var v1 = this.str;
+  var v2 = anotherString.str;
+  for (var k = 0; k < n; k++) {
+    var c1 = v1.charCodeAt(k);
+    var c2 = v2.charCodeAt(k);
+    if (c1 != c2) {
+      return c1 - c2;
     }
-  } else if (needle.length === 0) {
-    stack.push(fromIndex);
-  } else {
-    var partialIdx = substringSearch(haystack.subarray(fromIndex), needle);
-
-    if (partialIdx === -1) {
-      stack.push(-1);
-    } else {
-      stack.push(fromIndex + partialIdx);
-    }
   }
-};
+  return len1 - len2;
+});
 
-Override["java/lang/String.indexOf.(II)I"] = function(ctx, stack) {
-  var fromIndex = stack.pop(), ch = stack.pop(), _this = stack.pop();
+Override.simple("java/lang/String.regionMatches.(ZILjava/lang/String;II)Z", function(ignoreCase, toffset, other, ooffset, len) {
+  var a = (ignoreCase ? this.str.toLowerCase() : this.str);
+  var b = (ignoreCase ? other.str.toLowerCase() : other.str);
+  return a.substr(toffset, len) === b.substr(ooffset, len);
+});
 
-  var value = CLASSES.java_lang_String.getField("I.value.[C").get(_this);
-  var offset = CLASSES.java_lang_String.getField("I.offset.I").get(_this);
-  var count = CLASSES.java_lang_String.getField("I.count.I").get(_this);
-  var max = offset + count;
+Override.simple("java/lang/String.startsWith.(Ljava/lang/String;I)Z", function(prefix, toffset) {
+  return this.str.substr(toffset, prefix.str.length) === prefix.str;
+});
 
-  if (fromIndex < 0) {
-    fromIndex = 0;
-  } else if (fromIndex >= count) {
-    stack.push(-1);
-    return;
-  }
-  for (var i = offset + fromIndex; i < max; i++) {
-    if (value[i] == ch) {
-      stack.push(i - offset);
-      return;
-    }
-  }
-  stack.push(-1);
-};
+Override.simple("java/lang/String.startsWith.(Ljava/lang/String;)Z", function(prefix) {
+  return this.str.substr(0, prefix.str.length) === prefix.str;
+});
 
-Override["java/lang/String.hashCode.()I"] = function(ctx, stack) {
-  var _this = stack.pop();
-  var buf = util.javaStringToArrayBuffer(_this);
+Override.simple("java/lang/String.endsWith.(Ljava/lang/String;)Z", function(suffix) {
+  return this.str.indexOf(suffix.str, this.str.length - suffix.str.length) !== -1;
+});
 
-  // Same hashing algorithm as Java. If we find that this is too slow,
-  // we might be able to get away with a simpler/dumber variant.
+Override.simple("java/lang/String.hashCode.()I", function() {
   var hash = 0;
-  for (var i = 0; i < buf.length; i++) {
-    hash = Math.imul(31, hash) + buf[i] | 0;
+  for (var i = 0; i < this.str.length; i++) {
+    hash = Math.imul(31, hash) + this.str.charCodeAt(i) | 0;
   }
-  stack.push(hash);
-};
+  return hash;
+});
 
-Override["java/lang/String.charAt.(I)C"] = function(ctx, stack) {
-  var idx = stack.pop(), _this = stack.pop();
+Override.simple("java/lang/String.indexOf.(I)I", function(ch) {
+  return this.str.indexOf(String.fromCharCode(ch));
+});
 
-  var buf = util.javaStringToArrayBuffer(_this);
+Override.simple("java/lang/String.indexOf.(II)I", function(ch, fromIndex) {
+  return this.str.indexOf(String.fromCharCode(ch), fromIndex);
+});
 
-  if (idx < 0 || idx >= buf.length) {
-    ctx.raiseExceptionAndYield("java/lang/StringIndexOutOfBoundsException",
-                               "String.charAt(" + idx + ")");
-  } else {
-    stack.push(buf[idx]);
+Override.simple("java/lang/String.lastIndexOf.(I)I", function(ch) {
+  return this.str.lastIndexOf(String.fromCharCode(ch));
+});
+
+Override.simple("java/lang/String.lastIndexOf.(II)I", function(ch, fromIndex) {
+  return this.str.lastIndexOf(String.fromCharCode(ch), fromIndex);
+});
+
+Override.simple("java/lang/String.indexOf.(Ljava/lang/String;)I", function(s) {
+  return this.str.indexOf(s.str);
+});
+
+Override.simple("java/lang/String.indexOf.(Ljava/lang/String;I)I", function(s, fromIndex) {
+  return this.str.indexOf(s.str, fromIndex);
+});
+
+Override.simple("java/lang/String.substring.(I)Ljava/lang/String;", function(beginIndex) {
+  if (beginIndex < 0 || beginIndex > this.str.length) {
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
-};
+  return this.str.substring(beginIndex);
+});
 
-const SPACE_CODE_POINT = 32; // Everything below space is a control character.
+Override.simple("java/lang/String.substring.(II)Ljava/lang/String;", function(beginIndex, endIndex) {
+  if (beginIndex < 0 || endIndex > this.str.length || beginIndex > endIndex) {
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
+  }
+  return this.str.substring(beginIndex, endIndex);
+});
 
-Override["java/lang/String.trim.()Ljava/lang/String;"] = function(ctx, stack) {
-  var _this = stack.pop();
-  var buf = util.javaStringToArrayBuffer(_this);
+Override.simple("java/lang/String.concat.(Ljava/lang/String;)Ljava/lang/String;", function(s) {
+  return this.str + s.str;
+});
 
-  var end = buf.length;
+// via MDN:
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+Override.simple("java/lang/String.replace.(CC)Ljava/lang/String;", function(oldChar, newChar) {
+  // Using a RegExp here to replace all matches of oldChar, rather than just the first.
+  return this.str.replace(
+    new RegExp(escapeRegExp(String.fromCharCode(oldChar)), "g"),
+    String.fromCharCode(newChar));
+});
+
+Override.simple("java/lang/String.toLowerCase.()Ljava/lang/String;", function() {
+  return this.str.toLowerCase();
+});
+
+Override.simple("java/lang/String.toUpperCase.()Ljava/lang/String;", function() {
+  return this.str.toUpperCase();
+});
+
+Override.simple("java/lang/String.trim.()Ljava/lang/String;", function() {
+  // Java's String.trim() removes any character <= ASCII 32;
+  // JavaScript's only removes a few whitespacey chars.
   var start = 0;
-  while ((start < end) && (buf[start] <= SPACE_CODE_POINT)) {
+  var end = this.str.length;
+  while (start < end && this.str.charCodeAt(start) <= 32) {
     start++;
   }
-  while ((start < end) && (buf[end - 1] <= SPACE_CODE_POINT)) {
+  while (start < end && this.str.charCodeAt(end - 1) <= 32) {
     end--;
   }
 
-  if ((start > 0) || (end < buf.length)) {
-    stack.push(ctx.newStringFromUint16Array(buf.subarray(start, end)));
-  } else {
-    stack.push(_this);
+  return this.str.substring(start, end);
+});
+
+Override.simple("java/lang/String.toString.()Ljava/lang/String;", function() {
+  return this; // Note: returning "this" so that we keep the same object.
+});
+
+Override.simple("java/lang/String.toCharArray.()[C", function() {
+  return util.javaStringToArrayBuffer(this);
+});
+
+//****************************************************************
+// String.valueOf() for various types
+
+// NOTE: String.valueOf(Object) left in Java to avoid having to call
+// back into Java for Object.toString().
+
+Override.simple("java/lang/String.valueOf.([C)Ljava/lang/String;", function(chars) {
+  if (!chars) {
+    throw new JavaException("java/lang/NullPointerException");
   }
-};
+  return util.fromJavaChars(chars);
+}, { static: true });
 
-
-Override["java/lang/String.substring.(II)Ljava/lang/String;"] = function(ctx, stack) {
-  var endIndex = stack.pop(), beginIndex = stack.pop(), _this = stack.pop();
-  var buf = util.javaStringToArrayBuffer(_this);
-
-  if (beginIndex < 0 || endIndex > buf.length || beginIndex > endIndex) {
-    ctx.raiseExceptionAndYield("java/lang/StringIndexOutOfBoundsException",
-                               "String.substring()");
-  } else {
-    stack.push(ctx.newStringFromUint16Array(buf.subarray(beginIndex, endIndex)));
+Override.simple("java/lang/String.valueOf.([CII)Ljava/lang/String;", function(chars, offset, count) {
+  if (!chars) {
+    throw new JavaException("java/lang/NullPointerException");
   }
-};
+  return util.fromJavaChars(chars, offset, count);
+}, { static: true });
+
+Override.simple("java/lang/String.valueOf.(Z)Ljava/lang/String;", function(bool) {
+  return bool ? "true" : "false";
+}, { static: true });
+
+Override.simple("java/lang/String.valueOf.(C)Ljava/lang/String;", function(ch) {
+  return String.fromCharCode(ch);
+}, { static: true });
+
+Override.simple("java/lang/String.valueOf.(I)Ljava/lang/String;", function(n) {
+  return n.toString();
+}, { static: true });
+
+Override.simple("java/lang/String.valueOf.(J)Ljava/lang/String;", function(n, _) {
+  // This function takes a dummy second argument, since we're taking a
+  // Long and need to pop two items off the stack.
+  return n.toString();
+}, { static: true });
 
 
+// String.valueOf(float) and String.valueOf(double) have been left in
+// Java for now, as they follow complex formatting rules.
+// Additionally, the test suite covers things like positive zero vs.
+// negative zero, which we don't currently distinguish.
 
-/**
- * Boyer-Moore-Horspool: Efficient substring search, same as used in
- * Gecko. This function is compatible with typed arrays as well as
- * strings (we use it with typed arrays in the overrides above).
- *
- * Reference implementation:
- *   <http://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm>
- */
-function substringSearch(haystack, needle) {
-  var hlen = haystack.length;
-  var nlen = needle.length;
-  var badCharSkip = {};
-  var last = nlen - 1;
-  var scan;
-  var offset = 0;
+// Note: String.intern is implemented in `native.js`.
 
-  if (nlen <= 0 || !haystack || !needle) {
-    return -1;
-  }
 
-  for (scan = 0; scan < last; scan++) {
-    badCharSkip[needle[scan]] = last - scan;
-  }
+//****************************************************************
+// StringBuffer
 
-  while (hlen >= nlen) {
-    for (scan = last; haystack[offset + scan] === needle[scan]; scan--) {
-      if (scan === 0) {
-        return offset;
-      }
-    }
-
-    var skip = badCharSkip[haystack[offset + last]] || nlen;
-    hlen -= skip;
-    offset += skip;
-  }
-
-  return -1;
-}
+// Overriding StringBuffer.toString() avoids calling "new
+// String(this)" via JVM bytecode.
+Override.simple("java/lang/StringBuffer.toString.()Ljava/lang/String;", function() {
+  var value = this.class.getField("I.value.[C").get(this);
+  var count = this.class.getField("I.count.I").get(this);
+  return util.fromJavaChars(value, 0, count);
+});
