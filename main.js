@@ -75,7 +75,7 @@ var initFS = new Promise(function(resolve, reject) {
   ]);
 });
 
-var loadingPromises = [];
+var loadingPromises = [initFS];
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
     jvm.addPath(jar, data);
