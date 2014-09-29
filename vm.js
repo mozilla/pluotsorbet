@@ -1119,6 +1119,7 @@ VM.execute = function(ctx) {
             if (methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature ==
                 "gnu/testlet/JITTest.ciao.()V") {
                 console.log(compile(methodInfo));
+                methodInfo.compiled = new Function("ctx", compile(methodInfo));
             }
             if (methodInfo.compiled) {
               // If the method is compiled, directly call it
@@ -1405,7 +1406,7 @@ function compile(methodInfo) {
     }, 0);
   }
 
-  var generatedCode = "function " + hashCode(methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature) + "(ctx) {\n";
+  var generatedCode = "";//"function " + hashCode(methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature) + "(ctx) {\n";
   generatedCode += "  var frame = ctx.current();\n";
   generatedCode += "  var cp = frame.cp;\n";
   generatedCode += "  var stack = frame.stack;\n";//"new Array(" + maxDepth + ");\n";
@@ -1424,7 +1425,7 @@ function compile(methodInfo) {
   } else if (methodInfo.signature[methodInfo.signature.length - 1] != 'V') {
     generatedCode += "  frame.stack.push(stack[0]);\n"
   }*/
-  generatedCode += "}";
+  //generatedCode += "}";
 
   return generatedCode;
 }
