@@ -1122,7 +1122,7 @@ VM.execute = function(ctx) {
             if (methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature ==
                 "gnu/testlet/JITTest.ciao.()V") {
                 console.log(compile(methodInfo));
-                methodInfo.compiled = new Function("ctx", compile(methodInfo));
+                //methodInfo.compiled = new Function("ctx", compile(methodInfo));
             }
             if (methodInfo.compiled) {
               // If the method is compiled, directly call it
