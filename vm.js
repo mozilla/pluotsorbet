@@ -18,6 +18,165 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
+function prova() {
+  var table = {};
+  var done = false;
+  var src = VM.execute.toSource();
+  var cases = src.substring(src.indexOf("switch (op) {") + 14, src.lastIndexOf("default"));
+
+  var curOpcodes = [];
+  var insideCase = false;
+
+  function readLine(consuming) {
+    var lineEnd = cases.indexOf("\n");
+    if (lineEnd == -1) {
+      return null;
+    }
+
+    var line = cases.substring(0, lineEnd).trim();
+
+    if (consuming) {
+      cases = cases.substring(lineEnd + 1);
+    }
+
+    return line;
+  }
+
+  while (true) {
+    var line = readLine(true);
+    if (line == null) {
+      break;
+    }
+
+    var nextLine = readLine(false);
+
+    console.log("LINE: " + line);
+    console.log("NEXT: " + readLine());
+
+    if (!insideCase && line.startsWith("case")) {
+      console.log("IS AN OPCODE");
+      curOpcodes.push(parseInt(line.substring(5, 9), 16));
+    } else if (line.startsWith("break") && nextLine && nextLine.startsWith("case")) {
+      console.log("BREAKS THE CURRENT CASE")
+      insideCase = false;
+      curOpcodes = [];
+    } else {
+      insideCase = true;
+
+      curOpcodes.forEach(function(opcode) {
+        if (!table[opcode]) {
+          table[opcode] = "";
+        }
+
+        table[opcode] += line + "\n";
+      });
+    }
+  }
+}
+
+function compile(methodInfo) {
+  var depth = 0, maxDepth = 0;
+  var locals = 0;
+  var ip = 0;
+
+  var methodInfo = {
+    name: "NOME",
+    signature: "(Lasd;)V",
+    classInfo: {
+      className: "CLASS",
+      vmc: {},
+      vfc: {},
+      constant_pool: [
+        null,
+        { tag: TAGS.CONSTANT_Class, name_index: 2 },
+        { bytes: "Ciao" },
+        { tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 4 },
+        { name_index: 5, signature_index: 6 },
+        { bytes: "<init>" },
+        { bytes: "()V" },
+      ]
+    },
+    code: [
+      0x00, // nop
+      0x00, // nop
+      0x01, // aconst_null
+      0xc6, 0xFF, 0xFD, // ifnull
+      0xb6, 0x00, 0x03, // invokevirtual
+      0xb1              // return
+    ],
+  };
+
+  var casesToGenerate = {};
+
+  var frame = new Frame(methodInfo);
+  while (true) {
+    var op = frame.read8();
+    console.log("OPCODE: " + op.toString(16))
+    var code = table[op];
+    console.log("1 CODE TO REPLACE: " + code);
+
+    code = code.replace("frame.ip", "ip", 'g');
+    code = code.replace("frame.read16signed()", frame.read16signed.bind(frame), 'g');
+    code = code.replace("frame.read16()", frame.read16.bind(frame), 'g');
+    code = code.replace("frame.read8()", frame.read8.bind(frame), 'g');
+    code = code.replace(/\bop\b/g, op);
+
+    console.log("2 CODE TO REPLACE: " + code);
+
+    while (true) {
+      var push = code.indexOf("stack.push");
+      var pop = code.indexOf("stack.pop");
+
+      if (pop != -1 && (pop < push || push == -1)) {
+        depth--;
+        code = code.replace(/stack.pop\(\)/, "stack[" + depth + "]");
+      } else if (push != -1) {
+        code = code.replace(/stack.push\(([^\)]+)\)/, "stack[" + depth + "] = $1");
+        depth++;
+        if (depth > maxDepth) {
+          maxDepth = depth;
+        }
+      } else {
+        break;
+      }
+
+      console.log("CODE IS " + code)
+    }
+
+    casesToGenerate[frame.ip] = code;
+
+    if (op == 0xb1) {
+      break;
+    }
+  }
+
+  function hashCode(s){
+    return s.split("").reduce(function(a,b) {
+      a = ((a<<5) - a) + b.charCodeAt(0);
+      return a & a
+    }, 0);
+  }
+
+  var generatedCode = "function " + hashCode(methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature) + "(ctx) {\n";
+  generatedCode += "  var frame = ctx.current();\n";
+  generatedCode += "  var cp = frame.cp;\n";
+  generatedCode += "  var stack = new Array(" + maxDepth + ");\n";
+  generatedCode += "  var ip = 0;\n";
+  generatedCode += "  while (true) {\n";
+  generatedCode += "    switch (ip) {\n"
+  for (var caseToGenerate in casesToGenerate) {
+    generatedCode += "      case " + caseToGenerate + ":\n";
+    casesToGenerate[caseToGenerate].split("\n").forEach(function(line) {
+      generatedCode += "        " + line + "\n";
+    });
+  }
+  generatedCode += "    }\n";
+  generatedCode += "  }\n";
+  generatedCode += "}";
+
+  console.log(generatedCode);
+}
+
 VM.execute = function(ctx) {
     var frame = ctx.current();
 
@@ -176,7 +335,6 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
         switch (op) {
         case 0x00: // nop
             break;
@@ -668,86 +826,139 @@ VM.execute = function(ctx) {
             break;
         case 0x99: // ifeq
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() === 0 ? jmp : frame.ip;
+            if (stack.pop() === 0) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0x9a: // ifne
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() !== 0 ? jmp : frame.ip;
+            if (stack.pop() !== 0) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0x9b: // iflt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() < 0 ? jmp : frame.ip;
+            if (stack.pop() < 0) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0x9c: // ifge
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() >= 0 ? jmp : frame.ip;
+            if (stack.pop() >= 0) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0x9d: // ifgt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() > 0 ? jmp : frame.ip;
+            if (stack.pop() > 0) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0x9e: // ifle
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() <= 0 ? jmp : frame.ip;
+            if (stack.pop() <= 0) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0x9f: // if_icmpeq
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() === stack.pop() ? jmp : frame.ip;
+            if (stack.pop() === stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa0: // if_cmpne
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() !== stack.pop() ? jmp : frame.ip;
+            if (stack.pop() !== stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa1: // if_icmplt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() > stack.pop() ? jmp : frame.ip;
+            if (stack.pop() > stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa2: // if_icmpge
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() <= stack.pop() ? jmp : frame.ip;
+            if (stack.pop() <= stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa3: // if_icmpgt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() < stack.pop() ? jmp : frame.ip;
+            if (stack.pop() < stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa4: // if_icmple
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() >= stack.pop() ? jmp : frame.ip;
+            if (stack.pop() >= stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa5: // if_acmpeq
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() === stack.pop() ? jmp : frame.ip;
+            if (stack.pop() === stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa6: // if_acmpne
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() !== stack.pop() ? jmp : frame.ip;
+            if (stack.pop() !== stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xc6: // ifnull
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = !stack.pop() ? jmp : frame.ip;
+            if (!stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xc7: // ifnonnull
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.pop() ? jmp : frame.ip;
+            if (stack.pop()) {
+              frame.ip = jmp;
+              continue;
+            }
             break;
         case 0xa7: // goto
             frame.ip += frame.read16signed() - 1;
+            continue;
             break;
         case 0xc8: // goto_w
             frame.ip += frame.read32signed() - 1;
+            continue;
             break;
         case 0xa8: // jsr
             var jmp = frame.read16();
             stack.push(frame.ip);
             frame.ip = jmp;
+            continue;
             break;
         case 0xc9: // jsr_w
             var jmp = frame.read32();
             stack.push(frame.ip);
             frame.ip = jmp;
+            continue;
             break;
         case 0xa9: // ret
             frame.ip = frame.getLocal(frame.read8());
+            continue;
             break;
         case 0x85: // i2l
             stack.push2(Long.fromInt(stack.pop()));
@@ -809,6 +1020,7 @@ VM.execute = function(ctx) {
                 jmp = frame.read32signed();
             }
             frame.ip = startip - 1 + jmp;
+            continue;
             break;
         case 0xab: // lookupswitch
             var startip = frame.ip;
@@ -829,6 +1041,7 @@ VM.execute = function(ctx) {
                 }
             }
             frame.ip = startip - 1 + jmp;
+            continue;
             break;
         case 0xbc: // newarray
             var type = frame.read8();
@@ -1002,6 +1215,7 @@ VM.execute = function(ctx) {
                 break;
             case 0xa9: // ret
                 frame.ip = frame.getLocal(frame.read16());
+                continue;
                 break;
             default:
                 var opName = OPCODES[op];
@@ -1009,6 +1223,53 @@ VM.execute = function(ctx) {
             }
             break;
         case 0xb6: // invokevirtual
+            var idx = frame.read16();
+            var methodInfo = cp[idx];
+            if (methodInfo.tag) {
+                methodInfo = resolve(op, idx);
+            }
+            var consumes = Signature.getINSlots(methodInfo.signature);
+            ++consumes;
+            var obj = stack[stack.length - consumes];
+            if (!obj) {
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+                break;
+            }
+
+            if (methodInfo.classInfo != obj.class) {
+                if (!methodInfo.key) {
+                    methodInfo.key = "I." + methodInfo.name + "." + methodInfo.signature;
+                }
+
+                // Check if the method is already in the virtual method cache
+                if (obj.class.vmc[methodInfo.key]) {
+                    methodInfo = obj.class.vmc[methodInfo.key];
+                } else {
+                    methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);
+                }
+            }
+
+            if (VM.DEBUG) {
+                VM.trace("invoke", ctx.thread.pid, methodInfo);
+            }
+
+            var Alt = ACCESS_FLAGS.isNative(methodInfo.access_flags) ? Native : Override.hasMethod(methodInfo) ? Override : null;
+            if (Alt) {
+                try {
+                    Instrument.callPauseHooks(ctx.current());
+                    Instrument.measure(Alt, ctx, methodInfo);
+                    Instrument.callResumeHooks(ctx.current());
+                } catch (e) {
+                    Instrument.callResumeHooks(ctx.current());
+                    if (!e.class) {
+                        throw e;
+                    }
+                    throw_(e, ctx);
+                }
+                break;
+            }
+            pushFrame(methodInfo, consumes);
+            break;
         case 0xb7: // invokespecial
         case 0xb8: // invokestatic
         case 0xb9: // invokeinterface
