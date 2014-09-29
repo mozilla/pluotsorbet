@@ -40,21 +40,24 @@ var util = (function () {
     return Long.fromNumber(d);
   }
 
+  var jStringEncoder = new TextEncoder('utf-16');
+  var jStringDecoder = new TextDecoder('utf-16');
+
   function fromJavaChars(chars, offset, count) {
+    if (!chars) {
+      return null;
+    }
     if (typeof count !== 'number')
       count = chars.length;
     if (typeof offset !== 'number')
       offset = 0;
-    return String.fromCharCode.apply(null, chars.subarray(offset, offset + count));
+    return jStringDecoder.decode(chars.subarray(offset, offset + count));
   }
 
-  function fromJavaString(str) {
-    if (!str)
+  function fromJavaString(jStr) {
+    if (!jStr)
       return null;
-    var chars = CLASSES.java_lang_String.getField("I.value.[C").get(str);
-    var offset = CLASSES.java_lang_String.getField("I.offset.I").get(str);
-    var count = CLASSES.java_lang_String.getField("I.count.I").get(str);
-    return fromJavaChars(chars, offset, count);
+    return jStr.str;
   }
 
   /**
@@ -64,13 +67,10 @@ var util = (function () {
    * NOTE: Do not modify the ArrayBuffer; it may be shared between
    * multiple string instances.
    */
-  function javaStringToArrayBuffer(str) {
-    if (!str)
+  function javaStringToArrayBuffer(jStr) {
+    if (!jStr)
       return null;
-    var chars = CLASSES.java_lang_String.getField("I.value.[C").get(str);
-    var offset = CLASSES.java_lang_String.getField("I.offset.I").get(str);
-    var count = CLASSES.java_lang_String.getField("I.count.I").get(str);
-    return chars.subarray(offset, offset + count);
+    return new Uint16Array(jStringEncoder.encode(jStr.str).buffer);
   }
 
   var id = (function() {

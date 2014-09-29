@@ -29,7 +29,8 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
         ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
     if ((!!srcClass.elementClass != !!dstClass.elementClass) ||
         (!srcClass.elementClass && srcClass != dstClass)) {
-        ctx.raiseExceptionAndYield("java/lang/ArrayStoreException", "Incompatible component types.");
+        ctx.raiseExceptionAndYield("java/lang/ArrayStoreException",
+                                   "Incompatible component types: " + srcClass.constructor.name + " -> " + dstClass.constructor.name);
     }
     if (dstClass.elementClass) {
         if (srcClass != dstClass && !srcClass.elementClass.isAssignableTo(dstClass.elementClass)) {

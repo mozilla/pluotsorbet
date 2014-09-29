@@ -78,24 +78,7 @@ Runtime.prototype.newObject = function(classInfo) {
 
 Runtime.prototype.newString = function(s) {
   var obj = this.newObject(CLASSES.java_lang_String);
-  var length = s.length;
-  var chars = this.newPrimitiveArray("C", length);
-  for (var n = 0; n < length; ++n)
-    chars[n] = s.charCodeAt(n);
-  CLASSES.java_lang_String.getField("I.value.[C").set(obj, chars);
-  CLASSES.java_lang_String.getField("I.offset.I").set(obj, 0);
-  CLASSES.java_lang_String.getField("I.count.I").set(obj, length);
-  return obj;
-}
-
-Runtime.prototype.newStringFromUint16Array = function(buf) {
-  if (!(buf instanceof Uint16Array)) {
-      throw new Error('buf must be an instanceof Uint16Array, was ' + buf);
-  }
-  var obj = this.newObject(CLASSES.java_lang_String);
-  CLASSES.java_lang_String.getField("I.value.[C").set(obj, buf);
-  CLASSES.java_lang_String.getField("I.offset.I").set(obj, 0);
-  CLASSES.java_lang_String.getField("I.count.I").set(obj, buf.length);
+  obj.str = s;
   return obj;
 }
 
