@@ -177,8 +177,8 @@ JavaException.prototype = Object.create(Error.prototype);
  *   accordingly to do a `push2`. (Ideally, we'd just scrape the
  *   method signature and always do the right thing.)
  *
- * - The object reference ("this") is automatically bound `fn`, unless
- *   you specify { static: true } in opts.
+ * - The object reference ("this") is automatically bound to `fn`,
+ *   unless you specify { static: true } in opts.
  *
  * - JavaException instances are caught and propagated as Java
      exceptions; JS TypeError propagates as a NullPointerException.

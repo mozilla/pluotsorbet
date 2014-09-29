@@ -82,8 +82,8 @@ Override.simple(
 Override.simple(
   "java/lang/String.<init>.(Ljava/lang/StringBuffer;)V",
   function(buffer) {
-    var value = buffer.class.getField("value", "[C").get(buffer);
-    var count = buffer.class.getField("count", "I").get(buffer);
+    var value = buffer.class.getField("I.value.[C").get(buffer);
+    var count = buffer.class.getField("I.count.I").get(buffer);
     this.str = util.fromJavaChars(value, 0, count);
   });
 
@@ -97,15 +97,15 @@ Override.simple(
 // Methods
 
 Override.simple("java/lang/String.length.()I", function() {
-    return this.str.length;
-  });
+  return this.str.length;
+});
 
 Override.simple("java/lang/String.charAt.(I)C", function(index) {
-    if (index < 0 || index >= this.str.length) {
-      throw new JavaException("java/lang/IndexOutOfBoundsException");
-    }
-    return this.str.charCodeAt(index);
-  });
+  if (index < 0 || index >= this.str.length) {
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
+  }
+  return this.str.charCodeAt(index);
+});
 
 Override.simple("java/lang/String.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
   if (srcBegin < 0 || srcEnd > this.str.length || srcBegin > srcEnd ||
@@ -113,10 +113,8 @@ Override.simple("java/lang/String.getChars.(II[CI)V", function(srcBegin, srcEnd,
     throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
   var len = srcEnd - srcBegin;
-  var copied = [];
   for (var i = 0; i < len; i++) {
     dst[dstBegin + i] = this.str.charCodeAt(srcBegin + i);
-    copied.push(this.str.charAt(srcBegin + i));
   }
 });
 
@@ -270,7 +268,7 @@ Override.simple("java/lang/String.trim.()Ljava/lang/String;", function() {
   while (start < end && this.str.charCodeAt(end - 1) <= 32) {
     end--;
   }
-    
+
   return this.str.substring(start, end);
 });
 
@@ -279,11 +277,7 @@ Override.simple("java/lang/String.toString.()Ljava/lang/String;", function() {
 });
 
 Override.simple("java/lang/String.toCharArray.()[C", function() {
-  var arr = new Uint16Array(this.str.length);
-  for (var i = 0; i < this.str.length; i++) {
-    arr[i] = this.str.charCodeAt(i);
-  }
-  return arr;
+  return util.javaStringToArrayBuffer(this);
 });
 
 //****************************************************************
@@ -310,46 +304,6 @@ Override.simple("java/lang/String.valueOf.(Z)Ljava/lang/String;", function(bool)
   return bool ? "true" : "false";
 }, { static: true });
 
-<<<<<<< HEAD
-/**
- * Boyer-Moore-Horspool: Efficient substring search, same as used in
- * Gecko. This function is compatible with typed arrays as well as
- * strings (we use it with typed arrays in the overrides above).
- *
- * Reference implementation:
- *   <http://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm>
- */
-function substringSearch(haystack, needle) {
-  var hlen = haystack.length;
-  var nlen = needle.length;
-  var badCharSkip = {};
-  var last = nlen - 1;
-  var scan;
-  var offset = 0;
-
-  if (nlen <= 0 || !haystack || !needle) {
-    return -1;
-  }
-
-  for (scan = 0; scan < last; scan++) {
-    badCharSkip[needle[scan]] = last - scan;
-  }
-
-  while (hlen >= nlen) {
-    for (scan = last; haystack[offset + scan] === needle[scan]; scan--) {
-      if (scan === 0) {
-        return offset;
-      }
-    }
-
-    var skip = badCharSkip[haystack[offset + last]] || nlen;
-    hlen -= skip;
-    offset += skip;
-  }
-
-  return -1;
-}
-=======
 Override.simple("java/lang/String.valueOf.(C)Ljava/lang/String;", function(ch) {
   return String.fromCharCode(ch);
 }, { static: true });
@@ -379,8 +333,7 @@ Override.simple("java/lang/String.valueOf.(J)Ljava/lang/String;", function(n, _)
 // Overriding StringBuffer.toString() avoids calling "new
 // String(this)" via JVM bytecode.
 Override.simple("java/lang/StringBuffer.toString.()Ljava/lang/String;", function() {
-    var value = this.class.getField("value", "[C").get(this);
-    var count = this.class.getField("count", "I").get(this);
-    return util.fromJavaChars(value, 0, count);
+  var value = this.class.getField("I.value.[C").get(this);
+  var count = this.class.getField("I.count.I").get(this);
+  return util.fromJavaChars(value, 0, count);
 });
->>>>>>> Reimplement java.lang.String with JS Strings.

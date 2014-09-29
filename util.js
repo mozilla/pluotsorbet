@@ -40,6 +40,9 @@ var util = (function () {
     return Long.fromNumber(d);
   }
 
+  var jStringEncoder = new TextEncoder('utf-16');
+  var jStringDecoder = new TextDecoder('utf-16');
+
   function fromJavaChars(chars, offset, count) {
     if (!chars) {
       return null;
@@ -48,7 +51,7 @@ var util = (function () {
       count = chars.length;
     if (typeof offset !== 'number')
       offset = 0;
-    return String.fromCharCode.apply(null, chars.subarray(offset, offset + count));
+    return jStringDecoder.decode(chars.subarray(offset, offset + count));
   }
 
   function fromJavaString(jStr) {
@@ -67,11 +70,7 @@ var util = (function () {
   function javaStringToArrayBuffer(jStr) {
     if (!jStr)
       return null;
-    var arr = new Uint16Array(jStr.str.length);
-    for (var i = 0; i < jStr.str.length; i++) {
-      arr[i] = jStr.str.charCodeAt(i);
-    }
-    return arr;
+    return new Uint16Array(jStringEncoder.encode(jStr.str).buffer);
   }
 
   var id = (function() {
