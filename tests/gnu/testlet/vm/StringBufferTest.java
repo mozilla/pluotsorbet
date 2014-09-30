@@ -24,11 +24,12 @@
 
 package gnu.testlet.vm;
 import gnu.testlet.*;
+import java.io.UnsupportedEncodingException;
 
 class StringBufferTest implements Testlet {
 
     public void test(TestHarness th) {
-	th.check(test1(), 0);
+       th.check(test1(), 0);
     }
 
     public int test1() {
@@ -140,8 +141,8 @@ class StringBufferTest implements Testlet {
     /*
     ** charAt tests...
     */
-    
-    str1 = new StringBuffer("abcd");    
+
+    str1 = new StringBuffer("abcd");
     if (str1.charAt(0) != 'a') {
       return 320;
     }
@@ -533,8 +534,113 @@ class StringBufferTest implements Testlet {
       return 1070;
     }
 
-    return 0;
+    // Additional tests from http://goo.gl/UhDJwr
 
+    StringBuffer obj = new StringBuffer();
+    try {
+      obj.getChars(0, 0, new char[0], -1);
+      return 1080;
+    } catch (ArrayIndexOutOfBoundsException e) {
+      // expected
+    }
+
+    StringBuffer buffer = new StringBuffer("abcde");
+    try {
+      buffer.setLength(-1);
+      return 1090;
+    } catch (IndexOutOfBoundsException e) {
+      // expected
+    }
+
+    if (!"abcde".equals(buffer.toString())) { return 1091; }
+    buffer.setLength(1);
+    buffer.append('f');
+    System.out.println(buffer.toString());
+    if (!"af".equals(buffer.toString())) { return 1092; }
+
+    buffer = new StringBuffer("abcde");
+    buffer.setLength(3);
+    buffer.append('f');
+    if (!"abcf".equals(buffer.toString())) { return 1093; }
+
+    buffer = new StringBuffer("abcde");
+    buffer.setLength(2);
+    try {
+      buffer.charAt(3);
+      return 1100;
+    } catch (IndexOutOfBoundsException e) {
+      // Expected
+    }
+
+    buffer = new StringBuffer();
+    buffer.append("abcdefg");
+    buffer.setLength(2);
+    buffer.setLength(5);
+    for (int i = 2; i < 5; i++) {
+      if (buffer.charAt(i) != '\u0000') {
+        return 1101;
+      }
+    }
+
+    buffer = new StringBuffer();
+    buffer.append("abcdefg");
+    buffer.delete(2, 4);
+    buffer.setLength(7);
+    if (buffer.charAt(0) != 'a') { return 1102; }
+    if (buffer.charAt(1) != 'b') { return 1103; }
+    if (buffer.charAt(2) != 'e') { return 1104; }
+    if (buffer.charAt(3) != 'f') { return 1105; }
+    if (buffer.charAt(4) != 'g') { return 1106; }
+    for (int i = 5; i < 7; i++) {
+      if (buffer.charAt(i) != '\u0000') {
+        return 1107;
+      }
+    }
+    buffer = new StringBuffer();
+    buffer.append("abcdefg");
+    buffer.setLength(5);
+    buffer.setLength(7);
+    for (int i = 5; i < 7; i++) {
+      if (buffer.charAt(i) != '\u0000') {
+        return 1108;
+      }
+    }
+
+    buffer = new StringBuffer();
+    if (!"".equals(buffer.toString())) {
+      return 1109;
+    }
+    buffer.append("abcde");
+    if (!"abcde".equals(buffer.toString())) { return 1110; }
+    buffer.setLength(5);
+    buffer.append("fghij");
+    if (!"abcdefghij".equals(buffer.toString())) { return 1111; }
+
+    obj = new StringBuffer();
+    try {
+      obj.append(new char[0], -1, -1);
+      return 1112;
+    } catch (ArrayIndexOutOfBoundsException e) {
+      // expected
+    }
+
+    obj = new StringBuffer();
+    try {
+      obj.append((char[]) null, -1, -1);
+      return 1120;
+    } catch (NullPointerException e) {
+      // expected
+    }
+
+    obj = new StringBuffer();
+    try {
+      obj.insert(-1, ' ');
+      return 1130;
+    } catch (ArrayIndexOutOfBoundsException e) {
+      // expected
+    }
+
+    return 0;
   }
 
 }

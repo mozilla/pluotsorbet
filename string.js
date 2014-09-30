@@ -405,6 +405,9 @@ Override.simple("java/lang/StringBuffer.setLength.(I)V", function(newLength) {
   if (newLength > this.buf.length) {
     expandCapacity.call(this, newLength);
   }
+  for (; this.count < newLength; this.count++) {
+    this.buf[this.count] = '\0';
+  }
   this.count = newLength;
 });
 
@@ -417,9 +420,11 @@ Override.simple("java/lang/StringBuffer.charAt.(I)C", function(index) {
 });
 
 Override.simple("java/lang/StringBuffer.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
-  if (srcBegin < 0 || srcEnd < 0 || srcEnd > this.count || srcBegin > srcEnd ||
-      dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
+  if (srcBegin < 0 || srcEnd < 0 || srcEnd > this.count || srcBegin > srcEnd) {
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+  if (dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
+    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
   }
   dst.set(this.buf.subarray(srcBegin, srcEnd), dstBegin);
 });
@@ -462,12 +467,18 @@ Override.simple("java/lang/StringBuffer.append.(Ljava/lang/String;)Ljava/lang/St
 });
 
 Override.simple("java/lang/StringBuffer.append.([C)Ljava/lang/StringBuffer;", function(chars) {
+  if (chars == null) {
+    throw new JavaException("java/lang/NullPointerException");
+  }
   return stringBufferAppend.call(this, chars);
 });
 
 Override.simple("java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;", function(chars, offset, length) {
-  if (offset < 0) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+  if (chars == null) {
+    throw new JavaException("java/lang/NullPointerException");
+  }
+  if (offset < 0 || offset + length > chars.length) {
+    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
   }
   return stringBufferAppend.call(this, chars.subarray(offset, offset + length));
 });
@@ -518,7 +529,7 @@ function stringBufferDelete(start, end) {
   var len = end - start;
   if (len > 0) {
     // When Gecko 34 is released, we can use TypedArray.copyWithin() instead.
-    this.buf.set(this.buf.subarray(start + len, this.count), start);
+    this.buf.set(this.buf.subarray(end, this.count), start);
     this.count -= len;
   }
   return this;
@@ -547,7 +558,7 @@ function stringBufferInsert(offset, data) {
     throw new JavaException("java/lang/NullPointerException");
   }
   if (offset < 0 || offset > this.count) {
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
   }
   if (!(data instanceof Uint16Array)) {
     data = util.stringToCharArray(data);
