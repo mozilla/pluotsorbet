@@ -32,7 +32,7 @@ Array.prototype.popType = function(signature) {
     return (signature === "J" || signature === "D") ? this.pop2() : this.pop();
 }
 
-var Frame = function(methodInfo) {
+var Frame = function(methodInfo, locals, localsBase) {
     if (methodInfo) {
         this.methodInfo = methodInfo;
         this.cp = methodInfo.classInfo.constant_pool;
@@ -40,11 +40,17 @@ var Frame = function(methodInfo) {
         this.ip = 0;
     }
     this.stack = [];
+    this.locals = locals;
+    this.localsBase = localsBase;
+    this.lockObject = null;
+    this.profileData = null;
 
     // A convenience function for retrieving values in reverse order
     // from the end of the stack.  stack.read(1) returns the topmost item
     // on the stack, while stack.read(2) returns the one underneath it.
     this.stack.read = function(i) { return this[this.length - i] };
+
+    Object.seal(this)
 }
 
 Frame.prototype.getLocal = function(idx) {
