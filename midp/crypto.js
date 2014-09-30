@@ -117,8 +117,9 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
 
 Native["com/sun/midp/crypto/SHA.nativeClone.([I)V"] = function(ctx, stack) {
     var data = stack.pop();
-    for (var [key, value] of MIDP.hashers) {
+    for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
+            var value = MIDP.hashers.get(key);
             var hasher = value.clone();
             window.crypto.getRandomValues(data);
             MIDP.hashers.set(data, hasher);
@@ -162,8 +163,9 @@ Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
 
 Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(ctx, stack) {
     var data = stack.pop();
-    for (var [key, value] of MIDP.hashers) {
+    for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
+            var value = MIDP.hashers.get(key);
             var hasher = value.clone();
             window.crypto.getRandomValues(data);
             MIDP.hashers.set(data, hasher);

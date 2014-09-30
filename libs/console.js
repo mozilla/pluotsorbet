@@ -243,7 +243,7 @@
 
 
   var logAtLevel = function(levelName) {
-    var item = new LogItem(levelName, Array.slice(arguments, 1));
+    var item = new LogItem(levelName, Array.prototype.slice.call(arguments, 1));
     ENABLED_CONSOLE_TYPES.forEach(function(consoleType) {
       CONSOLES[consoleType].push(item);
     });

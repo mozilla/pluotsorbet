@@ -477,9 +477,9 @@
             };
         } else if (format == 565) { // TYPE_USHORT_565_RGB
             converterFunc = function(rgba) {
-                var r = (rgba & 0b11111000000000000000000000000000) >>> 16;
-                var g = (rgba & 0b00000000111111000000000000000000) >>> 13;
-                var b = (rgba & 0b00000000000000001111100000000000) >>> 11;
+                var r = (rgba & 0xF8000000) >>> 16;
+                var g = (rgba & 0xFC0000) >>> 13;
+                var b = (rgba & 0xF800) >>> 11;
                 return (r | g | b);
             };
         } else {
