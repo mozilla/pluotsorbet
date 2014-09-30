@@ -886,9 +886,13 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
             key = field.name;
     });
 
+    if (!key) {
+        ctx.raiseExceptionAndYield("java/io/IOException");
+    }
+
     if (!MIDP.localizedStrings) {
-      var data = CLASSES.loadFile("assets/0/en-US.xml");
-      if (!data || !key)
+      var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
+      if (!data)
           ctx.raiseExceptionAndYield("java/io/IOException");
       var text = util.decodeUtf8(data);
       var xml = new window.DOMParser().parseFromString(text, "text/xml");
