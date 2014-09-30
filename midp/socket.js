@@ -77,6 +77,11 @@ Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function(ctx, st
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
 
+    if (_this.socket.readyState == "closed") {
+        stack.push(-1);
+        return;
+    }
+
     function copyData() {
         var toRead = (length < _this.data.byteLength) ? length : _this.data.byteLength;
 
