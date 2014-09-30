@@ -355,7 +355,7 @@ Override.simple("java/lang/StringBuffer.<init>.(I)V", function(length) {
 
 Override.simple("java/lang/StringBuffer.<init>.(Ljava/lang/String;)V", function(jStr) {
   var stringBuf = util.stringToCharArray(jStr.str);
-  this.buf = new Uint16Array(stringBuf.length + 16);
+  this.buf = new Uint16Array(stringBuf.length + 16); // Add 16, per the Java implementation.
   this.buf.set(stringBuf, 0);
   this.count = stringBuf.length;
 });
@@ -379,10 +379,8 @@ Override.simple("java/lang/StringBuffer.copy.()V", function() {
  * @param {number} minCapacity
  */
 function expandCapacity(minCapacity) {
-  var newCapacity = (this.buf.length + 1) * 2;
-  if (newCapacity < 0) {
-    newCapacity = 65535; // In Java, this is much larger (MAX_INTEGER).
-  } else if (minCapacity > newCapacity) {
+  var newCapacity = (this.buf.length + 1) << 1;
+  if (minCapacity > newCapacity) {
     newCapacity = minCapacity;
   }
     
@@ -397,9 +395,7 @@ Override.simple("java/lang/StringBuffer.ensureCapacity.(I)V", function(minCapaci
   }
 });
 
-Override.simple("java/lang/StringBuffer.expandCapacity.(I)V", function(minCapacity) {
-  expandCapacity.call(this, minCapacity);
-});
+// StringBuffer.expandCapacity is private and not needed with these overrides.
 
 Override.simple("java/lang/StringBuffer.setLength.(I)V", function(newLength) {
   if (newLength < 0) {
