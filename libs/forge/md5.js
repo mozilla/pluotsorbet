@@ -18,7 +18,7 @@ forge.md.md5 = forge.md.algorithms.md5 = md5;
 // _state and _input variables.  We store them in this map so other message
 // digest objects can access them in md.clone.  They remain inaccessible outside
 // the module.
-var _privates = WeakMap();
+var _privates = new WeakMap();
 
 /**
  * Creates an MD5 message digest object.

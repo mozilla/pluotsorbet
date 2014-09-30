@@ -3,7 +3,7 @@
 
 'use strict';
 
-const RECORD_STORE_BASE = "/RecordStore";
+var RECORD_STORE_BASE = "/RecordStore";
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var storageId = stack.pop();
