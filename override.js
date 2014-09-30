@@ -232,3 +232,39 @@ Override.simple = function(key, fn, opts) {
     }
   };
 }
+
+Override["com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B"] = function(ctx, stack) {
+  var name = stack.pop();
+
+  // NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2
+  var NUMBER_OF_PERMISSIONS = 61;
+  var ALLOW = 1;
+
+  var maximus = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var defaults = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+
+  for (var i = 0; i < NUMBER_OF_PERMISSIONS; i++) {
+    maximus[i] = defaults[i] = ALLOW;
+  }
+
+  var permissions = ctx.newArray("[[B", 2);
+  permissions[0] = maximus;
+  permissions[0] = defaults;
+
+  stack.push(permissions);
+}
+
+Override["com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z"] = function(ctx, stack) {
+  var name = stack.pop();
+  stack.push(1);
+}
+
+Override["com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I"] = function(ctx, stack) {
+  var name = stack.pop();
+  stack.push(0);
+}
+
+Override["com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;"] = function(ctx, stack) {
+  var id = stack.pop();
+  stack.push("com.sun.midp");
+}
