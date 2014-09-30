@@ -67,10 +67,8 @@ var util = (function () {
    * NOTE: Do not modify the ArrayBuffer; it may be shared between
    * multiple string instances.
    */
-  function javaStringToArrayBuffer(jStr) {
-    if (!jStr)
-      return null;
-    return new Uint16Array(jStringEncoder.encode(jStr.str).buffer);
+  function stringToCharArray(str) {
+    return new Uint16Array(jStringEncoder.encode(str).buffer);
   }
 
   var id = (function() {
@@ -128,7 +126,7 @@ var util = (function () {
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
-    javaStringToArrayBuffer: javaStringToArrayBuffer,
+    stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,
     compareTypedArrays: compareTypedArrays,
