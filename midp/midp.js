@@ -863,28 +863,39 @@ Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/ev
     stack.push(1);
 }
 
+MIDP.localizedStrings = null;
+
 Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var id = stack.pop();
+
+    function findEntry() {
+      for (var n = 0; n < MIDP.localizedStrings.length; ++n) {
+          var entry = MIDP.localizedStrings[n];
+          if (entry.attributes.Key.value === key) {
+              stack.push(ctx.newString(entry.attributes.Value.value));
+              return;
+          }
+      }
+      ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
+    }
+
     var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
     var key;
     classInfo.fields.forEach(function(field) {
         if (classInfo.constant_pool[field.constantValue].integer === id)
             key = field.name;
     });
-    var data = CLASSES.loadFile("assets/0/en-US.xml");
-    if (!data || !key)
-        ctx.raiseExceptionAndYield("java/io/IOException");
-    var text = util.decodeUtf8(data);
-    var xml = new window.DOMParser().parseFromString(text, "text/xml");
-    var entries = xml.getElementsByTagName("localized_string");
-    for (var n = 0; n < entries.length; ++n) {
-        var entry = entries[n];
-        if (entry.attributes.Key.value === key) {
-            stack.push(ctx.newString(entry.attributes.Value.value));
-            return;
-        }
+
+    if (!MIDP.localizedStrings) {
+      var data = CLASSES.loadFile("assets/0/en-US.xml");
+      if (!data || !key)
+          ctx.raiseExceptionAndYield("java/io/IOException");
+      var text = util.decodeUtf8(data);
+      var xml = new window.DOMParser().parseFromString(text, "text/xml");
+      MIDP.localizedStrings = xml.getElementsByTagName("localized_string");
     }
-    ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
+
+    findEntry();
 }
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
