@@ -251,6 +251,10 @@ Override.simple = function(key, fn, opts) {
   };
 }
 
+// The following Permissions methods are overriden to avoid expensive calls to
+// DomainPolicy.loadValues. This has the added benefit that we avoid many other
+// computations.
+
 Override["com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B"] = function(ctx, stack) {
   var name = stack.pop();
 
@@ -268,21 +272,26 @@ Override["com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B"] 
 
   var permissions = ctx.newArray("[[B", 2);
   permissions[0] = maximums;
-  permissions[0] = defaults;
+  permissions[1] = defaults;
 
   stack.push(permissions);
 }
 
+// Always return true to make Java think the MIDlet domain is trusted.
 Override["com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z"] = function(ctx, stack) {
   var name = stack.pop();
   stack.push(1);
 }
 
+// Returns the ID of the permission. The callers will use this ID to check the
+// permission in the permissions array returned by Permissions::forDomain.
 Override["com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I"] = function(ctx, stack) {
   var name = stack.pop();
   stack.push(0);
 }
 
+// The Java code that uses this method doesn't actually use the return value, but
+// passes it to Permissions.getId. So we can return anything.
 Override["com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;"] = function(ctx, stack) {
   var id = stack.pop();
   stack.push("com.sun.midp");
