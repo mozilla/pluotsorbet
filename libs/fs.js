@@ -406,6 +406,13 @@ var fs = (function() {
 
   function stat(path, cb) {
     path = normalizePath(path);
+
+    var file = openedFiles.find(file => file && file.stat && file.path === path);
+    if (file) {
+      cb(file.stat);
+      return;
+    }
+
     asyncStorage.getItem("!" + path, function(statData) {
       if (statData) {
         cb(statData);
