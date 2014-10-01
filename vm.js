@@ -1077,9 +1077,9 @@ VM.execute = function(ctx) {
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo);
             }
-            popFrame(0);
-            if (!frame.methodInfo)
+            if (ctx.frames.length == 1)
                 return;
+            popFrame(0);
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
@@ -1087,18 +1087,18 @@ VM.execute = function(ctx) {
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            popFrame(1);
-            if (!frame.methodInfo)
+            if (ctx.frames.length == 1)
                 return;
+            popFrame(1);
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            popFrame(2);
-            if (!frame.methodInfo)
+            if (ctx.frames.length == 1)
                 return;
+            popFrame(2);
             break;
         default:
             var opName = OPCODES[op];

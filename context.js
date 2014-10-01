@@ -134,7 +134,9 @@ Context.prototype.execute = function(stopFrame) {
         throw e;
       }
     }
-  } while (this.current() !== stopFrame);
+  } while (this.frames.length !== 1);
+
+  this.frames.pop();
 }
 
 Context.prototype.start = function(stopFrame) {
@@ -159,7 +161,10 @@ Context.prototype.start = function(stopFrame) {
     }
     Instrument.callPauseHooks(ctx.current());
 
-    if (ctx.current() === stopFrame) {
+    // If there's one frame left, we're back to
+    // the method that created the thread and
+    // we're done.
+    if (ctx.frames.length === 1) {
       ctx.kill();
       return;
     }
