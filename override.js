@@ -259,15 +259,15 @@ Override["com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B"] 
   var NUMBER_OF_PERMISSIONS = 61;
   var ALLOW = 1;
 
-  var maximus = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var maximums = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
   var defaults = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
 
   for (var i = 0; i < NUMBER_OF_PERMISSIONS; i++) {
-    maximus[i] = defaults[i] = ALLOW;
+    maximums[i] = defaults[i] = ALLOW;
   }
 
   var permissions = ctx.newArray("[[B", 2);
-  permissions[0] = maximus;
+  permissions[0] = maximums;
   permissions[0] = defaults;
 
   stack.push(permissions);
