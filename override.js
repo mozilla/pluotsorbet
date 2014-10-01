@@ -176,6 +176,11 @@ Override["java/io/ByteArrayInputStream.reset.()V"] = function(ctx, stack) {
   _this.pos = _this.mark;
 }
 
+Override["com/sun/midp/chameleon/CGraphicsUtil.draw9pcsBackground.(Ljavax/microedition/lcdui/Graphics;IIII[Ljavax/microedition/lcdui/Image;)V"] = function(ctx, stack) {
+  var image = stack.pop(), h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), g = stack.pop();
+  console.log("CGraphicsUtil.draw9pcsBackground disabled");
+}
+
 function JavaException(className, message) {
   this.javaClassName = className;
   this.message = message;
