@@ -679,10 +679,12 @@ tests.push(function() {
   tests.push(function() {
     window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("misc"));
-      fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "write updates mtime");
-        lastTime = stat.mtime;
-        next();
+      fs.flush(fd, function() {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          ok(stat.mtime > lastTime, "write updates mtime");
+          lastTime = stat.mtime;
+          next();
+        });
       });
     }, 1);
   });

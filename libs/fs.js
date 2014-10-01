@@ -159,8 +159,7 @@ var fs = (function() {
     buffer.array.set(data, from);
 
     openedFiles[fd].position = from + data.byteLength;
-
-    setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
+    openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
   }
 
   function getpos(fd) {
@@ -181,7 +180,13 @@ var fs = (function() {
 
   function flush(fd, cb) {
     var blob = new Blob([openedFiles[fd].buffer.getContent()]);
-    asyncStorage.setItem(openedFiles[fd].path, blob, cb);
+    asyncStorage.setItem(openedFiles[fd].path, blob, function() {
+      if (openedFiles[fd].stat) {
+        setStat(openedFiles[fd].path, openedFiles[fd].stat, cb);
+      } else {
+        cb();
+      }
+    });
   }
 
   function list(path, cb) {
