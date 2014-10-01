@@ -282,8 +282,10 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack
     var classObject = stack.pop();
     var className = classObject.vmClass.className;
     var syntheticMethod = {
-      syntheticKey: "ClassNewInstanceSynthetic:" + className,
+      name: "ClassNewInstanceSynthetic",
+      signature: "()Ljava/lang/Object;",
       classInfo: {
+        className: className,
         vmc: {},
         vfc: {},
         constant_pool: [
@@ -503,8 +505,10 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     ctx.thread = thread;
 
     var syntheticMethod = {
-      syntheticKey: "ThreadStart0Synthetic:" + thread.class.className + "." + run.name + "." + run.signature,
+      name: "ThreadStart0Synthetic",
+      signature: "()V",
       classInfo: {
+        className: thread.class.className,
         vmc: {},
         vfc: {},
         constant_pool: [

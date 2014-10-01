@@ -40,8 +40,10 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     return;
   classInfo.thread = this.thread;
   var syntheticMethod = {
-    syntheticKey: "ClassInitSynthetic:" + classInfo.className,
+    name: "ClassInitSynthetic",
+    signature: "()V",
     classInfo: {
+      className: classInfo.className,
       vmc: {},
       vfc: {},
       constant_pool: [
@@ -80,8 +82,10 @@ Context.prototype.raiseException = function(className, message) {
     message = "";
   message = "" + message;
   var syntheticMethod = {
-    syntheticKey: "RaiseExceptionSynthetic",
+    name: "RaiseExceptionSynthetic",
+    signature: "()V",
     classInfo: {
+      className: className,
       vmc: {},
       vfc: {},
       constant_pool: [

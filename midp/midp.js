@@ -863,28 +863,44 @@ Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/ev
     stack.push(1);
 }
 
+MIDP.localizedStrings = new Map();
+
 Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(ctx, stack) {
     var id = stack.pop();
+
     var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
     var key;
     classInfo.fields.forEach(function(field) {
         if (classInfo.constant_pool[field.constantValue].integer === id)
             key = field.name;
     });
-    var data = CLASSES.loadFile("assets/0/en-US.xml");
-    if (!data || !key)
+
+    if (!key) {
         ctx.raiseExceptionAndYield("java/io/IOException");
-    var text = util.decodeUtf8(data);
-    var xml = new window.DOMParser().parseFromString(text, "text/xml");
-    var entries = xml.getElementsByTagName("localized_string");
-    for (var n = 0; n < entries.length; ++n) {
-        var entry = entries[n];
-        if (entry.attributes.Key.value === key) {
-            stack.push(ctx.newString(entry.attributes.Value.value));
-            return;
+    }
+
+    if (MIDP.localizedStrings.size === 0) {
+        var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
+        if (!data)
+            ctx.raiseExceptionAndYield("java/io/IOException");
+
+        var text = util.decodeUtf8(data);
+        var xml = new window.DOMParser().parseFromString(text, "text/xml");
+        var entries = xml.getElementsByTagName("localized_string");
+
+        for (var n = 0; n < entries.length; ++n) {
+            var attrs = entries[n].attributes;
+            MIDP.localizedStrings.set(attrs.Key.value, attrs.Value.value);
         }
     }
-    ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
+
+    var value = MIDP.localizedStrings.get(key);
+
+    if (!value) {
+        ctx.raiseExceptionAndYield("java/lang/IllegalStateException");
+    }
+
+    stack.push(ctx.newString(value));
 }
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
