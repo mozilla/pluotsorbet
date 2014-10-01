@@ -255,6 +255,7 @@ Override["com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B"] 
   var name = stack.pop();
 
   // NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2
+  // The 2 is the two hardcoded MIPS and AMS permissions.
   var NUMBER_OF_PERMISSIONS = 61;
   var ALLOW = 1;
 
