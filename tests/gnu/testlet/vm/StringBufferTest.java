@@ -24,15 +24,17 @@
 
 package gnu.testlet.vm;
 import gnu.testlet.*;
+import java.io.UnsupportedEncodingException;
 
 class StringBufferTest implements Testlet {
 
+    private TestHarness th;
     public void test(TestHarness th) {
-	th.check(test1(), 0);
+       this.th = th;
+       th.check(test1(), 0);
     }
 
     public int test1() {
-
     try {
       new StringBuffer(-1);
       return 100;
@@ -50,7 +52,7 @@ class StringBufferTest implements Testlet {
     if (! str1.toString().equals("")) {
       return 130;
     }
-    
+
     StringBuffer str2 = new StringBuffer("testing");
     if (str2.length() != 7) {
       return 140;
@@ -74,7 +76,7 @@ class StringBufferTest implements Testlet {
     if (! strbuf.append("hiii").toString().equals("hiii")) {
       return 190;
     }
-    
+
     strbuf = new StringBuffer(10);
     if (strbuf.capacity() != 10) {
       return 200;
@@ -83,16 +85,16 @@ class StringBufferTest implements Testlet {
     if (! str1.toString().equals("03041965")) {
       return 210;
     }
-    
+
     str1 = new StringBuffer();
     if (! str1.toString().equals("")) {
       return 220;
     }
-    
+
     /*
     ** capacity tests...
     */
-    
+
     str1 = new StringBuffer("");
     str2 = new StringBuffer("pentiumpentiumpentium");
     if (str1.capacity() != 16) {
@@ -106,11 +108,11 @@ class StringBufferTest implements Testlet {
     if (str1.capacity() != 34) {
       return 250;
     }
-    
+
     /*
     ** setLength tests...
     */
-    
+
     str1 = new StringBuffer("ba");
     try {
       str1.setLength(-1);
@@ -118,12 +120,12 @@ class StringBufferTest implements Testlet {
     }
     catch (IndexOutOfBoundsException e) {
     }
-    
+
     str1. setLength(4);
     if (str1.length() != 4) {
       return 270;
     }
-    
+
     if (str1.charAt(0) != 'b') {
       return 280;
     }
@@ -140,8 +142,8 @@ class StringBufferTest implements Testlet {
     /*
     ** charAt tests...
     */
-    
-    str1 = new StringBuffer("abcd");    
+
+    str1 = new StringBuffer("abcd");
     if (str1.charAt(0) != 'a') {
       return 320;
     }
@@ -154,7 +156,7 @@ class StringBufferTest implements Testlet {
     if (str1.charAt(3) != 'd') {
       return 350;
     }
-    
+
     try {
       str1.charAt(4);
       return 360;
@@ -168,7 +170,7 @@ class StringBufferTest implements Testlet {
     }
     catch (IndexOutOfBoundsException e) {
     }
-    
+
     /*
     ** getChars tests...
     */
@@ -194,7 +196,7 @@ class StringBufferTest implements Testlet {
       ** Index out of bounds of StringBuffer - srcOffset
       */
     }
-    
+
     try {
       str1.getChars(4, 3, dst, 3);
       return 400;
@@ -202,7 +204,7 @@ class StringBufferTest implements Testlet {
     catch (IndexOutOfBoundsException e) {
       /*
       **
-      */      
+      */
     }
 
     try {
@@ -264,10 +266,10 @@ class StringBufferTest implements Testlet {
     /*
     ** append tests...
     */
-    
+
     str1 = new StringBuffer();
     Object NULL = null;
-    
+
     if (! str1.append(NULL).toString().equals("null")) {
       return 540;
     }
@@ -296,7 +298,7 @@ class StringBufferTest implements Testlet {
     }
     catch (NullPointerException e) {
     }
-    
+
     char[] carr1 = {'h', 'i', 't', 'h', 'e', 'r'};
     str1 = new StringBuffer("!");
     str1 = str1.append(carr1);
@@ -456,7 +458,7 @@ class StringBufferTest implements Testlet {
     /*
     ** setCharAt tests...
     */
-    
+
     str1 = new StringBuffer("1234567");
     try {
       str1.setCharAt(-1, 'A');
@@ -480,7 +482,7 @@ class StringBufferTest implements Testlet {
     /*
     ** deleteCharAt tests...
     */
-    
+
     str1 = new StringBuffer("123456789");
     try {
       str1.deleteCharAt(-1);
@@ -500,7 +502,7 @@ class StringBufferTest implements Testlet {
     if (! str1.toString().equals("12346789")) {
       return 940;
     }
-    
+
     if (str1.length() != 8) {
       return 950;
     }
@@ -533,8 +535,104 @@ class StringBufferTest implements Testlet {
       return 1070;
     }
 
-    return 0;
+    // Additional tests from http://goo.gl/UhDJwr
 
+    StringBuffer obj = new StringBuffer();
+    try {
+      obj.getChars(0, 0, new char[0], -1);
+      th.fail();
+    } catch (ArrayIndexOutOfBoundsException e) {
+      th.pass();
+    }
+
+    StringBuffer buffer = new StringBuffer("abcde");
+    try {
+      buffer.setLength(-1);
+      th.fail();
+    } catch (IndexOutOfBoundsException e) {
+      th.pass();
+    }
+
+    th.check(buffer.toString(), "abcde");
+    buffer.setLength(1);
+    buffer.append('f');
+    th.check(buffer.toString(), "af");
+
+    buffer = new StringBuffer("abcde");
+    buffer.setLength(3);
+    buffer.append('f');
+    th.check(buffer.toString(), "abcf");
+
+    buffer = new StringBuffer("abcde");
+    buffer.setLength(2);
+    try {
+      buffer.charAt(3);
+      th.fail();
+    } catch (IndexOutOfBoundsException e) {
+      th.pass();
+    }
+
+    buffer = new StringBuffer();
+    buffer.append("abcdefg");
+    buffer.setLength(2);
+    buffer.setLength(5);
+    for (int i = 2; i < 5; i++) {
+      th.check('\u0000', buffer.charAt(i));
+    }
+
+    buffer = new StringBuffer();
+    buffer.append("abcdefg");
+    buffer.delete(2, 4);
+    buffer.setLength(7);
+    th.check(buffer.charAt(0), 'a');
+    th.check(buffer.charAt(1), 'b');
+    th.check(buffer.charAt(2), 'e');
+    th.check(buffer.charAt(3), 'f');
+    th.check(buffer.charAt(4), 'g');
+    for (int i = 5; i < 7; i++) {
+      th.check('\u0000', buffer.charAt(i));
+    }
+    buffer = new StringBuffer();
+    buffer.append("abcdefg");
+    buffer.setLength(5);
+    buffer.setLength(7);
+    for (int i = 5; i < 7; i++) {
+      th.check('\u0000', buffer.charAt(i));
+    }
+
+    buffer = new StringBuffer();
+    th.check(buffer.toString(), "");
+    buffer.append("abcde");
+    th.check(buffer.toString(), "abcde");
+    buffer.setLength(5);
+    buffer.append("fghij");
+    th.check(buffer.toString(), "abcdefghij");
+
+    obj = new StringBuffer();
+    try {
+      obj.append(new char[0], -1, -1);
+      th.fail();
+    } catch (ArrayIndexOutOfBoundsException e) {
+      th.pass();
+    }
+
+    obj = new StringBuffer();
+    try {
+      obj.append((char[]) null, -1, -1);
+      th.fail();
+    } catch (NullPointerException e) {
+      th.pass();
+    }
+
+    obj = new StringBuffer();
+    try {
+      obj.insert(-1, ' ');
+      th.fail();
+    } catch (ArrayIndexOutOfBoundsException e) {
+      th.pass();
+    }
+
+    return 0;
   }
 
 }

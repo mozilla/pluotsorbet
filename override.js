@@ -245,7 +245,8 @@ Override.simple = function(key, fn, opts) {
       } else if (e.javaClassName) {
         ctx.raiseExceptionAndYield(e.javaClassName, e.message);
       } else {
-        ctx.raiseExceptionAndYield("java/lang/RuntimeError", e);
+        console.error(e, e.stack);
+        ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
       }
     }
   };

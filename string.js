@@ -3,18 +3,18 @@
 'use strict';
 
 /**
- * These methods reimplement java.lang.String using native JS strings,
- * stored as the `str` property on the java.lang.String instance.
+ * string.js: Native implementations of String and StringBuffer.
  *
- * All methods on java.lang.String are implemented here in the same
- * order as java.lang.String, with the exception of a couple of the
- * String.valueOf() methods, whose absence is documented below.
+ * Methods are defined in the same order as the Java source.
+ * Any missing methods have been noted in comments.
  */
+
+//################################################################
+// java.lang.String (manipulated via the 'str' property)
 
 function isString(obj) {
   return obj && obj.str !== undefined;
 }
-
 
 //****************************************************************
 // Constructors
@@ -81,10 +81,8 @@ Override.simple(
 
 Override.simple(
   "java/lang/String.<init>.(Ljava/lang/StringBuffer;)V",
-  function(buffer) {
-    var value = buffer.class.getField("I.value.[C").get(buffer);
-    var count = buffer.class.getField("I.count.I").get(buffer);
-    this.str = util.fromJavaChars(value, 0, count);
+  function(jBuffer) {
+    this.str = util.fromJavaChars(jBuffer.buf, 0, jBuffer.count);
   });
 
 Override.simple(
@@ -112,10 +110,7 @@ Override.simple("java/lang/String.getChars.(II[CI)V", function(srcBegin, srcEnd,
       dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
-  var len = srcEnd - srcBegin;
-  for (var i = 0; i < len; i++) {
-    dst[dstBegin + i] = this.str.charCodeAt(srcBegin + i);
-  }
+  dst.set(util.stringToCharArray(this.str.substring(srcBegin, srcEnd)), dstBegin);
 });
 
 // Java returns encodings like "UTF_16"; TextEncoder and friends only
@@ -277,7 +272,7 @@ Override.simple("java/lang/String.toString.()Ljava/lang/String;", function() {
 });
 
 Override.simple("java/lang/String.toCharArray.()[C", function() {
-  return util.javaStringToArrayBuffer(this);
+  return util.stringToCharArray(this.str);
 });
 
 //****************************************************************
@@ -320,20 +315,317 @@ Override.simple("java/lang/String.valueOf.(J)Ljava/lang/String;", function(n, _)
 
 
 // String.valueOf(float) and String.valueOf(double) have been left in
-// Java for now, as they follow complex formatting rules.
-// Additionally, the test suite covers things like positive zero vs.
-// negative zero, which we don't currently distinguish.
+// Java for now, as they require support for complex formatting rules.
+// Additionally, their tests check for coverage of nuanced things like
+// positive zero vs. negative zero, which we don't currently support.
 
-// Note: String.intern is implemented in `native.js`.
+var internedStrings = new Map();
+
+Native["java/lang/String.intern.()Ljava/lang/String;"] = function(ctx, stack) {
+    var javaString = stack.pop();
+    var string = util.fromJavaString(javaString);
+
+    var internedString = internedStrings.get(string);
+
+    if (internedString) {
+        stack.push(internedString);
+    } else {
+        internedStrings.set(string, javaString);
+        stack.push(javaString);
+    }
+}
 
 
-//****************************************************************
-// StringBuffer
 
-// Overriding StringBuffer.toString() avoids calling "new
-// String(this)" via JVM bytecode.
+//################################################################
+// java.lang.StringBuffer (manipulated via the 'buf' property)
+
+Override.simple("java/lang/StringBuffer.<init>.()V", function() {
+  this.buf = new Uint16Array(16); // Initial buffer size: 16, per the Java implementation.
+  this.count = 0;
+});
+
+Override.simple("java/lang/StringBuffer.<init>.(I)V", function(length) {
+  if (length < 0) {
+    throw new JavaException("java/lang/NegativeArraySizeException");
+  }
+  this.buf = new Uint16Array(length);
+  this.count = 0;
+});
+
+Override.simple("java/lang/StringBuffer.<init>.(Ljava/lang/String;)V", function(jStr) {
+  var stringBuf = util.stringToCharArray(jStr.str);
+  this.buf = new Uint16Array(stringBuf.length + 16); // Add 16, per the Java implementation.
+  this.buf.set(stringBuf, 0);
+  this.count = stringBuf.length;
+});
+
+Override.simple("java/lang/StringBuffer.length.()I", function() {
+  return this.count;
+});
+
+Override.simple("java/lang/StringBuffer.capacity.()I", function() {
+  return this.buf.length;
+});
+
+Override.simple("java/lang/StringBuffer.copy.()V", function() {
+  // We don't support copying (there's no need unless we also support shared buffers).
+});
+
+/**
+ * Expand capacity to max(minCapacity, (capacity + 1) * 2).
+ *
+ * @this StringBuffer
+ * @param {number} minCapacity
+ */
+function expandCapacity(minCapacity) {
+  var newCapacity = (this.buf.length + 1) << 1;
+  if (minCapacity > newCapacity) {
+    newCapacity = minCapacity;
+  }
+    
+  var oldBuf = this.buf;
+  this.buf = new Uint16Array(newCapacity);
+  this.buf.set(oldBuf, 0);
+}
+
+Override.simple("java/lang/StringBuffer.ensureCapacity.(I)V", function(minCapacity) {
+  if (this.buf.length < minCapacity) {
+    expandCapacity.call(this, minCapacity);
+  }
+});
+
+// StringBuffer.expandCapacity is private and not needed with these overrides.
+
+Override.simple("java/lang/StringBuffer.setLength.(I)V", function(newLength) {
+  if (newLength < 0) {
+    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+
+  if (newLength > this.buf.length) {
+    expandCapacity.call(this, newLength);
+  }
+  for (; this.count < newLength; this.count++) {
+    this.buf[this.count] = '\0';
+  }
+  this.count = newLength;
+});
+
+
+Override.simple("java/lang/StringBuffer.charAt.(I)C", function(index) {
+  if (index < 0 || index >= this.count) {
+    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+  return this.buf[index];
+});
+
+Override.simple("java/lang/StringBuffer.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
+  if (srcBegin < 0 || srcEnd < 0 || srcEnd > this.count || srcBegin > srcEnd) {
+    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+  if (dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
+    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
+  }
+  dst.set(this.buf.subarray(srcBegin, srcEnd), dstBegin);
+});
+
+Override.simple("java/lang/StringBuffer.setCharAt.(IC)V", function(index, ch) {
+  if (index < 0 || index >= this.count) {
+    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+  this.buf[index] = ch;
+});
+
+
+/**
+ * Append `data`, which should be either a JS String or a Uint16Array.
+ * Data must not be null.
+ *
+ * @this StringBuffer
+ * @param {Uint16Array|string} data
+ * @return this
+ */
+function stringBufferAppend(data) {
+  if (data == null) {
+    throw new JavaException("java/lang/NullPointerException");
+  }
+  if (!(data instanceof Uint16Array)) {
+    data = util.stringToCharArray(data);
+  }
+  if (this.buf.length < this.count + data.length) {
+    expandCapacity.call(this, this.count + data.length);
+  }
+  this.buf.set(data, this.count);
+  this.count += data.length;
+  return this;
+}
+
+// StringBuffer.append(java.lang.Object) left in Java to avoid Object.toString().
+
+Override.simple("java/lang/StringBuffer.append.(Ljava/lang/String;)Ljava/lang/StringBuffer;", function(jStr) {
+  return stringBufferAppend.call(this, jStr ? jStr.str : "null");
+});
+
+Override.simple("java/lang/StringBuffer.append.([C)Ljava/lang/StringBuffer;", function(chars) {
+  if (chars == null) {
+    throw new JavaException("java/lang/NullPointerException");
+  }
+  return stringBufferAppend.call(this, chars);
+});
+
+Override.simple("java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;", function(chars, offset, length) {
+  if (chars == null) {
+    throw new JavaException("java/lang/NullPointerException");
+  }
+  if (offset < 0 || offset + length > chars.length) {
+    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
+  }
+  return stringBufferAppend.call(this, chars.subarray(offset, offset + length));
+});
+
+Override.simple("java/lang/StringBuffer.append.(Z)Ljava/lang/StringBuffer;", function(bool) {
+  return stringBufferAppend.call(this, bool ? "true" : "false");
+});
+
+Override.simple("java/lang/StringBuffer.append.(C)Ljava/lang/StringBuffer;", function(ch) {
+  if (this.buf.length < this.count + 1) {
+    expandCapacity.call(this, this.count + 1);
+  }
+  this.buf[this.count++] = ch;
+  return this;
+});
+
+Override.simple("java/lang/StringBuffer.append.(I)Ljava/lang/StringBuffer;", function(n) {
+  return stringBufferAppend.call(this, n + "");
+});
+
+Override.simple("java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;", function(n, _) {
+  return stringBufferAppend.call(this, n + "");
+});
+
+// StringBuffer.append(float) left in Java (see String.valueOf(float) above).
+
+// StringBuffer.append(double) left in Java (see String.valueOf(double) above).
+
+/**
+ * Delete characters between [start, end).
+ *
+ * @this StringBuffer
+ * @param {number} start
+ * @param {number} end
+ * @return this
+ */
+function stringBufferDelete(start, end) {
+  if (start < 0) {
+    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+  if (end > this.count) {
+    end = this.count;
+  }
+  if (start > end) {
+    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+
+  var len = end - start;
+  if (len > 0) {
+    // When Gecko 34 is released, we can use TypedArray.copyWithin() instead.
+    this.buf.set(this.buf.subarray(end, this.count), start);
+    this.count -= len;
+  }
+  return this;
+}
+
+Override.simple("java/lang/StringBuffer.delete.(II)Ljava/lang/StringBuffer;",
+                stringBufferDelete);
+
+Override.simple("java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;", function(index) {
+  if (index >= this.count) {
+    // stringBufferDelete handles the other boundary checks; this check is specific to deleteCharAt.
+    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+  }
+  return stringBufferDelete.call(this, index, index + 1);
+});
+
+/**
+ * Insert `data` at the given `offset`.
+ *
+ * @this StringBuffer
+ * @param {number} offset
+ * @param {Uint16Array|string} data
+ * @return this
+ */
+function stringBufferInsert(offset, data) {
+  if (data == null) {
+    throw new JavaException("java/lang/NullPointerException");
+  }
+  if (offset < 0 || offset > this.count) {
+    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
+  }
+  if (!(data instanceof Uint16Array)) {
+    data = util.stringToCharArray(data);
+  }
+  if (this.buf.length < this.count + data.length) {
+    expandCapacity.call(this, this.count + data.length);
+  }
+  // When Gecko 34 is released, we can use TypedArray.copyWithin() instead.
+  this.buf.set(this.buf.subarray(offset, this.count), offset + data.length);
+  this.buf.set(data, offset);
+  this.count += data.length;
+  return this;
+}
+
+// StringBuffer.insert(Object) left in Java (for String.valueOf()).
+
+Override.simple("java/lang/StringBuffer.insert.(ILjava/lang/String;)Ljava/lang/StringBuffer;", function(offset, jStr) {
+  return stringBufferInsert.call(this, offset, jStr ? jStr.str : "null");
+});
+
+Override.simple("java/lang/StringBuffer.insert.(I[C)Ljava/lang/StringBuffer;", function(offset, chars) {
+  return stringBufferInsert.call(this, offset, chars);
+});
+
+Override.simple("java/lang/StringBuffer.insert.(IZ)Ljava/lang/StringBuffer;", function(offset, bool) {
+  return stringBufferInsert.call(this, offset, bool ? "true" : "false");
+});
+
+Override.simple("java/lang/StringBuffer.insert.(IC)Ljava/lang/StringBuffer;", function(offset, ch) {
+  return stringBufferInsert.call(this, offset, String.fromCharCode(ch));
+});
+
+Override.simple("java/lang/StringBuffer.insert.(II)Ljava/lang/StringBuffer;", function(offset, n) {
+  return stringBufferInsert.call(this, offset, n + "");
+});
+
+Override.simple("java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;", function(offset, n, _) {
+  return stringBufferInsert.call(this, offset, n + "");
+});
+
+// StringBuffer.insert(float) left in Java.
+
+// StringBuffer.insert(double) left in Java.
+
+Override.simple("java/lang/StringBuffer.reverse.()Ljava/lang/StringBuffer;", function() {
+  var buf = this.buf;
+  for (var i = 0, j = this.count - 1; i < j; i++, j--) {
+    var tmp = buf[i];
+    buf[i] = buf[j];
+    buf[j] = tmp;
+  }
+  return this;
+});
+
 Override.simple("java/lang/StringBuffer.toString.()Ljava/lang/String;", function() {
-  var value = this.class.getField("I.value.[C").get(this);
-  var count = this.class.getField("I.count.I").get(this);
-  return util.fromJavaChars(value, 0, count);
+  return util.fromJavaChars(this.buf, 0, this.count);
+});
+
+Override.simple("java/lang/StringBuffer.setShared.()V", function() {
+  // Our StringBuffers are never shared. Everyone gets their very own!
+});
+
+Override.simple("java/lang/StringBuffer.getValue.()[C", function() {
+  // In theory, this method should only be called by String (which
+  // we've overridden to not do), so it should never be called. In any
+  // case, mutating this buf would have the same effect here as it
+  // would in Java.
+  return this.buf;
 });
