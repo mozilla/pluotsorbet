@@ -3,7 +3,7 @@
 
 'use strict';
 
-const SOCKET_OPT = {
+var SOCKET_OPT = {
   DELAY: 0,
   LINGER: 1,
   KEEPALIVE: 2,
