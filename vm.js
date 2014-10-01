@@ -31,9 +31,9 @@ VM.execute = function(ctx) {
         cp = frame.cp;
         if (frame.isSynchronized) {
             if (!frame.lockObject) {
-              frame.lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
-                                   ? methodInfo.classInfo.getClassObject(ctx)
-                                   : frame.getLocal(0);
+                frame.lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
+                                     ? methodInfo.classInfo.getClassObject(ctx)
+                                     : frame.getLocal(0);
             }
 
             ctx.monitorEnter(frame.lockObject);
