@@ -28,12 +28,13 @@ import java.io.UnsupportedEncodingException;
 
 class StringBufferTest implements Testlet {
 
+    private TestHarness th;
     public void test(TestHarness th) {
+       this.th = th;
        th.check(test1(), 0);
     }
 
     public int test1() {
-
     try {
       new StringBuffer(-1);
       return 100;
@@ -51,7 +52,7 @@ class StringBufferTest implements Testlet {
     if (! str1.toString().equals("")) {
       return 130;
     }
-    
+
     StringBuffer str2 = new StringBuffer("testing");
     if (str2.length() != 7) {
       return 140;
@@ -75,7 +76,7 @@ class StringBufferTest implements Testlet {
     if (! strbuf.append("hiii").toString().equals("hiii")) {
       return 190;
     }
-    
+
     strbuf = new StringBuffer(10);
     if (strbuf.capacity() != 10) {
       return 200;
@@ -84,16 +85,16 @@ class StringBufferTest implements Testlet {
     if (! str1.toString().equals("03041965")) {
       return 210;
     }
-    
+
     str1 = new StringBuffer();
     if (! str1.toString().equals("")) {
       return 220;
     }
-    
+
     /*
     ** capacity tests...
     */
-    
+
     str1 = new StringBuffer("");
     str2 = new StringBuffer("pentiumpentiumpentium");
     if (str1.capacity() != 16) {
@@ -107,11 +108,11 @@ class StringBufferTest implements Testlet {
     if (str1.capacity() != 34) {
       return 250;
     }
-    
+
     /*
     ** setLength tests...
     */
-    
+
     str1 = new StringBuffer("ba");
     try {
       str1.setLength(-1);
@@ -119,12 +120,12 @@ class StringBufferTest implements Testlet {
     }
     catch (IndexOutOfBoundsException e) {
     }
-    
+
     str1. setLength(4);
     if (str1.length() != 4) {
       return 270;
     }
-    
+
     if (str1.charAt(0) != 'b') {
       return 280;
     }
@@ -155,7 +156,7 @@ class StringBufferTest implements Testlet {
     if (str1.charAt(3) != 'd') {
       return 350;
     }
-    
+
     try {
       str1.charAt(4);
       return 360;
@@ -169,7 +170,7 @@ class StringBufferTest implements Testlet {
     }
     catch (IndexOutOfBoundsException e) {
     }
-    
+
     /*
     ** getChars tests...
     */
@@ -195,7 +196,7 @@ class StringBufferTest implements Testlet {
       ** Index out of bounds of StringBuffer - srcOffset
       */
     }
-    
+
     try {
       str1.getChars(4, 3, dst, 3);
       return 400;
@@ -203,7 +204,7 @@ class StringBufferTest implements Testlet {
     catch (IndexOutOfBoundsException e) {
       /*
       **
-      */      
+      */
     }
 
     try {
@@ -265,10 +266,10 @@ class StringBufferTest implements Testlet {
     /*
     ** append tests...
     */
-    
+
     str1 = new StringBuffer();
     Object NULL = null;
-    
+
     if (! str1.append(NULL).toString().equals("null")) {
       return 540;
     }
@@ -297,7 +298,7 @@ class StringBufferTest implements Testlet {
     }
     catch (NullPointerException e) {
     }
-    
+
     char[] carr1 = {'h', 'i', 't', 'h', 'e', 'r'};
     str1 = new StringBuffer("!");
     str1 = str1.append(carr1);
@@ -457,7 +458,7 @@ class StringBufferTest implements Testlet {
     /*
     ** setCharAt tests...
     */
-    
+
     str1 = new StringBuffer("1234567");
     try {
       str1.setCharAt(-1, 'A');
@@ -481,7 +482,7 @@ class StringBufferTest implements Testlet {
     /*
     ** deleteCharAt tests...
     */
-    
+
     str1 = new StringBuffer("123456789");
     try {
       str1.deleteCharAt(-1);
@@ -501,7 +502,7 @@ class StringBufferTest implements Testlet {
     if (! str1.toString().equals("12346789")) {
       return 940;
     }
-    
+
     if (str1.length() != 8) {
       return 950;
     }
@@ -539,37 +540,36 @@ class StringBufferTest implements Testlet {
     StringBuffer obj = new StringBuffer();
     try {
       obj.getChars(0, 0, new char[0], -1);
-      return 1080;
+      th.fail();
     } catch (ArrayIndexOutOfBoundsException e) {
-      // expected
+      th.pass();
     }
 
     StringBuffer buffer = new StringBuffer("abcde");
     try {
       buffer.setLength(-1);
-      return 1090;
+      th.fail();
     } catch (IndexOutOfBoundsException e) {
-      // expected
+      th.pass();
     }
 
-    if (!"abcde".equals(buffer.toString())) { return 1091; }
+    th.check(buffer.toString(), "abcde");
     buffer.setLength(1);
     buffer.append('f');
-    System.out.println(buffer.toString());
-    if (!"af".equals(buffer.toString())) { return 1092; }
+    th.check(buffer.toString(), "af");
 
     buffer = new StringBuffer("abcde");
     buffer.setLength(3);
     buffer.append('f');
-    if (!"abcf".equals(buffer.toString())) { return 1093; }
+    th.check(buffer.toString(), "abcf");
 
     buffer = new StringBuffer("abcde");
     buffer.setLength(2);
     try {
       buffer.charAt(3);
-      return 1100;
+      th.fail();
     } catch (IndexOutOfBoundsException e) {
-      // Expected
+      th.pass();
     }
 
     buffer = new StringBuffer();
@@ -577,67 +577,59 @@ class StringBufferTest implements Testlet {
     buffer.setLength(2);
     buffer.setLength(5);
     for (int i = 2; i < 5; i++) {
-      if (buffer.charAt(i) != '\u0000') {
-        return 1101;
-      }
+      th.check('\u0000', buffer.charAt(i));
     }
 
     buffer = new StringBuffer();
     buffer.append("abcdefg");
     buffer.delete(2, 4);
     buffer.setLength(7);
-    if (buffer.charAt(0) != 'a') { return 1102; }
-    if (buffer.charAt(1) != 'b') { return 1103; }
-    if (buffer.charAt(2) != 'e') { return 1104; }
-    if (buffer.charAt(3) != 'f') { return 1105; }
-    if (buffer.charAt(4) != 'g') { return 1106; }
+    th.check(buffer.charAt(0), 'a');
+    th.check(buffer.charAt(1), 'b');
+    th.check(buffer.charAt(2), 'e');
+    th.check(buffer.charAt(3), 'f');
+    th.check(buffer.charAt(4), 'g');
     for (int i = 5; i < 7; i++) {
-      if (buffer.charAt(i) != '\u0000') {
-        return 1107;
-      }
+      th.check('\u0000', buffer.charAt(i));
     }
     buffer = new StringBuffer();
     buffer.append("abcdefg");
     buffer.setLength(5);
     buffer.setLength(7);
     for (int i = 5; i < 7; i++) {
-      if (buffer.charAt(i) != '\u0000') {
-        return 1108;
-      }
+      th.check('\u0000', buffer.charAt(i));
     }
 
     buffer = new StringBuffer();
-    if (!"".equals(buffer.toString())) {
-      return 1109;
-    }
+    th.check(buffer.toString(), "");
     buffer.append("abcde");
-    if (!"abcde".equals(buffer.toString())) { return 1110; }
+    th.check(buffer.toString(), "abcde");
     buffer.setLength(5);
     buffer.append("fghij");
-    if (!"abcdefghij".equals(buffer.toString())) { return 1111; }
+    th.check(buffer.toString(), "abcdefghij");
 
     obj = new StringBuffer();
     try {
       obj.append(new char[0], -1, -1);
-      return 1112;
+      th.fail();
     } catch (ArrayIndexOutOfBoundsException e) {
-      // expected
+      th.pass();
     }
 
     obj = new StringBuffer();
     try {
       obj.append((char[]) null, -1, -1);
-      return 1120;
+      th.fail();
     } catch (NullPointerException e) {
-      // expected
+      th.pass();
     }
 
     obj = new StringBuffer();
     try {
       obj.insert(-1, ' ');
-      return 1130;
+      th.fail();
     } catch (ArrayIndexOutOfBoundsException e) {
-      // expected
+      th.pass();
     }
 
     return 0;

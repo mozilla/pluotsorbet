@@ -539,7 +539,8 @@ Override.simple("java/lang/StringBuffer.delete.(II)Ljava/lang/StringBuffer;",
                 stringBufferDelete);
 
 Override.simple("java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;", function(index) {
-  if (index < 0 || index >= this.count) {
+  if (index >= this.count) {
+    // stringBufferDelete handles the other boundary checks; this check is specific to deleteCharAt.
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
   }
   return stringBufferDelete.call(this, index, index + 1);
