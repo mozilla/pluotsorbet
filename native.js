@@ -535,9 +535,8 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
       exception_table: [],
     };
 
-    var synthFrame = new Frame(syntheticMethod, [ thread ], 0)
-    ctx.frames.push(synthFrame);
-    ctx.start(synthFrame);
+    ctx.frames.push(new Frame(syntheticMethod, [ thread ], 0));
+    ctx.start();
 }
 
 Native["java/lang/Thread.internalExit.()V"] = function(ctx, stack) {

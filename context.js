@@ -117,7 +117,7 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
   throw VM.Yield;
 }
 
-Context.prototype.execute = function(stopFrame) {
+Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());
   do {
     try {
@@ -139,9 +139,8 @@ Context.prototype.execute = function(stopFrame) {
   this.frames.pop();
 }
 
-Context.prototype.start = function(stopFrame) {
+Context.prototype.start = function() {
   var ctx = this;
-  ctx.stopFrame = stopFrame;
 
   window.setZeroTimeout(function() {
     Instrument.callResumeHooks(ctx.current());
@@ -169,12 +168,12 @@ Context.prototype.start = function(stopFrame) {
       return;
     }
 
-    ctx.start(stopFrame);
+    ctx.start();
   });
 }
 
 Context.prototype.resume = function() {
-  this.start(this.stopFrame);
+  this.start();
 }
 
 Context.prototype.block = function(obj, queue, lockLevel) {

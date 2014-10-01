@@ -38,14 +38,12 @@ JVM.prototype.startIsolate0 = function(className, args) {
     for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? ctx.newString(args[n]) : null;
 
-    var synthFrame1 = new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
-                                [ isolate, ctx.newString(className.replace(/\./g, "/")), array ], 0);
-    ctx.frames.push(synthFrame1);
-    ctx.execute(synthFrame1);
+    ctx.frames.push(new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
+                              [ isolate, ctx.newString(className.replace(/\./g, "/")), array ], 0));
+    ctx.execute();
 
-    var synthFrame2 = new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.start.()V"), [ isolate ], 0);
-    ctx.frames.push(synthFrame2);
-    ctx.start(synthFrame2);
+    ctx.frames.push(new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.start.()V"), [ isolate ], 0));
+    ctx.start();
 }
 
 JVM.prototype.startIsolate = function(isolate) {
@@ -75,16 +73,14 @@ JVM.prototype.startIsolate = function(isolate) {
     ctx.thread.pid = util.id();
     ctx.thread.alive = true;
 
-    var synthFrame1 = new Frame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
-                                [ runtime.mainThread, ctx.newString("main") ], 0);
-    ctx.frames.push(synthFrame1);
-    ctx.execute(synthFrame1);
+    ctx.frames.push(new Frame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
+                              [ runtime.mainThread, ctx.newString("main") ], 0));
+    ctx.execute();
 
     var args = ctx.newArray("[Ljava/lang/String;", mainArgs.length);
     for (var n = 0; n < mainArgs.length; ++n)
         args[n] = mainArgs[n] ? ctx.newString(mainArgs[n]) : null;
 
-    var synthFrame2 = new Frame(entryPoint, [ args ], 0);
-    ctx.frames.push(synthFrame2);
-    ctx.start(synthFrame2);
+    ctx.frames.push(new Frame(entryPoint, [ args ], 0));
+    ctx.start();
 }
