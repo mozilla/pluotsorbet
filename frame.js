@@ -52,8 +52,6 @@ var Frame = function(methodInfo, locals, localsBase) {
     // from the end of the stack.  stack.read(1) returns the topmost item
     // on the stack, while stack.read(2) returns the one underneath it.
     this.stack.read = function(i) { return this[this.length - i] };
-
-    Object.seal(this);
 }
 
 Frame.prototype.getLocal = function(idx) {
