@@ -33,12 +33,10 @@ Array.prototype.popType = function(signature) {
 }
 
 var Frame = function(methodInfo, locals, localsBase) {
-    if (methodInfo) {
-        this.methodInfo = methodInfo;
-        this.cp = methodInfo.classInfo.constant_pool;
-        this.code = methodInfo.code;
-        this.ip = 0;
-    }
+    this.methodInfo = methodInfo;
+    this.cp = methodInfo.classInfo.constant_pool;
+    this.code = methodInfo.code;
+    this.ip = 0;
     this.stack = [];
     this.locals = locals;
     this.localsBase = localsBase;
@@ -50,7 +48,7 @@ var Frame = function(methodInfo, locals, localsBase) {
     // on the stack, while stack.read(2) returns the one underneath it.
     this.stack.read = function(i) { return this[this.length - i] };
 
-    Object.seal(this)
+    Object.seal(this);
 }
 
 Frame.prototype.getLocal = function(idx) {

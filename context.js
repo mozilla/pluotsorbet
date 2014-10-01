@@ -115,7 +115,7 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
 
 Context.prototype.execute = function(stopFrame) {
   Instrument.callResumeHooks(this.current());
-  while (this.current() !== stopFrame) {
+  do {
     try {
       VM.execute(this);
     } catch (e) {
@@ -130,16 +130,13 @@ Context.prototype.execute = function(stopFrame) {
         throw e;
       }
     }
-  }
+  } while (this.current() !== stopFrame);
 }
 
 Context.prototype.start = function(stopFrame) {
-  if (this.current() === stopFrame) {
-    this.kill();
-    return;
-  }
   var ctx = this;
   ctx.stopFrame = stopFrame;
+
   window.setZeroTimeout(function() {
     Instrument.callResumeHooks(ctx.current());
     try {
@@ -157,6 +154,12 @@ Context.prototype.start = function(stopFrame) {
       }
     }
     Instrument.callPauseHooks(ctx.current());
+
+    if (ctx.current() === stopFrame) {
+      ctx.kill();
+      return;
+    }
+
     ctx.start(stopFrame);
   });
 }
