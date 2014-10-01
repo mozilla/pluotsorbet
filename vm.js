@@ -29,10 +29,13 @@ VM.execute = function(ctx) {
         frame = ctx.pushFrame(methodInfo, consumes);
         stack = frame.stack;
         cp = frame.cp;
-        if (ACCESS_FLAGS.isSynchronized(methodInfo.access_flags)) {
-            frame.lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
-                               ? methodInfo.classInfo.getClassObject(ctx)
-                               : frame.getLocal(0);
+        if (frame.isSynchronized) {
+            if (!frame.lockObject) {
+              frame.lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
+                                   ? methodInfo.classInfo.getClassObject(ctx)
+                                   : frame.getLocal(0);
+            }
+
             ctx.monitorEnter(frame.lockObject);
         }
         return frame;

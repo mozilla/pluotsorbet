@@ -37,10 +37,15 @@ var Frame = function(methodInfo, locals, localsBase) {
     this.cp = methodInfo.classInfo.constant_pool;
     this.code = methodInfo.code;
     this.ip = 0;
+
     this.stack = [];
+
     this.locals = locals;
     this.localsBase = localsBase;
+
+    this.isSynchronized = ACCESS_FLAGS.isSynchronized(methodInfo.access_flags);
     this.lockObject = null;
+
     this.profileData = null;
 
     // A convenience function for retrieving values in reverse order
