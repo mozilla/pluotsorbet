@@ -227,7 +227,7 @@ var fs = (function() {
   function ftruncate(fd, size) {
     if (size != openedFiles[fd].buffer.contentSize) {
       openedFiles[fd].buffer.setSize(size);
-      setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
+      openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
     }
   }
 
