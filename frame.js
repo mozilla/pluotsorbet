@@ -13,13 +13,6 @@ Array.prototype.pop2 = function() {
     return this.pop();
 }
 
-Array.prototype.dup = function() {
-    var v = this.pop();
-    this.push(v);
-    this.push(v);
-    return v;
-}
-
 Array.prototype.pushType = function(signature, value) {
     if (signature === "J" || signature === "D") {
         this.push2(value);
