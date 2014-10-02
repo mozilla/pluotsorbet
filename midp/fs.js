@@ -514,13 +514,9 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
         ctx.raiseException("java/io/IOException", "truncate failed");
         ctx.resume();
       } else {
-        var data = fs.read(fd);
-        fs.truncate(path, function(truncated) {
-          if (truncated) {
-            fs.write(fd, data.subarray(0, newLength));
-          } else {
-            ctx.raiseException("java/io/IOException", "truncate failed");
-          }
+        fs.ftruncate(fd, newLength);
+        fs.flush(fd, function() {
+          fs.close(fd);
           ctx.resume();
         });
       }
