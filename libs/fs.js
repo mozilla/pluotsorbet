@@ -234,6 +234,11 @@ var fs = (function() {
   function remove(path, cb) {
     path = normalizePath(path);
 
+    if (openedFiles.findIndex(file => file && file.path === path) != -1) {
+      cb(false);
+      return;
+    }
+
     list(path, function(files) {
       if (files != null && files.length > 0) {
         cb(false);
@@ -367,6 +372,11 @@ var fs = (function() {
   function rename(oldPath, newPath, cb) {
     oldPath = normalizePath(oldPath);
     newPath = normalizePath(newPath);
+
+    if (openedFiles.findIndex(file => file && file.path === oldPath) != -1) {
+      cb(false);
+      return;
+    }
 
     list(oldPath, function(files) {
       if (files != null && files.length > 0) {
