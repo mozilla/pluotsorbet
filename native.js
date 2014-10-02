@@ -298,12 +298,12 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack
           { bytes: "()V" },
         ]
       },
-      code: [
+      code: new Uint8Array([
         0xbb, 0x00, 0x01, // new <idx=1>
         0x59,             // dup
         0xb7, 0x00, 0x03, // invokespecial <idx=3>
         0xb0              // areturn
-      ],
+      ]),
     };
     ctx.pushFrame(syntheticMethod, 0);
     throw VM.Yield;
@@ -509,13 +509,13 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
           { bytes: "()V" },
         ],
       },
-      code: [
+      code: new Uint8Array([
         0x2a,             // aload_0
         0x59,             // dup
         0xb6, 0x00, 0x01, // invokespecial <idx=1>
         0xb7, 0x00, 0x07, // invokespecial <idx=7>
         0xb1,             // return
-      ],
+      ]),
       exception_table: [],
     };
 
