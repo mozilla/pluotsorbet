@@ -498,8 +498,12 @@ Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = functi
 
 Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(ctx, stack) {
     var newPath = util.decodeUtf8(stack.pop()), oldPath = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    fs.rename(oldPath, newPath, function() {
-      ctx.resume();
+    fs.rename(oldPath, newPath, function(renamed) {
+        if (!renamed) {
+            ctx.raiseException("java/io/IOException", "Rename failed");
+        }
+
+        ctx.resume();
     });
     throw VM.Pause;
 }
@@ -514,13 +518,9 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
         ctx.raiseException("java/io/IOException", "truncate failed");
         ctx.resume();
       } else {
-        var data = fs.read(fd);
-        fs.truncate(path, function(truncated) {
-          if (truncated) {
-            fs.write(fd, data.subarray(0, newLength));
-          } else {
-            ctx.raiseException("java/io/IOException", "truncate failed");
-          }
+        fs.ftruncate(fd, newLength);
+        fs.flush(fd, function() {
+          fs.close(fd);
           ctx.resume();
         });
       }

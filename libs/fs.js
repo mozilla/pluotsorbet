@@ -159,8 +159,7 @@ var fs = (function() {
     buffer.array.set(data, from);
 
     openedFiles[fd].position = from + data.byteLength;
-
-    setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
+    openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
   }
 
   function getpos(fd) {
@@ -181,7 +180,13 @@ var fs = (function() {
 
   function flush(fd, cb) {
     var blob = new Blob([openedFiles[fd].buffer.getContent()]);
-    asyncStorage.setItem(openedFiles[fd].path, blob, cb);
+    asyncStorage.setItem(openedFiles[fd].path, blob, function() {
+      if (openedFiles[fd].stat) {
+        setStat(openedFiles[fd].path, openedFiles[fd].stat, cb);
+      } else {
+        cb();
+      }
+    });
   }
 
   function list(path, cb) {
@@ -222,12 +227,17 @@ var fs = (function() {
   function ftruncate(fd, size) {
     if (size != openedFiles[fd].buffer.contentSize) {
       openedFiles[fd].buffer.setSize(size);
-      setStat(openedFiles[fd].path, { mtime: Date.now(), isDir: false });
+      openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
     }
   }
 
   function remove(path, cb) {
     path = normalizePath(path);
+
+    if (openedFiles.findIndex(file => file && file.path === path) != -1) {
+      setTimeout(() => cb(false), 0);
+      return;
+    }
 
     list(path, function(files) {
       if (files != null && files.length > 0) {
@@ -363,6 +373,11 @@ var fs = (function() {
     oldPath = normalizePath(oldPath);
     newPath = normalizePath(newPath);
 
+    if (openedFiles.findIndex(file => file && file.path === oldPath) != -1) {
+      setTimeout(() => cb(false), 0);
+      return;
+    }
+
     list(oldPath, function(files) {
       if (files != null && files.length > 0) {
         cb(false);
@@ -401,6 +416,13 @@ var fs = (function() {
 
   function stat(path, cb) {
     path = normalizePath(path);
+
+    var file = openedFiles.find(file => file && file.stat && file.path === path);
+    if (file) {
+      setTimeout(() => cb(file.stat), 0);
+      return;
+    }
+
     asyncStorage.getItem("!" + path, function(statData) {
       if (statData) {
         cb(statData);

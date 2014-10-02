@@ -361,6 +361,40 @@ public class TestFileConnection implements Testlet {
             file.delete();
             file.close();
 
+            // Test that deleting or renaming a open file fails.
+            // Create the stream ourselves because otherwise FileConnection will
+            // close the files before deleting/renaming them.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
+            try {
+                file.delete();
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Can not delete: " + file.getURL());
+            }
+            try {
+                file.rename("newname");
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Rename failed");
+            }
+            out.close();
+
+            // Renaming after closing the file should succeed.
+
+            file.rename("newname");
+            file.close();
+
+            // The file with the old name doesn't exist anymore.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            th.check(!file.exists());
+            file.close();
+            // The file with the new name exists.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/newname");
+            th.check(file.exists());
+            file.delete();
+            file.close();
+
             dir = (FileConnection)Connector.open(dirPath + "provaDir");
             dir.delete();
             th.check(!dir.exists());
