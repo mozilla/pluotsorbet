@@ -34,22 +34,16 @@ JVM.prototype.startIsolate0 = function(className, args) {
     var isolate = ctx.newObject(com_sun_cldc_isolate_Isolate);
     isolate.id = util.id();
 
-    var caller = new Frame();
-    ctx.frames.push(caller);
-
     var array = ctx.newArray("[Ljava/lang/String;", args.length);
     for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? ctx.newString(args[n]) : null;
 
-    caller.stack.push(isolate);
-    caller.stack.push(ctx.newString(className.replace(/\./g, "/")));
-    caller.stack.push(array);
-    ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"), 3);
-    ctx.execute(caller);
+    ctx.frames.push(new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
+                              [ isolate, ctx.newString(className.replace(/\./g, "/")), array ], 0));
+    ctx.execute();
 
-    caller.stack.push(isolate);
-    ctx.pushFrame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.start.()V"), 1);
-    ctx.start(caller);
+    ctx.frames.push(new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.start.()V"), [ isolate ], 0));
+    ctx.start();
 }
 
 JVM.prototype.startIsolate = function(isolate) {
@@ -75,21 +69,18 @@ JVM.prototype.startIsolate = function(isolate) {
     if (!entryPoint)
         throw new Error("Could not find main method in class " + mainName);
 
-    var caller = new Frame();
-    ctx.frames.push(caller);
-
     ctx.thread = runtime.mainThread = ctx.newObject(CLASSES.java_lang_Thread);
     ctx.thread.pid = util.id();
     ctx.thread.alive = true;
-    caller.stack.push(runtime.mainThread);
-    caller.stack.push(ctx.newString("main"));
-    ctx.pushFrame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"), 2);
-    ctx.execute(caller);
+
+    ctx.frames.push(new Frame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
+                              [ runtime.mainThread, ctx.newString("main") ], 0));
+    ctx.execute();
 
     var args = ctx.newArray("[Ljava/lang/String;", mainArgs.length);
     for (var n = 0; n < mainArgs.length; ++n)
         args[n] = mainArgs[n] ? ctx.newString(mainArgs[n]) : null;
-    caller.stack.push(args);
-    ctx.pushFrame(entryPoint, 1);
-    ctx.start(caller);
+
+    ctx.frames.push(new Frame(entryPoint, [ args ], 0));
+    ctx.start();
 }

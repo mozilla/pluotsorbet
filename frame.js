@@ -13,13 +13,6 @@ Array.prototype.pop2 = function() {
     return this.pop();
 }
 
-Array.prototype.dup = function() {
-    var v = this.pop();
-    this.push(v);
-    this.push(v);
-    return v;
-}
-
 Array.prototype.pushType = function(signature, value) {
     if (signature === "J" || signature === "D") {
         this.push2(value);
@@ -32,14 +25,21 @@ Array.prototype.popType = function(signature) {
     return (signature === "J" || signature === "D") ? this.pop2() : this.pop();
 }
 
-var Frame = function(methodInfo) {
-    if (methodInfo) {
-        this.methodInfo = methodInfo;
-        this.cp = methodInfo.classInfo.constant_pool;
-        this.code = methodInfo.code;
-        this.ip = 0;
-    }
+var Frame = function(methodInfo, locals, localsBase) {
+    this.methodInfo = methodInfo;
+    this.cp = methodInfo.classInfo.constant_pool;
+    this.code = methodInfo.code;
+    this.ip = 0;
+
     this.stack = [];
+
+    this.locals = locals;
+    this.localsBase = localsBase;
+
+    this.isSynchronized = ACCESS_FLAGS.isSynchronized(methodInfo.access_flags);
+    this.lockObject = null;
+
+    this.profileData = null;
 
     // A convenience function for retrieving values in reverse order
     // from the end of the stack.  stack.read(1) returns the topmost item

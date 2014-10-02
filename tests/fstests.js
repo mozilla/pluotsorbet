@@ -678,11 +678,24 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.write(fd, new TextEncoder().encode("misc"));
+      fs.write(fd, new TextEncoder().encode("mi"));
       fs.stat("/tmp/stat.txt", function(stat) {
         ok(stat.mtime > lastTime, "write updates mtime");
         lastTime = stat.mtime;
         next();
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.write(fd, new TextEncoder().encode("sc"));
+      fs.flush(fd, function() {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          ok(stat.mtime > lastTime, "write and then flush updates mtime");
+          lastTime = stat.mtime;
+          next();
+        });
       });
     }, 1);
   });
@@ -722,10 +735,12 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.close(fd);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "close doesn't update mtime");
-        next();
+      fs.flush(fd, function() {
+        fs.close(fd);
+        fs.stat("/tmp/stat.txt", function(stat) {
+          is(stat.mtime, lastTime, "close doesn't update mtime");
+          next();
+        });
       });
     }, 1);
   });
