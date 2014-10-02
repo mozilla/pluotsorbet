@@ -57,9 +57,17 @@ load("jvm.js", "classes.js", "libs/zipfile.js", "classinfo.js", "classfile/class
 var dump = print;
 var console = window.console;
 
+var start = dateNow();
+
 var jvm = new JVM();
 jvm.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
 jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
 jvm.initializeBuiltinClasses();
 
+print("INITIALIZATION TIME: " + (dateNow() - start));
+
+start = dateNow();
+
 jvm.startIsolate0("SimpleClass", urlParams.args);
+
+print("RUNNING TIME: " + (dateNow() - start));
