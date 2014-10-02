@@ -269,8 +269,6 @@ var fs = (function() {
   }
 
   function createInternal(path, data, cb) {
-    path = normalizePath(path);
-
     var name = basename(path);
     var dir = dirname(path);
 
@@ -290,6 +288,8 @@ var fs = (function() {
   }
 
   function create(path, blob, cb) {
+    path = normalizePath(path);
+
     createInternal(path, blob, function(created) {
       if (created) {
         setStat(path, { mtime: Date.now(), isDir: false }, function() {
@@ -302,6 +302,8 @@ var fs = (function() {
   }
 
   function mkdir(path, cb) {
+    path = normalizePath(path);
+
     createInternal(path, [], function(created) {
       if (created) {
         setStat(path, { mtime: Date.now(), isDir: true }, function() {
@@ -407,12 +409,10 @@ var fs = (function() {
   }
 
   function setStat(path, stat, cb) {
-    path = normalizePath(path);
     asyncStorage.setItem("!" + path, stat, cb);
   }
 
   function removeStat(path, cb) {
-    path = normalizePath(path);
     asyncStorage.removeItem("!" + path, cb);
   }
 
