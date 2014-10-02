@@ -487,9 +487,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     // Create a context for the thread and start it.
     var ctx = new Context(ctx.runtime);
     ctx.thread = thread;
-    var caller = new Frame();
-    ctx.frames.push(caller);
-    caller.stack.push(thread);
+
     var syntheticMethod = {
       name: "ThreadStart0Synthetic",
       signature: "()V",
@@ -520,8 +518,9 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
       ],
       exception_table: [],
     };
-    ctx.pushFrame(syntheticMethod, 1);
-    ctx.start(caller);
+
+    ctx.frames.push(new Frame(syntheticMethod, [ thread ], 0));
+    ctx.start();
 }
 
 Native["java/lang/Thread.internalExit.()V"] = function(ctx, stack) {

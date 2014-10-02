@@ -20,9 +20,7 @@ Context.prototype.current = function() {
 
 Context.prototype.pushFrame = function(methodInfo, consumes) {
   var caller = this.current();
-  var callee = new Frame(methodInfo);
-  callee.locals = caller.stack;
-  callee.localsBase = caller.stack.length - consumes;
+  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - consumes);
   this.frames.push(callee);
   Instrument.callEnterHooks(methodInfo, caller, callee);
   return callee;
@@ -119,9 +117,9 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
   throw VM.Yield;
 }
 
-Context.prototype.execute = function(stopFrame) {
+Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());
-  while (this.current() !== stopFrame) {
+  do {
     try {
       VM.execute(this);
     } catch (e) {
@@ -136,16 +134,14 @@ Context.prototype.execute = function(stopFrame) {
         throw e;
       }
     }
-  }
+  } while (this.frames.length !== 1);
+
+  this.frames.pop();
 }
 
-Context.prototype.start = function(stopFrame) {
-  if (this.current() === stopFrame) {
-    this.kill();
-    return;
-  }
+Context.prototype.start = function() {
   var ctx = this;
-  ctx.stopFrame = stopFrame;
+
   window.setZeroTimeout(function() {
     Instrument.callResumeHooks(ctx.current());
     try {
@@ -163,12 +159,21 @@ Context.prototype.start = function(stopFrame) {
       }
     }
     Instrument.callPauseHooks(ctx.current());
-    ctx.start(stopFrame);
+
+    // If there's one frame left, we're back to
+    // the method that created the thread and
+    // we're done.
+    if (ctx.frames.length === 1) {
+      ctx.kill();
+      return;
+    }
+
+    ctx.start();
   });
 }
 
 Context.prototype.resume = function() {
-  this.start(this.stopFrame);
+  this.start();
 }
 
 Context.prototype.block = function(obj, queue, lockLevel) {
