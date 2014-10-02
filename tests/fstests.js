@@ -692,7 +692,7 @@ tests.push(function() {
       fs.write(fd, new TextEncoder().encode("sc"));
       fs.flush(fd, function() {
         fs.stat("/tmp/stat.txt", function(stat) {
-          ok(stat.mtime > lastTime, "write updates mtime");
+          ok(stat.mtime > lastTime, "write and then flush updates mtime");
           lastTime = stat.mtime;
           next();
         });
