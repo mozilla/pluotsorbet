@@ -523,11 +523,8 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
         console.error("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
         ctx.raiseExceptionAndYield("java/io/IOException");
     }
-    var len = data.byteLength;
-    var bytes = ctx.newPrimitiveArray("B", len);
-    var src = new Uint8Array(data);
-    for (var n = 0; n < bytes.byteLength; ++n)
-        bytes[n] = src[n];
+    var bytes = ctx.newPrimitiveArray("B", data.byteLength);
+    bytes.set(data);
     stack.push(bytes);
 }
 
