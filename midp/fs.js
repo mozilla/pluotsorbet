@@ -498,8 +498,12 @@ Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = functi
 
 Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(ctx, stack) {
     var newPath = util.decodeUtf8(stack.pop()), oldPath = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    fs.rename(oldPath, newPath, function() {
-      ctx.resume();
+    fs.rename(oldPath, newPath, function(renamed) {
+        if (!renamed) {
+            ctx.raiseException("java/io/IOException", "Rename failed");
+        }
+
+        ctx.resume();
     });
     throw VM.Pause;
 }
