@@ -284,7 +284,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 
     if (_this.server) {
         MIDP.LocalMsgConnections[_this.protocolName] = new LocalMsgConnection();
-        pushNotify("localmsg:" + _this.protocolName);
+        MIDP.ConnectionRegistry.pushNotify("localmsg:" + _this.protocolName);
     } else {
         // Actually, there should always be a server, but we need this check
         // for apps that use the Nokia built-in servers (because we haven't

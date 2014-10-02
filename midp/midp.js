@@ -1024,40 +1024,57 @@ Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = f
     MIDP.foregroundIsolateId = isolateId;
 }
 
-// The lastRegistrationId is in common between alarms and push notifications
-MIDP.lastRegistrationId = -1;
-MIDP.alarms = [];
-MIDP.pushRegistrations = [];
+MIDP.ConnectionRegistry = {
+    // The lastRegistrationId is in common between alarms and push notifications
+    lastRegistrationId:  -1,
+    pushRegistrations: [],
+    alarms: [],
+    readyRegistrations: [],
+    addReadyRegistration: function(id) {
+        this.readyRegistrations.push(id);
+        this.notify();
+    },
+    notify: function() {
+        if (!this.readyRegistrations.length || !this.pendingPollCallback) {
+            return;
+        }
+        var cb = this.pendingPollCallback;
+        this.pendingPollCallback = null;
+        cb(this.readyRegistrations.pop());
+    },
+    pushNotify: function(protocolName) {
+        for (var i = 0; i < this.pushRegistrations.length; i++) {
+            if (protocolName == this.pushRegistrations[i].connection) {
+                this.addReadyRegistration(this.pushRegistrations[i].id);
+            }
+        }
+    },
+    waitForRegistration: function(cb) {
+        if (this.pendingPollCallback) {
+            throw new Error("There can only be one waiter.");
+        }
+        this.pendingPollCallback = cb;
+        this.notify();
+    },
+    addConnection: function(connection) {
+        connection.id = ++this.lastRegistrationId;
+        this.pushRegistrations.push(connection);
+        return connection.id;
+    },
+    addAlarm: function(alarm) {
+        alarm.id = ++this.lastRegistrationId;
+        this.alarms.push(alarm);
+        return alarm.id;
+    }
+};
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx, stack) {
     var time = stack.pop2().toNumber(), _this = stack.pop();
 
-    // TODO: Put the thread to sleep until a connection arrives / an alarm is triggered
-    // Wait for incoming connections
-    setTimeout(function() {
-        var id = -1;
-
-        for (var i = 0; i < MIDP.alarms.length; i++) {
-          if (MIDP.alarms[i].time < time) {
-              id = MIDP.alarms[i].id;
-              break;
-          }
-        }
-
-        if (id == -1) {
-            for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-                if (MIDP.pushRegistrations[i].notify) {
-                    MIDP.pushRegistrations[i].notify = false;
-                    id = MIDP.pushRegistrations[i].id;
-                    break;
-                }
-            }
-        }
-
+    MIDP.ConnectionRegistry.waitForRegistration(function(id) {
         stack.push(id);
         ctx.resume();
-    }, 2000);
-
+    });
     throw VM.Pause;
 }
 
@@ -1068,12 +1085,11 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"
 
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
-    MIDP.pushRegistrations.push({
+    MIDP.ConnectionRegistry.addConnection({
         connection: values[0],
         midlet: values[1],
         filter: values[2],
-        suiteId: values[3],
-        id: ++MIDP.lastRegistrationId,
+        suiteId: values[3]
     });
 
     stack.push(0);
@@ -1083,13 +1099,16 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     var time = stack.pop2().toNumber(), midlet = util.decodeUtf8(stack.pop());
 
     var lastAlarm = 0;
-    for (var i = 0; i < MIDP.alarms.length; i++) {
-        if (MIDP.alarms[i].midlet == midlet) {
+    var id = null;
+    var alarms = MIDP.ConnectionRegistry.alarms;
+    for (var i = 0; i < alarms.length; i++) {
+        if (alarms[i].midlet == midlet) {
             if (time != 0) {
-                lastAlarm = MIDP.alarms[i].time;
-                MIDP.alarms[i].time = time;
+                id = alarms[i].id;
+                lastAlarm = alarms[i].time;
+                alarms[i].time = time;
             } else {
-                MIDP.alarms[i].splice(i, 1);
+                alarms[i].splice(i, 1);
             }
 
             break;
@@ -1097,11 +1116,21 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     }
 
     if (lastAlarm == 0 && time != 0) {
-        MIDP.alarms.push({
+        id = MIDP.ConnectionRegistry.addAlarm({
             midlet: midlet,
-            time: time,
-            id: ++MIDP.lastRegistrationId,
+            time: time
         });
+    }
+
+    if (id !== null) {
+        var relativeTime = time - Date.now();
+        if (relativeTime < 0) {
+            relativeTime = 0;
+        }
+
+        setTimeout(function() {
+            MIDP.ConnectionRegistry.addReadyRegistration(id);
+        }, relativeTime);
     }
 
     stack.push2(Long.fromNumber(lastAlarm));
@@ -1111,16 +1140,18 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
     var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
 
     var reg;
-    for (var i = 0; i < MIDP.alarms.length; i++) {
-        if (MIDP.alarms[i].id == handle) {
-            reg = MIDP.alarms[i];
+    var alarms = MIDP.ConnectionRegistry.alarms;
+    for (var i = 0; i < alarms.length; i++) {
+        if (alarms[i].id == handle) {
+            reg = alarms[i];
         }
     }
 
     if (!reg) {
-        for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-            if (MIDP.pushRegistrations[i].id == handle) {
-                reg = MIDP.pushRegistrations[i];
+        var pushRegistrations = MIDP.ConnectionRegistry.pushRegistrations;
+        for (var i = 0; i < pushRegistrations.length; i++) {
+            if (pushRegistrations[i].id == handle) {
+                reg = pushRegistrations[i];
             }
         }
     }
@@ -1158,14 +1189,6 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = fu
     console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" +
                  name + ")");
     stack.push(0);
-}
-
-function pushNotify(protocolName) {
-    for (var i = 0; i < MIDP.pushRegistrations.length; i++) {
-        if (protocolName == MIDP.pushRegistrations[i].connection) {
-            MIDP.pushRegistrations[i].notify = true;
-        }
-    }
 }
 
 Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {

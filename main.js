@@ -43,12 +43,11 @@ if (urlParams.jars) {
 }
 
 if (urlParams.pushConn && urlParams.pushMidlet) {
-  MIDP.pushRegistrations.push({
+  MIDP.ConnectionRegistry.addConnection({
     connection: urlParams.pushConn,
     midlet: urlParams.pushMidlet,
     filter: "*",
-    suiteId: "1",
-    id: ++MIDP.lastRegistrationId,
+    suiteId: "1"
   });
 }
 
