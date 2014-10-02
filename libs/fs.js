@@ -269,8 +269,6 @@ var fs = (function() {
   }
 
   function createInternal(path, data, cb) {
-    path = normalizePath(path);
-
     var name = basename(path);
     var dir = dirname(path);
 
@@ -290,6 +288,8 @@ var fs = (function() {
   }
 
   function create(path, blob, cb) {
+    path = normalizePath(path);
+
     createInternal(path, blob, function(created) {
       if (created) {
         setStat(path, { mtime: Date.now(), isDir: false }, function() {
@@ -302,6 +302,8 @@ var fs = (function() {
   }
 
   function mkdir(path, cb) {
+    path = normalizePath(path);
+
     createInternal(path, [], function(created) {
       if (created) {
         setStat(path, { mtime: Date.now(), isDir: true }, function() {
@@ -423,31 +425,7 @@ var fs = (function() {
       return;
     }
 
-    asyncStorage.getItem("!" + path, function(statData) {
-      if (statData) {
-        cb(statData);
-        return;
-      }
-
-      // This transitioning code is expensive, we should get rid of it after
-      // a while.
-      statData = { mtime: Date.now() };
-
-      asyncStorage.getItem(path, function(data) {
-        if (!data) {
-          cb(null);
-          return;
-        } else if (data instanceof Blob) {
-          statData.isDir = false;
-        } else {
-          statData.isDir = true;
-        }
-
-        setStat(path, statData, function() {
-          cb(statData);
-        });
-      });
-    });
+    asyncStorage.getItem("!" + path, cb);
   }
 
   return {
