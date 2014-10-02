@@ -46,6 +46,8 @@ public class TestRandomAccessStream implements Testlet {
                 th.check(i, bytes[i]);
             }
 
+            ras.close();
+
             cleanup();
         } catch (IOException e) {
             th.fail("Unexpected exception: " + e);
