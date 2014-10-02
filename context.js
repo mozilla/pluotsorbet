@@ -60,7 +60,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         { bytes: "()V" },
       ],
     },
-    code: [
+    code: new Uint8Array([
         0x2a,             // aload_0
         0x59,             // dup
         0x59,             // dup
@@ -70,7 +70,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         0xb7, 0x00, 0x07, // invokespecial <idx=7>
         0xc3,             // monitorexit
         0xb1,             // return
-    ],
+    ]),
     exception_table: [],
   };
   this.current().stack.push(classInfo.getClassObject(this));
@@ -100,13 +100,13 @@ Context.prototype.raiseException = function(className, message) {
         { bytes: "(Ljava/lang/String;)V" },
       ],
     },
-    code: [
+    code: new Uint8Array([
       0xbb, 0x00, 0x01, // new <idx=1>
       0x59,             // dup
       0x12, 0x03,       // ldc <idx=2>
       0xb7, 0x00, 0x05, // invokespecial <idx=5>
       0xbf              // athrow
-    ],
+    ]),
     exception_table: [],
   };
   this.pushFrame(syntheticMethod, 0);
