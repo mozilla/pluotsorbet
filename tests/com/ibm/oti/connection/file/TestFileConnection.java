@@ -379,7 +379,20 @@ public class TestFileConnection implements Testlet {
                 th.check(e.getMessage(), "Rename failed");
             }
             out.close();
+
+            // Renaming after closing the file should succeed.
+
+            file.rename("newname");
+            file.close();
+
+            // The file with the new name exists.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/newname");
+            th.check(file.exists());
             file.delete();
+            file.close();
+            // The file with the old name doesn't exist anymore.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            th.check(!file.exists());
             file.close();
 
             dir = (FileConnection)Connector.open(dirPath + "provaDir");
