@@ -429,6 +429,80 @@
         cb(dx, dy);
     }
 
+    function renderImage(graphics, image, x, y, anchor) {
+        var texture = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image).nativeImageData;
+
+        if (!texture) {
+            console.warn("Graphics.render: image missing native data");
+            return;
+        }
+
+        if (texture instanceof CanvasRenderingContext2D) {
+            texture = texture.canvas; // Render the canvas, not the context.
+        }
+
+        withGraphics(graphics, function(c) {
+            withAnchor(graphics, c, anchor, x, y, texture.width, texture.height, function(x, y) {
+                c.drawImage(texture, x, y);
+            });
+        });
+    }
+
+    Override["com/sun/midp/chameleon/CGraphicsUtil.draw9pcsBackground.(Ljavax/microedition/lcdui/Graphics;IIII[Ljavax/microedition/lcdui/Image;)V"] = function(ctx, stack) {
+        var image = stack.pop(), h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), g = stack.pop();
+
+        if (image == null || image.length != 9) {
+            return;
+        }
+
+        var transX = g.class.getField("I.transX.I");
+        var transY = g.class.getField("I.transY.I");
+
+        transX.set(g, transX.get(g) + x);
+        transY.set(g, transY.get(g) + y);
+
+        // Top Border
+        var iW = image[1].class.getField("I.width.I").get(image[1]);
+        renderImage(g, image[0], 0, 0, LEFT | TOP);
+        w -= image[2].class.getField("I.width.I").get(image[2]);
+        for (var i = image[0].class.getField("I.width.I").get(image[0]); i < w; i += iW) {
+            renderImage(g, image[1], i, 0, LEFT | TOP);
+        }
+        w += image[2].class.getField("I.width.I").get(image[2]);
+        renderImage(g, image[2], w, 0, RIGHT | TOP);
+
+        // Tile middle rows
+        if (image[4] != null) {
+            iW = image[4].class.getField("I.width.I").get(image[4]);
+        }
+        var iH = image[3].class.getField("I.height.I").get(image[3]);
+        h -= image[6].class.getField("I.height.I").get(image[6]);
+        w -= image[5].class.getField("I.width.I").get(image[5]);
+        for (var i = image[0].class.getField("I.height.I").get(image[0]); i <= h; i += iH) {
+            renderImage(g, image[3], 0, i, LEFT | TOP);
+            for (var j = image[3].class.getField("I.width.I").get(image[3]); j <= w; j += iW) {
+                renderImage(g, image[4], j, i, LEFT | TOP);
+            }
+            renderImage(g, image[5], w + image[5].class.getField("I.width.I").get(image[5]), i,
+                        RIGHT | TOP);
+        }
+        w += image[5].class.getField("I.width.I").get(image[5]);
+        h += image[6].class.getField("I.height.I").get(image[6]);
+
+        // Bottom border
+        iW = image[7].class.getField("I.width.I").get(image[7]);
+        renderImage(g, image[6], 0, h, LEFT | BOTTOM);
+        w -= image[8].class.getField("I.width.I").get(image[8]);
+        for (var i = image[6].class.getField("I.width.I").get(image[6]); i < w; i += iW) {
+            renderImage(g, image[7], i, h, LEFT | BOTTOM);
+        }
+        w += image[8].class.getField("I.width.I").get(image[8]);
+        renderImage(g, image[8], w, h, RIGHT | BOTTOM);
+
+        transX.set(g, transX.get(g) - x);
+        transY.set(g, transY.get(g) - y);
+    }
+
     Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(ctx, stack) {
         var color = stack.pop(), _this = stack.pop();
         stack.push(color);
@@ -527,25 +601,8 @@
     }
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
-        var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop(),
-            imgData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
-            texture = imgData.nativeImageData;
-
-        if (!texture) {
-            console.warn("Graphics.render: image missing native data");
-            stack.push(1);
-            return;
-        }
-
-        if (texture instanceof CanvasRenderingContext2D) {
-            texture = texture.canvas; // Render the canvas, not the context.
-        }
-
-        withGraphics(_this, function(c) {
-            withAnchor(_this, c, anchor, x, y, texture.width, texture.height, function(x, y) {
-                c.drawImage(texture, x, y);
-            });
-        });
+        var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop();
+        renderImage(_this, image, x, y, anchor);
         stack.push(1);
     }
 
