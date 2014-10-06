@@ -30,8 +30,7 @@ Context.prototype.popFrame = function() {
   var callee = this.frames.pop();
   var caller = this.current();
   Instrument.callExitHooks(callee.methodInfo, caller, callee);
-  if (callee.localsBase)
-    caller.stack.length = callee.localsBase;
+  caller.stack.length = callee.localsBase;
   return caller;
 }
 
