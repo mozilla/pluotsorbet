@@ -90,9 +90,7 @@ Classes.prototype.getEntryPoint = function(classInfo) {
     var methods = classInfo.methods;
     for (var i=0; i<methods.length; i++) {
         var method = methods[i];
-        if (ACCESS_FLAGS.isPublic(method.access_flags) &&
-            ACCESS_FLAGS.isStatic(method.access_flags) &&
-            !ACCESS_FLAGS.isNative(method.access_flags) &&
+        if (method.isPublic && method.isStatic && !method.isNative &&
             method.name === "main" &&
             method.signature === "([Ljava/lang/String;)V") {
             return method;
@@ -177,7 +175,7 @@ Classes.prototype.getMethod = function(classInfo, methodKey) {
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
             if (!method.key) {
-              method.key = (ACCESS_FLAGS.isStatic(method.access_flags) ? "S" : "I") + "." + method.name + "." + method.signature;
+              method.key = (method.isStatic ? "S" : "I") + "." + method.name + "." + method.signature;
             }
             if (method.key === methodKey) {
                 return classInfo.vmc[methodKey] = method;
