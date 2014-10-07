@@ -1593,12 +1593,13 @@ VM.compile = function(methodInfo, ctx) {
         code += generateStackPush("S" + (depth - 1));
         break;
       case 0x5a: // dup_x1
+        var a = generateStackPop();
+        var b = generateStackPop();
         code += "\
-        var a = " + generateStackPop() + ";\n\
-        var b = " + generateStackPop() + ";\n";
-        code += generateStackPush("a") +
-                generateStackPush("b") +
-                generateStackPush("a");
+        var tmp = " + b + "\n";
+        code += generateStackPush(a) +
+                generateStackPush("tmp") +
+                generateStackPush(b);
         break;
       case 0x5b: // dup_x2
         code += "\
@@ -1692,68 +1693,64 @@ VM.compile = function(methodInfo, ctx) {
         code += generateStackPush2(generateStackPop2() + " * " + generateStackPop2());
         break;
       case 0x6c: // idiv
+        var b = generateStackPop();
+        var a = generateStackPop();
         code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n\
-        if (!b) {\n";
+        if (!" + b + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/ArithmeticException', '/ by zero');\n\
         }\n";
-        code += generateStackPush("(a === util.INT_MIN && b === -1) ? a : ((a / b)|0)");
+        code += generateStackPush("(" + a + " === util.INT_MIN && " + b + " === -1) ? " + a + " : ((" + a + " / " + b + ")|0)");
         break;
       case 0x6d: // ldiv
+        var b = generateStackPop2();
+        var a = generateStackPop2();
         code += "\
-        var b = " + generateStackPop2() + ";\n\
-        var a = " + generateStackPop2() + ";\n\
-        if (b.isZero()) {\n";
+        if (" + b + ".isZero()) {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/ArithmeticException', '/ by zero');\n\
         }\n";
-        code += generateStackPush2("a.div(b)");
+        code += generateStackPush2(a + ".div(" + b + ")");
         break;
       case 0x6e: // fdiv
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n";
-        code += generateStackPush("Math.fround(a / b)");
+        var b = generateStackPop();
+        var a = generateStackPop();
+        code += generateStackPush("Math.fround(" + a + " / " + b + ")");
         break;
       case 0x6f: // ddiv
-        code += "\
-        var b = " + generateStackPop2() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
-        code += generateStackPush2("a / b");
+        var b = generateStackPop2();
+        var a = generateStackPop2();
+        code += generateStackPush2(a + " / " + b);
         break;
       case 0x70: // irem
+        var b = generateStackPop();
+        var a = generateStackPop();
         code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n\
-        if (!b) {\n";
+        if (!" + b + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/ArithmeticException', '/ by zero');\n\
         }\n";
-        code += generateStackPush("a % b");
+        code += generateStackPush(a + " % " + b);
         break;
       case 0x71: // lrem
+        var b = generateStackPop2();
+        var a = generateStackPop2();
         code += "\
-        var b = " + generateStackPop2() + ";\n\
-        var a = " + generateStackPop2() + ";\n\
-        if (b.isZero()) {\n";
+        if (" + a + ".isZero()) {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/ArithmeticException', '/ by zero');\n\
         }\n";
-        code += generateStackPush2("a.modulo(b)");
+        code += generateStackPush2(a + ".modulo(" + b + ")");
         break;
       case 0x72: // frem
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n";
-        code += generateStackPush("Math.fround(a % b)");
+        var b = generateStackPop();
+        var a = generateStackPop();
+        code += generateStackPush("Math.fround(" + a + " % " + b + ")");
         break;
       case 0x73: // drem
-        code += "\
-        var b = " + generateStackPop2() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
-        code += generateStackPush2("a % b");
+        var b = generateStackPop2();
+        var a = generateStackPop2();
+        code += generateStackPush2(a + " %  " + b);
         break;
       case 0x74: // ineg
         code += generateStackPush("(-" + generateStackPop() + ") | 0");
@@ -2066,13 +2063,13 @@ VM.compile = function(methodInfo, ctx) {
 
         targetIPs.add(def);
 
+        var val = generateStackPop();
+
         code += "\
-        var val = " + generateStackPop() + ";\n\
-        var jmp;\n\
-        if (val < " + low + " || val > " + high + ") {\n\
+        if (" + val + " < " + low + " || " + val + " > " + high + ") {\n\
           ip = " + def + ";\n\
         } else {\n\
-          ip = offsets[val - " + low + "];\n\
+          ip = offsets[" + val + " - " + low + "];\n\
         }\n\
         continue;\n";
         break;
@@ -2097,9 +2094,10 @@ VM.compile = function(methodInfo, ctx) {
 
           targetIPs.add(def);
 
+          var val = generateStackPop();
+
           code += "\
-          var val = " + generateStackPop() + ";\n\
-          var jmp = offsets[val];\n\
+          var jmp = offsets[" + val + "];\n\
           if (!jmp) {\n\
             jmp = " + def + "\n\
           }\n\
@@ -2174,18 +2172,19 @@ VM.compile = function(methodInfo, ctx) {
           field = resolveCompiled(cp, op, idx);
         }
 
+        var obj = generateStackPop();
+
         code += "\
         var field = cp[" + idx + "];\n\
-        var obj = " + generateStackPop() + ";\n\
-        if (!obj) {\n";
+        if (!" + obj + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n";
 
         if (field.signature === "J" || field.signature === "D") {
-          code += generateStackPush2("field.get(obj)");
+          code += generateStackPush2("field.get(" + obj + ")");
         } else {
-          code += generateStackPush("field.get(obj)");
+          code += generateStackPush("field.get(" + obj + ")");
         }
         break;
       case 0xb5: // putfield
@@ -2197,20 +2196,22 @@ VM.compile = function(methodInfo, ctx) {
           field = resolveCompiled(cp, op, idx);
         }
 
+        var val;
         if (field.signature === "J" || field.signature === "D") {
-          code += "        var val = " + generateStackPop2() + ";\n";
+          val = generateStackPop2();
         } else {
-          code += "        var val = " + generateStackPop() + ";\n";
+          val = generateStackPop();
         }
+
+        var obj = generateStackPop();
 
         code += "\
         var field = cp[" + idx + "];\n\
-        var obj = " + generateStackPop() + ";\n\
-        if (!obj) {\n";
+        if (!" + obj + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n\
-        field.set(obj, val);\n"
+        field.set(" + obj + ", " + val + ");\n"
         break;
       case 0xb2: // getstatic
         var idx = frame.read16();
@@ -2266,14 +2267,15 @@ VM.compile = function(methodInfo, ctx) {
         }\n";
         }
 
+        var val;
         if (field.signature === "J" || field.signature === "D") {
-          code += "        var val = " + generateStackPop2() + ";\n";
+          val = generateStackPop2();
         } else {
-          code += "        var val = " + generateStackPop() + ";\n";
+          val = generateStackPop();
         }
 
         code += "\
-        ctx.runtime.setStatic(field, val);\n";
+        ctx.runtime.setStatic(field, " + val + ");\n";
         break;
       case 0xbb: // new
         var idx = frame.read16();
@@ -2329,44 +2331,48 @@ VM.compile = function(methodInfo, ctx) {
           classInfo = resolveCompiled(cp, op, idx);
         }
 
+        var obj = generateStackPop();
+
         code += "\
         var classInfo = cp[" + idx + "];\n\
-        var obj = " + generateStackPop() + ";\n\
-        //console.log('Instanceof: ' + obj)\n\
-        var result = !obj ? false : obj.class.isAssignableTo(classInfo);\n";
+        //console.log('Instanceof: ' + " + obj + ")\n\
+        var result = !" + obj + " ? false : " + obj + ".class.isAssignableTo(classInfo);\n";
         code += generateStackPush("result ? 1 : 0");
         break;
       case 0xbf: // athrow
-        // TODO: Optimize by inlining throw_ call (because we can be much more clever)
+        // TODO: Optimize by inlining throw_ call (maybe)
+        var obj = generateStackPop();
+
         code +="\
-        var obj = " + generateStackPop() + "\n\
-        if (!obj) {\n";
+        if (!" + obj + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n";
         code += generateStoreState(frame.ip) + "\
-        newFrame = throw_(obj, ctx);\n\
+        newFrame = throw_(" + obj + ", ctx);\n\
         //console.log('THROWING EXCEPTION to: ');\n\
         return newFrame;\n";
         break;
       case 0xc2: // monitorenter
+        var obj = generateStackPop();
+
         code += "\
-        var obj = " + generateStackPop() + "\n\
-        if (!obj) {\n";
+        if (!" + obj + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n";
         code += generateStoreState(frame.ip);
-        code += "        ctx.monitorEnter(obj);\n";
+        code += "        ctx.monitorEnter(" + obj + ");\n";
         break;
       case 0xc3: // monitorexit
+        var obj = generateStackPop();
+
         code += "\
-        var obj = " + generateStackPop() + ";\n\
-        if (!obj) {\n";
+        if (!" + obj + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n\
-        ctx.monitorExit(obj);\n";
+        ctx.monitorExit(" + obj + ");\n";
         break;
       case 0xc4: // wide
         var op = frame.read8();
