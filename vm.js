@@ -1146,7 +1146,7 @@ VM.execute = function(ctx) {
 
             var oldFrame = frame;
             frame = pushFrame(ctx, methodInfo, consumes);
-            if (!methodInfo.compiled && methodInfo.numCalled >= 10 && !methodInfo.dontCompile) {
+            if (!methodInfo.compiled && methodInfo.numCalled >= 100 && !methodInfo.dontCompile) {
                 try {
                   //console.log(VM.compile(methodInfo));
                   methodInfo.compiled = new Function("ctx", VM.compile(methodInfo, ctx));
@@ -1216,14 +1216,12 @@ VM.compile = function(methodInfo, ctx) {
   var locals = 0, maxLocals = 0;
   var ip = 0;
 
-  var code = "";
-
   var frame = new Frame(methodInfo);
   var cp = frame.cp;
 
   var targetIPs = new Set([0]);
-  var generatedCases = new Set();
   var stackLayout = new Map();
+  var generatedCases = [];
 
   function generateStackPush(val) {
     var gen = "        S" + (depth++) + " = " + val + ";\n";
@@ -1365,10 +1363,8 @@ VM.compile = function(methodInfo, ctx) {
 
     var op = frame.read8();
 
-    var opName = OPCODES[op];
-    code += "      case " + ip + ": // " + opName + " [0x" + op.toString(16) + "]\n";
+    var code = "";
     //code += "      console.log('" + methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature + " IMAT: " + ip + "');\n";
-    generatedCases.add(ip);
 
     var newDepth = stackLayout.get(ip);
     if (typeof newDepth !== "undefined") {
@@ -2388,8 +2384,7 @@ VM.compile = function(methodInfo, ctx) {
         break;
       case 0xc4: // wide
         var op = frame.read8();
-        var opName = OPCODES[op];
-        code += "// " + opName + " [0x" + op.toString(16) + "]\n";
+
         switch (op) {
           case 0x15: // iload
           case 0x17: // fload
@@ -2418,9 +2413,6 @@ VM.compile = function(methodInfo, ctx) {
             code += "        ip = " + generateGetLocal(frame.read16()) + ";\n        continue;\n";
             continue;
             break;
-          default:
-            var opName = OPCODES[op];
-            throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
         }
         break;
       case 0xb7: // invokespecial
@@ -2480,7 +2472,7 @@ VM.compile = function(methodInfo, ctx) {
           }
 
           code += "\
-          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 10 && !toCallMethodInfo.dontCompile) {\n\
+          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 100 && !toCallMethodInfo.dontCompile) {\n\
             try {\n\
               //console.log(VM.compile(toCallMethodInfo, ctx));\n\
               toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
@@ -2583,7 +2575,7 @@ VM.compile = function(methodInfo, ctx) {
         } else {\n\
           var callee = ctx.pushFrame(toCallMethodInfo, " + consumes + ");\n\
 \n\
-          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 10 && !toCallMethodInfo.dontCompile) {\n\
+          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 100 && !toCallMethodInfo.dontCompile) {\n\
             try {\n\
               //console.log(VM.compile(toCallMethodInfo, ctx));\n\
               toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
@@ -2647,14 +2639,12 @@ VM.compile = function(methodInfo, ctx) {
       default:
         throw new Error("NOT SUPPORTED: " + op.toString(16));
     }
+
+    generatedCases.push({
+      ip: ip,
+      code: code,
+    });
   }
-
-  code += "      default:\
-        console.log('IP: ' + ip);\n\
-        console.trace();\n";
-
-  code += "    }\n";
-  code += "  }\n";
 
   var localsCode = "";
   for (var i = 0; i < maxLocals+1; i++) {
@@ -2687,13 +2677,21 @@ VM.compile = function(methodInfo, ctx) {
 
   generatedCode += "  }\n\n\
   while (true) {\n\
-    switch (ip) {\n" + code;
+    switch (ip) {\n";
 
-  generatedCases.forEach(function(ip) {
-    if (!targetIPs.has(ip)) {
-      generatedCode = generatedCode.replace("case " + ip + ":", "");
+  generatedCases.forEach(function(aCase) {
+    if (targetIPs.has(aCase.ip)) {
+      generatedCode += "case " + aCase.ip + ":\n";
     }
+
+    generatedCode += aCase.code;
   });
+
+  generatedCode += "      default:\
+        console.log('IP: ' + ip);\n\
+        console.trace();\n\
+      }\n\
+    }\n";
 
   return generatedCode;
 }
