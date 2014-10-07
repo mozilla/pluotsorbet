@@ -106,7 +106,7 @@ jars.forEach(function(jar) {
   }, new Set()));
 });
 
-if (MIDP.midletClassName == "RunTests") {
+//if (MIDP.midletClassName == "RunTests") {
   startJVM.addDependency(new InitStep(function(callback) {
     function loadScript(path, loadCallback) {
       var element = document.createElement('script');
@@ -122,7 +122,7 @@ if (MIDP.midletClassName == "RunTests") {
     loadScript("tests/contacts.js");
     loadScript("tests/override.js", callback);
   }, new Set()));
-}
+//}
 
 if (urlParams.jad) {
   startJVM.addDependency(new InitStep(function(callback) {

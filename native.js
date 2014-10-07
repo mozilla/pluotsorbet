@@ -17,6 +17,15 @@ Native.invoke = function(ctx, methodInfo) {
     methodInfo.native.call(null, ctx, ctx.current().stack);
 }
 
+Native["JITTest.provanative.()I"] = function(ctx, stack) {
+  setTimeout(function() {
+    stack.push(42);
+    ctx.resume();
+  }, 100);
+
+  throw VM.Pause;
+}
+
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(ctx, stack) {
     var length = stack.pop(), dstOffset = stack.pop(), dst = stack.pop(), srcOffset = stack.pop(), src = stack.pop();
     if (!src || !dst)

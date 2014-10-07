@@ -81,6 +81,7 @@ var ClassInfo = function(classBytes) {
                 method.max_locals = a.info.max_locals;
             }
         });
+        method.numCalled = 0;
         self.methods.push(method);
     });
 
