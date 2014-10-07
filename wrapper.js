@@ -47,5 +47,5 @@ if (midletClassName == "RunTests") {
 }
 
 Promise.all(loadingPromises).then(function() {
-  document.getElementById("wrappee").src = "index.html";
+  document.getElementById("wrappee").src = "index.html" + location.search;
 });
