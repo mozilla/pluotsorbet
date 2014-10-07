@@ -54,6 +54,8 @@ function MethodInfo(m, classInfo, constantPool) {
     this.alternateImpl = (this.isNative ? Native :
                           Override.hasMethod(this) ? Override :
                           null);
+
+    this.numCalled = 0;
 }
 
 var ClassInfo = function(classBytes) {

@@ -14,3 +14,17 @@ Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(ctx, stack) {
   var str = util.decodeUtf8(stack.pop());
   stack.push(str.length);
 }
+
+Native["JITTest.getInt.()I"] = function(ctx, stack) {
+  stack.push(0xFFFFFFFF);
+}
+
+Native["JITTest.fromJavaString.(Ljava/lang/String;)I"] = function(ctx, stack) {
+  var str = util.fromJavaString(stack.pop());
+  stack.push(str.length);
+}
+
+Native["JITTest.decodeUtf8.([B)I"] = function(ctx, stack) {
+  var str = util.decodeUtf8(stack.pop());
+  stack.push(str.length);
+}
