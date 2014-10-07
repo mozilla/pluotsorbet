@@ -31,7 +31,7 @@ VM.execute = function(ctx) {
         cp = frame.cp;
         if (frame.isSynchronized) {
             if (!frame.lockObject) {
-                frame.lockObject = ACCESS_FLAGS.isStatic(methodInfo.access_flags)
+                frame.lockObject = methodInfo.isStatic
                                      ? methodInfo.classInfo.getClassObject(ctx)
                                      : frame.getLocal(0);
             }
@@ -1059,11 +1059,11 @@ VM.execute = function(ctx) {
                 VM.trace("invoke", ctx.thread.pid, methodInfo);
             }
 
-            var Alt = ACCESS_FLAGS.isNative(methodInfo.access_flags) ? Native : Override.hasMethod(methodInfo) ? Override : null;
-            if (Alt) {
+            var alternateImpl = methodInfo.alternateImpl;
+            if (alternateImpl) {
                 try {
                     Instrument.callPauseHooks(ctx.current());
-                    Instrument.measure(Alt, ctx, methodInfo);
+                    Instrument.measure(alternateImpl, ctx, methodInfo);
                     Instrument.callResumeHooks(ctx.current());
                 } catch (e) {
                     Instrument.callResumeHooks(ctx.current());

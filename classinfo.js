@@ -30,6 +30,32 @@ FieldInfo.prototype.toString = function() {
     return "[field " + this.name + "]";
 }
 
+function MethodInfo(m, classInfo, constantPool) {
+    this.classInfo = classInfo;
+    this.name = constantPool[m.name_index].bytes;
+    this.signature = constantPool[m.signature_index].bytes;
+    this.attributes = m.attributes;
+
+    for (var i = 0; i < this.attributes.length; i++) {
+        var a = this.attributes[i];
+        if (a.info.type === ATTRIBUTE_TYPES.Code) {
+            this.code = new Uint8Array(a.info.code);
+            this.exception_table = a.info.exception_table;
+            this.max_locals = a.info.max_locals;
+            break;
+        }
+    }
+
+    this.isNative = ACCESS_FLAGS.isNative(m.access_flags);
+    this.isPublic = ACCESS_FLAGS.isPublic(m.access_flags);
+    this.isStatic = ACCESS_FLAGS.isStatic(m.access_flags);
+    this.isSynchronized = ACCESS_FLAGS.isSynchronized(m.access_flags);
+
+    this.alternateImpl = (this.isNative ? Native :
+                          Override.hasMethod(this) ? Override :
+                          null);
+}
+
 var ClassInfo = function(classBytes) {
     var classImage = getClassImage(classBytes, this);
     var cp = classImage.constant_pool;
@@ -68,20 +94,7 @@ var ClassInfo = function(classBytes) {
 
     this.methods = [];
     classImage.methods.forEach(function(m) {
-        var method = {};
-        method.classInfo = self;
-        method.access_flags = m.access_flags;
-        method.name = cp[m.name_index].bytes;
-        method.signature = cp[m.signature_index].bytes;
-        method.attributes = m.attributes;
-        method.attributes.forEach(function(a) {
-            if (a.info.type === ATTRIBUTE_TYPES.Code) {
-                method.code = new Uint8Array(a.info.code);
-                method.exception_table = a.info.exception_table;
-                method.max_locals = a.info.max_locals;
-            }
-        });
-        self.methods.push(method);
+        self.methods.push(new MethodInfo(m, self, cp));
     });
 
     var classes = this.classes = [];

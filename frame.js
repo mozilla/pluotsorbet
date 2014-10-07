@@ -25,6 +25,14 @@ Array.prototype.popType = function(signature) {
     return (signature === "J" || signature === "D") ? this.pop2() : this.pop();
 }
 
+// A convenience function for retrieving values in reverse order
+// from the end of the stack.  stack.read(1) returns the topmost item
+// on the stack, while stack.read(2) returns the one underneath it.
+Array.prototype.read = function(i) {
+    return this[this.length - i];
+};
+
+
 var Frame = function(methodInfo, locals, localsBase) {
     this.methodInfo = methodInfo;
     this.cp = methodInfo.classInfo.constant_pool;
@@ -36,15 +44,10 @@ var Frame = function(methodInfo, locals, localsBase) {
     this.locals = locals;
     this.localsBase = localsBase;
 
-    this.isSynchronized = ACCESS_FLAGS.isSynchronized(methodInfo.access_flags);
+    this.isSynchronized = methodInfo.isSynchronized;
     this.lockObject = null;
 
     this.profileData = null;
-
-    // A convenience function for retrieving values in reverse order
-    // from the end of the stack.  stack.read(1) returns the topmost item
-    // on the stack, while stack.read(2) returns the one underneath it.
-    this.stack.read = function(i) { return this[this.length - i] };
 }
 
 Frame.prototype.getLocal = function(idx) {
