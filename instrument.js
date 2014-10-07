@@ -10,12 +10,8 @@ var Instrument = {
   profiling: false,
   profile: null,
 
-  getKey: function(methodInfo) {
-    return methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
-  },
-
   callEnterHooks: function(methodInfo, caller, callee) {
-    var key = this.getKey(methodInfo);
+    var key = methodInfo.implKey;
     if (Instrument.enter[key]) {
       Instrument.enter[key](caller, callee);
     }
@@ -36,7 +32,7 @@ var Instrument = {
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
-    var key = this.getKey(methodInfo);
+    var key = methodInfo.implKey;
 
     if (this.profiling) {
       var now = performance.now();
@@ -101,16 +97,16 @@ var Instrument = {
     this.profiling = false;
   },
 
-  measure: function(Alt, ctx, methodInfo) {
+  measure: function(alternateImpl, ctx, methodInfo) {
+    var key = methodInfo.implKey;
     if (this.profiling) {
       var then = performance.now();
-      Alt.invoke(ctx, methodInfo);
-      var key = this.getKey(methodInfo);
+      alternateImpl.call(null, ctx, ctx.current().stack);
       var methodProfileData = this.profile[key] || (this.profile[key] = { count: 0, cost: 0 });
       methodProfileData.count++;
       methodProfileData.cost += performance.now() - then;
     } else {
-      Alt.invoke(ctx, methodInfo);
+      alternateImpl.call(null, ctx, ctx.current().stack);
     }
   },
 };
