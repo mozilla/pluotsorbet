@@ -1148,10 +1148,10 @@ VM.execute = function(ctx) {
             frame = pushFrame(ctx, methodInfo, consumes);
             if (!methodInfo.compiled && methodInfo.numCalled >= 10 && !methodInfo.dontCompile) {
                 try {
-                  if (methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature ==
+                  /*if (methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature ==
                       "java/io/DataInputStream.readInt.()I") {
                     console.log(VM.compile(methodInfo));
-                  }
+                  }*/
                   methodInfo.compiled = new Function("ctx", VM.compile(methodInfo, ctx));
                 } catch (e) {
                   methodInfo.dontCompile = true;
@@ -1289,13 +1289,13 @@ VM.compile = function(methodInfo, ctx) {
     return gen + "\n";
   }
 
-  function generateCheckArrayAccess(ip) {
+  function generateCheckArrayAccess(ip, idx, refArray) {
     return "\
-    if (!refArray) {\n" +
+    if (!" + refArray + ") {\n" +
     generateStoreState(ip) + "\
       ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
     }\n\
-    if (idx < 0 || idx >= refArray.length) {\n" +
+    if (" + idx + " < 0 || " + idx + " >= " + refArray + ".length) {\n" +
     generateStoreState(ip) + "\
       ctx.raiseExceptionAndYield('java/lang/ArrayIndexOutOfBoundsException', idx);\n\
     }\n";
@@ -1497,19 +1497,17 @@ VM.compile = function(methodInfo, ctx) {
       case 0x33: // baload
       case 0x34: // caload
       case 0x35: // saload
-        code += "\
-        var idx = " + generateStackPop() + ";\n\
-        var refArray = " + generateStackPop() + ";\n";
-        code += generateCheckArrayAccess(frame.ip);
-        code += generateStackPush("refArray[idx]");
+        var idx = generateStackPop();
+        var refArray = generateStackPop();
+        code += generateCheckArrayAccess(frame.ip, idx, refArray);
+        code += generateStackPush(refArray + "[" + idx + "]");
         break;
       case 0x2f: // laload
       case 0x31: // daload
-        code += "\
-        var idx = " + generateStackPop() + ";\n\
-        var refArray = " + generateStackPop() + ";\n";
-        code += generateCheckArrayAccess(frame.ip);
-        code += generateStackPush2("refArray[idx]");
+        var idx = generateStackPop();
+        var refArray = generateStackPop();
+        code += generateCheckArrayAccess(frame.ip, idx, refArray);
+        code += generateStackPush2(refArray + "[" + idx + "]");
         break;
       case 0x36: // istore
       case 0x38: // fstore
@@ -1561,33 +1559,29 @@ VM.compile = function(methodInfo, ctx) {
       case 0x54: // bastore
       case 0x55: // castore
       case 0x56: // sastore
-        code += "\
-        var val = " + generateStackPop() + ";\n\
-        var idx = " + generateStackPop() + ";\n\
-        var refArray = " + generateStackPop() + ";\n";
-        code += generateCheckArrayAccess(frame.ip) + "\
-        refArray[idx] = val;\n";
+        var val = generateStackPop();
+        var idx = generateStackPop();
+        var refArray = generateStackPop();
+        code += generateCheckArrayAccess(frame.ip, idx, refArray) +
+                refArray + "[" + idx + "] = " + val + ";\n";
         break;
       case 0x50: // lastore
       case 0x52: // dastore
-        code += "\
-        var val = " + generateStackPop2() + ";\n\
-        var idx = " + generateStackPop() + ";\n\
-        var refArray = " + generateStackPop() + ";\n";
-        code += generateCheckArrayAccess(frame.ip) + "\
-        refArray[idx] = val;\n";
+        var val = generateStackPop2();
+        var idx = generateStackPop();
+        var refArray = generateStackPop();
+        code += generateCheckArrayAccess(frame.ip, idx, refArray) +
+                refArray + "[" + idx + "] = " + val + ";\n";
         break;
       case 0x53: // aastore
-        code += "\
-        var val = " + generateStackPop() + ";\n\
-        var idx = " + generateStackPop() + ";\n\
-        var refArray = " + generateStackPop() + ";\n";
-        code += generateCheckArrayAccess(frame.ip) + "\
-        if (val && !val.class.isAssignableTo(refArray.class.elementClass)) {\n";
+        var val = generateStackPop();
+        var idx = generateStackPop();
+        var refArray = generateStackPop();
+        code += generateCheckArrayAccess(frame.ip, idx, refArray) + "\
+        if (" + val + " && !" + val + ".class.isAssignableTo(" + refArray + ".class.elementClass)) {\n";
         code += generateStoreState(frame.ip) + "\
-            ctx.raiseExceptionAndYield('java/lang/ArrayStoreException');\n\
-        }\n\
-        refArray[idx] = val;\n";
+          ctx.raiseExceptionAndYield('java/lang/ArrayStoreException');\n\
+        }\n" + refArray + "[" + idx + "] = " + val + ";\n";
         break;
       case 0x57: // pop
         depth--;
@@ -1774,40 +1768,34 @@ VM.compile = function(methodInfo, ctx) {
         code += generateStackPush2("-" + generateStackPop2());
         break;
       case 0x78: // ishl
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n";
-        code += generateStackPush("a << b");
+        var b = generateStackPop();
+        var a = generateStackPop();
+        code += generateStackPush(a + " << " + b);
         break;
       case 0x79: // lshl
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
-        code += generateStackPush2("a.shiftLeft(b)");
+        var b = generateStackPop();
+        var a = generateStackPop2();
+        code += generateStackPush2(a + ".shiftLeft(" + b + ")");
         break;
       case 0x7a: // ishr
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n";
-        code += generateStackPush("a >> b");
+        var b = generateStackPop();
+        var a = generateStackPop();
+        code += generateStackPush(a + " >> " + b);
         break;
       case 0x7b: // lshr
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
-        code += generateStackPush2("a.shiftRight(b)");
+        var b = generateStackPop();
+        var a = generateStackPop2();
+        code += generateStackPush2(a + ".shiftRight(" + b + ")");
         break;
       case 0x7c: // iushr
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n";
-        code += generateStackPush("a >>> b");
+        var b = generateStackPop();
+        var a = generateStackPop();
+        code += generateStackPush(a + " >>> " + b);
         break;
       case 0x7d: // lushr
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
-        code += generateStackPush2("a.shiftRightUnsigned(b)");
+        var b = generateStackPop();
+        var a = generateStackPop2();
+        code += generateStackPush2(a + ".shiftRightUnsigned(" + b + ")");
         break;
       case 0x7e: // iand
         code += generateStackPush(generateStackPop() + " & " + generateStackPop());
@@ -1828,14 +1816,13 @@ VM.compile = function(methodInfo, ctx) {
         code += generateStackPush2(generateStackPop2() + ".xor(" + generateStackPop2() + ")");
         break;
       case 0x94: // lcmp
-        code += "\
-        var b = " + generateStackPop2() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
+        var b = generateStackPop2();
+        var a = generateStackPop2();
 
         code += "\
-        if (a.greaterThan(b)) {\n\
+        if (" + a + ".greaterThan(" + b + ")) {\n\
           S" + depth + " = 1;\n\
-        } else if (a.lessThan(b)) {\n\
+        } else if (" + a + ".lessThan(" + b + ")) {\n\
           S" + depth + " = -1;\n\
         } else {\n\
           S" + depth + " = 0;\n\
@@ -1845,16 +1832,15 @@ VM.compile = function(methodInfo, ctx) {
 
         break;
       case 0x95: // fcmpl
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n";
+        var b = generateStackPop();
+        var a = generateStackPop();
 
         code += "\
-        if (isNaN(a) || isNaN(b)) {\n\
+        if (isNaN(" + a + ") || isNaN(" + b + ")) {\n\
           S" + depth + " = -1;\n\
-        } else if (a > b) {\n\
+        } else if (" + a + " > " + b + ") {\n\
           S" + depth + " = 1;\n\
-        } else if (a < b){\n\
+        } else if (" + a + " < " + b + "){\n\
           S" + depth + " = -1;\n\
         } else {\n\
           S" + depth + " = 0;\n\
@@ -1864,16 +1850,15 @@ VM.compile = function(methodInfo, ctx) {
 
         break;
       case 0x96: // fcmpg
-        code += "\
-        var b = " + generateStackPop() + ";\n\
-        var a = " + generateStackPop() + ";\n";
+        var b = generateStackPop();
+        var a = generateStackPop();
 
         code += "\
-        if (isNaN(a) || isNaN(b)) {\n\
+        if (isNaN(" + a + ") || isNaN(" + b + ")) {\n\
           S" + depth + " = 1;\n\
-        } else if (a > b) {\n\
+        } else if (" + a + " > " + b + ") {\n\
           S" + depth + " = 1;\n\
-        } else if (a < b){\n\
+        } else if (" + a + " < " + b + "){\n\
           S" + depth + " = -1;\n\
         } else {\n\
           S" + depth + " = 0;\n\
@@ -1883,16 +1868,15 @@ VM.compile = function(methodInfo, ctx) {
 
         break;
       case 0x97: // dcmpl
-        code += "\
-        var b = " + generateStackPop2() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
+        var b = generateStackPop2();
+        var a = generateStackPop2();
 
         code += "\
-        if (isNaN(a) || isNaN(b)) {\n\
+        if (isNaN(" + a + ") || isNaN(" + b + ")) {\n\
           S" + depth + " = -1;\n\
-        } else if (a > b) {\n\
+        } else if (" + a + " > " + b + ") {\n\
           S" + depth + " = 1;\n\
-        } else if (a < b){\n\
+        } else if (" + a + " < " + b + "){\n\
           S" + depth + " = -1;\n\
         } else {\n\
           S" + depth + " = 0;\n\
@@ -1902,16 +1886,15 @@ VM.compile = function(methodInfo, ctx) {
 
         break;
       case 0x98: // dcmpg
-        code += "\
-        var b = " + generateStackPop2() + ";\n\
-        var a = " + generateStackPop2() + ";\n";
+        var b = generateStackPop2();
+        var a = generateStackPop2();
 
         code += "\
-        if (isNaN(a) || isNaN(b)) {\n\
+        if (isNaN(" + a + ") || isNaN(" + b + ")) {\n\
           S" + depth + " = 1;\n\
-        } else if (a > b) {\n\
+        } else if (" + a + " > " + b + ") {\n\
           S" + depth + " = 1;\n\
-        } else if (a < b){\n\
+        } else if (" + a + " < " + b + "){\n\
           S" + depth + " = -1;\n\
         } else {\n\
           S" + depth + " = 0;\n\
@@ -2125,13 +2108,13 @@ VM.compile = function(methodInfo, ctx) {
           break;
       case 0xbc: // newarray
         var type = "????ZCFDBSIJ"[frame.read8()];
+        var size = generateStackPop();
         code += "\
-        var size = " + generateStackPop() + ";\n\
-        if (size < 0) {\n";
+        if (" + size + " < 0) {\n";
         code += generateStoreState(frame.ip) + "\
-          ctx.raiseExceptionAndYield('java/lang/NegativeArraySizeException', size);\n\
+          ctx.raiseExceptionAndYield('java/lang/NegativeArraySizeException', " + size + ");\n\
         }\n";
-        code += generateStackPush("ctx.newPrimitiveArray('" + type + "', size)");
+        code += generateStackPush("ctx.newPrimitiveArray('" + type + "', " + size + ")");
         break;
       case 0xbd: // anewarray
         var idx = frame.read16();
@@ -2148,13 +2131,13 @@ VM.compile = function(methodInfo, ctx) {
         }
         className = "[" + className;
 
+        var size = generateStackPop();
         code += "\
-        var size = " + generateStackPop() + ";\n\
-        if (size < 0) {\n";
+        if (" + size + " < 0) {\n";
         code += generateStoreState(frame.ip) + "\
-          ctx.raiseExceptionAndYield('java/lang/NegativeArraySizeException', size);\n\
+          ctx.raiseExceptionAndYield('java/lang/NegativeArraySizeException', " + size + ");\n\
         }\n";
-        code += generateStackPush("ctx.newArray('" + className + "', size)");
+        code += generateStackPush("ctx.newArray('" + className + "', " + size + ")");
         break;
       case 0xc5: // multianewarray
         var idx = frame.read16();
@@ -2174,13 +2157,13 @@ VM.compile = function(methodInfo, ctx) {
         code += generateStackPush("ctx.newMultiArray('" + classInfo.className + "', lengths.reverse())");
         break;
       case 0xbe: // arraylength
+        var obj = generateStackPop();
         code += "\
-        var obj = " + generateStackPop() + ";\n\
-        if (!obj) {\n";
+        if (!" + obj + ") {\n";
         code += generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n";
-        code += generateStackPush("obj.length");
+        code += generateStackPush(obj + ".length");
         break;
       case 0xb4: // getfield
         var idx = frame.read16();
