@@ -1146,7 +1146,7 @@ VM.execute = function(ctx) {
 
             var oldFrame = frame;
             frame = pushFrame(ctx, methodInfo, consumes);
-            if (!methodInfo.compiled && methodInfo.numCalled >= 100 && !methodInfo.dontCompile) {
+            if (!methodInfo.compiled && methodInfo.numCalled >= 10 && !methodInfo.dontCompile) {
                 try {
                   //console.log(VM.compile(methodInfo));
                   methodInfo.compiled = new Function("ctx", VM.compile(methodInfo, ctx));
@@ -2423,9 +2423,96 @@ VM.compile = function(methodInfo, ctx) {
             throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
         }
         break;
-      case 0xb6: // invokevirtual
       case 0xb7: // invokespecial
       case 0xb8: // invokestatic
+        var idx = frame.read16();
+        var isStatic = (op === 0xb8);
+        var toCallMethodInfo = cp[idx];
+        // Resolve method in advance.
+        if (toCallMethodInfo.tag) {
+          toCallMethodInfo = resolveCompiled(cp, op, idx);
+        }
+
+        code += "        var toCallMethodInfo = cp[" + idx + "];\n";
+        //code += "        console.log(toCallMethodInfo.classInfo.className + '.' + toCallMethodInfo.name + '.' + toCallMethodInfo.signature);\n";
+
+        if (isStatic && !toCallMethodInfo.classInfo.isArrayClass) {
+            code +="\
+          if (!ctx.runtime.initialized[toCallMethodInfo.classInfo.className]) {\n" +
+            generateStoreState(ip) + "\
+            ctx.pushClassInitFrame(toCallMethodInfo.classInfo);\n\
+            throw VM.Yield;\n\
+          }\n";
+        }
+
+        var consumes = Signature.getINSlots(toCallMethodInfo.signature);
+        if (!isStatic) {
+          ++consumes;
+        }
+
+        // Store state
+        // TODO: Optimize if callee is compiled
+
+        code += generateStoreState(frame.ip);
+
+        depth -= consumes;
+
+        if (toCallMethodInfo.alternateImpl) {
+          code += "try {\n\
+            Instrument.callPauseHooks(ctx.current());\n\
+            Instrument.measure(toCallMethodInfo.alternateImpl, ctx, toCallMethodInfo);\n\
+            Instrument.callResumeHooks(ctx.current());\n\
+          } catch (e) {\n\
+            Instrument.callResumeHooks(ctx.current());\n\
+            throw e;\n\
+          }\n";
+        } else {
+          code += "var callee = ctx.pushFrame(toCallMethodInfo, " + consumes + ");\n";
+
+          if (toCallMethodInfo.isSynchronized) {
+            code += "\
+            if (!callee.lockObject) {\n\
+              callee.lockObject = toCallMethodInfo.isStatic\n\
+                                  ? toCallMethodInfo.classInfo.getClassObject(ctx)\n\
+                                  : callee.getLocal(0);\n\
+            }\n\
+            ctx.monitorEnter(callee.lockObject);\n";
+          }
+
+          code += "\
+          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 10 && !toCallMethodInfo.dontCompile) {\n\
+            try {\n\
+              //console.log(VM.compile(toCallMethodInfo, ctx));\n\
+              toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
+            } catch (e) {\n\
+              toCallMethodInfo.dontCompile = true;\n\
+            }\n\
+          }\n\
+\n\
+          var newFrame;\n\
+\n\
+          if (toCallMethodInfo.compiled) {\n\
+            newFrame = toCallMethodInfo.compiled(ctx);\n\
+          } else {\n\
+            newFrame = VM.execute(ctx);\n\
+          }\n\
+          if (newFrame !== frame) {\n\
+            return newFrame;\n\
+          }\n";
+        }
+
+        var returnType = toCallMethodInfo.signature[toCallMethodInfo.signature.length - 1];
+        if (returnType === 'J' || returnType === 'D') {
+          //code += "        console.log('RET: ' + frame.stack.read(2));\n";
+          code += generateStackPush2("frame.stack.pop2()");
+        } else if (returnType !== 'V') {
+          //code += "        console.log('RET FROM " + toCallMethodInfo.name + ": ' + frame.stack.read(1));\n";
+          code += generateStackPush("frame.stack.pop()");
+        }
+        code += "        frame.stack.length = 0;\n";
+
+        break;
+      case 0xb6: // invokevirtual
       case 0xb9: // invokeinterface // TODO: Optimize if call isn't virtual or interface
         var idx = frame.read16();
         if (op === 0xb9) {
@@ -2457,15 +2544,14 @@ VM.compile = function(methodInfo, ctx) {
 
           code += "\
         var obj = S" + (depth - consumes) + ";\n\
-        if (!obj) {\n";
-        code += generateStoreState(frame.ip) + "\
+        if (!obj) {\n" +
+        generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n";
 
-          if (op === 0xb6 || op === 0xb9) {
-            toCallMethodInfo.key = "I." + toCallMethodInfo.name + "." + toCallMethodInfo.signature;
+          toCallMethodInfo.key = "I." + toCallMethodInfo.name + "." + toCallMethodInfo.signature;
 
-            code += "\
+          code += "\
         if (toCallMethodInfo.classInfo != obj.class) {\n\
           // Check if the method is already in the virtual method cache\n\
           if (obj.class.vmc[" + toCallMethodInfo.key + "]) {\n\
@@ -2474,7 +2560,6 @@ VM.compile = function(methodInfo, ctx) {
             toCallMethodInfo = CLASSES.getMethod(obj.class, " + toCallMethodInfo.key + ");\n\
           }\n\
         }\n";
-          }
         }
 
         // Store state
@@ -2497,16 +2582,8 @@ VM.compile = function(methodInfo, ctx) {
           }\n\
         } else {\n\
           var callee = ctx.pushFrame(toCallMethodInfo, " + consumes + ");\n\
-          if (callee.isSynchronized) {\n\
-            if (!callee.lockObject) {\n\
-              callee.lockObject = toCallMethodInfo.isStatic\n\
-                                  ? toCallMethodInfo.classInfo.getClassObject(ctx)\n\
-                                  : callee.getLocal(0);\n\
-            }\n\
-            ctx.monitorEnter(callee.lockObject);\n\
-          }\n\
 \n\
-          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 100 && !toCallMethodInfo.dontCompile) {\n\
+          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 10 && !toCallMethodInfo.dontCompile) {\n\
             try {\n\
               //console.log(VM.compile(toCallMethodInfo, ctx));\n\
               toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
@@ -2517,18 +2594,11 @@ VM.compile = function(methodInfo, ctx) {
 \n\
           var newFrame;\n\
 \n\
-          try {\n\
-            if (toCallMethodInfo.compiled) {\n\
-              newFrame = toCallMethodInfo.compiled(ctx);\n\
-            } else {\n\
-              newFrame = VM.execute(ctx);\n\
-            }\n";
-
-          code +="\
-          } catch (e) {\n\
-            throw e;\n\
+          if (toCallMethodInfo.compiled) {\n\
+            newFrame = toCallMethodInfo.compiled(ctx);\n\
+          } else {\n\
+            newFrame = VM.execute(ctx);\n\
           }\n\
-\n\
           if (newFrame !== frame) {\n\
             return newFrame;\n\
           }\n\
