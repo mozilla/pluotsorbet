@@ -1146,7 +1146,7 @@ VM.execute = function(ctx) {
 
             var oldFrame = frame;
             frame = pushFrame(ctx, methodInfo, consumes);
-            if (!methodInfo.compiled && methodInfo.numCalled >= 1 && !methodInfo.dontCompile) {
+            if (!methodInfo.compiled && methodInfo.numCalled >= 100 && !methodInfo.dontCompile) {
                 try {
                   //console.log(VM.compile(methodInfo));
                   methodInfo.compiled = new Function("ctx", VM.compile(methodInfo, ctx));
@@ -2506,7 +2506,7 @@ VM.compile = function(methodInfo, ctx) {
             ctx.monitorEnter(callee.lockObject);\n\
           }\n\
 \n\
-          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 1 && !toCallMethodInfo.dontCompile) {\n\
+          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 100 && !toCallMethodInfo.dontCompile) {\n\
             try {\n\
               //console.log(VM.compile(toCallMethodInfo, ctx));\n\
               toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
@@ -2530,7 +2530,6 @@ VM.compile = function(methodInfo, ctx) {
           }\n\
 \n\
           if (newFrame !== frame) {\n\
-            //console.log('EXIT: ' + newFrame.methodInfo.name);\n\
             return newFrame;\n\
           }\n\
         }\n";
