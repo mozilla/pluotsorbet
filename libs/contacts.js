@@ -5,19 +5,16 @@
 
 var contacts = (function() {
   function forEach(callback) {
-    var req = navigator.mozContacts.getAll();
-
-    req.onsuccess = function() {
-      var contact = req.result;
-      if (contact) {
-        callback(contact);
-        req.continue();
+    window.parent.postMessage("contacts-getAll", "*");
+    window.addEventListener("message", function contactListener(event) {
+      if (event.data && event.data.name && event.data.name == "contact") {
+        if (event.data.contact) {
+          callback(event.data.contact);
+        } else {
+          window.removeEventListener("message", contactListener, false);
+        }
       }
-    }
-
-    req.onerror = function() {
-      console.error("Error while reading contacts");
-    }
+    }, false);
   }
 
   return {
