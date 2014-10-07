@@ -32,22 +32,24 @@ FieldInfo.prototype.toString = function() {
 
 function MethodInfo(m, classInfo, constantPool) {
     this.classInfo = classInfo;
-    this.access_flags = m.access_flags;
     this.name = constantPool[m.name_index].bytes;
     this.signature = constantPool[m.signature_index].bytes;
     this.attributes = m.attributes;
-    this.attributes.forEach(function(a) {
+
+    for (var i = 0; i < this.attributes.length; i++) {
+        var a = this.attributes[i];
         if (a.info.type === ATTRIBUTE_TYPES.Code) {
             this.code = new Uint8Array(a.info.code);
             this.exception_table = a.info.exception_table;
             this.max_locals = a.info.max_locals;
+            break;
         }
-    }, this);
+    }
 
-    this.isNative = ACCESS_FLAGS.isNative(this.access_flags);
-    this.isPublic = ACCESS_FLAGS.isPublic(this.access_flags);
-    this.isStatic = ACCESS_FLAGS.isStatic(this.access_flags);
-    this.isSynchronized = ACCESS_FLAGS.isSynchronized(this.access_flags);
+    this.isNative = ACCESS_FLAGS.isNative(m.access_flags);
+    this.isPublic = ACCESS_FLAGS.isPublic(m.access_flags);
+    this.isStatic = ACCESS_FLAGS.isStatic(m.access_flags);
+    this.isSynchronized = ACCESS_FLAGS.isSynchronized(m.access_flags);
 
     this.alternateImpl = (this.isNative ? Native :
                           Override.hasMethod(this) ? Override :
