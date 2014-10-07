@@ -1146,9 +1146,12 @@ VM.execute = function(ctx) {
 
             var oldFrame = frame;
             frame = pushFrame(ctx, methodInfo, consumes);
-            if (!methodInfo.compiled && methodInfo.numCalled >= 100 && !methodInfo.dontCompile) {
+            if (!methodInfo.compiled && methodInfo.numCalled >= 10 && !methodInfo.dontCompile) {
                 try {
-                  //console.log(VM.compile(methodInfo));
+                  if (methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature ==
+                      "java/io/DataInputStream.readInt.()I") {
+                    console.log(VM.compile(methodInfo));
+                  }
                   methodInfo.compiled = new Function("ctx", VM.compile(methodInfo, ctx));
                 } catch (e) {
                   methodInfo.dontCompile = true;
@@ -2472,9 +2475,9 @@ VM.compile = function(methodInfo, ctx) {
           }
 
           code += "\
-          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 100 && !toCallMethodInfo.dontCompile) {\n\
+          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 10 && !toCallMethodInfo.dontCompile) {\n\
             try {\n\
-              //console.log(VM.compile(toCallMethodInfo, ctx));\n\
+              //console.log(VM.compile(toCallMethodInfo));\n\
               toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
             } catch (e) {\n\
               toCallMethodInfo.dontCompile = true;\n\
@@ -2511,7 +2514,7 @@ VM.compile = function(methodInfo, ctx) {
           /*var argsNumber =*/ frame.read8();
           /*var zero =*/ frame.read8();
         }
-        var isStatic = (op === 0xb8);
+
         var toCallMethodInfo = cp[idx];
         // Resolve method in advance.
         if (toCallMethodInfo.tag) {
@@ -2521,38 +2524,25 @@ VM.compile = function(methodInfo, ctx) {
         code += "        var toCallMethodInfo = cp[" + idx + "];\n";
         //code += "        console.log(toCallMethodInfo.classInfo.className + '.' + toCallMethodInfo.name + '.' + toCallMethodInfo.signature);\n";
 
-        if (isStatic && !toCallMethodInfo.classInfo.isArrayClass) {
-            code +="\
-          if (!ctx.runtime.initialized[toCallMethodInfo.classInfo.className]) {\n" +
-            generateStoreState(ip) + "\
-            ctx.pushClassInitFrame(toCallMethodInfo.classInfo);\n\
-            throw VM.Yield;\n\
-          }\n";
-        }
+        var consumes = Signature.getINSlots(toCallMethodInfo.signature) + 1;
 
-        var consumes = Signature.getINSlots(toCallMethodInfo.signature);
-        if (!isStatic) {
-          ++consumes;
-
-          code += "\
+        code += "\
         var obj = S" + (depth - consumes) + ";\n\
         if (!obj) {\n" +
         generateStoreState(frame.ip) + "\
           ctx.raiseExceptionAndYield('java/lang/NullPointerException');\n\
         }\n";
 
-          toCallMethodInfo.key = "I." + toCallMethodInfo.name + "." + toCallMethodInfo.signature;
+        toCallMethodInfo.key = "I." + toCallMethodInfo.name + "." + toCallMethodInfo.signature;
 
-          code += "\
+        code += "\
         if (toCallMethodInfo.classInfo != obj.class) {\n\
-          // Check if the method is already in the virtual method cache\n\
           if (obj.class.vmc[" + toCallMethodInfo.key + "]) {\n\
             toCallMethodInfo = obj.class.vmc[" + toCallMethodInfo.key + "];\n\
           } else {\n\
             toCallMethodInfo = CLASSES.getMethod(obj.class, " + toCallMethodInfo.key + ");\n\
           }\n\
         }\n";
-        }
 
         // Store state
         // TODO: Optimize if callee is compiled
@@ -2575,9 +2565,9 @@ VM.compile = function(methodInfo, ctx) {
         } else {\n\
           var callee = ctx.pushFrame(toCallMethodInfo, " + consumes + ");\n\
 \n\
-          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 100 && !toCallMethodInfo.dontCompile) {\n\
+          if (!toCallMethodInfo.compiled && toCallMethodInfo.numCalled >= 10 && !toCallMethodInfo.dontCompile) {\n\
             try {\n\
-              //console.log(VM.compile(toCallMethodInfo, ctx));\n\
+              //console.log(VM.compile(toCallMethodInfo));\n\
               toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
             } catch (e) {\n\
               toCallMethodInfo.dontCompile = true;\n\
@@ -2608,31 +2598,38 @@ VM.compile = function(methodInfo, ctx) {
 
         break;
       case 0xb1: // return
-        code += "        if (frame.lockObject) {\n\
-          ctx.monitorExit(frame.lockObject);\n\
-        }\n\
-\n\
+        if (methodInfo.isSynchronized) {
+          code += "        if (frame.lockObject) {\n\
+            ctx.monitorExit(frame.lockObject);\n\
+          }\n";
+        }
+
+        code += "\
         var caller = ctx.popFrame();\n\
         return caller;\n";
         break;
       case 0xac: // ireturn
       case 0xae: // freturn
       case 0xb0: // areturn
-        code += "        if (frame.lockObject) {\n\
-          ctx.monitorExit(frame.lockObject);\n\
-        }\n\
-\n\
-        var caller = ctx.popFrame();\n\
+        if (methodInfo.isSynchronized) {
+          code += "        if (frame.lockObject) {\n\
+            ctx.monitorExit(frame.lockObject);\n\
+          }\n";
+        }
+
+        code += "        var caller = ctx.popFrame();\n\
         caller.stack.push(" + generateStackPop() + ");\n\
         return caller;\n";
         break;
       case 0xad: // lreturn
       case 0xaf: // dreturn
-        code += "        if (frame.lockObject) {\n\
-          ctx.monitorExit(frame.lockObject);\n\
-        }\n\
-\n\
-        var caller = ctx.popFrame();\n\
+        if (methodInfo.isSynchronized) {
+          code += "        if (frame.lockObject) {\n\
+            ctx.monitorExit(frame.lockObject);\n\
+          }\n";
+        }
+
+        code += "        var caller = ctx.popFrame();\n\
         caller.stack.push2(" + generateStackPop2() + ");\n\
         return caller;\n";
         break;
