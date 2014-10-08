@@ -1040,6 +1040,10 @@ VM.execute = function(ctx) {
                 case OPCODES.invokevirtual:
                 case OPCODES.invokeinterface:
                     if (methodInfo.classInfo != obj.class) {
+                        if (!methodInfo.key) {
+                            methodInfo.key = "I." + methodInfo.name + "." + methodInfo.signature;
+                        }
+
                         // Check if the method is already in the virtual method cache
                         if (obj.class.vmc[methodInfo.key]) {
                           methodInfo = obj.class.vmc[methodInfo.key];
