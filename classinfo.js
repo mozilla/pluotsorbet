@@ -30,6 +30,10 @@ FieldInfo.prototype.toString = function() {
     return "[field " + this.name + "]";
 }
 
+function missingNativeImpl(key, ctx, stack) {
+    console.error("Attempted to invoke missing native:", key);
+}
+
 function MethodInfo(m, classInfo, constantPool) {
     this.classInfo = classInfo;
     this.name = constantPool[m.name_index].bytes;
@@ -50,10 +54,22 @@ function MethodInfo(m, classInfo, constantPool) {
     this.isPublic = ACCESS_FLAGS.isPublic(m.access_flags);
     this.isStatic = ACCESS_FLAGS.isStatic(m.access_flags);
     this.isSynchronized = ACCESS_FLAGS.isSynchronized(m.access_flags);
+    this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
+    this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
-    this.alternateImpl = (this.isNative ? Native :
-                          Override.hasMethod(this) ? Override :
-                          null);
+    if (this.isNative) {
+        if (this.implKey in Native) {
+            this.alternateImpl = Native[this.implKey];
+        } else {
+            // Some Native MethodInfos are constructed but never called;
+            // that's fine, unless we actually try to call them.
+            this.alternateImpl = missingNativeImpl.bind(null, this.implKey);
+        }
+    } else if (this.implKey in Override) {
+        this.alternateImpl = Override[this.implKey];
+    } else {
+        this.alternateImpl = null;
+    }
 }
 
 var ClassInfo = function(classBytes) {
