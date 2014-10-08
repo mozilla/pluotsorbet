@@ -1067,10 +1067,7 @@ VM.execute = function(ctx) {
                     Instrument.callResumeHooks(ctx.current());
                 } catch (e) {
                     Instrument.callResumeHooks(ctx.current());
-                    if (!e.class) {
-                        throw e;
-                    }
-                    throw_(e, ctx);
+                    throw e;
                 }
                 break;
             }
