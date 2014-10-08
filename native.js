@@ -5,6 +5,18 @@
 
 var Native = {};
 
+Native.invoke = function(ctx, methodInfo) {
+    if (!methodInfo.native) {
+        var key = methodInfo.classInfo.className + "." + methodInfo.name + "." + methodInfo.signature;
+        methodInfo.native = Native[key];
+        if (!methodInfo.native) {
+            console.error("Missing native: " + key);
+            ctx.raiseExceptionAndYield("java/lang/RuntimeException", key + " not found");
+        }
+    }
+    methodInfo.native.call(null, ctx, ctx.current().stack);
+}
+
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(ctx, stack) {
     var length = stack.pop(), dstOffset = stack.pop(), dst = stack.pop(), srcOffset = stack.pop(), src = stack.pop();
     if (!src || !dst)
