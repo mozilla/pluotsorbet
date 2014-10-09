@@ -18,9 +18,9 @@ Context.prototype.current = function() {
   return frames[frames.length - 1];
 }
 
-Context.prototype.pushFrame = function(methodInfo, consumes) {
+Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
-  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - consumes);
+  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - methodInfo.consumes);
   this.frames.push(callee);
   Instrument.callEnterHooks(methodInfo, caller, callee);
   return callee;
