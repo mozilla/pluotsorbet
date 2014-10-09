@@ -174,9 +174,6 @@ Classes.prototype.getMethod = function(classInfo, methodKey) {
         var methods = c.methods;
         for (var i=0; i<methods.length; ++i) {
             var method = methods[i];
-            if (!method.key) {
-              method.key = (method.isStatic ? "S" : "I") + "." + method.name + "." + method.signature;
-            }
             if (method.key === methodKey) {
                 return classInfo.vmc[methodKey] = method;
             }
