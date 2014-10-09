@@ -18,4 +18,15 @@ var fakeContacts = [{
   },],
 }];
 
-contacts.forEach = fakeContacts.forEach.bind(fakeContacts);
+function getAllContacts() {
+  fakeContacts.forEach(function(contact) {
+    document.getElementById("wrappee").contentWindow.postMessage({
+      name: "contact",
+      contact: contact,
+    }, "*");
+  });
+  document.getElementById("wrappee").contentWindow.postMessage({
+    name: "contact",
+    contact: null,
+  }, "*");
+}

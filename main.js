@@ -98,7 +98,6 @@ if (urlParams.jad) {
 
 if (MIDP.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/contacts.js"),
                        loadScript("tests/override.js"));
 }
 
