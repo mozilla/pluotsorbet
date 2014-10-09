@@ -659,7 +659,7 @@ Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = 
 }
 
 Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(ctx, stack) {
-    var fileName = util.fromJavaString(stack.pop()), suiteId = stack.pop(), imageData = stack.pop();
+    var fileName = util.fromJavaString(stack.pop()), suiteId = stack.pop(), imageData = stack.pop(), _this = stack.pop();
     stack.push(0);
     console.warn("SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(L...ImageData;IL...String;)Z " +
                  "not implemented (" + imageData + ", " + suiteId + ", " + fileName + ")");
