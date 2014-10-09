@@ -2410,8 +2410,6 @@ VM.compile = function(methodInfo, ctx) {
         }\n";
 
           if (op === 0xb6 || op === 0xb9) {
-            toCallMethodInfo.key = "I." + toCallMethodInfo.name + "." + toCallMethodInfo.signature;
-
             code += "\
         if (toCallMethodInfo.classInfo != " + obj + ".class) {\n\
           if (" + obj + ".class.vmc['" + toCallMethodInfo.key + "']) {\n\

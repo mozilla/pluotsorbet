@@ -55,10 +55,6 @@ function MethodInfo(m, classInfo, constantPool) {
     this.isStatic = ACCESS_FLAGS.isStatic(m.access_flags);
     this.isSynchronized = ACCESS_FLAGS.isSynchronized(m.access_flags);
 
-    this.alternateImpl = (this.isNative ? Native :
-                          Override.hasMethod(this) ? Override :
-                          null);
-
     this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
     this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
