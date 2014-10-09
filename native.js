@@ -680,7 +680,7 @@ Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function(ctx, stack) {
 }
 
 Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(ctx, stack) {
-    var _this = stack.pop();
+    var newPriority = stack.pop(), _this = stack.pop();
 }
 
 var links = {};

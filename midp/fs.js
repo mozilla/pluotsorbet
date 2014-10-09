@@ -461,7 +461,7 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ct
 
 Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] =
 Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop());
+    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
     fs.remove(path, function(removed) {
         stack.push(removed ? 1 : 0);
         ctx.resume();
