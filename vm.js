@@ -1061,14 +1061,9 @@ VM.execute = function(ctx) {
 
             var alternateImpl = methodInfo.alternateImpl;
             if (alternateImpl) {
-                try {
-                    Instrument.callPauseHooks(ctx.current());
-                    Instrument.measure(alternateImpl, ctx, methodInfo);
-                    Instrument.callResumeHooks(ctx.current());
-                } catch (e) {
-                    Instrument.callResumeHooks(ctx.current());
-                    throw e;
-                }
+                Instrument.callPauseHooks(ctx.current());
+                Instrument.measure(alternateImpl, ctx, methodInfo);
+                Instrument.callResumeHooks(ctx.current());
                 break;
             }
             pushFrame(methodInfo, consumes);
