@@ -29,7 +29,7 @@ VM.execute = function(ctx) {
         frame = ctx.pushFrame(methodInfo);
         stack = frame.stack;
         cp = frame.cp;
-        if (frame.isSynchronized) {
+        if (methodInfo.isSynchronized) {
             if (!frame.lockObject) {
                 frame.lockObject = methodInfo.isStatic
                                      ? methodInfo.classInfo.getClassObject(ctx)
