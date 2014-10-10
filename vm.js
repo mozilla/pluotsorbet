@@ -78,7 +78,7 @@ VM.execute = function(ctx) {
                     if (exception_table[i].catch_type === 0) {
                         handler_pc = exception_table[i].handler_pc;
                     } else {
-                        var classInfo = resolve(OPCODES.athrow, exception_table[i].catch_type);
+                        var classInfo = resolve(exception_table[i].catch_type);
                         if (ex.class.isAssignableTo(classInfo)) {
                             handler_pc = exception_table[i].handler_pc;
                             break;
@@ -129,44 +129,44 @@ VM.execute = function(ctx) {
         throw VM.Yield;
     }
 
-    function resolve(op, idx) {
+    function resolve(idx, isStatic) {
         var constant = cp[idx];
         if (!constant.tag)
             return constant;
         switch(constant.tag) {
-        case TAGS.CONSTANT_Integer:
+        case 3: // TAGS.CONSTANT_Integer
             constant = constant.integer;
             break;
-        case TAGS.CONSTANT_Float:
+        case 4: // TAGS.CONSTANT_Float
             constant = constant.float;
             break;
-        case TAGS.CONSTANT_String:
+        case 8: // TAGS.CONSTANT_String
             constant = ctx.newString(cp[constant.string_index].bytes);
             break;
-        case TAGS.CONSTANT_Long:
+        case 5: // TAGS.CONSTANT_Long
             constant = Long.fromBits(constant.lowBits, constant.highBits);
             break;
-        case TAGS.CONSTANT_Double:
+        case 6: // TAGS.CONSTANT_Double
             constant = constant.double;
             break;
-        case TAGS.CONSTANT_Class:
+        case 7: // TAGS.CONSTANT_Class
             constant = CLASSES.getClass(cp[constant.name_index].bytes);
             break;
-        case TAGS.CONSTANT_Fieldref:
-            var classInfo = resolve(op, constant.class_index);
+        case 9: // TAGS.CONSTANT_Fieldref
+            var classInfo = resolve(constant.class_index, isStatic);
             var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getField(classInfo, ((op === 0xb2 || op === 0xb3) ? "S" : "I") + "." + fieldName + "." + signature);
+            constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
             if (!constant)
                 ctx.raiseExceptionAndYield("java/lang/RuntimeException",
                                    classInfo.className + "." + fieldName + "." + signature + " not found");
             break;
-        case TAGS.CONSTANT_Methodref:
-        case TAGS.CONSTANT_InterfaceMethodref:
-            var classInfo = resolve(op, constant.class_index);
+        case 10: // TAGS.CONSTANT_Methodref
+        case 11: // TAGS.CONSTANT_InterfaceMethodref
+            var classInfo = resolve(constant.class_index, isStatic);
             var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getMethod(classInfo, ((op === 0xb8) ? "S" : "I") + "." + methodName + "." + signature);
+            constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
             if (!constant)
                 ctx.raiseExceptionAndYield("java/lang/RuntimeException",
                                    classInfo.className + "." + methodName + "." + signature + " not found");
@@ -233,14 +233,14 @@ VM.execute = function(ctx) {
             var idx = (op === 0x12) ? frame.read8() : frame.read16();
             var constant = cp[idx];
             if (constant.tag)
-                constant = resolve(op, idx);
+                constant = resolve(idx);
             stack.push(constant);
             break;
         case 0x14: // ldc2_w
             var idx = frame.read16();
             var constant = cp[idx];
             if (constant.tag)
-                constant = resolve(op, idx);
+                constant = resolve(idx);
             stack.push2(constant);
             break;
         case 0x15: // iload
@@ -846,7 +846,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var classInfo = cp[idx];
             if (classInfo.tag)
-                classInfo = resolve(op, idx);
+                classInfo = resolve(idx);
             var size = stack.pop();
             if (size < 0) {
                 ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
@@ -862,7 +862,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var classInfo = cp[idx];
             if (classInfo.tag)
-                classInfo = resolve(op, idx);
+                classInfo = resolve(idx);
             var dimensions = frame.read8();
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
@@ -881,7 +881,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var field = cp[idx];
             if (field.tag)
-                field = resolve(op, idx);
+                field = resolve(idx, false);
             var obj = stack.pop();
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
@@ -893,7 +893,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var field = cp[idx];
             if (field.tag)
-                field = resolve(op, idx);
+                field = resolve(idx, false);
             var val = stack.popType(field.signature);
             var obj = stack.pop();
             if (!obj) {
@@ -906,7 +906,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var field = cp[idx];
             if (field.tag)
-                field = resolve(op, idx);
+                field = resolve(idx, true);
             classInitCheck(field.classInfo, frame.ip-3);
             var value = ctx.runtime.getStatic(field);
             if (typeof value === "undefined") {
@@ -918,7 +918,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var field = cp[idx];
             if (field.tag)
-                field = resolve(op, idx);
+                field = resolve(idx, true);
             classInitCheck(field.classInfo, frame.ip-3);
             ctx.runtime.setStatic(field, stack.popType(field.signature));
             break;
@@ -926,7 +926,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var classInfo = cp[idx];
             if (classInfo.tag)
-                classInfo = resolve(op, idx);
+                classInfo = resolve(idx);
             classInitCheck(classInfo, frame.ip-3);
             stack.push(ctx.newObject(classInfo));
             break;
@@ -934,7 +934,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var classInfo = cp[idx];
             if (classInfo.tag)
-                classInfo = resolve(op, idx);
+                classInfo = resolve(idx);
             var obj = stack[stack.length - 1];
             if (obj) {
                 if (!obj.class.isAssignableTo(classInfo)) {
@@ -949,7 +949,7 @@ VM.execute = function(ctx) {
             var idx = frame.read16();
             var classInfo = cp[idx];
             if (classInfo.tag)
-                classInfo = resolve(op, idx);
+                classInfo = resolve(idx);
             var obj = stack.pop();
             var result = !obj ? false : obj.class.isAssignableTo(classInfo);
             stack.push(result ? 1 : 0);
@@ -1024,7 +1024,7 @@ VM.execute = function(ctx) {
             var isStatic = (op === 0xb8);
             var methodInfo = cp[idx];
             if (methodInfo.tag) {
-                methodInfo = resolve(op, idx);
+                methodInfo = resolve(idx, isStatic);
                 if (isStatic)
                     classInitCheck(methodInfo.classInfo, startip);
             }
