@@ -88,6 +88,11 @@ function MethodInfo(opts) {
     } else {
         this.alternateImpl = null;
     }
+
+    this.consumes = Signature.getINSlots(this.signature);
+    if (!this.isStatic) {
+      this.consumes++;
+    }
 }
 
 var ClassInfo = function(classBytes) {
