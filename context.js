@@ -38,7 +38,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
   if (this.runtime.initialized[classInfo.className])
     return;
   classInfo.thread = this.thread;
-  var syntheticMethod = {
+  var syntheticMethod = new MethodInfo({
     name: "ClassInitSynthetic",
     signature: "()V",
     classInfo: {
@@ -69,9 +69,8 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         0xb7, 0x00, 0x07, // invokespecial <idx=7>
         0xc3,             // monitorexit
         0xb1,             // return
-    ]),
-    exception_table: [],
-  };
+    ])
+  });
   this.current().stack.push(classInfo.getClassObject(this));
   this.pushFrame(syntheticMethod, 1);
 }
@@ -80,7 +79,7 @@ Context.prototype.raiseException = function(className, message) {
   if (!message)
     message = "";
   message = "" + message;
-  var syntheticMethod = {
+  var syntheticMethod = new MethodInfo({
     name: "RaiseExceptionSynthetic",
     signature: "()V",
     classInfo: {
@@ -105,9 +104,8 @@ Context.prototype.raiseException = function(className, message) {
       0x12, 0x03,       // ldc <idx=2>
       0xb7, 0x00, 0x05, // invokespecial <idx=5>
       0xbf              // athrow
-    ]),
-    exception_table: [],
-  };
+    ])
+  });
   this.pushFrame(syntheticMethod, 0);
 }
 

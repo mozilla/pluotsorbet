@@ -34,26 +34,44 @@ function missingNativeImpl(key, ctx, stack) {
     console.error("Attempted to invoke missing native:", key);
 }
 
-function MethodInfo(m, classInfo, constantPool) {
-    this.classInfo = classInfo;
-    this.name = constantPool[m.name_index].bytes;
-    this.signature = constantPool[m.signature_index].bytes;
-    this.attributes = m.attributes;
+/**
+ * Required params:
+ *   - name
+ *   - signature
+ *   - classInfo
+ *
+ * Optional params:
+ *   - attributes (defaults to [])
+ *   - code (if not provided, pulls from attributes)
+ *   - isNative, isPublic, isStatic, isSynchronized
+ */
+function MethodInfo(opts) {
+    this.name = opts.name;
+    this.signature = opts.signature;
+    this.classInfo = opts.classInfo;
+    this.attributes = opts.attributes || [];
 
-    for (var i = 0; i < this.attributes.length; i++) {
-        var a = this.attributes[i];
-        if (a.info.type === ATTRIBUTE_TYPES.Code) {
-            this.code = new Uint8Array(a.info.code);
-            this.exception_table = a.info.exception_table;
-            this.max_locals = a.info.max_locals;
-            break;
+    // Use code if provided, otherwise search for the code within attributes.
+    if (opts.code) {
+        this.code = opts.code;
+        this.exception_table = [];
+        this.max_locals = undefined; // Unused for now.
+    } else {
+        for (var i = 0; i < this.attributes.length; i++) {
+            var a = this.attributes[i];
+            if (a.info.type === ATTRIBUTE_TYPES.Code) {
+                this.code = new Uint8Array(a.info.code);
+                this.exception_table = a.info.exception_table;
+                this.max_locals = a.info.max_locals;
+                break;
+            }
         }
     }
 
-    this.isNative = ACCESS_FLAGS.isNative(m.access_flags);
-    this.isPublic = ACCESS_FLAGS.isPublic(m.access_flags);
-    this.isStatic = ACCESS_FLAGS.isStatic(m.access_flags);
-    this.isSynchronized = ACCESS_FLAGS.isSynchronized(m.access_flags);
+    this.isNative = opts.isNative;
+    this.isPublic = opts.isPublic;
+    this.isStatic = opts.isStatic;
+    this.isSynchronized = opts.isSynchronized;
     this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
     this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
@@ -115,7 +133,16 @@ var ClassInfo = function(classBytes) {
 
     this.methods = [];
     classImage.methods.forEach(function(m) {
-        self.methods.push(new MethodInfo(m, self, cp));
+        self.methods.push(new MethodInfo({
+            name: cp[m.name_index].bytes,
+            signature: cp[m.signature_index].bytes,
+            classInfo: self,
+            attributes: m.attributes,
+            isNative: ACCESS_FLAGS.isNative(m.access_flags),
+            isPublic: ACCESS_FLAGS.isPublic(m.access_flags),
+            isStatic: ACCESS_FLAGS.isStatic(m.access_flags),
+            isSynchronized: ACCESS_FLAGS.isSynchronized(m.access_flags)
+        }));
     });
 
     var classes = this.classes = [];
