@@ -90,7 +90,7 @@ function MethodInfo(opts) {
     }
 
     this.consumes = Signature.getINSlots(this.signature);
-    if (this.isStatic) {
+    if (!this.isStatic) {
       this.consumes++;
     }
 }

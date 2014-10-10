@@ -272,6 +272,7 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack
     var syntheticMethod = new MethodInfo({
       name: "ClassNewInstanceSynthetic",
       signature: "()Ljava/lang/Object;",
+      isStatic: true,
       classInfo: {
         className: className,
         vmc: {},
@@ -293,7 +294,7 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack
         0xb0              // areturn
       ]),
     });
-    ctx.pushFrame(syntheticMethod, 0);
+    ctx.pushFrame(syntheticMethod);
     throw VM.Yield;
 };
 
