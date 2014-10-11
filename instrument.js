@@ -9,6 +9,7 @@ var Instrument = {
 
   profiling: false,
   profile: null,
+  asyncProfile: null,
 
   callEnterHooks: function(methodInfo, caller, callee) {
     var key = methodInfo.implKey;
@@ -58,10 +59,13 @@ var Instrument = {
     }
   },
 
-  callPauseHooks: function(frame) {
+  callPauseHooks: function(frame, alternateKey) {
     if (this.profiling && frame.profileData && frame.profileData.then) {
-        frame.profileData.cost += performance.now() - frame.profileData.then;
-        frame.profileData.then = null;
+      frame.profileData.cost += performance.now() - frame.profileData.then;
+      frame.profileData.then = null;
+
+      frame.profileData.asyncThen = performance.now();
+      frame.profileData.asyncKey = alternateKey || "OTHER";
     }
   },
 
@@ -73,6 +77,7 @@ var Instrument = {
 
   startProfile: function() {
     this.profile = {};
+    this.asyncProfile = {};
     this.profiling = true;
   },
 
@@ -91,6 +96,25 @@ var Instrument = {
 
     console.log("Profile:");
     methods.forEach(function(method) {
+      console.log(Math.round(method.cost) + "ms " + method.count + " " + method.key);
+    });
+
+    var asyncMethods = [];
+
+    for (var key in this.asyncProfile) {
+      if (this.asyncProfile[key].count) {
+        asyncMethods.push({
+          key: key,
+          count: this.asyncProfile[key].count,
+          cost: this.asyncProfile[key].cost,
+        });
+      }
+    }
+
+    asyncMethods.sort(function(a, b) { return b.cost - a.cost });
+
+    console.log("\n\nProfile async natives:");
+    asyncMethods.forEach(function(method) {
       console.log(Math.round(method.cost) + "ms " + method.count + " " + method.key);
     });
 

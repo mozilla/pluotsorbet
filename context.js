@@ -172,6 +172,14 @@ Context.prototype.start = function() {
 }
 
 Context.prototype.resume = function() {
+  var frame = this.current();
+  if (Instrument.profiling && frame.profileData) {
+    var key = frame.profileData.asyncKey;
+    var asyncProfileData = Instrument.asyncProfile[key] || (Instrument.asyncProfile[key] = { count: 0, cost: 0 });
+    asyncProfileData.cost += performance.now() - frame.profileData.asyncThen;
+    asyncProfileData.count++;
+    frame.profileData.asyncThen = null;
+  }
   this.start();
 }
 
