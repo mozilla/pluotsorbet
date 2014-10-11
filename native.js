@@ -277,9 +277,10 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
 Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack) {
     var classObject = stack.pop();
     var className = classObject.vmClass.className;
-    var syntheticMethod = {
+    var syntheticMethod = new MethodInfo({
       name: "ClassNewInstanceSynthetic",
       signature: "()Ljava/lang/Object;",
+      isStatic: true,
       classInfo: {
         className: className,
         vmc: {},
@@ -300,8 +301,8 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function(ctx, stack
         0xb7, 0x00, 0x03, // invokespecial <idx=3>
         0xb0              // areturn
       ]),
-    };
-    ctx.pushFrame(syntheticMethod, 0);
+    });
+    ctx.pushFrame(syntheticMethod);
     throw VM.Yield;
 };
 
@@ -484,7 +485,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     var ctx = new Context(ctx.runtime);
     ctx.thread = thread;
 
-    var syntheticMethod = {
+    var syntheticMethod = new MethodInfo({
       name: "ThreadStart0Synthetic",
       signature: "()V",
       classInfo: {
@@ -511,9 +512,8 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
         0xb6, 0x00, 0x01, // invokespecial <idx=1>
         0xb7, 0x00, 0x07, // invokespecial <idx=7>
         0xb1,             // return
-      ]),
-      exception_table: [],
-    };
+      ])
+    });
 
     ctx.frames.push(new Frame(syntheticMethod, [ thread ], 0));
     ctx.start();

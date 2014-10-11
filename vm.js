@@ -24,9 +24,9 @@ VM.execute = function(ctx) {
     var cp = frame.cp;
     var stack = frame.stack;
 
-    function pushFrame(methodInfo, consumes) {
+    function pushFrame(methodInfo) {
         var caller = frame;
-        frame = ctx.pushFrame(methodInfo, consumes);
+        frame = ctx.pushFrame(methodInfo);
         stack = frame.stack;
         cp = frame.cp;
         if (frame.isSynchronized) {
@@ -1028,10 +1028,8 @@ VM.execute = function(ctx) {
                 if (isStatic)
                     classInitCheck(methodInfo.classInfo, startip);
             }
-            var consumes = Signature.getINSlots(methodInfo.signature);
             if (!isStatic) {
-                ++consumes;
-                var obj = stack[stack.length - consumes];
+                var obj = stack[stack.length - methodInfo.consumes];
                 if (!obj) {
                     ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                     break;
@@ -1062,7 +1060,7 @@ VM.execute = function(ctx) {
                 Instrument.callResumeHooks(ctx.current());
                 break;
             }
-            pushFrame(methodInfo, consumes);
+            pushFrame(methodInfo);
             break;
         case 0xb1: // return
             if (VM.DEBUG) {

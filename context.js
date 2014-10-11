@@ -18,9 +18,9 @@ Context.prototype.current = function() {
   return frames[frames.length - 1];
 }
 
-Context.prototype.pushFrame = function(methodInfo, consumes) {
+Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
-  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - consumes);
+  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - methodInfo.consumes);
   this.frames.push(callee);
   Instrument.callEnterHooks(methodInfo, caller, callee);
   return callee;
@@ -38,9 +38,10 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
   if (this.runtime.initialized[classInfo.className])
     return;
   classInfo.thread = this.thread;
-  var syntheticMethod = {
+  var syntheticMethod = new MethodInfo({
     name: "ClassInitSynthetic",
     signature: "()V",
+    isStatic: false,
     classInfo: {
       className: classInfo.className,
       vmc: {},
@@ -69,20 +70,20 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         0xb7, 0x00, 0x07, // invokespecial <idx=7>
         0xc3,             // monitorexit
         0xb1,             // return
-    ]),
-    exception_table: [],
-  };
+    ])
+  });
   this.current().stack.push(classInfo.getClassObject(this));
-  this.pushFrame(syntheticMethod, 1);
+  this.pushFrame(syntheticMethod);
 }
 
 Context.prototype.raiseException = function(className, message) {
   if (!message)
     message = "";
   message = "" + message;
-  var syntheticMethod = {
+  var syntheticMethod = new MethodInfo({
     name: "RaiseExceptionSynthetic",
     signature: "()V",
+    isStatic: true,
     classInfo: {
       className: className,
       vmc: {},
@@ -105,10 +106,9 @@ Context.prototype.raiseException = function(className, message) {
       0x12, 0x03,       // ldc <idx=2>
       0xb7, 0x00, 0x05, // invokespecial <idx=5>
       0xbf              // athrow
-    ]),
-    exception_table: [],
-  };
-  this.pushFrame(syntheticMethod, 0);
+    ])
+  });
+  this.pushFrame(syntheticMethod);
 }
 
 Context.prototype.raiseExceptionAndYield = function(className, message) {
