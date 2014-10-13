@@ -10,4 +10,8 @@ public class Indicator {
     public void setActive(boolean active) {
         System.out.println("Indicator.setActive(Z)V not implemented (" + active + ")");
     }
+
+    public void setIcon(Image image) {
+        System.out.println("Indicator.setIcon(IL...Image;)V not implemented.");
+    }
 }
