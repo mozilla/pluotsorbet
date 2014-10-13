@@ -2394,11 +2394,8 @@ VM.compile = function(methodInfo, ctx) {
           }\n";
         }
 
-        var consumes = Signature.getINSlots(toCallMethodInfo.signature);
         if (!isStatic) {
-          ++consumes;
-
-          var obj = "S" + (depth - consumes);
+          var obj = "S" + (depth - toCallMethodInfo.consumes);
 
           code += "\
         if (!" + obj + ") {\n\
@@ -2421,7 +2418,7 @@ VM.compile = function(methodInfo, ctx) {
 
         code += generateStoreState(frame.ip);
 
-        depth -= consumes;
+        depth -= toCallMethodInfo.consumes;
 
         var alternateImplCall = "\
           Instrument.callPauseHooks(frame);\n\
@@ -2440,7 +2437,7 @@ VM.compile = function(methodInfo, ctx) {
           }\n\
           Instrument.callResumeHooks(frame);\n\
 \n\
-          var callee = ctx.pushFrame(toCallMethodInfo, " + consumes + ");\n\
+          var callee = ctx.pushFrame(toCallMethodInfo);\n\
           if (callee.isSynchronized) {\n\
             if (!callee.lockObject) {\n\
               callee.lockObject = toCallMethodInfo.isStatic\n\
