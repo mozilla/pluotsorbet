@@ -47,27 +47,43 @@ var urlParams = {
   args: "",
 };
 
-load("jvm.js", "classes.js", "libs/zipfile.js", "classinfo.js", "classfile/classfile.js",
-     "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js", "runtime.js",
-     "context.js", "libs/encoding.js", "util.js", "frame.js", "arrays.js",
-     "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
-     "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
-     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
+try {
+  load("jvm.js", "classes.js", "libs/zipfile.js", "classinfo.js", "classfile/classfile.js",
+       "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js", "runtime.js",
+       "context.js", "libs/encoding.js", "util.js", "frame.js", "arrays.js",
+       "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
+       "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
+       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "opt/build/opt.js");
 
-var dump = print;
-var console = window.console;
+  var dump = print;
+  var console = window.console;
 
-var start = dateNow();
+  var start = dateNow();
 
-var jvm = new JVM();
-jvm.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-jvm.initializeBuiltinClasses();
+  var jvm = new JVM();
+  jvm.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
+  jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  jvm.initializeBuiltinClasses();
 
-print("INITIALIZATION TIME: " + (dateNow() - start));
+  print("INITIALIZATION TIME: " + (dateNow() - start));
 
-start = dateNow();
+  start = dateNow();
 
-jvm.startIsolate0("SimpleClass", urlParams.args);
+  var directory = new ZipFile(snarf("java/classes.jar", "binary").buffer).directory;
+  for (var k in directory) {
+    if (k.indexOf(".class") > 0) {
+      try {
+      CLASSES.loadClass(k.substring(0, k.length - 6));
+      } catch (zz) {
+        // ...
+      }
+    }
+  }
 
-print("RUNNING TIME: " + (dateNow() - start));
+  jvm.startIsolate0("SimpleClass", urlParams.args);
+
+  print("RUNNING TIME: " + (dateNow() - start));
+} catch (x) {
+  print(x);
+  print(x.stack);
+}
