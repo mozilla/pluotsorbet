@@ -169,16 +169,18 @@ var DumbPipe = {
   },
 
   receiveMessage: function(id, message, detail) {
-    if (!this.pipes[id]) {
-      console.warn("nonexistent pipe " + id + " received message " + JSON.stringify(message));
-      return;
-    }
+    window.setTimeout(function() {
+      if (!this.pipes[id]) {
+        console.warn("nonexistent pipe " + id + " received message " + JSON.stringify(message));
+        return;
+      }
 
-    try {
-      this.pipes[id](message);
-    } catch(ex) {
-      console.error(ex);
-    }
+      try {
+        this.pipes[id](message);
+      } catch(ex) {
+        console.error(ex);
+      }
+    }.bind(this), 0);
   },
 
   getPackets: function(event) {
