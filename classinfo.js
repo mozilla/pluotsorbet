@@ -95,7 +95,7 @@ function MethodInfo(opts) {
       this.consumes++;
     }
 
-    this.numCalled = 100;
+    this.numCalled = 0;
     this.compiled = null;
     this.dontCompile = false;
 }
