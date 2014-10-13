@@ -86,6 +86,7 @@ Socket.prototype.close = function() {
 
 Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stack) {
     var port = stack.pop(), ipBytes = stack.pop(), _this = stack.pop();
+    // console.log("Protocol.open0: " + _this.host + ":" + port);
 
     _this.socket = new Socket(_this.host, port);
 
@@ -125,13 +126,16 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stac
 
 Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function(ctx, stack) {
     var _this = stack.pop();
+    // console.log("Protocol.available0: " + _this.data.byteLength);
     stack.push(_this.data.byteLength);
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
 
-    if (_this.isClosed == "closed") {
+    // console.log("Protocol.read0: " + _this.socket.isClosed);
+
+    if (_this.socket.isClosed) {
         stack.push(-1);
         return;
     }
@@ -160,6 +164,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, sta
 
 Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
+    // console.log("Protocol.write0: " + String.fromCharCode.apply(String, Array.prototype.slice.call(data.subarray(offset, offset + length))));
 
     _this.socket.onsend = function(result) {
         _this.socket.onsend = null;
