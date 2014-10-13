@@ -35,19 +35,21 @@ var gfxTests = [
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
-    .start("http://localhost:8000/index.html")
-    .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 4954 pass, 0 fail, 168 known fail, 0 unknown pass", "run unit tests");
+    .start("http://localhost:8000/index.html?logConsole=page,raw,native")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextExists("DONE: 4954 pass, 0 fail, 168 known fail, 0 unknown pass", "run unit tests");
+        });
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=page,raw")
+    .thenOpen("http://localhost:8000/main.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=page,raw")
     .waitForText("DONE", function() {
         test.assertTextExists("I m\nI a ma\nI 2\nI ma\nI 2\nI 1 isolate\nI Isolate ID correct\nI 4\nI 5\nI 1 isolate\nI ma\nI ma\nI 3 isolates\nI 1 m1\nI 2 m2\nI 4\nI 5\nI ma\nI 1 isolate\nI Isolates terminated\nI r mar\nI 2\nI mar\nI c marc\nI 2\nI marc\nI Main isolate still running");
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad")
+    .thenOpen("http://localhost:8000/main.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad")
     .waitForText("Hello World from MIDlet2", function() {
         test.assert(true);
     });
@@ -59,7 +61,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader", function() {
+    .thenOpen("http://localhost:8000/main.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader", function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
                 promptForMessageText();
@@ -78,7 +80,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name)
+        .thenOpen("http://localhost:8000/main.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name)
         .waitForText("PAINTED", function() {
             this.waitForSelector("#canvas", function() {
                 var got = this.evaluate(function(testCase) {

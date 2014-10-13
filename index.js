@@ -113,18 +113,18 @@ var DumbPipe = {
 
     switch (packet.command) {
       case "open":
-        console.log("outer recv: " + JSON.stringify(packet));
+        //console.log("outer recv: " + JSON.stringify(packet));
         this.openPipe(packet.id, packet.type, packet.message);
         break;
       case "message":
-        console.log("outer recv: " + JSON.stringify(packet));
+        //console.log("outer recv: " + JSON.stringify(packet));
         this.receiveMessage(packet.id, packet.message, event.detail);
         break;
       case "get":
         this.getPackets(event);
         break;
       case "close":
-        console.log("outer recv: " + JSON.stringify(packet));
+        //console.log("outer recv: " + JSON.stringify(packet));
         this.closePipe(packet.id);
         break;
     }
@@ -159,7 +159,7 @@ var DumbPipe = {
     // then sends us a "get" prompt, and we set its return value to the message.
     // Oh my shod, that's some funky git!
     var packet = { id: id, message: message };
-    console.log("outer send: " + JSON.stringify(packet));
+    //console.log("outer send: " + JSON.stringify(packet));
     this.packets.push(packet);
 
     var mozbrowser = document.getElementById("mozbrowser");
@@ -199,7 +199,13 @@ var DumbPipe = {
 document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalprompt", DumbPipe.handleEvent.bind(DumbPipe), true);
 
 var openSocketPipe = function(message, pipe) {
-  var socket = navigator.mozTCPSocket.open(message.host, message.port, { binaryType: "arraybuffer" });
+  var socket;
+  try {
+    socket = navigator.mozTCPSocket.open(message.host, message.port, { binaryType: "arraybuffer" });
+  } catch(ex) {
+    pipe({ type: "error", error: "error opening socket" });
+    return function() {};
+  }
 
   socket.onopen = function() {
     pipe({ type: "open" });
