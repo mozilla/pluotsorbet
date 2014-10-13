@@ -24,7 +24,7 @@ function loadScript(path) {
   }
 
   Promise.all(loadingPromises).then(function() {
-    document.getElementById("wrappee").src = "index.html" + location.search;
+    document.getElementById("mozbrowser").src = "main.html" + location.search;
   });
 })();
 
@@ -162,9 +162,9 @@ var DumbPipe = {
     console.log("outer send: " + JSON.stringify(packet));
     this.packets.push(packet);
 
-    var wrappee = document.getElementById("wrappee");
+    var mozbrowser = document.getElementById("mozbrowser");
     window.setTimeout(function() {
-      wrappee.src = wrappee.src.split("#")[0] + "#" + this.nextHashID++;
+      mozbrowser.src = mozbrowser.src.split("#")[0] + "#" + this.nextHashID++;
     }.bind(this), 0);
   },
 
@@ -207,7 +207,7 @@ var DumbPipe = {
   }
 };
 
-document.getElementById("wrappee").addEventListener("mozbrowsershowmodalprompt", DumbPipe.handleEvent.bind(DumbPipe), true);
+document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalprompt", DumbPipe.handleEvent.bind(DumbPipe), true);
 
 var openSocketPipe = function(message, pipe) {
   var socket = navigator.mozTCPSocket.open(message.host, message.port, { binaryType: "arraybuffer" });
