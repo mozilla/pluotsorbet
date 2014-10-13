@@ -171,28 +171,17 @@ var DumbPipe = {
   receiveMessage: function(id, message, detail) {
     if (!this.pipes[id]) {
       console.warn("nonexistent pipe " + id + " received message " + JSON.stringify(message));
-      if (detail.promptType == "prompt") {
-        detail.unblock();
-      }
       return;
     }
 
-    var result = null;
     try {
-      result = this.pipes[id](message);
+      this.pipes[id](message);
     } catch(ex) {
       console.error(ex);
-    }
-
-    // If this was a synchronous message, then return its result.
-    if (detail.promptType == "prompt") {
-      detail.returnValue = JSON.stringify(result);
-      detail.unblock();
     }
   },
 
   getPackets: function(event) {
-    event.preventDefault();
     try {
       event.detail.returnValue = JSON.stringify(this.packets);
       this.packets = [];

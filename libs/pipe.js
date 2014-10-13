@@ -100,3 +100,28 @@ var DumbPipe = {
 };
 
 window.addEventListener("hashchange", DumbPipe.handleEvent.bind(DumbPipe), false);
+
+// If "mozbrowser" isn't enabled on the frame we're loaded in, then override
+// the alert/prompt functions to funnel messages to the endpoint in the parent.
+if (window.parent !== window) {
+  alert = function(message) {
+    window.parent.DumbPipe.handleEvent({
+      detail: {
+        promptType: "alert",
+        message: message,
+      }
+    });
+  };
+
+  prompt = function(message) {
+    var event = {
+      detail: {
+        promptType: "prompt",
+        message: message,
+        unblock: function() {},
+      }
+    };
+    window.parent.DumbPipe.handleEvent(event);
+    return event.detail.returnValue;
+  };
+}
