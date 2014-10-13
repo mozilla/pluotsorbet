@@ -72,7 +72,7 @@ function MethodInfo(m, classInfo, constantPool) {
         this.alternateImpl = null;
     }
 
-    this.numCalled = 0;
+    this.numCalled = 100;
     this.compiled = null;
     this.dontCompile = false;
 }
