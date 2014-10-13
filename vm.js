@@ -2412,16 +2412,18 @@ VM.compile = function(methodInfo, ctx) {
           }\n\
           Instrument.callResumeHooks(frame);\n\
 \n\
-          var callee = ctx.pushFrame(toCallMethodInfo);\n\
-          if (toCallMethodInfo.isSynchronized) {\n\
+          var callee = ctx.pushFrame(toCallMethodInfo);\n";
+          if (toCallMethodInfo.isSynchronized) {
+            normalCall += "\
             if (!callee.lockObject) {\n\
-              callee.lockObject = toCallMethodInfo.isStatic\n\
-                                   ? toCallMethodInfo.classInfo.getClassObject(ctx)\n\
-                                   : callee.getLocal(0);\n\
+              callee.lockObject = " + (toCallMethodInfo.isStatic
+                                         ? "toCallMethodInfo.classInfo.getClassObject(ctx)\n"
+                                         : "callee.getLocal(0);\n") + "\
             }\n\
-            ctx.monitorEnter(callee.lockObject);\n\
-          }\n\
-\n\
+            ctx.monitorEnter(callee.lockObject);\n";
+          }
+
+          normalCall += "\n\
           var newFrame;\n\
 \n\
           if (toCallMethodInfo.compiled) {\n\
