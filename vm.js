@@ -85,7 +85,7 @@ function classInitCheck(ctx, frame, classInfo, ip) {
 
 function pushFrame(ctx, methodInfo) {
     var frame = ctx.pushFrame(methodInfo);
-    if (frame.isSynchronized) {
+    if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
             frame.lockObject = methodInfo.isStatic
                                  ? methodInfo.classInfo.getClassObject(ctx)
@@ -2413,7 +2413,7 @@ VM.compile = function(methodInfo, ctx) {
           Instrument.callResumeHooks(frame);\n\
 \n\
           var callee = ctx.pushFrame(toCallMethodInfo);\n\
-          if (callee.isSynchronized) {\n\
+          if (toCallMethodInfo.isSynchronized) {\n\
             if (!callee.lockObject) {\n\
               callee.lockObject = toCallMethodInfo.isStatic\n\
                                    ? toCallMethodInfo.classInfo.getClassObject(ctx)\n\

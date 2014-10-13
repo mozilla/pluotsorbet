@@ -44,7 +44,6 @@ var Frame = function(methodInfo, locals, localsBase) {
     this.locals = locals;
     this.localsBase = localsBase;
 
-    this.isSynchronized = methodInfo.isSynchronized;
     this.lockObject = null;
 
     this.profileData = null;
