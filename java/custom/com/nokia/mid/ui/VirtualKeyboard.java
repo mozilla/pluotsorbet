@@ -43,7 +43,7 @@ public class VirtualKeyboard {
     }
 
     public static void setVisibilityListener(KeyboardVisibilityListener keyboardVisibilityListener) {
-        throw new RuntimeException("CustomKeyboardControl::setVisibilityListener(KeyboardVisibilityListener) not implemented");
+        System.out.println("CustomKeyboardControl::setVisibilityListener(KeyboardVisibilityListener) not implemented");
     }
 
     public static void suppressSizeChanged(boolean bl) {
