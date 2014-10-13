@@ -18,16 +18,10 @@ var mobileInfo = (function() {
         });
         return;
       }
-
-      window.parent.postMessage("mobileInfo-get", "*");
-
-      window.addEventListener("message", function getMobileInfo(event) {
-        if (event.data && event.data.name && event.data.name == "mobileInfo") {
-          info = event.data.info;
-          window.removeEventListener("message", getMobileInfo, false);
-          callback(info);
-        }
-      }, false);
+      DumbPipe.open("mobileInfo", {}, function(message) {
+        info = message;
+        callback(info);
+      });
     }
   };
 })();

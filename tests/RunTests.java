@@ -14,6 +14,7 @@ public class RunTests extends MIDlet {
 
         public Harness(String note) {
             this.testName = note;
+            System.out.println(testName);
         }
 
         public void setNote(String note) {
@@ -25,8 +26,9 @@ public class RunTests extends MIDlet {
         }
 
         public void check(boolean ok) {
-            if (ok)
+            if (ok) {
                 ++pass;
+            }
             else {
                 ++fail;
                 debug("fail");

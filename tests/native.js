@@ -56,3 +56,27 @@ Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(ctx, stack) {
   var str = util.decodeUtf8(stack.pop());
   stack.push(str.length);
 }
+
+Native["gnu/testlet/vm/NativeTest.newFunction.()Z"] = function(ctx, stack) {
+  try {
+    new Function();
+    stack.push(1);
+  } catch(ex) {
+    console.error(ex);
+    stack.push(0);
+  }
+}
+
+Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function(ctx, stack) {
+  // Ensure we can echo a large amount of data.
+  var array = [];
+  for (var i = 0; i < 128 * 1024; i++) {
+    array[i] = i;
+  }
+  DumbPipe.open("echo", array, function(message) {
+    stack.push(JSON.stringify(array) === JSON.stringify(message) ? 1 : 0);
+    ctx.resume();
+  });
+
+  throw VM.Pause;
+}

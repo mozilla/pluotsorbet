@@ -18,15 +18,13 @@ var fakeContacts = [{
   },],
 }];
 
-function getAllContacts() {
+function getAllContacts(message, pipe) {
   fakeContacts.forEach(function(contact) {
-    document.getElementById("wrappee").contentWindow.postMessage({
-      name: "contact",
-      contact: contact,
-    }, "*");
+    window.setTimeout(function() {
+      pipe(contact);
+    }, 0);
   });
-  document.getElementById("wrappee").contentWindow.postMessage({
-    name: "contact",
-    contact: null,
-  }, "*");
+  window.setTimeout(function() {
+    pipe(null);
+  }, 0);
 }

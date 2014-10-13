@@ -5,16 +5,11 @@
 
 var contacts = (function() {
   function forEach(callback) {
-    window.parent.postMessage("contacts-getAll", "*");
-    window.addEventListener("message", function contactListener(event) {
-      if (event.data && event.data.name && event.data.name == "contact") {
-        if (event.data.contact) {
-          callback(event.data.contact);
-        } else {
-          window.removeEventListener("message", contactListener, false);
-        }
+    DumbPipe.open("contacts", {}, function(message) {
+      if (message) {
+        callback(message);
       }
-    }, false);
+    });
   }
 
   return {
