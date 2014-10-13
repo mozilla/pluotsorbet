@@ -1219,46 +1219,46 @@ VM.compile = function(methodInfo, ctx) {
     }\n";
   }
 
-  function resolveCompiled(cp, op, idx) {
+  function resolveCompiled(cp, idx, isStatic) {
       var constant = cp[idx];
 
       if (!constant.tag)
         return constant;
 
       switch(constant.tag) {
-        case TAGS.CONSTANT_Integer:
+        case 3: // TAGS.CONSTANT_Integer
           constant = constant.integer;
           break;
-        case TAGS.CONSTANT_Float:
+        case 4: // TAGS.CONSTANT_Float
           constant = constant.float;
           break;
-        case TAGS.CONSTANT_String:
+        case 8: // TAGS.CONSTANT_String
           constant = ctx.newString(cp[constant.string_index].bytes);
           break;
-        case TAGS.CONSTANT_Long:
+        case 5: // TAGS.CONSTANT_Long
           constant = Long.fromBits(constant.lowBits, constant.highBits);
           break;
-        case TAGS.CONSTANT_Double:
+        case 6: // TAGS.CONSTANT_Double
           constant = constant.double;
           break;
-        case TAGS.CONSTANT_Class:
+        case 7: // TAGS.CONSTANT_Class
           constant = CLASSES.getClass(cp[constant.name_index].bytes);
           break;
-        case TAGS.CONSTANT_Fieldref:
-          var classInfo = resolveCompiled(cp, op, constant.class_index);
+        case 9: // TAGS.CONSTANT_Fieldref
+          var classInfo = resolveCompiled(cp, constant.class_index, isStatic);
           var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
           var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-          constant = CLASSES.getField(classInfo, ((op === 0xb2 || op === 0xb3) ? "S." : "I.") + fieldName + "." + signature);
+          constant = CLASSES.getField(classInfo, (isStatic ? "S." : "I.") + fieldName + "." + signature);
           if (!constant) {
             throw new Error("java/lang/RuntimeException");
           }
           break;
-        case TAGS.CONSTANT_Methodref:
-        case TAGS.CONSTANT_InterfaceMethodref:
-          var classInfo = resolveCompiled(cp, op, constant.class_index);
+        case 10: // TAGS.CONSTANT_Methodref
+        case 11: // TAGS.CONSTANT_InterfaceMethodref
+          var classInfo = resolveCompiled(cp, constant.class_index, isStatic);
           var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
           var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-          constant = CLASSES.getMethod(classInfo, ((op === 0xb8) ? "S." : "I.") + methodName + "." + signature);
+          constant = CLASSES.getMethod(classInfo, (isStatic ? "S." : "I.") + methodName + "." + signature);
           if (!constant) {
             throw new Error("java/lang/RuntimeException");
           }
@@ -1350,7 +1350,7 @@ VM.compile = function(methodInfo, ctx) {
         var constant = cp[idx];
 
         if (constant.tag) {
-          constant = resolveCompiled(cp, op, idx);
+          constant = resolveCompiled(cp, idx);
         }
 
         code += generateStackPush("cp[" + idx + "]");
@@ -1361,7 +1361,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve the constant in advance.
         var constant = cp[idx];
         if (constant.tag) {
-          constant = resolveCompiled(cp, op, idx);
+          constant = resolveCompiled(cp, idx);
         }
 
         code += generateStackPush2("cp[" + idx + "]");
@@ -2046,7 +2046,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve the classinfo in advance.
         var classInfo = cp[idx];
         if (classInfo.tag) {
-          classInfo = resolveCompiled(cp, op, idx);
+          classInfo = resolveCompiled(cp, idx);
         }
 
         var className = classInfo.className;
@@ -2070,7 +2070,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve the classinfo in advance.
         var classInfo = cp[idx];
         if (classInfo.tag) {
-          classInfo = resolveCompiled(cp, op, idx);
+          classInfo = resolveCompiled(cp, idx);
         }
 
         var dimensions = frame.read8();
@@ -2098,7 +2098,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve the field in advance.
         var field = cp[idx];
         if (field && field.tag) {
-          field = resolveCompiled(cp, op, idx);
+          field = resolveCompiled(cp, idx, false);
         }
 
         var obj = generateStackPop();
@@ -2122,7 +2122,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve the field in advance.
         var field = cp[idx];
         if (field && field.tag) {
-          field = resolveCompiled(cp, op, idx);
+          field = resolveCompiled(cp, idx, false);
         }
 
         var val;
@@ -2148,7 +2148,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve the field in advance.
         var field = cp[idx];
         if (field && field.tag) {
-          field = resolveCompiled(cp, op, idx);
+          field = resolveCompiled(cp, idx, true);
         }
 
         code += "\
@@ -2181,7 +2181,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve the field in advance.
         var field = cp[idx];
         if (field.tag) {
-          field = resolveCompiled(cp, op, idx);
+          field = resolveCompiled(cp, idx, true);
         }
 
         code += "\
@@ -2212,7 +2212,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve class in advance.
         var classInfo = cp[idx];
         if (classInfo.tag) {
-          classInfo = resolveCompiled(cp, op, idx);
+          classInfo = resolveCompiled(cp, idx);
         }
 
         code += "\
@@ -2235,7 +2235,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve class in advance.
         var classInfo = cp[idx];
         if (classInfo.tag) {
-          classInfo = resolveCompiled(cp, op, idx);
+          classInfo = resolveCompiled(cp, idx);
         }
 
         var obj = "S" + (depth-1);
@@ -2258,7 +2258,7 @@ VM.compile = function(methodInfo, ctx) {
         // Resolve class in advance.
         var classInfo = cp[idx];
         if (classInfo.tag) {
-          classInfo = resolveCompiled(cp, op, idx);
+          classInfo = resolveCompiled(cp, idx);
         }
 
         var obj = generateStackPop();
@@ -2355,7 +2355,7 @@ VM.compile = function(methodInfo, ctx) {
         var toCallMethodInfo = cp[idx];
         // Resolve method in advance.
         if (toCallMethodInfo.tag) {
-          toCallMethodInfo = resolveCompiled(cp, op, idx);
+          toCallMethodInfo = resolveCompiled(cp, idx, isStatic);
         }
 
         code += "        var toCallMethodInfo = cp[" + idx + "];\n";
