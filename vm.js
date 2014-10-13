@@ -86,8 +86,8 @@ function classInitCheck(ctx, frame, classInfo, ip) {
     throw VM.Yield;
 }
 
-function pushFrame(ctx, methodInfo, consumes) {
-    var frame = ctx.pushFrame(methodInfo, consumes);
+function pushFrame(ctx, methodInfo) {
+    var frame = ctx.pushFrame(methodInfo);
     if (frame.isSynchronized) {
         if (!frame.lockObject) {
             frame.lockObject = methodInfo.isStatic
@@ -1043,10 +1043,8 @@ VM.execute = function(ctx) {
                 if (isStatic)
                     classInitCheck(ctx, frame, methodInfo.classInfo, startip);
             }
-            var consumes = Signature.getINSlots(methodInfo.signature);
             if (!isStatic) {
-                ++consumes;
-                var obj = stack[stack.length - consumes];
+                var obj = stack[stack.length - methodInfo.consumes];
                 if (!obj) {
                     ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                     break;
@@ -1089,7 +1087,7 @@ VM.execute = function(ctx) {
             }
             Instrument.callResumeHooks(frame);
 
-            frame = pushFrame(ctx, methodInfo, consumes);
+            frame = pushFrame(ctx, methodInfo);
 
             if (methodInfo.compiled) {
               frame = methodInfo.compiled(ctx);

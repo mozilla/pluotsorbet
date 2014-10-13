@@ -18,9 +18,9 @@ Context.prototype.current = function() {
   return frames[frames.length - 1];
 }
 
-Context.prototype.pushFrame = function(methodInfo, consumes) {
+Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
-  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - consumes);
+  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - methodInfo.consumes);
   this.frames.push(callee);
   Instrument.callEnterHooks(methodInfo, caller, callee);
   return callee;
@@ -41,6 +41,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
   var syntheticMethod = new MethodInfo({
     name: "ClassInitSynthetic",
     signature: "()V",
+    isStatic: false,
     classInfo: {
       className: classInfo.className,
       vmc: {},
@@ -72,7 +73,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
     ])
   });
   this.current().stack.push(classInfo.getClassObject(this));
-  this.pushFrame(syntheticMethod, 1);
+  this.pushFrame(syntheticMethod);
 }
 
 Context.prototype.raiseException = function(className, message) {
@@ -82,6 +83,7 @@ Context.prototype.raiseException = function(className, message) {
   var syntheticMethod = new MethodInfo({
     name: "RaiseExceptionSynthetic",
     signature: "()V",
+    isStatic: true,
     classInfo: {
       className: className,
       vmc: {},
@@ -106,7 +108,7 @@ Context.prototype.raiseException = function(className, message) {
       0xbf              // athrow
     ])
   });
-  this.pushFrame(syntheticMethod, 0);
+  this.pushFrame(syntheticMethod);
 }
 
 Context.prototype.raiseExceptionAndYield = function(className, message) {

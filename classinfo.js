@@ -90,6 +90,11 @@ function MethodInfo(opts) {
         this.alternateImpl = null;
     }
 
+    this.consumes = Signature.getINSlots(this.signature);
+    if (!this.isStatic) {
+      this.consumes++;
+    }
+
     this.numCalled = 100;
     this.compiled = null;
     this.dontCompile = false;
