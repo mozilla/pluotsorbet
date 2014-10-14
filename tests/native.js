@@ -59,8 +59,8 @@ Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(ctx, stack) {
 
 Native["gnu/testlet/vm/NativeTest.newFunction.()Z"] = function(ctx, stack) {
   try {
-    new Function();
-    stack.push(1);
+    var fn = new Function("ctx", "stack", "stack.push(1)");
+    fn(ctx, stack);
   } catch(ex) {
     console.error(ex);
     stack.push(0);
