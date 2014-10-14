@@ -110,10 +110,9 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stac
     }
 
     _this.socket.ondata = function(data) {
-        var receivedData = new Uint8Array(data);
-        var newArray = new Uint8Array(_this.data.byteLength + receivedData.byteLength);
+        var newArray = new Uint8Array(_this.data.byteLength + data.length);
         newArray.set(_this.data);
-        newArray.set(receivedData, _this.data.byteLength);
+        newArray.set(data, _this.data.byteLength);
         _this.data = newArray;
 
         if (_this.waitingData) {
