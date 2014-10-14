@@ -71,7 +71,9 @@ function createAlternateImpl(object, key, fn, opts) {
         }
       }
     } catch(e) {
-      if (e.name === "TypeError") {
+      if (e === VM.Pause || e === VM.Yield) {
+        throw e;
+      } else if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
         ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {
