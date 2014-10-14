@@ -868,4 +868,168 @@ module J2ME.Bytecode {
       return this.alignedBci + BytecodeLookupSwitch.OFFSET_TO_FIRST_PAIR_MATCH + BytecodeLookupSwitch.PAIR_SIZE * this.numberOfCases() - this.bci;
     }
   }
+
+  /**
+   * A utility class that makes iterating over bytecodes and reading operands
+   * simpler and less error prone. For example, it handles the {@link Bytecodes#WIDE} instruction
+   * and wide variants of instructions internally.
+   */
+  export class BytecodeStream {
+
+    private _code: Uint8Array;
+    private _opcode: Bytecodes;
+    private _currentBCI: number;
+    private _nextBCI: number;
+
+    constructor(code: Uint8Array) {
+      assert (code);
+      this._code = code;
+      this.setBCI(0);
+    }
+
+    /**
+     * Advances to the next bytecode.
+     */
+    public next() {
+      this.setBCI(this.nextBCI);
+    }
+
+    /**
+     * Gets the bytecode index of the end of the code.
+     */
+    public endBCI(): number {
+      return this._code.length;
+    }
+
+    /**
+     * Gets the next bytecode index (no side-effects).
+     */
+    public get nextBCI(): number {
+      return this._nextBCI;
+    }
+
+    /**
+     * Gets the current bytecode index.
+     */
+    public get currentBCI(): number {
+      return this._currentBCI;
+    }
+
+
+    /**
+     * Gets the current opcode. This method will never return the
+     * {@link Bytecodes#WIDE WIDE} opcode, but will instead
+     * return the opcode that is modified by the {@code WIDE} opcode.
+     * @return the current opcode; {@link Bytecodes#END} if at or beyond the end of the code
+     */
+    public currentBC(): Bytecodes {
+      if (this._opcode === Bytecodes.WIDE) {
+        return Bytes.beU1(this._code, this._currentBCI + 1);
+      } else {
+        return this._opcode;
+      }
+    }
+
+    /**
+     * Reads the index of a local variable for one of the load or store instructions.
+     * The WIDE modifier is handled internally.
+     */
+    public readLocalIndex(): number {
+      // read local variable index for load/store
+      if (this._opcode == Bytecodes.WIDE) {
+        return Bytes.beU2(this._code, this._currentBCI + 2);
+      }
+      return Bytes.beU1(this._code, this._currentBCI + 1);
+    }
+
+    /**
+     * Read the delta for an {@link Bytecodes#IINC} bytecode.
+     */
+    public readIncrement(): number {
+      // read the delta for the iinc bytecode
+      if (this._opcode == Bytecodes.WIDE) {
+        return Bytes.beS2(this._code, this._currentBCI + 4);
+      }
+      return Bytes.beS1(this._code, this._currentBCI + 2);
+    }
+
+    /**
+     * Read the destination of a {@link Bytecodes#GOTO} or {@code IF} instructions.
+     * @return the destination bytecode index
+     */
+    public readBranchDest(): number {
+      // reads the destination for a branch bytecode
+      return this._currentBCI + Bytes.beS2(this._code, this._currentBCI + 1);
+    }
+
+    /**
+     * Read the destination of a {@link Bytecodes#GOTO_W} or {@link Bytecodes#JSR_W} instructions.
+     * @return the destination bytecode index
+     */
+    public readFarBranchDest(): number {
+      // reads the destination for a wide branch bytecode
+      return this._currentBCI + Bytes.beS4(this._code, this._currentBCI + 1);
+    }
+
+    /**
+     * Read a signed 4-byte integer from the bytecode stream at the specified bytecode index.
+     * @param bci the bytecode index
+     * @return the integer value
+     */
+    public readInt(bci: number): number {
+      // reads a 4-byte signed value
+      return Bytes.beS4(this._code, bci);
+    }
+
+    /**
+     * Reads an unsigned, 1-byte value from the bytecode stream at the specified bytecode index.
+     * @param bci the bytecode index
+     * @return the byte
+     */
+    public readUByte(bci: number): number {
+      return Bytes.beU1(this._code, bci);
+    }
+
+    /**
+     * Reads a constant pool index for the current instruction.
+     * @return the constant pool index
+     */
+    public readCPI(): number {
+      if (this._opcode == Bytecodes.LDC) {
+        return Bytes.beU1(this._code, this._currentBCI + 1);
+      }
+      return Bytes.beU2(this._code, this._currentBCI + 1) << 16 >> 16;
+    }
+
+    /**
+     * Reads a signed, 1-byte value for the current instruction (e.g. BIPUSH).
+     */
+    public readByte(): number {
+      return this._code[this._currentBCI + 1] << 24 >> 24;
+    }
+
+    /**
+     * Reads a signed, 2-byte short for the current instruction (e.g. SIPUSH).
+     */
+    public readShort() {
+      return Bytes.beS2(this._code, this._currentBCI + 1) << 16 >> 16;
+    }
+
+    /**
+     * Sets the bytecode index to the specified value.
+     * If {@code bci} is beyond the end of the array, {@link #currentBC} will return
+     * {@link Bytecodes#END} and other methods may throw {@link ArrayIndexOutOfBoundsException}.
+     * @param bci the new bytecode index
+     */
+    public setBCI(bci: number) {
+      this._currentBCI = bci;
+      if (this._currentBCI < this._code.length) {
+        this._opcode = Bytes.beU1(this._code, bci);
+        this._nextBCI = bci + lengthAt(this._code, bci);
+      } else {
+        this._opcode = Bytecodes.END;
+        this._nextBCI = this._currentBCI;
+      }
+    }
+  }
 }

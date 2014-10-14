@@ -63,6 +63,7 @@ function MethodInfo(opts) {
                 this.code = new Uint8Array(a.info.code);
                 this.exception_table = a.info.exception_table;
                 this.max_locals = a.info.max_locals;
+                this.max_stack = a.info.max_stack;
                 break;
             }
         }

@@ -80,6 +80,8 @@ module J2ME.C4.IR {
 
   export class Node {
     abstract: boolean; // TODO: No idea what this is for.
+    kind: Kind;
+    isDeleted: boolean;
 
     private static _nextID: number [] = [];
 
@@ -464,6 +466,8 @@ module J2ME.C4.IR {
       Operator.byName[name] = this;
     }
 
+    static IADD   = new Operator("+",   (l, r) => l + r,      true);
+
     static ADD    = new Operator("+",   (l, r) => l + r,      true);
     static SUB    = new Operator("-",   (l, r) => l - r,      true);
     static MUL    = new Operator("*",   (l, r) => l * r,      true);
@@ -632,7 +636,7 @@ module J2ME.C4.IR {
   KeyValuePair.prototype.mustFloat = true;
   KeyValuePair.prototype.nodeName = "KeyValuePair";
 
-  export function nameOf(node) {
+  export function nameOf(node: any) {
     var useColors = false;
     var result;
     var m = StringUtilities;
@@ -642,6 +646,8 @@ module J2ME.C4.IR {
 //      }
       return node.value;
     } else if (node instanceof Variable) {
+      return node.name;
+    } else if (node instanceof Parameter) {
       return node.name;
     } else if (node instanceof Phi) {
       return result = m.concat3("|", node.id, "|"), useColors ? m.concat3(IndentingWriter.PURPLE, result, IndentingWriter.ENDC) : result;

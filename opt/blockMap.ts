@@ -85,7 +85,7 @@ module J2ME.Bytecode {
 
     private makeBlock(startBci: number): Block {
       var oldBlock = this.blockMap[startBci];
-      if (oldBlock == null) {
+      if (!oldBlock) {
         var newBlock = new Block();
         newBlock.startBci = startBci;
         this.blockMap[startBci] = newBlock;
@@ -169,9 +169,9 @@ module J2ME.Bytecode {
       var current: Block = null;
       var bci = 0;
       while (bci < code.length) {
-        if (current == null || this.blockMap[bci] != null) {
+        if (!current || this.blockMap[bci]) {
           var b = this.makeBlock(bci);
-          if (current != null) {
+          if (current) {
             this.setSuccessors(current.endBci, [b]);
           }
           current = b;
@@ -344,7 +344,7 @@ module J2ME.Bytecode {
             }
           }
         }
-        if (handlers !== null) {
+        if (handlers) {
           var dispatch = this.makeExceptionDispatch(handlers, 0, bci);
           block.successors.push(dispatch);
         }
@@ -397,6 +397,14 @@ module J2ME.Bytecode {
       block.active = false;
       this.blocks.push(block);
       return loops;
+    }
+
+    public trace(writer: IndentingWriter) {
+      writer.enter("Block Map: " + this.blocks.map(b => b.blockID).join(", "));
+      this.blocks.forEach(block => {
+        writer.writeLn("blockID: " + String(block.blockID + ", ").padRight(" ", 5) + "bci: [" + block.startBci + ", " + block.endBci + "]" + (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : ""));
+      });
+      writer.outdent();
     }
   }
 }
