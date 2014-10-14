@@ -64,7 +64,7 @@ function createAlternateImpl(object, key, fn, opts) {
           stack.push(0);
         } else if (typeof ret === "string") {
           stack.push(ctx.newString(ret));
-        } else if (retType === 'J') {
+        } else if (retType === 'J' || retType === 'D') {
           stack.push2(ret);
         } else {
           stack.push(ret);
