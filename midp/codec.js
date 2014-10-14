@@ -192,7 +192,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z", function(ctx
   if (val === undefined) {
     throw new JavaException("java/io/IOException");
   }
-  return val;
+  return val === 1;
 });
 
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;", function(ctx) {

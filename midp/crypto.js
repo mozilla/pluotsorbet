@@ -5,7 +5,7 @@
 
 Native.create("com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z", function(ctx, b, nbytes) {
     window.crypto.getRandomValues(b.subarray(0, nbytes));
-    return 1;
+    return true;
 }, { static: true });
 
 MIDP.hashers = new Map();
