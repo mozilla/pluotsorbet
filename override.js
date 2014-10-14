@@ -243,7 +243,7 @@ Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;
 
 // Always return true to make Java think the MIDlet domain is trusted.
 Override.create("com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z", function(ctx, name) {
-  return 1;
+  return true;
 }, { static: true });
 
 // Returns the ID of the permission. The callers will use this ID to check the
