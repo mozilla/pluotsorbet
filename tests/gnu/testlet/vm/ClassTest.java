@@ -97,12 +97,12 @@ public class ClassTest implements Testlet {
       th.fail("should not throw an Exception -- 11");
     }
 
-      try {
-          Class obj1 = Class.forName(null);
-          th.fail();
-      } catch (ClassNotFoundException e) {
-          th.check(true);
-      }
+    try {
+      Class obj1 = Class.forName(null);
+      th.fail();
+    } catch (ClassNotFoundException e) {
+      th.check(true);
+    }
   }
 
 }
