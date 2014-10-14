@@ -4,90 +4,74 @@
 'use strict';
 
 (function(Native) {
-    Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(ctx, stack) {
-        var _this = stack.pop(), ids = ctx.newPrimitiveArray("I", 1);
+    Native.create("com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I", function(ctx) {
+        var ids = ctx.newPrimitiveArray("I", 1);
         ids[0] = 1;
-        stack.push(ids);
-    }
+        return ids;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(null);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;", function(ctx, id) {
+        return null;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(1);
+    Native.create("com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z", function(ctx, id) {
         console.warn("DisplayDevice.isDisplayPrimary0.(I)Z not implemented (" + id + ")");
-    }
+        return true;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(1);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z", function(ctx, id) {
+        return true;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(0x3ff);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I", function(ctx, id) {
+        return 0x3ff;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenSupported0.(I)Z"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(1);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.isDisplayPenSupported0.(I)Z", function(ctx, id) {
+        return true;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(1);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z", function(ctx, id) {
+        return true;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(0);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z", function(ctx, id) {
+        return false;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(MIDP.Context2D.canvas.width);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I", function(ctx, id) {
+        return MIDP.Context2D.canvas.width;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(ctx, stack) {
-        var id = stack.pop(), _this = stack.pop();
-        stack.push(MIDP.Context2D.canvas.height);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I", function(ctx, id) {
+        return MIDP.Context2D.canvas.height;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(ctx, stack) {
-        var state = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+    Native.create("com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V", function(ctx, hardwareId, state) {
         console.warn("DisplayDevice.displayStateChanged0.(II)V not implemented (" + hardwareId + ", " + state + ")");
-    }
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(ctx, stack) {
-        var mode = stack.pop(), displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+    Native.create("com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V", function(ctx, hardwareId, displayId, mode) {
         console.warn("DisplayDevice.setFullScreen0.(IIZ)V not implemented (" +
                      hardwareId + ", " + displayId + ", " + mode + ")");
-    }
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(ctx, stack) {
-        var displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+    Native.create("com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V", function(ctx, hardwareId, displayId) {
         console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
-    }
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(ctx, stack) {
-        var on = stack.pop(), displayId = stack.pop(), _this = stack.pop();
-        stack.push(1);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z", function(ctx, displayId, on) {
+        return true;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = function(ctx, stack) {
-        var displayId = stack.pop(), _this = stack.pop();
-        stack.push(1);
-    }
+    Native.create("com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z", function(ctx, displayId) {
+        return true;
+    });
 
-    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(ctx, stack) {
-        var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(),
-            displayId = stack.pop(), hardwareId = stack.pop(), _this = stack.pop();
+    Native.create("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V", function(ctx, hardwareId, displayId, x1, y1, x2, y2) {
         console.warn("DisplayDevice.refresh0.(IIIIII)V not implemented (" +
                      hardwareId + ", " + displayId + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ")");
-    }
+    });
 
     function swapRB(pixel) {
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
@@ -164,8 +148,8 @@
         return data;
     }
 
-    Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] = function(ctx, stack) {
-        var length = stack.pop(), offset = stack.pop(), bytes = stack.pop(), imageData = stack.pop(), _this = stack.pop();
+    Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V",
+    function(ctx, imageData, bytes, offset, length) {
         var blob = new Blob([bytes.subarray(offset, offset + length)], { type: "image/png" });
         var img = new Image();
         img.src = URL.createObjectURL(blob);
@@ -178,40 +162,33 @@
             ctx.resume();
         }
         throw VM.Pause;
-    }
+    });
 
-    Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] = function(ctx, stack) {
-        var height = stack.pop(), width = stack.pop(), imageData = stack.pop(), _this = stack.pop();
+    Native.create("javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V",
+    function(ctx, imageData, width, height) {
         var context = createContext2d(width, height);
         context.fillStyle = "rgb(255,255,255)"; // white
         context.fillRect(0, 0, width, height);
         setImageData(imageData, width, height, context);
-    }
+    });
 
-    Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] = function(ctx, stack) {
-        var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), rgbData = stack.pop(),
-            imageData = stack.pop(), _this = stack.pop();
+    Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V",
+    function(ctx, imageData, rgbData, width, height, processAlpha) {
         var context = createContext2d(width, height);
         rgbDataToContext(context, rgbData, 0, width, processAlpha ? swapRB : swapRBAndSetAlpha);
         setImageData(imageData, width, height, context);
-    }
+    });
 
-    Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(ctx, stack) {
-        var height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(), scanlength = stack.pop(), offset = stack.pop(),
-            rgbData = stack.pop(), _this = stack.pop();
-        contextToRgbData(convertNativeImageData(_this), rgbData, offset, scanlength, x, y, width, height, swapRB);
-    }
+    Native.create("javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V", function(ctx, rgbData, offset, scanlength, x, y, width, height) {
+        contextToRgbData(convertNativeImageData(this), rgbData, offset, scanlength, x, y, width, height, swapRB);
+    });
 
-    Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(ctx, stack) {
-        var image = stack.pop();
-
+    Native.create("com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V", function(ctx, image) {
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
         imageData.class.getField("I.isMutable.Z").set(imageData, 1);
-    }
+    }, { static: true });
 
-    Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(ctx, stack) {
-        var argb = stack.pop(), image = stack.pop();
-
+    Native.create("com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V", function(ctx, image, argb) {
         var width = image.class.getField("I.width.I").get(image);
         var height = image.class.getField("I.height.I").get(image);
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
@@ -232,7 +209,7 @@
         }
 
         ctx.putImageData(ctxImageData, 0, 0);
-    }
+    }, { static: true });
 
     var FACE_SYSTEM = 0;
     var FACE_MONOSPACE = 32;
@@ -245,8 +222,7 @@
     var SIZE_MEDIUM = 0;
     var SIZE_LARGE = 16;
 
-    Native["javax/microedition/lcdui/Font.init.(III)V"] = function(ctx, stack) {
-        var size = stack.pop(), style = stack.pop(), face = stack.pop(), _this = stack.pop();
+    Native.create("javax/microedition/lcdui/Font.init.(III)V", function(ctx, face, style, size) {
         var defaultSize = Math.max(10, (MIDP.Context2D.canvas.height / 48) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
@@ -270,10 +246,10 @@
         else
             face = "Arial, Helvetica, sans-serif";
 
-        _this.class.getField("I.baseline.I").set(_this, (size/2)|0);
-        _this.class.getField("I.height.I").set(_this, (size * 1.3)|0);
-        _this.css = style + " " + size + "pt " + face;
-    }
+        this.class.getField("I.baseline.I").set(this, (size/2)|0);
+        this.class.getField("I.height.I").set(this, (size * 1.3)|0);
+        this.css = style + " " + size + "pt " + face;
+    });
 
     Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
         var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
@@ -448,9 +424,8 @@
         });
     }
 
-    Override["com/sun/midp/chameleon/CGraphicsUtil.draw9pcsBackground.(Ljavax/microedition/lcdui/Graphics;IIII[Ljavax/microedition/lcdui/Image;)V"] = function(ctx, stack) {
-        var image = stack.pop(), h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), g = stack.pop();
-
+    Override.create("com/sun/midp/chameleon/CGraphicsUtil.draw9pcsBackground.(Ljavax/microedition/lcdui/Graphics;IIII[Ljavax/microedition/lcdui/Image;)V",
+    function(ctx, g, x, y, w, h, image) {
         if (image == null || image.length != 9) {
             return;
         }
@@ -501,21 +476,18 @@
 
         transX.set(g, transX.get(g) - x);
         transY.set(g, transY.get(g) - y);
-    }
+    }, { static: true });
 
-    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(ctx, stack) {
-        var color = stack.pop(), _this = stack.pop();
-        stack.push(color);
-    }
+    Native.create("javax/microedition/lcdui/Graphics.getDisplayColor.(I)I", function(ctx, color) {
+        return color;
+    });
 
-    Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(ctx, stack) {
-        var isGray = stack.pop(), gray = stack.pop(), rgb = stack.pop(), _this = stack.pop();
-        stack.push(swapRB(rgb) | 0xff000000);
-    }
+    Native.create("javax/microedition/lcdui/Graphics.getPixel.(IIZ)I", function(ctx, rgb, gray, isGray) {
+        return swapRB(rgb) | 0xff000000;
+    });
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(ctx, stack) {
-        var rgba = stack.pop(), _this = stack.pop();
-        var g = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+    Native.create("com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V", function(ctx, rgba) {
+        var g = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var red = (rgba >> 16) & 0xff;
         var green = (rgba >> 8) & 0xff;
         var blue = rgba & 0xff;
@@ -523,21 +495,18 @@
         g.class.getField("I.rgbColor.I").set(g, rgba & 0x00ffffff);
         // Conversion matches Graphics#grayVal(int, int, int).
         g.class.getField("I.gray.I").set(g, (red * 76 + green * 150 + blue * 29) >> 8);
-    }
+    });
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        var g = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+    Native.create("com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I", function(ctx) {
+        var g = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var pixel = g.class.getField("I.pixel.I").get(g);
-        stack.push((pixel >> 24) & 0xff);
-    }
+        return (pixel >> 24) & 0xff;
+    });
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] = function(ctx, stack) {
-        var format = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
-            scanlength = stack.pop(), offset = stack.pop(), pixels = stack.pop(), _this = stack.pop();
-
+    Native.create("com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V",
+    function(ctx, pixels, offset, scanlength, x, y, width, height, format) {
         if (pixels == null) {
-            ctx.raiseExceptionAndYield("java/lang/NullPointerException", "Pixels array is null");
+            throw new JavaException("java/lang/NullPointerException", "Pixels array is null");
         }
 
         var converterFunc = null;
@@ -557,23 +526,20 @@
                 return (r | g | b);
             };
         } else {
-            ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "Format unsupported");
+            throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
         }
 
-        var graphics = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var graphics = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var image = graphics.class.getField("I.img.Ljavax/microedition/lcdui/Image;").get(graphics);
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
         contextToRgbData(convertNativeImageData(imageData), pixels, offset, scanlength, x, y, width, height, converterFunc);
-    }
+    });
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] = function(ctx, stack) {
-        var format = stack.pop(), manipulation = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(),
-            x = stack.pop(), scanlength = stack.pop(), offset = stack.pop(), transparency = stack.pop(),
-            pixels = stack.pop(), _this = stack.pop();
-
+    Native.create("com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V",
+    function(ctx, pixels, transparency, offset, scanlength, x, y, width, height, manipulation, format) {
         if (pixels == null) {
-            ctx.raiseExceptionAndYield("java/lang/NullPointerException", "Pixels array is null");
+            throw new JavaException("java/lang/NullPointerException", "Pixels array is null");
         }
 
         var converterFunc = null;
@@ -586,10 +552,10 @@
                 return (r | g | b | a);
             };
         } else {
-            ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "Format unsupported");
+            throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
         }
 
-        var graphics = _this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(_this);
+        var graphics = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
 
         var context = createContext2d(width, height);
         rgbDataToContext(context, pixels, offset, scanlength, converterFunc);
@@ -598,54 +564,54 @@
                 c.drawImage(context.canvas, x, y);
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(ctx, stack) {
-        var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), image = stack.pop(), _this = stack.pop();
-        renderImage(_this, image, x, y, anchor);
-        stack.push(1);
-    }
+    Native.create("javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z", function(ctx, image, x, y, anchor) {
+        renderImage(this, image, x, y, anchor);
+        return true;
+    });
 
-    Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(ctx, stack) {
-        var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
-                withOpaquePixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V", function(ctx, jStr, x, y, anchor) {
+        var str = util.fromJavaString(jStr);
+        var g = this;
+        withGraphics(g, function(c) {
+            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
+                withOpaquePixel(g, c, function() {
                     c.fillText(str, x, y);
                 });
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(ctx, stack) {
-        var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
-            len = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop(),
-            str = util.fromJavaChars(data, offset, len);
-        withGraphics(_this, function(c) {
-            withTextAnchor(_this, c, anchor, x, y, str, function(x, y) {
-                withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V", function(ctx, data, offset, len, x, y, anchor) {
+        var str = util.fromJavaChars(data, offset, len);
+        var g = this;
+        withGraphics(g, function(c) {
+            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
+                withPixel(g, c, function() {
                     c.fillText(str, x, y);
                 });
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(ctx, stack) {
-        var anchor = stack.pop(), y = stack.pop(), x = stack.pop(), chr = String.fromCharCode(stack.pop()), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withTextAnchor(_this, c, anchor, x, y, chr, function(x, y) {
-                withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.drawChar.(CIII)V", function(ctx, jChr, x, y, anchor) {
+        var chr = String.fromCharCode(jChr);
+        var g = this;
+        withGraphics(g, function(c) {
+            withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
+                withPixel(g, c, function() {
                     c.fillText(chr, x, y);
                 });
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(ctx, stack) {
-        var y3 = stack.pop(), x3 = stack.pop(), y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x1, y1, function(x, y) {
-                withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V", function(ctx, x1, y1, x2, y2, x3, y3) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withClip(g, c, x1, y1, function(x, y) {
+                withPixel(g, c, function() {
                     withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
                         withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
                             c.beginPath();
@@ -659,20 +625,20 @@
                 });
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(ctx, stack) {
-        var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
-                withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.drawRect.(IIII)V", function(ctx, x, y, w, h) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(x, y) {
+                withPixel(g, c, function() {
                     withSize(w, h, function(w, h) {
                         c.strokeRect(x, y, w, h);
                     });
                 });
             });
         });
-    }
+    });
 
     Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
         var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
