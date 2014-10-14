@@ -11,20 +11,18 @@ var SOCKET_OPT = {
   SNDBUF: 4,
 };
 
-Native["com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I"] = function(ctx, stack) {
-    var ipBytes = stack.pop(), host = stack.pop(), _this = stack.pop();
+Native.create("com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I", function(ctx, host, ipBytes) {
     // We'd need to modify ipBytes, that is an array with length 0
     // But we don't really need to do that, because getIpNumber0 is called only
     // before open0. So we just need to store the host and pass it to
     // mozTCPSocket::open.
-    _this.host = util.fromJavaString(host);
-    stack.push(0);
-}
+    this.host = util.fromJavaString(host);
+    return 0;
+});
 
-Native["com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;"] = function(ctx, stack) {
-    var local = stack.pop(), _this = stack.pop();
-    stack.push(ctx.newString((local) ? "127.0.0.1" : _this.socket.host));
-}
+Native.create("com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;", function(ctx, local) {
+    return local ? "127.0.0.1" : this.socket.host;
+});
 
 Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stack) {
     var port = stack.pop(), ipBytes = stack.pop(), _this = stack.pop();
@@ -69,10 +67,9 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stac
     throw VM.Pause;
 }
 
-Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function(ctx, stack) {
-    var _this = stack.pop();
-    stack.push(_this.data.byteLength);
-}
+Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function(ctx) {
+    return this.data.byteLength;
+});
 
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
@@ -120,25 +117,21 @@ Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, st
     stack.push(length);
 }
 
-Native["com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V"] = function(ctx, stack) {
-    var value = stack.pop(), option = stack.pop(), _this = stack.pop();
+Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(ctx, option, value) {
+    if (!(option in this.options)) {
+        throw new JavaException("java/lang/IllegalArgumentException", "Unsupported socket option");
+    }
 
-    if (!(option in _this.options)) {
+    this.options[option] = value;
+});
+
+Native.create("com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I", function(ctx, option) {
+    if (!(option in this.options)) {
         ctx.raiseException("java/lang/IllegalArgumentException", "Unsupported socket option");
     }
 
-    _this.options[option] = value;
-}
-
-Native["com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I"] = function(ctx, stack) {
-    var option = stack.pop(), _this = stack.pop();
-
-    if (!(option in _this.options)) {
-        ctx.raiseException("java/lang/IllegalArgumentException", "Unsupported socket option");
-    }
-
-    stack.push(_this.options[option]);
-}
+    return _this.options[option];
+});
 
 Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack) {
     var _this = stack.pop();
@@ -161,29 +154,23 @@ Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack)
     throw VM.Pause;
 }
 
-Native["com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-
+Native.create("com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V", function(ctx) {
     // We don't have the ability to close the output stream independently
     // of the connection as a whole.  But we don't seem to have to do anything
     // here, since this has just two call sites: one in Protocol.disconnect,
     // right before closing the socket; the other in Protocol.closeOutputStream,
     // which says it will be "called once by the child output stream," although
     // I can't find an actual caller.
-}
+});
 
-Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-
-    if (_this.waitingData) {
+Native.create("com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V", function(ctx) {
+    if (this.waitingData) {
         console.warn("Protocol.notifyClosedInput0.()V unimplemented while thread is blocked on read0");
     }
-}
+});
 
-Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-
-    if (_this.socket.ondrain) {
+Native.create("com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V", function(ctx) {
+    if (this.socket.ondrain) {
         console.warn("Protocol.notifyClosedOutput0.()V unimplemented while thread is blocked on write0");
     }
-}
+});

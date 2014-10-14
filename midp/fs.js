@@ -5,15 +5,13 @@
 
 var RECORD_STORE_BASE = "/RecordStore";
 
-Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var storageId = stack.pop();
-    stack.push(ctx.newString("assets/" + storageId + "/"));
-}
+Native.create("com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;", function(ctx, storageId) {
+    return "assets/" + storageId + "/";
+}, { static: true });
 
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(ctx.newString(""));
-}
+Native.create("com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;", function(ctx, id) {
+    return "";
+});
 
 Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
     var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop());
