@@ -18,11 +18,11 @@ Native.create("com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;L
     for (var n = 0; n < length; ++n)
         array[n] = data[n];
     return array;
-}, { static: true });
+});
 
 Native.create("com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V", function(ctx, severity, channelID, message) {
     console.info(util.fromJavaString(message));
-}, { static: true });
+});
 
 MIDP.groupTBL = [
     "net_access",
@@ -49,7 +49,7 @@ Native.create("com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/Str
         list[n] = ctx.newString(e);
     });
     return list;
-}, { static: true });
+});
 
 MIDP.messagesTBL = [
      ["Airtime",

@@ -286,32 +286,32 @@ Override.create("java/lang/String.valueOf.([C)Ljava/lang/String;", function(ctx,
     throw new JavaException("java/lang/NullPointerException");
   }
   return util.fromJavaChars(chars);
-}, { static: true });
+});
 
 Override.create("java/lang/String.valueOf.([CII)Ljava/lang/String;", function(ctx, chars, offset, count) {
   if (!chars) {
     throw new JavaException("java/lang/NullPointerException");
   }
   return util.fromJavaChars(chars, offset, count);
-}, { static: true });
+});
 
 Override.create("java/lang/String.valueOf.(Z)Ljava/lang/String;", function(ctx, bool) {
   return bool ? "true" : "false";
-}, { static: true });
+});
 
 Override.create("java/lang/String.valueOf.(C)Ljava/lang/String;", function(ctx, ch) {
   return String.fromCharCode(ch);
-}, { static: true });
+});
 
 Override.create("java/lang/String.valueOf.(I)Ljava/lang/String;", function(ctx, n) {
   return n.toString();
-}, { static: true });
+});
 
 Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(ctx, n, _) {
   // This function takes a dummy second argument, since we're taking a
   // Long and need to pop two items off the stack.
   return n.toString();
-}, { static: true });
+});
 
 
 // String.valueOf(float) and String.valueOf(double) have been left in

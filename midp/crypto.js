@@ -6,7 +6,7 @@
 Native.create("com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z", function(ctx, b, nbytes) {
     window.crypto.getRandomValues(b.subarray(0, nbytes));
     return true;
-}, { static: true });
+});
 
 MIDP.hashers = new Map();
 
@@ -86,7 +86,7 @@ MIDP.bin2String = function(array) {
 
 Native.create("com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getSHA1Hasher(data).update(inBuf.subarray(inOff, inOff + inLen));
-}, { static: true });
+});
 
 Native.create("com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getSHA1Hasher(data);
@@ -105,7 +105,7 @@ Native.create("com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V", function
     data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
-}, { static: true });
+});
 
 Native.create("com/sun/midp/crypto/SHA.nativeClone.([I)V", function(ctx, data) {
     for (var key of MIDP.hashers.keys()) {
@@ -117,11 +117,11 @@ Native.create("com/sun/midp/crypto/SHA.nativeClone.([I)V", function(ctx, data) {
             break;
         }
     }
-}, { static: true });
+});
 
 Native.create("com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Uint8Array(inBuf.subarray(inOff, inOff + inLen))));
-}, { static: true });
+});
 
 Native.create("com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getMD5Hasher(data);
@@ -143,7 +143,7 @@ Native.create("com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V", function
     data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
-}, { static: true });
+});
 
 Native.create("com/sun/midp/crypto/MD5.nativeClone.([I)V", function(ctx, data) {
     for (var key of MIDP.hashers.keys()) {
@@ -155,7 +155,7 @@ Native.create("com/sun/midp/crypto/MD5.nativeClone.([I)V", function(ctx, data) {
             break;
         }
     }
-}, { static: true });
+});
 
 var hexEncodeArray = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', ];
 
@@ -200,7 +200,7 @@ Native.create("com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I", function(ctx, data, 
 
     result.set(remainder);
     return remainder.length;
-}, { static: true });
+});
 
 Native.create("com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V", function(ctx, S, X, Y, inbuf, inoff, inlen, outbuf, outoff) {
     var x = X[0];
@@ -221,4 +221,4 @@ Native.create("com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V", function(ctx
 
     X[0] = x;
     Y[0] = y;
-}, { static: true });
+});

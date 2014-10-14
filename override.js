@@ -39,11 +39,10 @@ JavaException.prototype = Object.create(Error.prototype);
  *   { static: true } if the method is static (and should not receive
  *   and pop the `this` argument off the stack).
  */
-function createAlternateImpl(object, key, fn, opts) {
-  var isStatic = opts && opts.static;
+function createAlternateImpl(object, key, fn) {
   var retType = key[key.length - 1];
   var numArgs = fn.length;
-  object[key] = function(ctx, stack) {
+  object[key] = function(ctx, stack, isStatic) {
     var args = new Array(numArgs);
 
     args[0] = ctx;
@@ -90,15 +89,15 @@ Override.create = createAlternateImpl.bind(null, Override);
 
 Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
   return decodeURIComponent(string.str);
-}, { static: true });
+});
 
 Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
   return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
-}, { static: true });
+});
 
 Override.create("java/lang/Math.min.(II)I", function(ctx, a, b) {
   return Math.min(a, b);
-}, { static: true });
+});
 
 Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(ctx, b, off, len) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
@@ -241,21 +240,21 @@ Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;
   permissions[1] = defaults;
 
   return permissions;
-}, { static: true });
+});
 
 // Always return true to make Java think the MIDlet domain is trusted.
 Override.create("com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z", function(ctx, name) {
   return true;
-}, { static: true });
+});
 
 // Returns the ID of the permission. The callers will use this ID to check the
 // permission in the permissions array returned by Permissions::forDomain.
 Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I", function(ctx, name) {
   return 0;
-}, { static: true });
+});
 
 // The Java code that uses this method doesn't actually use the return value, but
 // passes it to Permissions.getId. So we can return anything.
 Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(ctx, id) {
   return "com.sun.midp";
-}, { static: true });
+});

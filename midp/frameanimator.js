@@ -88,4 +88,4 @@ Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.isRegistered.()Z", f
 
 Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.getNumRegisteredFrameAnimators.()I", function(ctx) {
   return FrameAnimator.numRegistered;
-}, { static: true });
+});
