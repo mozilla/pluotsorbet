@@ -276,57 +276,53 @@ MIDP.FakeLocalMsgServers.forEach(function(server) {
 MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 
-Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(ctx, stack) {
-    var name = util.fromJavaString(stack.pop()), _this = stack.pop();
+Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(ctx, jName) {
+    var name = util.fromJavaString(jName);
 
-    _this.server = (name[2] == ":");
-    _this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
+    this.server = (name[2] == ":");
+    this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
 
-    if (_this.server) {
-        MIDP.LocalMsgConnections[_this.protocolName] = new LocalMsgConnection();
-        MIDP.ConnectionRegistry.pushNotify("localmsg:" + _this.protocolName);
+    if (this.server) {
+        MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
+        MIDP.ConnectionRegistry.pushNotify("localmsg:" + this.protocolName);
     } else {
         // Actually, there should always be a server, but we need this check
         // for apps that use the Nokia built-in servers (because we haven't
         // implemented them yet).
-        if (!MIDP.LocalMsgConnections[_this.protocolName]) {
-            console.warn("localmsg server (" + _this.protocolName + ") unimplemented");
+        if (!MIDP.LocalMsgConnections[this.protocolName]) {
+            console.warn("localmsg server (" + this.protocolName + ") unimplemented");
             throw VM.Pause;
         }
 
-        if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
-            console.warn("connect to an unimplemented localmsg server (" + _this.protocolName + ")");
+        if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
+            console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
         }
 
-        MIDP.LocalMsgConnections[_this.protocolName].notifyConnection();
+        MIDP.LocalMsgConnections[this.protocolName].notifyConnection();
     }
-}
+});
 
-Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
+Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function(ctx) {
+    MIDP.LocalMsgConnections[this.protocolName].waitConnection(ctx);
+});
 
-    MIDP.LocalMsgConnections[_this.protocolName].waitConnection(ctx);
-}
-
-Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
-
+Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(ctx, data, offset, length) {
     var message = {
       data: data,
       offset: offset,
       length: length,
     };
 
-    if (_this.server) {
-        MIDP.LocalMsgConnections[_this.protocolName].sendMessageToClient(message);
+    if (this.server) {
+        MIDP.LocalMsgConnections[this.protocolName].sendMessageToClient(message);
     } else {
-        if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
-            console.warn("sendData (" + util.decodeUtf8(new Uint8Array(data.buffer, offset, length)) + ") to an unimplemented localmsg server (" + _this.protocolName + ")");
+        if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
+            console.warn("sendData (" + util.decodeUtf8(new Uint8Array(data.buffer, offset, length)) + ") to an unimplemented localmsg server (" + this.protocolName + ")");
         }
 
-        MIDP.LocalMsgConnections[_this.protocolName].sendMessageToServer(message);
+        MIDP.LocalMsgConnections[this.protocolName].sendMessageToServer(message);
     }
-}
+});
 
 Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(ctx, stack) {
     var data = stack.pop(), _this = stack.pop();
@@ -342,10 +338,8 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(ctx, st
     }
 }
 
-Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function(ctx, stack) {
-    var _this = stack.pop()
-
-    if (_this.server) {
-        delete MIDP.LocalMsgConnections[_this.protocolName];
+Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function(ctx) {
+    if (this.server) {
+        delete MIDP.LocalMsgConnections[this.protocolName];
     }
-}
+});
