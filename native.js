@@ -440,28 +440,26 @@ Native.create("java/lang/Thread.currentThread.()Ljava/lang/Thread;", function(ct
     return ctx.thread;
 }, { static: true });
 
-Native["java/lang/Thread.setPriority0.(II)V"] = function(ctx, stack) {
-    var newPriority = stack.pop(), oldPriority = stack.pop(), thread = stack.pop();
-}
+Native.create("java/lang/Thread.setPriority0.(II)V", function(ctx, oldPriority, newPriority) {
+});
 
-Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
-    var thread = stack.pop();
+Native.create("java/lang/Thread.start0.()V", function(ctx) {
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
-    if (thread === ctx.runtime.mainThread || thread.alive)
-        ctx.raiseExceptionAndYield("java/lang/IllegalThreadStateException");
-    thread.alive = true;
-    thread.pid = util.id();
-    var run = CLASSES.getMethod(thread.class, "I.run.()V");
+    if (this === ctx.runtime.mainThread || this.alive)
+        throw new JavaException("java/lang/IllegalThreadStateException");
+    this.alive = true;
+    this.pid = util.id();
+    var run = CLASSES.getMethod(this.class, "I.run.()V");
     // Create a context for the thread and start it.
     var ctx = new Context(ctx.runtime);
-    ctx.thread = thread;
+    ctx.thread = this;
 
     var syntheticMethod = new MethodInfo({
       name: "ThreadStart0Synthetic",
       signature: "()V",
       classInfo: {
-        className: thread.class.className,
+        className: this.class.className,
         vmc: {},
         vfc: {},
         constant_pool: [
@@ -487,41 +485,38 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
       ])
     });
 
-    ctx.frames.push(new Frame(syntheticMethod, [ thread ], 0));
+    ctx.frames.push(new Frame(syntheticMethod, [ this ], 0));
     ctx.start();
-}
+});
 
-Native["java/lang/Thread.internalExit.()V"] = function(ctx, stack) {
-    stack.pop().alive = false;
-}
+Native.create("java/lang/Thread.internalExit.()V", function(ctx) {
+    this.alive = false;
+});
 
-Native["java/lang/Thread.isAlive.()Z"] = function(ctx, stack) {
-    stack.push(stack.pop().alive ? 1 : 0);
-}
+Native.create("java/lang/Thread.isAlive.()Z", function(ctx) {
+    return !!this.alive;
+});
 
-Native["java/lang/Thread.sleep.(J)V"] = function(ctx, stack) {
-    var delay = stack.pop2().toNumber();
+Native.create("java/lang/Thread.sleep.(J)V", function(ctx, delay, _) {
     window.setTimeout(function() {
         ctx.resume();
-    }, delay);
+    }, delay.toNumber());
     throw VM.Pause;
-}
+}, { static: true });
 
-Native["java/lang/Thread.yield.()V"] = function(ctx, stack) {
+Native.create("java/lang/Thread.yield.()V", function(ctx) {
     throw VM.Yield;
-}
+}, { static: true });
 
-Native["java/lang/Thread.activeCount.()I"] = function(ctx, stack) {
-    stack.push(ctx.runtime.threadCount);
-}
+Native.create("java/lang/Thread.activeCount.()I", function(ctx) {
+    return ctx.runtime.threadCount;
+}, { static: true });
 
-Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ctx, stack) {
-    var ch = stack.pop(), obj = stack.pop();
+Native.create("com/sun/cldchi/io/ConsoleOutputStream.write.(I)V", function(ctx, ch) {
     console.print(ch);
-};
+});
 
-Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(ctx, stack) {
-    var name = stack.pop();
+Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;", function(ctx, name) {
     var fileName = util.fromJavaString(name);
     var data = CLASSES.loadFile(fileName);
     var obj = null;
@@ -530,33 +525,30 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
         obj.data = new Uint8Array(data);
         obj.pos = 0;
     }
-    stack.push(obj);
-};
+    return obj;
+}, { static: true });
 
-Override["com/sun/cldc/io/ResourceInputStream.available.()I"] = function(ctx, stack) {
-    var _this = stack.pop();
-    var handle = _this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(_this);
-
-    if (!handle) {
-        ctx.raiseExceptionAndYield("java/io/IOException");
-    }
-
-    stack.push(handle.data.length - handle.pos);
-}
-
-Override["com/sun/cldc/io/ResourceInputStream.read.()I"] = function(ctx, stack) {
-    var _this = stack.pop();
-    var handle = _this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(_this);
+Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function(ctx) {
+    var handle = this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
     if (!handle) {
-        ctx.raiseExceptionAndYield("java/io/IOException");
+        throw new JavaException("java/io/IOException");
     }
 
-    stack.push((handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1);
-}
+    return handle.data.length - handle.pos;
+});
 
-Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(ctx, stack) {
-    var len = stack.pop(), off = stack.pop(), b = stack.pop(), handle = stack.pop();
+Override.create("com/sun/cldc/io/ResourceInputStream.read.()I", function(ctx) {
+    var handle = this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
+
+    if (!handle) {
+        throw new JavaException("java/io/IOException");
+    }
+
+    return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
+});
+
+Native.create("com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I", function(ctx, handle, b, off, len) {
     var data = handle.data;
     var remaining = data.length - handle.pos;
     if (len > remaining)
@@ -564,51 +556,43 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     for (var n = 0; n < len; ++n)
         b[off+n] = data[handle.pos+n];
     handle.pos += len;
-    stack.push((len > 0) ? len : -1);
-}
+    return (len > 0) ? len : -1;
+}, { static: true });
 
-Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(ctx, stack) {
-    stack.push(String.fromCharCode(stack.pop()).toLowerCase().charCodeAt(0));
-}
+Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(ctx, char) {
+    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
+}, { static: true });
 
-Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(ctx, stack) {
-    stack.push(String.fromCharCode(stack.pop()).toUpperCase().charCodeAt(0));
-}
+Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(ctx, char) {
+    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
+}, { static: true });
 
-Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(ctx, stack) {
-    var target = stack.pop(), _this = stack.pop();
-    _this.target = target;
-}
+Native.create("java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V", function(ctx, target) {
+    this.target = target;
+});
 
-Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(ctx, stack) {
-    var _this = stack.pop();
-    var target = _this.target;
-    stack.push(target ? target : null);
-}
+Native.create("java/lang/ref/WeakReference.get.()Ljava/lang/Object;", function(ctx) {
+    return this.target ? this.target : null;
+});
 
-Native["java/lang/ref/WeakReference.clear.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-    _this.target = null;
-}
+Native.create("java/lang/ref/WeakReference.clear.()V", function(ctx) {
+    this.target = null;
+});
 
-Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-    _this.id = util.id();
-}
+Native.create("com/sun/cldc/isolate/Isolate.registerNewIsolate.()V", function(ctx) {
+    this.id = util.id();
+});
 
-Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(ctx, stack) {
-    var _this = stack.pop();
-    stack.push(_this.runtime ? _this.runtime.status : 1); // NEW
-}
+Native.create("com/sun/cldc/isolate/Isolate.getStatus.()I", function(ctx) {
+    return this.runtime ? this.runtime.status : 1; // NEW
+});
 
-Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-    ctx.runtime.vm.startIsolate(_this);
-}
+Native.create("com/sun/cldc/isolate/Isolate.nativeStart.()V", function(ctx) {
+    ctx.runtime.vm.startIsolate(this);
+});
 
-Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
-    var status = stack.pop(), _this = stack.pop();
-    var runtime = _this.runtime;
+Native.create("com/sun/cldc/isolate/Isolate.waitStatus.(I)V", function(ctx, status) {
+    var runtime = this.runtime;
     if (runtime.status >= status)
         return;
     function waitForStatus() {
@@ -619,29 +603,27 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(ctx, stack) {
         runtime.waitStatus(waitForStatus);
     }
     waitForStatus();
-}
+});
 
-Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function(ctx, stack) {
-    stack.push(ctx.runtime.isolate);
-}
+Native.create("com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;", function(ctx) {
+    return ctx.runtime.isolate;
+}, { static: true });
 
-Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function(ctx, stack) {
+Native.create("com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;", function(ctx) {
     var isolates = ctx.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
     var n = 0;
     Runtime.all.forEach(function (runtime) {
         isolates[n++] = runtime.isolate;
     });
-    stack.push(isolates);
-}
+    return isolates;
+}, { static: true });
 
-Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function(ctx, stack) {
-    var _this = stack.pop();
-    stack.push(_this.id);
-}
+Native.create("com/sun/cldc/isolate/Isolate.id0.()I", function(ctx) {
+    return this.id;
+});
 
-Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(ctx, stack) {
-    var newPriority = stack.pop(), _this = stack.pop();
-}
+Native.create("com/sun/cldc/isolate/Isolate.setPriority0.(I)V", function(ctx, newPriority) {
+});
 
 var links = {};
 var waitingForLinks = {};
@@ -661,9 +643,7 @@ Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function(ctx, stack)
     stack.push(links[isolateId].length);
 }
 
-Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
-    var linkArray = stack.pop();
-
+Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V", function(ctx, linkArray) {
     var isolateId = ctx.runtime.isolate.id;
 
     for (var i = 0; i < links[isolateId].length; i++) {
@@ -672,60 +652,50 @@ Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] 
         linkArray[i].sender = links[isolateId][i].sender;
         linkArray[i].receiver = links[isolateId][i].receiver;
     }
-}
+}, { static: true });
 
-Native["com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
-    var linkArray = stack.pop(), id = stack.pop();
-
+Native.create("com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V", function(ctx, id, linkArray) {
     links[id] = linkArray;
 
     if (waitingForLinks[id]) {
         waitingForLinks[id]();
     }
-}
+}, { static: true });
 
-Native["com/sun/midp/links/Link.init0.(II)V"] = function(ctx, stack) {
-    var receiver = stack.pop(), sender = stack.pop(), _this = stack.pop();
-    _this.sender = sender;
-    _this.receiver = receiver;
-    _this.class.getField("I.nativePointer.I").set(_this, util.id());
-}
+Native.create("com/sun/midp/links/Link.init0.(II)V", function(ctx, sender, receiver) {
+    this.sender = sender;
+    this.receiver = receiver;
+    this.class.getField("I.nativePointer.I").set(this, util.id());
+});
 
-Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(ctx, stack) {
-    var link = stack.pop(), linkMessage = stack.pop(), _this = stack.pop();
+Native.create("com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V", function(ctx, linkMessage, link) {
     // TODO: Implement when something hits send0
     console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
     throw VM.Pause;
-}
+});
 
-Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V"] = function(ctx, stack) {
-    var data = stack.pop(), _this = stack.pop();
-    _this.decoded = new TextDecoder("UTF-8").decode(data);
-}
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V", function(ctx, data) {
+    this.decoded = new TextDecoder("UTF-8").decode(data);
+});
 
-Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I"] = function(ctx, stack) {
-    var len = stack.pop(), off = stack.pop(), cbuf = stack.pop(), _this = stack.pop();
-
-    if (_this.decoded.length === 0) {
-      stack.push(-1);
-      return;
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(ctx, cbuf, off, len) {
+    if (this.decoded.length === 0) {
+      return -1;
     }
 
     for (var i = 0; i < len; i++) {
-      cbuf[i + off] = _this.decoded.charCodeAt(i);
+      cbuf[i + off] = this.decoded.charCodeAt(i);
     }
 
-    _this.decoded = _this.decoded.substring(len);
+    this.decoded = this.decoded.substring(len);
 
-    stack.push(len);
-}
+    return len;
+});
 
-Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx, stack) {
-  var len = stack.pop(), off = stack.pop(), cbuf = stack.pop(), _this = stack.pop();
-
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(ctx, cbuf, off, len) {
   var outputArray = [];
 
-  var pendingSurrogate = _this.class.getField("I.pendingSurrogate.I").get(_this);
+  var pendingSurrogate = this.class.getField("I.pendingSurrogate.I").get(this);
 
   var inputChar = 0;
   var outputSize = 0;
@@ -782,7 +752,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx
     count++;
   }
 
-  _this.class.getField("I.pendingSurrogate.I").set(_this, pendingSurrogate);
+  this.class.getField("I.pendingSurrogate.I").set(this, pendingSurrogate);
 
   var totalSize = outputArray.reduce(function(total, cur) {
     return total + cur.length;
@@ -794,17 +764,15 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(ctx
     return total + cur.length;
   }, 0);
 
-  stack.push(res);
-}
+  return res;
+});
 
-Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(ctx, stack) {
-  var len = stack.pop(), off = stack.pop(), cbuf = stack.pop(), _this = stack.pop();
-
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I", function(ctx, cbuf, off, len) {
   var inputChar = 0;
   var outputSize = 0;
   var outputCount = 0;
   var count = 0;
-  var localPendingSurrogate = _this.class.getField("I.pendingSurrogate.I").get(_this);
+  var localPendingSurrogate = this.class.getField("I.pendingSurrogate.I").get(this);
   while (count < length) {
     inputChar = 0xffff & cbuf[offset + count];
     if (0 != localPendingSurrogate) {
@@ -845,4 +813,4 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(ctx, sta
   }
 
   return outputCount;
-}
+});
