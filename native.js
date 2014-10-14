@@ -508,7 +508,7 @@ Native["java/lang/Thread.start0.()V"] = function(ctx, stack) {
     });
 
     ctx.frames.push(new Frame(syntheticMethod, [ thread ], 0));
-    ctx.start();
+    ctx.resume();
 }
 
 Native["java/lang/Thread.internalExit.()V"] = function(ctx, stack) {
