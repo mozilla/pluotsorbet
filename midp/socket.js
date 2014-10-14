@@ -170,12 +170,12 @@ Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, st
         _this.socket.onsend = null;
         if (result) {
             stack.push(length);
-            ctx.resume();
+            ctx.start();
         } else {
             _this.socket.ondrain = function() {
                 _this.socket.ondrain = null;
                 stack.push(length);
-                ctx.resume();
+                ctx.start();
             };
         }
     }
