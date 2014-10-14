@@ -35,10 +35,10 @@ var gfxTests = [
 
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
-    .start("http://localhost:8000/index.html?logConsole=page,raw,native")
+    .start("http://localhost:8000/index.html")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.assertTextExists("DONE: 4954 pass, 0 fail, 168 known fail, 0 unknown pass", "run unit tests");
+            test.assertTextExists("DONE: 70783 pass, 0 fail, 174 known fail, 0 unknown pass", "run unit tests");
         });
     });
 

@@ -186,12 +186,13 @@ public class TextEditor extends CanvasItem {
 
     // Sets the input constraints of this TextEditor.
     public void setConstraints(int constraints) {
-        throw new RuntimeException("TextEditor::setConstraints(int) not implemented");
+        System.out.println("TextEditor::setConstraints(int) not implemented");
     }
 
     // Gets the current input constraints of this TextEditor.
     public int getConstraints() {
-        throw new RuntimeException("TextEditor::getConstraints() not implemented");
+        System.out.println("TextEditor::getConstraints() not implemented");
+        return 0;
     }
 
     // Sets a hint to the implementation as to the input mode that should be used when the user initiates editing of this TextEditor.
