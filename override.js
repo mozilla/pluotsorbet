@@ -30,8 +30,6 @@ JavaException.prototype = Object.create(Error.prototype);
  * - JavaException instances are caught and propagated as Java
      exceptions; JS TypeError propagates as a NullPointerException.
  *
- * Simple overrides don't currently have access to `ctx` or `stack`.
- *
  * @param {string} key
  *   The fully-qualified JVM method signature.
  * @param {function(args)} fn
@@ -41,28 +39,33 @@ JavaException.prototype = Object.create(Error.prototype);
  *   { static: true } if the method is static (and should not receive
  *   and pop the `this` argument off the stack).
  */
-function createSimple(object, key, fn, opts) {
+function createAlternateImpl(object, key, fn, opts) {
   var isStatic = opts && opts.static;
-  var isVoid = key[key.length - 1] === 'V';
+  var retType = key[key.length - 1];
   var numArgs = fn.length;
   object[key] = function(ctx, stack) {
     var args = new Array(numArgs);
+
+    args[0] = ctx;
+
     // NOTE: If your function accepts a Long/Double, you must specify
     // two arguments (since they take up two stack positions); we
     // could sugar this someday.
-    for (var i = numArgs - 1; i >= 0; i--) {
+    for (var i = numArgs - 1; i >= 1; i--) {
       args[i] = stack.pop();
     }
     try {
       var self = isStatic ? null : stack.pop();
-      var ret = fn.apply(self, args, ctx);
-      if (!isVoid) {
+      var ret = fn.apply(self, args);
+      if (retType !== 'V') {
         if (ret === true) {
           stack.push(1);
         } else if (ret === false) {
           stack.push(0);
         } else if (typeof ret === "string") {
           stack.push(ctx.newString(ret));
+        } else if (retType === 'J') {
+          stack.push2(ret);
         } else {
           stack.push(ret);
         }
@@ -81,22 +84,21 @@ function createSimple(object, key, fn, opts) {
   };
 }
 
-Override.simple = createSimple.bind(null, Override);
-Native.simple = createSimple.bind(null, Native);
+Override.create = createAlternateImpl.bind(null, Override);
 
-Override.simple("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
+Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
   return decodeURIComponent(string.str);
 }, { static: true });
 
-Override.simple("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
+Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
   return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
 }, { static: true });
 
-Override.simple("java/lang/Math.min.(II)I", function(a, b) {
+Override.create("java/lang/Math.min.(II)I", function(ctx, a, b) {
   return Math.min(a, b);
 }, { static: true });
 
-Override.simple("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, len, ctx) {
+Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(ctx, b, off, len) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
@@ -121,149 +123,105 @@ Override.simple("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, 
   this.class.getField("I.count.I").set(this, newcount);
 });
 
-/*Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(ctx, stack) {
-  var len = stack.pop(), off = stack.pop(), b = stack.pop(), _this = stack.pop();
-
-  if ((off < 0) || (off > b.length) || (len < 0) ||
-      ((off + len) > b.length)) {
-      ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
-  }
-
-  if (len == 0) {
-      return;
-  }
-
-  var count = _this.class.getField("I.count.I").get(_this);
-  var buf = _this.class.getField("I.buf.[B").get(_this);
-
-  var newcount = count + len;
-  if (newcount > buf.length) {
-    var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
-    newbuf.set(buf);
-    buf = newbuf;
-    _this.class.getField("I.buf.[B").set(_this, buf);
-  }
-
-  buf.set(b.subarray(off, off + len), count);
-  _this.class.getField("I.count.I").set(_this, newcount);
-}*/
-
-Override["java/io/ByteArrayOutputStream.write.(I)V"] = function(ctx, stack) {
-  var value = stack.pop(), _this = stack.pop();
-
-  var count = _this.class.getField("I.count.I").get(_this);
-  var buf = _this.class.getField("I.buf.[B").get(_this);
+Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(ctx, value) {
+  var count = this.class.getField("I.count.I").get(this);
+  var buf = this.class.getField("I.buf.[B").get(this);
 
   var newcount = count + 1;
   if (newcount > buf.length) {
     var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
-    _this.class.getField("I.buf.[B").set(_this, buf);
+    this.class.getField("I.buf.[B").set(this, buf);
   }
 
   buf[count] = value;
-  _this.class.getField("I.count.I").set(_this, newcount);
-}
+  this.class.getField("I.count.I").set(this, newcount);
+});
 
-Override["java/io/ByteArrayInputStream.<init>.([B)V"] = function(ctx, stack) {
-  var buf = stack.pop(), _this = stack.pop();
-
+Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(ctx, buf) {
   if (!buf) {
-    ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+    throw new JavaException("java/lang/NullPointerException");
   }
 
-  _this.buf = buf;
-  _this.pos = _this.mark = 0;
-  _this.count = buf.length;
-}
+  this.buf = buf;
+  this.pos = this.mark = 0;
+  this.count = buf.length;
+});
 
-Override["java/io/ByteArrayInputStream.<init>.([BII)V"] = function(ctx, stack) {
-  var length = stack.pop(), offset = stack.pop(), buf = stack.pop(), _this = stack.pop();
-
+Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(ctx, buf, offset, length) {
   if (!buf) {
-    ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+    throw new JavaException("java/lang/NullPointerException");
   }
 
-  _this.buf = buf;
-  _this.pos = _this.mark = offset;
-  _this.count = (offset + length <= buf.length) ? (offset + length) : buf.length;
-}
+  this.buf = buf;
+  this.pos = this.mark = offset;
+  this.count = (offset + length <= buf.length) ? (offset + length) : buf.length;
+});
 
-Override["java/io/ByteArrayInputStream.read.()I"] = function(ctx, stack) {
-  var _this = stack.pop();
-  stack.push((_this.pos < _this.count) ? (_this.buf[_this.pos++] & 0xFF) : -1);
-}
+Override.create("java/io/ByteArrayInputStream.read.()I", function(ctx) {
+  return (this.pos < this.count) ? (this.buf[this.pos++] & 0xFF) : -1;
+});
 
-Override["java/io/ByteArrayInputStream.read.([BII)I"] = function(ctx, stack) {
-  var len = stack.pop(), off = stack.pop(), b = stack.pop(), _this = stack.pop();
-
+Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(ctx, b, off, len) {
   if (!b) {
-    ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+    throw new JavaException("java/lang/NullPointerException");
   }
 
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
-    ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
 
-  if (_this.pos >= _this.count) {
-    stack.push(-1);
-    return;
+  if (this.pos >= this.count) {
+    return -1;
   }
-  if (_this.pos + len > _this.count) {
-    len = _this.count - _this.pos;
+  if (this.pos + len > this.count) {
+    len = this.count - this.pos;
   }
   if (len === 0) {
-    stack.push(0);
-    return;
+    return 0;
   }
 
-  b.set(_this.buf.subarray(_this.pos, _this.pos + len), off);
+  b.set(this.buf.subarray(this.pos, this.pos + len), off);
 
-  _this.pos += len;
-  stack.push(len);
-}
+  this.pos += len;
+  return len;
+});
 
-Override["java/io/ByteArrayInputStream.skip.(J)J"] = function(ctx, stack) {
-  var n = stack.pop2().toNumber(), _this = stack.pop();
+Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(ctx, long, _) {
+  var n = long.toNumber();
 
-  if (_this.pos + n > _this.count) {
-      n = _this.count - _this.pos;
+  if (this.pos + n > this.count) {
+    n = this.count - this.pos;
   }
 
   if (n < 0) {
-      stack.push2(Long.fromNumber(0));
-      return;
+    return Long.fromNumber(0);
   }
 
-  _this.pos += n;
+  this.pos += n;
 
-  stack.push2(Long.fromNumber(n));
-}
+  return Long.fromNumber(n);
+});
 
-Override["java/io/ByteArrayInputStream.available.()I"] = function(ctx, stack) {
-  var _this = stack.pop();
-  stack.push(_this.count - _this.pos);
-}
+Override.create("java/io/ByteArrayInputStream.available.()I", function(ctx) {
+  return this.count - this.pos;
+});
 
-Override["java/io/ByteArrayInputStream.mark.(I)V"] = function(ctx, stack) {
-  var readAheadLimit = stack.pop(), _this = stack.pop();
-  _this.mark = _this.pos;
-}
+Override.create("java/io/ByteArrayInputStream.mark.(I)V", function(ctx, readAheadLimit) {
+  this.mark = this.pos;
+});
 
-Override["java/io/ByteArrayInputStream.reset.()V"] = function(ctx, stack) {
-  var _this = stack.pop();
-  _this.pos = _this.mark;
-}
+Override.create("java/io/ByteArrayInputStream.reset.()V", function(ctx) {
+  this.pos = this.mark;
+});
 
 // The following Permissions methods are overriden to avoid expensive calls to
 // DomainPolicy.loadValues. This has the added benefit that we avoid many other
 // computations.
 
-Override["com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B"] = function(ctx, stack) {
-  var name = stack.pop();
-
+Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B", function(ctx, name) {
   // NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2
   // The 2 is the two hardcoded MIPS and AMS permissions.
   var NUMBER_OF_PERMISSIONS = 61;
@@ -280,25 +238,22 @@ Override["com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B"] 
   permissions[0] = maximums;
   permissions[1] = defaults;
 
-  stack.push(permissions);
-}
+  return permissions;
+}, { static: true });
 
 // Always return true to make Java think the MIDlet domain is trusted.
-Override["com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z"] = function(ctx, stack) {
-  var name = stack.pop();
-  stack.push(1);
-}
+Override.create("com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z", function(ctx, name) {
+  return 1;
+}, { static: true });
 
 // Returns the ID of the permission. The callers will use this ID to check the
 // permission in the permissions array returned by Permissions::forDomain.
-Override["com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I"] = function(ctx, stack) {
-  var name = stack.pop();
-  stack.push(0);
-}
+Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I", function(ctx, name) {
+  return 0;
+}, { static: true });
 
 // The Java code that uses this method doesn't actually use the return value, but
 // passes it to Permissions.getId. So we can return anything.
-Override["com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;"] = function(ctx, stack) {
-  var id = stack.pop();
-  stack.push("com.sun.midp");
-}
+Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(ctx, id) {
+  return "com.sun.midp";
+}, { static: true });
