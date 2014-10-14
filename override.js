@@ -5,22 +5,123 @@
 
 var Override = {};
 
-Override["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
-  var string = util.fromJavaString(stack.pop());
-  stack.push(ctx.newString(decodeURIComponent(string)));
+function JavaException(className, message) {
+  this.javaClassName = className;
+  this.message = message;
+}
+JavaException.prototype = Object.create(Error.prototype);
+
+/**
+ * A simple wrapper for overriding JVM functions to avoid logic errors
+ * and simplify implementation:
+ *
+ * - Arguments are pushed off the stack based upon the number of
+ *   arguments listed on `fn`.
+ *
+ * - The return value is automatically pushed back onto the stack, if
+ *   the method signature does not return void. CAUTION: If you want to
+ *   return a Long or Double, this code needs to be modified
+ *   accordingly to do a `push2`. (Ideally, we'd just scrape the
+ *   method signature and always do the right thing.)
+ *
+ * - The object reference ("this") is automatically bound to `fn`,
+ *   unless you specify { static: true } in opts.
+ *
+ * - JavaException instances are caught and propagated as Java
+     exceptions; JS TypeError propagates as a NullPointerException.
+ *
+ * Simple overrides don't currently have access to `ctx` or `stack`.
+ *
+ * @param {string} key
+ *   The fully-qualified JVM method signature.
+ * @param {function(args)} fn
+ *   A function taking any number of args. The number of arguments
+ *   this function takes is the number of args popped off of the stack.
+ * @param {object} opts
+ *   { static: true } if the method is static (and should not receive
+ *   and pop the `this` argument off the stack).
+ */
+function createSimple(object, key, fn, opts) {
+  var isStatic = opts && opts.static;
+  var isVoid = key[key.length - 1] === 'V';
+  var numArgs = fn.length;
+  object[key] = function(ctx, stack) {
+    var args = new Array(numArgs);
+    // NOTE: If your function accepts a Long/Double, you must specify
+    // two arguments (since they take up two stack positions); we
+    // could sugar this someday.
+    for (var i = numArgs - 1; i >= 0; i--) {
+      args[i] = stack.pop();
+    }
+    try {
+      var self = isStatic ? null : stack.pop();
+      var ret = fn.apply(self, args, ctx);
+      if (!isVoid) {
+        if (ret === true) {
+          stack.push(1);
+        } else if (ret === false) {
+          stack.push(0);
+        } else if (typeof ret === "string") {
+          stack.push(ctx.newString(ret));
+        } else {
+          stack.push(ret);
+        }
+      }
+    } catch(e) {
+      if (e.name === "TypeError") {
+        // JavaScript's TypeError is analogous to a NullPointerException.
+        ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
+      } else if (e.javaClassName) {
+        ctx.raiseExceptionAndYield(e.javaClassName, e.message);
+      } else {
+        console.error(e, e.stack);
+        ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
+      }
+    }
+  };
 }
 
-Override["com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
-  var string = util.fromJavaString(stack.pop());
-  stack.push(ctx.newString(string.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent)));
-}
+Override.simple = createSimple.bind(null, Override);
+Native.simple = createSimple.bind(null, Native);
 
-Override["java/lang/Math.min.(II)I"] = function(ctx, stack) {
-  var b = stack.pop(), a = stack.pop();
-  stack.push(a <= b ? a : b);
-}
+Override.simple("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
+  return decodeURIComponent(string.str);
+}, { static: true });
 
-Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(ctx, stack) {
+Override.simple("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
+  return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
+}, { static: true });
+
+Override.simple("java/lang/Math.min.(II)I", function(a, b) {
+  return Math.min(a, b);
+}, { static: true });
+
+Override.simple("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, len, ctx) {
+  if ((off < 0) || (off > b.length) || (len < 0) ||
+      ((off + len) > b.length)) {
+    throw new JavaException("java/lang/IndexOutOfBoundsException");
+  }
+
+  if (len == 0) {
+    return;
+  }
+
+  var count = this.class.getField("I.count.I").get(this);
+  var buf = this.class.getField("I.buf.[B").get(this);
+
+  var newcount = count + len;
+  if (newcount > buf.length) {
+    var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    newbuf.set(buf);
+    buf = newbuf;
+    this.class.getField("I.buf.[B").set(this, buf);
+  }
+
+  buf.set(b.subarray(off, off + len), count);
+  this.class.getField("I.count.I").set(this, newcount);
+});
+
+/*Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(ctx, stack) {
   var len = stack.pop(), off = stack.pop(), b = stack.pop(), _this = stack.pop();
 
   if ((off < 0) || (off > b.length) || (len < 0) ||
@@ -45,7 +146,7 @@ Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(ctx, stack) {
 
   buf.set(b.subarray(off, off + len), count);
   _this.class.getField("I.count.I").set(_this, newcount);
-}
+}*/
 
 Override["java/io/ByteArrayOutputStream.write.(I)V"] = function(ctx, stack) {
   var value = stack.pop(), _this = stack.pop();
@@ -154,82 +255,6 @@ Override["java/io/ByteArrayInputStream.mark.(I)V"] = function(ctx, stack) {
 Override["java/io/ByteArrayInputStream.reset.()V"] = function(ctx, stack) {
   var _this = stack.pop();
   _this.pos = _this.mark;
-}
-
-function JavaException(className, message) {
-  this.javaClassName = className;
-  this.message = message;
-}
-JavaException.prototype = Object.create(Error.prototype);
-
-/**
- * A simple wrapper for overriding JVM functions to avoid logic errors
- * and simplify implementation:
- *
- * - Arguments are pushed off the stack based upon the number of
- *   arguments listed on `fn`.
- *
- * - The return value is automatically pushed back onto the stack, if
- *   the method signature does not return void. CAUTION: If you want to
- *   return a Long or Double, this code needs to be modified
- *   accordingly to do a `push2`. (Ideally, we'd just scrape the
- *   method signature and always do the right thing.)
- *
- * - The object reference ("this") is automatically bound to `fn`,
- *   unless you specify { static: true } in opts.
- *
- * - JavaException instances are caught and propagated as Java
-     exceptions; JS TypeError propagates as a NullPointerException.
- *
- * Simple overrides don't currently have access to `ctx` or `stack`.
- *
- * @param {string} key
- *   The fully-qualified JVM method signature.
- * @param {function(args)} fn
- *   A function taking any number of args. The number of arguments
- *   this function takes is the number of args popped off of the stack.
- * @param {object} opts
- *   { static: true } if the method is static (and should not receive
- *   and pop the `this` argument off the stack).
- */
-Override.simple = function(key, fn, opts) {
-  var isStatic = opts && opts.static;
-  var isVoid = key[key.length - 1] === 'V';
-  var numArgs = fn.length;
-  Override[key] = function(ctx, stack) {
-    var args = new Array(numArgs);
-    // NOTE: If your function accepts a Long/Double, you must specify
-    // two arguments (since they take up two stack positions); we
-    // could sugar this someday.
-    for (var i = numArgs - 1; i >= 0; i--) {
-      args[i] = stack.pop();
-    }
-    try {
-      var self = isStatic ? null : stack.pop();
-      var ret = fn.apply(self, args);
-      if (!isVoid) {
-        if (ret === true) {
-          stack.push(1);
-        } else if (ret === false) {
-          stack.push(0);
-        } else if (typeof ret === "string") {
-          stack.push(ctx.newString(ret));
-        } else {
-          stack.push(ret);
-        }
-      }
-    } catch(e) {
-      if (e.name === "TypeError") {
-        // JavaScript's TypeError is analogous to a NullPointerException.
-        ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
-      } else if (e.javaClassName) {
-        ctx.raiseExceptionAndYield(e.javaClassName, e.message);
-      } else {
-        console.error(e, e.stack);
-        ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
-      }
-    }
-  };
 }
 
 // The following Permissions methods are overriden to avoid expensive calls to
