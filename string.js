@@ -137,11 +137,11 @@ Override.create("java/lang/String.getBytes.()[B", function(ctx) {
 });
 
 Override.create("java/lang/String.equals.(Ljava/lang/Object;)Z", function(ctx, anObject) {
-  return isString(anObject) && anObject.str === this.str;
+  return !!(isString(anObject) && anObject.str === this.str);
 });
 
 Override.create("java/lang/String.equalsIgnoreCase.(Ljava/lang/String;)Z", function(ctx, anotherString) {
-  return isString(anotherString) && anotherString.str.toLowerCase() === this.str.toLowerCase();
+  return !!(isString(anotherString) && anotherString.str.toLowerCase() === this.str.toLowerCase());
 });
 
 Override.create("java/lang/String.compareTo.(Ljava/lang/String;)I", function(ctx, anotherString) {
