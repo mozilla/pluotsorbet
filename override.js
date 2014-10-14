@@ -64,14 +64,16 @@ function createAlternateImpl(object, key, fn, opts) {
           stack.push(0);
         } else if (typeof ret === "string") {
           stack.push(ctx.newString(ret));
-        } else if (retType === 'J') {
+        } else if (retType === 'J' || retType === 'D') {
           stack.push2(ret);
         } else {
           stack.push(ret);
         }
       }
     } catch(e) {
-      if (e.name === "TypeError") {
+      if (e === VM.Pause || e === VM.Yield) {
+        throw e;
+      } else if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
         ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {

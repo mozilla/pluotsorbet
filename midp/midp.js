@@ -8,23 +8,21 @@ var MIDP = {
 
 MIDP.manifest = {};
 
-Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(ctx, stack) {
-    var entryName = util.fromJavaString(stack.pop()), jar = util.fromJavaString(stack.pop());
-    var bytes = CLASSES.loadFileFromJar(jar, entryName);
+Native.create("com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B", function(ctx, jar, entryName) {
+    var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes)
-        ctx.raiseExceptionAndYield("java/io/IOException");
+        throw new JavaException("java/io/IOException");
     var length = bytes.byteLength;
     var data = new Uint8Array(bytes);
     var array = ctx.newPrimitiveArray("B", length);
     for (var n = 0; n < length; ++n)
         array[n] = data[n];
-    stack.push(array);
-}
+    return array;
+}, { static: true });
 
-Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(ctx, stack) {
-    var message = stack.pop(), channelID = stack.pop(), severity = stack.pop();
+Native.create("com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V", function(ctx, severity, channelID, message) {
     console.info(util.fromJavaString(message));
-}
+}, { static: true });
 
 MIDP.groupTBL = [
     "net_access",
@@ -45,13 +43,13 @@ MIDP.groupTBL = [
     "satsa"
 ];
 
-Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function(ctx, stack) {
+Native.create("com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;", function(ctx) {
     var list = ctx.newArray("[Ljava/lang/String;", MIDP.groupTBL.length);
     MIDP.groupTBL.forEach(function (e, n) {
         list[n] = ctx.newString(e);
     });
-    stack.push(list);
-}
+    return list;
+}, { static: true });
 
 MIDP.messagesTBL = [
      ["Airtime",

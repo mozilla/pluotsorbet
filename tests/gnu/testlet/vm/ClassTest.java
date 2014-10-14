@@ -96,6 +96,13 @@ public class ClassTest implements Testlet {
     catch (Exception e) {
       th.fail("should not throw an Exception -- 11");
     }
+
+    try {
+      Class obj1 = Class.forName(null);
+      th.fail();
+    } catch (ClassNotFoundException e) {
+      th.check(true);
+    }
   }
 
 }
