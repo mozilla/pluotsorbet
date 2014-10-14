@@ -640,25 +640,24 @@
         });
     });
 
-    Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(ctx, stack) {
-        var h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
-                withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.fillRect.(IIII)V", function(ctx, x, y, w, h) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(x, y) {
+                withPixel(g, c, function() {
                     withSize(w, h, function(w, h) {
                         c.fillRect(x, y, w, h);
                     });
                 });
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(ctx, stack) {
-        var arcHeight = stack.pop(), arcWidth = stack.pop(),
-            h = stack.pop(), w = stack.pop(), y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
-                withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V", function(ctx, x, y, w, h, arcWidth, arcHeight) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(x, y) {
+                withPixel(g, c, function() {
                     withSize(w, h, function(w, h) {
                         // TODO implement rounding
                         c.fillRect(x, y, w, h);
@@ -666,15 +665,12 @@
                 });
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(ctx, stack) {
-        var arcAngle = stack.pop(), startAngle = stack.pop(),
-            height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
-            _this = stack.pop();
-
-        withGraphics(_this, function(c) {
-            withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V", function(ctx, x, y, width, height, startAngle, arcAngle) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withPixel(g, c, function() {
                 // TODO need to use bezierCurveTo to implement this properly,
                 // but this works as a rough hack for now
                 var radius = Math.ceil(Math.max(height, width) / 2);
@@ -686,14 +682,12 @@
                 c.stroke();
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V"] = function(ctx, stack) {
-        var arcAngle = stack.pop(), startAngle = stack.pop(),
-            height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
-            _this = stack.pop();
-        withGraphics(_this, function(c) {
-            withPixel(_this, c, function() {
+    Native.create("javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V", function(ctx, x, y, width, height, startAngle, arcAngle) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withPixel(g, c, function() {
                 // TODO need to use bezierCurveTo to implement this properly,
                 // but this works as a rough hack for now
                 var radius = Math.ceil(Math.max(height, width) / 2);
@@ -705,7 +699,7 @@
                 c.fill();
             });
         });
-    }
+    });
 
     var TRANS_NONE = 0;
     var TRANS_MIRROR_ROT180 = 1;
@@ -716,12 +710,10 @@
     var TRANS_ROT270 = 6;
     var TRANS_MIRROR_ROT90 = 7;
 
-    Override["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] = function(ctx, stack) {
-        var anchor = stack.pop(), y = stack.pop(), x = stack.pop(),
-            transform = stack.pop(), sh = stack.pop(), sw = stack.pop(), sy = stack.pop(), sx = stack.pop(), image = stack.pop(), _this = stack.pop();
-
+    Override.create("javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V",
+    function(ctx, image, sx, sy, sw, sh, transform, x, y, anchor) {
         if (!image) {
-            ctx.raiseExceptionAndYield("java/lang/NullPointerException", "src image is null");
+            throw new JavaException("java/lang/NullPointerException", "src image is null");
         }
 
         var imgData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
@@ -732,8 +724,9 @@
         }
 
         var w = sw, h = sh;
-        withGraphics(_this, function(c) {
-            withAnchor(_this, c, anchor, x, y, w, h, function(x, y) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withAnchor(g, c, anchor, x, y, w, h, function(x, y) {
                 c.translate(x, y);
                 if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
                     c.scale(-1, 1);
@@ -748,15 +741,15 @@
                 c.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(ctx, stack) {
-        var y2 = stack.pop(), x2 = stack.pop(), y1 = stack.pop(), x1 = stack.pop(), _this = stack.pop(),
-            dx = x2 - x1, dy = y2 - y1;
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x1, y1, function(x, y) {
+    Native.create("javax/microedition/lcdui/Graphics.drawLine.(IIII)V", function(ctx, x1, y1, x2, y2) {
+        var dx = x2 - x1, dy = y2 - y1;
+        var g = this;
+        withGraphics(g, function(c) {
+            withClip(g, c, x1, y1, function(x, y) {
                 withSize(dx, dy, function(dx, dy) {
-                    withPixel(_this, c, function() {
+                    withPixel(g, c, function() {
                         var ctx = MIDP.Context2D;
                         ctx.beginPath();
                         ctx.moveTo(x, y);
@@ -767,19 +760,19 @@
                 });
             });
         });
-    }
+    });
 
-    Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] = function(ctx, stack) {
-        var processAlpha = stack.pop(), height = stack.pop(), width = stack.pop(), y = stack.pop(), x = stack.pop(),
-            scanlength = stack.pop(), offset = stack.pop(), rgbData = stack.pop(), _this = stack.pop();
+    Native.create("javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V",
+    function(ctx, rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         var context = createContext2d(width, height);
         rgbDataToContext(context, rgbData, offset, scanlength, processAlpha ? swapRB : swapRBAndSetAlpha);
-        withGraphics(_this, function(c) {
-            withClip(_this, c, x, y, function(x, y) {
+        var g = this;
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(x, y) {
                 c.drawImage(context.canvas, x, y);
             });
         });
-    }
+    });
 
     var textEditorId = 0,
         textEditorContext = null,
@@ -794,195 +787,167 @@
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.init.(Ljava/lang/String;IIII)I"] = function(ctx, stack) {
-        var height = stack.pop(), width = stack.pop(), constraints = stack.pop(), maxSize = stack.pop(),
-            text = stack.pop(), _this = stack.pop();
-
+    Native.create("com/nokia/mid/ui/TextEditor.init.(Ljava/lang/String;IIII)I",
+    function(ctx, text, maxSize, constraints, width, height) {
         if (constraints != 0) {
             console.warn("TextEditor.constraints not implemented");
         }
 
-        stack.push(++textEditorId);
-        _this.textEditorId = textEditorId;
-        _this.textEditor = document.createElement("textarea");
-        _this.visible = false;
-        _this.focused = false;
-        _this.backgroundColor = 0xFFFFFFFF | 0; // opaque white
-        _this.foregroundColor = 0xFF000000 | 0; // opaque black
-        _this.textEditor.style.border = "none";
-        _this.textEditor.style.resize = "none";
-        _this.textEditor.style.backgroundColor = abgrIntToCSS(_this.backgroundColor);
-        _this.textEditor.style.color = abgrIntToCSS(_this.foregroundColor);
-        _this.textEditor.value = util.fromJavaString(text);
-        _this.textEditor.setAttribute("maxlength", maxSize);
-        _this.textEditor.style.width = width + "px";
-        _this.textEditor.style.height = height + "px";
-        _this.textEditor.style.position = "absolute";
-        _this.textEditor.oninput = function(e) {
-            wakeTextEditorThread(_this.textEditorId);
-        }
-    }
+        this.textEditorId = ++textEditorId;
+        this.textEditor = document.createElement("textarea");
+        this.visible = false;
+        this.focused = false;
+        this.backgroundColor = 0xFFFFFFFF | 0; // opaque white
+        this.foregroundColor = 0xFF000000 | 0; // opaque black
+        this.textEditor.style.border = "none";
+        this.textEditor.style.resize = "none";
+        this.textEditor.style.backgroundColor = abgrIntToCSS(this.backgroundColor);
+        this.textEditor.style.color = abgrIntToCSS(this.foregroundColor);
+        this.textEditor.value = util.fromJavaString(text);
+        this.textEditor.setAttribute("maxlength", maxSize);
+        this.textEditor.style.width = width + "px";
+        this.textEditor.style.height = height + "px";
+        this.textEditor.style.position = "absolute";
+        this.textEditor.oninput = function(e) {
+            wakeTextEditorThread(this.textEditorId);
+        }.bind(this);
+        return textEditorId;
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.setSize.(II)V"] = function(ctx, stack) {
-        var height = stack.pop(), width = stack.pop(), _this = stack.pop();
-        _this.textEditor.style.width = width + "px";
-        _this.textEditor.style.height = height + "px";
-    }
+    Native.create("com/nokia/mid/ui/CanvasItem.setSize.(II)V", function(ctx, width, height) {
+        this.textEditor.style.width = width + "px";
+        this.textEditor.style.height = height + "px";
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.setVisible.(Z)V"] = function(ctx, stack) {
-        var visible = stack.pop(), _this = stack.pop();
+    Native.create("com/nokia/mid/ui/CanvasItem.setVisible.(Z)V", function(ctx, visible) {
         if (visible) {
-            document.getElementById("display").appendChild(_this.textEditor);
-        } else if (_this.visible) {
-            document.getElementById("display").removeChild(_this.textEditor);
+            document.getElementById("display").appendChild(this.textEditor);
+        } else if (this.visible) {
+            document.getElementById("display").removeChild(this.textEditor);
         }
-        _this.visible = visible;
-    }
+        this.visible = visible;
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.getWidth.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(parseInt(_this.textEditor.style.width));
-    }
+    Native.create("com/nokia/mid/ui/CanvasItem.getWidth.()I", function(ctx) {
+        return parseInt(this.textEditor.style.width);
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.getHeight.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(parseInt(_this.textEditor.style.height));
-    }
+    Native.create("com/nokia/mid/ui/CanvasItem.getHeight.()I", function(ctx) {
+        return parseInt(this.textEditor.style.height);
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.setPosition.(II)V"] = function(ctx, stack) {
-        var y = stack.pop(), x = stack.pop(), _this = stack.pop();
-        _this.textEditor.style.left = x + "px";
-        _this.textEditor.style.top = y + "px";
-    }
+    Native.create("com/nokia/mid/ui/CanvasItem.setPosition.(II)V", function(ctx, x, y) {
+        this.textEditor.style.left = x + "px";
+        this.textEditor.style.top = y + "px";
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.getPositionX.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(parseInt(_this.textEditor.style.left));
-    }
+    Native.create("com/nokia/mid/ui/CanvasItem.getPositionX.()I", function(ctx) {
+        return parseInt(this.textEditor.style.left);
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.getPositionY.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(parseInt(_this.textEditor.style.top));
-    }
+    Native.create("com/nokia/mid/ui/CanvasItem.getPositionY.()I", function(ctx) {
+        return parseInt(this.textEditor.style.top);
+    });
 
-    Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(_this.visible ? 1 : 0);
-    }
+    Native.create("com/nokia/mid/ui/CanvasItem.isVisible.()Z", function(ctx) {
+        return this.visible;
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(ctx, stack) {
-        var focused = stack.pop(), _this = stack.pop();
+    Native.create("com/nokia/mid/ui/TextEditor.setFocus.(Z)V", function(ctx, focused) {
         if (focused) {
-            _this.textEditor.focus();
+            this.textEditor.focus();
         } else {
-            _this.textEditor.blur();
+            this.textEditor.blur();
         }
-        _this.focused = focused;
-    }
+        this.focused = focused;
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.hasFocus.()Z"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(_this.focused);
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.hasFocus.()Z", function(ctx) {
+        return this.focused;
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.setCaret.(I)V"] = function(ctx, stack) {
-        var index = stack.pop(), _this = stack.pop();
-
-        if (!_this.visible) {
+    Native.create("com/nokia/mid/ui/TextEditor.setCaret.(I)V", function(ctx, index) {
+        if (!this.visible) {
             console.warn("setCaret ignored when TextEditor is invisible");
             return;
         }
 
-        _this.textEditor.setSelectionRange(index, index);
-    }
+        this.textEditor.setSelectionRange(index, index);
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.getCaretPosition.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(_this.textEditor.selectionStart);
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.getCaretPosition.()I", function(ctx) {
+        return this.textEditor.selectionStart;
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.getBackgroundColor.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(_this.backgroundColor);
-    }
-    Native["com/nokia/mid/ui/TextEditor.getForegroundColor.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(_this.foregroundColor);
-    }
-    Native["com/nokia/mid/ui/TextEditor.setBackgroundColor.(I)V"] = function(ctx, stack) {
-        var backgroundColor = stack.pop(), _this = stack.pop();
-        _this.backgroundColor = backgroundColor;
-        _this.textEditor.style.backgroundColor = abgrIntToCSS(backgroundColor);
-    }
-    Native["com/nokia/mid/ui/TextEditor.setForegroundColor.(I)V"] = function(ctx, stack) {
-        var foregroundColor = stack.pop(), _this = stack.pop();
-        _this.foregroundColor = foregroundColor;
-        _this.textEditor.style.color = abgrIntToCSS(foregroundColor);
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.getBackgroundColor.()I", function(ctx) {
+        return this.backgroundColor;
+    });
+    Native.create("com/nokia/mid/ui/TextEditor.getForegroundColor.()I", function(ctx) {
+        return this.foregroundColor;
+    });
+    Native.create("com/nokia/mid/ui/TextEditor.setBackgroundColor.(I)V", function(ctx, backgroundColor) {
+        this.backgroundColor = backgroundColor;
+        this.textEditor.style.backgroundColor = abgrIntToCSS(backgroundColor);
+    });
+    Native.create("com/nokia/mid/ui/TextEditor.setForegroundColor.(I)V", function(ctx, foregroundColor) {
+        this.foregroundColor = foregroundColor;
+        this.textEditor.style.color = abgrIntToCSS(foregroundColor);
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(ctx.newString(_this.textEditor.value));
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;", function(ctx) {
+        return this.textEditor.value;
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V"] = function(ctx, stack) {
-        var str = stack.pop(), _this = stack.pop();
-        _this.textEditor.value = util.fromJavaString(str);
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V", function(ctx, str) {
+        this.textEditor.value = util.fromJavaString(str);
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V"] = function(ctx, stack) {
-        var pos = stack.pop(), str = stack.pop(), _this = stack.pop(),
-            old = _this.textEditor.value;
-        _this.textEditor.value = old.slice(0, pos) + util.fromJavaString(str) + old.slice(pos);
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(ctx, str, pos) {
+        var old = this.textEditor.value;
+        this.textEditor.value = old.slice(0, pos) + util.fromJavaString(str) + old.slice(pos);
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.delete.(II)V"] = function(ctx, stack) {
-        var length = stack.pop(), offset = stack.pop(), _this = stack.pop(),
-            old = _this.textEditor.value;
+    Native.create("com/nokia/mid/ui/TextEditor.delete.(II)V", function(ctx, offset, length) {
+        var old = _this.textEditor.value;
 
         if (offset < 0 || offset > old.length || length < 0 || offset + length > old.length) {
             ctx.raiseExceptionAndYield("java.lang.StringIndexOutOfBoundsException", "offset/length invalid");
         }
 
-        _this.textEditor.value = old.slice(0, offset) + old.slice(offset + length);
-    }
+        this.textEditor.value = old.slice(0, offset) + old.slice(offset + length);
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.getMaxSize.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(parseInt(_this.textEditor.getAttribute("maxlength")));
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.getMaxSize.()I", function(ctx) {
+        return parseInt(this.textEditor.getAttribute("maxlength"));
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.setMaxSize.(I)I"] = function(ctx, stack) {
-        var maxSize = stack.pop(), _this = stack.pop();
-        _this.textEditor.setAttribute("maxlength", maxSize);
-        _this.textEditor.value = _this.textEditor.value.substring(0, maxSize);
+    Native.create("com/nokia/mid/ui/TextEditor.setMaxSize.(I)I", function(ctx, maxSize) {
+        this.textEditor.setAttribute("maxlength", maxSize);
+        this.textEditor.value = this.textEditor.value.substring(0, maxSize);
 
         // The return value is the assigned size, which could be less than
         // the size that was requested, although in this case we always set it
         // to the requested size.
-        stack.push(maxSize);
-    }
+        return maxSize;
+    });
 
-    Native["com/nokia/mid/ui/TextEditor.size.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
-        stack.push(_this.textEditor.value.length);
-    }
+    Native.create("com/nokia/mid/ui/TextEditor.size.()I", function(ctx) {
+        return this.textEditor.value.length;
+    });
 
-    Native["com/nokia/mid/ui/TextEditorThread.sleep.()V"] = function(ctx, stack) {
-        var _this = stack.pop();
+    Native.create("com/nokia/mid/ui/TextEditorThread.sleep.()V", function(ctx) {
         if (!dirtyEditors.length) {
             textEditorContext = ctx;
             throw VM.Pause;
         }
-    }
+    });
 
-    Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I"] = function(ctx, stack) {
-        var _this = stack.pop();
+    Native.create("com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I", function(ctx) {
         if (!dirtyEditors.length) {
             console.error("ERROR: getNextDirtyEditor called but no dirty editors");
-            stack.push(0);
-        } else {
-            stack.push(dirtyEditors.shift());
+            return 0;
         }
-    }
+
+        return dirtyEditors.shift();
+    });
 })(Native);
