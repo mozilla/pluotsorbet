@@ -30,41 +30,12 @@ function Socket(host, port) {
 }
 
 Socket.prototype.handleMessage = function(message) {
-    switch (message.type) {
-        case "open":
-            if (this.onopen) {
-                this.onopen();
-            }
-            break;
-        case "error":
-            if (this.onerror) {
-                this.onerror(message.error);
-            }
-            this.pipe = null;
-            break;
-        case "data":
-            if (this.ondata) {
-                this.ondata(message.data);
-            }
-            break;
-        case "send":
-            if (this.onsend) {
-                this.onsend(message.result);
-            }
-            break;
-        case "drain":
-            if (this.ondrain) {
-                this.ondrain();
-            }
-            break;
-        case "close":
-            this.isClosed = true;
-            if (this.onclose) {
-                this.onclose();
-            }
-            // DumbPipe.close(this.pipe);
-            this.pipe = null;
-            break;
+    if (message.type == "close") {
+        this.isClosed = true;
+    }
+    var callback = this["on" + message.type];
+    if (callback) {
+        callback(message);
     }
 }
 
@@ -102,15 +73,15 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stac
         ctx.resume();
     }
 
-    _this.socket.onerror = function(error) {
-        ctx.raiseException("java/io/IOException", error);
+    _this.socket.onerror = function(message) {
+        ctx.raiseException("java/io/IOException", message.error);
         ctx.resume();
     }
 
-    _this.socket.ondata = function(data) {
-        var newArray = new Uint8Array(_this.data.byteLength + data.length);
+    _this.socket.ondata = function(message) {
+        var newArray = new Uint8Array(_this.data.byteLength + message.data.length);
         newArray.set(_this.data);
-        newArray.set(data, _this.data.byteLength);
+        newArray.set(message.data, _this.data.byteLength);
         _this.data = newArray;
 
         if (_this.waitingData) {
@@ -161,9 +132,9 @@ Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, st
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
     // console.log("Protocol.write0: " + String.fromCharCode.apply(String, Array.prototype.slice.call(data.subarray(offset, offset + length))));
 
-    _this.socket.onsend = function(result) {
+    _this.socket.onsend = function(message) {
         _this.socket.onsend = null;
-        if (result) {
+        if (message.result) {
             stack.push(length);
             ctx.start();
         } else {
