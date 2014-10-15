@@ -78,13 +78,6 @@ public abstract class TestHarness {
 	setNote(note);
 	check(result, expected);
     }
-
-    public void check(String result, String expected) {
-	boolean ok = result.equals(expected);
-	check(ok);
-	if (!ok)
-	    debug("got (" + result + "), expected (" + expected + ")");
-    }
     
     public void pass() {
 	check(true);
