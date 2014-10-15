@@ -190,6 +190,82 @@ var NokiaContactsLocalMsgConnection = function() {
     LocalMsgConnection.call(this);
 }
 
+var NokiaPhoneStatusLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaPhoneStatusLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  var encoder = new DataEncoder();
+
+  switch (name) {
+    case "Common":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "2.[0-10]");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+      break;
+    case "Query":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Query");
+      encoder.put(DataType.STRING, "status", "OK");
+      encoder.putStart(DataType.LIST, "subscriptions");
+
+      // subscriptions
+      decoder.getStart(DataType.LIST);
+      while (decoder.getTag() == DataType.STRING) {
+        switch (decoder.getName()) {
+          case "network_status":
+            encoder.putStart(DataType.STRUCT, "network_status");
+            encoder.put(DataType.STRING, "", "");  // unknow name
+            encoder.put(DataType.BOOLEAN, "", 1);  // unknow name
+            encoder.putEnd(DataType.STRUCT, "network_status");
+            break;
+          case "wifi_status":
+            encoder.putStart(DataType.STRUCT, "wifi_status");
+            encoder.put(DataType.BOOLEAN, "", 1);  // unknow name, but it should indicate if the wifi is connected, and let's assume it's always connected.
+            encoder.putEnd(DataType.STRUCT, "wifi_status");
+            break;
+          case "battery":
+            encoder.putStart(DataType.STRUCT, "battery");
+            encoder.put(DataType.BYTE, "", 1);  // unknow name
+            encoder.put(DataType.BOOLEAN, "", 1);  // unknow name
+            encoder.putEnd(DataType.STRUCT, "battery");
+            break;
+          default:
+            console.error("(nokia.phone-status) Query " + decoder.getName() + " not implemented " +
+                  util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+            break;
+        }
+        decoder.getValue(DataType.STRING);
+      }
+
+      encoder.putEnd(DataType.LIST, "subscriptions");
+      encoder.putEnd(DataType.STRUCT, "event");
+      break;
+    default:
+      console.error("(nokia.phone-status) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+
+  var data = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient({
+      data: data,
+      length: data.length,
+      offset: 0,
+  });
+};
+
 NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
 NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
@@ -266,7 +342,7 @@ MIDP.LocalMsgConnections = {};
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
-MIDP.FakeLocalMsgServers = [ "nokia.phone-status", "nokia.active-standby", "nokia.profile",
+MIDP.FakeLocalMsgServers = [ "nokia.active-standby", "nokia.profile",
                              "nokia.connectivity-settings", "nokia.file-ui" ];
 
 MIDP.FakeLocalMsgServers.forEach(function(server) {
@@ -275,6 +351,7 @@ MIDP.FakeLocalMsgServers.forEach(function(server) {
 
 MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgConnection();
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(ctx, jName) {
     var name = util.fromJavaString(jName);
