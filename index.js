@@ -20,7 +20,8 @@ function loadScript(path) {
   var midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
   var loadingPromises = [];
   if (midletClassName == "RunTests") {
-    loadingPromises.push(loadScript("tests/contacts.js"));
+    loadingPromises.push(loadScript("tests/contacts.js"),
+                         loadScript("tests/index.js"));
   }
 
   Promise.all(loadingPromises).then(function() {
@@ -150,10 +151,6 @@ var DumbPipe = {
 document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalprompt",
                                                        DumbPipe.handleEvent.bind(DumbPipe),
                                                        true);
-
-DumbPipe.registerOpener("echo", function(message, sender) {
-  sender(message);
-});
 
 DumbPipe.registerOpener("mobileInfo", function(message, sender) {
   // Initialize the object with the URL params and fallback placeholders
