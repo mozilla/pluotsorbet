@@ -42,10 +42,10 @@ Socket.prototype.recipient = function(message) {
 
 Socket.prototype.send = function(data, offset, length) {
     // Convert the data to a regular Array to traverse the mozbrowser boundary.
-    data = Array.prototype.slice.call(data);
+    data = Array.prototype.slice.call(data.subarray(offset, offset + length));
     data.constructor = Array;
 
-    this.sender({ type: "send", data: data, offset: offset, length: length });
+    this.sender({ type: "send", data: data });
 }
 
 Socket.prototype.close = function() {

@@ -241,11 +241,11 @@ DumbPipe.registerOpener("socket", function(message, sender) {
     sender({ type: "close" });
   }
 
-  var send = function(data, offset, length) {
+  var send = function(data) {
     // Convert the data back to an Int8Array.
     data = new Int8Array(data);
 
-    var result = socket.send(data.buffer, offset, length);
+    var result = socket.send(data.buffer, 0, data.length);
 
     sender({ type: "send", result: result });
   };
@@ -253,7 +253,7 @@ DumbPipe.registerOpener("socket", function(message, sender) {
   return function(message) {
     switch (message.type) {
       case "send":
-        send(message.data, message.offset, message.length);
+        send(message.data);
         break;
       case "close":
         socket.close();
