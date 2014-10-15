@@ -236,10 +236,10 @@ Context.prototype.monitorExit = function(obj) {
 
 Context.prototype.wait = function(obj, timeout) {
   var lock = obj.lock;
-  if (!lock || lock.thread !== this.thread)
-    this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
   if (timeout < 0)
     this.raiseExceptionAndYield("java/lang/IllegalArgumentException");
+  if (!lock || lock.thread !== this.thread)
+    this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
   var lockLevel = lock.level;
   while (lock.level > 0)
     this.monitorExit(obj);
