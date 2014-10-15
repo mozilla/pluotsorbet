@@ -7,6 +7,7 @@ import javax.microedition.io.*;
 
 public class StressTestSocket implements Testlet {
     TestHarness th;
+    static final String URL = "socket://localhost:50003";
 
     public void test(TestHarness th) {
         this.th = th;
@@ -34,7 +35,7 @@ public class StressTestSocket implements Testlet {
     }
 
     void testMultipleSendsReceivesOnSameSocket() throws IOException {
-        SocketConnection client = (SocketConnection)Connector.open("socket://localhost:50002");
+        SocketConnection client = (SocketConnection)Connector.open(URL);
         OutputStream os = client.openOutputStream();
         InputStream is = client.openInputStream();
 
@@ -49,7 +50,7 @@ public class StressTestSocket implements Testlet {
 
     void testMultipleSendsReceivesOnMultipleSockets() throws IOException {
         for (int i = 0; i < 100; i++) {
-            SocketConnection client = (SocketConnection)Connector.open("socket://localhost:50002");
+            SocketConnection client = (SocketConnection)Connector.open(URL);
             OutputStream os = client.openOutputStream();
             InputStream is = client.openInputStream();
             send(os, is, "Message n." + i + "\n");
