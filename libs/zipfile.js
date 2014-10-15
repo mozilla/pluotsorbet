@@ -176,7 +176,7 @@ function inflate(bytes) {
 
   function ensureBuffer(requested) {
     var current = buffer ? buffer.byteLength : 0;
-    if (requested < current)
+    if (requested <= current)
       return;
     var size = 512;
     while (size < requested)

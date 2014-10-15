@@ -186,7 +186,7 @@
     Native.create("com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V", function(ctx, image) {
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
         imageData.class.getField("I.isMutable.Z").set(imageData, 1);
-    }, { static: true });
+    });
 
     Native.create("com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V", function(ctx, image, argb) {
         var width = image.class.getField("I.width.I").get(image);
@@ -209,7 +209,7 @@
         }
 
         ctx.putImageData(ctxImageData, 0, 0);
-    }, { static: true });
+    });
 
     var FACE_SYSTEM = 0;
     var FACE_MONOSPACE = 32;
@@ -476,7 +476,7 @@
 
         transX.set(g, transX.get(g) - x);
         transY.set(g, transY.get(g) - y);
-    }, { static: true });
+    });
 
     Native.create("javax/microedition/lcdui/Graphics.getDisplayColor.(I)I", function(ctx, color) {
         return color;

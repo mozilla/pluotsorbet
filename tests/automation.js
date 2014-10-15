@@ -37,7 +37,14 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 70788 pass, 0 fail, 174 known fail, 0 unknown pass", "run unit tests");
+        var content = this.getPageContent();
+        if (content.contains("DONE: 70904 pass, 0 fail, 174 known fail, 0 unknown pass")) {
+          test.pass('main unit tests');
+        } else {
+          this.debugPage();
+          this.echo(this.captureBase64('png'));
+          test.fail('main unit tests');
+        }
     });
 
     casper
@@ -49,7 +56,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad")
     .waitForText("Hello World from MIDlet2", function() {
-        test.assert(true);
+        test.pass();
     });
 
     casper
