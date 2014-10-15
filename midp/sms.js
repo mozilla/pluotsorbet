@@ -68,19 +68,17 @@ function promptForMessageText() {
     input.focus();
 }
 
-Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(ctx, stack) {
-    var port = stack.pop(), msid = stack.pop(), host = util.fromJavaString(stack.pop()), _this = stack.pop();
-
+Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I", function(ctx, host, msid, port) {
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
-      host: host,
+      host: util.fromJavaString(host),
     };
 
     promptForMessageText();
 
-    stack.push(++MIDP.lastSMSConnection);
-}
+    return ++MIDP.lastSMSConnection;
+});
 
 Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] = function(ctx, stack) {
     var smsPacket = stack.pop(), handle = stack.pop(), msid = stack.pop(), port = stack.pop(), _this = stack.pop();
@@ -122,10 +120,7 @@ Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms
     throw VM.Pause;
 }
 
-Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(ctx, stack) {
-    var deRegister = stack.pop(), handle = stack.pop(), port = stack.pop(), _this = stack.pop();
-
+Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(ctx, port, handle, deRegister) {
     delete MIDP.smsConnections[handle];
-
-    stack.push(0);
-}
+    return 0;
+});

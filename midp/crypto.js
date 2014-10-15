@@ -3,11 +3,10 @@
 
 'use strict';
 
-Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(ctx, stack) {
-    var nbytes = stack.pop(), b = stack.pop();
-    window.crypto.getRandomValues(b.subarray(0,nbytes));
-    stack.push(1);
-}
+Native.create("com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z", function(ctx, b, nbytes) {
+    window.crypto.getRandomValues(b.subarray(0, nbytes));
+    return true;
+}, { static: true });
 
 MIDP.hashers = new Map();
 
@@ -85,18 +84,11 @@ MIDP.bin2String = function(array) {
   return result;
 };
 
-Native["com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {
-    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
-        inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
-
+Native.create("com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getSHA1Hasher(data).update(inBuf.subarray(inOff, inOff + inLen));
-}
+}, { static: true });
 
-Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
-    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
-        outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
-        inBuf = stack.pop();
-
+Native.create("com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getSHA1Hasher(data);
 
     if (inBuf) {
@@ -113,10 +105,9 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
     data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
-}
+}, { static: true });
 
-Native["com/sun/midp/crypto/SHA.nativeClone.([I)V"] = function(ctx, stack) {
-    var data = stack.pop();
+Native.create("com/sun/midp/crypto/SHA.nativeClone.([I)V", function(ctx, data) {
     for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
             var value = MIDP.hashers.get(key);
@@ -126,20 +117,13 @@ Native["com/sun/midp/crypto/SHA.nativeClone.([I)V"] = function(ctx, stack) {
             break;
         }
     }
-}
+}, { static: true });
 
-Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(ctx, stack) {
-    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
-        inLen = stack.pop(), inOff = stack.pop(), inBuf = stack.pop();
-
+Native.create("com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Uint8Array(inBuf.subarray(inOff, inOff + inLen))));
-}
+}, { static: true });
 
-Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx, stack) {
-    var data = stack.pop(), count = stack.pop(), num = stack.pop(), state = stack.pop(),
-        outOff = stack.pop(), outBuf = stack.pop(), inLen = stack.pop(), inOff = stack.pop(),
-        inBuf = stack.pop();
-
+Native.create("com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V", function(ctx, inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getMD5Hasher(data);
 
     if (inBuf) {
@@ -159,10 +143,9 @@ Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(ctx,
     data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
-}
+}, { static: true });
 
-Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(ctx, stack) {
-    var data = stack.pop();
+Native.create("com/sun/midp/crypto/MD5.nativeClone.([I)V", function(ctx, data) {
     for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
             var value = MIDP.hashers.get(key);
@@ -172,7 +155,7 @@ Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(ctx, stack) {
             break;
         }
     }
-}
+}, { static: true });
 
 var hexEncodeArray = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', ];
 
@@ -204,9 +187,7 @@ function hexStringToBytes(hex) {
     return bytes;
 }
 
-Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
-    var result = stack.pop(), modulus = stack.pop(), exponent = stack.pop(), data = stack.pop();
-
+Native.create("com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I", function(ctx, data, exponent, modulus, result) {
     // The jsbn library doesn't work well with typed arrays, so we're using this
     // hack of translating the numbers to hexadecimal strings before handing
     // them to jsbn (and we're getting the result back in a hex string).
@@ -218,13 +199,10 @@ Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(ctx, stack) {
     var remainder = hexStringToBytes(bnRemainder.toString(16));
 
     result.set(remainder);
-    stack.push(remainder.length);
-}
+    return remainder.length;
+}, { static: true });
 
-Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] = function(ctx, stack) {
-    var outoff = stack.pop(), outbuf = stack.pop(), inlen = stack.pop(), inoff = stack.pop(),
-        inbuf = stack.pop(), Y = stack.pop(), X = stack.pop(), S = stack.pop();
-
+Native.create("com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V", function(ctx, S, X, Y, inbuf, inoff, inlen, outbuf, outoff) {
     var x = X[0];
     var y = Y[0];
 
@@ -243,4 +221,4 @@ Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] = function(ctx, sta
 
     X[0] = x;
     Y[0] = y;
-}
+}, { static: true });
