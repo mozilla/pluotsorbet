@@ -130,7 +130,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I", function(
         ctx.raiseException("java/lang/IllegalArgumentException", "Unsupported socket option");
     }
 
-    return _this.options[option];
+    return this.options[option];
 });
 
 Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack) {
