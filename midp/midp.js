@@ -141,8 +141,8 @@ MIDP.messagesTBL = [
      ["satsa"]
 ];
 
-Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(ctx, stack) {
-    var name = util.fromJavaString(stack.pop());
+Native.create("com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;", function(ctx, jName) {
+    var name = util.fromJavaString(jName);
     var list = null;
     MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
@@ -153,8 +153,8 @@ Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[
             });
         }
     });
-    stack.push(list);
-}
+    return list;
+});
 
 MIDP.membersTBL = [
     ["javax.microedition.io.Connector.http",
@@ -209,8 +209,8 @@ MIDP.membersTBL = [
     ["javax.microedition.apdu.sat"],
 ];
 
-Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(ctx, stack) {
-    var name = util.fromJavaString(stack.pop());
+Native.create("com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;", function(ctx, jName) {
+    var name = util.fromJavaString(jName);
     var list = null;
     MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
@@ -221,11 +221,10 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
             });
         }
     });
-    stack.push(list);
-}
+    return list;
+});
 
-Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
-    var state = stack.pop();
+Native.create("com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V", function(ctx, state) {
     var suiteId = (MIDP.midletClassName === "internal") ? -1 : 1;
     state.class.getField("I.suiteId.I").set(state, suiteId);
     state.class.getField("I.midletClassName.Ljava/lang/String;").set(state, ctx.newString(MIDP.midletClassName));
@@ -233,7 +232,7 @@ Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/C
     state.class.getField("I.arg0.Ljava/lang/String;").set(state, ctx.newString((args.length > 0) ? args[0] : ""));
     state.class.getField("I.arg1.Ljava/lang/String;").set(state, ctx.newString((args.length > 1) ? args[1] : ""));
     state.class.getField("I.arg2.Ljava/lang/String;").set(state, ctx.newString((args.length > 2) ? args[2] : ""));
-}
+});
 
 MIDP.domainTBL = [
     "manufacturer",
@@ -244,13 +243,13 @@ MIDP.domainTBL = [
     "maximum,unsecured",
 ];
 
-Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function(ctx, stack) {
+Native.create("com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;", function(ctx) {
     var list = ctx.newArray("[Ljava/lang/String;", MIDP.domainTBL.length);
     MIDP.domainTBL.forEach(function (e, n) {
         list[n] = ctx.newString(e);
     });
-    stack.push(list);
-}
+    return list;
+});
 
 MIDP.NEVER = 0;
 MIDP.ALLOW = 1;
@@ -296,63 +295,61 @@ MIDP.unidentifiedTBL = {
     satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
 };
 
-Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
-    var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
+Native.create("com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B", function(ctx, domain, group) {
     var allow = MIDP.NEVER;
-    switch (domain) {
+    switch (util.fromJavaString(domain)) {
     case "manufacturer":
     case "maximum":
     case "operator":
         allow = MIDP.ALLOW;
         break;
     case "identified_third_party":
-        allow = MIDP.identifiedTBL[group].default;
+        allow = MIDP.identifiedTBL[util.fromJavaString(group)].default;
         break;
     case "unidentified_third_party":
-        allow = MIDP.unidentifiedTBL[group].default;
+        allow = MIDP.unidentifiedTBL[util.fromJavaString(group)].default;
         break;
     }
-    stack.push(allow);
-}
+    return allow;
+});
 
-Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(ctx, stack) {
-    var group = util.fromJavaString(stack.pop()), domain = util.fromJavaString(stack.pop());
+Native.create("com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B", function(ctx, domain, group) {
     var allow = MIDP.NEVER;
-    switch (domain) {
+    switch (util.fromJavaString(domain)) {
     case "manufacturer":
     case "maximum":
     case "operator":
         allow = MIDP.ALLOW;
         break;
     case "identified_third_party":
-        allow = MIDP.identifiedTBL[group].max;
+        allow = MIDP.identifiedTBL[util.fromJavaString(group)].max;
         break;
     case "unidentified_third_party":
-        allow = MIDP.unidentifiedTBL[group].max;
+        allow = MIDP.unidentifiedTBL[util.fromJavaString(group)].max;
         break;
     }
-    stack.push(allow);
-}
+    return allow;
+});
 
-Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function(ctx, stack) {
+Native.create("com/sun/midp/security/Permissions.loadingFinished.()V", function(ctx) {
     console.warn("Permissions.loadingFinished.()V not implemented");
-}
+});
 
-Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(ctx, stack) {
-    stack.push(ctx.runtime.isolate.id);
-}
+Native.create("com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I", function(ctx) {
+    return ctx.runtime.isolate.id;
+});
 
-Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function(ctx, stack) {
+Native.create("com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V", function(ctx) {
     MIDP.AMSIsolateId = ctx.runtime.isolate.id;
-}
+});
 
-Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function(ctx, stack) {
-    stack.push(MIDP.AMSIsolateId);
-}
+Native.create("com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I", function(ctx) {
+    return MIDP.AMSIsolateId;
+});
 
-Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function(ctx, stack) {
-    stack.push((MIDP.AMSIsolateId == ctx.runtime.isolate.id) ? 1 : 0);
-}
+Native.create("com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z", function(ctx) {
+    return MIDP.AMSIsolateId == ctx.runtime.isolate.id;
+});
 
 Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(ctx, stack) {
     var midletIsolateId = stack.pop();
