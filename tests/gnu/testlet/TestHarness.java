@@ -25,7 +25,7 @@ public abstract class TestHarness {
     }
 
     public void check(Object result, Object expected) {
-	boolean ok = (result.toString().equals(expected.toString()));
+	boolean ok = (result == null ? expected == null : (result.toString().equals(expected.toString())));
 	check(ok);
 	if (!ok)
 	    debug("got (" + result + "), expected (" + expected + ")");
