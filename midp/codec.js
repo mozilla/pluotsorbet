@@ -4,11 +4,19 @@
 'use strict';
 
 var DataType = {
+  BOOLEAN: 0,
+  CHAR: 1,
   BYTE: 2,
+  WCHAR: 3,
+  SHORT: 4,
   USHORT: 5,
+  LONG: 6,
   ULONG: 7,
+  FLOAT: 8,
+  DOUBLE: 9,
   STRING: 10,
   WSTRING: 11,
+  URI: 12,
   METHOD: 13,
   STRUCT: 14,
   LIST: 15,
