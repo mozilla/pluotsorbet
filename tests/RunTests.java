@@ -14,7 +14,6 @@ public class RunTests extends MIDlet {
 
         public Harness(String note) {
             this.testName = note;
-            System.out.println(testName);
         }
 
         public void setNote(String note) {
