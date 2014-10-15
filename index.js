@@ -28,70 +28,24 @@ function loadScript(path) {
   });
 })();
 
-function getAllContacts(message, sender) {
-  var req = navigator.mozContacts.getAll();
-
-  req.onsuccess = function() {
-    var contact = req.result;
-    sender(contact);
-    if (contact) {
-      req.continue();
-    }
-  }
-
-  req.onerror = function() {
-    console.error("Error while reading contacts");
-  }
-}
-
-function getMobileInfo(message, sender) {
-  // Initialize the object with the URL params and fallback placeholders
-  // for testing/debugging on a desktop.
-  var mobileInfo = {
-    network: {
-      mcc: urlParams.network_mcc || "310", // United States
-      mnc: urlParams.network_mnc || "001",
-    },
-    icc: {
-      mcc: urlParams.icc_mcc || "310", // United States
-      mnc: urlParams.icc_mnc || "001",
-      msisdn: urlParams.icc_msisdn || "10005551212",
-    },
-  };
-
-  var mobileConnections = window.navigator.mozMobileConnections;
-  if (!mobileConnections && window.navigator.mozMobileConnection) {
-    mobileConnections = [ window.navigator.mozMobileConnection ];
-  }
-
-  // If we have access to the Mobile Connection API, then we use it to get
-  // the actual values.
-  if (mobileConnections) {
-    // Then the only part of the Mobile Connection API that is accessible
-    // to privileged apps is lastKnownNetwork and lastKnownHomeNetwork, which
-    // is fortunately all we need.  lastKnownNetwork is a string of format
-    // "<mcc>-<mnc>", while lastKnownHomeNetwork is "<mcc>-<mnc>[-<spn>]".
-    // Use only the info about the first SIM for the time being.
-    var lastKnownNetwork = mobileConnections[0].lastKnownNetwork.split("-");
-    mobileInfo.network.mcc = lastKnownNetwork[0];
-    mobileInfo.network.mnc = lastKnownNetwork[1];
-
-    var lastKnownHomeNetwork = mobileConnections[0].lastKnownHomeNetwork.split("-");
-    mobileInfo.icc.mcc = lastKnownHomeNetwork[0];
-    mobileInfo.icc.mnc = lastKnownHomeNetwork[1];
-  }
-
-  sender(mobileInfo);
-}
-
 var DumbPipe = {
+  // Functions that handle requests to open a pipe, indexed by type.
+  openers: {},
+
+  // Functions that receive messages from the other side for active pipes.
   recipients: {},
 
+  // Queue of messages to send to the other side.  Retrieved by the other side
+  // via a "get" message.
   outgoingMessages: [],
 
-  // Every time we want to make the other side retrieve messages, the hash has
-  // to change, so we set it to an ever-incrementing value.
+  // Every time we want to make the other side retrieve messages, the hash
+  // of the other side's web page has to change, so we increment it.
   nextHashID: 0,
+
+  registerOpener: function(type, opener) {
+    this.openers[type] = opener;
+  },
 
   handleEvent: function(event) {
     if (event.detail.promptType == "custom-prompt") {
@@ -132,28 +86,21 @@ var DumbPipe = {
   },
 
   openPipe: function(pipeID, type, message) {
-    // Create a function that the object on this spipeIDe of the boundary
-    // can use to send a message to the object on the other spipeIDe.
-    var sender = this.sender.bind(this, pipeID);
+    var opener = this.openers[type];
 
-    // Call the appropriate function to initialize the sender.
-    switch (type) {
-      case "echo":
-        this.recipients[pipeID] = openEchoPipe(message, sender);
-        break;
-      case "socket":
-        this.recipients[pipeID] = openSocketPipe(message, sender);
-        break;
-      case "mobileInfo":
-        this.recipients[pipeID] = getMobileInfo(message, sender);
-        break;
-      case "contacts":
-        this.recipients[pipeID] = getAllContacts(message, sender);
-        break;
+    if (!opener) {
+      console.error("no opener for pipe type " + type);
+      return;
     }
+
+    // Create a function that this side of the boundary can use to send
+    // a message to the other side.
+    var sender = this.sendMessage.bind(this, pipeID);
+
+    this.recipients[pipeID] = opener(message, sender);
   },
 
-  sender: function(pipeID, message) {
+  sendMessage: function(pipeID, message) {
     // Sadly, we have no way to send a message to the other side directly.
     // Instead, we change the hash part of the other side's URL, which triggers
     // a hashchange event on the other side.  A listener on the other side
@@ -204,7 +151,67 @@ document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalpromp
                                                        DumbPipe.handleEvent.bind(DumbPipe),
                                                        true);
 
-var openSocketPipe = function(message, sender) {
+DumbPipe.registerOpener("echo", function(message, sender) {
+  sender(message);
+});
+
+DumbPipe.registerOpener("mobileInfo", function(message, sender) {
+  // Initialize the object with the URL params and fallback placeholders
+  // for testing/debugging on a desktop.
+  var mobileInfo = {
+    network: {
+      mcc: urlParams.network_mcc || "310", // United States
+      mnc: urlParams.network_mnc || "001",
+    },
+    icc: {
+      mcc: urlParams.icc_mcc || "310", // United States
+      mnc: urlParams.icc_mnc || "001",
+      msisdn: urlParams.icc_msisdn || "10005551212",
+    },
+  };
+
+  var mobileConnections = window.navigator.mozMobileConnections;
+  if (!mobileConnections && window.navigator.mozMobileConnection) {
+    mobileConnections = [ window.navigator.mozMobileConnection ];
+  }
+
+  // If we have access to the Mobile Connection API, then we use it to get
+  // the actual values.
+  if (mobileConnections) {
+    // Then the only part of the Mobile Connection API that is accessible
+    // to privileged apps is lastKnownNetwork and lastKnownHomeNetwork, which
+    // is fortunately all we need.  lastKnownNetwork is a string of format
+    // "<mcc>-<mnc>", while lastKnownHomeNetwork is "<mcc>-<mnc>[-<spn>]".
+    // Use only the info about the first SIM for the time being.
+    var lastKnownNetwork = mobileConnections[0].lastKnownNetwork.split("-");
+    mobileInfo.network.mcc = lastKnownNetwork[0];
+    mobileInfo.network.mnc = lastKnownNetwork[1];
+
+    var lastKnownHomeNetwork = mobileConnections[0].lastKnownHomeNetwork.split("-");
+    mobileInfo.icc.mcc = lastKnownHomeNetwork[0];
+    mobileInfo.icc.mnc = lastKnownHomeNetwork[1];
+  }
+
+  sender(mobileInfo);
+});
+
+DumbPipe.registerOpener("contacts", function(message, sender) {
+  var req = navigator.mozContacts.getAll();
+
+  req.onsuccess = function() {
+    var contact = req.result;
+    sender(contact);
+    if (contact) {
+      req.continue();
+    }
+  }
+
+  req.onerror = function() {
+    console.error("Error while reading contacts");
+  }
+});
+
+DumbPipe.registerOpener("socket", function(message, sender) {
   var socket;
   try {
     socket = navigator.mozTCPSocket.open(message.host, message.port, { binaryType: "arraybuffer" });
@@ -256,8 +263,4 @@ var openSocketPipe = function(message, sender) {
         break;
     }
   };
-};
-
-var openEchoPipe = function(message, sender) {
-  sender(message);
-};
+});

@@ -18,13 +18,14 @@ var fakeContacts = [{
   },],
 }];
 
-function getAllContacts(message, pipe) {
+// Override the regular "contacts" registration with our fake one.
+DumbPipe.registerOpener("contacts", function(message, sender) {
   fakeContacts.forEach(function(contact) {
     window.setTimeout(function() {
-      pipe(contact);
+      sender(contact);
     }, 0);
   });
   window.setTimeout(function() {
-    pipe(null);
+    sender(null);
   }, 0);
-}
+});
