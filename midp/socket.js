@@ -48,9 +48,7 @@ Socket.prototype.send = function(data, offset, length) {
 }
 
 Socket.prototype.close = function() {
-    window.setZeroTimeout(function() {
-        this.pipe({ type: "close" });
-    }.bind(this));
+    this.pipe({ type: "close" });
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stack) {
