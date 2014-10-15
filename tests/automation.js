@@ -38,7 +38,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     .start("http://localhost:8000/index.html")
     .waitForText("DONE", function() {
         var content = this.getPageContent();
-        if (content.contains("DONE: 71002 pass, 0 fail, 200 known fail, 0 unknown pass")) {
+        if (content.contains("DONE: 70904 pass, 0 fail, 174 known fail, 0 unknown pass")) {
           test.pass('main unit tests');
         } else {
           this.debugPage();
