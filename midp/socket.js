@@ -25,11 +25,11 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/Strin
 });
 
 function Socket(host, port) {
-    this.pipe = DumbPipe.open("socket", { host: host, port: port }, this.handleMessage.bind(this));
+    this.sender = DumbPipe.open("socket", { host: host, port: port }, this.recipient.bind(this));
     this.isClosed = false;
 }
 
-Socket.prototype.handleMessage = function(message) {
+Socket.prototype.recipient = function(message) {
     if (message.type == "close") {
         this.isClosed = true;
     }
@@ -44,11 +44,11 @@ Socket.prototype.send = function(data, offset, length) {
     data = Array.prototype.slice.call(data);
     data.constructor = Array;
 
-    this.pipe({ type: "send", data: data, offset: offset, length: length });
+    this.sender({ type: "send", data: data, offset: offset, length: length });
 }
 
 Socket.prototype.close = function() {
-    this.pipe({ type: "close" });
+    this.sender({ type: "close" });
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stack) {

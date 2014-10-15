@@ -28,12 +28,12 @@ function loadScript(path) {
   });
 })();
 
-function getAllContacts(message, pipe) {
+function getAllContacts(message, sender) {
   var req = navigator.mozContacts.getAll();
 
   req.onsuccess = function() {
     var contact = req.result;
-    pipe(contact);
+    sender(contact);
     if (contact) {
       req.continue();
     }
@@ -44,7 +44,7 @@ function getAllContacts(message, pipe) {
   }
 }
 
-function getMobileInfo(message, pipe) {
+function getMobileInfo(message, sender) {
   // Initialize the object with the URL params and fallback placeholders
   // for testing/debugging on a desktop.
   var mobileInfo = {
@@ -81,13 +81,13 @@ function getMobileInfo(message, pipe) {
     mobileInfo.icc.mnc = lastKnownHomeNetwork[1];
   }
 
-  pipe(mobileInfo);
+  sender(mobileInfo);
 }
 
 var DumbPipe = {
-  pipes: {},
+  recipients: {},
 
-  packets: [],
+  outgoingMessages: [],
 
   // Every time we want to make the other side retrieve messages, the hash has
   // to change, so we set it to an ever-incrementing value.
@@ -100,67 +100,68 @@ var DumbPipe = {
     }
 
     /**
-     * We embed packets in the mozbrowsershowmodalprompt event's detail.message
-     * property.  The inner "message" property of the parsed JSON object
-     * is the payload that the other side is sending to our side via the event.
+     * We embed messages in the mozbrowsershowmodalprompt event's detail.message
+     * property.  The value of that property is a JSON string representing
+     * the message envelope, whose inner "message" property contains the actual
+     * message.
      *
-     * @property command {String} the command to invoke: open|receive|get
+     * @property command {String} the command to invoke: open|message|get|close
      * @property type {String} the type of pipe to open (when command == open)
-     * @property id {Number} the ID of the pipe (when command == open, receive)
+     * @property pipeID {Number} unique ID (when command == open|message|close)
      * @property message {String} the JSON message to forward to this side
      */
-    var packet = JSON.parse(event.detail.message);
+    var envelope = JSON.parse(event.detail.message);
 
-    switch (packet.command) {
+    switch (envelope.command) {
       case "open":
-        //console.log("outer recv: " + JSON.stringify(packet));
-        this.openPipe(packet.id, packet.type, packet.message);
+        //console.log("outer recv: " + JSON.stringify(envelope));
+        this.openPipe(envelope.pipeID, envelope.type, envelope.message);
         break;
       case "message":
-        //console.log("outer recv: " + JSON.stringify(packet));
-        this.receiveMessage(packet.id, packet.message, event.detail);
+        //console.log("outer recv: " + JSON.stringify(envelope));
+        this.receiveMessage(envelope.pipeID, envelope.message);
         break;
       case "get":
-        this.getPackets(event);
+        this.getMessages(event);
         break;
       case "close":
-        //console.log("outer recv: " + JSON.stringify(packet));
-        this.closePipe(packet.id);
+        //console.log("outer recv: " + JSON.stringify(envelope));
+        this.closePipe(envelope.pipeID);
         break;
     }
   },
 
-  openPipe: function(id, type, message) {
-    // Create a function that the pipe on this side of the boundary
-    // can use to communicate back to the pipe on the other side.
-    var sendMessage = this.sendMessage.bind(this, id);
+  openPipe: function(pipeID, type, message) {
+    // Create a function that the object on this spipeIDe of the boundary
+    // can use to send a message to the object on the other spipeIDe.
+    var sender = this.sender.bind(this, pipeID);
 
-    // Call the appropriate function to initialize the pipe.
+    // Call the appropriate function to initialize the sender.
     switch (type) {
       case "echo":
-        this.pipes[id] = openEchoPipe(message, sendMessage);
+        this.recipients[pipeID] = openEchoPipe(message, sender);
         break;
       case "socket":
-        this.pipes[id] = openSocketPipe(message, sendMessage);
+        this.recipients[pipeID] = openSocketPipe(message, sender);
         break;
       case "mobileInfo":
-        this.pipes[id] = getMobileInfo(message, sendMessage);
+        this.recipients[pipeID] = getMobileInfo(message, sender);
         break;
       case "contacts":
-        this.pipes[id] = getAllContacts(message, sendMessage);
+        this.recipients[pipeID] = getAllContacts(message, sender);
         break;
     }
   },
 
-  sendMessage: function(id, message) {
+  sender: function(pipeID, message) {
     // Sadly, we have no way to send a message to the other side directly.
     // Instead, we change the hash part of the other side's URL, which triggers
     // a hashchange event on the other side.  A listener on the other side
     // then sends us a "get" prompt, and we set its return value to the message.
     // Oh my shod, that's some funky git!
-    var packet = { id: id, message: message };
-    //console.log("outer send: " + JSON.stringify(packet));
-    this.packets.push(packet);
+    var envelope = { pipeID: pipeID, message: message };
+    //console.log("outer send: " + JSON.stringify(envelope));
+    this.outgoingMessages.push(envelope);
 
     var mozbrowser = document.getElementById("mozbrowser");
     window.setTimeout(function() {
@@ -168,53 +169,56 @@ var DumbPipe = {
     }.bind(this), 0);
   },
 
-  receiveMessage: function(id, message, detail) {
+  receiveMessage: function(pipeID, message, detail) {
     window.setTimeout(function() {
-      if (!this.pipes[id]) {
-        console.warn("nonexistent pipe " + id + " received message " + JSON.stringify(message));
+      if (!this.recipients[pipeID]) {
+        console.warn("nonexistent pipe " + pipeID + " received message " + JSON.stringify(message));
         return;
       }
 
       try {
-        this.pipes[id](message);
+        this.recipients[pipeID](message);
       } catch(ex) {
-        console.error(ex);
+        console.error(ex + "\n" + ex.stack);
       }
     }.bind(this), 0);
   },
 
-  getPackets: function(event) {
+  getMessages: function(event) {
     try {
-      event.detail.returnValue = JSON.stringify(this.packets);
-      this.packets = [];
-    }
-    finally {
+      event.detail.returnValue = JSON.stringify(this.outgoingMessages);
+    } catch(ex) {
+      console.error("failed to stringify outgoing messages: " + ex);
+    } finally {
+      this.outgoingMessages = [];
       event.detail.unblock();
     }
   },
 
-  closePipe: function(id) {
-    delete this.pipes[id];
+  closePipe: function(pipeID) {
+    delete this.recipients[pipeID];
   }
 };
 
-document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalprompt", DumbPipe.handleEvent.bind(DumbPipe), true);
+document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalprompt",
+                                                       DumbPipe.handleEvent.bind(DumbPipe),
+                                                       true);
 
-var openSocketPipe = function(message, pipe) {
+var openSocketPipe = function(message, sender) {
   var socket;
   try {
     socket = navigator.mozTCPSocket.open(message.host, message.port, { binaryType: "arraybuffer" });
   } catch(ex) {
-    pipe({ type: "error", error: "error opening socket" });
+    sender({ type: "error", error: "error opening socket" });
     return function() {};
   }
 
   socket.onopen = function() {
-    pipe({ type: "open" });
+    sender({ type: "open" });
   }
 
   socket.onerror = function(event) {
-    pipe({ type: "error", error: event.data.name });
+    sender({ type: "error", error: event.data.name });
   }
 
   socket.ondata = function(event) {
@@ -222,15 +226,15 @@ var openSocketPipe = function(message, pipe) {
     var array = Array.prototype.slice.call(new Uint8Array(event.data));
     array.constructor = Array;
 
-    pipe({ type: "data", data: array });
+    sender({ type: "data", data: array });
   }
 
   socket.ondrain = function(event) {
-    pipe({ type: "drain" });
+    sender({ type: "drain" });
   }
 
   socket.onclose = function(event) {
-    pipe({ type: "close" });
+    sender({ type: "close" });
   }
 
   var send = function(data, offset, length) {
@@ -239,7 +243,7 @@ var openSocketPipe = function(message, pipe) {
 
     var result = socket.send(data.buffer, offset, length);
 
-    pipe({ type: "send", result: result });
+    sender({ type: "send", result: result });
   };
 
   return function(message) {
@@ -254,6 +258,6 @@ var openSocketPipe = function(message, pipe) {
   };
 };
 
-var openEchoPipe = function(message, pipe) {
-  pipe(message);
+var openEchoPipe = function(message, sender) {
+  sender(message);
 };

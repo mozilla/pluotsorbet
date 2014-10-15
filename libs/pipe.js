@@ -2,53 +2,52 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 var DumbPipe = {
-  pipes: [],
-
+  recipients: {},
   nextPipeID: 0,
 
-  open: function(type, message, handler) {
-    var id = this.nextPipeID++;
+  open: function(type, message, recipient) {
+    var pipeID = this.nextPipeID++;
 
     this.send({
       command: "open",
       type: type,
-      id: id,
+      pipeID: pipeID,
       message: message,
     });
 
-    this.pipes[id] = handler;
+    this.recipients[pipeID] = recipient;
 
     // Return a function that can be used to send a message to the other side.
-    var pipe = function(message) {
-      var packet = {
+    var sender = function(message) {
+      var envelope = {
         command: "message",
-        id: id,
+        pipeID: pipeID,
         message: message,
       };
-      //console.log("inner send: " + JSON.stringify(packet));
-      this.send(packet);
+      //console.log("inner send: " + JSON.stringify(envelope));
+      this.send(envelope);
     }.bind(this);
 
-    pipe.id = id;
+    sender.pipeID = pipeID;
 
-    return pipe;
+    return sender;
   },
 
-  close: function(pipe) {
-    delete this.pipes[pipe.id];
+  close: function(sender) {
+    delete this.recipients[sender.pipeID];
 
     this.send({
       command: "close",
-      id: pipe.id,
+      pipeID: sender.pipeID,
     });
   },
 
   sendQueue: [],
   isRunningSendQueue: false,
 
-  send: function(packet, callback) {
+  send: function(envelope, callback) {
     this.sendQueue.push({
-      packet: packet,
+      envelope: envelope,
       callback: callback,
     });
 
@@ -62,14 +61,14 @@ var DumbPipe = {
     var item = this.sendQueue.shift();
 
     if (item.callback) {
-      var result = JSON.parse(prompt(JSON.stringify(item.packet)));
+      var result = JSON.parse(prompt(JSON.stringify(item.envelope)));
       try {
         item.callback(result);
       } catch(ex) {
         console.error(ex + "\n" + ex.stack);
       }
     } else {
-      alert(JSON.stringify(item.packet));
+      alert(JSON.stringify(item.envelope));
     }
 
     if (this.sendQueue.length > 0) {
@@ -80,18 +79,19 @@ var DumbPipe = {
   },
 
   handleEvent: function(event) {
-    this.send({ command: "get" }, function(packets) {
-      packets.forEach((function(packet) {
-        //console.log("inner recv: " + JSON.stringify(packet));
+    this.send({ command: "get" }, function(envelopes) {
+      envelopes.forEach((function(envelope) {
+        //console.log("inner recv: " + JSON.stringify(envelope));
         window.setZeroTimeout(function() {
-          if (this.pipes[packet.id]) {
+          if (this.recipients[envelope.pipeID]) {
             try {
-              this.pipes[packet.id](packet.message);
+              this.recipients[envelope.pipeID](envelope.message);
             } catch(ex) {
               console.error(ex + "\n" + ex.stack);
             }
           } else {
-            console.warn("nonexistent pipe " + packet.id + " received message " + JSON.stringify(packet.message));
+            console.warn("nonexistent pipe " + envelope.pipeID + " received message " +
+                         JSON.stringify(envelope.message));
           }
         }.bind(this));
       }).bind(this));
