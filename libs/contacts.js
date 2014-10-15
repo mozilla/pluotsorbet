@@ -5,9 +5,11 @@
 
 var contacts = (function() {
   function forEach(callback) {
-    DumbPipe.open("contacts", {}, function(message) {
+    var sender = DumbPipe.open("contacts", {}, function(message) {
       if (message) {
         callback(message);
+      } else {
+        DumbPipe.close(sender);
       }
     });
   }

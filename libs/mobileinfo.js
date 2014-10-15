@@ -18,9 +18,10 @@ var mobileInfo = (function() {
         });
         return;
       }
-      DumbPipe.open("mobileInfo", {}, function(message) {
+      var sender = DumbPipe.open("mobileInfo", {}, function(message) {
         info = message;
         callback(info);
+        DumbPipe.close(sender);
       });
     }
   };

@@ -32,6 +32,7 @@ function Socket(host, port) {
 Socket.prototype.recipient = function(message) {
     if (message.type == "close") {
         this.isClosed = true;
+        DumbPipe.close(this.sender);
     }
     var callback = this["on" + message.type];
     if (callback) {
