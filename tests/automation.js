@@ -37,16 +37,16 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .start("http://localhost:8000/index.html")
     .withFrame(0, function() {
-    .waitForText("DONE", function() {
-        var content = this.getPageContent();
-        if (content.contains("DONE: 70904 pass, 0 fail, 174 known fail, 0 unknown pass")) {
-          test.pass('main unit tests');
-        } else {
-          this.debugPage();
-          this.echo(this.captureBase64('png'));
-          test.fail('main unit tests');
-        }
-    });
+        casper.waitForText("DONE", function() {
+            var content = this.getPageContent();
+            if (content.contains("DONE: 70911 pass, 0 fail, 174 known fail, 0 unknown pass")) {
+              test.pass('main unit tests');
+            } else {
+              this.debugPage();
+              this.echo(this.captureBase64('png'));
+              test.fail('main unit tests');
+            }
+        });
     });
 
     casper
