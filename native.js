@@ -50,7 +50,7 @@ Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;
         for (var n = 0; n < length; ++n)
             dst[--dstOffset] = src[--srcOffset];
     }
-}, { static: true });
+});
 
 Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(ctx, stack) {
     var key = stack.pop();
@@ -172,15 +172,15 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
 
 Native.create("java/lang/System.currentTimeMillis.()J", function(ctx) {
     return Long.fromNumber(Date.now());
-}, { static: true });
+});
 
 Native.create("com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V", function(ctx, src, srcOffset, dst, dstOffset, length) {
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
-}, { static: true });
+});
 
 Native.create("com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V", function(ctx, src, srcOffset, dst, dstOffset, length) {
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
-}, { static: true });
+});
 
 Native.create("com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V", function(ctx, src, srcOffset, dst, dstOffset, length) {
     if (dst !== src || dstOffset < srcOffset) {
@@ -192,11 +192,11 @@ Native.create("com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Objec
         for (var n = 0; n < length; ++n)
             dst[--dstOffset] = src[--srcOffset];
     }
-}, { static: true });
+});
 
 Native.create("com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J", function(ctx) {
     return Long.fromNumber(performance.now());
-}, { static: true });
+});
 
 Native.create("java/lang/Object.getClass.()Ljava/lang/Class;", function(ctx) {
     return this.class.getClassObject(ctx);
@@ -267,7 +267,7 @@ Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", f
         throw e;
     }
     return classInfo.getClassObject(ctx);
-}, { static: true });
+});
 
 Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) {
     var className = this.vmClass.className;
@@ -325,7 +325,7 @@ Native.create("java/lang/Float.floatToIntBits.(F)I", (function() {
         fa[0] = val;
         return ia[0];
     }
-})(), { static: true });
+})());
 
 Native.create("java/lang/Double.doubleToLongBits.(D)J", (function() {
     var da = new Float64Array(1);
@@ -334,7 +334,7 @@ Native.create("java/lang/Double.doubleToLongBits.(D)J", (function() {
         da[0] = val;
         return Long.fromBits(ia[0], ia[1]);
     }
-})(), { static: true });
+})());
 
 Native.create("java/lang/Float.intBitsToFloat.(I)F", (function() {
     var fa = new Float32Array(1);
@@ -343,7 +343,7 @@ Native.create("java/lang/Float.intBitsToFloat.(I)F", (function() {
         ia[0] = val;
         return fa[0];
     }
-})(), { static: true });
+})());
 
 Native.create("java/lang/Double.longBitsToDouble.(J)D", (function() {
     var da = new Float64Array(1);
@@ -353,7 +353,7 @@ Native.create("java/lang/Double.longBitsToDouble.(J)D", (function() {
         ia[1] = l.high_;
         return da[0];
     }
-})(), { static: true });
+})());
 
 Native.create("java/lang/Throwable.fillInStackTrace.()V", function(ctx) {
     this.stackTrace = [];
@@ -403,51 +403,51 @@ Native.create("java/lang/Runtime.gc.()V", function(ctx) {
 
 Native.create("java/lang/Math.floor.(D)D", function(ctx, val, _) {
     return Math.floor(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.asin.(D)D", function(ctx, val, _) {
     return Math.asin(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.acos.(D)D", function(ctx, val, _) {
     return Math.acos(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.atan.(D)D", function(ctx, val, _) {
     return Math.atan(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.atan2.(DD)D", function(ctx, x, _1, y, _2) {
     return Math.atan2(x, y);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.sin.(D)D", function(ctx, val, _) {
     return Math.sin(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.cos.(D)D", function(ctx, val, _) {
     return Math.cos(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.tan.(D)D", function(ctx, val, _) {
     return Math.tan(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.sqrt.(D)D", function(ctx, val, _) {
     return Math.sqrt(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.ceil.(D)D", function(ctx, val, _) {
     return Math.ceil(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Math.floor.(D)D", function(ctx, val, _) {
     return Math.floor(val);
-}, { static: true });
+});
 
 Native.create("java/lang/Thread.currentThread.()Ljava/lang/Thread;", function(ctx) {
     return ctx.thread;
-}, { static: true });
+});
 
 Native.create("java/lang/Thread.setPriority0.(II)V", function(ctx, oldPriority, newPriority) {
 });
@@ -511,15 +511,15 @@ Native.create("java/lang/Thread.sleep.(J)V", function(ctx, delay, _) {
         ctx.resume();
     }, delay.toNumber());
     throw VM.Pause;
-}, { static: true });
+});
 
 Native.create("java/lang/Thread.yield.()V", function(ctx) {
     throw VM.Yield;
-}, { static: true });
+});
 
 Native.create("java/lang/Thread.activeCount.()I", function(ctx) {
     return ctx.runtime.threadCount;
-}, { static: true });
+});
 
 Native.create("com/sun/cldchi/io/ConsoleOutputStream.write.(I)V", function(ctx, ch) {
     console.print(ch);
@@ -535,7 +535,7 @@ Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljav
         obj.pos = 0;
     }
     return obj;
-}, { static: true });
+});
 
 Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function(ctx) {
     var handle = this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
@@ -566,15 +566,15 @@ Native.create("com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;
         b[off+n] = data[handle.pos+n];
     handle.pos += len;
     return (len > 0) ? len : -1;
-}, { static: true });
+});
 
 Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(ctx, char) {
     return String.fromCharCode(char).toLowerCase().charCodeAt(0);
-}, { static: true });
+});
 
 Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(ctx, char) {
     return String.fromCharCode(char).toUpperCase().charCodeAt(0);
-}, { static: true });
+});
 
 Native.create("java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V", function(ctx, target) {
     this.target = target;
@@ -616,7 +616,7 @@ Native.create("com/sun/cldc/isolate/Isolate.waitStatus.(I)V", function(ctx, stat
 
 Native.create("com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;", function(ctx) {
     return ctx.runtime.isolate;
-}, { static: true });
+});
 
 Native.create("com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;", function(ctx) {
     var isolates = ctx.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
@@ -625,7 +625,7 @@ Native.create("com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolat
         isolates[n++] = runtime.isolate;
     });
     return isolates;
-}, { static: true });
+});
 
 Native.create("com/sun/cldc/isolate/Isolate.id0.()I", function(ctx) {
     return this.id;
@@ -661,7 +661,7 @@ Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Lin
         linkArray[i].sender = links[isolateId][i].sender;
         linkArray[i].receiver = links[isolateId][i].receiver;
     }
-}, { static: true });
+});
 
 Native.create("com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V", function(ctx, id, linkArray) {
     links[id] = linkArray;
@@ -669,7 +669,7 @@ Native.create("com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Li
     if (waitingForLinks[id]) {
         waitingForLinks[id]();
     }
-}, { static: true });
+});
 
 Native.create("com/sun/midp/links/Link.init0.(II)V", function(ctx, sender, receiver) {
     this.sender = sender;

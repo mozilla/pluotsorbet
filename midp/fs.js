@@ -7,7 +7,7 @@ var RECORD_STORE_BASE = "/RecordStore";
 
 Native.create("com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;", function(ctx, storageId) {
     return "assets/" + storageId + "/";
-}, { static: true });
+});
 
 Native.create("com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;", function(ctx, id) {
     return "";
