@@ -112,13 +112,13 @@ var DumbPipe = {
     this.outgoingMessages.push(envelope);
 
     var mozbrowser = document.getElementById("mozbrowser");
-    window.setTimeout(function() {
+    window.setZeroTimeout(function() {
       mozbrowser.src = mozbrowser.src.split("#")[0] + "#" + this.nextHashID++;
-    }.bind(this), 0);
+    }.bind(this));
   },
 
   receiveMessage: function(pipeID, message, detail) {
-    window.setTimeout(function() {
+    window.setZeroTimeout(function() {
       if (!this.recipients[pipeID]) {
         console.warn("nonexistent pipe " + pipeID + " received message " + JSON.stringify(message));
         return;
@@ -129,7 +129,7 @@ var DumbPipe = {
       } catch(ex) {
         console.error(ex + "\n" + ex.stack);
       }
-    }.bind(this), 0);
+    }.bind(this));
   },
 
   getMessages: function(event) {
