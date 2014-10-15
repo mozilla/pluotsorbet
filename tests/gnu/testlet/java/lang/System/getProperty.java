@@ -33,8 +33,8 @@ public class getProperty implements Testlet
     this.harness = harness;
 
     getPropTest(null, "NullPointerException");
-    //getPropTest("", "IllegalArgumentException");
-    //getPropTest("__dummy_mauve_prop_not_set__", null);
+    getPropTest("", "IllegalArgumentException");
+    getPropTest("__dummy_mauve_prop_not_set__", null);
   }
 
   void getPropTest(String key, String expect)
