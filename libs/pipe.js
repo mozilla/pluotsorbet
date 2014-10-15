@@ -79,6 +79,18 @@ var DumbPipe = {
   },
 
   handleEvent: function(event) {
+    // To ensure we don't fill up the browser history over time, we navigate
+    // "back" every time the other side navigates us "forward" by changing
+    // the hash.  This will trigger a second hashchange event; to avoid getting
+    // messages twice, we only get them for the second hashchange event,
+    // i.e. once we've returned to the hashless page, at which point a second
+    // call to window.history.back() will have had no effect.
+    var hash = window.location.hash;
+    window.history.back();
+    if (window.location.hash != hash) {
+      return;
+    }
+
     this.send({ command: "get" }, function(envelopes) {
       envelopes.forEach((function(envelope) {
         //console.log("inner recv: " + JSON.stringify(envelope));
