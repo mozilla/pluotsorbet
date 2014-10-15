@@ -66,7 +66,7 @@ var DumbPipe = {
       try {
         item.callback(result);
       } catch(ex) {
-        console.error(ex);
+        console.error(ex + "\n" + ex.stack);
       }
     } else {
       alert(JSON.stringify(item.packet));
@@ -88,7 +88,7 @@ var DumbPipe = {
             try {
               this.pipes[packet.id](packet.message);
             } catch(ex) {
-              console.error(ex);
+              console.error(ex + "\n" + ex.stack);
             }
           } else {
             console.warn("nonexistent pipe " + packet.id + " received message " + JSON.stringify(packet.message));
