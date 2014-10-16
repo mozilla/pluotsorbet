@@ -321,19 +321,18 @@ Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(ctx, 
 
 var internedStrings = new Map();
 
-Native["java/lang/String.intern.()Ljava/lang/String;"] = function(ctx, stack) {
-    var javaString = stack.pop();
-    var string = util.fromJavaString(javaString);
+Native.create("java/lang/String.intern.()Ljava/lang/String;", function(ctx) {
+    var string = util.fromJavaString(this);
 
     var internedString = internedStrings.get(string);
 
     if (internedString) {
-        stack.push(internedString);
+        return internedString;
     } else {
-        internedStrings.set(string, javaString);
-        stack.push(javaString);
+        internedStrings.set(string, this);
+        return this;
     }
-}
+});
 
 
 

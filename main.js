@@ -74,7 +74,17 @@ var initFS = new Promise(function(resolve, reject) {
   ]);
 });
 
-var loadingPromises = [initFS];
+// Mobile info gets accessed a lot, so we cache it on startup.
+var mobileInfo;
+var getMobileInfo = new Promise(function(resolve, reject) {
+  var sender = DumbPipe.open("mobileInfo", {}, function(message) {
+    mobileInfo = message;
+    DumbPipe.close(sender);
+    resolve();
+  });
+});
+
+var loadingPromises = [initFS, getMobileInfo];
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
     jvm.addPath(jar, data);
@@ -98,7 +108,6 @@ if (urlParams.jad) {
 
 if (MIDP.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/contacts.js"),
                        loadScript("tests/override.js"));
 }
 

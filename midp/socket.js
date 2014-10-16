@@ -24,48 +24,69 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/Strin
     return local ? "127.0.0.1" : this.socket.host;
 });
 
-Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ctx, stack) {
-    var port = stack.pop(), ipBytes = stack.pop(), _this = stack.pop();
+function Socket(host, port) {
+    this.sender = DumbPipe.open("socket", { host: host, port: port }, this.recipient.bind(this));
+    this.isClosed = false;
+}
 
-    try {
-        _this.socket = navigator.mozTCPSocket.open(_this.host, port, { binaryType: "arraybuffer" });
-    } catch (ex) {
-        ctx.raiseExceptionAndYield("java/io/IOException");
+Socket.prototype.recipient = function(message) {
+    if (message.type == "close") {
+        this.isClosed = true;
+        DumbPipe.close(this.sender);
     }
+    var callback = this["on" + message.type];
+    if (callback) {
+        callback(message);
+    }
+}
 
-    _this.options = {};
-    _this.options[SOCKET_OPT.DELAY] = 1;
-    _this.options[SOCKET_OPT.LINGER] = 0;
-    _this.options[SOCKET_OPT.KEEPALIVE] = 1;
-    _this.options[SOCKET_OPT.RCVBUF] = 8192;
-    _this.options[SOCKET_OPT.SNDBUF] = 8192;
+Socket.prototype.send = function(data, offset, length) {
+    // Convert the data to a regular Array to traverse the mozbrowser boundary.
+    data = Array.prototype.slice.call(data.subarray(offset, offset + length));
+    data.constructor = Array;
 
-    _this.data = new Uint8Array();
-    _this.waitingData = null;
+    this.sender({ type: "send", data: data });
+}
 
-    _this.socket.onopen = function() {
+Socket.prototype.close = function() {
+    this.sender({ type: "close" });
+}
+
+Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ctx, ipBytes, port) {
+    this.socket = new Socket(this.host, port);
+
+    this.options = {};
+    this.options[SOCKET_OPT.DELAY] = 1;
+    this.options[SOCKET_OPT.LINGER] = 0;
+    this.options[SOCKET_OPT.KEEPALIVE] = 1;
+    this.options[SOCKET_OPT.RCVBUF] = 8192;
+    this.options[SOCKET_OPT.SNDBUF] = 8192;
+
+    this.data = new Uint8Array();
+    this.waitingData = null;
+
+    this.socket.onopen = function() {
         ctx.resume();
     }
 
-    _this.socket.onerror = function(event) {
-        ctx.raiseException("java/io/IOException", event.data.name);
+    this.socket.onerror = function(message) {
+        ctx.raiseException("java/io/IOException", message.error);
         ctx.resume();
     }
 
-    _this.socket.ondata = function(event) {
-        var receivedData = new Uint8Array(event.data);
-        var newArray = new Uint8Array(_this.data.byteLength + receivedData.byteLength);
-        newArray.set(_this.data);
-        newArray.set(receivedData, _this.data.byteLength);
-        _this.data = newArray;
+    this.socket.ondata = (function(message) {
+        var newArray = new Uint8Array(this.data.byteLength + message.data.length);
+        newArray.set(this.data);
+        newArray.set(message.data, this.data.byteLength);
+        this.data = newArray;
 
-        if (_this.waitingData) {
-            _this.waitingData();
+        if (this.waitingData) {
+            this.waitingData();
         }
-    }
+    }).bind(this);
 
     throw VM.Pause;
-}
+});
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function(ctx) {
     return this.data.byteLength;
@@ -74,7 +95,9 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function(ct
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
 
-    if (_this.socket.readyState == "closed") {
+    // console.log("Protocol.read0: " + _this.socket.isClosed);
+
+    if (_this.socket.isClosed) {
         stack.push(-1);
         return;
     }
@@ -103,18 +126,25 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(ctx, sta
 
 Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
+    // console.log("Protocol.write0: " + String.fromCharCode.apply(String, Array.prototype.slice.call(data.subarray(offset, offset + length))));
 
-    if (!_this.socket.send(data.buffer, offset, length)) {
-        _this.socket.ondrain = function() {
-            _this.socket.ondrain = null;
+    _this.socket.onsend = function(message) {
+        _this.socket.onsend = null;
+        if (message.result) {
             stack.push(length);
-            ctx.resume();
-        };
-
-        throw VM.Pause;
+            ctx.start();
+        } else {
+            _this.socket.ondrain = function() {
+                _this.socket.ondrain = null;
+                stack.push(length);
+                ctx.start();
+            };
+        }
     }
 
-    stack.push(length);
+    _this.socket.send(data, offset, length);
+
+    throw VM.Pause;
 }
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(ctx, option, value) {
@@ -127,32 +157,26 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I", function(ctx, option) {
     if (!(option in this.options)) {
-        ctx.raiseException("java/lang/IllegalArgumentException", "Unsupported socket option");
+        throw new JavaException("java/lang/IllegalArgumentException", "Unsupported socket option");
     }
 
-    return _this.options[option];
+    return this.options[option];
 });
 
-Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-
-    if (_this.socket.readyState == "closed") {
+Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function(ctx) {
+    if (this.socket.isClosed) {
         return;
     }
 
-    _this.socket.onclose = function() {
-        _this.socket.onclose = null;
+    this.socket.onclose = (function() {
+        this.socket.onclose = null;
         ctx.resume();
-    }
+    }).bind(this);
 
-    // If it's already closing, we don't need to close it, we just need to wait
-    // for it to close; otherwise, we need to close it.
-    if (_this.socket.readyState != "closing") {
-        _this.socket.close();
-    }
+    this.socket.close();
 
     throw VM.Pause;
-}
+});
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V", function(ctx) {
     // We don't have the ability to close the output stream independently
