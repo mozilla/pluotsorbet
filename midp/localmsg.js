@@ -17,13 +17,13 @@ LocalMsgConnection.prototype.notifyConnection = function() {
     }
 }
 
-LocalMsgConnection.prototype.waitConnection = function(ctx) {
-    this.waitingForConnection = function() {
-        this.waitingForConnection = null;
-        ctx.resume();
-    }
-
-    throw VM.Pause;
+LocalMsgConnection.prototype.waitConnection = function() {
+    return new Promise((function(resolve, reject) {
+      this.waitingForConnection = function() {
+          this.waitingForConnection = null;
+          resolve();
+      }
+    }).bind(this));
 }
 
 LocalMsgConnection.prototype.copyMessage = function(messageQueue, data) {
@@ -44,20 +44,20 @@ LocalMsgConnection.prototype.sendMessageToClient = function(message) {
     }
 }
 
-LocalMsgConnection.prototype.clientReceiveMessage = function(ctx, stack, data) {
-    if (this.clientMessages.length == 0) {
-        this.clientWaiting = function() {
-            this.clientWaiting = null;
+LocalMsgConnection.prototype.clientReceiveMessage = function(data) {
+    return new Promise((function(resolve, reject) {
+        if (this.clientMessages.length == 0) {
+            this.clientWaiting = function() {
+                this.clientWaiting = null;
 
-            stack.push(this.copyMessage(this.clientMessages, data));
+                resolve(this.copyMessage(this.clientMessages, data));
+            }
 
-            ctx.resume();
+            return;
         }
 
-        throw VM.Pause;
-    }
-
-    stack.push(this.copyMessage(this.clientMessages, data));
+        resolve(this.copyMessage(this.clientMessages, data));
+    }).bind(this));
 }
 
 LocalMsgConnection.prototype.sendMessageToServer = function(message) {
@@ -68,20 +68,19 @@ LocalMsgConnection.prototype.sendMessageToServer = function(message) {
     }
 }
 
-LocalMsgConnection.prototype.serverReceiveMessage = function(ctx, stack, data) {
-    if (this.serverMessages.length == 0) {
-        this.serverWaiting = function() {
-            this.serverWaiting = null;
+LocalMsgConnection.prototype.serverReceiveMessage = function(data) {
+    return new Promise((function(resolve, reject) {
+        if (this.serverMessages.length == 0) {
+            this.serverWaiting = function() {
+                this.serverWaiting = null;
 
-            stack.push(this.copyMessage(this.serverMessages, data));
-
-            ctx.resume();
+                resolve(this.copyMessage(this.serverMessages, data));
+            }
+            return;
         }
 
-        throw VM.Pause;
-    }
-
-    stack.push(this.copyMessage(this.serverMessages, data));
+        resolve(this.copyMessage(this.serverMessages, data));
+    }).bind(this));
 }
 
 var NokiaMessagingLocalMsgConnection = function() {
@@ -380,7 +379,7 @@ Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", fu
 });
 
 Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function(ctx) {
-    MIDP.LocalMsgConnections[this.protocolName].waitConnection(ctx);
+    return MIDP.LocalMsgConnections[this.protocolName].waitConnection();
 });
 
 Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(ctx, data, offset, length) {
@@ -401,19 +400,17 @@ Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(ctx
     }
 });
 
-Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(ctx, stack) {
-    var data = stack.pop(), _this = stack.pop();
-
-    if (_this.server) {
-        MIDP.LocalMsgConnections[_this.protocolName].serverReceiveMessage(ctx, stack, data);
-    } else {
-        if (MIDP.FakeLocalMsgServers.indexOf(_this.protocolName) != -1) {
-            console.warn("receiveData from an unimplemented localmsg server (" + _this.protocolName + ")");
-        }
-
-        MIDP.LocalMsgConnections[_this.protocolName].clientReceiveMessage(ctx, stack, data);
+Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(ctx, data) {
+    if (this.server) {
+        return MIDP.LocalMsgConnections[this.protocolName].serverReceiveMessage(data);
     }
-}
+
+    if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
+        console.warn("receiveData from an unimplemented localmsg server (" + this.protocolName + ")");
+    }
+
+    return MIDP.LocalMsgConnections[this.protocolName].clientReceiveMessage(data);
+});
 
 Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function(ctx) {
     if (this.server) {

@@ -80,45 +80,43 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I",
     return ++MIDP.lastSMSConnection;
 });
 
-Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] = function(ctx, stack) {
-    var smsPacket = stack.pop(), handle = stack.pop(), msid = stack.pop(), port = stack.pop(), _this = stack.pop();
+Native.create("com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I",
+function(ctx, port, msid, handle, smsPacket) {
+    return new Promise(function(resolve, reject) {
+        function receiveSMS() {
+            var sms = MIDP.j2meSMSMessages.shift();
+            var text = sms.text;
+            var addr = sms.addr;
 
-    function receiveSMS() {
-        var sms = MIDP.j2meSMSMessages.shift();
-        var text = sms.text;
-        var addr = sms.addr;
+            var message = ctx.newPrimitiveArray("B", text.length);
+            for (var i = 0; i < text.length; i++) {
+                message[i] = text.charCodeAt(i);
+            }
 
-        var message = ctx.newPrimitiveArray("B", text.length);
-        for (var i = 0; i < text.length; i++) {
-            message[i] = text.charCodeAt(i);
+            var address = ctx.newPrimitiveArray("B", addr.length);
+            for (var i = 0; i < addr.length; i++) {
+                address[i] = addr.charCodeAt(i);
+            }
+
+            smsPacket.class.getField("I.message.[B").set(smsPacket, message);
+            smsPacket.class.getField("I.address.[B").set(smsPacket, address);
+            smsPacket.class.getField("I.port.I").set(smsPacket, port);
+            smsPacket.class.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
+            smsPacket.class.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
+
+            return text.length;
         }
 
-        var address = ctx.newPrimitiveArray("B", addr.length);
-        for (var i = 0; i < addr.length; i++) {
-            address[i] = addr.charCodeAt(i);
+        if (MIDP.j2meSMSMessages.length > 0) {
+          resolve(receiveSMS());
+        } else {
+          MIDP.j2meSMSWaiting = function() {
+            MIDP.j2meSMSWaiting = null;
+            resolve(receiveSMS());
+          }
         }
-
-        smsPacket.class.getField("I.message.[B").set(smsPacket, message);
-        smsPacket.class.getField("I.address.[B").set(smsPacket, address);
-        smsPacket.class.getField("I.port.I").set(smsPacket, port);
-        smsPacket.class.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
-        smsPacket.class.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
-
-        stack.push(text.length);
-    }
-
-    if (MIDP.j2meSMSMessages.length > 0) {
-      receiveSMS();
-    } else {
-      MIDP.j2meSMSWaiting = function() {
-        MIDP.j2meSMSWaiting = null;
-        receiveSMS();
-        ctx.resume();
-      }
-    }
-
-    throw VM.Pause;
-}
+    });
+});
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(ctx, port, handle, deRegister) {
     delete MIDP.smsConnections[handle];
