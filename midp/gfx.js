@@ -251,39 +251,21 @@
         this.css = style + " " + size + "pt " + face;
     });
 
-    Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(ctx, stack) {
-        var str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
-        withFont(_this, c, str, function(w) {
-            stack.push(w);
-        });
-    }
+    Native.create("javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I", function(ctx, str) {
+        return withFont(this, MIDP.Context2D, util.fromJavaString(str));
+    });
 
-    Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(ctx, stack) {
-        var str = String.fromCharCode(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
+    Native.create("javax/microedition/lcdui/Font.charWidth.(C)I", function(ctx, char) {
+        return withFont(this, MIDP.Context2D, String.fromCharCode(char));
+    });
 
-        withFont(_this, c, str, function(w) {
-            stack.push(w);
-        });
-    }
+    Native.create("javax/microedition/lcdui/Font.charsWidth.([CII)I", function(ctx, str, offset, len) {
+        return withFont(_this, MIDP.Context2D, util.fromJavaChars(str).slice(offset, offset + len));
+    });
 
-    Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(ctx, stack) {
-        var len = stack.pop(), offset = stack.pop(), str = util.fromJavaChars(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
-
-        withFont(_this, c, str.slice(offset, offset + len), function(w) {
-            stack.push(w);
-        });
-    }
-
-    Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(ctx, stack) {
-        var len = stack.pop(), offset = stack.pop(), str = util.fromJavaString(stack.pop()), _this = stack.pop(),
-            c = MIDP.Context2D;
-        withFont(_this, c, str.slice(offset, offset + len), function(w) {
-            stack.push(w);
-        });
-    }
+    Native.create("javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I", function(ctx, str, offset, len) {
+        return withFont(_this, MIDP.Context2D, util.fromJavaString(str).slice(offset, offset + len));
+    });
 
     var HCENTER = 1;
     var VCENTER = 2;
@@ -339,28 +321,27 @@
         });
     }
 
-    function withFont(font, c, str, cb) {
+    function withFont(font, c, str) {
         c.font = font.css;
-        cb(c.measureText(str).width | 0, c);
+        return c.measureText(str).width | 0;
     }
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
         withClip(g, c, x, y, function(x, y) {
-            withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str, function(w, c) {
-                c.textAlign = "left";
-                c.textBaseline = "top";
-                if (anchor & RIGHT)
-                    x -= w;
-                if (anchor & HCENTER)
-                    x -= (w/2)|0;
-                if (anchor & BOTTOM)
-                    c.textBaseline = "bottom";
-                if (anchor & VCENTER)
-                    c.textBaseline = "middle";
-                if (anchor & BASELINE)
-                    c.textBaseline = "alphabetic";
-                cb(x, y, w);
-            });
+            var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+            c.textAlign = "left";
+            c.textBaseline = "top";
+            if (anchor & RIGHT)
+                x -= w;
+            if (anchor & HCENTER)
+                x -= (w/2)|0;
+            if (anchor & BOTTOM)
+                c.textBaseline = "bottom";
+            if (anchor & VCENTER)
+                c.textBaseline = "middle";
+            if (anchor & BASELINE)
+                c.textBaseline = "alphabetic";
+            cb(x, y, w);
         });
     }
 

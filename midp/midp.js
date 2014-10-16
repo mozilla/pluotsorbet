@@ -873,39 +873,35 @@ Native.create("com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/S
     return value;
 });
 
-Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(ctx, stack) {
-    var drawTrusted = stack.pop(), displayId = stack.pop(), _this = stack.pop();
+Native.create("javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V", function(ctx, displayId, drawTrusted) {
     console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + displayId + ", " + drawTrusted + ")");
-}
+});
 
-Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
+Native.create("com/sun/midp/events/EventQueue.sendShutdownEvent.()V", function(ctx) {
     var obj = ctx.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
     obj.class.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
     MIDP.sendEvent(obj);
-}
+});
 
-Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(ctx, stack) {
-    var commandState = stack.pop();
+Native.create("com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V", function(ctx, commandState) {
     console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
-}
+});
 
-Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(ctx, stack) {
-    console.info("Exit: " + stack.pop());
+Native.create("com/sun/midp/main/CommandState.exitInternal.(I)V", function(ctx, exit) {
+    console.info("Exit: " + exit);
     throw VM.Pause;
-}
+});
 
-Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function(ctx, stack) {
-    var _this = stack.pop();
-    stack.push(0);
+Native.create("com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z", function(ctx) {
     console.warn("SuspendSystem$MIDPSystem.allMidletsKilled.()Z not implemented");
-}
+    return false;
+});
 
-Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function(ctx, stack) {
+Native.create("com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I", function(ctx) {
     var ids = ctx.newPrimitiveArray("I", 1);
     ids[0] = 1; // KEYBOARD_INPUT_MODE
-    stack.push(ids);
-}
+    return ids;
+});
 
 /* We don't care about the system keys SELECT,
   SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
@@ -924,9 +920,9 @@ MIDP.systemKeyMap = {
   114: MIDP.SYSTEM_KEY_END, // F3
 };
 
-Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(ctx, stack) {
-    stack.push(MIDP.systemKeyMap[stack.pop()] || 0);
-}
+Native.create("javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I", function(ctx, key) {
+    return MIDP.systemKeyMap[key] || 0;
+});
 
 MIDP.keyMap = {
     1: 119, // UP
@@ -940,9 +936,9 @@ MIDP.keyMap = {
     12: 99, // GAME_D
 };
 
-Native["javax/microedition/lcdui/KeyConverter.getKeyCode.(I)I"] = function(ctx, stack) {
-    stack.push(MIDP.keyMap[stack.pop()] || 0);
-}
+Native.create("javax/microedition/lcdui/KeyConverter.getKeyCode.(I)I", function(ctx, key) {
+    return MIDP.keyMap[key] || 0;
+});
 
 MIDP.keyNames = {
     119: "Up",
@@ -956,10 +952,9 @@ MIDP.keyNames = {
     99: "Mail",
 };
 
-Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var keyCode = stack.pop();
-    stack.push(ctx.newString((keyCode in MIDP.keyNames) ? MIDP.keyNames[keyCode] : String.fromCharCode(keyCode)));
-}
+Native.create("javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;", function(ctx, keyCode) {
+    return (keyCode in MIDP.keyNames) ? MIDP.keyNames[keyCode] : String.fromCharCode(keyCode);
+});
 
 MIDP.gameKeys = {
     119: 1,  // UP
@@ -973,26 +968,22 @@ MIDP.gameKeys = {
     99: 12   // GAME_D
 };
 
-Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(ctx, stack) {
-    var keyCode = stack.pop();
-    stack.push(MIDP.gameKeys[keyCode] || 0);
-}
+Native.create("javax/microedition/lcdui/KeyConverter.getGameAction.(I)I", function(ctx, keyCode) {
+    return MIDP.gameKeys[keyCode] || 0;
+});
 
-Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(ctx, stack) {
-    var suppressKeyEvents = stack.pop(), canvas = stack.pop(), _this = stack.pop();
+Native.create("javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V", function(ctx, canvas, suppressKeyEvents) {
     MIDP.suppressKeyEvents = suppressKeyEvents;
-}
+});
 
-Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
+Native.create("com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V", function(ctx) {
     MIDP.displayId = -1;
-}
+});
 
-Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(ctx, stack) {
-    var displayId = stack.pop(), isolateId = stack.pop(), _this = stack.pop();
+Native.create("com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V", function(ctx, isolateId, displayId) {
     MIDP.displayId = displayId;
     MIDP.foregroundIsolateId = isolateId;
-}
+});
 
 MIDP.ConnectionRegistry = {
     // The lastRegistrationId is in common between alarms and push notifications
@@ -1048,10 +1039,8 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(ctx
     throw VM.Pause;
 }
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(ctx, stack) {
-    var connection = util.fromJavaString(stack.pop());
-
-    var values = connection.split(',');
+Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I", function(ctx, connection) {
+    var values = util.fromJavaString(connection).split(',');
 
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
@@ -1062,11 +1051,11 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"
         suiteId: values[3]
     });
 
-    stack.push(0);
-}
+    return 0;
+});
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(ctx, stack) {
-    var time = stack.pop2().toNumber(), midlet = util.decodeUtf8(stack.pop());
+Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J", function(ctx, jMidlet, jTime, _) {
+    var time = jTime.toNumber(), midlet = util.decodeUtf8(jMidlet);
 
     var lastAlarm = 0;
     var id = null;
@@ -1103,12 +1092,10 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
         }, relativeTime);
     }
 
-    stack.push2(Long.fromNumber(lastAlarm));
-}
+    return Long.fromNumber(lastAlarm);
+});
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(ctx, stack) {
-    var entrysz = stack.pop(), regentry = stack.pop(), handle = stack.pop();
-
+Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I", function(ctx, handle, regentry, entrysz) {
     var reg;
     var alarms = MIDP.ConnectionRegistry.alarms;
     for (var i = 0; i < alarms.length; i++) {
@@ -1127,9 +1114,8 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
     }
 
     if (!reg) {
-        console.warn("getMIDlet0 returns -1, this should never happen");
-        stack.push(-1);
-        return;
+        console.error("getMIDlet0 returns -1, this should never happen");
+        return -1;
     }
 
     var str;
@@ -1145,61 +1131,52 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
     }
     regentry[str.length] = 0;
 
-    stack.push(0);
-}
+    return 0;
+});
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(ctx, stack) {
-    var className = stack.pop(), suiteId = stack.pop();
+Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V", function(ctx, suiteId, className) {
     console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
                  suiteId + ", " + className + ")");
-}
+});
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(ctx, stack) {
-    var name = util.decodeUtf8(stack.pop());
+Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I", function(ctx, name) {
     console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" +
-                 name + ")");
-    stack.push(0);
-}
+                 util.decodeUtf8(name) + ")");
+    return 0;
+});
 
-Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(ctx, stack) {
-    var gestureEventIdentity = stack.pop();
-    stack.push(0);
+Native.create("com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z", function(ctx, gestureEventIdentity) {
     console.warn("GestureInteractiveZone.isSupported.(I)Z not implemented (" + gestureEventIdentity + ")");
-}
+    return false;
+});
 
-Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(ctx, stack) {
-    var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
+Native.create("com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z", function(ctx, suiteId, permission) {
+    return true;
+});
 
-Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(ctx, stack) {
-    var permission = stack.pop(), suiteId = stack.pop(), _this = stack.pop();
-    stack.push(1);
-}
+Native.create("com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I", function(ctx, suiteId, permission) {
+    return 1;
+});
 
-Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function(ctx, stack) {
+Native.create("com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V", function(ctx) {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
-}
+});
 
-Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function(ctx, stack) {
-    var _this = stack.pop();
+Native.create("com/sun/j2me/content/RegistryStore.init.()Z", function(ctx) {
     console.warn("com/sun/j2me/content/RegistryStore.init.()Z not implemented");
-    stack.push(1);
-}
+    return true;
+});
 
-Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var suiteID = stack.pop(), _this = stack.pop();
+Native.create("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;", function(ctx, suiteID) {
     console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
-    stack.push(ctx.newString(""));
-}
+    return "";
+});
 
-Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function(ctx, stack) {
-    var _this = stack.pop();
+Native.create("com/sun/j2me/content/AppProxy.isInSvmMode.()Z", function(ctx) {
     console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
-    stack.push(0);
-}
+    return false;
+});
 
-Native["com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V"] = function(ctx, stack) {
-    var cleanup = stack.pop(), className = util.fromJavaString(stack.pop()), suiteID = stack.pop();
+Native.create("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V", function(ctx, suiteID, className, cleanup) {
     console.warn("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V not implemented");
-}
+});
