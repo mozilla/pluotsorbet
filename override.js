@@ -53,21 +53,36 @@ function createAlternateImpl(object, key, fn) {
     for (var i = numArgs - 1; i >= 1; i--) {
       args[i] = stack.pop();
     }
+
+    function doReturn(ret) {
+      if (retType === 'V') {
+        return;
+      }
+
+      if (ret === true) {
+        stack.push(1);
+      } else if (ret === false) {
+        stack.push(0);
+      } else if (typeof ret === "string") {
+        stack.push(ctx.newString(ret));
+      } else if (retType === 'J' || retType === 'D') {
+        stack.push2(ret);
+      } else {
+        stack.push(ret);
+      }
+    }
+
     try {
       var self = isStatic ? null : stack.pop();
       var ret = fn.apply(self, args);
-      if (retType !== 'V') {
-        if (ret === true) {
-          stack.push(1);
-        } else if (ret === false) {
-          stack.push(0);
-        } else if (typeof ret === "string") {
-          stack.push(ctx.newString(ret));
-        } else if (retType === 'J' || retType === 'D') {
-          stack.push2(ret);
-        } else {
-          stack.push(ret);
-        }
+      if (ret && ret.then) { // ret.constructor.name == "Promise"
+        ret.then(doReturn, function(e) {
+          ctx.raiseException(e.javaClassName, e.message);
+        }).then(ctx.start.bind(ctx));
+
+        throw VM.Pause;
+      } else {
+        doReturn(ret);
       }
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
