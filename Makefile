@@ -6,6 +6,7 @@ test: all
 	rm -f test.log
 	killall python Python || true
 	python -m SimpleHTTPServer &
+	python tests/echoServer.py &
 	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
 	killall python Python || true
 	python dumplog.py
