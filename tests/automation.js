@@ -36,27 +36,33 @@ var gfxTests = [
 casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .start("http://localhost:8000/index.html")
-    .waitForText("DONE", function() {
-        var content = this.getPageContent();
-        if (content.contains("DONE: 70904 pass, 0 fail, 174 known fail, 0 unknown pass")) {
-          test.pass('main unit tests');
-        } else {
-          this.debugPage();
-          this.echo(this.captureBase64('png'));
-          test.fail('main unit tests');
-        }
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            var content = this.getPageContent();
+            if (content.contains("DONE: 70911 pass, 0 fail, 174 known fail, 0 unknown pass")) {
+              test.pass('main unit tests');
+            } else {
+              this.debugPage();
+              this.echo(this.captureBase64('png'));
+              test.fail('main unit tests');
+            }
+        });
     });
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=page,raw")
-    .waitForText("DONE", function() {
-        test.assertTextExists("I m\nI a ma\nI 2\nI ma\nI 2\nI 1 isolate\nI Isolate ID correct\nI 4\nI 5\nI 1 isolate\nI ma\nI ma\nI 3 isolates\nI 1 m1\nI 2 m2\nI 4\nI 5\nI ma\nI 1 isolate\nI Isolates terminated\nI r mar\nI 2\nI mar\nI c marc\nI 2\nI marc\nI Main isolate still running");
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextExists("I m\nI a ma\nI 2\nI ma\nI 2\nI 1 isolate\nI Isolate ID correct\nI 4\nI 5\nI 1 isolate\nI ma\nI ma\nI 3 isolates\nI 1 m1\nI 2 m2\nI 4\nI 5\nI ma\nI 1 isolate\nI Isolates terminated\nI r mar\nI 2\nI mar\nI c marc\nI 2\nI marc\nI Main isolate still running");
+        });
     });
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad")
-    .waitForText("Hello World from MIDlet2", function() {
-        test.pass();
+    .withFrame(0, function() {
+        casper.waitForText("Hello World from MIDlet2", function() {
+            test.pass();
+        });
     });
 
     casper
@@ -66,7 +72,8 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader", function() {
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader")
+    .withFrame(0, function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
                 promptForMessageText();
@@ -86,82 +93,84 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     gfxTests.forEach(function(testCase) {
         casper
         .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name)
-        .waitForText("PAINTED", function() {
-            this.waitForSelector("#canvas", function() {
-                var got = this.evaluate(function(testCase) {
-                    var gotCanvas = document.getElementById("canvas");
-                    var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
+        .withFrame(0, function() {
+            casper.waitForText("PAINTED", function() {
+                this.waitForSelector("#canvas", function() {
+                    var got = this.evaluate(function(testCase) {
+                        var gotCanvas = document.getElementById("canvas");
+                        var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
 
-                    var img = new Image();
-                    img.src = "tests/" + testCase.name + ".png";
+                        var img = new Image();
+                        img.src = "tests/" + testCase.name + ".png";
 
-                    img.onload = function() {
-                        var expectedCanvas = document.createElement('canvas');
-                        expectedCanvas.width = img.width;
-                        expectedCanvas.height = img.height;
-                        expectedCanvas.getContext("2d").drawImage(img, 0, 0);
+                        img.onload = function() {
+                            var expectedCanvas = document.createElement('canvas');
+                            expectedCanvas.width = img.width;
+                            expectedCanvas.height = img.height;
+                            expectedCanvas.getContext("2d").drawImage(img, 0, 0);
 
-                        var expectedPixels = new Uint32Array(expectedCanvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
+                            var expectedPixels = new Uint32Array(expectedCanvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
 
-                        if (expectedCanvas.width !== gotCanvas.width || expectedCanvas.height !== gotCanvas.height) {
-                            console.log("Canvas dimensions are wrong");
-                            console.log("FAIL");
-                            return;
-                        }
+                            if (expectedCanvas.width !== gotCanvas.width || expectedCanvas.height !== gotCanvas.height) {
+                                console.log("Canvas dimensions are wrong");
+                                console.log("FAIL");
+                                return;
+                            }
 
-                        var different = 0;
-                        var i = 0;
-                        for (var x = 0; x < gotCanvas.width; x++) {
-                            for (var y = 0; y < gotCanvas.height; y++) {
-                                if (expectedPixels[i] !== gotPixels[i]) {
-                                    different++;
+                            var different = 0;
+                            var i = 0;
+                            for (var x = 0; x < gotCanvas.width; x++) {
+                                for (var y = 0; y < gotCanvas.height; y++) {
+                                    if (expectedPixels[i] !== gotPixels[i]) {
+                                        different++;
+                                    }
+
+                                    i++;
                                 }
-
-                                i++;
                             }
-                        }
 
-                        if (different > testCase.maxDifferent) {
-                            console.log(gotCanvas.toDataURL());
-                            if (!testCase.todo) {
-                              console.log("FAIL - " + different);
+                            if (different > testCase.maxDifferent) {
+                                console.log(gotCanvas.toDataURL());
+                                if (!testCase.todo) {
+                                  console.log("FAIL - " + different);
+                                } else {
+                                  console.log("TODO - " + different);
+                                }
                             } else {
-                              console.log("TODO - " + different);
+                                if (!testCase.todo) {
+                                    console.log("PASS - " + different);
+                                } else {
+                                    console.log("UNEXPECTED PASS - " + different);
+                                }
                             }
+
+                            console.log("DONE");
+                        };
+
+                        img.onerror = function() {
+                            console.log("Error while loading test image");
+                            console.log("FAIL");
+                        };
+                    }, testCase);
+
+                    this.waitForText("DONE", function() {
+                        var content = this.getPageContent();
+                        var fail = content.contains("FAIL");
+                        var todo = content.contains("TODO");
+                        var unexpected = content.contains("UNEXPECTED");
+
+                        if (fail) {
+                            this.echo(content);
+                            test.fail(testCase.name + " - Failure");
+                        } else if (unexpected) {
+                            this.echo(content);
+                            test.fail(testCase.name + " - Unexpected pass");
+                        } else if (todo) {
+                            test.skip(1, testCase.name + " - Todo");
                         } else {
-                            if (!testCase.todo) {
-                                console.log("PASS - " + different);
-                            } else {
-                                console.log("UNEXPECTED PASS - " + different);
-                            }
+                            test.pass(testCase.name + " - Pass");
                         }
-
-                        console.log("DONE");
-                    };
-
-                    img.onerror = function() {
-                        console.log("Error while loading test image");
-                        console.log("FAIL");
-                    };
-                }, testCase);
-
-                this.waitForText("DONE", function() {
-                    var content = this.getPageContent();
-                    var fail = content.contains("FAIL");
-                    var todo = content.contains("TODO");
-                    var unexpected = content.contains("UNEXPECTED");
-
-                    if (fail) {
-                        this.echo(content);
-                        test.fail(testCase.name + " - Failure");
-                    } else if (unexpected) {
-                        this.echo(content);
-                        test.fail(testCase.name + " - Unexpected pass");
-                    } else if (todo) {
-                        test.skip(1, testCase.name + " - Todo");
-                    } else {
-                        test.pass(testCase.name + " - Pass");
-                    }
+                    });
                 });
             });
         });

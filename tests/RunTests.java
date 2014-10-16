@@ -25,8 +25,9 @@ public class RunTests extends MIDlet {
         }
 
         public void check(boolean ok) {
-            if (ok)
+            if (ok) {
                 ++pass;
+            }
             else {
                 ++fail;
                 debug("fail");
