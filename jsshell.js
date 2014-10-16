@@ -3,6 +3,12 @@
 
 'use strict';
 
+if (scriptArgs.length !== 1) {
+  print("error: One main class name must be specified.");
+  print("usage: jsshell <main class name>");
+  quit(1);
+}
+
 var window = {
   setZeroTimeout: function(callback) {
     callback();
@@ -68,6 +74,6 @@ print("INITIALIZATION TIME: " + (dateNow() - start));
 
 start = dateNow();
 
-jvm.startIsolate0("SimpleClass", urlParams.args);
+jvm.startIsolate0(scriptArgs[0], urlParams.args);
 
 print("RUNNING TIME: " + (dateNow() - start));
