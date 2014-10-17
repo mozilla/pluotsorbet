@@ -90,7 +90,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function(ct
 });
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx, data, offset, length) {
-    // console.log("Protocol.read0: " + this.socket.isClosed);
+    // console.log("Protocol.read0: " + _this.socket.isClosed);
 
     return new Promise((function(resolve, reject) {
         if (this.socket.isClosed) {
@@ -113,6 +113,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx
                 this.waitingData = null;
                 copyData();
             }).bind(this);
+
             return;
         }
 
@@ -120,25 +121,28 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx
     }).bind(this));
 });
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(ctx, data, offset, length) {
+Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
+    var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
     // console.log("Protocol.write0: " + String.fromCharCode.apply(String, Array.prototype.slice.call(data.subarray(offset, offset + length))));
 
-    return new Promise((function(resolve, reject) {
-        this.socket.onsend = (function(message) {
-            this.socket.onsend = null;
-            if (message.result) {
-                resolve(length);
-            } else {
-                this.socket.ondrain = (function() {
-                    this.socket.ondrain = null;
-                    resolve(length);
-                }).bind(this);
-            }
-        }).bind(this);
+    _this.socket.onsend = function(message) {
+        _this.socket.onsend = null;
+        if (message.result) {
+            stack.push(length);
+            ctx.start();
+        } else {
+            _this.socket.ondrain = function() {
+                _this.socket.ondrain = null;
+                stack.push(length);
+                ctx.start();
+            };
+        }
+    }
 
-        this.socket.send(data, offset, length);
-    }).bind(this));
-});
+    _this.socket.send(data, offset, length);
+
+    throw VM.Pause;
+}
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(ctx, option, value) {
     if (!(option in this.options)) {
