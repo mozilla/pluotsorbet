@@ -670,34 +670,38 @@ Native.create("com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/St
 });
 
 Native.create("com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V", function(ctx, id) {
-    var mutex;
-    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-        if (MIDP.InterIsolateMutexes[i].id == id) {
-            mutex = MIDP.InterIsolateMutexes[i];
-            break;
+    return new Promise(function(resolve, reject) {
+        var mutex;
+        for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
+            if (MIDP.InterIsolateMutexes[i].id == id) {
+                mutex = MIDP.InterIsolateMutexes[i];
+                break;
+            }
         }
-    }
 
-    if (!mutex) {
-        throw new JavaException("java/lang/IllegalStateException", "Invalid mutex ID");
-    }
+        if (!mutex) {
+            reject(new JavaException("java/lang/IllegalStateException", "Invalid mutex ID"));
+            return;
+        }
 
-    if (!mutex.locked) {
-        mutex.locked = true;
-        mutex.holder = ctx.runtime.isolate.id;
-    } else {
+        if (!mutex.locked) {
+            mutex.locked = true;
+            mutex.holder = ctx.runtime.isolate.id;
+            resolve();
+            return;
+        }
+
         if (mutex.holder == ctx.runtime.isolate.id) {
-            throw new JavaException("java/lang/RuntimeException", "Attempting to lock mutex twice within the same Isolate");
+            reject(new JavaException("java/lang/RuntimeException", "Attempting to lock mutex twice within the same Isolate"));
+            return;
         }
 
         mutex.waiting.push(function() {
             mutex.locked = true;
             mutex.holder = ctx.runtime.isolate.id;
-            ctx.resume();
+            resolve();
         });
-
-        throw VM.Pause;
-    }
+    });
 });
 
 Native.create("com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V", function(ctx, id) {
@@ -732,7 +736,7 @@ Native.create("com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V", functi
 // The foreground isolate will get the user events (keypresses, etc.)
 MIDP.foregroundIsolateId;
 MIDP.nativeEventQueues = {};
-MIDP.waitingNativeEventContexts = {};
+MIDP.waitingNativeEventQueue = {};
 
 MIDP.copyEvent = function(obj, isolateId) {
     var e = MIDP.nativeEventQueues[isolateId].shift();
@@ -742,12 +746,10 @@ MIDP.copyEvent = function(obj, isolateId) {
     });
 }
 
-MIDP.deliverWaitForNativeEventResult = function(ctx, isolateId) {
-    var stack = ctx.current().stack;
-    var obj = stack.pop();
+MIDP.deliverWaitForNativeEventResult = function(resolve, nativeEvent, isolateId) {
     if (MIDP.nativeEventQueues[isolateId].length > 0)
-        MIDP.copyEvent(obj, isolateId);
-    stack.push(MIDP.nativeEventQueues[isolateId].length);
+        MIDP.copyEvent(nativeEvent, isolateId);
+    resolve(MIDP.nativeEventQueues[isolateId].length);
 }
 
 MIDP.sendEvent = function(obj, isolateId) {
@@ -760,12 +762,11 @@ MIDP.sendEvent = function(obj, isolateId) {
 
 MIDP.sendNativeEvent = function(e, isolateId) {
     MIDP.nativeEventQueues[isolateId].push(e);
-    var ctx = MIDP.waitingNativeEventContexts[isolateId];
-    if (!ctx)
+    var elem = MIDP.waitingNativeEventQueue[isolateId];
+    if (!elem)
         return;
-    MIDP.deliverWaitForNativeEventResult(ctx, isolateId);
-    ctx.resume();
-    delete MIDP.waitingNativeEventContexts[isolateId];
+    MIDP.deliverWaitForNativeEventResult(elem.resolve, elem.nativeEvent, isolateId);
+    delete MIDP.waitingNativeEventQueue[isolateId];
 }
 
 MIDP.KEY_EVENT = 1;
@@ -812,18 +813,24 @@ function(ctx, obj, isolateId) {
 });
 
 Native.create("com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I",
-function(ctx) {
-    var isolateId = ctx.runtime.isolate.id;
+function(ctx, nativeEvent) {
+    return new Promise(function(resolve, reject) {
+        var isolateId = ctx.runtime.isolate.id;
 
-    if (!MIDP.nativeEventQueues[isolateId]) {
-      MIDP.nativeEventQueues[isolateId] = [];
-    }
+        if (!MIDP.nativeEventQueues[isolateId]) {
+          MIDP.nativeEventQueues[isolateId] = [];
+        }
 
-    if (MIDP.nativeEventQueues[isolateId].length === 0) {
-        MIDP.waitingNativeEventContexts[isolateId] = ctx;
-        throw VM.Pause;
-    }
-    MIDP.deliverWaitForNativeEventResult(ctx, isolateId);
+        if (MIDP.nativeEventQueues[isolateId].length === 0) {
+            MIDP.waitingNativeEventQueue[isolateId] = {
+              resolve: resolve,
+              nativeEvent: nativeEvent,
+            };
+            return;
+        }
+
+        MIDP.deliverWaitForNativeEventResult(resolve, nativeEvent, isolateId);
+    });
 });
 
 Native.create("com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z",
@@ -889,7 +896,7 @@ Native.create("com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/ma
 
 Native.create("com/sun/midp/main/CommandState.exitInternal.(I)V", function(ctx, exit) {
     console.info("Exit: " + exit);
-    throw VM.Pause;
+    return new Promise(function(){});
 });
 
 Native.create("com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z", function(ctx) {

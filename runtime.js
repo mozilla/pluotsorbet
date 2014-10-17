@@ -16,7 +16,6 @@ function Runtime(vm) {
 
 Runtime.prototype.waitStatus = function(callback) {
   this.waiting.push(callback);
-  throw VM.Pause;
 }
 
 Runtime.prototype.updateStatus = function(status) {

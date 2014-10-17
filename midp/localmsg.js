@@ -358,24 +358,30 @@ Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", fu
     this.server = (name[2] == ":");
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
 
-    if (this.server) {
-        MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
-        MIDP.ConnectionRegistry.pushNotify("localmsg:" + this.protocolName);
-    } else {
-        // Actually, there should always be a server, but we need this check
-        // for apps that use the Nokia built-in servers (because we haven't
-        // implemented them yet).
-        if (!MIDP.LocalMsgConnections[this.protocolName]) {
-            console.warn("localmsg server (" + this.protocolName + ") unimplemented");
-            throw VM.Pause;
+    return new Promise((function(resolve, reject) {
+        if (this.server) {
+            MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
+            MIDP.ConnectionRegistry.pushNotify("localmsg:" + this.protocolName);
+        } else {
+            // Actually, there should always be a server, but we need this check
+            // for apps that use the Nokia built-in servers (because we haven't
+            // implemented them yet).
+            if (!MIDP.LocalMsgConnections[this.protocolName]) {
+                console.warn("localmsg server (" + this.protocolName + ") unimplemented");
+                // Return without resolving the promise, we want the thread that is connecting
+                // to this unimplemented server to stop indefinitely.
+                return;
+            }
+
+            if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
+                console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
+            }
+
+            MIDP.LocalMsgConnections[this.protocolName].notifyConnection();
         }
 
-        if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-            console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
-        }
-
-        MIDP.LocalMsgConnections[this.protocolName].notifyConnection();
-    }
+        resolve();
+    }).bind(this));
 });
 
 Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function(ctx) {
