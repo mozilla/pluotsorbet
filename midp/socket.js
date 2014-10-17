@@ -109,10 +109,10 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx
         }).bind(this);
 
         if (this.data.byteLength == 0) {
-            this.waitingData = function() {
+            this.waitingData = (function() {
                 this.waitingData = null;
                 copyData();
-            }
+            }).bind(this);
             return;
         }
 
@@ -129,10 +129,10 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(ct
             if (message.result) {
                 resolve(length);
             } else {
-                this.socket.ondrain = function() {
+                this.socket.ondrain = (function() {
                     this.socket.ondrain = null;
                     resolve(length);
-                };
+                }).bind(this);
             }
         }).bind(this);
 
