@@ -25,18 +25,8 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import BytecodeStream = Bytecode.BytecodeStream;
 
-  export enum Kind {
-    Boolean,
-    Byte,
-    Short,
-    Char,
-    Int,
-    Float,
-    Long,
-    Double,
-    Object,
-    Void,
-    Illegal
+  function kindsFromSignature(signature: string) {
+
   }
 
   export function isTwoSlot(kind: Kind) {
@@ -240,7 +230,7 @@ module J2ME {
      * Pushes a value onto the stack and checks that it is an object.
      */
     public apush(x: Node) {
-      this.xpush(assertKind(Kind.Object, x));
+      this.xpush(assertKind(Kind.Reference, x));
     }
 
     /**
@@ -308,7 +298,7 @@ module J2ME {
      * Pops a value off of the stack and checks that it is an object.
      */
     public apop(): Value {
-      return assertKind(Kind.Object, this.xpop());
+      return assertKind(Kind.Reference, this.xpop());
     }
 
     /**
@@ -367,6 +357,9 @@ module J2ME {
   }
 
   export function compile(classes, classInfo: ClassInfo) {
+    if (classInfo.className.indexOf("SimpleClass") < 0) {
+      // return;
+    }
     writer.enter("Compiling Class: " + classInfo.className + " {");
     classInfo.methods.forEach(compileMethodInfo);
     writer.leave("}");
@@ -406,6 +399,7 @@ module J2ME {
     build() {
       IR.Node.startNumbering();
       var methodInfo = this.methodInfo;
+
       writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
       writer.writeLn("Size: " + methodInfo.code.length);
       var blockMap = new BlockMap(methodInfo);
@@ -423,12 +417,27 @@ module J2ME {
       var state = start.entryState = new State();
       // trace.writeLn(JSON.stringify(this.methodInfo));
       var methodInfo = this.methodInfo;
+
       for (var i = 0; i < methodInfo.max_locals; i++) {
         state.local.push(null);
       }
-//      for (var i = 0; i < methodInfo.consumes; i++) {
-//        state.local[i] = new IR.Parameter(start, i, "P" + i);
-//      }
+
+      var signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
+      writer.writeLn("SIG: " + signatureDescriptor);
+
+      var typeDescriptors = signatureDescriptor.typeDescriptors;
+
+      var j = 0;
+      for (var i = 1; i < typeDescriptors.length; i++) {
+        var kind = Kind.Reference;
+        if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
+          kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
+        }
+        var parameter = new IR.Parameter(start, i - 1, "P" + (i - 1));
+        parameter.kind = kind;
+        state.storeLocal(j, parameter);
+        j += isTwoSlot(kind) ? 2 : 1;
+      }
       return start;
     }
 
@@ -491,18 +500,19 @@ module J2ME {
       var stream = new BytecodeStream(code);
       var bci = block.startBci;
       stream.setBCI(bci);
-      while (bci < block.endBci) {
+//      while (bci < block.endBci) {
+//        this.processBytecode(stream, state);
+//        stream.next();
+//        bci = stream.currentBCI;
+//      }
+
+      while (stream.currentBCI < block.endBci) {
+        state.bci = bci;
         this.processBytecode(stream, state);
         stream.next();
         bci = stream.currentBCI;
-      }
-      while (stream.currentBCI < block.endBci) {
-        stream.next();
-        // this.processBytecode(stream, state);
-        writer.outdent();
+        // writer.outdent();
 //        writer.writeLn("State  After: " + Bytecodes[opcode] + " " + state.toString());
-//        writer.writeLn("");
-        // bci += Bytecode.lengthAt(code, bci);
       }
       return [];
     }
@@ -514,13 +524,98 @@ module J2ME {
     private storeLocal(kind: Kind, index: number) {
       this.state.storeLocal(index, this.state.pop(kind));
     }
+    
+    private stackOp(opcode: Bytecodes) {
+      var state = this.state;
+      switch (opcode) {
+        case Bytecodes.POP: {
+          state.xpop();
+          break;
+        }
+        case Bytecodes.POP2: {
+          state.xpop();
+          state.xpop();
+          break;
+        }
+        case Bytecodes.DUP: {
+          var w = state.xpop();
+          state.xpush(w);
+          state.xpush(w);
+          break;
+        }
+        case Bytecodes.DUP_X1: {
+          var w1 = state.xpop();
+          var w2 = state.xpop();
+          state.xpush(w1);
+          state.xpush(w2);
+          state.xpush(w1);
+          break;
+        }
+        case Bytecodes.DUP_X2: {
+          var w1 = state.xpop();
+          var w2 = state.xpop();
+          var w3 = state.xpop();
+          state.xpush(w1);
+          state.xpush(w3);
+          state.xpush(w2);
+          state.xpush(w1);
+          break;
+        }
+        case Bytecodes.DUP2: {
+          var w1 = state.xpop();
+          var w2 = state.xpop();
+          state.xpush(w2);
+          state.xpush(w1);
+          state.xpush(w2);
+          state.xpush(w1);
+          break;
+        }
+        case Bytecodes.DUP2_X1: {
+          var w1 = state.xpop();
+          var w2 = state.xpop();
+          var w3 = state.xpop();
+          state.xpush(w2);
+          state.xpush(w1);
+          state.xpush(w3);
+          state.xpush(w2);
+          state.xpush(w1);
+          break;
+        }
+        case Bytecodes.DUP2_X2: {
+          var w1 = state.xpop();
+          var w2 = state.xpop();
+          var w3 = state.xpop();
+          var w4 = state.xpop();
+          state.xpush(w2);
+          state.xpush(w1);
+          state.xpush(w4);
+          state.xpush(w3);
+          state.xpush(w2);
+          state.xpush(w1);
+          break;
+        }
+        case Bytecodes.SWAP: {
+          var w1 = state.xpop();
+          var w2 = state.xpop();
+          state.xpush(w1);
+          state.xpush(w2);
+          break;
+        }
+        default:
+          Debug.unexpected("");
+      }
+    }
+
+    genNewInstance(cpi: number) {
+      this.state.apush(genConstant("NEW", Kind.Reference));
+    }
 
     processBytecode(stream: BytecodeStream, state: State) {
       var opcode: Bytecodes = stream.currentBC();
       writer.enter("State Before: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
       switch (opcode) {
         case Bytecodes.NOP            : break;
-        case Bytecodes.ACONST_NULL    : state.apush(genConstant(null, Kind.Object)); break;
+        case Bytecodes.ACONST_NULL    : state.apush(genConstant(null, Kind.Reference)); break;
         case Bytecodes.ICONST_M1      : state.ipush(genConstant(-1, Kind.Int)); break;
         case Bytecodes.ICONST_0       : state.ipush(genConstant(0, Kind.Int)); break;
         case Bytecodes.ICONST_1       : state.ipush(genConstant(1, Kind.Int)); break;
@@ -544,7 +639,7 @@ module J2ME {
         case Bytecodes.LLOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Long); break;
         case Bytecodes.FLOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Float); break;
         case Bytecodes.DLOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Double); break;
-        case Bytecodes.ALOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Object); break;
+        case Bytecodes.ALOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Reference); break;
         case Bytecodes.ILOAD_0        :
         case Bytecodes.ILOAD_1        :
         case Bytecodes.ILOAD_2        :
@@ -564,13 +659,13 @@ module J2ME {
         case Bytecodes.ALOAD_0        :
         case Bytecodes.ALOAD_1        :
         case Bytecodes.ALOAD_2        :
-        case Bytecodes.ALOAD_3        : this.loadLocal(opcode - Bytecodes.ALOAD_0, Kind.Object); break;
+        case Bytecodes.ALOAD_3        : this.loadLocal(opcode - Bytecodes.ALOAD_0, Kind.Reference); break;
 
 //        case Bytecodes.IALOAD         : genLoadIndexed(Kind.Int); break;
 //        case Bytecodes.LALOAD         : genLoadIndexed(Kind.Long); break;
 //        case Bytecodes.FALOAD         : genLoadIndexed(Kind.Float); break;
 //        case Bytecodes.DALOAD         : genLoadIndexed(Kind.Double); break;
-//        case Bytecodes.AALOAD         : genLoadIndexed(Kind.Object); break;
+//        case Bytecodes.AALOAD         : genLoadIndexed(Kind.Reference); break;
 //        case Bytecodes.BALOAD         : genLoadIndexed(Kind.Byte); break;
 //        case Bytecodes.CALOAD         : genLoadIndexed(Kind.Char); break;
 //        case Bytecodes.SALOAD         : genLoadIndexed(Kind.Short); break;
@@ -578,7 +673,7 @@ module J2ME {
         case Bytecodes.LSTORE         : this.storeLocal(Kind.Long, stream.readLocalIndex()); break;
         case Bytecodes.FSTORE         : this.storeLocal(Kind.Float, stream.readLocalIndex()); break;
         case Bytecodes.DSTORE         : this.storeLocal(Kind.Double, stream.readLocalIndex()); break;
-        case Bytecodes.ASTORE         : this.storeLocal(Kind.Object, stream.readLocalIndex()); break;
+        case Bytecodes.ASTORE         : this.storeLocal(Kind.Reference, stream.readLocalIndex()); break;
         case Bytecodes.ISTORE_0       :
         case Bytecodes.ISTORE_1       :
         case Bytecodes.ISTORE_2       :
@@ -598,17 +693,18 @@ module J2ME {
         case Bytecodes.ASTORE_0       :
         case Bytecodes.ASTORE_1       :
         case Bytecodes.ASTORE_2       :
-        case Bytecodes.ASTORE_3       : this.storeLocal(Kind.Object, opcode - Bytecodes.ASTORE_0); break;
+        case Bytecodes.ASTORE_3       : this.storeLocal(Kind.Reference, opcode - Bytecodes.ASTORE_0); break;
 
         /*
         case Bytecodes.IASTORE        : genStoreIndexed(Kind.Int   ); break;
         case Bytecodes.LASTORE        : genStoreIndexed(Kind.Long  ); break;
         case Bytecodes.FASTORE        : genStoreIndexed(Kind.Float ); break;
         case Bytecodes.DASTORE        : genStoreIndexed(Kind.Double); break;
-        case Bytecodes.AASTORE        : genStoreIndexed(Kind.Object); break;
+        case Bytecodes.AASTORE        : genStoreIndexed(Kind.Reference); break;
         case Bytecodes.BASTORE        : genStoreIndexed(Kind.Byte  ); break;
         case Bytecodes.CASTORE        : genStoreIndexed(Kind.Char  ); break;
         case Bytecodes.SASTORE        : genStoreIndexed(Kind.Short ); break;
+        */
         case Bytecodes.POP            :
         case Bytecodes.POP2           :
         case Bytecodes.DUP            :
@@ -617,7 +713,8 @@ module J2ME {
         case Bytecodes.DUP2           :
         case Bytecodes.DUP2_X1        :
         case Bytecodes.DUP2_X2        :
-        case Bytecodes.SWAP           : stackOp(opcode); break;
+        case Bytecodes.SWAP           : this.stackOp(opcode); break;
+        /*
         case Bytecodes.IADD           :
         case Bytecodes.ISUB           :
         case Bytecodes.IMUL           : genArithmeticOp(Kind.Int, opcode, false); break;
@@ -687,8 +784,8 @@ module J2ME {
         case Bytecodes.IF_ICMPGE      : genIfSame(Kind.Int, Condition.GE); break;
         case Bytecodes.IF_ICMPGT      : genIfSame(Kind.Int, Condition.GT); break;
         case Bytecodes.IF_ICMPLE      : genIfSame(Kind.Int, Condition.LE); break;
-        case Bytecodes.IF_ACMPEQ      : genIfSame(Kind.Object, Condition.EQ); break;
-        case Bytecodes.IF_ACMPNE      : genIfSame(Kind.Object, Condition.NE); break;
+        case Bytecodes.IF_ACMPEQ      : genIfSame(Kind.Reference, Condition.EQ); break;
+        case Bytecodes.IF_ACMPNE      : genIfSame(Kind.Reference, Condition.NE); break;
         case Bytecodes.GOTO           : genGoto(stream.readBranchDest()); break;
         case Bytecodes.JSR            : genJsr(stream.readBranchDest()); break;
         case Bytecodes.RET            : genRet(stream.readLocalIndex()); break;
@@ -708,7 +805,9 @@ module J2ME {
         case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); genInvokeSpecial(lookupMethod(cpi, opcode), null, cpi, constantPool); break;
         case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); genInvokeStatic(lookupMethod(cpi, opcode), cpi, constantPool); break;
         case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); genInvokeInterface(lookupMethod(cpi, opcode), cpi, constantPool); break;
-        case Bytecodes.NEW            : genNewInstance(stream.readCPI()); break;
+        */
+        case Bytecodes.NEW            : this.genNewInstance(stream.readCPI()); break;
+        /*
         case Bytecodes.NEWARRAY       : genNewTypeArray(stream.readLocalIndex()); break;
         case Bytecodes.ANEWARRAY      : genNewObjectArray(stream.readCPI()); break;
         case Bytecodes.ARRAYLENGTH    : genArrayLength(); break;
@@ -731,8 +830,8 @@ module J2ME {
         default:
           Debug.somewhatImplemented(Bytecodes[opcode]);
       }
-      // writer.leave("State  After: " + Bytecodes[opcode] + " " + state.toString());
-      writer.outdent();
+      writer.leave("State  After: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
+      writer.writeLn("");
     }
   }
 }
