@@ -1933,7 +1933,7 @@ VM.compile = function(methodInfo, ctx) {
         code += generateStackPush(generateStackPop2() + ".toInt()");
         break;
       case 0x89: // l2f
-        code += generateStackPush("Math.fround(" + generateStackPop2() + ".toNumber()");
+        code += generateStackPush("Math.fround(" + generateStackPop2() + ".toNumber())");
         break;
       case 0x8a: // l2d
         code += generateStackPush2(generateStackPop2() + ".toNumber()");
