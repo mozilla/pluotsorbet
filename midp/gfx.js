@@ -822,11 +822,11 @@
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.getPositionX.()I", function(ctx) {
-        return parseInt(this.textEditor.style.left);
+        return parseInt(this.textEditor.style.left) || 0;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.getPositionY.()I", function(ctx) {
-        return parseInt(this.textEditor.style.top);
+        return parseInt(this.textEditor.style.top) || 0;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.isVisible.()Z", function(ctx) {
