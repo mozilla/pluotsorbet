@@ -279,6 +279,10 @@ class TestArithmetic implements Testlet {
         th.check((float)val1, val2);
     }
 
+    private void checkIntToFloatRel(int val1, float val2) {
+        th.check(Math.abs((float)val1 - val2) / val2 < 1E-9);
+    }
+
     private void checkDoubleToInt(double val1, int val2) {
         th.check((int)val1, val2);
     }
@@ -328,9 +332,9 @@ class TestArithmetic implements Testlet {
         checkIntToFloat(1, float1);
         checkIntToDouble(0, double0);
         checkIntToDouble(1, double1);
-        checkIntToFloat(2147483647, (float)2.14748365E9);
+        checkIntToFloatRel(2147483647, (float)2.14748365E9);
         checkIntToFloat(-2147483648, (float)-2.14748365E9);
-        checkIntToFloat(2147483647, float_maxint);
+        checkIntToFloatRel(2147483647, float_maxint);
         checkIntToFloat(-2147483648, float_minint);
         checkIntToDouble(2147483647, double_maxint);
         checkIntToDouble(-2147483648, double_minint);
