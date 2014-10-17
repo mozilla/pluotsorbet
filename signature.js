@@ -26,56 +26,16 @@ var Signature = (function() {
         }
     };
 
-    function _parse(part) {
-        var res = [];
-        var slots = 0;
-        if (part != '') {
-            var isArray = false;
-            var pos = 0;
-            while (pos < part.length) {
-                switch(part[pos]) {
-                    case TYPE.long:
-                    case TYPE.double:
-                        ++slots;
-                        // fall through
-                    case TYPE.boolean:
-                    case TYPE.byte:
-                    case TYPE.char:
-                    case TYPE.float:
-                    case TYPE.int:
-                    case TYPE.short:
-                        res.push({ type: TYPE.toString(part[pos]), isArray: isArray });
-                        isArray = false;
-                        break;
-                    case TYPE.object:
-                        var className = '';
-                        while (part[++pos] !== ';') {
-                            className += part[pos];
-                        }
-                        res.push({ type: "object", isArray: isArray, className: className });
-                        isArray = false;
-                        break;
-                    case TYPE.array:
-                        isArray = true;
-                        break;
-                }
-                pos++;
-            }
-        }
-        slots += res.length;
-        res.slots = slots;
-        return res;
-    }
-
     function getINSlots(signature) {
         var slots = 0;
 
         var pos = 0;
+        var isArray = false;
         while (pos < signature.length) {
             switch (signature[pos]) {
                 case TYPE.long:
                 case TYPE.double:
-                    slots += 2;
+                    slots += isArray ? 1 : 2;
                     break;
 
                 case TYPE.boolean:
@@ -94,8 +54,13 @@ var Signature = (function() {
 
                 case ')':
                     return slots;
+                case TYPE.array:
+                    isArray = true;
+                    pos++;
+                    continue;
             }
 
+            isArray = false;
             pos++;
         }
 
@@ -103,14 +68,6 @@ var Signature = (function() {
     }
 
     return {
-        parse: function(s) {
-            var IN = s.split(')')[0].substr(1);
-            var OUT = s.split(')')[1];
-            return {
-                IN: _parse(IN),
-                OUT: _parse(OUT)
-            };
-        },
         getINSlots: getINSlots,
     };
 })();
