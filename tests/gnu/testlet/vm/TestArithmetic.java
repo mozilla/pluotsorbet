@@ -275,12 +275,24 @@ class TestArithmetic implements Testlet {
         th.check((int)val1, val2);
     }
 
+    private void checkIntToFloat(int val1, float val2) {
+        th.check((float)val1, val2);
+    }
+
     private void checkDoubleToInt(double val1, int val2) {
         th.check((int)val1, val2);
     }
 
+    private void checkIntToDouble(int val1, double val2) {
+        th.check((double)val1, val2);
+    }
+
     private void checkFloatToLong(float val1, long val2) {
         th.check((long)val1, val2);
+    }
+
+    private void checkLongToFloat(long val1, float val2) {
+        th.check((float)val1, val2);
     }
 
     private void todoFloatToLong(float val1, long val2) {
@@ -289,6 +301,10 @@ class TestArithmetic implements Testlet {
 
     private void checkDoubleToLong(double val1, long val2) {
         th.check((long)val1, val2);
+    }
+
+    private void checkLongToDouble(long val1, double val2) {
+        th.check((double)val1, val2);
     }
 
     private void ftest() {
@@ -308,6 +324,17 @@ class TestArithmetic implements Testlet {
         checkDoubleToInt(double_maxint, 2147483647);
         checkDoubleToInt(double_minint, -2147483648);
 
+        checkIntToFloat(0, float0);
+        checkIntToFloat(1, float1);
+        checkIntToDouble(0, double0);
+        checkIntToDouble(1, double1);
+        checkIntToFloat(2147483647, (float)2.14748365E9);
+        checkIntToFloat(-2147483648, (float)-2.14748365E9);
+        checkIntToFloat(2147483647, float_maxint);
+        checkIntToFloat(-2147483648, float_minint);
+        checkIntToDouble(2147483647, double_maxint);
+        checkIntToDouble(-2147483648, double_minint);
+
         checkFloatToLong(float0, 0L);
         checkFloatToLong(float1, 1L);
         checkDoubleToLong(double0, 0L);
@@ -322,6 +349,17 @@ class TestArithmetic implements Testlet {
         checkFloatToLong(float_minlong, -9223372036854775808L);
         checkDoubleToLong(double_maxlong, 9223372036854775807L);
         checkDoubleToLong(double_minlong, -9223372036854775808L);
+
+        checkLongToFloat(0L, float0);
+        checkLongToFloat(1L, float1);
+        checkLongToDouble(0L, double0);
+        checkLongToDouble(1L, double1);
+        checkLongToFloat(9223372036854775807L, (float)9.223372E18);
+        checkLongToFloat(-9223372036854775808L, (float)-9.223372E18);
+        checkLongToFloat(9223372036854775807L, float_maxlong);
+        checkLongToFloat(-9223372036854775808L, float_minlong);
+        checkLongToDouble(9223372036854775807L, double_maxlong);
+        checkLongToDouble(-9223372036854775808L, double_minlong);
 
         float a = float1;
         float b = float2;
