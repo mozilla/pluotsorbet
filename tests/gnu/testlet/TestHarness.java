@@ -17,6 +17,13 @@ public abstract class TestHarness {
 	    debug("got (" + result + "), expected (" + expected + ")");
     }
 
+    public void check(int result, int expected) {
+        boolean ok = (result == expected);
+        check(ok);
+        if (!ok)
+            debug("got (" + result + "), expected (" + expected + ")");
+    }
+
     public void check(long result, long expected) {
 	boolean ok = (result == expected);
 	check(ok);
