@@ -498,10 +498,9 @@ Native.create("java/lang/Thread.isAlive.()Z", function(ctx) {
 });
 
 Native.create("java/lang/Thread.sleep.(J)V", function(ctx, delay, _) {
-    window.setTimeout(function() {
-        ctx.resume();
-    }, delay.toNumber());
-    throw VM.Pause;
+    return new Promise(function(resolve, reject) {
+        window.setTimeout(resolve, delay.toNumber());
+    })
 });
 
 Native.create("java/lang/Thread.yield.()V", function(ctx) {
@@ -592,17 +591,21 @@ Native.create("com/sun/cldc/isolate/Isolate.nativeStart.()V", function(ctx) {
 });
 
 Native.create("com/sun/cldc/isolate/Isolate.waitStatus.(I)V", function(ctx, status) {
-    var runtime = this.runtime;
-    if (runtime.status >= status)
-        return;
-    function waitForStatus() {
+    return new Promise((function(resolve, reject) {
+        var runtime = this.runtime;
         if (runtime.status >= status) {
-            ctx.resume();
+            resolve();
             return;
         }
-        runtime.waitStatus(waitForStatus);
-    }
-    waitForStatus();
+        function waitForStatus() {
+            if (runtime.status >= status) {
+                resolve();
+                return;
+            }
+            runtime.waitStatus(waitForStatus);
+        }
+        waitForStatus();
+    }).bind(this));
 });
 
 Native.create("com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;", function(ctx) {
@@ -628,20 +631,21 @@ Native.create("com/sun/cldc/isolate/Isolate.setPriority0.(I)V", function(ctx, ne
 var links = {};
 var waitingForLinks = {};
 
-Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function(ctx, stack) {
-    var isolateId = ctx.runtime.isolate.id;
+Native.create("com/sun/midp/links/LinkPortal.getLinkCount0.()I", function(ctx) {
+    return new Promise(function(resolve, reject) {
+        var isolateId = ctx.runtime.isolate.id;
 
-    if (!links[isolateId]) {
-        waitingForLinks[isolateId] = function() {
-            stack.push(links[isolateId].length);
-            ctx.resume();
+        if (!links[isolateId]) {
+            waitingForLinks[isolateId] = function() {
+                resolve(links[isolateId].length);
+            }
+
+            return;
         }
 
-        throw VM.Pause;
-    }
-
-    stack.push(links[isolateId].length);
-}
+        resolve(links[isolateId].length);
+    });
+});
 
 Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V", function(ctx, linkArray) {
     var isolateId = ctx.runtime.isolate.id;
@@ -671,7 +675,7 @@ Native.create("com/sun/midp/links/Link.init0.(II)V", function(ctx, sender, recei
 Native.create("com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V", function(ctx, linkMessage, link) {
     // TODO: Implement when something hits send0
     console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
-    throw VM.Pause;
+    return new Promise(function(){});
 });
 
 Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V", function(ctx, data) {
