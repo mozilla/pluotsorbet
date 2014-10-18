@@ -57,7 +57,7 @@ def countOpcodeUsage():
 
   for opcode in table:
     for elem in cache:
-      opcodes[opcode] += cache[elem].count(opcode)
+      opcodes[opcode] += cache[elem].split().count(opcode)
 
   for opcode in sorted(opcodes, key=opcodes.get, reverse=True):
     print(opcode + ": " + str(opcodes[opcode]))
