@@ -22,22 +22,16 @@ Native.create("gnu/testlet/vm/NativeTest.throwException.()V", function(ctx) {
 });
 
 Native.create("gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V", function(ctx) {
-  setTimeout(function() {
-    ctx.raiseException("java/lang/NullPointerException", "An exception");
-    ctx.resume();
-  }, 100);
-
-  throw VM.Pause;
+  return new Promise(function(resolve, reject) {
+    setTimeout(reject.bind(null, new JavaException("java/lang/NullPointerException", "An exception")), 100);
+  });
 });
 
-Native["gnu/testlet/vm/NativeTest.returnAfterPause.()I"] = function(ctx, stack) {
-  setTimeout(function() {
-    stack.push(42);
-    ctx.resume();
-  }, 100);
-
-  throw VM.Pause;
-}
+Native.create("gnu/testlet/vm/NativeTest.returnAfterPause.()I", function(ctx) {
+  return new Promise(function(resolve, reject) {
+    setTimeout(resolve.bind(null, 42), 100);
+  });
+});
 
 Native.create("gnu/testlet/vm/NativeTest.nonStatic.(I)I", function(ctx, val) {
   return val + 40;
@@ -61,16 +55,15 @@ Native.create("gnu/testlet/vm/NativeTest.newFunction.()Z", function(ctx) {
   }
 });
 
-Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function(ctx, stack) {
-  // Ensure we can echo a large amount of data.
-  var array = [];
-  for (var i = 0; i < 128 * 1024; i++) {
-    array[i] = i;
-  }
-  DumbPipe.open("echo", array, function(message) {
-    stack.push(JSON.stringify(array) === JSON.stringify(message) ? 1 : 0);
-    ctx.resume();
+Native.create("gnu/testlet/vm/NativeTest.dumbPipe.()Z", function(ctx) {
+  return new Promise(function(resolve, reject) {
+    // Ensure we can echo a large amount of data.
+    var array = [];
+    for (var i = 0; i < 128 * 1024; i++) {
+      array[i] = i;
+    }
+    DumbPipe.open("echo", array, function(message) {
+      resolve(JSON.stringify(array) === JSON.stringify(message));
+    });
   });
-
-  throw VM.Pause;
-}
+});

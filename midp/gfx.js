@@ -150,18 +150,18 @@
 
     Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V",
     function(ctx, imageData, bytes, offset, length) {
-        var blob = new Blob([bytes.subarray(offset, offset + length)], { type: "image/png" });
-        var img = new Image();
-        img.src = URL.createObjectURL(blob);
-        img.onload = function() {
-            setImageData(imageData, img.naturalWidth, img.naturalHeight, img);
-            ctx.resume();
-        }
-        img.onerror = function(e) {
-            ctx.raiseException("java/lang/IllegalArgumentException", "error decoding image");
-            ctx.resume();
-        }
-        throw VM.Pause;
+        return new Promise(function(resolve, reject) {
+            var blob = new Blob([bytes.subarray(offset, offset + length)], { type: "image/png" });
+            var img = new Image();
+            img.src = URL.createObjectURL(blob);
+            img.onload = function() {
+                setImageData(imageData, img.naturalWidth, img.naturalHeight, img);
+                resolve();
+            }
+            img.onerror = function(e) {
+                reject(new JavaException("java/lang/IllegalArgumentException", "error decoding image"));
+            }
+        });
     });
 
     Native.create("javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V",
@@ -756,15 +756,14 @@
     });
 
     var textEditorId = 0,
-        textEditorContext = null,
+        textEditorResolve = null,
         dirtyEditors = [];
 
     function wakeTextEditorThread(id) {
         dirtyEditors.push(id);
-        if (textEditorContext) {
-            var ctx = textEditorContext;
-            textEditorContext = null;
-            ctx.resume();
+        if (textEditorResolve) {
+            textEditorResolve();
+            textEditorResolve = null;
         }
     }
 
@@ -823,11 +822,11 @@
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.getPositionX.()I", function(ctx) {
-        return parseInt(this.textEditor.style.left);
+        return parseInt(this.textEditor.style.left) || 0;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.getPositionY.()I", function(ctx) {
-        return parseInt(this.textEditor.style.top);
+        return parseInt(this.textEditor.style.top) || 0;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.isVisible.()Z", function(ctx) {
@@ -917,10 +916,11 @@
     });
 
     Native.create("com/nokia/mid/ui/TextEditorThread.sleep.()V", function(ctx) {
-        if (!dirtyEditors.length) {
-            textEditorContext = ctx;
-            throw VM.Pause;
-        }
+        return new Promise(function(resolve, reject) {
+          if (!dirtyEditors.length) {
+              textEditorResolve = resolve;
+          }
+        });
     });
 
     Native.create("com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I", function(ctx) {
