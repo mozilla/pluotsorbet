@@ -10,9 +10,35 @@ class TestClass implements TestInterface {
 }
 
 class SimpleClass {
-    public void asd() {
-        int c = 5;
-        c++;
+    public static int asd(int a, int b, int c) {
+        int k = 10;
+        int x = a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        x = x + a + (1 + k);
+        return x;
     }
 
     public static void main(String[] args) {

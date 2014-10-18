@@ -1204,38 +1204,36 @@ module J2ME.C4.IR {
    * Peephole optimizations:
    */
   export class PeepholeOptimizer {
-    foldUnary(node, truthy?) {
+    foldUnary(node) {
       release || assert (node instanceof Unary);
       if (isConstant(node.argument)) {
         return new Constant(node.operator.evaluate(node.argument.value));
       }
-      if (truthy) {
-        var argument = this.fold(node.argument, true);
-        if (node.operator === Operator.TRUE) {
-          return argument;
+      var argument = this.fold(node.argument);
+      if (node.operator === Operator.TRUE) {
+        return argument;
+      }
+      if (argument instanceof Unary) {
+        if (node.operator === Operator.FALSE && argument.operator === Operator.FALSE) {
+          return argument.argument;
         }
-        if (argument instanceof Unary) {
-          if (node.operator === Operator.FALSE && argument.operator === Operator.FALSE) {
-            return argument.argument;
-          }
-        } else {
-          return new Unary(node.operator, argument);
-        }
+      } else {
+        return new Unary(node.operator, argument);
       }
       return node;
     }
-    foldBinary(node, truthy?) {
+    foldBinary(node) {
       release || assert (node instanceof Binary);
       if (isConstant(node.left) && isConstant(node.right)) {
         return new Constant(node.operator.evaluate(node.left.value, node.right.value));
       }
       return node;
     }
-    fold(node, truthy?) {
+    fold(node) {
       if (node instanceof Unary) {
-        return this.foldUnary(node, truthy);
+        return this.foldUnary(node);
       } else if (node instanceof Binary) {
-        return this.foldBinary(node, truthy);
+        return this.foldBinary(node);
       }
       return node;
     }

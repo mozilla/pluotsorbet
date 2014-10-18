@@ -69,16 +69,16 @@ try {
 
   start = dateNow();
 
-  var directory = new ZipFile(snarf("java/classes.jar", "binary").buffer).directory;
-  for (var k in directory) {
-    if (k.indexOf(".class") > 0) {
-      try {
-      CLASSES.loadClass(k.substring(0, k.length - 6));
-      } catch (zz) {
-        // ...
-      }
-    }
-  }
+  // var directory = new ZipFile(snarf("java/classes.jar", "binary").buffer).directory;
+  // for (var k in directory) {
+  //   if (k.indexOf(".class") > 0) {
+  //     try {
+  //     CLASSES.loadClass(k.substring(0, k.length - 6));
+  //     } catch (zz) {
+  //       // ...
+  //     }
+  //   }
+  // }
 
   jvm.startIsolate0("SimpleClass", urlParams.args);
 

@@ -19,7 +19,7 @@ module J2ME {
     Illegal
   }
 
-  function kindCharacter(kind: Kind): string {
+  export function kindCharacter(kind: Kind): string {
     switch (kind) {
       case Kind.Boolean:
         return 'Z';

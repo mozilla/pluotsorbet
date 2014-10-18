@@ -180,14 +180,12 @@ module J2ME.C4.IR {
   Region.prototype.nodeName = "Region";
 
   export class Start extends Region {
-    scope: Node;
     constructor() {
       super(null);
       this.control = this;
     }
     visitInputs(visitor: NodeVisitor) {
       visitArrayInputs(this.predecessors, visitor);
-      visitor(this.scope);
     }
   }
   Start.prototype.nodeName = "Start";
@@ -466,31 +464,31 @@ module J2ME.C4.IR {
       Operator.byName[name] = this;
     }
 
-    static IADD   = new Operator("+",   (l, r) => l + r,      true);
+    static IADD   = new Operator("+",   (l, r) => (l + r) | 0,  true);
 
-    static ADD    = new Operator("+",   (l, r) => l + r,      true);
-    static SUB    = new Operator("-",   (l, r) => l - r,      true);
-    static MUL    = new Operator("*",   (l, r) => l * r,      true);
-    static DIV    = new Operator("/",   (l, r) => l / r,      true);
-    static MOD    = new Operator("%",   (l, r) => l % r,      true);
-    static AND    = new Operator("&",   (l, r) => l & r,      true);
-    static OR     = new Operator("|",   (l, r) => l | r,      true);
-    static XOR    = new Operator("^",   (l, r) => l ^ r,      true);
-    static LSH    = new Operator("<<",  (l, r) => l << r,     true);
-    static RSH    = new Operator(">>",  (l, r) => l >> r,     true);
-    static URSH   = new Operator(">>>", (l, r) => l >>> r,    true);
-    static SEQ    = new Operator("===", (l, r) => l === r,    true);
-    static SNE    = new Operator("!==", (l, r) => l !== r,    true);
-    static EQ     = new Operator("==",  (l, r) => l == r,     true);
-    static NE     = new Operator("!=",  (l, r) => l != r,     true);
-    static LE     = new Operator("<=",  (l, r) => l <= r,     true);
-    static GT     = new Operator(">",   (l, r) => l > r,      true);
-    static LT     = new Operator("<",   (l, r) => l < r,      true);
-    static GE     = new Operator(">=",  (l, r) => l >= r,     true);
-    static PLUS   = new Operator("+",   (a) => +a,            false);
-    static NEG    = new Operator("-",   (a) => -a,            false);
-    static TRUE   = new Operator("!!",  (a) => !!a,           false);
-    static FALSE  = new Operator("!",   (a) => !a,            false);
+    static ADD    = new Operator("+",   (l, r) => l + r,        true);
+    static SUB    = new Operator("-",   (l, r) => l - r,        true);
+    static MUL    = new Operator("*",   (l, r) => l * r,        true);
+    static DIV    = new Operator("/",   (l, r) => l / r,        true);
+    static MOD    = new Operator("%",   (l, r) => l % r,        true);
+    static AND    = new Operator("&",   (l, r) => l & r,        true);
+    static OR     = new Operator("|",   (l, r) => l | r,        true);
+    static XOR    = new Operator("^",   (l, r) => l ^ r,        true);
+    static LSH    = new Operator("<<",  (l, r) => l << r,       true);
+    static RSH    = new Operator(">>",  (l, r) => l >> r,       true);
+    static URSH   = new Operator(">>>", (l, r) => l >>> r,      true);
+    static SEQ    = new Operator("===", (l, r) => l === r,      true);
+    static SNE    = new Operator("!==", (l, r) => l !== r,      true);
+    static EQ     = new Operator("==",  (l, r) => l == r,       true);
+    static NE     = new Operator("!=",  (l, r) => l != r,       true);
+    static LE     = new Operator("<=",  (l, r) => l <= r,       true);
+    static GT     = new Operator(">",   (l, r) => l > r,        true);
+    static LT     = new Operator("<",   (l, r) => l < r,        true);
+    static GE     = new Operator(">=",  (l, r) => l >= r,       true);
+    static PLUS   = new Operator("+",   (a) => +a,              false);
+    static NEG    = new Operator("-",   (a) => -a,              false);
+    static TRUE   = new Operator("!!",  (a) => !!a,             false);
+    static FALSE  = new Operator("!",   (a) => !a,              false);
 
     static TYPE_OF     = new Operator("typeof", (a) => typeof a,  false);
     static BITWISE_NOT = new Operator("~", (a) => ~a,             false);

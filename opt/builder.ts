@@ -21,6 +21,8 @@ module J2ME {
   import Undefined = IR.Undefined;
   import True = IR.True;
   import False = IR.False;
+  import Operator = IR.Operator;
+  import PeepholeOptimizer = IR.PeepholeOptimizer;
 
   import Bytecodes = Bytecode.Bytecodes;
   import BytecodeStream = Bytecode.BytecodeStream;
@@ -366,6 +368,9 @@ module J2ME {
   }
 
   function compileMethodInfo(methodInfo: MethodInfo) {
+    if (methodInfo.name !== 'asd') {
+      return;
+    }
     if (!methodInfo.code) {
       return;
     }
@@ -391,9 +396,11 @@ module J2ME {
   class Builder {
     state: State;
     stream: BytecodeStream;
+    peepholeOptimizer: PeepholeOptimizer;
 
     constructor(public methodInfo: MethodInfo) {
       // ...
+      this.peepholeOptimizer = new PeepholeOptimizer();
     }
 
     build() {
@@ -407,7 +414,40 @@ module J2ME {
       blockMap.trace(writer);
 
       var start = this.buildStart();
-      this.buildGraph(start, start.entryState.clone(), blockMap);
+      var dfg = this.buildGraph(start, start.entryState.clone(), blockMap);
+
+      true && dfg.trace(writer);
+
+      enterTimeline("Build CFG");
+      var cfg = dfg.buildCFG();
+      leaveTimeline();
+
+      enterTimeline("Optimize Phis");
+      cfg.optimizePhis();
+      leaveTimeline();
+
+      enterTimeline("Schedule Nodes");
+      cfg.scheduleEarly();
+      leaveTimeline();
+
+      true && cfg.trace(writer);
+
+      enterTimeline("Verify IR");
+      cfg.verify();
+      leaveTimeline();
+
+      enterTimeline("Allocate Variables");
+      cfg.allocateVariables();
+      leaveTimeline();
+
+      enterTimeline("Generate Source");
+      var result = C4.Backend.generate(cfg);
+      leaveTimeline();
+      true && writer.writeLn(result.body);
+
+      Node.stopNumbering();
+      leaveTimeline();
+
       writer.leave("}");
       IR.Node.stopNumbering();
     }
@@ -433,7 +473,7 @@ module J2ME {
         if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
           kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
         }
-        var parameter = new IR.Parameter(start, i - 1, "P" + (i - 1));
+        var parameter = new IR.Parameter(start, i - 1, "P" + kindCharacter(kind) + (i - 1));
         parameter.kind = kind;
         state.storeLocal(j, parameter);
         j += isTwoSlot(kind) ? 2 : 1;
@@ -441,7 +481,7 @@ module J2ME {
       return start;
     }
 
-    buildGraph(start: Region, state: State, blockMap: BlockMap) {
+    buildGraph(start: Region, state: State, blockMap: BlockMap): IR.DFG {
       var worklist = new SortedList<WorklistItem>(function compare(a: WorklistItem, b: WorklistItem) {
         return a.block.blockID - b.block.blockID;
       });
@@ -457,33 +497,33 @@ module J2ME {
 //      });
 
       var next: WorklistItem;
+
       while ((next = worklist.pop())) {
         this.buildBlock(next.region, next.block, next.region.entryState.clone()).forEach(function (stop: Stop) {
-          /*
-          var target = stop.target;
-          var region = target.region;
-          if (region) {
-            writer && writer.enter("Merging into region: " + region + " @ " + target.position + ", block " + target.bid + " {");
-            writer && writer.writeLn("  R " + region.entryState);
-            writer && writer.writeLn("+ I " + stop.state);
-
-            region.entryState.merge(region, stop.state);
-            region.predecessors.push(stop.control);
-
-            writer && writer.writeLn("  = " + region.entryState);
-            writer && writer.leave("}");
-          } else {
-            region = target.region = new Region(stop.control);
-            var dirtyLocals: boolean [] = null;
-//            if (target.loop) {
-//              dirtyLocals = enableDirtyLocals.value && target.loop.getDirtyLocals();
-//              writer && writer.writeLn("Adding PHIs to loop region. " + dirtyLocals);
-//            }
-            region.entryState = target.loop ? stop.state.makeLoopPhis(region, dirtyLocals) : stop.state.clone(target.position);
-            writer && writer.writeLn("Adding new region: " + region + " @ " + target.position + " to worklist.");
-            worklist.push({region: region, block: target});
-          }
-          */
+//
+//          var target = stop.target;
+//          var region = target.region;
+//          if (region) {
+//            writer && writer.enter("Merging into region: " + region + " @ " + target.position + ", block " + target.bid + " {");
+//            writer && writer.writeLn("  R " + region.entryState);
+//            writer && writer.writeLn("+ I " + stop.state);
+//
+//            region.entryState.merge(region, stop.state);
+//            region.predecessors.push(stop.control);
+//
+//            writer && writer.writeLn("  = " + region.entryState);
+//            writer && writer.leave("}");
+//          } else {
+//            region = target.region = new Region(stop.control);
+//            var dirtyLocals: boolean [] = null;
+////            if (target.loop) {
+////              dirtyLocals = enableDirtyLocals.value && target.loop.getDirtyLocals();
+////              writer && writer.writeLn("Adding PHIs to loop region. " + dirtyLocals);
+////            }
+//            region.entryState = target.loop ? stop.state.makeLoopPhis(region, dirtyLocals) : stop.state.clone(target.position);
+//            writer && writer.writeLn("Adding new region: " + region + " @ " + target.position + " to worklist.");
+//            worklist.push({region: region, block: target});
+//          }
         });
 
         writer && writer.enter("Worklist: {");
@@ -492,6 +532,9 @@ module J2ME {
         });
         writer && writer.leave("}");
       }
+
+      var stop = new IR.Stop(start, start, this.state.pop(Kind.Int));
+      return new IR.DFG(stop);
     }
 
     buildBlock(region: Region, block: Block, state: State): Stop [] {
@@ -606,6 +649,46 @@ module J2ME {
       }
     }
 
+    genArithmeticOp(result: Kind, opcode: Bytecodes, canTrap: boolean) {
+      var state = this.state;
+      var y = state.pop(result);
+      var x = state.pop(result);
+      var v;
+      switch(opcode) {
+        case Bytecodes.IADD:
+        case Bytecodes.LADD: v = new IR.Binary(Operator.IADD, x, y); break;
+        /*
+        case Bytceode.FADD:
+        case Bytceode.DADD: v = new FloatAddNode(result, x, y, isStrictFP); break;
+        case Bytceode.ISUB:
+        case Bytceode.LSUB: v = new IntegerSubNode(result, x, y); break;
+        case Bytceode.FSUB:
+        case Bytceode.DSUB: v = new FloatSubNode(result, x, y, isStrictFP); break;
+        case Bytceode.IMUL:
+        case Bytceode.LMUL: v = new IntegerMulNode(result, x, y); break;
+        case Bytceode.FMUL:
+        case Bytceode.DMUL: v = new FloatMulNode(result, x, y, isStrictFP); break;
+        case Bytceode.IDIV:
+        case Bytceode.LDIV: v = new IntegerDivNode(result, x, y); break;
+        case Bytceode.FDIV:
+        case Bytceode.DDIV: v = new FloatDivNode(result, x, y, isStrictFP); break;
+        case Bytceode.IREM:
+        case Bytceode.LREM: v = new IntegerRemNode(result, x, y); break;
+        case Bytceode.FREM:
+        case Bytceode.DREM: v = new FloatRemNode(result, x, y, isStrictFP); break;
+        default:
+          throw new CiBailout("should not reach");
+        */
+      }
+//      ValueNode result1 = append(graph.unique(v));
+//      if (canTrap) {
+//        append(graph.add(new ValueAnchorNode(result1)));
+//      }
+
+      v = this.peepholeOptimizer.fold(v);
+      state.push(result, v);
+    }
+
     genNewInstance(cpi: number) {
       this.state.apush(genConstant("NEW", Kind.Reference));
     }
@@ -630,8 +713,8 @@ module J2ME {
         case Bytecodes.FCONST_2       : state.fpush(genConstant(2, Kind.Float)); break;
         case Bytecodes.DCONST_0       : state.dpush(genConstant(0, Kind.Double)); break;
         case Bytecodes.DCONST_1       : state.dpush(genConstant(1, Kind.Double)); break;
-//        case Bytecodes.BIPUSH         : state.ipush(genConstant(stream.readByte(), Kind.Int)); break;
-//        case Bytecodes.SIPUSH         : state.ipush(genConstant(stream.readShort(), Kind.Int)); break;
+        case Bytecodes.BIPUSH         : state.ipush(genConstant(stream.readByte(), Kind.Int)); break;
+        case Bytecodes.SIPUSH         : state.ipush(genConstant(stream.readShort(), Kind.Int)); break;
 //        case Bytecodes.LDC            :
 //        case Bytecodes.LDC_W          :
 //        case Bytecodes.LDC2_W         : genLoadConstant(stream.readCPI()); break;
@@ -714,27 +797,28 @@ module J2ME {
         case Bytecodes.DUP2_X1        :
         case Bytecodes.DUP2_X2        :
         case Bytecodes.SWAP           : this.stackOp(opcode); break;
-        /*
+
         case Bytecodes.IADD           :
         case Bytecodes.ISUB           :
-        case Bytecodes.IMUL           : genArithmeticOp(Kind.Int, opcode, false); break;
+        case Bytecodes.IMUL           : this.genArithmeticOp(Kind.Int, opcode, false); break;
         case Bytecodes.IDIV           :
-        case Bytecodes.IREM           : genArithmeticOp(Kind.Int, opcode, true); break;
+        case Bytecodes.IREM           : this.genArithmeticOp(Kind.Int, opcode, true); break;
         case Bytecodes.LADD           :
         case Bytecodes.LSUB           :
-        case Bytecodes.LMUL           : genArithmeticOp(Kind.Long, opcode, false); break;
+        case Bytecodes.LMUL           : this.genArithmeticOp(Kind.Long, opcode, false); break;
         case Bytecodes.LDIV           :
-        case Bytecodes.LREM           : genArithmeticOp(Kind.Long, opcode, true); break;
+        case Bytecodes.LREM           : this.genArithmeticOp(Kind.Long, opcode, true); break;
         case Bytecodes.FADD           :
         case Bytecodes.FSUB           :
         case Bytecodes.FMUL           :
         case Bytecodes.FDIV           :
-        case Bytecodes.FREM           : genArithmeticOp(Kind.Float, opcode, false); break;
+        case Bytecodes.FREM           : this.genArithmeticOp(Kind.Float, opcode, false); break;
         case Bytecodes.DADD           :
         case Bytecodes.DSUB           :
         case Bytecodes.DMUL           :
         case Bytecodes.DDIV           :
-        case Bytecodes.DREM           : genArithmeticOp(Kind.Double, opcode, false); break;
+        case Bytecodes.DREM           : this.genArithmeticOp(Kind.Double, opcode, false); break;
+        /*
         case Bytecodes.INEG           : genNegateOp(Kind.Int); break;
         case Bytecodes.LNEG           : genNegateOp(Kind.Long); break;
         case Bytecodes.FNEG           : genNegateOp(Kind.Float); break;
