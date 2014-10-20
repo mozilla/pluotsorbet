@@ -465,6 +465,7 @@ module J2ME.C4.IR {
     }
 
     static IADD   = new Operator("+",   (l, r) => (l + r) | 0,  true);
+    static FADD   = new Operator("+",   (l, r) => +(l + r),  true);
 
     static ADD    = new Operator("+",   (l, r) => l + r,        true);
     static SUB    = new Operator("-",   (l, r) => l - r,        true);

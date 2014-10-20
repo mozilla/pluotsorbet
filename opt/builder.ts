@@ -46,8 +46,34 @@ module J2ME {
     access_flags: any;
   }
 
+  enum TAGS {
+    CONSTANT_Class = 7,
+    CONSTANT_Fieldref = 9,
+    CONSTANT_Methodref = 10,
+    CONSTANT_InterfaceMethodref = 11,
+    CONSTANT_String = 8,
+    CONSTANT_Integer = 3,
+    CONSTANT_Float = 4,
+    CONSTANT_Long = 5,
+    CONSTANT_Double = 6,
+    CONSTANT_NameAndType = 12,
+    CONSTANT_Utf8 = 1,
+    CONSTANT_Unicode = 2
+}
+
   export interface ConstantPoolEntry {
-    tag: number;
+    tag: TAGS;
+    name_index: number;
+    bytes: string;
+    class_index: number;
+    name_and_type_index: number;
+    signature_index: number;
+    string_index: number;
+    integer: number;
+    float: number;
+    double: number;
+    highBits: number;
+    lowBits: number;
   }
 
   export interface ClassInfo {
@@ -393,14 +419,29 @@ module J2ME {
     return constant;
   }
 
+  function getConstantFromPool(entry : ConstantPoolEntry): IR.Constant {
+    switch (entry.tag) {
+      case TAGS.CONSTANT_Integer:
+        return genConstant(entry.integer, Kind.Int);
+      case TAGS.CONSTANT_Float:
+        return genConstant(entry.float, Kind.Float);
+      case TAGS.CONSTANT_Double:
+        return genConstant(entry.double, Kind.Double);
+      default:
+        throw "Not done.";
+    }
+  }
+
   class Builder {
     state: State;
     stream: BytecodeStream;
     peepholeOptimizer: PeepholeOptimizer;
+    signatureDescriptor: SignatureDescriptor;
 
     constructor(public methodInfo: MethodInfo) {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
+      this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
     }
 
     build() {
@@ -462,7 +503,7 @@ module J2ME {
         state.local.push(null);
       }
 
-      var signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
+      var signatureDescriptor = this.signatureDescriptor;
       writer.writeLn("SIG: " + signatureDescriptor);
 
       var typeDescriptors = signatureDescriptor.typeDescriptors;
@@ -532,8 +573,10 @@ module J2ME {
         });
         writer && writer.leave("}");
       }
-
-      var stop = new IR.Stop(start, start, this.state.pop(Kind.Int));
+      var signatureDescriptor = this.signatureDescriptor;
+      var returnType = signatureDescriptor.typeDescriptors[0];
+      // TODO handle void return types
+      var stop = new IR.Stop(start, start, this.state.pop(returnType.kind));
       return new IR.DFG(stop);
     }
 
@@ -654,28 +697,29 @@ module J2ME {
       var y = state.pop(result);
       var x = state.pop(result);
       var v;
+//      var isStrictFP = false; // TODO
       switch(opcode) {
         case Bytecodes.IADD:
         case Bytecodes.LADD: v = new IR.Binary(Operator.IADD, x, y); break;
+        case Bytecodes.FADD:
+        case Bytecodes.DADD: v = new IR.Binary(Operator.FADD, x, y /*, isStrictFP*/); break;
         /*
-        case Bytceode.FADD:
-        case Bytceode.DADD: v = new FloatAddNode(result, x, y, isStrictFP); break;
-        case Bytceode.ISUB:
-        case Bytceode.LSUB: v = new IntegerSubNode(result, x, y); break;
-        case Bytceode.FSUB:
-        case Bytceode.DSUB: v = new FloatSubNode(result, x, y, isStrictFP); break;
-        case Bytceode.IMUL:
-        case Bytceode.LMUL: v = new IntegerMulNode(result, x, y); break;
-        case Bytceode.FMUL:
-        case Bytceode.DMUL: v = new FloatMulNode(result, x, y, isStrictFP); break;
-        case Bytceode.IDIV:
-        case Bytceode.LDIV: v = new IntegerDivNode(result, x, y); break;
-        case Bytceode.FDIV:
-        case Bytceode.DDIV: v = new FloatDivNode(result, x, y, isStrictFP); break;
-        case Bytceode.IREM:
-        case Bytceode.LREM: v = new IntegerRemNode(result, x, y); break;
-        case Bytceode.FREM:
-        case Bytceode.DREM: v = new FloatRemNode(result, x, y, isStrictFP); break;
+        case Bytecodes.ISUB:
+        case Bytecodes.LSUB: v = new IntegerSubNode(result, x, y); break;
+        case Bytecodes.FSUB:
+        case Bytecodes.DSUB: v = new FloatSubNode(result, x, y, isStrictFP); break;
+        case Bytecodes.IMUL:
+        case Bytecodes.LMUL: v = new IntegerMulNode(result, x, y); break;
+        case Bytecodes.FMUL:
+        case Bytecodes.DMUL: v = new FloatMulNode(result, x, y, isStrictFP); break;
+        case Bytecodes.IDIV:
+        case Bytecodes.LDIV: v = new IntegerDivNode(result, x, y); break;
+        case Bytecodes.FDIV:
+        case Bytecodes.DDIV: v = new FloatDivNode(result, x, y, isStrictFP); break;
+        case Bytecodes.IREM:
+        case Bytecodes.LREM: v = new IntegerRemNode(result, x, y); break;
+        case Bytecodes.FREM:
+        case Bytecodes.DREM: v = new FloatRemNode(result, x, y, isStrictFP); break;
         default:
           throw new CiBailout("should not reach");
         */
@@ -691,6 +735,28 @@ module J2ME {
 
     genNewInstance(cpi: number) {
       this.state.apush(genConstant("NEW", Kind.Reference));
+    }
+
+    genLoadConstant(cpi: number, state: State) {
+      var constant = getConstantFromPool(this.methodInfo.classInfo.constant_pool[cpi]);
+
+//      Object con = constantPool.lookupConstant(cpi);
+//
+//      if (con instanceof RiType) {
+//        // this is a load of class constant which might be unresolved
+//        RiType riType = (RiType) con;
+//        if (riType instanceof RiResolvedType) {
+//          frameState.push(CiKind.Object, append(ConstantNode.forCiConstant(((RiResolvedType) riType).getEncoding(Representation.JavaClass), runtime, graph)));
+//        } else {
+//          append(graph.add(new DeoptimizeNode(DeoptAction.InvalidateRecompile)));
+//          frameState.push(CiKind.Object, append(ConstantNode.forObject(null, runtime, graph)));
+//        }
+//      } else if (con instanceof CiConstant) {
+//        CiConstant constant = (CiConstant) con;
+        state.push(constant.kind, constant);
+//      } else {
+//        throw new Error("lookupConstant returned an object of incorrect type");
+//      }
     }
 
     processBytecode(stream: BytecodeStream, state: State) {
@@ -715,9 +781,9 @@ module J2ME {
         case Bytecodes.DCONST_1       : state.dpush(genConstant(1, Kind.Double)); break;
         case Bytecodes.BIPUSH         : state.ipush(genConstant(stream.readByte(), Kind.Int)); break;
         case Bytecodes.SIPUSH         : state.ipush(genConstant(stream.readShort(), Kind.Int)); break;
-//        case Bytecodes.LDC            :
-//        case Bytecodes.LDC_W          :
-//        case Bytecodes.LDC2_W         : genLoadConstant(stream.readCPI()); break;
+        case Bytecodes.LDC            :
+        case Bytecodes.LDC_W          :
+        case Bytecodes.LDC2_W         : this.genLoadConstant(stream.readCPI(), state); break;
         case Bytecodes.ILOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Int); break;
         case Bytecodes.LLOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Long); break;
         case Bytecodes.FLOAD          : this.loadLocal(stream.readLocalIndex(), Kind.Float); break;

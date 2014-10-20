@@ -48,7 +48,7 @@ module J2ME {
 
     private static canonicalTypeDescriptors: TypeDescriptor [] = [];
 
-    constructor(public value: string) {
+    constructor(public value: string, public kind: Kind) {
       assert (!TypeDescriptor.canonicalTypeDescriptors[value]);
       TypeDescriptor.canonicalTypeDescriptors[value] = this;
       writer.writeLn(value);
@@ -146,7 +146,7 @@ module J2ME {
       var typeDescriptor = TypeDescriptor.canonicalTypeDescriptors[value];
       if (!typeDescriptor) {
         // creating the type descriptor entry will add it to the canonical mapping.
-        typeDescriptor = new TypeDescriptor(value);
+        typeDescriptor = new TypeDescriptor(value, Kind.Reference);
       }
       return typeDescriptor;
     }
@@ -154,7 +154,7 @@ module J2ME {
 
   export class AtomicTypeDescriptor extends TypeDescriptor {
     constructor(public kind: Kind) {
-      super(kindCharacter(kind));
+      super(kindCharacter(kind), kind);
     }
 
     public static Boolean = new AtomicTypeDescriptor(Kind.Boolean);
