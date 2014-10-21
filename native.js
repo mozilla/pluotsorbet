@@ -71,23 +71,23 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "MIDP-2.0"
         break;
     case "fileconn.dir.memorycard":
-        value = "fcfile:///";
+        value = "file:///";
         break;
     case "fileconn.dir.private":
-        value = "fcfile:///";
+        value = "file:///";
         break;
     case "fileconn.dir.applications.bookmarks":
-        value = "fcfile:///";
+        value = "file:///";
         break;
     case "fileconn.dir.received":
-        value = "fcfile:///";
+        value = "file:///";
         break;
     case "fileconn.dir.roots.names":
         // The names here should be localized.
         value = "Memory card;Phone memory;Private"
         break;
     case "fileconn.dir.roots.external":
-        value = "fcfile:///MemoryCard;fcfile:///;fcfile:///";
+        value = "file:///MemoryCard;file:///;file:///";
         break;
     case "fileconn.dir.photos.name":
         value = "Photos";
