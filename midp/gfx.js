@@ -260,11 +260,11 @@
     });
 
     Native.create("javax/microedition/lcdui/Font.charsWidth.([CII)I", function(ctx, str, offset, len) {
-        return withFont(_this, MIDP.Context2D, util.fromJavaChars(str).slice(offset, offset + len));
+        return withFont(this, MIDP.Context2D, util.fromJavaChars(str).slice(offset, offset + len));
     });
 
     Native.create("javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I", function(ctx, str, offset, len) {
-        return withFont(_this, MIDP.Context2D, util.fromJavaString(str).slice(offset, offset + len));
+        return withFont(this, MIDP.Context2D, util.fromJavaString(str).slice(offset, offset + len));
     });
 
     var HCENTER = 1;
