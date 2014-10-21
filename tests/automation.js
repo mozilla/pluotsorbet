@@ -33,21 +33,26 @@ var gfxTests = [
   { name: "gfx/ClippingTest", maxDifferent: 0 },
 ];
 
-casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
-    casper
-    .start("http://localhost:8000/index.html")
-    .withFrame(0, function() {
+casper.test.begin("unit tests", 6 + gfxTests.length, function(test) {
+    function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
             if (content.contains("DONE: 70958 pass, 0 fail, 177 known fail, 0 unknown pass")) {
-              test.pass('main unit tests');
+                test.pass('main unit tests');
             } else {
-              this.debugPage();
-              this.echo(this.captureBase64('png'));
-              test.fail('main unit tests');
+                this.debugPage();
+                this.echo(this.captureBase64('png'));
+                test.fail('main unit tests');
             }
         });
-    });
+    }
+    casper
+    .start("http://localhost:8000/index.html")
+    .withFrame(0, basicUnitTests);
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?numCalled=1000")
+    .withFrame(0, basicUnitTests);
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=page,raw")
