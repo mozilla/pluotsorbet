@@ -6,14 +6,14 @@ module J2ME.Bytecode {
      * Gets a signed 1-byte value.
      */
     public static beS1(data: Uint8Array, bci: number) {
-      return data[bci];
+      return (data[bci] << 24) >> 24;
     }
 
     /**
      * Gets a signed 2-byte big-endian value.
      */
     public static beS2(data: Uint8Array, bci: number) {
-      return (data[bci] << 8) | (data[bci + 1] & 0xff);
+      return ((data[bci] << 8) | (data[bci + 1] & 0xff)) << 16 >> 16;
     }
     
     /**
@@ -49,6 +49,67 @@ module J2ME.Bytecode {
     }
   }
 
+  export enum Condition {
+    /**
+     * Equal.
+     */
+    EQ,
+
+    /**
+     * Not equal.
+     */
+    NE,
+
+    /**
+     * Signed less than.
+     */
+    LT,
+
+    /**
+     * Signed less than or equal.
+     */
+    LE,
+
+    /**
+     * Signed greater than.
+     */
+    GT,
+
+    /**
+     * Signed greater than or equal.
+     */
+    GE,
+
+    /**
+     * Unsigned greater than or equal ("above than or equal").
+     */
+    AE,
+
+    /**
+     * Unsigned less than or equal ("below than or equal").
+     */
+    BE,
+
+    /**
+     * Unsigned greater than ("above than").
+     */
+    AT,
+
+    /**
+     * Unsigned less than ("below than").
+     */
+    BT,
+
+    /**
+     * Operation produced an overflow.
+     */
+    OF,
+
+    /**
+     * Operation did not produce an overflow.
+     */
+    NOF
+  }
   /**
    * The definitions of the bytecodes that are valid input to the compiler and
    * related utility methods. This comprises two groups: the standard Java

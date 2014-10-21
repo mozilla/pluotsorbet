@@ -11,6 +11,8 @@ module J2ME.Bytecode {
     public isLoopHeader: boolean;
     public blockID: number;
 
+    public region: C4.IR.Region;
+
     // public FixedWithNextNode firstInstruction;
 
     public successors: Block [];
@@ -81,6 +83,10 @@ module J2ME.Bytecode {
       for (var i = 0; i < this.blocks.length; i++) {
         this.blocks[i].blockID = i;
       }
+    }
+
+    public getBlock(bci: number) {
+      return this.blockMap[bci];
     }
 
     private makeBlock(startBci: number): Block {
@@ -291,7 +297,7 @@ module J2ME.Bytecode {
           // Don't compile such methods for now, until we see a concrete case that allows checking for correctness.
           throw "Too many loops in method";
         }
-        assert (block.loops === 0);
+        // assert (block.loops === 0);
         block.loops = 1 << this.nextLoop;
         this.nextLoop ++;
       }
@@ -399,10 +405,23 @@ module J2ME.Bytecode {
       return loops;
     }
 
-    public trace(writer: IndentingWriter) {
+    public trace(writer: IndentingWriter, traceBytecode: boolean = false) {
+      var code = this.method.code;
+      var stream = new BytecodeStream(code);
+
       writer.enter("Block Map: " + this.blocks.map(b => b.blockID).join(", "));
       this.blocks.forEach(block => {
-        writer.writeLn("blockID: " + String(block.blockID + ", ").padRight(" ", 5) + "bci: [" + block.startBci + ", " + block.endBci + "]" + (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : ""));
+        writer.enter("blockID: " + String(block.blockID + ", ").padRight(" ", 5) + "bci: [" + block.startBci + ", " + block.endBci + "]" + (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") + (block.isLoopHeader ? " isLoopHeader" : ""));
+        if (traceBytecode) {
+          var bci = block.startBci;
+          stream.setBCI(bci);
+          while (stream.currentBCI <= block.endBci) {
+            writer.writeLn(Bytecodes[stream.currentBC()]);
+            stream.next();
+            bci = stream.currentBCI;
+          }
+          writer.outdent();
+        }
       });
       writer.outdent();
     }

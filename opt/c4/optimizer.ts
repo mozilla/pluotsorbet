@@ -23,7 +23,7 @@ module J2ME.C4.IR {
   import pushUnique = ArrayUtilities.pushUnique;
   import unique = ArrayUtilities.unique;
 
-  var debug = false;
+  var debug = true;
 
   function toID(node) {
     return node.id;
@@ -971,7 +971,7 @@ module J2ME.C4.IR {
     }
 
     scheduleEarly() {
-      var debugScheduler = false;
+      var debugScheduler = true;
       var writer = debugScheduler && new IndentingWriter();
 
       debugScheduler && writer.enter("> Schedule Early");

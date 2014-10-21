@@ -16,7 +16,7 @@ module J2ME {
   import Constant = IR.Constant;
   import Start = IR.Start;
   import Region = IR.Region;
-
+  import ProjectionType = IR.ProjectionType;
   import Null = IR.Null;
   import Undefined = IR.Undefined;
   import True = IR.True;
@@ -26,6 +26,7 @@ module J2ME {
 
   import Bytecodes = Bytecode.Bytecodes;
   import BytecodeStream = Bytecode.BytecodeStream;
+  import Condition = Bytecode.Condition;
 
   function kindsFromSignature(signature: string) {
 
@@ -153,7 +154,7 @@ module J2ME {
       }
       s.bci = this.bci;
       s.local = this.local.map(function (v, i) {
-        if (dirtyLocals[i]) {
+        if (true || dirtyLocals[i]) {
           return makePhi(v);
         }
         return v;
@@ -432,11 +433,32 @@ module J2ME {
     }
   }
 
+  class StopInfo {
+    constructor(
+      public control: Node,
+      public target: Block,
+      public state: State) {
+      // ...
+    }
+  }
+
+  class ReturnInfo {
+    constructor(
+      public control: Node,
+      public value: Value) {
+      // ...
+    }
+  }
+
   class Builder {
     state: State;
+    region: Region;
     stream: BytecodeStream;
     peepholeOptimizer: PeepholeOptimizer;
     signatureDescriptor: SignatureDescriptor;
+    stops: StopInfo [];
+    returns: ReturnInfo [];
+    blockMap: BlockMap;
 
     constructor(public methodInfo: MethodInfo) {
       // ...
@@ -451,8 +473,9 @@ module J2ME {
       writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
       writer.writeLn("Size: " + methodInfo.code.length);
       var blockMap = new BlockMap(methodInfo);
+      this.blockMap = blockMap;
       blockMap.build();
-      blockMap.trace(writer);
+      blockMap.trace(writer, true);
 
       var start = this.buildStart();
       var dfg = this.buildGraph(start, start.entryState.clone(), blockMap);
@@ -461,6 +484,10 @@ module J2ME {
 
       enterTimeline("Build CFG");
       var cfg = dfg.buildCFG();
+      leaveTimeline();
+
+      enterTimeline("Verify IR");
+      cfg.verify();
       leaveTimeline();
 
       enterTimeline("Optimize Phis");
@@ -538,69 +565,74 @@ module J2ME {
 //      });
 
       var next: WorklistItem;
-
+      debugger;
       while ((next = worklist.pop())) {
-        this.buildBlock(next.region, next.block, next.region.entryState.clone()).forEach(function (stop: Stop) {
-//
-//          var target = stop.target;
-//          var region = target.region;
-//          if (region) {
-//            writer && writer.enter("Merging into region: " + region + " @ " + target.position + ", block " + target.bid + " {");
-//            writer && writer.writeLn("  R " + region.entryState);
-//            writer && writer.writeLn("+ I " + stop.state);
-//
-//            region.entryState.merge(region, stop.state);
-//            region.predecessors.push(stop.control);
-//
-//            writer && writer.writeLn("  = " + region.entryState);
-//            writer && writer.leave("}");
-//          } else {
-//            region = target.region = new Region(stop.control);
-//            var dirtyLocals: boolean [] = null;
-////            if (target.loop) {
-////              dirtyLocals = enableDirtyLocals.value && target.loop.getDirtyLocals();
-////              writer && writer.writeLn("Adding PHIs to loop region. " + dirtyLocals);
-////            }
-//            region.entryState = target.loop ? stop.state.makeLoopPhis(region, dirtyLocals) : stop.state.clone(target.position);
-//            writer && writer.writeLn("Adding new region: " + region + " @ " + target.position + " to worklist.");
-//            worklist.push({region: region, block: target});
-//          }
+        writer && writer.writeLn("Processing: " + next.region + " " + next.block.blockID + " " + next.region.entryState);
+        this.buildBlock(next.region, next.block, next.region.entryState.clone()).forEach(function (stop: StopInfo) {
+          var target = stop.target;
+          var region = target.region;
+          if (region) {
+            writer && writer.enter("Merging into region: " + region + " @ " + target.startBci + ", block " + target.blockID + " {");
+            writer && writer.writeLn("  R " + region.entryState);
+            writer && writer.writeLn("+ I " + stop.state);
+
+            region.entryState.merge(region, stop.state);
+            region.predecessors.push(stop.control);
+
+            writer && writer.writeLn("  = " + region.entryState);
+            writer && writer.leave("}");
+          } else {
+            region = target.region = new Region(stop.control);
+            var dirtyLocals: boolean [] = [];
+//            if (target.loop) {
+//              dirtyLocals = enableDirtyLocals.value && target.loop.getDirtyLocals();
+//              writer && writer.writeLn("Adding PHIs to loop region. " + dirtyLocals);
+//            }
+            region.entryState = target.isLoopHeader ? stop.state.makeLoopPhis(region, dirtyLocals) : stop.state.clone(target.startBci);
+            writer && writer.writeLn("Adding new region: " + region + " @ " + target.startBci + " to worklist.");
+            worklist.push({region: region, block: target});
+          }
         });
 
         writer && writer.enter("Worklist: {");
         worklist.forEach(function (item) {
-          // writer && writer.writeLn(item.region + " " + item.block.blockID + " " + item.region.entryState);
+          writer && writer.writeLn(item.region + " " + item.block.blockID + " " + item.region.entryState);
         });
         writer && writer.leave("}");
       }
       var signatureDescriptor = this.signatureDescriptor;
       var returnType = signatureDescriptor.typeDescriptors[0];
       // TODO handle void return types
-      var stop = new IR.Stop(start, start, this.state.pop(returnType.kind));
+      var stop = new IR.Stop(this.returns[0].control, this.returns[0].control, this.returns[0].value);
       return new IR.DFG(stop);
     }
 
-    buildBlock(region: Region, block: Block, state: State): Stop [] {
+    buildBlock(region: Region, block: Block, state: State): StopInfo [] {
+      this.stops = null;
+      this.returns = null;
       this.state = state;
+      this.region = region;
       var code = this.methodInfo.code;
       var stream = new BytecodeStream(code);
       var bci = block.startBci;
       stream.setBCI(bci);
-//      while (bci < block.endBci) {
-//        this.processBytecode(stream, state);
-//        stream.next();
-//        bci = stream.currentBCI;
-//      }
 
-      while (stream.currentBCI < block.endBci) {
+      while (stream.currentBCI <= block.endBci) {
         state.bci = bci;
         this.processBytecode(stream, state);
         stream.next();
         bci = stream.currentBCI;
-        // writer.outdent();
-//        writer.writeLn("State  After: " + Bytecodes[opcode] + " " + state.toString());
       }
-      return [];
+      if (this.returns) {
+        return [];
+      }
+      if (!this.stops) {
+        return [new StopInfo(region,
+          this.blockMap.getBlock(stream.nextBCI),
+          this.state
+        )];
+      }
+      return this.stops;
     }
 
     private loadLocal(index: number, kind: Kind) {
@@ -759,6 +791,55 @@ module J2ME {
 //      }
     }
 
+    genIncrement(stream: BytecodeStream) {
+      var index = stream.readLocalIndex();
+      var local = this.state.loadLocal(index);
+      var increment = genConstant(stream.readIncrement(), Kind.Int);
+      var value = new IR.Binary(Operator.IADD, local, increment);
+      this.state.storeLocal(index, value);
+    }
+
+    genCondition(kind: Kind, condition: Condition) {
+      var y = this.state.pop(kind);
+      var x = this.state.pop(kind);
+      // Map condition to operator somehow.
+      return new IR.Binary(Operator.LE, x, y);
+    }
+
+    genIfSame(stream: BytecodeStream, kind: Kind, condition: Condition) {
+      release || assert (!this.stops);
+      var predicate = this.genCondition(kind, condition);
+      var _if = new IR.If(this.region, predicate);
+      this.stops = [new StopInfo(
+        new IR.Projection(_if, ProjectionType.FALSE),
+        this.blockMap.getBlock(stream.readBranchDest()),
+        this.state
+      ), new StopInfo(
+        new IR.Projection(_if, ProjectionType.TRUE),
+        this.blockMap.getBlock(stream.nextBCI),
+        this.state
+      )];
+    }
+
+    genGoto(stream: BytecodeStream) {
+      release || assert (!this.stops);
+      this.stops = [new StopInfo(
+        this.region,
+        this.blockMap.getBlock(stream.readBranchDest()),
+        this.state
+      )];
+    }
+
+    genReturn(value: Value) {
+      if (!this.returns) {
+        this.returns = [];
+      }
+      this.returns.push(new ReturnInfo(
+        this.region,
+        value
+      ));
+    }
+
     processBytecode(stream: BytecodeStream, state: State) {
       var opcode: Bytecodes = stream.currentBC();
       writer.enter("State Before: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
@@ -901,7 +982,9 @@ module J2ME {
         case Bytecodes.LAND           :
         case Bytecodes.LOR            :
         case Bytecodes.LXOR           : genLogicOp(Kind.Long, opcode); break;
-        case Bytecodes.IINC           : genIncrement(); break;
+        */
+        case Bytecodes.IINC           : this.genIncrement(stream); break;
+        /*
         case Bytecodes.I2L            : genConvert(ConvertNode.Op.I2L); break;
         case Bytecodes.I2F            : genConvert(ConvertNode.Op.I2F); break;
         case Bytecodes.I2D            : genConvert(ConvertNode.Op.I2D); break;
@@ -922,26 +1005,30 @@ module J2ME {
         case Bytecodes.FCMPG          : genCompareOp(Kind.Float, false); break;
         case Bytecodes.DCMPL          : genCompareOp(Kind.Double, true); break;
         case Bytecodes.DCMPG          : genCompareOp(Kind.Double, false); break;
-        case Bytecodes.IFEQ           : genIfZero(Condition.EQ); break;
+        case Bytecodes.IFEQ           : genIfZero(Operator.EQ); break;
         case Bytecodes.IFNE           : genIfZero(Condition.NE); break;
         case Bytecodes.IFLT           : genIfZero(Condition.LT); break;
         case Bytecodes.IFGE           : genIfZero(Condition.GE); break;
         case Bytecodes.IFGT           : genIfZero(Condition.GT); break;
         case Bytecodes.IFLE           : genIfZero(Condition.LE); break;
         case Bytecodes.IF_ICMPEQ      : genIfSame(Kind.Int, Condition.EQ); break;
-        case Bytecodes.IF_ICMPNE      : genIfSame(Kind.Int, Condition.NE); break;
-        case Bytecodes.IF_ICMPLT      : genIfSame(Kind.Int, Condition.LT); break;
-        case Bytecodes.IF_ICMPGE      : genIfSame(Kind.Int, Condition.GE); break;
-        case Bytecodes.IF_ICMPGT      : genIfSame(Kind.Int, Condition.GT); break;
-        case Bytecodes.IF_ICMPLE      : genIfSame(Kind.Int, Condition.LE); break;
-        case Bytecodes.IF_ACMPEQ      : genIfSame(Kind.Reference, Condition.EQ); break;
-        case Bytecodes.IF_ACMPNE      : genIfSame(Kind.Reference, Condition.NE); break;
-        case Bytecodes.GOTO           : genGoto(stream.readBranchDest()); break;
+        */
+        case Bytecodes.IF_ICMPNE      : this.genIfSame(stream, Kind.Int, Condition.NE); break;
+        case Bytecodes.IF_ICMPLT      : this.genIfSame(stream, Kind.Int, Condition.LT); break;
+        case Bytecodes.IF_ICMPGE      : this.genIfSame(stream, Kind.Int, Condition.GE); break;
+        case Bytecodes.IF_ICMPGT      : this.genIfSame(stream, Kind.Int, Condition.GT); break;
+        case Bytecodes.IF_ICMPLE      : this.genIfSame(stream, Kind.Int, Condition.LE); break;
+        case Bytecodes.IF_ACMPEQ      : this.genIfSame(stream, Kind.Reference, Condition.EQ); break;
+        case Bytecodes.IF_ACMPNE      : this.genIfSame(stream, Kind.Reference, Condition.NE); break;
+        case Bytecodes.GOTO           : this.genGoto(stream); break;
+        /*
         case Bytecodes.JSR            : genJsr(stream.readBranchDest()); break;
         case Bytecodes.RET            : genRet(stream.readLocalIndex()); break;
         case Bytecodes.TABLESWITCH    : genTableswitch(); break;
         case Bytecodes.LOOKUPSWITCH   : genLookupswitch(); break;
-        case Bytecodes.IRETURN        : genReturn(state.ipop()); break;
+        */
+        case Bytecodes.IRETURN        : this.genReturn(state.ipop()); break;
+        /*
         case Bytecodes.LRETURN        : genReturn(state.lpop()); break;
         case Bytecodes.FRETURN        : genReturn(state.fpop()); break;
         case Bytecodes.DRETURN        : genReturn(state.dpop()); break;
