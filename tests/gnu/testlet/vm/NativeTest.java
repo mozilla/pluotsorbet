@@ -13,6 +13,8 @@ public class NativeTest implements Testlet {
     native static void throwExceptionAfterPause();
     native static int returnAfterPause();
     native int nonStatic(int val);
+    native static boolean newFunction();
+    native static boolean dumbPipe();
 
     public void test(TestHarness th) {
         th.todo(getInt(), 0xFFFFFFFF); // got (4294967295), expected (-1)
@@ -50,5 +52,8 @@ public class NativeTest implements Testlet {
         th.check(returnAfterPause(), 42);
 
         th.check(nonStatic(2), 42);
+
+        th.check(newFunction());
+        th.check(dumbPipe());
     }
 }

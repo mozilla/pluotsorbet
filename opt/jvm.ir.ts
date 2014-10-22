@@ -45,6 +45,17 @@ module J2ME.C4.IR {
   }
 
   JVMLoadIndexed.prototype.nodeName = "JVMLoadIndexed ";
+
+  export class JVMConvert extends Value {
+    constructor(public from: Kind, public to: Kind, public value: Value) {
+      super();
+    }
+    visitInputs(visitor: NodeVisitor) {
+      visitor(this.value);
+    }
+  }
+
+  JVMConvert.prototype.nodeName = "JVMConvert";
 }
 
 module J2ME.C4.Backend {
@@ -86,5 +97,11 @@ module J2ME.C4.Backend {
     var array = compileValue(this.array, cx);
     var index = compileValue(this.index, cx);
     return new AST.MemberExpression(array, index, true);
+  }
+
+  IR.JVMConvert.prototype.compile = function (cx: Context): AST.Node {
+    var value = compileValue(this.value, cx);
+    // bdahl: Add all the conversions here.
+    return new AST.BinaryExpression("|", value, constant(0));
   }
 }

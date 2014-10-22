@@ -151,7 +151,7 @@ public class TestFileConnection implements Testlet {
 
     public void test(TestHarness th) {
         try {
-            dirPath = System.getProperty("fileconn.dir.private").substring(2);
+            dirPath = System.getProperty("fileconn.dir.private");
 
             dir = (FileConnection)Connector.open(dirPath + "provaDir");
 

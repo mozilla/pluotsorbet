@@ -141,38 +141,36 @@ Context.prototype.execute = function() {
 Context.prototype.start = function() {
   var ctx = this;
 
-  window.setZeroTimeout(function() {
-    Instrument.callResumeHooks(ctx.current());
-    try {
-      VM.execute(ctx);
-    } catch (e) {
-      switch (e) {
-      case VM.Yield:
-        break;
-      case VM.Pause:
-        Instrument.callPauseHooks(ctx.current());
-        return;
-      default:
-        console.info(e);
-        throw e;
-      }
-    }
-    Instrument.callPauseHooks(ctx.current());
-
-    // If there's one frame left, we're back to
-    // the method that created the thread and
-    // we're done.
-    if (ctx.frames.length === 1) {
-      ctx.kill();
+  Instrument.callResumeHooks(ctx.current());
+  try {
+    VM.execute(ctx);
+  } catch (e) {
+    switch (e) {
+    case VM.Yield:
+      break;
+    case VM.Pause:
+      Instrument.callPauseHooks(ctx.current());
       return;
+    default:
+      console.info(e);
+      throw e;
     }
+  }
+  Instrument.callPauseHooks(ctx.current());
 
-    ctx.start();
-  });
+  // If there's one frame left, we're back to
+  // the method that created the thread and
+  // we're done.
+  if (ctx.frames.length === 1) {
+    ctx.kill();
+    return;
+  }
+
+  ctx.resume();
 }
 
 Context.prototype.resume = function() {
-  this.start();
+  window.setZeroTimeout(this.start.bind(this));
 }
 
 Context.prototype.block = function(obj, queue, lockLevel) {
@@ -238,10 +236,10 @@ Context.prototype.monitorExit = function(obj) {
 
 Context.prototype.wait = function(obj, timeout) {
   var lock = obj.lock;
-  if (!lock || lock.thread !== this.thread)
-    this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
   if (timeout < 0)
     this.raiseExceptionAndYield("java/lang/IllegalArgumentException");
+  if (!lock || lock.thread !== this.thread)
+    this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
   var lockLevel = lock.level;
   while (lock.level > 0)
     this.monitorExit(obj);

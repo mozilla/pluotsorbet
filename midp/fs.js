@@ -5,167 +5,138 @@
 
 var RECORD_STORE_BASE = "/RecordStore";
 
-Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var storageId = stack.pop();
-    stack.push(ctx.newString("assets/" + storageId + "/"));
-}
+Native.create("com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;", function(ctx, storageId) {
+    return "assets/" + storageId + "/";
+});
 
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(ctx, stack) {
-    var id = stack.pop(), _this = stack.pop();
-    stack.push(ctx.newString(""));
-}
+Native.create("com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;", function(ctx, id) {
+    return "";
+});
 
-Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] = function(ctx, stack) {
-    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop());
-
-    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
-
-    fs.exists(path, function(exists) {
-        stack.push(exists ? 1 : 0);
-        ctx.resume();
+Native.create("com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z",
+function(ctx, filenameBase, name, ext) {
+    return new Promise(function(resolve, reject) {
+        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
+        fs.exists(path, resolve);
     });
+});
 
-    throw VM.Pause;
-}
+Native.create("com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V",
+function(ctx, filenameBase, name, ext) {
+    return new Promise(function(resolve, reject) {
+        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
-Native["com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V"] = function(ctx, stack) {
-    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop());
-
-    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
-
-    fs.remove(path, function(removed) {
-        ctx.resume();
+        fs.remove(path, resolve);
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I"] = function(ctx, stack) {
-    var storageId = stack.pop(), filenameBase = util.fromJavaString(stack.pop());
-
+Native.create("com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I", function(ctx, filenameBase, storageId) {
     // Pretend there is 50MiB available.  Our implementation is backed
     // by IndexedDB, which has no actual limit beyond space available on device,
     // which I don't think we can determine.  But this should be sufficient
     // to convince the MIDlet to use the API as needed.
-    stack.push(50 * 1024 * 1024);
-}
+    return 50 * 1024 * 1024;
+});
 
-Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I"] = function(ctx, stack) {
-    var storageId = stack.pop(), filenameBase = util.fromJavaString(stack.pop()), handle = stack.pop();
-
+Native.create("com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I", function(ctx, handle, filenameBase, storageId) {
     // Pretend there is 50MiB available.  Our implementation is backed
     // by IndexedDB, which has no actual limit beyond space available on device,
     // which I don't think we can determine.  But this should be sufficient
     // to convince the MIDlet to use the API as needed.
-    stack.push(50 * 1024 * 1024);
-}
+    return 50 * 1024 * 1024;
+});
 
-Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(ctx, stack) {
-    var ext = stack.pop(), name = util.fromJavaString(stack.pop()), filenameBase = util.fromJavaString(stack.pop()), _this = stack.pop();
+Native.create("com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I",
+function(ctx, filenameBase, name, ext) {
+    return new Promise(function(resolve, reject) {
+        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
-    var path = RECORD_STORE_BASE + "/" + filenameBase + "/" + name + "." + ext;
-
-    function openCallback(fd) {
-        if (fd == -1) {
-            ctx.raiseException("java/io/IOException", "openRecordStoreFile: open failed");
-        } else {
-            stack.push(fd); // handle
+        function openCallback(fd) {
+            if (fd == -1) {
+                reject(new JavaException("java/io/IOException", "openRecordStoreFile: open failed"));
+            } else {
+                resolve(fd); // handle
+            }
         }
-        ctx.resume();
-    }
 
-    fs.exists(path, function(exists) {
-        if (exists) {
-            fs.open(path, openCallback);
-        } else {
-            // Per the reference impl, create the file if it doesn't exist.
-            var dirname = fs.dirname(path);
-            fs.mkdirp(dirname, function(created) {
-                if (created) {
-                    fs.create(path, new Blob(), function(created) {
-                        if (created) {
-                            fs.open(path, openCallback);
-                        }
-                        else {
-                            ctx.raiseException("java/io/IOException", "openRecordStoreFile: create failed");
-                            ctx.resume();
-                        }
-                    });
-                } else {
-                    ctx.raiseException("java/io/IOException", "openRecordStoreFile: mkdirp failed");
-                    ctx.resume();
-                }
-            });
-        }
+        fs.exists(path, function(exists) {
+            if (exists) {
+                fs.open(path, openCallback);
+            } else {
+                // Per the reference impl, create the file if it doesn't exist.
+                var dirname = fs.dirname(path);
+                fs.mkdirp(dirname, function(created) {
+                    if (created) {
+                        fs.create(path, new Blob(), function(created) {
+                            if (created) {
+                                fs.open(path, openCallback);
+                            }
+                            else {
+                                reject(new JavaException("java/io/IOException", "openRecordStoreFile: create failed"));
+                            }
+                        });
+                    } else {
+                        reject(new JavaException("java/io/IOException", "openRecordStoreFile: mkdirp failed"));
+                    }
+                });
+            }
+        });
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(ctx, stack) {
-    var pos = stack.pop(), handle = stack.pop();
-
+Native.create("com/sun/midp/rms/RecordStoreFile.setPosition.(II)V", function(ctx, handle, pos) {
     fs.setpos(handle, pos);
-}
+});
 
-Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(ctx, stack) {
-    var numBytes = stack.pop(), offset = stack.pop(), buf = stack.pop(), handle = stack.pop();
-
+Native.create("com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I", function(ctx, handle, buf, offset, numBytes) {
     var from = fs.getpos(handle);
     var to = from + numBytes;
     var readBytes = fs.read(handle, from, to);
 
     if (readBytes.byteLength <= 0) {
-        ctx.raiseExceptionAndYield("java/io/IOException", "handle invalid or segment indices out of bounds");
+        throw new JavaException("java/io/IOException", "handle invalid or segment indices out of bounds");
     }
 
     var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
     for (var i = 0; i < readBytes.byteLength; i++) {
         subBuffer[i] = readBytes[i];
     }
-    stack.push(readBytes.byteLength);
-}
+    return readBytes.byteLength;
+});
 
-Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(ctx, stack) {
-    var numBytes = stack.pop(), offset = stack.pop(), buf = stack.pop(), handle = stack.pop();
+Native.create("com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V", function(ctx, handle, buf, offset, numBytes) {
     fs.write(handle, buf.subarray(offset, offset + numBytes));
-}
+});
 
-Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(ctx, stack) {
-    var handle = stack.pop();
-    fs.flush(handle, function() {
-        ctx.resume();
+Native.create("com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V", function(ctx, handle) {
+    return new Promise(function(resolve, reject) {
+      fs.flush(handle, resolve);
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(ctx, stack) {
-    var handle = stack.pop();
-
-    fs.flush(handle, function() {
-        fs.close(handle);
-        ctx.resume();
+Native.create("com/sun/midp/rms/RecordStoreFile.closeFile.(I)V", function(ctx, handle) {
+    return new Promise(function(resolve, reject) {
+      fs.flush(handle, function() {
+          fs.close(handle);
+          resolve();
+      });
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V"] = function(ctx, stack) {
-    var size = stack.pop(), handle = stack.pop();
-
-    fs.flush(handle, function() {
-        fs.ftruncate(handle, size);
-        ctx.resume();
+Native.create("com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V", function(ctx, handle, size) {
+    return new Promise(function(resolve, reject) {
+      fs.flush(handle, function() {
+          fs.ftruncate(handle, size);
+          resolve();
+      });
     });
-
-    throw VM.Pause;
-}
+});
 
 MIDP.RecordStoreCache = [];
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] = function(ctx, stack) {
-    var headerDataSize = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I",
+function(ctx, suiteId, jStoreName, headerDataSize) {
+    var storeName = util.fromJavaString(jStoreName);
 
     var sharedHeader =
         MIDP.RecordStoreCache.filter(function(v) { return (v && v.suiteId == suiteId && v.storeName == storeName); })[0];
@@ -184,19 +155,17 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/Str
     }
     ++sharedHeader.refCount;
 
-    stack.push(sharedHeader.lookupId);
-}
+    return sharedHeader.lookupId;
+});
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(ctx, stack) {
-    var headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
-
+Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I", function(ctx, lookupId, headerData, headerDataSize) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "invalid header lookup ID");
+        throw new JavaException("java/lang/IllegalStateException", "invalid header lookup ID");
     }
 
     if (!headerData) {
-      ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "header data is null");
+        throw new JavaException("java/lang/IllegalArgumentException", "header data is null");
     }
 
     var size = headerDataSize;
@@ -206,19 +175,18 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = 
     sharedHeader.headerData = headerData.buffer.slice(0, size);
     ++sharedHeader.headerVersion;
 
-    stack.push(sharedHeader.headerVersion);
-}
+    return sharedHeader.headerVersion;
+});
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] = function(ctx, stack) {
-    var headerVersion = stack.pop(), headerDataSize = stack.pop(), headerData = stack.pop(), lookupId = stack.pop();
-
+Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I",
+function(ctx, lookupId, headerData, headerDataSize, headerVersion) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "invalid header lookup ID");
+        throw new JavaException("java/lang/IllegalStateException", "invalid header lookup ID");
     }
 
     if (!headerData) {
-      ctx.raiseExceptionAndYield("java/lang/IllegalArgumentException", "header data is null");
+        throw new JavaException("java/lang/IllegalArgumentException", "header data is null");
     }
 
     if (sharedHeader.headerVersion > headerVersion && sharedHeader.headerData) {
@@ -229,26 +197,22 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] 
         for (var i = 0; i < size; i++) {
             headerData[i] = sharedHeader.headerData[i];
         }
-        stack.push(sharedHeader.headerVersion);
-    } else {
-        stack.push(headerVersion);
+        return sharedHeader.headerVersion;
     }
-}
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(ctx, stack) {
-    var lookupId = stack.pop();
+    return headerVersion;
+});
 
+Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I", function(ctx, lookupId) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        ctx.raiseExceptionAndYield("java/lang/IllegalStateException", "invalid header lookup ID");
+        throw new JavaException("java/lang/IllegalStateException", "invalid header lookup ID");
     }
 
-    stack.push(sharedHeader.refCount);
-}
+    return sharedHeader.refCount;
+});
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx, stack) {
-    var _this = stack.pop();
-
+Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V", function(ctx) {
     for (var i = 0; i < MIDP.RecordStoreCache.length; i++) {
         if (MIDP.RecordStoreCache[i] == null) {
             continue;
@@ -259,541 +223,454 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(ctx
             MIDP.RecordStoreCache[i] = null;
         }
     }
-}
+});
 
 // In the reference implementation, finalize is identical to cleanup0.
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.finalize.()V"] =
     Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"];
 
-Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] = function(ctx, stack) {
-    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
-    stack.push(null);
+Native.create("com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I",
+function(ctx, suiteId, storeName) {
     console.warn("RecordStoreRegistry.getRecordStoreListeners.(IL...String;)[I not implemented (" +
-                 suiteId + ", " + storeName + ")");
-}
+                 suiteId + ", " + util.fromJavaString(storeName) + ")");
+    return null;
+});
 
-Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] = function(ctx, stack) {
-    var recordId = stack.pop(), changeType = stack.pop(), storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+Native.create("com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V",
+function(ctx, suiteId, storeName, changeType, recordId) {
     console.warn("RecordStoreRegistry.sendRecordStoreChangeEvent.(IL...String;II)V not implemented (" +
-                 suiteId + ", " + storeName + ", " + changeType + ", " + recordId + ")");
-}
+                 suiteId + ", " + util.fromJavaString(storeName) + ", " + changeType + ", " + recordId + ")");
+});
 
-Native["com/sun/midp/rms/RecordStoreRegistry.startRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
-    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+Native.create("com/sun/midp/rms/RecordStoreRegistry.startRecordStoreListening.(ILjava/lang/String;)V",
+function(ctx, suiteId, storeName) {
     console.warn("RecordStoreRegistry.startRecordStoreListening.(IL...String;)V not implemented (" +
-                 suiteId + ", " + storeName + ")");
-}
+                 suiteId + ", " + util.fromJavaString(storeName) + ")");
+});
 
-Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] = function(ctx, stack) {
-    var storeName = util.fromJavaString(stack.pop()), suiteId = stack.pop();
+Native.create("com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V",
+function(ctx, suiteId, storeName) {
     console.warn("RecordStoreRegistry.stopRecordStoreListening.(IL...String;)V not implemented (" +
-                 suiteId + ", " + storeName + ")");
-}
+                 suiteId + ", " + util.fromJavaString(storeName) + ")");
+});
 
-Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(ctx, stack) {
-    var taskId = stack.pop();
+Native.create("com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V", function(ctx, taskId) {
     console.warn("RecordStoreRegistry.stopAllRecordStoreListeners.(I)V not implemented (" + taskId + ")");
-}
+});
 
-Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = function(ctx, stack) {
-    var path = stack.pop(), _this = stack.pop();
-
+Native.create("com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z", function(ctx, path) {
     var invalid = ['<', '>', ':', '"', '/', '\\', '|', '*', '?'].map(function(char) {
       return char.charCodeAt(0);
     });
 
     for (var i = 0; i < path.length; i++) {
         if (path[i] <= 31 || invalid.indexOf(path[i]) != -1) {
-            stack.push(0);
-            return;
-        }
-    }
-
-    stack.push(1);
-}
-
-Native["com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    // Pretend there is 1 GB available
-    stack.push2(Long.fromNumber(1024 * 1024 * 1024));
-}
-
-Native["com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V"] = function(ctx, stack) {
-    var value = stack.pop(), path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    console.warn("Connection.setHiddenImpl.([BZ)V not implemented (" + path + ")");
-}
-
-Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    fs.exists(path, function(exists) {
-        stack.push(exists ? 1 : 0);
-        ctx.resume();
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    fs.size(path, function(size) {
-        stack.push2(Long.fromNumber(size));
-        ctx.resume();
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    fs.stat(path, function(stat) {
-        stack.push((stat && stat.isDir) ? 1 : 0);
-        ctx.resume();
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] = function(ctx, stack) {
-    var includeHidden = stack.pop(), filterArray = stack.pop(), path = util.decodeUtf8(stack.pop()),
-        _this = stack.pop();
-
-    var filter = "";
-    if (filterArray) {
-        filter = util.decodeUtf8(filterArray);
-        if (filter.contains("?")) {
-            console.warn("Our implementation of Connection::listImpl assumes the filter doesn't contain the ? wildcard character");
-        }
-
-        // Translate the filter to a regular expression
-
-        // Escape regular expression (everything but * and ?)
-        // Source of the regexp: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
-        filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
-
-        // Transform * to .+
-        filter = filter.replace(/\*/g, ".+");
-
-        filter += "$";
-    }
-
-    fs.list(path, function(files) {
-        var regexp = new RegExp(filter);
-
-        files = files.filter(regexp.test.bind(regexp));
-
-        var filesArray = ctx.newArray("[[B", files.length);
-
-        var added = 0;
-
-        function checkDone() {
-            if (added === files.length) {
-                stack.push(filesArray);
-                ctx.resume();
-
-                return true;
-            }
-
             return false;
         }
+    }
 
-        if (checkDone()) {
-            return;
+    return true;
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", function(ctx, path) {
+    // Pretend there is 1 GB available
+    return Long.fromNumber(1024 * 1024 * 1024);
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V", function(ctx, path, value) {
+    console.warn("Connection.setHiddenImpl.([BZ)V not implemented (" + util.decodeUtf8(path) + ")");
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.existsImpl.([B)Z", function(ctx, path) {
+    return new Promise(function(resolve, reject) {
+      fs.exists(util.decodeUtf8(path), resolve);
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J", function(ctx, path) {
+    return new Promise(function(resolve, reject) {
+        fs.size(util.decodeUtf8(path), function(size) {
+            resolve(Long.fromNumber(size));
+        });
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z", function(ctx, path) {
+    return new Promise(function(resolve, reject) {
+        fs.stat(util.decodeUtf8(path), function(stat) {
+            resolve(!!stat && stat.isDir);
+        });
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B",
+function(ctx, jPath, filterArray, includeHidden) {
+    var path = util.decodeUtf8(jPath);
+    return new Promise(function(resolve, reject) {
+        var filter = "";
+        if (filterArray) {
+            filter = util.decodeUtf8(filterArray);
+            if (filter.contains("?")) {
+                console.warn("Our implementation of Connection::listImpl assumes the filter doesn't contain the ? wildcard character");
+            }
+
+            // Translate the filter to a regular expression
+
+            // Escape regular expression (everything but * and ?)
+            // Source of the regexp: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+            filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
+
+            // Transform * to .+
+            filter = filter.replace(/\*/g, ".+");
+
+            filter += "$";
         }
 
-        files.forEach(function(file) {
-          fs.stat(path + "/" + file, function(stat) {
-              if (stat.isDir) {
-                  file += "/";
-              }
+        fs.list(path, function(files) {
+            var regexp = new RegExp(filter);
 
-              var bytesFile = new TextEncoder("utf-8").encode(file);
+            files = files.filter(regexp.test.bind(regexp));
 
-              var fileArray = ctx.newPrimitiveArray("B", bytesFile.byteLength);
-              fileArray.set(bytesFile);
+            var filesArray = ctx.newArray("[[B", files.length);
 
-              filesArray[added++] = fileArray;
+            var added = 0;
 
-              checkDone();
+            function checkDone() {
+                if (added === files.length) {
+                    resolve(filesArray);
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            if (checkDone()) {
+                return;
+            }
+
+            files.forEach(function(file) {
+              fs.stat(path + "/" + file, function(stat) {
+                  if (stat.isDir) {
+                      file += "/";
+                  }
+
+                  var bytesFile = new TextEncoder("utf-8").encode(file);
+
+                  var fileArray = ctx.newPrimitiveArray("B", bytesFile.byteLength);
+                  fileArray.set(bytesFile);
+
+                  filesArray[added++] = fileArray;
+
+                  checkDone();
+              });
+            });
+        });
+    });
+});
+
+
+Native.create("com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I", function(ctx, path) {
+    return new Promise(function(resolve, reject) {
+        fs.mkdir(util.decodeUtf8(path), function(created) {
+            // IBM's implementation returns different error numbers, we don't care
+            resolve(created ? 0 : 42);
+        });
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.newFileImpl.([B)I", function(ctx, jPath) {
+    var path = util.decodeUtf8(jPath);
+
+    return new Promise(function(resolve, reject) {
+        // IBM's implementation returns different error numbers, we don't care
+
+        fs.exists(path, function(exists) {
+            if (exists) {
+                fs.truncate(path, function(truncated) {
+                    resolve(truncated ? 0 : 42);
+                });
+            } else {
+                fs.create(path, new Blob(), function(created) {
+                    resolve(created ? 0 : 42);
+                });
+            }
+        });
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z", function(ctx, path) {
+    return new Promise(function(resolve, reject) {
+        fs.remove(util.decodeUtf8(path), resolve);
+    });
+});
+
+Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] =
+  Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"]
+
+Native.create("com/ibm/oti/connection/file/Connection.isReadOnlyImpl.([B)Z", function(ctx, path) {
+    console.warn("Connection.isReadOnlyImpl.([B)Z not implemented (" + util.decodeUtf8(path) + ")");
+    return false;
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z", function(ctx, path) {
+    console.warn("Connection.isWriteOnlyImpl.([B)Z not implemented (" + util.decodeUtf8(path) + ")");
+    return false;
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J", function(ctx, path) {
+    return new Promise(function(resolve, reject) {
+        fs.stat(util.decodeUtf8(path), function(stat) {
+            resolve(Long.fromNumber(stat != null ? stat.mtime : 0));
+        });
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", function(ctx, oldPath, newPath) {
+    return new Promise(function(resolve, reject) {
+        fs.rename(util.decodeUtf8(oldPath), util.decodeUtf8(newPath), function(renamed) {
+            if (!renamed) {
+                reject(new JavaException("java/io/IOException", "Rename failed"));
+                return;
+            }
+
+            resolve();
+        });
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(ctx, path, newLength, _) {
+    return new Promise(function(resolve, reject) {
+        fs.open(util.decodeUtf8(path), function(fd) {
+          if (fd == -1) {
+            reject(new JavaException("java/io/IOException", "truncate failed"));
+            return;
+          }
+
+          fs.ftruncate(fd, newLength.toNumber());
+          fs.flush(fd, function() {
+              fs.close(fd);
+              resolve();
           });
         });
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    // IBM's implementation returns different error numbers, we don't care
-
-    fs.mkdir(path, function(created) {
-        stack.push(created ? 0 : 42);
-        ctx.resume();
+Native.create("com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I", function(ctx, path) {
+    return new Promise(function(resolve, reject) {
+      fs.open(util.decodeUtf8(path), resolve);
     });
+});
 
-    throw VM.Pause;
-}
+Native.create("com/ibm/oti/connection/file/FCInputStream.availableImpl.(I)I", function(ctx, fd) {
+    return fs.getsize(fd) - fs.getpos(fd);
+});
 
-Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    // IBM's implementation returns different error numbers, we don't care
-
-    fs.exists(path, function(exists) {
-        if (exists) {
-            fs.truncate(path, function(truncated) {
-                stack.push(truncated ? 0 : 42);
-                ctx.resume();
-            });
-        } else {
-            fs.create(path, new Blob(), function(created) {
-                stack.push(created ? 0 : 42);
-                ctx.resume();
-            });
-        }
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] =
-Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    fs.remove(path, function(removed) {
-        stack.push(removed ? 1 : 0);
-        ctx.resume();
-    });
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.isReadOnlyImpl.([B)Z"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    stack.push(0);
-    console.warn("Connection.isReadOnlyImpl.([B)Z not implemented (" + path + ")");
-}
-
-Native["com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    stack.push(0);
-    console.warn("Connection.isWriteOnlyImpl.([B)Z not implemented (" + path + ")");
-}
-
-Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    fs.stat(path, function(stat) {
-        if (stat == null) {
-            stack.push2(Long.fromNumber(0));
-        } else {
-            stack.push2(Long.fromNumber(stat.mtime));
-        }
-        ctx.resume();
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(ctx, stack) {
-    var newPath = util.decodeUtf8(stack.pop()), oldPath = util.decodeUtf8(stack.pop()), _this = stack.pop();
-    fs.rename(oldPath, newPath, function(renamed) {
-        if (!renamed) {
-            ctx.raiseException("java/io/IOException", "Rename failed");
-        }
-
-        ctx.resume();
-    });
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(ctx, stack) {
-    var newLength = stack.pop2().toNumber(), path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    // IBM's implementation returns different error numbers, we don't care
-
-    fs.open(path, function(fd) {
-      if (fd == -1) {
-        ctx.raiseException("java/io/IOException", "truncate failed");
-        ctx.resume();
-      } else {
-        fs.ftruncate(fd, newLength);
-        fs.flush(fd, function() {
-          fs.close(fd);
-          ctx.resume();
-        });
-      }
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    fs.open(path, function(fd) {
-        stack.push(fd);
-        ctx.resume();
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/FCInputStream.availableImpl.(I)I"] = function(ctx, stack) {
-    var fd = stack.pop(), _this = stack.pop();
-    stack.push(fs.getsize(fd) - fs.getpos(fd));
-}
-
-Native["com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J"] = function(ctx, stack) {
-    var fd = stack.pop(), count = stack.pop2(), _this = stack.pop();
-
+Native.create("com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J", function(ctx, count, _, fd) {
     var curpos = fs.getpos(fd);
     var size = fs.getsize(fd);
     if (curpos + count.toNumber() > size) {
         fs.setpos(fd, size);
-        stack.push2(Long.fromNumber(size - curpos));
-    } else {
-        fs.setpos(fd, curpos + count.toNumber());
-        stack.push2(count);
+        return Long.fromNumber(size - curpos);
     }
-}
 
-Native["com/ibm/oti/connection/file/FCInputStream.readImpl.([BIII)I"] = function(ctx, stack) {
-    var fd = stack.pop(), count = stack.pop(), offset = stack.pop(), buffer = stack.pop(), _this = stack.pop();
+    fs.setpos(fd, curpos + count.toNumber());
+    return count;
+});
 
+Native.create("com/ibm/oti/connection/file/FCInputStream.readImpl.([BIII)I", function(ctx, buffer, offset, count, fd) {
     if (offset < 0 || count < 0 || offset > buffer.byteLength || (buffer.byteLength - offset) < count) {
-        ctx.raiseExceptionAndYield("java/lang/IndexOutOfBoundsException");
+        throw new JavaException("java/lang/IndexOutOfBoundsException");
     }
 
     if (buffer.byteLength == 0 || count == 0) {
-        stack.push(0);
-        return;
+        return 0;
     }
 
     var curpos = fs.getpos(fd);
     var data = fs.read(fd, curpos, curpos + count);
     buffer.set(data, offset);
 
-    stack.push((data.byteLength > 0) ? data.byteLength : -1);
-}
+    return (data.byteLength > 0) ? data.byteLength : -1;
+});
 
-Native["com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I"] = function(ctx, stack) {
-    var fd = stack.pop(), _this = stack.pop();
-
+Native.create("com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I", function(ctx, fd) {
     var curpos = fs.getpos(fd);
 
     var data = fs.read(fd, curpos, curpos+1);
 
-    stack.push((data.byteLength > 0) ? data[0] : -1);
-}
+    return (data.byteLength > 0) ? data[0] : -1;
+});
 
-Native["com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V"] = function(ctx, stack) {
-    var fd = stack.pop(), _this = stack.pop();
-
+Native.create("com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V", function(ctx, fd) {
     if (fd >= 0) {
       fs.close(fd);
     }
-}
+});
 
-Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(ctx, stack) {
-    var fd = stack.pop(), _this = stack.pop();
+Native.create("com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V", function(ctx, fd) {
+    return new Promise(function(resolve, reject) {
+        if (fd <= -1) {
+            resolve();
+            return;
+        }
 
-    if (fd <= -1) {
-        return;
-    }
-
-    fs.flush(fd, function() {
-        fs.close(fd);
-        ctx.resume();
-    });
-
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(ctx, stack) {
-    var path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    function open() {
-        fs.open(path, function(fd) {
-            stack.push(fd);
-            ctx.resume();
+        fs.flush(fd, function() {
+            fs.close(fd);
+            resolve();
         });
-    }
+    });
+});
 
-    fs.exists(path, function(exists) {
-        if (exists) {
-            fs.truncate(path, function(truncated) {
-                if (truncated) {
-                    open();
-                } else {
-                    stack.push(-1);
-                    ctx.resume();
-                }
-            });
-        } else {
-            fs.create(path, new Blob(), function(created) {
-                if (created) {
-                    open();
-                } else {
-                    stack.push(-1);
-                    ctx.resume();
-                }
+Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", function(ctx, jPath) {
+    var path = util.decodeUtf8(jPath);
+
+    return new Promise(function(resolve, reject) {
+        fs.exists(path, function(exists) {
+            if (exists) {
+                fs.truncate(path, function(truncated) {
+                    if (truncated) {
+                        fs.open(path, resolve);
+                    } else {
+                        resolve(-1);
+                    }
+                });
+            } else {
+                fs.create(path, new Blob(), function(created) {
+                    if (created) {
+                        fs.open(path, resolve);
+                    } else {
+                        resolve(-1);
+                    }
+                });
+            }
+        });
+    });
+});
+
+Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I", function(ctx, jPath, offset, _) {
+    var path = util.decodeUtf8(jPath);
+
+    return new Promise(function(resolve, reject) {
+        function open() {
+            fs.open(path, function(fd) {
+                fs.setpos(fd, offset.toNumber());
+                resolve(fd);
             });
         }
-    });
 
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"] = function(ctx, stack) {
-    var offset = stack.pop2(), path = util.decodeUtf8(stack.pop()), _this = stack.pop();
-
-    function open() {
-        fs.open(path, function(fd) {
-            stack.push(fd);
-            fs.setpos(fd, offset.toNumber());
-            ctx.resume();
+        fs.exists(path, function(exists) {
+            if (exists) {
+                open();
+            } else {
+                fs.create(path, new Blob(), function(created) {
+                    if (created) {
+                        open();
+                    } else {
+                        resolve(-1);
+                    }
+                });
+            }
         });
-    }
-
-    fs.exists(path, function(exists) {
-        if (exists) {
-            open();
-        } else {
-            fs.create(path, new Blob(), function(created) {
-                if (created) {
-                    open();
-                } else {
-                    stack.push(-1);
-                    ctx.resume();
-                }
-            });
-        }
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V"] = function(ctx, stack) {
-    var fd = stack.pop(), _this = stack.pop();
-
-    fs.flush(fd, function() {
-        ctx.resume();
+Native.create("com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V", function(ctx, fd) {
+    return new Promise(function(resolve, reject) {
+        fs.flush(fd, resolve);
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = function(ctx, stack) {
-    var fd = stack.pop(), val = stack.pop(), _this = stack.pop();
-
+Native.create("com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V", function(ctx, val, fd) {
     var buf = new Uint8Array(1);
     buf[0] = val;
-
     fs.write(fd, buf);
-}
+});
 
-Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = function(ctx, stack) {
-    var fd = stack.pop(), count = stack.pop(), offset = stack.pop(), byteArray = stack.pop(), _this = stack.pop();
-
+Native.create("com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V",
+function(ctx, byteArray, offset, count, fd) {
     fs.write(fd, byteArray.subarray(offset, offset+count));
-}
+});
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(ctx, stack) {
-    var mode = stack.pop(), fileName = util.fromJavaString(stack.pop()), _this = stack.pop();
+Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I", function(ctx, fileName, mode) {
+    var path = "/" + util.fromJavaString(fileName);
 
-    var path = "/" + fileName;
-
-    function open() {
-        fs.open(path, function(fd) {
-            if (fd == -1) {
-                ctx.raiseException("java/io/IOException",
-                                   "RandomAccessStream::open(" + fileName + ") failed opening the file");
-            } else {
-                stack.push(fd);
-            }
-            ctx.resume();
-        });
-    }
-
-    fs.exists(path, function(exists) {
-        if (exists) {
-            open();
-        } else {
-            fs.create(path, new Blob(), function(created) {
-                if (created) {
-                    open();
+    return new Promise(function(resolve, reject) {
+        function open() {
+            fs.open(path, function(fd) {
+                if (fd == -1) {
+                    reject(new JavaException("java/io/IOException",
+                                             "RandomAccessStream::open(" + path + ") failed opening the file"));
                 } else {
-                    ctx.raiseException("java/io/IOException",
-                                       "RandomAccessStream::open(" + fileName + ") failed creating the file");
-                    ctx.resume();
+                    resolve(fd);
                 }
             });
         }
+
+        fs.exists(path, function(exists) {
+            if (exists) {
+                open();
+            } else {
+                fs.create(path, new Blob(), function(created) {
+                    if (created) {
+                        open();
+                    } else {
+                        reject(new JavaException("java/io/IOException",
+                                                 "RandomAccessStream::open(" + path + ") failed creating the file"));
+                    }
+                });
+            }
+        });
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), buffer = stack.pop(), handle = stack.pop();
-
+Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I",
+function(ctx, handle, buffer, offset, length) {
     var from = fs.getpos(handle);
     var to = from + length;
     var readBytes = fs.read(handle, from, to);
 
     if (readBytes.byteLength <= 0) {
-        stack.push(-1);
-        return;
+        return -1;
     }
 
     var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
     for (var i = 0; i < readBytes.byteLength; i++) {
         subBuffer[i] = readBytes[i];
     }
-    stack.push(readBytes.byteLength);
-}
+    return readBytes.byteLength;
+});
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), buffer = stack.pop(), handle = stack.pop();
+Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V",
+function(ctx, handle, buffer, offset, length) {
     fs.write(handle, buffer.subarray(offset, offset + length));
-}
+});
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"] = function(ctx, stack) {
-    var handle = stack.pop();
-
-    fs.flush(handle, function() {
-        ctx.resume();
+Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V", function(ctx, handle) {
+    return new Promise(function(resolve, reject) {
+        fs.flush(handle, resolve);
     });
+});
 
-    throw VM.Pause;
-}
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V"] = function(ctx, stack) {
-    var position = stack.pop(), handle = stack.pop();
+Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V", function(ctx, handle, position) {
     fs.setpos(handle, position);
-}
+});
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(ctx, stack) {
-    var handle = stack.pop();
-
+Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I", function(ctx, handle) {
     var size = fs.getsize(handle);
 
     if (size == -1) {
-        ctx.raiseExceptionAndYield("java/io/IOException", "RandomAccessStream::sizeOf(" + handle + ") failed");
+        throw new JavaException("java/io/IOException", "RandomAccessStream::sizeOf(" + handle + ") failed");
     }
 
-    stack.push(size);
-}
+    return size;
+});
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(ctx, stack) {
-    var handle = stack.pop();
-
-    fs.flush(handle, function() {
-        fs.close(handle);
-        ctx.resume();
+Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", function(ctx, handle) {
+    return new Promise(function(resolve, reject) {
+        fs.flush(handle, function() {
+            fs.close(handle);
+            resolve();
+        });
     });
-
-    throw VM.Pause;
-}
+});

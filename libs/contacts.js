@@ -5,19 +5,13 @@
 
 var contacts = (function() {
   function forEach(callback) {
-    var req = navigator.mozContacts.getAll();
-
-    req.onsuccess = function() {
-      var contact = req.result;
-      if (contact) {
-        callback(contact);
-        req.continue();
+    var sender = DumbPipe.open("contacts", {}, function(message) {
+      if (message) {
+        callback(message);
+      } else {
+        DumbPipe.close(sender);
       }
-    }
-
-    req.onerror = function() {
-      console.error("Error while reading contacts");
-    }
+    });
   }
 
   return {

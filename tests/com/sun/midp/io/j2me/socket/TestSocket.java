@@ -9,14 +9,14 @@ public class TestSocket implements Testlet {
     public void test(TestHarness th) {
         try {
             testBasicSocketConnection(th);
-        } catch (Exception e) {
+        } catch (IOException e) {
             th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }
 
         try {
             testImmediatelyCloseConnection(th);
-        } catch (Exception e) {
+        } catch (IOException e) {
             th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }

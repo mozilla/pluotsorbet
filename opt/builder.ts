@@ -471,19 +471,39 @@ module J2ME {
   }
 
   class Builder {
-    state: State;
-    region: Region;
-    stream: BytecodeStream;
     peepholeOptimizer: PeepholeOptimizer;
     signatureDescriptor: SignatureDescriptor;
-    stops: StopInfo [];
-    returns: ReturnInfo [];
+
+    /**
+     * Current state vector.
+     */
+    state: State;
+
+    /**
+     * Current region.
+     */
+    region: Region;
+
+    /**
+     * Stop infos accumulated for the last processed block.
+     */
+    blockStopInfos: StopInfo [];
+
+    /**
+     * Methor return infos accumulated during the processing of this method.
+     */
+    methodReturnInfos: ReturnInfo [];
+
+    /**
+     * Current block map.
+     */
     blockMap: BlockMap;
 
     constructor(public methodInfo: MethodInfo) {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
+      this.methodReturnInfos = null;
     }
 
     build(): C4.Backend.Compilation {
@@ -492,13 +512,12 @@ module J2ME {
 
       writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
       writer.writeLn("Size: " + methodInfo.code.length);
-      var blockMap = new BlockMap(methodInfo);
-      this.blockMap = blockMap;
+      var blockMap = this.blockMap = new BlockMap(methodInfo);
       blockMap.build();
       blockMap.trace(writer, true);
 
       var start = this.buildStart();
-      var dfg = this.buildGraph(start, start.entryState.clone(), blockMap);
+      var dfg = this.buildGraph(start, start.entryState.clone());
 
       true && dfg.trace(writer);
 
@@ -573,26 +592,25 @@ module J2ME {
       return start;
     }
 
-    buildGraph(start: Region, state: State, blockMap: BlockMap): IR.DFG {
+    buildGraph(start: Region, state: State): IR.DFG {
       var worklist = new SortedList<WorklistItem>(function compare(a: WorklistItem, b: WorklistItem) {
         return a.block.blockID - b.block.blockID;
       });
 
       worklist.push({
         region: start,
-        block: blockMap.blocks[0]
+        block: this.blockMap.blocks[0]
       });
-
-//      var self = this;
-//      blockMap.blocks.forEach(block => {
-//        self.buildBlock(start, block, state);
-//      });
 
       var next: WorklistItem;
       debugger;
       while ((next = worklist.pop())) {
         writer && writer.writeLn("Processing: " + next.region + " " + next.block.blockID + " " + next.region.entryState);
-        this.buildBlock(next.region, next.block, next.region.entryState.clone()).forEach(function (stop: StopInfo) {
+        this.buildBlock(next.region, next.block, next.region.entryState.clone());
+        if (!this.blockStopInfos) {
+          continue;
+        }
+        this.blockStopInfos.forEach(function (stop: StopInfo) {
           var target = stop.target;
           var region = target.region;
           if (region) {
@@ -626,14 +644,28 @@ module J2ME {
       }
       var signatureDescriptor = this.signatureDescriptor;
       var returnType = signatureDescriptor.typeDescriptors[0];
+
       // TODO handle void return types
-      var stop = new IR.Stop(this.returns[0].control, this.returns[0].store, this.returns[0].value);
+      var stop;
+      var returnInfos = this.methodReturnInfos;
+      if (returnInfos.length === 0) {
+        stop = new IR.Stop(this.methodReturnInfos[0].control, this.methodReturnInfos[0].store, this.methodReturnInfos[0].value);
+      } else {
+        var returnRegion = new Region(null);
+        var returnValuePhi = new Phi(returnRegion, null);
+        var returnStorePhi = new Phi(returnRegion, null);
+        returnInfos.forEach(function (returnInfo) {
+          returnRegion.predecessors.push(returnInfo.control);
+          returnValuePhi.pushValue(returnInfo.value);
+          returnStorePhi.pushValue(returnInfo.store);
+        });
+        stop = new IR.Stop(returnRegion, returnStorePhi, returnValuePhi);
+      }
       return new IR.DFG(stop);
     }
 
-    buildBlock(region: Region, block: Block, state: State): StopInfo [] {
-      this.stops = null;
-      this.returns = null;
+    buildBlock(region: Region, block: Block, state: State) {
+      this.blockStopInfos = null;
       this.state = state;
       this.region = region;
       var code = this.methodInfo.code;
@@ -644,19 +676,20 @@ module J2ME {
       while (stream.currentBCI <= block.endBci) {
         state.bci = bci;
         this.processBytecode(stream, state);
+        if (Bytecode.isReturn(stream.currentBC())) {
+          release || assert (!this.blockStopInfos, "Should not have any stops.");
+          return;
+        }
         stream.next();
         bci = stream.currentBCI;
       }
-      if (this.returns) {
-        return [];
-      }
-      if (!this.stops) {
-        return [new StopInfo(region,
+
+      if (!this.blockStopInfos) {
+        this.blockStopInfos = [new StopInfo(region,
           this.blockMap.getBlock(stream.nextBCI),
           this.state
         )];
       }
-      return this.stops;
     }
 
     private loadLocal(index: number, kind: Kind) {
@@ -831,10 +864,15 @@ module J2ME {
       this.state.storeLocal(index, value);
     }
 
+    genConvert(from: Kind, to: Kind) {
+      var value = this.state.pop(from);
+      this.state.push(to, new IR.JVMConvert(from, to, value));
+    }
+
     genIf(stream: BytecodeStream, predicate: IR.Binary) {
-      release || assert (!this.stops);
+      release || assert (!this.blockStopInfos);
       var _if = new IR.If(this.region, predicate);
-      this.stops = [new StopInfo(
+      this.blockStopInfos = [new StopInfo(
         new IR.Projection(_if, ProjectionType.TRUE),
         this.blockMap.getBlock(stream.readBranchDest()),
         this.state
@@ -859,8 +897,8 @@ module J2ME {
     }
 
     genGoto(stream: BytecodeStream) {
-      release || assert (!this.stops);
-      this.stops = [new StopInfo(
+      release || assert (!this.blockStopInfos);
+      this.blockStopInfos = [new StopInfo(
         this.region,
         this.blockMap.getBlock(stream.readBranchDest()),
         this.state
@@ -869,12 +907,12 @@ module J2ME {
 
     genReturn(value: Value) {
       if (value === null) {
-        value = genConstant("123", Kind.Reference);
+        value = Undefined;
       }
-      if (!this.returns) {
-        this.returns = [];
+      if (!this.methodReturnInfos) {
+        this.methodReturnInfos = [];
       }
-      this.returns.push(new ReturnInfo(
+      this.methodReturnInfos.push(new ReturnInfo(
         this.region,
         this.state.store,
         value
@@ -1084,22 +1122,23 @@ module J2ME {
         case Bytecodes.LXOR           : genLogicOp(Kind.Long, opcode); break;
         */
         case Bytecodes.IINC           : this.genIncrement(stream); break;
+        case Bytecodes.I2L            : this.genConvert(Kind.Int, Kind.Long); break;
+        case Bytecodes.I2F            : this.genConvert(Kind.Int, Kind.Float); break;
+        case Bytecodes.I2D            : this.genConvert(Kind.Int, Kind.Double); break;
+        case Bytecodes.L2I            : this.genConvert(Kind.Long, Kind.Int); break;
+        case Bytecodes.L2F            : this.genConvert(Kind.Long, Kind.Float); break;
+        case Bytecodes.L2D            : this.genConvert(Kind.Long, Kind.Double); break;
+        case Bytecodes.F2I            : this.genConvert(Kind.Float, Kind.Int); break;
+        case Bytecodes.F2L            : this.genConvert(Kind.Float, Kind.Long); break;
+        case Bytecodes.F2D            : this.genConvert(Kind.Float, Kind.Double); break;
+        case Bytecodes.D2I            : this.genConvert(Kind.Double, Kind.Int); break;
+        case Bytecodes.D2L            : this.genConvert(Kind.Double, Kind.Long); break;
+        case Bytecodes.D2F            : this.genConvert(Kind.Double, Kind.Float); break;
+        case Bytecodes.I2B            : this.genConvert(Kind.Int, Kind.Byte); break;
+        case Bytecodes.I2C            : this.genConvert(Kind.Int, Kind.Char); break;
+        case Bytecodes.I2S            : this.genConvert(Kind.Int, Kind.Short); break;
+
         /*
-        case Bytecodes.I2L            : genConvert(ConvertNode.Op.I2L); break;
-        case Bytecodes.I2F            : genConvert(ConvertNode.Op.I2F); break;
-        case Bytecodes.I2D            : genConvert(ConvertNode.Op.I2D); break;
-        case Bytecodes.L2I            : genConvert(ConvertNode.Op.L2I); break;
-        case Bytecodes.L2F            : genConvert(ConvertNode.Op.L2F); break;
-        case Bytecodes.L2D            : genConvert(ConvertNode.Op.L2D); break;
-        case Bytecodes.F2I            : genConvert(ConvertNode.Op.F2I); break;
-        case Bytecodes.F2L            : genConvert(ConvertNode.Op.F2L); break;
-        case Bytecodes.F2D            : genConvert(ConvertNode.Op.F2D); break;
-        case Bytecodes.D2I            : genConvert(ConvertNode.Op.D2I); break;
-        case Bytecodes.D2L            : genConvert(ConvertNode.Op.D2L); break;
-        case Bytecodes.D2F            : genConvert(ConvertNode.Op.D2F); break;
-        case Bytecodes.I2B            : genConvert(ConvertNode.Op.I2B); break;
-        case Bytecodes.I2C            : genConvert(ConvertNode.Op.I2C); break;
-        case Bytecodes.I2S            : genConvert(ConvertNode.Op.I2S); break;
         case Bytecodes.LCMP           : genCompareOp(Kind.Long, false); break;
         case Bytecodes.FCMPL          : genCompareOp(Kind.Float, true); break;
         case Bytecodes.FCMPG          : genCompareOp(Kind.Float, false); break;

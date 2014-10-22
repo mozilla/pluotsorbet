@@ -640,9 +640,6 @@ module J2ME.C4.IR {
     var result;
     var m = StringUtilities;
     if (node instanceof Constant) {
-//      if (node.value instanceof Multiname) {
-//        return node.value.name;
-//      }
       return node.value;
     } else if (node instanceof Variable) {
       return node.name;

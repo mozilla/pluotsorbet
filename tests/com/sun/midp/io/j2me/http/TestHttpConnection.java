@@ -35,7 +35,7 @@ public class TestHttpConnection implements Testlet {
 
             is.close();
             hc.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }

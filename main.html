@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="style/main.css">
+  <link rel="stylesheet" type="text/css" href="style/confirm.css">
+
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+  <script type="text/javascript" src="libs/urlparams.js" defer></script>
+  <script type="text/javascript" src="libs/console.js" defer></script>
+  <script type="text/javascript" src="legacy.js" defer></script>
+  <script type="text/javascript" src="timer.js" defer></script>
+  <script type="text/javascript" src="util.js" defer></script>
+  <script type="text/javascript" src="classfile/reader.js" defer></script>
+  <script type="text/javascript" src="classfile/accessflags.js" defer></script>
+  <script type="text/javascript" src="classfile/attributetypes.js" defer></script>
+  <script type="text/javascript" src="classfile/classfile.js" defer></script>
+  <script type="text/javascript" src="classfile/tags.js" defer></script>
+  <script type="text/javascript" src="classinfo.js" defer></script>
+  <script type="text/javascript" src="arrays.js" defer></script>
+  <script type="text/javascript" src="signature.js" defer></script>
+  <script type="text/javascript" src="opcodes.js" defer></script>
+  <script type="text/javascript" src="classes.js" defer></script>
+  <script type="text/javascript" src="override.js" defer></script>
+  <script type="text/javascript" src="native.js" defer></script>
+  <script type="text/javascript" src="string.js" defer></script>
+  <script type="text/javascript" src="frame.js" defer></script>
+  <script type="text/javascript" src="vm.js" defer></script>
+  <script type="text/javascript" src="runtime.js" defer></script>
+  <script type="text/javascript" src="instrument.js" defer></script>
+  <script type="text/javascript" src="context.js" defer></script>
+  <script type="text/javascript" src="jvm.js" defer></script>
+  <script type="text/javascript" src="libs/zipfile.js" defer></script>
+  <script type="text/javascript" src="libs/long.js" defer></script>
+  <script type="text/javascript" src="libs/async_storage.js" defer></script>
+  <script type="text/javascript" src="libs/encoding.js" defer></script>
+  <script type="text/javascript" src="libs/fs.js" defer></script>
+  <script type="text/javascript" src="libs/rusha.js" defer></script>
+  <script type="text/javascript" src="libs/forge/util.js" defer></script>
+  <script type="text/javascript" src="libs/forge/md5.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn2.js" defer></script>
+  <script type="text/javascript" src="libs/contacts.js" defer></script>
+  <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
+  <script type="text/javascript" src="libs/pipe.js" defer></script>
+  <script type="text/javascript" src="midp/midp.js" defer></script>
+  <script type="text/javascript" src="midp/frameanimator.js" defer></script>
+  <script type="text/javascript" src="midp/fs.js" defer></script>
+  <script type="text/javascript" src="midp/crypto.js" defer></script>
+  <script type="text/javascript" src="midp/gfx.js" defer></script>
+  <script type="text/javascript" src="midp/localmsg.js" defer></script>
+  <script type="text/javascript" src="midp/socket.js" defer></script>
+  <script type="text/javascript" src="midp/sms.js" defer></script>
+  <script type="text/javascript" src="midp/codec.js" defer></script>
+  <script type="text/javascript" src="game-ui.js" defer></script>
+  <script type="text/javascript" src="desktop-ui.js" defer></script>
+  <script type="text/javascript" src="main.js" defer></script>
+</head>
+
+<body>
+  <pre id="console"></pre>
+
+  <!-- The raw console is used for unit tests, so it's not visible by default: -->
+  <pre id="raw-console" style="display: none"></pre>
+
+  <div id="settings">
+    <section>
+      <div>x,y <span id="xy"></span></div>
+    </section>
+    <section>
+      <select id="loglevel">
+        <option value="0">Log Level: Trace
+        <option value="1">Log Level: Log
+        <option value="2">Log Level: Info
+        <option value="3">Log Level: Warn
+        <option value="4">Log Level: Error
+        <option value="5">Log Level: Silent
+      </select>
+      <input id="console-filter-input" type="text" placeholder="Filter Console Output" value="">
+      <label><input type="checkbox" id="auto-scroll" checked>Auto-Scroll At Bottom</label>
+    </section>
+    <section>
+      <button id="clearstorage">Clear storage</button>
+      <button id="trace">Trace: OFF</button>
+      <button id="printAllExceptions">Print all exceptions: OFF</button>
+      <button id="profile">Profile: OFF</button>
+    </section>
+  </div>
+  <div id="display"><canvas id="canvas"></canvas></div>
+  <div id="gamepad">
+    <button id="up">up</button>
+    <button id="down">down</button>
+    <button id="left">left</button>
+    <button id="right">right</button>
+    <button id="fire">fire</button>
+  </div>
+
+  <form role="dialog" data-type="confirm"
+        class="sms-listener-prompt"
+        id="sms-listener-prompt" style="display: none">
+    <section>
+      <h1>SMS Verification Requested</h1>
+      <p>This app sent you an SMS. Type the message you received here:
+        <input type="text" placeholder="Type SMS Here">
+    </section>
+    <menu>
+      <button class="cancel">Cancel</button>
+      <button class="recommend">Done</button>
+    </menu>
+  </form>
+
+</body>
+
+</html>

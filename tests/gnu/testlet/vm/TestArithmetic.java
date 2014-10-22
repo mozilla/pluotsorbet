@@ -271,37 +271,99 @@ class TestArithmetic implements Testlet {
     private static double double_maxlong = (double)Long.MAX_VALUE;
     private static double double_minlong = (double)Long.MIN_VALUE;
 
+    private void checkFloatToInt(float val1, int val2) {
+        th.check((int)val1, val2);
+    }
+
+    private void checkIntToFloat(int val1, float val2) {
+        th.check((float)val1, val2);
+    }
+
+    private void checkIntToFloatRel(int val1, float val2) {
+        th.check(Math.abs((float)val1 - val2) / val2 < 1E-9);
+    }
+
+    private void checkDoubleToInt(double val1, int val2) {
+        th.check((int)val1, val2);
+    }
+
+    private void checkIntToDouble(int val1, double val2) {
+        th.check((double)val1, val2);
+    }
+
+    private void checkFloatToLong(float val1, long val2) {
+        th.check((long)val1, val2);
+    }
+
+    private void checkLongToFloat(long val1, float val2) {
+        th.check((float)val1, val2);
+    }
+
+    private void todoFloatToLong(float val1, long val2) {
+        th.todo((long)val1, val2);
+    }
+
+    private void checkDoubleToLong(double val1, long val2) {
+        th.check((long)val1, val2);
+    }
+
+    private void checkLongToDouble(long val1, double val2) {
+        th.check((double)val1, val2);
+    }
+
     private void ftest() {
         // f2i, d2i, f2l and d2l tests
-        th.check((int)float0, 0);
-        th.check((int)float1, 1);
-        th.check((int)double0, 0);
-        th.check((int)double1, 1);
-        th.check((int)Float.NaN, 0);
-        th.check((int)-Float.NaN, 0);
-        th.check((int)Double.NaN, 0);
-        th.check((int)-Double.NaN, 0);
-        th.check((int)Float.POSITIVE_INFINITY, 2147483647);
-        th.check((int)Float.NEGATIVE_INFINITY, -2147483648);
-        th.check((int)float_maxint, 2147483647);
-        th.check((int)float_minint, -2147483648);
-        th.check((int)double_maxint, 2147483647);
-        th.check((int)double_minint, -2147483648);
+        checkFloatToInt(float0, 0);
+        checkFloatToInt(float1, 1);
+        checkDoubleToInt(double0, 0);
+        checkDoubleToInt(double1, 1);
+        checkFloatToInt(Float.NaN, 0);
+        checkFloatToInt(-Float.NaN, 0);
+        checkDoubleToInt(Double.NaN, 0);
+        checkDoubleToInt(-Double.NaN, 0);
+        checkFloatToInt(Float.POSITIVE_INFINITY, 2147483647);
+        checkFloatToInt(Float.NEGATIVE_INFINITY, -2147483648);
+        checkFloatToInt(float_maxint, 2147483647);
+        checkFloatToInt(float_minint, -2147483648);
+        checkDoubleToInt(double_maxint, 2147483647);
+        checkDoubleToInt(double_minint, -2147483648);
 
-        th.check((long)float0, 0L);
-        th.check((long)float1, 1L);
-        th.check((long)double0, 0L);
-        th.check((long)double1, 1L);
-        th.check((long)Float.NaN, 0L);
-        th.check((long)-Float.NaN, 0L);
-        th.check((long)Double.NaN, 0L);
-        th.check((long)-Double.NaN, 0L);
-        th.check((long)Float.POSITIVE_INFINITY, 9223372036854775807L);
-        th.check((long)Float.NEGATIVE_INFINITY, -9223372036854775808L);
-        th.check((long)float_maxlong, 9223372036854775807L);
-        th.check((long)float_minlong, -9223372036854775808L);
-        th.check((long)double_maxlong, 9223372036854775807L);
-        th.check((long)double_minlong, -9223372036854775808L);
+        checkIntToFloat(0, float0);
+        checkIntToFloat(1, float1);
+        checkIntToDouble(0, double0);
+        checkIntToDouble(1, double1);
+        checkIntToFloatRel(2147483647, (float)2.14748365E9);
+        checkIntToFloat(-2147483648, (float)-2.14748365E9);
+        checkIntToFloatRel(2147483647, float_maxint);
+        checkIntToFloat(-2147483648, float_minint);
+        checkIntToDouble(2147483647, double_maxint);
+        checkIntToDouble(-2147483648, double_minint);
+
+        checkFloatToLong(float0, 0L);
+        checkFloatToLong(float1, 1L);
+        checkDoubleToLong(double0, 0L);
+        checkDoubleToLong(double1, 1L);
+        checkFloatToLong(Float.NaN, 0L);
+        checkFloatToLong(-Float.NaN, 0L);
+        checkDoubleToLong(Double.NaN, 0L);
+        checkDoubleToLong(-Double.NaN, 0L);
+        todoFloatToLong(Float.POSITIVE_INFINITY, 9223372036854775807L);
+        todoFloatToLong(Float.NEGATIVE_INFINITY, -9223372036854775808L);
+        checkFloatToLong(float_maxlong, 9223372036854775807L);
+        checkFloatToLong(float_minlong, -9223372036854775808L);
+        checkDoubleToLong(double_maxlong, 9223372036854775807L);
+        checkDoubleToLong(double_minlong, -9223372036854775808L);
+
+        checkLongToFloat(0L, float0);
+        checkLongToFloat(1L, float1);
+        checkLongToDouble(0L, double0);
+        checkLongToDouble(1L, double1);
+        checkLongToFloat(9223372036854775807L, (float)9.223372E18);
+        checkLongToFloat(-9223372036854775808L, (float)-9.223372E18);
+        checkLongToFloat(9223372036854775807L, float_maxlong);
+        checkLongToFloat(-9223372036854775808L, float_minlong);
+        checkLongToDouble(9223372036854775807L, double_maxlong);
+        checkLongToDouble(-9223372036854775808L, double_minlong);
 
         float a = float1;
         float b = float2;
@@ -347,7 +409,6 @@ class TestArithmetic implements Testlet {
         th.check((-float1/0.0) * 0.5, Float.NEGATIVE_INFINITY);
         th.check((int)(float1/0.0), 2147483647);
         th.check((int)(-float1/0.0), -2147483648);
-        th.check((int)Float.NaN, 0);
     }
 
     private void dtest() {
