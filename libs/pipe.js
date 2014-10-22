@@ -24,7 +24,7 @@ var DumbPipe = {
         pipeID: pipeID,
         message: message,
       };
-      //console.log("inner send: " + JSON.stringify(envelope));
+      console.log("inner send: " + JSON.stringify(envelope));
       this.send(envelope);
     }.bind(this);
 
@@ -99,7 +99,7 @@ var DumbPipe = {
 
     this.send({ command: "get" }, function(envelopes) {
       envelopes.forEach((function(envelope) {
-        //console.log("inner recv: " + JSON.stringify(envelope));
+        console.log("inner recv: " + JSON.stringify(envelope));
         window.setZeroTimeout(function() {
           if (this.recipients[envelope.pipeID]) {
             try {
