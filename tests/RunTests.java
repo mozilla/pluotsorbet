@@ -97,17 +97,23 @@ public class RunTests extends MIDlet {
     }
 
     public void startApp() {
-        String arg0 = getAppProperty("arg-0");
+        String arg = getAppProperty("arg-0");
 
-        if (arg0 != null && arg0.length() > 0) {
+        if (arg != null && arg.length() > 0) {
             Vector v = new Vector();
-            for (int i = 0; i < Testlets.list.length; i++) {
-                v.addElement(Testlets.list[i]);
+            for (int n = 0; n < Testlets.list.length; ++n) {
+                v.addElement(Testlets.list[n]);
             }
-            if (v.contains(arg0)) {
-                runTest(arg0);
-            } else {
-                System.err.println("can't find test " + arg0);
+
+            int i = 0;
+            while (arg != null && arg.length() > 0) {
+                if (v.contains(arg)) {
+                    runTest(arg);
+                } else {
+                    System.err.println("can't find test " + arg);
+                }
+
+                arg = getAppProperty("arg-" + ++i);
             }
         } else {
             for (int n = 0; n < Testlets.list.length; ++n) {
