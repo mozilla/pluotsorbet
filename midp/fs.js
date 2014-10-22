@@ -213,15 +213,12 @@ Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)
 });
 
 Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V", function(ctx) {
-    for (var i = 0; i < MIDP.RecordStoreCache.length; i++) {
-        if (MIDP.RecordStoreCache[i] == null) {
-            continue;
-        }
-        if (--MIDP.RecordStoreCache[i].refCount <= 0) {
-            // Set to null instead of removing from array to maintain
-            // correspondence between lookup IDs and array indices.
-            MIDP.RecordStoreCache[i] = null;
-        }
+    var lookupId = this.class.getField("I.lookupId.I").get(this);
+    if (MIDP.RecordStoreCache[lookupId] &&
+        --MIDP.RecordStoreCache[lookupId].refCount <= 0) {
+        // Set to null instead of removing from array to maintain
+        // correspondence between lookup IDs and array indices.
+        MIDP.RecordStoreCache[lookupId] = null;
     }
 });
 
