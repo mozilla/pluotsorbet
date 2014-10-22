@@ -1,6 +1,7 @@
 import gnu.testlet.*;
 
 import javax.microedition.midlet.*;
+import java.util.Vector;
 
 public class RunTests extends MIDlet {
     private static class Harness extends TestHarness {
@@ -66,36 +67,55 @@ public class RunTests extends MIDlet {
         }
     };
 
+    int pass = 0, fail = 0, knownFail = 0, unknownPass = 0;
+
+    void runTest(String name) {
+        name = name.replace('/', '.');
+        Harness harness = new Harness(name);
+        Class c = null;
+        try {
+            c = Class.forName(name);
+        } catch (Exception e) {
+            System.err.println(e);
+            harness.fail("Can't load test");
+        }
+        Object obj = null;
+        try {
+            obj = c.newInstance();
+        } catch (Exception e) {
+            System.err.println(e);
+            harness.fail("Can't instantiate test");
+        }
+        Testlet t = (Testlet) obj;
+        t.test(harness);
+        if (harness.failed() > 0)
+            harness.report();
+        pass += harness.passed();
+        fail += harness.failed();
+        knownFail += harness.knownFailed();
+        unknownPass += harness.unknownPassed();
+    }
+
     public void startApp() {
-        int pass = 0, fail = 0, knownFail = 0, unknownPass = 0;
-        for (int n = 0; n < Testlets.list.length; ++n) {
-            String name = Testlets.list[n];
-            if (name == null)
-                break;
-            name = name.replace('/', '.');
-            Harness harness = new Harness(name);
-            Class c = null;
-            try {
-                c = Class.forName(name);
-            } catch (Exception e) {
-                System.err.println(e);
-                harness.fail("Can't load test");
+        String arg0 = getAppProperty("arg-0");
+
+        if (arg0 != null && arg0.length() > 0) {
+            Vector v = new Vector();
+            for (int i = 0; i < Testlets.list.length; i++) {
+                v.addElement(Testlets.list[i]);
             }
-            Object obj = null;
-            try {
-                obj = c.newInstance();
-            } catch (Exception e) {
-                System.err.println(e);
-                harness.fail("Can't instantiate test");
+            if (v.contains(arg0)) {
+                runTest(arg0);
+            } else {
+                System.err.println("can't find test " + arg0);
             }
-            Testlet t = (Testlet) obj;
-            t.test(harness);
-            if (harness.failed() > 0)
-                harness.report();
-            pass += harness.passed();
-            fail += harness.failed();
-            knownFail += harness.knownFailed();
-            unknownPass += harness.unknownPassed();
+        } else {
+            for (int n = 0; n < Testlets.list.length; ++n) {
+                String name = Testlets.list[n];
+                if (name == null)
+                    break;
+                runTest(name);
+            }
         }
         System.out.println("DONE: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " + unknownPass + " unknown pass");
     }
