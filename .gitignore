@@ -2,5 +2,7 @@
 *.jad
 *.class
 .DS_Store
+certs/j2se_main.ks
+certs/j2se_test.ks
 tests/Testlets.java
 test.log

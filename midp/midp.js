@@ -371,7 +371,11 @@ Native.create("com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)
     var value;
     switch (util.fromJavaString(key)) {
     case "com.sun.midp.publickeystore.WebPublicKeyStore":
-        value = "_main.ks";
+        if (MIDP.midletClassName == "RunTests") {
+          value = "_test.ks";
+        } else {
+          value = "_main.ks";
+        }
         break;
     case "com.sun.midp.events.dispatchTableInitSize":
         value = "16";
