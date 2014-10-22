@@ -32,7 +32,7 @@ function Socket(host, port) {
 Socket.prototype.recipient = function(message) {
     if (message.type == "close") {
         this.isClosed = true;
-        // DumbPipe.close(this.sender);
+        DumbPipe.close(this.sender);
     }
     var callback = this["on" + message.type];
     if (callback) {
@@ -53,7 +53,7 @@ Socket.prototype.close = function() {
 }
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ctx, ipBytes, port) {
-    console.log("Protocol.open0: " + this.host + ":" + port);
+    // console.log("Protocol.open0: " + this.host + ":" + port);
 
     return new Promise((function(resolve, reject) {
         this.socket = new Socket(this.host, port);
@@ -69,17 +69,17 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ctx,
         this.waitingData = null;
 
         this.socket.onopen = function() {
-            console.log("this.socket.onopen");
+            // console.log("this.socket.onopen");
             resolve();
         }
 
         this.socket.onerror = function(message) {
-            console.log("this.socket.onerror: " + message.error);
+            // console.log("this.socket.onerror: " + message.error);
             reject(new JavaException("java/io/IOException", message.error));
         }
 
         this.socket.ondata = (function(message) {
-            console.log("this.socket.ondata: " + JSON.stringify(message));
+            // console.log("this.socket.ondata: " + JSON.stringify(message));
             var newArray = new Uint8Array(this.data.byteLength + message.data.length);
             newArray.set(this.data);
             newArray.set(message.data, this.data.byteLength);
@@ -93,12 +93,12 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ctx,
 });
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function(ctx) {
-    console.log("Protocol.available0: " + this.data.byteLength);
+    // console.log("Protocol.available0: " + this.data.byteLength);
     return this.data.byteLength;
 });
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx, data, offset, length) {
-    console.log("Protocol.read0: " + this.socket.isClosed);
+    // console.log("Protocol.read0: " + this.socket.isClosed);
 
     return new Promise((function(resolve, reject) {
         if (this.socket.isClosed) {
@@ -132,16 +132,17 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx
 Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
     var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
     // console.log("Protocol.write0: " + String.fromCharCode.apply(String, Array.prototype.slice.call(data.subarray(offset, offset + length))));
-    console.log("Protocol.write0: " + _this.socket.isClosed);
+    // console.log("Protocol.write0: " + _this.socket.isClosed);
 
     if (_this.socket.isClosed) {
-        ctx.raiseExceptionAndYield("java/io/IOException", "socket closed");
+        ctx.raiseExceptionAndYield("java/io/IOException", "socket is closed");
     }
 
     _this.socket.onsend = function(message) {
         _this.socket.onsend = null;
         if ("error" in message) {
-            ctx.raiseException("java/io/IOException", message.error);
+            console.error(message.error);
+            ctx.raiseException("java/io/IOException", "error writing to socket");
             ctx.start();
         } else if (message.result) {
             stack.push(length);
@@ -177,7 +178,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I", function(
 });
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function(ctx) {
-    console.log("Protocol.close0: " + this.socket.isClosed);
+    // console.log("Protocol.close0: " + this.socket.isClosed);
 
     return new Promise((function(resolve, reject) {
         if (this.socket.isClosed) {
@@ -186,7 +187,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function(ctx) {
         }
 
         this.socket.onclose = (function() {
-console.log("this.socket.onclose");
+            // console.log("this.socket.onclose");
             this.socket.onclose = null;
             resolve();
         }).bind(this);

@@ -69,18 +69,18 @@ var DumbPipe = {
 
     switch (envelope.command) {
       case "open":
-        console.log("outer recv: " + JSON.stringify(envelope));
+        //console.log("outer recv: " + JSON.stringify(envelope));
         this.openPipe(envelope.pipeID, envelope.type, envelope.message);
         break;
       case "message":
-        console.log("outer recv: " + JSON.stringify(envelope));
+        //console.log("outer recv: " + JSON.stringify(envelope));
         this.receiveMessage(envelope.pipeID, envelope.message);
         break;
       case "get":
         this.getMessages(event);
         break;
       case "close":
-        console.log("outer recv: " + JSON.stringify(envelope));
+        //console.log("outer recv: " + JSON.stringify(envelope));
         this.closePipe(envelope.pipeID);
         break;
     }
@@ -108,7 +108,7 @@ var DumbPipe = {
     // then sends us a "get" prompt, and we set its return value to the message.
     // Oh my shod, that's some funky git!
     var envelope = { pipeID: pipeID, message: message };
-    console.log("outer send: " + JSON.stringify(envelope));
+    //console.log("outer send: " + JSON.stringify(envelope));
     this.outgoingMessages.push(envelope);
 
     var mozbrowser = document.getElementById("mozbrowser");
