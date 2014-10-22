@@ -3,6 +3,12 @@
 
 'use strict';
 
+if (scriptArgs.length !== 1) {
+  print("error: One main class name must be specified.");
+  print("usage: jsshell <main class name>");
+  quit(1);
+}
+
 var window = {
   setZeroTimeout: function(callback) {
     callback();
@@ -69,16 +75,7 @@ try {
 
   start = dateNow();
 
-  // var directory = new ZipFile(snarf("java/classes.jar", "binary").buffer).directory;
-  // for (var k in directory) {
-  //   if (k.indexOf(".class") > 0) {
-  //     try {
-  //     CLASSES.loadClass(k.substring(0, k.length - 6));
-  //     } catch (zz) {
-  //       // ...
-  //     }
-  //   }
-  // }
+  jvm.startIsolate0(scriptArgs[0], urlParams.args);
 
   jvm.startIsolate0("SimpleClass", urlParams.args);
 

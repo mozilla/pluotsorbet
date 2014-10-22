@@ -101,12 +101,12 @@ var Instrument = {
     var key = methodInfo.implKey;
     if (this.profiling) {
       var then = performance.now();
-      alternateImpl.call(null, ctx, ctx.current().stack);
+      alternateImpl.call(null, ctx, ctx.current().stack, methodInfo.isStatic);
       var methodProfileData = this.profile[key] || (this.profile[key] = { count: 0, cost: 0 });
       methodProfileData.count++;
       methodProfileData.cost += performance.now() - then;
     } else {
-      alternateImpl.call(null, ctx, ctx.current().stack);
+      alternateImpl.call(null, ctx, ctx.current().stack, methodInfo.isStatic);
     }
   },
 };
