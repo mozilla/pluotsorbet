@@ -445,6 +445,7 @@ module J2ME {
   class ReturnInfo {
     constructor(
       public control: Node,
+      public store: Node,
       public value: Value) {
       // ...
     }
@@ -530,6 +531,8 @@ module J2ME {
         state.local.push(null);
       }
 
+      state.store = new IR.Projection(start, ProjectionType.STORE);
+
       var signatureDescriptor = this.signatureDescriptor;
       writer.writeLn("SIG: " + signatureDescriptor);
 
@@ -603,7 +606,7 @@ module J2ME {
       var signatureDescriptor = this.signatureDescriptor;
       var returnType = signatureDescriptor.typeDescriptors[0];
       // TODO handle void return types
-      var stop = new IR.Stop(this.returns[0].control, this.returns[0].control, this.returns[0].value);
+      var stop = new IR.Stop(this.returns[0].control, this.returns[0].store, this.returns[0].value);
       return new IR.DFG(stop);
     }
 
@@ -802,8 +805,8 @@ module J2ME {
     genCondition(kind: Kind, condition: Condition) {
       var y = this.state.pop(kind);
       var x = this.state.pop(kind);
-      // Map condition to operator somehow.
-      return new IR.Binary(Operator.LE, x, y);
+      debugger;
+      return new IR.Binary(Bytecode.conditionToOperator(condition), x, y);
     }
 
     genIfSame(stream: BytecodeStream, kind: Kind, condition: Condition) {
@@ -811,11 +814,11 @@ module J2ME {
       var predicate = this.genCondition(kind, condition);
       var _if = new IR.If(this.region, predicate);
       this.stops = [new StopInfo(
-        new IR.Projection(_if, ProjectionType.FALSE),
+        new IR.Projection(_if, ProjectionType.TRUE),
         this.blockMap.getBlock(stream.readBranchDest()),
         this.state
       ), new StopInfo(
-        new IR.Projection(_if, ProjectionType.TRUE),
+        new IR.Projection(_if, ProjectionType.FALSE),
         this.blockMap.getBlock(stream.nextBCI),
         this.state
       )];
@@ -831,16 +834,55 @@ module J2ME {
     }
 
     genReturn(value: Value) {
+      if (value === null) {
+        value = genConstant("123", Kind.Reference);
+      }
       if (!this.returns) {
         this.returns = [];
       }
       this.returns.push(new ReturnInfo(
         this.region,
+        this.state.store,
         value
       ));
     }
 
+    lookupMethod(cpi: number, opcode: Bytecodes): MethodInfo {
+      var constantPoolEntry = this.methodInfo.classInfo.constant_pool[cpi];
+      assert (constantPoolEntry.tag === TAGS.CONSTANT_Methodref);
+      // TODO: Lots of stuff here.
+      return this.methodInfo;
+    }
+
+    /**
+     * Marks the |node| as the active store node, with dependencies on all loads appearing after the
+     * previous active store node.
+     */
+    registerStore(node: Node) {
+      var state = this.state;
+      state.store = new IR.Projection(node, ProjectionType.STORE);
+      // node.loads = state.loads.slice(0);
+      // state.loads.length = 0;
+    }
+
+    genInvokeStatic(methodInfo: MethodInfo) {
+
+      var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature)
+      var types = signature.typeDescriptors;
+      var args: Value [] = [];
+      for (var i = 1; i < types.length; i++) {
+        var type = types[i];
+        args.push(this.state.pop(type.kind));
+      }
+      var call = new IR.CallProperty(this.region, this.state.store, new Constant("X"), new Constant(methodInfo.name), args, IR.Flags.PRISTINE);
+      this.registerStore(call);
+      if (types[0].kind !== Kind.Void) {
+        this.state.push(types[0], call);
+      }
+    }
+
     processBytecode(stream: BytecodeStream, state: State) {
+      var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
       writer.enter("State Before: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
       switch (opcode) {
@@ -1033,14 +1075,18 @@ module J2ME {
         case Bytecodes.FRETURN        : genReturn(state.fpop()); break;
         case Bytecodes.DRETURN        : genReturn(state.dpop()); break;
         case Bytecodes.ARETURN        : genReturn(state.apop()); break;
-        case Bytecodes.RETURN         : genReturn(null); break;
+        */
+        case Bytecodes.RETURN         : this.genReturn(null); break;
+        /*
         case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); genGetStatic(cpi, lookupField(cpi, opcode)); break;
         case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); genPutStatic(cpi, lookupField(cpi, opcode)); break;
         case Bytecodes.GETFIELD       : cpi = stream.readCPI(); genGetField(cpi, lookupField(cpi, opcode)); break;
         case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); genPutField(cpi, lookupField(cpi, opcode)); break;
         case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); genInvokeVirtual(lookupMethod(cpi, opcode), cpi, constantPool); break;
         case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); genInvokeSpecial(lookupMethod(cpi, opcode), null, cpi, constantPool); break;
-        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); genInvokeStatic(lookupMethod(cpi, opcode), cpi, constantPool); break;
+        */
+        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvokeStatic(this.lookupMethod(cpi, opcode)); break;
+        /*
         case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); genInvokeInterface(lookupMethod(cpi, opcode), cpi, constantPool); break;
         */
         case Bytecodes.NEW            : this.genNewInstance(stream.readCPI()); break;

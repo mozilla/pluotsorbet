@@ -470,10 +470,11 @@ module J2ME.C4.Backend {
   IR.Binary.prototype.compile = function (cx: Context): AST.Expression {
     var left = compileValue(this.left, cx);
     var right = compileValue(this.right, cx);
-    if (this.operator === IR.Operator.AS_ADD) {
-      return call(id("asAdd"), [left, right]);
+    var result = new BinaryExpression (this.operator.name, left, right);
+    if (this.operator === Operator.IADD) {
+      return new BinaryExpression("|", result, constant(0));
     }
-    return new BinaryExpression (this.operator.name, left, right);
+    return result;
   }
 
   IR.CallProperty.prototype.compile = function (cx: Context): AST.Node {
@@ -483,9 +484,7 @@ module J2ME.C4.Backend {
     var args = this.args.map(function (arg) {
       return compileValue(arg, cx);
     });
-    if (this.flags & IR.Flags.AS_CALL) {
-      return callAsCall(callee, object, args);
-    } else if (this.flags & IR.Flags.PRISTINE) {
+    if (this.flags & IR.Flags.PRISTINE) {
       return call(callee, args);
     } else {
       return callCall(callee, object, args);
