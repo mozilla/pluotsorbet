@@ -62,7 +62,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = navigator.language;
         break;
     case "microedition.platform":
-        value = "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
+        value = urlParams.platform ? urlParams.platform : "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
     case "microedition.platformimpl":
         value = "";
