@@ -822,6 +822,11 @@ module J2ME {
       state.push(result, v);
     }
 
+    genNegateOp(kind: Kind) {
+      var x = this.state.pop(kind);
+      this.state.push(kind, new IR.Unary(Operator.NEG, x));
+    }
+
     genNewInstance(cpi: number) {
       this.state.apush(genConstant("NEW", Kind.Reference));
     }
@@ -1103,11 +1108,11 @@ module J2ME {
         case Bytecodes.DMUL           :
         case Bytecodes.DDIV           :
         case Bytecodes.DREM           : this.genArithmeticOp(Kind.Double, opcode, false); break;
+        case Bytecodes.INEG           : this.genNegateOp(Kind.Int); break;
+        case Bytecodes.LNEG           : this.genNegateOp(Kind.Long); break;
+        case Bytecodes.FNEG           : this.genNegateOp(Kind.Float); break;
+        case Bytecodes.DNEG           : this.genNegateOp(Kind.Double); break;
         /*
-        case Bytecodes.INEG           : genNegateOp(Kind.Int); break;
-        case Bytecodes.LNEG           : genNegateOp(Kind.Long); break;
-        case Bytecodes.FNEG           : genNegateOp(Kind.Float); break;
-        case Bytecodes.DNEG           : genNegateOp(Kind.Double); break;
         case Bytecodes.ISHL           :
         case Bytecodes.ISHR           :
         case Bytecodes.IUSHR          : genShiftOp(Kind.Int, opcode); break;
