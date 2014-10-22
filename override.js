@@ -41,7 +41,7 @@ JavaException.prototype = Object.create(Error.prototype);
  */
 function createAlternateImpl(object, key, fn) {
   var retType = key[key.length - 1];
-  var numArgs = fn.length;
+  var numArgs = Signature.getINSlots(key.substring(key.lastIndexOf(".") + 1)) + 1;
   object[key] = function(ctx, stack, isStatic) {
     var args = new Array(numArgs);
 
