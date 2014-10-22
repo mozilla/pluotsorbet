@@ -19,6 +19,35 @@ module J2ME {
     Illegal
   }
 
+  export function stackKind(kind: Kind): Kind {
+    switch (kind) {
+      case Kind.Boolean: return Kind.Int;
+      case Kind.Byte: return Kind.Int;
+      case Kind.Short: return Kind.Int;
+      case Kind.Char: return Kind.Int;
+      case Kind.Int: return Kind.Int;
+      case Kind.Float: return Kind.Float;
+      case Kind.Long: return Kind.Long;
+      case Kind.Double: return Kind.Double;
+      case Kind.Reference: return Kind.Reference;
+      default: throw Debug.unexpected("Unknown stack kind: " + kind);
+    }
+  }
+
+  export function arrayTypeCodeToKind(typeCode): Kind {
+    switch (typeCode) {
+      case 4:  return Kind.Boolean;
+      case 5:  return Kind.Char;
+      case 6:  return Kind.Float;
+      case 7:  return Kind.Double;
+      case 8:  return Kind.Byte;
+      case 9:  return Kind.Short;
+      case 10: return Kind.Int;
+      case 11: return Kind.Long;
+      default: throw Debug.unexpected("Unknown array type code: " + typeCode);
+    }
+  }
+
   export function kindCharacter(kind: Kind): string {
     switch (kind) {
       case Kind.Boolean:
