@@ -887,7 +887,7 @@ Native.create("javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V", functio
 Native.create("com/sun/midp/events/EventQueue.sendShutdownEvent.()V", function(ctx) {
     var obj = ctx.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
     obj.class.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
-    MIDP.sendEvent(obj);
+    MIDP.sendEvent(obj, ctx.runtime.isolate.id);
 });
 
 Native.create("com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V", function(ctx, commandState) {
