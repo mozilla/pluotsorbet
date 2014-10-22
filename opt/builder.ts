@@ -802,16 +802,8 @@ module J2ME {
       this.state.storeLocal(index, value);
     }
 
-    genCondition(kind: Kind, condition: Condition) {
-      var y = this.state.pop(kind);
-      var x = this.state.pop(kind);
-      debugger;
-      return new IR.Binary(Bytecode.conditionToOperator(condition), x, y);
-    }
-
-    genIfSame(stream: BytecodeStream, kind: Kind, condition: Condition) {
+    genIf(stream: BytecodeStream, predicate: IR.Binary) {
       release || assert (!this.stops);
-      var predicate = this.genCondition(kind, condition);
       var _if = new IR.If(this.region, predicate);
       this.stops = [new StopInfo(
         new IR.Projection(_if, ProjectionType.TRUE),
@@ -822,6 +814,19 @@ module J2ME {
         this.blockMap.getBlock(stream.nextBCI),
         this.state
       )];
+    }
+
+    genIfSame(stream: BytecodeStream, kind: Kind, condition: Condition) {
+      var y = this.state.pop(kind);
+      var x = this.state.pop(kind);
+      this.genIf(stream, new IR.Binary(Bytecode.conditionToOperator(condition), x, y));
+    }
+
+    genIfZero(stream: BytecodeStream, condition: Condition) {
+      this.state.ipush(genConstant(0, Kind.Int));
+      var y = this.state.ipop();
+      var x = this.state.ipop();
+      this.genIf(stream, new IR.Binary(Bytecode.conditionToOperator(condition), x, y));
     }
 
     genGoto(stream: BytecodeStream) {
@@ -1047,14 +1052,14 @@ module J2ME {
         case Bytecodes.FCMPG          : genCompareOp(Kind.Float, false); break;
         case Bytecodes.DCMPL          : genCompareOp(Kind.Double, true); break;
         case Bytecodes.DCMPG          : genCompareOp(Kind.Double, false); break;
-        case Bytecodes.IFEQ           : genIfZero(Operator.EQ); break;
-        case Bytecodes.IFNE           : genIfZero(Condition.NE); break;
-        case Bytecodes.IFLT           : genIfZero(Condition.LT); break;
-        case Bytecodes.IFGE           : genIfZero(Condition.GE); break;
-        case Bytecodes.IFGT           : genIfZero(Condition.GT); break;
-        case Bytecodes.IFLE           : genIfZero(Condition.LE); break;
-        case Bytecodes.IF_ICMPEQ      : genIfSame(Kind.Int, Condition.EQ); break;
-        */
+         */
+        case Bytecodes.IFEQ           : this.genIfZero(stream, Condition.EQ); break;
+        case Bytecodes.IFNE           : this.genIfZero(stream, Condition.NE); break;
+        case Bytecodes.IFLT           : this.genIfZero(stream, Condition.LT); break;
+        case Bytecodes.IFGE           : this.genIfZero(stream, Condition.GE); break;
+        case Bytecodes.IFGT           : this.genIfZero(stream, Condition.GT); break;
+        case Bytecodes.IFLE           : this.genIfZero(stream, Condition.LE); break;
+        case Bytecodes.IF_ICMPEQ      : this.genIfSame(stream, Kind.Int, Condition.EQ); break;
         case Bytecodes.IF_ICMPNE      : this.genIfSame(stream, Kind.Int, Condition.NE); break;
         case Bytecodes.IF_ICMPLT      : this.genIfSame(stream, Kind.Int, Condition.LT); break;
         case Bytecodes.IF_ICMPGE      : this.genIfSame(stream, Kind.Int, Condition.GE); break;
@@ -1070,12 +1075,10 @@ module J2ME {
         case Bytecodes.LOOKUPSWITCH   : genLookupswitch(); break;
         */
         case Bytecodes.IRETURN        : this.genReturn(state.ipop()); break;
-        /*
-        case Bytecodes.LRETURN        : genReturn(state.lpop()); break;
-        case Bytecodes.FRETURN        : genReturn(state.fpop()); break;
-        case Bytecodes.DRETURN        : genReturn(state.dpop()); break;
-        case Bytecodes.ARETURN        : genReturn(state.apop()); break;
-        */
+        case Bytecodes.LRETURN        : this.genReturn(state.lpop()); break;
+        case Bytecodes.FRETURN        : this.genReturn(state.fpop()); break;
+        case Bytecodes.DRETURN        : this.genReturn(state.dpop()); break;
+        case Bytecodes.ARETURN        : this.genReturn(state.apop()); break;
         case Bytecodes.RETURN         : this.genReturn(null); break;
         /*
         case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); genGetStatic(cpi, lookupField(cpi, opcode)); break;
