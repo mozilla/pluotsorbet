@@ -412,7 +412,12 @@ module J2ME.Bytecode {
     /**
      * Denotes the 4 INVOKE* instructions.
      */
-    INVOKE       = 0x00001000
+    INVOKE       = 0x00001000,
+
+    /**
+     * Denotes a return instruction that ends a basic block.
+     */
+    RETURN       = 0x00002000
   }
 
   /**
@@ -427,10 +432,10 @@ module J2ME.Bytecode {
 
   var writer = new IndentingWriter();
 
-  function define(opcode: number, name: string, format: string, flags: Flags = 0) {
+  function define(opcode: number, name: string, format: string, flags_: Flags = 0) {
     var instructionLength = format.length;
     length[opcode] = instructionLength;
-    flags[opcode] = flags;
+    flags[opcode] = flags_;
     assert (!isConditionalBranch(opcode) || isBranch(opcode), "a conditional branch must also be a branch");
   }
 
@@ -606,12 +611,12 @@ module J2ME.Bytecode {
   define(Bytecodes.RET                 , "ret"             , "bi"   , Flags.STOP);
   define(Bytecodes.TABLESWITCH         , "tableswitch"     , ""     , Flags.STOP);
   define(Bytecodes.LOOKUPSWITCH        , "lookupswitch"    , ""     , Flags.STOP);
-  define(Bytecodes.IRETURN             , "ireturn"         , "b"    , Flags.TRAP | Flags.STOP);
-  define(Bytecodes.LRETURN             , "lreturn"         , "b"    , Flags.TRAP | Flags.STOP);
-  define(Bytecodes.FRETURN             , "freturn"         , "b"    , Flags.TRAP | Flags.STOP);
-  define(Bytecodes.DRETURN             , "dreturn"         , "b"    , Flags.TRAP | Flags.STOP);
-  define(Bytecodes.ARETURN             , "areturn"         , "b"    , Flags.TRAP | Flags.STOP);
-  define(Bytecodes.RETURN              , "return"          , "b"    , Flags.TRAP | Flags.STOP);
+  define(Bytecodes.IRETURN             , "ireturn"         , "b"    , Flags.TRAP | Flags.STOP | Flags.RETURN);
+  define(Bytecodes.LRETURN             , "lreturn"         , "b"    , Flags.TRAP | Flags.STOP | Flags.RETURN);
+  define(Bytecodes.FRETURN             , "freturn"         , "b"    , Flags.TRAP | Flags.STOP | Flags.RETURN);
+  define(Bytecodes.DRETURN             , "dreturn"         , "b"    , Flags.TRAP | Flags.STOP | Flags.RETURN);
+  define(Bytecodes.ARETURN             , "areturn"         , "b"    , Flags.TRAP | Flags.STOP | Flags.RETURN);
+  define(Bytecodes.RETURN              , "return"          , "b"    , Flags.TRAP | Flags.STOP | Flags.RETURN);
   define(Bytecodes.GETSTATIC           , "getstatic"       , "bjj"  , Flags.TRAP | Flags.FIELD_READ);
   define(Bytecodes.PUTSTATIC           , "putstatic"       , "bjj"  , Flags.TRAP | Flags.FIELD_WRITE);
   define(Bytecodes.GETFIELD            , "getfield"        , "bjj"  , Flags.TRAP | Flags.FIELD_READ);
@@ -760,6 +765,13 @@ module J2ME.Bytecode {
    */
   function isThreeByteExtended(opcode: Bytecodes): boolean {
     return (opcode & ~0xff) != 0;
+  }
+
+  /**
+   * Determines if a given opcode is a return bytecode.
+   */
+  export function isReturn(opcode: Bytecodes): boolean {
+    return !!(flags[opcode & 0xff] & Flags.RETURN);
   }
   
   export class BytecodeSwitch {

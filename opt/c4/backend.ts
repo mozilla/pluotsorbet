@@ -104,7 +104,7 @@ module J2ME.C4.Backend {
     return false;
   }
 
-  function constant(value, cx?: Context): AST.Node {
+  export function constant(value, cx?: Context): AST.Node {
     if (typeof value === "string" || value === null || value === true || value === false) {
       return new Literal(value);
     } else if (value === undefined) {
