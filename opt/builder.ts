@@ -395,14 +395,33 @@ module J2ME {
   }
 
   function compileMethodInfo(methodInfo: MethodInfo) {
-    if (methodInfo.name !== 'asd') {
+    if (methodInfo.name !== 'bubbleSort') {
       return;
     }
     if (!methodInfo.code) {
       return;
     }
     var builder = new Builder(methodInfo);
-    builder.build();
+    var compilation = builder.build();
+    var fnName = methodInfo.name;
+    var fnSource = "function " + fnName + " (" + compilation.parameters.join(", ") + ") " + compilation.body;
+    var fn = Function("return " + fnSource)();
+
+    var array = new Int32Array(1024);
+    for (var i = 0; i < array.length; i++) {
+      array[i] = array.length - i;
+    }
+
+    writer.writeLn(fnSource);
+    var s = dateNow();
+    for (var i = 0; i < 100; i++) {
+      for (var j = 0; j < array.length; j++) {
+        array[j] = array.length - j;
+      }
+      fn(array, 0, array.length - 1);
+    }
+    writer.writeLn("Result: " + Array.prototype.join.call(array, ", "));
+    writer.writeLn("Took: " + (dateNow() - s));
   }
 
   interface WorklistItem {
@@ -467,7 +486,7 @@ module J2ME {
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
     }
 
-    build() {
+    build(): C4.Backend.Compilation {
       IR.Node.startNumbering();
       var methodInfo = this.methodInfo;
 
@@ -519,6 +538,8 @@ module J2ME {
 
       writer.leave("}");
       IR.Node.stopNumbering();
+
+      return result;
     }
 
     buildStart(): IR.Start {
@@ -772,6 +793,14 @@ module J2ME {
       this.state.apush(genConstant("NEW", Kind.Reference));
     }
 
+    genNewTypeArray(typeCode: number) {
+      var kind = arrayTypeCodeToKind(typeCode);
+      var length = this.state.ipop();
+      var result = new IR.JVMNewArray(this.region, kind, length);
+      this.recordStore(result);
+      this.state.apush(result);
+    }
+
     genLoadConstant(cpi: number, state: State) {
       var constant = getConstantFromPool(this.methodInfo.classInfo.constant_pool[cpi]);
 
@@ -858,16 +887,24 @@ module J2ME {
      * Marks the |node| as the active store node, with dependencies on all loads appearing after the
      * previous active store node.
      */
-    registerStore(node: Node) {
+    recordStore(node: any) {
       var state = this.state;
       state.store = new IR.Projection(node, ProjectionType.STORE);
-      // node.loads = state.loads.slice(0);
-      // state.loads.length = 0;
+      node.loads = state.loads.slice(0);
+      state.loads.length = 0;
+    }
+
+    /**
+     * Keeps track of the current set of loads.
+     */
+    recordLoad(node: Node): Value {
+      var state = this.state;
+      state.loads.push(node);
+      return node;
     }
 
     genInvokeStatic(methodInfo: MethodInfo) {
-
-      var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature)
+      var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       var types = signature.typeDescriptors;
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
@@ -875,10 +912,26 @@ module J2ME {
         args.push(this.state.pop(type.kind));
       }
       var call = new IR.CallProperty(this.region, this.state.store, new Constant("X"), new Constant(methodInfo.name), args, IR.Flags.PRISTINE);
-      this.registerStore(call);
+      this.recordStore(call);
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0], call);
       }
+    }
+
+    genStoreIndexed(kind: Kind) {
+      var value = this.state.pop(stackKind(kind));
+      var index = this.state.ipop();
+      var array = this.state.apop();
+      var arrayStore = new IR.JVMStoreIndexed(this.region, this.state.store, kind, array, index, value);
+      this.recordStore(arrayStore);
+    }
+
+    genLoadIndexed(kind: Kind) {
+      var index = this.state.ipop();
+      var array = this.state.apop();
+      var arrayLoad = new IR.JVMLoadIndexed(this.region, this.state.store, kind, array, index);
+      this.recordLoad(arrayLoad);
+      this.state.push(stackKind(kind), arrayLoad);
     }
 
     processBytecode(stream: BytecodeStream, state: State) {
@@ -933,14 +986,14 @@ module J2ME {
         case Bytecodes.ALOAD_2        :
         case Bytecodes.ALOAD_3        : this.loadLocal(opcode - Bytecodes.ALOAD_0, Kind.Reference); break;
 
-//        case Bytecodes.IALOAD         : genLoadIndexed(Kind.Int); break;
-//        case Bytecodes.LALOAD         : genLoadIndexed(Kind.Long); break;
-//        case Bytecodes.FALOAD         : genLoadIndexed(Kind.Float); break;
-//        case Bytecodes.DALOAD         : genLoadIndexed(Kind.Double); break;
-//        case Bytecodes.AALOAD         : genLoadIndexed(Kind.Reference); break;
-//        case Bytecodes.BALOAD         : genLoadIndexed(Kind.Byte); break;
-//        case Bytecodes.CALOAD         : genLoadIndexed(Kind.Char); break;
-//        case Bytecodes.SALOAD         : genLoadIndexed(Kind.Short); break;
+        case Bytecodes.IALOAD         : this.genLoadIndexed(Kind.Int); break;
+        case Bytecodes.LALOAD         : this.genLoadIndexed(Kind.Long); break;
+        case Bytecodes.FALOAD         : this.genLoadIndexed(Kind.Float); break;
+        case Bytecodes.DALOAD         : this.genLoadIndexed(Kind.Double); break;
+        case Bytecodes.AALOAD         : this.genLoadIndexed(Kind.Reference); break;
+        case Bytecodes.BALOAD         : this.genLoadIndexed(Kind.Byte); break;
+        case Bytecodes.CALOAD         : this.genLoadIndexed(Kind.Char); break;
+        case Bytecodes.SALOAD         : this.genLoadIndexed(Kind.Short); break;
         case Bytecodes.ISTORE         : this.storeLocal(Kind.Int, stream.readLocalIndex()); break;
         case Bytecodes.LSTORE         : this.storeLocal(Kind.Long, stream.readLocalIndex()); break;
         case Bytecodes.FSTORE         : this.storeLocal(Kind.Float, stream.readLocalIndex()); break;
@@ -967,16 +1020,16 @@ module J2ME {
         case Bytecodes.ASTORE_2       :
         case Bytecodes.ASTORE_3       : this.storeLocal(Kind.Reference, opcode - Bytecodes.ASTORE_0); break;
 
-        /*
-        case Bytecodes.IASTORE        : genStoreIndexed(Kind.Int   ); break;
-        case Bytecodes.LASTORE        : genStoreIndexed(Kind.Long  ); break;
-        case Bytecodes.FASTORE        : genStoreIndexed(Kind.Float ); break;
-        case Bytecodes.DASTORE        : genStoreIndexed(Kind.Double); break;
-        case Bytecodes.AASTORE        : genStoreIndexed(Kind.Reference); break;
-        case Bytecodes.BASTORE        : genStoreIndexed(Kind.Byte  ); break;
-        case Bytecodes.CASTORE        : genStoreIndexed(Kind.Char  ); break;
-        case Bytecodes.SASTORE        : genStoreIndexed(Kind.Short ); break;
-        */
+
+        case Bytecodes.IASTORE        : this.genStoreIndexed(Kind.Int); break;
+        case Bytecodes.LASTORE        : this.genStoreIndexed(Kind.Long); break;
+        case Bytecodes.FASTORE        : this.genStoreIndexed(Kind.Float); break;
+        case Bytecodes.DASTORE        : this.genStoreIndexed(Kind.Double); break;
+        case Bytecodes.AASTORE        : this.genStoreIndexed(Kind.Reference); break;
+        case Bytecodes.BASTORE        : this.genStoreIndexed(Kind.Byte); break;
+        case Bytecodes.CASTORE        : this.genStoreIndexed(Kind.Char); break;
+        case Bytecodes.SASTORE        : this.genStoreIndexed(Kind.Short); break;
+
         case Bytecodes.POP            :
         case Bytecodes.POP2           :
         case Bytecodes.DUP            :
@@ -1090,8 +1143,8 @@ module J2ME {
         case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); genInvokeInterface(lookupMethod(cpi, opcode), cpi, constantPool); break;
         */
         case Bytecodes.NEW            : this.genNewInstance(stream.readCPI()); break;
-        /*
-        case Bytecodes.NEWARRAY       : genNewTypeArray(stream.readLocalIndex()); break;
+        case Bytecodes.NEWARRAY       : this.genNewTypeArray(stream.readLocalIndex()); break;
+         /*
         case Bytecodes.ANEWARRAY      : genNewObjectArray(stream.readCPI()); break;
         case Bytecodes.ARRAYLENGTH    : genArrayLength(); break;
         case Bytecodes.ATHROW         : genThrow(stream.currentBCI()); break;

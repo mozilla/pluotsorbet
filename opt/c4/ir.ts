@@ -63,7 +63,7 @@ module J2ME.C4.IR {
     (block: Block): void;
   }
 
-  function visitArrayInputs(array: Node [], visitor: NodeVisitor) {
+  export function visitArrayInputs(array: Node [], visitor: NodeVisitor) {
     for (var i = 0; i < array.length; i++) {
       visitor(array[i]);
     }

@@ -190,7 +190,7 @@ module J2ME.C4.Backend {
     return call(property(callee, "call"), [object].concat(args));
   }
 
-  function assignment(left, right) {
+  export function assignment(left, right) {
     release || assert(left && right);
     return new AssignmentExpression("=", left, right);
   }
@@ -397,7 +397,7 @@ module J2ME.C4.Backend {
     }
   }
 
-  function compileValue(value, cx: Context, noVariable?) {
+  export function compileValue(value, cx: Context, noVariable?) {
     release || assert (value);
     release || assert (value.compile, "Implement |compile| for " + value + " (" + value.nodeName + ")");
     release || assert (cx instanceof Context);
