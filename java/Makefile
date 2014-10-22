@@ -9,7 +9,7 @@ classes.jar: $(SRCS) $(CUSTOM_SRCS)
 	mkdir build
 	javac -cp cldc1.1.1:vm:midp -source 1.3 -target 1.3 -d ./build $(SRCS) > /dev/null
 	javac -sourcepath custom -cp build -source 1.3 -target 1.3 -d ./build $(CUSTOM_SRCS) > /dev/null
-	cd build && jar cvf ../classes.jar *
+	cd build && jar cvf0 ../classes.jar *
 	jar uvf classes.jar $(EXTRA)
 	rm -rf build
 
