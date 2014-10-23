@@ -101,7 +101,9 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx
     // console.log("Protocol.read0: " + this.socket.isClosed);
 
     return new Promise((function(resolve, reject) {
-        if (this.socket.isClosed) {
+        // There might be data left in the buffer when the socket is closed, so we
+        // should allow buffer reading even the socket has been closed.
+        if (this.socket.isClosed && this.data.length == 0) {
             resolve(-1);
             return;
         }
@@ -129,37 +131,31 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx
     }).bind(this));
 });
 
-Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
-    // console.log("Protocol.write0: " + String.fromCharCode.apply(String, Array.prototype.slice.call(data.subarray(offset, offset + length))));
-    // console.log("Protocol.write0: " + _this.socket.isClosed);
-
-    if (_this.socket.isClosed) {
-        ctx.raiseExceptionAndYield("java/io/IOException", "socket is closed");
-    }
-
-    _this.socket.onsend = function(message) {
-        _this.socket.onsend = null;
-        if ("error" in message) {
-            console.error(message.error);
-            ctx.raiseException("java/io/IOException", "error writing to socket");
-            ctx.start();
-        } else if (message.result) {
-            stack.push(length);
-            ctx.start();
-        } else {
-            _this.socket.ondrain = function() {
-                _this.socket.ondrain = null;
-                stack.push(length);
-                ctx.start();
-            };
+Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(ctx, data, offset, length) {
+    return new Promise(function(resolve, reject) {
+        if (this.socket.isClosed) {
+          reject(new JavaException("java/io/IOException", "socket is closed"));
+          return;
         }
-    }
 
-    _this.socket.send(data, offset, length);
+        this.socket.onsend = function(message) {
+            this.socket.onsend = null;
+            if ("error" in message) {
+                console.error(message.error);
+                reject(new JavaException("java/io/IOException", "error writing to socket"));
+            } else if (message.result) {
+                resolve(length);
+            } else {
+                this.socket.ondrain = function() {
+                    this.socket.ondrain = null;
+                    resolve(length);
+                }.bind(this);
+            }
+        }.bind(this);
 
-    throw VM.Pause;
-}
+        this.socket.send(data, offset, length);
+    }.bind(this));
+});
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(ctx, option, value) {
     if (!(option in this.options)) {
