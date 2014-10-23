@@ -16,6 +16,7 @@ public class TestSSLStreamConnection implements Testlet {
     static final String SOCKET_URL = "socket://localhost:54443";
     static final String HOST = "localhost";
     static final int PORT = 54443;
+    static final String MESSAGE = "I haven't stopped thinking about recreating that pluot sorbet.";
     static final WebPublicKeyStore KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
     TestHarness th;
 
@@ -26,14 +27,16 @@ public class TestSSLStreamConnection implements Testlet {
             testBasicSSLStreamConnection();
             testMultipleSendsReceivesOnSameSocket();
             testMultipleSendsReceivesOnMultipleSockets();
+            testSendOnClosedOutputStream();
+            testReceiveOnClosedInputStream();
         } catch (Exception e) {
             th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }
     }
 
-    void send(OutputStream os, String string) throws IOException {
-        os.write((string + "\n").getBytes());
+    void send(OutputStream os, String message) throws IOException {
+        os.write((message + "\n").getBytes());
     }
 
     String receive(InputStream is) throws IOException {
@@ -42,8 +45,8 @@ public class TestSSLStreamConnection implements Testlet {
         do {
             buf[i++] = (byte)is.read();
         } while (buf[i-1] != -1 && buf[i-1] != '\n' && i < buf.length);
-        String received = new String(buf, 0, i-1);
-        return received;
+        String message = new String(buf, 0, i-1);
+        return message;
     }
 
     void testBasicSSLStreamConnection() throws IOException {
@@ -54,9 +57,8 @@ public class TestSSLStreamConnection implements Testlet {
             OutputStream os = s.openOutputStream();
             InputStream is = s.openInputStream();
 
-            String string = "I haven't stopped thinking about recreating that pluot sorbet.";
-            send(os, string);
-            th.todo(receive(is), string);
+            send(os, MESSAGE);
+            th.todo(receive(is), MESSAGE);
 
             os.close();
             is.close();
@@ -75,9 +77,9 @@ public class TestSSLStreamConnection implements Testlet {
             InputStream is = s.openInputStream();
 
             for (int i = 0; i < 100; i++) {
-                String string = "Message n." + i;
-                send(os, string);
-                th.todo(receive(is), string);
+                String message = "Message n." + i;
+                send(os, message);
+                th.todo(receive(is), message);
             }
 
             os.close();
@@ -97,9 +99,9 @@ public class TestSSLStreamConnection implements Testlet {
                 OutputStream os = s.openOutputStream();
                 InputStream is = s.openInputStream();
 
-                String string = "Message n." + i;
-                send(os, string);
-                th.todo(receive(is), string);
+                String message = "Message n." + i;
+                send(os, message);
+                th.todo(receive(is), message);
 
                 os.close();
                 is.close();
@@ -107,6 +109,53 @@ public class TestSSLStreamConnection implements Testlet {
             } finally {
                 t.close();
             }
+        }
+    }
+
+    void testSendOnClosedOutputStream() throws IOException {
+        StreamConnection t = (StreamConnection)Connector.open(SOCKET_URL);
+        try {
+            SSLStreamConnection s =
+                new SSLStreamConnection(HOST, PORT, t.openInputStream(), t.openOutputStream(), KEY_STORE);
+            OutputStream os = s.openOutputStream();
+            InputStream is = s.openInputStream();
+
+            os.close();
+            try {
+                send(os, MESSAGE);
+                th.fail("send on closed output stream");
+            } catch(Exception e) {
+                th.todo(e, "java.io.InterruptedIOException: Stream closed");
+            }
+
+            is.close();
+            s.close();
+        } finally {
+            t.close();
+        }
+    }
+
+    void testReceiveOnClosedInputStream() throws IOException {
+        StreamConnection t = (StreamConnection)Connector.open(SOCKET_URL);
+        try {
+            SSLStreamConnection s =
+                new SSLStreamConnection(HOST, PORT, t.openInputStream(), t.openOutputStream(), KEY_STORE);
+            OutputStream os = s.openOutputStream();
+            InputStream is = s.openInputStream();
+
+            send(os, MESSAGE);
+            is.close();
+            try {
+                receive(is);
+                th.fail("receive on closed input stream");
+            } catch(Exception e) {
+                th.todo(e, "java.io.InterruptedIOException: Stream closed");
+            }
+
+            os.close();
+            s.close();
+        } finally {
+            t.close();
         }
     }
 }
