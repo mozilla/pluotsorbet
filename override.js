@@ -15,33 +15,27 @@ JavaException.prototype = Object.create(Error.prototype);
  * A simple wrapper for overriding JVM functions to avoid logic errors
  * and simplify implementation:
  *
- * - Arguments are pushed off the stack based upon the number of
- *   arguments listed on `fn`.
+ * - Arguments are pushed off the stack based upon the signature of the
+ *   function.
  *
  * - The return value is automatically pushed back onto the stack, if
- *   the method signature does not return void. CAUTION: If you want to
- *   return a Long or Double, this code needs to be modified
- *   accordingly to do a `push2`. (Ideally, we'd just scrape the
- *   method signature and always do the right thing.)
+ *   the method signature does not return void.
  *
- * - The object reference ("this") is automatically bound to `fn`,
- *   unless you specify { static: true } in opts.
+ * - The object reference ("this") is automatically bound to `fn`.
  *
  * - JavaException instances are caught and propagated as Java
      exceptions; JS TypeError propagates as a NullPointerException.
  *
+ * @param {object} object
+ *   Native or Override.
  * @param {string} key
  *   The fully-qualified JVM method signature.
  * @param {function(args)} fn
- *   A function taking any number of args. The number of arguments
- *   this function takes is the number of args popped off of the stack.
- * @param {object} opts
- *   { static: true } if the method is static (and should not receive
- *   and pop the `this` argument off the stack).
+ *   A function taking any number of args.
  */
 function createAlternateImpl(object, key, fn) {
   var retType = key[key.length - 1];
-  var numArgs = fn.length;
+  var numArgs = Signature.getINSlots(key.substring(key.lastIndexOf(".") + 1)) + 1;
   object[key] = function(ctx, stack, isStatic) {
     var args = new Array(numArgs);
 

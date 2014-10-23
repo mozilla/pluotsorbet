@@ -14,13 +14,13 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferent: 1615 },
-  { name: "gfx/CanvasTest", maxDifferent: 268 },
+  { name: "gfx/AlertTest", maxDifferent: 1621 },
+  { name: "gfx/CanvasTest", maxDifferent: 269 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
-  { name: "gfx/DrawStringTest", maxDifferent: 342 },
-  { name: "gfx/DrawRedStringTest", maxDifferent: 491 },
+  { name: "gfx/DrawStringTest", maxDifferent: 345 },
+  { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
   { name: "gfx/TextBoxTest", maxDifferent: 4677 },
   { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
