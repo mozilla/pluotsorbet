@@ -35,7 +35,7 @@ Classes.prototype.loadFileFromJar = function(jar, fileName) {
     if (!(fileName in zip.directory))
         return null;
     var bytes = zip.read(fileName);
-    return bytes.buffer.slice(0, bytes.length);
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
 }
 
 Classes.prototype.loadFile = function(fileName) {
