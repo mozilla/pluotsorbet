@@ -13,11 +13,11 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
 public class TestSSLStreamConnection implements Testlet {
-    private static final String SOCKET_URL = "socket://localhost:54443";
-    private static final String HOST = "localhost";
-    private static final int PORT = 54443;
-    private static final WebPublicKeyStore KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
-    private TestHarness th;
+    static final String SOCKET_URL = "socket://localhost:54443";
+    static final String HOST = "localhost";
+    static final int PORT = 54443;
+    static final WebPublicKeyStore KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
+    TestHarness th;
 
     public void test(TestHarness th) {
         this.th = th;
@@ -32,17 +32,18 @@ public class TestSSLStreamConnection implements Testlet {
         }
     }
 
-    void send(OutputStream os, InputStream is, String string) throws IOException {
+    void send(OutputStream os, String string) throws IOException {
         os.write((string + "\n").getBytes());
+    }
 
+    String receive(InputStream is) throws IOException {
         byte buf[] = new byte[1024];
         int i = 0;
         do {
             buf[i++] = (byte)is.read();
         } while (buf[i-1] != -1 && buf[i-1] != '\n' && i < buf.length);
-
         String received = new String(buf, 0, i-1);
-        th.todo(received, string);
+        return received;
     }
 
     void testBasicSSLStreamConnection() throws IOException {
@@ -53,7 +54,9 @@ public class TestSSLStreamConnection implements Testlet {
             OutputStream os = s.openOutputStream();
             InputStream is = s.openInputStream();
 
-            send(os, is, "I haven't stopped thinking about recreating that pluot sorbet.");
+            String string = "I haven't stopped thinking about recreating that pluot sorbet.";
+            send(os, string);
+            th.todo(receive(is), string);
 
             os.close();
             is.close();
@@ -72,7 +75,9 @@ public class TestSSLStreamConnection implements Testlet {
             InputStream is = s.openInputStream();
 
             for (int i = 0; i < 100; i++) {
-                send(os, is, "Message n." + i);
+                String string = "Message n." + i;
+                send(os, string);
+                th.todo(receive(is), string);
             }
 
             os.close();
@@ -92,7 +97,9 @@ public class TestSSLStreamConnection implements Testlet {
                 OutputStream os = s.openOutputStream();
                 InputStream is = s.openInputStream();
 
-                send(os, is, "Message n." + i);
+                String string = "Message n." + i;
+                send(os, string);
+                th.todo(receive(is), string);
 
                 os.close();
                 is.close();
