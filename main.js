@@ -72,24 +72,6 @@ var initFS = new Promise(function(resolve, reject) {
         }
       });
     }),
-
-    new Promise(function(resolve, reject) {
-      if (MIDP.midletClassName == "RunTests") {
-        fs.exists("/_test.ks", function(exists) {
-          if (exists) {
-            resolve();
-          } else {
-            load("certs/_test.ks", "blob").then(function(data) {
-              fs.create("/_test.ks", data, function() {
-                resolve();
-              });
-            });
-          }
-        });
-      } else {
-        resolve();
-      }
-    }),
   ]);
 });
 
@@ -128,6 +110,21 @@ if (urlParams.jad) {
 if (MIDP.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"));
+  loadingPromises.push(
+    new Promise(function(resolve, reject) {
+      fs.exists("/_test.ks", function(exists) {
+        if (exists) {
+          resolve();
+        } else {
+          load("certs/_test.ks", "blob").then(function(data) {
+            fs.create("/_test.ks", data, function() {
+              resolve();
+            });
+          });
+        }
+      });
+    })
+  );
 }
 
 Promise.all(loadingPromises).then(function() {
