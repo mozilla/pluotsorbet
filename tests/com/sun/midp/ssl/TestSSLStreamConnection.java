@@ -13,40 +13,93 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
 public class TestSSLStreamConnection implements Testlet {
+    private static final String SOCKET_URL = "socket://localhost:54443";
+    private static final String HOST = "localhost";
+    private static final int PORT = 54443;
+    private static final WebPublicKeyStore KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
+    private TestHarness th;
+
     public void test(TestHarness th) {
+        this.th = th;
+
         try {
-            testSSLStreamConnection(th);
+            testBasicSSLStreamConnection();
+            testMultipleSendsReceivesOnSameSocket();
+            testMultipleSendsReceivesOnMultipleSockets();
         } catch (Exception e) {
             th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }
     }
 
-    void testSSLStreamConnection(TestHarness th) throws IOException {
-        StreamConnection t = (StreamConnection)Connector.open("socket://localhost:54443");
+    void send(OutputStream os, InputStream is, String string) throws IOException {
+        os.write((string + "\n").getBytes());
+
+        byte buf[] = new byte[1024];
+        int i = 0;
+        do {
+            buf[i++] = (byte)is.read();
+        } while (buf[i-1] != -1 && buf[i-1] != '\n' && i < buf.length);
+
+        String received = new String(buf, 0, i-1);
+        th.todo(received, string);
+    }
+
+    void testBasicSSLStreamConnection() throws IOException {
+        StreamConnection t = (StreamConnection)Connector.open(SOCKET_URL);
         try {
-            WebPublicKeyStore cs = WebPublicKeyStore.getTrustedKeyStore();
-            SSLStreamConnection s = new SSLStreamConnection("localhost", 54443,
-                       t.openInputStream(), t.openOutputStream(), cs);
-            OutputStream sout = s.openOutputStream();
-            InputStream sin = s.openInputStream();
+            SSLStreamConnection s =
+                new SSLStreamConnection(HOST, PORT, t.openInputStream(), t.openOutputStream(), KEY_STORE);
+            OutputStream os = s.openOutputStream();
+            InputStream is = s.openInputStream();
 
-            String message = "I haven't stopped thinking about recreating that pluot sorbet.";
-            sout.write((message + "\n").getBytes());
+            send(os, is, "I haven't stopped thinking about recreating that pluot sorbet.");
 
-            byte buf[] = new byte[1024];
-            int i = 0;
-            do {
-                buf[i++] = (byte)sin.read();
-            } while (buf[i-1] != -1 && buf[i-1] != '\n' && i < buf.length);
-
-            String received = new String(buf, 0, i-1);
-            th.todo(received, message);
-            sin.close();
-            sout.close();
+            os.close();
+            is.close();
             s.close();
         } finally {
             t.close();
+        }
+    }
+
+    void testMultipleSendsReceivesOnSameSocket() throws IOException {
+        StreamConnection t = (StreamConnection)Connector.open(SOCKET_URL);
+        try {
+            SSLStreamConnection s =
+                new SSLStreamConnection(HOST, PORT, t.openInputStream(), t.openOutputStream(), KEY_STORE);
+            OutputStream os = s.openOutputStream();
+            InputStream is = s.openInputStream();
+
+            for (int i = 0; i < 100; i++) {
+                send(os, is, "Message n." + i);
+            }
+
+            os.close();
+            is.close();
+            s.close();
+        } finally {
+            t.close();
+        }
+    }
+
+    void testMultipleSendsReceivesOnMultipleSockets() throws IOException {
+        for (int i = 0; i < 100; i++) {
+            StreamConnection t = (StreamConnection)Connector.open(SOCKET_URL);
+            try {
+                SSLStreamConnection s =
+                    new SSLStreamConnection(HOST, PORT, t.openInputStream(), t.openOutputStream(), KEY_STORE);
+                OutputStream os = s.openOutputStream();
+                InputStream is = s.openInputStream();
+
+                send(os, is, "Message n." + i);
+
+                os.close();
+                is.close();
+                s.close();
+            } finally {
+                t.close();
+            }
         }
     }
 }
