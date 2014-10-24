@@ -471,8 +471,32 @@ module J2ME.C4.Backend {
     var left = compileValue(this.left, cx);
     var right = compileValue(this.right, cx);
     var result = new BinaryExpression (this.operator.name, left, right);
-    if (this.operator === Operator.IADD) {
+    if (this.operator === Operator.IADD ||
+        this.operator === Operator.ISUB ||
+        this.operator === Operator.IMUL ||
+        this.operator === Operator.IDIV ||
+        this.operator === Operator.IREM) {
       return new BinaryExpression("|", result, constant(0));
+    } else if (this.operator === Operator.LADD ||
+               this.operator === Operator.LSUB ||
+               this.operator === Operator.LMUL ||
+               this.operator === Operator.LDIV ||
+               this.operator === Operator.LREM) {
+      assert(false);
+      return new BinaryExpression("+", result, constant(0));
+    } else if (this.operator === Operator.FADD ||
+               this.operator === Operator.FSUB ||
+               this.operator === Operator.FMUL ||
+               this.operator === Operator.FDIV ||
+               this.operator === Operator.FREM) {
+      assert(false);
+      return new BinaryExpression("|", result, constant(0));
+    } else if (this.operator === Operator.DADD ||
+               this.operator === Operator.DSUB ||
+               this.operator === Operator.DMUL ||
+               this.operator === Operator.DDIV ||
+               this.operator === Operator.DREM) {
+      return new BinaryExpression("+", result, constant(0));
     }
     return result;
   }

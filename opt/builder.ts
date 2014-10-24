@@ -32,6 +32,58 @@ module J2ME {
 
   }
 
+  declare var CLASSES: any;
+  declare var Long: any;
+
+  function resolve(cp, idx, isStatic) {
+    var constant = cp[idx];
+    if (!constant.tag)
+      return constant;
+    switch(constant.tag) {
+      case 3: // TAGS.CONSTANT_Integer
+        constant = constant.integer;
+        break;
+      case 4: // TAGS.CONSTANT_Float
+        constant = constant.float;
+        break;
+      case 8: // TAGS.CONSTANT_String
+        debugger;
+//        constant = ctx.newString(cp[constant.string_index].bytes);
+        break;
+      case 5: // TAGS.CONSTANT_Long
+        constant = Long.fromBits(constant.lowBits, constant.highBits);
+        break;
+      case 6: // TAGS.CONSTANT_Double
+        constant = constant.double;
+        break;
+      case 7: // TAGS.CONSTANT_Class
+        constant = CLASSES.getClass(cp[constant.name_index].bytes);
+        break;
+      case 9: // TAGS.CONSTANT_Fieldref
+        var classInfo = resolve(cp, constant.class_index, isStatic);
+        var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
+        var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+        constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
+//        if (!constant)
+//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
+//              classInfo.className + "." + fieldName + "." + signature + " not found");
+        break;
+      case 10: // TAGS.CONSTANT_Methodref
+      case 11: // TAGS.CONSTANT_InterfaceMethodref
+        var classInfo = resolve(cp, constant.class_index, isStatic);
+        var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
+        var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+        constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
+//        if (!constant)
+//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
+//              classInfo.className + "." + methodName + "." + signature + " not found");
+        break;
+      default:
+        throw new Error("not support constant type");
+    }
+    return cp[idx] = constant;
+  }
+
   export function isTwoSlot(kind: Kind) {
     return kind === Kind.Long || kind === Kind.Double;
   }
@@ -387,7 +439,7 @@ module J2ME {
 
   export function compile(classes, classInfo: ClassInfo) {
     if (classInfo.className.indexOf("SimpleClass") < 0) {
-      // return;
+      return;
     }
     writer.enter("Compiling Class: " + classInfo.className + " {");
     classInfo.methods.forEach(compileMethodInfo);
@@ -686,7 +738,7 @@ module J2ME {
 
       if (!this.blockStopInfos) {
         this.blockStopInfos = [new StopInfo(region,
-          this.blockMap.getBlock(stream.nextBCI),
+          this.blockMap.getBlock(stream.currentBCI),
           this.state
         )];
       }
@@ -788,30 +840,28 @@ module J2ME {
       var v;
 //      var isStrictFP = false; // TODO
       switch(opcode) {
-        case Bytecodes.IADD:
-        case Bytecodes.LADD: v = new IR.Binary(Operator.IADD, x, y); break;
-        case Bytecodes.FADD:
-        case Bytecodes.DADD: v = new IR.Binary(Operator.FADD, x, y /*, isStrictFP*/); break;
-        /*
-        case Bytecodes.ISUB:
-        case Bytecodes.LSUB: v = new IntegerSubNode(result, x, y); break;
-        case Bytecodes.FSUB:
-        case Bytecodes.DSUB: v = new FloatSubNode(result, x, y, isStrictFP); break;
-        case Bytecodes.IMUL:
-        case Bytecodes.LMUL: v = new IntegerMulNode(result, x, y); break;
-        case Bytecodes.FMUL:
-        case Bytecodes.DMUL: v = new FloatMulNode(result, x, y, isStrictFP); break;
-        case Bytecodes.IDIV:
-        case Bytecodes.LDIV: v = new IntegerDivNode(result, x, y); break;
-        case Bytecodes.FDIV:
-        case Bytecodes.DDIV: v = new FloatDivNode(result, x, y, isStrictFP); break;
-        case Bytecodes.IREM:
-        case Bytecodes.LREM: v = new IntegerRemNode(result, x, y); break;
-        case Bytecodes.FREM:
-        case Bytecodes.DREM: v = new FloatRemNode(result, x, y, isStrictFP); break;
+        case Bytecodes.IADD: v = new IR.Binary(Operator.IADD, x, y); break;
+        case Bytecodes.LADD: v = new IR.Binary(Operator.LADD, x, y); break;
+        case Bytecodes.FADD: v = new IR.Binary(Operator.FADD, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DADD: v = new IR.Binary(Operator.DADD, x, y/*, isStrictFP*/); break;
+        case Bytecodes.ISUB: v = new IR.Binary(Operator.ISUB, x, y); break;
+        case Bytecodes.LSUB: v = new IR.Binary(Operator.LSUB, x, y); break;
+        case Bytecodes.FSUB: v = new IR.Binary(Operator.FSUB, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DSUB: v = new IR.Binary(Operator.DSUB, x, y/*, isStrictFP*/); break;
+        case Bytecodes.IMUL: v = new IR.Binary(Operator.IMUL, x, y); break;
+        case Bytecodes.LMUL: v = new IR.Binary(Operator.LMUL, x, y); break;
+        case Bytecodes.FMUL: v = new IR.Binary(Operator.FMUL, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DMUL: v = new IR.Binary(Operator.DMUL, x, y/*, isStrictFP*/); break;
+        case Bytecodes.IDIV: v = new IR.Binary(Operator.IDIV, x, y); break;
+        case Bytecodes.LDIV: v = new IR.Binary(Operator.LDIV, x, y); break;
+        case Bytecodes.FDIV: v = new IR.Binary(Operator.FDIV, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DDIV: v = new IR.Binary(Operator.DDIV, x, y/*, isStrictFP*/); break;
+        case Bytecodes.IREM: v = new IR.Binary(Operator.IREM, x, y); break;
+        case Bytecodes.LREM: v = new IR.Binary(Operator.LREM, x, y); break;
+        case Bytecodes.FREM: v = new IR.Binary(Operator.FREM, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DREM: v = new IR.Binary(Operator.DREM, x, y/*, isStrictFP*/); break;
         default:
-          throw new CiBailout("should not reach");
-        */
+          assert(false);
       }
 //      ValueNode result1 = append(graph.unique(v));
 //      if (canTrap) {
@@ -820,6 +870,42 @@ module J2ME {
 
       v = this.peepholeOptimizer.fold(v);
       state.push(result, v);
+    }
+
+    genShiftOp(kind: Kind, opcode: Bytecodes) {
+      var state = this.state;
+      var s = state.ipop();
+      var x = state.pop(kind);
+      var v;
+      switch(opcode){
+        case Bytecodes.ISHL:
+        case Bytecodes.LSHL: v = new IR.Binary(Operator.LSH, x, s); break;
+        case Bytecodes.ISHR:
+        case Bytecodes.LSHR: v = new IR.Binary(Operator.RSH, x, s); break;
+        case Bytecodes.IUSHR:
+        case Bytecodes.LUSHR: v = new IR.Binary(Operator.LSH, x, s); break;
+        default:
+          assert(false);
+      }
+      state.push(kind, v);
+    }
+
+    genLogicOp(kind: Kind, opcode: Bytecodes) {
+      var state = this.state;
+      var y = state.pop(kind);
+      var x = state.pop(kind);
+      var v;
+      switch(opcode){
+        case Bytecodes.IAND:
+        case Bytecodes.LAND: v = new IR.Binary(Operator.AND, x, y); break;
+        case Bytecodes.IOR:
+        case Bytecodes.LOR: v = new IR.Binary(Operator.OR, x, y); break;
+        case Bytecodes.IXOR:
+        case Bytecodes.LXOR: v = new IR.Binary(Operator.XOR, x, y); break;
+        default:
+          assert(false);
+      }
+      state.push(kind, v);
     }
 
     genNegateOp(kind: Kind) {
@@ -925,10 +1011,8 @@ module J2ME {
     }
 
     lookupMethod(cpi: number, opcode: Bytecodes): MethodInfo {
-      var constantPoolEntry = this.methodInfo.classInfo.constant_pool[cpi];
-      assert (constantPoolEntry.tag === TAGS.CONSTANT_Methodref);
-      // TODO: Lots of stuff here.
-      return this.methodInfo;
+      // TODO isstatic
+      return resolve(this.methodInfo.classInfo.constant_pool, cpi, true);
     }
 
     /**
@@ -1112,20 +1196,18 @@ module J2ME {
         case Bytecodes.LNEG           : this.genNegateOp(Kind.Long); break;
         case Bytecodes.FNEG           : this.genNegateOp(Kind.Float); break;
         case Bytecodes.DNEG           : this.genNegateOp(Kind.Double); break;
-        /*
         case Bytecodes.ISHL           :
         case Bytecodes.ISHR           :
-        case Bytecodes.IUSHR          : genShiftOp(Kind.Int, opcode); break;
+        case Bytecodes.IUSHR          : this.genShiftOp(Kind.Int, opcode); break;
         case Bytecodes.IAND           :
         case Bytecodes.IOR            :
-        case Bytecodes.IXOR           : genLogicOp(Kind.Int, opcode); break;
+        case Bytecodes.IXOR           : this.genLogicOp(Kind.Int, opcode); break;
         case Bytecodes.LSHL           :
         case Bytecodes.LSHR           :
-        case Bytecodes.LUSHR          : genShiftOp(Kind.Long, opcode); break;
+        case Bytecodes.LUSHR          : this.genShiftOp(Kind.Long, opcode); break;
         case Bytecodes.LAND           :
         case Bytecodes.LOR            :
-        case Bytecodes.LXOR           : genLogicOp(Kind.Long, opcode); break;
-        */
+        case Bytecodes.LXOR           : this.genLogicOp(Kind.Long, opcode); break;
         case Bytecodes.IINC           : this.genIncrement(stream); break;
         case Bytecodes.I2L            : this.genConvert(Kind.Int, Kind.Long); break;
         case Bytecodes.I2F            : this.genConvert(Kind.Int, Kind.Float); break;
