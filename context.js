@@ -168,16 +168,6 @@ Context.prototype.invoke = function(methodInfoId, object, args) {
   return VM.execute(this);
 };
 
-Context.prototype.executeUntilCurrentFramePopped = function() {
-    try {
-        VM.execute(this);
-    } catch (e) {
-        if (e === STOP_FRAME) {
-            return;
-        }
-    }
-};
-
 Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());
   do {
