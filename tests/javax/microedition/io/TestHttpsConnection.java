@@ -13,7 +13,7 @@ public class TestHttpsConnection implements Testlet {
 
         try {
             testBasicHttpsConnection();
-        } catch (Exception e) {
+        } catch (IOException e) {
             th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }
