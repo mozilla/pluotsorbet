@@ -10,7 +10,13 @@ var Instrument = {
   profiling: false,
   profile: null,
 
+  enabled: "instrument" in urlParams && !/no|0/.test(urlParams.instrument),
+
   callEnterHooks: function(methodInfo, caller, callee) {
+    if (!this.enabled) {
+      return;
+    }
+
     var key = methodInfo.implKey;
     if (Instrument.enter[key]) {
       Instrument.enter[key](caller, callee);
@@ -32,6 +38,10 @@ var Instrument = {
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
+    if (!this.enabled) {
+      return;
+    }
+
     var key = methodInfo.implKey;
 
     if (this.profiling) {
@@ -132,7 +142,10 @@ Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
-  var _this = caller.stack.read(3);
+  // We can't use caller.stack.read() here, because the length of the caller's
+  // stack differs depending on whether or not In.read threw an exception.
+  var _this = caller.stack[2];
+
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   connection.logBuffer += String.fromCharCode(callee.stack.read(1));
 };
