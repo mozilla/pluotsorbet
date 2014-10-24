@@ -3,10 +3,13 @@
 
 'use strict';
 
+var COMPILED_FRAME = {};
+
 function Context(runtime) {
   this.frames = [];
   this.runtime = runtime;
   this.runtime.addContext(this);
+  this.methods = {};
 }
 
 Context.prototype.kill = function() {
@@ -20,17 +23,54 @@ Context.prototype.current = function() {
 
 Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
-  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - methodInfo.consumes);
+  var callee = new Frame(methodInfo, caller.stack.slice(caller.stack.length - methodInfo.consumes), 0);
+  caller.stack.length -= methodInfo.consumes;
   this.frames.push(callee);
-  Instrument.callEnterHooks(methodInfo, caller, callee);
-  return callee;
+//  Instrument.callEnterHooks(methodInfo, caller, callee);
+  if (methodInfo.isSynchronized) {
+        if (!callee.lockObject) {
+            callee.lockObject = methodInfo.isStatic
+                ? methodInfo.classInfo.getClassObject(ctx)
+                : callee.getLocal(0);
+        }
+
+        this.monitorEnter(callee.lockObject);
+  }
+  VM.execute(this);
 }
 
-Context.prototype.popFrame = function() {
-  var callee = this.frames.pop();
+Context.prototype.popFrame = function(consumes) {
+  var callee = this.current();
+  if (callee.lockObject)
+      this.monitorExit(callee.lockObject);
+  this.frames.pop();
   var caller = this.current();
-  Instrument.callExitHooks(callee.methodInfo, caller, callee);
-  caller.stack.length = callee.localsBase;
+  if (caller === COMPILED_FRAME) {
+      switch (consumes) {
+          case 2:
+              return callee.stack.pop2();
+              break;
+          case 1:
+              return callee.stack.pop();
+              break;
+      }
+      return;
+  }
+  if (!caller) {
+      return;
+  }
+  var stack = caller.stack;
+  switch (consumes) {
+        case 2:
+            stack.push2(callee.stack.pop2());
+            break;
+        case 1:
+            stack.push(callee.stack.pop());
+            break;
+  }
+
+
+//  Instrument.callExitHooks(callee.methodInfo, caller, callee);
   return caller;
 }
 
@@ -116,6 +156,28 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
   throw VM.Yield;
 }
 
+Context.prototype.invoke = function(methodInfoId, object, args) {
+  var methodInfo = this.methods[methodInfoId];
+  var frame = new Frame(methodInfo, [], 0);
+  this.frames.push(frame);
+  frame.setLocal(0, object);
+  for (var i = 0; i < args.length; i++) {
+    frame.setLocal(i + 1, args[i]);
+  }
+  debugger;
+  return VM.execute(this);
+};
+
+Context.prototype.executeUntilCurrentFramePopped = function() {
+    try {
+        VM.execute(this);
+    } catch (e) {
+        if (e === STOP_FRAME) {
+            return;
+        }
+    }
+};
+
 Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());
   do {
@@ -133,14 +195,11 @@ Context.prototype.execute = function() {
         throw e;
       }
     }
-  } while (this.frames.length !== 1);
-
-  this.frames.pop();
+  } while (this.frames.length !== 0);
 }
 
 Context.prototype.start = function() {
   var ctx = this;
-
   Instrument.callResumeHooks(ctx.current());
   try {
     VM.execute(ctx);
@@ -158,11 +217,8 @@ Context.prototype.start = function() {
   }
   Instrument.callPauseHooks(ctx.current());
 
-  // If there's one frame left, we're back to
-  // the method that created the thread and
-  // we're done.
-  if (ctx.frames.length === 1) {
-    ctx.kill();
+  if (ctx.frames.length === 0) {
+      ctx.kill();
     return;
   }
 
@@ -286,3 +342,7 @@ Context.prototype.newObject = function(classInfo) {
 Context.prototype.newString = function(s) {
   return this.runtime.newString(s);
 }
+
+Context.prototype.getStatic = function(fieldInfoId) {
+  return this.runtime.staticFields[fieldInfoId];
+};

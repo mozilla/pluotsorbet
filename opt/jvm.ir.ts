@@ -56,6 +56,20 @@ module J2ME.C4.IR {
   }
 
   JVMConvert.prototype.nodeName = "JVMConvert";
+
+  export class JVMBailout extends StoreDependent {
+    constructor(control: Control, store: Store, public state: State) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      visitor(this.control);
+      visitor(this.store);
+      visitArrayInputs(this.state.local, visitor, true);
+      visitArrayInputs(this.state.stack, visitor);
+    }
+  }
+
+  JVMBailout.prototype.nodeName = "JVMBailout";
 }
 
 module J2ME.C4.Backend {
@@ -102,6 +116,35 @@ module J2ME.C4.Backend {
   IR.JVMConvert.prototype.compile = function (cx: Context): AST.Node {
     var value = compileValue(this.value, cx);
     // bdahl: Add all the conversions here.
+    debugger;
     return new AST.BinaryExpression("|", value, constant(0));
+  }
+
+  IR.JVMBailout.prototype.compile = function (cx: Context): AST.Node {
+    var local = this.state.local;
+    var stack = this.state.stack;
+
+    var localValues = [];
+    var stackValues = [];
+
+    var $ = new AST.Identifier("$");
+    for (var i = 0; i < local.length; i++) {
+      if (local[i] === null) {
+        continue;
+      }
+      localValues.push(compileValue(local[i], cx));
+    }
+    for (var i = 0; i < stack.length; i++) {
+      if (stack[i] === null) {
+        continue;
+      }
+      stackValues.push(compileValue(stack[i], cx));
+    }
+    return new AST.CallExpression(new AST.Identifier("JVMBailout"), [
+      new AST.Identifier("$"),
+      new AST.Literal(this.state.bci),
+      new AST.ArrayExpression(localValues),
+      new AST.ArrayExpression(stackValues)
+    ]);
   }
 }

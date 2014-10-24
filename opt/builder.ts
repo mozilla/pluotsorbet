@@ -47,8 +47,9 @@ module J2ME {
         constant = constant.float;
         break;
       case 8: // TAGS.CONSTANT_String
-        debugger;
-//        constant = ctx.newString(cp[constant.string_index].bytes);
+//        debugger;
+        // TODO ctx.newString??
+        constant = cp[constant.string_index].bytes;
         break;
       case 5: // TAGS.CONSTANT_Long
         constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -92,11 +93,19 @@ module J2ME {
     assert (x === null);
   }
 
+  export interface Context {
+    executeUntilCurrentFramePopped();
+    pushClassInitFrame(classInfo: ClassInfo);
+    runtime: any;
+    methods: any;
+  }
+
   export interface FieldInfo {
     name: string;
     signature: any;
     classInfo: ClassInfo;
     access_flags: any;
+    id: number;
   }
 
   enum TAGS {
@@ -137,6 +146,7 @@ module J2ME {
     methods: any [];
     classes: any [];
     constant_pool: ConstantPoolEntry [];
+    isArrayClass: boolean;
   }
 
   export interface ExceptionHandler {
@@ -158,13 +168,14 @@ module J2ME {
     max_stack: number;
     consumes: number;
     signature: string;
+    implKey: string;
   }
 
   function assertKind(kind: Kind, x: Node): Node {
     return x;
   }
 
-  class State {
+  export class State {
     private static _nextID = 0;
     id: number
     bci: number;
@@ -438,42 +449,54 @@ module J2ME {
   }
 
   export function compile(classes, classInfo: ClassInfo) {
-    if (classInfo.className.indexOf("SimpleClass") < 0) {
-      return;
-    }
-    writer.enter("Compiling Class: " + classInfo.className + " {");
-    classInfo.methods.forEach(compileMethodInfo);
-    writer.leave("}");
+//    if (classInfo.className.indexOf("SimpleClass") < 0) {
+//      return;
+//    }
+//    writer.enter("Compiling Class: " + classInfo.className + " {");
+//    classInfo.methods.forEach(compileMethodInfo);
+//    writer.leave("}");
   }
 
-  function compileMethodInfo(methodInfo: MethodInfo) {
+  export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context) {
+    return;
     if (methodInfo.name !== 'bubbleSort') {
       return;
     }
     if (!methodInfo.code) {
       return;
     }
-    var builder = new Builder(methodInfo);
-    var compilation = builder.build();
+    var builder = new Builder(methodInfo, ctx);
+    try {
+      var compilation = builder.build();
     var fnName = methodInfo.name;
-    var fnSource = "function " + fnName + " (" + compilation.parameters.join(", ") + ") " + compilation.body;
-    var fn = Function("return " + fnSource)();
-
-    var array = new Int32Array(1024);
-    for (var i = 0; i < array.length; i++) {
-      array[i] = array.length - i;
-    }
+    var fnSource = compilation.body;
+//    fnSource = fnSource.replace(/\(\"X\"\)\./gm, '');
+//    fnSource = "function fail() {console.log('fail');}function success() {console.log('success');}" + fnSource + " asd()";
+    console.log('-------------------');
+    compilation.parameters.unshift('ctx');
+    debugger;
+    var fn = Function(compilation.parameters, fnSource);
+    console.log('-------------------');
+//    var array = new Int32Array(1024);
+//    for (var i = 0; i < array.length; i++) {
+//      array[i] = array.length - i;
+//    }
 
     writer.writeLn(fnSource);
-    var s = dateNow();
-    for (var i = 0; i < 100; i++) {
-      for (var j = 0; j < array.length; j++) {
-        array[j] = array.length - j;
-      }
-      fn(array, 0, array.length - 1);
+    } catch (e) {
+      writer.writeLn(e);
+      writer.writeLn(e.stack);
     }
-    writer.writeLn("Result: " + Array.prototype.join.call(array, ", "));
-    writer.writeLn("Took: " + (dateNow() - s));
+//    var s = dateNow();
+//    for (var i = 0; i < 100; i++) {
+//      for (var j = 0; j < array.length; j++) {
+//        array[j] = array.length - j;
+//      }
+//      fn(array, 0, array.length - 1);
+//    }
+//    writer.writeLn("Result: " + Array.prototype.join.call(array, ", "));
+//    writer.writeLn("Took: " + (dateNow() - s));
+    return fn;
   }
 
   interface WorklistItem {
@@ -491,7 +514,8 @@ module J2ME {
     return constant;
   }
 
-  function getConstantFromPool(entry : ConstantPoolEntry): IR.Constant {
+  function getConstantFromPool(cpi : number, cp: ConstantPoolEntry []): IR.Constant {
+    var entry = cp[cpi];
     switch (entry.tag) {
       case TAGS.CONSTANT_Integer:
         return genConstant(entry.integer, Kind.Int);
@@ -499,8 +523,12 @@ module J2ME {
         return genConstant(entry.float, Kind.Float);
       case TAGS.CONSTANT_Double:
         return genConstant(entry.double, Kind.Double);
+      case TAGS.CONSTANT_String:
+        entry = cp[entry.string_index];
+        return genConstant(entry.bytes, Kind.Reference);
       default:
-        throw "Not done.";
+        debugger;
+        throw "Not done for: " + entry.tag;
     }
   }
 
@@ -551,7 +579,7 @@ module J2ME {
      */
     blockMap: BlockMap;
 
-    constructor(public methodInfo: MethodInfo) {
+    constructor(public methodInfo: MethodInfo, public ctx: Context) {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
@@ -655,7 +683,6 @@ module J2ME {
       });
 
       var next: WorklistItem;
-      debugger;
       while ((next = worklist.pop())) {
         writer && writer.writeLn("Processing: " + next.region + " " + next.block.blockID + " " + next.region.entryState);
         this.buildBlock(next.region, next.block, next.region.entryState.clone());
@@ -664,6 +691,7 @@ module J2ME {
         }
         this.blockStopInfos.forEach(function (stop: StopInfo) {
           var target = stop.target;
+          writer.writeLn(String(target));
           var region = target.region;
           if (region) {
             writer && writer.enter("Merging into region: " + region + " @ " + target.startBci + ", block " + target.blockID + " {");
@@ -926,7 +954,7 @@ module J2ME {
     }
 
     genLoadConstant(cpi: number, state: State) {
-      var constant = getConstantFromPool(this.methodInfo.classInfo.constant_pool[cpi]);
+      var constant = getConstantFromPool(cpi, this.methodInfo.classInfo.constant_pool);
 
 //      Object con = constantPool.lookupConstant(cpi);
 //
@@ -1010,7 +1038,11 @@ module J2ME {
       ));
     }
 
-    lookupMethod(cpi: number, opcode: Bytecodes): MethodInfo {
+    lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
+      return resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+    }
+
+    lookupField(cpi: number, opcode: Bytecodes): FieldInfo {
       // TODO isstatic
       return resolve(this.methodInfo.classInfo.constant_pool, cpi, true);
     }
@@ -1043,8 +1075,36 @@ module J2ME {
         var type = types[i];
         args.push(this.state.pop(type.kind));
       }
+
       var call = new IR.CallProperty(this.region, this.state.store, new Constant("X"), new Constant(methodInfo.name), args, IR.Flags.PRISTINE);
       this.recordStore(call);
+      if (types[0].kind !== Kind.Void) {
+        this.state.push(types[0], call);
+      }
+    }
+
+    genInvokeVirtual(methodInfo: MethodInfo) {
+      var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
+      this.ctx.methods[methodInfo.implKey] = methodInfo;
+      var types = signature.typeDescriptors;
+      var args: Value [] = [];
+      for (var i = 1; i < types.length; i++) {
+        var type = types[i];
+        args.push(this.state.pop(type.kind));
+      }
+      var argsArray = new IR.NewArray(this.region, args);
+      var invokeArgs: Value [] = [];
+      invokeArgs.push(new Constant(methodInfo.implKey));
+      invokeArgs.push(this.state.pop(Kind.Reference));
+      invokeArgs.push(argsArray);
+
+      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      this.recordStore(call);
+
+      console.log("hi");
+//      var bailout = new IR.JVMBailout(this.region, this.state.store, this.state.clone(this.state.bci));
+//      this.recordStore(bailout);
+
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0], call);
       }
@@ -1064,6 +1124,24 @@ module J2ME {
       var arrayLoad = new IR.JVMLoadIndexed(this.region, this.state.store, kind, array, index);
       this.recordLoad(arrayLoad);
       this.state.push(stackKind(kind), arrayLoad);
+    }
+
+    classInitCheck(classInfo: ClassInfo) {
+      var ctx = this.ctx;
+      if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
+        return;
+      ctx.pushClassInitFrame(classInfo);
+      ctx.executeUntilCurrentFramePopped();
+    }
+
+    genGetStatic(fieldInfo: FieldInfo, cpi: number) {
+      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+      this.classInitCheck(fieldInfo.classInfo);
+//      this.ctx.setStaticFieldInfo(fieldInfo);
+      var staticLoad = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant('getStatic'), [new Constant(fieldInfo.id)], IR.Flags.PRISTINE);
+//      var staticLoad = new IR.GetProperty(this.region, this.state.store, new IR.Variable('window.runtime'), new Constant(fieldInfo.id));
+      this.recordLoad(staticLoad);
+      this.state.push(signature.kind, staticLoad);
     }
 
     processBytecode(stream: BytecodeStream, state: State) {
@@ -1259,15 +1337,17 @@ module J2ME {
         case Bytecodes.DRETURN        : this.genReturn(state.dpop()); break;
         case Bytecodes.ARETURN        : this.genReturn(state.apop()); break;
         case Bytecodes.RETURN         : this.genReturn(null); break;
+        case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); this.genGetStatic(this.lookupField(cpi, opcode), cpi); break;
         /*
-        case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); genGetStatic(cpi, lookupField(cpi, opcode)); break;
         case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); genPutStatic(cpi, lookupField(cpi, opcode)); break;
         case Bytecodes.GETFIELD       : cpi = stream.readCPI(); genGetField(cpi, lookupField(cpi, opcode)); break;
         case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); genPutField(cpi, lookupField(cpi, opcode)); break;
-        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); genInvokeVirtual(lookupMethod(cpi, opcode), cpi, constantPool); break;
+        */
+        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvokeVirtual(this.lookupMethod(cpi, opcode, false)); break;
+        /*
         case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); genInvokeSpecial(lookupMethod(cpi, opcode), null, cpi, constantPool); break;
         */
-        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvokeStatic(this.lookupMethod(cpi, opcode)); break;
+        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvokeStatic(this.lookupMethod(cpi, opcode, true)); break;
         /*
         case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); genInvokeInterface(lookupMethod(cpi, opcode), cpi, constantPool); break;
         */

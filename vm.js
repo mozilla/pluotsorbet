@@ -24,40 +24,6 @@ VM.execute = function(ctx) {
     var cp = frame.cp;
     var stack = frame.stack;
 
-    function pushFrame(methodInfo) {
-        var caller = frame;
-        frame = ctx.pushFrame(methodInfo);
-        stack = frame.stack;
-        cp = frame.cp;
-        if (methodInfo.isSynchronized) {
-            if (!frame.lockObject) {
-                frame.lockObject = methodInfo.isStatic
-                                     ? methodInfo.classInfo.getClassObject(ctx)
-                                     : frame.getLocal(0);
-            }
-
-            ctx.monitorEnter(frame.lockObject);
-        }
-        return frame;
-    }
-
-    function popFrame(consumes) {
-        if (frame.lockObject)
-            ctx.monitorExit(frame.lockObject);
-        var callee = frame;
-        frame = ctx.popFrame();
-        stack = frame.stack;
-        cp = frame.cp;
-        switch (consumes) {
-        case 2:
-            stack.push2(callee.stack.pop2());
-            break;
-        case 1:
-            stack.push(callee.stack.pop());
-            break;
-        }
-        return frame;
-    }
 
     function buildExceptionLog(ex, stackTrace) {
         var className = ex.class.className;
@@ -1035,15 +1001,42 @@ VM.execute = function(ctx) {
                 Instrument.callResumeHooks(ctx.current());
                 break;
             }
-            pushFrame(methodInfo);
+            var fn;
+            if (methodInfo.fn) {
+                fn = methodInfo.fn;
+            } else {
+                fn = methodInfo.fn = J2ME.compileMethodInfo(methodInfo, ctx);
+            }
+            if (fn) {
+                ctx.frames.push(COMPILED_FRAME);
+                // Take off the arguments from the stack.
+                var args = stack.slice(stack.length - methodInfo.consumes);
+                args.unshift(ctx);
+                // Invoke the compiled function.
+                var returnValue = fn.apply(null, args);
+                // Push return value back on the stack.
+                var returnType = methodInfo.signature[methodInfo.signature.length - 1];
+                switch (returnType) {
+                    case 'V':
+                        break;
+                    case 'J':
+                    case 'D':
+                        stack.push2(returnValue);
+                        break;
+                    default:
+                        stack.push(returnValue);
+                        break;
+                }
+                ctx.frames.pop();
+                break;
+            }
+            ctx.pushFrame(methodInfo);
             break;
         case 0xb1: // return
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo);
             }
-            if (ctx.frames.length == 1)
-                return;
-            popFrame(0);
+            return ctx.popFrame(0);
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
@@ -1051,18 +1044,14 @@ VM.execute = function(ctx) {
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            if (ctx.frames.length == 1)
-                return;
-            popFrame(1);
+            return ctx.popFrame(1);
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            if (ctx.frames.length == 1)
-                return;
-            popFrame(2);
+            return ctx.popFrame(2);
             break;
         default:
             var opName = OPCODES[op];

@@ -55,6 +55,9 @@ module J2ME.C4.IR {
   import unexpected = Debug.unexpected;
   import createEmptyObject = ObjectUtilities.createEmptyObject;
 
+  // TODO is there a better way to deal with Math.fround
+  declare var Math: any;
+
   export interface NodeVisitor {
     (node: Node): void;
   }
@@ -63,8 +66,11 @@ module J2ME.C4.IR {
     (block: Block): void;
   }
 
-  export function visitArrayInputs(array: Node [], visitor: NodeVisitor) {
+  export function visitArrayInputs(array: Node [], visitor: NodeVisitor, ignoreNull: boolean = false) {
     for (var i = 0; i < array.length; i++) {
+      if (ignoreNull && array[i] === null) {
+        continue;
+      }
       visitor(array[i]);
     }
   }
@@ -465,13 +471,35 @@ module J2ME.C4.IR {
     }
 
     static IADD   = new Operator("+",   (l, r) => (l + r) | 0,  true);
-    static FADD   = new Operator("+",   (l, r) => +(l + r),  true);
+    static LADD   = new Operator("+",   (l, r) => l.add(r),  true);
+    static FADD   = new Operator("+",   (l, r) => Math.fround(l + r),  true);
+    static DADD   = new Operator("+",   (l, r) => +(l + r),  true);
 
-    static ADD    = new Operator("+",   (l, r) => l + r,        true);
-    static SUB    = new Operator("-",   (l, r) => l - r,        true);
-    static MUL    = new Operator("*",   (l, r) => l * r,        true);
-    static DIV    = new Operator("/",   (l, r) => l / r,        true);
-    static MOD    = new Operator("%",   (l, r) => l % r,        true);
+    static ISUB    = new Operator("-",   (l, r) => (l - r) | 0,        true);
+    static LSUB    = new Operator("-",   (l, r) => l.subtract(r),        true);
+    static FSUB    = new Operator("-",   (l, r) => Math.fround(l - r),        true);
+    static DSUB    = new Operator("-",   (l, r) => +(l - r),        true);
+
+    static IMUL    = new Operator("*",   (l, r) => (l * r) | 0,        true);
+    static LMUL    = new Operator("*",   (l, r) => l.multiply(r),        true);
+    static FMUL    = new Operator("*",   (l, r) => Math.fround(l * r),        true);
+    static DMUL    = new Operator("*",   (l, r) => +(l * r),        true);
+
+    static IDIV    = new Operator("/",   (l, r) => (l / r) | 0,        true);
+    static LDIV    = new Operator("/",   (l, r) => l.div(r),        true);
+    static FDIV    = new Operator("/",   (l, r) => Math.fround(l / r),        true);
+    static DDIV    = new Operator("/",   (l, r) => +(l / r),        true);
+
+    static IREM    = new Operator("%",   (l, r) => (l % r) | 0,        true);
+    static LREM    = new Operator("%",   (l, r) => l.modulo(r),        true);
+    static FREM    = new Operator("%",   (l, r) => Math.fround(l % r),        true);
+    static DREM    = new Operator("%",   (l, r) => +(l % r),        true);
+
+//    static ADD    = new Operator("+",   (l, r) => l + r,        true);
+//    static SUB    = new Operator("-",   (l, r) => l - r,        true);
+//    static MUL    = new Operator("*",   (l, r) => l * r,        true);
+//    static DIV    = new Operator("/",   (l, r) => l / r,        true);
+//    static MOD    = new Operator("%",   (l, r) => l % r,        true);
     static AND    = new Operator("&",   (l, r) => l & r,        true);
     static OR     = new Operator("|",   (l, r) => l | r,        true);
     static XOR    = new Operator("^",   (l, r) => l ^ r,        true);

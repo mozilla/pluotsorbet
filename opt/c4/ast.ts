@@ -557,6 +557,9 @@ module J2ME.C4.AST {
     constructor (public expressions: Expression []) {
       super();
     }
+    toSource(precedence: number) : string {
+      return "(" + this.expressions.map(x => x.toSource(precedence)).join(", ") + ")";
+    }
   }
 
   export class UnaryExpression extends Expression {

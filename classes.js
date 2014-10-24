@@ -61,7 +61,6 @@ Classes.prototype.loadFile = function(fileName) {
 Classes.prototype.loadClassBytes = function(bytes) {
     var classInfo = new ClassInfo(bytes);
     this.classes[classInfo.className] = classInfo;
-    J2ME.compile(this, classInfo);
     return classInfo;
 }
 
