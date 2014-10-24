@@ -9,6 +9,7 @@ var Instrument = {
 
   profiling: false,
   profile: null,
+  asyncProfile: null,
 
   enabled: "instrument" in urlParams && !/no|0/.test(urlParams.instrument),
 
@@ -81,28 +82,45 @@ var Instrument = {
     }
   },
 
+  enterAsyncNative: function(key) {
+    var profileData = this.asyncProfile[key] || (this.asyncProfile[key] = { count: 0, cost: 0 });
+    profileData.then = performance.now();
+  },
+
+  exitAsyncNative: function(key) {
+    var profileData = this.asyncProfile[key];
+    profileData.count++;
+    profileData.cost += performance.now() - profileData.then;
+  },
+
   startProfile: function() {
     this.profile = {};
+    this.asyncProfile = {};
     this.profiling = true;
   },
 
-  stopProfile: function() {
+  printProfile: function(aProfile, aProfileName) {
     var methods = [];
 
-    for (var key in this.profile) {
+    for (var key in aProfile) {
       methods.push({
         key: key,
-        count: this.profile[key].count,
-        cost: this.profile[key].cost,
+        count: aProfile[key].count,
+        cost: aProfile[key].cost,
       });
     }
 
     methods.sort(function(a, b) { return b.cost - a.cost });
 
-    console.log("Profile:");
+    console.log(aProfileName + ":");
     methods.forEach(function(method) {
       console.log(Math.round(method.cost) + "ms " + method.count + " " + method.key);
     });
+  },
+
+  stopProfile: function() {
+    this.printProfile(this.profile, "Profile");
+    this.printProfile(this.asyncProfile, "Async natives profile");
 
     this.profiling = false;
   },
