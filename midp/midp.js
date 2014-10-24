@@ -854,18 +854,14 @@ function(ctx, obj) {
 MIDP.localizedStrings = new Map();
 
 Native.create("com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;", function(ctx, id) {
-    var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
-    var key;
-    classInfo.fields.forEach(function(field) {
-        if (classInfo.constant_pool[field.constantValue].integer === id)
-            key = field.name;
-    });
-
-    if (!key) {
-        throw new JavaException("java/io/IOException");
-    }
-
     if (MIDP.localizedStrings.size === 0) {
+        // First build up a mapping of field names to field IDs
+        var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
+        var constantsMap = new Map();
+        classInfo.fields.forEach(function(field) {
+          constantsMap.set(field.name, classInfo.constant_pool[field.constantValue].integer);
+        });
+
         var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
         if (!data)
             throw new JavaException("java/io/IOException");
@@ -876,11 +872,13 @@ Native.create("com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/S
 
         for (var n = 0; n < entries.length; ++n) {
             var attrs = entries[n].attributes;
-            MIDP.localizedStrings.set(attrs.Key.value, attrs.Value.value);
+            // map the key value to a field ID
+            var id = constantsMap.get(attrs.Key.value);
+            MIDP.localizedStrings.set(id, attrs.Value.value);
         }
     }
 
-    var value = MIDP.localizedStrings.get(key);
+    var value = MIDP.localizedStrings.get(id);
 
     if (!value) {
         throw new JavaException("java/lang/IllegalStateException");
