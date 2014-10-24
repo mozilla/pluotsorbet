@@ -30,6 +30,10 @@ class HelloGraphics extends Canvas implements Runnable {
         } else {
             g.drawString("World", getWidth() / 4 * 3, getHeight() / 2, Graphics.HCENTER | Graphics.VCENTER);
         }
+        g.setColor(0xFF, 0, 0);
+        g.drawRoundRect(0, 0, getWidth() / 4, getHeight() / 4, getWidth() / 8, getHeight() / 8);
+        g.setColor(0xFF, 0, 0xFF);
+        g.fillRoundRect(10, 10, getWidth() / 8, getHeight() / 10, getWidth() / 16, getHeight() / 20);
     }
 
     public void run() {

@@ -362,6 +362,55 @@
     }
 
     /**
+     * create the outline of an elliptical arc
+     * covering the specified rectangle.
+     * @param x the x-coordinate of the center of the ellipse.
+     * @param y y-coordinate of the center of the ellipse.
+     * @param rw the horizontal radius of the arc.
+     * @param rh the vertical radius of the arc.
+     * @param arcStart the beginning angle
+     * @param arcEnd the ending angle
+     * @param closed if true, draw a closed arc sector.
+     */
+    function createEllipticalArc(c, x, y, rw, rh, arcStart, arcEnd, closed) {
+          c.save();
+          c.translate(x, y);
+          if (closed) {
+            c.moveTo(0, 0);
+          }
+          // draw circle arc which will be stretched into an oval arc
+          c.scale(1, rh / rw);
+          c.arc(0, 0, rw, arcStart, arcEnd, false);
+          if (closed) {
+            c.lineTo(0, 0);
+          }
+          c.restore();
+    }
+
+    /**
+     * Create a round rectangle path.
+     * @param x the x coordinate of the rectangle
+     * @param y the y coordinate of the rectangle
+     * @param width the width of the rectangle
+     * @param height the height of the rectangle
+     * @param arcWidth the horizontal diameter of the arc at the four corners
+     * @param arcHeight the vertical diameter of the arc at the four corners
+     */
+    function createRoundRect(c, x, y, width, height, arcWidth, arcHeight) {
+        var rw = arcWidth / 2;
+        var rh = arcHeight / 2;
+        c.moveTo(x + rw, y);
+        c.lineTo(x + width - rw, y);
+        createEllipticalArc(c, x + width - rw, y + rh, rw, rh, 1.5 * Math.PI, 2 * Math.PI, false);
+        c.lineTo(x + width, y + height - rh);
+        createEllipticalArc(c, x + width - rw, y + height - rh, rw, rh, 0, 0.5 * Math.PI, false);
+        c.lineTo(x + rw, y + height);
+        createEllipticalArc(c, x + rw, y + height - rh, rw, rh, 0.5 * Math.PI, Math.PI, false);
+        c.lineTo(x, y + rh);
+        createEllipticalArc(c, x + rw, y + rh, rw, rh, Math.PI, 1.5 * Math.PI, false);
+    }
+
+    /**
      * Like withPixel, but ignores alpha channel, setting the alpha value to 1.
      * Useful when you suspect that the caller is specifying the alpha channel
      * incorrectly, although we should actually figure out why that's happening.
@@ -609,6 +658,9 @@
     });
 
     Native.create("javax/microedition/lcdui/Graphics.drawRect.(IIII)V", function(ctx, x, y, w, h) {
+        if (w < 0 || h < 0) {
+            return;
+        }
         var g = this;
         withGraphics(g, function(c) {
             withClip(g, c, x, y, function(x, y) {
@@ -621,7 +673,28 @@
         });
     });
 
+    Native.create("javax/microedition/lcdui/Graphics.drawRoundRect.(IIIIII)V", function(ctx, x, y, w, h, arcWidth, arcHeight) {
+        if (w < 0 || h < 0) {
+            return;
+        }
+        var g = this;
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(x, y) {
+                withPixel(g, c, function() {
+                    withSize(w, h, function(w, h) {
+                        c.beginPath();
+                        createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+                        c.stroke();
+                    });
+                });
+            });
+        });
+    });
+
     Native.create("javax/microedition/lcdui/Graphics.fillRect.(IIII)V", function(ctx, x, y, w, h) {
+        if (w <= 0 || h <= 0) {
+            return;
+        }
         var g = this;
         withGraphics(g, function(c) {
             withClip(g, c, x, y, function(x, y) {
@@ -635,13 +708,17 @@
     });
 
     Native.create("javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V", function(ctx, x, y, w, h, arcWidth, arcHeight) {
+        if (w <= 0 || h <= 0) {
+            return;
+        }
         var g = this;
         withGraphics(g, function(c) {
             withClip(g, c, x, y, function(x, y) {
                 withPixel(g, c, function() {
                     withSize(w, h, function(w, h) {
-                        // TODO implement rounding
-                        c.fillRect(x, y, w, h);
+                        c.beginPath();
+                        createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+                        c.fill();
                     });
                 });
             });
@@ -649,34 +726,34 @@
     });
 
     Native.create("javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V", function(ctx, x, y, width, height, startAngle, arcAngle) {
+        if (width < 0 || height < 0) {
+            return;
+        }
         var g = this;
         withGraphics(g, function(c) {
             withPixel(g, c, function() {
-                // TODO need to use bezierCurveTo to implement this properly,
-                // but this works as a rough hack for now
-                var radius = Math.ceil(Math.max(height, width) / 2);
-                var startRad = startAngle * 0.0175;
-                var arcRad = arcAngle * 0.0175;
+                var endRad = -startAngle * 0.0175;
+                var startRad = endRad - arcAngle * 0.0175;
                 c.beginPath();
-                c.moveTo(x + radius, y);
-                c.arc(x, y, radius, startRad, arcRad);
+                createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, false);
                 c.stroke();
             });
         });
     });
 
     Native.create("javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V", function(ctx, x, y, width, height, startAngle, arcAngle) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
         var g = this;
         withGraphics(g, function(c) {
             withPixel(g, c, function() {
-                // TODO need to use bezierCurveTo to implement this properly,
-                // but this works as a rough hack for now
-                var radius = Math.ceil(Math.max(height, width) / 2);
-                var startRad = startAngle * 0.0175;
-                var arcRad = arcAngle * 0.0175;
+                var endRad = -startAngle * 0.0175;
+                var startRad = endRad - arcAngle * 0.0175;
                 c.beginPath();
-                c.moveTo(x + radius, y);
-                c.arc(x, y, radius, startRad, arcRad);
+                c.moveTo(x, y);
+                createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, true);
+                c.moveTo(x, y);
                 c.fill();
             });
         });
