@@ -30,7 +30,7 @@ Context.prototype.pushFrame = function(methodInfo) {
   if (methodInfo.isSynchronized) {
         if (!callee.lockObject) {
             callee.lockObject = methodInfo.isStatic
-                ? methodInfo.classInfo.getClassObject(ctx)
+                ? methodInfo.classInfo.getClassObject(this)
                 : callee.getLocal(0);
         }
 
