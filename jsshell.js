@@ -77,8 +77,6 @@ try {
 
   jvm.startIsolate0(scriptArgs[0], urlParams.args);
 
-  jvm.startIsolate0("SimpleClass", urlParams.args);
-
   print("RUNNING TIME: " + (dateNow() - start));
 } catch (x) {
   print(x);
