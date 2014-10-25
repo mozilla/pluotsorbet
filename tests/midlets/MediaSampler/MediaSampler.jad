@@ -1,0 +1,14 @@
+AMR-Audio-Clip: /midlets/MediaSampler/res/AudioClip.amr
+MIDI-Audio-Clip: /midlets/MediaSampler/res/song.mid
+MIDlet-1: MediaSamplerMIDlet,/midlets/MediaSampler/res/mediasampler.png,com.nokia.example.mmapi.mediasampler.MediaSamplerMIDlet
+MIDlet-Jar-Size: 60189
+MIDlet-Jar-URL: MediaSampler.jar
+MIDlet-Name: MediaSampler
+MIDlet-Vendor: Forum Nokia
+MIDlet-Version: 1.1
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0
+Nokia-MIDlet-On-Screen-Keypad: no
+Video-Clip: /midlets/MediaSampler/res/VideoClip.3gp
+Video-URL: <write your video file URL here>
+WAV-Audio-Clip: /midlets/MediaSampler/res/laser.wav
