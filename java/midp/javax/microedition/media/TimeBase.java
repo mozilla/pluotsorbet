@@ -26,31 +26,32 @@
 package javax.microedition.media;
 
 /**
- * A <code>MediaException</code> indicates an unexpected error
- * condition in a method.
+ * A <code>TimeBase</code> is a constantly ticking source of time.
+ * It measures the progress of time and
+ * provides the basic means for synchronizing media playback for
+ * <code>Player</code>s.
+ * <p>
+ * A <code>TimeBase</code> measures time in microseconds in
+ * order to provide the necessary resolution for synchronization.
+ * It is acknowledged that some implementations may not be able to
+ * support time resolution in the microseconds range.  For such 
+ * implementations, the internal representation of time can be done 
+ * within their limits.
+ * But the time reported via the API must be scaled to the microseconds
+ * range.
+ * <p>
+ * <code>Manager.getSystemTimeBase</code> provides the default 
+ * <code>TimeBase</code> used by the system.
  *
+ * @see Player
  */
-
-public class MediaException extends Exception {
+public interface TimeBase {
 
     /**
-     * Constructs a <code>MediaException</code> with <code>null</code>
-     * as its error detail message.
-     */
-    public MediaException() {
-	super();
-    }
-    
-    /**
-     * Constructs a <code>MediaException</code> with the specified detail
-     * message. The error message string <code>s</code> can later be
-     * retrieved by the 
-     * <code>{@link java.lang.Throwable#getMessage}</code>
-     * method of class <code>java.lang.Throwable</code>.
+     * Get the current time of this <code>TimeBase</code>.  The values
+     * returned must be non-negative and non-decreasing over time.
      *
-     * @param reason the detail message.
+     * @return the current <code>TimeBase</code> time in microseconds.
      */
-    public MediaException(String reason) {
-	super(reason);
-    }
+    long getTime();
 }
