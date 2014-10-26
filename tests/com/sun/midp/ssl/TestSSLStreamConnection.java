@@ -29,7 +29,7 @@ public class TestSSLStreamConnection implements Testlet {
             testMultipleSendsReceivesOnMultipleSockets();
             testSendOnClosedOutputStream();
             testReceiveOnClosedInputStream();
-        } catch (Exception e) {
+        } catch (IOException e) {
             th.todo(false, "Unexpected exception: " + e);
             e.printStackTrace();
         }
