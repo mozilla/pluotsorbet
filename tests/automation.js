@@ -19,6 +19,8 @@ var gfxTests = [
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
+  { name: "gfx/DrawAndFillRoundRectTest", maxDifferent: 2000 },
+  { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
   { name: "gfx/DrawStringTest", maxDifferent: 345 },
   { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
   { name: "gfx/TextBoxTest", maxDifferent: 4677 },
@@ -37,8 +39,8 @@ casper.test.begin("unit tests", 6 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
-            if (content.contains("DONE: 70958 pass, 0 fail, 177 known fail, 0 unknown pass")) {
-                test.pass('main unit tests');
+            if (content.contains("DONE: 70958 pass, 0 fail, 180 known fail, 0 unknown pass")) {
+              test.pass('main unit tests');
             } else {
                 this.debugPage();
                 this.echo(this.captureBase64('png'));

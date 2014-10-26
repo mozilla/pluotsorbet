@@ -9,8 +9,15 @@ var Instrument = {
 
   profiling: false,
   profile: null,
+  asyncProfile: null,
+
+  enabled: "instrument" in urlParams && !/no|0/.test(urlParams.instrument),
 
   callEnterHooks: function(methodInfo, caller, callee) {
+    if (!this.enabled) {
+      return;
+    }
+
     var key = methodInfo.implKey;
     if (Instrument.enter[key]) {
       Instrument.enter[key](caller, callee);
@@ -32,6 +39,10 @@ var Instrument = {
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
+    if (!this.enabled) {
+      return;
+    }
+
     var key = methodInfo.implKey;
 
     if (this.profiling) {
@@ -71,28 +82,45 @@ var Instrument = {
     }
   },
 
+  enterAsyncNative: function(key) {
+    var profileData = this.asyncProfile[key] || (this.asyncProfile[key] = { count: 0, cost: 0 });
+    profileData.then = performance.now();
+  },
+
+  exitAsyncNative: function(key) {
+    var profileData = this.asyncProfile[key];
+    profileData.count++;
+    profileData.cost += performance.now() - profileData.then;
+  },
+
   startProfile: function() {
     this.profile = {};
+    this.asyncProfile = {};
     this.profiling = true;
   },
 
-  stopProfile: function() {
+  printProfile: function(aProfile, aProfileName) {
     var methods = [];
 
-    for (var key in this.profile) {
+    for (var key in aProfile) {
       methods.push({
         key: key,
-        count: this.profile[key].count,
-        cost: this.profile[key].cost,
+        count: aProfile[key].count,
+        cost: aProfile[key].cost,
       });
     }
 
     methods.sort(function(a, b) { return b.cost - a.cost });
 
-    console.log("Profile:");
+    console.log(aProfileName + ":");
     methods.forEach(function(method) {
       console.log(Math.round(method.cost) + "ms " + method.count + " " + method.key);
     });
+  },
+
+  stopProfile: function() {
+    this.printProfile(this.profile, "Profile");
+    this.printProfile(this.asyncProfile, "Async natives profile");
 
     this.profiling = false;
   },
@@ -132,7 +160,10 @@ Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
-  var _this = caller.stack.read(3);
+  // We can't use caller.stack.read() here, because the length of the caller's
+  // stack differs depending on whether or not In.read threw an exception.
+  var _this = caller.stack[2];
+
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   connection.logBuffer += String.fromCharCode(callee.stack.read(1));
 };

@@ -70,9 +70,19 @@ function createAlternateImpl(object, key, fn) {
       var self = isStatic ? null : stack.pop();
       var ret = fn.apply(self, args);
       if (ret && ret.then) { // ret.constructor.name == "Promise"
-        ret.then(doReturn, function(e) {
+        ret.then(function(res) {
+          if (Instrument.profiling) {
+            Instrument.exitAsyncNative(key);
+          }
+
+          doReturn(res);
+        }, function(e) {
           ctx.raiseException(e.javaClassName, e.message);
         }).then(ctx.start.bind(ctx));
+
+        if (Instrument.profiling) {
+          Instrument.enterAsyncNative(key);
+        }
 
         throw VM.Pause;
       } else {

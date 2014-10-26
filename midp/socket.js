@@ -53,6 +53,8 @@ Socket.prototype.close = function() {
 }
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ctx, ipBytes, port) {
+    // console.log("Protocol.open0: " + this.host + ":" + port);
+
     return new Promise((function(resolve, reject) {
         this.socket = new Socket(this.host, port);
 
@@ -66,13 +68,18 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ctx,
         this.data = new Uint8Array();
         this.waitingData = null;
 
-        this.socket.onopen = resolve;
+        this.socket.onopen = function() {
+            // console.log("this.socket.onopen");
+            resolve();
+        }
 
         this.socket.onerror = function(message) {
+            // console.log("this.socket.onerror: " + message.error);
             reject(new JavaException("java/io/IOException", message.error));
         }
 
         this.socket.ondata = (function(message) {
+            // console.log("this.socket.ondata: " + JSON.stringify(message));
             var newArray = new Uint8Array(this.data.byteLength + message.data.length);
             newArray.set(this.data);
             newArray.set(message.data, this.data.byteLength);
@@ -86,14 +93,17 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ctx,
 });
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function(ctx) {
+    // console.log("Protocol.available0: " + this.data.byteLength);
     return this.data.byteLength;
 });
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx, data, offset, length) {
-    // console.log("Protocol.read0: " + _this.socket.isClosed);
+    // console.log("Protocol.read0: " + this.socket.isClosed);
 
     return new Promise((function(resolve, reject) {
-        if (this.socket.isClosed) {
+        // There might be data left in the buffer when the socket is closed, so we
+        // should allow buffer reading even the socket has been closed.
+        if (this.socket.isClosed && this.data.length == 0) {
             resolve(-1);
             return;
         }
@@ -121,28 +131,31 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(ctx
     }).bind(this));
 });
 
-Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(ctx, stack) {
-    var length = stack.pop(), offset = stack.pop(), data = stack.pop(), _this = stack.pop();
-    // console.log("Protocol.write0: " + String.fromCharCode.apply(String, Array.prototype.slice.call(data.subarray(offset, offset + length))));
-
-    _this.socket.onsend = function(message) {
-        _this.socket.onsend = null;
-        if (message.result) {
-            stack.push(length);
-            ctx.start();
-        } else {
-            _this.socket.ondrain = function() {
-                _this.socket.ondrain = null;
-                stack.push(length);
-                ctx.start();
-            };
+Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(ctx, data, offset, length) {
+    return new Promise(function(resolve, reject) {
+        if (this.socket.isClosed) {
+          reject(new JavaException("java/io/IOException", "socket is closed"));
+          return;
         }
-    }
 
-    _this.socket.send(data, offset, length);
+        this.socket.onsend = function(message) {
+            this.socket.onsend = null;
+            if ("error" in message) {
+                console.error(message.error);
+                reject(new JavaException("java/io/IOException", "error writing to socket"));
+            } else if (message.result) {
+                resolve(length);
+            } else {
+                this.socket.ondrain = function() {
+                    this.socket.ondrain = null;
+                    resolve(length);
+                }.bind(this);
+            }
+        }.bind(this);
 
-    throw VM.Pause;
-}
+        this.socket.send(data, offset, length);
+    }.bind(this));
+});
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(ctx, option, value) {
     if (!(option in this.options)) {
@@ -161,6 +174,8 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I", function(
 });
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function(ctx) {
+    // console.log("Protocol.close0: " + this.socket.isClosed);
+
     return new Promise((function(resolve, reject) {
         if (this.socket.isClosed) {
             resolve();
@@ -168,6 +183,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function(ctx) {
         }
 
         this.socket.onclose = (function() {
+            // console.log("this.socket.onclose");
             this.socket.onclose = null;
             resolve();
         }).bind(this);

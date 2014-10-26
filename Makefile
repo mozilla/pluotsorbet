@@ -7,6 +7,8 @@ test: all
 	killall python Python || true
 	python -m SimpleHTTPServer &
 	python tests/echoServer.py &
+	cd tests && python httpsServer.py &
+	cd tests && python sslEchoServer.py &
 	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
 	killall python Python || true
 	python dumplog.py
