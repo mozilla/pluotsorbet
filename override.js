@@ -39,12 +39,12 @@ function createAlternateImpl(object, key, fn) {
   object[key] = function(ctx, stack, isStatic) {
     var args = new Array(numArgs);
 
-    args[0] = ctx;
+    args[numArgs - 1] = ctx;
 
     // NOTE: If your function accepts a Long/Double, you must specify
     // two arguments (since they take up two stack positions); we
     // could sugar this someday.
-    for (var i = numArgs - 1; i >= 1; i--) {
+    for (var i = numArgs - 2; i >= 0; i--) {
       args[i] = stack.pop();
     }
 
@@ -106,19 +106,19 @@ function createAlternateImpl(object, key, fn) {
 
 Override.create = createAlternateImpl.bind(null, Override);
 
-Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
+Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
   return decodeURIComponent(string.str);
 });
 
-Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
+Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
   return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
 });
 
-Override.create("java/lang/Math.min.(II)I", function(ctx, a, b) {
+Override.create("java/lang/Math.min.(II)I", function(a, b) {
   return Math.min(a, b);
 });
 
-Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(ctx, b, off, len) {
+Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, len, ctx) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
@@ -143,7 +143,7 @@ Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(ctx, b, 
   this.class.getField("I.count.I").set(this, newcount);
 });
 
-Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(ctx, value) {
+Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(value, ctx) {
   var count = this.class.getField("I.count.I").get(this);
   var buf = this.class.getField("I.buf.[B").get(this);
 
@@ -159,7 +159,7 @@ Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(ctx, value)
   this.class.getField("I.count.I").set(this, newcount);
 });
 
-Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(ctx, buf) {
+Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(buf) {
   if (!buf) {
     throw new JavaException("java/lang/NullPointerException");
   }
@@ -169,7 +169,7 @@ Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(ctx, buf) 
   this.count = buf.length;
 });
 
-Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(ctx, buf, offset, length) {
+Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(buf, offset, length) {
   if (!buf) {
     throw new JavaException("java/lang/NullPointerException");
   }
@@ -179,11 +179,11 @@ Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(ctx, buf
   this.count = (offset + length <= buf.length) ? (offset + length) : buf.length;
 });
 
-Override.create("java/io/ByteArrayInputStream.read.()I", function(ctx) {
+Override.create("java/io/ByteArrayInputStream.read.()I", function() {
   return (this.pos < this.count) ? (this.buf[this.pos++] & 0xFF) : -1;
 });
 
-Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(ctx, b, off, len) {
+Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(b, off, len) {
   if (!b) {
     throw new JavaException("java/lang/NullPointerException");
   }
@@ -209,7 +209,7 @@ Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(ctx, b, of
   return len;
 });
 
-Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(ctx, long, _) {
+Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(long, _) {
   var n = long.toNumber();
 
   if (this.pos + n > this.count) {
@@ -225,15 +225,15 @@ Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(ctx, long, _)
   return Long.fromNumber(n);
 });
 
-Override.create("java/io/ByteArrayInputStream.available.()I", function(ctx) {
+Override.create("java/io/ByteArrayInputStream.available.()I", function() {
   return this.count - this.pos;
 });
 
-Override.create("java/io/ByteArrayInputStream.mark.(I)V", function(ctx, readAheadLimit) {
+Override.create("java/io/ByteArrayInputStream.mark.(I)V", function(readAheadLimit) {
   this.mark = this.pos;
 });
 
-Override.create("java/io/ByteArrayInputStream.reset.()V", function(ctx) {
+Override.create("java/io/ByteArrayInputStream.reset.()V", function() {
   this.pos = this.mark;
 });
 
@@ -241,7 +241,7 @@ Override.create("java/io/ByteArrayInputStream.reset.()V", function(ctx) {
 // DomainPolicy.loadValues. This has the added benefit that we avoid many other
 // computations.
 
-Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B", function(ctx, name) {
+Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B", function(name, ctx) {
   // NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2
   // The 2 is the two hardcoded MIPS and AMS permissions.
   var NUMBER_OF_PERMISSIONS = 61;
@@ -262,18 +262,18 @@ Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;
 });
 
 // Always return true to make Java think the MIDlet domain is trusted.
-Override.create("com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z", function(ctx, name) {
+Override.create("com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z", function(name) {
   return true;
 });
 
 // Returns the ID of the permission. The callers will use this ID to check the
 // permission in the permissions array returned by Permissions::forDomain.
-Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I", function(ctx, name) {
+Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I", function(name) {
   return 0;
 });
 
 // The Java code that uses this method doesn't actually use the return value, but
 // passes it to Permissions.getId. So we can return anything.
-Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(ctx, id) {
+Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(id) {
   return "com.sun.midp";
 });

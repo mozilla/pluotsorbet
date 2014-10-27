@@ -352,7 +352,7 @@ MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgConnection();
 
-Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(ctx, jName) {
+Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);
 
     this.server = (name[2] == ":");
@@ -384,11 +384,11 @@ Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", fu
     }).bind(this));
 });
 
-Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function(ctx) {
+Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function() {
     return MIDP.LocalMsgConnections[this.protocolName].waitConnection();
 });
 
-Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(ctx, data, offset, length) {
+Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(data, offset, length) {
     var message = {
       data: data,
       offset: offset,
@@ -406,7 +406,7 @@ Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(ctx
     }
 });
 
-Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(ctx, data) {
+Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(data) {
     if (this.server) {
         return MIDP.LocalMsgConnections[this.protocolName].serverReceiveMessage(data);
     }
@@ -418,7 +418,7 @@ Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(ct
     return MIDP.LocalMsgConnections[this.protocolName].clientReceiveMessage(data);
 });
 
-Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function(ctx) {
+Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function() {
     if (this.server) {
         delete MIDP.LocalMsgConnections[this.protocolName];
     }
