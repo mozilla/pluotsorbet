@@ -37,6 +37,10 @@ var jvm = new JVM();
 var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
 MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
 
+if (urlParams.gamepad && !/no|0/.test(urlParams.gamepad)) {
+  document.documentElement.classList.add('gamepad');
+}
+
 var jars = ["java/classes.jar", "tests/tests.jar"];
 if (urlParams.jars) {
   jars = jars.concat(urlParams.jars.split(":"));
