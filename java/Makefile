@@ -21,7 +21,7 @@ tools/Jpp.class: tools/Jpp.java
 
 # Preprocess all .jpp files to generate corresponding .java files.
 $(JPP_DESTS): tools/Jpp.class $(JPP_SRCS)
-	$(foreach file,$(JPP_SRCS), java -classpath tools Jpp $(file) $(JPP_DEFS) -o $(file:.jpp=.java))
+	$(foreach file,$(JPP_SRCS), java -classpath tools Jpp $(file) $(JPP_DEFS) -o $(file:.jpp=.java);)
 
 clean:
 	rm -f `find . -name "*.jar" -or -name "*~"`
