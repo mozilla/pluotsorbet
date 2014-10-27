@@ -392,9 +392,9 @@ public class RandomAccessStream extends ConnectionBaseAdapter {
     /**
      * Ensures native resources are freed when Object is collected.
      */
-
-
-
+// #ifdef ENABLE_CDC
+    protected native void finalize();
+// #else
     private native void finalize();
-
+// #endif
 }

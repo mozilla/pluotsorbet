@@ -38,8 +38,10 @@ public interface MessageConnection extends javax.microedition.io.Connection {
     // JAVADOC COMMENT ELIDED
     public static final String BINARY_MESSAGE = "binary";
 
+    // #ifdef ENABLE_JSR_205
     // JAVADOC COMMENT ELIDED
     public static final String MULTIPART_MESSAGE = "multipart";
+    // #endif ENABLE_JSR_205
     
     // JAVADOC COMMENT ELIDED
     public Message newMessage(String type);

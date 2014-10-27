@@ -29,9 +29,9 @@ package javax.microedition.lcdui;
 import com.sun.mmedia.MIDPVideoPainter;
 import com.sun.mmedia.MMHelper;
 import java.util.Vector;
-
+// #ifdef ENABLE_CHAMELEON
 import com.sun.midp.chameleon.MIDPWindow;
-
+// #endif
 
 /**
  * This is a helper class to communicate between the LCDUI canvas and
@@ -157,7 +157,7 @@ final class MMHelperImpl extends MMHelper {
      */
     public boolean isDisplayOverlapped(Graphics g) {
         boolean isOverlapped = false;
-
+// #ifdef ENABLE_CHAMELEON
         Object creator = g.getCreator();
         if (creator != null) {
             if (creator instanceof Display) {
@@ -165,7 +165,7 @@ final class MMHelperImpl extends MMHelper {
                 isOverlapped = window.systemMenuUp();
             }
         }
-
+// #endif
         return isOverlapped;
     }
 
