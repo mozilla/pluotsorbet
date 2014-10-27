@@ -60,6 +60,38 @@ var util = (function () {
     return jStr.str;
   }
 
+  function newPrimitiveArray(type, size) {
+    var constructor = ARRAYS[type];
+    if (!constructor.prototype.class)
+      CLASSES.initPrimitiveArrayType(type, constructor);
+    return new constructor(size);
+  }
+
+  function newArray(typeName, size) {
+    return new (CLASSES.getClass(typeName).constructor)(size);
+  }
+
+  function newMultiArray(typeName, lengths) {
+    var length = lengths[0];
+    var array = newArray(typeName, length);
+    if (lengths.length > 1) {
+      lengths = lengths.slice(1);
+      for (var i=0; i<length; i++)
+        array[i] = newMultiArray(typeName.substr(1), lengths);
+    }
+    return array;
+  }
+
+  function newObject(classInfo) {
+      return new (classInfo.constructor)();
+  }
+
+  function newString(s) {
+    var obj = newObject(CLASSES.java_lang_String);
+    obj.str = s;
+    return obj;
+  }
+
   /**
    * Returns an ArrayBufferView of the underlying code points
    * represented by the given Java string.
@@ -126,6 +158,11 @@ var util = (function () {
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
+    newPrimitiveArray: newPrimitiveArray,
+    newArray: newArray,
+    newMultiArray: newMultiArray,
+    newObject: newObject,
+    newString: newString,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,
