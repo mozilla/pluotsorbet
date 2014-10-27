@@ -152,10 +152,10 @@ Native.create("com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V
   this.encoder.putEnd(tag, util.fromJavaString(name));
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.getData.()[B", function(ctx) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.getData.()[B", function() {
   var data = this.encoder.getData();
 
-  var array = ctx.newPrimitiveArray("B", data.length);
+  var array = util.newPrimitiveArray("B", data.length);
   for (var i = 0; i < data.length; i++) {
     array[i] = data.charCodeAt(i);
   }

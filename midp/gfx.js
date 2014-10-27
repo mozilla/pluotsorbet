@@ -4,8 +4,8 @@
 'use strict';
 
 (function(Native) {
-    Native.create("com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I", function(ctx) {
-        var ids = ctx.newPrimitiveArray("I", 1);
+    Native.create("com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I", function() {
+        var ids = util.newPrimitiveArray("I", 1);
         ids[0] = 1;
         return ids;
     });

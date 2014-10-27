@@ -138,7 +138,7 @@ VM.execute = function(ctx) {
             constant = constant.float;
             break;
         case 8: // TAGS.CONSTANT_String
-            constant = ctx.newString(cp[constant.string_index].bytes);
+            constant = util.newString(cp[constant.string_index].bytes);
             break;
         case 5: // TAGS.CONSTANT_Long
             constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -826,7 +826,7 @@ VM.execute = function(ctx) {
             if (size < 0) {
                 ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
             }
-            stack.push(ctx.newPrimitiveArray("????ZCFDBSIJ"[type], size));
+            stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
             break;
         case 0xbd: // anewarray
             var idx = frame.read16();
@@ -841,7 +841,7 @@ VM.execute = function(ctx) {
             if (className[0] !== "[")
                 className = "L" + className + ";";
             className = "[" + className;
-            stack.push(ctx.newArray(className, size));
+            stack.push(util.newArray(className, size));
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();
@@ -852,7 +852,7 @@ VM.execute = function(ctx) {
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
                 lengths[i] = stack.pop();
-            stack.push(ctx.newMultiArray(classInfo.className, lengths.reverse()));
+            stack.push(util.newMultiArray(classInfo.className, lengths.reverse()));
             break;
         case 0xbe: // arraylength
             var obj = stack.pop();
@@ -910,7 +910,7 @@ VM.execute = function(ctx) {
             if (classInfo.tag)
                 classInfo = resolve(idx);
             classInitCheck(classInfo, frame.ip-3);
-            stack.push(ctx.newObject(classInfo));
+            stack.push(util.newObject(classInfo));
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();

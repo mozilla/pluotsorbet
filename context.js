@@ -266,23 +266,3 @@ Context.prototype.notify = function(obj, notifyAll) {
     ctx.wakeup(obj);
   });
 }
-
-Context.prototype.newPrimitiveArray = function(type, size) {
-  return util.newPrimitiveArray(type, size);
-}
-
-Context.prototype.newArray = function(typeName, size) {
-  return util.newArray(typeName, size);
-}
-
-Context.prototype.newMultiArray = function(typeName, lengths) {
-  return util.newMultiArray(typeName, lengths);
-}
-
-Context.prototype.newObject = function(classInfo) {
-  return util.newObject(classInfo);
-}
-
-Context.prototype.newString = function(s) {
-  return util.newString(s);
-}

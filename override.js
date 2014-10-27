@@ -58,7 +58,7 @@ function createAlternateImpl(object, key, fn) {
       } else if (ret === false) {
         stack.push(0);
       } else if (typeof ret === "string") {
-        stack.push(ctx.newString(ret));
+        stack.push(util.newString(ret));
       } else if (retType === 'J' || retType === 'D') {
         stack.push2(ret);
       } else {
@@ -118,7 +118,7 @@ Override.create("java/lang/Math.min.(II)I", function(a, b) {
   return Math.min(a, b);
 });
 
-Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, len, ctx) {
+Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, len) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
@@ -133,7 +133,7 @@ Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, 
 
   var newcount = count + len;
   if (newcount > buf.length) {
-    var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
     this.class.getField("I.buf.[B").set(this, buf);
@@ -143,13 +143,13 @@ Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, 
   this.class.getField("I.count.I").set(this, newcount);
 });
 
-Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(value, ctx) {
+Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(value) {
   var count = this.class.getField("I.count.I").get(this);
   var buf = this.class.getField("I.buf.[B").get(this);
 
   var newcount = count + 1;
   if (newcount > buf.length) {
-    var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
     this.class.getField("I.buf.[B").set(this, buf);
@@ -241,20 +241,20 @@ Override.create("java/io/ByteArrayInputStream.reset.()V", function() {
 // DomainPolicy.loadValues. This has the added benefit that we avoid many other
 // computations.
 
-Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B", function(name, ctx) {
+Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B", function(name) {
   // NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2
   // The 2 is the two hardcoded MIPS and AMS permissions.
   var NUMBER_OF_PERMISSIONS = 61;
   var ALLOW = 1;
 
-  var maximums = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
-  var defaults = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var maximums = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var defaults = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
 
   for (var i = 0; i < NUMBER_OF_PERMISSIONS; i++) {
     maximums[i] = defaults[i] = ALLOW;
   }
 
-  var permissions = ctx.newArray("[[B", 2);
+  var permissions = util.newArray("[[B", 2);
   permissions[0] = maximums;
   permissions[1] = defaults;
 
