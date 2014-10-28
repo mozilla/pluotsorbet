@@ -13,6 +13,24 @@ var util = (function () {
     return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
   }
 
+  /**
+   * Provides a UTF-8 decoder that will throw an exception on error rather
+   * than silently sanitizing the output.
+   */
+  var fallibleUtf8Decoder = new TextDecoder("utf-8", { fatal: true });
+
+  /**
+   * Decodes a UTF-8 string stored in an ArrayBufferView.
+   *
+   * @param arr An ArrayBufferView to decode (such as a Uint8Array).
+   * @returns The decoded string.
+   * @throws An invalid enoding is encountered, see
+   *         TextDecoder.prototype.decode().
+   */
+  function decodeUtf8Array(arr) {
+    return fallibleUtf8Decoder.decode(arr);
+  }
+
   function defaultValue(type) {
     if (type === 'J')
       return Long.ZERO;
@@ -153,6 +171,7 @@ var util = (function () {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
+    decodeUt8Array: decodeUtf8Array,
     defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
