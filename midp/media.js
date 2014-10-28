@@ -5,7 +5,6 @@
 
 const ContentTypes = {
     memory: [
-        "audio/x-wav"
     ],
 
     file: [
@@ -120,10 +119,14 @@ var PlayerCache = {
 
 function Player(url) {
     this.url = url;
+    // this.mediaFormat will only be updated by PlayerImpl.nGetMediaFormat.
     this.mediaFormat = "UNKNOWN";
     this.wholeContentSize = -1;
     this.contentSize = 0;
     this.data = null;
+    this.audioContext = new AudioContext();
+    this.source = null;
+    this.currentTime = 0;
 }
 
 // default buffer size 1 MB
@@ -166,6 +169,31 @@ Player.prototype.writeBuffer = function(buffer) {
 
     this.data.set(buffer, this.contentSize);
     this.contentSize += buffer.length;
+};
+
+Player.prototype.start = function() {
+    console.info("Player.prototype.start");
+    return new Promise(function(resolve, reject) {
+        if (this.contentSize > 0) {
+            if (this.source !== null) {
+                this.source.start(0, this.currentTime);
+                resolve();
+                return;
+            }
+            this.source = this.audioContext.createBufferSource();
+            this.decode(this.data, function(decoded) {
+                this.source.buffer = decoded;
+                this.source.connect(this.audioContext.destination);
+                this.source.start(this.currentTime);
+                resolve();
+            }.bind(this));
+            return;
+        }
+    }.bind(this));
+};
+
+Player.prototype.decode = function(encoded, callback) {
+    this.audioContext.decodeAudioData(encoded.buffer, callback);
 };
 
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
@@ -254,6 +282,72 @@ Native.create("com/sun/mmedia/DirectPlayer.nIsVideoControlSupported.(I)Z", funct
         return true;
     }
     return false;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nIsVolumeControlSupported.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    // TODO Is there any other types supporting volume control?
+    if (player.mediaFormat.indexOf("video/") === 0 || player.mediaFormat.indexOf("audio/") === 0) {
+        return true;
+    }
+    return false;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z not implemented.");
+    return false;
+});
+
+// Device is available?
+Native.create("com/sun/mmedia/DirectPlayer.nAcquireDevice.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nAcquireDevice.(I)Z not implemented.");
+    return true;
+});
+
+// Relase device reference
+Native.create("com/sun/mmedia/DirectPlayer.nReleaseDevice.(I)V", function(handle) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nReleaseDevice.(I)V not implemented.");
+});
+
+// Start Prefetch of Native Player
+Native.create("com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z not implemented.");
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I", function(handle) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I not implemented.");
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nStart.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    player.start();
+    return true;
+});
+
+/**
+ * @return the volume level between 0 and 100 if succeeded. Otherwise -1.
+ */
+Native.create("com/sun/mmedia/DirectVolume.nGetVolume.(I)I", function(handle) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectVolume.nGetVolume.(I)I not implemented.");
+    return 100;
+});
+
+/**
+ * @param level The volume level between 0 and 100.
+ * @return the volume level set between 0 and 100 if succeeded. Otherwise -1.
+ */
+Native.create("com/sun/mmedia/DirectVolume.nSetVolume.(II)I", function(handle, level) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectVolume.nSetVolume.(II)I not implemented.");
+    return level;
 });
 
 Native.create("com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z", function(appId, note, duration, volume) {
