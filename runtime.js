@@ -81,6 +81,15 @@ Runtime.prototype.newString = function(s) {
   return obj;
 }
 
+Runtime.prototype.newStringConstant = function(s) {
+    if (internedStrings.has(s)) {
+        return internedStrings.get(s);
+    }
+    var obj = this.newString(s);
+    internedStrings.set(s, obj);
+    return obj;
+}
+
 Runtime.prototype.setStatic = function(field, value) {
   this.staticFields[field.id] = value;
 }

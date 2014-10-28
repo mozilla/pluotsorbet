@@ -158,13 +158,13 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
 
 Context.prototype.invoke = function(methodInfoId, object, args) {
   var methodInfo = this.methods[methodInfoId];
+  args = args || [];
   var frame = new Frame(methodInfo, [], 0);
   this.frames.push(frame);
   frame.setLocal(0, object);
   for (var i = 0; i < args.length; i++) {
     frame.setLocal(i + 1, args[i]);
   }
-  debugger;
   return VM.execute(this);
 };
 
@@ -333,6 +333,58 @@ Context.prototype.newString = function(s) {
   return this.runtime.newString(s);
 }
 
+Context.prototype.newStringConstant = function(s) {
+    return this.runtime.newStringConstant(s);
+}
+
 Context.prototype.getStatic = function(fieldInfoId) {
   return this.runtime.staticFields[fieldInfoId];
+};
+
+Context.prototype.resolve = function(cp, idx, isStatic) {
+    var constant = cp[idx];
+    if (!constant.tag)
+        return constant;
+    switch(constant.tag) {
+        case 3: // TAGS.CONSTANT_Integer
+            constant = constant.integer;
+            break;
+        case 4: // TAGS.CONSTANT_Float
+            constant = constant.float;
+            break;
+        case 8: // TAGS.CONSTANT_String
+            constant = this.newStringConstant(cp[constant.string_index].bytes);
+            break;
+        case 5: // TAGS.CONSTANT_Long
+            constant = Long.fromBits(constant.lowBits, constant.highBits);
+            break;
+        case 6: // TAGS.CONSTANT_Double
+            constant = constant.double;
+            break;
+        case 7: // TAGS.CONSTANT_Class
+            constant = CLASSES.getClass(cp[constant.name_index].bytes);
+            break;
+        case 9: // TAGS.CONSTANT_Fieldref
+            var classInfo = this.resolve(cp, constant.class_index, isStatic);
+            var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
+            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+            constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
+//        if (!constant)
+//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
+//              classInfo.className + "." + fieldName + "." + signature + " not found");
+            break;
+        case 10: // TAGS.CONSTANT_Methodref
+        case 11: // TAGS.CONSTANT_InterfaceMethodref
+            var classInfo = this.resolve(cp, constant.class_index, isStatic);
+            var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
+            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+            constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
+//        if (!constant)
+//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
+//              classInfo.className + "." + methodName + "." + signature + " not found");
+            break;
+        default:
+            throw new Error("not support constant type");
+    }
+    return constant;
 };

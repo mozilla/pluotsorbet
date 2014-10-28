@@ -104,7 +104,7 @@ VM.execute = function(ctx) {
             constant = constant.float;
             break;
         case 8: // TAGS.CONSTANT_String
-            constant = ctx.newString(cp[constant.string_index].bytes);
+            constant = ctx.newStringConstant(cp[constant.string_index].bytes);
             break;
         case 5: // TAGS.CONSTANT_Long
             constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -137,7 +137,7 @@ VM.execute = function(ctx) {
         default:
             throw new Error("not support constant type");
         }
-        return cp[idx] = constant;
+        return constant;
     }
 
     while (true) {
@@ -1011,6 +1011,7 @@ VM.execute = function(ctx) {
                 ctx.frames.push(COMPILED_FRAME);
                 // Take off the arguments from the stack.
                 var args = stack.slice(stack.length - methodInfo.consumes);
+                stack.length -= methodInfo.consumes;
                 args.unshift(ctx);
                 // Invoke the compiled function.
                 var returnValue = fn.apply(null, args);
