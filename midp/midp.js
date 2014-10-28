@@ -895,7 +895,7 @@ Native.create("javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V", functio
     console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + displayId + ", " + drawTrusted + ")");
 });
 
-Native.create("com/sun/midp/events/EventQueue.sendShutdownEvent.()V", function() {
+Native.create("com/sun/midp/events/EventQueue.sendShutdownEvent.()V", function(ctx) {
     var obj = util.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
     obj.class.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
     MIDP.sendEvent(obj, ctx.runtime.isolate.id);
