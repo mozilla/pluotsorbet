@@ -7,6 +7,9 @@ public abstract class CanvasItem {
 
     Object parent = null;
 
+    native private void attachNativeImpl();
+    native private void detachNativeImpl();
+
     // Set the parent object of this CanvasItem.
     public void setParent(Object theParent) {
         if (theParent != null && parent != null && theParent != parent) {
@@ -14,6 +17,12 @@ public abstract class CanvasItem {
         }
 
         parent = theParent;
+
+        if (parent != null) {
+            attachNativeImpl();
+        } else {
+            detachNativeImpl();
+        }
     }
 
     // Sets the size of this CanvasItem in pixels.
