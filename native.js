@@ -7,7 +7,7 @@ var Native = {};
 
 Native.create = createAlternateImpl.bind(null, Native);
 
-Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(ctx, src, srcOffset, dst, dstOffset, length) {
+Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst)
         throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
     var srcClass = src.class;
@@ -52,7 +52,7 @@ Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;
     }
 });
 
-Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, key) {
+Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;", function(key) {
     var value;
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
@@ -161,19 +161,19 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     return value ? value : null;
 });
 
-Native.create("java/lang/System.currentTimeMillis.()J", function(ctx) {
+Native.create("java/lang/System.currentTimeMillis.()J", function() {
     return Long.fromNumber(Date.now());
 });
 
-Native.create("com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V", function(ctx, src, srcOffset, dst, dstOffset, length) {
+Native.create("com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V", function(src, srcOffset, dst, dstOffset, length) {
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
 });
 
-Native.create("com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V", function(ctx, src, srcOffset, dst, dstOffset, length) {
+Native.create("com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V", function(src, srcOffset, dst, dstOffset, length) {
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
 });
 
-Native.create("com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V", function(ctx, src, srcOffset, dst, dstOffset, length) {
+Native.create("com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n)
             dst[dstOffset++] = src[srcOffset++];
@@ -185,7 +185,7 @@ Native.create("com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Objec
     }
 });
 
-Native.create("com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J", function(ctx) {
+Native.create("com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J", function() {
     return Long.fromNumber(performance.now());
 });
 
@@ -193,14 +193,14 @@ Native.create("java/lang/Object.getClass.()Ljava/lang/Class;", function(ctx) {
     return this.class.getClassObject(ctx);
 });
 
-Native.create("java/lang/Object.hashCode.()I", function(ctx) {
+Native.create("java/lang/Object.hashCode.()I", function() {
     var hashCode = this.hashCode;
     while (!hashCode)
         hashCode = this.hashCode = util.id();
     return hashCode;
 });
 
-Native.create("java/lang/Object.wait.(J)V", function(ctx, timeout, _) {
+Native.create("java/lang/Object.wait.(J)V", function(timeout, _, ctx) {
     ctx.wait(this, timeout.toNumber());
 });
 
@@ -241,11 +241,11 @@ Native.create("java/lang/Class.init9.()V", function(ctx) {
     runtime.initialized[className] = true;
 });
 
-Native.create("java/lang/Class.getName.()Ljava/lang/String;", function(ctx) {
+Native.create("java/lang/Class.getName.()Ljava/lang/String;", function() {
     return this.vmClass.className.replace(/\//g, ".");
 });
 
-Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", function(ctx, name) {
+Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", function(name, ctx) {
     try {
         if (!name)
             throw new Classes.ClassNotFoundException();
@@ -254,7 +254,7 @@ Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", f
         classInfo = CLASSES.getClass(className);
     } catch (e) {
         if (e instanceof (Classes.ClassNotFoundException))
-            ctx.raiseExceptionAndYield("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+            throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
         throw e;
     }
     return classInfo.getClassObject(ctx);
@@ -291,28 +291,28 @@ Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) 
     throw VM.Yield;
 });
 
-Native.create("java/lang/Class.isInterface.()Z", function(ctx) {
+Native.create("java/lang/Class.isInterface.()Z", function() {
     return ACCESS_FLAGS.isInterface(this.vmClass.access_flags);
 });
 
-Native.create("java/lang/Class.isArray.()Z", function(ctx) {
+Native.create("java/lang/Class.isArray.()Z", function() {
     return !!this.vmClass.isArrayClass;
 });
 
-Native.create("java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z", function(ctx, fromClass) {
+Native.create("java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z", function(fromClass) {
     if (!fromClass)
         throw new JavaException("java/lang/NullPointerException");
     return fromClass.vmClass.isAssignableTo(this.vmClass);
 });
 
-Native.create("java/lang/Class.isInstance.(Ljava/lang/Object;)Z", function(ctx, obj) {
+Native.create("java/lang/Class.isInstance.(Ljava/lang/Object;)Z", function(obj) {
     return obj && obj.class.isAssignableTo(this.vmClass);
 });
 
 Native.create("java/lang/Float.floatToIntBits.(F)I", (function() {
     var fa = new Float32Array(1);
     var ia = new Int32Array(fa.buffer);
-    return function(ctx, val) {
+    return function(val) {
         fa[0] = val;
         return ia[0];
     }
@@ -321,7 +321,7 @@ Native.create("java/lang/Float.floatToIntBits.(F)I", (function() {
 Native.create("java/lang/Double.doubleToLongBits.(D)J", (function() {
     var da = new Float64Array(1);
     var ia = new Int32Array(da.buffer);
-    return function(ctx, val, _) {
+    return function(val, _) {
         da[0] = val;
         return Long.fromBits(ia[0], ia[1]);
     }
@@ -330,7 +330,7 @@ Native.create("java/lang/Double.doubleToLongBits.(D)J", (function() {
 Native.create("java/lang/Float.intBitsToFloat.(I)F", (function() {
     var fa = new Float32Array(1);
     var ia = new Int32Array(fa.buffer);
-    return function(ctx, val) {
+    return function(val) {
         ia[0] = val;
         return fa[0];
     }
@@ -339,7 +339,7 @@ Native.create("java/lang/Float.intBitsToFloat.(I)F", (function() {
 Native.create("java/lang/Double.longBitsToDouble.(J)D", (function() {
     var da = new Float64Array(1);
     var ia = new Int32Array(da.buffer);
-    return function(ctx, l, _) {
+    return function(l, _) {
         ia[0] = l.low_;
         ia[1] = l.high_;
         return da[0];
@@ -381,58 +381,58 @@ Native.create("java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;", functi
     return result;
 });
 
-Native.create("java/lang/Runtime.freeMemory.()J", function(ctx) {
+Native.create("java/lang/Runtime.freeMemory.()J", function() {
     return Long.fromInt(0x800000);
 });
 
-Native.create("java/lang/Runtime.totalMemory.()J", function(ctx) {
+Native.create("java/lang/Runtime.totalMemory.()J", function() {
     return Long.fromInt(0x1000000);
 });
 
-Native.create("java/lang/Runtime.gc.()V", function(ctx) {
+Native.create("java/lang/Runtime.gc.()V", function() {
 });
 
-Native.create("java/lang/Math.floor.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.floor.(D)D", function(val, _) {
     return Math.floor(val);
 });
 
-Native.create("java/lang/Math.asin.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.asin.(D)D", function(val, _) {
     return Math.asin(val);
 });
 
-Native.create("java/lang/Math.acos.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.acos.(D)D", function(val, _) {
     return Math.acos(val);
 });
 
-Native.create("java/lang/Math.atan.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.atan.(D)D", function(val, _) {
     return Math.atan(val);
 });
 
-Native.create("java/lang/Math.atan2.(DD)D", function(ctx, x, _1, y, _2) {
+Native.create("java/lang/Math.atan2.(DD)D", function(x, _1, y, _2) {
     return Math.atan2(x, y);
 });
 
-Native.create("java/lang/Math.sin.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.sin.(D)D", function(val, _) {
     return Math.sin(val);
 });
 
-Native.create("java/lang/Math.cos.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.cos.(D)D", function(val, _) {
     return Math.cos(val);
 });
 
-Native.create("java/lang/Math.tan.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.tan.(D)D", function(val, _) {
     return Math.tan(val);
 });
 
-Native.create("java/lang/Math.sqrt.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.sqrt.(D)D", function(val, _) {
     return Math.sqrt(val);
 });
 
-Native.create("java/lang/Math.ceil.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.ceil.(D)D", function(val, _) {
     return Math.ceil(val);
 });
 
-Native.create("java/lang/Math.floor.(D)D", function(ctx, val, _) {
+Native.create("java/lang/Math.floor.(D)D", function(val, _) {
     return Math.floor(val);
 });
 
@@ -440,7 +440,7 @@ Native.create("java/lang/Thread.currentThread.()Ljava/lang/Thread;", function(ct
     return ctx.thread;
 });
 
-Native.create("java/lang/Thread.setPriority0.(II)V", function(ctx, oldPriority, newPriority) {
+Native.create("java/lang/Thread.setPriority0.(II)V", function(oldPriority, newPriority) {
 });
 
 Native.create("java/lang/Thread.start0.()V", function(ctx) {
@@ -489,21 +489,21 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
     ctx.resume();
 });
 
-Native.create("java/lang/Thread.internalExit.()V", function(ctx) {
+Native.create("java/lang/Thread.internalExit.()V", function() {
     this.alive = false;
 });
 
-Native.create("java/lang/Thread.isAlive.()Z", function(ctx) {
+Native.create("java/lang/Thread.isAlive.()Z", function() {
     return !!this.alive;
 });
 
-Native.create("java/lang/Thread.sleep.(J)V", function(ctx, delay, _) {
+Native.create("java/lang/Thread.sleep.(J)V", function(delay, _) {
     return new Promise(function(resolve, reject) {
         window.setTimeout(resolve, delay.toNumber());
     })
 });
 
-Native.create("java/lang/Thread.yield.()V", function(ctx) {
+Native.create("java/lang/Thread.yield.()V", function() {
     throw VM.Yield;
 });
 
@@ -511,11 +511,11 @@ Native.create("java/lang/Thread.activeCount.()I", function(ctx) {
     return ctx.runtime.threadCount;
 });
 
-Native.create("com/sun/cldchi/io/ConsoleOutputStream.write.(I)V", function(ctx, ch) {
+Native.create("com/sun/cldchi/io/ConsoleOutputStream.write.(I)V", function(ch) {
     console.print(ch);
 });
 
-Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;", function(ctx, name) {
+Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;", function(name, ctx) {
     var fileName = util.fromJavaString(name);
     var data = CLASSES.loadFile(fileName);
     var obj = null;
@@ -527,7 +527,7 @@ Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljav
     return obj;
 });
 
-Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function(ctx) {
+Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function() {
     var handle = this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
     if (!handle) {
@@ -537,7 +537,7 @@ Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function(ct
     return handle.data.length - handle.pos;
 });
 
-Override.create("com/sun/cldc/io/ResourceInputStream.read.()I", function(ctx) {
+Override.create("com/sun/cldc/io/ResourceInputStream.read.()I", function() {
     var handle = this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
     if (!handle) {
@@ -547,7 +547,7 @@ Override.create("com/sun/cldc/io/ResourceInputStream.read.()I", function(ctx) {
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
 });
 
-Native.create("com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I", function(ctx, handle, b, off, len) {
+Native.create("com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I", function(handle, b, off, len) {
     var data = handle.data;
     var remaining = data.length - handle.pos;
     if (len > remaining)
@@ -558,31 +558,31 @@ Native.create("com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;
     return (len > 0) ? len : -1;
 });
 
-Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(ctx, char) {
+Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(char) {
     return String.fromCharCode(char).toLowerCase().charCodeAt(0);
 });
 
-Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(ctx, char) {
+Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(char) {
     return String.fromCharCode(char).toUpperCase().charCodeAt(0);
 });
 
-Native.create("java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V", function(ctx, target) {
+Native.create("java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V", function(target) {
     this.target = target;
 });
 
-Native.create("java/lang/ref/WeakReference.get.()Ljava/lang/Object;", function(ctx) {
+Native.create("java/lang/ref/WeakReference.get.()Ljava/lang/Object;", function() {
     return this.target ? this.target : null;
 });
 
-Native.create("java/lang/ref/WeakReference.clear.()V", function(ctx) {
+Native.create("java/lang/ref/WeakReference.clear.()V", function() {
     this.target = null;
 });
 
-Native.create("com/sun/cldc/isolate/Isolate.registerNewIsolate.()V", function(ctx) {
+Native.create("com/sun/cldc/isolate/Isolate.registerNewIsolate.()V", function() {
     this.id = util.id();
 });
 
-Native.create("com/sun/cldc/isolate/Isolate.getStatus.()I", function(ctx) {
+Native.create("com/sun/cldc/isolate/Isolate.getStatus.()I", function() {
     return this.runtime ? this.runtime.status : 1; // NEW
 });
 
@@ -590,7 +590,7 @@ Native.create("com/sun/cldc/isolate/Isolate.nativeStart.()V", function(ctx) {
     ctx.runtime.vm.startIsolate(this);
 });
 
-Native.create("com/sun/cldc/isolate/Isolate.waitStatus.(I)V", function(ctx, status) {
+Native.create("com/sun/cldc/isolate/Isolate.waitStatus.(I)V", function(status) {
     return new Promise((function(resolve, reject) {
         var runtime = this.runtime;
         if (runtime.status >= status) {
@@ -621,11 +621,11 @@ Native.create("com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolat
     return isolates;
 });
 
-Native.create("com/sun/cldc/isolate/Isolate.id0.()I", function(ctx) {
+Native.create("com/sun/cldc/isolate/Isolate.id0.()I", function() {
     return this.id;
 });
 
-Native.create("com/sun/cldc/isolate/Isolate.setPriority0.(I)V", function(ctx, newPriority) {
+Native.create("com/sun/cldc/isolate/Isolate.setPriority0.(I)V", function(newPriority) {
 });
 
 var links = {};
@@ -647,7 +647,7 @@ Native.create("com/sun/midp/links/LinkPortal.getLinkCount0.()I", function(ctx) {
     });
 });
 
-Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V", function(ctx, linkArray) {
+Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V", function(linkArray, ctx) {
     var isolateId = ctx.runtime.isolate.id;
 
     for (var i = 0; i < links[isolateId].length; i++) {
@@ -658,7 +658,7 @@ Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Lin
     }
 });
 
-Native.create("com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V", function(ctx, id, linkArray) {
+Native.create("com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V", function(id, linkArray) {
     links[id] = linkArray;
 
     if (waitingForLinks[id]) {
@@ -666,23 +666,23 @@ Native.create("com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Li
     }
 });
 
-Native.create("com/sun/midp/links/Link.init0.(II)V", function(ctx, sender, receiver) {
+Native.create("com/sun/midp/links/Link.init0.(II)V", function(sender, receiver) {
     this.sender = sender;
     this.receiver = receiver;
     this.class.getField("I.nativePointer.I").set(this, util.id());
 });
 
-Native.create("com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V", function(ctx, linkMessage, link) {
+Native.create("com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V", function(linkMessage, link) {
     // TODO: Implement when something hits send0
     console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
     return new Promise(function(){});
 });
 
-Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V", function(ctx, data) {
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V", function(data) {
     this.decoded = new TextDecoder("UTF-8").decode(data);
 });
 
-Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(ctx, cbuf, off, len) {
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(cbuf, off, len) {
     if (this.decoded.length === 0) {
       return -1;
     }
@@ -696,7 +696,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(ctx, 
     return len;
 });
 
-Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(ctx, cbuf, off, len) {
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len, ctx) {
   var outputArray = [];
 
   var pendingSurrogate = this.class.getField("I.pendingSurrogate.I").get(this);
@@ -771,7 +771,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", functio
   return res;
 });
 
-Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I", function(ctx, cbuf, off, len) {
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I", function(cbuf, off, len) {
   var inputChar = 0;
   var outputSize = 0;
   var outputCount = 0;
