@@ -103,10 +103,26 @@ VM.execute = function(ctx) {
 
                 return;
             }
+
+            if (ctx.frames.length == 1) {
+                break;
+            }
+
             popFrame(0);
         } while (frame.methodInfo);
+
         ctx.kill();
-        throw new Error(buildExceptionLog(ex, stackTrace));
+
+        if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
+            console.error(buildExceptionLog(ex, stackTrace));
+
+            ctx.thread.waiting.forEach(function(waitingCtx, n) {
+                ctx.thread.waiting[n] = null;
+                waitingCtx.wakeup(ctx.thread);
+            });
+        } else {
+          throw new Error(buildExceptionLog(ex, stackTrace));
+        }
     }
 
     function checkArrayAccess(refArray, idx) {
