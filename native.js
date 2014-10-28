@@ -147,6 +147,10 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         // The concatenation of MCC and MNC for the network.
         value = util.pad(mobileInfo.network.mcc, 3) + util.pad(mobileInfo.network.mnc, 3);
         break;
+    case "com.nokia.mid.imei":
+        console.warn("Property 'com.nokia.mid.imei' is a stub");
+        value = "";
+        break;
     case "com.nokia.mid.ui.customfontsize":
         console.warn("Property 'com.nokia.mid.ui.customfontsize' is a stub");
         value = "false";
