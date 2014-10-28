@@ -49,38 +49,6 @@ Runtime.prototype.removeContext = function(ctx) {
   }
 }
 
-Runtime.prototype.newPrimitiveArray = function(type, size) {
-  var constructor = ARRAYS[type];
-  if (!constructor.prototype.class)
-    CLASSES.initPrimitiveArrayType(type, constructor);
-  return new constructor(size);
-}
-
-Runtime.prototype.newArray = function(typeName, size) {
-  return new (CLASSES.getClass(typeName).constructor)(size);
-}
-
-Runtime.prototype.newMultiArray = function(typeName, lengths) {
-  var length = lengths[0];
-  var array = this.newArray(typeName, length);
-  if (lengths.length > 1) {
-    lengths = lengths.slice(1);
-    for (var i=0; i<length; i++)
-      array[i] = this.newMultiArray(typeName.substr(1), lengths);
-  }
-  return array;
-}
-
-Runtime.prototype.newObject = function(classInfo) {
-    return new (classInfo.constructor)();
-}
-
-Runtime.prototype.newString = function(s) {
-  var obj = this.newObject(CLASSES.java_lang_String);
-  obj.str = s;
-  return obj;
-}
-
 Runtime.prototype.setStatic = function(field, value) {
   this.staticFields[field.id] = value;
 }

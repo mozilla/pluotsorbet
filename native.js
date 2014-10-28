@@ -361,19 +361,19 @@ Native.create("java/lang/Throwable.fillInStackTrace.()V", function(ctx) {
     }.bind(this));
 });
 
-Native.create("java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;", function(ctx) {
+Native.create("java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;", function() {
     var result = null;
     if (this.stackTrace) {
         var depth = this.stackTrace.length;
-        var classNames = ctx.newArray("[Ljava/lang/Object;", depth);
-        var methodNames = ctx.newArray("[Ljava/lang/Object;", depth);
-        var offsets = ctx.newPrimitiveArray("I", depth);
+        var classNames = util.newArray("[Ljava/lang/Object;", depth);
+        var methodNames = util.newArray("[Ljava/lang/Object;", depth);
+        var offsets = util.newPrimitiveArray("I", depth);
         this.stackTrace.forEach(function(e, n) {
-            classNames[n] = ctx.newString(e.className);
-            methodNames[n] = ctx.newString(e.methodName);
+            classNames[n] = util.newString(e.className);
+            methodNames[n] = util.newString(e.methodName);
             offsets[n] = e.offset;
         });
-        result = ctx.newArray("[Ljava/lang/Object;", 3);
+        result = util.newArray("[Ljava/lang/Object;", 3);
         result[0] = classNames;
         result[1] = methodNames;
         result[2] = offsets;
@@ -515,12 +515,12 @@ Native.create("com/sun/cldchi/io/ConsoleOutputStream.write.(I)V", function(ch) {
     console.print(ch);
 });
 
-Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;", function(name, ctx) {
+Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;", function(name) {
     var fileName = util.fromJavaString(name);
     var data = CLASSES.loadFile(fileName);
     var obj = null;
     if (data) {
-        obj = ctx.newObject(CLASSES.java_lang_Object);
+        obj = util.newObject(CLASSES.java_lang_Object);
         obj.data = new Uint8Array(data);
         obj.pos = 0;
     }
@@ -612,8 +612,8 @@ Native.create("com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isol
     return ctx.runtime.isolate;
 });
 
-Native.create("com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;", function(ctx) {
-    var isolates = ctx.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
+Native.create("com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;", function() {
+    var isolates = util.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
     var n = 0;
     Runtime.all.forEach(function (runtime) {
         isolates[n++] = runtime.isolate;
@@ -696,7 +696,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(cbuf,
     return len;
 });
 
-Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len, ctx) {
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len) {
   var outputArray = [];
 
   var pendingSurrogate = this.class.getField("I.pendingSurrogate.I").get(this);
@@ -762,7 +762,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", functio
     return total + cur.length;
   }, 0);
 
-  var res = ctx.newPrimitiveArray("B", totalSize);
+  var res = util.newPrimitiveArray("B", totalSize);
   outputArray.reduce(function(total, cur) {
     res.set(cur, total);
     return total + cur.length;

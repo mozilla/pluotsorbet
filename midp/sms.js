@@ -81,19 +81,19 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I",
 });
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I",
-function(port, msid, handle, smsPacket, ctx) {
+function(port, msid, handle, smsPacket) {
     return new Promise(function(resolve, reject) {
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
             var text = sms.text;
             var addr = sms.addr;
 
-            var message = ctx.newPrimitiveArray("B", text.length);
+            var message = util.newPrimitiveArray("B", text.length);
             for (var i = 0; i < text.length; i++) {
                 message[i] = text.charCodeAt(i);
             }
 
-            var address = ctx.newPrimitiveArray("B", addr.length);
+            var address = util.newPrimitiveArray("B", addr.length);
             for (var i = 0; i < addr.length; i++) {
                 address[i] = addr.charCodeAt(i);
             }

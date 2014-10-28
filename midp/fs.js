@@ -301,7 +301,7 @@ Native.create("com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z", fu
 });
 
 Native.create("com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B",
-function(jPath, filterArray, includeHidden, ctx) {
+function(jPath, filterArray, includeHidden) {
     var path = util.decodeUtf8(jPath);
     return new Promise(function(resolve, reject) {
         var filter = "";
@@ -328,7 +328,7 @@ function(jPath, filterArray, includeHidden, ctx) {
 
             files = files.filter(regexp.test.bind(regexp));
 
-            var filesArray = ctx.newArray("[[B", files.length);
+            var filesArray = util.newArray("[[B", files.length);
 
             var added = 0;
 
@@ -354,7 +354,7 @@ function(jPath, filterArray, includeHidden, ctx) {
 
                   var bytesFile = new TextEncoder("utf-8").encode(file);
 
-                  var fileArray = ctx.newPrimitiveArray("B", bytesFile.byteLength);
+                  var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
                   fileArray.set(bytesFile);
 
                   filesArray[added++] = fileArray;

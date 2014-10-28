@@ -31,15 +31,15 @@ JVM.prototype.startIsolate0 = function(className, args) {
 
     var com_sun_cldc_isolate_Isolate = CLASSES.getClass("com/sun/cldc/isolate/Isolate");
 
-    var isolate = ctx.newObject(com_sun_cldc_isolate_Isolate);
+    var isolate = util.newObject(com_sun_cldc_isolate_Isolate);
     isolate.id = util.id();
 
-    var array = ctx.newArray("[Ljava/lang/String;", args.length);
+    var array = util.newArray("[Ljava/lang/String;", args.length);
     for (var n = 0; n < args.length; ++n)
-        array[n] = args[n] ? ctx.newString(args[n]) : null;
+        array[n] = args[n] ? util.newString(args[n]) : null;
 
     ctx.frames.push(new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
-                              [ isolate, ctx.newString(className.replace(/\./g, "/")), array ], 0));
+                              [ isolate, util.newString(className.replace(/\./g, "/")), array ], 0));
     ctx.execute();
 
     ctx.frames.push(new Frame(CLASSES.getMethod(com_sun_cldc_isolate_Isolate, "I.start.()V"), [ isolate ], 0));
@@ -69,17 +69,17 @@ JVM.prototype.startIsolate = function(isolate) {
     if (!entryPoint)
         throw new Error("Could not find main method in class " + mainName);
 
-    ctx.thread = runtime.mainThread = ctx.newObject(CLASSES.java_lang_Thread);
+    ctx.thread = runtime.mainThread = util.newObject(CLASSES.java_lang_Thread);
     ctx.thread.pid = util.id();
     ctx.thread.alive = true;
 
     ctx.frames.push(new Frame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
-                              [ runtime.mainThread, ctx.newString("main") ], 0));
+                              [ runtime.mainThread, util.newString("main") ], 0));
     ctx.execute();
 
-    var args = ctx.newArray("[Ljava/lang/String;", mainArgs.length);
+    var args = util.newArray("[Ljava/lang/String;", mainArgs.length);
     for (var n = 0; n < mainArgs.length; ++n)
-        args[n] = mainArgs[n] ? ctx.newString(mainArgs[n]) : null;
+        args[n] = mainArgs[n] ? util.newString(mainArgs[n]) : null;
 
     ctx.frames.push(new Frame(entryPoint, [ args ], 0));
     ctx.start();

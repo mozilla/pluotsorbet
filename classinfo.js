@@ -185,7 +185,7 @@ ClassInfo.prototype.getClassObject = function(ctx) {
     var classObjects = ctx.runtime.classObjects;
     var classObject = classObjects[className];
     if (!classObject) {
-        classObject = ctx.newObject(CLASSES.java_lang_Class);
+        classObject = util.newObject(CLASSES.java_lang_Class);
         classObject.vmClass = this;
         classObjects[className] = classObject;
     }
