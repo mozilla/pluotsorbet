@@ -19,25 +19,25 @@ function isString(obj) {
 //****************************************************************
 // Constructors
 
-Override.create("java/lang/String.<init>.()V", function(ctx) {
+Override.create("java/lang/String.<init>.()V", function() {
   this.str = "";
 });
 
-Override.create("java/lang/String.<init>.(Ljava/lang/String;)V", function(ctx, jStr) {
+Override.create("java/lang/String.<init>.(Ljava/lang/String;)V", function(jStr) {
   if (!jStr) {
     throw new JavaException("java/lang/NullPointerException");
   }
   this.str = jStr.str;
 });
 
-Override.create("java/lang/String.<init>.([C)V", function(ctx, chars) {
+Override.create("java/lang/String.<init>.([C)V", function(chars) {
   if (!chars) {
     throw new JavaException("java/lang/NullPointerException");
   }
   this.str = util.fromJavaChars(chars);
 });
 
-Override.create("java/lang/String.<init>.([CII)V", function(ctx, value, offset, count) {
+Override.create("java/lang/String.<init>.([CII)V", function(value, offset, count) {
   if (offset < 0 || count < 0 || offset > value.length - count) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
@@ -57,55 +57,55 @@ function constructFromByteArray(bytes, off, len, enc) {
 
 Override.create(
   "java/lang/String.<init>.([BIILjava/lang/String;)V",
-  function(ctx, bytes, off, len, enc) {
+  function(bytes, off, len, enc) {
     constructFromByteArray.call(this, bytes, off, len, enc.str);
   });
 
 Override.create(
   "java/lang/String.<init>.([BLjava/lang/String;)V",
-  function(ctx, bytes, enc) {
+  function(bytes, enc) {
     constructFromByteArray.call(this, bytes, 0, bytes.length, enc.str);
   });
 
 Override.create(
   "java/lang/String.<init>.([BII)V",
-  function(ctx, bytes, offset, len) {
+  function(bytes, offset, len) {
     constructFromByteArray.call(this, bytes, offset, len, "UTF-8");
   });
 
 Override.create(
   "java/lang/String.<init>.([B)V",
-  function(ctx, bytes) {
+  function(bytes) {
     constructFromByteArray.call(this, bytes, 0, bytes.length, "UTF-8");
   });
 
 Override.create(
   "java/lang/String.<init>.(Ljava/lang/StringBuffer;)V",
-  function(ctx, jBuffer) {
+  function(jBuffer) {
     this.str = util.fromJavaChars(jBuffer.buf, 0, jBuffer.count);
   });
 
 Override.create(
   "java/lang/String.<init>.(II[C)V",
-  function(ctx, offset, count, value) {
+  function(offset, count, value) {
     this.str = util.fromJavaChars(value, offset, count);
   });
 
 //****************************************************************
 // Methods
 
-Override.create("java/lang/String.length.()I", function(ctx) {
+Override.create("java/lang/String.length.()I", function() {
   return this.str.length;
 });
 
-Override.create("java/lang/String.charAt.(I)C", function(ctx, index) {
+Override.create("java/lang/String.charAt.(I)C", function(index) {
   if (index < 0 || index >= this.str.length) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
   return this.str.charCodeAt(index);
 });
 
-Override.create("java/lang/String.getChars.(II[CI)V", function(ctx, srcBegin, srcEnd, dst, dstBegin) {
+Override.create("java/lang/String.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
   if (srcBegin < 0 || srcEnd > this.str.length || srcBegin > srcEnd ||
       dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
@@ -123,7 +123,7 @@ function normalizeEncoding(enc) {
   return encoding;
 }
 
-Override.create("java/lang/String.getBytes.(Ljava/lang/String;)[B", function(ctx, jEnc) {
+Override.create("java/lang/String.getBytes.(Ljava/lang/String;)[B", function(jEnc) {
   try {
     var encoding = normalizeEncoding(jEnc.str);
     return new Int8Array(new TextEncoder(encoding).encode(this.str));
@@ -132,19 +132,19 @@ Override.create("java/lang/String.getBytes.(Ljava/lang/String;)[B", function(ctx
   }
 });
 
-Override.create("java/lang/String.getBytes.()[B", function(ctx) {
+Override.create("java/lang/String.getBytes.()[B", function() {
   return new Int8Array(new TextEncoder("utf-8").encode(this.str));
 });
 
-Override.create("java/lang/String.equals.(Ljava/lang/Object;)Z", function(ctx, anObject) {
+Override.create("java/lang/String.equals.(Ljava/lang/Object;)Z", function(anObject) {
   return !!(isString(anObject) && anObject.str === this.str);
 });
 
-Override.create("java/lang/String.equalsIgnoreCase.(Ljava/lang/String;)Z", function(ctx, anotherString) {
+Override.create("java/lang/String.equalsIgnoreCase.(Ljava/lang/String;)Z", function(anotherString) {
   return !!(isString(anotherString) && anotherString.str.toLowerCase() === this.str.toLowerCase());
 });
 
-Override.create("java/lang/String.compareTo.(Ljava/lang/String;)I", function(ctx, anotherString) {
+Override.create("java/lang/String.compareTo.(Ljava/lang/String;)I", function(anotherString) {
   // Sadly, JS String doesn't have a compareTo() method, so we must
   // replicate the Java algorithm. (There is String.localeCompare, but
   // that only returns {-1, 0, 1}, not a distance measure, which this
@@ -164,25 +164,25 @@ Override.create("java/lang/String.compareTo.(Ljava/lang/String;)I", function(ctx
   return len1 - len2;
 });
 
-Override.create("java/lang/String.regionMatches.(ZILjava/lang/String;II)Z", function(ctx, ignoreCase, toffset, other, ooffset, len) {
+Override.create("java/lang/String.regionMatches.(ZILjava/lang/String;II)Z", function(ignoreCase, toffset, other, ooffset, len) {
   var a = (ignoreCase ? this.str.toLowerCase() : this.str);
   var b = (ignoreCase ? other.str.toLowerCase() : other.str);
   return a.substr(toffset, len) === b.substr(ooffset, len);
 });
 
-Override.create("java/lang/String.startsWith.(Ljava/lang/String;I)Z", function(ctx, prefix, toffset) {
+Override.create("java/lang/String.startsWith.(Ljava/lang/String;I)Z", function(prefix, toffset) {
   return this.str.substr(toffset, prefix.str.length) === prefix.str;
 });
 
-Override.create("java/lang/String.startsWith.(Ljava/lang/String;)Z", function(ctx, prefix) {
+Override.create("java/lang/String.startsWith.(Ljava/lang/String;)Z", function(prefix) {
   return this.str.substr(0, prefix.str.length) === prefix.str;
 });
 
-Override.create("java/lang/String.endsWith.(Ljava/lang/String;)Z", function(ctx, suffix) {
+Override.create("java/lang/String.endsWith.(Ljava/lang/String;)Z", function(suffix) {
   return this.str.indexOf(suffix.str, this.str.length - suffix.str.length) !== -1;
 });
 
-Override.create("java/lang/String.hashCode.()I", function(ctx) {
+Override.create("java/lang/String.hashCode.()I", function() {
   var hash = 0;
   for (var i = 0; i < this.str.length; i++) {
     hash = Math.imul(31, hash) + this.str.charCodeAt(i) | 0;
@@ -190,45 +190,45 @@ Override.create("java/lang/String.hashCode.()I", function(ctx) {
   return hash;
 });
 
-Override.create("java/lang/String.indexOf.(I)I", function(ctx, ch) {
+Override.create("java/lang/String.indexOf.(I)I", function(ch) {
   return this.str.indexOf(String.fromCharCode(ch));
 });
 
-Override.create("java/lang/String.indexOf.(II)I", function(ctx, ch, fromIndex) {
+Override.create("java/lang/String.indexOf.(II)I", function(ch, fromIndex) {
   return this.str.indexOf(String.fromCharCode(ch), fromIndex);
 });
 
-Override.create("java/lang/String.lastIndexOf.(I)I", function(ctx, ch) {
+Override.create("java/lang/String.lastIndexOf.(I)I", function(ch) {
   return this.str.lastIndexOf(String.fromCharCode(ch));
 });
 
-Override.create("java/lang/String.lastIndexOf.(II)I", function(ctx, ch, fromIndex) {
+Override.create("java/lang/String.lastIndexOf.(II)I", function(ch, fromIndex) {
   return this.str.lastIndexOf(String.fromCharCode(ch), fromIndex);
 });
 
-Override.create("java/lang/String.indexOf.(Ljava/lang/String;)I", function(ctx, s) {
+Override.create("java/lang/String.indexOf.(Ljava/lang/String;)I", function(s) {
   return this.str.indexOf(s.str);
 });
 
-Override.create("java/lang/String.indexOf.(Ljava/lang/String;I)I", function(ctx, s, fromIndex) {
+Override.create("java/lang/String.indexOf.(Ljava/lang/String;I)I", function(s, fromIndex) {
   return this.str.indexOf(s.str, fromIndex);
 });
 
-Override.create("java/lang/String.substring.(I)Ljava/lang/String;", function(ctx, beginIndex) {
+Override.create("java/lang/String.substring.(I)Ljava/lang/String;", function(beginIndex) {
   if (beginIndex < 0 || beginIndex > this.str.length) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
   return this.str.substring(beginIndex);
 });
 
-Override.create("java/lang/String.substring.(II)Ljava/lang/String;", function(ctx, beginIndex, endIndex) {
+Override.create("java/lang/String.substring.(II)Ljava/lang/String;", function(beginIndex, endIndex) {
   if (beginIndex < 0 || endIndex > this.str.length || beginIndex > endIndex) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
   }
   return this.str.substring(beginIndex, endIndex);
 });
 
-Override.create("java/lang/String.concat.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, s) {
+Override.create("java/lang/String.concat.(Ljava/lang/String;)Ljava/lang/String;", function(s) {
   return this.str + s.str;
 });
 
@@ -237,22 +237,22 @@ function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
-Override.create("java/lang/String.replace.(CC)Ljava/lang/String;", function(ctx, oldChar, newChar) {
+Override.create("java/lang/String.replace.(CC)Ljava/lang/String;", function(oldChar, newChar) {
   // Using a RegExp here to replace all matches of oldChar, rather than just the first.
   return this.str.replace(
     new RegExp(escapeRegExp(String.fromCharCode(oldChar)), "g"),
     String.fromCharCode(newChar));
 });
 
-Override.create("java/lang/String.toLowerCase.()Ljava/lang/String;", function(ctx) {
+Override.create("java/lang/String.toLowerCase.()Ljava/lang/String;", function() {
   return this.str.toLowerCase();
 });
 
-Override.create("java/lang/String.toUpperCase.()Ljava/lang/String;", function(ctx) {
+Override.create("java/lang/String.toUpperCase.()Ljava/lang/String;", function() {
   return this.str.toUpperCase();
 });
 
-Override.create("java/lang/String.trim.()Ljava/lang/String;", function(ctx) {
+Override.create("java/lang/String.trim.()Ljava/lang/String;", function() {
   // Java's String.trim() removes any character <= ASCII 32;
   // JavaScript's only removes a few whitespacey chars.
   var start = 0;
@@ -267,11 +267,11 @@ Override.create("java/lang/String.trim.()Ljava/lang/String;", function(ctx) {
   return this.str.substring(start, end);
 });
 
-Override.create("java/lang/String.toString.()Ljava/lang/String;", function(ctx) {
+Override.create("java/lang/String.toString.()Ljava/lang/String;", function() {
   return this; // Note: returning "this" so that we keep the same object.
 });
 
-Override.create("java/lang/String.toCharArray.()[C", function(ctx) {
+Override.create("java/lang/String.toCharArray.()[C", function() {
   return util.stringToCharArray(this.str);
 });
 
@@ -281,33 +281,33 @@ Override.create("java/lang/String.toCharArray.()[C", function(ctx) {
 // NOTE: String.valueOf(Object) left in Java to avoid having to call
 // back into Java for Object.toString().
 
-Override.create("java/lang/String.valueOf.([C)Ljava/lang/String;", function(ctx, chars) {
+Override.create("java/lang/String.valueOf.([C)Ljava/lang/String;", function(chars) {
   if (!chars) {
     throw new JavaException("java/lang/NullPointerException");
   }
   return util.fromJavaChars(chars);
 });
 
-Override.create("java/lang/String.valueOf.([CII)Ljava/lang/String;", function(ctx, chars, offset, count) {
+Override.create("java/lang/String.valueOf.([CII)Ljava/lang/String;", function(chars, offset, count) {
   if (!chars) {
     throw new JavaException("java/lang/NullPointerException");
   }
   return util.fromJavaChars(chars, offset, count);
 });
 
-Override.create("java/lang/String.valueOf.(Z)Ljava/lang/String;", function(ctx, bool) {
+Override.create("java/lang/String.valueOf.(Z)Ljava/lang/String;", function(bool) {
   return bool ? "true" : "false";
 });
 
-Override.create("java/lang/String.valueOf.(C)Ljava/lang/String;", function(ctx, ch) {
+Override.create("java/lang/String.valueOf.(C)Ljava/lang/String;", function(ch) {
   return String.fromCharCode(ch);
 });
 
-Override.create("java/lang/String.valueOf.(I)Ljava/lang/String;", function(ctx, n) {
+Override.create("java/lang/String.valueOf.(I)Ljava/lang/String;", function(n) {
   return n.toString();
 });
 
-Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(ctx, n, _) {
+Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(n, _) {
   // This function takes a dummy second argument, since we're taking a
   // Long and need to pop two items off the stack.
   return n.toString();
@@ -321,7 +321,7 @@ Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(ctx, 
 
 var internedStrings = new Map();
 
-Native.create("java/lang/String.intern.()Ljava/lang/String;", function(ctx) {
+Native.create("java/lang/String.intern.()Ljava/lang/String;", function() {
     var string = util.fromJavaString(this);
 
     var internedString = internedStrings.get(string);
@@ -339,12 +339,12 @@ Native.create("java/lang/String.intern.()Ljava/lang/String;", function(ctx) {
 //################################################################
 // java.lang.StringBuffer (manipulated via the 'buf' property)
 
-Override.create("java/lang/StringBuffer.<init>.()V", function(ctx) {
+Override.create("java/lang/StringBuffer.<init>.()V", function() {
   this.buf = new Uint16Array(16); // Initial buffer size: 16, per the Java implementation.
   this.count = 0;
 });
 
-Override.create("java/lang/StringBuffer.<init>.(I)V", function(ctx, length) {
+Override.create("java/lang/StringBuffer.<init>.(I)V", function(length) {
   if (length < 0) {
     throw new JavaException("java/lang/NegativeArraySizeException");
   }
@@ -352,22 +352,22 @@ Override.create("java/lang/StringBuffer.<init>.(I)V", function(ctx, length) {
   this.count = 0;
 });
 
-Override.create("java/lang/StringBuffer.<init>.(Ljava/lang/String;)V", function(ctx, jStr) {
+Override.create("java/lang/StringBuffer.<init>.(Ljava/lang/String;)V", function(jStr) {
   var stringBuf = util.stringToCharArray(jStr.str);
   this.buf = new Uint16Array(stringBuf.length + 16); // Add 16, per the Java implementation.
   this.buf.set(stringBuf, 0);
   this.count = stringBuf.length;
 });
 
-Override.create("java/lang/StringBuffer.length.()I", function(ctx) {
+Override.create("java/lang/StringBuffer.length.()I", function() {
   return this.count;
 });
 
-Override.create("java/lang/StringBuffer.capacity.()I", function(ctx) {
+Override.create("java/lang/StringBuffer.capacity.()I", function() {
   return this.buf.length;
 });
 
-Override.create("java/lang/StringBuffer.copy.()V", function(ctx) {
+Override.create("java/lang/StringBuffer.copy.()V", function() {
   // We don't support copying (there's no need unless we also support shared buffers).
 });
 
@@ -388,7 +388,7 @@ function expandCapacity(minCapacity) {
   this.buf.set(oldBuf, 0);
 }
 
-Override.create("java/lang/StringBuffer.ensureCapacity.(I)V", function(ctx, minCapacity) {
+Override.create("java/lang/StringBuffer.ensureCapacity.(I)V", function(minCapacity) {
   if (this.buf.length < minCapacity) {
     expandCapacity.call(this, minCapacity);
   }
@@ -396,7 +396,7 @@ Override.create("java/lang/StringBuffer.ensureCapacity.(I)V", function(ctx, minC
 
 // StringBuffer.expandCapacity is private and not needed with these overrides.
 
-Override.create("java/lang/StringBuffer.setLength.(I)V", function(ctx, newLength) {
+Override.create("java/lang/StringBuffer.setLength.(I)V", function(newLength) {
   if (newLength < 0) {
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
   }
@@ -411,14 +411,14 @@ Override.create("java/lang/StringBuffer.setLength.(I)V", function(ctx, newLength
 });
 
 
-Override.create("java/lang/StringBuffer.charAt.(I)C", function(ctx, index) {
+Override.create("java/lang/StringBuffer.charAt.(I)C", function(index) {
   if (index < 0 || index >= this.count) {
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
   }
   return this.buf[index];
 });
 
-Override.create("java/lang/StringBuffer.getChars.(II[CI)V", function(ctx, srcBegin, srcEnd, dst, dstBegin) {
+Override.create("java/lang/StringBuffer.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
   if (srcBegin < 0 || srcEnd < 0 || srcEnd > this.count || srcBegin > srcEnd) {
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
   }
@@ -428,7 +428,7 @@ Override.create("java/lang/StringBuffer.getChars.(II[CI)V", function(ctx, srcBeg
   dst.set(this.buf.subarray(srcBegin, srcEnd), dstBegin);
 });
 
-Override.create("java/lang/StringBuffer.setCharAt.(IC)V", function(ctx, index, ch) {
+Override.create("java/lang/StringBuffer.setCharAt.(IC)V", function(index, ch) {
   if (index < 0 || index >= this.count) {
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
   }
@@ -461,18 +461,18 @@ function stringBufferAppend(data) {
 
 // StringBuffer.append(java.lang.Object) left in Java to avoid Object.toString().
 
-Override.create("java/lang/StringBuffer.append.(Ljava/lang/String;)Ljava/lang/StringBuffer;", function(ctx, jStr) {
+Override.create("java/lang/StringBuffer.append.(Ljava/lang/String;)Ljava/lang/StringBuffer;", function(jStr) {
   return stringBufferAppend.call(this, jStr ? jStr.str : "null");
 });
 
-Override.create("java/lang/StringBuffer.append.([C)Ljava/lang/StringBuffer;", function(ctx, chars) {
+Override.create("java/lang/StringBuffer.append.([C)Ljava/lang/StringBuffer;", function(chars) {
   if (chars == null) {
     throw new JavaException("java/lang/NullPointerException");
   }
   return stringBufferAppend.call(this, chars);
 });
 
-Override.create("java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;", function(ctx, chars, offset, length) {
+Override.create("java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;", function(chars, offset, length) {
   if (chars == null) {
     throw new JavaException("java/lang/NullPointerException");
   }
@@ -482,11 +482,11 @@ Override.create("java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;", 
   return stringBufferAppend.call(this, chars.subarray(offset, offset + length));
 });
 
-Override.create("java/lang/StringBuffer.append.(Z)Ljava/lang/StringBuffer;", function(ctx, bool) {
+Override.create("java/lang/StringBuffer.append.(Z)Ljava/lang/StringBuffer;", function(bool) {
   return stringBufferAppend.call(this, bool ? "true" : "false");
 });
 
-Override.create("java/lang/StringBuffer.append.(C)Ljava/lang/StringBuffer;", function(ctx, ch) {
+Override.create("java/lang/StringBuffer.append.(C)Ljava/lang/StringBuffer;", function(ch) {
   if (this.buf.length < this.count + 1) {
     expandCapacity.call(this, this.count + 1);
   }
@@ -494,11 +494,11 @@ Override.create("java/lang/StringBuffer.append.(C)Ljava/lang/StringBuffer;", fun
   return this;
 });
 
-Override.create("java/lang/StringBuffer.append.(I)Ljava/lang/StringBuffer;", function(ctx, n) {
+Override.create("java/lang/StringBuffer.append.(I)Ljava/lang/StringBuffer;", function(n) {
   return stringBufferAppend.call(this, n + "");
 });
 
-Override.create("java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;", function(ctx, n, _) {
+Override.create("java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;", function(n, _) {
   return stringBufferAppend.call(this, n + "");
 });
 
@@ -514,7 +514,7 @@ Override.create("java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;", fun
  * @param {number} end
  * @return this
  */
-function stringBufferDelete(ctx, start, end) {
+function stringBufferDelete(start, end) {
   if (start < 0) {
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
   }
@@ -537,12 +537,12 @@ function stringBufferDelete(ctx, start, end) {
 Override.create("java/lang/StringBuffer.delete.(II)Ljava/lang/StringBuffer;",
                 stringBufferDelete);
 
-Override.create("java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;", function(ctx, index) {
+Override.create("java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;", function(index) {
   if (index >= this.count) {
     // stringBufferDelete handles the other boundary checks; this check is specific to deleteCharAt.
     throw new JavaException("java/lang/StringIndexOutOfBoundsException");
   }
-  return stringBufferDelete.call(this, ctx, index, index + 1);
+  return stringBufferDelete.call(this, index, index + 1);
 });
 
 /**
@@ -575,27 +575,27 @@ function stringBufferInsert(offset, data) {
 
 // StringBuffer.insert(Object) left in Java (for String.valueOf()).
 
-Override.create("java/lang/StringBuffer.insert.(ILjava/lang/String;)Ljava/lang/StringBuffer;", function(ctx, offset, jStr) {
+Override.create("java/lang/StringBuffer.insert.(ILjava/lang/String;)Ljava/lang/StringBuffer;", function(offset, jStr) {
   return stringBufferInsert.call(this, offset, jStr ? jStr.str : "null");
 });
 
-Override.create("java/lang/StringBuffer.insert.(I[C)Ljava/lang/StringBuffer;", function(ctx, offset, chars) {
+Override.create("java/lang/StringBuffer.insert.(I[C)Ljava/lang/StringBuffer;", function(offset, chars) {
   return stringBufferInsert.call(this, offset, chars);
 });
 
-Override.create("java/lang/StringBuffer.insert.(IZ)Ljava/lang/StringBuffer;", function(ctx, offset, bool) {
+Override.create("java/lang/StringBuffer.insert.(IZ)Ljava/lang/StringBuffer;", function(offset, bool) {
   return stringBufferInsert.call(this, offset, bool ? "true" : "false");
 });
 
-Override.create("java/lang/StringBuffer.insert.(IC)Ljava/lang/StringBuffer;", function(ctx, offset, ch) {
+Override.create("java/lang/StringBuffer.insert.(IC)Ljava/lang/StringBuffer;", function(offset, ch) {
   return stringBufferInsert.call(this, offset, String.fromCharCode(ch));
 });
 
-Override.create("java/lang/StringBuffer.insert.(II)Ljava/lang/StringBuffer;", function(ctx, offset, n) {
+Override.create("java/lang/StringBuffer.insert.(II)Ljava/lang/StringBuffer;", function(offset, n) {
   return stringBufferInsert.call(this, offset, n + "");
 });
 
-Override.create("java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;", function(ctx, offset, n, _) {
+Override.create("java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;", function(offset, n, _) {
   return stringBufferInsert.call(this, offset, n + "");
 });
 
@@ -603,7 +603,7 @@ Override.create("java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;", fu
 
 // StringBuffer.insert(double) left in Java.
 
-Override.create("java/lang/StringBuffer.reverse.()Ljava/lang/StringBuffer;", function(ctx) {
+Override.create("java/lang/StringBuffer.reverse.()Ljava/lang/StringBuffer;", function() {
   var buf = this.buf;
   for (var i = 0, j = this.count - 1; i < j; i++, j--) {
     var tmp = buf[i];
@@ -613,15 +613,15 @@ Override.create("java/lang/StringBuffer.reverse.()Ljava/lang/StringBuffer;", fun
   return this;
 });
 
-Override.create("java/lang/StringBuffer.toString.()Ljava/lang/String;", function(ctx) {
+Override.create("java/lang/StringBuffer.toString.()Ljava/lang/String;", function() {
   return util.fromJavaChars(this.buf, 0, this.count);
 });
 
-Override.create("java/lang/StringBuffer.setShared.()V", function(ctx) {
+Override.create("java/lang/StringBuffer.setShared.()V", function() {
   // Our StringBuffers are never shared. Everyone gets their very own!
 });
 
-Override.create("java/lang/StringBuffer.getValue.()[C", function(ctx) {
+Override.create("java/lang/StringBuffer.getValue.()[C", function() {
   // In theory, this method should only be called by String (which
   // we've overridden to not do), so it should never be called. In any
   // case, mutating this buf would have the same effect here as it

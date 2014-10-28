@@ -128,34 +128,34 @@ DataDecoder.prototype.getType = function() {
   return this.data[0].type || -1;
 }
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.init.()V", function(ctx) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.init.()V", function() {
   this.encoder = new DataEncoder();
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V", function(ctx, tag, name) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V", function(tag, name) {
   this.encoder.putStart(tag, util.fromJavaString(name));
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V", function(ctx, tag, name, value) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V", function(tag, name, value) {
   this.encoder.put(tag, util.fromJavaString(name), util.fromJavaString(value));
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V", function(ctx, tag, name, value, _) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V", function(tag, name, value, _) {
   this.encoder.put(tag, util.fromJavaString(name), value.toNumber());
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V", function(ctx, tag, name, value) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V", function(tag, name, value) {
   this.encoder.put(tag, util.fromJavaString(name), value);
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V", function(ctx, tag, name) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V", function(tag, name) {
   this.encoder.putEnd(tag, util.fromJavaString(name));
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.getData.()[B", function(ctx) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.getData.()[B", function() {
   var data = this.encoder.getData();
 
-  var array = ctx.newPrimitiveArray("B", data.length);
+  var array = util.newPrimitiveArray("B", data.length);
   for (var i = 0; i < data.length; i++) {
     array[i] = data.charCodeAt(i);
   }
@@ -163,23 +163,23 @@ Native.create("com/nokia/mid/s40/codec/DataEncoder.getData.()[B", function(ctx) 
   return array;
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.init.([BII)V", function(ctx, data, offset, length) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.init.([BII)V", function(data, offset, length) {
   this.decoder = new DataDecoder(data, offset, length);
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V", function(ctx, tag) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V", function(tag) {
   if (!this.decoder.getStart(tag)) {
     throw new JavaException("java/io/IOException", "no start found " + tag);
   }
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V", function(ctx, tag) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V", function(tag) {
   if (!this.decoder.getEnd(tag)) {
     throw new JavaException("java/io/IOException", "no end found " + tag);
   }
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;", function(ctx, tag) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;", function(tag) {
   var str = this.decoder.getValue(tag);
   if (str === undefined) {
     throw new JavaException("java/io/IOException", "tag (" + tag + ") invalid");
@@ -187,7 +187,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/Strin
   return str;
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J", function(ctx, tag) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J", function(tag) {
   var num = this.decoder.getValue(tag);
   if (num === undefined) {
     throw new JavaException("java/io/IOException", "tag (" + tag + ") invalid");
@@ -195,7 +195,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J", function(ct
   return Long.fromNumber(num);
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z", function(ctx) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z", function() {
   var val = this.decoder.getNextValue();
   if (val === undefined) {
     throw new JavaException("java/io/IOException");
@@ -203,7 +203,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z", function(ctx
   return val === 1;
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;", function(ctx) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;", function() {
   var name = this.decoder.getName();
   if (name === undefined) {
     throw new JavaException("java/io/IOException");
@@ -211,7 +211,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"
   return name;
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.getType.()I", function(ctx) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.getType.()I", function() {
   var tag = this.decoder.getTag();
   if (tag === undefined) {
     throw new JavaException("java/io/IOException");
@@ -219,6 +219,6 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getType.()I", function(ctx) {
   return tag;
 });
 
-Native.create("com/nokia/mid/s40/codec/DataDecoder.listHasMoreItems.()Z", function(ctx) {
+Native.create("com/nokia/mid/s40/codec/DataDecoder.listHasMoreItems.()Z", function() {
   return this.decoder.getType() != DataEncoder.END;
 });
