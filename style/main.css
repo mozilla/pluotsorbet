@@ -105,20 +105,19 @@ button {
 #gamepad #right { left: 125px; bottom: 20px; }
 #gamepad #fire { left: 250px; bottom: 20px; }
 
+.gamepad body > #gamepad {
+  display: block;
+  z-index: 2;
+}
+
+.gamepad body > #gamepad button {
+  display: block;
+}
 
 /* Auto-Size (for devices): Hide everything except the canvas. */
 .autosize body > pre,
 .autosize body > div {
   display: none;
-}
-
-.autosize body > #gamepad {
-  display: block;
-  z-index: 2;
-}
-
-.autosize body > #gamepad button {
-  display: block;
 }
 
 .autosize #display {

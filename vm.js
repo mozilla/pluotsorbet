@@ -39,7 +39,7 @@ function resolve(ctx, cp, idx, isStatic) {
         constant = constant.float;
         break;
     case 8: // TAGS.CONSTANT_String
-        constant = ctx.newString(cp[constant.string_index].bytes);
+        constant = util.newString(cp[constant.string_index].bytes);
         break;
     case 5: // TAGS.CONSTANT_Long
         constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -180,6 +180,7 @@ VM.execute = function(ctx) {
     while (frame && frame.methodInfo.compiled) {
       frame = frame.methodInfo.compiled(ctx);
     }
+
 
     if (!frame) {
       return;
@@ -839,7 +840,7 @@ VM.execute = function(ctx) {
             if (size < 0) {
                 ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
             }
-            stack.push(ctx.newPrimitiveArray("????ZCFDBSIJ"[type], size));
+            stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
             break;
         case 0xbd: // anewarray
             var idx = frame.read16();
@@ -854,7 +855,7 @@ VM.execute = function(ctx) {
             if (className[0] !== "[")
                 className = "L" + className + ";";
             className = "[" + className;
-            stack.push(ctx.newArray(className, size));
+            stack.push(util.newArray(className, size));
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();
@@ -865,7 +866,7 @@ VM.execute = function(ctx) {
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
                 lengths[i] = stack.pop();
-            stack.push(ctx.newMultiArray(classInfo.className, lengths.reverse()));
+            stack.push(util.newMultiArray(classInfo.className, lengths.reverse()));
             break;
         case 0xbe: // arraylength
             var obj = stack.pop();
@@ -923,7 +924,7 @@ VM.execute = function(ctx) {
             if (classInfo.tag)
                 classInfo = resolve(ctx, cp, idx);
             classInitCheck(ctx, frame, classInfo, frame.ip-3);
-            stack.push(ctx.newObject(classInfo));
+            stack.push(util.newObject(classInfo));
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();
@@ -1233,7 +1234,7 @@ VM.compile = function(methodInfo, ctx) {
           constant = constant.float;
           break;
         case 8: // TAGS.CONSTANT_String
-          constant = ctx.newString(cp[constant.string_index].bytes);
+          constant = util.newString(cp[constant.string_index].bytes);
           break;
         case 5: // TAGS.CONSTANT_Long
           constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -2038,7 +2039,7 @@ VM.compile = function(methodInfo, ctx) {
           frame.ip = " + ip + "\n" +
           generateStoreLocals() + "\
           ctx.raiseExceptionAndYield('java/lang/NegativeArraySizeException', " + size + ");\n\
-        }\n" + generateStackPush("ctx.newPrimitiveArray('" + type + "', " + size + ")");
+        }\n" + generateStackPush("util.newPrimitiveArray('" + type + "', " + size + ")");
         break;
       case 0xbd: // anewarray
         var idx = frame.read16();
@@ -2062,7 +2063,7 @@ VM.compile = function(methodInfo, ctx) {
           frame.ip = " + ip + "\n" +
           generateStoreLocals() + "\
           ctx.raiseExceptionAndYield('java/lang/NegativeArraySizeException', " + size + ");\n\
-        }\n" + generateStackPush("ctx.newArray('" + className + "', " + size + ")");
+        }\n" + generateStackPush("util.newArray('" + className + "', " + size + ")");
         break;
       case 0xc5: // multianewarray
         var idx = frame.read16();
@@ -2079,7 +2080,7 @@ VM.compile = function(methodInfo, ctx) {
         for (var i = 0; i < dimensions; i++) {
           code += "        lengths[" + i + "] = " + generateStackPop() + ";\n";
         }
-        code += generateStackPush("ctx.newMultiArray('" + classInfo.className + "', lengths.reverse())");
+        code += generateStackPush("util.newMultiArray('" + classInfo.className + "', lengths.reverse())");
         break;
       case 0xbe: // arraylength
         var obj = generateStackPop();
@@ -2227,7 +2228,7 @@ VM.compile = function(methodInfo, ctx) {
         }\n";
         }
 
-        code += generateStackPush("ctx.newObject(classInfo)");
+        code += generateStackPush("util.newObject(classInfo)");
         break;
       case 0xc0: // checkcast
         var idx = frame.read16();

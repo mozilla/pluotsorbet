@@ -68,7 +68,7 @@ function promptForMessageText() {
     input.focus();
 }
 
-Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I", function(ctx, host, msid, port) {
+Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I", function(host, msid, port) {
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
@@ -81,19 +81,19 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I",
 });
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I",
-function(ctx, port, msid, handle, smsPacket) {
+function(port, msid, handle, smsPacket) {
     return new Promise(function(resolve, reject) {
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
             var text = sms.text;
             var addr = sms.addr;
 
-            var message = ctx.newPrimitiveArray("B", text.length);
+            var message = util.newPrimitiveArray("B", text.length);
             for (var i = 0; i < text.length; i++) {
                 message[i] = text.charCodeAt(i);
             }
 
-            var address = ctx.newPrimitiveArray("B", addr.length);
+            var address = util.newPrimitiveArray("B", addr.length);
             for (var i = 0; i < addr.length; i++) {
                 address[i] = addr.charCodeAt(i);
             }
@@ -118,7 +118,7 @@ function(ctx, port, msid, handle, smsPacket) {
     });
 });
 
-Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(ctx, port, handle, deRegister) {
+Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(port, handle, deRegister) {
     delete MIDP.smsConnections[handle];
     return 0;
 });
