@@ -6,5 +6,5 @@ A few similar projects exist. The primary objective here is to keep this very si
 
 ## Run j2me.js in the SpiderMonkey shell ##
 
-	1. Download the SpiderMonkey shell (https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Introduction_to_the_JavaScript_shell)
-	2. Execute the jsshell.js file as follows: * js jsshell.js package.ClassName *
+1. Download the SpiderMonkey shell (https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Introduction_to_the_JavaScript_shell)
+2. Execute the jsshell.js file as follows: * js jsshell.js package.ClassName *
