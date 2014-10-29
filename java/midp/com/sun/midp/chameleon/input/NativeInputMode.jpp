@@ -104,11 +104,11 @@ public class NativeInputMode implements InputMode {
     /**
      * Finalizer. Free the data structures allocated in initialize(int).
      */
-
-
-
+// #ifdef ENABLE_CDC
+    protected native void finalize();
+// #else
     private native void finalize();
-
+// #endif
 
     /**
      * Input method identifier. For a given platform, this class may

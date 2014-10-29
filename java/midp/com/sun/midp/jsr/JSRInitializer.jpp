@@ -1,5 +1,5 @@
 /*
- *   
+ *
  *
  * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
@@ -24,33 +24,58 @@
  * information or have any questions.
  */
 
-package com.sun.midp.main;
-
-import com.sun.cldc.isolate.Isolate;
-
-import com.sun.midp.log.Logging;
-import com.sun.midp.log.LogChannels;
+package com.sun.midp.jsr;
 
 /**
- * Wrapper for the Isolate API that may be present or not depending
- * on a build-time option.
+ * Initializes JSRs.
  */
-class IsolateUtil {
+public final class JSRInitializer {
     /**
-     * Sets the specified VM profile for the given isolate.
-     *
-     * @param isolate an isolate object for which the new profile must be set
-     * @param profileName name of the profile to set
+     * Initializes JSRs.
      */
-    static void setProfile(Isolate isolate, String profileName) {
-// #ifdef ENABLE_VM_PROFILES
-        //isolate.setProfile(profileName);
-// #else
-        if (Logging.REPORT_LEVEL <= Logging.WARNING) {
-            Logging.report(Logging.WARNING, LogChannels.LC_AMS,
-                "VM profiles are disabled in the VM, " +
-                "but Isolate.setProfile() was called!");
-        }
+    public static void init() {
+// #ifdef ENABLE_JSR_75
+        com.sun.midp.jsr075.Initializer.init();
+// #endif
+
+// #ifdef ENABLE_JSR_82
+        com.sun.midp.jsr082.Initializer.init();
+// #endif
+
+// #ifdef ENABLE_JSR_184
+        com.sun.midp.jsr184.Initializer.init();
+// #endif
+
+// #ifdef ENABLE_JSR_211
+// #ifdef ENABLE_NATIVE_APP_MANAGER
+        com.sun.midp.jsr211.Initializer.init();
+// #endif ENABLE_NATIVE_APP_MANAGER
+// #endif
+
+// #ifdef ENABLE_JSR_226
+        com.sun.pisces.PiscesFinalizer.init();
+// #endif
+
+// #ifdef ENABLE_JSR_229
+        com.sun.midp.jsr229.Initializer.init();
+// #endif
+
+// #ifdef ENABLE_JSR_290
+        com.sun.midp.jsr290.Initializer.init();
+// #endif
+
+// #ifdef ENABLE_JSR_257
+        com.sun.midp.jsr257.Initializer.init();
+// #endif
+
+    }
+
+    /**
+     * Finalizes JSRs.
+     */
+    public static void cleanup() {
+// #ifdef ENABLE_JSR_257
+        com.sun.midp.jsr257.Initializer.cleanup();
 // #endif
     }
 }

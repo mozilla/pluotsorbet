@@ -1204,6 +1204,7 @@ public abstract class AbstractPIMItem implements PIMItem {
     /**
      * Ensures that the underlying list is closed.
      */
+// #ifdef ENABLE_CDC
     protected void finalize() {
         if (dummyList) {
             try {
@@ -1213,4 +1214,9 @@ public abstract class AbstractPIMItem implements PIMItem {
             }
         }
     }
+// #else
+// #ifdef NATIVE_PIM
+    private native void finalize();
+// #endif
+// #endif
 }

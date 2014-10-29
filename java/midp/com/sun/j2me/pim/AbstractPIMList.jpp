@@ -776,6 +776,7 @@ public abstract class AbstractPIMList implements PIMList {
     /**
      * Ensures that the underlying list is closed.
      */
+// #ifdef ENABLE_CDC
     protected void finalize() {
         try {
             close();
@@ -783,4 +784,9 @@ public abstract class AbstractPIMList implements PIMList {
             // Ignore silently
         }
     }
+// #else
+// #ifdef NATIVE_PIM
+    private native void finalize();
+// #endif
+// #endif
 }
