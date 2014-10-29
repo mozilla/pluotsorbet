@@ -18,6 +18,12 @@ public abstract class CanvasItem {
 
         parent = theParent;
 
+        // We need to attach/detach the native implementation at some point.
+        // We initially considered init/finalize, but our VM doesn't appear
+        // to ever call finalize.  So we do it here, attaching the native impl.
+        // when setParent is called with an object reference, then detaching it
+        // when setParent is called with a null value; which appears to be
+        // expected usage when creating/destroying CanvasItem objects.
         if (parent != null) {
             attachNativeImpl();
         } else {
