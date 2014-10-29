@@ -39,9 +39,9 @@ import com.sun.midp.lcdui.GraphicsAccess;
 import com.sun.midp.io.j2me.storage.File;
 
 
-
+// #ifndef ENABLE_CDC
 import com.sun.midp.main.MIDletSuiteUtils;
-
+// #endif
 
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.Font;
@@ -111,9 +111,9 @@ public class SkinResourcesImpl extends SkinResources {
         resources = null;
         skinData = null;
 
-
+// #ifndef ENABLE_CDC
         isAmsIsolate = MIDletSuiteUtils.isAmsIsolate();
-
+// #endif
 
         if (reload) {
             if (Logging.REPORT_LEVEL <= Logging.CRITICAL) {
@@ -487,11 +487,11 @@ final class LoadedSkinResources {
     /** Loaded images */
     Image[] images;
     
-
-
-
+// #ifdef ENABLE_CDC
+    protected native void finalize();
+// #else
     private native void finalize();
-
+// #endif
     
 }
 
@@ -557,11 +557,11 @@ final class LoadedSkinData {
     static byte STRING_ENCODING_UTF8 = 
         SkinResourcesConstants.STRING_ENCODING_UTF8;
 
-
-
-
+// #ifdef ENABLE_CDC
+    protected native void finalize();
+// #else
     private native void finalize();
-
+// #endif
 
     LoadedSkinData() {
         properties = null;

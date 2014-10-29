@@ -65,10 +65,10 @@ public class EventQueue implements Runnable {
      */
     static {
         eventQueue = new EventQueue();
-
+// #ifndef ENABLE_GCI
         eventQueue.nativeEventQueueHandle =
             eventQueue.getNativeEventQueueHandle();
-
+// #endif ENABLE_GCI
         eventQueue.start();
     }
 
@@ -104,7 +104,7 @@ public class EventQueue implements Runnable {
     /** True, if the queue is alive. */
     boolean alive; // = false
 
-
+// #ifndef ENABLE_GCI
     /** The thread running the native event monitor. */
     Thread eventMonitorThread;
 
@@ -114,7 +114,7 @@ public class EventQueue implements Runnable {
     /** This is for the native finalizer to reset peer native queue. */
     int nativeEventQueueHandle = -1;
 
-
+// #endif ENABLE_GCI
 
     /**
      * Returns true if the current thread is the event queue dispatch
@@ -171,36 +171,36 @@ public class EventQueue implements Runnable {
 
         eventQueueLock = new Object();
 
-
+// #ifndef ENABLE_GCI
         pool = new NativeEventPool();
 
         eventMonitorThread =
             new Thread(
                 new NativeEventMonitor(eventQueueLock, this, pool));
-
+// #endif ENABLE_GCI
 
     }
 
+// #ifdef ENABLE_GCI
+
+    /** Starts the event queue thread. */
+    void start() {
+        eventQueueThread.start();
+    }
 
 
+    /**
+     * Send a native event to a specific Isolate.
+     *
+     * @param event a native event
+     * @param isolateId ID of the receiving Isolate
+     */
+    public void sendNativeEventToIsolate(NativeEvent event,
+                                         int isolateId) {
+    	post(event);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// #else
 
     /** Starts the event queue and event monitor threads. */
     void start() {
@@ -235,27 +235,27 @@ public class EventQueue implements Runnable {
      */
     public native void sendNativeEventToIsolate(NativeEvent event,
                                                 int isolateId);
-
+// #endif
 
     /**
      * Native finalizer to reset the native peer event queue when
      * the Isolate ends.
      */
-
-
-
-
-
-
-
-
+// #ifdef ENABLE_CDC
+    /**
+     * Queue a shutdown event to the native event queue.
+     */
+    private void sendShutdownEvent() {
+	post(new Event(EventTypes.EVENT_QUEUE_SHUTDOWN));
+    }
+// #else
     /**
      * Queue a shutdown event to the native event queue.
      */
     private native void sendShutdownEvent();
 
     private native void finalize();
-
+// #endif
 
     /**
      * Register to preprocess and process events of single type.
@@ -463,9 +463,9 @@ public class EventQueue implements Runnable {
                 }
             }
         }
-
+// #ifndef ENABLE_GCI
         resetNativeEventQueue();
-
+// #endif ENABLE_GCI
     }
 
     /** Runs the event queue. See the class description for details. */
@@ -517,11 +517,11 @@ public class EventQueue implements Runnable {
 
 		dispatchData.listener.process(event);
 
-
+// #ifndef ENABLE_GCI
                 if (event instanceof NativeEvent) {
                     pool.putBack((NativeEvent)event);
                 }
-
+// #endif
 
                 // IMPL_NOTE
 		if (Logging.REPORT_LEVEL <= Logging.INFORMATION) {
@@ -566,7 +566,7 @@ class DispatchData {
     }
 }
 
-
+// #ifndef ENABLE_GCI
 /**
  * Runs in its own Java thread. Wait for set of native events to arrive and
  * then post them as a set to the Java event queue.
@@ -710,4 +710,4 @@ class NativeEventPool {
         }
     }
 }
-
+// #endif ENABLE_GCI

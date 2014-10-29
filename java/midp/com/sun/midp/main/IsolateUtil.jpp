@@ -1,5 +1,5 @@
 /*
- *
+ *   
  *
  * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
@@ -24,58 +24,33 @@
  * information or have any questions.
  */
 
-package com.sun.midp.jsr;
+package com.sun.midp.main;
+
+import com.sun.cldc.isolate.Isolate;
+
+import com.sun.midp.log.Logging;
+import com.sun.midp.log.LogChannels;
 
 /**
- * Initializes JSRs.
+ * Wrapper for the Isolate API that may be present or not depending
+ * on a build-time option.
  */
-public final class JSRInitializer {
+class IsolateUtil {
     /**
-     * Initializes JSRs.
+     * Sets the specified VM profile for the given isolate.
+     *
+     * @param isolate an isolate object for which the new profile must be set
+     * @param profileName name of the profile to set
      */
-    public static void init() {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    }
-
-    /**
-     * Finalizes JSRs.
-     */
-    public static void cleanup() {
-
-
-
+    static void setProfile(Isolate isolate, String profileName) {
+// #ifdef ENABLE_VM_PROFILES
+        isolate.setProfile(profileName);
+// #else
+        if (Logging.REPORT_LEVEL <= Logging.WARNING) {
+            Logging.report(Logging.WARNING, LogChannels.LC_AMS,
+                "VM profiles are disabled in the VM, " +
+                "but Isolate.setProfile() was called!");
+        }
+// #endif
     }
 }

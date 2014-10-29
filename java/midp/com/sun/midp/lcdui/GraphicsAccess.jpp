@@ -36,7 +36,7 @@ import javax.microedition.lcdui.Graphics;
  */
 public interface GraphicsAccess {
 
-    
+    // #ifdef ENABLE_CHAMELEON
     /**
      * Return a romized image resource based on the identifier.
      *
@@ -47,7 +47,7 @@ public interface GraphicsAccess {
      */
     public Image getRomizedImage(int imageDataArrayPtr,
             int imageDataArrayLength);
-    
+    //#endif
 
     /**
      * Resize Image optionally saving its content clipped according

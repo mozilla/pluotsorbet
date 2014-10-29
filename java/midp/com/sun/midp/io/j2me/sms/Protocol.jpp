@@ -1012,7 +1012,11 @@ public class Protocol extends ProtocolBase {
     /**
      * Native finalizer
      */
+    // #ifdef ENABLE_CDC
     protected native void finalize();
+    // #else
+    private   native void finalize();
+    // #endif ENABLE_CDC
 
     /**
      * Native function to open sms connection
