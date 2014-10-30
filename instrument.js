@@ -89,6 +89,11 @@ var Instrument = {
 
   exitAsyncNative: function(key) {
     var profileData = this.asyncProfile[key];
+    if (!profileData) {
+      // Ignore native without profile data, which can happen when you start
+      // profiling while the native is pending.
+      return;
+    }
     profileData.count++;
     profileData.cost += performance.now() - profileData.then;
   },
