@@ -1001,6 +1001,7 @@ module J2ME {
     }
 
     genInvokeStatic(methodInfo: MethodInfo) {
+      this.classInitCheck(methodInfo.classInfo);
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       this.ctx.methods[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
@@ -1063,27 +1064,34 @@ module J2ME {
 
     classInitCheck(classInfo: ClassInfo) {
       var ctx = this.ctx;
-      if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
+      if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className]) {
         return;
-      try {
-        ctx.pushClassInitFrame(classInfo);
-      } catch (e) {
-        debugger;
-        writer.writeLn(e);
-        writer.writeLn(e.stack);
       }
+
+      var methodInfo = this.methodInfo;
+      this.ctx.methods[methodInfo.implKey] = methodInfo;
+
+      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), new IR.Variable("ctx"), new Constant("classInitCheck"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
+      this.recordStore(classInitCheck);
     }
 
     genGetStatic(fieldInfo: FieldInfo, cpi: number) {
-      var methodInfo = this.methodInfo;
-      this.ctx.methods[methodInfo.implKey] = methodInfo;
-      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), new IR.Variable("ctx"), new Constant("classInitCheck"), [new Constant(fieldInfo.classInfo.className)], IR.Flags.PRISTINE);
-      this.recordStore(classInitCheck);
+      this.classInitCheck(fieldInfo.classInfo);
 
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var staticLoad = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant('getStatic'), [new Constant(fieldInfo.id)], IR.Flags.PRISTINE);
       this.recordLoad(staticLoad);
       this.state.push(signature.kind, staticLoad);
+    }
+
+    genPutStatic(fieldInfo: FieldInfo, cpi: number) {
+      this.classInitCheck(fieldInfo.classInfo);
+
+      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+      var value = this.state.pop(signature.kind);
+
+      var staticPut = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant('putStatic'), [new Constant(fieldInfo.id), value], IR.Flags.PRISTINE);
+      this.recordStore(staticPut);
     }
 
     processBytecode(stream: BytecodeStream, state: State) {
@@ -1280,8 +1288,8 @@ module J2ME {
         case Bytecodes.ARETURN        : this.genReturn(state.apop()); break;
         case Bytecodes.RETURN         : this.genReturn(null); break;
         case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); this.genGetStatic(this.lookupField(cpi, opcode, true), cpi); break;
+        case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); this.genPutStatic(this.lookupField(cpi, opcode, true), cpi); break;
         /*
-        case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); genPutStatic(cpi, lookupField(cpi, opcode, true)); break;
         case Bytecodes.GETFIELD       : cpi = stream.readCPI(); genGetField(cpi, lookupField(cpi, opcode, false)); break;
         case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); genPutField(cpi, lookupField(cpi, opcode, false)); break;
         */

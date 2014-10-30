@@ -341,6 +341,10 @@ Context.prototype.getStatic = function(fieldInfoId) {
   return this.runtime.staticFields[fieldInfoId];
 };
 
+Context.prototype.putStatic = function(fieldInfoId, value) {
+    this.runtime.staticFields[fieldInfoId] = value;
+};
+
 Context.prototype.resolve = function(cp, idx, isStatic) {
     var constant = cp[idx];
     if (!constant.tag)
