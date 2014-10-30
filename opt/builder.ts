@@ -49,6 +49,7 @@ module J2ME {
     runtime: any;
     methods: MethodInfo [];
     classInfos: ClassInfo [];
+    fieldInfos: FieldInfo [];
     resolve(constantPool: ConstantPoolEntry [], idx: number, isStatic: boolean) : any;
   }
 
@@ -1127,6 +1128,31 @@ module J2ME {
       this.recordStore(staticPut);
     }
 
+    genGetField(fieldInfo: FieldInfo, cpi: number) {
+      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+      var fieldId = fieldInfo.id;
+      this.ctx.fieldInfos[fieldId] = fieldInfo;
+
+      var object = this.state.apop();
+      var getField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('get'), [object], IR.Flags.PRISTINE);
+      // TODO Null check and exception throw.
+      this.recordLoad(getField);
+      this.state.push(signature.kind, getField);
+    }
+
+    genPutField(fieldInfo: FieldInfo, cpi: number) {
+      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+      var fieldId = fieldInfo.id;
+      this.ctx.fieldInfos[fieldId] = fieldInfo;
+
+      var value = this.state.pop(signature.kind);
+      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+      var object = this.state.apop();
+
+      var putField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('set'), [object, value], IR.Flags.PRISTINE);
+      this.recordStore(putField);
+    }
+
     processBytecode(stream: BytecodeStream, state: State) {
       var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
@@ -1322,10 +1348,8 @@ module J2ME {
         case Bytecodes.RETURN         : this.genReturn(null); break;
         case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); this.genGetStatic(this.lookupField(cpi, opcode, true), cpi); break;
         case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); this.genPutStatic(this.lookupField(cpi, opcode, true), cpi); break;
-        /*
-        case Bytecodes.GETFIELD       : cpi = stream.readCPI(); genGetField(cpi, lookupField(cpi, opcode, false)); break;
-        case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); genPutField(cpi, lookupField(cpi, opcode, false)); break;
-        */
+        case Bytecodes.GETFIELD       : cpi = stream.readCPI(); this.genGetField(this.lookupField(cpi, opcode, false), cpi); break;
+        case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); this.genPutField(this.lookupField(cpi, opcode, false), cpi); break;
         case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvokeVirtual(this.lookupMethod(cpi, opcode, false)); break;
         case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.genInvokeSpecial(this.lookupMethod(cpi, opcode, false)); break;
         case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvokeStatic(this.lookupMethod(cpi, opcode, true)); break;

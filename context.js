@@ -11,6 +11,7 @@ function Context(runtime) {
   this.runtime.addContext(this);
   this.methods = {};
   this.classInfos = {};
+  this.fieldInfos = {};
 }
 
 Context.prototype.kill = function() {
