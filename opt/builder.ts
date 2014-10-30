@@ -1021,12 +1021,39 @@ module J2ME {
       invokeArgs.push(new Constant(methodInfo.implKey));
       invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invokeStatic"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0], call);
       }
+    }
+
+    genInvokeSpecial(methodInfo: MethodInfo) {
+      var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
+      this.ctx.methods[methodInfo.implKey] = methodInfo;
+      var types = signature.typeDescriptors;
+      var args: Value [] = [];
+      for (var i = 1; i < types.length; i++) {
+        var type = types[i];
+        args.push(this.state.pop(type.kind));
+      }
+      var argsArray = new IR.NewArray(this.region, args);
+      var invokeArgs: Value [] = [];
+      invokeArgs.push(new Constant(methodInfo.implKey));
+      invokeArgs.push(this.state.pop(Kind.Reference));
+      invokeArgs.push(argsArray);
+
+      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invokeSpecial"), invokeArgs, IR.Flags.PRISTINE);
+      this.recordStore(call);
+
+      if (types[0].kind !== Kind.Void) {
+        this.state.push(types[0], call);
+      }
+    }
+
+    genInvokeInterface(methodInfo: MethodInfo) {
+      this.genInvokeVirtual(methodInfo);
     }
 
     genInvokeVirtual(methodInfo: MethodInfo) {
@@ -1300,13 +1327,9 @@ module J2ME {
         case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); genPutField(cpi, lookupField(cpi, opcode, false)); break;
         */
         case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvokeVirtual(this.lookupMethod(cpi, opcode, false)); break;
-        /*
-        case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); genInvokeSpecial(lookupMethod(cpi, opcode), null, cpi, constantPool); break;
-        */
+        case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.genInvokeSpecial(this.lookupMethod(cpi, opcode, false)); break;
         case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvokeStatic(this.lookupMethod(cpi, opcode, true)); break;
-        /*
-        case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); genInvokeInterface(lookupMethod(cpi, opcode), cpi, constantPool); break;
-        */
+        case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.genInvokeInterface(this.lookupMethod(cpi, opcode, false)); break;
         case Bytecodes.NEW            : this.genNewInstance(stream.readCPI()); break;
         case Bytecodes.NEWARRAY       : this.genNewTypeArray(stream.readLocalIndex()); break;
          /*

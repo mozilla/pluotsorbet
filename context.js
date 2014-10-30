@@ -172,6 +172,30 @@ Context.prototype.invoke = function(methodInfoId, object, args) {
   return VM.execute(this);
 };
 
+Context.prototype.invokeStatic = function(methodInfoId, args) {
+    var methodInfo = this.methods[methodInfoId];
+    args = args || [];
+    var frame = new Frame(methodInfo, [], 0);
+    this.frames.push(frame);
+    for (var i = 0; i < args.length; i++) {
+        frame.setLocal(i, args[i]);
+    }
+    return VM.execute(this);
+};
+
+Context.prototype.invokeSpecial = function(methodInfoId, object, args) {
+    var methodInfo = this.methods[methodInfoId];
+    args = args || [];
+    var frame = new Frame(methodInfo, [], 0);
+    this.frames.push(frame);
+    frame.setLocal(0, object);
+    for (var i = 0; i < args.length; i++) {
+        frame.setLocal(i + 1, args[i]);
+    }
+    return VM.execute(this);
+};
+
+
 Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());
   do {
