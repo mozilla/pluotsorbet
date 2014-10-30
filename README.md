@@ -30,7 +30,7 @@ To run a MIDlet:
 URL parameters:
 
 * See full list at libs/urlparams.js
-* Default `midletClassName` if none specified is `RunTests1`
+* Default `midletClassName` if none specified is `RunTests`
 
 If testing sockets, 4 servers are necessary:
 
