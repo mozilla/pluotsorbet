@@ -57,19 +57,22 @@ module J2ME.C4.IR {
 
   JVMConvert.prototype.nodeName = "JVMConvert";
 
-  export class JVMBailout extends StoreDependent {
-    constructor(control: Control, store: Store, public state: State) {
+  export class JVMCallProperty extends StoreDependent {
+    constructor(control: Control, store: Store, public state: State, public object: Value, public name: Value, public args: Value [], public flags: number) {
       super(control, store);
+      this.handlesAssignment = true;
     }
     visitInputs(visitor: NodeVisitor) {
-      visitor(this.control);
-      visitor(this.store);
-      visitArrayInputs(this.state.local, visitor, true);
-      visitArrayInputs(this.state.stack, visitor);
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+      this.loads && visitArrayInputs(this.loads, visitor);
+      visitor(this.object);
+      visitor(this.name);
+      visitArrayInputs(this.args, visitor);
     }
   }
 
-  JVMBailout.prototype.nodeName = "JVMBailout";
+  JVMCallProperty.prototype.nodeName = "JVMCallProperty";
 }
 
 module J2ME.C4.Backend {
@@ -120,7 +123,7 @@ module J2ME.C4.Backend {
     return new AST.BinaryExpression("|", value, constant(0));
   }
 
-  IR.JVMBailout.prototype.compile = function (cx: Context): AST.Node {
+  IR.JVMCallProperty.prototype.compile = function (cx: Context): AST.Node {
     var local = this.state.local;
     var stack = this.state.stack;
 
@@ -140,11 +143,41 @@ module J2ME.C4.Backend {
       }
       stackValues.push(compileValue(stack[i], cx));
     }
-    return new AST.CallExpression(new AST.Identifier("JVMBailout"), [
-      new AST.Identifier("$"),
-      new AST.Literal(this.state.bci),
-      new AST.ArrayExpression(localValues),
-      new AST.ArrayExpression(stackValues)
-    ]);
+
+    var object = compileValue(this.object, cx);
+    var name = compileValue(this.name, cx);
+    var callee = property(object, name);
+    var args = this.args.map(function (arg) {
+      return compileValue(arg, cx);
+    });
+    var callNode;
+    if (this.flags & IR.Flags.PRISTINE) {
+      callNode = call(callee, args);
+    } else {
+      callNode = callCall(callee, object, args);
+    }
+
+    var exception = new AST.Identifier("e");
+    var to = new AST.Identifier(this.variable.name);
+    cx.useVariable(this.variable);
+
+    return new AST.TryStatement(
+      new AST.BlockStatement([assignment(to, callNode)]),
+      new AST.CatchClause(exception, null,
+        new AST.BlockStatement([ // Ask mbx: is it bug I need ExpressionStatement here to get the semicolon inserted.
+          new AST.ExpressionStatement(new AST.CallExpression(new AST.Identifier("ctx.JVMBailout"), [
+            exception,
+            new AST.Identifier("methodInfoId"),
+            new AST.Identifier("frameIndex"),
+            new AST.Literal(this.state.bci),
+            new AST.ArrayExpression(localValues),
+            new AST.ArrayExpression(stackValues)
+          ])),
+          new AST.ThrowStatement(exception)
+        ])
+      ),
+      [],
+      null
+    );
   }
 }

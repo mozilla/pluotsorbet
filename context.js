@@ -388,3 +388,18 @@ Context.prototype.resolve = function(cp, idx, isStatic) {
     }
     return constant;
 };
+
+Context.prototype.JVMBailout = function(e, methodInfoId, frameIndex, cpi, locals, stack) {
+    var methodInfo = this.methods[methodInfoId];
+    console.log('Bailing out of ' + methodInfo.name + '() because of ' + e + "\n" + e.stack);
+    var frame = new Frame(methodInfo, locals, 0);
+    frame.stack = stack;
+    frame.ip = cpi;
+    this.frames[frameIndex] = frame;
+};
+
+Context.prototype.classInitCheck = function(className) {
+    if (this.runtime.initialized[className])
+        return;
+    throw VM.Yield;
+};

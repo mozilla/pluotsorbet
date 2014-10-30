@@ -442,6 +442,12 @@ module J2ME.C4.AST {
     constructor (public block: BlockStatement, public handlers:  CatchClause, public guardedHandlers: CatchClause [], public finalizer: BlockStatement) {
       super();
     }
+    toSource(precedence: number) : string {
+      if (this.guardedHandlers.length !== 0 || this.finalizer !== null) {
+        throw "TODO";
+      }
+      return "try " + this.block.toSource(Precedence.Sequence) + "  catch(" + this.handlers.param.toSource(Precedence.Sequence) + ") " + this.handlers.body.toSource(Precedence.Sequence);
+    }
   }
 
   export class WhileStatement extends Statement {

@@ -102,6 +102,7 @@ module J2ME.C4.IR {
     mustFloat: boolean;
     shouldFloat: boolean;
     shouldNotFloat: boolean;
+    handlesAssignment: boolean;
 
     constructor() {
       this.id = Node.getNextID();

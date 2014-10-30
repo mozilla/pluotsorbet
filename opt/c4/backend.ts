@@ -155,7 +155,7 @@ module J2ME.C4.Backend {
     return true;
   }
 
-  function property(obj, ...args) {
+  export function property(obj, ...args) {
     for (var i = 0; i < args.length; i++) {
       var x = args[i];
       if (typeof x === "string") {
@@ -173,7 +173,7 @@ module J2ME.C4.Backend {
     return obj;
   }
 
-  function call(callee, args): CallExpression {
+  export function call(callee, args): CallExpression {
     release || assert(args instanceof Array);
     release || args.forEach(function (x) {
       release || assert(!(x instanceof Array));
@@ -186,7 +186,7 @@ module J2ME.C4.Backend {
     return call(property(callee, "asCall"), [object].concat(args));
   }
 
-  function callCall(callee, object, args) {
+  export function callCall(callee, object, args) {
     return call(property(callee, "call"), [object].concat(args));
   }
 
@@ -369,7 +369,7 @@ module J2ME.C4.Backend {
             this.useVariable(node.to);
             from = compileValue(node.from, this);
           } else {
-            if (node.variable) {
+            if (node.variable && !node.handlesAssignment) {
               to = id(node.variable.name);
               this.useVariable(node.variable);
             } else {

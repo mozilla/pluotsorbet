@@ -35,56 +35,6 @@ module J2ME {
   declare var CLASSES: any;
   declare var Long: any;
 
-  function resolve(cp, idx, isStatic) {
-    var constant = cp[idx];
-    if (!constant.tag)
-      return constant;
-    switch(constant.tag) {
-      case 3: // TAGS.CONSTANT_Integer
-        constant = constant.integer;
-        break;
-      case 4: // TAGS.CONSTANT_Float
-        constant = constant.float;
-        break;
-      case 8: // TAGS.CONSTANT_String
-//        debugger;
-        // TODO ctx.newString??
-        constant = cp[constant.string_index].bytes;
-        break;
-      case 5: // TAGS.CONSTANT_Long
-        constant = Long.fromBits(constant.lowBits, constant.highBits);
-        break;
-      case 6: // TAGS.CONSTANT_Double
-        constant = constant.double;
-        break;
-      case 7: // TAGS.CONSTANT_Class
-        constant = CLASSES.getClass(cp[constant.name_index].bytes);
-        break;
-      case 9: // TAGS.CONSTANT_Fieldref
-        var classInfo = resolve(cp, constant.class_index, isStatic);
-        var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
-        var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-        constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
-//        if (!constant)
-//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-//              classInfo.className + "." + fieldName + "." + signature + " not found");
-        break;
-      case 10: // TAGS.CONSTANT_Methodref
-      case 11: // TAGS.CONSTANT_InterfaceMethodref
-        var classInfo = resolve(cp, constant.class_index, isStatic);
-        var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
-        var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-        constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
-//        if (!constant)
-//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-//              classInfo.className + "." + methodName + "." + signature + " not found");
-        break;
-      default:
-        throw new Error("not support constant type");
-    }
-    return cp[idx] = constant;
-  }
-
   export function isTwoSlot(kind: Kind) {
     return kind === Kind.Long || kind === Kind.Double;
   }
@@ -98,6 +48,7 @@ module J2ME {
     pushClassInitFrame(classInfo: ClassInfo);
     runtime: any;
     methods: any;
+    resolve(constantPool: ConstantPoolEntry [], idx: number, isStatic: boolean) : any;
   }
 
   export interface FieldInfo {
@@ -458,8 +409,7 @@ module J2ME {
   }
 
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context) {
-    return;
-    if (methodInfo.name !== 'bubbleSort') {
+    if (methodInfo.name !== 'go') {
       return;
     }
     if (!methodInfo.code) {
@@ -473,8 +423,7 @@ module J2ME {
 //    fnSource = fnSource.replace(/\(\"X\"\)\./gm, '');
 //    fnSource = "function fail() {console.log('fail');}function success() {console.log('success');}" + fnSource + " asd()";
     console.log('-------------------');
-    compilation.parameters.unshift('ctx');
-    debugger;
+    compilation.parameters.unshift('ctx', 'frameIndex', 'methodInfoId');
     var fn = Function(compilation.parameters, fnSource);
     console.log('-------------------');
 //    var array = new Int32Array(1024);
@@ -484,6 +433,7 @@ module J2ME {
 
     writer.writeLn(fnSource);
     } catch (e) {
+      debugger;
       writer.writeLn(e);
       writer.writeLn(e.stack);
     }
@@ -512,24 +462,6 @@ module J2ME {
     var constant = new IR.Constant(x);
     constant.kind = kind;
     return constant;
-  }
-
-  function getConstantFromPool(cpi : number, cp: ConstantPoolEntry []): IR.Constant {
-    var entry = cp[cpi];
-    switch (entry.tag) {
-      case TAGS.CONSTANT_Integer:
-        return genConstant(entry.integer, Kind.Int);
-      case TAGS.CONSTANT_Float:
-        return genConstant(entry.float, Kind.Float);
-      case TAGS.CONSTANT_Double:
-        return genConstant(entry.double, Kind.Double);
-      case TAGS.CONSTANT_String:
-        entry = cp[entry.string_index];
-        return genConstant(entry.bytes, Kind.Reference);
-      default:
-        debugger;
-        throw "Not done for: " + entry.tag;
-    }
   }
 
   class StopInfo {
@@ -954,25 +886,27 @@ module J2ME {
     }
 
     genLoadConstant(cpi: number, state: State) {
-      var constant = getConstantFromPool(cpi, this.methodInfo.classInfo.constant_pool);
-
-//      Object con = constantPool.lookupConstant(cpi);
-//
-//      if (con instanceof RiType) {
-//        // this is a load of class constant which might be unresolved
-//        RiType riType = (RiType) con;
-//        if (riType instanceof RiResolvedType) {
-//          frameState.push(CiKind.Object, append(ConstantNode.forCiConstant(((RiResolvedType) riType).getEncoding(Representation.JavaClass), runtime, graph)));
-//        } else {
-//          append(graph.add(new DeoptimizeNode(DeoptAction.InvalidateRecompile)));
-//          frameState.push(CiKind.Object, append(ConstantNode.forObject(null, runtime, graph)));
-//        }
-//      } else if (con instanceof CiConstant) {
-//        CiConstant constant = (CiConstant) con;
-        state.push(constant.kind, constant);
-//      } else {
-//        throw new Error("lookupConstant returned an object of incorrect type");
-//      }
+      var cp = this.methodInfo.classInfo.constant_pool;
+      var entry = cp[cpi];
+      switch (entry.tag) {
+        case TAGS.CONSTANT_Integer:
+          state.ipush(genConstant(entry.integer, Kind.Int));
+          return;
+        case TAGS.CONSTANT_Float:
+          state.fpush(genConstant(entry.float, Kind.Float));
+          return;
+        case TAGS.CONSTANT_Double:
+          state.dpush(genConstant(entry.double, Kind.Double));
+          return;
+        case TAGS.CONSTANT_String:
+          entry = cp[entry.string_index];
+          var call = new IR.CallProperty(null, null, new IR.Variable('ctx'), new Constant("newStringConstant"), [genConstant(entry.bytes, Kind.Reference)], IR.Flags.PRISTINE);
+//          this.recordStore(call);
+          return state.push(Kind.Reference, call);
+        default:
+          debugger;
+          throw "Not done for: " + entry.tag;
+      }
     }
 
     genIncrement(stream: BytecodeStream) {
@@ -1039,12 +973,11 @@ module J2ME {
     }
 
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
-      return resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+      return this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
     }
 
-    lookupField(cpi: number, opcode: Bytecodes): FieldInfo {
-      // TODO isstatic
-      return resolve(this.methodInfo.classInfo.constant_pool, cpi, true);
+    lookupField(cpi: number, opcode: Bytecodes, isStatic): FieldInfo {
+      return this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
     }
 
     /**
@@ -1069,15 +1002,21 @@ module J2ME {
 
     genInvokeStatic(methodInfo: MethodInfo) {
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
+      this.ctx.methods[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
         var type = types[i];
         args.push(this.state.pop(type.kind));
       }
+      var argsArray = new IR.NewArray(this.region, args);
+      var invokeArgs: Value [] = [];
+      invokeArgs.push(new Constant(methodInfo.implKey));
+      invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, new Constant("X"), new Constant(methodInfo.name), args, IR.Flags.PRISTINE);
+      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
+
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0], call);
       }
@@ -1100,10 +1039,6 @@ module J2ME {
 
       var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
-
-      console.log("hi");
-//      var bailout = new IR.JVMBailout(this.region, this.state.store, this.state.clone(this.state.bci));
-//      this.recordStore(bailout);
 
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0], call);
@@ -1130,16 +1065,23 @@ module J2ME {
       var ctx = this.ctx;
       if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
         return;
-      ctx.pushClassInitFrame(classInfo);
-      ctx.executeUntilCurrentFramePopped();
+      try {
+        ctx.pushClassInitFrame(classInfo);
+      } catch (e) {
+        debugger;
+        writer.writeLn(e);
+        writer.writeLn(e.stack);
+      }
     }
 
     genGetStatic(fieldInfo: FieldInfo, cpi: number) {
+      var methodInfo = this.methodInfo;
+      this.ctx.methods[methodInfo.implKey] = methodInfo;
+      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), new IR.Variable("ctx"), new Constant("classInitCheck"), [new Constant(fieldInfo.classInfo.className)], IR.Flags.PRISTINE);
+      this.recordStore(classInitCheck);
+
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      this.classInitCheck(fieldInfo.classInfo);
-//      this.ctx.setStaticFieldInfo(fieldInfo);
       var staticLoad = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant('getStatic'), [new Constant(fieldInfo.id)], IR.Flags.PRISTINE);
-//      var staticLoad = new IR.GetProperty(this.region, this.state.store, new IR.Variable('window.runtime'), new Constant(fieldInfo.id));
       this.recordLoad(staticLoad);
       this.state.push(signature.kind, staticLoad);
     }
@@ -1337,11 +1279,11 @@ module J2ME {
         case Bytecodes.DRETURN        : this.genReturn(state.dpop()); break;
         case Bytecodes.ARETURN        : this.genReturn(state.apop()); break;
         case Bytecodes.RETURN         : this.genReturn(null); break;
-        case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); this.genGetStatic(this.lookupField(cpi, opcode), cpi); break;
+        case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); this.genGetStatic(this.lookupField(cpi, opcode, true), cpi); break;
         /*
-        case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); genPutStatic(cpi, lookupField(cpi, opcode)); break;
-        case Bytecodes.GETFIELD       : cpi = stream.readCPI(); genGetField(cpi, lookupField(cpi, opcode)); break;
-        case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); genPutField(cpi, lookupField(cpi, opcode)); break;
+        case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); genPutStatic(cpi, lookupField(cpi, opcode, true)); break;
+        case Bytecodes.GETFIELD       : cpi = stream.readCPI(); genGetField(cpi, lookupField(cpi, opcode, false)); break;
+        case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); genPutField(cpi, lookupField(cpi, opcode, false)); break;
         */
         case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvokeVirtual(this.lookupMethod(cpi, opcode, false)); break;
         /*

@@ -1008,11 +1008,12 @@ VM.execute = function(ctx) {
                 fn = methodInfo.fn = J2ME.compileMethodInfo(methodInfo, ctx);
             }
             if (fn) {
-                ctx.frames.push(COMPILED_FRAME);
+                console.log("Invoking compiled function " + methodInfo.name + "()");
+                var frameIndex = ctx.frames.push(COMPILED_FRAME);
                 // Take off the arguments from the stack.
                 var args = stack.slice(stack.length - methodInfo.consumes);
                 stack.length -= methodInfo.consumes;
-                args.unshift(ctx);
+                args.unshift(ctx, frameIndex - 1, methodInfo.implKey);
                 // Invoke the compiled function.
                 var returnValue = fn.apply(null, args);
                 // Push return value back on the stack.
