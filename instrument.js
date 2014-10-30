@@ -14,13 +14,11 @@ var Instrument = {
   enabled: "instrument" in urlParams && !/no|0/.test(urlParams.instrument),
 
   callEnterHooks: function(methodInfo, caller, callee) {
-    if (!this.enabled) {
-      return;
-    }
-
-    var key = methodInfo.implKey;
-    if (Instrument.enter[key]) {
-      Instrument.enter[key](caller, callee);
+    if (this.enabled) {
+      var key = methodInfo.implKey;
+      if (Instrument.enter[key]) {
+        Instrument.enter[key](caller, callee);
+      }
     }
 
     if (this.profiling) {
@@ -39,10 +37,6 @@ var Instrument = {
   },
 
   callExitHooks: function(methodInfo, caller, callee) {
-    if (!this.enabled) {
-      return;
-    }
-
     var key = methodInfo.implKey;
 
     if (this.profiling) {
@@ -64,8 +58,10 @@ var Instrument = {
       }
     }
 
-    if (Instrument.exit[key]) {
-      Instrument.exit[key](caller, callee);
+    if (this.enabled) {
+      if (Instrument.exit[key]) {
+        Instrument.exit[key](caller, callee);
+      }
     }
   },
 
