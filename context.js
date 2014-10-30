@@ -159,6 +159,9 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
 
 Context.prototype.invoke = function(methodInfoId, object, args) {
   var methodInfo = this.methods[methodInfoId];
+  if (methodInfo.classInfo !== object.class) {
+      methodInfo = CLASSES.getMethod(object.class, methodInfo.key);
+  }
   args = args || [];
   var frame = new Frame(methodInfo, [], 0);
   this.frames.push(frame);
