@@ -513,6 +513,8 @@ module J2ME {
      */
     blockMap: BlockMap;
 
+    ctxVar: IR.Variable;
+
     constructor(public methodInfo: MethodInfo, public ctx: Context) {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
@@ -522,6 +524,7 @@ module J2ME {
 
     build(): C4.Backend.Compilation {
       IR.Node.startNumbering();
+      this.ctxVar = new IR.Variable("ctx");
       var methodInfo = this.methodInfo;
 
       writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
@@ -879,7 +882,7 @@ module J2ME {
       var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
       this.classInitCheck(classInfo);
       this.ctx.classInfos[classInfo.className] = classInfo;
-      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("newObjectFromId"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
+      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("newObjectFromId"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
       this.recordStore(call);
       this.state.apush(call);
     }
@@ -907,7 +910,7 @@ module J2ME {
           return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
-          var call = new IR.CallProperty(null, null, new IR.Variable('ctx'), new Constant("newStringConstant"), [genConstant(entry.bytes, Kind.Reference)], IR.Flags.PRISTINE);
+          var call = new IR.CallProperty(null, null, this.ctxVar, new Constant("newStringConstant"), [genConstant(entry.bytes, Kind.Reference)], IR.Flags.PRISTINE);
 //          this.recordStore(call);
           return state.push(Kind.Reference, call);
         default:
@@ -1022,7 +1025,7 @@ module J2ME {
       invokeArgs.push(new Constant(methodInfo.implKey));
       invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invokeStatic"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("invokeStatic"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1045,7 +1048,7 @@ module J2ME {
       invokeArgs.push(this.state.pop(Kind.Reference));
       invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invokeSpecial"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("invokeSpecial"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1072,7 +1075,7 @@ module J2ME {
       invokeArgs.push(this.state.pop(Kind.Reference));
       invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1105,7 +1108,7 @@ module J2ME {
       var methodInfo = this.methodInfo;
       this.ctx.methods[methodInfo.implKey] = methodInfo;
 
-      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), new IR.Variable("ctx"), new Constant("classInitCheck"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
+      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("classInitCheck"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
       this.recordStore(classInitCheck);
     }
 
@@ -1113,7 +1116,7 @@ module J2ME {
       this.classInitCheck(fieldInfo.classInfo);
 
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      var staticLoad = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant('getStatic'), [new Constant(fieldInfo.id)], IR.Flags.PRISTINE);
+      var staticLoad = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('getStatic'), [new Constant(fieldInfo.id)], IR.Flags.PRISTINE);
       this.recordLoad(staticLoad);
       this.state.push(signature.kind, staticLoad);
     }
@@ -1124,7 +1127,7 @@ module J2ME {
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var value = this.state.pop(signature.kind);
 
-      var staticPut = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant('putStatic'), [new Constant(fieldInfo.id), value], IR.Flags.PRISTINE);
+      var staticPut = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('putStatic'), [new Constant(fieldInfo.id), value], IR.Flags.PRISTINE);
       this.recordStore(staticPut);
     }
 
@@ -1376,7 +1379,7 @@ module J2ME {
       }
       */
         default:
-          Debug.somewhatImplemented(Bytecodes[opcode]);
+          Debug.notImplemented(Bytecodes[opcode]);
       }
       writer.leave("State  After: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
       writer.writeLn("");
