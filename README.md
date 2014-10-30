@@ -8,6 +8,7 @@ The current goals of j2me.js are:
 1. Keep j2me.js simple and small: Leverage the phoneME JDK/infrastructre and existing Java code as much as we can, and implement as little as possible in JavaScript
 
 ## Building j2me.js
+
 Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
 Get the [j2me.js repo](https://github.com/andreasgal/j2me.js) if you don't have it already
@@ -20,6 +21,7 @@ Build using make:
         make
 
 ## Running MIDlets, tests
+
 To run a MIDlet:
 
         python -m SimpleHTTPServer&
@@ -28,7 +30,7 @@ To run a MIDlet:
 URL parameters:
 
 * See full list at libs/urlparams.js
-* Default MIDlet if none specified is /tests/RunTests.java
+* Default `midletClassName` if none specified is `RunTests1`
 
 If testing sockets, 4 servers are necessary:
 
@@ -50,15 +52,13 @@ Continuous integration:
 
 * Uses Travis
 * Runs automation.js which uses Casper.js testing framework and slimer.js (Gecko backend for casper.js)
-* `casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log`
+* `make test`
 
 gfx tests use image comparison; output should match reference
 
-Logging:
+## Logging
 
-* logConsole and logLevel URL params
-* See libs/console.js
-
+See `logConsole` and `logLevel` URL params in libs/console.js
 
 ## Running j2me.js in the SpiderMonkey shell
 
