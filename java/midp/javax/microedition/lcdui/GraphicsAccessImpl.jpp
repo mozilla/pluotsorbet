@@ -27,9 +27,9 @@
 package javax.microedition.lcdui;
 
 import javax.microedition.lcdui.game.GameCanvas;
-
+// #ifdef ENABLE_CHAMELEON
 import com.sun.midp.chameleon.MIDPWindow;
-
+// #endif
 
 /**
  * Class to access extended Image and Graphics functionality needed to
@@ -38,7 +38,7 @@ import com.sun.midp.chameleon.MIDPWindow;
  */
 class GraphicsAccessImpl implements com.sun.midp.lcdui.GraphicsAccess {
 
-    
+    // #ifdef ENABLE_CHAMELEON
     /**
      * Return a romized image resource based on the identifier.
      *
@@ -53,7 +53,7 @@ class GraphicsAccessImpl implements com.sun.midp.lcdui.GraphicsAccess {
         return Image.getRomizedImage(
             imageDataArrayPtr, imageDataArrayLength);
     }
-    
+    // #endif
 
     /**
      * Resize Image optionally saving its content clipped according
@@ -94,12 +94,12 @@ class GraphicsAccessImpl implements com.sun.midp.lcdui.GraphicsAccess {
     public int getGraphicsWidth(Graphics g) {
         Object creator = g.getCreator();
         if (creator != null) {
-            
+            // #ifdef ENABLE_CHAMELEON
             if (creator instanceof Display) {
                 MIDPWindow window = ((Display)creator).getWindow();
                 return window.getBodyAnchorX() + window.getBodyWidth();
             }
-            
+            // #endif
             if (creator instanceof GameCanvas) {
                 return ((GameCanvas)creator).getWidth();
             }
@@ -118,12 +118,12 @@ class GraphicsAccessImpl implements com.sun.midp.lcdui.GraphicsAccess {
     public int getGraphicsHeight(Graphics g) {
         Object creator = g.getCreator();
         if (creator != null) {
-            
+            // #ifdef ENABLE_CHAMELEON
             if (creator instanceof Display) {
                 MIDPWindow window = ((Display)creator).getWindow();
                 return window.getBodyAnchorY() + window.getBodyHeight();
             }
-            
+            // #endif
             if (creator instanceof GameCanvas) {
                 return ((GameCanvas)creator).getHeight();
             }

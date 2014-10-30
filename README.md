@@ -58,3 +58,11 @@ Logging:
 
 * logConsole and logLevel URL params
 * See libs/console.js
+
+
+## Running j2me.js in the SpiderMonkey shell
+
+1. Download the [SpiderMonkey shell](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Introduction_to_the_JavaScript_shell)
+1. Execute the jsshell.js file as follows:
+
+        `js jsshell.js package.ClassName`

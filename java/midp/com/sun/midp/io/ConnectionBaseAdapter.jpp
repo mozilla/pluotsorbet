@@ -24,11 +24,11 @@
 
 package com.sun.midp.io;
 
-
-
-
+// #ifdef ENABLE_CDC
+import com.sun.cdc.io.ConnectionBaseInterface;
+// #else
 import com.sun.cldc.io.ConnectionBaseInterface;
-
+// #endif
 
 import com.sun.midp.midlet.*;
 

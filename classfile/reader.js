@@ -50,11 +50,8 @@ Reader.prototype.readDouble = function() {
 
 // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
 // http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
-function javaUTF8Decode(buf) {
+function javaUTF8Decode(arr) {
   var str = '';
-
-  var arr = new Uint8Array(buf)
-
   var i = 0;
   while (i < arr.length) {
       var x = arr[i++];
@@ -83,7 +80,18 @@ function javaUTF8Decode(buf) {
 }
 
 Reader.prototype.readString = function(length) {
-    return javaUTF8Decode(this.readBytes(length));
+    // NB: no need to create a new slice.
+    var data = new Uint8Array(this.bytes.buffer, this.offset, length);
+    this.offset += length;
+
+    // First try w/ TextDecoder, fallback to manually parsing if there was an
+    // error. This will handle parsing errors resulting from Java's modified
+    // UTF-8 implementation.
+    try {
+        return util.decodeUtf8Array(data);
+    } catch(e) {
+        return javaUTF8Decode(data);
+    }
 }
 
 Reader.prototype.readBytes = function(length) {
