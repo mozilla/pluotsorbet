@@ -47,7 +47,8 @@ module J2ME {
     executeUntilCurrentFramePopped();
     pushClassInitFrame(classInfo: ClassInfo);
     runtime: any;
-    methods: any;
+    methods: MethodInfo [];
+    classInfos: ClassInfo [];
     resolve(constantPool: ConstantPoolEntry [], idx: number, isStatic: boolean) : any;
   }
 
@@ -874,7 +875,12 @@ module J2ME {
     }
 
     genNewInstance(cpi: number) {
-      this.state.apush(genConstant("NEW", Kind.Reference));
+      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      this.classInitCheck(classInfo);
+      this.ctx.classInfos[classInfo.className] = classInfo;
+      var call = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx'), new Constant("newObjectFromId"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
+      this.recordStore(call);
+      this.state.apush(call);
     }
 
     genNewTypeArray(typeCode: number) {

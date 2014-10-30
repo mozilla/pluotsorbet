@@ -10,6 +10,7 @@ function Context(runtime) {
   this.runtime = runtime;
   this.runtime.addContext(this);
   this.methods = {};
+  this.classInfos = {};
 }
 
 Context.prototype.kill = function() {
@@ -327,6 +328,10 @@ Context.prototype.newMultiArray = function(typeName, lengths) {
 
 Context.prototype.newObject = function(classInfo) {
   return this.runtime.newObject(classInfo);
+}
+
+Context.prototype.newObjectFromId = function(id) {
+    return this.runtime.newObject(this.classInfos[id]);
 }
 
 Context.prototype.newString = function(s) {
