@@ -19,7 +19,7 @@ function(filenameBase, name, ext) {
         var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
         fs.exists(path, resolve);
     });
-});
+}, true);
 
 Native.create("com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V",
 function(filenameBase, name, ext) {
@@ -28,7 +28,7 @@ function(filenameBase, name, ext) {
 
         fs.remove(path, resolve);
     });
-});
+}, true);
 
 Native.create("com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I", function(filenameBase, storageId) {
     // Pretend there is 50MiB available.  Our implementation is backed
@@ -82,7 +82,7 @@ function(filenameBase, name, ext) {
             }
         });
     });
-});
+}, true);
 
 Native.create("com/sun/midp/rms/RecordStoreFile.setPosition.(II)V", function(handle, pos) {
     fs.setpos(handle, pos);
@@ -112,7 +112,7 @@ Native.create("com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V", function(hand
     return new Promise(function(resolve, reject) {
       fs.flush(handle, resolve);
     });
-});
+}, true);
 
 Native.create("com/sun/midp/rms/RecordStoreFile.closeFile.(I)V", function(handle) {
     return new Promise(function(resolve, reject) {
@@ -121,7 +121,7 @@ Native.create("com/sun/midp/rms/RecordStoreFile.closeFile.(I)V", function(handle
           resolve();
       });
     });
-});
+}, true);
 
 Native.create("com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V", function(handle, size) {
     return new Promise(function(resolve, reject) {
@@ -130,7 +130,7 @@ Native.create("com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V", function(ha
           resolve();
       });
     });
-});
+}, true);
 
 MIDP.RecordStoreCache = [];
 
@@ -282,7 +282,7 @@ Native.create("com/ibm/oti/connection/file/Connection.existsImpl.([B)Z", functio
     return new Promise(function(resolve, reject) {
       fs.exists(util.decodeUtf8(path), resolve);
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J", function(path) {
     return new Promise(function(resolve, reject) {
@@ -290,7 +290,7 @@ Native.create("com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J", funct
             resolve(Long.fromNumber(size));
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z", function(path) {
     return new Promise(function(resolve, reject) {
@@ -298,7 +298,7 @@ Native.create("com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z", fu
             resolve(!!stat && stat.isDir);
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B",
 function(jPath, filterArray, includeHidden) {
@@ -364,7 +364,7 @@ function(jPath, filterArray, includeHidden) {
             });
         });
     });
-});
+}, true);
 
 
 Native.create("com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I", function(path) {
@@ -374,7 +374,7 @@ Native.create("com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I", function
             resolve(created ? 0 : 42);
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.newFileImpl.([B)I", function(jPath) {
     var path = util.decodeUtf8(jPath);
@@ -394,13 +394,13 @@ Native.create("com/ibm/oti/connection/file/Connection.newFileImpl.([B)I", functi
             }
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z", function(path) {
     return new Promise(function(resolve, reject) {
         fs.remove(util.decodeUtf8(path), resolve);
     });
-});
+}, true);
 
 Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] =
   Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"]
@@ -421,7 +421,7 @@ Native.create("com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J", f
             resolve(Long.fromNumber(stat != null ? stat.mtime : 0));
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", function(oldPath, newPath) {
     return new Promise(function(resolve, reject) {
@@ -434,7 +434,7 @@ Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", funct
             resolve();
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(path, newLength, _) {
     return new Promise(function(resolve, reject) {
@@ -451,13 +451,13 @@ Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", func
           });
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I", function(path) {
     return new Promise(function(resolve, reject) {
       fs.open(util.decodeUtf8(path), resolve);
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/FCInputStream.availableImpl.(I)I", function(fd) {
     return fs.getsize(fd) - fs.getpos(fd);
@@ -517,7 +517,7 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V", funct
             resolve();
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", function(jPath) {
     var path = util.decodeUtf8(jPath);
@@ -543,7 +543,7 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", funct
             }
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I", function(jPath, offset, _) {
     var path = util.decodeUtf8(jPath);
@@ -570,13 +570,13 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"
             }
         });
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V", function(fd) {
     return new Promise(function(resolve, reject) {
         fs.flush(fd, resolve);
     });
-});
+}, true);
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V", function(val, fd) {
     var buf = new Uint8Array(1);
@@ -619,7 +619,7 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/
             }
         });
     });
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I",
 function(handle, buffer, offset, length) {
@@ -647,7 +647,7 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"
     return new Promise(function(resolve, reject) {
         fs.flush(handle, resolve);
     });
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V", function(handle, position) {
     fs.setpos(handle, position);
@@ -670,4 +670,4 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", func
             resolve();
         });
     });
-});
+}, true);

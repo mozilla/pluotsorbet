@@ -162,7 +162,7 @@
                 reject(new JavaException("java/lang/IllegalArgumentException", "error decoding image"));
             }
         });
-    });
+    }, true);
 
     Native.create("javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V",
     function(imageData, width, height) {
@@ -1039,7 +1039,7 @@
               textEditorResolve = resolve;
           }
         });
-    });
+    }, true);
 
     Native.create("com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I", function() {
         if (!dirtyEditors.length) {

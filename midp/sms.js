@@ -116,7 +116,7 @@ function(port, msid, handle, smsPacket) {
           }
         }
     });
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(port, handle, deRegister) {
     delete MIDP.smsConnections[handle];
