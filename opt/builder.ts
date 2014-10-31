@@ -411,7 +411,7 @@ module J2ME {
   }
 
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context) {
-    if (methodInfo.name !== 'go') {
+    if (methodInfo.name.substr(0, 8) !== 'compile_') {
       return;
     }
     if (!methodInfo.code) {
@@ -420,34 +420,15 @@ module J2ME {
     var builder = new Builder(methodInfo, ctx);
     try {
       var compilation = builder.build();
-    var fnName = methodInfo.name;
-    var fnSource = compilation.body;
-//    fnSource = fnSource.replace(/\(\"X\"\)\./gm, '');
-//    fnSource = "function fail() {console.log('fail');}function success() {console.log('success');}" + fnSource + " asd()";
-    console.log('-------------------');
-    compilation.parameters.unshift('ctx', 'frameIndex', 'methodInfoId');
-    var fn = Function(compilation.parameters, fnSource);
-    console.log('-------------------');
-//    var array = new Int32Array(1024);
-//    for (var i = 0; i < array.length; i++) {
-//      array[i] = array.length - i;
-//    }
-
-    writer.writeLn(fnSource);
+      var fnSource = compilation.body;
+      compilation.parameters.unshift('ctx', 'frameIndex', 'methodInfoId');
+      var fn = Function(compilation.parameters, fnSource);
     } catch (e) {
-      debugger;
+      writer.writeLn("--------- Failed to compile " + methodInfo.name + "() -------------------");
       writer.writeLn(e);
       writer.writeLn(e.stack);
     }
-//    var s = dateNow();
-//    for (var i = 0; i < 100; i++) {
-//      for (var j = 0; j < array.length; j++) {
-//        array[j] = array.length - j;
-//      }
-//      fn(array, 0, array.length - 1);
-//    }
-//    writer.writeLn("Result: " + Array.prototype.join.call(array, ", "));
-//    writer.writeLn("Took: " + (dateNow() - s));
+
     return fn;
   }
 
@@ -582,6 +563,7 @@ module J2ME {
       var start = new IR.Start();
       var state = start.entryState = new State();
       // trace.writeLn(JSON.stringify(this.methodInfo));
+      debugger;
       var methodInfo = this.methodInfo;
 
       for (var i = 0; i < methodInfo.max_locals; i++) {
@@ -595,16 +577,24 @@ module J2ME {
 
       var typeDescriptors = signatureDescriptor.typeDescriptors;
 
-      var j = 0;
+      var localIndex = 0;
+      var paramIndex = 0;
+      if (!methodInfo.isStatic) {
+        state.storeLocal(0, new IR.Parameter(start, paramIndex, "_this"));
+        paramIndex++;
+        localIndex = 1;
+      }
+      // Skip the first typeDescriptor since it is the return type.
       for (var i = 1; i < typeDescriptors.length; i++) {
         var kind = Kind.Reference;
         if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
           kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
         }
-        var parameter = new IR.Parameter(start, i - 1, "P" + kindCharacter(kind) + (i - 1));
+        var parameter = new IR.Parameter(start, paramIndex, "P" + kindCharacter(kind) + paramIndex);
         parameter.kind = kind;
-        state.storeLocal(j, parameter);
-        j += isTwoSlot(kind) ? 2 : 1;
+        paramIndex++;
+        state.storeLocal(localIndex, parameter);
+        localIndex += isTwoSlot(kind) ? 2 : 1;
       }
       return start;
     }

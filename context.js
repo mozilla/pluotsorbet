@@ -167,6 +167,21 @@ Context.prototype.invoke = function(methodInfoId, object, args) {
   if (methodInfo.classInfo !== object.class) {
       methodInfo = CLASSES.getMethod(object.class, methodInfo.key);
   }
+  // Invoke Native Implementation
+  if (methodInfo.alternateImpl) {
+    throw "TODO";
+    return;
+  }
+  // Invoke Compiled Implementation
+  if (methodInfo.fn) {
+    var frameIndex = this.frames.push(COMPILED_FRAME);
+    var fn = methodInfo.fn;
+    args.unshift(this, frameIndex - 1, methodInfo.implKey, object);
+    var returnValue = fn.apply(null, args);
+    this.frames.pop();
+    return returnValue;
+  }
+  // Invoke Interpreter
   args = args || [];
   var frame = new Frame(methodInfo, [], 0);
   this.frames.push(frame);
