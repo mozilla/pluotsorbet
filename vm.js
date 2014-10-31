@@ -1143,7 +1143,7 @@ VM.execute = function(ctx) {
     };
 }
 
-VM.compile = function(methodInfo, ctx) {
+VM.compile = function(methodInfo, ctx, debugStmtEnabled) {
   var depth = 0, maxDepth = 0;
   var locals = 0, maxLocals = 0;
   var ip = 0;
@@ -1304,8 +1304,9 @@ VM.compile = function(methodInfo, ctx) {
 
     var code = "";
 
-    //var opName = OPCODES[op];
-    //code += "      // " + opName + " [0x" + op.toString(16) + "]\n";
+    if (debugStmtEnabled) {
+      code += "      // " + OPCODES[op] + " [0x" + op.toString(16) + "]\n";
+    }
 
     var newDepth = stackLayout.get(ip);
     if (typeof newDepth !== "undefined") {
