@@ -1010,6 +1010,7 @@ module J2ME {
         var type = types[i];
         args.push(this.state.pop(type.kind));
       }
+      args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
@@ -1032,6 +1033,7 @@ module J2ME {
         var type = types[i];
         args.push(this.state.pop(type.kind));
       }
+      args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
@@ -1059,6 +1061,7 @@ module J2ME {
         var type = types[i];
         args.push(this.state.pop(type.kind));
       }
+      args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
@@ -1087,6 +1090,13 @@ module J2ME {
       var arrayLoad = new IR.JVMLoadIndexed(this.region, this.state.store, kind, array, index);
       this.recordLoad(arrayLoad);
       this.state.push(stackKind(kind), arrayLoad);
+    }
+
+    genArrayLength() {
+      var array = this.state.apop();
+      var getProperty = new IR.GetProperty(this.region, this.state.store, array, new Constant('length'));
+      this.recordLoad(getProperty);
+      this.state.ipush(getProperty);
     }
 
     classInitCheck(classInfo: ClassInfo) {
@@ -1351,7 +1361,9 @@ module J2ME {
         case Bytecodes.NEWARRAY       : this.genNewTypeArray(stream.readLocalIndex()); break;
          /*
         case Bytecodes.ANEWARRAY      : genNewObjectArray(stream.readCPI()); break;
-        case Bytecodes.ARRAYLENGTH    : genArrayLength(); break;
+        */
+        case Bytecodes.ARRAYLENGTH    : this.genArrayLength(); break;
+        /*
         case Bytecodes.ATHROW         : genThrow(stream.currentBCI()); break;
         case Bytecodes.CHECKCAST      : genCheckCast(); break;
         case Bytecodes.INSTANCEOF     : genInstanceOf(); break;
