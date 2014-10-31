@@ -181,7 +181,7 @@ Player.prototype.start = function() {
                 return;
             }
             this.source = this.audioContext.createBufferSource();
-            this.decode(this.data, function(decoded) {
+            this.decode(this.data.subarray(0, this.contentSize), function(decoded) {
                 this.source.buffer = decoded;
                 this.source.connect(this.audioContext.destination);
                 this.source.start(this.currentTime);
