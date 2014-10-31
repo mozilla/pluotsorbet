@@ -185,10 +185,6 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
   });
 }
 
-var NokiaContactsLocalMsgConnection = function() {
-    LocalMsgConnection.call(this);
-}
-
 var NokiaPhoneStatusLocalMsgConnection = function() {
     LocalMsgConnection.call(this);
 };
@@ -265,6 +261,10 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
   });
 };
 
+var NokiaContactsLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+}
+
 NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
 NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
@@ -336,13 +336,62 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
   }
 }
 
+var NokiaFileUILocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaFileUILocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  var encoder = new DataEncoder();
+
+  switch (name) {
+    case "Common":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "1.0");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+      break;
+
+    case "FileSelect":
+      var trans_id = decoder.getValue(DataType.USHORT);
+      var storageType = decoder.getValue(DataType.STRING);
+      var mediaType = decoder.getValue(DataType.STRING);
+      var multipleSelection = decoder.getValue(DataType.BOOLEAN);
+      var startingURL = decoder.getValue(DataType.STRING);
+
+      // Build reply
+    break;
+
+    default:
+      console.error("(nokia.phone-status) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+
+  var data = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient({
+      data: data,
+      length: data.length,
+      offset: 0,
+  });
+};
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
 MIDP.FakeLocalMsgServers = [ "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings", "nokia.file-ui" ];
+                             "nokia.connectivity-settings" ];
 
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
@@ -351,6 +400,7 @@ MIDP.FakeLocalMsgServers.forEach(function(server) {
 MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.file-ui"] = new NokiaFileUILocalMsgConnection();
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);
