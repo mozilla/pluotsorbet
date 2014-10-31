@@ -164,7 +164,14 @@ Player.prototype.realize = function(contentType) {
         this.gainNode.connect(this.audioContext.destination);
     }
     return true;
-}
+};
+
+Player.prototype.close = function() {
+    if (this.source) {
+        this.source.stop();
+        this.source.disconnect();
+    }
+};
 
 Player.prototype.getBufferSize = function() {
     return this.wholeContentSize === -1 ? Player.DEFAULT_BUFFER_SIZE :
@@ -277,6 +284,11 @@ Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", functio
  * @return 0 - failed; 1 - succeeded.
  */
 Native.create("com/sun/mmedia/PlayerImpl.nTerm.(I)I", function(handle) {
+    var player = PlayerCache[handle];
+    if (!player) {
+        return 1;
+    }
+    player.close();
     delete PlayerCache[handle];
     return 1;
 });
