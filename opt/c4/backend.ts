@@ -489,8 +489,7 @@ module J2ME.C4.Backend {
                this.operator === Operator.FMUL ||
                this.operator === Operator.FDIV ||
                this.operator === Operator.FREM) {
-      assert(false);
-      return new BinaryExpression("|", result, constant(0));
+      return call(id("Math.fround"), [result]);
     } else if (this.operator === Operator.DADD ||
                this.operator === Operator.DSUB ||
                this.operator === Operator.DMUL ||
