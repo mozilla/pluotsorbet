@@ -166,12 +166,29 @@ function throw_(ex, ctx) {
             return frame;
         }
 
+        if (ctx.frames.length == 1) {
+            break;
+        }
+
         frame = popFrame(ctx, frame, 0);
         stack = frame.stack;
         cp = frame.cp;
     } while (frame.methodInfo);
+
     ctx.kill();
-    throw new Error(buildExceptionLog(ex, stackTrace));
+
+    if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
+        console.error(buildExceptionLog(ex, stackTrace));
+
+        ctx.thread.waiting.forEach(function(waitingCtx, n) {
+            ctx.thread.waiting[n] = null;
+            waitingCtx.wakeup(ctx.thread);
+        });
+
+        return frame;
+    } else {
+        throw new Error(buildExceptionLog(ex, stackTrace));
+    }
 }
 
 VM.execute = function(ctx) {
