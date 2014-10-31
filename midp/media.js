@@ -141,6 +141,11 @@ function Player(url) {
     this.gainNode = null;
 
     this.currentTime = 0;
+
+    this.isPlaying = false;
+    this.startTime = 0;
+    this.stopTime = 0;
+    this.duration = 0;
 }
 
 // default buffer size 1 MB
@@ -171,6 +176,22 @@ Player.prototype.close = function() {
         this.source.stop();
         this.source.disconnect();
     }
+};
+
+/**
+ * @return current time in ms.
+ */
+Player.prototype.getMediaTime = function() {
+    if (!this.audioContext) {
+        return -1;
+    }
+    var time = 0;
+    if (this.isPlaying) {
+        time = this.audioContext.currentTime - this.startTime;
+    } else {
+        time = Math.min(this.duration, this.stopTime - this.startTime);
+    }
+    return Math.round(time * 1000);
 };
 
 Player.prototype.getBufferSize = function() {
@@ -238,18 +259,21 @@ Player.prototype.start = function() {
     console.info("Player.prototype.start");
     return new Promise(function(resolve, reject) {
         if (this.contentSize > 0) {
-            if (this.source !== null) {
-                this.source.start(0, this.currentTime);
-                resolve();
-                return;
-            }
             this.source = this.audioContext.createBufferSource();
             this.decode(this.data.subarray(0, this.contentSize), function(decoded) {
                 this.source.buffer = decoded;
                 this.source.connect(this.gainNode || this.audioContext.destination);
-                this.source.start(this.currentTime);
+                this.source.start();
+                this.isPlaying = true;
+                this.startTime = this.audioContext.currentTime;
+                this.duration = decoded.duration;
                 resolve();
             }.bind(this));
+            this.source.onended = function() {
+                console.info("Player stopped.");
+                this.stopTime = this.audioContext.currentTime;
+                this.isPlaying = false;
+            }.bind(this);
             return;
         }
     }.bind(this));
@@ -395,8 +419,7 @@ Native.create("com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z", function(handle) {
 
 Native.create("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I", function(handle) {
     var player = PlayerCache[handle];
-    console.warn("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I not implemented.");
-    return true;
+    return player.getMediaTime();
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nStart.(I)Z", function(handle) {
