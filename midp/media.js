@@ -121,24 +121,50 @@ function Player(url) {
     this.url = url;
     // this.mediaFormat will only be updated by PlayerImpl.nGetMediaFormat.
     this.mediaFormat = "UNKNOWN";
+    this.contentType = "";
     this.wholeContentSize = -1;
     this.contentSize = 0;
+
+    /* @type {Int8Array} */
     this.data = null;
-    this.audioContext = new AudioContext();
+
+    /* @type {AudioContext} */
+    this.audioContext = null;
+
+    /* @type {AudioBufferSourceNode} */
     this.source = null;
 
     /*
      * Audio gain node used to control volume.
      * @type {GainNode}
      */
-    this.gainNode = this.audioContext.createGain();
-    this.gainNode.connect(this.audioContext.destination);
+    this.gainNode = null;
 
     this.currentTime = 0;
 }
 
 // default buffer size 1 MB
 Player.DEFAULT_BUFFER_SIZE  = 1024 * 1024;
+
+Player.prototype.realize = function(contentType) {
+    if (contentType) {
+        switch (contentType) {
+            case "audio/x-wav":
+            case "audio/amr":
+                this.contentType = contentType;
+                break;
+            default:
+                console.warn("Unsupported content type: " + contentType);
+                return false;
+        }
+    }
+    this.audioContext = new AudioContext();
+    if (this.isVolumeControlSupported()) {
+        this.gainNode = this.audioContext.createGain();
+        this.gainNode.connect(this.audioContext.destination);
+    }
+    return true;
+}
 
 Player.prototype.getBufferSize = function() {
     return this.wholeContentSize === -1 ? Player.DEFAULT_BUFFER_SIZE :
@@ -154,20 +180,42 @@ Player.prototype.getMediaFormat = function() {
 
     // Refer to https://www.ffmpeg.org/doxygen/0.6/amr_8c-source.html.
     if (headerString.indexOf("#!AMR\n") === 0){
-        return "audio/amr";
+        return "amr";
     }
 
     // Refer to https://www.ffmpeg.org/doxygen/0.6/wav_8c-source.html
     if (headerString.indexOf("RIFF") === 0 && headerString.indexOf("WAVE") === 8) {
-        return "audio/x-wav";
+        return "wav";
     }
 
     // Refer to http://www.sonicspot.com/guide/midifiles.html
     if (headerString.indexOf("MThd") === 0) {
-        return "audio/midi";
+        return "mid";
     }
 
     return "UNKNOWN";
+};
+
+Player.prototype.isVolumeControlSupported = function() {
+    if (this.mediaFormat !== "UNKNOWN") {
+        switch (this.mediaFormat) {
+            case "amr":
+            case "wav":
+                return true;
+            default:
+                return false;
+        }
+    }
+    if (this.contentType) {
+        switch (this.contentType) {
+            case "audio/amr":
+            case "audio/x-wav":
+                return true;
+            default:
+                return false;
+        }
+    }
+    return false;
 };
 
 Player.prototype.writeBuffer = function(buffer) {
@@ -191,7 +239,7 @@ Player.prototype.start = function() {
             this.source = this.audioContext.createBufferSource();
             this.decode(this.data.subarray(0, this.contentSize), function(decoded) {
                 this.source.buffer = decoded;
-                this.source.connect(this.gainNode);
+                this.source.connect(this.gainNode || this.audioContext.destination);
                 this.source.start(this.currentTime);
                 resolve();
             }.bind(this));
@@ -220,7 +268,6 @@ Player.prototype.setVolume = function(level) {
 
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
     var url = util.fromJavaString(jURI);
-    console.log("PlayerImpl.nInit(" + [appId, pId, url].join() + ")");
     var id = pId + (appId << 32);
     PlayerCache[id] = new Player(url);
     return id;
@@ -247,8 +294,8 @@ Native.create("com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z", function(hand
 
 Native.create("com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z", function(handle, jMime) {
     var mime = util.fromJavaString(jMime);
-    console.warn("com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z not implemented");
-    return true;
+    var player = PlayerCache[handle];
+    return player.realize(mime);
 });
 
 
@@ -299,20 +346,13 @@ Native.create("com/sun/mmedia/DirectPlayer.nIsMIDIControlSupported.(I)Z", functi
 
 Native.create("com/sun/mmedia/DirectPlayer.nIsVideoControlSupported.(I)Z", function(handle) {
     var player = PlayerCache[handle];
-    // TODO Is there any other types supporting video control?
-    if (player.mediaFormat.indexOf("video/") === 0) {
-        return true;
-    }
+    console.warn("com/sun/mmedia/DirectPlayer.nIsVideoControlSupported.(I)Z not implemented.");
     return false;
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nIsVolumeControlSupported.(I)Z", function(handle) {
     var player = PlayerCache[handle];
-    // TODO Is there any other types supporting volume control?
-    if (player.mediaFormat.indexOf("video/") === 0 || player.mediaFormat.indexOf("audio/") === 0) {
-        return true;
-    }
-    return false;
+    return player.isVolumeControlSupported();
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z", function(handle) {
