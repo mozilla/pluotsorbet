@@ -23,6 +23,54 @@ VM.execute = function(ctx) {
 
     var cp = frame.cp;
     var stack = frame.stack;
+    var returnValue = null;
+
+    function pushFrame(methodInfo) {
+        var caller = frame;
+        frame = ctx.pushFrame(methodInfo);
+        stack = frame.stack;
+        cp = frame.cp;
+        if (methodInfo.isSynchronized) {
+            if (!frame.lockObject) {
+                frame.lockObject = methodInfo.isStatic
+                                    ? methodInfo.classInfo.getClassObject(ctx)
+                                    : frame.getLocal(0);
+            }
+
+            ctx.monitorEnter(frame.lockObject);
+        }
+        return frame;
+    }
+
+    function popFrame(consumes) {
+        if (frame.lockObject)
+            ctx.monitorExit(frame.lockObject);
+        var callee = frame;
+        frame = ctx.popFrame();
+        if (frame === null || frame === COMPILED_FRAME) {
+            returnValue = null;
+            switch (consumes) {
+            case 2:
+                returnValue = callee.stack.pop2();
+                break;
+            case 1:
+                returnValue = callee.stack.pop();
+                break;
+            }
+            return true;
+        }
+        stack = frame.stack;
+        cp = frame.cp;
+        switch (consumes) {
+        case 2:
+            stack.push2(callee.stack.pop2());
+            break;
+        case 1:
+            stack.push(callee.stack.pop());
+            break;
+        }
+        return false;
+    }
 
 
     function buildExceptionLog(ex, stackTrace) {
@@ -1032,13 +1080,16 @@ VM.execute = function(ctx) {
                 ctx.frames.pop();
                 break;
             }
-            ctx.pushFrame(methodInfo);
+            pushFrame(methodInfo);
             break;
         case 0xb1: // return
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo);
             }
-            return ctx.popFrame(0);
+            var shouldReturn = popFrame(0);
+            if (shouldReturn) {
+               return;
+            }
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
@@ -1046,14 +1097,21 @@ VM.execute = function(ctx) {
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            return ctx.popFrame(1);
+
+            var shouldReturn = popFrame(1);
+            if (shouldReturn) {
+                return;
+            }
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            return ctx.popFrame(2);
+            var shouldReturn = popFrame(2);
+            if (shouldReturn) {
+                return;
+            }
             break;
         default:
             var opName = OPCODES[op];

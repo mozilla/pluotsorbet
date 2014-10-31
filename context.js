@@ -27,56 +27,19 @@ Context.prototype.current = function() {
 Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
   var callee = new Frame(methodInfo, caller.stack.slice(caller.stack.length - methodInfo.consumes), 0);
-  if ((caller.stack.length - methodInfo.consumes) < 0) {
-      debugger;
-  }
   caller.stack.length -= methodInfo.consumes;
   this.frames.push(callee);
-//  Instrument.callEnterHooks(methodInfo, caller, callee);
-  if (methodInfo.isSynchronized) {
-        if (!callee.lockObject) {
-            callee.lockObject = methodInfo.isStatic
-                ? methodInfo.classInfo.getClassObject(this)
-                : callee.getLocal(0);
-        }
-
-        this.monitorEnter(callee.lockObject);
-  }
-  VM.execute(this);
+  Instrument.callEnterHooks(methodInfo, caller, callee);
+  return callee;
 }
 
-Context.prototype.popFrame = function(consumes) {
-  var callee = this.current();
-  if (callee.lockObject)
-      this.monitorExit(callee.lockObject);
-  this.frames.pop();
+Context.prototype.popFrame = function() {
+  var callee = this.frames.pop();
+  if (this.frames.length === 0) {
+    return null;
+  }
   var caller = this.current();
-  if (caller === COMPILED_FRAME) {
-      switch (consumes) {
-          case 2:
-              return callee.stack.pop2();
-              break;
-          case 1:
-              return callee.stack.pop();
-              break;
-      }
-      return;
-  }
-  if (!caller) {
-      return;
-  }
-  var stack = caller.stack;
-  switch (consumes) {
-        case 2:
-            stack.push2(callee.stack.pop2());
-            break;
-        case 1:
-            stack.push(callee.stack.pop());
-            break;
-  }
-
-
-//  Instrument.callExitHooks(callee.methodInfo, caller, callee);
+  Instrument.callExitHooks(callee.methodInfo, caller, callee);
   return caller;
 }
 
