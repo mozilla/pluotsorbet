@@ -9,6 +9,7 @@ function Context(runtime) {
   this.frames = [];
   this.runtime = runtime;
   this.runtime.addContext(this);
+  this.compiledFrames = 0;
   // TODO these should probably be moved to runtime...
   this.methodInfos = {};
   this.classInfos = {};
@@ -137,14 +138,18 @@ Context.prototype.invoke = function(methodInfoId, object, args) {
   }
   // Invoke Compiled Implementation
   if (methodInfo.fn) {
+    console.log("Invoking compiled function " + methodInfo.name + "()");
     var frameIndex = this.frames.push(COMPILED_FRAME);
+    this.compiledFrames++;
     var fn = methodInfo.fn;
     args.unshift(this, frameIndex - 1, methodInfo.implKey, object);
     var returnValue = fn.apply(null, args);
+    this.compiledFrames--;
     this.frames.pop();
     return returnValue;
   }
   // Invoke Interpreter
+  console.log("Invoking interpreted function " + methodInfo.name + "()");
   args = args || [];
   var frame = new Frame(methodInfo, [], 0);
   this.frames.push(frame);
@@ -414,6 +419,7 @@ Context.prototype.JVMBailout = function(e, methodInfoId, frameIndex, cpi, locals
     var frame = new Frame(methodInfo, locals, 0);
     frame.stack = stack;
     frame.ip = cpi;
+    this.compiledFrames--;
     this.frames[frameIndex] = frame;
 };
 

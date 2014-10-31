@@ -563,7 +563,6 @@ module J2ME {
       var start = new IR.Start();
       var state = start.entryState = new State();
       // trace.writeLn(JSON.stringify(this.methodInfo));
-      debugger;
       var methodInfo = this.methodInfo;
 
       for (var i = 0; i < methodInfo.max_locals; i++) {
@@ -1016,7 +1015,8 @@ module J2ME {
       invokeArgs.push(new Constant(methodInfo.implKey));
       invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("invokeStatic"), invokeArgs, IR.Flags.PRISTINE);
+      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invokeStatic"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1040,7 +1040,8 @@ module J2ME {
       invokeArgs.push(this.state.pop(Kind.Reference));
       invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("invokeSpecial"), invokeArgs, IR.Flags.PRISTINE);
+      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invokeSpecial"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1068,7 +1069,8 @@ module J2ME {
       invokeArgs.push(this.state.pop(Kind.Reference));
       invokeArgs.push(argsArray);
 
-      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invokeVirtual"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1100,6 +1102,7 @@ module J2ME {
     }
 
     classInitCheck(classInfo: ClassInfo) {
+      // XXX If we precompile the class check will always be needed.
       var ctx = this.ctx;
       if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className]) {
         return;

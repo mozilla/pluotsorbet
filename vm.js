@@ -948,6 +948,12 @@ VM.execute = function(ctx) {
             stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow
+            if (ctx.compiledFrames > 0) {
+                // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
+                // TODO There are much better ways to do this, but this is easy for now!
+                frame.ip--;
+                throw VM.Yield;
+            }
             var obj = stack.pop();
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
@@ -1058,6 +1064,7 @@ VM.execute = function(ctx) {
             if (fn) {
                 console.log("Invoking compiled function " + methodInfo.name + "()");
                 var frameIndex = ctx.frames.push(COMPILED_FRAME);
+                ctx.compiledFrames++;
                 // Take off the arguments from the stack.
                 var args = stack.slice(stack.length - methodInfo.consumes);
                 stack.length -= methodInfo.consumes;
@@ -1077,6 +1084,7 @@ VM.execute = function(ctx) {
                         stack.push(returnValue);
                         break;
                 }
+                ctx.compiledFrames--;
                 ctx.frames.pop();
                 break;
             }
