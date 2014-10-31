@@ -1,4 +1,5 @@
 AMR-Audio-Clip: /midlets/MediaSampler/res/AudioClip.amr
+AMR-Audio-Clip-Long: /midlets/MediaSampler/res/yuan.amr
 MIDI-Audio-Clip: /midlets/MediaSampler/res/song.mid
 MIDlet-1: MediaSamplerMIDlet,/midlets/MediaSampler/res/mediasampler.png,com.nokia.example.mmapi.mediasampler.MediaSamplerMIDlet
 MIDlet-Jar-Size: 60189

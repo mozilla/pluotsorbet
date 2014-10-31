@@ -53,15 +53,17 @@ public class MediaFactory {
     public static Media[] getSoundMedias() {
         if (!soundInitDone) {
             String armFile = mlet.getAppProperty("AMR-Audio-Clip");
+            String armFileLong = mlet.getAppProperty("AMR-Audio-Clip-Long");
             String midiFile = mlet.getAppProperty("MIDI-Audio-Clip");
             String wavFile = mlet.getAppProperty("WAV-Audio-Clip");
 
             Media m1 = new Media(midiFile, "audio/midi", Media.LOCATION_JAR);
             Media m2 = new Media(armFile, "audio/amr", Media.LOCATION_JAR);
+            Media m2_long = new Media(armFileLong, "audio/amr", Media.LOCATION_JAR);
             Media m3 = new Media(wavFile, "audio/wav", Media.LOCATION_JAR);
             Media m4 = new Media(wavFile, "audio/x-wav", Media.LOCATION_JAR);
 
-            soundMedias = new Media[]{m1, m2, m3, m4};
+            soundMedias = new Media[]{m1, m2_long, m2, m3, m4};
             soundInitDone = true;
         }
         return soundMedias;
