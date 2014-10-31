@@ -126,6 +126,14 @@ function Player(url) {
     this.data = null;
     this.audioContext = new AudioContext();
     this.source = null;
+
+    /*
+     * Audio gain node used to control volume.
+     * @type {GainNode}
+     */
+    this.gainNode = this.audioContext.createGain();
+    this.gainNode.connect(this.audioContext.destination);
+
     this.currentTime = 0;
 }
 
@@ -183,7 +191,7 @@ Player.prototype.start = function() {
             this.source = this.audioContext.createBufferSource();
             this.decode(this.data.subarray(0, this.contentSize), function(decoded) {
                 this.source.buffer = decoded;
-                this.source.connect(this.audioContext.destination);
+                this.source.connect(this.gainNode);
                 this.source.start(this.currentTime);
                 resolve();
             }.bind(this));
@@ -194,6 +202,20 @@ Player.prototype.start = function() {
 
 Player.prototype.decode = function(encoded, callback) {
     this.audioContext.decodeAudioData(encoded.buffer, callback);
+};
+
+Player.prototype.getVolume = function() {
+    return Math.floor(this.gainNode.gain.value * 100);
+};
+
+Player.prototype.setVolume = function(level) {
+    if (level < 0) {
+        level = 0;
+    } else if (level > 100) {
+        level = 100;
+    }
+    this.gainNode.gain.value = level / 100;
+    return level;
 };
 
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
@@ -336,8 +358,7 @@ Native.create("com/sun/mmedia/DirectPlayer.nStart.(I)Z", function(handle) {
  */
 Native.create("com/sun/mmedia/DirectVolume.nGetVolume.(I)I", function(handle) {
     var player = PlayerCache[handle];
-    console.warn("com/sun/mmedia/DirectVolume.nGetVolume.(I)I not implemented.");
-    return 100;
+    return player.getVolume();
 });
 
 /**
@@ -346,8 +367,17 @@ Native.create("com/sun/mmedia/DirectVolume.nGetVolume.(I)I", function(handle) {
  */
 Native.create("com/sun/mmedia/DirectVolume.nSetVolume.(II)I", function(handle, level) {
     var player = PlayerCache[handle];
-    console.warn("com/sun/mmedia/DirectVolume.nSetVolume.(II)I not implemented.");
-    return level;
+    return player.setVolume(level);
+});
+
+Native.create("com/sun/mmedia/DirectVolume.nIsMuted.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    return player.getVolume() === 0;
+});
+
+Native.create("com/sun/mmedia/DirectVolume.nSetMute.(IZ)Z", function(handle, level) {
+    var player = PlayerCache[handle];
+    return player.setVolume(0) === 0;
 });
 
 Native.create("com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z", function(appId, note, duration, volume) {
