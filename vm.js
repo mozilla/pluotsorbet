@@ -70,7 +70,7 @@ function resolve(ctx, cp, idx, isStatic) {
                                classInfo.className + "." + methodName + "." + signature + " not found");
         break;
     default:
-        throw new Error("not support constant type");
+        throw new Error("not supported constant type");
     }
     return cp[idx] = constant;
 }
