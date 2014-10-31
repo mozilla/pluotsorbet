@@ -1075,7 +1075,7 @@ VM.execute = function(ctx) {
                   methodInfo.compiled = new Function("ctx", VM.compile(methodInfo, ctx));
                 } catch (e) {
                   methodInfo.dontCompile = true;
-                  console.log("Can't compile function: " + e);
+                  console.warn("Can't compile function: " + e);
                 }
             }
             Instrument.callResumeHooks(frame);
@@ -2425,7 +2425,7 @@ VM.compile = function(methodInfo, ctx) {
               toCallMethodInfo.compiled = new Function('ctx', VM.compile(toCallMethodInfo, ctx));\n\
             } catch (e) {\n\
               toCallMethodInfo.dontCompile = true;\n\
-              console.log('Can\\'t compile function: ' + e);\n\
+              console.warn('Can\\'t compile function: ' + e);\n\
             }\n\
           }\n\
           Instrument.callResumeHooks(frame);\n\
