@@ -47,7 +47,7 @@ module J2ME {
     executeUntilCurrentFramePopped();
     pushClassInitFrame(classInfo: ClassInfo);
     runtime: any;
-    methods: MethodInfo [];
+    methodInfos: MethodInfo [];
     classInfos: ClassInfo [];
     fieldInfos: FieldInfo [];
     resolve(constantPool: ConstantPoolEntry [], idx: number, isStatic: boolean) : any;
@@ -1013,7 +1013,7 @@ module J2ME {
     genInvokeStatic(methodInfo: MethodInfo) {
       this.classInitCheck(methodInfo.classInfo);
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
-      this.ctx.methods[methodInfo.implKey] = methodInfo;
+      this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
@@ -1035,7 +1035,7 @@ module J2ME {
 
     genInvokeSpecial(methodInfo: MethodInfo) {
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
-      this.ctx.methods[methodInfo.implKey] = methodInfo;
+      this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
@@ -1062,7 +1062,7 @@ module J2ME {
 
     genInvokeVirtual(methodInfo: MethodInfo) {
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
-      this.ctx.methods[methodInfo.implKey] = methodInfo;
+      this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
@@ -1106,7 +1106,7 @@ module J2ME {
       }
 
       var methodInfo = this.methodInfo;
-      this.ctx.methods[methodInfo.implKey] = methodInfo;
+      this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
 
       var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("classInitCheck"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
       this.recordStore(classInitCheck);

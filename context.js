@@ -9,7 +9,8 @@ function Context(runtime) {
   this.frames = [];
   this.runtime = runtime;
   this.runtime.addContext(this);
-  this.methods = {};
+  // TODO these should probably be moved to runtime...
+  this.methodInfos = {};
   this.classInfos = {};
   this.fieldInfos = {};
 }
@@ -26,6 +27,9 @@ Context.prototype.current = function() {
 Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
   var callee = new Frame(methodInfo, caller.stack.slice(caller.stack.length - methodInfo.consumes), 0);
+  if ((caller.stack.length - methodInfo.consumes) < 0) {
+      debugger;
+  }
   caller.stack.length -= methodInfo.consumes;
   this.frames.push(callee);
 //  Instrument.callEnterHooks(methodInfo, caller, callee);
@@ -159,7 +163,7 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
 }
 
 Context.prototype.invoke = function(methodInfoId, object, args) {
-  var methodInfo = this.methods[methodInfoId];
+  var methodInfo = this.methodInfos[methodInfoId];
   if (methodInfo.classInfo !== object.class) {
       methodInfo = CLASSES.getMethod(object.class, methodInfo.key);
   }
@@ -174,7 +178,7 @@ Context.prototype.invoke = function(methodInfoId, object, args) {
 };
 
 Context.prototype.invokeStatic = function(methodInfoId, args) {
-    var methodInfo = this.methods[methodInfoId];
+    var methodInfo = this.methodInfos[methodInfoId];
     args = args || [];
     var frame = new Frame(methodInfo, [], 0);
     this.frames.push(frame);
@@ -185,7 +189,7 @@ Context.prototype.invokeStatic = function(methodInfoId, args) {
 };
 
 Context.prototype.invokeSpecial = function(methodInfoId, object, args) {
-    var methodInfo = this.methods[methodInfoId];
+    var methodInfo = this.methodInfos[methodInfoId];
     args = args || [];
     var frame = new Frame(methodInfo, [], 0);
     this.frames.push(frame);
@@ -427,7 +431,7 @@ Context.prototype.resolve = function(cp, idx, isStatic) {
 };
 
 Context.prototype.JVMBailout = function(e, methodInfoId, frameIndex, cpi, locals, stack) {
-    var methodInfo = this.methods[methodInfoId];
+    var methodInfo = this.methodInfos[methodInfoId];
     console.log('Bailing out of ' + methodInfo.name + '() because of ' + e + "\n" + e.stack);
     var frame = new Frame(methodInfo, locals, 0);
     frame.stack = stack;
