@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="style/main.css">
   <link rel="stylesheet" type="text/css" href="style/confirm.css">
+  <link rel="stylesheet" type="text/css" href="style/action_menu.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
@@ -107,6 +108,18 @@
     <menu>
       <button class="cancel">Cancel</button>
       <button class="recommend">Done</button>
+    </menu>
+  </form>
+
+  <form role="dialog" data-type="action"
+        class="nokia-fileui-prompt"
+        id="nokia-fileui-prompt" style="display: none">
+    <header>Select a file</header>
+    <section>
+      <input type="file">
+    </section>
+    <menu>
+      <button class="cancel">Cancel</button>
     </menu>
   </form>
 
