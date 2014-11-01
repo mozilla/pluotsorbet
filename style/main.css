@@ -160,7 +160,8 @@ button {
  * built-in styles, which refer to all of those attributes, without
  * modifying the original dialog CSS, for future maintainability.
  */
-.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt {
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt,
+.debug-mode form[role="dialog"][data-type="action"].nokia-fileui-prompt {
   position: fixed;
   top: 0px;
   right: 0px;
@@ -174,7 +175,8 @@ button {
 }
 
 /* Hide the unnecessary scroll bar in the SMS verification dialog. */
-.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt section {
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt section,
+.debug-mode form[role="dialog"][data-type="action"].nokia-fileui-prompt section {
   overflow: hidden;
 }
 /* Trim down fonts to fix on our 240x320 debug-mode canvas. */
