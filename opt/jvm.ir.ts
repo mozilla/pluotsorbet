@@ -3,6 +3,13 @@
  */
 
 module J2ME.C4.IR {
+  export class JVMLong extends Value {
+    constructor(public lowBits: number, public highBits: number, public kind: Kind = Kind.Long) {
+      super();
+    }
+  }
+  Value.prototype.nodeName = "JVMLong";
+
   export class JVMNewArray extends Value {
     constructor(public control: Control, public kind: Kind, public length: Value) {
       super();
@@ -76,6 +83,10 @@ module J2ME.C4.IR {
 }
 
 module J2ME.C4.Backend {
+  IR.JVMLong.prototype.compile = function (cx: Context): AST.Node {
+    return new AST.CallExpression(new AST.Identifier("Long.fromBits"), [this.lowBits, this.highBits]);
+  }
+
   IR.JVMNewArray.prototype.compile = function (cx: Context): AST.Node {
     var jsTypedArrayType: string;
     switch (this.kind) {
@@ -119,8 +130,50 @@ module J2ME.C4.Backend {
   IR.JVMConvert.prototype.compile = function (cx: Context): AST.Node {
     var value = compileValue(this.value, cx);
     // bdahl: Add all the conversions here.
-    debugger;
-    return new AST.BinaryExpression("|", value, constant(0));
+    if (this.from === Kind.Int) {
+      switch (this.to) {
+        case Kind.Long:
+          return call(new AST.Identifier("Long.fromInt"), [value]);
+        case Kind.Float:
+          return value;
+        case Kind.Double:
+          return value;
+        case Kind.Short:
+          return new AST.BinaryExpression(">>", new AST.BinaryExpression("<<", value, constant(16)), constant(16));
+        case Kind.Char:
+          return new AST.BinaryExpression("&", value, constant(0xffff));
+        case Kind.Byte:
+          return new AST.BinaryExpression(">>", new AST.BinaryExpression("<<", value, constant(24)), constant(24));
+      }
+    } else if (this.from === Kind.Long) {
+      switch (this.to) {
+        case Kind.Int:
+          return call(new AST.MemberExpression(value, new AST.Identifier("toInt"), false), []);
+        case Kind.Float:
+          return call(new AST.Identifier("Math.fround"), [call(new AST.MemberExpression(value, new AST.Identifier("toNumber"), false), [])]);
+        case Kind.Double:
+          return call(new AST.MemberExpression(value, new AST.Identifier("toNumber"), false), []);
+      }
+    } else if (this.from === Kind.Float) {
+      switch (this.to) {
+        case Kind.Int:
+          return call(new AST.Identifier("util.double2int"), [value]);
+        case Kind.Long:
+          return call(new AST.Identifier("Long.fromNumber"), [value]);
+        case Kind.Double:
+          return value;
+      }
+    } else if (this.from === Kind.Double) {
+      switch (this.to) {
+        case Kind.Int:
+          return call(new AST.Identifier("util.double2int"), [value]);
+        case Kind.Long:
+          return call(new AST.Identifier("util.double2long"), [value]);
+        case Kind.Float:
+          return call(new AST.Identifier("Math.fround"), [value]);
+      }
+    }
+    throw "Unimplemented conversion";
   }
 
   IR.JVMCallProperty.prototype.compile = function (cx: Context): AST.Node {

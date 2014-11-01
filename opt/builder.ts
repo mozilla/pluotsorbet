@@ -897,6 +897,9 @@ module J2ME {
         case TAGS.CONSTANT_Double:
           state.dpush(genConstant(entry.double, Kind.Double));
           return;
+        case 5: // TAGS.CONSTANT_Long
+          state.lpush(new IR.JVMLong(entry.lowBits, entry.highBits));
+          return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
           var call = new IR.CallProperty(null, null, this.ctxVar, new Constant("newStringConstant"), [genConstant(entry.bytes, Kind.Reference)], IR.Flags.PRISTINE);
