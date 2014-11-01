@@ -348,10 +348,10 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
 
-  var encoder = new DataEncoder();
-
   switch (name) {
     case "Common":
+      var encoder = new DataEncoder();
+
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "Common");
       encoder.putStart(DataType.STRUCT, "message");
@@ -359,6 +359,13 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
       encoder.put(DataType.STRING, "version", "1.0");
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+      });
       break;
 
     case "FileSelect":
@@ -368,7 +375,30 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
       var multipleSelection = decoder.getValue(DataType.BOOLEAN);
       var startingURL = decoder.getValue(DataType.STRING);
 
-      // Build reply
+      var el = document.getElementById('nokia-fileui-prompt').cloneNode(true);
+      el.style.display = 'block';
+      el.classList.add('visible');
+
+      var selectedFile = null;
+
+      el.querySelector('input').addEventListener('change', function() {
+        selectedFile = this.files[0];
+      });
+
+      el.querySelector('button.cancel').addEventListener('click', function() {
+        el.parentElement.removeChild(el);
+      });
+
+      el.querySelector('button.recommend').addEventListener('click', function() {
+        el.parentElement.removeChild(el);
+
+        // Build a reply
+        if (selectedFile) {
+          console.log(selectedFile.name);
+        }
+      });
+
+      document.body.appendChild(el);
     break;
 
     default:
@@ -376,13 +406,6 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
                     util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       return;
   }
-
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-      data: data,
-      length: data.length,
-      offset: 0,
-  });
 };
 
 MIDP.LocalMsgConnections = {};
