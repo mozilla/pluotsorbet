@@ -169,6 +169,8 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
           break;
         }
       }
+
+      return;
     break;
 
     default:
