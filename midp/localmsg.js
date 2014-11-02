@@ -381,9 +381,13 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
       el.style.display = 'block';
       el.classList.add('visible');
 
+      var btnDone = el.querySelector('button.recommend');
+      btnDone.disabled = true;
+
       var selectedFile = null;
 
       el.querySelector('input').addEventListener('change', function() {
+        btnDone.disabled = false;
         selectedFile = this.files[0];
       });
 
@@ -391,7 +395,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
         el.parentElement.removeChild(el);
       });
 
-      el.querySelector('button.recommend').addEventListener('click', (function() {
+      btnDone.addEventListener('click', (function() {
         el.parentElement.removeChild(el);
 
         if (!selectedFile) {
