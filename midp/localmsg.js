@@ -342,7 +342,8 @@ MIDP.LocalMsgConnections = {};
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
 MIDP.FakeLocalMsgServers = [ "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings", "nokia.file-ui" ];
+                             "nokia.connectivity-settings", "nokia.file-ui",
+                             "nokia.image-processing" ];
 
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
