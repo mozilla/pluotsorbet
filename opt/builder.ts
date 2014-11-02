@@ -1,6 +1,6 @@
 module J2ME {
 
-  var writer = new IndentingWriter();
+  var writer = new IndentingWriter(false);
 
   import Block = Bytecode.Block;
   import BlockMap = Bytecode.BlockMap;
@@ -938,6 +938,13 @@ module J2ME {
       )];
     }
 
+    genIfNull(stream: BytecodeStream, condition: Condition) {
+      this.state.apush(Null);
+      var y = this.state.apop();
+      var x = this.state.apop();
+      this.genIf(stream, new IR.Binary(Bytecode.conditionToOperator(condition), x, y));
+    }
+
     genIfSame(stream: BytecodeStream, kind: Kind, condition: Condition) {
       var y = this.state.pop(kind);
       var x = this.state.pop(kind);
@@ -1073,7 +1080,7 @@ module J2ME {
       invokeArgs.push(argsArray);
 
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invokeVirtual"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1376,8 +1383,10 @@ module J2ME {
         case Bytecodes.MONITORENTER   : genMonitorEnter(state.apop()); break;
         case Bytecodes.MONITOREXIT    : genMonitorExit(state.apop()); break;
         case Bytecodes.MULTIANEWARRAY : genNewMultiArray(stream.readCPI()); break;
-        case Bytecodes.IFNULL         : genIfNull(Condition.EQ); break;
-        case Bytecodes.IFNONNULL      : genIfNull(Condition.NE); break;
+        */
+        case Bytecodes.IFNULL         : this.genIfNull(stream, Condition.EQ); break;
+        case Bytecodes.IFNONNULL      : this.genIfNull(stream, Condition.NE); break;
+        /*
         case Bytecodes.GOTO_W         : genGoto(stream.readFarBranchDest()); break;
         case Bytecodes.JSR_W          : genJsr(stream.readFarBranchDest()); break;
         case Bytecodes.BREAKPOINT:
