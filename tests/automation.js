@@ -35,7 +35,7 @@ var gfxTests = [
   { name: "gfx/ClippingTest", maxDifferent: 0 },
 ];
 
-casper.test.begin("unit tests", 6 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
@@ -88,6 +88,23 @@ casper.test.begin("unit tests", 6 + gfxTests.length, function(test) {
             this.waitUntilVisible(".sms-listener-prompt", function() {
                 this.sendKeys(".sms-listener-prompt.visible input", "Prova SMS", { reset: true });
                 this.click(".sms-listener-prompt.visible button.recommend");
+                this.waitForText("DONE", function() {
+                    test.assertTextDoesntExist("FAIL");
+                });
+            });
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&main=com/sun/midp/main/MIDletSuiteLoader")
+    .withFrame(0, function() {
+        this.waitForText("START", function() {
+            this.waitUntilVisible(".nokia-fileui-prompt", function() {
+                this.fill("form.nokia-fileui-prompt.visible", {
+                    "nokia-fileui-file": "/home/marco/Documents/workspace/j2me.js/j2me.js/index.html",
+                });
+                this.click(".nokia-fileui-prompt.visible input");
+                this.click(".nokia-fileui-prompt.visible button.recommend");
                 this.waitForText("DONE", function() {
                     test.assertTextDoesntExist("FAIL");
                 });
