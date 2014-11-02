@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
+var system = require('system');
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
@@ -101,7 +103,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
         this.waitForText("START", function() {
             this.waitUntilVisible(".nokia-fileui-prompt", function() {
                 this.fill("form.nokia-fileui-prompt.visible", {
-                    "nokia-fileui-file": "/home/marco/Documents/workspace/j2me.js/j2me.js/index.html",
+                    "nokia-fileui-file": system.args[4],
                 });
                 this.click(".nokia-fileui-prompt.visible input");
                 this.click(".nokia-fileui-prompt.visible button.recommend");
