@@ -72,6 +72,7 @@ function MethodInfo(opts) {
     this.isPublic = opts.isPublic;
     this.isStatic = opts.isStatic;
     this.isSynchronized = opts.isSynchronized;
+
     this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
     this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
@@ -93,6 +94,10 @@ function MethodInfo(opts) {
     if (!this.isStatic) {
       this.consumes++;
     }
+
+    this.numCalled = urlParams.numCalled || 0;
+    this.compiled = null;
+    this.dontCompile = false;
 }
 
 var ClassInfo = function(classBytes) {
