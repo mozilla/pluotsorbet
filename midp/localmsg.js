@@ -391,14 +391,63 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
         el.parentElement.removeChild(el);
       });
 
-      el.querySelector('button.recommend').addEventListener('click', function() {
+      el.querySelector('button.recommend').addEventListener('click', (function() {
         el.parentElement.removeChild(el);
 
-        // Build a reply
-        if (selectedFile) {
-          console.log(selectedFile.name);
+        if (!selectedFile) {
+          return;
         }
-      });
+
+        var createFile = (function(path) {
+          fs.mkdir("/nokiafileui", (function() {
+            fs.create("/" + path, selectedFile, (function() {
+              var encoder = new DataEncoder();
+
+              encoder.putStart(DataType.STRUCT, "event");
+              encoder.put(DataType.METHOD, "name", "FileSelect");
+              encoder.put(DataType.USHORT, "trans_id", trans_id);
+              encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+              encoder.putStart(DataType.ARRAY, "unknown_array"); // Name unknown
+              encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
+              encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
+              encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
+              encoder.put(DataType.WSTRING, "unknown_string_3", path); // Name unknown
+              encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
+              encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
+              encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
+              encoder.putEnd(DataType.ARRAY, "unknown_array"); // Name unknown
+              encoder.putEnd(DataType.STRUCT, "event");
+
+              var data = new TextEncoder().encode(encoder.getData());
+              this.sendMessageToClient({
+                data: data,
+                length: data.length,
+                offset: 0,
+              });
+            }).bind(this));
+          }).bind(this));
+        }).bind(this);
+
+        var i = 0;
+        var tryFile = (function(path) {
+          fs.exists("/" + path, function(exists) {
+            if (exists) {
+              var newPath = "";
+              var extensionIndex = path.lastIndexOf(".");
+              if (extensionIndex == -1) {
+                newPath = path + (++i);
+              } else {
+                newPath = path.substring(0, extensionIndex) + "-" + (++i) + path.substring(extensionIndex);
+              }
+              tryFile(newPath);
+            } else {
+              createFile(path);
+            }
+          });
+        }).bind(this);
+
+        tryFile("nokiafileui/" + selectedFile.name);
+      }).bind(this));
 
       document.body.appendChild(el);
     break;
