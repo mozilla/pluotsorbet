@@ -402,9 +402,9 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           return;
         }
 
-        var createFile = (function(path) {
+        var createFile = (function(fileName) {
           fs.mkdir("/nokiafileui", (function() {
-            fs.create("/nokiafileui/" + path, selectedFile, (function() {
+            fs.create("/nokiafileui/" + fileName, selectedFile, (function() {
               var encoder = new DataEncoder();
 
               encoder.putStart(DataType.STRUCT, "event");
@@ -415,7 +415,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
               encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
               encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
               encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
-              encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + path); // Name unknown
+              encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + fileName); // Name unknown
               encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
               encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
               encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
@@ -432,20 +432,22 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           }).bind(this));
         }).bind(this);
 
+        var name = selectedFile.name;
+        var ext = "";
+        var extIndex = name.lastIndexOf(".");
+        if (extIndex !== -1) {
+          ext = name.substring(extIndex);
+          name = name.substring(0, extIndex);
+        }
+
         var i = 0;
-        var tryFile = (function(path) {
-          fs.exists("/nokiafileui/" + path, function(exists) {
+        var tryFile = (function(fileName) {
+          fs.exists("/nokiafileui/" + fileName, function(exists) {
             if (exists) {
-              var newPath = "";
-              var extensionIndex = path.lastIndexOf(".");
-              if (extensionIndex == -1) {
-                newPath = path + (++i);
-              } else {
-                newPath = path.substring(0, extensionIndex) + "-" + (++i) + path.substring(extensionIndex);
-              }
-              tryFile(newPath);
+              i++;
+              tryFile(name + "-" + i + ext);
             } else {
-              createFile(path);
+              createFile(fileName);
             }
           });
         }).bind(this);
