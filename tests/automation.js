@@ -98,7 +98,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&main=com/sun/midp/main/MIDletSuiteLoader")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.waitUntilVisible(".nokia-fileui-prompt", function() {
