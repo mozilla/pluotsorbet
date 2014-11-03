@@ -114,7 +114,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
                         this.echo(this.captureBase64('png'));
                         test.fail('file-ui test');
                     } else {
-                        test.pass("file-ui test")
+                        test.pass("file-ui test");
                     }
                 });
             });
