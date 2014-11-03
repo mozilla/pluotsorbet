@@ -23,34 +23,37 @@
  * information or have any questions.
  */
 
-package javax.microedition.media;
+package javax.microedition.media.protocol;
 
 /**
- * A <code>MediaException</code> indicates an unexpected error
- * condition in a method.
+ * A <CODE>ContentDescriptor</CODE> identifies media data containers.
  *
+ * @see SourceStream
  */
 
-public class MediaException extends Exception {
+public class ContentDescriptor {
+
+    private String encoding;
 
     /**
-     * Constructs a <code>MediaException</code> with <code>null</code>
-     * as its error detail message.
-     */
-    public MediaException() {
-	super();
-    }
-    
-    /**
-     * Constructs a <code>MediaException</code> with the specified detail
-     * message. The error message string <code>s</code> can later be
-     * retrieved by the 
-     * <code>{@link java.lang.Throwable#getMessage}</code>
-     * method of class <code>java.lang.Throwable</code>.
+     * Obtain a string that represents the content type
+     * for this descriptor.
+     * If the content type is not known, <code>null</code> is returned.
      *
-     * @param reason the detail message.
+     * @return The content type.
      */
-    public MediaException(String reason) {
-	super(reason);
+    public String getContentType() {
+	return encoding;
+    }
+
+    /** 
+     * Create a content descriptor with the specified content type.
+     *
+     * @param contentType The content type of this descriptor.
+     * If <code>contentType</code> is <code>null</code>, the type 
+     * of the content is unknown.
+     */
+    public ContentDescriptor(String contentType) {
+	encoding = contentType;
     }
 }
