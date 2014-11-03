@@ -404,7 +404,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
 
         var createFile = (function(path) {
           fs.mkdir("/nokiafileui", (function() {
-            fs.create("/" + path, selectedFile, (function() {
+            fs.create("/nokiafileui/" + path, selectedFile, (function() {
               var encoder = new DataEncoder();
 
               encoder.putStart(DataType.STRUCT, "event");
@@ -415,7 +415,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
               encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
               encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
               encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
-              encoder.put(DataType.WSTRING, "unknown_string_3", path); // Name unknown
+              encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + path); // Name unknown
               encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
               encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
               encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
@@ -434,7 +434,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
 
         var i = 0;
         var tryFile = (function(path) {
-          fs.exists("/" + path, function(exists) {
+          fs.exists("/nokiafileui/" + path, function(exists) {
             if (exists) {
               var newPath = "";
               var extensionIndex = path.lastIndexOf(".");
@@ -450,7 +450,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           });
         }).bind(this);
 
-        tryFile("nokiafileui/" + selectedFile.name);
+        tryFile(selectedFile.name);
       }).bind(this));
 
       document.body.appendChild(el);
