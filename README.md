@@ -24,7 +24,7 @@ Build using make:
 
 To run a MIDlet:
 
-        python -m SimpleHTTPServer&
+        python tests/httpServer.py &
         http://localhost:8000/index.html?jad=ExampleApp.jad&jars=ExampleApp.jar&midletClassName=com.example.yourClassNameHere
 
 URL parameters:
@@ -34,14 +34,14 @@ URL parameters:
 
 If testing sockets, 4 servers are necessary:
 
-        python -m SimpleHTTPServer &
+        python tests/httpServer.py &
         python tests/echoServer.py &
         cd tests && python httpsServer.py &
         cd tests && python sslEchoServer.py &
 
 To run specific tests (e.g. TestSystem and TestRC4):
 
-        python -m SimpleHTTPServer&
+        python tests/httpServer.py &
         http://localhost:8000/index.html?args=java/lang/TestSystem,javax/crypto/TestRC4
 
 Full list of RunTests tests available in the tests/Testlets.java generated file
