@@ -88,6 +88,7 @@ var fs = (function() {
   }
 
   var openedFiles = [];
+  var fileStats = {};
 
   function open(path, cb) {
     path = normalizePath(path);
@@ -158,8 +159,10 @@ var fs = (function() {
 
     buffer.array.set(data, from);
 
-    openedFiles[fd].position = from + data.byteLength;
-    openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
+    var file = openedFiles[fd];
+    file.position = from + data.byteLength;
+    file.stat = { mtime: Date.now(), isDir: false, size: buffer.contentSize };
+    fileStats[file.path] = file.stat;
   }
 
   function getpos(fd) {
@@ -215,7 +218,7 @@ var fs = (function() {
     stat(path, function(stat) {
       if (stat && !stat.isDir) {
         asyncStorage.setItem(path, new Blob(), function() {
-          setStat(path, { mtime: Date.now(), isDir: false });
+          setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
           cb(true);
         });
       } else {
@@ -227,7 +230,7 @@ var fs = (function() {
   function ftruncate(fd, size) {
     if (size != openedFiles[fd].buffer.contentSize) {
       openedFiles[fd].buffer.setSize(size);
-      openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
+      fileStats[fd.path] = openedFiles[fd].stat = { mtime: Date.now(), isDir: false, size: size };
     }
   }
 
@@ -292,7 +295,7 @@ var fs = (function() {
 
     createInternal(path, blob, function(created) {
       if (created) {
-        setStat(path, { mtime: Date.now(), isDir: false }, function() {
+        setStat(path, { mtime: Date.now(), isDir: false, size: blob.size }, function() {
           cb(created);
         });
       } else {
@@ -360,10 +363,18 @@ var fs = (function() {
   function size(path, cb) {
     path = normalizePath(path);
 
+    if (fileStats[path] && typeof fileStats[path].size != "undefined") {
+      cb(fileStats[path].size);
+      return;
+    }
+
     asyncStorage.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
+        if (fileStats[path]) {
+          fileStats[path].size = blob.size;
+        }
         cb(blob.size);
       }
     });
@@ -409,15 +420,23 @@ var fs = (function() {
   }
 
   function setStat(path, stat, cb) {
+    fileStats[path] = stat;
     asyncStorage.setItem("!" + path, stat, cb);
   }
 
   function removeStat(path, cb) {
+    delete fileStats[path];
     asyncStorage.removeItem("!" + path, cb);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
+
+    var stat = fileStats[path];
+    if (stat) {
+      setTimeout(() => cb(stat), 0);
+      return;
+    }
 
     var file = openedFiles.find(file => file && file.stat && file.path === path);
     if (file) {
@@ -425,7 +444,12 @@ var fs = (function() {
       return;
     }
 
-    asyncStorage.getItem("!" + path, cb);
+    asyncStorage.getItem("!" + path, function(stat) {
+      if (stat) {
+        fileStats[path] = stat;
+      }
+      cb(stat)
+    });
   }
 
   return {
