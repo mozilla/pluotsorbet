@@ -1,5 +1,4 @@
 /*
- *   
  *
  *  Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
@@ -25,11 +24,24 @@
  */
 package javax.microedition.media;
 
-
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
+import java.util.Vector;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
+import com.sun.j2me.log.Logging;
+import com.sun.j2me.log.LogChannels;
+import com.sun.mmedia.BasicPlayer;
+import com.sun.mmedia.PlayerImpl;
+import com.sun.mmedia.TonePlayer;
+import com.sun.mmedia.Configuration;
+import com.sun.mmedia.protocol.*;
+import com.sun.mmedia.DefaultConfiguration;
+import com.sun.mmedia.DirectPlayer;
+
+import javax.microedition.media.protocol.*;
 
 /**
  * <code>Manager</code> is the access point for obtaining
@@ -417,6 +429,9 @@ import java.io.IOException;
  */
 
 public final class Manager {
+
+    private static Configuration config = Configuration.getConfiguration();
+    private static TonePlayer tonePlayer;
     
     /**
      * The locator to create a tone <code>Player</code>
@@ -448,14 +463,36 @@ public final class Manager {
      */
     public final static String TONE_DEVICE_LOCATOR = "device://tone";
 
-    // private final static String RADIO_CAPTURE_LOCATOR = "capture://radio";
-
-    private final static String DS_ERR = "Cannot create a DataSource for: ";    
-
-    private final static String PL_ERR = "Cannot create a Player for: ";
+    /**
+     * The locator to create a MIDI <code>Player</code>
+     * which gives access to the MIDI device by making
+     * {@link javax.microedition.media.control.MIDIControl MIDIControl}
+     * available.  For example,
+     * <pre>
+     * try {
+     *     Player p = Manager.createPlayer(Manager.MIDI_DEVICE_LOCATOR);
+     *     p.prefetch(); // opens the MIDI device
+     *     MIDIControl m = (MIDIControl)p.getControl("MIDIControl");
+     * } catch (IOException ioe) {
+     * } catch (MediaException me) {}
+     * </pre>
+     *
+     * The MIDI <code>Player</code> returned does not carry any
+     * media data.  <code>getDuration</code> returns 0 for this
+     * <code>Player</code>.
+     * <p>
+     * The content type of the <code>Player</code> created from this
+     * locator is <code>audio/midi</code>.
+     * <p>
+     * A <code>Player</code> for this locator may not be supported
+     * for all implementations.
+     * <p>
+     * Value "device://midi" is assigned to <code>MIDI_DEVICE_LOCATOR</code>.
+     */
+    public final static String MIDI_DEVICE_LOCATOR = "device://midi";
     
-    private final static String REDIRECTED_MSG = " with exception message: ";
-
+    private static String DS_ERR = "Cannot create a DataSource for: ";
+    private static String PL_ERR = "Cannot create a Player for: ";
 
     /**
      * This private constructor keeps anyone from actually
@@ -488,7 +525,7 @@ public final class Manager {
      * @return           The list of supported content types for the given protocol.
      */
     public static String[] getSupportedContentTypes(String protocol) {
-        return new String[0];        
+        return config.getSupportedContentTypes(protocol);        
     }
 
 
@@ -520,8 +557,9 @@ public final class Manager {
      * @return               The list of supported protocols for the given content type.
      */
     public static String[] getSupportedProtocols(String content_type) {
-        return new String[0];
+        return config.getSupportedProtocols(content_type);
     }
+
 
     /**
      * Create a <code>Player</code> from an input locator.
@@ -536,14 +574,289 @@ public final class Manager {
      */
     public static Player createPlayer(String locator)
          throws IOException, MediaException {
-
         if (locator == null) {
             throw new IllegalArgumentException();
         }
 
-        throw new MediaException("Cannot create Player");
+        String locStr = locator.toLowerCase();
+
+        // System.out.println("[mmapi] createPlayer with " + locator);
+
+        /* Verify if Protocol is supported */
+        String theProtocol = null;
+        boolean found = false;
+        int idx = locStr.indexOf(':');
+
+        if (idx != -1) {
+            theProtocol = locStr.substring(0, idx);
+        } else {
+            throw new MediaException("Malformed locator");
+        }
+
+        if (locStr.startsWith(DefaultConfiguration.RADIO_CAPTURE_LOCATOR))
+        {
+            if (!config.isRadioSupported())
+            {
+                throw new MediaException( "Radio Capture is not supported" );
+            }
+            parseRadioLocatorStr(locator);
+        }
+        else if (locStr.startsWith(DefaultConfiguration.AUDIO_CAPTURE_LOCATOR) ||
+            locStr.startsWith(DefaultConfiguration.VIDEO_CAPTURE_LOCATOR))
+        {
+            // separate device & encodings
+            int encInd = locator.indexOf('?');
+            String encStr = null;
+            if (encInd > 0) {
+                locStr = locStr.substring(0, encInd);
+                idx = locator.indexOf("encoding=");
+                if (idx != -1) {
+                    encStr = locator.substring(idx+9);
+                    if (encStr != null) {
+                        idx = encStr.indexOf('&');
+                        if (idx > 0) {
+                            encStr = encStr.substring(0, idx);
+                        }
+                        encStr = encStr.toLowerCase();
+                    }
+                }
+
+            }
+            found = true;
+            String encodings = null;
+            if (locStr.equals(DefaultConfiguration.AUDIO_CAPTURE_LOCATOR)) {
+                String supported = System.getProperty("supports.audio.capture");
+                encodings = System.getProperty("audio.encodings");
+                if (supported == null || supported.equals("false") || encodings == null) {
+                    found = false;
+                }
+            } else if (locStr.equals(DefaultConfiguration.VIDEO_CAPTURE_LOCATOR)) {
+                String supported = System.getProperty("supports.video.capture");
+                encodings = System.getProperty("video.encodings");
+                if (supported == null || supported.equals("false") || encodings == null) {
+                    found = false;
+                }
+            }
+            if (encStr != null && encodings != null && encodings.indexOf(encStr) == -1) {
+                found = false;
+            }
+            if (!found) {
+                throw new MediaException("Player cannot be created for " + locator);
+            }
+        } else {
+            String supportedProtocols[] = getSupportedProtocols(null);
+            for (int i = 0; i < supportedProtocols.length && !found; i++) {
+                if (theProtocol.equals(supportedProtocols[i])) {
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                throw new MediaException("Player cannot be created for " + locator + 
+                                        " Unsupported protocol " + theProtocol);
+            }
+        }
+
+        DataSource ds = createDataSource(locator);
+        Player pp = null;
+
+        try {
+            pp = createPlayer(ds);
+        } catch (MediaException ex) {
+            ds.disconnect();
+            throw ex;
+        } catch (IOException ex) {
+            ds.disconnect();
+            throw ex;
+        }
+        return pp;
     }
 
+    private static void parseRadioLocatorStr( String locator ) throws MediaException
+    {
+        final int prefixLen = 
+                DefaultConfiguration.RADIO_CAPTURE_LOCATOR.length();
+        
+        if( null == locator )
+        {
+            throw new MediaException( "radio locator is null" );
+        }
+        if( !locator.startsWith( DefaultConfiguration.RADIO_CAPTURE_LOCATOR ) )
+        {
+            throw new MediaException( "bad radio locator" );
+        }
+        
+        if ( locator.length() == prefixLen )
+        {
+            return;
+        }
+        
+        if( locator.charAt( prefixLen ) != '?' )
+        {
+            throw new MediaException( "bad radio locator" );
+        }
+        String params = locator.substring( prefixLen + 1 );
+        parseRadioParamsString( params );
+    }
+
+    private static void parseRadioParamsString( String params ) throws MediaException
+    {
+        boolean foundFreq       = false;
+        boolean foundMod        = false;
+        boolean foundStereoMode = false;
+        boolean foundId         = false; 
+        boolean foundPreset     = false;
+        
+        int i = 0, j = -1; 
+        do {
+            j = params.indexOf( '&', i );
+            String param = j < 0 ? params.substring( i ) : params.substring( i,
+                    j );
+            if( param.startsWith( "f=" ) )
+            {
+                if( foundFreq )
+                {
+                    throw new MediaException( "frequency is set more than" +
+                            " once in the radio locator string" );
+                }
+                parseRadioFreqParam( param );
+                foundFreq = true;
+            }
+            else if ( param.startsWith( "mod=" ) )
+            {
+                if( foundMod )
+                {
+                    throw new MediaException( "modulation is set more than" +
+                            " once in the radio locator string" );
+                }
+                parseRadioModParam( param );
+                foundMod = true;
+            }
+            else if ( param.startsWith( "st=" ) )
+            {
+                if( foundStereoMode )
+                {
+                    throw new MediaException( "stereo mode is set more than" +
+                            " once in the radio locator string" );
+                }
+                parseRadioStereoParam( param );
+                foundStereoMode = true;
+            }
+            else if ( param.startsWith( "id=" ) )
+            {
+                if( foundId )
+                {
+                    throw new MediaException( "Program ID is set more than" +
+                            " once in the radio locator string" );
+                }
+                parseRadioIdParam( param );
+                foundId = true;
+            }
+            else if ( param.startsWith( "preset=" ) )
+            {
+                if( foundPreset )
+                {
+                    throw new MediaException( "Preset is set more than" +
+                            " once in the radio locator string" );
+                }
+                parseRadioPresetParam( param );
+                foundPreset = true;
+            }
+            else
+            {
+                throw new MediaException( "Unknown parameter in the" +
+                        " radio locator string" );
+            }
+
+            i = j + 1;
+        } while( j >= 0 );
+        
+    }
+    
+    private static void parseRadioFreqParam( String s )
+        throws MediaException
+    {
+        String param = s;
+        if( 'M' == param.charAt( param.length() - 1 ) || 
+            'k' == param.charAt( param.length() - 1 ) )
+        {
+            param = param.substring( 0, param.length() - 1 );
+        }
+        try {
+            if( 0 >= Float.parseFloat( param.substring( 2 ) ) )
+            {
+                throw new MediaException( "Frequency is not positive" +
+                        " in the radio locator string" );
+            }
+        } catch (NumberFormatException e)
+        {
+            throw new MediaException( "Frequency is not numeric or too big" +
+                    " in the radio locator string" );
+        }
+    }
+    
+    private static void parseRadioModParam( String param )
+        throws MediaException
+    {
+        String mod = param.substring( "mod=".length() );
+        if( !mod.equals( "am" ) && !mod.equals( "fm" ) )
+        {
+            throw new MediaException( "Unknown modulation in the" +
+                    " radio locator string parameters" );
+        }
+    }
+    
+    private static void parseRadioStereoParam( String param )
+        throws MediaException
+    {
+        String mode = param.substring( "st=".length() );
+        if( !mode.equals( "mono" ) && 
+            !mode.equals( "stereo" ) && 
+            !mode.equals( "auto" ))
+        {
+            throw new MediaException( "Unknown stereo mode in the" +
+                    " radio locator string parameters" );
+        }
+    }
+
+    private static void parseRadioIdParam( String param )
+        throws MediaException
+    {
+        String id = param.toLowerCase().substring( "id=".length() );
+        if( 0 == id.length() )
+        {
+            throw new MediaException( "Empty Program ID name in" +
+                    " the radio locator string parameters" );
+        }
+        
+        for( int i = 0; i < id.length(); i++ )
+        {
+            char ch = id.charAt( i );
+            if( !Character.isLowerCase( ch ) &&
+                !Character.isDigit( ch ) )
+            {
+                throw new MediaException( "Not an alphanumeric Program" +
+                        " ID in the radio locator string parameters" );
+            }
+        }
+    }
+
+    private static void parseRadioPresetParam( String param )
+        throws MediaException
+    {
+        String preset = param.substring( "preset=".length() );
+        try {
+            if( 0 >= Byte.parseByte( preset ) )
+            {
+                throw new MediaException( "Preset number is not positive" +
+                        " in the radio locator string" );
+            }
+        } catch (NumberFormatException e)
+        {
+            throw new MediaException( "Preset number is not numeric" +
+                    " or too big in the radio locator string" );
+        }
+    }
 
     /**
      * Create a <code>Player</code> to play back media from an
@@ -569,16 +882,29 @@ public final class Manager {
      */
     public static Player createPlayer(InputStream stream, String type)
          throws IOException, MediaException {
+
         if (stream == null) {
             throw new IllegalArgumentException();
         }
 
         if (type == null) {
-            throw new MediaException(PL_ERR + "NULL content-type");
+            throw new MediaException(PL_ERR + "cannot determine the media type");
         }
         
-        throw new MediaException("Cannot create Player");
+        type = type.toLowerCase();
 
+        // Wrap the input stream with a CommonDS where the input
+        // can be handled in a generic way.
+        
+        CommonDS ds = new CommonDS();
+        ds.setInputStream(stream);
+        ds.setContentType(type);
+        
+        try {
+            return createPlayer(ds);
+        } catch (IOException ex) {
+            throw new MediaException(PL_ERR + ex.getMessage());
+        }
     }
 
 
@@ -610,9 +936,182 @@ public final class Manager {
      */
     public static void playTone(int note, int duration, int volume)
          throws MediaException {
-        
+             
         if (note < 0 || note > 127 || duration <= 0) {
-            throw new IllegalArgumentException("bad param");
+            throw new IllegalArgumentException( "Invalid note(" + note +
+                                                ") or duration (" + duration + ")" );
         }
+
+        if (volume < 0) {
+            volume = 0;
+        } else if (volume > 100) {
+            volume = 100;
+        }
+
+        if (duration == 0 || volume == 0) {
+            return;
+        }
+
+        if (tonePlayer == null) {
+            tonePlayer = config.getTonePlayer();
+        }
+        
+        if (tonePlayer != null) {
+            tonePlayer.playTone(note, duration, volume);
+        } else {
+            throw new MediaException("no tone player");
+        }
+    }
+
+    /**
+     * MMAPI full specific methods.
+     *
+     * @param  source              Description of the Parameter
+     * @return                     Description of the Return Value
+     * @exception  IOException     Description of the Exception
+     * @exception  MediaException  Description of the Exception
+     */
+
+    /**
+     * Create a <code>Player</code> for a <code>DataSource</code>.
+     *
+     * @param  source                        The <CODE>DataSource</CODE> that provides
+     * the media content.
+     * @return                               A new <code>Player</code>.
+     * @exception  MediaException            Thrown if a <code>Player</code> cannot
+     * be created for the given <code>DataSource</code>.
+     * @exception  IOException               Thrown if there was a problem connecting
+     * with the source.
+     */
+    public static Player createPlayer(DataSource source)
+        throws IOException, MediaException
+    {
+        if (source == null) {
+            throw new IllegalArgumentException();
+        }
+
+        String type;
+
+        try {
+            type = source.getContentType();
+        } catch( IllegalStateException e ) {
+            type = null;
+        }
+
+        if (type != null) {
+            String theProtocol = null;
+            String locator = source.getLocator();
+            if (locator != null) {
+                int idx = locator.indexOf(':');
+                if (idx != -1) {
+                    theProtocol = locator.substring(0, idx);
+                }
+            }
+            String supportedContentTypes[] = getSupportedContentTypes(theProtocol);
+            boolean found = false;
+            for(int i=0; i<supportedContentTypes.length && !found; i++) {
+                if (type.equals(supportedContentTypes[i])) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                throw new MediaException("Player cannot be created for " + type);
+            }
+        }
+
+        PlayerImpl p = new PlayerImpl(source);
+
+        return p;
+    }
+
+
+    /**
+     * Create a <code>DataSource</code> for the specified media
+     * identified by a locator.  The <code>DataSource</code>
+     * returned can be used to read the media data from the input
+     * source.
+     * <p>
+     * The returned data source is <i>connected</i>;
+     * <code>DataSource.connect</code> has been invoked.
+     * <p>
+     * If no suitable <code>DataSource</code> can be found to
+     * handle the input, a <CODE>MediaException</CODE>
+     * is thrown.
+     *
+     * @param  locator             The source protocol for the media data.
+     * @return                     A connected <CODE>DataSource</CODE>.
+     * @exception  MediaException  Thrown if no <CODE>DataSource</CODE>
+     * can be found that supports the given protocol as specified by
+     * the locator.
+     * @exception  IOException     Thrown if there was a problem connecting
+     * with the source (e.g. the source media does not exist).
+     */
+    private static DataSource createDataSource(String locator)
+         throws IOException, MediaException {
+
+        String className = config.getProtocolHandler(BasicDS.getProtocol(locator));
+
+        if (className == null) {
+            throw new MediaException(DS_ERR + locator);
+        }
+
+        try {
+
+            // ... Try to create a DataSource instance ...
+            Class protoClass = Class.forName(className);
+            DataSource source = (DataSource) protoClass.newInstance();
+            // ... and get it connected ...
+            ((BasicDS) source).setLocator(locator);
+            if (locator.equals(TONE_DEVICE_LOCATOR)) {
+                ((BasicDS) source).setContentType("audio/x-tone-seq");
+            } else if (locator.equals(MIDI_DEVICE_LOCATOR)) {
+                ((BasicDS) source).setContentType("audio/midi");
+            }
+            return source;
+        } catch (MediaException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new MediaException(DS_ERR + e.getMessage());
+        }
+    }
+
+    private static TimeBase sysTimeBase = null;
+
+    /**
+     * Get the time-base object for the system.
+     *
+     * @return    The system time base.
+     */
+    public static TimeBase getSystemTimeBase() {
+        if (sysTimeBase == null) {
+            sysTimeBase = new SystemTimeBase();
+        }
+
+        return sysTimeBase;
+    }
+}
+
+/**
+ * SystemTimeBase is the implementation of the default <CODE>TimeBase</CODE>
+ * based on the system clock.
+ *
+ * @see        TimeBase
+ */
+class SystemTimeBase implements TimeBase {
+    /*
+     *  Pick some offset (start-up time) so the system time won't be
+     *  so huge.  The huge numbers overflow floating point operations
+     *  in some cases.
+     */
+    private static long offset = System.currentTimeMillis() * 1000L;
+
+    /**
+     * This is a straight-forward implementation of a
+     * system time base using the system clock.
+     *
+     * @return    The time value
+     */
+    public long getTime() {
+        return (System.currentTimeMillis() * 1000L) - offset;
     }
 }

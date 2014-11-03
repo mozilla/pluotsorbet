@@ -5,52 +5,41 @@
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version
- * 2 only, as published by the Free Software Foundation.
+ * 2 only, as published by the Free Software Foundation. 
  * 
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
- * included at /legal/license.txt).
+ * included at /legal/license.txt). 
  * 
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
+ * 02110-1301 USA 
  * 
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 or visit www.sun.com if you need additional
- * information or have any questions.
+ * information or have any questions. 
  */
-
-package javax.microedition.media;
+ 
+package com.sun.mmedia;
 
 /**
- * A <code>MediaException</code> indicates an unexpected error
- * condition in a method.
- *
+ * This interfcae provides a set of methods to handle
+ * media related events; foregournd / background switch
  */
-
-public class MediaException extends Exception {
-
-    /**
-     * Constructs a <code>MediaException</code> with <code>null</code>
-     * as its error detail message.
-     */
-    public MediaException() {
-	super();
-    }
+public interface MediaEventConsumer {
     
     /**
-     * Constructs a <code>MediaException</code> with the specified detail
-     * message. The error message string <code>s</code> can later be
-     * retrieved by the 
-     * <code>{@link java.lang.Throwable#getMessage}</code>
-     * method of class <code>java.lang.Throwable</code>.
-     *
-     * @param reason the detail message.
-     */
-    public MediaException(String reason) {
-	super(reason);
-    }
+     * Called by event delivery when MIDlet controller (in AMS Isolate)
+     * notifies MIDlet and its display that there is a change in its foreground status
+     */    
+    void handleMediaForegroundNotify();
+
+    /**
+     * Called by event delivery when MIDlet controller (in AMS Isolate)
+     * notifies MIDlet and its display that there is a change in its foreground status
+     */        
+    void handleMediaBackgroundNotify();    
 }
