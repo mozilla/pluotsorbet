@@ -108,7 +108,14 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
                 this.click(".nokia-fileui-prompt.visible input");
                 this.click(".nokia-fileui-prompt.visible button.recommend");
                 this.waitForText("DONE", function() {
-                    test.assertTextDoesntExist("FAIL");
+                    var content = this.getPageContent();
+                    if (content.contains("FAIL")) {
+                        this.debugPage();
+                        this.echo(this.captureBase64('png'));
+                        test.fail('file-ui test');
+                    } else {
+                        test.pass("file-ui test")
+                    }
                 });
             });
         });
