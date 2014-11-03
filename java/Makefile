@@ -15,7 +15,6 @@ classes.jar: $(SRCS) $(CUSTOM_SRCS) $(JPP_DESTS)
 	cd build && jar cvf0 ../classes.jar *
 	jar uvf0 classes.jar $(EXTRA)
 	rm -rf build
-	rm -f $(JPP_DESTS)
 
 tools/Jpp.class: tools/Jpp.java
 	javac $^
@@ -25,4 +24,4 @@ $(JPP_DESTS): tools/Jpp.class $(JPP_SRCS)
 	$(foreach file,$(JPP_SRCS), java -classpath tools Jpp $(file) $(JPP_DEFS) -o $(file:.jpp=.java);)
 
 clean:
-	rm -f `find . -name "*.jar" -or -name "*~"`
+	rm -f `find . -name "*.jar" -or -name "*~"` $(JPP_DESTS)
