@@ -499,6 +499,18 @@ Native.create("com/sun/mmedia/DirectPlayer.nReleaseDevice.(I)V", function(handle
     console.warn("com/sun/mmedia/DirectPlayer.nReleaseDevice.(I)V not implemented.");
 });
 
+Native.create("com/sun/mmedia/DirectPlayer.nSwitchToForeground.(II)Z", function(handle, options) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nSwitchToForeground.(II)Z not implemented. ");
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nSwitchToBackground.(II)Z", function(handle, options) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nSwitchToBackground.(II)Z not implemented. ");
+    return true;
+});
+
 // Start Prefetch of Native Player
 Native.create("com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z", function(handle) {
     var player = PlayerCache[handle];
