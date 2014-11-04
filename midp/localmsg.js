@@ -512,6 +512,12 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       var aspect = decoder.getValue(DataType.STRING);
       var quality = decoder.getValue(DataType.BYTE);
 
+      if (aspect != "FullImage") {
+        console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+        return;
+      }
+
       console.log("fileName: " + fileName);
       console.log("max_vres: " + max_vres);
       console.log("max_hres: " + max_hres);
@@ -535,7 +541,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
           canvas.toBlob(function(blob) {
-
+            
           }, "image/jpeg", quality / 100);
         }
         img.onerror = function(e) {
