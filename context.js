@@ -133,7 +133,12 @@ Context.prototype.invoke = function(methodInfoId, direct, args) {
   }
   // Invoke Native Implementation
   if (methodInfo.alternateImpl) {
-    throw "TODO";
+    var alternateImpl = methodInfo.alternateImpl;
+    try {
+      return alternateImpl.call(null, this, args, methodInfo.isStatic);
+    } catch (e) {
+      throw "TODO handle exceptions/yields in alternate impls. " + e + e.stack;
+    }
     return;
   }
   // Invoke Compiled Implementation

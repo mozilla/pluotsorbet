@@ -42,7 +42,11 @@ if (!jsGlobal.performance.now) {
 }
 
 function log(message?: any, ...optionalParams: any[]): void {
-  jsGlobal.print.apply(jsGlobal, arguments);
+  if (inBrowser) {
+    console.log.apply(jsGlobal, arguments);
+  } else {
+    jsGlobal.print.apply(jsGlobal, arguments);
+  }
 }
 
 function warn(message?: any, ...optionalParams: any[]): void {

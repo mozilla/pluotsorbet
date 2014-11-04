@@ -1088,7 +1088,7 @@ VM.execute = function(ctx) {
             }
             var shouldReturn = popFrame(0);
             if (shouldReturn) {
-               return;
+               return returnValue;
             }
             break;
         case 0xac: // ireturn
@@ -1100,7 +1100,7 @@ VM.execute = function(ctx) {
 
             var shouldReturn = popFrame(1);
             if (shouldReturn) {
-                return;
+                return returnValue;
             }
             break;
         case 0xad: // lreturn
@@ -1110,7 +1110,7 @@ VM.execute = function(ctx) {
             }
             var shouldReturn = popFrame(2);
             if (shouldReturn) {
-                return;
+                return returnValue;
             }
             break;
         default:

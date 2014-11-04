@@ -60,15 +60,23 @@ function createAlternateImpl(object, key, fn) {
       }
 
       if (ret === true) {
-        stack.push(1);
+        var value = 1;
+        stack.push(value);
+        return value;
       } else if (ret === false) {
-        stack.push(0);
+        var value = 0;
+        stack.push(value);
+        return value;
       } else if (typeof ret === "string") {
-        stack.push(ctx.newString(ret));
+        var value = ctx.newString(ret);
+        stack.push(value);
+        return value;
       } else if (retType === 'J' || retType === 'D') {
         stack.push2(ret);
+        return ret;
       } else {
         stack.push(ret);
+        return ret;
       }
     }
 
@@ -82,7 +90,7 @@ function createAlternateImpl(object, key, fn) {
 
         throw VM.Pause;
       } else {
-        doReturn(ret);
+        return doReturn(ret);
       }
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
