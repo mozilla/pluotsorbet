@@ -130,7 +130,7 @@ module J2ME {
 
   export class State {
     private static _nextID = 0;
-    id: number
+    id: number;
     bci: number;
     local: Value [];
     stack: Value [];
@@ -1009,7 +1009,7 @@ module J2ME {
       return node;
     }
 
-    genInvokeStatic(methodInfo: MethodInfo) {
+    genInvokeStatic(methodInfo: MethodInfo, nextBCI: Bytecodes) {
       this.classInitCheck(methodInfo.classInfo);
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
@@ -1023,10 +1023,11 @@ module J2ME {
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
+      invokeArgs.push(new Constant(true));
       invokeArgs.push(argsArray);
 
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invokeStatic"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1034,7 +1035,7 @@ module J2ME {
       }
     }
 
-    genInvokeSpecial(methodInfo: MethodInfo) {
+    genInvokeSpecial(methodInfo: MethodInfo, nextBCI: Bytecodes) {
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
@@ -1043,15 +1044,16 @@ module J2ME {
         var type = types[i];
         args.push(this.state.pop(type.kind));
       }
+      args.push(this.state.pop(Kind.Reference));
       args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
-      invokeArgs.push(this.state.pop(Kind.Reference));
+      invokeArgs.push(new Constant(true));
       invokeArgs.push(argsArray);
 
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invokeSpecial"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1059,11 +1061,11 @@ module J2ME {
       }
     }
 
-    genInvokeInterface(methodInfo: MethodInfo) {
-      this.genInvokeVirtual(methodInfo);
+    genInvokeInterface(methodInfo: MethodInfo, nextBCI: Bytecodes) {
+      this.genInvokeVirtual(methodInfo, nextBCI);
     }
 
-    genInvokeVirtual(methodInfo: MethodInfo) {
+    genInvokeVirtual(methodInfo: MethodInfo, nextBCI: Bytecodes) {
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
@@ -1072,15 +1074,16 @@ module J2ME {
         var type = types[i];
         args.push(this.state.pop(type.kind));
       }
+      args.push(this.state.pop(Kind.Reference));
       args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
-      invokeArgs.push(this.state.pop(Kind.Reference));
+      invokeArgs.push(new Constant(false));
       invokeArgs.push(argsArray);
 
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1366,10 +1369,10 @@ module J2ME {
         case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); this.genPutStatic(this.lookupField(cpi, opcode, true), cpi); break;
         case Bytecodes.GETFIELD       : cpi = stream.readCPI(); this.genGetField(this.lookupField(cpi, opcode, false), cpi); break;
         case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); this.genPutField(this.lookupField(cpi, opcode, false), cpi); break;
-        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvokeVirtual(this.lookupMethod(cpi, opcode, false)); break;
-        case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.genInvokeSpecial(this.lookupMethod(cpi, opcode, false)); break;
-        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvokeStatic(this.lookupMethod(cpi, opcode, true)); break;
-        case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.genInvokeInterface(this.lookupMethod(cpi, opcode, false)); break;
+        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvokeVirtual(this.lookupMethod(cpi, opcode, false), stream.nextBCI); break;
+        case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.genInvokeSpecial(this.lookupMethod(cpi, opcode, false), stream.nextBCI); break;
+        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvokeStatic(this.lookupMethod(cpi, opcode, true), stream.nextBCI); break;
+        case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.genInvokeInterface(this.lookupMethod(cpi, opcode, false), stream.nextBCI); break;
         case Bytecodes.NEW            : this.genNewInstance(stream.readCPI()); break;
         case Bytecodes.NEWARRAY       : this.genNewTypeArray(stream.readLocalIndex()); break;
          /*

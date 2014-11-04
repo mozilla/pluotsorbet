@@ -126,10 +126,10 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
   throw VM.Yield;
 }
 
-Context.prototype.invoke = function(methodInfoId, object, args) {
+Context.prototype.invoke = function(methodInfoId, direct, args) {
   var methodInfo = this.methodInfos[methodInfoId];
-  if (methodInfo.classInfo !== object.class) {
-      methodInfo = CLASSES.getMethod(object.class, methodInfo.key);
+  if (!direct && methodInfo.classInfo !== args[0].class) {
+      methodInfo = CLASSES.getMethod(args[0].class, methodInfo.key);
   }
   // Invoke Native Implementation
   if (methodInfo.alternateImpl) {
@@ -137,52 +137,45 @@ Context.prototype.invoke = function(methodInfoId, object, args) {
     return;
   }
   // Invoke Compiled Implementation
+  if (!methodInfo.dontCompile && !methodInfo.fn) {
+    this.compileMethodInfo(methodInfo);
+  }
   if (methodInfo.fn) {
-    console.log("Invoking compiled function " + methodInfo.name + "()");
-    var frameIndex = this.frames.push(COMPILED_FRAME);
-    this.compiledFrames++;
-    var fn = methodInfo.fn;
-    args.unshift(this, frameIndex - 1, methodInfo.implKey, object);
-    var returnValue = fn.apply(null, args);
-    this.compiledFrames--;
-    this.frames.pop();
-    return returnValue;
+    return this.invokeCompiledFn(methodInfo, args);
   }
   // Invoke Interpreter
   console.log("Invoking interpreted function " + methodInfo.name + "()");
   args = args || [];
   var frame = new Frame(methodInfo, [], 0);
   this.frames.push(frame);
-  frame.setLocal(0, object);
   for (var i = 0; i < args.length; i++) {
-    frame.setLocal(i + 1, args[i]);
+    frame.setLocal(i, args[i]);
   }
   return VM.execute(this);
 };
 
-Context.prototype.invokeStatic = function(methodInfoId, args) {
-    var methodInfo = this.methodInfos[methodInfoId];
-    args = args || [];
-    var frame = new Frame(methodInfo, [], 0);
-    this.frames.push(frame);
-    for (var i = 0; i < args.length; i++) {
-        frame.setLocal(i, args[i]);
-    }
-    return VM.execute(this);
+Context.prototype.invokeCompiledFn = function(methodInfo, args) {
+  console.log("Invoking compiled function " + methodInfo.name + "()");
+  var frameIndex = this.frames.push(COMPILED_FRAME) - 1;
+  this.compiledFrames++;
+
+  args.unshift(this, frameIndex, methodInfo.implKey);
+  var fn = methodInfo.fn;
+  var returnValue = fn.apply(null, args);
+
+  this.compiledFrames--;
+  this.frames.pop();
+  return returnValue;
 };
 
-Context.prototype.invokeSpecial = function(methodInfoId, object, args) {
-    var methodInfo = this.methodInfos[methodInfoId];
-    args = args || [];
-    var frame = new Frame(methodInfo, [], 0);
-    this.frames.push(frame);
-    frame.setLocal(0, object);
-    for (var i = 0; i < args.length; i++) {
-        frame.setLocal(i + 1, args[i]);
-    }
-    return VM.execute(this);
+Context.prototype.compileMethodInfo = function(methodInfo) {
+  var fn = J2ME.compileMethodInfo(methodInfo, this);
+  if (fn) {
+    methodInfo.fn = fn;
+  } else {
+    methodInfo.dontCompile = true;
+  }
 };
-
 
 Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());

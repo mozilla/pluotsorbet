@@ -118,7 +118,7 @@ VM.execute = function(ctx) {
                 return;
             }
             popFrame(0);
-        } while (frame.methodInfo);
+        } while (frame);
         ctx.kill();
         throw new Error(buildExceptionLog(ex, stackTrace));
     }
@@ -1055,22 +1055,16 @@ VM.execute = function(ctx) {
                 Instrument.callResumeHooks(ctx.current());
                 break;
             }
-            var fn;
-            if (methodInfo.fn) {
-                fn = methodInfo.fn;
-            } else {
-                fn = methodInfo.fn = J2ME.compileMethodInfo(methodInfo, ctx);
+
+            if (!methodInfo.dontCompile && !methodInfo.fn) {
+              ctx.compileMethodInfo(methodInfo);
             }
-            if (fn) {
-                console.log("Invoking compiled function " + methodInfo.name + "()");
-                var frameIndex = ctx.frames.push(COMPILED_FRAME);
-                ctx.compiledFrames++;
+            if (methodInfo.fn) {
                 // Take off the arguments from the stack.
                 var args = stack.slice(stack.length - methodInfo.consumes);
                 stack.length -= methodInfo.consumes;
-                args.unshift(ctx, frameIndex - 1, methodInfo.implKey);
                 // Invoke the compiled function.
-                var returnValue = fn.apply(null, args);
+                var returnValue = ctx.invokeCompiledFn(methodInfo, args);
                 // Push return value back on the stack.
                 var returnType = methodInfo.signature[methodInfo.signature.length - 1];
                 switch (returnType) {
@@ -1084,8 +1078,6 @@ VM.execute = function(ctx) {
                         stack.push(returnValue);
                         break;
                 }
-                ctx.compiledFrames--;
-                ctx.frames.pop();
                 break;
             }
             pushFrame(methodInfo);
