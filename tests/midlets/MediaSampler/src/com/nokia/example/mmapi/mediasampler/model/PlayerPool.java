@@ -247,6 +247,10 @@ public class PlayerPool implements PlayerListener {
     private void startPlayer(Player player) {
         try {
             if (player != null) {
+                if (player.getState() == Player.STARTED) {
+                    player.stop();
+                    return;
+                }
                 if (player.getState() == Player.UNREALIZED) {
                     player.prefetch();
                     player.realize();

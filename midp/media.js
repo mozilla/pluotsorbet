@@ -128,6 +128,9 @@ function Player(url) {
     /* @type {Int8Array} */
     this.data = null;
 
+    /* @type {AudioBuffer} */
+    this.audioBuffer = null;
+
     /* @type {AudioContext} */
     this.audioContext = null;
 
@@ -139,8 +142,6 @@ function Player(url) {
      * @type {GainNode}
      */
     this.gainNode = null;
-
-    this.currentTime = 0;
 
     this.isPlaying = false;
     this.startTime = 0;
@@ -175,7 +176,18 @@ Player.prototype.close = function() {
     if (this.source) {
         this.source.stop();
         this.source.disconnect();
+        this.source = null;
     }
+    if (this.gainNode) {
+        this.gainNode.disconnect();
+        this.gainNode = null;
+    }
+    this.audioBuffer = null;
+    this.data = null;
+
+    this.startTime = 0;
+    this.stopTime = 0;
+    this.isPlaying = false;
 };
 
 /**
@@ -255,28 +267,71 @@ Player.prototype.writeBuffer = function(buffer) {
     this.contentSize += buffer.length;
 };
 
+Player.prototype.play = function() {
+    var offset = this.stopTime - this.startTime;
+    this.source = this.audioContext.createBufferSource();
+    this.source.buffer = this.cloneBuffer();
+    this.source.connect(this.gainNode || this.audioContext.destination);
+    this.source.start(0, offset);
+    this.isPlaying = true;
+    this.startTime = this.audioContext.currentTime - offset;
+    this.source.onended = function() {
+        this.close();
+    }.bind(this);
+};
+
 Player.prototype.start = function() {
-    console.info("Player.prototype.start");
     return new Promise(function(resolve, reject) {
         if (this.contentSize > 0) {
-            this.source = this.audioContext.createBufferSource();
             this.decode(this.data.subarray(0, this.contentSize), function(decoded) {
-                this.source.buffer = decoded;
-                this.source.connect(this.gainNode || this.audioContext.destination);
-                this.source.start();
-                this.isPlaying = true;
-                this.startTime = this.audioContext.currentTime;
+                // Save a copy of the audio buffer for resumimg or replaying.
+                this.audioBuffer = decoded;
                 this.duration = decoded.duration;
+                this.play();
                 resolve();
             }.bind(this));
-            this.source.onended = function() {
-                console.info("Player stopped.");
-                this.stopTime = this.audioContext.currentTime;
-                this.isPlaying = false;
-            }.bind(this);
             return;
         }
+        console.warn("Cannot start playing.");
+        resolve();
     }.bind(this));
+};
+
+Player.prototype.pause = function() {
+    if (!this.isPlaying) {
+        return;
+    }
+    this.isPlaying = false;
+    this.source.onended = null;
+    this.stopTime = this.audioContext.currentTime;
+    this.source.stop();
+    this.source.disconnect();
+    this.source = null;
+};
+
+Player.prototype.resume = function() {
+    if (this.isPlaying) {
+        return;
+    }
+    if (this.stopTime - this.startTime >= this.duration) {
+        return;
+    }
+    this.play();
+};
+
+Player.prototype.cloneBuffer = function() {
+    var buffer = this.audioBuffer;
+    var cloned = this.audioContext.createBuffer(
+                    buffer.numberOfChannels,
+                    buffer.length,
+                    buffer.sampleRate
+                 );
+
+    for (var i = 0; i < buffer.numberOfChannels; ++i) {
+        var channel = buffer.getChannelData(i);
+        cloned.getChannelData(i).set(new Float32Array(channel));
+    }
+    return cloned;
 };
 
 Player.prototype.decode = function(encoded, callback) {
@@ -391,6 +446,12 @@ Native.create("com/sun/mmedia/DirectPlayer.nIsVolumeControlSupported.(I)Z", func
     return player.isVolumeControlSupported();
 });
 
+Native.create("com/sun/mmedia/DirectPlayer.nIsNeedBuffering.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    console.warn("com/sun/mmedia/DirectPlayer.nIsNeedBuffering.(I)Z not implemented.");
+    return false;
+});
+
 Native.create("com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z", function(handle) {
     var player = PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z not implemented.");
@@ -425,6 +486,31 @@ Native.create("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I", function(handle)
 Native.create("com/sun/mmedia/DirectPlayer.nStart.(I)Z", function(handle) {
     var player = PlayerCache[handle];
     player.start();
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nStop.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    player.close();
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nTerm.(I)I", function(handle) {
+    var player = PlayerCache[handle];
+    player.close();
+    delete PlayerCache[handle];
+    return 1;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nPause.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    player.pause();
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nResume.(I)Z", function(handle) {
+    var player = PlayerCache[handle];
+    player.resume();
     return true;
 });
 
