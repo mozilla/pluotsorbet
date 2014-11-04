@@ -715,7 +715,7 @@ Native.create("com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V", function
             resolve();
         });
     });
-});
+}, true);
 
 Native.create("com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V", function(id, ctx) {
     var mutex;
@@ -844,7 +844,7 @@ function(nativeEvent, ctx) {
 
         MIDP.deliverWaitForNativeEventResult(resolve, nativeEvent, isolateId);
     });
-});
+}, true);
 
 Native.create("com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z",
 function(obj, ctx) {
@@ -908,7 +908,7 @@ Native.create("com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/ma
 Native.create("com/sun/midp/main/CommandState.exitInternal.(I)V", function(exit) {
     console.info("Exit: " + exit);
     return new Promise(function(){});
-});
+}, true);
 
 Native.create("com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z", function() {
     console.warn("SuspendSystem$MIDPSystem.allMidletsKilled.()Z not implemented");
@@ -1053,7 +1053,7 @@ Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I", functio
             resolve(id);
         });
     });
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I", function(connection) {
     var values = util.fromJavaString(connection).split(',');

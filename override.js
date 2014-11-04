@@ -11,6 +11,73 @@ function JavaException(className, message) {
 }
 JavaException.prototype = Object.create(Error.prototype);
 
+function boolReturnType(stack, ret) {
+  if (ret) {
+    stack.push(1);
+  } else {
+    stack.push(0);
+  }
+}
+
+function doubleReturnType(stack, ret) {
+  // double types require two stack frames
+  stack.push2(ret);
+}
+
+function voidReturnType(stack, ret) {
+  // no-op
+}
+
+function stringReturnType(stack, ret) {
+  if (typeof ret === "string") {
+    stack.push(util.newString(ret));
+  } else {
+    // already a native string or null
+    stack.push(ret);
+  }
+}
+
+function defaultReturnType(stack, ret) {
+    stack.push(ret);
+}
+
+function getReturnFunction(sig) {
+  var retType = sig.substring(sig.lastIndexOf(")") + 1);
+  var fxn;
+  switch (retType) {
+    case 'V': fxn = voidReturnType; break;
+    case 'Z': fxn = boolReturnType; break;
+    case 'J':
+    case 'D': fxn = doubleReturnType; break;
+    case 'Ljava/lang/String;': fxn = stringReturnType; break;
+    default: fxn = defaultReturnType; break;
+  }
+
+  return fxn;
+}
+
+function executePromise(stack, ret, doReturn, ctx, key) {
+  if (ret && ret.then) { // ret.constructor.name == "Promise"
+    ret.then(function(res) {
+      if (Instrument.profiling) {
+        Instrument.exitAsyncNative(key);
+      }
+
+      doReturn(stack, res);
+    }, function(e) {
+      ctx.raiseException(e.javaClassName, e.message);
+    }).then(ctx.start.bind(ctx));
+
+    if (Instrument.profiling) {
+      Instrument.enterAsyncNative(key);
+    }
+
+    throw VM.Pause;
+  } else {
+    doReturn(stack, ret);
+  }
+}
+
 /**
  * A simple wrapper for overriding JVM functions to avoid logic errors
  * and simplify implementation:
@@ -33,9 +100,12 @@ JavaException.prototype = Object.create(Error.prototype);
  * @param {function(args)} fn
  *   A function taking any number of args.
  */
-function createAlternateImpl(object, key, fn) {
+function createAlternateImpl(object, key, fn, usesPromise) {
   var retType = key[key.length - 1];
   var numArgs = Signature.getINSlots(key.substring(key.lastIndexOf(".") + 1)) + 1;
+  var doReturn = getReturnFunction(key);
+  var postExec = usesPromise ? executePromise : doReturn;
+
   object[key] = function(ctx, stack, isStatic) {
     var args = new Array(numArgs);
 
@@ -48,46 +118,10 @@ function createAlternateImpl(object, key, fn) {
       args[i] = stack.pop();
     }
 
-    function doReturn(ret) {
-      if (retType === 'V') {
-        return;
-      }
-
-      if (ret === true) {
-        stack.push(1);
-      } else if (ret === false) {
-        stack.push(0);
-      } else if (typeof ret === "string") {
-        stack.push(util.newString(ret));
-      } else if (retType === 'J' || retType === 'D') {
-        stack.push2(ret);
-      } else {
-        stack.push(ret);
-      }
-    }
-
     try {
       var self = isStatic ? null : stack.pop();
       var ret = fn.apply(self, args);
-      if (ret && ret.then) { // ret.constructor.name == "Promise"
-        ret.then(function(res) {
-          if (Instrument.profiling) {
-            Instrument.exitAsyncNative(key);
-          }
-
-          doReturn(res);
-        }, function(e) {
-          ctx.raiseException(e.javaClassName, e.message);
-        }).then(ctx.start.bind(ctx));
-
-        if (Instrument.profiling) {
-          Instrument.enterAsyncNative(key);
-        }
-
-        throw VM.Pause;
-      } else {
-        doReturn(ret);
-      }
+      postExec(stack, ret, doReturn, ctx, key);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throw e;
