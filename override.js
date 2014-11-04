@@ -12,7 +12,7 @@ function JavaException(className, message) {
 JavaException.prototype = Object.create(Error.prototype);
 
 function bool_return_type(stack, ret) {
-  if (ret === true) {
+  if (ret) {
     stack.push(1);
   } else {
     stack.push(0);
