@@ -25,13 +25,13 @@ Native.create("gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V", function
   return new Promise(function(resolve, reject) {
     setTimeout(reject.bind(null, new JavaException("java/lang/NullPointerException", "An exception")), 100);
   });
-});
+}, true);
 
 Native.create("gnu/testlet/vm/NativeTest.returnAfterPause.()I", function() {
   return new Promise(function(resolve, reject) {
     setTimeout(resolve.bind(null, 42), 100);
   });
-});
+}, true);
 
 Native.create("gnu/testlet/vm/NativeTest.nonStatic.(I)I", function(val) {
   return val + 40;
@@ -66,4 +66,4 @@ Native.create("gnu/testlet/vm/NativeTest.dumbPipe.()Z", function() {
       resolve(JSON.stringify(array) === JSON.stringify(message));
     });
   });
-});
+}, true);
