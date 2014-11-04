@@ -459,7 +459,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
     break;
 
     default:
-      console.error("(nokia.phone-status) event " + name + " not implemented " +
+      console.error("(nokia.file-ui) event " + name + " not implemented " +
                     util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       return;
   }
