@@ -80,7 +80,6 @@ module J2ME {
     constructor(public value: string, public kind: Kind) {
       assert (!TypeDescriptor.canonicalTypeDescriptors[value]);
       TypeDescriptor.canonicalTypeDescriptors[value] = this;
-      writer.writeLn(value);
     }
 
     toString(): string {
