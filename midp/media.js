@@ -124,6 +124,8 @@ function Player(url) {
     this.contentType = "";
     this.wholeContentSize = -1;
     this.contentSize = 0;
+    this.volume = -1;
+    this.isMuted = false;
 
     /* @type {Int8Array} */
     this.data = null;
@@ -167,6 +169,7 @@ Player.prototype.realize = function(contentType) {
     this.audioContext = new AudioContext();
     if (this.isVolumeControlSupported()) {
         this.gainNode = this.audioContext.createGain();
+        this.volume = Math.round(this.gainNode.gain.value * 100);
         this.gainNode.connect(this.audioContext.destination);
     }
     return true;
@@ -339,17 +342,42 @@ Player.prototype.decode = function(encoded, callback) {
 };
 
 Player.prototype.getVolume = function() {
-    return Math.floor(this.gainNode.gain.value * 100);
+    return this.volume;
 };
 
 Player.prototype.setVolume = function(level) {
+    if (!this.gainNode) {
+        return -1;
+    }
     if (level < 0) {
         level = 0;
     } else if (level > 100) {
         level = 100;
     }
-    this.gainNode.gain.value = level / 100;
+    this.volume = level;
+    if (!this.isMuted) {
+        this.gainNode.gain.value = level / 100;
+    }
     return level;
+};
+
+Player.prototype.getMute = function() {
+    return this.isMuted;
+};
+
+Player.prototype.setMute = function(mute) {
+    if (this.isMuted === mute) {
+        return;
+    }
+    this.isMuted = mute;
+    if (!this.gainNode) {
+        return;
+    }
+    if (mute) {
+        this.gainNode.gain.value = 0;
+    } else {
+        this.gainNode.gain.value = this.volume / 100;
+    }
 };
 
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
@@ -533,12 +561,13 @@ Native.create("com/sun/mmedia/DirectVolume.nSetVolume.(II)I", function(handle, l
 
 Native.create("com/sun/mmedia/DirectVolume.nIsMuted.(I)Z", function(handle) {
     var player = PlayerCache[handle];
-    return player.getVolume() === 0;
+    return player.getMute();
 });
 
-Native.create("com/sun/mmedia/DirectVolume.nSetMute.(IZ)Z", function(handle, level) {
+Native.create("com/sun/mmedia/DirectVolume.nSetMute.(IZ)Z", function(handle, mute) {
     var player = PlayerCache[handle];
-    return player.setVolume(0) === 0;
+    player.setMute(mute);
+    return true;
 });
 
 Native.create("com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z", function(appId, note, duration, volume) {
