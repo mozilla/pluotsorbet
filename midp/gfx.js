@@ -1037,6 +1037,8 @@
         return new Promise(function(resolve, reject) {
           if (!dirtyEditors.length) {
               textEditorResolve = resolve;
+          } else {
+              resolve();
           }
         });
     }, true);

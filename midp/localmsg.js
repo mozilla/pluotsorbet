@@ -169,6 +169,8 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
           break;
         }
       }
+
+      return;
     break;
 
     default:
@@ -183,10 +185,6 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
     length: data.length,
     offset: 0,
   });
-}
-
-var NokiaContactsLocalMsgConnection = function() {
-    LocalMsgConnection.call(this);
 }
 
 var NokiaPhoneStatusLocalMsgConnection = function() {
@@ -265,6 +263,10 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
   });
 };
 
+var NokiaContactsLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+}
+
 NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
 NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
@@ -336,13 +338,140 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
   }
 }
 
+var NokiaFileUILocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaFileUILocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  switch (name) {
+    case "Common":
+      var encoder = new DataEncoder();
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "1.0");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+      });
+      break;
+
+    case "FileSelect":
+      var trans_id = decoder.getValue(DataType.USHORT);
+      var storageType = decoder.getValue(DataType.STRING);
+      var mediaType = decoder.getValue(DataType.STRING);
+      var multipleSelection = decoder.getValue(DataType.BOOLEAN);
+      var startingURL = decoder.getValue(DataType.STRING);
+
+      var el = document.getElementById('nokia-fileui-prompt').cloneNode(true);
+      el.style.display = 'block';
+      el.classList.add('visible');
+
+      var btnDone = el.querySelector('button.recommend');
+      btnDone.disabled = true;
+
+      var selectedFile = null;
+
+      el.querySelector('input').addEventListener('change', function() {
+        btnDone.disabled = false;
+        selectedFile = this.files[0];
+      });
+
+      el.querySelector('button.cancel').addEventListener('click', function() {
+        el.parentElement.removeChild(el);
+      });
+
+      btnDone.addEventListener('click', (function() {
+        el.parentElement.removeChild(el);
+
+        if (!selectedFile) {
+          return;
+        }
+
+        var createFile = (function(fileName) {
+          fs.mkdir("/nokiafileui", (function() {
+            fs.create("/nokiafileui/" + fileName, selectedFile, (function() {
+              var encoder = new DataEncoder();
+
+              encoder.putStart(DataType.STRUCT, "event");
+              encoder.put(DataType.METHOD, "name", "FileSelect");
+              encoder.put(DataType.USHORT, "trans_id", trans_id);
+              encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+              encoder.putStart(DataType.ARRAY, "unknown_array"); // Name unknown
+              encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
+              encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
+              encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
+              encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + fileName); // Name unknown
+              encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
+              encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
+              encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
+              encoder.putEnd(DataType.ARRAY, "unknown_array"); // Name unknown
+              encoder.putEnd(DataType.STRUCT, "event");
+
+              var data = new TextEncoder().encode(encoder.getData());
+              this.sendMessageToClient({
+                data: data,
+                length: data.length,
+                offset: 0,
+              });
+            }).bind(this));
+          }).bind(this));
+        }).bind(this);
+
+        var name = selectedFile.name;
+        var ext = "";
+        var extIndex = name.lastIndexOf(".");
+        if (extIndex !== -1) {
+          ext = name.substring(extIndex);
+          name = name.substring(0, extIndex);
+        }
+
+        var i = 0;
+        var tryFile = (function(fileName) {
+          fs.exists("/nokiafileui/" + fileName, function(exists) {
+            if (exists) {
+              i++;
+              tryFile(name + "-" + i + ext);
+            } else {
+              createFile(fileName);
+            }
+          });
+        }).bind(this);
+
+        tryFile(selectedFile.name);
+      }).bind(this));
+
+      document.body.appendChild(el);
+    break;
+
+    default:
+      console.error("(nokia.phone-status) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+};
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
 MIDP.FakeLocalMsgServers = [ "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings", "nokia.file-ui" ];
+                             "nokia.connectivity-settings", "nokia.image-processing" ];
 
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
@@ -351,6 +480,7 @@ MIDP.FakeLocalMsgServers.forEach(function(server) {
 MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.file-ui"] = new NokiaFileUILocalMsgConnection();
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);

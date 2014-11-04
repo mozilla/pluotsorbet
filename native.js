@@ -82,6 +82,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "fileconn.dir.received":
         value = "file:///";
         break;
+    case "fileconn.dir.photos":
+        value = "file:///Photos/";
+        break;
     case "fileconn.dir.roots.names":
         // The names here should be localized.
         value = "Memory card;Phone memory;Private"

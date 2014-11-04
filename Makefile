@@ -5,7 +5,7 @@ all: java tests
 test: all
 	rm -f test.log
 	killall python Python || true
-	python -m SimpleHTTPServer &
+	python tests/httpServer.py &
 	python tests/echoServer.py &
 	cd tests && python httpsServer.py &
 	cd tests && python sslEchoServer.py &

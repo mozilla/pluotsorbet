@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
+var system = require('system');
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
@@ -35,21 +37,26 @@ var gfxTests = [
   { name: "gfx/ClippingTest", maxDifferent: 0 },
 ];
 
-casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
-    casper
-    .start("http://localhost:8000/index.html")
-    .withFrame(0, function() {
+casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
+    function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
-            if (content.contains("DONE: 70965 pass, 0 fail, 180 known fail, 0 unknown pass")) {
-              test.pass('main unit tests');
+            if (content.contains("DONE: 70966 pass, 0 fail, 180 known fail, 0 unknown pass")) {
+                test.pass('main unit tests');
             } else {
-              this.debugPage();
-              this.echo(this.captureBase64('png'));
-              test.fail('main unit tests');
+                this.debugPage();
+                this.echo(this.captureBase64('png'));
+                test.fail('main unit tests');
             }
         });
-    });
+    }
+    casper
+    .start("http://localhost:8000/index.html")
+    .withFrame(0, basicUnitTests);
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?numCalled=1000")
+    .withFrame(0, basicUnitTests);
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=page,raw")
@@ -85,6 +92,30 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
                 this.click(".sms-listener-prompt.visible button.recommend");
                 this.waitForText("DONE", function() {
                     test.assertTextDoesntExist("FAIL");
+                });
+            });
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet")
+    .withFrame(0, function() {
+        this.waitForText("START", function() {
+            this.waitUntilVisible(".nokia-fileui-prompt", function() {
+                this.fill("form.nokia-fileui-prompt.visible", {
+                    "nokia-fileui-file": system.args[4],
+                });
+                this.click(".nokia-fileui-prompt.visible input");
+                this.click(".nokia-fileui-prompt.visible button.recommend");
+                this.waitForText("DONE", function() {
+                    var content = this.getPageContent();
+                    if (content.contains("FAIL")) {
+                        this.debugPage();
+                        this.echo(this.captureBase64('png'));
+                        test.fail('file-ui test');
+                    } else {
+                        test.pass("file-ui test");
+                    }
                 });
             });
         });
