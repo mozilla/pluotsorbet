@@ -90,7 +90,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBy
             }
         }).bind(this);
     }).bind(this));
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function() {
     // console.log("Protocol.available0: " + this.data.byteLength);
@@ -129,7 +129,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(dat
 
         copyData();
     }).bind(this));
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(data, offset, length) {
     return new Promise(function(resolve, reject) {
@@ -155,7 +155,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(da
 
         this.socket.send(data, offset, length);
     }.bind(this));
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(option, value) {
     if (!(option in this.options)) {
@@ -190,7 +190,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function() {
 
         this.socket.close();
     }).bind(this));
-});
+}, true);
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V", function() {
     // We don't have the ability to close the output stream independently

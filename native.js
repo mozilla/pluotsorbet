@@ -508,7 +508,7 @@ Native.create("java/lang/Thread.sleep.(J)V", function(delay, _) {
     return new Promise(function(resolve, reject) {
         window.setTimeout(resolve, delay.toNumber());
     })
-});
+}, true);
 
 Native.create("java/lang/Thread.yield.()V", function() {
     throw VM.Yield;
@@ -613,7 +613,7 @@ Native.create("com/sun/cldc/isolate/Isolate.waitStatus.(I)V", function(status) {
         }
         waitForStatus();
     }).bind(this));
-});
+}, true);
 
 Native.create("com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;", function(ctx) {
     return ctx.runtime.isolate;
@@ -652,7 +652,7 @@ Native.create("com/sun/midp/links/LinkPortal.getLinkCount0.()I", function(ctx) {
 
         resolve(links[isolateId].length);
     });
-});
+}, true);
 
 Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V", function(linkArray, ctx) {
     var isolateId = ctx.runtime.isolate.id;
@@ -683,7 +683,7 @@ Native.create("com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage
     // TODO: Implement when something hits send0
     console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
     return new Promise(function(){});
-});
+}, true);
 
 Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V", function(data) {
     this.decoded = new TextDecoder("UTF-8").decode(data);
