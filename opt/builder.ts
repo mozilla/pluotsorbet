@@ -401,15 +401,6 @@ module J2ME {
     }
   }
 
-  export function compile(classes, classInfo: ClassInfo) {
-//    if (classInfo.className.indexOf("SimpleClass") < 0) {
-//      return;
-//    }
-//    writer.enter("Compiling Class: " + classInfo.className + " {");
-//    classInfo.methods.forEach(compileMethodInfo);
-//    writer.leave("}");
-  }
-
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context) {
     if (methodInfo.name.substr(0, 8) !== 'compile_') {
       return;
@@ -418,11 +409,12 @@ module J2ME {
       return;
     }
     var builder = new Builder(methodInfo, ctx);
+    var fn;
     try {
       var compilation = builder.build();
       var fnSource = compilation.body;
       compilation.parameters.unshift('ctx', 'frameIndex', 'methodInfoId');
-      var fn = new Function(compilation.parameters.join(','), fnSource);
+      fn = new Function(compilation.parameters.join(','), fnSource);
     } catch (e) {
       writer.writeLn("--------- Failed to compile " + methodInfo.name + "() -------------------");
       writer.writeLn(e);
