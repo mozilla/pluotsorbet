@@ -512,7 +512,7 @@ Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", fu
 
         resolve();
     }).bind(this));
-});
+}, true);
 
 Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function() {
     return MIDP.LocalMsgConnections[this.protocolName].waitConnection();
@@ -546,7 +546,7 @@ Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(da
     }
 
     return MIDP.LocalMsgConnections[this.protocolName].clientReceiveMessage(data);
-});
+}, true);
 
 Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function() {
     if (this.server) {
