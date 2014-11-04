@@ -465,13 +465,86 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
   }
 };
 
+var NokiaImageProcessingLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaImageProcessingLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  switch (name) {
+    case "Common":
+      var encoder = new DataEncoder();
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "1.[0-10]");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
+      break;
+
+    case "Scale":
+      var trans_id = decoder.getValue(DataType.BYTE);
+      var fileName = decoder.getValue(DataType.WSTRING);
+      decoder.getStart(DataType.LIST);
+      if (decoder.getName() == "max_kb") {
+        console.error("(nokia.image-processing) event " + name + " with max_kb not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+        return;
+      }
+      var max_vres = decoder.getValue(DataType.USHORT);
+      var max_hres = decoder.getValue(DataType.USHORT);
+      decoder.getEnd(DataType.LIST);
+      var aspect = decoder.getValue(DataType.STRING);
+      var quality = decoder.getValue(DataType.BYTE);
+
+      /*
+              var encoder = new DataEncoder();
+
+              encoder.putStart(DataType.STRUCT, "event");
+              encoder.put(DataType.METHOD, "name", "Scale");
+              encoder.put(DataType.BYTE, "trans_id", trans_id);
+              encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
+              encoder.put(DataType.WSTRING, "filename", NEWFILENAME); // Name unknown
+              encoder.putEnd(DataType.STRUCT, "event");
+
+              var data = new TextEncoder().encode(encoder.getData());
+              this.sendMessageToClient({
+                data: data,
+                length: data.length,
+                offset: 0,
+              });
+      */
+    break;
+
+    default:
+      console.error("(nokia.image-processing) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+};
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
 MIDP.FakeLocalMsgServers = [ "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings", "nokia.image-processing" ];
+                             "nokia.connectivity-settings" ];
 
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
@@ -481,6 +554,7 @@ MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.file-ui"] = new NokiaFileUILocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.image-processing"] = new NokiaImageProcessingLocalMsgConnection();
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);
