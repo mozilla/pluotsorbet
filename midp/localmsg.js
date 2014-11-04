@@ -527,6 +527,16 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         img.onload = function() {
           console.log("width: " + img.naturalWidth);
           console.log("height: " + img.naturalHeight);
+
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.min(img.naturalWidth, max_hres);
+          canvas.height = Math.min(img.naturalHeight, max_vres);
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob(function(blob) {
+
+          }, "image/jpeg", quality / 100);
         }
         img.onerror = function(e) {
           console.error("Error in decoding image");
