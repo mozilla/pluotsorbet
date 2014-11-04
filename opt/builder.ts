@@ -422,7 +422,7 @@ module J2ME {
       var compilation = builder.build();
       var fnSource = compilation.body;
       compilation.parameters.unshift('ctx', 'frameIndex', 'methodInfoId');
-      var fn = Function(compilation.parameters, fnSource);
+      var fn = new Function(compilation.parameters.join(','), fnSource);
     } catch (e) {
       writer.writeLn("--------- Failed to compile " + methodInfo.name + "() -------------------");
       writer.writeLn(e);
