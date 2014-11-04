@@ -512,6 +512,27 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       var aspect = decoder.getValue(DataType.STRING);
       var quality = decoder.getValue(DataType.BYTE);
 
+      console.log("fileName: " + fileName);
+      console.log("max_vres: " + max_vres);
+      console.log("max_hres: " + max_hres);
+      console.log("aspect: " + aspect);
+      console.log("quality: " + quality);
+
+      fs.open("/" + fileName, function(fd) {
+        var imgData = fs.read(fd);
+        fs.close(fd);
+
+        var img = new Image();
+        img.src = URL.createObjectURL(new Blob([ imgData ]));
+        img.onload = function() {
+          console.log("width: " + img.naturalWidth);
+          console.log("height: " + img.naturalHeight);
+        }
+        img.onerror = function(e) {
+          console.error("Error in decoding image");
+        }
+      });
+
       /*
               var encoder = new DataEncoder();
 
