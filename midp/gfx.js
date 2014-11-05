@@ -162,6 +162,28 @@
                 reject(new JavaException("java/lang/IllegalArgumentException", "error decoding image"));
             }
         });
+    }, true);
+
+    Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V",
+    function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
+        var context = createContext2d(width, height);
+
+        if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
+            context.scale(-1, 1);
+        } else if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270) {
+            context.scale(1, -1);
+        } else if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90) {
+            context.rotate(Math.PI / 2);
+        } else if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180) {
+            context.rotate(Math.PI);
+        } else if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270) {
+            context.rotate(1.5 * Math.PI);
+        }
+
+        context.drawImage(dataSource.nativeImageData, x, y, width, height, 0, 0, width, height);
+
+        setImageData(dataDest, width, height, context);
+        dataDest.class.getField("I.isMutable.Z").set(dataDest, isMutable);
     });
 
     Native.create("javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V",
@@ -1041,7 +1063,7 @@
               resolve();
           }
         });
-    });
+    }, true);
 
     Native.create("com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I", function() {
         if (!dirtyEditors.length) {

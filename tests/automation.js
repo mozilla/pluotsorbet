@@ -36,6 +36,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferent: 0 },
   { name: "gfx/ImageProcessingTest", maxDifferent: 5830 },
+  { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
 ];
 
 casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {

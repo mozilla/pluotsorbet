@@ -22,7 +22,7 @@ public class ImageRenderingTest extends MIDlet implements CommandListener {
         try {
             image = Image.createImage("/gfx/images/FirefoxLogo.png");
         } catch (java.io.IOException e) {
-            System.out.println(e);
+            System.out.println("FAIL - " + e);
         }
 
         quitCommand = new Command("Quit", Command.EXIT, 2);
