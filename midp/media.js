@@ -31,8 +31,9 @@ var ListCache = {
     create: function(data) {
         var id = this._nextId;
         this._cached[id] = data;
-        // Find next valid id.
-        while (this._cached[++this._nextId]);
+        if (++this._nextId > 0xffff) {
+            this._nextId = 0;
+        }
         return id;
     },
 
@@ -41,11 +42,10 @@ var ListCache = {
     },
 
     remove: function(id) {
-        this._cached[id] = null;
-        this._nextId = id;
+        delete this._cached[id];
     },
 
-    _cached: [],
+    _cached: {},
     // A valid ID should be greater than 0.
     _nextId: 1
 }
