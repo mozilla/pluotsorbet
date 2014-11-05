@@ -207,7 +207,6 @@ module J2ME.C4.Backend {
 
   IR.JVMConvert.prototype.compile = function (cx: Context): AST.Node {
     var value = compileValue(this.value, cx);
-    // bdahl: Add all the conversions here.
     if (this.from === Kind.Int) {
       switch (this.to) {
         case Kind.Long:
