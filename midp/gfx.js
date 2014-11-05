@@ -166,10 +166,6 @@
 
     Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V",
     function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
-        /*if (transform != TRANS_NONE) {
-            console.error("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V doesn't support transforms");
-        }*/
-
         var context = createContext2d(width, height);
 
         if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
