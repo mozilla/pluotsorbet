@@ -520,12 +520,6 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         return;
       }
 
-      console.log("fileName: " + fileName);
-      console.log("max_vres: " + max_vres);
-      console.log("max_hres: " + max_hres);
-      console.log("aspect: " + aspect);
-      console.log("quality: " + quality);
-
       fs.open("/" + fileName, (function(fd) {
         var imgData = fs.read(fd);
         fs.close(fd);
@@ -533,9 +527,6 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         var img = new Image();
         img.src = URL.createObjectURL(new Blob([ imgData ]));
         img.onload = (function() {
-          console.log("width: " + img.naturalWidth);
-          console.log("height: " + img.naturalHeight);
-
           var canvas = document.createElement("canvas");
           canvas.width = Math.min(img.naturalWidth, max_hres);
           canvas.height = Math.min(img.naturalHeight, max_vres);
@@ -545,8 +536,6 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
           canvas.toBlob((function(blob) {
             createUniqueFile("/nokiaimageprocessing", "image", blob, (function(fileName) {
               var encoder = new DataEncoder();
-
-              console.log("CREATED: " + fileName);
 
               encoder.putStart(DataType.STRUCT, "event");
               encoder.put(DataType.METHOD, "name", "Scale");
@@ -564,6 +553,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
             }).bind(this));
           }).bind(this), "image/jpeg", quality / 100);
         }).bind(this);
+
         img.onerror = function(e) {
           console.error("Error in decoding image");
         };
