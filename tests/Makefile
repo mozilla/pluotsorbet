@@ -4,6 +4,17 @@ BUILDTIME_SUPPORT_DIR=support/buildtime
 RUNTIME_SUPPORT_DIR=support/runtime
 BUILDTIME_SUPPORT_SRCS=$(shell find $(BUILDTIME_SUPPORT_DIR) -name "*.java")
 RUNTIME_SUPPORT_SRCS=$(shell find $(RUNTIME_SUPPORT_DIR) -name "*.java")
+PACKAGE_FILES = \
+  tests.jar \
+  gnu/testlet/vm/test.png \
+  gfx/images/* \
+  midlets/test.png \
+  midlets/favouriteartists/images/* \
+  midlets/blogwriter/images/* \
+  midlets/rlinks/images/* \
+  com/sun/cldc/io/utf8.txt \
+  org/mozilla/io/test.jpg \
+  $(NULL)
 
 all: tests.jar
 
@@ -25,7 +36,7 @@ tests.jar: $(SRCS) Testlets.java
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar:$(BUILDTIME_SUPPORT_DIR) -d ./build $^ > /dev/null
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -d ./build $(RUNTIME_SUPPORT_SRCS) > /dev/null
 	jar cvfe tests.jar RunTests -C build/ .
-	jar uvf tests.jar gnu/testlet/vm/test.png gfx/images/* midlets/test.png midlets/favouriteartists/images/* midlets/blogwriter/images/* midlets/rlinks/images/* com/sun/cldc/io/utf8.txt > /dev/null
+	jar uvf $(PACKAGE_FILES) > /dev/null
 	rm -rf build
 
 clean:

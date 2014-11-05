@@ -35,6 +35,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferent: 0 },
+  { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
 ];
 
@@ -42,7 +43,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
-            if (content.contains("DONE: 70966 pass, 0 fail, 180 known fail, 0 unknown pass")) {
+            if (content.contains("DONE: 70976 pass, 0 fail, 180 known fail, 0 unknown pass")) {
                 test.pass('main unit tests');
             } else {
                 this.debugPage();
