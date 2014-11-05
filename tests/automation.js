@@ -35,7 +35,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferent: 0 },
-  { name: "gfx/ImageProcessingTest", maxDifferent: 5830 },
+  { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
 ];
 
