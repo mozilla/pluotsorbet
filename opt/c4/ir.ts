@@ -669,7 +669,7 @@ module J2ME.C4.IR {
     var result;
     var m = StringUtilities;
     if (node instanceof Constant) {
-      return node.value;
+      return kindCharacter(node.kind) + node.value;
     } else if (node instanceof Variable) {
       return node.name;
     } else if (node instanceof Parameter) {
