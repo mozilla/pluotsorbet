@@ -77,7 +77,7 @@ Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesNext.(I)Ljava/lang/String;", function(hdlr) {
     var cached = ListCache.get(hdlr);
     if (!cached) {
-        console.error("Invaid hdlr: " + hdlr);
+        console.error("Invalid hdlr: " + hdlr);
         return null;
     }
     return cached.shift() || null;
@@ -104,7 +104,7 @@ Native.create("com/sun/mmedia/DefaultConfiguration.nListProtocolsOpen.(Ljava/lan
 Native.create("com/sun/mmedia/DefaultConfiguration.nListProtocolsNext.(I)Ljava/lang/String;", function(hdlr) {
     var cached = ListCache.get(hdlr);
     if (!cached) {
-        console.error("Invaid hdlr: " + hdlr);
+        console.error("Invalid hdlr: " + hdlr);
         return null;
     }
     return cached.shift() || null;
