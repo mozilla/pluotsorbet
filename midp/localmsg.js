@@ -526,13 +526,13 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       console.log("aspect: " + aspect);
       console.log("quality: " + quality);
 
-      fs.open("/" + fileName, function(fd) {
+      fs.open("/" + fileName, (function(fd) {
         var imgData = fs.read(fd);
         fs.close(fd);
 
         var img = new Image();
         img.src = URL.createObjectURL(new Blob([ imgData ]));
-        img.onload = function() {
+        img.onload = (function() {
           console.log("width: " + img.naturalWidth);
           console.log("height: " + img.naturalHeight);
 
@@ -542,23 +542,17 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
           var ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-          canvas.toBlob(function(blob) {
-
-          }, "image/jpeg", quality / 100);
-        }
-        img.onerror = function(e) {
-          console.error("Error in decoding image");
-        }
-      });
-
-      /*
+          canvas.toBlob((function(blob) {
+            createUniqueFile("/nokiaimageprocessing", "image", blob, (function(fileName) {
               var encoder = new DataEncoder();
+
+              console.log("CREATED: " + fileName);
 
               encoder.putStart(DataType.STRUCT, "event");
               encoder.put(DataType.METHOD, "name", "Scale");
               encoder.put(DataType.BYTE, "trans_id", trans_id);
               encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
-              encoder.put(DataType.WSTRING, "filename", NEWFILENAME); // Name unknown
+              encoder.put(DataType.WSTRING, "filename", "nokiaimageprocessing/" + fileName); // Name unknown
               encoder.putEnd(DataType.STRUCT, "event");
 
               var data = new TextEncoder().encode(encoder.getData());
@@ -567,7 +561,13 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
                 length: data.length,
                 offset: 0,
               });
-      */
+            }).bind(this));
+          }).bind(this), "image/jpeg", quality / 100);
+        }).bind(this);
+        img.onerror = function(e) {
+          console.error("Error in decoding image");
+        };
+      }).bind(this));
     break;
 
     default:
