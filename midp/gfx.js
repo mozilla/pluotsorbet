@@ -183,6 +183,7 @@
         context.drawImage(dataSource.nativeImageData, x, y, width, height, 0, 0, width, height);
 
         setImageData(dataDest, width, height, context);
+        dataDest.class.getField("I.isMutable.Z").set(dataDest, isMutable);
     });
 
     Native.create("javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V",
