@@ -570,6 +570,11 @@ MIDP.Context2D = (function() {
     c.addEventListener("mousemove", function(ev) {
         var distanceX = ev.layerX - posX;
         var distanceY = ev.layerY - posY;
+        if (distanceX == 0 && distanceY == 0) {
+            // Sometimes "mousemove" fires even if we haven't actually
+            // moved the mouse; treating that as a "move" breaks clicks.
+            return;
+        }
         mouse_moved = true;
         if (mouse_is_down) {
             MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
