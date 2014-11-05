@@ -964,6 +964,13 @@ module J2ME {
       this.genIf(stream, new IR.Binary(Bytecode.conditionToOperator(condition), x, y));
     }
 
+    genCompareOp(kind: Kind, isLessThan: boolean) {
+      var b = this.state.pop(kind);
+      var a = this.state.pop(kind);
+      var compare = new IR.JVMFloatCompare(this.region, a, b, isLessThan);
+      this.state.ipush(compare);
+    }
+
     genGoto(stream: BytecodeStream) {
       release || assert (!this.blockStopInfos);
       this.blockStopInfos = [new StopInfo(
@@ -1339,11 +1346,11 @@ module J2ME {
 
         /*
         case Bytecodes.LCMP           : genCompareOp(Kind.Long, false); break;
-        case Bytecodes.FCMPL          : genCompareOp(Kind.Float, true); break;
-        case Bytecodes.FCMPG          : genCompareOp(Kind.Float, false); break;
-        case Bytecodes.DCMPL          : genCompareOp(Kind.Double, true); break;
-        case Bytecodes.DCMPG          : genCompareOp(Kind.Double, false); break;
          */
+        case Bytecodes.FCMPL          : this.genCompareOp(Kind.Float, true); break;
+        case Bytecodes.FCMPG          : this.genCompareOp(Kind.Float, false); break;
+        case Bytecodes.DCMPL          : this.genCompareOp(Kind.Double, true); break;
+        case Bytecodes.DCMPG          : this.genCompareOp(Kind.Double, false); break;
         case Bytecodes.IFEQ           : this.genIfZero(stream, Condition.EQ); break;
         case Bytecodes.IFNE           : this.genIfZero(stream, Condition.NE); break;
         case Bytecodes.IFLT           : this.genIfZero(stream, Condition.LT); break;

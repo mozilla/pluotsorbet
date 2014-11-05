@@ -22,6 +22,19 @@ module J2ME.C4.IR {
 
   JVMNewArray.prototype.nodeName = "JVMNewArray";
 
+  export class JVMFloatCompare extends Value {
+    constructor(public control: Control, public a: Value, public b: Value, public lessThan: boolean) {
+      super();
+    }
+    visitInputs(visitor: NodeVisitor) {
+      visitor(this.control);
+      visitor(this.a);
+      visitor(this.b);
+    }
+  }
+
+  JVMFloatCompare.prototype.nodeName = "JVMFloatCompare";
+
   export class JVMStoreIndexed extends StoreDependent {
     constructor(control: Control, store: Store, public kind: Kind, public array: Value, public index: Value, public value: Value) {
       super(control, store);
@@ -146,6 +159,24 @@ module J2ME.C4.Backend {
     var array = compileValue(this.array, cx);
     var index = compileValue(this.index, cx);
     return new AST.MemberExpression(array, index, true);
+  }
+
+  IR.JVMFloatCompare.prototype.compile = function (cx: Context): AST.Node {
+    var a = compileValue(this.a, cx);
+    var b = compileValue(this.b, cx);
+    var nanResult;
+    if (this.lessThan) {
+      nanResult = constant(-1);
+    } else {
+      nanResult = constant(1);
+    }
+    var nan = new AST.LogicalExpression("||", new AST.CallExpression(new AST.Identifier("isNaN"), [a]), new AST.CallExpression(new AST.Identifier("isNaN"), [b]));
+    var gt = new AST.BinaryExpression(">", a, b);
+    var lt = new AST.BinaryExpression("<", a, b);
+    return new AST.ConditionalExpression(nan, nanResult,
+        new AST.ConditionalExpression(gt, constant(1),
+          new AST.ConditionalExpression(lt,
+            constant(-1), constant(0))));
   }
 
   IR.JVMConvert.prototype.compile = function (cx: Context): AST.Node {
