@@ -1040,6 +1040,9 @@ module J2ME {
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
         var type = types[i];
+        if (isTwoSlot(type.kind)) {
+          args.push(Null);
+        }
         args.push(this.state.pop(type.kind));
       }
       args.reverse();
@@ -1065,6 +1068,9 @@ module J2ME {
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
         var type = types[i];
+        if (isTwoSlot(type.kind)) {
+          args.push(Null);
+        }
         args.push(this.state.pop(type.kind));
       }
       args.push(this.state.pop(Kind.Reference));
@@ -1095,6 +1101,9 @@ module J2ME {
       var args: Value [] = [];
       for (var i = 1; i < types.length; i++) {
         var type = types[i];
+        if (isTwoSlot(type.kind)) {
+          args.push(Null);
+        }
         args.push(this.state.pop(type.kind));
       }
       args.push(this.state.pop(Kind.Reference));
