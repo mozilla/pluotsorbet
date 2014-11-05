@@ -419,6 +419,10 @@ Context.prototype.resolve = function(cp, idx, isStatic) {
     return constant;
 };
 
+Context.prototype.triggerBailout = function(e, methodInfoId, frameIndex, cpi, locals, stack) {
+  throw VM.Yield;
+};
+
 Context.prototype.JVMBailout = function(e, methodInfoId, frameIndex, cpi, locals, stack) {
     var methodInfo = this.methodInfos[methodInfoId];
     var reason = "";

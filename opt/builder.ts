@@ -512,7 +512,7 @@ module J2ME {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
-      this.methodReturnInfos = null;
+      this.methodReturnInfos = [];
     }
 
     build(): C4.Backend.Compilation {
@@ -666,19 +666,16 @@ module J2ME {
       // TODO handle void return types
       var stop;
       var returnInfos = this.methodReturnInfos;
-      if (returnInfos.length === 0) {
-        stop = new IR.Stop(this.methodReturnInfos[0].control, this.methodReturnInfos[0].store, this.methodReturnInfos[0].value);
-      } else {
-        var returnRegion = new Region(null);
-        var returnValuePhi = new Phi(returnRegion, null);
-        var returnStorePhi = new Phi(returnRegion, null);
-        returnInfos.forEach(function (returnInfo) {
-          returnRegion.predecessors.push(returnInfo.control);
-          returnValuePhi.pushValue(returnInfo.value);
-          returnStorePhi.pushValue(returnInfo.store);
-        });
-        stop = new IR.Stop(returnRegion, returnStorePhi, returnValuePhi);
-      }
+      assert (returnInfos.length > 0);
+      var returnRegion = new Region(null);
+      var returnValuePhi = new Phi(returnRegion, null);
+      var returnStorePhi = new Phi(returnRegion, null);
+      returnInfos.forEach(function (returnInfo) {
+        returnRegion.predecessors.push(returnInfo.control);
+        returnValuePhi.pushValue(returnInfo.value);
+        returnStorePhi.pushValue(returnInfo.store);
+      });
+      stop = new IR.Stop(returnRegion, returnStorePhi, returnValuePhi);
       return new IR.DFG(stop);
     }
 
@@ -694,7 +691,8 @@ module J2ME {
       while (stream.currentBCI <= block.endBci) {
         state.bci = bci;
         this.processBytecode(stream, state);
-        if (Bytecode.isReturn(stream.currentBC())) {
+        if (Bytecode.isReturn(stream.currentBC()) ||
+            Bytecodes.ATHROW === stream.currentBC()) {
           release || assert (!this.blockStopInfos, "Should not have any stops.");
           return;
         }
@@ -994,9 +992,6 @@ module J2ME {
       if (value === null) {
         value = Undefined;
       }
-      if (!this.methodReturnInfos) {
-        this.methodReturnInfos = [];
-      }
       this.methodReturnInfos.push(new ReturnInfo(
         this.region,
         this.state.store,
@@ -1036,6 +1031,17 @@ module J2ME {
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
       var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("nullCheck"), [object], IR.Flags.PRISTINE);
       this.recordStore(call);
+    }
+
+    genThrow(bci: number) {
+      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("triggerBailout"), [], IR.Flags.PRISTINE);
+      this.recordStore(call);
+      this.methodReturnInfos.push(new ReturnInfo(
+        this.region,
+        this.state.store,
+        Undefined
+      ));
     }
 
     genInvokeStatic(methodInfo: MethodInfo, nextBCI: Bytecodes) {
@@ -1422,8 +1428,8 @@ module J2ME {
         case Bytecodes.ANEWARRAY      : genNewObjectArray(stream.readCPI()); break;
         */
         case Bytecodes.ARRAYLENGTH    : this.genArrayLength(); break;
+        case Bytecodes.ATHROW         : this.genThrow(stream.currentBCI); break;
         /*
-        case Bytecodes.ATHROW         : genThrow(stream.currentBCI()); break;
         case Bytecodes.CHECKCAST      : genCheckCast(); break;
         case Bytecodes.INSTANCEOF     : genInstanceOf(); break;
         case Bytecodes.MONITORENTER   : genMonitorEnter(state.apop()); break;
