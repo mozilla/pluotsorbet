@@ -1027,7 +1027,7 @@ module J2ME {
       return node;
     }
 
-    genNullCheck(object, bci: Bytecodes) {
+    genNullCheck(object, bci: number) {
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
       var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("nullCheck"), [object], IR.Flags.PRISTINE);
       this.recordStore(call);
