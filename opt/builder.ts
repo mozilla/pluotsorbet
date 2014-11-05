@@ -1,6 +1,7 @@
 module J2ME {
 
-  var writer = new IndentingWriter(false);
+  var debug = true;
+  var writer = new IndentingWriter(!debug);
 
   import Block = Bytecode.Block;
   import BlockMap = Bytecode.BlockMap;
@@ -165,11 +166,15 @@ module J2ME {
       release || assert (control);
       function makePhi(x) {
         var phi = new Phi(control, x);
+        phi.kind = x.kind;
         phi.isLoop = true;
         return phi;
       }
       s.bci = this.bci;
       s.local = this.local.map(function (v, i) {
+        if (v === null) {
+          return null;
+        }
         if (true || dirtyLocals[i]) {
           return makePhi(v);
         }
@@ -204,7 +209,14 @@ module J2ME {
     }
 
     static mergeValue(control: Control, a: Value, b: Value): Phi {
-      var phi: Phi = <Phi>(a instanceof Phi && a.control === control ? a : new Phi(control, a));
+      var phi;
+      if (a instanceof Phi && a.control === control) {
+        phi = a;
+      } else {
+        phi = new Phi(control, a)
+        phi.kind = a.kind;
+      }
+      release || assert (phi.kind === b.kind);
       phi.pushValue(b);
       return phi;
     }
@@ -212,6 +224,9 @@ module J2ME {
     static mergeValues(control: Control, a: Value [], b: Value []) {
       for (var i = 0; i < a.length; i++) {
         a[i] = State.mergeValue(control, a[i], b[i]);
+        if (isTwoSlot(a[i].kind)) {
+          i++;
+        }
       }
     }
 
@@ -416,7 +431,7 @@ module J2ME {
       compilation.parameters.unshift('ctx', 'frameIndex', 'methodInfoId');
       fn = new Function(compilation.parameters.join(','), fnSource);
     } catch (e) {
-      writer.writeLn("--------- Failed to compile " + methodInfo.name + "() -------------------");
+      Debug.warning("Failed to compile " + methodInfo.name + "()");
       writer.writeLn(e);
       writer.writeLn(e.stack);
     }
@@ -504,12 +519,12 @@ module J2ME {
       writer.writeLn("Size: " + methodInfo.code.length);
       var blockMap = this.blockMap = new BlockMap(methodInfo);
       blockMap.build();
-      blockMap.trace(writer, true);
+      debug && blockMap.trace(writer, true);
 
       var start = this.buildStart();
       var dfg = this.buildGraph(start, start.entryState.clone());
 
-      true && dfg.trace(writer);
+      debug && dfg.trace(writer);
 
       enterTimeline("Build CFG");
       var cfg = dfg.buildCFG();
@@ -527,7 +542,7 @@ module J2ME {
       cfg.scheduleEarly();
       leaveTimeline();
 
-      true && cfg.trace(writer);
+      debug && cfg.trace(writer);
 
       enterTimeline("Verify IR");
       cfg.verify();
@@ -540,7 +555,7 @@ module J2ME {
       enterTimeline("Generate Source");
       var result = C4.Backend.generate(cfg);
       leaveTimeline();
-      true && writer.writeLn(result.body);
+      debug && writer.writeLn(result.body);
 
       Node.stopNumbering();
       leaveTimeline();
@@ -898,7 +913,6 @@ module J2ME {
 //          this.recordStore(call);
           return state.push(Kind.Reference, call);
         default:
-          debugger;
           throw "Not done for: " + entry.tag;
       }
     }
@@ -1023,7 +1037,7 @@ module J2ME {
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
-        this.state.push(types[0], call);
+        this.state.push(types[0].kind, call);
       }
     }
 
@@ -1049,7 +1063,7 @@ module J2ME {
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
-        this.state.push(types[0], call);
+        this.state.push(types[0].kind, call);
       }
     }
 
@@ -1079,7 +1093,7 @@ module J2ME {
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
-        this.state.push(types[0], call);
+        this.state.push(types[0].kind, call);
       }
     }
 

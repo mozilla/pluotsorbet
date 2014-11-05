@@ -205,7 +205,6 @@ module J2ME {
       assert (!SignatureDescriptor.canonicalSignatureDescriptors[value]);
       SignatureDescriptor.canonicalSignatureDescriptors[value] = this;
       this.typeDescriptors = SignatureDescriptor.parse(value, 0);
-      writer.writeLn(value);
     }
 
     toString(): string {

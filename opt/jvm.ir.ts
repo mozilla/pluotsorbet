@@ -64,7 +64,20 @@ module J2ME.C4.IR {
 
   JVMConvert.prototype.nodeName = "JVMConvert";
 
+  function visitStateInputs(a, visitor) {
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] === null) {
+        continue;
+      }
+      visitor(a[i]);
+      if (isTwoSlot(a[i].kind)) {
+        i++;
+      }
+    }
+  }
+
   export class JVMCallProperty extends StoreDependent {
+
     constructor(control: Control, store: Store, public state: State, public object: Value, public name: Value, public args: Value [], public flags: number) {
       super(control, store);
       this.handlesAssignment = true;
@@ -76,6 +89,14 @@ module J2ME.C4.IR {
       visitor(this.object);
       visitor(this.name);
       visitArrayInputs(this.args, visitor);
+      visitStateInputs(this.state.local, visitor);
+      visitStateInputs(this.state.stack, visitor);
+    }
+    replaceInput(oldInput: Node, newInput: Node) {
+      var count = super.replaceInput(oldInput, newInput);
+      count += (<any>this.state.local).replace(oldInput, newInput);
+      count += (<any>this.state.stack).replace(oldInput, newInput);
+      return count;
     }
   }
 
@@ -189,12 +210,18 @@ module J2ME.C4.Backend {
         continue;
       }
       localValues.push(compileValue(local[i], cx));
+      if (isTwoSlot(local[i].kind)) {
+        localValues.push(constant(null));
+      }
     }
     for (var i = 0; i < stack.length; i++) {
       if (stack[i] === null) {
         continue;
       }
       stackValues.push(compileValue(stack[i], cx));
+      if (isTwoSlot(stack[i].kind)) {
+        stackValues.push(constant(null));
+      }
     }
 
     var object = compileValue(this.object, cx);
