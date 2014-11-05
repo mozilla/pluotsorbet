@@ -449,7 +449,12 @@ module J2ME {
   }
   
   function genConstant(x: any, kind: Kind): IR.Constant {
-    var constant = new IR.Constant(x);
+    var constant;
+    if (kind === Kind.Long) {
+      constant = new IR.JVMLong(x, 0);
+    } else {
+      constant = new IR.Constant(x);
+    }
     constant.kind = kind;
     return constant;
   }
@@ -967,7 +972,12 @@ module J2ME {
     genCompareOp(kind: Kind, isLessThan: boolean) {
       var b = this.state.pop(kind);
       var a = this.state.pop(kind);
-      var compare = new IR.JVMFloatCompare(this.region, a, b, isLessThan);
+      var compare;
+      if (kind === Kind.Long) {
+        compare = new IR.JVMLongCompare(this.region, a, b);
+      } else {
+        compare = new IR.JVMFloatCompare(this.region, a, b, isLessThan);
+      }
       this.state.ipush(compare);
     }
 
@@ -1344,9 +1354,7 @@ module J2ME {
         case Bytecodes.I2C            : this.genConvert(Kind.Int, Kind.Char); break;
         case Bytecodes.I2S            : this.genConvert(Kind.Int, Kind.Short); break;
 
-        /*
-        case Bytecodes.LCMP           : genCompareOp(Kind.Long, false); break;
-         */
+        case Bytecodes.LCMP           : this.genCompareOp(Kind.Long, false); break;
         case Bytecodes.FCMPL          : this.genCompareOp(Kind.Float, true); break;
         case Bytecodes.FCMPG          : this.genCompareOp(Kind.Float, false); break;
         case Bytecodes.DCMPL          : this.genCompareOp(Kind.Double, true); break;

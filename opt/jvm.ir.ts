@@ -7,6 +7,9 @@ module J2ME.C4.IR {
     constructor(public lowBits: number, public highBits: number, public kind: Kind = Kind.Long) {
       super();
     }
+    toString() : string {
+      return "J<" + this.lowBits + "," + this.highBits + ">";
+    }
   }
   Value.prototype.nodeName = "JVMLong";
 
@@ -34,6 +37,19 @@ module J2ME.C4.IR {
   }
 
   JVMFloatCompare.prototype.nodeName = "JVMFloatCompare";
+
+  export class JVMLongCompare extends Value {
+    constructor(public control: Control, public a: Value, public b: Value) {
+      super();
+    }
+    visitInputs(visitor: NodeVisitor) {
+      visitor(this.control);
+      visitor(this.a);
+      visitor(this.b);
+    }
+  }
+
+  JVMLongCompare.prototype.nodeName = "JVMLongCompare";
 
   export class JVMStoreIndexed extends StoreDependent {
     constructor(control: Control, store: Store, public kind: Kind, public array: Value, public index: Value, public value: Value) {
@@ -118,7 +134,7 @@ module J2ME.C4.IR {
 
 module J2ME.C4.Backend {
   IR.JVMLong.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.CallExpression(new AST.Identifier("Long.fromBits"), [this.lowBits, this.highBits]);
+    return new AST.CallExpression(new AST.Identifier("Long.fromBits"), [constant(this.lowBits), constant(this.highBits)]);
   }
 
   IR.JVMNewArray.prototype.compile = function (cx: Context): AST.Node {
@@ -177,7 +193,17 @@ module J2ME.C4.Backend {
         new AST.ConditionalExpression(gt, constant(1),
           new AST.ConditionalExpression(lt,
             constant(-1), constant(0))));
-  }
+  };
+
+  IR.JVMLongCompare.prototype.compile = function (cx: Context): AST.Node {
+    var a = compileValue(this.a, cx);
+    var b = compileValue(this.b, cx);
+    var gt = call(new AST.MemberExpression(a, new AST.Identifier("greaterThan"), false), [b]);
+    var lt = call(new AST.MemberExpression(a, new AST.Identifier("lessThan"), false), [b]);
+    return new AST.ConditionalExpression(gt, constant(1),
+        new AST.ConditionalExpression(lt,
+          constant(-1), constant(0)));
+  };
 
   IR.JVMConvert.prototype.compile = function (cx: Context): AST.Node {
     var value = compileValue(this.value, cx);
