@@ -1032,6 +1032,12 @@ module J2ME {
       return node;
     }
 
+    genNullCheck(object, bci: Bytecodes) {
+      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("nullCheck"), [object], IR.Flags.PRISTINE);
+      this.recordStore(call);
+    }
+
     genInvokeStatic(methodInfo: MethodInfo, nextBCI: Bytecodes) {
       this.classInitCheck(methodInfo.classInfo);
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
@@ -1073,7 +1079,9 @@ module J2ME {
         }
         args.push(this.state.pop(type.kind));
       }
-      args.push(this.state.pop(Kind.Reference));
+      var obj = this.state.pop(Kind.Reference);
+      this.genNullCheck(obj, nextBCI);
+      args.push(obj);
       args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
@@ -1106,7 +1114,9 @@ module J2ME {
         }
         args.push(this.state.pop(type.kind));
       }
-      args.push(this.state.pop(Kind.Reference));
+      var obj = this.state.pop(Kind.Reference);
+      this.genNullCheck(obj, nextBCI);
+      args.push(obj);
       args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
@@ -1141,6 +1151,7 @@ module J2ME {
 
     genArrayLength() {
       var array = this.state.apop();
+      this.genNullCheck(array, this.state.bci);
       var getProperty = new IR.GetProperty(this.region, this.state.store, array, new Constant('length'));
       this.recordLoad(getProperty);
       this.state.ipush(getProperty);
@@ -1185,6 +1196,7 @@ module J2ME {
       this.ctx.fieldInfos[fieldId] = fieldInfo;
 
       var object = this.state.apop();
+      this.genNullCheck(object, this.state.bci);
       var getField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('get'), [object], IR.Flags.PRISTINE);
       // TODO Null check and exception throw.
       this.recordLoad(getField);
@@ -1199,6 +1211,7 @@ module J2ME {
       var value = this.state.pop(signature.kind);
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var object = this.state.apop();
+      this.genNullCheck(object, this.state.bci);
 
       var putField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('set'), [object, value], IR.Flags.PRISTINE);
       this.recordStore(putField);

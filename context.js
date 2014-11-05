@@ -118,13 +118,21 @@ Context.prototype.raiseException = function(className, message) {
       0xbf              // athrow
     ])
   });
-  this.pushFrame(syntheticMethod);
+  //  pushFrame() is not used since the invoker may be a compiled frame.
+  var callee = new Frame(syntheticMethod, [], 0);
+  this.frames.push(callee);
 }
 
 Context.prototype.raiseExceptionAndYield = function(className, message) {
   this.raiseException(className, message);
   throw VM.Yield;
 }
+
+Context.prototype.nullCheck = function(object) {
+  if (!object) {
+    this.raiseExceptionAndYield("java/lang/NullPointerException");
+  }
+};
 
 Context.prototype.invoke = function(methodInfoId, direct, args) {
   var methodInfo = this.methodInfos[methodInfoId];
