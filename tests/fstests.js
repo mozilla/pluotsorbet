@@ -556,7 +556,7 @@ tests.push(function() {
 
 tests.push(function() {
   fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 12, "file's size is 12");
+    is(size, 131079, "file's size after closing is 131079");
     next();
   });
 });
@@ -678,6 +678,18 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
+      fs.flush(fd, function() {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          is(stat.mtime, lastTime, "flush on just opened file doesn't update mtime");
+          lastTime = stat.mtime;
+          next();
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("mi"));
       fs.stat("/tmp/stat.txt", function(stat) {
         ok(stat.mtime > lastTime, "write updates mtime");
@@ -693,6 +705,18 @@ tests.push(function() {
       fs.flush(fd, function() {
         fs.stat("/tmp/stat.txt", function(stat) {
           ok(stat.mtime > lastTime, "write and then flush updates mtime");
+          lastTime = stat.mtime;
+          next();
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.flush(fd, function() {
+        fs.stat("/tmp/stat.txt", function(stat) {
+          is(stat.mtime, lastTime, "flush on non-dirty file doesn't change mtime");
           lastTime = stat.mtime;
           next();
         });

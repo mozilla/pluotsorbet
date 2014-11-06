@@ -116,10 +116,7 @@ Native.create("com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V", function(hand
 
 Native.create("com/sun/midp/rms/RecordStoreFile.closeFile.(I)V", function(handle) {
     return new Promise(function(resolve, reject) {
-      fs.flush(handle, function() {
-          fs.close(handle);
-          resolve();
-      });
+      fs.close(handle, resolve);
     });
 }, true);
 
@@ -438,17 +435,12 @@ Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", funct
 
 Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(path, newLength, _) {
     return new Promise(function(resolve, reject) {
-        fs.open(util.decodeUtf8(path), function(fd) {
-          if (fd == -1) {
+        fs.truncate(util.decodeUtf8(path), function(success) {
+          if (!success) {
             reject(new JavaException("java/io/IOException", "truncate failed"));
-            return;
+          } else {
+            resolve();
           }
-
-          fs.ftruncate(fd, newLength.toNumber());
-          fs.flush(fd, function() {
-              fs.close(fd);
-              resolve();
-          });
         });
     });
 }, true);
@@ -507,15 +499,7 @@ Native.create("com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V", functi
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V", function(fd) {
     return new Promise(function(resolve, reject) {
-        if (fd <= -1) {
-            resolve();
-            return;
-        }
-
-        fs.flush(fd, function() {
-            fs.close(fd);
-            resolve();
-        });
+        fs.close(fd, resolve);
     });
 }, true);
 
@@ -665,9 +649,6 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I", fun
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", function(handle) {
     return new Promise(function(resolve, reject) {
-        fs.flush(handle, function() {
-            fs.close(handle);
-            resolve();
-        });
+        fs.close(handle, resolve);
     });
 }, true);
