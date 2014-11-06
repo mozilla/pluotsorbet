@@ -801,6 +801,9 @@ module J2ME {
       var state = this.state;
       var y = state.pop(result);
       var x = state.pop(result);
+      if (canTrap) {
+        this.genDivideByZeroCheck(y);
+      }
       var v;
 //      var isStrictFP = false; // TODO
       switch(opcode) {
@@ -1027,9 +1030,20 @@ module J2ME {
       return node;
     }
 
-    genNullCheck(object, bci: number) {
+    genNullCheck(object: Value, bci: number) {
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
       var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("nullCheck"), [object], IR.Flags.PRISTINE);
+      this.recordStore(call);
+    }
+
+    genDivideByZeroCheck(object: Value) {
+      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
+      var call;
+      if (object.kind === Kind.Long) {
+        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("divideByZeroCheckLong"), [object], IR.Flags.PRISTINE);
+      } else {
+        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("divideByZeroCheck"), [object], IR.Flags.PRISTINE);
+      }
       this.recordStore(call);
     }
 

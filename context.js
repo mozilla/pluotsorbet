@@ -134,6 +134,18 @@ Context.prototype.nullCheck = function(object) {
   }
 };
 
+Context.prototype.divideByZeroCheck = function(object) {
+  if (object === 0) {
+    this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
+  }
+};
+
+Context.prototype.divideByZeroCheckLong = function(object) {
+  if (object.isZero()) {
+    this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
+  }
+};
+
 Context.prototype.invoke = function(methodInfoId, direct, args) {
   var methodInfo = this.methodInfos[methodInfoId];
   if (!direct && methodInfo.classInfo !== args[0].class) {
