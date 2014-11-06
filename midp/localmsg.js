@@ -331,6 +331,35 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       contacts.forEach(this.sendContact.bind(this, decoder.getValue(DataType.ULONG)));
     break;
 
+    case "getFirst":
+      var trans_id = decoder.getValue(DataType.ULONG);
+      decoder.getEnd(DataType.ARRAY); // Ignore the contents of the "sources" array
+      var numEntries = decoder.getValue(DataType.ULONG);
+      if (numEntries !== 1) {
+        console.error("(nokia.contacts) event getFirst with numEntries != 1 not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+    break;
+
+    case "getNext":
+      var trans_id = decoder.getValue(DataType.ULONG);
+      decoder.getEnd(DataType.ARRAY); // Ignore the contents of the "sources" array
+      decoder.getEnd(DataType.LIST); // Ignore the contents of the "filter" list
+      decoder.getStart(DataType.LIST);
+      var contactID = decoder.getValue(DataType.WSTRING);
+      decoder.getEnd(DataType.LIST);
+      var includeStartEntry = decoder.getValue(DataType.BOOLEAN);
+      if (includeStartEntry == 1) {
+        console.error("(nokia.contacts) event getNext with includeStartEntry == true not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+      var numEntries = decoder.getValue(DataType.ULONG);
+      if (numEntries !== 1) {
+        console.error("(nokia.contacts) event getNext with numEntries != 1 not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+    break;
+
     default:
       console.error("(nokia.contacts) event " + name + " not implemented " +
                     util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
