@@ -892,7 +892,7 @@ module J2ME {
     genNewTypeArray(typeCode: number) {
       var kind = arrayTypeCodeToKind(typeCode);
       var length = this.state.ipop();
-      var result = new IR.JVMNewArray(this.region, kind, length);
+      var result = new IR.JVMNewArray(this.region, this.state.store, kind, length);
       this.recordStore(result);
       this.state.apush(result);
     }

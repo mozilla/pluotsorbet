@@ -13,11 +13,12 @@ module J2ME.C4.IR {
   }
   Value.prototype.nodeName = "JVMLong";
 
-  export class JVMNewArray extends Value {
-    constructor(public control: Control, public kind: Kind, public length: Value) {
-      super();
+  export class JVMNewArray extends StoreDependent {
+    constructor(public control: Control, public store: Store, public kind: Kind, public length: Value) {
+      super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
+      visitor(this.store);
       visitor(this.control);
       visitor(this.length);
     }
