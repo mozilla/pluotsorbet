@@ -11,9 +11,9 @@ function Context(runtime) {
   this.runtime.addContext(this);
   this.compiledFrames = 0;
   // TODO these should probably be moved to runtime...
-  this.methodInfos = {};
-  this.classInfos = {};
-  this.fieldInfos = {};
+  this.methodInfos = runtime.methodInfos;
+  this.classInfos = runtime.classInfos;
+  this.fieldInfos = runtime.fieldInfos;
 }
 
 Context.prototype.kill = function() {
