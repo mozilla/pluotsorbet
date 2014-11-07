@@ -132,6 +132,7 @@ module J2ME {
   }
 
   function assertKind(kind: Kind, x: Node): Node {
+    assert(stackKind(x.kind) === stackKind(kind), "Got " + kindCharacter(stackKind(x.kind)) + " expected " + kindCharacter(stackKind(kind)));
     return x;
   }
 
@@ -219,16 +220,24 @@ module J2ME {
       if (a instanceof Phi && a.control === control) {
         phi = a;
       } else {
-        phi = new Phi(control, a)
+        phi = new Phi(control, a);
         phi.kind = a.kind;
       }
-      release || assert (phi.kind === b.kind);
+      if (a.kind === Kind.Store) {
+        release || assert(b.kind === Kind.Store, "Got " + Kind[b.kind] + " should be store.");
+      } else if (b === null || b === Illegal || stackKind(a.kind) !== stackKind(b.kind)) {
+        // TODO get rid of the null check by pushing Illegals for doubles/longs.
+        b = Illegal;
+      }
       phi.pushValue(b);
       return phi;
     }
 
     static mergeValues(control: Control, a: Value [], b: Value []) {
       for (var i = 0; i < a.length; i++) {
+        if (a[i] === null) {
+          continue;
+        }
         a[i] = State.mergeValue(control, a[i], b[i]);
         if (isTwoSlot(a[i].kind)) {
           i++;
@@ -249,16 +258,16 @@ module J2ME {
       writer.writeLn(this.toString());
     }
 
-    static toBriefString(x: Node) {
+    static toBriefString(x: Node) : string {
       if (x instanceof Node) {
-        return x.toString(true);
+        return kindCharacter(x.kind); // + x.toString(true);
       }
       if (x === null) {
-        return "null";
+        return "_";
       } else if (x === undefined) {
         return "undefined";
       }
-      return x;
+      return String(x);
     }
 
     toString(): string {
@@ -281,7 +290,7 @@ module J2ME {
      * Pushes a value onto the stack and checks that it is an int.
      */
     public ipush(x: Node) {
-      this.xpush(assertKind(Kind.Int, x));
+      this.push(Kind.Int, x);
     }
 
     /**
@@ -289,30 +298,28 @@ module J2ME {
      * @param x the instruction to push onto the stack
      */
     public fpush(x: Node) {
-      this.xpush(assertKind(Kind.Float, x));
+      this.push(Kind.Float, x);
     }
 
     /**
      * Pushes a value onto the stack and checks that it is an object.
      */
     public apush(x: Node) {
-      this.xpush(assertKind(Kind.Reference, x));
+      this.push(Kind.Reference, x);
     }
 
     /**
      * Pushes a value onto the stack and checks that it is a long.
      */
     public lpush(x: Node) {
-      this.xpush(assertKind(Kind.Long, x));
-      this.xpush(null);
+      this.push(Kind.Long, x);
     }
 
     /**
      * Pushes a value onto the stack and checks that it is a double.
      */
     public dpush(x: Node) {
-      this.xpush(assertKind(Kind.Double, x));
-      this.xpush(null);
+      this.push(Kind.Double, x);
     }
 
     /**
@@ -320,6 +327,10 @@ module J2ME {
      */
     public push(kind: Kind, x: Value) {
       assert (kind !== Kind.Void);
+      if (x.kind === undefined) {
+        x.kind = kind;
+      }
+
       this.xpush(assertKind(kind, x));
       if (isTwoSlot(kind)) {
         this.xpush(null);
@@ -331,6 +342,7 @@ module J2ME {
      */
     public pop(kind: Kind): Value {
       assert (kind !== Kind.Void);
+      kind = stackKind(kind);
       if (isTwoSlot(kind)) {
         this.xpop();
       }
@@ -462,6 +474,8 @@ module J2ME {
     return constant;
   }
 
+  var Illegal = genConstant(undefined, Kind.Illegal);
+
   class StopInfo {
     constructor(
       public control: Node,
@@ -563,7 +577,6 @@ module J2ME {
       enterTimeline("Generate Source");
       var result = C4.Backend.generate(cfg);
       leaveTimeline();
-      debug && writer.writeLn(result.body);
 
       Node.stopNumbering();
       leaveTimeline();
@@ -585,6 +598,7 @@ module J2ME {
       }
 
       state.store = new IR.Projection(start, ProjectionType.STORE);
+      state.store.kind = Kind.Store;
 
       var signatureDescriptor = this.signatureDescriptor;
       writer.writeLn("SIG: " + signatureDescriptor);
@@ -594,7 +608,9 @@ module J2ME {
       var localIndex = 0;
       var paramIndex = 0;
       if (!methodInfo.isStatic) {
-        state.storeLocal(0, new IR.Parameter(start, paramIndex, "_this"));
+        var thisParam = new IR.Parameter(start, paramIndex, "_this")
+        thisParam.kind = Kind.Reference;
+        state.storeLocal(0, thisParam);
         paramIndex++;
         localIndex = 1;
       }
@@ -813,23 +829,23 @@ module J2ME {
         case Bytecodes.IADD: v = new IR.Binary(Operator.IADD, x, y); break;
         case Bytecodes.LADD: v = new IR.JVMLongBinary(Operator.LADD, x, y); break;
         case Bytecodes.FADD: v = new IR.Binary(Operator.FADD, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DADD: v = new IR.Binary(Operator.DADD, x, y/*, isStrictFP*/);  v.kind = Kind.Double; break;
+        case Bytecodes.DADD: v = new IR.Binary(Operator.DADD, x, y/*, isStrictFP*/); break;
         case Bytecodes.ISUB: v = new IR.Binary(Operator.ISUB, x, y); break;
         case Bytecodes.LSUB: v = new IR.JVMLongBinary(Operator.LSUB, x, y); break;
         case Bytecodes.FSUB: v = new IR.Binary(Operator.FSUB, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DSUB: v = new IR.Binary(Operator.DSUB, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
+        case Bytecodes.DSUB: v = new IR.Binary(Operator.DSUB, x, y/*, isStrictFP*/); break;
         case Bytecodes.IMUL: v = new IR.Binary(Operator.IMUL, x, y); break;
         case Bytecodes.LMUL: v = new IR.JVMLongBinary(Operator.LMUL, x, y); break;
         case Bytecodes.FMUL: v = new IR.Binary(Operator.FMUL, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DMUL: v = new IR.Binary(Operator.DMUL, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
+        case Bytecodes.DMUL: v = new IR.Binary(Operator.DMUL, x, y/*, isStrictFP*/); break;
         case Bytecodes.IDIV: v = new IR.Binary(Operator.IDIV, x, y); break;
         case Bytecodes.LDIV: v = new IR.JVMLongBinary(Operator.LDIV, x, y); break;
         case Bytecodes.FDIV: v = new IR.Binary(Operator.FDIV, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DDIV: v = new IR.Binary(Operator.DDIV, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
+        case Bytecodes.DDIV: v = new IR.Binary(Operator.DDIV, x, y/*, isStrictFP*/); break;
         case Bytecodes.IREM: v = new IR.Binary(Operator.IREM, x, y); break;
         case Bytecodes.LREM: v = new IR.JVMLongBinary(Operator.LREM, x, y); break;
         case Bytecodes.FREM: v = new IR.Binary(Operator.FREM, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DREM: v = new IR.Binary(Operator.DREM, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
+        case Bytecodes.DREM: v = new IR.Binary(Operator.DREM, x, y/*, isStrictFP*/); break;
         default:
           assert(false);
       }
@@ -937,6 +953,7 @@ module J2ME {
       var local = this.state.loadLocal(index);
       var increment = genConstant(stream.readIncrement(), Kind.Int);
       var value = new IR.Binary(Operator.IADD, local, increment);
+      value.kind = stackKind(local.kind);
       this.state.storeLocal(index, value);
     }
 
@@ -1026,6 +1043,7 @@ module J2ME {
     recordStore(node: any) {
       var state = this.state;
       state.store = new IR.Projection(node, ProjectionType.STORE);
+      state.store.kind = Kind.Store;
       node.loads = state.loads.slice(0);
       state.loads.length = 0;
     }
@@ -1088,6 +1106,7 @@ module J2ME {
 
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
       var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      call.kind = types[0].kind;
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1118,6 +1137,7 @@ module J2ME {
 
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
       var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      call.kind = types[0].kind;
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1172,7 +1192,7 @@ module J2ME {
       var array = this.state.apop();
       var arrayLoad = new IR.JVMLoadIndexed(this.region, this.state.store, kind, array, index);
       this.recordLoad(arrayLoad);
-      this.state.push(stackKind(kind), arrayLoad);
+      this.state.push(kind, arrayLoad);
     }
 
     genArrayLength() {

@@ -16,7 +16,8 @@ module J2ME {
     Double,
     Reference,
     Void,
-    Illegal
+    Illegal,
+    Store
   }
 
   export function stackKind(kind: Kind): Kind {

@@ -14,7 +14,7 @@ module J2ME.C4.IR {
   Value.prototype.nodeName = "JVMLong";
 
   export class JVMNewArray extends StoreDependent {
-  constructor(public control: Control, public store: Store, public kind: Kind, public length: Value) {
+  constructor(public control: Control, public store: Store, public arrayKind: Kind, public length: Value) {
     super(control, store);
   }
   visitInputs(visitor: NodeVisitor) {
@@ -168,10 +168,11 @@ module J2ME.C4.Backend {
 
   IR.JVMNewArray.prototype.compile = function (cx: Context): AST.Node {
     var jsTypedArrayType: string;
-    switch (this.kind) {
+    switch (this.arrayKind) {
       case Kind.Int:
         jsTypedArrayType = "Int32Array";
         break;
+      case Kind.Char:
       case Kind.Short:
         jsTypedArrayType = "Int16Array";
         break;
@@ -188,7 +189,7 @@ module J2ME.C4.Backend {
         jsTypedArrayType = "Float64Array";
         break;
       default:
-        throw Debug.unexpected(this.kind);
+        throw Debug.unexpected(Kind[this.arrayKind]);
     }
     return new AST.NewExpression(new AST.Identifier(jsTypedArrayType), [compileValue(this.length, cx)]);
   }
