@@ -594,7 +594,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       var quality = decoder.getValue(DataType.BYTE);
 
       if (aspect != "FullImage" && aspect != "LockToPartialView") {
-        console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' not implemented " +
+        console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' or 'LockToPartialView' not implemented " +
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
         return;
       }
