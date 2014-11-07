@@ -44,6 +44,11 @@ module J2ME {
     assert (x === null);
   }
 
+  export enum CompilationTarget {
+    Runtime,
+    Buildtime
+  }
+
   export interface Context {
     executeUntilCurrentFramePopped();
     pushClassInitFrame(classInfo: ClassInfo);
@@ -416,14 +421,14 @@ module J2ME {
     }
   }
 
-  export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context) {
+  export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
     if (methodInfo.name.substr(0, 8) !== 'compile_') {
       return;
     }
     if (!methodInfo.code) {
       return;
     }
-    var builder = new Builder(methodInfo, ctx);
+    var builder = new Builder(methodInfo, ctx, target);
     var fn;
     try {
       var compilation = builder.build();
@@ -508,7 +513,7 @@ module J2ME {
 
     ctxVar: IR.Variable;
 
-    constructor(public methodInfo: MethodInfo, public ctx: Context) {
+    constructor(public methodInfo: MethodInfo, public ctx: Context, public target: CompilationTarget) {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
@@ -1182,6 +1187,7 @@ module J2ME {
 
     classInitCheck(classInfo: ClassInfo) {
       // XXX If we precompile the class check will always be needed.
+      assert(this.target === CompilationTarget.Runtime);
       var ctx = this.ctx;
       if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className]) {
         return;

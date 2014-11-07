@@ -194,7 +194,7 @@ Context.prototype.invokeCompiledFn = function(methodInfo, args) {
 };
 
 Context.prototype.compileMethodInfo = function(methodInfo) {
-  var fn = J2ME.compileMethodInfo(methodInfo, this);
+  var fn = J2ME.compileMethodInfo(methodInfo, this, J2ME.CompilationTarget.Runtime);
   if (fn) {
     methodInfo.fn = fn;
   } else {
