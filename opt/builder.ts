@@ -808,25 +808,25 @@ module J2ME {
 //      var isStrictFP = false; // TODO
       switch(opcode) {
         case Bytecodes.IADD: v = new IR.Binary(Operator.IADD, x, y); break;
-        case Bytecodes.LADD: v = new IR.Binary(Operator.LADD, x, y); break;
+        case Bytecodes.LADD: v = new IR.JVMLongBinary(Operator.LADD, x, y); break;
         case Bytecodes.FADD: v = new IR.Binary(Operator.FADD, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DADD: v = new IR.Binary(Operator.DADD, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DADD: v = new IR.Binary(Operator.DADD, x, y/*, isStrictFP*/);  v.kind = Kind.Double; break;
         case Bytecodes.ISUB: v = new IR.Binary(Operator.ISUB, x, y); break;
-        case Bytecodes.LSUB: v = new IR.Binary(Operator.LSUB, x, y); break;
+        case Bytecodes.LSUB: v = new IR.JVMLongBinary(Operator.LSUB, x, y); break;
         case Bytecodes.FSUB: v = new IR.Binary(Operator.FSUB, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DSUB: v = new IR.Binary(Operator.DSUB, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DSUB: v = new IR.Binary(Operator.DSUB, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
         case Bytecodes.IMUL: v = new IR.Binary(Operator.IMUL, x, y); break;
-        case Bytecodes.LMUL: v = new IR.Binary(Operator.LMUL, x, y); break;
+        case Bytecodes.LMUL: v = new IR.JVMLongBinary(Operator.LMUL, x, y); break;
         case Bytecodes.FMUL: v = new IR.Binary(Operator.FMUL, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DMUL: v = new IR.Binary(Operator.DMUL, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DMUL: v = new IR.Binary(Operator.DMUL, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
         case Bytecodes.IDIV: v = new IR.Binary(Operator.IDIV, x, y); break;
-        case Bytecodes.LDIV: v = new IR.Binary(Operator.LDIV, x, y); break;
+        case Bytecodes.LDIV: v = new IR.JVMLongBinary(Operator.LDIV, x, y); break;
         case Bytecodes.FDIV: v = new IR.Binary(Operator.FDIV, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DDIV: v = new IR.Binary(Operator.DDIV, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DDIV: v = new IR.Binary(Operator.DDIV, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
         case Bytecodes.IREM: v = new IR.Binary(Operator.IREM, x, y); break;
-        case Bytecodes.LREM: v = new IR.Binary(Operator.LREM, x, y); break;
+        case Bytecodes.LREM: v = new IR.JVMLongBinary(Operator.LREM, x, y); break;
         case Bytecodes.FREM: v = new IR.Binary(Operator.FREM, x, y/*, isStrictFP*/); break;
-        case Bytecodes.DREM: v = new IR.Binary(Operator.DREM, x, y/*, isStrictFP*/); break;
+        case Bytecodes.DREM: v = new IR.Binary(Operator.DREM, x, y/*, isStrictFP*/); v.kind = Kind.Double; break;
         default:
           assert(false);
       }
@@ -845,12 +845,12 @@ module J2ME {
       var x = state.pop(kind);
       var v;
       switch(opcode){
-        case Bytecodes.ISHL:
-        case Bytecodes.LSHL: v = new IR.Binary(Operator.LSH, x, s); break;
-        case Bytecodes.ISHR:
-        case Bytecodes.LSHR: v = new IR.Binary(Operator.RSH, x, s); break;
-        case Bytecodes.IUSHR:
-        case Bytecodes.LUSHR: v = new IR.Binary(Operator.LSH, x, s); break;
+        case Bytecodes.ISHL: v = new IR.Binary(Operator.LSH, x, s); break;
+        case Bytecodes.LSHL: v = new IR.JVMLongBinary(Operator.LSH, x, s); break;
+        case Bytecodes.ISHR: v = new IR.Binary(Operator.RSH, x, s); break;
+        case Bytecodes.LSHR: v = new IR.JVMLongBinary(Operator.RSH, x, s); break;
+        case Bytecodes.IUSHR: v = new IR.Binary(Operator.URSH, x, s); break;
+        case Bytecodes.LUSHR: v = new IR.JVMLongBinary(Operator.URSH, x, s); break;
         default:
           assert(false);
       }
@@ -863,12 +863,12 @@ module J2ME {
       var x = state.pop(kind);
       var v;
       switch(opcode){
-        case Bytecodes.IAND:
-        case Bytecodes.LAND: v = new IR.Binary(Operator.AND, x, y); break;
-        case Bytecodes.IOR:
-        case Bytecodes.LOR: v = new IR.Binary(Operator.OR, x, y); break;
-        case Bytecodes.IXOR:
-        case Bytecodes.LXOR: v = new IR.Binary(Operator.XOR, x, y); break;
+        case Bytecodes.IAND: v = new IR.Binary(Operator.AND, x, y); break;
+        case Bytecodes.LAND: v = new IR.JVMLongBinary(Operator.AND, x, y); break;
+        case Bytecodes.IOR: v = new IR.Binary(Operator.OR, x, y); break;
+        case Bytecodes.LOR: v = new IR.JVMLongBinary(Operator.OR, x, y); break;
+        case Bytecodes.IXOR: v = new IR.Binary(Operator.XOR, x, y); break;
+        case Bytecodes.LXOR: v = new IR.JVMLongBinary(Operator.XOR, x, y); break;
         default:
           assert(false);
       }
@@ -877,7 +877,13 @@ module J2ME {
 
     genNegateOp(kind: Kind) {
       var x = this.state.pop(kind);
-      this.state.push(kind, new IR.Unary(Operator.NEG, x));
+      var v;
+      if (kind === Kind.Long) {
+        v = new IR.JVMLongUnary(Operator.NEG, x);
+      } else {
+        v = new IR.Unary(Operator.NEG, x)
+      }
+      this.state.push(kind, v);
     }
 
     genNewInstance(cpi: number) {
@@ -1064,14 +1070,13 @@ module J2ME {
       this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
       var args: Value [] = [];
-      for (var i = 1; i < types.length; i++) {
+      for (var i = types.length - 1; i > 0; i--) {
         var type = types[i];
         if (isTwoSlot(type.kind)) {
-          args.push(Null);
+          args.unshift(Null);
         }
-        args.push(this.state.pop(type.kind));
+        args.unshift(this.state.pop(type.kind));
       }
-      args.reverse();
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
@@ -1092,17 +1097,16 @@ module J2ME {
       this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
       var args: Value [] = [];
-      for (var i = 1; i < types.length; i++) {
+      for (var i = types.length - 1; i > 0; i--) {
         var type = types[i];
         if (isTwoSlot(type.kind)) {
-          args.push(Null);
+          args.unshift(Null);
         }
-        args.push(this.state.pop(type.kind));
+        args.unshift(this.state.pop(type.kind));
       }
       var obj = this.state.pop(Kind.Reference);
       this.genNullCheck(obj, nextBCI);
-      args.push(obj);
-      args.reverse();
+      args.unshift(obj);
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));
@@ -1127,17 +1131,16 @@ module J2ME {
       this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
       var types = signature.typeDescriptors;
       var args: Value [] = [];
-      for (var i = 1; i < types.length; i++) {
+      for (var i = types.length - 1; i > 0; i--) {
         var type = types[i];
         if (isTwoSlot(type.kind)) {
-          args.push(Null);
+          args.unshift(Null);
         }
-        args.push(this.state.pop(type.kind));
+        args.unshift(this.state.pop(type.kind));
       }
       var obj = this.state.pop(Kind.Reference);
       this.genNullCheck(obj, nextBCI);
-      args.push(obj);
-      args.reverse();
+      args.unshift(obj);
       var argsArray = new IR.NewArray(this.region, args);
       var invokeArgs: Value [] = [];
       invokeArgs.push(new Constant(methodInfo.implKey));

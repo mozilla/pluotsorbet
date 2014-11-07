@@ -477,13 +477,6 @@ module J2ME.C4.Backend {
         this.operator === Operator.IDIV ||
         this.operator === Operator.IREM) {
       return new BinaryExpression("|", result, constant(0));
-    } else if (this.operator === Operator.LADD ||
-               this.operator === Operator.LSUB ||
-               this.operator === Operator.LMUL ||
-               this.operator === Operator.LDIV ||
-               this.operator === Operator.LREM) {
-      assert(false);
-      return new BinaryExpression("+", result, constant(0));
     } else if (this.operator === Operator.FADD ||
                this.operator === Operator.FSUB ||
                this.operator === Operator.FMUL ||
@@ -495,7 +488,7 @@ module J2ME.C4.Backend {
                this.operator === Operator.DMUL ||
                this.operator === Operator.DDIV ||
                this.operator === Operator.DREM) {
-      return new BinaryExpression("+", result, constant(0));
+      return new UnaryExpression("+", true, result);
     }
     return result;
   }
@@ -634,6 +627,9 @@ module J2ME.C4.Backend {
       // so we differentiate them here.
       var name = cx.parameters[i] ? cx.parameters[i].name : "_" + i;
       parameters.push(id(name));
+      if (isTwoSlot(cx.parameters[i].kind)) {
+        parameters.push(id(name + "null"));
+      }
     }
     var compilationId = Compilation.id ++;
     var compilationGlobalPropertyName = "$$F" + compilationId;

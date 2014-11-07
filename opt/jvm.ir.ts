@@ -14,17 +14,42 @@ module J2ME.C4.IR {
   Value.prototype.nodeName = "JVMLong";
 
   export class JVMNewArray extends StoreDependent {
-    constructor(public control: Control, public store: Store, public kind: Kind, public length: Value) {
-      super(control, store);
+  constructor(public control: Control, public store: Store, public kind: Kind, public length: Value) {
+    super(control, store);
+  }
+  visitInputs(visitor: NodeVisitor) {
+    visitor(this.store);
+    visitor(this.control);
+    visitor(this.length);
+  }
+}
+
+  JVMNewArray.prototype.nodeName = "JVMNewArray";
+
+  export class JVMLongBinary extends Value {
+    constructor(public operator: Operator, public a: Value, public b: Value) {
+      super();
+      this.kind = Kind.Long;
     }
     visitInputs(visitor: NodeVisitor) {
-      visitor(this.store);
-      visitor(this.control);
-      visitor(this.length);
+      visitor(this.a);
+      visitor(this.b);
     }
   }
 
-  JVMNewArray.prototype.nodeName = "JVMNewArray";
+  JVMLongBinary.prototype.nodeName = "JVMLongBinary";
+
+  export class JVMLongUnary extends Value {
+    constructor(public operator: Operator, public a: Value) {
+      super();
+      this.kind = Kind.Long;
+    }
+    visitInputs(visitor: NodeVisitor) {
+      visitor(this.a);
+    }
+  }
+
+  JVMLongUnary.prototype.nodeName = "JVMLongUnary";
 
   export class JVMFloatCompare extends Value {
     constructor(public control: Control, public a: Value, public b: Value, public lessThan: boolean) {
@@ -134,6 +159,9 @@ module J2ME.C4.IR {
 }
 
 module J2ME.C4.Backend {
+  import Operator = IR.Operator;
+  import assert = Debug.assert;
+
   IR.JVMLong.prototype.compile = function (cx: Context): AST.Node {
     return new AST.CallExpression(new AST.Identifier("Long.fromBits"), [constant(this.lowBits), constant(this.highBits)]);
   }
@@ -204,6 +232,42 @@ module J2ME.C4.Backend {
     return new AST.ConditionalExpression(gt, constant(1),
         new AST.ConditionalExpression(lt,
           constant(-1), constant(0)));
+  };
+
+  IR.JVMLongBinary.prototype.compile = function (cx: Context): AST.Node {
+    var a = compileValue(this.a, cx);
+    var b = compileValue(this.b, cx);
+    var operator;
+    switch (this.operator) {
+      case Operator.LADD: operator = "add"; break;
+      case Operator.LSUB: operator = "subtract"; break;
+      case Operator.LMUL: operator = "multiply"; break;
+      case Operator.LDIV: operator = "div"; break;
+      case Operator.LREM: operator = "modulo"; break;
+
+      case Operator.LSH: operator = "shiftLeft"; break;
+      case Operator.RSH: operator = "shiftRight"; break;
+      case Operator.URSH: operator = "shiftRightUnsigned"; break;
+
+      case Operator.AND: operator = "and"; break;
+      case Operator.OR: operator = "or"; break;
+      case Operator.XOR: operator = "xor"; break;
+
+      default:
+        assert(false);
+    }
+    return call(new AST.MemberExpression(a, new AST.Identifier(operator), false), [b]);
+  };
+
+  IR.JVMLongUnary.prototype.compile = function (cx: Context): AST.Node {
+    var a = compileValue(this.a, cx);
+    var operator;
+    switch (this.operator) {
+      case Operator.NEG: operator = "negate"; break;
+      default:
+        assert(false);
+    }
+    return call(new AST.MemberExpression(a, new AST.Identifier(operator), false), []);
   };
 
   IR.JVMConvert.prototype.compile = function (cx: Context): AST.Node {
