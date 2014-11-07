@@ -442,11 +442,23 @@ module J2ME {
     var fn;
     try {
       var compilation = builder.build();
+      var args = ["ctx", "frameIndex", "methodInfoId"];
+      for (var i = 0; i < builder.parameters.length; i++) {
+        var parameter = builder.parameters[i];
+        var paramName = compilation.parameters[i];
+        args.push(paramName);
+        if (isTwoSlot(parameter.kind)) {
+          args.push(paramName + "_illegal");
+        }
+      }
       var fnSource = compilation.body;
-      compilation.parameters.unshift('ctx', 'frameIndex', 'methodInfoId');
-      fn = new Function(compilation.parameters.join(','), fnSource);
+      fn = new Function(args.join(","), fnSource);
+      debug && writer.writeLn(fn.toString());
     } catch (e) {
-      Debug.warning("Failed to compile " + methodInfo.name + "()");
+      Debug.warning("Failed to compile " + methodInfo.implKey + " " + e + " " + e.stack);
+      if (e.message.indexOf("Not Implemented ") === -1) {
+        throw e;
+      }
       writer.writeLn(e);
       writer.writeLn(e.stack);
     }
@@ -525,11 +537,14 @@ module J2ME {
 
     ctxVar: IR.Variable;
 
+    parameters: IR.Parameter [];
+
     constructor(public methodInfo: MethodInfo, public ctx: Context, public target: CompilationTarget) {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       this.methodReturnInfos = [];
+      this.parameters = [];
     }
 
     build(): C4.Backend.Compilation {
@@ -610,6 +625,7 @@ module J2ME {
       if (!methodInfo.isStatic) {
         var thisParam = new IR.Parameter(start, paramIndex, "_this")
         thisParam.kind = Kind.Reference;
+        this.parameters.push(thisParam);
         state.storeLocal(0, thisParam);
         paramIndex++;
         localIndex = 1;
@@ -621,6 +637,7 @@ module J2ME {
           kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
         }
         var parameter = new IR.Parameter(start, paramIndex, "P" + kindCharacter(kind) + paramIndex);
+        this.parameters.push(parameter);
         parameter.kind = kind;
         paramIndex++;
         state.storeLocal(localIndex, parameter);

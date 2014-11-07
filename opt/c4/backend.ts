@@ -627,9 +627,6 @@ module J2ME.C4.Backend {
       // so we differentiate them here.
       var name = cx.parameters[i] ? cx.parameters[i].name : "_" + i;
       parameters.push(id(name));
-      if (isTwoSlot(cx.parameters[i].kind)) {
-        parameters.push(id(name + "null"));
-      }
     }
     var compilationId = Compilation.id ++;
     var compilationGlobalPropertyName = "$$F" + compilationId;
