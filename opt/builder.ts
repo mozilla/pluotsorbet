@@ -445,7 +445,7 @@ module J2ME {
       var args = ["ctx", "frameIndex", "methodInfoId"];
       for (var i = 0; i < builder.parameters.length; i++) {
         var parameter = builder.parameters[i];
-        var paramName = compilation.parameters[i];
+        var paramName = compilation.parameters[i] || "unsued_" + i;
         args.push(paramName);
         if (isTwoSlot(parameter.kind)) {
           args.push(paramName + "_illegal");
