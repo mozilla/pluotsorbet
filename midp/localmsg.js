@@ -272,7 +272,7 @@ NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.pro
 NokiaContactsLocalMsgConnection.prototype.encodeContact = function(encoder, contact) {
     encoder.putStart(DataType.LIST, "Contact");
 
-    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString());
+    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString().substr(0,30));
 
     encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
 
