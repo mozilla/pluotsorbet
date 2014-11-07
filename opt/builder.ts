@@ -122,6 +122,7 @@ module J2ME {
     isNative: boolean;
     isPublic: boolean;
     isStatic: boolean;
+    isSynchronized: boolean;
     exception_table: ExceptionHandler [];
     max_locals: number;
     max_stack: number;
@@ -422,10 +423,7 @@ module J2ME {
   }
 
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
-    if (methodInfo.name.substr(0, 8) !== 'compile_') {
-      return;
-    }
-    if (!methodInfo.code) {
+    if (!methodInfo.code || methodInfo.name == "<init>" || methodInfo.isSynchronized || methodInfo.exception_table.length) {
       return;
     }
     var builder = new Builder(methodInfo, ctx, target);
