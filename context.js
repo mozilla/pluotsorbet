@@ -155,9 +155,22 @@ Context.prototype.invoke = function(methodInfoId, direct, args) {
   if (methodInfo.alternateImpl) {
     var alternateImpl = methodInfo.alternateImpl;
     try {
-      return alternateImpl.call(null, this, args, methodInfo.isStatic);
+      var frameIndex = this.frames.length - 1;
+      var frames = this.frames;
+
+      // Async alternate functions push data back on the stack, but in the case of a compiled
+      // function, the stack doesn't exist. To handle async, a bailout is triggered so the
+      // compiled frame is replaced with an interpreted frame. The async function then can get the new
+      // frame's stack from this callback.
+      // XXX: This is hacky and error prone and should be done better.
+      return alternateImpl.call(null, this, args, methodInfo.isStatic, function() {
+        return frames[frameIndex].stack;
+      });
     } catch (e) {
-      throw "TODO handle exceptions/yields in alternate impls. " + e + e.stack;
+      if (e === VM.Pause || e === VM.Yield) {
+        throw e;
+      }
+      throw new Error("TODO handle exceptions/yields in alternate impls. " + e + e.stack);
     }
     return;
   }

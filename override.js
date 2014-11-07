@@ -42,7 +42,7 @@ JavaException.prototype = Object.create(Error.prototype);
 function createAlternateImpl(object, key, fn) {
   var retType = key[key.length - 1];
   var numArgs = fn.length;
-  object[key] = function(ctx, stack, isStatic) {
+  object[key] = function(ctx, stack, isStatic, cb) {
     var args = new Array(numArgs);
 
     args[0] = ctx;
@@ -57,6 +57,10 @@ function createAlternateImpl(object, key, fn) {
     function doReturn(ret) {
       if (retType === 'V') {
         return;
+      }
+
+      if (cb) {
+        stack = cb();
       }
 
       if (ret === true) {
@@ -90,6 +94,7 @@ function createAlternateImpl(object, key, fn) {
 
         throw VM.Pause;
       } else {
+        cb = null;
         return doReturn(ret);
       }
     } catch(e) {
