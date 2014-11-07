@@ -1197,8 +1197,9 @@ module J2ME {
     genGetStatic(fieldInfo: FieldInfo, cpi: number) {
       this.classInitCheck(fieldInfo.classInfo);
 
+      var type = fieldInfo.signature;
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      var staticLoad = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('getStatic'), [new Constant(fieldInfo.id)], IR.Flags.PRISTINE);
+      var staticLoad = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('getStatic'), [new Constant(fieldInfo.id), new Constant(type)], IR.Flags.PRISTINE);
       this.recordLoad(staticLoad);
       this.state.push(signature.kind, staticLoad);
     }

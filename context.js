@@ -375,8 +375,13 @@ Context.prototype.newStringConstant = function(s) {
     return this.runtime.newStringConstant(s);
 }
 
-Context.prototype.getStatic = function(fieldInfoId) {
-  return this.runtime.staticFields[fieldInfoId];
+Context.prototype.getStatic = function(fieldInfoId, type) {
+  // TODO unify this with getstatic in runtime and the VM getstatic code.
+  var value = this.runtime.staticFields[fieldInfoId];
+  if (typeof value === "undefined") {
+    value = util.defaultValue(type);
+  }
+  return value;
 };
 
 Context.prototype.putStatic = function(fieldInfoId, value) {
