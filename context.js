@@ -27,8 +27,16 @@ Context.prototype.current = function() {
 
 Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
-  var callee = new Frame(methodInfo, caller.stack.slice(caller.stack.length - methodInfo.consumes), 0);
-  caller.stack.length -= methodInfo.consumes;
+  var callee;
+  if (caller === COMPILED_FRAME) {
+    if (methodInfo.consumes !== 0) {
+      throw new Error("A frame cannot consume arguments from a compiled frame.");
+    }
+    callee = new Frame(methodInfo, [], 0);
+  } else {
+    callee = new Frame(methodInfo, caller.stack.slice(caller.stack.length - methodInfo.consumes), 0);
+    caller.stack.length -= methodInfo.consumes;
+  }
   this.frames.push(callee);
   Instrument.callEnterHooks(methodInfo, caller, callee);
   return callee;
