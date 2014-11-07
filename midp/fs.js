@@ -435,12 +435,14 @@ Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", funct
 
 Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(path, newLength, _) {
     return new Promise(function(resolve, reject) {
-        fs.truncate(util.decodeUtf8(path), function(success) {
-          if (!success) {
+        fs.open(util.decodeUtf8(path), function(fd) {
+          if (fd == -1) {
             reject(new JavaException("java/io/IOException", "truncate failed"));
-          } else {
-            resolve();
+            return;
           }
+
+          fs.ftruncate(fd, newLength.toNumber());
+          fs.close(fd, resolve);
         });
     });
 }, true);
