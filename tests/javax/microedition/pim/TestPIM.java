@@ -4,7 +4,7 @@ import java.util.Enumeration;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
-public class TestContactList implements Testlet {
+public class TestPIM implements Testlet {
     public void test(TestHarness th) {
         try {
             th.check(System.getProperty("microedition.pim.version") != null);
