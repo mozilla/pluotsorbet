@@ -70,6 +70,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "microedition.profiles":
         value = "MIDP-2.0"
         break;
+    case "microedition.pim.version":
+        value = "1.0";
+        break;
     case "fileconn.dir.memorycard":
         value = "file:///";
         break;
