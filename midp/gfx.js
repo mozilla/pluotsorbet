@@ -908,7 +908,8 @@
         this.textEditor.style.width = width + "px";
         this.textEditor.style.height = height + "px";
         this.textEditor.style.position = "absolute";
-        this.textEditor.style.visibility = "hidden";
+        this.textEditor.style.opacity = 0;
+        this.textEditor.style.zIndex = -999;
         this.textEditor.oninput = function(e) {
             wakeTextEditorThread(this.textEditorId);
         }.bind(this);
@@ -935,9 +936,16 @@
 
     Native.create("com/nokia/mid/ui/CanvasItem.setVisible.(Z)V", function(visible) {
         if (visible && !this.visible) {
-            this.textEditor.style.visibility = "visible";
+            // Sometimes in Java, setVisible() is called after setFocus(), to make
+            // sure the native input won't lose focus, we change opacity instead
+            // of visibility.
+            this.textEditor.style.opacity = 1;
+            this.textEditor.style.zIndex = 999;
         } else if (!visible && this.visible) {
-            this.textEditor.style.visibility = "hidden";
+            this.textEditor.style.opacity = 0;
+            // To make sure the j2me control could be clicked again to show the
+            // textEditor, we need to put the textEditor at the bottom.
+            this.textEditor.style.zIndex = -999;
         }
         this.visible = visible;
     });
