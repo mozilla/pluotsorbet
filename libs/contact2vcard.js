@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-/* global setImmediate */
+'use strict';
 
 /**
  * ContactToVcard provides the functionality necessary to export from
@@ -9,9 +9,7 @@
  * to choose the 3.0 standard instead of the 4.0 one is that some systems
  * most notoriously Android 4.x don't seem to be able to import vCard 4.0.
  */
-(function(exports) {
-  'use strict';
-
+var contact2vcard = (function() {
   /** Mapping between contact fields and equivalent vCard fields */
   var VCARD_MAP = {
     'fax' : 'FAX',
@@ -232,7 +230,7 @@
     function processContact(ct) {
       if (navigator.mozContact && !(ct instanceof navigator.mozContact)) {
         console.error('An instance of mozContact was expected');
-        setImmediate(function() { appendVCard(''); });
+        setZeroTimeout(function() { appendVCard(''); });
         return;
       }
 
@@ -260,7 +258,7 @@
 
       // vCard standard does not accept contacts without 'n' or 'fn' fields.
       if (n === 'n:;;;;;' || !ct.name) {
-        setImmediate(function() { appendVCard(''); });
+        setZeroTimeout(function() { appendVCard(''); });
         return;
       }
 
@@ -281,6 +279,8 @@
       if (ct.anniversary) {
         allFields.push('ANNIVERSARY:' + ISODateString(ct.anniversary));
       }
+
+      allFields.push('UID:' + ct.id.toString().substr(0,30));
 
       allFields.push.apply(allFields, fromContactField(ct.email, 'EMAIL'));
       allFields.push.apply(allFields, fromContactField(ct.url, 'URL'));
@@ -331,13 +331,15 @@
           appendVCard(joinFields(allFields));
         });
       } else {
-        setImmediate(function() { appendVCard(joinFields(allFields)); });
+        setZeroTimeout(function() { appendVCard(joinFields(allFields)); });
       }
     }
 
     processContact(contacts[0]);
   }
 
-  exports.ContactToVcard = ContactToVcard;
-  exports.ContactToVcardBlob = ContactToVcardBlob;
-})(this);
+  return {
+    ContactToVcard: ContactToVcard,
+    ContactToVcardBlob: ContactToVcardBlob,
+  };
+})();
