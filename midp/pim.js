@@ -66,7 +66,6 @@ Native.create("com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z", functi
       contact2vcard.ContactToVcard([ contact ], function(vcards, nCards) {
         str += vcards;
       }, function() {
-        console.log("str: " + str);
         PIM.curVcard = new TextEncoder('utf8').encode(str);
 
         description[0] = contact.id;
