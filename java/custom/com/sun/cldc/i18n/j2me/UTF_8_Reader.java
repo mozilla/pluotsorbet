@@ -74,7 +74,7 @@ public class UTF_8_Reader extends StreamReader {
 
             init(output.toByteArray());
 
-            initialized = false;
+            initialized = true;
         }
 
         return readNative(cbuf, off, len);
