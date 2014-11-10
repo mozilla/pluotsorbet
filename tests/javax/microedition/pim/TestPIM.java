@@ -18,12 +18,16 @@ public class TestPIM implements Testlet {
             Contact contact = contactList.createContact();
             th.check(contactList.isSupportedField(Contact.UID));
             th.check(contactList.isSupportedAttribute(Contact.UID, Contact.ATTR_NONE));
-            contact.addString(Contact.UID, Contact.ATTR_NONE, "aUniqueID");
+            contact.addString(Contact.UID, Contact.ATTR_NONE, "2");
 
             Enumeration contacts = contactList.items((PIMItem)contact);
             th.check(contacts.hasMoreElements());
             Contact foundContact = (Contact)contacts.nextElement();
             String tel = foundContact.getString(Contact.TEL, Contact.ATTR_NONE);
+
+            th.check(tel, "+16505550102");
+
+            th.check(!contacts.hasMoreElements());
 
             contactList.close();
         } catch (PIMException e) {
