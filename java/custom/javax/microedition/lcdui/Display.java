@@ -2564,6 +2564,24 @@ public class Display {
         return  (current instanceof AlertLF) ? window.getAlertHeight() : window.getBodyHeight();
     }
 
+    /**
+     * Get the anchor x of the current displayable layer.
+     *
+     * @return the anchor x of the current displayable layer
+     */
+    public int getDisplayableAnchorX() {
+        return  (current instanceof AlertLF) ? window.getAlertAnchorX() : window.getBodyAnchorX();
+    }
+
+    /**
+     * Get the anchor y of the current displayable layer.
+     *
+     * @return the anchor y of the current displayable layer
+     */
+    public int getDisplayableAnchorY() {
+        return  (current instanceof AlertLF) ? window.getAlertAnchorY() : window.getBodyAnchorY();
+    }
+
     /** Get the width of some default displayable depending on the screen mode and 
      * the layers attached to the screen 
      * @param isFullScn true if the full screen is set for the displayable      

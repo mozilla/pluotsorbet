@@ -99,6 +99,7 @@ var fs = (function() {
         var reader = new FileReader();
         reader.addEventListener("loadend", function() {
           var fd = openedFiles.push({
+            dirty: false,
             path: path,
             buffer: new FileBuffer(new Uint8Array(reader.result)),
             position: 0,
@@ -110,11 +111,20 @@ var fs = (function() {
     });
   }
 
-  function close(fd) {
+  function close(fd, cb) {
     if (fd >= 0 && openedFiles[fd]) {
-      // Replace descriptor object with null value instead of removing it from
-      // the array so we don't change the indexes of the other objects.
-      openedFiles.splice(fd, 1, null);
+      flush(fd, function() {
+        // Replace descriptor object with null value instead of removing it from
+        // the array so we don't change the indexes of the other objects.
+        openedFiles.splice(fd, 1, null);
+        if (cb) {
+          cb();
+        }
+      });
+    } else {
+      if (cb) {
+        cb();
+      }
     }
   }
 
@@ -160,6 +170,7 @@ var fs = (function() {
 
     openedFiles[fd].position = from + data.byteLength;
     openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
+    openedFiles[fd].dirty = true;
   }
 
   function getpos(fd) {
@@ -179,8 +190,15 @@ var fs = (function() {
   }
 
   function flush(fd, cb) {
+    // Bail early if the file has not been modified.
+    if (!openedFiles[fd].dirty) {
+      cb();
+      return;
+    }
+
     var blob = new Blob([openedFiles[fd].buffer.getContent()]);
     asyncStorage.setItem(openedFiles[fd].path, blob, function() {
+      openedFiles[fd].dirty = false;
       if (openedFiles[fd].stat) {
         setStat(openedFiles[fd].path, openedFiles[fd].stat, cb);
       } else {
@@ -228,6 +246,7 @@ var fs = (function() {
     if (size != openedFiles[fd].buffer.contentSize) {
       openedFiles[fd].buffer.setSize(size);
       openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
+      openedFiles[fd].dirty = true;
     }
   }
 

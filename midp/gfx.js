@@ -950,7 +950,7 @@
         return parseInt(this.textEditor.style.height);
     });
 
-    Native.create("com/nokia/mid/ui/CanvasItem.setPosition.(II)V", function(x, y) {
+    Native.create("com/nokia/mid/ui/CanvasItem.setPosition0.(II)V", function(x, y) {
         this.textEditor.style.left = x + "px";
         this.textEditor.style.top = y + "px";
     });
