@@ -1,10 +1,31 @@
 package javax.microedition.pim;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Enumeration;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestPIM implements Testlet {
+    public void testExportContact(TestHarness th, Contact contact) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        PIM pimInst = PIM.getInstance();
+
+        String[] supportedFormats = pimInst.supportedSerialFormats(PIM.CONTACT_LIST);
+        th.check(supportedFormats.length > 0);
+
+        try {
+            pimInst.toSerialFormat(contact, baos, "UTF-8", supportedFormats[0]);
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+            return;
+        }
+
+        String data = new String(baos.toByteArray());
+        th.check(data, "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Test Contact 2\r\nTEL:+16505550102\r\nTEL:+16505550103\r\nUID:2\r\nEND:VCARD\r\n");
+    }
+
     public void test(TestHarness th) {
         try {
             th.check(System.getProperty("microedition.pim.version") != null);
@@ -42,6 +63,7 @@ public class TestPIM implements Testlet {
             foundContact = (Contact)contacts.nextElement();
             th.check(foundContact.getString(Contact.TEL, Contact.ATTR_NONE), "+16505550102");
             th.check(foundContact.countValues(Contact.TEL), 2);
+            testExportContact(th, foundContact);
             th.check(!contacts.hasMoreElements());
 
             contactList.close();
