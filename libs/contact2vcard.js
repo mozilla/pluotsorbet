@@ -170,7 +170,7 @@ var contact2vcard = (function() {
    *        invoked once all the contacts have been processed.
    * @param {Number} batchSize An optional parameter specifying the maximum
    *        number of characters that should be added to the output string
-   *        before invoking the append callback. If this paramter is not
+   *        before invoking the append callback. If this parameter is not
    *        provided a default value of 1MiB will be used instead.
    */
   function ContactToVcard(contacts, append, success, batchSize, skipPhoto) {
