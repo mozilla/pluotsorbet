@@ -35,36 +35,6 @@ Stack.prototype = {
         }
         return value;
     },
-    pushFromArray: function(type, idx, arr) {
-        if (!arr) {
-            throw new Error("java/lang/NullPointerException");
-        }
-        if (idx < 0 || idx > arr.length) {
-            throw new Error("java/lang/ArrayIndexOutOfBoundsException: " + idx);
-        }
-        this.push(type, arr[idx]);
-    },
-    popIntoArray: function(type) {
-        var val = this.pop(type);
-        var idx = this.pop(Stack.INT);
-        var arr = this.pop(Stack.REF);
-        if (!arr) {
-            throw new Error("java/lang/NullPointerException");
-        }
-        if (idx < 0 || idx > arr.length) {
-            throw new Error("java/lang/ArrayIndexOutOfBoundsException: " + idx);
-        }
-        if (type === Stack.REF) {
-            if (val && !val.class.isAssignableTo(arr.class.elementClass)) {
-                throw new Error("java/lang/ArrayStoreException");
-            }
-        }
-
-        arr[idx] = val;
-    },
-    empty: function() {
-        this.items.length = 0;
-    },
     get length() {
         return this.items.length;
     },

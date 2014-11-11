@@ -151,7 +151,7 @@ function throw_(ex, ctx) {
         }
 
         if (handler_pc != null) {
-            stack.empty();
+            stack.length = 0;
             stack.push(Stack.REF, ex);
             frame.ip = handler_pc;
 
@@ -306,7 +306,16 @@ VM.execute = function(ctx) {
         case 0x33: // baload
         case 0x34: // caload
         case 0x35: // saload
-            stack.pushFromArray(INSTR_TO_INT[op - 0x2e], stack.pop(Stack.INT), stack.pop(Stack.REF));
+            var type = INSTR_TO_INT[op - 0x2e];
+            var idx = stack.pop(Stack.INT);
+            var arr = stack.pop(Stack.REF);
+            if (!arr) {
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+            }
+            if (idx < 0 || idx > arr.length) {
+                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException: " + idx);
+            }
+            stack.push(type, arr[idx]);
             break;
         case 0x36: // istore
         case 0x37: // lstore
@@ -354,7 +363,23 @@ VM.execute = function(ctx) {
         case 0x54: // bastore
         case 0x55: // castore
         case 0x56: // sastore
-            stack.popIntoArray(INSTR_TO_INT[op - 0x4f]);
+            var type = INSTR_TO_INT[op - 0x4f];
+            var val = stack.pop(type);
+            var idx = stack.pop(Stack.INT);
+            var arr = stack.pop(Stack.REF);
+            if (!arr) {
+                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+            }
+            if (idx < 0 || idx > arr.length) {
+                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException: " + idx);
+            }
+            if (type === Stack.REF) {
+                if (val && !val.class.isAssignableTo(arr.class.elementClass)) {
+                    ctx.raiseExceptionAndYield("java/lang/ArrayStoreException");
+                }
+            }
+
+            arr[idx] = val;
             break;
         case 0x57: // pop
             stack.pop(Stack.UNKNOWN);
@@ -691,6 +716,17 @@ VM.execute = function(ctx) {
             var jmp = frame.ip - 1 + frame.read16signed();
             frame.ip = stack.pop(Stack.REF) !== stack.pop(Stack.REF) ? jmp : frame.ip;
             break;
+        case 0xa7: // goto
+            frame.ip += frame.read16signed() - 1;
+            break;
+        case 0xa8: // jsr
+            var jmp = frame.read16();
+            stack.push(Stack.INT, frame.ip);
+            frame.ip = jmp;
+            break;
+        case 0xa9: // ret
+            frame.ip = frame.getLocal(Stack.INT, frame.read8());
+            break;
         case 0xc6: // ifnull
             var jmp = frame.ip - 1 + frame.read16signed();
             frame.ip = !stack.pop(Stack.REF) ? jmp : frame.ip;
@@ -699,24 +735,13 @@ VM.execute = function(ctx) {
             var jmp = frame.ip - 1 + frame.read16signed();
             frame.ip = stack.pop(Stack.REF) ? jmp : frame.ip;
             break;
-        case 0xa7: // goto
-            frame.ip += frame.read16signed() - 1;
-            break;
         case 0xc8: // goto_w
             frame.ip += frame.read32signed() - 1;
-            break;
-        case 0xa8: // jsr
-            var jmp = frame.read16();
-            stack.push(Stack.INT, frame.ip);
-            frame.ip = jmp;
             break;
         case 0xc9: // jsr_w
             var jmp = frame.read32();
             stack.push(Stack.INT, frame.ip);
             frame.ip = jmp;
-            break;
-        case 0xa9: // ret
-            frame.ip = frame.getLocal(Stack.INT, frame.read8());
             break;
         case 0x85: // i2l
             stack.push(Stack.LONG, Long.fromInt(stack.pop(Stack.INT)));
@@ -763,6 +788,25 @@ VM.execute = function(ctx) {
         case 0x93: // i2s
             stack.push(Stack.SHORT, (stack.pop(Stack.INT) << 16) >> 16);
             break;
+        default:
+            frame = VM.handleComplexOp(op, ctx, frame, cp, stack);
+            if (frame) {
+                cp = frame.cp;
+                stack = frame.stack;
+                // Return if the caller is compiled
+                if (frame.methodInfo.compiled) {
+                    return frame;
+                }
+            } else {
+                return null;
+            }
+        }
+    }
+}
+
+
+VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
+    switch(op) {
         case 0xaa: // tableswitch
             var startip = frame.ip;
             while ((frame.ip & 3) != 0)
@@ -919,9 +963,7 @@ VM.execute = function(ctx) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
             frame = throw_(obj, ctx);
-            stack = frame.stack;
-            cp = frame.cp;
-            break;
+            return frame;
         case 0xc2: // monitorenter
             var obj = stack.pop(Stack.REF);
             if (!obj) {
@@ -1033,9 +1075,7 @@ VM.execute = function(ctx) {
             if (methodInfo.compiled) {
               frame = methodInfo.compiled(ctx);
             }
-            stack = frame.stack;
-            cp = frame.cp;
-            break;
+            return frame;
         case 0xb1: // return
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo);
@@ -1044,13 +1084,7 @@ VM.execute = function(ctx) {
                 return;
             frame.methodInfo.numCalled++;
             frame = popFrame(ctx, frame, 0);
-            // Return if the caller is compiled
-            if (frame.methodInfo.compiled) {
-                return frame;
-            }
-            stack = frame.stack;
-            cp = frame.cp;
-            break;
+            return frame;
         case 0xac: // ireturn
         case 0xad: // lreturn
         case 0xae: // freturn
@@ -1061,21 +1095,15 @@ VM.execute = function(ctx) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack.read(retType, 1));
             }
             if (ctx.frames.length == 1)
-                return;
+                return null;
             frame.methodInfo.numCalled++;
             frame = popFrame(ctx, frame, (retType === Stack.LONG || retType === Stack.DOUBLE) ? 2 : 1);
-            // Return if the caller is compiled
-            if (frame.methodInfo.compiled) {
-                return frame;
-            }
-            stack = frame.stack;
-            cp = frame.cp;
-            break;
+            return frame;
         default:
             var opName = OPCODES[op];
             throw new Error("Opcode " + opName + " [" + op + "] not supported. (" + ctx.thread.pid + ")");
-        }
-    };
+    }
+    return frame;
 }
 
 // VM.compile = function(methodInfo, ctx, debugStmtEnabled) {

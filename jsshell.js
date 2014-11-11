@@ -32,6 +32,7 @@ var document = {
       },
     },
   },
+  addEventListener: function() { },
   querySelector: function() {
     return {
       addEventListener: function() {
@@ -44,6 +45,9 @@ var document = {
       },
       getContext: function() {
       },
+      getBoundingClientRect: function() {
+        return { top: 0, left: 0, width: 0, height: 0 };
+      }
     };
   },
 };
