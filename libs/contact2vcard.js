@@ -312,14 +312,8 @@ var contact2vcard = (function() {
        * be one of the IANA registered image formats or a non-standard image
        * format.
       */
-      if (
-        (
-          typeof skipPhoto == 'undefined' ||
-          skipPhoto === false
-        ) &&
-        ct.photo &&
-        ct.photo.length
-      ) {
+      if ((typeof skipPhoto == 'undefined' || skipPhoto === false) &&
+          ct.photo && ct.photo.length) {
         var photoMeta = ['PHOTO', 'ENCODING=b'];
         var blob = ct.photo[0];
 
