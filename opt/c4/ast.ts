@@ -587,7 +587,7 @@ module J2ME.C4.AST {
     }
     toSource(precedence: number) : string {
       var currentPrecedence = BinaryPrecedence[this.operator];
-      var result = this.left.toSource(currentPrecedence) + this.operator + this.right.toSource(currentPrecedence + 1);
+      var result = this.left.toSource(currentPrecedence) + " " + this.operator + " " + this.right.toSource(currentPrecedence + 1);
       return parenthesize(result, currentPrecedence, precedence);
     }
   }
