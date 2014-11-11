@@ -11,12 +11,18 @@ public class TestPIM implements Testlet {
 
             PIM pimInst = PIM.getInstance();
 
-            th.check(pimInst.listPIMLists(PIM.CONTACT_LIST) != null);
+            String[] contactLists = pimInst.listPIMLists(PIM.CONTACT_LIST);
+            th.check(contactLists.length, 1);
+            th.check(contactLists[0], "ContactList");
 
             ContactList contactList = (ContactList)pimInst.openPIMList(PIM.CONTACT_LIST, PIM.READ_ONLY);
 
             Contact contact = contactList.createContact();
+            th.check(contactList.isSupportedField(Contact.FORMATTED_NAME));
+            th.check(contactList.isSupportedField(Contact.TEL));
             th.check(contactList.isSupportedField(Contact.UID));
+            th.check(contactList.isSupportedAttribute(Contact.FORMATTED_NAME, Contact.ATTR_NONE));
+            th.check(contactList.isSupportedAttribute(Contact.TEL, Contact.ATTR_NONE));
             th.check(contactList.isSupportedAttribute(Contact.UID, Contact.ATTR_NONE));
             contact.addString(Contact.UID, Contact.ATTR_NONE, "2");
 
@@ -35,6 +41,7 @@ public class TestPIM implements Testlet {
             th.check(contacts.hasMoreElements());
             foundContact = (Contact)contacts.nextElement();
             th.check(foundContact.getString(Contact.TEL, Contact.ATTR_NONE), "+16505550102");
+            th.check(foundContact.countValues(Contact.TEL), 2);
             th.check(!contacts.hasMoreElements());
 
             contactList.close();
