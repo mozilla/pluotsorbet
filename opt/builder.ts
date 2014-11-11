@@ -1,6 +1,6 @@
 module J2ME {
 
-  var debug = true;
+  var debug = false;
   var writer = new IndentingWriter(!debug);
 
   import Block = Bytecode.Block;
