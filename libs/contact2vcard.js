@@ -151,8 +151,7 @@ var contact2vcard = (function() {
     ContactToVcard(contacts, function append(vcards, nCards) {
       str += vcards;
     }, function success() {
-      str = str ? toBlob(str) : null;
-      callback(toBlob(str));
+      callback(str ? toBlob(str) : null);
     });
   }
 
