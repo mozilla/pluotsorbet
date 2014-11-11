@@ -4,6 +4,7 @@
 var fakeContacts = [{
   id: 1,
   name: ["Test Contact 1"],
+  familyName: ["Contact 1"],
   tel: [{
     type: ["home"],
     pref: true,
@@ -20,6 +21,7 @@ var fakeContacts = [{
 {
   id: 2,
   name: ["Test Contact 2"],
+  familyName: ["Contact 2"],
   tel: [{
     type: ["home"],
     pref: true,

@@ -70,6 +70,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "microedition.profiles":
         value = "MIDP-2.0"
         break;
+    case "microedition.pim.version":
+        value = "1.0";
+        break;
     case "fileconn.dir.memorycard":
         value = "file:///";
         break;
@@ -689,7 +692,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V", function(data) {
     this.decoded = new TextDecoder("UTF-8").decode(data);
 });
 
-Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(cbuf, off, len) {
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I", function(cbuf, off, len) {
     if (this.decoded.length === 0) {
       return -1;
     }
