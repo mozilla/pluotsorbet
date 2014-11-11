@@ -16,6 +16,7 @@ function Runtime(vm) {
   this.methodInfos = {};
   this.classInfos = {};
   this.fieldInfos = {};
+  this.functions = {};
 }
 
 Runtime.prototype.waitStatus = function(callback) {

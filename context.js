@@ -3,13 +3,11 @@
 
 'use strict';
 
-var COMPILED_FRAME = {};
-
 function Context(runtime) {
   this.frames = [];
+  this.frameSets = [];
   this.runtime = runtime;
   this.runtime.addContext(this);
-  this.compiledFrames = 0;
   // TODO these should probably be moved to runtime...
   this.methodInfos = runtime.methodInfos;
   this.classInfos = runtime.classInfos;
@@ -28,7 +26,7 @@ Context.prototype.current = function() {
 Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
   var callee;
-  if (caller === COMPILED_FRAME) {
+  if (caller === undefined) {
     if (methodInfo.consumes !== 0) {
       throw new Error("A frame cannot consume arguments from a compiled frame.");
     }
@@ -154,63 +152,13 @@ Context.prototype.divideByZeroCheckLong = function(object) {
   }
 };
 
-Context.prototype.invoke = function(methodInfoId, direct, args) {
-  var methodInfo = this.methodInfos[methodInfoId];
-  if (!direct && methodInfo.classInfo !== args[0].class) {
-      methodInfo = CLASSES.getMethod(args[0].class, methodInfo.key);
-  }
-  // Invoke Native Implementation
-  if (methodInfo.alternateImpl) {
-    var alternateImpl = methodInfo.alternateImpl;
-    try {
-      var frameIndex = this.frames.length - 1;
-      var frames = this.frames;
-
-      // Async alternate functions push data back on the stack, but in the case of a compiled
-      // function, the stack doesn't exist. To handle async, a bailout is triggered so the
-      // compiled frame is replaced with an interpreted frame. The async function then can get the new
-      // frame's stack from this callback.
-      // XXX: This is hacky and error prone and should be done better.
-      return alternateImpl.call(null, this, args, methodInfo.isStatic, function() {
-        return frames[frameIndex].stack;
-      });
-    } catch (e) {
-      if (e === VM.Pause || e === VM.Yield) {
-        throw e;
-      }
-      throw new Error("TODO handle exceptions/yields in alternate impls. " + e + e.stack);
-    }
-    return;
-  }
-  // Invoke Compiled Implementation
-  if (!methodInfo.dontCompile && !methodInfo.fn) {
-    this.compileMethodInfo(methodInfo);
-  }
-  if (methodInfo.fn) {
-    return this.invokeCompiledFn(methodInfo, args);
-  }
-  // Invoke Interpreter
-  console.log("Invoking interpreted function " + methodInfo.name + "()");
-  args = args || [];
-  var frame = new Frame(methodInfo, [], 0);
-  this.frames.push(frame);
-  for (var i = 0; i < args.length; i++) {
-    frame.setLocal(i, args[i]);
-  }
-  return VM.execute(this);
-};
-
 Context.prototype.invokeCompiledFn = function(methodInfo, args) {
-  console.log("Invoking compiled function " + methodInfo.name + "()");
-  var frameIndex = this.frames.push(COMPILED_FRAME) - 1;
-  this.compiledFrames++;
-
-  args.unshift(this, frameIndex, methodInfo.implKey);
+  args.unshift(this, 0);
   var fn = methodInfo.fn;
+  this.frameSets.push(this.frames);
+  this.frames = [];
   var returnValue = fn.apply(null, args);
-
-  this.compiledFrames--;
-  this.frames.pop();
+  this.frames = this.frameSets.pop();
   return returnValue;
 };
 
@@ -461,7 +409,7 @@ Context.prototype.triggerBailout = function(e, methodInfoId, frameIndex, cpi, lo
   throw VM.Yield;
 };
 
-Context.prototype.JVMBailout = function(e, methodInfoId, frameIndex, cpi, locals, stack) {
+Context.prototype.JVMBailout = function(e, methodInfoId, compiledDepth, cpi, locals, stack) {
     var methodInfo = this.methodInfos[methodInfoId];
     var reason = "";
     if (e === VM.Yield) {
@@ -478,8 +426,16 @@ Context.prototype.JVMBailout = function(e, methodInfoId, frameIndex, cpi, locals
     var frame = new Frame(methodInfo, locals, 0);
     frame.stack = stack;
     frame.ip = cpi;
-    this.compiledFrames--;
-    this.frames[frameIndex] = frame;
+    this.frames.unshift(frame);
+    if (compiledDepth === 0 && this.frameSets.length) {
+      // Append all the current frames to the parent frame set, so a single frame stack
+      // exists when the bailout finishes.
+      var currentFrames = this.frames;
+      this.frames = this.frameSets.pop();
+      for (var i = 0; i < currentFrames.length; i++) {
+        this.frames.push(currentFrames[i]);
+      }
+    }
 };
 
 Context.prototype.classInitCheck = function(className) {

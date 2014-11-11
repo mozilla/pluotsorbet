@@ -133,7 +133,7 @@ module J2ME.C4.IR {
 
   export class JVMCallProperty extends StoreDependent {
 
-    constructor(control: Control, store: Store, public state: State, public object: Value, public name: Value, public args: Value [], public flags: number) {
+    constructor(control: Control, store: Store, public state: State, public object: Value, public name: Value, public args: Value [], public callerMethodInfoId: string, public objectCheck?: boolean) {
       super(control, store);
       this.handlesAssignment = true;
     }
@@ -345,32 +345,47 @@ module J2ME.C4.Backend {
         stackValues.push(constant(null));
       }
     }
-
     var object = compileValue(this.object, cx);
     var name = compileValue(this.name, cx);
     var callee = property(object, name);
     var args = this.args.map(function (arg) {
       return compileValue(arg, cx);
     });
-    var callNode;
-    if (this.flags & IR.Flags.PRISTINE) {
-      callNode = call(callee, args);
-    } else {
-      callNode = callCall(callee, object, args);
+
+    var objCheck = null;
+    if (this.objectCheck) {
+      var vmc = new AST.MemberExpression(object, new AST.Identifier("class"), false);
+      objCheck = new AST.IfStatement(new AST.UnaryExpression("!", true, new AST.BinaryExpression("in", name, vmc)),
+          new AST.ExpressionStatement(
+            new AST.CallExpression(new AST.Identifier("J2ME.buildCompiledCall"), [
+              vmc,
+              name,
+              new AST.CallExpression(new AST.Identifier("CLASSES.getMethod"), [
+                new AST.MemberExpression(object, new AST.Identifier("class"), false), name])])),
+          null);
+      callee = property(vmc, name);
     }
+
+    var callNode = call(callee, args);
 
     var exception = new AST.Identifier("e");
     var to = new AST.Identifier(this.variable.name);
     cx.useVariable(this.variable);
 
+    var body = [];
+    if (objCheck) {
+      body.push(objCheck);
+    }
+    body.push(assignment(to, callNode));
+
     return new AST.TryStatement(
-      new AST.BlockStatement([assignment(to, callNode)]),
+      new AST.BlockStatement(body),
       new AST.CatchClause(exception, null,
         new AST.BlockStatement([ // Ask mbx: is it bug I need ExpressionStatement here to get the semicolon inserted.
           new AST.ExpressionStatement(new AST.CallExpression(new AST.Identifier("ctx.JVMBailout"), [
             exception,
-            new AST.Identifier("methodInfoId"),
-            new AST.Identifier("frameIndex"),
+            new AST.Literal(this.callerMethodInfoId),
+            new AST.Identifier("compiledDepth"),
             new AST.Literal(this.state.bci),
             new AST.ArrayExpression(localValues),
             new AST.ArrayExpression(stackValues)

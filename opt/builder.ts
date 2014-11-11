@@ -35,6 +35,7 @@ module J2ME {
 
   declare var CLASSES: any;
   declare var Long: any;
+  declare var VM: any;
 
   export function isTwoSlot(kind: Kind) {
     return kind === Kind.Long || kind === Kind.Double;
@@ -50,7 +51,6 @@ module J2ME {
   }
 
   export interface Context {
-    executeUntilCurrentFramePopped();
     pushClassInitFrame(classInfo: ClassInfo);
     runtime: any;
     methodInfos: MethodInfo [];
@@ -129,7 +129,12 @@ module J2ME {
     consumes: number;
     signature: string;
     implKey: string;
+    key: string;
+    alternateImpl: {()};
+    fn: {()};
   }
+
+  declare var Frame;
 
   function assertKind(kind: Kind, x: Node): Node {
     assert(stackKind(x.kind) === stackKind(kind), "Got " + kindCharacter(stackKind(x.kind)) + " expected " + kindCharacter(stackKind(kind)));
@@ -434,6 +439,63 @@ module J2ME {
     }
   }
 
+  export function buildCompiledCall(funcs, key: string, methodInfo: MethodInfo) {
+    if (key in funcs) {
+      return;
+    }
+    function native() {
+      var alternateImpl = methodInfo.alternateImpl;
+      try {
+        // Async alternate functions push data back on the stack, but in the case of a compiled
+        // function, the stack doesn't exist. To handle async, a bailout is triggered so the
+        // compiled frame is replaced with an interpreted frame. The async function then can get the new
+        // frame's stack from this callback.
+        // TODO Refactor override so we don't have to slice here.
+        var ctx = arguments[0];
+        var args = Array.prototype.slice.call(arguments, 2);
+        return alternateImpl.call(null, ctx, args, methodInfo.isStatic, function() {
+          assert(ctx.frameSets.length === 0, "There are still compiled frames.");
+          return ctx.current().stack;
+        });
+      } catch (e) {
+        if (e === VM.Pause || e === VM.Yield) {
+          throw e;
+        }
+        throw new Error("TODO handle exceptions/yields in alternate impls. " + e + e.stack);
+      }
+    }
+
+    function interpreter() {
+      var frame = new Frame(methodInfo, [], 0);
+      var ctx = arguments[0];
+      ctx.frames.push(frame);
+      for (var i = 2; i < arguments.length; i++) {
+        frame.setLocal(i - 2, arguments[i]);
+      }
+      return VM.execute(ctx);
+    }
+
+    function compile() {
+      var ctx = arguments[0];
+      ctx.compileMethodInfo(methodInfo);
+      if (methodInfo.fn) {
+        funcs[key] = methodInfo.fn;
+        return methodInfo.fn.apply(null, arguments);
+      }
+      // Compiling failed use the interpreter.
+      funcs[key] = interpreter;
+      return interpreter.apply(null, arguments);
+    }
+
+    var fn;
+    if (methodInfo.alternateImpl) {
+      fn = native;
+    } else {
+      fn = compile;
+    }
+    funcs[key] = fn;
+  }
+
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
     if (!methodInfo.code || methodInfo.name == "<init>" || methodInfo.isSynchronized || methodInfo.exception_table.length) {
       return;
@@ -442,10 +504,10 @@ module J2ME {
     var fn;
     try {
       var compilation = builder.build();
-      var args = ["ctx", "frameIndex", "methodInfoId"];
+      var args = ["ctx", "compiledDepth"];
       for (var i = 0; i < builder.parameters.length; i++) {
         var parameter = builder.parameters[i];
-        var paramName = compilation.parameters[i] || "unsued_" + i;
+        var paramName = compilation.parameters[i] || "unused_" + i;
         args.push(paramName);
         if (isTwoSlot(parameter.kind)) {
           args.push(paramName + "_illegal");
@@ -536,6 +598,8 @@ module J2ME {
     blockMap: BlockMap;
 
     ctxVar: IR.Variable;
+    functionVar: IR.Variable;
+    compiledDepthVar: IR.Variable;
 
     parameters: IR.Parameter [];
 
@@ -550,6 +614,8 @@ module J2ME {
     build(): C4.Backend.Compilation {
       IR.Node.startNumbering();
       this.ctxVar = new IR.Variable("ctx");
+      this.functionVar = new IR.Variable("ctx.runtime.functions");
+      this.compiledDepthVar = new IR.Variable("compiledDepth");
       var methodInfo = this.methodInfo;
 
       writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
@@ -1076,7 +1142,7 @@ module J2ME {
 
     genNullCheck(object: Value, bci: number) {
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("nullCheck"), [object], IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("nullCheck"), [object], this.methodInfo.implKey);
       this.recordStore(call);
     }
 
@@ -1084,16 +1150,16 @@ module J2ME {
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
       var call;
       if (object.kind === Kind.Long) {
-        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("divideByZeroCheckLong"), [object], IR.Flags.PRISTINE);
+        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("divideByZeroCheckLong"), [object], this.methodInfo.implKey);
       } else {
-        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("divideByZeroCheck"), [object], IR.Flags.PRISTINE);
+        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("divideByZeroCheck"), [object], this.methodInfo.implKey);
       }
       this.recordStore(call);
     }
 
     genThrow(bci: number) {
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("triggerBailout"), [], IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxVar, new Constant("triggerBailout"), [], this.methodInfo.implKey);
       this.recordStore(call);
       this.methodReturnInfos.push(new ReturnInfo(
         this.region,
@@ -1115,14 +1181,11 @@ module J2ME {
         }
         args.unshift(this.state.pop(type.kind));
       }
-      var argsArray = new IR.NewArray(this.region, args);
-      var invokeArgs: Value [] = [];
-      invokeArgs.push(new Constant(methodInfo.implKey));
-      invokeArgs.push(new Constant(true));
-      invokeArgs.push(argsArray);
+      args.unshift(this.ctxVar, new IR.Binary(Operator.IADD, this.compiledDepthVar, genConstant(1, Kind.Int)));
 
+      buildCompiledCall(this.ctx.runtime.functions, methodInfo.implKey, methodInfo);
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.functionVar, new Constant(methodInfo.implKey), args, this.methodInfo.implKey);
       call.kind = types[0].kind;
       this.recordStore(call);
 
@@ -1146,14 +1209,11 @@ module J2ME {
       var obj = this.state.pop(Kind.Reference);
       this.genNullCheck(obj, nextBCI);
       args.unshift(obj);
-      var argsArray = new IR.NewArray(this.region, args);
-      var invokeArgs: Value [] = [];
-      invokeArgs.push(new Constant(methodInfo.implKey));
-      invokeArgs.push(new Constant(true));
-      invokeArgs.push(argsArray);
+      args.unshift(this.ctxVar, new IR.Binary(Operator.IADD, this.compiledDepthVar, genConstant(1, Kind.Int)));
 
+      buildCompiledCall(this.ctx.runtime.functions, methodInfo.implKey, methodInfo);
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.functionVar, new Constant(methodInfo.implKey), args, this.methodInfo.implKey);
       call.kind = types[0].kind;
       this.recordStore(call);
 
@@ -1181,14 +1241,10 @@ module J2ME {
       var obj = this.state.pop(Kind.Reference);
       this.genNullCheck(obj, nextBCI);
       args.unshift(obj);
-      var argsArray = new IR.NewArray(this.region, args);
-      var invokeArgs: Value [] = [];
-      invokeArgs.push(new Constant(methodInfo.implKey));
-      invokeArgs.push(new Constant(false));
-      invokeArgs.push(argsArray);
+      args.unshift(this.ctxVar, new IR.Binary(Operator.IADD, this.compiledDepthVar, genConstant(1, Kind.Int)));
 
       this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), this.ctxVar, new Constant("invoke"), invokeArgs, IR.Flags.PRISTINE);
+      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(nextBCI), obj, new Constant(methodInfo.key), args, this.methodInfo.implKey, true);
       this.recordStore(call);
 
       if (types[0].kind !== Kind.Void) {
@@ -1231,7 +1287,7 @@ module J2ME {
       var methodInfo = this.methodInfo;
       this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
 
-      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("classInitCheck"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
+      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxVar, new Constant("classInitCheck"), [new Constant(classInfo.className)], this.methodInfo.implKey);
       this.recordStore(classInitCheck);
     }
 

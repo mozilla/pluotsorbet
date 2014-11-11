@@ -47,7 +47,7 @@ VM.execute = function(ctx) {
             ctx.monitorExit(frame.lockObject);
         var callee = frame;
         frame = ctx.popFrame();
-        if (frame === null || frame === COMPILED_FRAME) {
+        if (frame === null) {
             returnValue = null;
             switch (consumes) {
             case 2:
@@ -948,9 +948,8 @@ VM.execute = function(ctx) {
             stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow
-            if (ctx.compiledFrames > 0) {
+            if (ctx.frameSets.length > 0) {
                 // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
-                // TODO There are much better ways to do this, but this is easy for now!
                 frame.ip--;
                 throw VM.Yield;
             }
