@@ -13,15 +13,14 @@ JavaException.prototype = Object.create(Error.prototype);
 
 function boolReturnType(stack, ret) {
   if (ret) {
-    stack.push(1);
+    stack.push(Stack.BOOLEAN, 1);
   } else {
-    stack.push(0);
+    stack.push(Stack.BOOLEAN, 0);
   }
 }
 
 function doubleReturnType(stack, ret) {
-  // double types require two stack frames
-  stack.push2(ret);
+  stack.push(Stack.DOUBLE, ret);
 }
 
 function voidReturnType(stack, ret) {
@@ -30,15 +29,15 @@ function voidReturnType(stack, ret) {
 
 function stringReturnType(stack, ret) {
   if (typeof ret === "string") {
-    stack.push(util.newString(ret));
+    stack.push(Stack.REF, util.newString(ret));
   } else {
     // already a native string or null
-    stack.push(ret);
+    stack.push(Stack.REF, ret);
   }
 }
 
 function defaultReturnType(stack, ret) {
-    stack.push(ret);
+    stack.push(Stack.INT, ret);
 }
 
 function getReturnFunction(sig) {
@@ -115,11 +114,11 @@ function createAlternateImpl(object, key, fn, usesPromise) {
     // two arguments (since they take up two stack positions); we
     // could sugar this someday.
     for (var i = numArgs - 2; i >= 0; i--) {
-      args[i] = stack.pop();
+      args[i] = stack.pop(Stack.UNKNOWN);
     }
 
     try {
-      var self = isStatic ? null : stack.pop();
+      var self = isStatic ? null : stack.pop(Stack.REF);
       var ret = fn.apply(self, args);
       postExec(stack, ret, doReturn, ctx, key);
     } catch(e) {

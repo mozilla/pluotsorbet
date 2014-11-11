@@ -3,43 +3,101 @@
 
 'use strict';
 
-Array.prototype.push2 = function(value) {
-    this.push(value);
-    this.push(null);
+function Stack(arr) {
+    this.items = arr || [];
 }
 
-Array.prototype.pop2 = function() {
-    this.pop();
-    return this.pop();
-}
+Stack.INT = 0;
+Stack.LONG = 1;
+Stack.FLOAT = 2;
+Stack.DOUBLE = 3;
+Stack.REF = 4;
+Stack.BYTE = 5;
+Stack.CHAR = 6;
+Stack.SHORT = 7;
+Stack.BOOLEAN = 8;
+Stack.UNKNOWN = 0; // XXX
+Stack.UNKNOWN_WIDE = 1; // XXX
 
-Array.prototype.pushType = function(signature, value) {
-    if (signature === "J" || signature === "D") {
-        this.push2(value);
-        return;
+var SIGNATURE_TO_STACK_TYPE = "IJFDLBCSZ??";
+
+Stack.prototype = {
+    push: function(type, value) {
+        this.items.push(value);
+        if (type === Stack.LONG || type === Stack.DOUBLE) {
+            this.items.push(null);
+        }
+    },
+    pop: function(type) {
+        var value = this.items.pop();
+        if (type === Stack.LONG || type === Stack.DOUBLE) {
+            value = this.items.pop();
+        }
+        return value;
+    },
+    pushFromArray: function(type, idx, arr) {
+        if (!arr) {
+            throw new Error("java/lang/NullPointerException");
+        }
+        if (idx < 0 || idx > arr.length) {
+            throw new Error("java/lang/ArrayIndexOutOfBoundsException: " + idx);
+        }
+        this.push(type, arr[idx]);
+    },
+    popIntoArray: function(type) {
+        var val = this.pop(type);
+        var idx = this.pop(Stack.INT);
+        var arr = this.pop(Stack.REF);
+        if (!arr) {
+            throw new Error("java/lang/NullPointerException");
+        }
+        if (idx < 0 || idx > arr.length) {
+            throw new Error("java/lang/ArrayIndexOutOfBoundsException: " + idx);
+        }
+        if (type === Stack.REF) {
+            if (val && !val.class.isAssignableTo(arr.class.elementClass)) {
+                throw new Error("java/lang/ArrayStoreException");
+            }
+        }
+
+        arr[idx] = val;
+    },
+    empty: function() {
+        this.items.length = 0;
+    },
+    get length() {
+        return this.items.length;
+    },
+    set length(n) {
+        this.items.length = n;
+    },
+    pushType: function(type, val) {
+        this.push(SIGNATURE_TO_STACK_TYPE.indexOf(type), val);
+    },
+    popType: function(type) {
+        return this.pop(SIGNATURE_TO_STACK_TYPE.indexOf(type));
+    },
+    read: function(type, count) {
+        return this.get(type, this.items.length - count);
+    },
+    get: function(type, offset) {
+        return this.items[offset];
+    },
+    set: function(type, offset, val) {
+        this.items[offset] = val;
     }
-    this.push(value);
 }
-
-Array.prototype.popType = function(signature) {
-    return (signature === "J" || signature === "D") ? this.pop2() : this.pop();
-}
-
-// A convenience function for retrieving values in reverse order
-// from the end of the stack.  stack.read(1) returns the topmost item
-// on the stack, while stack.read(2) returns the one underneath it.
-Array.prototype.read = function(i) {
-    return this[this.length - i];
-};
-
 
 var Frame = function(methodInfo, locals, localsBase) {
+    if (!(locals instanceof Stack)) {
+        locals = new Stack(locals);
+    }
     this.methodInfo = methodInfo;
     this.cp = methodInfo.classInfo.constant_pool;
     this.code = methodInfo.code;
     this.ip = 0;
 
-    this.stack = [];
+    this.stack = new Stack();
 
     this.locals = locals;
     this.localsBase = localsBase;
@@ -49,12 +107,12 @@ var Frame = function(methodInfo, locals, localsBase) {
     this.profileData = null;
 }
 
-Frame.prototype.getLocal = function(idx) {
-    return this.locals[this.localsBase + idx];
+Frame.prototype.getLocal = function(type, idx) {
+    return this.locals.get(type, this.localsBase + idx);
 }
 
-Frame.prototype.setLocal = function(idx, value) {
-    this.locals[this.localsBase + idx] = value;
+Frame.prototype.setLocal = function(type, idx, value) {
+    this.locals.set(type, this.localsBase + idx, value);
 }
 
 Frame.prototype.read8 = function() {

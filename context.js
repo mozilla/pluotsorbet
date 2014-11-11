@@ -72,7 +72,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         0xb1,             // return
     ])
   });
-  this.current().stack.push(classInfo.getClassObject(this));
+  this.current().stack.push(Stack.REF, classInfo.getClassObject(this));
   this.pushFrame(syntheticMethod);
 }
 
