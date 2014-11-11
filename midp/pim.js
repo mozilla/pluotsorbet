@@ -7,6 +7,9 @@ var PIM = {};
 PIM.CONTACT_LIST = 1;
 PIM.EVENT_LIST = 2;
 PIM.TODO_LIST = 3;
+PIM.READ_ONLY = 1;
+PIM.WRITE_ONLY = 2;
+PIM.READ_WRITE = 3;
 
 PIM.Contact = {
   FORMATTED_NAME: 105,
@@ -61,6 +64,11 @@ Native.create("com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V", 
 
 Native.create("com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I", function(listType, listName, mode) {
   console.warn("PIMProxy.listOpen0.(ILjava/lang/String;I)I incomplete");
+
+  if (mode !== PIM.READ_ONLY) {
+    console.warn("PIMProxy.listOpen0.(ILjava/lang/String;I)I in write mode not implemented");
+    return 0;
+  }
 
   if (listType === PIM.CONTACT_LIST) {
     PIM.openLists[++PIM.lastListHandle] = {};
