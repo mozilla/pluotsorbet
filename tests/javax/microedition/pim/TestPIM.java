@@ -20,13 +20,21 @@ public class TestPIM implements Testlet {
             th.check(contactList.isSupportedAttribute(Contact.UID, Contact.ATTR_NONE));
             contact.addString(Contact.UID, Contact.ATTR_NONE, "2");
 
-            Enumeration contacts = contactList.items((PIMItem)contact);
+            // Test reading all contacts
+            Enumeration contacts = contactList.items();
             th.check(contacts.hasMoreElements());
             Contact foundContact = (Contact)contacts.nextElement();
-            String tel = foundContact.getString(Contact.TEL, Contact.ATTR_NONE);
+            th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "1");
+            th.check(contacts.hasMoreElements());
+            foundContact = (Contact)contacts.nextElement();
+            th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "2");
+            th.check(!contacts.hasMoreElements());
 
-            th.check(tel, "+16505550102");
-
+            // Test filtering contacts
+            contacts = contactList.items((PIMItem)contact);
+            th.check(contacts.hasMoreElements());
+            foundContact = (Contact)contacts.nextElement();
+            th.check(foundContact.getString(Contact.TEL, Contact.ATTR_NONE), "+16505550102");
             th.check(!contacts.hasMoreElements());
 
             contactList.close();
