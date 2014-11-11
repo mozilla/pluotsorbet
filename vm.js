@@ -18,14 +18,14 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
-function checkArrayAccess(ctx, refArray, idx) {
-    if (!refArray) {
-        ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-    }
-    if (idx < 0 || idx >= refArray.length) {
-        ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
-    }
-}
+// function checkArrayAccess(ctx, refArray, idx) {
+//     if (!refArray) {
+//         ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+//     }
+//     if (idx < 0 || idx >= refArray.length) {
+//         ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
+//     }
+// }
 
 function resolve(ctx, cp, idx, isStatic) {
     var constant = cp[idx];
@@ -265,8 +265,8 @@ VM.execute = function(ctx) {
         case 0x17: // fload
         case 0x18: // dload
         case 0x19: // aload
-            stack.push(INSTR_TO_INT[op - 0x15],
-                       frame.getLocal(INSTR_TO_INT[op - 0x15], frame.read8()));
+            var type = INSTR_TO_INT[op - 0x15];
+            stack.push(type, frame.getLocal(type, frame.read8()));
             break;
         case 0x1a: // iload_0
         case 0x1b: // iload_1
@@ -313,7 +313,7 @@ VM.execute = function(ctx) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
             if (idx < 0 || idx > arr.length) {
-                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException: " + idx);
+                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
             }
             stack.push(type, arr[idx]);
             break;
@@ -371,7 +371,7 @@ VM.execute = function(ctx) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
             if (idx < 0 || idx > arr.length) {
-                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException: " + idx);
+                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
             }
             if (type === Stack.REF) {
                 if (val && !val.class.isAssignableTo(arr.class.elementClass)) {
@@ -388,9 +388,9 @@ VM.execute = function(ctx) {
             stack.pop(Stack.UNKNOWN_WIDE);
             break;
         case 0x59: // dup
-            var val = stack.pop(Stack.UNKNOWN);
-            stack.push(Stack.UNKNOWN, val);
-            stack.push(Stack.UNKNOWN, val);
+            var a = stack.pop(Stack.UNKNOWN);
+            stack.push(Stack.UNKNOWN, a);
+            stack.push(Stack.UNKNOWN, a);
             break;
         case 0x5a: // dup_x1
             var a = stack.pop(Stack.UNKNOWN);
@@ -597,6 +597,29 @@ VM.execute = function(ctx) {
         case 0x83: // lxor
             stack.push(Stack.LONG, stack.pop(Stack.LONG).xor(stack.pop(Stack.LONG)));
             break;
+
+        default:
+            if (VM.handleSimpleFlowOp(op, ctx, frame, cp, stack)) {
+                break;
+            }
+
+            frame = VM.handleComplexOp(op, ctx, frame, cp, stack);
+            if (frame) {
+                cp = frame.cp;
+                stack = frame.stack;
+                // Return if the caller is compiled
+                if (frame.methodInfo.compiled) {
+                    return frame;
+                }
+            } else {
+                return null;
+            }
+        }
+    }
+}
+
+VM.handleSimpleFlowOp = function(op, ctx, frame, cp, stack) {
+    switch(op) {
         case 0x94: // lcmp
             var b = stack.pop(Stack.LONG);
             var a = stack.pop(Stack.LONG);
@@ -789,21 +812,10 @@ VM.execute = function(ctx) {
             stack.push(Stack.SHORT, (stack.pop(Stack.INT) << 16) >> 16);
             break;
         default:
-            frame = VM.handleComplexOp(op, ctx, frame, cp, stack);
-            if (frame) {
-                cp = frame.cp;
-                stack = frame.stack;
-                // Return if the caller is compiled
-                if (frame.methodInfo.compiled) {
-                    return frame;
-                }
-            } else {
-                return null;
-            }
-        }
+        return false;
     }
+    return true; // handled
 }
-
 
 VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
     switch(op) {
