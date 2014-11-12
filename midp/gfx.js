@@ -635,6 +635,19 @@
         });
     });
 
+    Native.create("javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V",
+    function(jStr, offset, len, x, y, anchor) {
+        var str = util.fromJavaString(jStr).substr(offset, len);
+        var g = this;
+        withGraphics(g, function(c) {
+            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
+                withPixel(g, c, function() {
+                    c.fillText(str, x, y);
+                });
+            });
+        });
+    });
+
     Native.create("javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V", function(data, offset, len, x, y, anchor) {
         var str = util.fromJavaChars(data, offset, len);
         var g = this;
