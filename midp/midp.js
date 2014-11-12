@@ -872,10 +872,19 @@ MIDP.suppressKeyEvents = false;
 MIDP.keyPress = function(keyCode) {
     if (!MIDP.suppressKeyEvents)
         MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
-}
+};
+
+MIDP.keyRelease = function(keyCode) {
+    if (!MIDP.suppressKeyEvents)
+        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.RELEASED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+};
 
 window.addEventListener("keypress", function(ev) {
     MIDP.keyPress(ev.which);
+});
+
+window.addEventListener("keyup", function(ev) {
+    MIDP.keyRelease(ev.which);
 });
 
 Native.create("com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I", function() {
