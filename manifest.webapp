@@ -23,7 +23,10 @@
     "mobilenetwork": {
       "description:": "Required to verify your phone number"
     },
-    "browser": {}
+    "browser": {},
+    "desktop-notification": {
+      "description": "Required to display notifications"
+    }
   },
   "type": "privileged"
 }
