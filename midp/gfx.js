@@ -1085,7 +1085,6 @@
             if (isVKVisible) {
                 console.warn("Window shrunk but we thought the keyboard was already visible!");
             }
-            console.log("Keyboard is now visible");
             isVKVisible = true;
             keyboardHeight = initialWindowHeight - window.innerHeight;
             if (pendingHideNotify) {
@@ -1105,7 +1104,6 @@
             if (!isVKVisible) {
                 console.warn("Window grew but we thought the keyboard was already hidden!");
             }
-            console.log("Keyboard is now hidden");
             isVKVisible = false;
             keyboardHeight = 0;
             if (pendingShowNotify) {
@@ -1121,31 +1119,24 @@
     });
 
     Native.create("com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z", function() {
-        console.log("VirtualKeyboard.isVisible.()Z == " + isVKVisible);
         return isVKVisible;
     });
 
     Native.create("com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I", function() {
-        console.log("VirtualKeyboard.getXPosition.()I == " + 0);
         return 0;
     });
 
     Native.create("com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I", function() {
         // We should return the number of pixels between the top of the
         // screen and the top of the keyboard
-        var val = window.innerHeight;
-        console.log("VirtualKeyboard.getYPosition.()I == " + val);
-        return val;
+        return window.innerHeight;
     });
 
     Native.create("com/nokia/mid/ui/VirtualKeyboard.getWidth.()I", function() {
-        var val = window.innerWidth;
-        console.log("VirtualKeyboard.getWidth.()I == " + val);
-        return val;
+        return window.innerWidth;
     });
 
     Native.create("com/nokia/mid/ui/VirtualKeyboard.getHeight.()I", function() {
-        console.log("VirtualKeyboard.getHeight.()I == " + keyboardHeight);
         return keyboardHeight;
     });
 
