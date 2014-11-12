@@ -1,6 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-Override["gnu/testlet/vm/OverrideTest.overridden.()I"] = function(ctx, stack) {
-  stack.push(2);
-}
+Override.create("gnu/testlet/vm/OverrideTest.overridden.()I", function(ctx) {
+  return 2;
+});
