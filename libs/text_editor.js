@@ -65,6 +65,11 @@ var TextEditorProvider = (function() {
             }
 
             this.textEditorElem.value = this.content || '';
+            if (this.selectionRange) {
+                this.textEditorElem.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
+                delete this.selectionRange;
+            }
+
             if (this.focused) this.focus();
             this.setVisible(this.visible);
         },
@@ -147,7 +152,11 @@ var TextEditorProvider = (function() {
         },
 
         setSelectionRange: function(from, to) {
-            this.textEditorElem && this.textEditorElem.setSelectionRange(from, to);
+            if (!this.textEditorElem) {
+                this.selectionRange = [from, to];
+            } else {
+                this.textEditorElem.setSelectionRange(from, to);
+            }
         },
 
         setAttribute: function(attrName, value) {

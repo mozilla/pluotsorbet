@@ -968,7 +968,7 @@
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.setConstraints.(I)V", function(constraints) {
-        return this.textEditor.setConstraints(constraints);
+        this.textEditor.setConstraints(constraints);
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.getConstraints.()I", function() {
