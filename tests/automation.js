@@ -37,6 +37,7 @@ var gfxTests = [
   { name: "gfx/ClippingTest", maxDifferent: 0 },
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
+  { name: "gfx/DrawSubstringTest", maxDifferent: 0 },
 ];
 
 casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
