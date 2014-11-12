@@ -177,6 +177,7 @@ module J2ME.C4.Backend {
         jsTypedArrayType = "Int16Array";
         break;
       case Kind.Byte:
+      case Kind.Boolean:
         jsTypedArrayType = "Int8Array";
         break;
       case Kind.Float:
