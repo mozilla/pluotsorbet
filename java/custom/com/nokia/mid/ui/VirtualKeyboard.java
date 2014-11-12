@@ -3,6 +3,31 @@ package com.nokia.mid.ui;
 import com.nokia.mid.ui.CustomKeyboardControl;
 import com.nokia.mid.ui.KeyboardVisibilityListener;
 
+class VKVisibilityNotificationRunnable implements Runnable {
+    public void run() {
+        while(true) {
+            boolean isShow = sleepUntilVKVisibilityChange();
+            synchronized(this) {
+                if (null == listener) {
+                    continue;
+                }
+                if (isShow) {
+                    listener.showNotify(VirtualKeyboard.SYSTEM_KEYBOARD);
+                } else {
+                    listener.hideNotify(VirtualKeyboard.SYSTEM_KEYBOARD);
+                }
+            }
+        }
+    }
+
+    public synchronized void setListener(KeyboardVisibilityListener listener) {
+        this.listener = listener;
+    }
+
+    private KeyboardVisibilityListener listener;
+    private native boolean sleepUntilVKVisibilityChange();
+}
+
 public class VirtualKeyboard {
     public static final int CUSTOM_KEYBOARD = 1;
     public static final int SYSTEM_KEYBOARD = 2;
@@ -22,32 +47,30 @@ public class VirtualKeyboard {
         System.out.println("VirtualKeyboard::hideOpenKeypadCommand(boolean) not implemented");
     }
 
-    public static boolean isVisible() {
-        throw new RuntimeException("VirtualKeyboard::isVisible() not implemented");
-    }
+    public native static boolean isVisible();
 
-    public static int getXPosition() {
-        throw new RuntimeException("VirtualKeyboard::getXPosition() not implemented");
-    }
+    public native static int getXPosition();
 
-    public static int getYPosition() {
-        throw new RuntimeException("VirtualKeyboard::getYPosition() not implemented");
-    }
+    public native static int getYPosition();
 
-    public static int getWidth() {
-        throw new RuntimeException("VirtualKeyboard::getWidth() not implemented");
-    }
+    public native static int getWidth();
 
-    public static int getHeight() {
-        throw new RuntimeException("VirtualKeyboard::getHeight() not implemented");
-    }
+    public native static int getHeight();
 
-    public static void setVisibilityListener(KeyboardVisibilityListener keyboardVisibilityListener) {
-        System.out.println("VirtualKeyboard::setVisibilityListener(KeyboardVisibilityListener) not implemented");
+    public static void setVisibilityListener(KeyboardVisibilityListener listener) {
+        if (null == visibilityNotifier) {
+            visibilityNotifier = new VKVisibilityNotificationRunnable();
+            listenerThread = new Thread(visibilityNotifier);
+            listenerThread.start();
+        }
+        visibilityNotifier.setListener(listener);
     }
 
     public static void suppressSizeChanged(boolean bl) {
         throw new RuntimeException("VirtualKeyboard::suppressSizeChanged(boolean) not implemented");
     }
+
+    private static VKVisibilityNotificationRunnable visibilityNotifier = null;
+    private static Thread listenerThread = null;
 }
 
