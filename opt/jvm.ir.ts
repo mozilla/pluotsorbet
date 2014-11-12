@@ -319,32 +319,26 @@ module J2ME.C4.Backend {
     throw "Unimplemented conversion";
   }
 
+  function compileStateValues(cx: Context, values: IR.Value []): AST.Node [] {
+    var compiledValues = [];
+    for (var i = 0; i < values.length; i++) {
+      if (values[i] === null) {
+        compiledValues.push(constant(null));
+      } else {
+        compiledValues.push(compileValue(values[i], cx));
+        if (isTwoSlot(values[i].kind)) {
+          compiledValues.push(constant(null));
+          i++;
+        }
+      }
+    }
+    return compiledValues;
+  }
+
   IR.JVMCallProperty.prototype.compile = function (cx: Context): AST.Node {
-    var local = this.state.local;
-    var stack = this.state.stack;
 
-    var localValues = [];
-    var stackValues = [];
-
-    var $ = new AST.Identifier("$");
-    for (var i = 0; i < local.length; i++) {
-      if (local[i] === null) {
-        continue;
-      }
-      localValues.push(compileValue(local[i], cx));
-      if (isTwoSlot(local[i].kind)) {
-        localValues.push(constant(null));
-      }
-    }
-    for (var i = 0; i < stack.length; i++) {
-      if (stack[i] === null) {
-        continue;
-      }
-      stackValues.push(compileValue(stack[i], cx));
-      if (isTwoSlot(stack[i].kind)) {
-        stackValues.push(constant(null));
-      }
-    }
+    var localValues = compileStateValues(cx, this.state.local);
+    var stackValues = compileStateValues(cx, this.state.stack);;
     var object = compileValue(this.object, cx);
     var name = compileValue(this.name, cx);
     var callee = property(object, name);
