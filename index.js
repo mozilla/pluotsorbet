@@ -264,3 +264,17 @@ DumbPipe.registerOpener("socket", function(message, sender) {
     }
   };
 });
+
+DumbPipe.registerOpener("notification", function(message, sender) {
+  if (Notification.permission === "granted") {
+    new Notification(message.text, message.options);
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission(function(permission) {
+      if (permission === "granted") {
+        new Notification(message.text, message.options);
+      }
+    });
+  }
+
+  sender();
+});
