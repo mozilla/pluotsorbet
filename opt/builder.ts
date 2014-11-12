@@ -980,10 +980,13 @@ module J2ME {
     genNegateOp(kind: Kind) {
       var x = this.state.pop(kind);
       var v;
-      if (kind === Kind.Long) {
-        v = new IR.JVMLongUnary(Operator.NEG, x);
-      } else {
-        v = new IR.Unary(Operator.NEG, x)
+      switch (kind) {
+        case Kind.Int: v = new IR.Unary(Operator.INEG, x); break;
+        case Kind.Long: v = new IR.JVMLongUnary(Operator.LNEG, x); break;
+        case Kind.Float: v = new IR.Unary(Operator.FNEG, x); break;
+        case Kind.Double: v = new IR.Unary(Operator.DNEG, x); break;
+        default:
+          assert(false);
       }
       this.state.push(kind, v);
     }

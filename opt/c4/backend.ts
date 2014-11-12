@@ -456,11 +456,16 @@ module J2ME.C4.Backend {
   }
 
   IR.Unary.prototype.compile = function (cx: Context): AST.Node {
-    return new UnaryExpression (
+    var result = new UnaryExpression (
       this.operator.name,
       true,
       compileValue(this.argument, cx)
     );
+    if (this.operator === Operator.INEG) {
+      return new BinaryExpression("|", result, constant(0));
+    }
+    // Float and double don't need conversion.
+    return result;
   }
 
   IR.Copy.prototype.compile = function (cx: Context): AST.Node {

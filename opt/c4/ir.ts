@@ -496,6 +496,11 @@ module J2ME.C4.IR {
     static FREM    = new Operator("%",   (l, r) => Math.fround(l % r),        true);
     static DREM    = new Operator("%",   (l, r) => +(l % r),        true);
 
+    static INEG    = new Operator("-",   (a) => (-a) | 0,              false);
+    static LNEG    = new Operator("-",   (a) => a.negate(),              false);
+    static FNEG    = new Operator("-",   (a) => -a,              false);
+    static DNEG    = new Operator("-",   (a) => -a,              false);
+
 //    static ADD    = new Operator("+",   (l, r) => l + r,        true);
 //    static SUB    = new Operator("-",   (l, r) => l - r,        true);
 //    static MUL    = new Operator("*",   (l, r) => l * r,        true);
