@@ -184,7 +184,7 @@ module J2ME.C4.Backend {
         jsTypedArrayType = "Float32Array";
         break;
       case Kind.Long:
-        jsTypedArrayType = "Float64Array"; // Tricky.
+        jsTypedArrayType = "Array";
         break;
       case Kind.Double:
         jsTypedArrayType = "Float64Array";
