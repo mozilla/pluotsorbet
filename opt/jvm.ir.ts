@@ -264,7 +264,7 @@ module J2ME.C4.Backend {
     var a = compileValue(this.a, cx);
     var operator;
     switch (this.operator) {
-      case Operator.NEG: operator = "negate"; break;
+      case Operator.LNEG: operator = "negate"; break;
       default:
         assert(false);
     }
