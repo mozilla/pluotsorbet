@@ -1094,4 +1094,12 @@
 
         return dirtyEditors.shift();
     });
+
+    Native.create("com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V", function(active) {
+        if (active) {
+            var image = this.class.getField("I.image.Ljavax/microedition/lcdui/Image;").get(this);
+            var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
+            new Notification("Some text", { icon: convertNativeImageData(imageData).toDataURL() });
+        }
+    });
 })(Native);
