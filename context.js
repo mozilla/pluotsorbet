@@ -413,18 +413,6 @@ Context.prototype.triggerBailout = function(e, methodInfoId, compiledDepth, cpi,
 
 Context.prototype.JVMBailout = function(e, methodInfoId, compiledDepth, cpi, locals, stack) {
     var methodInfo = this.methodInfos[methodInfoId];
-    var reason = "";
-    if (e === VM.Yield) {
-      reason = "VM.Yield";
-    } else if (e === VM.Pause) {
-      reason = "VM.Pause";
-    } else {
-      reason += e;
-      if (e.stack) {
-        reason += "\n" + e.stack;
-      }
-    }
-    console.log("Bailing out of " + methodInfo.name + "() due to " + reason);
     var frame = new Frame(methodInfo, locals, 0);
     frame.stack = stack;
     frame.ip = cpi;

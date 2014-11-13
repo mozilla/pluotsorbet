@@ -517,12 +517,10 @@ module J2ME {
       fn = new Function(args.join(","), fnSource);
       debug && writer.writeLn(fn.toString());
     } catch (e) {
-      Debug.warning("Failed to compile " + methodInfo.implKey + " " + e + " " + e.stack);
+      debug && Debug.warning("Failed to compile " + methodInfo.implKey + " " + e + " " + e.stack);
       if (e.message.indexOf("Not Implemented ") === -1) {
         throw e;
       }
-      writer.writeLn(e);
-      writer.writeLn(e.stack);
     }
 
     return fn;
@@ -1566,7 +1564,7 @@ module J2ME {
       }
       */
         default:
-          Debug.notImplemented(Bytecodes[opcode]);
+          throw new Error("Not Implemented " + Bytecodes[opcode]);
       }
       writer.leave("State  After: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
       writer.writeLn("");
