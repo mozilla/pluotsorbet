@@ -130,7 +130,7 @@ module J2ME.C4.Backend {
     }
   }
 
-  function id(name) {
+  export function id(name) {
     release || assert (typeof name === "string");
     return new Identifier(name);
   }
@@ -432,20 +432,20 @@ module J2ME.C4.Backend {
   IR.Parameter.prototype.compile = function (cx: Context): AST.Node {
     cx.useParameter(this);
     return id(this.name);
-  }
+  };
 
   IR.Constant.prototype.compile = function (cx: Context): AST.Node {
     return constant(this.value, cx);
-  }
+  };
 
   IR.Variable.prototype.compile = function (cx: Context): AST.Node {
     return id(this.name);
-  }
+  };
 
   IR.Phi.prototype.compile = function (cx: Context): AST.Node {
     release || assert (this.variable);
     return compileValue(this.variable, cx);
-  }
+  };
 
   IR.Latch.prototype.compile = function (cx: Context): AST.Node {
     return new ConditionalExpression (
@@ -453,7 +453,7 @@ module J2ME.C4.Backend {
       compileValue(this.left, cx),
       compileValue(this.right, cx)
     );
-  }
+  };
 
   IR.Unary.prototype.compile = function (cx: Context): AST.Node {
     var result = new UnaryExpression (
@@ -466,11 +466,11 @@ module J2ME.C4.Backend {
     }
     // Float and double don't need conversion.
     return result;
-  }
+  };
 
   IR.Copy.prototype.compile = function (cx: Context): AST.Node {
     return compileValue(this.argument, cx);
-  }
+  };
 
   IR.Binary.prototype.compile = function (cx: Context): AST.Expression {
     var left = compileValue(this.left, cx);
@@ -496,7 +496,7 @@ module J2ME.C4.Backend {
       return new UnaryExpression("+", true, result);
     }
     return result;
-  }
+  };
 
   IR.CallProperty.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
@@ -510,7 +510,7 @@ module J2ME.C4.Backend {
     } else {
       return callCall(callee, object, args);
     }
-  }
+  };
 
   IR.Call.prototype.compile = function (cx: Context): AST.Node {
     var args = this.args.map(function (arg) {
@@ -532,47 +532,47 @@ module J2ME.C4.Backend {
     } else {
       return callCall(callee, object, args);
     }
-  }
+  };
 
   IR.This.prototype.compile = function (cx: Context): AST.Node {
     return new ThisExpression();
-  }
+  };
 
   IR.Throw.prototype.compile = function (cx: Context): AST.Node {
     var argument = compileValue(this.argument, cx);
     return new ThrowStatement(argument);
-  }
+  };
 
   IR.Arguments.prototype.compile = function (cx: Context): AST.Node {
     return id("arguments");
-  }
+  };
 
   IR.GlobalProperty.prototype.compile = function (cx: Context): AST.Node {
     return id(this.name);
-  }
+  };
 
   IR.GetProperty.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
     var name = compileValue(this.name, cx);
     return property(object, name);
-  }
+  };
 
   IR.SetProperty.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
     var name = compileValue(this.name, cx);
     var value = compileValue(this.value, cx);
     return assignment(property(object, name), value);
-  }
+  };
 
   IR.Projection.prototype.compile = function (cx: Context): AST.Node {
     release || assert (this.type === IR.ProjectionType.SCOPE);
     release || assert (this.argument instanceof Start);
     return compileValue(this.argument.scope, cx);
-  }
+  };
 
   IR.NewArray.prototype.compile = function (cx: Context): AST.Node {
     return new ArrayExpression(compileValues(this.elements, cx));
-  }
+  };
 
   IR.NewObject.prototype.compile = function (cx: Context): AST.Node {
     var properties = this.properties.map(function (property) {
@@ -581,7 +581,7 @@ module J2ME.C4.Backend {
       return new Property(key, value, "init");
     });
     return new ObjectExpression(properties);
-  }
+  };
 
   IR.Block.prototype.compile = function (cx: Context): AST.Node {
     return cx.compileBlock(this);

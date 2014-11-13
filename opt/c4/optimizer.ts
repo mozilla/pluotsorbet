@@ -234,7 +234,7 @@ module J2ME.C4.IR {
       }
     }
 
-    forEachInPreOrderDepthFirstSearch(visitor) {
+    forEachInPreOrderDepthFirstSearch(visitor: NodeVisitor) {
       var visited = new Array(1024);
       var worklist = [this.exit];
       function push(node) {
@@ -346,15 +346,20 @@ module J2ME.C4.IR {
     }
   }
 
+  export interface UseEntry {
+    def: Node;
+    uses: Node [];
+  }
+
   export class Uses {
-    entries: any [];
+    entries: UseEntry [];
     constructor() {
       this.entries = [];
     }
-    addUse(def, use) {
+    addUse(def: Node, use: Node) {
       var entry = this.entries[def.id];
       if (!entry) {
-        entry = this.entries[def.id] = {def: def, uses:[]};
+        entry = this.entries[def.id] = {def: def, uses: []};
       }
       pushUnique(entry.uses, use);
     }
@@ -365,7 +370,7 @@ module J2ME.C4.IR {
       });
       writer.leave("<");
     }
-    replace(def, value) {
+    replace(def: Node, value: Node) {
       var entry = this.entries[def.id];
       if (entry.uses.length === 0) {
         return false;
@@ -378,7 +383,7 @@ module J2ME.C4.IR {
       entry.uses = [];
       return true;
     }
-    updateUses(def, value, useEntries, writer) {
+    updateUses(def: Node, value: Node, useEntries: UseEntry [], writer: IndentingWriter) {
       debug && writer.writeLn("Update " + def + " with " + value);
       var entry = useEntries[def.id];
       if (entry.uses.length === 0) {
@@ -659,7 +664,7 @@ module J2ME.C4.IR {
      *
      * () -> Map[id -> {def:Node, uses:Array[Node]}]
      */
-    computeUses() {
+    computeUses(): Uses {
       enterTimeline("computeUses");
       var writer = debug && new IndentingWriter();
 
@@ -920,8 +925,8 @@ module J2ME.C4.IR {
        * Simplest example where this happens:
        *   var a, b, t;
        *   while (true) {
-         *     t = a; a = b; b = t;
-         *   }
+       *     t = a; a = b; b = t;
+       *   }
        */
       var blocks = this.blocks;
       blockMoves.forEach(function (moves, blockID) {
@@ -991,6 +996,7 @@ module J2ME.C4.IR {
           roots.push(node);
         }
         if (isPhi(node)) {
+          var phi = <Phi>node;
           /**
            * When breaking out of SSA, move instructions need to have non-floating source nodes. Otherwise
            * the topological sorting of moves gets more complicated, especially when cyclic dependencies
@@ -1000,7 +1006,7 @@ module J2ME.C4.IR {
            * TODO: Find out if this requirement is too expensive. We can make the move insertion algorithm
            * more intelligent so that it walks the inputs of floating nodes when looking for dependencies.
            */
-          node.args.forEach(function (input) {
+          phi.args.forEach(function (input) {
             if (shouldFloat(input)) {
               input.mustNotFloat = true;
             }

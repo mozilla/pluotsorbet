@@ -339,7 +339,7 @@ module J2ME.C4.Backend {
   IR.JVMCallProperty.prototype.compile = function (cx: Context): AST.Node {
 
     var localValues = compileStateValues(cx, this.state.local);
-    var stackValues = compileStateValues(cx, this.state.stack);;
+    var stackValues = compileStateValues(cx, this.state.stack);
     var object = compileValue(this.object, cx);
     var name = compileValue(this.name, cx);
     var callee = property(object, name);
