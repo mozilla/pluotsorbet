@@ -3,14 +3,14 @@
 
 'use strict';
 
-var STACK_SIZE = 100;
+var MAX_STACK_SIZE = 256;
 function Stack() {
-    this.types = [];//new Uint8Array(STACK_SIZE);
+    this.types = new Uint8Array(MAX_STACK_SIZE);
     //    this.ints = new Int32Array(STACK_SIZE);
     //    this.floats = this.doubles = new Float64Array(STACK_SIZE);
-    this.longs = this.refs = [];
-    this.floats = this.doubles = [];
-    this.ints = [];
+    this.longs = this.refs = new Array(); // Store objects.
+    this.floats = this.doubles = new Float64Array(MAX_STACK_SIZE);
+    this.ints = new Int32Array(MAX_STACK_SIZE);
 
     this.length = 0;
 }
@@ -42,11 +42,7 @@ Stack.prototype = {
     setToArray: function(arr) {
         this.length = 0;
         for (var i = 0; arr && i < arr.length; i++) {
-            if (typeof arr[i] === "object") {
-                this.pushRef(arr[i]);
-            } else {
-                throw new Error("stack not designed to push anything but refs in constructor");
-            }
+            this.pushRef(arr[i]);
         }
     },
 

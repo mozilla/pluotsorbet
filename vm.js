@@ -20,14 +20,14 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
-// function checkArrayAccess(ctx, refArray, idx) {
-//     if (!refArray) {
-//         ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-//     }
-//     if (idx < 0 || idx >= refArray.length) {
-//         ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
-//     }
-// }
+function checkArrayAccess(ctx, refArray, idx) {
+    if (!refArray) {
+        ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+    }
+    if (idx < 0 || idx >= refArray.length) {
+        ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
+    }
+}
 
 function classInitCheck(ctx, frame, classInfo, ip) {
     if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
@@ -158,7 +158,6 @@ VM.execute = function(ctx) {
       frame = frame.methodInfo.compiled(ctx);
     }
 
-
     if (!frame) {
       return;
     }
@@ -168,9 +167,6 @@ VM.execute = function(ctx) {
 
     while (true) {
         var op = frame.read8();
-        // frame.debug();
-        // stack.debug();
-        // console.warn(OPCODES[op]);
         switch (op) {
         case 0x00: // nop
             break;
@@ -187,8 +183,10 @@ VM.execute = function(ctx) {
             stack.pushInt(op - 0x03);
             break;
         case 0x09: // lconst_0
+            stack.pushLong(Long.ZERO);
+            break;
         case 0x0a: // lconst_1
-            stack.pushLong(Long.fromInt(op - 0x09));
+            stack.pushLong(Long.ONE);
             break;
         case 0x0b: // fconst_0
         case 0x0c: // fconst_1
@@ -268,12 +266,7 @@ VM.execute = function(ctx) {
             var type = INSTR_TO_STACK_STORAGE[op - 0x2e];
             var idx = stack.popInt();
             var arr = stack.popRef();
-            if (!arr) {
-                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-            }
-            if (idx < 0 || idx > arr.length) {
-                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
-            }
+            checkArrayAccess(ctx, arr, idx);
             stack.push(type, arr[idx]);
             break;
         case 0x36: // istore
@@ -333,12 +326,7 @@ VM.execute = function(ctx) {
             var val = stack.pop(type);
             var idx = stack.popInt();
             var arr = stack.popRef();
-            if (!arr) {
-                ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-            }
-            if (idx < 0 || idx > arr.length) {
-                ctx.raiseExceptionAndYield("java/lang/ArrayIndexOutOfBoundsException", idx);
-            }
+            checkArrayAccess(ctx, arr, idx);
             if (type === Stack.REF) {
                 if (val && !val.class.isAssignableTo(arr.class.elementClass)) {
                     ctx.raiseExceptionAndYield("java/lang/ArrayStoreException");
