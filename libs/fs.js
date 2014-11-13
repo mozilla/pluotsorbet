@@ -254,7 +254,7 @@ var fs = (function() {
     path = normalizePath(path);
 
     if (openedFiles.findIndex(file => file && file.path === path) != -1) {
-      setTimeout(() => cb(false), 0);
+      setZeroTimeout(() => cb(false));
       return;
     }
 
@@ -395,7 +395,7 @@ var fs = (function() {
     newPath = normalizePath(newPath);
 
     if (openedFiles.findIndex(file => file && file.path === oldPath) != -1) {
-      setTimeout(() => cb(false), 0);
+      setZeroTimeout(() => cb(false));
       return;
     }
 
@@ -440,7 +440,7 @@ var fs = (function() {
 
     var file = openedFiles.find(file => file && file.stat && file.path === path);
     if (file) {
-      setTimeout(() => cb(file.stat), 0);
+      setZeroTimeout(() => cb(file.stat));
       return;
     }
 
