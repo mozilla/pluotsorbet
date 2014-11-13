@@ -246,10 +246,11 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
-    if (size != openedFiles[fd].buffer.contentSize) {
-      openedFiles[fd].buffer.setSize(size);
-      openedFiles[fd].dirty = true;
-      fileStats[fd.path] = openedFiles[fd].stat = { mtime: Date.now(), isDir: false, size: size };
+    var file = openedFiles[fd];
+    if (size != file.buffer.contentSize) {
+      file.buffer.setSize(size);
+      file.dirty = true;
+      fileStats[file.path] = file.stat = { mtime: Date.now(), isDir: false, size: size };
     }
   }
 
