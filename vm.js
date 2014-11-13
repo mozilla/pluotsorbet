@@ -141,51 +141,15 @@ VM.execute = function(ctx) {
     }
 
     function resolve(idx, isStatic) {
-        var constant = cp[idx];
-        if (!constant.tag)
-            return constant;
-        switch(constant.tag) {
-        case 3: // TAGS.CONSTANT_Integer
-            constant = constant.integer;
-            break;
-        case 4: // TAGS.CONSTANT_Float
-            constant = constant.float;
-            break;
-        case 8: // TAGS.CONSTANT_String
-            constant = ctx.newStringConstant(cp[constant.string_index].bytes);
-            break;
-        case 5: // TAGS.CONSTANT_Long
-            constant = Long.fromBits(constant.lowBits, constant.highBits);
-            break;
-        case 6: // TAGS.CONSTANT_Double
-            constant = constant.double;
-            break;
-        case 7: // TAGS.CONSTANT_Class
-            constant = CLASSES.getClass(cp[constant.name_index].bytes);
-            break;
-        case 9: // TAGS.CONSTANT_Fieldref
-            var classInfo = resolve(constant.class_index, isStatic);
-            var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
-            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
-            if (!constant)
-                ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-                                   classInfo.className + "." + fieldName + "." + signature + " not found");
-            break;
-        case 10: // TAGS.CONSTANT_Methodref
-        case 11: // TAGS.CONSTANT_InterfaceMethodref
-            var classInfo = resolve(constant.class_index, isStatic);
-            var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
-            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
-            if (!constant)
-                ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-                                   classInfo.className + "." + methodName + "." + signature + " not found");
-            break;
-        default:
-            throw new Error("not support constant type");
+        try {
+            return ctx.resolve(cp, idx, isStatic);
+        } catch (e) {
+            if (e instanceof JavaException) {
+                ctx.raiseExceptionAndYield(e.javaClassName, e.message);
+            } else {
+                throw e;
+            }
         }
-        return constant;
     }
 
     while (true) {

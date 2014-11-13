@@ -385,9 +385,10 @@ Context.prototype.resolve = function(cp, idx, isStatic) {
             var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
             constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
-//        if (!constant)
-//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-//              classInfo.className + "." + fieldName + "." + signature + " not found");
+            if (!constant) {
+                throw new JavaException("java/lang/RuntimeException",
+                    classInfo.className + "." + fieldName + "." + signature + " not found");
+            }
             break;
         case 10: // TAGS.CONSTANT_Methodref
         case 11: // TAGS.CONSTANT_InterfaceMethodref
@@ -395,9 +396,10 @@ Context.prototype.resolve = function(cp, idx, isStatic) {
             var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
             var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
             constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
-//        if (!constant)
-//          ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-//              classInfo.className + "." + methodName + "." + signature + " not found");
+            if (!constant) {
+                throw new JavaException("java/lang/RuntimeException",
+                    classInfo.className + "." + methodName + "." + signature + " not found");
+            }
             break;
         default:
             throw new Error("not support constant type");
