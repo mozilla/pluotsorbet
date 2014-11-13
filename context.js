@@ -152,6 +152,15 @@ Context.prototype.divideByZeroCheckLong = function(object) {
   }
 };
 
+Context.prototype.checkCast = function(classInfoId, object) {
+  var classInfo = this.classInfos[classInfoId];
+  if (object && !object.class.isAssignableTo(classInfo)) {
+    this.raiseExceptionAndYield("java/lang/ClassCastException",
+        object.class.className + " is not assignable to " +
+        classInfo.className);
+  }
+};
+
 Context.prototype.invokeCompiledFn = function(methodInfo, args) {
   args.unshift(this, 0);
   var fn = methodInfo.fn;
