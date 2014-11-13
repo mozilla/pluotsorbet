@@ -859,6 +859,8 @@ module J2ME.C4.IR {
     allocateVariables() {
       var writer = debug && new IndentingWriter();
 
+      var uses = this.computeUses();
+
       debug && writer.enter("> Allocating Virtual Registers");
       var order = this.computeReversePostOrder();
 
@@ -866,6 +868,9 @@ module J2ME.C4.IR {
         if (isProjection(node, ProjectionType.STORE)) {
           return;
         }
+        //if (!uses[node.id]) {
+        //  return;
+        //}
         if (node instanceof SetProperty) {
           return;
         }
@@ -1036,6 +1041,9 @@ module J2ME.C4.IR {
       }
 
       function shouldFloat(node) {
+        if (node instanceof IR.JVMCallProperty) {
+          // debugger;
+        }
         if (node.mustNotFloat || node.shouldNotFloat) {
           return false;
         }

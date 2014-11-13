@@ -430,7 +430,7 @@ module J2ME.C4.IR {
     TRUE,
     FALSE,
     STORE,
-    SCOPE
+    CONTEXT
   }
 
   export class Projection extends Value {

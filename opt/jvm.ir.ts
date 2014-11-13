@@ -156,6 +156,62 @@ module J2ME.C4.IR {
   }
 
   JVMCallProperty.prototype.nodeName = "JVMCallProperty";
+
+  export class JVMInvoke extends StoreDependent {
+    constructor(control: Control, store: Store, public object: Value, public methodInfo: MethodInfo, public args: Value []) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+      this.loads && visitArrayInputs(this.loads, visitor);
+      this.object && visitor(this.object);
+      visitArrayInputs(this.args, visitor);
+    }
+  }
+
+  JVMInvoke.prototype.nodeName = "JVMInvoke";
+
+  export class JVMNew extends StoreDependent {
+    constructor(control: Control, store: Store, public classInfo: ClassInfo) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+    }
+  }
+
+  JVMNew.prototype.nodeName = "JVMNew";
+
+  export class JVMGetField extends StoreDependent {
+    constructor(control: Control, store: Store, public object: Value, public fieldInfo: FieldInfo) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+      this.loads && visitArrayInputs(this.loads, visitor);
+      visitor(this.object);
+    }
+  }
+
+  JVMGetField.prototype.nodeName = "JVMGetField";
+
+  export class JVMPutField extends StoreDependent {
+    constructor(control: Control, store: Store, public object: Value, public fieldInfo: FieldInfo, public value: Value) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+      this.loads && visitArrayInputs(this.loads, visitor);
+      visitor(this.object);
+      visitor(this.value);
+    }
+  }
+
+  JVMPutField.prototype.nodeName = "JVMPutField";
 }
 
 module J2ME.C4.Backend {
@@ -164,7 +220,7 @@ module J2ME.C4.Backend {
 
   IR.JVMLong.prototype.compile = function (cx: Context): AST.Node {
     return new AST.CallExpression(new AST.Identifier("Long.fromBits"), [constant(this.lowBits), constant(this.highBits)]);
-  }
+  };
 
   IR.JVMNewArray.prototype.compile = function (cx: Context): AST.Node {
     var jsTypedArrayType: string;
@@ -193,20 +249,20 @@ module J2ME.C4.Backend {
         throw Debug.unexpected(Kind[this.arrayKind]);
     }
     return new AST.NewExpression(new AST.Identifier(jsTypedArrayType), [compileValue(this.length, cx)]);
-  }
+  };
 
   IR.JVMStoreIndexed.prototype.compile = function (cx: Context): AST.Node {
     var array = compileValue(this.array, cx);
     var index = compileValue(this.index, cx);
     var value = compileValue(this.value, cx);
     return assignment(new AST.MemberExpression(array, index, true), value);
-  }
+  };
 
   IR.JVMLoadIndexed.prototype.compile = function (cx: Context): AST.Node {
     var array = compileValue(this.array, cx);
     var index = compileValue(this.index, cx);
     return new AST.MemberExpression(array, index, true);
-  }
+  };
 
   IR.JVMFloatCompare.prototype.compile = function (cx: Context): AST.Node {
     var a = compileValue(this.a, cx);
@@ -364,14 +420,19 @@ module J2ME.C4.Backend {
     var callNode = call(callee, args);
 
     var exception = new AST.Identifier("e");
-    var to = new AST.Identifier(this.variable.name);
-    cx.useVariable(this.variable);
 
     var body = [];
     if (objCheck) {
       body.push(objCheck);
     }
-    body.push(assignment(to, callNode));
+    if (this.variable) {
+      body.push(assignment(id(this.variable.name), callNode));
+      cx.useVariable(this.variable);
+    } else {
+      body.push(callNode);
+    }
+
+    // body.push(assignment(to, callNode));
 
     return new AST.TryStatement(
       new AST.BlockStatement(body),
@@ -391,5 +452,64 @@ module J2ME.C4.Backend {
       [],
       null
     );
+  };
+
+  IR.JVMInvoke.prototype.compile = function (cx: Context): AST.Node {
+    var object = this.object ? compileValue(this.object, cx) : null;
+    var args = this.args.map(function (arg) {
+      return compileValue(arg, cx);
+    });
+    //
+    //var object = compileValue(this.object, cx);
+    //var name = compileValue(this.name, cx);
+    //var callee = property(object, name);
+    //var args = this.args.map(function (arg) {
+    //  return compileValue(arg, cx);
+    //});
+    //return call(callee, args);
+    var callee = null;
+    if (object) {
+      callee = property(object, mangleMethod(this.methodInfo));
+    } else {
+      callee = id(mangleMethod(this.methodInfo));
+    }
+    return call(callee, args);
+  };
+
+  function hashString(s: string) {
+    var data = new Int32Array(s.length);
+    for (var i = 0; i < s.length; i++) {
+      data[i] = s.charCodeAt(i);
+    }
+    return HashUtilities.hashBytesTo32BitsMD5(data, 0, s.length);
   }
+
+  function mangleMethod(methodInfo: MethodInfo) {
+    var hash = hashString(methodInfo.implKey);
+    return methodInfo.name + "_" + StringUtilities.variableLengthEncodeInt32(hash);
+  }
+
+  function mangleClass(classInfo: ClassInfo) {
+    var hash = hashString(classInfo.className);
+    return classInfo.className + "_" + StringUtilities.variableLengthEncodeInt32(hash);
+  }
+
+  function mangleField(fieldInfo: FieldInfo) {
+    return fieldInfo.name + "_" + StringUtilities.variableLengthEncodeInt32(fieldInfo.id);
+  }
+
+  IR.JVMGetField.prototype.compile = function (cx: Context): AST.Node {
+    var object = compileValue(this.object, cx);
+    return new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false);
+  };
+
+  IR.JVMPutField.prototype.compile = function (cx: Context): AST.Node {
+    var object = compileValue(this.object, cx);
+    var value = compileValue(this.value, cx);
+    return assignment(new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false), value);
+  };
+
+  IR.JVMNew.prototype.compile = function (cx: Context): AST.Node {
+    return new AST.NewExpression(id(mangleClass(this.classInfo)), []);
+  };
 }

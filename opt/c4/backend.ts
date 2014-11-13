@@ -544,7 +544,7 @@ module J2ME.C4.Backend {
   };
 
   IR.Projection.prototype.compile = function (cx: Context): AST.Node {
-    release || assert (this.type === IR.ProjectionType.SCOPE);
+    release || assert (this.type === IR.ProjectionType.CONTEXT);
     release || assert (this.argument instanceof Start);
     return compileValue(this.argument.scope, cx);
   };
