@@ -468,7 +468,7 @@ var fs = (function() {
       if (stat) {
         fileStats[path] = stat;
       }
-      cb(stat)
+      cb(stat);
     });
   }
 
