@@ -18,8 +18,9 @@ public class FileSystemRegistry {
     }
 
     public static Enumeration listRoots() {
-        System.out.println("FileSystemRegistry::listRoots() not implemented.");
-        return new Vector().elements();
+        Vector roots = new Vector();
+        roots.addElement("");
+        return roots.elements();
     }
 }
 
