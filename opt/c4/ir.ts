@@ -75,13 +75,8 @@ module J2ME.C4.IR {
     }
   }
 
-  // Clean this up.
-  export enum Flags {
-    NumericProperty = 0x01,
-    RESOLVED = 0x02,
-    PRISTINE = 0x04,
-    IS_METHOD = 0x08,
-    AS_CALL = 0x10
+  export enum NodeFlags {
+    None
   }
 
   export class Node {
@@ -99,7 +94,10 @@ module J2ME.C4.IR {
     control: Control;
     nodeName: string;
     variable: Variable;
+
+    // TODO: Remove all these.
     mustFloat: boolean;
+    mustNotFloat: boolean;
     shouldFloat: boolean;
     shouldNotFloat: boolean;
     handlesAssignment: boolean;
@@ -280,7 +278,7 @@ module J2ME.C4.IR {
   StoreDependent.prototype.nodeName = "StoreDependent";
 
   export class Call extends StoreDependent {
-    constructor(control: Control, store: Store, public callee: Value, public object: Value, public args: Value [], public flags: number) {
+    constructor(control: Control, store: Store, public callee: Value, public object: Value, public args: Value []) {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
@@ -357,7 +355,7 @@ module J2ME.C4.IR {
   DeleteProperty.prototype.nodeName = "DeleteProperty";
 
   export class CallProperty extends StoreDependent {
-    constructor(control: Control, store: Store, public object: Value, public name: Value, public args: Value [], public flags: number) {
+    constructor(control: Control, store: Store, public object: Value, public name: Value, public args: Value []) {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
@@ -527,12 +525,6 @@ module J2ME.C4.IR {
 
     static TYPE_OF     = new Operator("typeof", (a) => typeof a,  false);
     static BITWISE_NOT = new Operator("~", (a) => ~a,             false);
-    static AS_ADD      = new Operator("+", function (l, r) {
-      if (typeof l === "string" || typeof r === "string") {
-        return String(l) + String(r);
-      }
-      return l + r;
-    }, true);
 
     static linkOpposites(a: Operator, b: Operator) {
       a.not = b;

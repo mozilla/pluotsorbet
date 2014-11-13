@@ -1013,7 +1013,7 @@ module J2ME {
       var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
       this.classInitCheck(classInfo);
       this.ctx.classInfos[classInfo.className] = classInfo;
-      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("newObjectFromId"), [new Constant(classInfo.className)], IR.Flags.PRISTINE);
+      var call = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant("newObjectFromId"), [new Constant(classInfo.className)]);
       this.recordStore(call);
       this.state.apush(call);
     }
@@ -1044,7 +1044,7 @@ module J2ME {
           return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
-          var call = new IR.CallProperty(null, null, this.ctxVar, new Constant("newStringConstant"), [genConstant(entry.bytes, Kind.Reference)], IR.Flags.PRISTINE);
+          var call = new IR.CallProperty(null, null, this.ctxVar, new Constant("newStringConstant"), [genConstant(entry.bytes, Kind.Reference)]);
 //          this.recordStore(call);
           return state.push(Kind.Reference, call);
         default:
@@ -1145,7 +1145,7 @@ module J2ME {
       return this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
     }
 
-    lookupField(cpi: number, opcode: Bytecodes, isStatic): FieldInfo {
+    lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
       return this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
     }
 
@@ -1326,7 +1326,7 @@ module J2ME {
 
       var type = fieldInfo.signature;
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      var staticLoad = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('getStatic'), [new Constant(fieldInfo.id), new Constant(type)], IR.Flags.PRISTINE);
+      var staticLoad = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('getStatic'), [new Constant(fieldInfo.id), new Constant(type)]);
       this.recordLoad(staticLoad);
       this.state.push(signature.kind, staticLoad);
     }
@@ -1337,7 +1337,7 @@ module J2ME {
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var value = this.state.pop(signature.kind);
 
-      var staticPut = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('putStatic'), [new Constant(fieldInfo.id), value], IR.Flags.PRISTINE);
+      var staticPut = new IR.CallProperty(this.region, this.state.store, this.ctxVar, new Constant('putStatic'), [new Constant(fieldInfo.id), value]);
       this.recordStore(staticPut);
     }
 
@@ -1348,7 +1348,7 @@ module J2ME {
 
       var object = this.state.apop();
       this.genNullCheck(object, this.state.bci);
-      var getField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('get'), [object], IR.Flags.PRISTINE);
+      var getField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('get'), [object]);
       // TODO Null check and exception throw.
       this.recordLoad(getField);
       this.state.push(signature.kind, getField);
@@ -1364,7 +1364,7 @@ module J2ME {
       var object = this.state.apop();
       this.genNullCheck(object, this.state.bci);
 
-      var putField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('set'), [object, value], IR.Flags.PRISTINE);
+      var putField = new IR.CallProperty(this.region, this.state.store, new IR.Variable('ctx.fieldInfos[' + fieldId + ']'), new Constant('set'), [object, value]);
       this.recordStore(putField);
     }
 

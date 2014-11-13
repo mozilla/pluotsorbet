@@ -100,7 +100,6 @@ module J2ME.C4.Backend {
   var C = new Identifier("$C");
 
   function isLazyConstant(value) {
-    // return value instanceof C4.AVM2.Runtime.LazyInitializer;
     return false;
   }
 
@@ -410,14 +409,6 @@ module J2ME.C4.Backend {
     return id(value.variable.name);
   }
 
-  function compileMultiname(name, cx: Context) {
-    return [
-      compileValue(name.namespaces, cx),
-      compileValue(name.name, cx),
-      constant(name.flags)
-    ];
-  }
-
   function isArray(array) {
     return array instanceof Array;
   }
@@ -505,11 +496,7 @@ module J2ME.C4.Backend {
     var args = this.args.map(function (arg) {
       return compileValue(arg, cx);
     });
-    if (this.flags & IR.Flags.PRISTINE) {
-      return call(callee, args);
-    } else {
-      return callCall(callee, object, args);
-    }
+    return call(callee, args);
   };
 
   IR.Call.prototype.compile = function (cx: Context): AST.Node {
@@ -523,15 +510,7 @@ module J2ME.C4.Backend {
     } else {
       object = new Literal(null);
     }
-    if (this.flags & IR.Flags.AS_CALL) {
-      return callAsCall(callee, object, args);
-    } else if (false && this.pristine &&
-        (this.callee instanceof IR.GetProperty && this.callee.object === this.object) ||
-        this.object === null) {
-      return call(callee, args);
-    } else {
-      return callCall(callee, object, args);
-    }
+    return callCall(callee, object, args);
   };
 
   IR.This.prototype.compile = function (cx: Context): AST.Node {
