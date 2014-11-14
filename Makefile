@@ -1,4 +1,4 @@
-.PHONY: all test tests java certs clean
+.PHONY: all test tests java certs app clean
 
 all: java tests
 
@@ -25,6 +25,10 @@ java:
 
 certs:
 	make -C certs
+
+# Makes an output/ directory containing the packaged open web app files.
+app: java certs
+	tools/package.sh
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
