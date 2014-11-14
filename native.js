@@ -76,6 +76,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "microedition.amms.version":
         value = "1.1";
         break;
+    case "mmapi-configuration":
+        value = null;
+        break;
     case "fileconn.dir.memorycard":
         value = "file:///";
         break;
