@@ -215,7 +215,7 @@ Player.prototype.getBufferSize = function() {
 };
 
 Player.prototype.getMediaFormat = function() {
-    if (this.url === null && this.contentSize === 0) {
+    if (this.url === null || this.contentSize === 0) {
         return "UNKNOWN";
     }
 
