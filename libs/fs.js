@@ -87,7 +87,7 @@ var fs = (function() {
     });
   }
 
-  var openedFiles = [];
+  var openedFiles = [null, null, null];
   var fileStats = {};
 
   function open(path, cb) {
