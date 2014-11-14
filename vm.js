@@ -135,6 +135,7 @@ function throw_(ex, ctx) {
             if (frame.ip >= exception_table[i].start_pc && frame.ip <= exception_table[i].end_pc) {
                 if (exception_table[i].catch_type === 0) {
                     handler_pc = exception_table[i].handler_pc;
+                    break;
                 } else {
                     var classInfo = resolve(ctx, cp, exception_table[i].catch_type);
                     if (ex.class.isAssignableTo(classInfo)) {
