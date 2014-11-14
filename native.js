@@ -706,6 +706,19 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I", function
     return len;
 });
 
+Native.create("java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;", function(bytearr) {
+    var array = new Uint8Array(bytearr.buffer);
+    try {
+        return util.decodeUtf8Array(array);
+    } catch(e) {
+        try {
+            return util.javaUTF8Decode(array);
+        } catch (e) {
+            throw new JavaException("java/io/UTFDataFormatException");
+        }
+    }
+});
+
 Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len) {
   var outputArray = [];
 
