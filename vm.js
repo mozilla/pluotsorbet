@@ -41,9 +41,10 @@ function pushFrame(ctx, methodInfo) {
     var frame = ctx.pushFrame(methodInfo);
     if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
-            frame.lockObject = methodInfo.isStatic
-                                 ? methodInfo.classInfo.getClassObject(ctx)
-                : frame.getLocalRef(0);
+            frame.lockObject =
+                methodInfo.isStatic ?
+                methodInfo.classInfo.getClassObject(ctx) :
+                frame.locals.refs[frame.localsBase + 0];
         }
 
         ctx.monitorEnter(frame.lockObject);
@@ -56,12 +57,30 @@ function popFrame(ctx, callee, returnType) {
         ctx.monitorExit(callee.lockObject);
     var frame = ctx.popFrame();
     var stack = frame.stack;
+
     switch (returnType) {
-    case Stack.INT: stack.pushInt(callee.stack.popInt()); break;
-    case Stack.LONG: stack.pushLong(callee.stack.popLong()); break;
-    case Stack.FLOAT: stack.pushFloat(callee.stack.popFloat()); break;
-    case Stack.DOUBLE: stack.pushDouble(callee.stack.popDouble()); break;
-    case Stack.REF: stack.pushRef(callee.stack.popRef()); break;
+    case STACK_INT:
+        stack.types[stack.length] = STACK_INT;
+        stack.ints[stack.length++] = callee.stack.ints[--callee.stack.length];
+        break;
+    case STACK_LONG:
+        stack.pushLong(callee.stack.popLong());
+        break;
+    case STACK_FLOAT:
+        stack.types[stack.length] = STACK_FLOAT;
+        stack.floats[stack.length++] = callee.stack.floats[--callee.stack.length];
+        break;
+    case STACK_DOUBLE:
+        stack.types[stack.length] = STACK_DOUBLE;
+        stack.types[stack.length + 1] = STACK_DOUBLE;
+        stack.doubles[stack.length] = callee.stack.doubles[callee.stack.length - 2];
+        callee.stack.length -= 2;
+        stack.length += 2;
+        break;
+    case STACK_REF:
+        stack.types[stack.length] = STACK_REF;
+        stack.refs[stack.length++] = callee.stack.refs[--callee.stack.length];
+        break;
     }
     Stack.release(callee.stack);
     return frame;
@@ -148,8 +167,8 @@ function throw_(ex, ctx) {
 // Many JVM instructions are sorted by type so that you can do math on
 // them and map them to different operations; map each instruction to
 // the proper stack storage for that type.
-var INSTR_TO_STACK_STORAGE = [Stack.INT, Stack.LONG, Stack.FLOAT, Stack.DOUBLE,
-                              Stack.REF, Stack.INT, Stack.INT, Stack.INT];
+var INSTR_TO_STACK_STORAGE = [STACK_INT, STACK_LONG, STACK_FLOAT, STACK_DOUBLE,
+                              STACK_REF, STACK_INT, STACK_INT, STACK_INT];
 
 VM.execute = function(ctx) {
     var frame = ctx.current();
@@ -166,12 +185,13 @@ VM.execute = function(ctx) {
     var stack = frame.stack;
 
     while (true) {
-        var op = frame.read8();
+        var op = frame.code[frame.ip++];
         switch (op) {
         case 0x00: // nop
             break;
         case 0x01: // aconst_null
-            stack.pushRef(null);
+            stack.types[stack.length] = STACK_REF;
+            stack.refs[stack.length++] = null;
             break;
         case 0x02: // iconst_m1
         case 0x03: // iconst_0
@@ -180,80 +200,131 @@ VM.execute = function(ctx) {
         case 0x06: // iconst_3
         case 0x07: // iconst_4
         case 0x08: // iconst_5
-            stack.pushInt(op - 0x03);
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length] = op - 0x03;
+            stack.length += 1;
             break;
         case 0x09: // lconst_0
-            stack.pushLong(Long.ZERO);
+            stack.types[stack.length] = STACK_LONG;
+            stack.longs[stack.length] = Long.ZERO;
+            stack.types[stack.length + 1] = STACK_LONG;
+            stack.length += 2;
             break;
         case 0x0a: // lconst_1
-            stack.pushLong(Long.ONE);
+            stack.types[stack.length] = STACK_LONG;
+            stack.longs[stack.length] = Long.ONE;
+            stack.types[stack.length + 1] = STACK_LONG;
+            stack.length += 2;
             break;
         case 0x0b: // fconst_0
         case 0x0c: // fconst_1
         case 0x0d: // fconst_2
-            stack.pushFloat(op - 0x0b);
+            stack.types[stack.length] = STACK_FLOAT;
+            stack.floats[stack.length++] = op - 0x0b;
             break;
         case 0x0e: // dconst_0
         case 0x0f: // dconst_1
-            stack.pushDouble(op - 0x0e);
+            stack.types[stack.length] = STACK_DOUBLE;
+            stack.doubles[stack.length] = op - 0x0e;
+            stack.types[stack.length + 1] = STACK_DOUBLE;
+            stack.length += 2;
             break;
         case 0x10: // bipush
-            stack.pushInt(frame.read8signed());
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = frame.read8signed();
             break;
         case 0x11: // sipush
-            stack.pushInt(frame.read16signed());
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = frame.read16signed();
             break;
         case 0x12: // ldc
         case 0x13: // ldc_w
         case 0x14: // ldc2_w
-            var idx = (op === 0x12) ? frame.read8() : frame.read16();
+            var idx = (op === 0x12) ? frame.code[frame.ip++] : frame.read16();
             var constant = cp.resolve(ctx, idx);
-            stack.push(constant.type, constant.value);
+
+            // Same as `stack.push(constant.value)`
+            switch(constant.type) {
+            case STACK_INT:
+                stack.types[stack.length] = STACK_INT;
+                stack.ints[stack.length++] = constant.value;
+                break;
+            case STACK_LONG:
+                stack.types[stack.length] = stack.types[stack.length + 1] = STACK_LONG;
+                stack.longs[stack.length++] = constant.value;
+                stack.length++;
+                break;
+            case STACK_FLOAT:
+                stack.types[stack.length] = STACK_FLOAT;
+                stack.floats[stack.length++] = constant.value;
+                break;
+            case STACK_DOUBLE:
+                stack.types[stack.length] = stack.types[stack.length + 1] = STACK_DOUBLE;
+                stack.doubles[stack.length++] = constant.value;
+                stack.length++;
+                break;
+            case STACK_REF:
+                stack.types[stack.length] = STACK_REF;
+                stack.refs[stack.length++] = constant.value;
+                break;
+            }
             break;
         case 0x15: // iload
-            stack.pushInt(frame.getLocalInt(frame.read8()));
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = frame.locals.ints[frame.localsBase + frame.code[frame.ip++]];
             break;
         case 0x16: // lload
-            stack.pushLong(frame.getLocalLong(frame.read8()));
+            stack.pushLong(frame.locals.longs[frame.localsBase + frame.code[frame.ip++]]);
             break;
         case 0x17: // fload
-            stack.pushFloat(frame.getLocalFloat(frame.read8()));
+            stack.types[stack.length] = STACK_FLOAT;
+            stack.floats[stack.length++] = frame.locals.floats[frame.localsBase + frame.code[frame.ip++]];
             break;
         case 0x18: // dload
-            stack.pushDouble(frame.getLocalDouble(frame.read8()));
+            stack.types[stack.length] = stack.types[stack.length + 1] = STACK_DOUBLE;
+            stack.doubles[stack.length] = frame.locals.doubles[frame.localsBase + frame.code[frame.ip++]];
+            stack.length += 2;
             break;
         case 0x19: // aload
-            stack.pushRef(frame.getLocalRef(frame.read8()));
+            stack.types[stack.length] = STACK_REF;
+            stack.refs[stack.length++] = frame.locals.refs[frame.localsBase + frame.code[frame.ip++]];
             break;
         case 0x1a: // iload_0
         case 0x1b: // iload_1
         case 0x1c: // iload_2
         case 0x1d: // iload_3
-            stack.pushInt(frame.getLocalInt(op - 0x1a));
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = frame.locals.ints[frame.localsBase + (op - 0x1a)];
             break;
         case 0x1e: // lload_0
         case 0x1f: // lload_1
         case 0x20: // lload_2
         case 0x21: // lload_3
-            stack.pushLong(frame.getLocalLong(op - 0x1e));
+            stack.types[stack.length] = stack.types[stack.length + 1] = STACK_LONG;
+            stack.longs[stack.length++] = frame.locals.longs[frame.localsBase + (op - 0x1e)];
+            stack.length++; // empty second slot
             break;
         case 0x22: // fload_0
         case 0x23: // fload_1
         case 0x24: // fload_2
         case 0x25: // fload_3
-            stack.pushFloat(frame.getLocalFloat(op - 0x22));
+            stack.types[stack.length] = STACK_FLOAT;
+            stack.floats[stack.length++] = frame.locals.floats[frame.localsBase + (op - 0x22)];
             break;
         case 0x26: // dload_0
         case 0x27: // dload_1
         case 0x28: // dload_2
         case 0x29: // dload_3
-            stack.pushDouble(frame.getLocalDouble(op - 0x26));
+            stack.types[stack.length] = stack.types[stack.length + 1] = STACK_DOUBLE;
+            stack.doubles[stack.length++] = frame.locals.doubles[frame.localsBase + (op - 0x26)];
+            stack.length++; // empty second slot
             break;
         case 0x2a: // aload_0
         case 0x2b: // aload_1
         case 0x2c: // aload_2
         case 0x2d: // aload_3
-            stack.pushRef(frame.getLocalRef(op - 0x2a));
+            stack.types[stack.length] = STACK_REF;
+            stack.refs[stack.length++] = frame.locals.refs[frame.localsBase + (op - 0x2a)];
             break;
         case 0x2e: // iaload
         case 0x2f: // laload
@@ -264,55 +335,84 @@ VM.execute = function(ctx) {
         case 0x34: // caload
         case 0x35: // saload
             var type = INSTR_TO_STACK_STORAGE[op - 0x2e];
-            var idx = stack.popInt();
-            var arr = stack.popRef();
+            var idx = stack.ints[--stack.length];
+            var arr = stack.refs[--stack.length];
             checkArrayAccess(ctx, arr, idx);
-            stack.push(type, arr[idx]);
+
+            // Same as `stack.push(arr[idx])`
+            switch(type) {
+            case STACK_INT:
+                stack.types[stack.length] = STACK_INT;
+                stack.ints[stack.length++] = arr[idx];
+                break;
+            case STACK_LONG:
+                stack.types[stack.length] = stack.types[stack.length + 1] = STACK_LONG;
+                stack.longs[stack.length++] = arr[idx];
+                stack.length++;
+                break;
+            case STACK_FLOAT:
+                stack.types[stack.length] = STACK_FLOAT;
+                stack.floats[stack.length++] = arr[idx];
+                break;
+            case STACK_DOUBLE:
+                stack.types[stack.length] = stack.types[stack.length + 1] = STACK_DOUBLE;
+                stack.doubles[stack.length++] = arr[idx];
+                stack.length++;
+                break;
+            case STACK_REF:
+                stack.types[stack.length] = STACK_REF;
+                stack.refs[stack.length++] = arr[idx];
+                break;
+            }
             break;
         case 0x36: // istore
-            frame.setLocalInt(frame.read8(), stack.popInt());
+            frame.locals.ints[frame.localsBase + frame.code[frame.ip++]] = stack.ints[--stack.length];
             break;
         case 0x37: // lstore
-            frame.setLocalLong(frame.read8(), stack.popLong());
+            --stack.length; // Remove the second Long word.
+            frame.locals.longs[frame.localsBase + frame.code[frame.ip++]] = stack.longs[--stack.length];
             break;
         case 0x38: // fstore
-            frame.setLocalFloat(frame.read8(), stack.popFloat());
+            frame.locals.floats[frame.localsBase + frame.code[frame.ip++]] = stack.floats[--stack.length];
             break;
         case 0x39: // dstore
-            frame.setLocalDouble(frame.read8(), stack.popDouble());
+            --stack.length; // Remove the second double word.
+            frame.locals.doubles[frame.localsBase + frame.code[frame.ip++]] = stack.doubles[--stack.length];
             break;
         case 0x3a: // astore
-            frame.setLocalRef(frame.read8(), stack.popRef());
+            frame.locals.refs[frame.localsBase + frame.code[frame.ip++]] = stack.refs[--stack.length];
             break;
         case 0x3b: // istore_0
         case 0x3c: // istore_1
         case 0x3d: // istore_2
         case 0x3e: // istore_3
-            frame.setLocalInt(op - 0x3b, stack.popInt());
+            frame.locals.ints[frame.localsBase + (op - 0x3b)] = stack.ints[--stack.length];
             break;
         case 0x3f: // lstore_0
         case 0x40: // lstore_1
         case 0x41: // lstore_2
         case 0x42: // lstore_3
-            frame.setLocalLong(op - 0x3f, stack.popLong());
+            --stack.length; // Remove the second word.
+            frame.locals.longs[frame.localsBase + (op - 0x3f)] = stack.longs[--stack.length];
             break;
         case 0x43: // fstore_0
         case 0x44: // fstore_1
         case 0x45: // fstore_2
         case 0x46: // fstore_3
-            frame.setLocalFloat(op - 0x43, stack.popFloat());
+            frame.locals.floats[frame.localsBase + (op - 0x43)] = stack.floats[--stack.length];
             break;
         case 0x47: // dstore_0
         case 0x48: // dstore_1
         case 0x49: // dstore_2
         case 0x4a: // dstore_3
-            frame.setLocalDouble(op - 0x47, stack.popDouble());
+            --stack.length; // Remove the second word.
+            frame.locals.doubles[frame.localsBase + (op - 0x47)] = stack.doubles[--stack.length];
             break;
         case 0x4b: // astore_0
         case 0x4c: // astore_1
         case 0x4d: // astore_2
         case 0x4e: // astore_3
-            frame.setLocalRef(op - 0x4b, stack.popRef());
+            frame.locals.refs[frame.localsBase + (op - 0x4b)] = stack.refs[--stack.length];
             break;
         case 0x4f: // iastore
         case 0x50: // lastore
@@ -324,10 +424,10 @@ VM.execute = function(ctx) {
         case 0x56: // sastore
             var type = INSTR_TO_STACK_STORAGE[op - 0x4f];
             var val = stack.pop(type);
-            var idx = stack.popInt();
-            var arr = stack.popRef();
+            var idx = stack.ints[--stack.length];
+            var arr = stack.refs[--stack.length];
             checkArrayAccess(ctx, arr, idx);
-            if (type === Stack.REF) {
+            if (type === STACK_REF) {
                 if (val && !val.class.isAssignableTo(arr.class.elementClass)) {
                     ctx.raiseExceptionAndYield("java/lang/ArrayStoreException");
                 }
@@ -336,16 +436,23 @@ VM.execute = function(ctx) {
             arr[idx] = val;
             break;
         case 0x57: // pop
-            stack.popWord();
+            --stack.length;
             break;
         case 0x58: // pop2
-            stack.popWord();
-            stack.popWord();
+            stack.length -= 2;
             break;
         case 0x59: // dup
-            var a = stack.popWord();
-            stack.pushWord(a);
-            stack.pushWord(a);
+            var oldIdx = stack.length - 1;
+            var newIdx = stack.length;
+            stack.length++;
+            var type = stack.types[newIdx] = stack.types[oldIdx];
+            switch(type) {
+            case STACK_INT: stack.ints[newIdx] = stack.ints[oldIdx]; break;
+            case STACK_LONG: stack.longs[newIdx] = stack.longs[oldIdx]; break;
+            case STACK_FLOAT: stack.floats[newIdx] = stack.floats[oldIdx]; break;
+            case STACK_DOUBLE: stack.doubles[newIdx] = stack.doubles[oldIdx]; break;
+            case STACK_REF: stack.refs[newIdx] = stack.refs[oldIdx]; break;
+            }
             break;
         case 0x5a: // dup_x1
             var a = stack.popWord();
@@ -400,53 +507,69 @@ VM.execute = function(ctx) {
             stack.pushWord(b);
             break;
         case 0x84: // iinc
-            var idx = frame.read8();
-            var val = frame.read8signed();
-            frame.setLocalInt(idx, frame.getLocalInt(idx) + val);
+            var idx = frame.code[frame.ip++];
+            frame.locals.ints[frame.localsBase + idx] += frame.read8signed();
             break;
         case 0x60: // iadd
-            stack.pushInt((stack.popInt() + stack.popInt())|0);
+            stack.ints[stack.length - 2] += stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x61: // ladd
             stack.pushLong(stack.popLong().add(stack.popLong()));
             break;
         case 0x62: // fadd
-            stack.pushFloat(Math.fround(stack.popFloat() + stack.popFloat()));
+            stack.floats[stack.length - 2] = Math.fround(stack.floats[stack.length - 2] +
+                                                         stack.floats[stack.length - 1]);
+            stack.length--;
             break;
         case 0x63: // dadd
-            stack.pushDouble(stack.popDouble() + stack.popDouble());
+            // [d1 _ d2 _] => [(d1 + d2) _]
+            stack.doubles[stack.length - 4] += stack.doubles[stack.length - 2];
+            stack.length -= 2; // Drop the last double.
             break;
         case 0x64: // isub
-            stack.pushInt((- stack.popInt() + stack.popInt())|0);
+            stack.ints[stack.length - 2] -= stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x65: // lsub
             stack.pushLong(stack.popLong().negate().add(stack.popLong()));
             break;
         case 0x66: // fsub
-            stack.pushFloat(Math.fround(- stack.popFloat() + stack.popFloat()));
+            stack.floats[stack.length - 2] = Math.fround(stack.floats[stack.length - 2] -
+                                                         stack.floats[stack.length - 1]);
+            stack.length--;
             break;
         case 0x67: // dsub
-            stack.pushDouble(- stack.popDouble() + stack.popDouble());
+            stack.doubles[stack.length - 4] -= stack.doubles[stack.length - 2];
+            stack.length -= 2; // Drop the last double.
             break;
         case 0x68: // imul
-            stack.pushInt(Math.imul(stack.popInt(), stack.popInt()));
+            stack.ints[stack.length - 2] = Math.imul(stack.ints[stack.length - 2],
+                                                     stack.ints[stack.length - 1]);
+            stack.length--;
             break;
         case 0x69: // lmul
             stack.pushLong(stack.popLong().multiply(stack.popLong()));
             break;
         case 0x6a: // fmul
-            stack.pushFloat(Math.fround(stack.popFloat() * stack.popFloat()));
+            stack.floats[stack.length - 2] = Math.fround(stack.floats[stack.length - 2] *
+                                                         stack.floats[stack.length - 1]);
+            stack.length--;
             break;
         case 0x6b: // dmul
-            stack.pushDouble(stack.popDouble() * stack.popDouble());
+            stack.doubles[stack.length - 4] *= stack.doubles[stack.length - 2];
+            stack.length -= 2; // Drop the last double.
             break;
         case 0x6c: // idiv
-            var b = stack.popInt();
-            var a = stack.popInt();
+            var b = stack.ints[--stack.length];
+            var a = stack.ints[--stack.length];
             if (!b) {
                 ctx.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
             }
-            stack.pushInt((a === util.INT_MIN && b === -1) ? a : ((a / b)|0));
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = ((a === util.INT_MIN && b === -1) ?
+                                          a :
+                                          ((a / b)|0));
             break;
         case 0x6d: // ldiv
             var b = stack.popLong();
@@ -457,22 +580,22 @@ VM.execute = function(ctx) {
             stack.pushLong(a.div(b));
             break;
         case 0x6e: // fdiv
-            var b = stack.popFloat();
-            var a = stack.popFloat();
+            var b = stack.floats[--stack.length];
+            var a = stack.floats[--stack.length];
             stack.pushFloat(Math.fround(a / b));
             break;
         case 0x6f: // ddiv
-            var b = stack.popDouble();
-            var a = stack.popDouble();
-            stack.pushDouble(a / b);
+            stack.doubles[stack.length - 4] /= stack.doubles[stack.length - 2];
+            stack.length -= 2; // Drop the last double.
             break;
         case 0x70: // irem
-            var b = stack.popInt();
-            var a = stack.popInt();
+            var b = stack.ints[--stack.length];
+            var a = stack.ints[--stack.length];
             if (!b) {
                 ctx.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
             }
-            stack.pushInt(a % b);
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = a % b;
             break;
         case 0x71: // lrem
             var b = stack.popLong();
@@ -483,71 +606,70 @@ VM.execute = function(ctx) {
             stack.pushLong(a.modulo(b));
             break;
         case 0x72: // frem
-            var b = stack.popFloat();
-            var a = stack.popFloat();
+            var b = stack.floats[--stack.length];
+            var a = stack.floats[--stack.length];
             stack.pushFloat(Math.fround(a % b));
             break;
         case 0x73: // drem
-            var b = stack.popDouble();
-            var a = stack.popDouble();
-            stack.pushDouble(a % b);
+            stack.doubles[stack.length - 4] %= stack.doubles[stack.length - 2];
+            stack.length -= 2; // Drop the last double.
             break;
         case 0x74: // ineg
-            stack.pushInt((- stack.popInt())|0);
+            stack.ints[stack.length - 1] *= -1;
             break;
         case 0x75: // lneg
             stack.pushLong(stack.popLong().negate());
             break;
         case 0x76: // fneg
-            stack.pushFloat(- stack.popFloat());
+            stack.floats[stack.length - 1] *= -1;
             break;
         case 0x77: // dneg
-            stack.pushDouble(- stack.popDouble());
+            stack.doubles[stack.length - 2] *= -1;
             break;
         case 0x78: // ishl
-            var b = stack.popInt();
-            var a = stack.popInt();
-            stack.pushInt(a << b);
+            stack.ints[stack.length - 2] <<= stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x79: // lshl
-            var b = stack.popInt();
+            var b = stack.ints[--stack.length];
             var a = stack.popLong();
             stack.pushLong(a.shiftLeft(b));
             break;
         case 0x7a: // ishr
-            var b = stack.popInt();
-            var a = stack.popInt();
-            stack.pushInt(a >> b);
+            stack.ints[stack.length - 2] >>= stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x7b: // lshr
-            var b = stack.popInt();
+            var b = stack.ints[--stack.length];
             var a = stack.popLong();
             stack.pushLong(a.shiftRight(b));
             break;
         case 0x7c: // iushr
-            var b = stack.popInt();
-            var a = stack.popInt();
-            stack.pushInt(a >>> b);
+            stack.ints[stack.length - 2] >>>= stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x7d: // lushr
-            var b = stack.popInt();
+            var b = stack.ints[--stack.length];
             var a = stack.popLong();
             stack.pushLong(a.shiftRightUnsigned(b));
             break;
         case 0x7e: // iand
-            stack.pushInt(stack.popInt() & stack.popInt());
+            stack.ints[stack.length - 2] &= stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x7f: // land
             stack.pushLong(stack.popLong().and(stack.popLong()));
             break;
         case 0x80: // ior
-            stack.pushInt(stack.popInt() | stack.popInt());
+            stack.ints[stack.length - 2] |= stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x81: // lor
             stack.pushLong(stack.popLong().or(stack.popLong()));
             break;
         case 0x82: // ixor
-            stack.pushInt(stack.popInt() ^ stack.popInt());
+            stack.ints[stack.length - 2] ^= stack.ints[stack.length - 1];
+            stack.length--;
             break;
         case 0x83: // lxor
             stack.pushLong(stack.popLong().xor(stack.popLong()));
@@ -578,160 +700,180 @@ VM.handleSimpleFlowOp = function(op, ctx, frame, cp, stack) {
         case 0x94: // lcmp
             var b = stack.popLong();
             var a = stack.popLong();
+            stack.types[stack.length] = STACK_INT;
             if (a.greaterThan(b)) {
-                stack.pushInt(1);
+                stack.ints[stack.length++] = 1;
             } else if (a.lessThan(b)) {
-                stack.pushInt(-1);
+                stack.ints[stack.length++] = -1;
             } else {
-                stack.pushInt(0);
+                stack.ints[stack.length++] = 0;
             }
             break;
         case 0x95: // fcmpl
-            var b = stack.popFloat();
-            var a = stack.popFloat();
+            var b = stack.floats[--stack.length];
+            var a = stack.floats[--stack.length];
+            stack.types[stack.length] = STACK_INT;
             if (isNaN(a) || isNaN(b)) {
-                stack.pushInt(-1);
+                stack.ints[stack.length++] = -1;
             } else if (a > b) {
-                stack.pushInt(1);
+                stack.ints[stack.length++] = 1;
             } else if (a < b) {
-                stack.pushInt(-1);
+                stack.ints[stack.length++] = -1;
             } else {
-                stack.pushInt(0);
+                stack.ints[stack.length++] = 0;
             }
             break;
         case 0x96: // fcmpg
-            var b = stack.popFloat();
-            var a = stack.popFloat();
+            var b = stack.floats[--stack.length];
+            var a = stack.floats[--stack.length];
+            stack.types[stack.length] = STACK_INT;
             if (isNaN(a) || isNaN(b)) {
-                stack.pushInt(1);
+                stack.ints[stack.length++] = 1;
             } else if (a > b) {
-                stack.pushInt(1);
+                stack.ints[stack.length++] = 1;
             } else if (a < b) {
-                stack.pushInt(-1);
+                stack.ints[stack.length++] = -1;
             } else {
-                stack.pushInt(0);
+                stack.ints[stack.length++] = 0;
             }
             break;
         case 0x97: // dcmpl
-            var b = stack.popDouble();
-            var a = stack.popDouble();
+            --stack.length; // remove dummy double
+            var b = stack.doubles[--stack.length];
+            --stack.length; // remove dummy double
+            var a = stack.doubles[--stack.length];
+            stack.types[stack.length] = STACK_INT;
             if (isNaN(a) || isNaN(b)) {
-                stack.pushInt(-1);
+                stack.ints[stack.length++] = -1;
             } else if (a > b) {
-                stack.pushInt(1);
+                stack.ints[stack.length++] = 1;
             } else if (a < b) {
-                stack.pushInt(-1);
+                stack.ints[stack.length++] = -1;
             } else {
-                stack.pushInt(0);
+                stack.ints[stack.length++] = 0;
             }
             break;
         case 0x98: // dcmpg
-            var b = stack.popDouble();
-            var a = stack.popDouble();
+            --stack.length; // remove dummy double
+            var b = stack.doubles[--stack.length];
+            --stack.length; // remove dummy double
+            var a = stack.doubles[--stack.length];
+            stack.types[stack.length] = STACK_INT;
             if (isNaN(a) || isNaN(b)) {
-                stack.pushInt(1);
+                stack.ints[stack.length++] = 1;
             } else if (a > b) {
-                stack.pushInt(1);
+                stack.ints[stack.length++] = 1;
             } else if (a < b) {
-                stack.pushInt(-1);
+                stack.ints[stack.length++] = -1;
             } else {
-                stack.pushInt(0);
+                stack.ints[stack.length++] = 0;
             }
             break;
         case 0x99: // ifeq
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() === 0 ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] === 0 ? jmp : frame.ip;
             break;
         case 0x9a: // ifne
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() !== 0 ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] !== 0 ? jmp : frame.ip;
             break;
         case 0x9b: // iflt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() < 0 ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] < 0 ? jmp : frame.ip;
             break;
         case 0x9c: // ifge
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() >= 0 ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] >= 0 ? jmp : frame.ip;
             break;
         case 0x9d: // ifgt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() > 0 ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] > 0 ? jmp : frame.ip;
             break;
         case 0x9e: // ifle
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() <= 0 ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] <= 0 ? jmp : frame.ip;
             break;
         case 0x9f: // if_icmpeq
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() === stack.popInt() ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] === stack.ints[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa0: // if_cmpne
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() !== stack.popInt() ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] !== stack.ints[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa1: // if_icmplt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() > stack.popInt() ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] > stack.ints[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa2: // if_icmpge
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() <= stack.popInt() ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] <= stack.ints[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa3: // if_icmpgt
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() < stack.popInt() ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] < stack.ints[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa4: // if_icmple
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popInt() >= stack.popInt() ? jmp : frame.ip;
+            frame.ip = stack.ints[--stack.length] >= stack.ints[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa5: // if_acmpeq
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popRef() === stack.popRef() ? jmp : frame.ip;
+            frame.ip = stack.refs[--stack.length] === stack.refs[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa6: // if_acmpne
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popRef() !== stack.popRef() ? jmp : frame.ip;
+            frame.ip = stack.refs[--stack.length] !== stack.refs[--stack.length] ? jmp : frame.ip;
             break;
         case 0xa7: // goto
             frame.ip += frame.read16signed() - 1;
             break;
         case 0xa8: // jsr
             var jmp = frame.read16();
-            stack.pushInt(frame.ip);
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = frame.ip;
             frame.ip = jmp;
             break;
         case 0xa9: // ret
-            frame.ip = frame.getLocalInt(frame.read8());
+            // Same as `frame.ip = frame.getLocalInt(frame.read8());`
+            frame.ip = frame.locals.ints[frame.localsBase + frame.code[frame.ip++]];
             break;
         case 0xc6: // ifnull
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = !stack.popRef() ? jmp : frame.ip;
+            frame.ip = !stack.refs[--stack.length] ? jmp : frame.ip;
             break;
         case 0xc7: // ifnonnull
             var jmp = frame.ip - 1 + frame.read16signed();
-            frame.ip = stack.popRef() ? jmp : frame.ip;
+            frame.ip = stack.refs[--stack.length] ? jmp : frame.ip;
             break;
         case 0xc8: // goto_w
             frame.ip += frame.read32signed() - 1;
             break;
         case 0xc9: // jsr_w
             var jmp = frame.read32();
-            stack.pushInt(frame.ip);
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = frame.ip;
             frame.ip = jmp;
             break;
         case 0x85: // i2l
-            stack.pushLong(Long.fromInt(stack.popInt()));
+            stack.pushLong(Long.fromInt(stack.ints[--stack.length]));
             break;
         case 0x86: // i2f
-            stack.pushFloat(Math.fround(stack.popInt()));
+            var idx = stack.length - 1;
+            stack.types[idx] = STACK_FLOAT;
+            stack.floats[idx] = Math.fround(stack.ints[idx]);
             break;
         case 0x87: // i2d
-            stack.pushDouble(stack.popInt());
+            var idx = stack.length - 1;
+            stack.types[idx] = STACK_DOUBLE;
+            stack.doubles[idx] = stack.ints[idx];
+            stack.length++; // one because double is twice as wide
             break;
         case 0x88: // l2i
-            stack.pushInt(stack.popLong().toInt());
+            var idx = stack.length - 2;
+            stack.types[idx] = STACK_INT;
+            stack.ints[idx] = stack.longs[idx].toInt();
+            stack.length--; // long is twice as wide
             break;
         case 0x89: // l2f
             stack.pushFloat(Math.fround(stack.popLong().toNumber()));
@@ -740,31 +882,44 @@ VM.handleSimpleFlowOp = function(op, ctx, frame, cp, stack) {
             stack.pushDouble(stack.popLong().toNumber());
             break;
         case 0x8b: // f2i
-            stack.pushInt(util.double2int(stack.popFloat()));
+            var idx = stack.length - 1;
+            stack.types[idx] = STACK_INT;
+            stack.ints[idx] = util.double2int(stack.floats[idx]);
             break;
         case 0x8c: // f2l
-            stack.pushLong(Long.fromNumber(stack.popFloat()));
+            stack.pushLong(Long.fromNumber(stack.floats[--stack.length]));
             break;
         case 0x8d: // f2d
-            stack.pushDouble(stack.popFloat());
+            stack.pushDouble(stack.floats[--stack.length]);
             break;
         case 0x8e: // d2i
-            stack.pushInt(util.double2int(stack.popDouble()));
+            stack.types[stack.length - 2] = STACK_INT;
+            stack.ints[stack.length - 2] = util.double2int(stack.doubles[stack.length - 2]);
+            stack.length--; // double is twice as wide
             break;
         case 0x8f: // d2l
-            stack.pushLong(util.double2long(stack.popDouble()));
+            stack.types[stack.length - 2] = STACK_LONG;
+            stack.longs[stack.length - 2] = util.double2long(stack.doubles[stack.length - 2]);
+            // no length change; same size
             break;
         case 0x90: // d2f
-            stack.pushFloat(Math.fround(stack.popDouble()));
+            stack.types[stack.length - 2] = STACK_FLOAT;
+            stack.floats[stack.length - 2] = Math.fround(stack.doubles[stack.length - 2]);
+            stack.length--; // double is twice as wide
             break;
         case 0x91: // i2b
-            stack.pushInt((stack.popInt() << 24) >> 24);
+            var val = stack.ints[stack.length - 1];
+            // No need to set stack.types; int === int
+            stack.ints[stack.length - 1] = (val << 24) >> 24;
             break;
         case 0x92: // i2c
-            stack.pushInt(stack.popInt() & 0xffff);
+            // No need to set stack.types; int === int
+            stack.ints[stack.length - 1] &= 0xffff;
             break;
         case 0x93: // i2s
-            stack.pushInt((stack.popInt() << 16) >> 16);
+            var val = stack.ints[stack.length - 1];
+            // No need to set stack.types; int === int
+            stack.ints[stack.length - 1] = (val << 16) >> 16;
             break;
         default:
         return false;
@@ -776,12 +931,13 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
     switch(op) {
         case 0xaa: // tableswitch
             var startip = frame.ip;
-            while ((frame.ip & 3) != 0)
+            while ((frame.ip & 3) != 0) {
                 frame.ip++;
+            }
             var def = frame.read32signed();
             var low = frame.read32signed();
             var high = frame.read32signed();
-            var val = stack.popInt();
+            var val = stack.ints[--stack.length];
             var jmp;
             if (val < low || val > high) {
                 jmp = def;
@@ -797,7 +953,7 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
                 frame.ip++;
             var jmp = frame.read32signed();
             var size = frame.read32();
-            var val = frame.stack.popInt();
+            var val = frame.stack.ints[--stack.length];
           lookup:
             for (var i=0; i<size; i++) {
                 var key = frame.read32signed();
@@ -812,8 +968,8 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
             frame.ip = startip - 1 + jmp;
             break;
         case 0xbc: // newarray
-            var type = frame.read8();
-            var size = stack.popInt();
+            var type = frame.code[frame.ip++];
+            var size = stack.ints[--stack.length];
             if (size < 0) {
                 ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
             }
@@ -822,7 +978,7 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
         case 0xbd: // anewarray
             var idx = frame.read16();
             var classInfo = cp.resolve(ctx, idx).value;
-            var size = stack.popInt();
+            var size = stack.ints[--stack.length];
             if (size < 0) {
                 ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
             }
@@ -835,23 +991,24 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
         case 0xc5: // multianewarray
             var idx = frame.read16();
             var classInfo = cp.resolve(ctx, idx).value;
-            var dimensions = frame.read8();
+            var dimensions = frame.code[frame.ip++];
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
-                lengths[i] = stack.popInt();
+                lengths[i] = stack.ints[--stack.length];
             stack.pushRef(util.newMultiArray(classInfo.className, lengths.reverse()));
             break;
         case 0xbe: // arraylength
-            var obj = stack.popRef();
+            var obj = stack.refs[--stack.length];
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
-            stack.pushInt(obj.length);
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = obj.length;
             break;
         case 0xb4: // getfield
             var idx = frame.read16();
             var field = cp.resolve(ctx, idx).value;
-            var obj = stack.popRef();
+            var obj = stack.refs[--stack.length];
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
@@ -861,7 +1018,7 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
             var idx = frame.read16();
             var field = cp.resolve(ctx, idx).value;
             var val = stack.popType(field.signature);
-            var obj = stack.popRef();
+            var obj = stack.refs[--stack.length];
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
@@ -872,7 +1029,7 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
             var field = cp.resolve(ctx, idx, true).value;
             classInitCheck(ctx, frame, field.classInfo, frame.ip-3);
             var value = ctx.runtime.getStatic(field);
-            if (typeof value === "undefined") {
+            if (value === undefined) {
                 value = util.defaultValue(field.signature);
             }
             stack.pushType(field.signature, value);
@@ -902,71 +1059,77 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
         case 0xc1: // instanceof
             var idx = frame.read16();
             var classInfo = cp.resolve(ctx, idx).value;
-            var obj = stack.popRef();
+            var obj = stack.refs[--stack.length];
             var result = !obj ? false : obj.class.isAssignableTo(classInfo);
-            stack.pushInt(result ? 1 : 0);
+            stack.types[stack.length] = STACK_INT;
+            stack.ints[stack.length++] = result ? 1 : 0;
             break;
         case 0xbf: // athrow
-            var obj = stack.popRef();
+            var obj = stack.refs[--stack.length];
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
             frame = throw_(obj, ctx);
             return frame;
         case 0xc2: // monitorenter
-            var obj = stack.popRef();
+            var obj = stack.refs[--stack.length];
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
             ctx.monitorEnter(obj);
             break;
         case 0xc3: // monitorexit
-            var obj = stack.popRef();
+            var obj = stack.refs[--stack.length];
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
             }
             ctx.monitorExit(obj);
             break;
         case 0xc4: // wide
-
-            switch (op = frame.read8()) {
+            switch (op = frame.code[frame.ip++]) {
             case 0x15: // iload
-                stack.pushInt(frame.getLocalInt(frame.read16()));
+                stack.types[stack.length] = STACK_INT;
+                stack.ints[stack.length++] = frame.locals.ints[frame.localsBase + frame.read16()];
                 break;
             case 0x16: // lload
-                stack.pushLong(frame.getLocalLong(frame.read16()));
+                stack.pushLong(frame.locals.longs[frame.localsBase + frame.read16()]);
                 break;
             case 0x17: // fload
-                stack.pushFloat(frame.getLocalFloat(frame.read16()));
+                stack.types[stack.length] = STACK_FLOAT;
+                stack.floats[stack.length++] = frame.locals.floats[frame.localsBase + frame.read16()];
                 break;
             case 0x18: // dload
-                stack.pushDouble(frame.getLocalDouble(frame.read16()));
+                stack.types[stack.length] = stack.types[stack.length + 1] = STACK_DOUBLE;
+                stack.doubles[stack.length] = frame.locals.doubles[frame.localsBase + frame.read16()];
+                stack.length += 2;
                 break;
             case 0x19: // aload
-                stack.pushRef(frame.getLocalRef(frame.read16()));
+                stack.types[stack.length] = STACK_REF;
+                stack.refs[stack.length++] = frame.locals.refs[frame.localsBase + frame.read16()];
                 break;
             case 0x36: // istore
-                frame.setLocalInt(frame.read16(), stack.popInt());
+                frame.locals.ints[frame.localsBase + frame.read16()] = stack.ints[--stack.length];
                 break;
             case 0x37: // lstore
-                frame.setLocalLong(frame.read16(), stack.popLong());
+                --stack.length; // remove the dummy long first
+                frame.locals.longs[frame.localsBase + frame.read16()] = stack.longs[--stack.length];
                 break;
             case 0x38: // fstore
-                frame.setLocalFloat(frame.read16(), stack.popFloat());
+                frame.locals.floats[frame.localsBase + frame.read16()] = stack.floats[--stack.length];
                 break;
             case 0x39: // dstore
-                frame.setLocalDouble(frame.read16(), stack.popDouble());
+                --stack.length; // remove the dummy double first
+                frame.locals.doubles[frame.localsBase + frame.read16()] = stack.doubles[--stack.length];
                 break;
             case 0x3a: // astore
-                frame.setLocalRef(frame.read16(), stack.popRef());
+                frame.locals.refs[frame.localsBase + frame.read16()] = stack.refs[--stack.length];
                 break;
             case 0x84: // iinc
                 var idx = frame.read16();
-                var val = frame.read16signed();
-                frame.setLocalInt(idx, frame.getLocalInt(idx) + val);
+                frame.locals.ints[frame.localsBase + idx] += frame.read16signed();
                 break;
             case 0xa9: // ret
-                frame.ip = frame.getLocalInt(frame.read16());
+                frame.ip = frame.locals.ints[frame.localsBase + frame.read16()];
                 break;
             default:
                 var opName = OPCODES[op];
@@ -980,8 +1143,8 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
             var startip = frame.ip - 1;
             var idx = frame.read16();
             if (op === 0xb9) {
-                var argsNumber = frame.read8();
-                var zero = frame.read8();
+                var argsNumber = frame.code[frame.ip++];
+                var zero = frame.code[frame.ip++];
             }
             var isStatic = (op === 0xb8);
             var methodInfoConstant = cp.resolve(ctx, idx, isStatic);
@@ -1015,7 +1178,6 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
             if (VM.DEBUG) {
                 VM.trace("invoke", ctx.thread.pid, methodInfo);
             }
-//        console.log("INVOKE", methodInfo.implKey, obj);
 
             var alternateImpl = methodInfo.alternateImpl;
             if (alternateImpl) {
@@ -1046,7 +1208,6 @@ VM.handleComplexOp = function(op, ctx, frame, cp, stack) {
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo);
             }
-//        console.log("RETURN VOID", frame.methodInfo.implKey);
             if (ctx.frames.length == 1)
                 return;
             frame.methodInfo.numCalled++;

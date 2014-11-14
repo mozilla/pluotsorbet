@@ -6,26 +6,26 @@
 var MAX_STACK_SIZE = 256;
 function Stack() {
     this.types = new Uint8Array(MAX_STACK_SIZE);
-    //    this.ints = new Int32Array(STACK_SIZE);
-    //    this.floats = this.doubles = new Float64Array(STACK_SIZE);
-    this.longs = this.refs = new Array(); // Store objects.
+    this.longs = this.refs = [];
     this.floats = this.doubles = new Float64Array(MAX_STACK_SIZE);
     this.ints = new Int32Array(MAX_STACK_SIZE);
-
     this.length = 0;
 }
 
 // Storage types:
-Stack.INT = 0;
-Stack.LONG = 1;
-Stack.FLOAT = 2;
-Stack.DOUBLE = 3;
-Stack.REF = 4;
+var STACK_INT = 0;
+var STACK_LONG = 1;
+var STACK_FLOAT = 2;
+var STACK_DOUBLE = 3;
+var STACK_REF = 4;
 
 Stack.pool = [];
 Stack.obtain = function(arr) {
     var stack = Stack.pool.pop() || new Stack();
-    stack.setToArray(arr);
+    stack.length = 0;
+    for (var i = 0; arr && i < arr.length; i++) {
+        stack.pushRef(arr[i]);
+    }
     return stack;
 }
 
@@ -33,103 +33,7 @@ Stack.release = function(stack) {
     Stack.pool.push(stack);
 }
 
-function StackWord(type, value) {
-    this.type = type;
-    this.value = value;
-}
-
 Stack.prototype = {
-    setToArray: function(arr) {
-        this.length = 0;
-        for (var i = 0; arr && i < arr.length; i++) {
-            this.pushRef(arr[i]);
-        }
-    },
-
-    debug: function() {
-        console.log("stack:");
-        for (var i = 0; i < this.length; i++) {
-            var type = this.types[i];
-            console.log(" ", i, type, "--", this.get(type, i));
-        }
-    },
-    getInt: function(offset) {
-        return this.ints[offset];
-    },
-    getLong: function(offset) {
-        return this.longs[offset];
-    },
-    getFloat: function(offset) {
-        return this.floats[offset];
-    },
-    getDouble: function(offset) {
-        return this.doubles[offset];
-    },
-    getRef: function(offset) {
-        return this.refs[offset];
-    },
-    get: function(type, idx) {
-        switch(type) {
-        case Stack.INT: return this.getInt(idx);
-        case Stack.LONG: return this.getLong(idx);
-        case Stack.FLOAT: return this.getFloat(idx);
-        case Stack.DOUBLE: return this.getDouble(idx);
-        case Stack.REF: return this.getRef(idx);
-        default: throw new Error("invalid stack type: " + type);
-        }
-    },
-
-    setInt: function(offset, val) {
-        if (this.length < offset + 1) {
-            this.length = offset + 1;
-        }
-        this.types[offset] = Stack.INT;
-        this.ints[offset] = val;
-    },
-    setLong: function(offset, val) {
-        if (this.length < offset + 2) {
-            this.length = offset + 2;
-        }
-        this.types[offset] = Stack.LONG;
-        this.types[offset + 1] = Stack.LONG;
-        this.longs[offset] = val;
-        //this.longs[offset + 1] = null;
-    },
-    setFloat: function(offset, val) {
-        if (this.length < offset + 1) {
-            this.length = offset + 1;
-        }
-        this.types[offset] = Stack.FLOAT;
-        this.floats[offset] = val;
-    },
-    setDouble: function(offset, val) {
-        if (this.length < offset + 2) {
-            this.length = offset + 2;
-        }
-        this.types[offset] = Stack.DOUBLE;
-        this.types[offset + 1] = Stack.DOUBLE;
-        this.doubles[offset] = val;
-        //this.doubles[offset + 1] = null;
-    },
-    setRef: function(offset, val) {
-        if (this.length < offset + 1) {
-            this.length = offset + 1;
-        }
-        this.types[offset] = Stack.REF;
-        this.refs[offset] = val;
-    },
-
-    push: function(type, value) {
-        switch(type) {
-        case Stack.INT: this.pushInt(value); break;
-        case Stack.LONG: this.pushLong(value); break;
-        case Stack.FLOAT: this.pushFloat(value); break;
-        case Stack.DOUBLE: this.pushDouble(value); break;
-        case Stack.REF: this.pushRef(value); break;
-        default: throw new Error("invalid stack type: " + type);
-        }
-    },
-
     pushType: function(type, value) {
         switch(type[0]) {
         case "B":
@@ -142,55 +46,54 @@ Stack.prototype = {
         case "D": this.pushDouble(value); break;
         case "[":
         case "L": this.pushRef(value); break;
-        default: throw new Error("invalid stack type: " + type);
         }
     },
 
     pushInt: function(value) {
-        this.types[this.length] = Stack.INT;
+        this.types[this.length] = STACK_INT;
         this.ints[this.length++] = value;
     },
     pushLong: function(value) {
-        this.types[this.length] = Stack.LONG;
-        this.types[this.length + 1] = Stack.LONG;
+        this.types[this.length] = STACK_LONG;
+        this.types[this.length + 1] = STACK_LONG;
         this.longs[this.length++] = value;
         this.length++;
     },
     pushFloat: function(value) {
-        this.types[this.length] = Stack.FLOAT;
+        this.types[this.length] = STACK_FLOAT;
         this.floats[this.length++] = value;
     },
     pushDouble: function(value) {
-        this.types[this.length] = Stack.DOUBLE;
-        this.types[this.length + 1] = Stack.DOUBLE;
+        this.types[this.length] = STACK_DOUBLE;
+        this.types[this.length + 1] = STACK_DOUBLE;
         this.doubles[this.length++] = value;
         this.length++;
     },
     pushRef: function(value) {
-        this.types[this.length] = Stack.REF;
+        this.types[this.length] = STACK_REF;
         this.refs[this.length++] = value;
     },
     pushWord: function(word) {
         var idx = this.length++;
-        this.types[idx] = word.type;
-        switch(word.type) {
-        case Stack.INT: this.ints[idx] = word.value; break;
-        case Stack.LONG: this.longs[idx] = word.value; break;
-        case Stack.FLOAT: this.floats[idx] = word.value; break;
-        case Stack.DOUBLE: this.doubles[idx] = word.value; break;
-        case Stack.REF: this.refs[idx] = word.value; break;
-        default: throw new Error("invalid stack type: " + word.type);
+        var type = word[0];
+        var value = word[1];
+        this.types[idx] = type;
+        switch(type) {
+        case STACK_INT: this.ints[idx] = value; break;
+        case STACK_LONG: this.longs[idx] = value; break;
+        case STACK_FLOAT: this.floats[idx] = value; break;
+        case STACK_DOUBLE: this.doubles[idx] = value; break;
+        case STACK_REF: this.refs[idx] = value; break;
         }
     },
 
     pop: function(type) {
         switch(type) {
-        case Stack.INT: return this.popInt();
-        case Stack.LONG: return this.popLong();
-        case Stack.FLOAT: return this.popFloat();
-        case Stack.DOUBLE: return this.popDouble();
-        case Stack.REF: return this.popRef();
-        default: throw new Error("invalid stack type: " + type);
+        case STACK_INT: return this.ints[--this.length];
+        case STACK_LONG: this.length--; return this.longs[--this.length];
+        case STACK_FLOAT: return this.floats[--this.length];
+        case STACK_DOUBLE: this.length--; return this.doubles[--this.length];
+        case STACK_REF: return this.refs[--this.length];
         }
     },
     popType: function(type) {
@@ -199,54 +102,65 @@ Stack.prototype = {
         case "C":
         case "S":
         case "Z":
-        case "I": return this.popInt();
-        case "J": return this.popLong();
-        case "F": return this.popFloat();
-        case "D": return this.popDouble();
+        case "I": return this.ints[--this.length];
+        case "J": this.length--; return this.longs[--this.length];
+        case "F": return this.floats[--this.length];
+        case "D": this.length--; return this.doubles[--this.length];
         case "[":
-        case "L": return this.popRef();
-        default: throw new Error("invalid stack type: " + type);
+        case "L": return this.refs[--this.length];
         }
     },
 
-    popInt: function() {
-        return this.ints[--this.length];
-    },
+    // popInt: function() {
+    //     return this.ints[--this.length];
+    // },
     popLong: function() {
         --this.length;
         return this.longs[--this.length];
     },
-    popFloat: function() {
-        return this.floats[--this.length];
-    },
-    popDouble: function() {
-        --this.length;
-        return this.doubles[--this.length];
-    },
-    popRef: function() {
-        return this.refs[--this.length];
-    },
+    // popFloat: function() {
+    //     return this.floats[--this.length];
+    // },
+    // popDouble: function() {
+    //     --this.length;
+    //     return this.doubles[--this.length];
+    // },
+    // popRef: function() {
+    //     return this.refs[--this.length];
+    // },
 
     popWord: function() {
         var idx = --this.length;
         var type = this.types[idx];
         var value;
         switch(type) {
-        case Stack.INT: value = this.ints[idx]; break;
-        case Stack.LONG: value = this.longs[idx]; break;
-        case Stack.FLOAT: value = this.floats[idx]; break;
-        case Stack.DOUBLE: value = this.doubles[idx]; break;
-        case Stack.REF: value = this.refs[idx]; break;
-        default: throw new Error("invalid stack type: " + type);
+        case STACK_INT: value = this.ints[idx]; break;
+        case STACK_LONG: value = this.longs[idx]; break;
+        case STACK_FLOAT: value = this.floats[idx]; break;
+        case STACK_DOUBLE: value = this.doubles[idx]; break;
+        case STACK_REF: value = this.refs[idx]; break;
         }
-        return new StackWord(type, value);
+        return [type, value];
     },
 
-    readInt: function(count) { return this.getInt(this.length - count); },
-    readLong: function(count) { return this.getLong(this.length - count); },
-    readFloat: function(count) { return this.getFloat(this.length - count); },
-    readDouble: function(count) { return this.getDouble(this.length - count); },
-    readRef: function(count) { return this.getRef(this.length - count); },
+    readInt: function(count) { return this.ints[this.length - count]; },
+    readLong: function(count) { return this.longs[this.length - count]; },
+    readFloat: function(count) { return this.floats[this.length - count]; },
+    readDouble: function(count) { return this.doubles[this.length - count]; },
+    readRef: function(count) { return this.refs[this.length - count]; },
+
+    loadArgsAtIndex: function(args, idx) {
+        for (var i = idx; i >= 0; i--) {
+            var idx = --this.length;
+            switch (this.types[idx]) {
+            case STACK_INT: args[i] = this.ints[idx]; break;
+            case STACK_LONG: args[i] = this.longs[idx]; break;
+            case STACK_FLOAT: args[i] = this.floats[idx]; break;
+            case STACK_DOUBLE: args[i] = this.doubles[idx]; break;
+            case STACK_REF: args[i] = this.refs[idx]; break;
+            }
+        }
+    }
 }
 
 var Frame = function(methodInfo, locals, localsBase) {
@@ -269,31 +183,12 @@ var Frame = function(methodInfo, locals, localsBase) {
 }
 
 Frame.prototype = {
-    debug: function() {
-        console.log("locals:");
-        for (var i = 0; i < this.methodInfo.max_locals; i++) {
-            var type = this.locals.types[this.localsBase + i];
-            console.log(" ", i, this.locals.get(type, this.localsBase + i));
-        }
-    },
-    getLocalInt: function(idx) { return this.locals.getInt(this.localsBase + idx); },
-    getLocalLong: function(idx) { return this.locals.getLong(this.localsBase + idx); },
-    getLocalFloat: function(idx) { return this.locals.getFloat(this.localsBase + idx); },
-    getLocalDouble: function(idx) { return this.locals.getDouble(this.localsBase + idx); },
-    getLocalRef: function(idx) { return this.locals.getRef(this.localsBase + idx); },
-
-    setLocalInt: function(idx, value) { this.locals.setInt(this.localsBase + idx, value); },
-    setLocalLong: function(idx, value) { this.locals.setLong(this.localsBase + idx, value); },
-    setLocalFloat: function(idx, value) { this.locals.setFloat(this.localsBase + idx, value); },
-    setLocalDouble: function(idx, value) { this.locals.setDouble(this.localsBase + idx, value); },
-    setLocalRef: function(idx, value) { this.locals.setRef(this.localsBase + idx, value); },
-
     read8: function() {
         return this.code[this.ip++];
     },
 
     read16: function() {
-        return this.read8()<<8 | this.read8();
+        return this.code[this.ip++] << 8 | this.code[this.ip++];
     },
 
     read32: function() {
@@ -301,7 +196,7 @@ Frame.prototype = {
     },
 
     read8signed: function() {
-        var x = this.read8();
+        var x = this.code[this.ip++];
         return (x > 0x7f) ? (x - 0x100) : x;
     },
 

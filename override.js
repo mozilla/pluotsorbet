@@ -102,12 +102,10 @@ function createAlternateImpl(object, key, fn, usesPromise) {
     // NOTE: If your function accepts a Long/Double, you must specify
     // two arguments (since they take up two stack positions); we
     // could sugar this someday.
-    for (var i = numArgs - 2; i >= 0; i--) {
-      args[i] = stack.popWord().value;
-    }
+    stack.loadArgsAtIndex(args, numArgs - 2);
 
     try {
-      var self = isStatic ? null : stack.popRef();
+      var self = isStatic ? null : stack.refs[--stack.length];
       var ret = fn.apply(self, args);
       postExec(stack, ret, doReturn, ctx, key);
     } catch(e) {
