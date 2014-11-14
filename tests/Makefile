@@ -12,6 +12,7 @@ PACKAGE_FILES = \
   midlets/favouriteartists/images/* \
   midlets/blogwriter/images/* \
   midlets/rlinks/images/* \
+  midlets/MediaSampler/res/* \
   com/sun/cldc/io/utf8.txt \
   org/mozilla/io/test.jpg \
   $(NULL)
