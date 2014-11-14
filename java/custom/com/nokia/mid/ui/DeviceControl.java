@@ -7,7 +7,7 @@ public class DeviceControl {
     public static final int KEYMAT_OFF = 3;
 
     public static void setLights(int num, int level) {
-        throw new RuntimeException("DeviceControl::setLights(int,int) not implemented");
+        System.out.println("DeviceControl::setLights(int,int) not implemented");
     }
 
     public static void flashLights(long duration) {
