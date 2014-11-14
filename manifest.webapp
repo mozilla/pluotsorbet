@@ -1,8 +1,9 @@
 {
-  "name": "j2me.js",
   "description": "j2me interpreter for firefox os",
-  "launch_path": "/index.html?autosize=1&logConsole=web",
   "origin": "app://j2mejs.mozilla.org",
+  "name": "WhatsApp",
+  "description": "WhatsApp in j2me.js",
+  "launch_path": "/index.html?main=com/sun/midp/main/MIDletSuiteLoader&jad=WhatsApp.jad&jars=WhatsApp_2_12_49.jar&midletClassName=com.whatsapp.client.test.WhatsAppBG&pushConn=localmsg:whatsapp&pushMidlet=com.whatsapp.client.test.ContactListMidlet&autosize=1&logConsole=web",
   "icons": {
     "128": "/img/icon-128.png"
   },

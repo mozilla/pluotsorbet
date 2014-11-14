@@ -3,43 +3,176 @@
 
 'use strict';
 
-Array.prototype.push2 = function(value) {
-    this.push(value);
-    this.push(null);
+var MAX_STACK_SIZE = 256;
+function Stack() {
+    this.types = new Uint8Array(MAX_STACK_SIZE);
+    this.longs = this.refs = [];
+    this.floats = this.doubles = new Float64Array(MAX_STACK_SIZE);
+    this.ints = new Int32Array(MAX_STACK_SIZE);
+    this.length = 0;
 }
 
-Array.prototype.pop2 = function() {
-    this.pop();
-    return this.pop();
-}
+// Storage types:
+var STACK_INT = 0;
+var STACK_LONG = 1;
+var STACK_FLOAT = 2;
+var STACK_DOUBLE = 3;
+var STACK_REF = 4;
 
-Array.prototype.pushType = function(signature, value) {
-    if (signature === "J" || signature === "D") {
-        this.push2(value);
-        return;
+Stack.pool = [];
+Stack.obtain = function(arr) {
+    var stack = Stack.pool.pop() || new Stack();
+    stack.length = 0;
+    for (var i = 0; arr && i < arr.length; i++) {
+        stack.pushRef(arr[i]);
     }
-    this.push(value);
+    return stack;
 }
 
-Array.prototype.popType = function(signature) {
-    return (signature === "J" || signature === "D") ? this.pop2() : this.pop();
+Stack.release = function(stack) {
+    Stack.pool.push(stack);
 }
 
-// A convenience function for retrieving values in reverse order
-// from the end of the stack.  stack.read(1) returns the topmost item
-// on the stack, while stack.read(2) returns the one underneath it.
-Array.prototype.read = function(i) {
-    return this[this.length - i];
-};
+Stack.prototype = {
+    pushType: function(type, value) {
+        switch(type[0]) {
+        case "B":
+        case "C":
+        case "S":
+        case "Z":
+        case "I": this.pushInt(value); break;
+        case "J": this.pushLong(value); break;
+        case "F": this.pushFloat(value); break;
+        case "D": this.pushDouble(value); break;
+        case "[":
+        case "L": this.pushRef(value); break;
+        }
+    },
 
+    pushInt: function(value) {
+        this.types[this.length] = STACK_INT;
+        this.ints[this.length++] = value;
+    },
+    pushLong: function(value) {
+        this.types[this.length] = STACK_LONG;
+        this.types[this.length + 1] = STACK_LONG;
+        this.longs[this.length++] = value;
+        this.length++;
+    },
+    pushFloat: function(value) {
+        this.types[this.length] = STACK_FLOAT;
+        this.floats[this.length++] = value;
+    },
+    pushDouble: function(value) {
+        this.types[this.length] = STACK_DOUBLE;
+        this.types[this.length + 1] = STACK_DOUBLE;
+        this.doubles[this.length++] = value;
+        this.length++;
+    },
+    pushRef: function(value) {
+        this.types[this.length] = STACK_REF;
+        this.refs[this.length++] = value;
+    },
+    pushWord: function(word) {
+        var idx = this.length++;
+        var type = word[0];
+        var value = word[1];
+        this.types[idx] = type;
+        switch(type) {
+        case STACK_INT: this.ints[idx] = value; break;
+        case STACK_LONG: this.longs[idx] = value; break;
+        case STACK_FLOAT: this.floats[idx] = value; break;
+        case STACK_DOUBLE: this.doubles[idx] = value; break;
+        case STACK_REF: this.refs[idx] = value; break;
+        }
+    },
+
+    pop: function(type) {
+        switch(type) {
+        case STACK_INT: return this.ints[--this.length];
+        case STACK_LONG: this.length--; return this.longs[--this.length];
+        case STACK_FLOAT: return this.floats[--this.length];
+        case STACK_DOUBLE: this.length--; return this.doubles[--this.length];
+        case STACK_REF: return this.refs[--this.length];
+        }
+    },
+    popType: function(type) {
+        switch(type[0]) {
+        case "B":
+        case "C":
+        case "S":
+        case "Z":
+        case "I": return this.ints[--this.length];
+        case "J": this.length--; return this.longs[--this.length];
+        case "F": return this.floats[--this.length];
+        case "D": this.length--; return this.doubles[--this.length];
+        case "[":
+        case "L": return this.refs[--this.length];
+        }
+    },
+
+    // popInt: function() {
+    //     return this.ints[--this.length];
+    // },
+    popLong: function() {
+        --this.length;
+        return this.longs[--this.length];
+    },
+    // popFloat: function() {
+    //     return this.floats[--this.length];
+    // },
+    // popDouble: function() {
+    //     --this.length;
+    //     return this.doubles[--this.length];
+    // },
+    // popRef: function() {
+    //     return this.refs[--this.length];
+    // },
+
+    popWord: function() {
+        var idx = --this.length;
+        var type = this.types[idx];
+        var value;
+        switch(type) {
+        case STACK_INT: value = this.ints[idx]; break;
+        case STACK_LONG: value = this.longs[idx]; break;
+        case STACK_FLOAT: value = this.floats[idx]; break;
+        case STACK_DOUBLE: value = this.doubles[idx]; break;
+        case STACK_REF: value = this.refs[idx]; break;
+        }
+        return [type, value];
+    },
+
+    readInt: function(count) { return this.ints[this.length - count]; },
+    readLong: function(count) { return this.longs[this.length - count]; },
+    readFloat: function(count) { return this.floats[this.length - count]; },
+    readDouble: function(count) { return this.doubles[this.length - count]; },
+    readRef: function(count) { return this.refs[this.length - count]; },
+
+    loadArgsAtIndex: function(args, idx) {
+        for (var i = idx; i >= 0; i--) {
+            var idx = --this.length;
+            switch (this.types[idx]) {
+            case STACK_INT: args[i] = this.ints[idx]; break;
+            case STACK_LONG: args[i] = this.longs[idx]; break;
+            case STACK_FLOAT: args[i] = this.floats[idx]; break;
+            case STACK_DOUBLE: args[i] = this.doubles[idx]; break;
+            case STACK_REF: args[i] = this.refs[idx]; break;
+            }
+        }
+    }
+}
 
 var Frame = function(methodInfo, locals, localsBase) {
+    if (!(locals instanceof Stack)) {
+        locals = Stack.obtain(locals);
+    }
     this.methodInfo = methodInfo;
     this.cp = methodInfo.classInfo.constant_pool;
     this.code = methodInfo.code;
     this.ip = 0;
 
-    this.stack = [];
+    this.stack = Stack.obtain();
 
     this.locals = locals;
     this.localsBase = localsBase;
@@ -49,37 +182,31 @@ var Frame = function(methodInfo, locals, localsBase) {
     this.profileData = null;
 }
 
-Frame.prototype.getLocal = function(idx) {
-    return this.locals[this.localsBase + idx];
-}
+Frame.prototype = {
+    read8: function() {
+        return this.code[this.ip++];
+    },
 
-Frame.prototype.setLocal = function(idx, value) {
-    this.locals[this.localsBase + idx] = value;
-}
+    read16: function() {
+        return this.code[this.ip++] << 8 | this.code[this.ip++];
+    },
 
-Frame.prototype.read8 = function() {
-    return this.code[this.ip++];
+    read32: function() {
+        return this.read16()<<16 | this.read16();
+    },
+
+    read8signed: function() {
+        var x = this.code[this.ip++];
+        return (x > 0x7f) ? (x - 0x100) : x;
+    },
+
+    read16signed: function() {
+        var x = this.read16();
+        return (x > 0x7fff) ? (x - 0x10000) : x;
+    },
+
+    read32signed: function() {
+        var x = this.read32();
+        return (x > 0x7fffffff) ? (x - 0x100000000) : x;
+    },
 };
-
-Frame.prototype.read16 = function() {
-    return this.read8()<<8 | this.read8();
-};
-
-Frame.prototype.read32 = function() {
-    return this.read16()<<16 | this.read16();
-};
-
-Frame.prototype.read8signed = function() {
-    var x = this.read8();
-    return (x > 0x7f) ? (x - 0x100) : x;
-}
-
-Frame.prototype.read16signed = function() {
-    var x = this.read16();
-    return (x > 0x7fff) ? (x - 0x10000) : x;
-}
-
-Frame.prototype.read32signed = function() {
-    var x = this.read32();
-    return (x > 0x7fffffff) ? (x - 0x100000000) : x;
-}

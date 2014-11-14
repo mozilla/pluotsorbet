@@ -46,7 +46,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
       className: classInfo.className,
       vmc: {},
       vfc: {},
-      constant_pool: [
+      constant_pool: new ConstantPool([
         null,
         { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
         { tag: TAGS.CONSTANT_Class, name_index: 3 },
@@ -58,7 +58,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         { name_index: 9, signature_index: 10 },
         { bytes: "init9" },
         { bytes: "()V" },
-      ],
+      ]),
     },
     code: new Uint8Array([
         0x2a,             // aload_0
@@ -72,7 +72,7 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         0xb1,             // return
     ])
   });
-  this.current().stack.push(classInfo.getClassObject(this));
+  this.current().stack.pushRef(classInfo.getClassObject(this));
   this.pushFrame(syntheticMethod);
 }
 
@@ -88,7 +88,7 @@ Context.prototype.raiseException = function(className, message) {
       className: className,
       vmc: {},
       vfc: {},
-      constant_pool: [
+      constant_pool: new ConstantPool([
         null,
         { tag: TAGS.CONSTANT_Class, name_index: 2 },
         { bytes: className },
@@ -98,7 +98,7 @@ Context.prototype.raiseException = function(className, message) {
         { name_index: 7, signature_index: 8 },
         { bytes: "<init>" },
         { bytes: "(Ljava/lang/String;)V" },
-      ],
+      ]),
     },
     code: new Uint8Array([
       0xbb, 0x00, 0x01, // new <idx=1>

@@ -938,7 +938,7 @@ Native.create("com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/S
         var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
         var constantsMap = new Map();
         classInfo.fields.forEach(function(field) {
-          constantsMap.set(field.name, classInfo.constant_pool[field.constantValue].integer);
+          constantsMap.set(field.name, classInfo.constant_pool.get(field.constantValue).integer);
         });
 
         var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");

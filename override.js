@@ -11,49 +11,37 @@ function JavaException(className, message) {
 }
 JavaException.prototype = Object.create(Error.prototype);
 
-function boolReturnType(stack, ret) {
-  if (ret) {
-    stack.push(1);
-  } else {
-    stack.push(0);
-  }
-}
-
-function doubleReturnType(stack, ret) {
-  // double types require two stack frames
-  stack.push2(ret);
-}
-
-function voidReturnType(stack, ret) {
-  // no-op
-}
-
 function stringReturnType(stack, ret) {
   if (typeof ret === "string") {
-    stack.push(util.newString(ret));
+    stack.pushRef(util.newString(ret));
   } else {
     // already a native string or null
-    stack.push(ret);
+    stack.pushRef(ret);
   }
 }
 
-function defaultReturnType(stack, ret) {
-    stack.push(ret);
+var RETURN_FUNCTIONS = {
+  "B": function(stack, ret) { stack.pushInt(ret); },
+  "C": function(stack, ret) { stack.pushInt(ret); },
+  "S": function(stack, ret) { stack.pushInt(ret); },
+  "Z": function(stack, ret) { stack.pushInt(ret ? 1 : 0); },
+  "I": function(stack, ret) { stack.pushInt(ret); },
+  "J": function(stack, ret) { stack.pushLong(ret); },
+  "F": function(stack, ret) { stack.pushFloat(ret); },
+  "D": function(stack, ret) { stack.pushDouble(ret); },
+  "[": function(stack, ret) { stack.pushRef(ret); },
+  "L": function(stack, ret) { stack.pushRef(ret); },
+  "V": function(stack, ret) { /* nothing */ },
 }
 
 function getReturnFunction(sig) {
   var retType = sig.substring(sig.lastIndexOf(")") + 1);
-  var fxn;
-  switch (retType) {
-    case 'V': fxn = voidReturnType; break;
-    case 'Z': fxn = boolReturnType; break;
-    case 'J':
-    case 'D': fxn = doubleReturnType; break;
-    case 'Ljava/lang/String;': fxn = stringReturnType; break;
-    default: fxn = defaultReturnType; break;
-  }
 
-  return fxn;
+  if (retType === "Ljava/lang/String;") {
+    return stringReturnType;
+  } else {
+    return RETURN_FUNCTIONS[retType[0]];
+  }
 }
 
 function executePromise(stack, ret, doReturn, ctx, key) {
@@ -114,18 +102,17 @@ function createAlternateImpl(object, key, fn, usesPromise) {
     // NOTE: If your function accepts a Long/Double, you must specify
     // two arguments (since they take up two stack positions); we
     // could sugar this someday.
-    for (var i = numArgs - 2; i >= 0; i--) {
-      args[i] = stack.pop();
-    }
+    stack.loadArgsAtIndex(args, numArgs - 2);
 
     try {
-      var self = isStatic ? null : stack.pop();
+      var self = isStatic ? null : stack.refs[--stack.length];
       var ret = fn.apply(self, args);
       postExec(stack, ret, doReturn, ctx, key);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throw e;
       } else if (e.name === "TypeError") {
+        console.error(e);
         // JavaScript's TypeError is analogous to a NullPointerException.
         ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {

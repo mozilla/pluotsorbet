@@ -280,7 +280,7 @@ Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) 
         className: className,
         vmc: {},
         vfc: {},
-        constant_pool: [
+        constant_pool: new ConstantPool([
           null,
           { tag: TAGS.CONSTANT_Class, name_index: 2 },
           { bytes: className },
@@ -288,7 +288,7 @@ Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) 
           { name_index: 5, signature_index: 6 },
           { bytes: "<init>" },
           { bytes: "()V" },
-        ]
+        ])
       },
       code: new Uint8Array([
         0xbb, 0x00, 0x01, // new <idx=1>
@@ -472,7 +472,7 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
         className: this.class.className,
         vmc: {},
         vfc: {},
-        constant_pool: [
+        constant_pool: new ConstantPool([
           null,
           { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
           { tag: TAGS.CONSTANT_Class, name_index: 3 },
@@ -484,7 +484,7 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
           { name_index: 9, signature_index: 10 },
           { bytes: "internalExit" },
           { bytes: "()V" },
-        ],
+        ]),
       },
       code: new Uint8Array([
         0x2a,             // aload_0
