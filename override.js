@@ -60,7 +60,7 @@ function executePromise(stack, ret, doReturn, ctx, key) {
   if (ret && ret.then) { // ret.constructor.name == "Promise"
     ret.then(function(res) {
       if (Instrument.profiling) {
-        Instrument.exitAsyncNative(key);
+        Instrument.exitAsyncNative(key, ret);
       }
 
       doReturn(stack, res);
@@ -69,7 +69,7 @@ function executePromise(stack, ret, doReturn, ctx, key) {
     }).then(ctx.start.bind(ctx));
 
     if (Instrument.profiling) {
-      Instrument.enterAsyncNative(key);
+      Instrument.enterAsyncNative(key, ret);
     }
 
     throw VM.Pause;
