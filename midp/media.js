@@ -50,6 +50,10 @@ var ListCache = {
     _nextId: 1
 }
 
+var extToFormat = new Map([
+    ["mp3", "MPEG_layer_3"],
+]);
+
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
     var types = [];
@@ -155,17 +159,7 @@ function Player(url) {
 Player.DEFAULT_BUFFER_SIZE  = 1024 * 1024;
 
 Player.prototype.guessFormatFromURL = function() {
-    var extToFormat = new Map([
-        [".mp3", "MPEG_layer_3"],
-    ]);
-
-    for (var [ext, format] of extToFormat) {
-        if (this.url.endsWith(ext)) {
-            return format;
-        }
-    }
-
-    return "UNKNOWN";
+    return extToFormat.get(this.url.substr(this.url.lastIndexOf(".") + 1)) || "UNKNOWN";
 }
 
 Player.prototype.realize = function(contentType) {
