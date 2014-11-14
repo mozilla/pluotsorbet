@@ -65,18 +65,15 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.close(-1);
-  next();
+  fs.close(-1, next);
 });
 
 tests.push(function() {
-  fs.close(0);
-  next();
+  fs.close(0, next);
 });
 
 tests.push(function() {
-  fs.close(1);
-  next();
+  fs.close(1, next);
 });
 
 tests.push(function() {
@@ -332,8 +329,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.close(0);
-  next();
+  fs.close(0, next);
 });
 
 tests.push(function() {
@@ -495,7 +491,7 @@ tests.push(function() {
 
 tests.push(function() {
   fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 0, "unflushed file's size is 0");
+    is(size, 12, "unflushed file's size is 12");
     next();
   });
 });
@@ -550,8 +546,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.close(1);
-  next();
+  fs.close(1, next);
 });
 
 tests.push(function() {
@@ -760,10 +755,11 @@ tests.push(function() {
   tests.push(function() {
     window.setTimeout(function() {
       fs.flush(fd, function() {
-        fs.close(fd);
-        fs.stat("/tmp/stat.txt", function(stat) {
-          is(stat.mtime, lastTime, "close doesn't update mtime");
-          next();
+        fs.close(fd, function() {
+          fs.stat("/tmp/stat.txt", function(stat) {
+            is(stat.mtime, lastTime, "close doesn't update mtime");
+            next();
+          });
         });
       });
     }, 1);

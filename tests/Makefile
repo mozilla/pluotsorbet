@@ -32,9 +32,9 @@ tests.jar: $(SRCS) Testlets.java
 	rm -rf build
 	mkdir build
 	# Build the buildtime support classes in-place, not in ./build, so they aren't available at runtime.
-	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar $(BUILDTIME_SUPPORT_SRCS) > /dev/null
-	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar:$(BUILDTIME_SUPPORT_DIR) -d ./build $^ > /dev/null
-	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -d ./build $(RUNTIME_SUPPORT_SRCS) > /dev/null
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -extdirs "" $(BUILDTIME_SUPPORT_SRCS) > /dev/null
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar:$(BUILDTIME_SUPPORT_DIR) -extdirs "" -d ./build $^ > /dev/null
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -extdirs "" -d ./build $(RUNTIME_SUPPORT_SRCS) > /dev/null
 	jar cvfe tests.jar RunTests -C build/ .
 	jar uvf $(PACKAGE_FILES) > /dev/null
 	rm -rf build
