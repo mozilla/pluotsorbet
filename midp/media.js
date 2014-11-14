@@ -50,6 +50,10 @@ var ListCache = {
     _nextId: 1
 }
 
+var extToFormat = new Map([
+    ["mp3", "MPEG_layer_3"],
+]);
+
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
     var types = [];
@@ -120,7 +124,7 @@ var PlayerCache = {
 function Player(url) {
     this.url = url;
     // this.mediaFormat will only be updated by PlayerImpl.nGetMediaFormat.
-    this.mediaFormat = "UNKNOWN";
+    this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
     this.contentType = "";
     this.wholeContentSize = -1;
     this.contentSize = 0;
@@ -153,6 +157,10 @@ function Player(url) {
 
 // default buffer size 1 MB
 Player.DEFAULT_BUFFER_SIZE  = 1024 * 1024;
+
+Player.prototype.guessFormatFromURL = function() {
+    return extToFormat.get(this.url.substr(this.url.lastIndexOf(".") + 1)) || "UNKNOWN";
+}
 
 Player.prototype.realize = function(contentType) {
     if (contentType) {
@@ -216,7 +224,7 @@ Player.prototype.getBufferSize = function() {
 
 Player.prototype.getMediaFormat = function() {
     if (this.url === null || this.contentSize === 0) {
-        return "UNKNOWN";
+        return this.mediaFormat;
     }
 
     var headerString = util.decodeUtf8(this.data.subarray(0, 50));
@@ -236,7 +244,7 @@ Player.prototype.getMediaFormat = function() {
         return "mid";
     }
 
-    return "UNKNOWN";
+    return this.mediaFormat;
 };
 
 Player.prototype.isVolumeControlSupported = function() {
