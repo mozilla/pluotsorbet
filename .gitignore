@@ -37,3 +37,5 @@ java/midp/javax/microedition/lcdui/Display.java
 java/midp/javax/microedition/lcdui/GraphicsAccessImpl.java
 java/midp/javax/microedition/lcdui/MMHelperImpl.java
 java/midp/javax/wireless/messaging/MessageConnection.java
+java/midp/com/sun/amms/DirectSoundSource3D.java
+java/midp/com/sun/amms/GlobalMgrImpl.java

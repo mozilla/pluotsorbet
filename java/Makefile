@@ -1,6 +1,6 @@
 SRCS=$(shell find ./cldc1.1.1 -name *.java) $(shell find ./vm -name *.java) $(shell find ./midp -name *.java)
 CUSTOM_SRCS=$(shell find ./custom -name *.java)
-JPP_DEFS=-DENABLE_JSR_205 -DENABLE_CHAMELEON -DENABLE_SSL -DENABLE_PUBLICKEYSTORE -DENABLE_JSR_211 -DENABLE_MULTIPLE_ISOLATES -DRECORD -DUSE_FILE_CONNECTION
+JPP_DEFS=-DENABLE_JSR_205 -DENABLE_CHAMELEON -DENABLE_SSL -DENABLE_PUBLICKEYSTORE -DENABLE_JSR_211 -DENABLE_MULTIPLE_ISOLATES -DRECORD -DUSE_FILE_CONNECTION -DENABLE_JSR_234
 JPP_SRCS=$(shell find . -name *.jpp)
 JPP_DESTS=$(JPP_SRCS:.jpp=.java)
 EXTRA=$(shell find . -name *.png) $(shell find . -name *.bin) $(shell find . -name *.xml)
