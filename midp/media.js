@@ -8,15 +8,18 @@ const ContentTypes = {
     ],
 
     file: [
-        "audio/x-wav"
+        "audio/x-wav",
+        "audio/mpeg",
     ],
 
     http: [
-        "audio/x-wav"
+        "audio/x-wav",
+        "audio/mpeg",
     ],
 
     https: [
-        "audio/x-wav"
+        "audio/x-wav",
+        "audio/mpeg",
     ],
 
     rtp: [],
@@ -167,6 +170,7 @@ Player.prototype.realize = function(contentType) {
         switch (contentType) {
             case "audio/x-wav":
             case "audio/amr":
+            case "audio/mpeg":
                 this.contentType = contentType;
                 break;
             default:
@@ -261,6 +265,7 @@ Player.prototype.isVolumeControlSupported = function() {
         switch (this.contentType) {
             case "audio/amr":
             case "audio/x-wav":
+            case "audio/mpeg":
                 return true;
             default:
                 return false;
