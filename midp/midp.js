@@ -1227,7 +1227,7 @@ Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I",
 
 Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V", function(suiteId, className) {
     console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
-                 suiteId + ", " + className + ")");
+                 suiteId + ", " + util.fromJavaString(className) + ")");
 });
 
 Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I", function(name) {
