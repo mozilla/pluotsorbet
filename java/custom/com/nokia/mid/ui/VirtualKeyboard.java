@@ -4,13 +4,26 @@ import com.nokia.mid.ui.CustomKeyboardControl;
 import com.nokia.mid.ui.KeyboardVisibilityListener;
 
 class VKVisibilityNotificationRunnable implements Runnable {
+    private Object listenerLock = new Object();
+
     public void run() {
         while(true) {
             boolean isShow = sleepUntilVKVisibilityChange();
-            synchronized(this) {
+            synchronized(listenerLock) {
                 if (null == listener) {
                     continue;
                 }
+                // NB: A malicious or poorly-written listener can block
+                //     in one of `showNotify` or `hideNotify`, causing
+                //     us to stop sending visibility notifications and
+                //     causing the next call to `setListener` to also
+                //     block. We could alleviate this by creating a
+                //     new Thread on which we will make the call to
+                //     `showNotify` or `hideNotify`, then waiting for
+                //     the thread to notify us but timing out after
+                //     some reasonable amount of time. This is a lot
+                //     of thread creation and will only help poorly-
+                //     written programs so is probably overkill.
                 if (isShow) {
                     listener.showNotify(VirtualKeyboard.SYSTEM_KEYBOARD);
                 } else {
@@ -20,8 +33,10 @@ class VKVisibilityNotificationRunnable implements Runnable {
         }
     }
 
-    public synchronized void setListener(KeyboardVisibilityListener listener) {
-        this.listener = listener;
+    public void setListener(KeyboardVisibilityListener listener) {
+        synchronized(listenerLock) {
+            this.listener = listener;
+        }
     }
 
     private KeyboardVisibilityListener listener;
