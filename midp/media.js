@@ -256,6 +256,7 @@ Player.prototype.isVolumeControlSupported = function() {
         switch (this.mediaFormat) {
             case "amr":
             case "wav":
+            case "MPEG_layer_3":
                 return true;
             default:
                 return false;
