@@ -17,7 +17,7 @@ public class NativeTest implements Testlet {
     native static boolean dumbPipe();
 
     public void test(TestHarness th) {
-        th.todo(getInt(), 0xFFFFFFFF); // got (4294967295), expected (-1)
+        th.check(getInt(), 0xFFFFFFFF);
 
         String s = "marco";
         th.check(s.substring(0, 0), "");
