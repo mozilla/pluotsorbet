@@ -59,6 +59,9 @@ var extToFormat = new Map([
     ["jpeg", "JPEG"],
 ]);
 
+var supportedAudioFormats = ["MPEG_layer_3", "wav", "amr"];
+var supportedVideoFormats = ["JPEG"];
+
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
     var types = [];
@@ -126,38 +129,196 @@ Native.create("com/sun/mmedia/DefaultConfiguration.nListProtocolsClose.(I)V", fu
 var PlayerCache = {
 };
 
-function Player(url) {
-    this.url = url;
-    // this.mediaFormat will only be updated by PlayerImpl.nGetMediaFormat.
-    this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
-    this.contentType = "";
-    this.wholeContentSize = -1;
-    this.contentSize = 0;
-    this.volume = -1;
-    this.isMuted = false;
+function AudioPlayer(playerContainer) {
+    this.playerContainer = playerContainer;
 
-    /* @type {Int8Array} */
-    this.data = null;
+    this.isMuted = false;
 
     /* @type {AudioBuffer} */
     this.audioBuffer = null;
 
-    /* @type {AudioContext} */
-    this.audioContext = null;
+    this.audioContext = new AudioContext();
 
     /* @type {AudioBufferSourceNode} */
     this.source = null;
 
     /*
      * Audio gain node used to control volume.
-     * @type {GainNode}
      */
-    this.gainNode = null;
+    this.gainNode = this.audioContext.createGain();
+
+    this.volume = Math.round(this.gainNode.gain.value * 100);
+
+    this.gainNode.connect(this.audioContext.destination);
 
     this.isPlaying = false;
     this.startTime = 0;
     this.stopTime = 0;
     this.duration = 0;
+}
+
+AudioPlayer.prototype.realize = function() {
+    return new Promise(function(resolve, reject) { resolve(true); });
+}
+
+AudioPlayer.prototype.play = function() {
+    var offset = this.stopTime - this.startTime;
+    this.source = this.audioContext.createBufferSource();
+    this.source.buffer = this.cloneBuffer();
+    this.source.connect(this.gainNode || this.audioContext.destination);
+    this.source.start(0, offset);
+    this.isPlaying = true;
+    this.startTime = this.audioContext.currentTime - offset;
+    this.source.onended = function() {
+        this.close();
+    }.bind(this);
+}
+
+AudioPlayer.prototype.start = function() {
+    if (this.playerContainer.contentSize > 0) {
+        this.decode(this.playerContainer.data.subarray(0, this.playerContainer.contentSize), function(decoded) {
+            // Save a copy of the audio buffer for resumimg or replaying.
+            this.audioBuffer = decoded;
+            this.duration = decoded.duration;
+            this.play();
+        }.bind(this));
+
+        return;
+    }
+
+    console.warn("Cannot start playing.");
+}
+
+AudioPlayer.prototype.pause = function() {
+    if (!this.isPlaying) {
+        return;
+    }
+
+    this.isPlaying = false;
+    this.source.onended = null;
+    this.stopTime = this.audioContext.currentTime;
+    this.source.stop();
+    this.source.disconnect();
+    this.source = null;
+}
+
+AudioPlayer.prototype.resume = function() {
+    if (this.isPlaying) {
+        return;
+    }
+
+    if (this.stopTime - this.startTime >= this.duration) {
+        return;
+    }
+
+    this.play();
+}
+
+AudioPlayer.prototype.close = function() {
+    if (this.source) {
+        this.source.stop();
+        this.source.disconnect();
+        this.source = null;
+    }
+
+    if (this.gainNode) {
+        this.gainNode.disconnect();
+        this.gainNode = null;
+    }
+
+    this.audioBuffer = null;
+
+    this.startTime = 0;
+    this.stopTime = 0;
+    this.isPlaying = false;
+}
+
+AudioPlayer.prototype.getMediaTime = function() {
+    if (!this.audioContext) {
+        return -1;
+    }
+
+    var time = 0;
+
+    if (this.isPlaying) {
+        time = this.audioContext.currentTime - this.startTime;
+    } else {
+        time = Math.min(this.duration, this.stopTime - this.startTime);
+    }
+
+    return Math.round(time * 1000);
+}
+
+AudioPlayer.prototype.cloneBuffer = function() {
+    var buffer = this.audioBuffer;
+    var cloned = this.audioContext.createBuffer(
+                    buffer.numberOfChannels,
+                    buffer.length,
+                    buffer.sampleRate
+                 );
+
+    for (var i = 0; i < buffer.numberOfChannels; ++i) {
+        var channel = buffer.getChannelData(i);
+        cloned.getChannelData(i).set(new Float32Array(channel));
+    }
+    return cloned;
+};
+
+AudioPlayer.prototype.decode = function(encoded, callback) {
+    this.audioContext.decodeAudioData(encoded.buffer, callback);
+};
+
+AudioPlayer.prototype.getVolume = function() {
+    return this.volume;
+};
+
+AudioPlayer.prototype.setVolume = function(level) {
+    if (!this.gainNode) {
+        return -1;
+    }
+    if (level < 0) {
+        level = 0;
+    } else if (level > 100) {
+        level = 100;
+    }
+    this.volume = level;
+    if (!this.isMuted) {
+        this.gainNode.gain.value = level / 100;
+    }
+    return level;
+}
+
+AudioPlayer.prototype.getMute = function() {
+    return this.isMuted;
+}
+
+AudioPlayer.prototype.setMute = function(mute) {
+    if (this.isMuted === mute) {
+        return;
+    }
+    this.isMuted = mute;
+    if (!this.gainNode) {
+        return;
+    }
+    if (mute) {
+        this.gainNode.gain.value = 0;
+    } else {
+        this.gainNode.gain.value = this.volume / 100;
+    }
+}
+
+function Player(url) {
+    this.url = url;
+
+    // this.mediaFormat will only be updated by PlayerImpl.nGetMediaFormat.
+    this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
+    this.contentType = "";
+
+    this.wholeContentSize = -1;
+    this.contentSize = 0;
+    this.data = null;
+
+    this.player = null;
 }
 
 // default buffer size 1 MB
@@ -168,59 +329,41 @@ Player.prototype.guessFormatFromURL = function() {
 }
 
 Player.prototype.realize = function(contentType) {
-    if (contentType) {
-        switch (contentType) {
-            case "audio/x-wav":
-            case "audio/amr":
-            case "audio/mpeg":
-                this.contentType = contentType;
-                break;
-            default:
-                console.warn("Unsupported content type: " + contentType);
-                return false;
+    return new Promise((function(resolve, reject) {
+        if (contentType) {
+            switch (contentType) {
+                case "audio/x-wav":
+                case "audio/amr":
+                case "audio/mpeg":
+                    this.contentType = contentType;
+                    break;
+                default:
+                    console.warn("Unsupported content type: " + contentType);
+                    resolve(false);
+                    return;
+            }
         }
-    }
-    this.audioContext = new AudioContext();
-    if (this.isVolumeControlSupported()) {
-        this.gainNode = this.audioContext.createGain();
-        this.volume = Math.round(this.gainNode.gain.value * 100);
-        this.gainNode.connect(this.audioContext.destination);
-    }
-    return true;
+
+        if (supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
+            this.player = new AudioPlayer(this);
+            this.player.realize().then(resolve);
+        } else {
+            console.warn("Unsupported media format: " + this.mediaFormat);
+            resolve(false);
+        }
+    }).bind(this));
 };
 
 Player.prototype.close = function() {
-    if (this.source) {
-        this.source.stop();
-        this.source.disconnect();
-        this.source = null;
-    }
-    if (this.gainNode) {
-        this.gainNode.disconnect();
-        this.gainNode = null;
-    }
-    this.audioBuffer = null;
     this.data = null;
-
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.isPlaying = false;
+    this.player.close();
 };
 
 /**
  * @return current time in ms.
  */
 Player.prototype.getMediaTime = function() {
-    if (!this.audioContext) {
-        return -1;
-    }
-    var time = 0;
-    if (this.isPlaying) {
-        time = this.audioContext.currentTime - this.startTime;
-    } else {
-        time = Math.min(this.duration, this.stopTime - this.startTime);
-    }
-    return Math.round(time * 1000);
+    return this.player.getMediaTime();
 };
 
 Player.prototype.getBufferSize = function() {
@@ -307,113 +450,35 @@ Player.prototype.writeBuffer = function(buffer) {
 };
 
 Player.prototype.play = function() {
-    var offset = this.stopTime - this.startTime;
-    this.source = this.audioContext.createBufferSource();
-    this.source.buffer = this.cloneBuffer();
-    this.source.connect(this.gainNode || this.audioContext.destination);
-    this.source.start(0, offset);
-    this.isPlaying = true;
-    this.startTime = this.audioContext.currentTime - offset;
-    this.source.onended = function() {
-        this.close();
-    }.bind(this);
+    this.player.play();
 };
 
 Player.prototype.start = function() {
-    return new Promise(function(resolve, reject) {
-        if (this.contentSize > 0) {
-            this.decode(this.data.subarray(0, this.contentSize), function(decoded) {
-                // Save a copy of the audio buffer for resumimg or replaying.
-                this.audioBuffer = decoded;
-                this.duration = decoded.duration;
-                this.play();
-                resolve();
-            }.bind(this));
-            return;
-        }
-        console.warn("Cannot start playing.");
-        resolve();
-    }.bind(this));
+    this.player.start();
 };
 
 Player.prototype.pause = function() {
-    if (!this.isPlaying) {
-        return;
-    }
-    this.isPlaying = false;
-    this.source.onended = null;
-    this.stopTime = this.audioContext.currentTime;
-    this.source.stop();
-    this.source.disconnect();
-    this.source = null;
+    this.player.pause();
 };
 
 Player.prototype.resume = function() {
-    if (this.isPlaying) {
-        return;
-    }
-    if (this.stopTime - this.startTime >= this.duration) {
-        return;
-    }
-    this.play();
-};
-
-Player.prototype.cloneBuffer = function() {
-    var buffer = this.audioBuffer;
-    var cloned = this.audioContext.createBuffer(
-                    buffer.numberOfChannels,
-                    buffer.length,
-                    buffer.sampleRate
-                 );
-
-    for (var i = 0; i < buffer.numberOfChannels; ++i) {
-        var channel = buffer.getChannelData(i);
-        cloned.getChannelData(i).set(new Float32Array(channel));
-    }
-    return cloned;
-};
-
-Player.prototype.decode = function(encoded, callback) {
-    this.audioContext.decodeAudioData(encoded.buffer, callback);
+    this.player.resume();
 };
 
 Player.prototype.getVolume = function() {
-    return this.volume;
+    return this.player.getVolume();
 };
 
 Player.prototype.setVolume = function(level) {
-    if (!this.gainNode) {
-        return -1;
-    }
-    if (level < 0) {
-        level = 0;
-    } else if (level > 100) {
-        level = 100;
-    }
-    this.volume = level;
-    if (!this.isMuted) {
-        this.gainNode.gain.value = level / 100;
-    }
-    return level;
+    this.player.setVolume(level);
 };
 
 Player.prototype.getMute = function() {
-    return this.isMuted;
+    return this.player.getMute();
 };
 
 Player.prototype.setMute = function(mute) {
-    if (this.isMuted === mute) {
-        return;
-    }
-    this.isMuted = mute;
-    if (!this.gainNode) {
-        return;
-    }
-    if (mute) {
-        this.gainNode.gain.value = 0;
-    } else {
-        this.gainNode.gain.value = this.volume / 100;
-    }
+    return this.player.setMute(mute);
 };
 
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
@@ -451,7 +516,7 @@ Native.create("com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z", funct
     var mime = util.fromJavaString(jMime);
     var player = PlayerCache[handle];
     return player.realize(mime);
-});
+}, true);
 
 
 Native.create("com/sun/mmedia/MediaDownload.nGetJavaBufferSize.(I)I", function(handle) {
