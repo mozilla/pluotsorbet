@@ -420,7 +420,9 @@ PlayerContainer.prototype.realize = function(contentType) {
 
 PlayerContainer.prototype.close = function() {
     this.data = null;
-    this.player.close();
+    if (this.player) {
+        this.player.close();
+    }
 };
 
 /**
