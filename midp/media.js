@@ -545,7 +545,7 @@ Native.create("com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I", function(handl
 });
 
 Native.create("com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z", function(handle) {
-    console.error("com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z not implemented");
+    console.warn("com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z not implemented");
     return true;
 });
 
