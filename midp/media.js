@@ -367,7 +367,7 @@ ImagePlayer.prototype.setVisible = function(visible) {
     this.image.style.visibility = visible ? "visible" : "hidden";
 }
 
-function Player(url) {
+function PlayerContainer(url) {
     this.url = url;
 
     // this.mediaFormat will only be updated by PlayerImpl.nGetMediaFormat.
@@ -382,13 +382,13 @@ function Player(url) {
 }
 
 // default buffer size 1 MB
-Player.DEFAULT_BUFFER_SIZE  = 1024 * 1024;
+PlayerContainer.DEFAULT_BUFFER_SIZE  = 1024 * 1024;
 
-Player.prototype.guessFormatFromURL = function() {
+PlayerContainer.prototype.guessFormatFromURL = function() {
     return Media.extToFormat.get(this.url.substr(this.url.lastIndexOf(".") + 1)) || "UNKNOWN";
 }
 
-Player.prototype.realize = function(contentType) {
+PlayerContainer.prototype.realize = function(contentType) {
     return new Promise((function(resolve, reject) {
         if (contentType) {
             switch (contentType) {
@@ -418,7 +418,7 @@ Player.prototype.realize = function(contentType) {
     }).bind(this));
 };
 
-Player.prototype.close = function() {
+PlayerContainer.prototype.close = function() {
     this.data = null;
     this.player.close();
 };
@@ -426,16 +426,16 @@ Player.prototype.close = function() {
 /**
  * @return current time in ms.
  */
-Player.prototype.getMediaTime = function() {
+PlayerContainer.prototype.getMediaTime = function() {
     return this.player.getMediaTime();
 };
 
-Player.prototype.getBufferSize = function() {
-    return this.wholeContentSize === -1 ? Player.DEFAULT_BUFFER_SIZE :
+PlayerContainer.prototype.getBufferSize = function() {
+    return this.wholeContentSize === -1 ? PlayerContainer.DEFAULT_BUFFER_SIZE :
                                           this.wholeContentSize;
 };
 
-Player.prototype.getMediaFormat = function() {
+PlayerContainer.prototype.getMediaFormat = function() {
     if (this.contentSize === 0) {
         return this.mediaFormat;
     }
@@ -460,11 +460,11 @@ Player.prototype.getMediaFormat = function() {
     return this.mediaFormat;
 };
 
-Player.prototype.getContentType = function() {
+PlayerContainer.prototype.getContentType = function() {
     return this.contentType;
 };
 
-Player.prototype.isHandledByDevice = function() {
+PlayerContainer.prototype.isHandledByDevice = function() {
     // TODO: Handle download in JS also for audio formats
     if (Media.supportedAudioFormats.indexOf(this.mediaFormat) === -1) {
         return true;
@@ -473,7 +473,7 @@ Player.prototype.isHandledByDevice = function() {
     }
 };
 
-Player.prototype.isVideoControlSupported = function() {
+PlayerContainer.prototype.isVideoControlSupported = function() {
     if (this.mediaFormat !== "UNKNOWN") {
         switch (this.mediaFormat) {
             case "JPEG":
@@ -493,7 +493,7 @@ Player.prototype.isVideoControlSupported = function() {
     return false;
 };
 
-Player.prototype.isVolumeControlSupported = function() {
+PlayerContainer.prototype.isVolumeControlSupported = function() {
     if (this.mediaFormat !== "UNKNOWN") {
         switch (this.mediaFormat) {
             case "amr":
@@ -517,7 +517,7 @@ Player.prototype.isVolumeControlSupported = function() {
     return false;
 };
 
-Player.prototype.writeBuffer = function(buffer) {
+PlayerContainer.prototype.writeBuffer = function(buffer) {
     if (this.contentSize === 0) {
         this.data = util.newPrimitiveArray("B", this.getBufferSize());
     }
@@ -526,58 +526,58 @@ Player.prototype.writeBuffer = function(buffer) {
     this.contentSize += buffer.length;
 };
 
-Player.prototype.play = function() {
+PlayerContainer.prototype.play = function() {
     this.player.play();
 };
 
-Player.prototype.start = function() {
+PlayerContainer.prototype.start = function() {
     this.player.start();
 };
 
-Player.prototype.pause = function() {
+PlayerContainer.prototype.pause = function() {
     this.player.pause();
 };
 
-Player.prototype.resume = function() {
+PlayerContainer.prototype.resume = function() {
     this.player.resume();
 };
 
-Player.prototype.getVolume = function() {
+PlayerContainer.prototype.getVolume = function() {
     return this.player.getVolume();
 };
 
-Player.prototype.setVolume = function(level) {
+PlayerContainer.prototype.setVolume = function(level) {
     this.player.setVolume(level);
 };
 
-Player.prototype.getMute = function() {
+PlayerContainer.prototype.getMute = function() {
     return this.player.getMute();
 };
 
-Player.prototype.setMute = function(mute) {
+PlayerContainer.prototype.setMute = function(mute) {
     return this.player.setMute(mute);
 };
 
-Player.prototype.getWidth = function() {
+PlayerContainer.prototype.getWidth = function() {
     return this.player.getWidth();
 }
 
-Player.prototype.getHeight = function() {
+PlayerContainer.prototype.getHeight = function() {
     return this.player.getHeight();
 }
 
-Player.prototype.setLocation = function(x, y, w, h) {
+PlayerContainer.prototype.setLocation = function(x, y, w, h) {
     this.player.setLocation(x, y, w, h);
 }
 
-Player.prototype.setVisible = function(visible) {
+PlayerContainer.prototype.setVisible = function(visible) {
     this.player.setVisible(visible);
 }
 
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
     var url = util.fromJavaString(jURI);
     var id = pId + (appId << 32);
-    Media.PlayerCache[id] = new Player(url);
+    Media.PlayerCache[id] = new PlayerContainer(url);
     return id;
 });
 
