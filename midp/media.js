@@ -55,6 +55,8 @@ var ListCache = {
 
 var extToFormat = new Map([
     ["mp3", "MPEG_layer_3"],
+    ["jpg", "JPEG"],
+    ["jpeg", "JPEG"],
 ]);
 
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
