@@ -253,6 +253,26 @@ Player.prototype.getMediaFormat = function() {
     return this.mediaFormat;
 };
 
+Player.prototype.isVideoControlSupported = function() {
+    if (this.mediaFormat !== "UNKNOWN") {
+        switch (this.mediaFormat) {
+            case "JPEG":
+                return true;
+            default:
+                return false;
+        }
+    }
+    if (this.contentType) {
+        switch (this.contentType) {
+            case "image/jpeg":
+                return true;
+            default:
+                return false;
+        }
+    }
+    return false;
+};
+
 Player.prototype.isVolumeControlSupported = function() {
     if (this.mediaFormat !== "UNKNOWN") {
         switch (this.mediaFormat) {
@@ -480,9 +500,7 @@ Native.create("com/sun/mmedia/DirectPlayer.nIsMIDIControlSupported.(I)Z", functi
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nIsVideoControlSupported.(I)Z", function(handle) {
-    var player = PlayerCache[handle];
-    console.warn("com/sun/mmedia/DirectPlayer.nIsVideoControlSupported.(I)Z not implemented.");
-    return false;
+    return PlayerCache[handle].isVideoControlSupported();
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nIsVolumeControlSupported.(I)Z", function(handle) {
