@@ -157,6 +157,9 @@ function AudioPlayer(playerContainer) {
     this.startTime = 0;
     this.stopTime = 0;
     this.duration = 0;
+
+    this.isVideoControlSupported = false;
+    this.isAudioControlSupported = true;
 }
 
 AudioPlayer.prototype.realize = function() {
@@ -315,6 +318,9 @@ function ImagePlayer(playerContainer) {
     this.image = new Image();
     this.image.style.position = "absolute";
     this.image.style.visibility = "hidden";
+
+    this.isVideoControlSupported = true;
+    this.isAudioControlSupported = false;
 }
 
 ImagePlayer.prototype.realize = function() {
@@ -470,57 +476,15 @@ PlayerContainer.prototype.getContentType = function() {
 
 PlayerContainer.prototype.isHandledByDevice = function() {
     // TODO: Handle download in JS also for audio formats
-    if (Media.supportedAudioFormats.indexOf(this.mediaFormat) === -1) {
-        return true;
-    } else {
-        return false;
-    }
+    return Media.supportedAudioFormats.indexOf(this.mediaFormat) === -1;
 };
 
 PlayerContainer.prototype.isVideoControlSupported = function() {
-    if (this.mediaFormat !== "UNKNOWN") {
-        switch (this.mediaFormat) {
-            case "JPEG":
-            case "PNG":
-                return true;
-            default:
-                return false;
-        }
-    }
-    if (this.contentType) {
-        switch (this.contentType) {
-            case "image/jpeg":
-            case "image/png":
-                return true;
-            default:
-                return false;
-        }
-    }
-    return false;
+    return this.player.isVideoControlSupported;
 };
 
 PlayerContainer.prototype.isVolumeControlSupported = function() {
-    if (this.mediaFormat !== "UNKNOWN") {
-        switch (this.mediaFormat) {
-            case "amr":
-            case "wav":
-            case "MPEG_layer_3":
-                return true;
-            default:
-                return false;
-        }
-    }
-    if (this.contentType) {
-        switch (this.contentType) {
-            case "audio/amr":
-            case "audio/x-wav":
-            case "audio/mpeg":
-                return true;
-            default:
-                return false;
-        }
-    }
-    return false;
+    return this.player.isVolumeControlSupported;
 };
 
 PlayerContainer.prototype.writeBuffer = function(buffer) {
