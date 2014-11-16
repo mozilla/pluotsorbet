@@ -58,10 +58,11 @@ Media.extToFormat = new Map([
     ["mp3", "MPEG_layer_3"],
     ["jpg", "JPEG"],
     ["jpeg", "JPEG"],
+    ["png", "PNG"],
 ]);
 
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr"];
-Media.supportedImageFormats = ["JPEG"];
+Media.supportedImageFormats = ["JPEG", "PNG"];
 
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
@@ -396,6 +397,7 @@ PlayerContainer.prototype.realize = function(contentType) {
                 case "audio/amr":
                 case "audio/mpeg":
                 case "image/jpeg":
+                case "image/png":
                     this.contentType = contentType;
                     break;
                 default:
@@ -479,6 +481,7 @@ PlayerContainer.prototype.isVideoControlSupported = function() {
     if (this.mediaFormat !== "UNKNOWN") {
         switch (this.mediaFormat) {
             case "JPEG":
+            case "PNG":
                 return true;
             default:
                 return false;
@@ -487,6 +490,7 @@ PlayerContainer.prototype.isVideoControlSupported = function() {
     if (this.contentType) {
         switch (this.contentType) {
             case "image/jpeg":
+            case "image/png":
                 return true;
             default:
                 return false;
