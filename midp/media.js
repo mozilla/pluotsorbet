@@ -346,6 +346,26 @@ ImagePlayer.prototype.getMediaTime = function() {
     return -1;
 }
 
+ImagePlayer.prototype.getWidth = function() {
+    return this.image.naturalWidth;
+}
+
+ImagePlayer.prototype.getHeight = function() {
+    return this.image.naturalHeight;
+}
+
+ImagePlayer.prototype.setLocation = function(x, y, w, h) {
+    this.image.style.left = x + "px";
+    this.image.style.top = y + "px";
+    this.image.style.width = w + "px";
+    this.image.style.height = h + "px";
+    document.getElementById("display").appendChild(this.image);
+}
+
+ImagePlayer.prototype.setVisible = function(visible) {
+    this.image.style.visibility = visible ? "visible" : "hidden";
+}
+
 function Player(url) {
     this.url = url;
 
@@ -537,6 +557,22 @@ Player.prototype.setMute = function(mute) {
     return this.player.setMute(mute);
 };
 
+Player.prototype.getWidth = function() {
+    return this.player.getWidth();
+}
+
+Player.prototype.getHeight = function() {
+    return this.player.getHeight();
+}
+
+Player.prototype.setLocation = function(x, y, w, h) {
+    this.player.setLocation(x, y, w, h);
+}
+
+Player.prototype.setVisible = function(visible) {
+    this.player.setVisible(visible);
+}
+
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
     var url = util.fromJavaString(jURI);
     var id = pId + (appId << 32);
@@ -709,6 +745,24 @@ Native.create("com/sun/mmedia/DirectPlayer.nPause.(I)Z", function(handle) {
 Native.create("com/sun/mmedia/DirectPlayer.nResume.(I)Z", function(handle) {
     var player = PlayerCache[handle];
     player.resume();
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nGetWidth.(I)I", function(handle) {
+    return PlayerCache[handle].getWidth();
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nGetHeight.(I)I", function(handle) {
+    return PlayerCache[handle].getHeight();
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nSetLocation.(IIIII)Z", function(handle, x, y, w, h) {
+    PlayerCache[handle].setLocation(x, y, w, h);
+    return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nSetVisible.(IZ)Z", function(handle, visible) {
+    PlayerCache[handle].setVisible(visible);
     return true;
 });
 
