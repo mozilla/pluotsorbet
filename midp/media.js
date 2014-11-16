@@ -396,6 +396,10 @@ Player.prototype.getMediaFormat = function() {
     return this.mediaFormat;
 };
 
+Player.prototype.getContentType = function() {
+    return this.contentType;
+};
+
 Player.prototype.isVideoControlSupported = function() {
     if (this.mediaFormat !== "UNKNOWN") {
         switch (this.mediaFormat) {
@@ -505,6 +509,10 @@ Native.create("com/sun/mmedia/PlayerImpl.nGetMediaFormat.(I)Ljava/lang/String;",
     var player = PlayerCache[handle];
     player.mediaFormat = player.getMediaFormat();
     return player.mediaFormat;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nGetContentType.(I)Ljava/lang/String;", function(handle) {
+    return PlayerCache[handle].getContentType();
 });
 
 Native.create("com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z", function(handle) {
