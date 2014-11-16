@@ -60,7 +60,7 @@ var extToFormat = new Map([
 ]);
 
 var supportedAudioFormats = ["MPEG_layer_3", "wav", "amr"];
-var supportedVideoFormats = ["JPEG"];
+var supportedImageFormats = ["JPEG"];
 
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
@@ -307,6 +307,45 @@ AudioPlayer.prototype.setMute = function(mute) {
     }
 }
 
+function ImagePlayer(playerContainer) {
+    this.url = playerContainer.url;
+
+    this.image = new Image();
+    this.image.style.position = "absolute";
+    this.image.style.visibility = "hidden";
+}
+
+ImagePlayer.prototype.realize = function() {
+    return new Promise((function(resolve, reject) {
+        if (this.url.startsWith("file")) {
+            fs.open(this.url.substring(7), (function(fd) {
+                var imgData = fs.read(fd);
+                fs.close(fd);
+
+                this.image.src = URL.createObjectURL(new Blob([ imgData ]));
+                resolve(true);
+            }).bind(this));
+        } else {
+            this.image.src = this.url;
+            resolve(true);
+        }
+    }).bind(this));
+}
+
+ImagePlayer.prototype.start = function() {
+}
+
+ImagePlayer.prototype.pause = function() {
+}
+
+ImagePlayer.prototype.close = function() {
+    document.getElementById("display").removeChild(this.image);
+}
+
+ImagePlayer.prototype.getMediaTime = function() {
+    return -1;
+}
+
 function Player(url) {
     this.url = url;
 
@@ -335,6 +374,7 @@ Player.prototype.realize = function(contentType) {
                 case "audio/x-wav":
                 case "audio/amr":
                 case "audio/mpeg":
+                case "image/jpeg":
                     this.contentType = contentType;
                     break;
                 default:
@@ -346,6 +386,9 @@ Player.prototype.realize = function(contentType) {
 
         if (supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
             this.player = new AudioPlayer(this);
+            this.player.realize().then(resolve);
+        } else if (supportedImageFormats.indexOf(this.mediaFormat) !== -1) {
+            this.player = new ImagePlayer(this);
             this.player.realize().then(resolve);
         } else {
             console.warn("Unsupported media format: " + this.mediaFormat);
@@ -398,6 +441,15 @@ Player.prototype.getMediaFormat = function() {
 
 Player.prototype.getContentType = function() {
     return this.contentType;
+};
+
+Player.prototype.isHandledByDevice = function() {
+    // TODO: Handle download in JS also for audio formats
+    if (supportedAudioFormats.indexOf(this.mediaFormat) === -1) {
+        return true;
+    } else {
+        return false;
+    }
 };
 
 Player.prototype.isVideoControlSupported = function() {
@@ -516,8 +568,7 @@ Native.create("com/sun/mmedia/DirectPlayer.nGetContentType.(I)Ljava/lang/String;
 });
 
 Native.create("com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z", function(handle) {
-    console.warn("com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z not implemented");
-    return false;
+    return PlayerCache[handle].isHandledByDevice();
 });
 
 Native.create("com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z", function(handle, jMime) {
