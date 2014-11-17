@@ -479,7 +479,7 @@ PlayerContainer.prototype.getContentType = function() {
 
 PlayerContainer.prototype.isHandledByDevice = function() {
     // TODO: Handle download in JS also for audio formats
-    return Media.supportedAudioFormats.indexOf(this.mediaFormat) === -1;
+    return this.url !== null && Media.supportedAudioFormats.indexOf(this.mediaFormat) === -1;
 };
 
 PlayerContainer.prototype.isVideoControlSupported = function() {
