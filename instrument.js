@@ -141,18 +141,18 @@ var Instrument = {
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.<init>.(Ljava/lang/String;ILjava/io/InputStream;Ljava/io/OutputStream;Lcom/sun/midp/pki/CertStore;)V"] = function(caller, callee) {
-  var _this = caller.stack.read(6), port = caller.stack.read(4), host = util.fromJavaString(caller.stack.read(5));
+  var _this = caller.stack.readRef(6), port = caller.stack.readInt(4), host = util.fromJavaString(caller.stack.readRef(5));
   _this.logBuffer = "SSLStreamConnection to " + host + ":" + port + ":\n";
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.(I)V"] = function(caller, callee) {
-  var _this = caller.stack.read(3);
+  var _this = caller.stack.readRef(3);
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
-  connection.logBuffer += String.fromCharCode(callee.stack.read(1));
+  connection.logBuffer += String.fromCharCode(callee.stack.readInt(1));
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee) {
-  var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3), _this = caller.stack.read(4);
+  var len = caller.stack.readInt(1), off = caller.stack.readInt(2), b = caller.stack.readRef(3), _this = caller.stack.readRef(4);
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
@@ -163,14 +163,14 @@ Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee
 Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
   // We can't use caller.stack.read() here, because the length of the caller's
   // stack differs depending on whether or not In.read threw an exception.
-  var _this = caller.stack[2];
+  var _this = caller.stack.getRef(2);
 
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
-  connection.logBuffer += String.fromCharCode(callee.stack.read(1));
+  connection.logBuffer += String.fromCharCode(callee.stack.readInt(1));
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
-  var len = caller.stack.read(4), off = caller.stack.read(5), b = caller.stack.read(6), _this = caller.stack.read(7);
+  var len = caller.stack.readInt(4), off = caller.stack.readInt(5), b = caller.stack.readRef(6), _this = caller.stack.readRef(7);
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
@@ -179,7 +179,7 @@ Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.close.()V"] = function(caller, callee) {
-  var _this = caller.stack.read(1);
+  var _this = caller.stack.readRef(1);
   if ("logBuffer" in _this) {
     console.log(_this.logBuffer);
     delete _this.logBuffer;

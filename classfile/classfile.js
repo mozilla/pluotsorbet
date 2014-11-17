@@ -10,7 +10,7 @@ var getClassImage = function(classBytes) {
         var reader = new Reader(bytes);
         var attribute = { attribute_name_index: attribute_name_index };
 
-        var item = classImage.constant_pool[attribute_name_index];
+        var item = classImage.constant_pool.get(attribute_name_index);
 
         switch(item.tag) {
             case TAGS.CONSTANT_Long:
@@ -105,7 +105,7 @@ var getClassImage = function(classBytes) {
         major_version: reader.read16()
     };
 
-    classImage.constant_pool = [ null ];
+    classImage.constant_pool = new ConstantPool([ null ]);
     var constant_pool_count = reader.read16();
     for(var i=1; i<constant_pool_count; i++) {
         var tag = reader.read8();

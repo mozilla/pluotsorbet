@@ -103,8 +103,8 @@ function MethodInfo(opts) {
 var ClassInfo = function(classBytes) {
     var classImage = getClassImage(classBytes, this);
     var cp = classImage.constant_pool;
-    this.className = cp[cp[classImage.this_class].name_index].bytes;
-    this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
+    this.className = cp.get(cp.get(classImage.this_class).name_index).bytes;
+    this.superClassName = classImage.super_class ? cp.get(cp.get(classImage.super_class).name_index).bytes : null;
     this.access_flags = classImage.access_flags;
     this.constant_pool = cp;
     this.constructor = function () {
@@ -121,16 +121,16 @@ var ClassInfo = function(classBytes) {
 
     this.interfaces = [];
     classImage.interfaces.forEach(function(i) {
-        var int = CLASSES.loadClass(cp[cp[i].name_index].bytes);
+        var int = CLASSES.loadClass(cp.get(cp.get(i).name_index).bytes);
         self.interfaces.push(int);
         self.interfaces = self.interfaces.concat(int.interfaces);
     });
 
     this.fields = [];
     classImage.fields.forEach(function(f) {
-        var field = new FieldInfo(self, f.access_flags, cp[f.name_index].bytes, cp[f.descriptor_index].bytes);
+        var field = new FieldInfo(self, f.access_flags, cp.get(f.name_index).bytes, cp.get(f.descriptor_index).bytes);
         f.attributes.forEach(function(attribute) {
-            if (cp[attribute.attribute_name_index].bytes === "ConstantValue")
+            if (cp.get(attribute.attribute_name_index).bytes === "ConstantValue")
                 field.constantValue = new DataView(attribute.info).getUint16(0, false);
         });
         self.fields.push(field);
@@ -139,8 +139,8 @@ var ClassInfo = function(classBytes) {
     this.methods = [];
     classImage.methods.forEach(function(m) {
         self.methods.push(new MethodInfo({
-            name: cp[m.name_index].bytes,
-            signature: cp[m.signature_index].bytes,
+            name: cp.get(m.name_index).bytes,
+            signature: cp.get(m.signature_index).bytes,
             classInfo: self,
             attributes: m.attributes,
             isNative: ACCESS_FLAGS.isNative(m.access_flags),
@@ -154,9 +154,9 @@ var ClassInfo = function(classBytes) {
     classImage.attributes.forEach(function(a) {
         if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
             a.info.classes.forEach(function(c) {
-                classes.push(cp[cp[c.inner_class_info_index].name_index].bytes);
+                classes.push(cp.get(cp.get(c.inner_class_info_index).name_index).bytes);
                 if (c.outer_class_info_index)
-                    classes.push(cp[cp[c.outer_class_info_index].name_index].bytes);
+                    classes.push(cp.get(cp.get(c.outer_class_info_index).name_index).bytes);
             });
         }
     });
