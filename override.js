@@ -61,13 +61,15 @@ function getReturnFunction(sig) {
   return fxn;
 }
 
-function executePromise(stack, ret, doReturn, ctx, key) {
+function executePromise(stack, ret, doReturn, ctx, key, cb) {
   if (ret && ret.then) { // ret.constructor.name == "Promise"
     ret.then(function(res) {
       if (Instrument.profiling) {
         Instrument.exitAsyncNative(key, ret);
       }
-
+      if (cb) {
+        stack = cb();
+      }
       doReturn(stack, res);
     }, function(e) {
       ctx.raiseException(e.javaClassName, e.message);
@@ -79,6 +81,10 @@ function executePromise(stack, ret, doReturn, ctx, key) {
 
     throw VM.Pause;
   } else {
+    // !!!! Why does this every hapen? Shouldn't we always have a promise here?
+    if (cb) {
+      stack = cb();
+    }
     doReturn(stack, ret);
   }
 }
@@ -111,7 +117,7 @@ function createAlternateImpl(object, key, fn, usesPromise) {
   var doReturn = getReturnFunction(key);
   var postExec = usesPromise ? executePromise : doReturn;
 
-  object[key] = function(ctx, stack, isStatic) {
+  object[key] = function(ctx, stack, isStatic, cb) {
     var args = new Array(numArgs);
 
     args[numArgs - 1] = ctx;
@@ -126,7 +132,7 @@ function createAlternateImpl(object, key, fn, usesPromise) {
     try {
       var self = isStatic ? null : stack.pop();
       var ret = fn.apply(self, args);
-      postExec(stack, ret, doReturn, ctx, key);
+      postExec(stack, ret, doReturn, ctx, key, cb);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throw e;

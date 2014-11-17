@@ -12,6 +12,11 @@ function Runtime(vm) {
   this.pending = {};
   this.staticFields = {};
   this.classObjects = {};
+
+  this.methodInfos = {};
+  this.classInfos = {};
+  this.fieldInfos = {};
+  this.functions = {};
 }
 
 Runtime.prototype.waitStatus = function(callback) {
@@ -47,6 +52,15 @@ Runtime.prototype.removeContext = function(ctx) {
     Runtime.all.delete(this);
     this.updateStatus(4); // STOPPED
   }
+}
+
+Runtime.prototype.newStringConstant = function(s) {
+    if (internedStrings.has(s)) {
+        return internedStrings.get(s);
+    }
+    var obj = util.newString(s);
+    internedStrings.set(s, obj);
+    return obj;
 }
 
 Runtime.prototype.setStatic = function(field, value) {

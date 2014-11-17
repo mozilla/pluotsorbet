@@ -23,6 +23,7 @@ VM.execute = function(ctx) {
 
     var cp = frame.cp;
     var stack = frame.stack;
+    var returnValue = null;
 
     function pushFrame(methodInfo) {
         var caller = frame;
@@ -32,8 +33,8 @@ VM.execute = function(ctx) {
         if (methodInfo.isSynchronized) {
             if (!frame.lockObject) {
                 frame.lockObject = methodInfo.isStatic
-                                     ? methodInfo.classInfo.getClassObject(ctx)
-                                     : frame.getLocal(0);
+                                    ? methodInfo.classInfo.getClassObject(ctx)
+                                    : frame.getLocal(0);
             }
 
             ctx.monitorEnter(frame.lockObject);
@@ -46,6 +47,18 @@ VM.execute = function(ctx) {
             ctx.monitorExit(frame.lockObject);
         var callee = frame;
         frame = ctx.popFrame();
+        if (frame === null) {
+            returnValue = null;
+            switch (consumes) {
+            case 2:
+                returnValue = callee.stack.pop2();
+                break;
+            case 1:
+                returnValue = callee.stack.pop();
+                break;
+            }
+            return true;
+        }
         stack = frame.stack;
         cp = frame.cp;
         switch (consumes) {
@@ -56,8 +69,9 @@ VM.execute = function(ctx) {
             stack.push(callee.stack.pop());
             break;
         }
-        return frame;
+        return false;
     }
+
 
     function buildExceptionLog(ex, stackTrace) {
         var className = ex.class.className;
@@ -109,8 +123,7 @@ VM.execute = function(ctx) {
             }
 
             popFrame(0);
-        } while (frame.methodInfo);
-
+        } while (frame);
         ctx.kill();
 
         if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
@@ -143,51 +156,15 @@ VM.execute = function(ctx) {
     }
 
     function resolve(idx, isStatic) {
-        var constant = cp[idx];
-        if (!constant.tag)
-            return constant;
-        switch(constant.tag) {
-        case 3: // TAGS.CONSTANT_Integer
-            constant = constant.integer;
-            break;
-        case 4: // TAGS.CONSTANT_Float
-            constant = constant.float;
-            break;
-        case 8: // TAGS.CONSTANT_String
-            constant = util.newString(cp[constant.string_index].bytes);
-            break;
-        case 5: // TAGS.CONSTANT_Long
-            constant = Long.fromBits(constant.lowBits, constant.highBits);
-            break;
-        case 6: // TAGS.CONSTANT_Double
-            constant = constant.double;
-            break;
-        case 7: // TAGS.CONSTANT_Class
-            constant = CLASSES.getClass(cp[constant.name_index].bytes);
-            break;
-        case 9: // TAGS.CONSTANT_Fieldref
-            var classInfo = resolve(constant.class_index, isStatic);
-            var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
-            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
-            if (!constant)
-                ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-                                   classInfo.className + "." + fieldName + "." + signature + " not found");
-            break;
-        case 10: // TAGS.CONSTANT_Methodref
-        case 11: // TAGS.CONSTANT_InterfaceMethodref
-            var classInfo = resolve(constant.class_index, isStatic);
-            var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
-            var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-            constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
-            if (!constant)
-                ctx.raiseExceptionAndYield("java/lang/RuntimeException",
-                                   classInfo.className + "." + methodName + "." + signature + " not found");
-            break;
-        default:
-            throw new Error("not support constant type");
+        try {
+            return ctx.resolve(cp, idx, isStatic);
+        } catch (e) {
+            if (e instanceof JavaException) {
+                ctx.raiseExceptionAndYield(e.javaClassName, e.message);
+            } else {
+                throw e;
+            }
         }
-        return cp[idx] = constant;
     }
 
     while (true) {
@@ -950,6 +927,11 @@ VM.execute = function(ctx) {
             stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow
+            if (ctx.frameSets.length > 0) {
+                // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
+                frame.ip--;
+                throw VM.Yield;
+            }
             var obj = stack.pop();
             if (!obj) {
                 ctx.raiseExceptionAndYield("java/lang/NullPointerException");
@@ -1051,15 +1033,41 @@ VM.execute = function(ctx) {
                 Instrument.callResumeHooks(ctx.current());
                 break;
             }
+
+            if (!methodInfo.dontCompile && !methodInfo.fn) {
+              ctx.compileMethodInfo(methodInfo);
+            }
+            if (methodInfo.fn) {
+                // Take off the arguments from the stack.
+                var args = stack.slice(stack.length - methodInfo.consumes);
+                stack.length -= methodInfo.consumes;
+                // Invoke the compiled function.
+                var returnValue = ctx.invokeCompiledFn(methodInfo, args);
+                // Push return value back on the stack.
+                var returnType = methodInfo.signature[methodInfo.signature.length - 1];
+                switch (returnType) {
+                    case 'V':
+                        break;
+                    case 'J':
+                    case 'D':
+                        stack.push2(returnValue);
+                        break;
+                    default:
+                        stack.push(returnValue);
+                        break;
+                }
+                break;
+            }
             pushFrame(methodInfo);
             break;
         case 0xb1: // return
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo);
             }
-            if (ctx.frames.length == 1)
-                return;
-            popFrame(0);
+            var shouldReturn = popFrame(0);
+            if (shouldReturn) {
+               return returnValue;
+            }
             break;
         case 0xac: // ireturn
         case 0xae: // freturn
@@ -1067,18 +1075,21 @@ VM.execute = function(ctx) {
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            if (ctx.frames.length == 1)
-                return;
-            popFrame(1);
+
+            var shouldReturn = popFrame(1);
+            if (shouldReturn) {
+                return returnValue;
+            }
             break;
         case 0xad: // lreturn
         case 0xaf: // dreturn
             if (VM.DEBUG) {
                 VM.trace("return", ctx.thread.pid, frame.methodInfo, stack[stack.length-1]);
             }
-            if (ctx.frames.length == 1)
-                return;
-            popFrame(2);
+            var shouldReturn = popFrame(2);
+            if (shouldReturn) {
+                return returnValue;
+            }
             break;
         default:
             var opName = OPCODES[op];

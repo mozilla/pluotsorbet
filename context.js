@@ -5,8 +5,13 @@
 
 function Context(runtime) {
   this.frames = [];
+  this.frameSets = [];
   this.runtime = runtime;
   this.runtime.addContext(this);
+  // TODO these should probably be moved to runtime...
+  this.methodInfos = runtime.methodInfos;
+  this.classInfos = runtime.classInfos;
+  this.fieldInfos = runtime.fieldInfos;
 }
 
 Context.prototype.kill = function() {
@@ -20,7 +25,16 @@ Context.prototype.current = function() {
 
 Context.prototype.pushFrame = function(methodInfo) {
   var caller = this.current();
-  var callee = new Frame(methodInfo, caller.stack, caller.stack.length - methodInfo.consumes);
+  var callee;
+  if (caller === undefined) {
+    if (methodInfo.consumes !== 0) {
+      throw new Error("A frame cannot consume arguments from a compiled frame.");
+    }
+    callee = new Frame(methodInfo, [], 0);
+  } else {
+    callee = new Frame(methodInfo, caller.stack.slice(caller.stack.length - methodInfo.consumes), 0);
+    caller.stack.length -= methodInfo.consumes;
+  }
   this.frames.push(callee);
   Instrument.callEnterHooks(methodInfo, caller, callee);
   return callee;
@@ -28,9 +42,11 @@ Context.prototype.pushFrame = function(methodInfo) {
 
 Context.prototype.popFrame = function() {
   var callee = this.frames.pop();
+  if (this.frames.length === 0) {
+    return null;
+  }
   var caller = this.current();
   Instrument.callExitHooks(callee.methodInfo, caller, callee);
-  caller.stack.length = callee.localsBase;
   return caller;
 }
 
@@ -108,13 +124,61 @@ Context.prototype.raiseException = function(className, message) {
       0xbf              // athrow
     ])
   });
-  this.pushFrame(syntheticMethod);
+  //  pushFrame() is not used since the invoker may be a compiled frame.
+  var callee = new Frame(syntheticMethod, [], 0);
+  this.frames.push(callee);
 }
 
 Context.prototype.raiseExceptionAndYield = function(className, message) {
   this.raiseException(className, message);
   throw VM.Yield;
 }
+
+Context.prototype.nullCheck = function(object) {
+  if (!object) {
+    this.raiseExceptionAndYield("java/lang/NullPointerException");
+  }
+};
+
+Context.prototype.divideByZeroCheck = function(object) {
+  if (object === 0) {
+    this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
+  }
+};
+
+Context.prototype.divideByZeroCheckLong = function(object) {
+  if (object.isZero()) {
+    this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
+  }
+};
+
+Context.prototype.checkCast = function(classInfoId, object) {
+  var classInfo = this.classInfos[classInfoId];
+  if (object && !object.class.isAssignableTo(classInfo)) {
+    this.raiseExceptionAndYield("java/lang/ClassCastException",
+        object.class.className + " is not assignable to " +
+        classInfo.className);
+  }
+};
+
+Context.prototype.invokeCompiledFn = function(methodInfo, args) {
+  args.unshift(this, 0);
+  var fn = methodInfo.fn;
+  this.frameSets.push(this.frames);
+  this.frames = [];
+  var returnValue = fn.apply(null, args);
+  this.frames = this.frameSets.pop();
+  return returnValue;
+};
+
+Context.prototype.compileMethodInfo = function(methodInfo) {
+  var fn = J2ME.compileMethodInfo(methodInfo, this, J2ME.CompilationTarget.Runtime);
+  if (fn) {
+    methodInfo.fn = fn;
+  } else {
+    methodInfo.dontCompile = true;
+  }
+};
 
 Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());
@@ -133,14 +197,11 @@ Context.prototype.execute = function() {
         throw e;
       }
     }
-  } while (this.frames.length !== 1);
-
-  this.frames.pop();
+  } while (this.frames.length !== 0);
 }
 
 Context.prototype.start = function() {
   var ctx = this;
-
   Instrument.callResumeHooks(ctx.current());
   try {
     VM.execute(ctx);
@@ -158,11 +219,8 @@ Context.prototype.start = function() {
   }
   Instrument.callPauseHooks(ctx.current());
 
-  // If there's one frame left, we're back to
-  // the method that created the thread and
-  // we're done.
-  if (ctx.frames.length === 1) {
-    ctx.kill();
+  if (ctx.frames.length === 0) {
+      ctx.kill();
     return;
   }
 
@@ -266,3 +324,101 @@ Context.prototype.notify = function(obj, notifyAll) {
     ctx.wakeup(obj);
   });
 }
+
+Context.prototype.newObjectFromId = function(id) {
+    return util.newObject(this.classInfos[id]);
+}
+
+Context.prototype.newStringConstant = function(s) {
+    return this.runtime.newStringConstant(s);
+}
+
+Context.prototype.getStatic = function(fieldInfoId, type) {
+  // TODO unify this with getstatic in runtime and the VM getstatic code.
+  var value = this.runtime.staticFields[fieldInfoId];
+  if (typeof value === "undefined") {
+    value = util.defaultValue(type);
+  }
+  return value;
+};
+
+Context.prototype.putStatic = function(fieldInfoId, value) {
+    this.runtime.staticFields[fieldInfoId] = value;
+};
+
+Context.prototype.resolve = function(cp, idx, isStatic) {
+  var constant = cp[idx];
+  if (!constant.tag)
+    return constant;
+  switch(constant.tag) {
+    case 3: // TAGS.CONSTANT_Integer
+      constant = constant.integer;
+      break;
+    case 4: // TAGS.CONSTANT_Float
+      constant = constant.float;
+      break;
+    case 8: // TAGS.CONSTANT_String
+      constant = this.newStringConstant(cp[constant.string_index].bytes);
+      break;
+    case 5: // TAGS.CONSTANT_Long
+      constant = Long.fromBits(constant.lowBits, constant.highBits);
+      break;
+    case 6: // TAGS.CONSTANT_Double
+      constant = constant.double;
+      break;
+    case 7: // TAGS.CONSTANT_Class
+      constant = CLASSES.getClass(cp[constant.name_index].bytes);
+      break;
+    case 9: // TAGS.CONSTANT_Fieldref
+      var classInfo = this.resolve(cp, constant.class_index, isStatic);
+      var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
+      var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+      constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
+      if (!constant) {
+        throw new JavaException("java/lang/RuntimeException",
+            classInfo.className + "." + fieldName + "." + signature + " not found");
+      }
+      break;
+    case 10: // TAGS.CONSTANT_Methodref
+    case 11: // TAGS.CONSTANT_InterfaceMethodref
+      var classInfo = this.resolve(cp, constant.class_index, isStatic);
+      var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
+      var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+      constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
+      if (!constant) {
+        throw new JavaException("java/lang/RuntimeException",
+            classInfo.className + "." + methodName + "." + signature + " not found");
+      }
+      break;
+    default:
+      throw new Error("not support constant type");
+  }
+  return constant;
+};
+
+Context.prototype.triggerBailout = function(e, methodInfoId, compiledDepth, cpi, locals, stack) {
+  throw VM.Yield;
+};
+
+Context.prototype.JVMBailout = function(e, methodInfoId, compiledDepth, cpi, locals, stack) {
+    var methodInfo = this.methodInfos[methodInfoId];
+    var frame = new Frame(methodInfo, locals, 0);
+    frame.stack = stack;
+    frame.ip = cpi;
+    this.frames.unshift(frame);
+    if (compiledDepth === 0 && this.frameSets.length) {
+      // Append all the current frames to the parent frame set, so a single frame stack
+      // exists when the bailout finishes.
+      var currentFrames = this.frames;
+      this.frames = this.frameSets.pop();
+      for (var i = 0; i < currentFrames.length; i++) {
+        this.frames.push(currentFrames[i]);
+      }
+    }
+};
+
+Context.prototype.classInitCheck = function(className) {
+    if (this.runtime.initialized[className])
+        return;
+    throw VM.Yield;
+};

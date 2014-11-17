@@ -6,6 +6,7 @@
 Array.prototype.push2 = function(value) {
     this.push(value);
     this.push(null);
+    return value;
 }
 
 Array.prototype.pop2 = function() {

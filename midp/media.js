@@ -3,7 +3,7 @@
 
 'use strict';
 
-const ContentTypes = {
+var ContentTypes = {
     memory: [
     ],
 

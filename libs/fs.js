@@ -257,8 +257,8 @@ var fs = (function() {
   function remove(path, cb) {
     path = normalizePath(path);
 
-    if (openedFiles.findIndex(file => file && file.path === path) != -1) {
-      setZeroTimeout(() => cb(false));
+    if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
+      setZeroTimeout(function() { cb(false); }, 0);
       return;
     }
 
@@ -406,8 +406,8 @@ var fs = (function() {
     oldPath = normalizePath(oldPath);
     newPath = normalizePath(newPath);
 
-    if (openedFiles.findIndex(file => file && file.path === oldPath) != -1) {
-      setZeroTimeout(() => cb(false));
+    if (openedFiles.findIndex(function(file) { return file && file.path === oldPath; }) != -1) {
+      setZeroTimeout(function() { cb(false); }, 0);
       return;
     }
 
@@ -454,13 +454,13 @@ var fs = (function() {
 
     var stat = fileStats[path];
     if (stat) {
-      setTimeout(() => cb(stat), 0);
+      setZeroTimeout(function() { cb(stat); }, 0);
       return;
     }
 
-    var file = openedFiles.find(file => file && file.stat && file.path === path);
+    var file = openedFiles.find(function (file) { return file && file.stat && file.path === path });
     if (file) {
-      setZeroTimeout(() => cb(file.stat));
+      setZeroTimeout(function() { cb(file.stat); }, 0);
       return;
     }
 
