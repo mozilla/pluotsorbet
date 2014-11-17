@@ -35,6 +35,11 @@ module J2ME {
   import BytecodeStream = Bytecode.BytecodeStream;
   import Condition = Bytecode.Condition;
 
+
+  import mangleMethod = J2ME.C4.Backend.mangleMethod;
+  import mangleClass = J2ME.C4.Backend.mangleClass;
+  import mangleField = J2ME.C4.Backend.mangleField;
+
   function kindsFromSignature(signature: string) {
 
   }
@@ -53,7 +58,8 @@ module J2ME {
 
   export enum CompilationTarget {
     Runtime,
-    Buildtime
+    Buildtime,
+    Static
   }
 
   export interface Context {
@@ -449,61 +455,28 @@ module J2ME {
     }
   }
 
-  export function buildCompiledCall(funcs, key: string, methodInfo: MethodInfo) {
-    if (key in funcs) {
-      return;
-    }
-    function native() {
-      var alternateImpl = methodInfo.alternateImpl;
+  export function quote(s) {
+    return "\"" + s + "\"";
+  }
+  export function compileClassInfo(writer: IndentingWriter, classInfo: ClassInfo, ctx: Context, target: CompilationTarget) {
+    writer.enter(mangleClass(classInfo) + ": {");
+    writer.enter("methods: {");
+    var methods = classInfo.methods;
+    for (var i = 0; i < methods.length; i++) {
+      var method = methods[i];
       try {
-        // Async alternate functions push data back on the stack, but in the case of a compiled
-        // function, the stack doesn't exist. To handle async, a bailout is triggered so the
-        // compiled frame is replaced with an interpreted frame. The async function then can get the new
-        // frame's stack from this callback.
-        // TODO Refactor override so we don't have to slice here.
-        var ctx = arguments[0];
-        var args = Array.prototype.slice.call(arguments, 2);
-        return alternateImpl.call(null, ctx, args, methodInfo.isStatic, function() {
-          assert(ctx.frameSets.length === 0, "There are still compiled frames.");
-          return ctx.current().stack;
-        });
-      } catch (e) {
-        if (e === VM.Pause || e === VM.Yield) {
-          throw e;
+        var fn = compileMethodInfo(method, ctx, CompilationTarget.Static);
+        if (fn) {
+          writer.enter(mangleMethod(method) + ": ");
+          writer.write(fn);
+          writer.leave(",");
         }
-        throw new Error("TODO handle exceptions/yields in alternate impls. " + e + e.stack);
+      } catch (x) {
+        writer.writeLn(mangleMethod(method) + ": undefined,");
       }
     }
-
-    function interpreter() {
-      var frame = new Frame(methodInfo, [], 0);
-      var ctx = arguments[0];
-      ctx.frames.push(frame);
-      for (var i = 2; i < arguments.length; i++) {
-        frame.setLocal(i - 2, arguments[i]);
-      }
-      return VM.execute(ctx);
-    }
-
-    function compile() {
-      var ctx = arguments[0];
-      ctx.compileMethodInfo(methodInfo);
-      if (methodInfo.fn) {
-        funcs[key] = methodInfo.fn;
-        return methodInfo.fn.apply(null, arguments);
-      }
-      // Compiling failed use the interpreter.
-      funcs[key] = interpreter;
-      return interpreter.apply(null, arguments);
-    }
-
-    var fn;
-    if (methodInfo.alternateImpl) {
-      fn = native;
-    } else {
-      fn = compile;
-    }
-    funcs[key] = fn;
+    writer.leave("}");
+    writer.leave("},");
   }
 
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
@@ -522,19 +495,15 @@ module J2ME {
     var fn;
     try {
       var compilation = builder.build();
-      var args = ["ctx", "compiledDepth"];
+      var args = [];
       for (var i = 0; i < builder.parameters.length; i++) {
         var parameter = builder.parameters[i];
-        var paramName = compilation.parameters[i] || "unused_" + i;
-        args.push(paramName);
-        if (isTwoSlot(parameter.kind)) {
-          args.push(paramName + "_illegal");
-        }
+        args.push(parameter.name);
       }
       var fnSource = compilation.body;
-      console.info(fnSource);
-      // fn = new Function(args.join(","), fnSource);
-      debug && writer.writeLn(fn.toString());
+      // console.info(fnSource);
+      fn = new Function(args.join(","), fnSource);
+      // debug && writer.writeLn(fn.toString());
       counter.count("Compiled");
     } catch (e) {
       counter.count("Failed to Compile " + e);
@@ -560,6 +529,12 @@ module J2ME {
     var constant;
     if (kind === Kind.Long) {
       constant = new IR.JVMLong(x, 0);
+    } else if (kind === Kind.Reference) {
+      if (isString(x)) {
+        constant = new IR.JVMString(x);
+      } else {
+        constant = new IR.Constant(x);
+      }
     } else {
       constant = new IR.Constant(x);
     }
@@ -617,8 +592,6 @@ module J2ME {
     blockMap: BlockMap;
 
     ctxValue: IR.Parameter;
-    functionVar: IR.Variable;
-    compiledDepthVar: IR.Variable;
 
     parameters: IR.Parameter [];
 
@@ -633,8 +606,6 @@ module J2ME {
     build(): C4.Backend.Compilation {
       IR.Node.startNumbering();
       
-      this.functionVar = new IR.Variable("ctx.runtime.functions");
-      this.compiledDepthVar = new IR.Variable("compiledDepth");
       var methodInfo = this.methodInfo;
 
       writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
@@ -954,11 +925,6 @@ module J2ME {
         default:
           assert(false);
       }
-//      ValueNode result1 = append(graph.unique(v));
-//      if (canTrap) {
-//        append(graph.add(new ValueAnchorNode(result1)));
-//      }
-
       v = this.peepholeOptimizer.fold(v);
       state.push(result, v);
     }
@@ -1028,6 +994,14 @@ module J2ME {
       this.state.apush(result);
     }
 
+    genNewObjectArray(cpi: number) {
+      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      var length = this.state.ipop();
+      var result = new IR.JVMNewObjectArray(this.region, this.state.store, classInfo, length);
+      this.recordStore(result);
+      this.state.apush(result);
+    }
+
     genLoadConstant(cpi: number, state: State) {
       var cp = this.methodInfo.classInfo.constant_pool;
       var entry = cp[cpi];
@@ -1046,9 +1020,8 @@ module J2ME {
           return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
-          var call = new IR.CallProperty(null, null, this.ctxValue, new Constant("newStringConstant"), [genConstant(entry.bytes, Kind.Reference)]);
-//          this.recordStore(call);
-          return state.push(Kind.Reference, call);
+          return state.push(Kind.Reference, genConstant(entry.bytes, Kind.Reference));
+
         default:
           throw "Not done for: " + entry.tag;
       }
@@ -1056,11 +1029,17 @@ module J2ME {
 
     genCheckCast(cpi: Bytecodes) {
       var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
-      var obj = this.state.peek();
-      this.ctx.classInfos[classInfo.className] = classInfo;
-      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxValue, new Constant("checkCast"), [new Constant(classInfo.className), obj], this.methodInfo.implKey);
-      this.recordStore(call);
+      var object = this.state.peek();
+      var checkCast = new IR.JVMCheckCast(this.region, this.state.store, object, classInfo);
+      this.recordStore(checkCast);
+    }
+
+    genInstanceOf(cpi: Bytecodes) {
+      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      var object = this.state.apop();
+      var instanceOf = new IR.JVMInstanceOf(this.region, this.state.store, object, classInfo);
+      this.recordStore(instanceOf);
+      this.state.push(Kind.Boolean, instanceOf);
     }
 
     genIncrement(stream: BytecodeStream) {
@@ -1172,27 +1151,15 @@ module J2ME {
       return node;
     }
 
-    genNullCheck(object: Value, bci: number) {
-      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxValue, new Constant("nullCheck"), [object], this.methodInfo.implKey);
-      this.recordStore(call);
-    }
-
-    genDivideByZeroCheck(object: Value) {
-      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call;
-      if (object.kind === Kind.Long) {
-        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxValue, new Constant("divideByZeroCheckLong"), [object], this.methodInfo.implKey);
-      } else {
-        call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxValue, new Constant("divideByZeroCheck"), [object], this.methodInfo.implKey);
-      }
-      this.recordStore(call);
+    genDivideByZeroCheck(value: Value) {
+      var checkArithmetic = new IR.JVMCheckArithmetic(this.region, this.state.store, value);
+      this.recordStore(checkArithmetic);
     }
 
     genThrow(bci: number) {
-      this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
-      var call = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(bci), this.ctxValue, new Constant("triggerBailout"), [], this.methodInfo.implKey);
-      this.recordStore(call);
+      // this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
+      var _throw = new IR.JVMThrow(this.region, this.state.store);
+      this.recordStore(_throw);
       this.methodReturnInfos.push(new ReturnInfo(
         this.region,
         this.state.store,
@@ -1241,21 +1208,6 @@ module J2ME {
       var getProperty = new IR.GetProperty(this.region, this.state.store, array, new Constant('length'));
       this.recordLoad(getProperty);
       this.state.ipush(getProperty);
-    }
-
-    classInitCheck(classInfo: ClassInfo) {
-      // XXX If we precompile the class check will always be needed.
-      assert(this.target === CompilationTarget.Runtime);
-      var ctx = this.ctx;
-      if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className]) {
-        return;
-      }
-
-      var methodInfo = this.methodInfo;
-      this.ctx.methodInfos[methodInfo.implKey] = methodInfo;
-
-      var classInitCheck = new IR.JVMCallProperty(this.region, this.state.store, this.state.clone(this.state.bci), this.ctxValue, new Constant("classInitCheck"), [new Constant(classInfo.className)], this.methodInfo.implKey);
-      this.recordStore(classInitCheck);
     }
 
     genClass(classInfo: ClassInfo): Value {
@@ -1479,14 +1431,12 @@ module J2ME {
         case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
         case Bytecodes.NEW            : this.genNewInstance(stream.readCPI()); break;
         case Bytecodes.NEWARRAY       : this.genNewTypeArray(stream.readLocalIndex()); break;
-         /*
-        case Bytecodes.ANEWARRAY      : genNewObjectArray(stream.readCPI()); break;
-        */
+        case Bytecodes.ANEWARRAY      : this.genNewObjectArray(stream.readCPI()); break;
         case Bytecodes.ARRAYLENGTH    : this.genArrayLength(); break;
         case Bytecodes.ATHROW         : this.genThrow(stream.currentBCI); break;
         case Bytecodes.CHECKCAST      : this.genCheckCast(stream.readCPI()); break;
+        case Bytecodes.INSTANCEOF     : this.genInstanceOf(stream.readCPI()); break;
         /*
-        case Bytecodes.INSTANCEOF     : genInstanceOf(); break;
         case Bytecodes.MONITORENTER   : genMonitorEnter(state.apop()); break;
         case Bytecodes.MONITOREXIT    : genMonitorExit(state.apop()); break;
         case Bytecodes.MULTIANEWARRAY : genNewMultiArray(stream.readCPI()); break;

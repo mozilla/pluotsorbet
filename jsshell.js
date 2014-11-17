@@ -74,9 +74,12 @@ try {
   print("INITIALIZATION TIME: " + (dateNow() - start));
 
   start = dateNow();
+  // var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
 
-  jvm.startIsolate0(scriptArgs[0], urlParams.args);
+  var runtime = new Runtime(jvm);
+  CLASSES.compileAll(runtime);
 
+  J2ME.printResults();
   print("RUNNING TIME: " + (dateNow() - start));
 } catch (x) {
   print(x);

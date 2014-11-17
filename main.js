@@ -114,6 +114,10 @@ if (MIDP.midletClassName == "RunTests") {
 Promise.all(loadingPromises).then(function() {
   jvm.initializeBuiltinClasses();
   jvm.startIsolate0(main, urlParams.args);
+
+  var runtime = new Runtime(jvm);
+
+  CLASSES.compileAll(runtime);
 });
 
 function getIsOff(button) {

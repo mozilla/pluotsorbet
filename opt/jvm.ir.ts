@@ -13,18 +13,41 @@ module J2ME.C4.IR {
   }
   Value.prototype.nodeName = "JVMLong";
 
+  export class JVMString extends Constant {
+    constructor(value: string) {
+      super(value);
+    }
+    toString() : string {
+      return "S<" + this.value + ">";
+    }
+  }
+  Value.prototype.nodeName = "JVMString";
+
   export class JVMNewArray extends StoreDependent {
-  constructor(public control: Control, public store: Store, public arrayKind: Kind, public length: Value) {
-    super(control, store);
+    constructor(public control: Control, public store: Store, public arrayKind: Kind, public length: Value) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      visitor(this.store);
+      visitor(this.control);
+      visitor(this.length);
+    }
   }
-  visitInputs(visitor: NodeVisitor) {
-    visitor(this.store);
-    visitor(this.control);
-    visitor(this.length);
-  }
-}
 
   JVMNewArray.prototype.nodeName = "JVMNewArray";
+
+  export class JVMNewObjectArray extends StoreDependent {
+    constructor(public control: Control, public store: Store, public classInfo: ClassInfo, public length: Value) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      visitor(this.store);
+      visitor(this.control);
+      visitor(this.length);
+    }
+  }
+
+  JVMNewObjectArray.prototype.nodeName = "JVMNewObjectArray";
 
   export class JVMLongBinary extends Value {
     constructor(public operator: Operator, public a: Value, public b: Value) {
@@ -184,6 +207,58 @@ module J2ME.C4.IR {
 
   JVMNew.prototype.nodeName = "JVMNew";
 
+  export class JVMThrow extends StoreDependent {
+    constructor(control: Control, store: Store) {
+      super(control, store);
+      this.handlesAssignment = true;
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+    }
+  }
+
+  JVMThrow.prototype.nodeName = "JVMThrow";
+
+  export class JVMCheckCast extends StoreDependent {
+    constructor(control: Control, store: Store, public object: Value, public classInfo: ClassInfo) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+      visitor(this.object);
+    }
+  }
+
+  JVMCheckCast.prototype.nodeName = "JVMCheckCast";
+
+  export class JVMInstanceOf extends StoreDependent {
+    constructor(control: Control, store: Store, public object: Value, public classInfo: ClassInfo) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+      visitor(this.object);
+    }
+  }
+
+  JVMInstanceOf.prototype.nodeName = "JVMInstanceOf";
+
+  export class JVMCheckArithmetic extends StoreDependent {
+    constructor(control: Control, store: Store, public value: Value) {
+      super(control, store);
+    }
+    visitInputs(visitor: NodeVisitor) {
+      this.control && visitor(this.control);
+      this.store && visitor(this.store);
+      visitor(this.value);
+    }
+  }
+
+  JVMCheckArithmetic.prototype.nodeName = "JVMCheckArithmetic";
+
   export class JVMGetField extends StoreDependent {
     constructor(control: Control, store: Store, public object: Value, public fieldInfo: FieldInfo) {
       super(control, store);
@@ -222,6 +297,25 @@ module J2ME.C4.Backend {
     return new AST.CallExpression(new AST.Identifier("Long.fromBits"), [constant(this.lowBits), constant(this.highBits)]);
   };
 
+  IR.JVMString.prototype.compile = function (cx: Context): AST.Node {
+    return new AST.CallExpression(new AST.Identifier("$.S"), [constant(this.value)]);
+  };
+
+  IR.JVMCheckCast.prototype.compile = function (cx: Context): AST.Node {
+    var object = compileValue(this.object, cx);
+    return new AST.CallExpression(new AST.Identifier("check"), [object, id(mangleClass(this.classInfo))]);
+  };
+
+  IR.JVMInstanceOf.prototype.compile = function (cx: Context): AST.Node {
+    var object = compileValue(this.object, cx);
+    return new AST.CallExpression(new AST.Identifier("instanceOf"), [object, id(mangleClass(this.classInfo))]);
+  };
+
+  IR.JVMCheckArithmetic.prototype.compile = function (cx: Context): AST.Node {
+    var value = compileValue(this.value, cx);
+    return new AST.CallExpression(new AST.Identifier("checkDivideByZero"), [value]);
+  };
+
   IR.JVMNewArray.prototype.compile = function (cx: Context): AST.Node {
     var jsTypedArrayType: string;
     switch (this.arrayKind) {
@@ -249,6 +343,10 @@ module J2ME.C4.Backend {
         throw Debug.unexpected(Kind[this.arrayKind]);
     }
     return new AST.NewExpression(new AST.Identifier(jsTypedArrayType), [compileValue(this.length, cx)]);
+  };
+
+  IR.JVMNewObjectArray.prototype.compile = function (cx: Context): AST.Node {
+    return new AST.NewExpression(new AST.Identifier("Array"), [compileValue(this.length, cx)]);
   };
 
   IR.JVMStoreIndexed.prototype.compile = function (cx: Context): AST.Node {
@@ -484,18 +582,23 @@ module J2ME.C4.Backend {
     return HashUtilities.hashBytesTo32BitsMD5(data, 0, s.length);
   }
 
-  function mangleMethod(methodInfo: MethodInfo) {
+  var friendlyMangledNames = false;
+
+  export function mangleMethod(methodInfo: MethodInfo) {
     var hash = hashString(methodInfo.implKey);
-    return methodInfo.name + "_" + StringUtilities.variableLengthEncodeInt32(hash);
+    var prefix = friendlyMangledNames ? methodInfo.name + "_" : "";
+    return prefix + StringUtilities.variableLengthEncodeInt32(hash);
   }
 
-  function mangleClass(classInfo: ClassInfo) {
+  export function mangleClass(classInfo: ClassInfo) {
     var hash = hashString(classInfo.className);
-    return classInfo.className + "_" + StringUtilities.variableLengthEncodeInt32(hash);
+    var prefix = friendlyMangledNames ? classInfo.className + "_" : "";
+    return prefix + StringUtilities.variableLengthEncodeInt32(hash);
   }
 
-  function mangleField(fieldInfo: FieldInfo) {
-    return fieldInfo.name + "_" + StringUtilities.variableLengthEncodeInt32(fieldInfo.id);
+  export function mangleField(fieldInfo: FieldInfo) {
+    var prefix = friendlyMangledNames ? fieldInfo.name + "_" : "";
+    return prefix + StringUtilities.variableLengthEncodeInt32(fieldInfo.id);
   }
 
   IR.JVMGetField.prototype.compile = function (cx: Context): AST.Node {
@@ -511,5 +614,9 @@ module J2ME.C4.Backend {
 
   IR.JVMNew.prototype.compile = function (cx: Context): AST.Node {
     return new AST.NewExpression(id(mangleClass(this.classInfo)), []);
+  };
+
+  IR.JVMThrow.prototype.compile = function (cx: Context): AST.Node {
+    return new AST.ThrowStatement(constant(null));
   };
 }
