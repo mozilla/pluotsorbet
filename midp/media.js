@@ -196,7 +196,7 @@ AudioPlayer.prototype.play = function() {
 AudioPlayer.prototype.start = function() {
     if (this.playerContainer.contentSize > 0) {
         this.decode(this.playerContainer.data.subarray(0, this.playerContainer.contentSize), function(decoded) {
-            // Save a copy of the audio buffer for resumimg or replaying.
+            // Save a copy of the audio buffer for resuming or replaying.
             this.audioBuffer = decoded;
             this.duration = decoded.duration;
             this.play();
