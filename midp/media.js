@@ -167,7 +167,7 @@ function AudioPlayer(playerContainer) {
     this.duration = 0;
 
     this.isVideoControlSupported = false;
-    this.isAudioControlSupported = true;
+    this.isVolumeControlSupported = true;
 }
 
 AudioPlayer.prototype.realize = function() {
