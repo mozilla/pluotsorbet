@@ -12,16 +12,22 @@ Media.ContentTypes = {
     file: [
         "audio/x-wav",
         "audio/mpeg",
+        "image/jpeg",
+        "image/png",
     ],
 
     http: [
         "audio/x-wav",
         "audio/mpeg",
+        "image/jpeg",
+        "image/png",
     ],
 
     https: [
         "audio/x-wav",
         "audio/mpeg",
+        "image/jpeg",
+        "image/png",
     ],
 
     rtp: [],
