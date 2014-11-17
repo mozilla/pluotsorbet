@@ -61,6 +61,14 @@ Media.extToFormat = new Map([
     ["png", "PNG"],
 ]);
 
+Media.contentTypeToFormat = new Map([
+    ["audio/amr", "amr"],
+    ["audio/x-wav", "wav"],
+    ["audio/mpeg", "MPEG_layer_3"],
+    ["image/jpeg", "JPEG"],
+    ["image/png", "PNG"],
+]);
+
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
 
@@ -379,7 +387,6 @@ ImagePlayer.prototype.setVisible = function(visible) {
 function PlayerContainer(url) {
     this.url = url;
 
-    // this.mediaFormat will only be updated by PlayerImpl.nGetMediaFormat.
     this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
     this.contentType = "";
 
@@ -400,18 +407,12 @@ PlayerContainer.prototype.guessFormatFromURL = function() {
 PlayerContainer.prototype.realize = function(contentType) {
     return new Promise((function(resolve, reject) {
         if (contentType) {
-            switch (contentType) {
-                case "audio/x-wav":
-                case "audio/amr":
-                case "audio/mpeg":
-                case "image/jpeg":
-                case "image/png":
-                    this.contentType = contentType;
-                    break;
-                default:
-                    console.warn("Unsupported content type: " + contentType);
-                    resolve(false);
-                    return;
+            this.contentType = contentType;
+            this.mediaFormat = Media.contentTypeToFormat.get(contentType) || this.mediaFormat;
+            if (this.mediaFormat === "UNKNOWN") {
+                console.warn("Unsupported content type: " + contentType);
+                resolve(false);
+                return;
             }
         }
 
