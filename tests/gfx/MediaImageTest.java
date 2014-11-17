@@ -47,7 +47,7 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
                 file.create();
             }
             OutputStream os = file.openDataOutputStream();
-            InputStream is = getClass().getResourceAsStream("/gfx/images/Lena.jpg");
+            InputStream is = getClass().getResourceAsStream("/org/mozilla/io/test.jpg");
             os.write(read(is));
             os.close();
 

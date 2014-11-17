@@ -41,7 +41,7 @@ public class TestMediaImage implements Testlet, PlayerListener {
                 file.create();
             }
             OutputStream os = file.openDataOutputStream();
-            InputStream is = getClass().getResourceAsStream("/gfx/images/Lena.jpg");
+            InputStream is = getClass().getResourceAsStream("/org/mozilla/io/test.jpg");
             os.write(read(is));
             os.close();
 
@@ -53,8 +53,8 @@ public class TestMediaImage implements Testlet, PlayerListener {
 
             VideoControl videoControl = (VideoControl)player.getControl("VideoControl");
 
-            th.check(videoControl.getSourceHeight(), 128);
-            th.check(videoControl.getSourceWidth(), 128);
+            th.check(videoControl.getSourceHeight(), 195);
+            th.check(videoControl.getSourceWidth(), 195);
 
             Item videoItem = (Item)videoControl.initDisplayMode(VideoControl.USE_GUI_PRIMITIVE, null);
             form.append(videoItem);
