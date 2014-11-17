@@ -41,11 +41,16 @@ function defaultReturnType(stack, ret) {
     stack.push(ret);
 }
 
+function intReturnType(stack, ret) {
+    stack.push(ret | 0);
+}
+
 function getReturnFunction(sig) {
   var retType = sig.substring(sig.lastIndexOf(")") + 1);
   var fxn;
   switch (retType) {
     case 'V': fxn = voidReturnType; break;
+    case 'I': fxn = intReturnType; break;
     case 'Z': fxn = boolReturnType; break;
     case 'J':
     case 'D': fxn = doubleReturnType; break;
