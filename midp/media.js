@@ -347,7 +347,9 @@ ImagePlayer.prototype.pause = function() {
 }
 
 ImagePlayer.prototype.close = function() {
-    document.getElementById("display").removeChild(this.image);
+    if (this.image.parentNode) {
+        document.getElementById("display").removeChild(this.image);
+    }
 }
 
 ImagePlayer.prototype.getMediaTime = function() {
