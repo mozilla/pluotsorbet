@@ -1,5 +1,6 @@
 ///<reference path='opt.ts' />
 ///<reference path='utilities.ts' />
+///<reference path='options.ts' />
 ///<reference path='metrics.ts' />
 ///<reference path='c4/ir.ts' />
 ///<reference path='c4/optimizer.ts' />

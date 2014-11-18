@@ -2,6 +2,7 @@ module J2ME {
 
   var debug = false;
   var writer = new IndentingWriter(!debug);
+  var consoleWriter = new IndentingWriter();
 
   export var counter = new J2ME.Metrics.Counter(true);
 
@@ -79,7 +80,7 @@ module J2ME {
     id: number;
   }
 
-  enum TAGS {
+  export enum TAGS {
     CONSTANT_Class = 7,
     CONSTANT_Fieldref = 9,
     CONSTANT_Methodref = 10,
@@ -458,25 +459,26 @@ module J2ME {
   export function quote(s) {
     return "\"" + s + "\"";
   }
-  export function compileClassInfo(writer: IndentingWriter, classInfo: ClassInfo, ctx: Context, target: CompilationTarget) {
-    writer.enter(mangleClass(classInfo) + ": {");
-    writer.enter("methods: {");
+  export function compileClassInfo(codeWriter: IndentingWriter, classInfo: ClassInfo, ctx: Context, target: CompilationTarget) {
+    codeWriter.enter(mangleClass(classInfo) + ": {");
+    codeWriter.enter("methods: {");
     var methods = classInfo.methods;
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
       try {
         var fn = compileMethodInfo(method, ctx, CompilationTarget.Static);
         if (fn) {
-          writer.enter(mangleMethod(method) + ": ");
-          writer.write(fn);
-          writer.leave(",");
+          codeWriter.enter(mangleMethod(method) + ": ");
+          codeWriter.write(fn);
+          codeWriter.leave(",");
         }
       } catch (x) {
-        writer.writeLn(mangleMethod(method) + ": undefined,");
+
+        codeWriter.writeLn(mangleMethod(method) + ": undefined,");
       }
     }
-    writer.leave("}");
-    writer.leave("},");
+    codeWriter.leave("}");
+    codeWriter.leave("},");
   }
 
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
@@ -501,8 +503,8 @@ module J2ME {
         args.push(parameter.name);
       }
       var fnSource = compilation.body;
-      // console.info(fnSource);
       fn = new Function(args.join(","), fnSource);
+      // consoleWriter.writeLn(fn.toString());
       // debug && writer.writeLn(fn.toString());
       counter.count("Compiled");
     } catch (e) {
