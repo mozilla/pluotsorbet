@@ -241,6 +241,8 @@ Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Lj
     } else {
       console.warn("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z not implemented for: " + request);
     }
+
+    return false;
 });
 
 Native.create("com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V", function(state) {
