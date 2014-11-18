@@ -11,92 +11,128 @@ function JavaException(className, message) {
 }
 JavaException.prototype = Object.create(Error.prototype);
 
+function boolReturnType(stack, ret) {
+  if (ret) {
+    stack.push(1);
+  } else {
+    stack.push(0);
+  }
+}
+
+function doubleReturnType(stack, ret) {
+  // double types require two stack frames
+  stack.push2(ret);
+}
+
+function voidReturnType(stack, ret) {
+  // no-op
+}
+
+function stringReturnType(stack, ret) {
+  if (typeof ret === "string") {
+    stack.push(util.newString(ret));
+  } else {
+    // already a native string or null
+    stack.push(ret);
+  }
+}
+
+function defaultReturnType(stack, ret) {
+    stack.push(ret);
+}
+
+function intReturnType(stack, ret) {
+    stack.push(ret | 0);
+}
+
+function getReturnFunction(sig) {
+  var retType = sig.substring(sig.lastIndexOf(")") + 1);
+  var fxn;
+  switch (retType) {
+    case 'V': fxn = voidReturnType; break;
+    case 'I': fxn = intReturnType; break;
+    case 'Z': fxn = boolReturnType; break;
+    case 'J':
+    case 'D': fxn = doubleReturnType; break;
+    case 'Ljava/lang/String;': fxn = stringReturnType; break;
+    default: fxn = defaultReturnType; break;
+  }
+
+  return fxn;
+}
+
+function executePromise(stack, ret, doReturn, ctx, key, cb) {
+  if (ret && ret.then) { // ret.constructor.name == "Promise"
+    ret.then(function(res) {
+      if (Instrument.profiling) {
+        Instrument.exitAsyncNative(key, ret);
+      }
+      if (cb) {
+        stack = cb();
+      }
+      doReturn(stack, res);
+    }, function(e) {
+      ctx.raiseException(e.javaClassName, e.message);
+    }).then(ctx.start.bind(ctx));
+
+    if (Instrument.profiling) {
+      Instrument.enterAsyncNative(key, ret);
+    }
+
+    throw VM.Pause;
+  } else {
+    // !!!! Why does this every hapen? Shouldn't we always have a promise here?
+    if (cb) {
+      stack = cb();
+    }
+    doReturn(stack, ret);
+  }
+}
+
 /**
  * A simple wrapper for overriding JVM functions to avoid logic errors
  * and simplify implementation:
  *
- * - Arguments are pushed off the stack based upon the number of
- *   arguments listed on `fn`.
+ * - Arguments are pushed off the stack based upon the signature of the
+ *   function.
  *
  * - The return value is automatically pushed back onto the stack, if
- *   the method signature does not return void. CAUTION: If you want to
- *   return a Long or Double, this code needs to be modified
- *   accordingly to do a `push2`. (Ideally, we'd just scrape the
- *   method signature and always do the right thing.)
+ *   the method signature does not return void.
  *
- * - The object reference ("this") is automatically bound to `fn`,
- *   unless you specify { static: true } in opts.
+ * - The object reference ("this") is automatically bound to `fn`.
  *
  * - JavaException instances are caught and propagated as Java
      exceptions; JS TypeError propagates as a NullPointerException.
  *
+ * @param {object} object
+ *   Native or Override.
  * @param {string} key
  *   The fully-qualified JVM method signature.
  * @param {function(args)} fn
- *   A function taking any number of args. The number of arguments
- *   this function takes is the number of args popped off of the stack.
- * @param {object} opts
- *   { static: true } if the method is static (and should not receive
- *   and pop the `this` argument off the stack).
+ *   A function taking any number of args.
  */
-function createAlternateImpl(object, key, fn) {
+function createAlternateImpl(object, key, fn, usesPromise) {
   var retType = key[key.length - 1];
-  var numArgs = fn.length;
+  var numArgs = Signature.getINSlots(key.substring(key.lastIndexOf(".") + 1)) + 1;
+  var doReturn = getReturnFunction(key);
+  var postExec = usesPromise ? executePromise : doReturn;
+
   object[key] = function(ctx, stack, isStatic, cb) {
     var args = new Array(numArgs);
 
-    args[0] = ctx;
+    args[numArgs - 1] = ctx;
 
     // NOTE: If your function accepts a Long/Double, you must specify
     // two arguments (since they take up two stack positions); we
     // could sugar this someday.
-    for (var i = numArgs - 1; i >= 1; i--) {
+    for (var i = numArgs - 2; i >= 0; i--) {
       args[i] = stack.pop();
-    }
-
-    function doReturn(ret) {
-      if (retType === 'V') {
-        return;
-      }
-
-      if (cb) {
-        stack = cb();
-      }
-
-      if (ret === true) {
-        var value = 1;
-        stack.push(value);
-        return value;
-      } else if (ret === false) {
-        var value = 0;
-        stack.push(value);
-        return value;
-      } else if (typeof ret === "string") {
-        var value = ctx.newString(ret);
-        stack.push(value);
-        return value;
-      } else if (retType === 'J' || retType === 'D') {
-        stack.push2(ret);
-        return ret;
-      } else {
-        stack.push(ret);
-        return ret;
-      }
     }
 
     try {
       var self = isStatic ? null : stack.pop();
       var ret = fn.apply(self, args);
-      if (ret && ret.then) { // ret.constructor.name == "Promise"
-        ret.then(doReturn, function(e) {
-          ctx.raiseException(e.javaClassName, e.message);
-        }).then(ctx.start.bind(ctx));
-
-        throw VM.Pause;
-      } else {
-        cb = null;
-        return doReturn(ret);
-      }
+      postExec(stack, ret, doReturn, ctx, key, cb);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throw e;
@@ -115,19 +151,19 @@ function createAlternateImpl(object, key, fn) {
 
 Override.create = createAlternateImpl.bind(null, Override);
 
-Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
+Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
   return decodeURIComponent(string.str);
 });
 
-Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(ctx, string) {
+Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
   return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
 });
 
-Override.create("java/lang/Math.min.(II)I", function(ctx, a, b) {
+Override.create("java/lang/Math.min.(II)I", function(a, b) {
   return Math.min(a, b);
 });
 
-Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(ctx, b, off, len) {
+Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, len) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
     throw new JavaException("java/lang/IndexOutOfBoundsException");
@@ -142,7 +178,7 @@ Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(ctx, b, 
 
   var newcount = count + len;
   if (newcount > buf.length) {
-    var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
     this.class.getField("I.buf.[B").set(this, buf);
@@ -152,13 +188,13 @@ Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(ctx, b, 
   this.class.getField("I.count.I").set(this, newcount);
 });
 
-Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(ctx, value) {
+Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(value) {
   var count = this.class.getField("I.count.I").get(this);
   var buf = this.class.getField("I.buf.[B").get(this);
 
   var newcount = count + 1;
   if (newcount > buf.length) {
-    var newbuf = ctx.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
     this.class.getField("I.buf.[B").set(this, buf);
@@ -168,7 +204,7 @@ Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(ctx, value)
   this.class.getField("I.count.I").set(this, newcount);
 });
 
-Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(ctx, buf) {
+Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(buf) {
   if (!buf) {
     throw new JavaException("java/lang/NullPointerException");
   }
@@ -178,7 +214,7 @@ Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(ctx, buf) 
   this.count = buf.length;
 });
 
-Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(ctx, buf, offset, length) {
+Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(buf, offset, length) {
   if (!buf) {
     throw new JavaException("java/lang/NullPointerException");
   }
@@ -188,11 +224,11 @@ Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(ctx, buf
   this.count = (offset + length <= buf.length) ? (offset + length) : buf.length;
 });
 
-Override.create("java/io/ByteArrayInputStream.read.()I", function(ctx) {
+Override.create("java/io/ByteArrayInputStream.read.()I", function() {
   return (this.pos < this.count) ? (this.buf[this.pos++] & 0xFF) : -1;
 });
 
-Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(ctx, b, off, len) {
+Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(b, off, len) {
   if (!b) {
     throw new JavaException("java/lang/NullPointerException");
   }
@@ -218,7 +254,7 @@ Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(ctx, b, of
   return len;
 });
 
-Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(ctx, long, _) {
+Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(long, _) {
   var n = long.toNumber();
 
   if (this.pos + n > this.count) {
@@ -234,15 +270,15 @@ Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(ctx, long, _)
   return Long.fromNumber(n);
 });
 
-Override.create("java/io/ByteArrayInputStream.available.()I", function(ctx) {
+Override.create("java/io/ByteArrayInputStream.available.()I", function() {
   return this.count - this.pos;
 });
 
-Override.create("java/io/ByteArrayInputStream.mark.(I)V", function(ctx, readAheadLimit) {
+Override.create("java/io/ByteArrayInputStream.mark.(I)V", function(readAheadLimit) {
   this.mark = this.pos;
 });
 
-Override.create("java/io/ByteArrayInputStream.reset.()V", function(ctx) {
+Override.create("java/io/ByteArrayInputStream.reset.()V", function() {
   this.pos = this.mark;
 });
 
@@ -250,20 +286,20 @@ Override.create("java/io/ByteArrayInputStream.reset.()V", function(ctx) {
 // DomainPolicy.loadValues. This has the added benefit that we avoid many other
 // computations.
 
-Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B", function(ctx, name) {
+Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;)[[B", function(name) {
   // NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2
   // The 2 is the two hardcoded MIPS and AMS permissions.
   var NUMBER_OF_PERMISSIONS = 61;
   var ALLOW = 1;
 
-  var maximums = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
-  var defaults = ctx.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var maximums = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var defaults = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
 
   for (var i = 0; i < NUMBER_OF_PERMISSIONS; i++) {
     maximums[i] = defaults[i] = ALLOW;
   }
 
-  var permissions = ctx.newArray("[[B", 2);
+  var permissions = util.newArray("[[B", 2);
   permissions[0] = maximums;
   permissions[1] = defaults;
 
@@ -271,18 +307,18 @@ Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;
 });
 
 // Always return true to make Java think the MIDlet domain is trusted.
-Override.create("com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z", function(ctx, name) {
+Override.create("com/sun/midp/security/Permissions.isTrusted.(Ljava/lang/String;)Z", function(name) {
   return true;
 });
 
 // Returns the ID of the permission. The callers will use this ID to check the
 // permission in the permissions array returned by Permissions::forDomain.
-Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I", function(ctx, name) {
+Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I", function(name) {
   return 0;
 });
 
 // The Java code that uses this method doesn't actually use the return value, but
 // passes it to Permissions.getId. So we can return anything.
-Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(ctx, id) {
+Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(id) {
   return "com.sun.midp";
 });

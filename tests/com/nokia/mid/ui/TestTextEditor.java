@@ -5,16 +5,18 @@ import gnu.testlet.Testlet;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.TextField;
 
 public class TestTextEditor extends Canvas implements Testlet {
-    public void test(TestHarness th) {
+    public void testConstraints(TestHarness th, int constraints) {
         TextEditor textEditor = new TextEditor("Hello, world!", 20, 0, 100, 24);
 
         th.check(textEditor.getContent(), "Hello, world!");
         th.check(textEditor.getMaxSize(), 20);
+        th.check(textEditor.getCaretPosition(), 13);
 
-        textEditor.setConstraints(0);
-        th.check(textEditor.getConstraints(), 0);
+        textEditor.setConstraints(constraints);
+        th.check(textEditor.getConstraints(), constraints);
 
         th.check(textEditor.getWidth(), 100);
         th.check(textEditor.getHeight(), 24);
@@ -27,6 +29,15 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getContent(), "Helló, világ!");
         th.check(textEditor.setMaxSize(5), 5);
         th.check(textEditor.getContent(), "Helló");
+        th.check(textEditor.getCaretPosition(), 5);
+
+        textEditor.delete(2, 2);
+        th.check(textEditor.getContent(), "Heó");
+        th.check(textEditor.getCaretPosition(), 2);
+
+        textEditor.insert("ll", 2);
+        th.check(textEditor.getContent(), "Helló");
+        th.check(textEditor.getCaretPosition(), 4);
 
         textEditor.setSize(120, 28);
         th.check(textEditor.getWidth(), 120);
@@ -77,13 +88,22 @@ public class TestTextEditor extends Canvas implements Testlet {
 
         textEditor.setVisible(true);
         textEditor.setContent("XYZYZ");
-        th.check(textEditor.getCaretPosition(), 0);
+        th.check(textEditor.getCaretPosition(), 5);
         textEditor.setCaret(3);
         th.check(textEditor.getCaretPosition(), 3);
         textEditor.setCaret(6);
         th.check(textEditor.getCaretPosition(), 5);
         textEditor.setCaret(0);
         th.check(textEditor.getCaretPosition(), 0);
+        textEditor.setCaret(-1);
+        th.check(textEditor.getCaretPosition(), 0);
+
+        textEditor.setParent(null);
+    }
+
+    public void test(TestHarness th) {
+        testConstraints(th, TextField.ANY);
+        testConstraints(th, TextField.PASSWORD);
     }
 
     protected void paint(Graphics graphics) {}

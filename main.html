@@ -44,15 +44,19 @@
   <script type="text/javascript" src="libs/contacts.js" defer></script>
   <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
   <script type="text/javascript" src="libs/pipe.js" defer></script>
+  <script type="text/javascript" src="libs/contact2vcard.js" defer></script>
   <script type="text/javascript" src="midp/midp.js" defer></script>
   <script type="text/javascript" src="midp/frameanimator.js" defer></script>
   <script type="text/javascript" src="midp/fs.js" defer></script>
   <script type="text/javascript" src="midp/crypto.js" defer></script>
   <script type="text/javascript" src="midp/gfx.js" defer></script>
+  <script type="text/javascript" src="midp/text_editor.js" defer></script>
   <script type="text/javascript" src="midp/localmsg.js" defer></script>
+  <script type="text/javascript" src="midp/media.js" defer></script>
   <script type="text/javascript" src="midp/socket.js" defer></script>
   <script type="text/javascript" src="midp/sms.js" defer></script>
   <script type="text/javascript" src="midp/codec.js" defer></script>
+  <script type="text/javascript" src="midp/pim.js" defer></script>
   <script type="text/javascript" src="game-ui.js" defer></script>
   <script type="text/javascript" src="desktop-ui.js" defer></script>
   <script type="text/javascript" src="opt/build/opt.js" defer></script>
@@ -105,6 +109,19 @@
       <h1>SMS Verification Requested</h1>
       <p>This app sent you an SMS. Type the message you received here:
         <input type="text" placeholder="Type SMS Here">
+    </section>
+    <menu>
+      <button class="cancel">Cancel</button>
+      <button class="recommend">Done</button>
+    </menu>
+  </form>
+
+  <form role="dialog" data-type="confirm"
+        class="nokia-fileui-prompt"
+        id="nokia-fileui-prompt" style="display: none">
+    <section>
+      <h1>Select a file</h1>
+      <p><input type="file" name="nokia-fileui-file">
     </section>
     <menu>
       <button class="cancel">Cancel</button>

@@ -15,39 +15,39 @@ public class VirtualKeyboard {
     public static final int VKB_MODE_ALPHA_UPPER_CASE_LOCKED = 4;
 
     public static CustomKeyboardControl getCustomKeyboardControl() {
-        throw new RuntimeException("CustomKeyboardControl::getCustomKeyboardControl() not implemented");
+        throw new RuntimeException("VirtualKeyboard::getCustomKeyboardControl() not implemented");
     }
 
     public static void hideOpenKeypadCommand(boolean bl) {
-        System.out.println("CustomKeyboardControl::hideOpenKeypadCommand(boolean) not implemented");
+        System.out.println("VirtualKeyboard::hideOpenKeypadCommand(boolean) not implemented");
     }
 
     public static boolean isVisible() {
-        throw new RuntimeException("CustomKeyboardControl::isVisible() not implemented");
+        throw new RuntimeException("VirtualKeyboard::isVisible() not implemented");
     }
 
     public static int getXPosition() {
-        throw new RuntimeException("CustomKeyboardControl::getXPosition() not implemented");
+        throw new RuntimeException("VirtualKeyboard::getXPosition() not implemented");
     }
 
     public static int getYPosition() {
-        throw new RuntimeException("CustomKeyboardControl::getYPosition() not implemented");
+        throw new RuntimeException("VirtualKeyboard::getYPosition() not implemented");
     }
 
     public static int getWidth() {
-        throw new RuntimeException("CustomKeyboardControl::getWidth() not implemented");
+        throw new RuntimeException("VirtualKeyboard::getWidth() not implemented");
     }
 
     public static int getHeight() {
-        throw new RuntimeException("CustomKeyboardControl::getHeight() not implemented");
+        throw new RuntimeException("VirtualKeyboard::getHeight() not implemented");
     }
 
     public static void setVisibilityListener(KeyboardVisibilityListener keyboardVisibilityListener) {
-        System.out.println("CustomKeyboardControl::setVisibilityListener(KeyboardVisibilityListener) not implemented");
+        System.out.println("VirtualKeyboard::setVisibilityListener(KeyboardVisibilityListener) not implemented");
     }
 
     public static void suppressSizeChanged(boolean bl) {
-        throw new RuntimeException("CustomKeyboardControl::suppressSizeChanged(boolean) not implemented");
+        throw new RuntimeException("VirtualKeyboard::suppressSizeChanged(boolean) not implemented");
     }
 }
 

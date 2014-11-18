@@ -245,9 +245,12 @@ DumbPipe.registerOpener("socket", function(message, sender) {
     // Convert the data back to an Int8Array.
     data = new Int8Array(data);
 
-    var result = socket.send(data.buffer, 0, data.length);
-
-    sender({ type: "send", result: result });
+    try {
+      var result = socket.send(data.buffer, 0, data.length);
+      sender({ type: "send", result: result });
+    } catch (ex) {
+      sender({ type: "send", error: ex.toString() });
+    }
   };
 
   return function(message) {

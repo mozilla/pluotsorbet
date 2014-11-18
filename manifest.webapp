@@ -2,6 +2,7 @@
   "name": "j2me.js",
   "description": "j2me interpreter for firefox os",
   "launch_path": "/index.html?autosize=1&logConsole=web",
+  "origin": "app://j2mejs.mozilla.org",
   "icons": {
     "128": "/img/icon-128.png"
   },

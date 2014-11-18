@@ -1,11 +1,17 @@
 package com.nokia.mid.ui;
 
+import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Display;
+
 public abstract class CanvasItem {
     public static final int SCALE_NOT_ALLOWED = 0;
     public static final int SCALE_NEAREST = 1;
     public static final int SCALE_AVERAGE = 2;
 
     Object parent = null;
+
+    native private void attachNativeImpl();
+    native private void detachNativeImpl();
 
     // Set the parent object of this CanvasItem.
     public void setParent(Object theParent) {
@@ -14,6 +20,18 @@ public abstract class CanvasItem {
         }
 
         parent = theParent;
+
+        // We need to attach/detach the native implementation at some point.
+        // We initially considered init/finalize, but our VM doesn't appear
+        // to ever call finalize.  So we do it here, attaching the native impl.
+        // when setParent is called with an object reference, then detaching it
+        // when setParent is called with a null value; which appears to be
+        // expected usage when creating/destroying CanvasItem objects.
+        if (parent != null) {
+            attachNativeImpl();
+        } else {
+            detachNativeImpl();
+        }
     }
 
     // Sets the size of this CanvasItem in pixels.
@@ -31,7 +49,24 @@ public abstract class CanvasItem {
     native public int getHeight();
 
     // Sets the rendering position of this CanvasItem.
-    native public void setPosition(int x, int y);
+    native public void setPosition0(int x, int y);
+
+    public void setPosition(int x, int y) {
+        // The passed coordinate is relative to the parent canvas, we need to add up
+        // the anchor value of the parent to get the right coordinate in HTML.
+        if (!(parent instanceof Canvas)) {
+            setPosition0(x, y);
+            return;
+        }
+
+        Display display = ((Canvas)parent).getCurrentDisplay();
+        if (display == null) {
+            setPosition0(x, y);
+            return;
+        }
+
+        setPosition0(display.getDisplayableAnchorX() + x, display.getDisplayableAnchorY() + y);
+    }
 
     // Sets the Z-position, or the elevation, of the item.
     public void setZPosition(int z) throws IllegalArgumentException {

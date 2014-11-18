@@ -1,6 +1,8 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
+var system = require('system');
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
@@ -19,6 +21,8 @@ var gfxTests = [
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
+  { name: "gfx/DrawAndFillRoundRectTest", maxDifferent: 2000 },
+  { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
   { name: "gfx/DrawStringTest", maxDifferent: 345 },
   { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
   { name: "gfx/TextBoxTest", maxDifferent: 4677 },
@@ -31,16 +35,17 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferent: 0 },
+  { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
+  { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
+  { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
 ];
 
-casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
-    casper
-    .start("http://localhost:8000/index.html")
-    .withFrame(0, function() {
+casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
+    function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
-            if (content.contains("DONE: 70958 pass, 0 fail, 177 known fail, 0 unknown pass")) {
-              test.pass('main unit tests');
+            if (content.contains("DONE: 71088 pass, 0 fail, 179 known fail, 0 unknown pass")) {
+                test.pass('main unit tests');
             } else {
               this.debugPage();
               this.echo(this.captureBase64('png'));
@@ -58,7 +63,7 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad")
+    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar")
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
@@ -68,11 +73,11 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 124 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 126 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader&jars=tests/tests.jar")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
@@ -88,11 +93,35 @@ casper.test.begin("unit tests", 5 + gfxTests.length, function(test) {
         });
     });
 
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&jars=tests/tests.jar")
+    .withFrame(0, function() {
+        this.waitForText("START", function() {
+            this.waitUntilVisible(".nokia-fileui-prompt", function() {
+                this.fill("form.nokia-fileui-prompt.visible", {
+                    "nokia-fileui-file": system.args[4],
+                });
+                this.click(".nokia-fileui-prompt.visible input");
+                this.click(".nokia-fileui-prompt.visible button.recommend");
+                this.waitForText("DONE", function() {
+                    var content = this.getPageContent();
+                    if (content.contains("FAIL")) {
+                        this.debugPage();
+                        this.echo(this.captureBase64('png'));
+                        test.fail('file-ui test');
+                    } else {
+                        test.pass("file-ui test");
+                    }
+                });
+            });
+        });
+    });
+
     // Graphics tests
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name)
+        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name + "&jars=tests/tests.jar")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {

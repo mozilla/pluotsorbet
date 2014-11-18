@@ -169,6 +169,8 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
           break;
         }
       }
+
+      return;
     break;
 
     default:
@@ -183,10 +185,6 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
     length: data.length,
     offset: 0,
   });
-}
-
-var NokiaContactsLocalMsgConnection = function() {
-    LocalMsgConnection.call(this);
 }
 
 var NokiaPhoneStatusLocalMsgConnection = function() {
@@ -265,17 +263,16 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
   });
 };
 
+var NokiaContactsLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+}
+
 NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
-    var encoder = new DataEncoder();
-    encoder.putStart(DataType.STRUCT, "event");
-    encoder.put(DataType.METHOD, "name", "Notify");
-    encoder.put(DataType.ULONG, "trans_id", trans_id); // The meaning of this field is unknown
-    encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
+NokiaContactsLocalMsgConnection.prototype.encodeContact = function(encoder, contact) {
     encoder.putStart(DataType.LIST, "Contact");
 
-    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString());
+    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString().substr(0,30));
 
     encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
 
@@ -289,6 +286,15 @@ NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, conta
     encoder.putEnd(DataType.ARRAY, "Numbers");
 
     encoder.putEnd(DataType.LIST, "Contact");
+}
+
+NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
+    var encoder = new DataEncoder();
+    encoder.putStart(DataType.STRUCT, "event");
+    encoder.put(DataType.METHOD, "name", "Notify");
+    encoder.put(DataType.ULONG, "trans_id", trans_id); // The meaning of this field is unknown
+    encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
+    this.encodeContact(encoder, contact);
     encoder.putEnd(DataType.STRUCT, "event");
 
     var data = new TextEncoder().encode(encoder.getData());
@@ -329,6 +335,81 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       contacts.forEach(this.sendContact.bind(this, decoder.getValue(DataType.ULONG)));
     break;
 
+    case "getFirst":
+      var trans_id = decoder.getValue(DataType.ULONG);
+      decoder.getEnd(DataType.ARRAY); // Ignore the contents of the "sources" array
+      var numEntries = decoder.getValue(DataType.ULONG);
+      if (numEntries !== 1) {
+        console.error("(nokia.contacts) event getFirst with numEntries != 1 not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+
+      contacts.getNext((function(contact) {
+        var encoder = new DataEncoder();
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.METHOD, "name", "getFirst");
+        encoder.put(DataType.ULONG, "trans_id", trans_id);
+        if (contact) {
+          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+          encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
+          this.encodeContact(encoder, contact);
+          encoder.putEnd(DataType.ARRAY, "contacts"); // Name unknown
+        } else {
+          encoder.put(DataType.STRING, "result", "Entry not found"); // Name unknown
+        }
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+            data: data,
+            length: data.length,
+            offset: 0,
+        });
+      }).bind(this));
+    break;
+
+    case "getNext":
+      var trans_id = decoder.getValue(DataType.ULONG);
+      decoder.getEnd(DataType.ARRAY); // Ignore the contents of the "sources" array
+      decoder.getEnd(DataType.LIST); // Ignore the contents of the "filter" list
+      decoder.getStart(DataType.LIST);
+      var contactID = decoder.getValue(DataType.WSTRING);
+      decoder.getEnd(DataType.LIST);
+      var includeStartEntry = decoder.getValue(DataType.BOOLEAN);
+      if (includeStartEntry == 1) {
+        console.error("(nokia.contacts) event getNext with includeStartEntry == true not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+      var numEntries = decoder.getValue(DataType.ULONG);
+      if (numEntries !== 1) {
+        console.error("(nokia.contacts) event getNext with numEntries != 1 not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+
+      contacts.getNext((function(contact) {
+        var encoder = new DataEncoder();
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.METHOD, "name", "getNext");
+        encoder.put(DataType.ULONG, "trans_id", trans_id);
+        if (contact) {
+          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+          encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
+          this.encodeContact(encoder, contact);
+          encoder.putEnd(DataType.ARRAY, "contacts"); // Name unknown
+        } else {
+          encoder.put(DataType.STRING, "result", "Entry not found"); // Name unknown
+        }
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+            data: data,
+            length: data.length,
+            offset: 0,
+        });
+      }).bind(this));
+    break;
+
     default:
       console.error("(nokia.contacts) event " + name + " not implemented " +
                     util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
@@ -336,13 +417,242 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
   }
 }
 
+function createUniqueFile(parentDir, completeName, blob, callback) {
+  var name = completeName;
+  var ext = "";
+  var extIndex = name.lastIndexOf(".");
+  if (extIndex !== -1) {
+    ext = name.substring(extIndex);
+    name = name.substring(0, extIndex);
+  }
+
+  var i = 0;
+  function tryFile(fileName) {
+    fs.exists(parentDir + "/" + fileName, function(exists) {
+      if (exists) {
+        i++;
+        tryFile(name + "-" + i + ext);
+      } else {
+        fs.mkdir(parentDir, function() {
+          fs.create(parentDir + "/" + fileName, blob, function() {
+            callback(fileName);
+          });
+        });
+      }
+    });
+  }
+
+  tryFile(completeName);
+}
+
+var NokiaFileUILocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaFileUILocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  switch (name) {
+    case "Common":
+      var encoder = new DataEncoder();
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "1.0");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+      });
+      break;
+
+    case "FileSelect":
+      var trans_id = decoder.getValue(DataType.USHORT);
+      var storageType = decoder.getValue(DataType.STRING);
+      var mediaType = decoder.getValue(DataType.STRING);
+      var multipleSelection = decoder.getValue(DataType.BOOLEAN);
+      var startingURL = decoder.getValue(DataType.STRING);
+
+      var el = document.getElementById('nokia-fileui-prompt').cloneNode(true);
+      el.style.display = 'block';
+      el.classList.add('visible');
+
+      var btnDone = el.querySelector('button.recommend');
+      btnDone.disabled = true;
+
+      var selectedFile = null;
+
+      el.querySelector('input').addEventListener('change', function() {
+        btnDone.disabled = false;
+        selectedFile = this.files[0];
+      });
+
+      el.querySelector('button.cancel').addEventListener('click', function() {
+        el.parentElement.removeChild(el);
+      });
+
+      btnDone.addEventListener('click', (function() {
+        el.parentElement.removeChild(el);
+
+        if (!selectedFile) {
+          return;
+        }
+
+        createUniqueFile("/nokiafileui", selectedFile.name, selectedFile, (function(fileName) {
+          var encoder = new DataEncoder();
+
+          encoder.putStart(DataType.STRUCT, "event");
+          encoder.put(DataType.METHOD, "name", "FileSelect");
+          encoder.put(DataType.USHORT, "trans_id", trans_id);
+          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+          encoder.putStart(DataType.ARRAY, "unknown_array"); // Name unknown
+          encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
+          encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
+          encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
+          encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + fileName); // Name unknown
+          encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
+          encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
+          encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
+          encoder.putEnd(DataType.ARRAY, "unknown_array"); // Name unknown
+          encoder.putEnd(DataType.STRUCT, "event");
+
+          var data = new TextEncoder().encode(encoder.getData());
+          this.sendMessageToClient({
+            data: data,
+            length: data.length,
+            offset: 0,
+          });
+        }).bind(this));
+      }).bind(this));
+
+      document.body.appendChild(el);
+    break;
+
+    default:
+      console.error("(nokia.file-ui) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+};
+
+var NokiaImageProcessingLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaImageProcessingLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  switch (name) {
+    case "Common":
+      var encoder = new DataEncoder();
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "1.[0-10]");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
+      break;
+
+    case "Scale":
+      var trans_id = decoder.getValue(DataType.BYTE);
+      var fileName = decoder.getValue(DataType.WSTRING);
+      decoder.getStart(DataType.LIST);
+      if (decoder.getName() == "max_kb") {
+        console.error("(nokia.image-processing) event " + name + " with max_kb not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+        return;
+      }
+      var max_vres = decoder.getValue(DataType.USHORT);
+      var max_hres = decoder.getValue(DataType.USHORT);
+      decoder.getEnd(DataType.LIST);
+      var aspect = decoder.getValue(DataType.STRING);
+      var quality = decoder.getValue(DataType.BYTE);
+
+      if (aspect != "FullImage" && aspect != "LockToPartialView") {
+        console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' or 'LockToPartialView' not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+        return;
+      }
+
+      fs.open("/" + fileName, (function(fd) {
+        var imgData = fs.read(fd);
+        fs.close(fd);
+
+        var img = new Image();
+        img.src = URL.createObjectURL(new Blob([ imgData ]));
+        img.onload = (function() {
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.min(img.naturalWidth, max_hres);
+          canvas.height = Math.min(img.naturalHeight, max_vres);
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob((function(blob) {
+            createUniqueFile("/nokiaimageprocessing", "image", blob, (function(fileName) {
+              var encoder = new DataEncoder();
+
+              encoder.putStart(DataType.STRUCT, "event");
+              encoder.put(DataType.METHOD, "name", "Scale");
+              encoder.put(DataType.BYTE, "trans_id", trans_id);
+              encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
+              encoder.put(DataType.WSTRING, "filename", "nokiaimageprocessing/" + fileName); // Name unknown
+              encoder.putEnd(DataType.STRUCT, "event");
+
+              var data = new TextEncoder().encode(encoder.getData());
+              this.sendMessageToClient({
+                data: data,
+                length: data.length,
+                offset: 0,
+              });
+            }).bind(this));
+          }).bind(this), "image/jpeg", quality / 100);
+        }).bind(this);
+
+        img.onerror = function(e) {
+          console.error("Error in decoding image");
+        };
+      }).bind(this));
+    break;
+
+    default:
+      console.error("(nokia.image-processing) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+};
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
 MIDP.FakeLocalMsgServers = [ "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings", "nokia.file-ui" ];
+                             "nokia.connectivity-settings" ];
 
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
@@ -351,8 +661,10 @@ MIDP.FakeLocalMsgServers.forEach(function(server) {
 MIDP.LocalMsgConnections["nokia.contacts"] = new NokiaContactsLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.file-ui"] = new NokiaFileUILocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.image-processing"] = new NokiaImageProcessingLocalMsgConnection();
 
-Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(ctx, jName) {
+Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);
 
     this.server = (name[2] == ":");
@@ -382,13 +694,13 @@ Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", fu
 
         resolve();
     }).bind(this));
-});
+}, true);
 
-Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function(ctx) {
+Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function() {
     return MIDP.LocalMsgConnections[this.protocolName].waitConnection();
 });
 
-Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(ctx, data, offset, length) {
+Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(data, offset, length) {
     var message = {
       data: data,
       offset: offset,
@@ -406,7 +718,7 @@ Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(ctx
     }
 });
 
-Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(ctx, data) {
+Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(data) {
     if (this.server) {
         return MIDP.LocalMsgConnections[this.protocolName].serverReceiveMessage(data);
     }
@@ -416,9 +728,9 @@ Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(ct
     }
 
     return MIDP.LocalMsgConnections[this.protocolName].clientReceiveMessage(data);
-});
+}, true);
 
-Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function(ctx) {
+Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function() {
     if (this.server) {
         delete MIDP.LocalMsgConnections[this.protocolName];
     }

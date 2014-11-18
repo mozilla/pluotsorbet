@@ -37,7 +37,16 @@ var jvm = new JVM();
 var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
 MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
 
-var jars = ["java/classes.jar", "tests/tests.jar"];
+if ("gamepad" in urlParams && !/no|0/.test(urlParams.gamepad)) {
+  document.documentElement.classList.add('gamepad');
+}
+
+var jars = ["java/classes.jar"];
+
+if (MIDP.midletClassName == "RunTests") {
+  jars.push("tests/tests.jar");
+}
+
 if (urlParams.jars) {
   jars = jars.concat(urlParams.jars.split(":"));
 }
@@ -58,6 +67,7 @@ var initFS = new Promise(function(resolve, reject) {
     new Promise(function(resolve, reject) {
       fs.mkdir("/Persistent", resolve);
     }),
+
     new Promise(function(resolve, reject) {
       fs.exists("/_main.ks", function(exists) {
         if (exists) {
@@ -70,7 +80,7 @@ var initFS = new Promise(function(resolve, reject) {
           });
         }
       });
-    })
+    }),
   ]);
 });
 
@@ -109,6 +119,21 @@ if (urlParams.jad) {
 if (MIDP.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"));
+  loadingPromises.push(
+    new Promise(function(resolve, reject) {
+      fs.exists("/_test.ks", function(exists) {
+        if (exists) {
+          resolve();
+        } else {
+          load("certs/_test.ks", "blob").then(function(data) {
+            fs.create("/_test.ks", data, function() {
+              resolve();
+            });
+          });
+        }
+      });
+    })
+  );
 }
 
 Promise.all(loadingPromises).then(function() {

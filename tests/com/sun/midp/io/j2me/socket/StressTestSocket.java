@@ -22,7 +22,7 @@ public class StressTestSocket implements Testlet {
     }
 
     void send(OutputStream os, InputStream is, String string) throws IOException {
-        os.write(string.getBytes());
+        os.write((string + "\n").getBytes());
 
         byte buf[] = new byte[1024];
         int i = 0;
@@ -30,7 +30,7 @@ public class StressTestSocket implements Testlet {
             buf[i++] = (byte)is.read();
         } while (buf[i-1] != -1 && buf[i-1] != '\n' && i < buf.length);
         
-        String received = new String(buf, 0, i);
+        String received = new String(buf, 0, i-1);
         th.todo(received, string);
     }
 
@@ -40,7 +40,7 @@ public class StressTestSocket implements Testlet {
         InputStream is = client.openInputStream();
 
         for (int i = 0; i < 100; i++) {
-            send(os, is, "Message n." + i + "\n");
+            send(os, is, "Message n." + i);
         }
 
         is.close();
@@ -53,7 +53,7 @@ public class StressTestSocket implements Testlet {
             SocketConnection client = (SocketConnection)Connector.open(URL);
             OutputStream os = client.openOutputStream();
             InputStream is = client.openInputStream();
-            send(os, is, "Message n." + i + "\n");
+            send(os, is, "Message n." + i);
             is.close();
             os.close();
             client.close();

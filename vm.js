@@ -117,10 +117,25 @@ VM.execute = function(ctx) {
 
                 return;
             }
+
+            if (ctx.frames.length == 1) {
+                break;
+            }
+
             popFrame(0);
         } while (frame);
         ctx.kill();
-        throw new Error(buildExceptionLog(ex, stackTrace));
+
+        if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
+            console.error(buildExceptionLog(ex, stackTrace));
+
+            ctx.thread.waiting.forEach(function(waitingCtx, n) {
+                ctx.thread.waiting[n] = null;
+                waitingCtx.wakeup(ctx.thread);
+            });
+        } else {
+          throw new Error(buildExceptionLog(ex, stackTrace));
+        }
     }
 
     function checkArrayAccess(refArray, idx) {
@@ -804,7 +819,7 @@ VM.execute = function(ctx) {
             if (size < 0) {
                 ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
             }
-            stack.push(ctx.newPrimitiveArray("????ZCFDBSIJ"[type], size));
+            stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
             break;
         case 0xbd: // anewarray
             var idx = frame.read16();
@@ -819,7 +834,7 @@ VM.execute = function(ctx) {
             if (className[0] !== "[")
                 className = "L" + className + ";";
             className = "[" + className;
-            stack.push(ctx.newArray(className, size));
+            stack.push(util.newArray(className, size));
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();
@@ -830,7 +845,7 @@ VM.execute = function(ctx) {
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
                 lengths[i] = stack.pop();
-            stack.push(ctx.newMultiArray(classInfo.className, lengths.reverse()));
+            stack.push(util.newMultiArray(classInfo.className, lengths.reverse()));
             break;
         case 0xbe: // arraylength
             var obj = stack.pop();
@@ -888,7 +903,7 @@ VM.execute = function(ctx) {
             if (classInfo.tag)
                 classInfo = resolve(idx);
             classInitCheck(classInfo, frame.ip-3);
-            stack.push(ctx.newObject(classInfo));
+            stack.push(util.newObject(classInfo));
             break;
         case 0xc0: // checkcast
             var idx = frame.read16();

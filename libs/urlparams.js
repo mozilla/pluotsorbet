@@ -7,9 +7,11 @@
  * The URL query parameters.  One or more of the following:
  *
  *    args (gets split from comma-separated list to Array)
+ *    gamepad
  *    icc_mcc
  *    icc_mnc
  *    icc_msisdn
+ *    instrument
  *    jad
  *    jars
  *    logConsole

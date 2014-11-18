@@ -13,6 +13,55 @@ var util = (function () {
     return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
   }
 
+  /**
+   * Provides a UTF-8 decoder that will throw an exception on error rather
+   * than silently sanitizing the output.
+   */
+  var fallibleUtf8Decoder = new TextDecoder("utf-8", { fatal: true });
+
+  /**
+   * Decodes a UTF-8 string stored in an ArrayBufferView.
+   *
+   * @param arr An ArrayBufferView to decode (such as a Uint8Array).
+   * @returns The decoded string.
+   * @throws An invalid enoding is encountered, see
+   *         TextDecoder.prototype.decode().
+   */
+  function decodeUtf8Array(arr) {
+    return fallibleUtf8Decoder.decode(arr);
+  }
+
+  // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
+  // http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
+  function javaUTF8Decode(arr) {
+    var str = '';
+    var i = 0;
+    while (i < arr.length) {
+        var x = arr[i++];
+
+        if (x <= 0x7f) {
+            // Code points in the range '\u0001' to '\u007F' are represented by a
+            // single byte.
+            // The 7 bits of data in the byte give the value of the code point
+            // represented.
+            str += String.fromCharCode(x);
+        } else if (x <= 0xdf) {
+            // The null code point ('\u0000') and code points in the range '\u0080'
+            // to '\u07FF' are represented by a pair of bytes x and y.
+            var y = arr[i++];
+            str += String.fromCharCode(((x & 0x1f) << 6) + (y & 0x3f));
+        } else {
+            // Code points in the range '\u0800' to '\uFFFF' are represented by 3
+            // bytes x, y, and z.
+            var y = arr[i++];
+            var z = arr[i++];
+            str += String.fromCharCode(((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f));
+        }
+    }
+
+    return str;
+  }
+
   function defaultValue(type) {
     if (type === 'J')
       return Long.ZERO;
@@ -58,6 +107,38 @@ var util = (function () {
     if (!jStr)
       return null;
     return jStr.str;
+  }
+
+  function newPrimitiveArray(type, size) {
+    var constructor = ARRAYS[type];
+    if (!constructor.prototype.class)
+      CLASSES.initPrimitiveArrayType(type, constructor);
+    return new constructor(size);
+  }
+
+  function newArray(typeName, size) {
+    return new (CLASSES.getClass(typeName).constructor)(size);
+  }
+
+  function newMultiArray(typeName, lengths) {
+    var length = lengths[0];
+    var array = newArray(typeName, length);
+    if (lengths.length > 1) {
+      lengths = lengths.slice(1);
+      for (var i=0; i<length; i++)
+        array[i] = newMultiArray(typeName.substr(1), lengths);
+    }
+    return array;
+  }
+
+  function newObject(classInfo) {
+      return new (classInfo.constructor)();
+  }
+
+  function newString(s) {
+    var obj = newObject(CLASSES.java_lang_String);
+    obj.str = s;
+    return obj;
   }
 
   /**
@@ -121,11 +202,18 @@ var util = (function () {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
+    decodeUt8Array: decodeUtf8Array,
+    javaUTF8Decode: javaUTF8Decode,
     defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
+    newPrimitiveArray: newPrimitiveArray,
+    newArray: newArray,
+    newMultiArray: newMultiArray,
+    newObject: newObject,
+    newString: newString,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,
