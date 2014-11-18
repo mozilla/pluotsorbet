@@ -42,7 +42,7 @@ If testing sockets, 4 servers are necessary:
 To run specific tests (e.g. TestSystem and TestRC4):
 
         python tests/httpServer.py &
-        http://localhost:8000/index.html?args=java/lang/TestSystem,javax/crypto/TestRC4
+        http://localhost:8000/index.html?args=java.lang.TestSystem,javax.crypto.TestRC4
 
 Full list of RunTests tests available in the tests/Testlets.java generated file
 
