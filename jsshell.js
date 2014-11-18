@@ -3,6 +3,10 @@
 
 'use strict';
 
+function check() {
+
+}
+
 if (scriptArgs.length !== 1) {
   print("error: One main class name must be specified.");
   print("usage: jsshell <main class name>");
@@ -64,7 +68,7 @@ try {
        "context.js", "libs/encoding.js", "util.js", "frame.js", "arrays.js",
        "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
        "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
-       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "opt/build/opt.js");
+       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "opt/build/opt.js", "compiled.js");
 
   var dump = print;
   var console = window.console;
@@ -79,10 +83,7 @@ try {
   print("INITIALIZATION TIME: " + (dateNow() - start));
 
   start = dateNow();
-  // var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
-
-  var runtime = new Runtime(jvm);
-  CLASSES.compileAll(runtime);
+  var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
 
   J2ME.printResults();
   print("RUNNING TIME: " + (dateNow() - start));

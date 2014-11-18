@@ -162,7 +162,7 @@ Context.prototype.checkCast = function(classInfoId, object) {
 };
 
 Context.prototype.invokeCompiledFn = function(methodInfo, args) {
-  args.unshift(this, 0);
+  args.unshift(this);
   var fn = methodInfo.fn;
   this.frameSets.push(this.frames);
   this.frames = [];
@@ -331,6 +331,10 @@ Context.prototype.newObjectFromId = function(id) {
 
 Context.prototype.newStringConstant = function(s) {
     return this.runtime.newStringConstant(s);
+}
+
+Context.prototype.S = function(s) {
+  return this.runtime.newStringConstant(s);
 }
 
 Context.prototype.getStatic = function(fieldInfoId, type) {

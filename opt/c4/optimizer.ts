@@ -1041,9 +1041,6 @@ module J2ME.C4.IR {
       }
 
       function shouldFloat(node) {
-        if (node instanceof IR.JVMCallProperty) {
-          // debugger;
-        }
         if (node.mustNotFloat || node.shouldNotFloat) {
           return false;
         }

@@ -459,34 +459,14 @@ module J2ME {
   export function quote(s) {
     return "\"" + s + "\"";
   }
-  export function compileClassInfo(codeWriter: IndentingWriter, classInfo: ClassInfo, ctx: Context, target: CompilationTarget) {
-    codeWriter.enter(mangleClass(classInfo) + ": {");
-    codeWriter.enter("methods: {");
-    var methods = classInfo.methods;
-    for (var i = 0; i < methods.length; i++) {
-      var method = methods[i];
-      try {
-        var fn = compileMethodInfo(method, ctx, CompilationTarget.Static);
-        if (fn) {
-          codeWriter.enter(mangleMethod(method) + ": ");
-          codeWriter.write(fn);
-          codeWriter.leave(",");
-        }
-      } catch (x) {
-
-        codeWriter.writeLn(mangleMethod(method) + ": undefined,");
-      }
-    }
-    codeWriter.leave("}");
-    codeWriter.leave("},");
-  }
 
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
-    counter.count("Trying to Compile");
     if (!methodInfo.code) {
       counter.count("Cannot Compile: Method has no code.");
       return;
-    } else if (methodInfo.isSynchronized) {
+    }
+    counter.count("Trying to Compile");
+    if (methodInfo.isSynchronized) {
       counter.count("Cannot Compile: Method is synchronized.");
       return;
     } else if (methodInfo.exception_table.length) {
@@ -503,12 +483,14 @@ module J2ME {
         args.push(parameter.name);
       }
       var fnSource = compilation.body;
+      // consoleWriter.writeLn(fnSource);
       fn = new Function(args.join(","), fnSource);
       // consoleWriter.writeLn(fn.toString());
       // debug && writer.writeLn(fn.toString());
       counter.count("Compiled");
     } catch (e) {
       counter.count("Failed to Compile " + e);
+      // consoleWriter.writeLns(e.stack);
       debug && Debug.warning("Failed to compile " + methodInfo.implKey + " " + e + " " + e.stack);
       if (e.message.indexOf("Not Implemented ") === -1) {
         throw e;
@@ -562,6 +544,15 @@ module J2ME {
       public value: Value) {
       // ...
     }
+  }
+
+
+  /**
+   * TODO: Consider using debug info for nicer parameter names, if available.
+   */
+  function getParameterName(methodInfo: MethodInfo, i: number): string {
+    var parameterNames = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    return i < parameterNames.length ? parameterNames[i] : "p" + (parameterNames.length - i);
   }
 
   class Builder {
@@ -697,7 +688,7 @@ module J2ME {
         if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
           kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
         }
-        var parameter = new IR.Parameter(start, parameterIndex, "P" + kindCharacter(kind) + parameterIndex);
+        var parameter = new IR.Parameter(start, parameterIndex, getParameterName(this.methodInfo, parameterIndex - 1));
         this.parameters.push(parameter);
         parameter.kind = kind;
         parameterIndex++;
@@ -1206,14 +1197,13 @@ module J2ME {
 
     genArrayLength() {
       var array = this.state.apop();
-      // this.genNullCheck(array, this.state.bci);
       var getProperty = new IR.GetProperty(this.region, this.state.store, array, new Constant('length'));
       this.recordLoad(getProperty);
       this.state.ipush(getProperty);
     }
 
     genClass(classInfo: ClassInfo): Value {
-      return new Constant(classInfo.className);
+      return new IR.JVMClass(classInfo);
     }
 
     genGetField(fieldInfo: FieldInfo, isStatic: boolean) {

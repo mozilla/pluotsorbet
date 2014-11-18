@@ -11,7 +11,7 @@ module J2ME.C4.IR {
       return "J<" + this.lowBits + "," + this.highBits + ">";
     }
   }
-  Value.prototype.nodeName = "JVMLong";
+  JVMLong.prototype.nodeName = "JVMLong";
 
   export class JVMString extends Constant {
     constructor(value: string) {
@@ -21,7 +21,17 @@ module J2ME.C4.IR {
       return "S<" + this.value + ">";
     }
   }
-  Value.prototype.nodeName = "JVMString";
+  JVMString.prototype.nodeName = "JVMString";
+
+  export class JVMClass extends Constant {
+    constructor(classInfo: ClassInfo) {
+      super(classInfo);
+    }
+    toString() : string {
+      return "C<" + this.value.className + ">";
+    }
+  }
+  JVMClass.prototype.nodeName = "JVMClass";
 
   export class JVMNewArray extends StoreDependent {
     constructor(public control: Control, public store: Store, public arrayKind: Kind, public length: Value) {
@@ -299,6 +309,10 @@ module J2ME.C4.Backend {
 
   IR.JVMString.prototype.compile = function (cx: Context): AST.Node {
     return new AST.CallExpression(new AST.Identifier("$.S"), [constant(this.value)]);
+  };
+
+  IR.JVMClass.prototype.compile = function (cx: Context): AST.Node {
+    return id(mangleClass(this.value));
   };
 
   IR.JVMCheckCast.prototype.compile = function (cx: Context): AST.Node {
@@ -584,21 +598,39 @@ module J2ME.C4.Backend {
 
   var friendlyMangledNames = false;
 
+  export function mangleString(s: string) {
+    var invalidChars = "[];/<>()";
+    var replaceChars = "abc_defg";
+    var result = "";
+    for (var i = 0; i < s.length; i++) {
+      if ((i === 0 && isIdentifierStart(s[i])) || (i > 0 && isIdentifierPart(s[i]))) {
+        result += s[i];
+      } else {
+        release || assert (invalidChars.indexOf(s[i]) >= 0, s[i] + " " + s);
+        result += replaceChars[invalidChars.indexOf(s[i])];
+      }
+    }
+    return result;
+  }
+
   export function mangleMethod(methodInfo: MethodInfo) {
-    var hash = hashString(methodInfo.implKey);
-    var prefix = friendlyMangledNames ? methodInfo.name + "_" : "";
-    return prefix + StringUtilities.variableLengthEncodeInt32(hash);
+    if (friendlyMangledNames) {
+      return mangleString(methodInfo.name + methodInfo.signature);
+    }
+    var hash = hashString(methodInfo.name + methodInfo.signature);
+    return StringUtilities.variableLengthEncodeInt32(hash);
   }
 
   export function mangleClass(classInfo: ClassInfo) {
+    if (friendlyMangledNames) {
+      return mangleString(classInfo.className);
+    }
     var hash = hashString(classInfo.className);
-    var prefix = friendlyMangledNames ? classInfo.className + "_" : "";
-    return prefix + StringUtilities.variableLengthEncodeInt32(hash);
+    return StringUtilities.variableLengthEncodeInt32(hash);
   }
 
   export function mangleField(fieldInfo: FieldInfo) {
-    var prefix = friendlyMangledNames ? fieldInfo.name + "_" : "";
-    return prefix + StringUtilities.variableLengthEncodeInt32(fieldInfo.id);
+    return mangleString(fieldInfo.name);
   }
 
   IR.JVMGetField.prototype.compile = function (cx: Context): AST.Node {

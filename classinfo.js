@@ -88,6 +88,22 @@ function MethodInfo(opts) {
         this.alternateImpl = Override[this.implKey];
     } else {
         this.alternateImpl = null;
+
+        if (typeof CC !== "undefined") {
+            var compiledMethod = null;
+            var classMangledName = J2ME.C4.Backend.mangleClass(this.classInfo);
+            var compiledClass = CC[classMangledName];
+            if (compiledClass) {
+                var methodMangledName = J2ME.C4.Backend.mangleMethod(this);
+                compiledMethod = compiledClass.methods[methodMangledName];
+                if (this.isStatic) {
+                    jsGlobal[methodMangledName] = compiledMethod;
+                }
+                console.log("HERE: " + compiledMethod + " : ");
+
+            }
+            this.fn = compiledMethod;
+        }
     }
 
     this.consumes = Signature.getINSlots(this.signature);

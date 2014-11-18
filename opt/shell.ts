@@ -1,6 +1,7 @@
 ///<reference path='build/opt.d.ts' />
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
+var CC = {};
 
 jsGlobal.window = {
   setZeroTimeout: function(callback) {
@@ -54,7 +55,7 @@ jsGlobal.urlParams = {
 module J2ME {
   declare var load: (string) => void;
   declare var process, require, global, quit, help, scriptArgs, arguments, snarf;
-  declare var JVM, Runtime, CLASSES, Context;
+  declare var JVM, Runtime, CLASSES, Context, release;
 
   var isNode = typeof process === 'object';
   var writer: IndentingWriter;
@@ -76,14 +77,21 @@ module J2ME {
   writer = new IndentingWriter();
 
   var verboseOption: Options.Option;
-  var compileOption: Options.Option;
+  var classpathOption: Options.Option;
+  var classFilterOption: Options.Option;
+  var debuggerOption: Options.Option;
+  var releaseOption: Options.Option;
+
 
   function main(commandLineArguments: string []) {
     var options = new Options.OptionSet("J2ME");
     var shellOptions = options.register(new Options.OptionSet(""));
 
     verboseOption = shellOptions.register(new Options.Option("v", "verbose", "boolean", false, "Verbose"));
-    compileOption = shellOptions.register(new Options.Option("c", "compile", "string", ".*", "Compile Filter"));
+    classpathOption = shellOptions.register(new Options.Option("cp", "classpath", "string []", [], "Compile ClassPath"));
+    classFilterOption = shellOptions.register(new Options.Option("f", "filter", "string", ".*", "Compile Filter"));
+    debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
+    releaseOption = shellOptions.register(new Options.Option("r", "release", "boolean", false, "Release mode"));
 
     var argumentParser = new Options.ArgumentParser();
     argumentParser.addBoundOptionSet(shellOptions);
@@ -105,7 +113,8 @@ module J2ME {
     // Try and parse command line arguments.
 
     try {
-      argumentParser.parse(commandLineArguments).filter(function (value, index, array) {
+      argumentParser.parse(commandLineArguments);
+      classpathOption.value.filter(function (value, index, array) {
         if (value.endsWith(".jar")) {
           files.push(value);
         } else {
@@ -114,27 +123,66 @@ module J2ME {
       });
     } catch (x) {
       writer.writeLn(x.message);
+      writer.writeLns(x.stack);
       quit();
     }
+
+    release = releaseOption.value;
 
     var jvm = new JVM();
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
       if (file.endsWith(".jar")) {
-        if (verboseOption) {
+        if (verboseOption.value) {
           writer.writeLn("Loading: " + file);
         }
         jvm.addPath(file, snarf(file, "binary").buffer);
         // jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
       }
     }
-    if (compileOption.value) {
-      if (verboseOption) {
-        writer.writeLn("Compiling Pattern: " + compileOption.value);
+    if (classFilterOption.value) {
+      if (verboseOption.value) {
+        writer.writeLn("Compiling Pattern: " + classFilterOption.value);
       }
-      compile(jvm, compileOption.value);
+      compile(jvm, classFilterOption.value);
     }
     jvm.initializeBuiltinClasses();
+  }
+
+  function compileClassInfo(codeWriter: IndentingWriter, classInfo: ClassInfo, ctx: Context) {
+    var mangledClassName = J2ME.C4.Backend.mangleClass(classInfo);
+    if (!J2ME.C4.Backend.isIdentifierName(mangledClassName)) {
+      mangledClassName = quote(mangledClassName);
+    }
+    codeWriter.enter(mangledClassName + ": {");
+    codeWriter.enter("methods: {");
+    var methods = classInfo.methods;
+    for (var i = 0; i < methods.length; i++) {
+      var method = methods[i];
+      var mangledMethodName = J2ME.C4.Backend.mangleMethod(method);
+      if (!J2ME.C4.Backend.isIdentifierName(mangledMethodName)) {
+        mangledMethodName = quote(mangledMethodName);
+      }
+      try {
+        var fn = compileMethodInfo(method, ctx, CompilationTarget.Static);
+        if (fn) {
+          if (debuggerOption.value) {
+            codeWriter.writeLn("// " + method.name);
+          }
+          codeWriter.enter(mangledMethodName + ": ");
+          codeWriter.write(fn);
+          codeWriter.leave(",");
+          if (verboseOption.value) {
+            writer.write(fn);
+          }
+        }
+      } catch (x) {
+
+        codeWriter.writeLn(mangledMethodName + ": undefined,");
+      }
+    }
+    codeWriter.leave("}");
+    codeWriter.leave("},");
   }
 
   function compile(jvm: any, classFilter: string) {
@@ -147,13 +195,13 @@ module J2ME {
       code += s + "\n";
     });
 
-    codeWriter.enter("var code = {");
+    codeWriter.enter("var CC = {");
     Object.keys(classFiles).every(function (name) {
       if (name.substr(-4) !== ".jar") {
         return true;
       }
       var zip = classFiles[name];
-      codeWriter.enter(J2ME.quote(name) + ": {");
+      // codeWriter.enter(J2ME.quote(name) + ": {");
       Object.keys(zip.directory).every(function (fileName) {
         if (fileName.substr(-6) !== '.class') {
           return true;
@@ -161,20 +209,25 @@ module J2ME {
         if (!fileName.match(classFilter)) {
           return true;
         }
-        if (verboseOption) {
+        if (verboseOption.value) {
           writer.writeLn("Compiling Class: " + fileName);
         }
-        codeWriter.enter(J2ME.quote(fileName) + ": {");
-        J2ME.compileClassInfo(codeWriter, CLASSES.loadClassFile(fileName), ctx, CompilationTarget.Static);
-        codeWriter.leave("},");
+        if (debuggerOption.value) {
+          codeWriter.writeLn("// " + fileName);
+        }
+        compileClassInfo(codeWriter, CLASSES.loadClassFile(fileName), ctx);
+        // codeWriter.leave("},");
         return true;
       }.bind(this));
 
-      codeWriter.leave("},");
+      // codeWriter.leave("},");
       return true;
     }.bind(this));
     codeWriter.leave("}");
     writer.writeLn(code);
+    if (verboseOption.value) {
+      J2ME.printResults();
+    }
   }
 
   var commandLineArguments: string [];
@@ -194,116 +247,3 @@ module J2ME {
 
   main(commandLineArguments);
 }
-
-  /*
-  var dump = print;
-  var console = window.console;
-
-  var start = dateNow();
-
-  var jvm = new JVM();
-  jvm.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-  jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-  jvm.initializeBuiltinClasses();
-
-  print("INITIALIZATION TIME: " + (dateNow() - start));
-
-  start = dateNow();
-  // var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
-
-  var runtime = new Runtime(jvm);
-  CLASSES.compileAll(runtime);
-
-  J2ME.printResults();
-  print("RUNNING TIME: " + (dateNow() - start));
-} catch (x) {
-  print(x);
-  print(x.stack);
-}
-*/
-
-//
-//'use strict';
-//
-//if (scriptArgs.length !== 1) {
-//  print("error: One main class name must be specified.");
-//  print("usage: jsshell <main class name>");
-//  quit(1);
-//}
-//
-//var window = {
-//  setZeroTimeout: function(callback) {
-//    callback();
-//  },
-//  addEventListener: function() {
-//  },
-//  crypto: {
-//    getRandomValues: function() {
-//    },
-//  },
-//};
-//
-//var navigator = {
-//  language: "en-US",
-//};
-//
-//var document = {
-//  documentElement: {
-//    classList: {
-//      add: function() {
-//      },
-//    },
-//  },
-//  querySelector: function() {
-//    return {
-//      addEventListener: function() {
-//      },
-//    };
-//  },
-//  getElementById: function() {
-//    return {
-//      addEventListener: function() {
-//      },
-//      getContext: function() {
-//      },
-//    };
-//  },
-//};
-//
-//var urlParams = {
-//  logConsole: "native",
-//  args: "",
-//};
-//
-//try {
-//  load("jvm.js", "classes.js", "libs/zipfile.js", "classinfo.js", "classfile/classfile.js",
-//    "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js", "runtime.js",
-//    "context.js", "libs/encoding.js", "util.js", "frame.js", "arrays.js",
-//    "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
-//    "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
-//    "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "opt/build/opt.js");
-//
-//  var dump = print;
-//  var console = window.console;
-//
-//  var start = dateNow();
-//
-//  var jvm = new JVM();
-//  jvm.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-//  jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-//  jvm.initializeBuiltinClasses();
-//
-//  print("INITIALIZATION TIME: " + (dateNow() - start));
-//
-//  start = dateNow();
-//  // var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
-//
-//  var runtime = new Runtime(jvm);
-//  CLASSES.compileAll(runtime);
-//
-//  J2ME.printResults();
-//  print("RUNNING TIME: " + (dateNow() - start));
-//} catch (x) {
-//  print(x);
-//  print(x.stack);
-//}

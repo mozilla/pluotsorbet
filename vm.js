@@ -1034,7 +1034,7 @@ VM.execute = function(ctx) {
                 break;
             }
 
-            if (!methodInfo.dontCompile && !methodInfo.fn) {
+            if (false && !methodInfo.dontCompile && !methodInfo.fn) {
               ctx.compileMethodInfo(methodInfo);
             }
             if (methodInfo.fn) {

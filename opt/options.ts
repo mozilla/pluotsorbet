@@ -142,7 +142,14 @@ module J2ME.Options {
             continue;
           }
           if (argument.type !== "boolean") {
-            value = args.shift();
+            if (argument.type.indexOf("[]") > 0) {
+              value = [];
+              while (args.length && args[0][0] != '-') {
+                value.push(args.shift());
+              }
+            } else {
+              value = args.shift();
+            }
             release || assert(value !== "-" && value !== "--", "Argument " + argString + " must have a value.");
           } else {
             value = true;
