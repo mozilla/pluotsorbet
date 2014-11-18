@@ -9,6 +9,7 @@ module J2ME.Bytecode {
     public endBci: number;
     public isExceptionEntry: boolean;
     public isLoopHeader: boolean;
+    public isLoopEnd: boolean;
     public blockID: number;
 
     public region: C4.IR.Region;
@@ -20,7 +21,9 @@ module J2ME.Bytecode {
 
     visited: boolean;
     active: boolean;
-    public loops: number; // long
+    public loops: number = 0; // long
+    public exits: number = 0; // long
+    public loopID: number = -1; // long
 
     constructor() {
       this.successors = [];
@@ -32,6 +35,8 @@ module J2ME.Bytecode {
       block.endBci = this.endBci;
       block.isExceptionEntry = this.isExceptionEntry;
       block.isLoopHeader = this.isLoopHeader;
+      block.loops = this.loops;
+      block.loopID = this.loopID;
       block.blockID = this.blockID;
       block.successors = this.successors.slice(0);
       return block;
@@ -65,7 +70,10 @@ module J2ME.Bytecode {
       this.iterateOverBytecodes();
       this.addExceptionEdges();
       this.computeBlockOrder();
+      this.fixLoopBits();
       this.initializeBlockIDs();
+      this.computeLoopStores();
+
       // writer.writeLn("Blocks: " + this.blocks.length);
       // writer.writeLn(JSON.stringify(this.blocks, null, 2));
     }
@@ -77,6 +85,10 @@ module J2ME.Bytecode {
         var block = this.makeBlock(handler.handler_pc);
         block.isExceptionEntry = true;
       }
+    }
+
+    private computeLoopStores() {
+
     }
 
     private initializeBlockIDs() {
@@ -278,7 +290,7 @@ module J2ME.Bytecode {
     /**
      * The next available loop number.
      */
-    private nextLoop = 0;
+    private _nextLoop = 0;
 
     /**
      * Mark the block as a loop header, using the next available loop number.
@@ -292,14 +304,15 @@ module J2ME.Bytecode {
           // Don't compile such methods for now, until we see a concrete case that allows checking for correctness.
           throw new CompilerBailout("Loop formed by an exception handler");
         }
-        if (this.nextLoop >= 32) {
+        if (this._nextLoop >= 32) {
           // This restriction can be removed by using a fall-back to a BitSet in case we have more than 32 loops
           // Don't compile such methods for now, until we see a concrete case that allows checking for correctness.
           throw "Too many loops in method";
         }
-        // assert (block.loops === 0);
-        block.loops = 1 << this.nextLoop;
-        this.nextLoop ++;
+        assert (!block.loops, block.loops);
+        block.loops = 1 << this._nextLoop;
+        block.loopID = this._nextLoop;
+        this._nextLoop ++;
       }
       assert (IntegerUtilities.bitCount(block.loops) === 1);
     }
@@ -357,6 +370,58 @@ module J2ME.Bytecode {
       }
     }
 
+
+    private fixLoopBits() {
+      var loopChanges: boolean = false;
+      function _fixLoopBits(block: Block) {
+        if (block.visited) {
+          // Return cached loop information for this block.
+          if (block.isLoopHeader) {
+            return block.loops & ~(1 << block.loopID);
+          } else {
+            return block.loops;
+          }
+        }
+
+        block.visited = true;
+        var loops = block.loops;
+        var successors = block.successors;
+        for (var i = 0; i < successors.length; i++) {
+          // Recursively process successors.
+          loops |= _fixLoopBits(successors[i]);
+        }
+        for (var i = 0; i < successors.length; i++) {
+          var successor = successors[i];
+          successor.exits = loops & ~successor.loops;
+        }
+        if (block.loops !== loops) {
+          loopChanges = true;
+          block.loops = loops;
+        }
+
+        if (block.isLoopHeader) {
+          loops &= ~(1 << block.loopID);
+        }
+        return loops;
+      }
+
+      do {
+        loopChanges = false;
+        for (var i = 0; i < this.blocks.length; i++) {
+          this.blocks[i].visited = false;
+        }
+        var loop = _fixLoopBits(this.blockMap[0]);
+        if (loop !== 0) {
+          // There is a path from a loop end to the method entry that does not pass the loop
+          // header.
+          // Therefore, the loop is non reducible (has more than one entry).
+          // We don't want to compile such methods because the IR only supports structured
+          // loops.
+          throw new CompilerBailout("Non-reducible loop");
+        }
+      } while (loopChanges);
+    }
+
     private computeBlockOrder() {
       var loop = this.computeBlockOrderFrom(this.blockMap[0]);
       if (loop != 0) {
@@ -379,9 +444,12 @@ module J2ME.Bytecode {
         if (block.active) {
           // Reached block via backward branch.
           this.makeLoopHeader(block);
+          return block.loops;
+        } else if (block.isLoopHeader) {
+          return block.loops & ~(1 << block.loopID);
+        } else {
+          return block.loops;
         }
-        // Return cached loop information for this block.
-        return block.loops;
       }
 
       block.visited = true;
@@ -390,16 +458,21 @@ module J2ME.Bytecode {
       var loops = 0;
 
       for (var i = 0; i < block.successors.length; i++) {
+        var successor = block.successors[i];
         // Recursively process successors.
         loops |= this.computeBlockOrderFrom(block.successors[i]);
-      }
-
-      if (block.isLoopHeader) {
-        assert (IntegerUtilities.bitCount(block.loops) === 1);
-        loops &= ~block.loops;
+        if (successor.active) {
+          // Reached block via backward branch.
+          block.isLoopEnd = true;
+        }
       }
 
       block.loops = loops;
+
+      if (block.isLoopHeader) {
+        loops &= ~(1 << block.loopID);
+      }
+
       block.active = false;
       this.blocks.push(block);
       return loops;
@@ -411,7 +484,15 @@ module J2ME.Bytecode {
 
       writer.enter("Block Map: " + this.blocks.map(b => b.blockID).join(", "));
       this.blocks.forEach(block => {
-        writer.enter("blockID: " + String(block.blockID + ", ").padRight(" ", 5) + "bci: [" + block.startBci + ", " + block.endBci + "]" + (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") + (block.isLoopHeader ? " isLoopHeader" : ""));
+        writer.enter("blockID: " + String(block.blockID +
+          ", ").padRight(" ", 5) +
+          "bci: [" + block.startBci + ", " + block.endBci + "]" +
+          (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") +
+          (block.isLoopHeader ? " isLoopHeader" : "") +
+          (block.isLoopEnd ? " isLoopEnd" : "") +
+          ", loops: " + block.loops.toString(2) +
+          ", exits: " + block.exits.toString(2) +
+          ", loopID: " + block.loopID);
         if (traceBytecode) {
           var bci = block.startBci;
           stream.setBCI(bci);
@@ -420,8 +501,8 @@ module J2ME.Bytecode {
             stream.next();
             bci = stream.currentBCI;
           }
-          writer.outdent();
         }
+        writer.outdent();
       });
       writer.outdent();
     }
