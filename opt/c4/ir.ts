@@ -155,7 +155,7 @@ module J2ME.C4.IR {
           }
         }
         if (v instanceof Array) {
-          count += v.replace(oldInput, newInput);
+          count += (<any>v).replace(oldInput, newInput);
         }
       }
       return count;
@@ -165,6 +165,7 @@ module J2ME.C4.IR {
   Node.prototype.nodeName = "Node";
 
   export class Control extends Node {
+    block: Block;
     constructor() {
       super();
     }

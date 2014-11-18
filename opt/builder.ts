@@ -530,7 +530,7 @@ module J2ME {
 
   class StopInfo {
     constructor(
-      public control: Node,
+      public control: Control,
       public target: Block,
       public state: State) {
       // ...
@@ -539,7 +539,7 @@ module J2ME {
 
   class ReturnInfo {
     constructor(
-      public control: Node,
+      public control: Control,
       public store: Node,
       public value: Value) {
       // ...
@@ -1053,11 +1053,11 @@ module J2ME {
       release || assert (!this.blockStopInfos);
       var _if = new IR.If(this.region, predicate);
       this.blockStopInfos = [new StopInfo(
-        new IR.Projection(_if, ProjectionType.TRUE),
+        <Control><any>new IR.Projection(_if, ProjectionType.TRUE),
         this.blockMap.getBlock(stream.readBranchDest()),
         this.state
       ), new StopInfo(
-        new IR.Projection(_if, ProjectionType.FALSE),
+        <Control><any>new IR.Projection(_if, ProjectionType.FALSE),
         this.blockMap.getBlock(stream.nextBCI),
         this.state
       )];

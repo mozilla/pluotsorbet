@@ -103,12 +103,13 @@ module J2ME.C4.IR {
     rpo: number;
     name: string;
     phis: Phi [];
+    loops: number;
     nodes: Node [];
     region: Node;
     dominator: Block;
     successors: Block [];
     predecessors: Block [];
-
+    isLoopHeader: boolean;
     /**
      * This is added by the codegen.
      */
@@ -194,7 +195,7 @@ module J2ME.C4.IR {
       return CFG.fromDFG(this);
     }
 
-    static preOrderDepthFirstSearch(root, visitChildren, pre) {
+    static preOrderDepthFirstSearch(root: Node, visitChildren, pre: NodeVisitor) {
       var visited = [];
       var worklist = [root];
       var push = worklist.push.bind(worklist);
@@ -210,7 +211,7 @@ module J2ME.C4.IR {
       }
     }
 
-    static postOrderDepthFirstSearch(root, visitChildren, post) {
+    static postOrderDepthFirstSearch(root: Node, visitChildren, post: NodeVisitor) {
       var ONE_TIME = 1, MANY_TIMES = 2;
       var visited = [];
       var worklist = [root];
@@ -256,7 +257,7 @@ module J2ME.C4.IR {
       }
     }
 
-    forEach(visitor, postOrder: boolean) {
+    forEach(visitor: NodeVisitor, postOrder: boolean) {
       var search = postOrder ? DFG.postOrderDepthFirstSearch : DFG.preOrderDepthFirstSearch;
       search(this.exit, function (node, v) {
         node.visitInputsNoConstants(v);
@@ -290,16 +291,17 @@ module J2ME.C4.IR {
 
       var blocks = [];
 
-      function followProjection(node) {
+      function followProjection(node: Node): Node {
         return node instanceof Projection ? node.project() : node;
       }
 
-      function next(node) {
+      function next(node: Node) {
         node = followProjection(node);
         if (!visited[node.id]) {
           visited[node.id] = true;
-          if (node.block) {
-            blocks.push(node.block);
+          var control = <Control>node;
+          if (control.block) {
+            blocks.push(control.block);
           }
           nodes.push(node);
           node.visitInputsNoConstants(next);
@@ -519,7 +521,7 @@ module J2ME.C4.IR {
       release || assert (this.root !== this.exit);
     }
 
-    buildBlock(start, end) {
+    buildBlock(start, end): Block {
       var block = new Block(this.nextBlockID++, start, end);
       this.blocks.push(block);
       return block;
@@ -633,7 +635,7 @@ module J2ME.C4.IR {
         release || assert(bitCount(block.loops) === 1);
       }
 
-      function visit(block) {
+      function visit(block: Block) {
         if (visited.get(block.id)) {
           if (active.get(block.id)) {
             makeLoopHeader(block);
