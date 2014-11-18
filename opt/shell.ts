@@ -37,7 +37,12 @@ jsGlobal.document = {
       },
       getContext: function() {
       },
+      getBoundingClientRect: function() {
+        return { top: 0, left: 0, width: 0, height: 0 };
+      }
     };
+  },
+  addEventListener: function() {
   },
 };
 
