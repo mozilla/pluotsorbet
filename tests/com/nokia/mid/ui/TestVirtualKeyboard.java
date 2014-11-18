@@ -1,3 +1,5 @@
+/* vim: set filetype=java shiftwidth=4 tabstop=4 autoindent cindent expandtab : */
+
 package com.nokia.mid.ui;
 
 import gnu.testlet.TestHarness;
@@ -48,26 +50,26 @@ public class TestVirtualKeyboard extends Canvas implements Testlet {
     public native static void showKeyboard();
 
     public static void verifyKeyboardHidden(TestHarness th) {
-      th.check(VirtualKeyboard.isVisible(), false);
+        th.check(VirtualKeyboard.isVisible(), false);
 
-      // We may consider checking these values but it's not clear from
-      // documentation what we should expect them to be
-      // th.check(VirtualKeyboard.getXPosition(), 0);
-      // th.check(VirtualKeyboard.getYPosition(), /* Height of window */);
-      // th.check(VirtualKeyboard.getWidth(), 0);
-      // th.check(VirtualKeyboard.getHeight(), 0);
+        // We may consider checking these values but it's not clear from
+        // documentation what we should expect them to be
+        // th.check(VirtualKeyboard.getXPosition(), 0);
+        // th.check(VirtualKeyboard.getYPosition(), /* Height of window */);
+        // th.check(VirtualKeyboard.getWidth(), 0);
+        // th.check(VirtualKeyboard.getHeight(), 0);
     }
 
     public static void verifyKeyboardShown(TestHarness th) {
-      th.check(VirtualKeyboard.isVisible(), true);
-      th.check(VirtualKeyboard.getXPosition(), 0);
-      // th.check(VirtualKeyboard.getYPosition() + VirtualKeyboard.getHeight(), /* Window height */);
-      // th.check(VirtualKeyboard.getWidth(), /* Width of window */);
+        th.check(VirtualKeyboard.isVisible(), true);
+        th.check(VirtualKeyboard.getXPosition(), 0);
+        // th.check(VirtualKeyboard.getYPosition() + VirtualKeyboard.getHeight(), /* Window height */);
+        // th.check(VirtualKeyboard.getWidth(), /* Width of window */);
 
-      // It would be nice to verify these values, but it's not clear
-      // what they should be (probably varies across devices)
-      // th.check(VirtualKeyboard.getYPosition(), /* unknown */);
-      // th.check(VirtualKeyboard.getHeight(), /* unknown */);
+        // It would be nice to verify these values, but it's not clear
+        // what they should be (probably varies across devices)
+        // th.check(VirtualKeyboard.getYPosition(), /* unknown */);
+        // th.check(VirtualKeyboard.getHeight(), /* unknown */);
     }
 
     public void test(TestHarness th) {
@@ -86,12 +88,12 @@ public class TestVirtualKeyboard extends Canvas implements Testlet {
             listener.isExpectingShow = true;
             showKeyboard();
             while(true) {
-              try {
-                listener.wait();
-                break;
-              } catch (InterruptedException e) {
-                continue;
-              }
+                try {
+                    listener.wait();
+                    break;
+                } catch (InterruptedException e) {
+                    continue;
+                }
             }
         }
 
@@ -100,12 +102,12 @@ public class TestVirtualKeyboard extends Canvas implements Testlet {
             listener.isExpectingHide = true;
             hideKeyboard();
             while (true) {
-              try {
-                listener.wait();
-                break;
-              } catch (InterruptedException e) {
-                continue;
-              }
+                try {
+                    listener.wait();
+                    break;
+                } catch (InterruptedException e) {
+                    continue;
+                }
             }
         }
 
