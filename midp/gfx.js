@@ -1094,4 +1094,84 @@
 
         return dirtyEditors.shift();
     });
+
+    var initialWindowHeight = window.innerHeight;
+    var isVKVisible = false;
+    var keyboardHeight = 0;
+    var pendingShowNotify = false;
+    var pendingHideNotify = false;
+    var keyboardVisibilityListenerResolve;
+    window.addEventListener("resize", function(evt) {
+        if (window.innerHeight < initialWindowHeight) {
+            if (isVKVisible) {
+                console.warn("Window shrunk but we thought the keyboard was already visible!");
+            }
+            isVKVisible = true;
+            keyboardHeight = initialWindowHeight - window.innerHeight;
+            if (pendingHideNotify) {
+                pendingHideNotify = false;
+                return;
+            } else if (keyboardVisibilityListenerResolve) {
+                keyboardVisibilityListenerResolve(true);
+                keyboardVisibilityListenerResolve = null;
+            } else {
+                pendingShowNotify = true;
+            }
+        } else if (window.innerHeight >= initialWindowHeight) {
+            if (window.innerHeight > initialWindowHeight) {
+                console.warn("Window grew beyond initial size!");
+                initialWindowHeight = window.innerHeight;
+            }
+            if (!isVKVisible) {
+                console.warn("Window grew but we thought the keyboard was already hidden!");
+            }
+            isVKVisible = false;
+            keyboardHeight = 0;
+            if (pendingShowNotify) {
+                pendingShowNotify = false;
+                return;
+            } else if (keyboardVisibilityListenerResolve) {
+                keyboardVisibilityListenerResolve(false);
+                keyboardVisibilityListenerResolve = null;
+            } else {
+                pendingHideNotify = true;
+            }
+        }
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z", function() {
+        return isVKVisible;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I", function() {
+        return 0;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I", function() {
+        // We should return the number of pixels between the top of the
+        // screen and the top of the keyboard
+        return window.innerHeight;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getWidth.()I", function() {
+        return window.innerWidth;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getHeight.()I", function() {
+        return keyboardHeight;
+    });
+
+    Native.create("com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z", function() {
+        return new Promise(function(resolve, reject) {
+            if (pendingShowNotify) {
+                resolve(true);
+                pendingShowNotify = false;
+            } else if (pendingHideNotify) {
+                resolve(false);
+                pendingHideNotify = false;
+            } else {
+                keyboardVisibilityListenerResolve = resolve;
+            }
+        });
+    }, true);
 })(Native);
