@@ -11,6 +11,7 @@ var FieldInfo = (function() {
         this.name = name;
         this.signature = signature;
         this.id = idgen++;
+        this.mangledName = J2ME.C4.Backend.mangleField(this);
     }
 })();
 
@@ -106,6 +107,8 @@ function MethodInfo(opts) {
         }
     }
 
+    this.mangledName = J2ME.C4.Backend.mangleMethod(this);
+
     this.consumes = Signature.getINSlots(this.signature);
     if (!this.isStatic) {
       this.consumes++;
@@ -119,15 +122,11 @@ var ClassInfo = function(classBytes) {
     this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
     this.access_flags = classImage.access_flags;
     this.constant_pool = cp;
-    this.constructor = function () {
-    }
-    this.constructor.prototype.class = this;
-    this.constructor.prototype.toString = function() {
-        return "[instance " + this.class.className + "]";
-    }
     // Cache for virtual methods and fields
     this.vmc = {};
     this.vfc = {};
+
+    this.mangledName = J2ME.C4.Backend.mangleClass(this);
 
     var self = this;
 
@@ -170,6 +169,32 @@ var ClassInfo = function(classBytes) {
                 if (c.outer_class_info_index)
                     classes.push(cp[cp[c.outer_class_info_index].name_index].bytes);
             });
+        }
+    });
+}
+
+ClassInfo.prototype.initPrototypeChain = function() {
+    if (this.superClass) {
+        this.superClass.initPrototypeChain();
+    }
+
+    var constructor = this.constructor = function() { };
+    constructor.prototype = Object.create(
+        this.superClass ?
+            this.superClass.constructor.prototype :
+            null);
+    constructor.prototype.class = this;
+    constructor.prototype.toString = function() {
+        return '[instance ' + this.class.className + ']';
+    };
+
+    this.methods.forEach(function(methodInfo) {
+        if (methodInfo.fn) {
+            if (methodInfo.isStatic) {
+                constructor[methodInfo.mangledName] = methodInfo.fn;
+            } else {
+                constructor.prototype[methodInfo.mangledName] = methodInfo.fn;
+            }
         }
     });
 }

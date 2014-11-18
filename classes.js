@@ -76,6 +76,8 @@ Classes.prototype.loadClassFile = function(fileName) {
     classes.forEach(function (c, n) {
         classes[n] = self.loadClass(c);
     });
+
+    classInfo.initPrototypeChain();
     return classInfo;
 }
 
