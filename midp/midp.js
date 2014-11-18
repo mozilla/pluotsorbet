@@ -551,49 +551,110 @@ MIDP.Context2D = (function() {
       c.height = 320;
     }
 
-    // TODO These mouse event handlers only work on firefox right now,
-    // because they use layerX and layerY.
+    function sendPenEvent(pt, whichType) {
+        MIDP.sendNativeEvent({
+            type: MIDP.PEN_EVENT,
+            intParam1: whichType,
+            intParam2: pt.x,
+            intParam3: pt.y,
+            intParam4: MIDP.displayId
+        }, MIDP.foregroundIsolateId);
+    }
 
-    var mouse_is_down = false;
-    var mouse_moved = false;
-    var posX = 0;
-    var posY = 0;
+    function sendGestureEvent(pt, distancePt, whichType) {
+        MIDP.sendNativeEvent({
+            type: MIDP.GESTURE_EVENT,
+            intParam1: whichType,
+            intParam2: distancePt && distancePt.x || 0,
+            intParam3: distancePt && distancePt.y || 0,
+            intParam4: MIDP.displayId,
+            intParam5: pt.x,
+            intParam6: pt.y,
+            floatParam1: 0.0,
+            intParam7: 0,
+            intParam8: 0,
+            intParam9: 0,
+            intParam10: 0,
+            intParam11: 0,
+            intParam12: 0,
+            intParam13: 0,
+            intParam14: 0,
+            intParam15: 0,
+            intParam16: 0
+        }, MIDP.foregroundIsolateId);
+    }
 
-    c.addEventListener("mousedown", function(ev) {
-        mouse_is_down = true;
-        mouse_moved = false;
-        posX = ev.layerX;
-        posY = ev.layerY;
-        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.PRESSED, intParam2: posX, intParam3: posY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+    // In the simulator and on device, use touch events; in desktop
+    // mode, we must use mouse events (unless you enable touch events
+    // in devtools).
+    var supportsTouch = ("ontouchstart" in document.documentElement);
+
+    // Cache the canvas position for future computation.
+    var canvasRect = c.getBoundingClientRect();
+    window.addEventListener("resize", function() {
+        canvasRect = c.getBoundingClientRect();
     });
 
-    c.addEventListener("mousemove", function(ev) {
-        var distanceX = ev.layerX - posX;
-        var distanceY = ev.layerY - posY;
-        if (distanceX == 0 && distanceY == 0) {
-            // Sometimes "mousemove" fires even if we haven't actually
-            // moved the mouse; treating that as a "move" breaks clicks.
-            return;
-        }
-        mouse_moved = true;
-        if (mouse_is_down) {
-            MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.DRAGGED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
-            MIDP.sendNativeEvent({ type: MIDP.GESTURE_EVENT, intParam1: MIDP.GESTURE_DRAG, intParam2: distanceX, intParam3: distanceY, intParam4: MIDP.displayId,
-                                   intParam5: posX, intParam6: posY, floatParam1: 0.0, intParam7: 0, intParam8: 0, intParam9: 0,
-                                   intParam10: 0, intParam11: 0, intParam12: 0, intParam13: 0, intParam14: 0, intParam15: 0, intParam16: 0 }, MIDP.foregroundIsolateId);
-        }
-        posX = ev.layerX;
-        posY = ev.layerY;
+    function getEventPoint(event) {
+        var item = ((event.touches && event.touches[0]) || // touchstart, touchmove
+                    (event.changedTouches && event.changedTouches[0]) || // touchend
+                    event); // mousedown, mouseup, mousemove
+        return {
+            x: item.pageX - (canvasRect.left | 0),
+            y: item.pageY - (canvasRect.top | 0)
+        };
+    }
+
+    // Input Handling: Some MIDlets (usually older ones) respond to
+    // "pen" events; others respond to "gesture" events. We must fire
+    // both. A distance threshold ensures that touches with an "intent
+    // to tap" will likely result in a tap.
+
+    var MIN_DRAG_DISTANCE_SQUARED = 5 * 5;
+    var mouseDownInfo = null;
+
+    c.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
+        event.preventDefault(); // Prevent unnecessary fake mouse events.
+        var pt = getEventPoint(event);
+        sendPenEvent(pt, MIDP.PRESSED);
+        mouseDownInfo = pt;
     });
 
-    c.addEventListener("mouseup", function(ev) {
-        mouse_is_down = false;
-        if (!mouse_moved) {
-            MIDP.sendNativeEvent({ type: MIDP.GESTURE_EVENT, intParam1: MIDP.GESTURE_TAP, intParam2: 0, intParam3: 0, intParam4: MIDP.displayId,
-                                   intParam5: ev.layerX, intParam6: ev.layerY, floatParam1: 0.0, intParam7: 0, intParam8: 0, intParam9: 0,
-                                   intParam10: 0, intParam11: 0, intParam12: 0, intParam13: 0, intParam14: 0, intParam15: 0, intParam16: 0 }, MIDP.foregroundIsolateId);
+    c.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
+        if (!mouseDownInfo) {
+            return; // Mousemove on desktop; ignored.
         }
-        MIDP.sendNativeEvent({ type: MIDP.PEN_EVENT, intParam1: MIDP.RELEASED, intParam2: ev.layerX, intParam3: ev.layerY, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+        event.preventDefault();
+        var pt = getEventPoint(event);
+        sendPenEvent(pt, MIDP.DRAGGED);
+        var distance = {
+            x: pt.x - mouseDownInfo.x,
+            y: pt.y - mouseDownInfo.y
+        };
+        // If this gesture is dragging, or we've moved a substantial
+        // amount since the original "down" event, begin or continue a
+        // drag event. Using squared distance to avoid needing sqrt.
+        if (mouseDownInfo.isDragging ||
+            (distance.x * distance.x + distance.y * distance.y > MIN_DRAG_DISTANCE_SQUARED)) {
+            mouseDownInfo.isDragging = true;
+            mouseDownInfo.x = pt.x;
+            mouseDownInfo.y = pt.y;
+            sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
+        }
+    });
+
+    // The end listener goes on `document` so that we properly detect touchend/mouseup anywhere.
+    document.addEventListener(supportsTouch ? "touchend" : "mouseup", function(event) {
+        if (!mouseDownInfo) {
+            return; // Touchstart wasn't on the canvas.
+        }
+        event.preventDefault();
+
+        var pt = getEventPoint(event);
+        sendPenEvent(pt, MIDP.RELEASED);
+        sendGestureEvent(pt, null, mouseDownInfo.isDragging ? MIDP.GESTURE_DROP : MIDP.GESTURE_TAP);
+
+        mouseDownInfo = null; // Clear the way for the next gesture.
     });
 
     return c.getContext("2d");
@@ -811,10 +872,19 @@ MIDP.suppressKeyEvents = false;
 MIDP.keyPress = function(keyCode) {
     if (!MIDP.suppressKeyEvents)
         MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
-}
+};
+
+MIDP.keyRelease = function(keyCode) {
+    if (!MIDP.suppressKeyEvents)
+        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.RELEASED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+};
 
 window.addEventListener("keypress", function(ev) {
     MIDP.keyPress(ev.which);
+});
+
+window.addEventListener("keyup", function(ev) {
+    MIDP.keyRelease(ev.which);
 });
 
 Native.create("com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I", function() {
@@ -1157,7 +1227,7 @@ Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I",
 
 Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V", function(suiteId, className) {
     console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
-                 suiteId + ", " + className + ")");
+                 suiteId + ", " + util.fromJavaString(className) + ")");
 });
 
 Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I", function(name) {

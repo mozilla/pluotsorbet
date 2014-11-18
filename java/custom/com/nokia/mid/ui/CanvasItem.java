@@ -1,5 +1,8 @@
 package com.nokia.mid.ui;
 
+import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Display;
+
 public abstract class CanvasItem {
     public static final int SCALE_NOT_ALLOWED = 0;
     public static final int SCALE_NEAREST = 1;
@@ -46,7 +49,24 @@ public abstract class CanvasItem {
     native public int getHeight();
 
     // Sets the rendering position of this CanvasItem.
-    native public void setPosition(int x, int y);
+    native public void setPosition0(int x, int y);
+
+    public void setPosition(int x, int y) {
+        // The passed coordinate is relative to the parent canvas, we need to add up
+        // the anchor value of the parent to get the right coordinate in HTML.
+        if (!(parent instanceof Canvas)) {
+            setPosition0(x, y);
+            return;
+        }
+
+        Display display = ((Canvas)parent).getCurrentDisplay();
+        if (display == null) {
+            setPosition0(x, y);
+            return;
+        }
+
+        setPosition0(display.getDisplayableAnchorX() + x, display.getDisplayableAnchorY() + y);
+    }
 
     // Sets the Z-position, or the elevation, of the item.
     public void setZPosition(int z) throws IllegalArgumentException {

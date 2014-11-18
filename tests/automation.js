@@ -37,13 +37,14 @@ var gfxTests = [
   { name: "gfx/ClippingTest", maxDifferent: 0 },
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
+  { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
 ];
 
 casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
-            if (content.contains("DONE: 70983 pass, 0 fail, 180 known fail, 0 unknown pass")) {
+            if (content.contains("DONE: 71095 pass, 0 fail, 179 known fail, 0 unknown pass")) {
                 test.pass('main unit tests');
             } else {
                 this.debugPage();
@@ -69,7 +70,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad")
+    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar")
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
@@ -79,11 +80,11 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 124 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 126 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader&jars=tests/tests.jar")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
@@ -100,7 +101,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&jars=tests/tests.jar")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.waitUntilVisible(".nokia-fileui-prompt", function() {
@@ -127,7 +128,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name)
+        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name + "&jars=tests/tests.jar")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {

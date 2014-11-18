@@ -14,5 +14,5 @@ port = 8000
 if len(sys.argv) > 1:
     port = int(sys.argv[1])
 
-httpd = BaseHTTPServer.HTTPServer(('localhost', port), CustomRequestHandler)
+httpd = BaseHTTPServer.HTTPServer(('', port), CustomRequestHandler)
 httpd.serve_forever()

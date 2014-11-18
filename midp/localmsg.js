@@ -269,15 +269,10 @@ var NokiaContactsLocalMsgConnection = function() {
 
 NokiaContactsLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
-    var encoder = new DataEncoder();
-    encoder.putStart(DataType.STRUCT, "event");
-    encoder.put(DataType.METHOD, "name", "Notify");
-    encoder.put(DataType.ULONG, "trans_id", trans_id); // The meaning of this field is unknown
-    encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
+NokiaContactsLocalMsgConnection.prototype.encodeContact = function(encoder, contact) {
     encoder.putStart(DataType.LIST, "Contact");
 
-    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString());
+    encoder.put(DataType.WSTRING, "ContactID", contact.id.toString().substr(0,30));
 
     encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
 
@@ -291,6 +286,15 @@ NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, conta
     encoder.putEnd(DataType.ARRAY, "Numbers");
 
     encoder.putEnd(DataType.LIST, "Contact");
+}
+
+NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
+    var encoder = new DataEncoder();
+    encoder.putStart(DataType.STRUCT, "event");
+    encoder.put(DataType.METHOD, "name", "Notify");
+    encoder.put(DataType.ULONG, "trans_id", trans_id); // The meaning of this field is unknown
+    encoder.put(DataType.BYTE, "type", 1); // The name of this field is unknown (the value may be 1, 2, 3 according to the event (I'd guess CREATE, DELETE, UPDATE))
+    this.encodeContact(encoder, contact);
     encoder.putEnd(DataType.STRUCT, "event");
 
     var data = new TextEncoder().encode(encoder.getData());
@@ -329,6 +333,81 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
 
     case "NotifySubscribe":
       contacts.forEach(this.sendContact.bind(this, decoder.getValue(DataType.ULONG)));
+    break;
+
+    case "getFirst":
+      var trans_id = decoder.getValue(DataType.ULONG);
+      decoder.getEnd(DataType.ARRAY); // Ignore the contents of the "sources" array
+      var numEntries = decoder.getValue(DataType.ULONG);
+      if (numEntries !== 1) {
+        console.error("(nokia.contacts) event getFirst with numEntries != 1 not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+
+      contacts.getNext((function(contact) {
+        var encoder = new DataEncoder();
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.METHOD, "name", "getFirst");
+        encoder.put(DataType.ULONG, "trans_id", trans_id);
+        if (contact) {
+          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+          encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
+          this.encodeContact(encoder, contact);
+          encoder.putEnd(DataType.ARRAY, "contacts"); // Name unknown
+        } else {
+          encoder.put(DataType.STRING, "result", "Entry not found"); // Name unknown
+        }
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+            data: data,
+            length: data.length,
+            offset: 0,
+        });
+      }).bind(this));
+    break;
+
+    case "getNext":
+      var trans_id = decoder.getValue(DataType.ULONG);
+      decoder.getEnd(DataType.ARRAY); // Ignore the contents of the "sources" array
+      decoder.getEnd(DataType.LIST); // Ignore the contents of the "filter" list
+      decoder.getStart(DataType.LIST);
+      var contactID = decoder.getValue(DataType.WSTRING);
+      decoder.getEnd(DataType.LIST);
+      var includeStartEntry = decoder.getValue(DataType.BOOLEAN);
+      if (includeStartEntry == 1) {
+        console.error("(nokia.contacts) event getNext with includeStartEntry == true not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+      var numEntries = decoder.getValue(DataType.ULONG);
+      if (numEntries !== 1) {
+        console.error("(nokia.contacts) event getNext with numEntries != 1 not implemented " +
+                      util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      }
+
+      contacts.getNext((function(contact) {
+        var encoder = new DataEncoder();
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.METHOD, "name", "getNext");
+        encoder.put(DataType.ULONG, "trans_id", trans_id);
+        if (contact) {
+          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+          encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
+          this.encodeContact(encoder, contact);
+          encoder.putEnd(DataType.ARRAY, "contacts"); // Name unknown
+        } else {
+          encoder.put(DataType.STRING, "result", "Entry not found"); // Name unknown
+        }
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+            data: data,
+            length: data.length,
+            offset: 0,
+        });
+      }).bind(this));
     break;
 
     default:
@@ -514,8 +593,8 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       var aspect = decoder.getValue(DataType.STRING);
       var quality = decoder.getValue(DataType.BYTE);
 
-      if (aspect != "FullImage") {
-        console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' not implemented " +
+      if (aspect != "FullImage" && aspect != "LockToPartialView") {
+        console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' or 'LockToPartialView' not implemented " +
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
         return;
       }

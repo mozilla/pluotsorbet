@@ -14,7 +14,47 @@ var contacts = (function() {
     });
   }
 
+  function getAll(callback) {
+    var contacts = [];
+    var sender = DumbPipe.open("contacts", {}, function(contact) {
+      if (!contact) {
+        callback(contacts);
+        DumbPipe.close(sender);
+        return;
+      }
+
+      contacts.push(contact);
+    });
+  }
+
+  var requestHandler = null;
+  function getNext(callback) {
+    if (requestHandler) {
+      callback(requestHandler());
+      return;
+    }
+
+    getAll(function(contacts) {
+      var idx = -1;
+
+      requestHandler = function() {
+        idx++;
+
+        if (idx < contacts.length) {
+          return contacts[idx];
+        }
+
+        requestHandler = null;
+
+        return null;
+      }
+
+      callback(requestHandler());
+    });
+  }
+
   return {
     forEach: forEach,
+    getNext: getNext,
   };
 })();

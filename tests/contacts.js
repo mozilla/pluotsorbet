@@ -4,6 +4,7 @@
 var fakeContacts = [{
   id: 1,
   name: ["Test Contact 1"],
+  familyName: ["Contact 1"],
   tel: [{
     type: ["home"],
     pref: true,
@@ -16,7 +17,24 @@ var fakeContacts = [{
     value: "+16505550101",
     carrier: "C2",
   },],
-}];
+},
+{
+  id: 2,
+  name: ["Test Contact 2"],
+  familyName: ["Contact 2"],
+  tel: [{
+    type: ["home"],
+    pref: true,
+    value: "+16505550102",
+    carrier: "C3",
+  },
+  {
+    type: ["work"],
+    pref: false,
+    value: "+16505550103",
+    carrier: "C4",
+  },],
+},];
 
 // Override the regular "contacts" registration with our fake one.
 DumbPipe.registerOpener("contacts", function(message, sender) {

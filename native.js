@@ -70,6 +70,15 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "microedition.profiles":
         value = "MIDP-2.0"
         break;
+    case "microedition.pim.version":
+        value = "1.0";
+        break;
+    case "microedition.amms.version":
+        value = "1.1";
+        break;
+    case "mmapi-configuration":
+        value = null;
+        break;
     case "fileconn.dir.memorycard":
         value = "file:///";
         break;
@@ -689,7 +698,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V", function(data) {
     this.decoded = new TextDecoder("UTF-8").decode(data);
 });
 
-Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(cbuf, off, len) {
+Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I", function(cbuf, off, len) {
     if (this.decoded.length === 0) {
       return -1;
     }
@@ -701,6 +710,19 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Reader.read.([CII)I", function(cbuf,
     this.decoded = this.decoded.substring(len);
 
     return len;
+});
+
+Native.create("java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;", function(bytearr) {
+    var array = new Uint8Array(bytearr.buffer);
+    try {
+        return util.decodeUtf8Array(array);
+    } catch(e) {
+        try {
+            return util.javaUTF8Decode(array);
+        } catch (e) {
+            throw new JavaException("java/io/UTFDataFormatException");
+        }
+    }
 });
 
 Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len) {

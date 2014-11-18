@@ -32,6 +32,8 @@ import java.io.*;
 
 /** Reader for UTF-8 encoded input streams. */
 public class UTF_8_Reader extends StreamReader {
+    boolean initialized = false;
+
     /** Constructs a UTF-8 reader. */
     public UTF_8_Reader() {
     }
@@ -39,22 +41,6 @@ public class UTF_8_Reader extends StreamReader {
     public Reader open(InputStream in, String enc)
         throws UnsupportedEncodingException {
         super.open(in, enc);
-
-        // Read the whole stream in memory
-        byte[] buffer = new byte[1024];
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try {
-            int numRead = 0;
-            while ((numRead = in.read(buffer)) > -1) {
-                output.write(buffer, 0, numRead);
-            }
-            output.flush();
-        } catch (Exception e) {
-            throw new UnsupportedEncodingException("Failed to read from the stream");
-        }
-
-        init(output.toByteArray());
-
         return this;
     }
 
@@ -70,7 +56,29 @@ public class UTF_8_Reader extends StreamReader {
      * @exception IOException is thrown if the input stream 
      * could not be read for the raw unconverted character
      */
-    public native int read(char cbuf[], int off, int len) throws IOException;
+    public native int readNative(char cbuf[], int off, int len);
+    public int read(char cbuf[], int off, int len) throws IOException {
+        if (!initialized) {
+            // Read the whole stream in memory
+            byte[] buffer = new byte[1024];
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            try {
+                int numRead = 0;
+                while ((numRead = in.read(buffer)) > -1) {
+                    output.write(buffer, 0, numRead);
+                }
+                output.flush();
+            } catch (Exception e) {
+                throw new UnsupportedEncodingException("Failed to read from the stream");
+            }
+
+            init(output.toByteArray());
+
+            initialized = true;
+        }
+
+        return readNative(cbuf, off, len);
+    }
 
     /**
      * Mark the present position in the stream.

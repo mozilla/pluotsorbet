@@ -87,7 +87,8 @@ var fs = (function() {
     });
   }
 
-  var openedFiles = [];
+  var openedFiles = [null, null, null];
+  var fileStats = {};
 
   function open(path, cb) {
     path = normalizePath(path);
@@ -99,6 +100,7 @@ var fs = (function() {
         var reader = new FileReader();
         reader.addEventListener("loadend", function() {
           var fd = openedFiles.push({
+            dirty: false,
             path: path,
             buffer: new FileBuffer(new Uint8Array(reader.result)),
             position: 0,
@@ -110,11 +112,20 @@ var fs = (function() {
     });
   }
 
-  function close(fd) {
+  function close(fd, cb) {
     if (fd >= 0 && openedFiles[fd]) {
-      // Replace descriptor object with null value instead of removing it from
-      // the array so we don't change the indexes of the other objects.
-      openedFiles.splice(fd, 1, null);
+      flush(fd, function() {
+        // Replace descriptor object with null value instead of removing it from
+        // the array so we don't change the indexes of the other objects.
+        openedFiles.splice(fd, 1, null);
+        if (cb) {
+          cb();
+        }
+      });
+    } else {
+      if (cb) {
+        cb();
+      }
     }
   }
 
@@ -158,8 +169,11 @@ var fs = (function() {
 
     buffer.array.set(data, from);
 
-    openedFiles[fd].position = from + data.byteLength;
-    openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
+    var file = openedFiles[fd];
+    file.position = from + data.byteLength;
+    file.stat = { mtime: Date.now(), isDir: false, size: buffer.contentSize };
+    file.dirty = true;
+    fileStats[file.path] = file.stat;
   }
 
   function getpos(fd) {
@@ -179,8 +193,15 @@ var fs = (function() {
   }
 
   function flush(fd, cb) {
+    // Bail early if the file has not been modified.
+    if (!openedFiles[fd].dirty) {
+      cb();
+      return;
+    }
+
     var blob = new Blob([openedFiles[fd].buffer.getContent()]);
     asyncStorage.setItem(openedFiles[fd].path, blob, function() {
+      openedFiles[fd].dirty = false;
       if (openedFiles[fd].stat) {
         setStat(openedFiles[fd].path, openedFiles[fd].stat, cb);
       } else {
@@ -215,7 +236,7 @@ var fs = (function() {
     stat(path, function(stat) {
       if (stat && !stat.isDir) {
         asyncStorage.setItem(path, new Blob(), function() {
-          setStat(path, { mtime: Date.now(), isDir: false });
+          setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
           cb(true);
         });
       } else {
@@ -225,9 +246,11 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
-    if (size != openedFiles[fd].buffer.contentSize) {
-      openedFiles[fd].buffer.setSize(size);
-      openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
+    var file = openedFiles[fd];
+    if (size != file.buffer.contentSize) {
+      file.buffer.setSize(size);
+      file.dirty = true;
+      fileStats[file.path] = file.stat = { mtime: Date.now(), isDir: false, size: size };
     }
   }
 
@@ -235,7 +258,7 @@ var fs = (function() {
     path = normalizePath(path);
 
     if (openedFiles.findIndex(file => file && file.path === path) != -1) {
-      setTimeout(() => cb(false), 0);
+      setZeroTimeout(() => cb(false));
       return;
     }
 
@@ -292,7 +315,7 @@ var fs = (function() {
 
     createInternal(path, blob, function(created) {
       if (created) {
-        setStat(path, { mtime: Date.now(), isDir: false }, function() {
+        setStat(path, { mtime: Date.now(), isDir: false, size: blob.size }, function() {
           cb(created);
         });
       } else {
@@ -360,10 +383,18 @@ var fs = (function() {
   function size(path, cb) {
     path = normalizePath(path);
 
+    if (fileStats[path] && typeof fileStats[path].size != "undefined") {
+      cb(fileStats[path].size);
+      return;
+    }
+
     asyncStorage.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
+        if (fileStats[path]) {
+          fileStats[path].size = blob.size;
+        }
         cb(blob.size);
       }
     });
@@ -376,7 +407,7 @@ var fs = (function() {
     newPath = normalizePath(newPath);
 
     if (openedFiles.findIndex(file => file && file.path === oldPath) != -1) {
-      setTimeout(() => cb(false), 0);
+      setZeroTimeout(() => cb(false));
       return;
     }
 
@@ -409,23 +440,36 @@ var fs = (function() {
   }
 
   function setStat(path, stat, cb) {
+    fileStats[path] = stat;
     asyncStorage.setItem("!" + path, stat, cb);
   }
 
   function removeStat(path, cb) {
+    delete fileStats[path];
     asyncStorage.removeItem("!" + path, cb);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
 
-    var file = openedFiles.find(file => file && file.stat && file.path === path);
-    if (file) {
-      setTimeout(() => cb(file.stat), 0);
+    var stat = fileStats[path];
+    if (stat) {
+      setTimeout(() => cb(stat), 0);
       return;
     }
 
-    asyncStorage.getItem("!" + path, cb);
+    var file = openedFiles.find(file => file && file.stat && file.path === path);
+    if (file) {
+      setZeroTimeout(() => cb(file.stat));
+      return;
+    }
+
+    asyncStorage.getItem("!" + path, function(stat) {
+      if (stat) {
+        fileStats[path] = stat;
+      }
+      cb(stat);
+    });
   }
 
   return {
