@@ -484,16 +484,38 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
       var multipleSelection = decoder.getValue(DataType.BOOLEAN);
       var startingURL = decoder.getValue(DataType.STRING);
 
+      var accept = '';
+
+      switch (mediaType) {
+        case "Picture":
+          accept = "image/*";
+        break;
+
+        case "Video":
+          accept = "video/*";
+        break;
+
+        case "Music":
+          accept = "audio/*";
+        break;
+
+        default:
+          throw new Error("Media type '" + mediaType + "' not supported");
+      }
+
       var el = document.getElementById('nokia-fileui-prompt').cloneNode(true);
       el.style.display = 'block';
       el.classList.add('visible');
+
+      var fileInput = el.querySelector('input');
+      fileInput.accept = accept;
 
       var btnDone = el.querySelector('button.recommend');
       btnDone.disabled = true;
 
       var selectedFile = null;
 
-      el.querySelector('input').addEventListener('change', function() {
+      fileInput.addEventListener('change', function() {
         btnDone.disabled = false;
         selectedFile = this.files[0];
       });
