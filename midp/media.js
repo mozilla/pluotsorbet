@@ -10,6 +10,7 @@ Media.ContentTypes = {
     ],
 
     file: [
+        "audio/ogg",
         "audio/x-wav",
         "audio/mpeg",
         "image/jpeg",
@@ -68,6 +69,7 @@ Media.extToFormat = new Map([
 ]);
 
 Media.contentTypeToFormat = new Map([
+    ["audio/ogg", "ogg"],
     ["audio/amr", "amr"],
     ["audio/x-wav", "wav"],
     ["audio/mpeg", "MPEG_layer_3"],
@@ -75,7 +77,7 @@ Media.contentTypeToFormat = new Map([
     ["image/png", "PNG"],
 ]);
 
-Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr"];
+Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
 
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
@@ -406,7 +408,25 @@ function PlayerContainer(url) {
 // default buffer size 1 MB
 PlayerContainer.DEFAULT_BUFFER_SIZE  = 1024 * 1024;
 
+PlayerContainer.prototype.isAudioCapture = function() {
+    return !!(this.url && this.url.startsWith("capture://audio"));
+};
+
 PlayerContainer.prototype.guessFormatFromURL = function() {
+    if (this.isAudioCapture()) {
+        var encoding = "audio/ogg"; // Same as system property |audio.encodings|
+
+        var idx = this.url.indexOf("encoding=");
+        if (idx > 0) {
+            var encodingKeyPair = this.url.substring(idx).split("&")[0].split("=");
+            encoding = encodingKeyPair.length == 2 ? encodingKeyPair[1] : encoding;
+        }
+
+        var format = Media.contentTypeToFormat.get(encoding);
+
+        return format || "UNKNOWN";
+    }
+
     return Media.extToFormat.get(this.url.substr(this.url.lastIndexOf(".") + 1)) || "UNKNOWN";
 }
 
@@ -424,6 +444,9 @@ PlayerContainer.prototype.realize = function(contentType) {
 
         if (Media.supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
             this.player = new AudioPlayer(this);
+            if (this.isAudioCapture()) {
+                this.audioRecorder = new AudioRecorder();
+            }
             this.player.realize().then(resolve);
         } else if (Media.supportedImageFormats.indexOf(this.mediaFormat) !== -1) {
             this.player = new ImagePlayer(this);
@@ -474,6 +497,11 @@ PlayerContainer.prototype.getMediaFormat = function() {
     // Refer to http://www.sonicspot.com/guide/midifiles.html
     if (headerString.indexOf("MThd") === 0) {
         return "mid";
+    }
+
+    // https://wiki.xiph.org/Ogg#Detecting_Ogg_files_and_extracting_information
+    if (headerString.indexOf("OggS") === 0) {
+        return "ogg";
     }
 
     return this.mediaFormat;
@@ -553,6 +581,155 @@ PlayerContainer.prototype.setVisible = function(visible) {
     this.player.setVisible(visible);
 }
 
+PlayerContainer.prototype.getRecordedSize = function() {
+    return this.audioRecorder.data.byteLength;
+};
+
+PlayerContainer.prototype.getRecordedData = function(offset, size, buffer) {
+    var toRead = (size < this.audioRecorder.data.length) ? size : this.audioRecorder.data.byteLength;
+    buffer.set(this.audioRecorder.data.subarray(0, toRead), offset);
+    this.audioRecorder.data = new Uint8Array(this.audioRecorder.data.buffer.slice(toRead));
+};
+
+var AudioRecorder = function(aMimeType) {
+    this.mimeType = aMimeType || "audio/ogg";
+    this.eventListeners = {};
+    this.data = new Uint8Array();
+    this.sender = DumbPipe.open("audiorecorder", {
+        mimeType: this.mimeType
+    }, this.recipient.bind(this));
+};
+
+AudioRecorder.prototype.recipient = function(message) {
+    var callback = this["on" + message.type];
+    if (typeof callback === "function") {
+        callback(message);
+    }
+
+    if (this.eventListeners[message.type]) {
+        this.eventListeners[message.type].forEach(function(listener) {
+            if (typeof listener === "function") {
+                listener(message);
+            }
+        });
+    }
+};
+
+AudioRecorder.prototype.addEventListener = function(name, callback) {
+    if (!callback || !name) {
+        return;
+    }
+
+    if (!this.eventListeners[name]) {
+        this.eventListeners[name] = [];
+    }
+
+    this.eventListeners[name].push(callback);
+};
+
+AudioRecorder.prototype.removeEventListener = function(name, callback) {
+    if (!name || !callback || !this.eventListeners[name]) {
+        return;
+    }
+
+    var newArray = [];
+    this.eventListeners[name].forEach(function(listener) {
+        if (callback != listener) {
+            newArray.push(listener);
+        }
+    });
+
+    this.eventListeners[name] = newArray;
+};
+
+AudioRecorder.prototype.start = function() {
+    return new Promise(function(resolve, reject) {
+        this.onstart = function() {
+            this.onstart = null;
+            resolve(1);
+        }.bind(this);
+
+        this.onerror = function() {
+            this.onerror = null;
+            resolve(0);
+        }.bind(this);
+
+        this.sender({ type: "start" });
+    }.bind(this));
+};
+
+AudioRecorder.prototype.stop = function() {
+    return new Promise(function(resolve, reject) {
+        // To make sure the Player in Java can fetch data immediately, we
+        // need to return after data is back.
+        this.ondata = function ondata(message) {
+            _cleanEventListeners();
+
+            // The audio data we received are encoded with a proper format, it doesn't
+            // make sense to concatenate them like the socket, so let just override
+            // the buffered data here.
+            this.data = new Uint8Array(message.data.length);
+            this.data.set(message.data);
+            resolve(1);
+        }.bind(this);
+
+        var _onerror = function() {
+            _cleanEventListeners();
+            resolve(0);
+        }.bind(this);
+
+        var _cleanEventListeners = function() {
+            this.ondata = null;
+            this.removeEventListener("error", _onerror);
+        }.bind(this);
+
+        this.addEventListener("error", _onerror);
+        this.sender({ type: "stop" });
+    }.bind(this));
+};
+
+AudioRecorder.prototype.pause = function() {
+    return new Promise(function(resolve, reject) {
+        // In Java, |stopRecord| might be called before |commit|, which triggers
+        // the calling sequence:
+        //    nPause -> nGetRecordedSize -> nGetRecordedData -> nClose
+        //
+        // to make sure the Player in Java can fetch data in such a case, we
+        // need to request data immediately.
+        //
+        this.ondata = function ondata(message) {
+            this.ondata = null;
+
+            // The audio data we received are encoded with a proper format, it doesn't
+            // make sense to concatenate them like the socket, so let just override
+            // the buffered data here.
+            this.data = new Uint8Array(message.data.length);
+            this.data.set(message.data);
+            resolve(1);
+        }.bind(this);
+
+        // Have to request data first before pausing.
+        this.requestData();
+        this.sender({ type: "pause" });
+    }.bind(this));
+};
+
+AudioRecorder.prototype.requestData = function() {
+    this.sender({ type: "requestData" });
+};
+
+AudioRecorder.prototype.close = function() {
+    if (this._closed) {
+        return new Promise(function(resolve) { resolve(1); });
+    }
+
+    // Make sure recording is stopped on the other side.
+    return this.stop().then(function() {
+        DumbPipe.close(this.sender);
+        this._closed = true;
+    }.bind(this));
+};
+
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
     var url = util.fromJavaString(jURI);
     var id = pId + (appId << 32);
@@ -592,7 +769,6 @@ Native.create("com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z", funct
     var player = Media.PlayerCache[handle];
     return player.realize(mime);
 }, true);
-
 
 Native.create("com/sun/mmedia/MediaDownload.nGetJavaBufferSize.(I)I", function(handle) {
     var player = Media.PlayerCache[handle];
@@ -745,6 +921,60 @@ Native.create("com/sun/mmedia/DirectPlayer.nSetVisible.(IZ)Z", function(handle, 
     Media.PlayerCache[handle].setVisible(visible);
     return true;
 });
+
+Native.create("com/sun/mmedia/DirectPlayer.nIsRecordControlSupported.(I)Z", function(handle) {
+    return !!(Media.PlayerCache[handle] && Media.PlayerCache[handle].audioRecorder);
+});
+
+Native.create("com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I", function(handle, locator) {
+    console.warn("com/sun/mmedia/DirectRecord.nSetLocator.(I)I not implemented.");
+    return -1;
+});
+
+Native.create("com/sun/mmedia/DirectRecord.nGetRecordedSize.(I)I", function(handle) {
+    return Media.PlayerCache[handle].getRecordedSize();
+});
+
+Native.create("com/sun/mmedia/DirectRecord.nGetRecordedData.(III[B)I", function(handle, offset, size, buffer) {
+    Media.PlayerCache[handle].getRecordedData(offset, size, buffer);
+    return 1;
+});
+
+Native.create("com/sun/mmedia/DirectRecord.nCommit.(I)I", function(handle) {
+    // In DirectRecord.java, before nCommit, nPause or nStop is called,
+    // which means all the recorded data has been fetched, so do nothing here.
+    return 1;
+});
+
+Native.create("com/sun/mmedia/DirectRecord.nPause.(I)I", function(handle) {
+    return Media.PlayerCache[handle].audioRecorder.pause();
+}, true);
+
+Native.create("com/sun/mmedia/DirectRecord.nStop.(I)I", function(handle) {
+    return Media.PlayerCache[handle].audioRecorder.stop();
+}, true);
+
+Native.create("com/sun/mmedia/DirectRecord.nClose.(I)I", function(handle) {
+    var player = Media.PlayerCache[handle];
+
+    if (!player || !player.audioRecorder) {
+        // We need to check if |audioRecorder| is still available, because |nClose|
+        // might be called twice in DirectRecord.java, and only IOException is
+        // handled in DirectRecord.java, let use IOException instead of IllegalStateException.
+        throw new JavaException("java/io/IOException");
+    }
+
+    return player.audioRecorder.close().then(function(result) {
+       delete player.audioRecorder;
+       return result;
+    });
+}, true);
+
+Native.create("com/sun/mmedia/DirectRecord.nStart.(I)I", function(handle) {
+    // In DirectRecord.java, nStart plays two roles: real start and resume.
+    // Let's handle this on the other side of the DumbPipe.
+    return Media.PlayerCache[handle].audioRecorder.start();
+}, true);
 
 /**
  * @return the volume level between 0 and 100 if succeeded. Otherwise -1.
