@@ -189,7 +189,7 @@ module J2ME {
         codeWriter.writeLn("this." + J2ME.C4.Backend.mangleField(fieldInfo) + " = " + defaultValue + ";");
       }
     });
-    codeWriter.leave("}");
+    codeWriter.leave("},");
     codeWriter.enter("methods: {");
     var methods = classInfo.methods;
     for (var i = 0; i < methods.length; i++) {
