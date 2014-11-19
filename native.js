@@ -725,6 +725,47 @@ Native.create("java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;", funct
     }
 });
 
+Native.create("java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B", function(jStr) {
+    var str = util.fromJavaString(jStr);
+
+    var utflen = 0;
+
+    for (var i = 0; i < str.length; i++) {
+        var c = str.charCodeAt(i);
+        if ((c >= 0x0001) && (c <= 0x007F)) {
+            utflen++;
+        } else if (c > 0x07FF) {
+            utflen += 3;
+        } else {
+            utflen += 2;
+        }
+    }
+
+    if (utflen > 65535) {
+        throw new JavaException("java/io/UTFDataFormatException");
+    }
+
+    var count = 0;
+    var bytearr = util.newPrimitiveArray("B", utflen + 2);
+    bytearr[count++] = (utflen >>> 8) & 0xFF;
+    bytearr[count++] = (utflen >>> 0) & 0xFF;
+    for (var i = 0; i < str.length; i++) {
+        var c = str.charCodeAt(i);
+        if ((c >= 0x0001) && (c <= 0x007F)) {
+            bytearr[count++] = c;
+        } else if (c > 0x07FF) {
+            bytearr[count++] = 0xE0 | ((c >> 12) & 0x0F);
+            bytearr[count++] = 0x80 | ((c >>  6) & 0x3F);
+            bytearr[count++] = 0x80 | ((c >>  0) & 0x3F);
+        } else {
+            bytearr[count++] = 0xC0 | ((c >>  6) & 0x1F);
+            bytearr[count++] = 0x80 | ((c >>  0) & 0x3F);
+        }
+    }
+
+    return bytearr;
+});
+
 Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len) {
   var outputArray = [];
 
