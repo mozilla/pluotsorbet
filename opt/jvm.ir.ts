@@ -3,6 +3,7 @@
  */
 
 module J2ME.C4.IR {
+
   export class JVMLong extends Value {
     constructor(public lowBits: number, public highBits: number, public kind: Kind = Kind.Long) {
       super();
@@ -191,7 +192,7 @@ module J2ME.C4.IR {
   JVMCallProperty.prototype.nodeName = "JVMCallProperty";
 
   export class JVMInvoke extends StoreDependent {
-    constructor(control: Control, store: Store, public object: Value, public methodInfo: MethodInfo, public args: Value []) {
+    constructor(control: Control, store: Store, public opcode: J2ME.Bytecode.Bytecodes, public object: Value, public methodInfo: MethodInfo, public args: Value []) {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
@@ -571,18 +572,17 @@ module J2ME.C4.Backend {
     var args = this.args.map(function (arg) {
       return compileValue(arg, cx);
     });
-    //
-    //var object = compileValue(this.object, cx);
-    //var name = compileValue(this.name, cx);
-    //var callee = property(object, name);
-    //var args = this.args.map(function (arg) {
-    //  return compileValue(arg, cx);
-    //});
-    //return call(callee, args);
     var callee = null;
+
     if (object) {
+      if (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESPECIAL) {
+        var classPrototype = property(id(mangleClass(this.methodInfo.classInfo)), "prototype");
+        var callee = property(classPrototype, mangleMethod(this.methodInfo));
+        return callCall(callee, object, args);
+      }
       callee = property(object, mangleMethod(this.methodInfo));
     } else {
+      release || assert (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESTATIC);
       callee = id(mangleMethod(this.methodInfo));
     }
     return call(callee, args);

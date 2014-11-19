@@ -1172,7 +1172,7 @@ module J2ME {
       if (opcode !== Bytecodes.INVOKESTATIC) {
         object = this.state.pop(Kind.Reference);
       }
-      var call = new IR.JVMInvoke(this.region, this.state.store, object, methodInfo, args);
+      var call = new IR.JVMInvoke(this.region, this.state.store, opcode, object, methodInfo, args);
       this.recordStore(call);
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0].kind, call);
