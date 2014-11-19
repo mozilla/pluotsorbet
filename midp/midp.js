@@ -227,10 +227,22 @@ Native.create("com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lan
 Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z", function(request) {
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
-      window.open(request);
+        window.open(request);
+    } else if (request.startsWith("x-contacts:add?number=")) {
+        new MozActivity({
+            name: "new",
+            data: {
+                type: "webcontacts/contact",
+                params: {
+                    tel: request.substring(22),
+                },
+            },
+        });
     } else {
       console.warn("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z not implemented for: " + request);
     }
+
+    return false;
 });
 
 Native.create("com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V", function(state) {
