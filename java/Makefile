@@ -10,7 +10,7 @@ VPATH=./cldc1.1.1 ./vm ./midp ./custom
 classes.jar: $(SRCS) $(CUSTOM_SRCS) $(JPP_DESTS)
 	rm -rf build
 	mkdir build
-	javac -cp cldc1.1.1:vm:midp -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build $(SRCS) > /dev/null
+	javac -cp cldc1.1.1:vm:midp:custom -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build $(SRCS) > /dev/null
 	javac -sourcepath custom -cp build -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build $(CUSTOM_SRCS) > /dev/null
 	cd build && jar cvf0 ../classes.jar *
 	jar uvf0 classes.jar $(EXTRA)
