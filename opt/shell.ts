@@ -129,8 +129,25 @@ module J2ME {
       callGraphOption.value.filter(function (value, index, array) {
         if (value.endsWith(".json")) {
           var calls = JSON.parse(snarf(value));
-
-          writer.writeLn(JSON.stringify(calls, null, 2));
+          var Y = {};
+          Y["java/io/ByteArrayOutputStream.write.(I)V"] = true;
+          var changed = true;
+          while (changed) {
+            changed = false;
+            for (var k in calls) {
+              if (Y[k]) {
+                continue;
+              }
+              for (var z in Y) {
+                if (calls[k].indexOf(z) >= 0) {
+                  Y[k] = true;
+                  changed = true;
+                  break;
+                }
+              }
+            }
+          }
+          writer.writeLn(JSON.stringify(Y, null, 2));
         } else {
           return true;
         }
