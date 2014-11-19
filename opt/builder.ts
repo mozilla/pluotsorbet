@@ -113,8 +113,9 @@ module J2ME {
   export interface ClassInfo {
     className: string;
     superClassName: string;
+    superClass: ClassInfo;
     interfaces: ClassInfo [];
-    fields: any [];
+    fields: FieldInfo [];
     methods: any [];
     classes: any [];
     constant_pool: ConstantPoolEntry [];
