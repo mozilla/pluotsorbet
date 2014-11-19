@@ -1,48 +1,45 @@
-/*
- *   
- *
- * Portions Copyright  2000-2009 Sun Microsystems, Inc. All Rights
- * Reserved.  Use is subject to license terms.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License version
- * 2 only, as published by the Free Software Foundation.
- * 
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License version 2 for more details (a copy is
- * included at /legal/license.txt).
- * 
- * You should have received a copy of the GNU General Public License
- * version 2 along with this work; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA
- * 
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
- * Clara, CA 95054 or visit www.sun.com if you need additional
- * information or have any questions.
- */
- 
-/*
- * Copyright (C) 2002-2003 PalmSource, Inc.  All Rights Reserved.
- */
-
 package javax.microedition.io.file;
 
-/**
- * This class is defined by the JSR-75 specification
- * <em>PDA Optional Packages for the J2ME&trade; Platform</em>
+/*
+ * Licensed Materials - Property of IBM,
+ * (c) Copyright IBM Corp. 2003  All Rights Reserved
  */
-// JAVADOC COMMENT ELIDED
+ 
+/**
+ * This class is used for receiving status notification when
+ * adding or removing a file system root. This can be achieved by inserting or
+ * removing a card from a device or by mounting or unmounting file systems to
+ * a device.
+ *
+ * @see FileConnection
+ * @since FileConnection 1.0
+ */
 public interface FileSystemListener {
-    // JAVADOC COMMENT ELIDED
+
+    /**
+     * Constant indicating that a file system root has been added to the device.
+     */
     public static final int ROOT_ADDED = 0;
 
-    // JAVADOC COMMENT ELIDED
+    /**
+     * Constant indicating that a file system root has been removed from the
+     * device.
+     */
     public static final int ROOT_REMOVED = 1;
 
-    // JAVADOC COMMENT ELIDED
+    /**
+     * This method is invoked when a root on the device has changed state.
+     *
+     * @param   state int representing the state change that has happened to
+     *          the root.
+     * @param   rootName the String name of the root, following the root naming
+     *          conventions detailed in FileConnection.
+     * @throws  IllegalArgumentException if <code>state</code> has a negative
+     *          value or is not one of the legal acceptable constants.
+     * @throws  NullPointerException if <code>rootName</code> is
+     *          <code>null</code>.
+     *
+     * @see     FileConnection
+     */
     public abstract void rootChanged(int state, String rootName);
 }
