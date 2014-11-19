@@ -7,6 +7,7 @@ public class AddContact extends MIDlet {
     public void startApp() {
         try {
             platformRequest("x-contacts:add?number=+393333333333");
+            System.out.println("Success");
         } catch (ConnectionNotFoundException e) {
             System.out.println("Error while adding contact");
         }
