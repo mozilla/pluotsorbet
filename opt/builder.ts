@@ -8,6 +8,7 @@ module J2ME {
 
   export function printResults() {
     counter.trace(new IndentingWriter());
+    consoleWriter.writeLn(JSON.stringify(staticCallGraph, null, 2));
   }
 
   import Block = Bytecode.Block;
@@ -44,6 +45,8 @@ module J2ME {
   function kindsFromSignature(signature: string) {
 
   }
+
+  var staticCallGraph = Object.create(null);
 
   declare var CLASSES: any;
   declare var Long: any;
@@ -1162,6 +1165,12 @@ module J2ME {
     }
 
     genInvoke(methodInfo: MethodInfo, opcode: Bytecodes, nextBCI: number) {
+      var callees = staticCallGraph[this.methodInfo.implKey];
+      if (!callees) {
+        callees = staticCallGraph[this.methodInfo.implKey] = [];
+      }
+      ArrayUtilities.pushUnique(callees, methodInfo.implKey);
+
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       var types = signature.typeDescriptors;
       var args: Value [] = [];

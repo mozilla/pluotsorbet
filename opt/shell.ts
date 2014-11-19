@@ -78,6 +78,7 @@ module J2ME {
 
   var verboseOption: Options.Option;
   var classpathOption: Options.Option;
+  var callGraphOption: Options.Option;
   var classFilterOption: Options.Option;
   var debuggerOption: Options.Option;
   var releaseOption: Options.Option;
@@ -89,6 +90,9 @@ module J2ME {
 
     verboseOption = shellOptions.register(new Options.Option("v", "verbose", "boolean", false, "Verbose"));
     classpathOption = shellOptions.register(new Options.Option("cp", "classpath", "string []", [], "Compile ClassPath"));
+    callGraphOption = shellOptions.register(new Options.Option("cg", "callGraph", "string []", [], "Call Grpah Files"));
+
+
     classFilterOption = shellOptions.register(new Options.Option("f", "filter", "string", ".*", "Compile Filter"));
     debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
     releaseOption = shellOptions.register(new Options.Option("r", "release", "boolean", false, "Release mode"));
@@ -117,6 +121,16 @@ module J2ME {
       classpathOption.value.filter(function (value, index, array) {
         if (value.endsWith(".jar")) {
           files.push(value);
+        } else {
+          return true;
+        }
+      });
+
+      callGraphOption.value.filter(function (value, index, array) {
+        if (value.endsWith(".json")) {
+          var calls = JSON.parse(snarf(value));
+
+          writer.writeLn(JSON.stringify(calls, null, 2));
         } else {
           return true;
         }
