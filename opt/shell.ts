@@ -149,12 +149,47 @@ module J2ME {
     jvm.initializeBuiltinClasses();
   }
 
+  function getClassInheritanceChain(classInfo: ClassInfo): ClassInfo [] {
+    var list = [];
+    var klass = classInfo;
+    while (klass) {
+      list.unshift(klass);
+      klass = klass.superClass;
+    }
+    return list;
+  }
+
   function compileClassInfo(codeWriter: IndentingWriter, classInfo: ClassInfo, ctx: Context) {
     var mangledClassName = J2ME.C4.Backend.mangleClass(classInfo);
     if (!J2ME.C4.Backend.isIdentifierName(mangledClassName)) {
       mangledClassName = quote(mangledClassName);
     }
     codeWriter.enter(mangledClassName + ": {");
+    codeWriter.enter("initializer: function () {");
+    getClassInheritanceChain(classInfo).forEach(function (klass) {
+      if (debuggerOption.value) {
+        codeWriter.writeLn("// " + klass.className);
+      }
+      for (var i = 0; i < klass.fields.length; i++) {
+        var fieldInfo = klass.fields[i];
+        var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+        var kind = signature.kind;
+        var defaultValue;
+        switch (kind) {
+          case Kind.Reference:
+            defaultValue = "null";
+            break;
+          case Kind.Long:
+            defaultValue = "Long.ZERO";
+            break;
+          default:
+            defaultValue = "0";
+            break;
+        }
+        codeWriter.writeLn("this." + J2ME.C4.Backend.mangleField(fieldInfo) + " = " + defaultValue + ";");
+      }
+    });
+    codeWriter.leave("}");
     codeWriter.enter("methods: {");
     var methods = classInfo.methods;
     for (var i = 0; i < methods.length; i++) {
