@@ -654,3 +654,9 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", func
         fs.close(handle, resolve);
     });
 }, true);
+
+Native.create("javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;", function() {
+    var array = util.newArray("[Ljava/lang/String;", 1);
+    array[0] = util.newString("");
+    return array;
+});
