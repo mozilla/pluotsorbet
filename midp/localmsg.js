@@ -276,21 +276,23 @@ NokiaContactsLocalMsgConnection.prototype.encodeContact = function(encoder, cont
 
     encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
 
-    if (contact.tel) {
-        encoder.putStart(DataType.ARRAY, "Numbers");
-        contact.tel.forEach(function(tel) {
-            encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
-            // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
-            encoder.put(DataType.WSTRING, "Number", tel.value);
-            encoder.putEnd(DataType.LIST, "NumbersList");
-        });
-        encoder.putEnd(DataType.ARRAY, "Numbers");
-    }
+    encoder.putStart(DataType.ARRAY, "Numbers");
+    contact.tel.forEach(function(tel) {
+        encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
+        // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
+        encoder.put(DataType.WSTRING, "Number", tel.value);
+        encoder.putEnd(DataType.LIST, "NumbersList");
+    });
+    encoder.putEnd(DataType.ARRAY, "Numbers");
 
     encoder.putEnd(DataType.LIST, "Contact");
 }
 
 NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
+    if (!contact.tel) {
+        return;
+    }
+
     var encoder = new DataEncoder();
     encoder.putStart(DataType.STRUCT, "event");
     encoder.put(DataType.METHOD, "name", "Notify");
@@ -346,7 +348,12 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       }
 
-      contacts.getNext((function(contact) {
+      var gotContact = (function(contact) {
+        if (contact && !contact.tel) {
+          contacts.getNext(gotContact);
+          return;
+        }
+
         var encoder = new DataEncoder();
         encoder.putStart(DataType.STRUCT, "event");
         encoder.put(DataType.METHOD, "name", "getFirst");
@@ -367,7 +374,9 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
             length: data.length,
             offset: 0,
         });
-      }).bind(this));
+      }).bind(this);
+
+      contacts.getNext(gotContact);
     break;
 
     case "getNext":
