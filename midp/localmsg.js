@@ -276,14 +276,16 @@ NokiaContactsLocalMsgConnection.prototype.encodeContact = function(encoder, cont
 
     encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
 
-    encoder.putStart(DataType.ARRAY, "Numbers");
-    contact.tel.forEach(function(tel) {
-        encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
-        // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
-        encoder.put(DataType.WSTRING, "Number", tel.value);
-        encoder.putEnd(DataType.LIST, "NumbersList");
-    });
-    encoder.putEnd(DataType.ARRAY, "Numbers");
+    if (contact.tel) {
+        encoder.putStart(DataType.ARRAY, "Numbers");
+        contact.tel.forEach(function(tel) {
+            encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
+            // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
+            encoder.put(DataType.WSTRING, "Number", tel.value);
+            encoder.putEnd(DataType.LIST, "NumbersList");
+        });
+        encoder.putEnd(DataType.ARRAY, "Numbers");
+    }
 
     encoder.putEnd(DataType.LIST, "Contact");
 }
