@@ -276,21 +276,23 @@ NokiaContactsLocalMsgConnection.prototype.encodeContact = function(encoder, cont
 
     encoder.put(DataType.WSTRING, "DisplayName", contact.name[0]);
 
-    if (contact.tel) {
-        encoder.putStart(DataType.ARRAY, "Numbers");
-        contact.tel.forEach(function(tel) {
-            encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
-            // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
-            encoder.put(DataType.WSTRING, "Number", tel.value);
-            encoder.putEnd(DataType.LIST, "NumbersList");
-        });
-        encoder.putEnd(DataType.ARRAY, "Numbers");
-    }
+    encoder.putStart(DataType.ARRAY, "Numbers");
+    contact.tel.forEach(function(tel) {
+        encoder.putStart(DataType.LIST, "NumbersList"); // The name of this field is unknown
+        // encoder.put(DataType.ULONG, "Kind", ???); // The meaning of this field is unknown
+        encoder.put(DataType.WSTRING, "Number", tel.value);
+        encoder.putEnd(DataType.LIST, "NumbersList");
+    });
+    encoder.putEnd(DataType.ARRAY, "Numbers");
 
     encoder.putEnd(DataType.LIST, "Contact");
 }
 
 NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
+    if (!contact.tel) {
+        return;
+    }
+
     var encoder = new DataEncoder();
     encoder.putStart(DataType.STRUCT, "event");
     encoder.put(DataType.METHOD, "name", "Notify");
@@ -351,7 +353,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
         encoder.putStart(DataType.STRUCT, "event");
         encoder.put(DataType.METHOD, "name", "getFirst");
         encoder.put(DataType.ULONG, "trans_id", trans_id);
-        if (contact) {
+        if (contact && contact.tel) {
           encoder.put(DataType.STRING, "result", "OK"); // Name unknown
           encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
           this.encodeContact(encoder, contact);
