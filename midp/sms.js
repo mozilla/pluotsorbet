@@ -75,14 +75,14 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I",
       host: util.fromJavaString(host),
     };
 
-    promptForMessageText();
-
     return ++MIDP.lastSMSConnection;
 });
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I",
 function(port, msid, handle, smsPacket) {
     return new Promise(function(resolve, reject) {
+        promptForMessageText();
+
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
             var text = sms.text;
