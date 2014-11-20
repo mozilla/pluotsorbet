@@ -348,12 +348,17 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       }
 
-      contacts.getNext((function(contact) {
+      var gotContact = function(contact) {
+        if (!contacts.tel) {
+          contacts.getNext(gotContact);
+          return;
+        }
+
         var encoder = new DataEncoder();
         encoder.putStart(DataType.STRUCT, "event");
         encoder.put(DataType.METHOD, "name", "getFirst");
         encoder.put(DataType.ULONG, "trans_id", trans_id);
-        if (contact && contact.tel) {
+        if (contact) {
           encoder.put(DataType.STRING, "result", "OK"); // Name unknown
           encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
           this.encodeContact(encoder, contact);
@@ -369,7 +374,9 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
             length: data.length,
             offset: 0,
         });
-      }).bind(this));
+      }).bind(this);
+
+      contacts.getNext(gotContact);
     break;
 
     case "getNext":
