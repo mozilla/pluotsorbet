@@ -45,24 +45,18 @@ Example - Asteroids
         python tests/httpServer.py &
         http://localhost:8000/index.html?midletClassName=asteroids.Game&jars=tests/tests.jar&gamepad=1
 
-If the MIDlet you'd like to run uses sockets, you must start 4 servers (instead of just the http server):
-
-        python tests/httpServer.py &
-        python tests/echoServer.py &
-        cd tests && python httpsServer.py &
-        cd tests && python sslEchoServer.py &
-
 Some apps require access to APIs that aren't enabled by default on Desktop Firefox and there is no UI built in to Desktop Firefox to enable them. APIs matching this description include:
 
 * mozTCPSocket
 * mozContacts
 * mozbrowser
+* notifications
 
 To enable this type of API for a MIDlet you're running, use [Myk's API Enabler Addon](https://github.com/mykmelez/tcpsocketpup)
 
 ### FirefoxOS device (or emulator)
 
-To run a MIDlet on a FirefoxOS device, update the `launch_path` property in manifest.webapp. The `MIDletClassPath` URL parameter needs to point to an app.
+To run a MIDlet on a FirefoxOS device, update the `launch_path` property in manifest.webapp. The `midletClassName` URL parameter needs to point to an app.
 
 Once you've updated manifest.webapp, connect to the device or emulator as described in the [FirefoxOS Developer Phone Guide](https://developer.mozilla.org/en-US/Firefox_OS/Developer_phone_guide/Flame) and select your j2me.js directory (the one containing manifest.webapp) when choosing the app to push to device.
 
@@ -78,25 +72,28 @@ If you want to pass additional [casperJS command line options](http://docs.slime
 
 gfx tests use image comparison; a reference image is provided with the test and the output of the test must match the reference image. The output is allowed to differ from the reference image by a number of pixels specified in automation.js.
 
-The main set of unit tests that automation.js runs are contained in the RunTests MIDlet. These tests run when you run the RunTests MIDlet:
-
-    tests/org/mozillaio/\*.java
-
-Full list of RunTests tests available in the tests/Testlets.java generated file
+The main set of unit tests that automation.js runs is the set covered by the RunTests MIDlet. The full list of RunTests tests available in the tests/Testlets.java generated file. RunTests runs a number of "Testlets" (Java classes that implement the `Testlet` interface).
 
 ### Running a single test
 
-(TODO: This example doesn't seem to work) If the test you want to run is a class with a main method, specify a `main` URL parameter to index.html, e.g.:
+If the test you want to run is a class with a main method, specify a `main` URL parameter to index.html, e.g.:
 
-        main=gfx/DrawSubstringTest&jars=tests/tests.jar
+        main=gnu/testlet/vm/SystemTest&jars=tests/tests.jar
 
 If the test you want to run is a MIDlet, specify `midletClassName` and `jad` URL parameters to index.html (`main` will default to the MIDletSuiteLoader), e.g.:
 
         midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar
 
-If the test you want to run is a Testlet (a Java class that implements the `Testlet` interface), specify an `args` URL parameter to index.html. You can specify multiple Testlets separated by commas, and you can use either '.' or '/' in the class name, e.g.:
+If the test you want to run is a Testlet , specify an `args` URL parameter to index.html. You can specify multiple Testlets separated by commas, and you can use either '.' or '/' in the class name, e.g.:
 
         args=java.lang.TestSystem,javax.crypto.TestRC4,com/nokia/mid/ui/TestVirtualKeyboard
+
+If the testlet uses sockets, you must start 4 servers (instead of just the http server):
+
+        python tests/httpServer.py &
+        python tests/echoServer.py &
+        cd tests && python httpsServer.py &
+        cd tests && python sslEchoServer.py &
 
 ### Failures (and what to do)
 
@@ -104,7 +101,7 @@ Frequent causes of failure include:
 
 * automation.js expects a different number of tests to have passed than the number that actually passed (this is very common when adding new tests)
 * timeout: Travis machines are generally slower than dev machines and so tests that pass locally will fail in the continuous integration tests
-* Number of differing pixels in a gfx/rendering test exceeds the threshold allowed in automation.js. This will often happen because slimerJS uses a different version of Firefox than the developer.
+* Number of differing pixels in a gfx/rendering test exceeds the threshold allowed in automation.js. This will often happen because slimerJS uses a different version of Firefox than the developer. This can also happen because the test renders text, whose font rendering can vary from machine to machine, perhaps even with the same font.
 
 gfx/rendering tests will print a number next to the error message. That number is the number of differing pixels. If it is close to the threshold you can probably just increase the threshold in automation.js with no ill effect.
 
@@ -135,13 +132,18 @@ Modeline for Java files:
 
     /* vim: set filetype=java shiftwidth=4 tabstop=4 autoindent cindent expandtab : */
 
+Modelines for JS files:
+
+    /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+    /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
 ## Profiling
 
 ### JS profiling
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
-When debugging using the WebIDE, enable the option "select an iframe as the currently targeted document" and select the iframe containing main.html as the debugging target.
+When debugging using the WebIDE, enable the option "select an iframe as the currently targeted document" and select the iframe containing main.html as the debugging target. NB: you need to connect to a target device running FxOS 2.1 or up to use this feature in WebIDE.
 
 Use these JS calls within the console to start and stop profiling (TODO: I haven't actually gotten these to work):
 
@@ -160,17 +162,13 @@ When running j2me.js in Desktop Firefox, click the "profile" button that appears
 
 Add "&profile=1" to your URL parameter list to enable profile immediately upon loading j2me.js (index.html).
 
-On device, you could theoretically add profile=1 to the launch path but there is no way to stop the profile (which makes profile actually dump) so this would not be very helpful.
-
-One blind spot that these Java profiles are susceptible to is that Java profiles don't measure time when a Java thread is paused. An example of where this matters is for filesystem access: Java filesystem APIs are synchronous so our implementations of them call out to native JavaScript and then pause the Java thread. The thread is paused until the (asynchronous) JavaScript filesystem calls return, which means that, in these profiles, most filesystem access will appear to take much less time than it actually takes.
-
 ## Filesystem
 
 midp/fs.js contains native implementations of various midp filesystem APIs.
 
 Those implementations call out to lib/fs.js which is a JS implementation of a filesystem.
 
-Uses async\_storage.js (from gaia?) - async API for accessing IndexedDB
+Uses async\_storage.js (from gaia) - async API for accessing IndexedDB
 
 Java APIs are sync but our implementations use async APIs
 
@@ -190,11 +188,14 @@ We use `Native` object in JS to handle creation and registration of `native` fun
 
 e.g.:
 
-    Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {...}
+    Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {...});
 
-Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
+If you need to implement a method in JS but you can't declare it `native` in Java, use `Override`.
 
-Pass `true` as last param if JS will make async calls and return a `Promise`
+e.g.:
+
+   Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(...) {...});
+
 
 If raising a Java `Exception`, throw new instance of Java `Exception` class
 
@@ -202,14 +203,10 @@ e.g.:
 
     throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
 
-`Native.create` will automatically convert JS return type to Java type, but won't automatically convert Java parameter type to JS type
+Remember:
 
-`this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
-
-Context is last param to every native override
-
-Instead of copying whole file to custom and overriding (e.g.) just one function, use override.js
-
-For any method of any class, override.js allows us to override impl with native JS. Doing this for MIDlet code is dangerous b/c method names and class names may change with any update.
-
-   Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(...) {...}
+  * Return types are automatically converted to Java types, but parameters are not automatically converted from Java types to JS types
+  * Pass `true` as last param if JS will make async calls and return a `Promise`
+  * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
+  * Context is last param to every function registered using `Native.create` or `Override.create`
+  * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
