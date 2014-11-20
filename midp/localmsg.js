@@ -348,8 +348,8 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       }
 
-      var gotContact = function(contact) {
-        if (!contacts.tel) {
+      var gotContact = (function(contact) {
+        if (!contact.tel) {
           contacts.getNext(gotContact);
           return;
         }
