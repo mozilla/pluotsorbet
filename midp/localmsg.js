@@ -349,7 +349,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       }
 
       var gotContact = (function(contact) {
-        if (!contact.tel) {
+        if (contact && !contact.tel) {
           contacts.getNext(gotContact);
           return;
         }
