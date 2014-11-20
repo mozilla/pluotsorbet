@@ -8,10 +8,6 @@ function Context(runtime) {
   this.frameSets = [];
   this.runtime = runtime;
   this.runtime.addContext(this);
-  // TODO these should probably be moved to runtime...
-  this.methodInfos = runtime.methodInfos;
-  this.classInfos = runtime.classInfos;
-  this.fieldInfos = runtime.fieldInfos;
 }
 
 Context.prototype.kill = function() {
@@ -134,31 +130,28 @@ Context.prototype.raiseExceptionAndYield = function(className, message) {
   throw VM.Yield;
 }
 
-Context.prototype.nullCheck = function(object) {
-  if (!object) {
-    this.raiseExceptionAndYield("java/lang/NullPointerException");
-  }
-};
-
 Context.prototype.divideByZeroCheck = function(object) {
-  if (object === 0) {
-    this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
-  }
+  throw "MOVE THIS TO A GLOBAL";
+  // if (object === 0) {
+  //   this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
+  // }
 };
 
 Context.prototype.divideByZeroCheckLong = function(object) {
-  if (object.isZero()) {
-    this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
-  }
+  throw "MOVE THIS TO A GLOBAL";
+  // if (object.isZero()) {
+  //   this.raiseExceptionAndYield("java/lang/ArithmeticException", "/ by zero");
+  // }
 };
 
 Context.prototype.checkCast = function(classInfoId, object) {
-  var classInfo = this.classInfos[classInfoId];
-  if (object && !object.class.isAssignableTo(classInfo)) {
-    this.raiseExceptionAndYield("java/lang/ClassCastException",
-        object.class.className + " is not assignable to " +
-        classInfo.className);
-  }
+  throw "MOVE THIS TO A GLOBAL";
+  // var classInfo = this.classInfos[classInfoId];
+  // if (object && !object.class.isAssignableTo(classInfo)) {
+  //   this.raiseExceptionAndYield("java/lang/ClassCastException",
+  //       object.class.className + " is not assignable to " +
+  //       classInfo.className);
+  // }
 };
 
 Context.prototype.invokeCompiledFn = function(methodInfo, args) {
@@ -325,30 +318,9 @@ Context.prototype.notify = function(obj, notifyAll) {
   });
 }
 
-Context.prototype.newObjectFromId = function(id) {
-    return util.newObject(this.classInfos[id]);
-}
-
-Context.prototype.newStringConstant = function(s) {
-    return this.runtime.newStringConstant(s);
-}
-
 Context.prototype.S = function(s) {
   return this.runtime.newStringConstant(s);
 }
-
-Context.prototype.getStatic = function(fieldInfoId, type) {
-  // TODO unify this with getstatic in runtime and the VM getstatic code.
-  var value = this.runtime.staticFields[fieldInfoId];
-  if (typeof value === "undefined") {
-    value = util.defaultValue(type);
-  }
-  return value;
-};
-
-Context.prototype.putStatic = function(fieldInfoId, value) {
-    this.runtime.staticFields[fieldInfoId] = value;
-};
 
 Context.prototype.resolve = function(cp, idx, isStatic) {
   var constant = cp[idx];
@@ -362,7 +334,7 @@ Context.prototype.resolve = function(cp, idx, isStatic) {
       constant = constant.float;
       break;
     case 8: // TAGS.CONSTANT_String
-      constant = this.newStringConstant(cp[constant.string_index].bytes);
+      constant = this.runtime.newStringConstant(cp[constant.string_index].bytes);
       break;
     case 5: // TAGS.CONSTANT_Long
       constant = Long.fromBits(constant.lowBits, constant.highBits);
