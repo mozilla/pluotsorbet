@@ -12,11 +12,6 @@ function Runtime(vm) {
   this.pending = {};
   this.staticFields = {};
   this.classObjects = {};
-
-  this.methodInfos = {};
-  this.classInfos = {};
-  this.fieldInfos = {};
-  this.functions = {};
 }
 
 Runtime.prototype.waitStatus = function(callback) {

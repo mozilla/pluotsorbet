@@ -202,7 +202,7 @@ var util = (function () {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
-    decodeUt8Array: decodeUtf8Array,
+    decodeUtf8Array: decodeUtf8Array,
     javaUTF8Decode: javaUTF8Decode,
     defaultValue: defaultValue,
     double2int: double2int,

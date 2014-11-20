@@ -69,9 +69,6 @@ module J2ME {
   export interface Context {
     pushClassInitFrame(classInfo: ClassInfo);
     runtime: any;
-    methodInfos: MethodInfo [];
-    classInfos: ClassInfo [];
-    fieldInfos: FieldInfo [];
     resolve(constantPool: ConstantPoolEntry [], idx: number, isStatic: boolean) : any;
   }
 

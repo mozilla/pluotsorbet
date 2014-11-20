@@ -76,6 +76,8 @@ Classes.prototype.loadClassFile = function(fileName) {
     classes.forEach(function (c, n) {
         classes[n] = self.loadClass(c);
     });
+
+    classInfo.initPrototypeChain();
     return classInfo;
 }
 
@@ -189,54 +191,4 @@ Classes.prototype.getMethod = function(classInfo, methodKey) {
             }
         }
     }
-};
-
-
-Classes.prototype.compileAll = function(runtime) {
-  var all = 'var PRECOMPILED = {};';
-  var classfiles = this.classfiles;
-  var methodsCompiled = 0;
-  var methodsFailed = 0;
-  var methodsFailedHard = 0;
-  //var dependencies = new J2ME.Dependencies();
-  var dependencies = null;
-  var ctx = new Context(runtime);
-
-  var code = "";
-  var writer = new J2ME.IndentingWriter(false, function (s) {
-    code += s + "\n";
-  });
-
-  writer.enter("var code = {");
-  Object.keys(classfiles).every(function (name) {
-    if (name.substr(-4) !== ".jar") {
-      return true;
-    }
-    var zip = classfiles[name];
-    var kk = 0;
-
-    writer.enter(J2ME.quote(name) + ": {");
-    Object.keys(zip.directory).every(function (fileName) {
-      if (fileName.substr(-6) !== '.class') {
-        return true;
-      }
-      writer.enter(J2ME.quote(fileName) + ": {");
-      J2ME.compileClassInfo(writer, this.loadClassFile(fileName), ctx);
-      writer.leave("},");
-      return true;
-    }.bind(this));
-
-    writer.leave("},");
-    return true;
-  }.bind(this));
-  writer.leave("}");
-
-  //var dependenciesJSON = JSON.stringify(dependencies);
-  //all += "PRECOMPILED.dependencies = " + dependenciesJSON;
-  //console.log("Number of methods compiled: " + methodsCompiled);
-  //console.log("Number of methods failed: " + methodsFailed);
-  //console.log("Number of methods hard fail: " + methodsFailedHard);
-  // var bl = new Blob([all], {type : 'text/plain'});
-  // console.log(URL.createObjectURL(bl));
-  console.log(code);
 };
