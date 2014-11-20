@@ -206,7 +206,7 @@ public interface FileConnection extends javax.microedition.io.StreamConnection {
      * platform and implementation specific use of caching and buffering of the
      * data.  Steam contents and file length extensions are not necessarily
      * visible outside of the application immediately unless
-     * <code>flush()</code> is called on the stream.  The returned output stream
+     * <code>flush()</code> is called on the stream. The returned output stream
      * is automatically and synchronously flushed when it is closed.
      * </P>
      *
@@ -238,7 +238,7 @@ public interface FileConnection extends javax.microedition.io.StreamConnection {
      * platform and implementation specific use of caching and buffering of the
      * data. Steam contents and file length extensions are not necessarily
      * visible outside of the application immediately unless
-     * <code>flush()</code> is called on the stream.  The returned output stream
+     * <code>flush()</code> is called on the stream. The returned output stream
      * is automatically and synchronously flushed when it is closed.
      * </P>
      *
@@ -267,7 +267,7 @@ public interface FileConnection extends javax.microedition.io.StreamConnection {
      * platform and implementation specific use of caching and buffering of the
      * data. Steam contents and file length extensions are not necessarily
      * visible outside of the application immediately unless
-     * <code>flush()</code> is called on the stream.  The returned output 
+     * <code>flush()</code> is called on the stream. The returned output 
 	 * stream is automatically and synchronously flushed when it is closed.
      * </P>
      *
