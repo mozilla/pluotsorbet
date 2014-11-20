@@ -122,3 +122,29 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(port, 
     delete MIDP.smsConnections[handle];
     return 0;
 });
+
+Native.create("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I", function(msgBuffer, msgLen, msgType, hasPort) {
+    return 1;
+});
+
+Native.create("com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I",
+function(handle, type, host, destPort, sourcePort, message) {
+    return new Promise(function(resolve, reject) {
+        var activity = new MozActivity({
+            name: "new",
+            data: {
+              type: "websms/sms",
+              number:  util.fromJavaString(host),
+              body: util.decodeUtf8(message),
+            },
+        });
+
+        activity.onsuccess = function() {
+          resolve(message.byteLength);
+        };
+
+        activity.onerror = function() {
+          reject(new JavaException("java/io/IOException", "Error while sending SMS message"));
+        };
+    });
+}, true);
