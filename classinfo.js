@@ -11,11 +11,8 @@ var FieldInfo = (function() {
         this.name = name;
         this.signature = signature;
         this.id = idgen++;
-<<<<<<< HEAD
         this.isStatic = ACCESS_FLAGS.isStatic(access_flags);
-=======
         this.mangledName = J2ME.C4.Backend.mangleField(this);
->>>>>>> 1060e6c538636ce13dfc2c0f586de55b5e005613
     }
 })();
 
