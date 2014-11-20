@@ -1,7 +1,7 @@
 module J2ME {
 
   var debug = false;
-  var writer = new IndentingWriter(!debug);
+  var writer = null; // new IndentingWriter(true);
   var consoleWriter = new IndentingWriter();
 
   export var counter = new J2ME.Metrics.Counter(true);
@@ -81,6 +81,7 @@ module J2ME {
     classInfo: ClassInfo;
     access_flags: any;
     id: number;
+    isStatic: boolean;
   }
 
   export enum TAGS {
@@ -152,6 +153,12 @@ module J2ME {
   }
 
   declare var Frame;
+
+  export class CompiledMethodInfo {
+    constructor(public args: string [], public body: string, public referencedClasses: ClassInfo []) {
+      // ...
+    }
+  }
 
   function assertKind(kind: Kind, x: Node): Node {
     assert(stackKind(x.kind) === stackKind(kind), "Got " + kindCharacter(stackKind(x.kind)) + " expected " + kindCharacter(stackKind(kind)));
@@ -464,7 +471,7 @@ module J2ME {
     return "\"" + s + "\"";
   }
 
-  export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
+  export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
     if (!methodInfo.code) {
       counter.count("Cannot Compile: Method has no code.");
       return;
@@ -486,14 +493,15 @@ module J2ME {
         var parameter = builder.parameters[i];
         args.push(parameter.name);
       }
-      var fnSource = compilation.body;
+      var body = compilation.body;
       // consoleWriter.writeLn(fnSource);
-      fn = new Function(args.join(","), fnSource);
+      // var fn = new Function(args.join(","), body);
       // consoleWriter.writeLn(fn.toString());
       // debug && writer.writeLn(fn.toString());
       counter.count("Compiled");
     } catch (e) {
       counter.count("Failed to Compile " + e);
+      // consoleWriter.writeLn(e);
       // consoleWriter.writeLns(e.stack);
       debug && Debug.warning("Failed to compile " + methodInfo.implKey + " " + e + " " + e.stack);
       if (e.message.indexOf("Not Implemented ") === -1) {
@@ -501,7 +509,7 @@ module J2ME {
       }
     }
 
-    return fn;
+    return new CompiledMethodInfo(args, body, builder.referencedClasses);
   }
 
   interface WorklistItem {
@@ -588,9 +596,9 @@ module J2ME {
      */
     blockMap: BlockMap;
 
-    ctxValue: IR.Parameter;
-
     parameters: IR.Parameter [];
+
+    referencedClasses: ClassInfo [];
 
     constructor(public methodInfo: MethodInfo, public ctx: Context, public target: CompilationTarget) {
       // ...
@@ -598,6 +606,7 @@ module J2ME {
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       this.methodReturnInfos = [];
       this.parameters = [];
+      this.referencedClasses = [];
     }
 
     build(): C4.Backend.Compilation {
@@ -605,16 +614,18 @@ module J2ME {
       
       var methodInfo = this.methodInfo;
 
-      writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
-      writer.writeLn("Size: " + methodInfo.code.length);
+      writer && writer.enter("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
+      writer && writer.writeLn("Size: " + methodInfo.code.length);
       var blockMap = this.blockMap = new BlockMap(methodInfo);
       blockMap.build();
-      debug && blockMap.trace(writer, true);
+
+      // consoleWriter.writeLn("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
+      // blockMap.trace(consoleWriter, false);
 
       var start = this.buildStart();
       var dfg = this.buildGraph(start, start.entryState.clone());
 
-      debug && dfg.trace(writer);
+      writer && dfg.trace(writer);
 
       enterTimeline("Build CFG");
       var cfg = dfg.buildCFG();
@@ -632,7 +643,7 @@ module J2ME {
       cfg.scheduleEarly();
       leaveTimeline();
 
-      debug && cfg.trace(writer);
+      writer && cfg.trace(writer);
 
       enterTimeline("Verify IR");
       cfg.verify();
@@ -649,7 +660,7 @@ module J2ME {
       Node.stopNumbering();
       leaveTimeline();
 
-      writer.leave("}");
+      writer && writer.leave("}");
       IR.Node.stopNumbering();
 
       return result;
@@ -668,14 +679,9 @@ module J2ME {
       state.store.kind = Kind.Store;
 
       var signatureDescriptor = this.signatureDescriptor;
-      writer.writeLn("SIG: " + signatureDescriptor);
+      writer && writer.writeLn("SIG: " + signatureDescriptor);
 
       var typeDescriptors = signatureDescriptor.typeDescriptors;
-
-
-      assert (!this.ctxValue);
-      this.ctxValue = new IR.Parameter(start, 0, "$");
-      this.parameters.push(this.ctxValue);
 
       var localIndex = 0;
       var parameterIndex = 1;
@@ -721,7 +727,7 @@ module J2ME {
         }
         this.blockStopInfos.forEach(function (stop: StopInfo) {
           var target = stop.target;
-          writer.writeLn(String(target));
+          writer && writer.writeLn(String(target));
           var region = target.region;
           if (region) {
             writer && writer.enter("Merging into region: " + region + " @ " + target.startBci + ", block " + target.blockID + " {");
@@ -977,7 +983,7 @@ module J2ME {
     }
 
     genNewInstance(cpi: number) {
-      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      var classInfo = this.lookupClass(cpi);
       var jvmNew = new IR.JVMNew(this.region, this.state.store, classInfo);
       this.recordStore(jvmNew);
       this.state.apush(jvmNew);
@@ -992,7 +998,7 @@ module J2ME {
     }
 
     genNewObjectArray(cpi: number) {
-      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      var classInfo = this.lookupClass(cpi);
       var length = this.state.ipop();
       var result = new IR.JVMNewObjectArray(this.region, this.state.store, classInfo, length);
       this.recordStore(result);
@@ -1025,14 +1031,14 @@ module J2ME {
     }
 
     genCheckCast(cpi: Bytecodes) {
-      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      var classInfo = this.lookupClass(cpi);
       var object = this.state.peek();
       var checkCast = new IR.JVMCheckCast(this.region, this.state.store, object, classInfo);
       this.recordStore(checkCast);
     }
 
     genInstanceOf(cpi: Bytecodes) {
-      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      var classInfo = this.lookupClass(cpi);
       var object = this.state.apop();
       var instanceOf = new IR.JVMInstanceOf(this.region, this.state.store, object, classInfo);
       this.recordStore(instanceOf);
@@ -1119,12 +1125,22 @@ module J2ME {
       ));
     }
 
+    lookupClass(cpi: number): ClassInfo {
+      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      ArrayUtilities.pushUnique(this.referencedClasses, classInfo);
+      return classInfo;
+    }
+
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
-      return this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+      var methodInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+      ArrayUtilities.pushUnique(this.referencedClasses, methodInfo.classInfo);
+      return methodInfo;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
-      return this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+      var fieldInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+      ArrayUtilities.pushUnique(this.referencedClasses, fieldInfo.classInfo);
+      return fieldInfo;
     }
 
     /**
@@ -1154,7 +1170,6 @@ module J2ME {
     }
 
     genThrow(bci: number) {
-      // this.ctx.methodInfos[this.methodInfo.implKey] = this.methodInfo;
       var _throw = new IR.JVMThrow(this.region, this.state.store);
       this.recordStore(_throw);
       this.methodReturnInfos.push(new ReturnInfo(
@@ -1177,12 +1192,11 @@ module J2ME {
       for (var i = types.length - 1; i > 0; i--) {
         args.unshift(this.state.pop(types[i].kind));
       }
-      args.unshift(this.ctxValue);
       var object = null;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         object = this.state.pop(Kind.Reference);
       }
-      var call = new IR.JVMInvoke(this.region, this.state.store, opcode, object, methodInfo, args);
+      var call = new IR.JVMInvoke(this.region, this.state.store, this.state.clone(nextBCI), opcode, object, methodInfo, args);
       this.recordStore(call);
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0].kind, call);
@@ -1213,6 +1227,7 @@ module J2ME {
     }
 
     genClass(classInfo: ClassInfo): Value {
+      ArrayUtilities.pushUnique(this.referencedClasses, classInfo);
       return new IR.JVMClass(classInfo);
     }
 
@@ -1235,7 +1250,7 @@ module J2ME {
     processBytecode(stream: BytecodeStream, state: State) {
       var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
-      writer.enter("State Before: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
+      writer && writer.enter("State Before: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
       switch (opcode) {
         case Bytecodes.NOP            : break;
         case Bytecodes.ACONST_NULL    : state.apush(genConstant(null, Kind.Reference)); break;
@@ -1457,8 +1472,8 @@ module J2ME {
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
       }
-      writer.leave("State  After: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
-      writer.writeLn("");
+      writer && writer.leave("State  After: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
+      writer && writer.writeLn("");
     }
   }
 }

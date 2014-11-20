@@ -11,6 +11,7 @@ var FieldInfo = (function() {
         this.name = name;
         this.signature = signature;
         this.id = idgen++;
+        this.isStatic = ACCESS_FLAGS.isStatic(access_flags);
     }
 })();
 

@@ -165,34 +165,8 @@ module J2ME.C4.IR {
     }
   }
 
-  export class JVMCallProperty extends StoreDependent {
-
-    constructor(control: Control, store: Store, public state: State, public object: Value, public name: Value, public args: Value [], public callerMethodInfoId: string, public objectCheck?: boolean) {
-      super(control, store);
-      this.handlesAssignment = true;
-    }
-    visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
-      this.loads && visitArrayInputs(this.loads, visitor);
-      visitor(this.object);
-      visitor(this.name);
-      visitArrayInputs(this.args, visitor);
-      visitStateInputs(this.state.local, visitor);
-      visitStateInputs(this.state.stack, visitor);
-    }
-    replaceInput(oldInput: Node, newInput: Node) {
-      var count = super.replaceInput(oldInput, newInput);
-      count += (<any>this.state.local).replace(oldInput, newInput);
-      count += (<any>this.state.stack).replace(oldInput, newInput);
-      return count;
-    }
-  }
-
-  JVMCallProperty.prototype.nodeName = "JVMCallProperty";
-
   export class JVMInvoke extends StoreDependent {
-    constructor(control: Control, store: Store, public opcode: J2ME.Bytecode.Bytecodes, public object: Value, public methodInfo: MethodInfo, public args: Value []) {
+    constructor(control: Control, store: Store, public state: State, public opcode: J2ME.Bytecode.Bytecodes, public object: Value, public methodInfo: MethodInfo, public args: Value []) {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
@@ -201,6 +175,18 @@ module J2ME.C4.IR {
       this.loads && visitArrayInputs(this.loads, visitor);
       this.object && visitor(this.object);
       visitArrayInputs(this.args, visitor);
+      if (this.state) {
+        visitStateInputs(this.state.local, visitor);
+        visitStateInputs(this.state.stack, visitor);
+      }
+    }
+    replaceInput(oldInput: Node, newInput: Node) {
+      var count = super.replaceInput(oldInput, newInput);
+      if (this.state) {
+        count += (<any>this.state.local).replace(oldInput, newInput);
+        count += (<any>this.state.stack).replace(oldInput, newInput);
+      }
+      return count;
     }
   }
 
@@ -505,6 +491,7 @@ module J2ME.C4.Backend {
     return compiledValues;
   }
 
+  /*
   IR.JVMCallProperty.prototype.compile = function (cx: Context): AST.Node {
 
     var localValues = compileStateValues(cx, this.state.local);
@@ -566,6 +553,7 @@ module J2ME.C4.Backend {
       null
     );
   };
+  */
 
   IR.JVMInvoke.prototype.compile = function (cx: Context): AST.Node {
     var object = this.object ? compileValue(this.object, cx) : null;
@@ -573,19 +561,32 @@ module J2ME.C4.Backend {
       return compileValue(arg, cx);
     });
     var callee = null;
-
+    var result = null;
     if (object) {
       if (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESPECIAL) {
-        var classPrototype = property(id(mangleClass(this.methodInfo.classInfo)), "prototype");
-        var callee = property(classPrototype, mangleMethod(this.methodInfo));
-        return callCall(callee, object, args);
+        result = callCall(id(mangleClassAndMethod(this.methodInfo)), object, args);
+      } else {
+        callee = property(object, mangleMethod(this.methodInfo));
+        result = call(callee, args);
       }
-      callee = property(object, mangleMethod(this.methodInfo));
     } else {
       release || assert (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESTATIC);
       callee = id(mangleMethod(this.methodInfo));
+      result = call(callee, args);
     }
-    return call(callee, args);
+    if (false && this.state) {
+      var block = new AST.BlockStatement([]);
+      var to = id(this.variable.name);
+      cx.useVariable(this.variable);
+      block.body.push(new AST.ExpressionStatement(assignment(to, result)));
+      var ifYield = new AST.IfStatement(id("$Y"), new AST.BlockStatement([
+        new AST.ExpressionStatement(call(property(id("$"), "B"), [])),
+        new AST.ReturnStatement(undefined)
+      ]));
+      block.body.push(ifYield);
+      return block;
+    }
+    return result;
   };
 
   function hashString(s: string) {
@@ -613,11 +614,21 @@ module J2ME.C4.Backend {
     return result;
   }
 
-  export function mangleMethod(methodInfo: MethodInfo) {
+  export function mangleClassAndMethod(methodInfo: MethodInfo) {
+    var name = methodInfo.classInfo.className + methodInfo.name + methodInfo.signature;
     if (friendlyMangledNames) {
-      return mangleString(methodInfo.name + methodInfo.signature);
+      return mangleString(name);
     }
-    var hash = hashString(methodInfo.name + methodInfo.signature);
+    var hash = hashString(name);
+    return StringUtilities.variableLengthEncodeInt32(hash);
+  }
+
+  export function mangleMethod(methodInfo: MethodInfo) {
+    var name = methodInfo.name + methodInfo.signature;
+    if (friendlyMangledNames) {
+      return mangleString(name);
+    }
+    var hash = hashString(name);
     return StringUtilities.variableLengthEncodeInt32(hash);
   }
 

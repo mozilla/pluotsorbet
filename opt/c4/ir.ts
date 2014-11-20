@@ -265,7 +265,7 @@ module J2ME.C4.IR {
   Store.prototype.nodeName = "Store";
 
   export class StoreDependent extends Value {
-    loads: Node [];
+    public loads: Node [];
     constructor(public control: Control, public store: Store) {
       super();
     }

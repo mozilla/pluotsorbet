@@ -276,6 +276,9 @@ module J2ME.C4.AST {
     if (value === null) {
       return 'null';
     }
+    if (value === undefined) {
+      return 'undefined';
+    }
     if (typeof value === 'string') {
       return escapeString(value);
     }
@@ -343,7 +346,7 @@ module J2ME.C4.AST {
       super();
     }
     toSource(precedence: number) : string {
-      return "{\n" + nodesToSource(this.body, precedence) + "}";
+      return "{" + nodesToSource(this.body, precedence, "\n") + "}";
     }
   }
 
@@ -352,12 +355,12 @@ module J2ME.C4.AST {
       super();
     }
     toSource(precedence: number) : string {
-      return this.expression.toSource(Precedence.Sequence) + ";\n";
+      return this.expression.toSource(Precedence.Sequence) + ";";
     }
   }
 
   export class IfStatement extends Statement {
-    constructor (public test: Expression, public consequent: Statement, public alternate: Statement) {
+    constructor (public test: Expression, public consequent: Statement, public alternate?: Statement) {
       super();
     }
     toSource(precedence: number) : string {
@@ -421,11 +424,11 @@ module J2ME.C4.AST {
       super();
     }
     toSource(precedence: number) : string {
-      var result = "return ";
+      var result = "return";
       if (this.argument) {
-        result += this.argument.toSource(Precedence.Sequence);
+        result += " " + this.argument.toSource(Precedence.Sequence);
       }
-      return result + ";\n";
+      return result + ";";
     }
   }
 

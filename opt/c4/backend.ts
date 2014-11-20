@@ -368,13 +368,18 @@ module J2ME.C4.Backend {
             this.useVariable(node.to);
             from = compileValue(node.from, this);
           } else {
-            if (node.variable && !node.handlesAssignment) {
-              to = id(node.variable.name);
-              this.useVariable(node.variable);
-            } else {
-              to = null;
-            }
             from = compileValue(node, this, true);
+            if (from instanceof AST.Statement) {
+              body.push(from);
+              continue;
+            } else {
+              if (node.variable) {
+                to = id(node.variable.name);
+                this.useVariable(node.variable);
+              } else {
+                to = null;
+              }
+            }
           }
           if (to) {
             statement = new ExpressionStatement(assignment(to, from));

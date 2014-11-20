@@ -85,7 +85,6 @@ try {
   start = dateNow();
   var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
 
-  J2ME.printResults();
   print("RUNNING TIME: " + (dateNow() - start));
 } catch (x) {
   print(x);
