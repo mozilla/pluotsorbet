@@ -118,7 +118,8 @@ if (urlParams.jad) {
 
 if (MIDP.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/override.js"));
+                       loadScript("tests/override.js"),
+                       loadScript("tests/mozactivitymock.js"));
   loadingPromises.push(
     new Promise(function(resolve, reject) {
       fs.exists("/_test.ks", function(exists) {
