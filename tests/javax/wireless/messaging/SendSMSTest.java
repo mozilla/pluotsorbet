@@ -22,7 +22,7 @@ public class SendSMSTest implements Testlet {
             conn.send(msg);
 
             th.check(getNumber(), "3393333333");
-            th.todo(getBody(), "SMS nuntius");
+            th.check(getBody(), "SMS nuntius");
 
             conn.close();
         } catch (Exception e) {

@@ -135,8 +135,8 @@ function(handle, type, host, destPort, sourcePort, message) {
             name: "new",
             data: {
               type: "websms/sms",
-              number:  util.fromJavaString(host),
-              body: util.decodeUtf8(message),
+              number: util.fromJavaString(host),
+              body: new TextDecoder('utf-16be').decode(message),
             },
         });
 
