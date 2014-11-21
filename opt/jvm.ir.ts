@@ -571,7 +571,7 @@ module J2ME.C4.Backend {
       }
     } else {
       release || assert (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESTATIC);
-      callee = id(mangleMethod(this.methodInfo));
+      callee = id(mangleClassAndMethod(this.methodInfo));
       result = call(callee, args);
     }
     if (false && this.state) {
@@ -597,7 +597,7 @@ module J2ME.C4.Backend {
     return HashUtilities.hashBytesTo32BitsMD5(data, 0, s.length);
   }
 
-  var friendlyMangledNames = false;
+  var friendlyMangledNames = true;
 
   export function mangleString(s: string) {
     var invalidChars = "[];/<>()";

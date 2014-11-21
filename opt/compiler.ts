@@ -103,13 +103,15 @@ module J2ME {
           writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
           writer.leave("}");
-          if (emitter.closure) {
-            writer.writeLn(mangledClassName + ".prototype[" + quote(mangledMethodName) + "] = " + mangledClassAndMethodName + ";");
-          } else {
-            writer.writeLn(mangledClassName + ".prototype." + mangledMethodName + " = " + mangledClassAndMethodName + ";");
-          }
-          if (emitter.closure) {
-            writer.writeLn("window[" + quote(mangledClassAndMethodName) + "] = " + mangledClassAndMethodName + ";");
+          if (!method.isStatic) {
+            if (emitter.closure) {
+              writer.writeLn(mangledClassName + ".prototype[" + quote(mangledMethodName) + "] = " + mangledClassAndMethodName + ";");
+            } else {
+              writer.writeLn(mangledClassName + ".prototype." + mangledMethodName + " = " + mangledClassAndMethodName + ";");
+            }
+            if (emitter.closure) {
+              writer.writeLn("window[" + quote(mangledClassAndMethodName) + "] = " + mangledClassAndMethodName + ";");
+            }
           }
           compiledMethods.push(compiledMethod);
         }
