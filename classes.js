@@ -77,7 +77,6 @@ Classes.prototype.loadClassFile = function(fileName) {
         classes[n] = self.loadClass(c);
     });
 
-    classInfo.initPrototypeChain();
     return classInfo;
 }
 

@@ -1005,63 +1005,86 @@ VM.execute = function(ctx) {
                 if (isStatic)
                     classInitCheck(methodInfo.classInfo, startip);
             }
+            var obj = null;
+            var fn;
             if (!isStatic) {
-                var obj = stack[stack.length - methodInfo.consumes];
+                obj = stack[stack.length - methodInfo.consumes];
                 if (!obj) {
                     ctx.raiseExceptionAndYield("java/lang/NullPointerException");
                 }
                 switch (op) {
                 case OPCODES.invokevirtual:
                 case OPCODES.invokeinterface:
-                    if (methodInfo.classInfo != obj.class) {
-                        // Check if the method is already in the virtual method cache
-                        if (obj.class.vmc[methodInfo.key]) {
-                          methodInfo = obj.class.vmc[methodInfo.key];
-                        } else {
-                          methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);
-                        }
-                    }
+                    fn = obj[methodInfo.mangledName];
+                    break;
+                case OPCODES.invokespecial:
+                    fn = jsGlobal[J2ME.C4.Backend.mangleClassAndMethod(methodInfo)];
                     break;
                 }
+            } else {
+                fn = jsGlobal[J2ME.C4.Backend.mangleClassAndMethod(methodInfo)];
             }
 
             if (VM.DEBUG) {
                 VM.trace("invoke", ctx.thread.pid, methodInfo);
             }
 
-            var alternateImpl = methodInfo.alternateImpl;
-            if (alternateImpl) {
-                Instrument.callPauseHooks(ctx.current());
-                Instrument.measure(alternateImpl, ctx, methodInfo);
-                Instrument.callResumeHooks(ctx.current());
+            
+            if (!fn) {
+                if (!isStatic) {
+                    var obj = stack[stack.length - methodInfo.consumes];
+                    if (!obj) {
+                        ctx.raiseExceptionAndYield("java/lang/NullPointerException");
+                    }
+                    switch (op) {
+                    case OPCODES.invokevirtual:
+                    case OPCODES.invokeinterface:
+                        if (methodInfo.classInfo != obj.class) {
+                            // Check if the method is already in the virtual method cache
+                            if (obj.class.vmc[methodInfo.key]) {
+                              methodInfo = obj.class.vmc[methodInfo.key];
+                            } else {
+                              methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if (VM.DEBUG) {
+                    VM.trace("invoke", ctx.thread.pid, methodInfo);
+                }
+
+                var alternateImpl = methodInfo.alternateImpl;
+                if (alternateImpl) {
+                    Instrument.callPauseHooks(ctx.current());
+                    Instrument.measure(alternateImpl, ctx, methodInfo);
+                    Instrument.callResumeHooks(ctx.current());
+                    break;
+                }
+                console.log(methodInfo.implKey);
+                pushFrame(methodInfo);
                 break;
             }
 
-            if (false && !methodInfo.dontCompile && !methodInfo.fn) {
-              ctx.compileMethodInfo(methodInfo);
+            // Take off the arguments from the stack.
+            var args = stack.slice(stack.length - methodInfo.consumes);
+            stack.length -= methodInfo.consumes;
+            // Invoke the compiled function.
+            var returnValue = fn.apply(obj, args);
+            // Push return value back on the stack.
+            var returnType = methodInfo.signature[methodInfo.signature.length - 1];
+            switch (returnType) {
+                case 'V':
+                    break;
+                case 'J':
+                case 'D':
+                    stack.push2(returnValue);
+                    break;
+                default:
+                    stack.push(returnValue);
+                    break;
             }
-            if (methodInfo.fn) {
-                // Take off the arguments from the stack.
-                var args = stack.slice(stack.length - methodInfo.consumes);
-                stack.length -= methodInfo.consumes;
-                // Invoke the compiled function.
-                var returnValue = ctx.invokeCompiledFn(methodInfo, args);
-                // Push return value back on the stack.
-                var returnType = methodInfo.signature[methodInfo.signature.length - 1];
-                switch (returnType) {
-                    case 'V':
-                        break;
-                    case 'J':
-                    case 'D':
-                        stack.push2(returnValue);
-                        break;
-                    default:
-                        stack.push(returnValue);
-                        break;
-                }
-                break;
-            }
-            pushFrame(methodInfo);
             break;
         case 0xb1: // return
             if (VM.DEBUG) {

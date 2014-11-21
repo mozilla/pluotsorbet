@@ -114,6 +114,17 @@ module J2ME {
             }
           }
           compiledMethods.push(compiledMethod);
+        } else {
+          var patchObject;
+          var key;
+          if (method.isStatic) {
+            key = mangledClassAndMethodName;
+            patchObject = "jsGlobal"
+          } else {
+            key = mangledMethodName;
+            patchObject = mangledClassName + ".prototype";
+          }
+          writer.writeLn("trampoline(" + patchObject + "," + quote(key) + ");");
         }
       } catch (x) {
         consoleWriter.writeLn("XXXX: " + x);

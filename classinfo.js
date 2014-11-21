@@ -109,6 +109,7 @@ function MethodInfo(opts) {
     }
 
     this.mangledName = J2ME.C4.Backend.mangleMethod(this);
+    this.mangledClassAndMethodName = J2ME.C4.Backend.mangleClassAndMethod(this);
 
     this.consumes = Signature.getINSlots(this.signature);
     if (!this.isStatic) {
@@ -128,6 +129,17 @@ var ClassInfo = function(classBytes) {
     this.vfc = {};
 
     this.mangledName = J2ME.C4.Backend.mangleClass(this);
+
+    if (jsGlobal[this.mangledName]) {
+        this.constructor = jsGlobal[this.mangledName];
+    } else {
+        this.constructor = function () {};
+    }
+    this.constructor.prototype.class = this;
+    this.constructor.prototype.toString = function() {
+        return '[instance ' + this.class.className + ']';
+    };
+
 
     var self = this;
 
@@ -170,32 +182,6 @@ var ClassInfo = function(classBytes) {
                 if (c.outer_class_info_index)
                     classes.push(cp[cp[c.outer_class_info_index].name_index].bytes);
             });
-        }
-    });
-}
-
-ClassInfo.prototype.initPrototypeChain = function() {
-    if (this.superClass) {
-        this.superClass.initPrototypeChain();
-    }
-
-    var constructor = this.constructor = function() { };
-    constructor.prototype = Object.create(
-        this.superClass ?
-            this.superClass.constructor.prototype :
-            null);
-    constructor.prototype.class = this;
-    constructor.prototype.toString = function() {
-        return '[instance ' + this.class.className + ']';
-    };
-
-    this.methods.forEach(function(methodInfo) {
-        if (methodInfo.fn) {
-            if (methodInfo.isStatic) {
-                constructor[methodInfo.mangledName] = methodInfo.fn;
-            } else {
-                constructor.prototype[methodInfo.mangledName] = methodInfo.fn;
-            }
         }
     });
 }
@@ -263,3 +249,72 @@ ArrayClass.prototype.implementsInterface = function(iface) {
 ArrayClass.prototype.isAssignableTo = ClassInfo.prototype.isAssignableTo;
 
 ArrayClass.prototype.getClassObject = ClassInfo.prototype.getClassObject;
+
+function getOnce(obj, key, getter) {
+    Object.defineProperty(obj, key, {
+      get: function() {
+        var value = getter();
+        Object.defineProperty(obj, key, {
+          value: value,
+          configurable: true,
+          enumerable: true
+        });
+        return value;
+      },
+      configurable: true,
+      enumerable: true
+    });
+}
+
+
+function trampoline(obj, key, className, methodKey) {
+    getOnce(obj, key, function() {
+        var classInfo = CLASSES.getClass(className);
+        var methodInfo = CLASSES.getMethod(classInfo, methodKey);
+        function native() {
+            var alternateImpl = methodInfo.alternateImpl;
+            try {
+                // Async alternate functions push data back on the stack, but in the case of a compiled
+                // function, the stack doesn't exist. To handle async, a bailout is triggered so the
+                // compiled frame is replaced with an interpreted frame. The async function then can get the new
+                // frame's stack from this callback.
+                // TODO Refactor override so we don't have to slice here.
+                var ctx = arguments[0];
+                var args = Array.prototype.slice.call(arguments, 2);
+                return alternateImpl.call(null, ctx, args, methodInfo.isStatic, function() {
+                  assert(ctx.frameSets.length === 0, "There are still compiled frames.");
+                  return ctx.current().stack;
+                });
+            } catch (e) {
+                if (e === VM.Pause || e === VM.Yield) {
+                    throw e;
+                }
+                throw new Error("TODO handle exceptions/yields in alternate impls. " + e + e.stack);
+            }
+        }
+
+        function interpreter() {
+            var frame = new Frame(methodInfo, [], 0);
+            var ctx = arguments[0];
+            ctx.frames.push(frame);
+            for (var i = 2; i < arguments.length; i++) {
+                frame.setLocal(i - 2, arguments[i]);
+            }
+            if (methodInfo.isSynchronized) {
+                if (!frame.lockObject) {
+                  frame.lockObject = methodInfo.isStatic
+                    ? methodInfo.classInfo.getClassObject(ctx)
+                    : frame.getLocal(0);
+                }
+
+                ctx.monitorEnter(frame.lockObject);
+            }
+            return VM.execute(ctx);
+        }
+    
+        if (methodInfo.alternateImpl) {
+          return native;
+        }
+        return interpreter;
+    });
+}
