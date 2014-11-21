@@ -240,11 +240,19 @@ Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
         ctx.runtime.setStatic(CLASSES.getField(classInfo, "S._API_access_ok.I"), 1);
     }
     var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
-    if (clinit)
-        ctx.pushFrame(clinit, 0);
-    if (classInfo.superClass)
-        ctx.pushClassInitFrame(classInfo.superClass);
-    throw VM.Yield;
+    var frames = [];
+    if (clinit) {
+        frames.push(new Frame(clinit, [], 0));
+    }
+    if (classInfo.superClass) {
+        var classInitFrame = ctx.getClassInitFrame(classInfo.superClass);
+        if (classInitFrame) {
+            frames.push(classInitFrame);
+        }
+    }
+    if (frames.length) {
+        ctx.executeNewFrameSet(frames);
+    }
 });
 
 Native.create("java/lang/Class.init9.()V", function(ctx) {
@@ -303,8 +311,7 @@ Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) 
         0xb0              // areturn
       ]),
     });
-    ctx.pushFrame(syntheticMethod);
-    throw VM.Yield;
+    return ctx.executeNewFrameSet([new Frame(syntheticMethod, [], 0)]);
 });
 
 Native.create("java/lang/Class.isInterface.()Z", function() {

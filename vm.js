@@ -150,9 +150,12 @@ VM.execute = function(ctx) {
     function classInitCheck(classInfo, ip) {
         if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
             return;
-        frame.ip = ip;
-        ctx.pushClassInitFrame(classInfo);
-        throw VM.Yield;
+        try {
+            ctx.pushClassInitFrame(classInfo);
+        } catch (e) {
+            frame.ip = ip;
+            throw e;
+        }
     }
 
     function resolve(idx, isStatic) {

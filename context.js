@@ -46,7 +46,26 @@ Context.prototype.popFrame = function() {
   return caller;
 }
 
-Context.prototype.pushClassInitFrame = function(classInfo) {
+Context.prototype.executeNewFrameSet = function(frames) {
+  this.frameSets.push(this.frames);
+  this.frames = frames;
+  try {
+    var returnValue = VM.execute(this);
+  } catch (e) {
+    // Append all the current frames to the parent frame set, so a single frame stack
+    // exists when the bailout finishes.
+    var currentFrames = this.frames;
+    this.frames = this.frameSets.pop();
+    for (var i = 0; i < currentFrames.length; i++) {
+      this.frames.push(currentFrames[i]);
+    }
+    throw e;
+  }
+  this.frames = this.frameSets.pop();
+  return returnValue;
+}
+
+Context.prototype.getClassInitFrame = function(classInfo) {
   if (this.runtime.initialized[classInfo.className])
     return;
   classInfo.thread = this.thread;
@@ -84,8 +103,14 @@ Context.prototype.pushClassInitFrame = function(classInfo) {
         0xb1,             // return
     ])
   });
-  this.current().stack.push(classInfo.getClassObject(this));
-  this.pushFrame(syntheticMethod);
+  return new Frame(syntheticMethod, [classInfo.getClassObject(this)], 0);
+}
+
+Context.prototype.pushClassInitFrame = function(classInfo) {
+  if (this.runtime.initialized[classInfo.className])
+    return;
+  var classInitFrame = this.getClassInitFrame(classInfo);
+  this.executeNewFrameSet([classInitFrame]);
 }
 
 Context.prototype.raiseException = function(className, message) {
