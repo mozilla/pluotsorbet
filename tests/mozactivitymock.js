@@ -19,9 +19,9 @@ function MozActivity(obj) {
         lastSMSNumber = obj.data.number;
         lastSMSBody = obj.data.body;
 
-        setTimeout((function() {
+        setZeroTimeout((function() {
           this.onsuccess();
-        }).bind(this), 0);
+        }).bind(this));
       break;
 
       default:
