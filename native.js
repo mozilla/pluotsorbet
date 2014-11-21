@@ -143,6 +143,10 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         console.warn("Property 'com.nokia.multisim.imsi.sim2' is a stub");
         value = null;
         break;
+    case "com.nokia.mid.batterylevel":
+        // http://developer.nokia.com/community/wiki/Checking_battery_level_in_Java_ME
+        value = Math.floor(navigator.battery.level * 100).toString();
+        break;
     case "com.nokia.mid.imsi":
         console.warn("Property 'com.nokia.mid.imsi' is a stub");
         value = "000000000000000";

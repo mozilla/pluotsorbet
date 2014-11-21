@@ -20,6 +20,7 @@
  *    midletClassName
  *    network_mcc
  *    network_mnc
+ *    platform
  *    profile
  *    pushConn
  *    pushMidlet
