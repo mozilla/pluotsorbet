@@ -279,9 +279,8 @@ function trampoline(obj, key, className, methodKey) {
                 // compiled frame is replaced with an interpreted frame. The async function then can get the new
                 // frame's stack from this callback.
                 // TODO Refactor override so we don't have to slice here.
-                var ctx = arguments[0];
-                var args = Array.prototype.slice.call(arguments, 2);
-                return alternateImpl.call(null, ctx, args, methodInfo.isStatic, function() {
+                var ctx = $.ctx;
+                return alternateImpl.call(null, ctx, Array.prototype.slice.call(arguments), methodInfo.isStatic, function() {
                   assert(ctx.frameSets.length === 0, "There are still compiled frames.");
                   return ctx.current().stack;
                 });
@@ -295,10 +294,14 @@ function trampoline(obj, key, className, methodKey) {
 
         function interpreter() {
             var frame = new Frame(methodInfo, [], 0);
-            var ctx = arguments[0];
-            ctx.frames.push(frame);
-            for (var i = 2; i < arguments.length; i++) {
-                frame.setLocal(i - 2, arguments[i]);
+            var ctx = $.ctx;
+            var args = Array.prototype.slice.call(arguments);
+
+            if (!methodInfo.isStatic) {
+                args.unshift(this);
+            }
+            for (var i = 0; i < args.length; i++) {
+                frame.setLocal(i, args[i]);
             }
             if (methodInfo.isSynchronized) {
                 if (!frame.lockObject) {
@@ -309,9 +312,9 @@ function trampoline(obj, key, className, methodKey) {
 
                 ctx.monitorEnter(frame.lockObject);
             }
-            return VM.execute(ctx);
+            return ctx.executeNewFrameSet([frame]);
         }
-    
+
         if (methodInfo.alternateImpl) {
           return native;
         }

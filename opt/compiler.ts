@@ -124,7 +124,12 @@ module J2ME {
             key = mangledMethodName;
             patchObject = mangledClassName + ".prototype";
           }
-          writer.writeLn("trampoline(" + patchObject + "," + quote(key) + ");");
+          writer.writeLn("trampoline(" +
+                         patchObject + "," +
+                         quote(key) + "," +
+                         quote(classInfo.className) + "," +
+                         quote(method.key) +
+                         ");");
         }
       } catch (x) {
         consoleWriter.writeLn("XXXX: " + x);

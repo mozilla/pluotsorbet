@@ -198,8 +198,14 @@ Context.prototype.compileMethodInfo = function(methodInfo) {
   }
 };
 
+Context.prototype.setCurrent = function() {
+  $ = this.runtime;
+  $.ctx = this;
+}
+
 Context.prototype.execute = function() {
   Instrument.callResumeHooks(this.current());
+  this.setCurrent();
   do {
     try {
       VM.execute(this);
@@ -220,6 +226,7 @@ Context.prototype.execute = function() {
 
 Context.prototype.start = function() {
   var ctx = this;
+  this.setCurrent();
   Instrument.callResumeHooks(ctx.current());
   try {
     VM.execute(ctx);

@@ -3,6 +3,8 @@
 
 'use strict';
 
+var $; // The currently-running runtime.
+
 function Runtime(vm) {
   this.vm = vm;
   this.status = 1; // NEW
@@ -12,6 +14,7 @@ function Runtime(vm) {
   this.pending = {};
   this.staticFields = {};
   this.classObjects = {};
+  this.ctx = null;
 }
 
 Runtime.prototype.waitStatus = function(callback) {
