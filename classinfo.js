@@ -312,6 +312,7 @@ function trampoline(obj, key, className, methodKey) {
 
                 ctx.monitorEnter(frame.lockObject);
             }
+
             return ctx.executeNewFrameSet([frame]);
         }
 

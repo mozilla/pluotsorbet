@@ -264,7 +264,7 @@ module J2ME.C4.IR {
       this.control && visitor(this.control);
       this.store && visitor(this.store);
       this.loads && visitArrayInputs(this.loads, visitor);
-      visitor(this.object);
+      this.object && visitor(this.object);
     }
   }
 
@@ -278,7 +278,7 @@ module J2ME.C4.IR {
       this.control && visitor(this.control);
       this.store && visitor(this.store);
       this.loads && visitArrayInputs(this.loads, visitor);
-      visitor(this.object);
+      this.object && visitor(this.object);
       visitor(this.value);
     }
   }
@@ -640,19 +640,38 @@ module J2ME.C4.Backend {
     return StringUtilities.variableLengthEncodeInt32(hash);
   }
 
+  export function mangleClassAndField(fieldInfo: FieldInfo) {
+    var name = fieldInfo.classInfo.className + fieldInfo.name;
+    if (friendlyMangledNames) {
+      return mangleString(name);
+    }
+    var hash = hashString(name);
+    return StringUtilities.variableLengthEncodeInt32(hash);
+  }
+
   export function mangleField(fieldInfo: FieldInfo) {
     return mangleString(fieldInfo.name);
   }
 
   IR.JVMGetField.prototype.compile = function (cx: Context): AST.Node {
-    var object = compileValue(this.object, cx);
-    return new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false);
+    if (this.object) {
+      var object = compileValue(this.object, cx);
+      return new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false);
+    } else {
+      assert(this.fieldInfo.isStatic);
+      return new AST.MemberExpression(id("$"), id(mangleClassAndField(this.fieldInfo)), false);
+    }
   };
 
   IR.JVMPutField.prototype.compile = function (cx: Context): AST.Node {
-    var object = compileValue(this.object, cx);
     var value = compileValue(this.value, cx);
-    return assignment(new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false), value);
+    if (this.object) {
+      var object = compileValue(this.object, cx);
+      return assignment(new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false), value);
+    } else {
+      assert(this.fieldInfo.isStatic);
+      return assignment(new AST.MemberExpression(id("$"), id(mangleClassAndField(this.fieldInfo)), false), value);
+    }
   };
 
   IR.JVMNew.prototype.compile = function (cx: Context): AST.Node {

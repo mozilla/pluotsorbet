@@ -1230,7 +1230,7 @@ module J2ME {
 
     genGetField(fieldInfo: FieldInfo, isStatic: boolean) {
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      var object = isStatic ? this.genClass(fieldInfo.classInfo) : this.state.apop();
+      var object = isStatic ? null : this.state.apop();
       var getField = new IR.JVMGetField(this.region, this.state.store, object, fieldInfo);
       this.recordLoad(getField);
       this.state.push(signature.kind, getField);
@@ -1239,7 +1239,7 @@ module J2ME {
     genPutField(fieldInfo: FieldInfo, isStatic: boolean) {
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var value = this.state.pop(signature.kind);
-      var object = isStatic ? this.genClass(fieldInfo.classInfo) : this.state.apop();
+      var object = isStatic ? null : this.state.apop();
       var putField = new IR.JVMPutField(this.region, this.state.store, object, fieldInfo, value);
       this.recordStore(putField);
     }
