@@ -3,7 +3,26 @@
 
 'use strict';
 
-var $; // The currently-running runtime.
+var $; // The currently-executing runtime.
+
+var runtimeTemplate = {};
+
+function registerClass(klass, mangledClassName) {
+  // Ensure each Runtime instance receives its own copy of the class
+  // constructor, hoisted off the current runtime.
+  Object.defineProperty(runtimeTemplate, mangledClassName, {
+    configurable: true,
+    get: function() {
+      var runtimeClass = klass.bind(null);
+      klass.staticInitializer.call(runtimeClass);
+      Object.defineProperty(this, mangledClassName, {
+        configurable: false,
+        value: runtimeClass
+      });
+      return runtimeClass;
+    }
+  });
+}
 
 function Runtime(vm) {
   this.vm = vm;
@@ -16,6 +35,8 @@ function Runtime(vm) {
   this.classObjects = {};
   this.ctx = null;
 }
+
+Runtime.prototype = Object.create(runtimeTemplate);
 
 Runtime.prototype.waitStatus = function(callback) {
   this.waiting.push(callback);

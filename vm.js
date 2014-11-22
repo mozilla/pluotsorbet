@@ -1062,7 +1062,6 @@ VM.execute = function(ctx) {
                     Instrument.callResumeHooks(ctx.current());
                     break;
                 }
-                console.log(methodInfo.implKey);
                 pushFrame(methodInfo);
                 break;
             }

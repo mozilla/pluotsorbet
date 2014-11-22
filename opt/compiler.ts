@@ -29,33 +29,32 @@ module J2ME {
     return list;
   }
 
-  function compileConstructor(emitter: Emitter, classInfo: ClassInfo) {
+  function emitClass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
     var mangledClassName = mangleClass(classInfo);
     if (emitter.closure) {
       writer.writeLn("/** @constructor */");
     }
 
-    writer.enter("function " + mangledClassName + "() {");
-    getClassInheritanceChain(classInfo).forEach(function (klass) {
-      for (var i = 0; i < klass.fields.length; i++) {
-        var fieldInfo = klass.fields[i];
-        if (fieldInfo.isStatic) {
+    function emitFields(fields, emitStatic) {
+      for (var i = 0; i < fields.length; i++) {
+        var fieldInfo = fields[i];
+        if (fieldInfo.isStatic !== emitStatic) {
           continue;
         }
         var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
         var kind = signature.kind;
         var defaultValue;
         switch (kind) {
-          case Kind.Reference:
-            defaultValue = "null";
-            break;
-          case Kind.Long:
-            defaultValue = "Long.ZERO";
-            break;
-          default:
-            defaultValue = "0";
-            break;
+        case Kind.Reference:
+          defaultValue = "null";
+          break;
+        case Kind.Long:
+          defaultValue = "Long.ZERO";
+          break;
+        default:
+          defaultValue = "0";
+          break;
         }
         if (emitter.closure) {
           writer.writeLn("this[" + quote(mangleField(fieldInfo)) + "] = " + defaultValue + ";");
@@ -63,7 +62,16 @@ module J2ME {
           writer.writeLn("this." + mangleField(fieldInfo) + " = " + defaultValue + ";");
         }
       }
+    }
+
+    writer.enter("function " + mangledClassName + "() {");
+    getClassInheritanceChain(classInfo).forEach(function (klass) {
+      emitFields(klass.fields, false);
     });
+    writer.leave("}");
+
+    writer.enter(mangledClassName + ".staticInitializer = function() {");
+    emitFields(classInfo.fields, true);
     writer.leave("}");
 
     if (emitter.closure) {
@@ -74,6 +82,8 @@ module J2ME {
       var mangledSuperClassName = mangleClass(classInfo.superClass);
       writer.writeLn(mangledClassName + ".prototype = Object.create(" + mangledSuperClassName + ".prototype);");
     }
+
+    writer.writeLn("registerClass(" + mangledClassName + "," + quote(mangledClassName) + ")");
   }
 
   function compileClassInfo(emitter: Emitter, classInfo: ClassInfo, ctx: Context): CompiledMethodInfo [] {
@@ -83,7 +93,7 @@ module J2ME {
       mangledClassName = quote(mangledClassName);
     }
 
-    compileConstructor(emitter, classInfo);
+    emitClass(emitter, classInfo);
 
     var methods = classInfo.methods;
     var compiledMethods: CompiledMethodInfo [] = [];
@@ -133,6 +143,7 @@ module J2ME {
         }
       } catch (x) {
         consoleWriter.writeLn("XXXX: " + x);
+        consoleWriter.writeLn(x.stack);
       }
     }
 

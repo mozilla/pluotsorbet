@@ -653,13 +653,17 @@ module J2ME.C4.Backend {
     return mangleString(fieldInfo.name);
   }
 
+  function getRuntimeClass(classInfo: ClassInfo) {
+    return new AST.MemberExpression(id("$"), id(mangleClass(classInfo)), false);
+  }
+
   IR.JVMGetField.prototype.compile = function (cx: Context): AST.Node {
     if (this.object) {
       var object = compileValue(this.object, cx);
       return new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false);
     } else {
       assert(this.fieldInfo.isStatic);
-      return new AST.MemberExpression(id("$"), id(mangleClassAndField(this.fieldInfo)), false);
+      return new AST.MemberExpression(getRuntimeClass(this.fieldInfo.classInfo), id(mangleField(this.fieldInfo)), false);
     }
   };
 
@@ -670,7 +674,7 @@ module J2ME.C4.Backend {
       return assignment(new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false), value);
     } else {
       assert(this.fieldInfo.isStatic);
-      return assignment(new AST.MemberExpression(id("$"), id(mangleClassAndField(this.fieldInfo)), false), value);
+      return assignment(new AST.MemberExpression(getRuntimeClass(this.fieldInfo.classInfo), id(mangleField(this.fieldInfo)), false), value);
     }
   };
 
