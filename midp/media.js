@@ -429,7 +429,7 @@ PlayerContainer.prototype.realize = function(contentType) {
             this.player = new ImagePlayer(this);
             this.player.realize().then(resolve);
         } else {
-            console.warn("Unsupported media format: " + this.mediaFormat);
+            console.warn("Unsupported media format (" + this.mediaFormat + ") for " + this.url);
             resolve(false);
         }
     }).bind(this));
