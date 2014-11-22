@@ -7,18 +7,25 @@ var $; // The currently-executing runtime.
 
 var runtimeTemplate = {};
 
-function registerClass(klass, mangledClassName) {
+function registerClass(klass, mangledClassName, className) {
   // Ensure each Runtime instance receives its own copy of the class
   // constructor, hoisted off the current runtime.
   Object.defineProperty(runtimeTemplate, mangledClassName, {
     configurable: true,
     get: function() {
       var runtimeClass = klass.bind(null);
-      klass.staticInitializer.call(runtimeClass);
+      var classInfo = CLASSES.getClass(className);
       Object.defineProperty(this, mangledClassName, {
         configurable: false,
         value: runtimeClass
       });
+      // TODO: monitorEnter
+      if (klass.staticInitializer) {
+        klass.staticInitializer.call(runtimeClass);
+      }
+      if (klass.staticConstructor) {
+        klass.staticConstructor.call(runtimeClass);
+      }
       return runtimeClass;
     }
   });

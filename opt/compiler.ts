@@ -70,9 +70,11 @@ module J2ME {
     });
     writer.leave("}");
 
-    writer.enter(mangledClassName + ".staticInitializer = function() {");
-    emitFields(classInfo.fields, true);
-    writer.leave("}");
+    if (classInfo.fields.some(f => f.isStatic)) {
+      writer.enter(mangledClassName + ".staticInitializer = function() {");
+      emitFields(classInfo.fields, true);
+      writer.leave("}");
+    }
 
     if (emitter.closure) {
       writer.writeLn("window[" + quote(mangledClassName) + "] = " + mangledClassName + ";");
@@ -83,7 +85,9 @@ module J2ME {
       writer.writeLn(mangledClassName + ".prototype = Object.create(" + mangledSuperClassName + ".prototype);");
     }
 
-    writer.writeLn("registerClass(" + mangledClassName + "," + quote(mangledClassName) + ")");
+    writer.writeLn("registerClass(" + mangledClassName + "," +
+                   quote(mangledClassName) + "," +
+                   quote(classInfo.className) + ")");
   }
 
   function compileClassInfo(emitter: Emitter, classInfo: ClassInfo, ctx: Context): CompiledMethodInfo [] {
@@ -113,7 +117,9 @@ module J2ME {
           writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
           writer.leave("}");
-          if (!method.isStatic) {
+          if (method.name === "<clinit>") {
+            writer.writeLn(mangledClassName + ".staticConstructor = " + mangledClassAndMethodName);
+          } else if (!method.isStatic) {
             if (emitter.closure) {
               writer.writeLn(mangledClassName + ".prototype[" + quote(mangledMethodName) + "] = " + mangledClassAndMethodName + ";");
             } else {
