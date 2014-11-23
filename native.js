@@ -65,7 +65,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = urlParams.platform ? urlParams.platform : "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
     case "microedition.platformimpl":
-        value = "";
+        value = null;
         break;
     case "microedition.profiles":
         value = "MIDP-2.0"
@@ -172,9 +172,10 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         break;
     default:
         console.warn("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
+        value = null;
         break;
     }
-    return value ? value : null;
+    return value;
 });
 
 Native.create("java/lang/System.currentTimeMillis.()J", function() {

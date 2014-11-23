@@ -35,6 +35,7 @@ public class getProperty implements Testlet
     getPropTest(null, "NullPointerException");
     getPropTest("", "IllegalArgumentException");
     getPropTest("__dummy_mauve_prop_not_set__", null);
+    getPropTest("com.nokia.mid.imei", "");
   }
 
   void getPropTest(String key, String expect)

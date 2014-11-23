@@ -433,7 +433,7 @@ Native.create("com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)
         value = null;
         break;
     }
-    return value ? value : null;
+    return value;
 });
 
 Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V", function(fileName) {
