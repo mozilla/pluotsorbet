@@ -809,7 +809,7 @@ tests.push(function() {
   });
 });
 
-asyncStorage.clear(function() {
+fs.clear(function() {
   fs.init(function() {
     next();
   });

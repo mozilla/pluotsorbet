@@ -152,7 +152,7 @@ function toggle(button) {
 
 window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
-   asyncStorage.clear();
+   fs.clear();
  };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;

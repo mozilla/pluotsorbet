@@ -524,6 +524,10 @@ var fs = (function() {
     });
   }
 
+  function clear(cb) {
+    store.clear(cb);
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -546,5 +550,6 @@ var fs = (function() {
     size: size,
     rename: rename,
     stat: stat,
+    clear: clear,
   };
 })();
