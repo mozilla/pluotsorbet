@@ -1,5 +1,7 @@
 'use strict';
 
+var DEBUG_FS = false;
+
 var fs = (function() {
   var MemoryStore = function() {
     this.map = new Map();
@@ -123,7 +125,7 @@ var fs = (function() {
 
   function open(path, cb) {
     path = normalizePath(path);
-console.log("fs open " + path);
+    if (DEBUG_FS) { console.log("fs open " + path); }
 
     store.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
@@ -146,7 +148,7 @@ console.log("fs open " + path);
 
   function close(fd, cb) {
     if (fd >= 0 && openedFiles[fd]) {
-console.log("fs close " + openedFiles[fd].path);
+      if (DEBUG_FS) { console.log("fs close " + openedFiles[fd].path); }
       flush(fd, function() {});
       openedFiles.splice(fd, 1, null);
     }
@@ -159,7 +161,7 @@ console.log("fs close " + openedFiles[fd].path);
     if (!openedFiles[fd]) {
       return null;
     }
-console.log("fs read " + openedFiles[fd].path);
+    if (DEBUG_FS) { console.log("fs read " + openedFiles[fd].path); }
 
     var buffer = openedFiles[fd].buffer;
 
@@ -180,7 +182,7 @@ console.log("fs read " + openedFiles[fd].path);
   }
 
   function write(fd, data, from) {
-console.log("fs write " + openedFiles[fd].path);
+    if (DEBUG_FS) { console.log("fs write " + openedFiles[fd].path); }
 
     if (typeof from == "undefined") {
       from = openedFiles[fd].position;
@@ -222,7 +224,7 @@ console.log("fs write " + openedFiles[fd].path);
   }
 
   function flush(fd, cb) {
-console.log("fs flush " + openedFiles[fd].path);
+    if (DEBUG_FS) { console.log("fs flush " + openedFiles[fd].path); }
 
     var openedFile = openedFiles[fd];
 
@@ -245,7 +247,7 @@ console.log("fs flush " + openedFiles[fd].path);
 
   function list(path, cb) {
     path = normalizePath(path);
-console.log("fs list " + path);
+    if (DEBUG_FS) { console.log("fs list " + path); }
 
     store.getItem(path, function(files) {
       if (files == null || files instanceof Blob) {
@@ -258,7 +260,7 @@ console.log("fs list " + path);
 
   function exists(path, cb) {
     path = normalizePath(path);
-console.log("fs exists " + path);
+    if (DEBUG_FS) { console.log("fs exists " + path); }
 
     stat(path, function(stat) {
       cb(stat ? true : false);
@@ -267,7 +269,7 @@ console.log("fs exists " + path);
 
   function truncate(path, cb) {
     path = normalizePath(path);
-console.log("fs truncate " + path);
+    if (DEBUG_FS) { console.log("fs truncate " + path); }
 
     stat(path, function(stat) {
       if (stat && !stat.isDir) {
@@ -282,7 +284,7 @@ console.log("fs truncate " + path);
   }
 
   function ftruncate(fd, size) {
-console.log("fs ftruncate " + openedFiles[fd].path);
+    if (DEBUG_FS) { console.log("fs ftruncate " + openedFiles[fd].path); }
 
     var file = openedFiles[fd];
     if (size != file.buffer.contentSize) {
@@ -294,7 +296,7 @@ console.log("fs ftruncate " + openedFiles[fd].path);
 
   function remove(path, cb) {
     path = normalizePath(path);
-console.log("fs remove " + path);
+    if (DEBUG_FS) { console.log("fs remove " + path); }
 
     if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
       setZeroTimeout(function() { cb(false); });
@@ -351,7 +353,7 @@ console.log("fs remove " + path);
 
   function create(path, blob, cb) {
     path = normalizePath(path);
-console.log("fs create " + path);
+    if (DEBUG_FS) { console.log("fs create " + path); }
 
     createInternal(path, blob, function(created) {
       if (created) {
@@ -366,7 +368,7 @@ console.log("fs create " + path);
 
   function mkdir(path, cb) {
     path = normalizePath(path);
-console.log("fs mkdir " + path);
+    if (DEBUG_FS) { console.log("fs mkdir " + path); }
 
     createInternal(path, [], function(created) {
       if (created) {
@@ -380,7 +382,7 @@ console.log("fs mkdir " + path);
   }
 
   function mkdirp(path, cb) {
-console.log("fs mkdirp " + path);
+    if (DEBUG_FS) { console.log("fs mkdirp " + path); }
 
     if (path[0] !== "/") {
       console.error("mkdirp called on relative path: " + path);
@@ -425,7 +427,7 @@ console.log("fs mkdirp " + path);
 
   function size(path, cb) {
     path = normalizePath(path);
-console.log("fs size " + path);
+    if (DEBUG_FS) { console.log("fs size " + path); }
 
     if (fileStats[path] && typeof fileStats[path].size != "undefined") {
       cb(fileStats[path].size);
@@ -449,7 +451,7 @@ console.log("fs size " + path);
   function rename(oldPath, newPath, cb) {
     oldPath = normalizePath(oldPath);
     newPath = normalizePath(newPath);
-console.log("fs rename " + oldPath + " -> " + newPath);
+    if (DEBUG_FS) { console.log("fs rename " + oldPath + " -> " + newPath); }
 
     if (openedFiles.findIndex(function(file) { return file && file.path === oldPath; }) != -1) {
       setZeroTimeout(function() { cb(false); });
@@ -485,14 +487,14 @@ console.log("fs rename " + oldPath + " -> " + newPath);
   }
 
   function setStat(path, stat, cb) {
-console.log("fs setStat " + path);
+    if (DEBUG_FS) { console.log("fs setStat " + path); }
 
     fileStats[path] = stat;
     store.setItem("!" + path, stat, cb);
   }
 
   function removeStat(path, cb) {
-console.log("fs removeStat " + path);
+    if (DEBUG_FS) { console.log("fs removeStat " + path); }
 
     delete fileStats[path];
     store.removeItem("!" + path, cb);
@@ -500,7 +502,7 @@ console.log("fs removeStat " + path);
 
   function stat(path, cb) {
     path = normalizePath(path);
-console.log("fs stat " + path);
+    if (DEBUG_FS) { console.log("fs stat " + path); }
 
     var stat = fileStats[path];
     if (stat) {
