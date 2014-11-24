@@ -2,10 +2,10 @@
 
 var fs = (function() {
   var realAsyncStorage = asyncStorage;
-  var Store = function() {
+  var MemoryStore = function() {
     this.map = new Map();
   };
-  Store.prototype.getItem = function(key, cb) {
+  MemoryStore.prototype.getItem = function(key, cb) {
     if (this.map.has(key)) {
       var value = this.map.get(key);
       window.setZeroTimeout(function() { cb(value) });
@@ -16,22 +16,22 @@ var fs = (function() {
       }).bind(this));
     }
   };
-  Store.prototype.setItem = function(key, value, cb) {
+  MemoryStore.prototype.setItem = function(key, value, cb) {
     this.map.set(key, value);
     window.setZeroTimeout(function() { (cb || function() {})() });
     realAsyncStorage.setItem(key, value);
   };
-  Store.prototype.removeItem = function(key, cb) {
+  MemoryStore.prototype.removeItem = function(key, cb) {
     this.map.delete(key);
     window.setZeroTimeout(function() { cb() });
     realAsyncStorage.removeItem(key);
   };
-  Store.prototype.clear = function(cb) {
+  MemoryStore.prototype.clear = function(cb) {
     this.map.clear();
     realAsyncStorage.clear();
     window.setZeroTimeout(function() { if (cb) cb() });
   }
-  asyncStorage = new Store();
+  asyncStorage = new MemoryStore();
 
   var FileBuffer = function(array) {
     this.array = array;
