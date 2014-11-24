@@ -8,11 +8,11 @@ var fs = (function() {
   var STORENAME = 'keyvaluepairs';
   var db = null;
 
-  var MemoryStore = function() {
+  var Store = function() {
     this.map = new Map();
   };
 
-  MemoryStore.prototype.getItem = function(key, cb) {
+  Store.prototype.getItem = function(key, cb) {
     if (this.map.has(key)) {
       var value = this.map.get(key);
       window.setZeroTimeout(function() { cb(value) });
@@ -34,7 +34,7 @@ var fs = (function() {
     }
   };
 
-  MemoryStore.prototype.setItem = function(key, value) {
+  Store.prototype.setItem = function(key, value) {
     this.map.set(key, value);
 
     var transaction = db.transaction(STORENAME, "readwrite");
@@ -45,7 +45,7 @@ var fs = (function() {
     };
   };
 
-  MemoryStore.prototype.removeItem = function(key) {
+  Store.prototype.removeItem = function(key) {
     this.map.delete(key);
 
     var transaction = db.transaction(STORENAME, "readwrite");
@@ -56,7 +56,7 @@ var fs = (function() {
     };
   };
 
-  MemoryStore.prototype.clear = function() {
+  Store.prototype.clear = function() {
     this.map.clear();
 
     var transaction = db.transaction(STORENAME, "readwrite");
@@ -67,7 +67,7 @@ var fs = (function() {
     };
   }
 
-  var store = new MemoryStore();
+  var store = new Store();
 
   var FileBuffer = function(array) {
     this.array = array;
