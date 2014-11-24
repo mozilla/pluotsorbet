@@ -124,6 +124,7 @@ var fs = (function() {
 
   function open(path, cb) {
     path = normalizePath(path);
+console.log("fs open " + path);
 
     asyncStorage.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
@@ -146,6 +147,7 @@ var fs = (function() {
 
   function close(fd, cb) {
     if (fd >= 0 && openedFiles[fd]) {
+console.log("fs close " + openedFiles[fd].path);
       flush(fd, function() {});
       openedFiles.splice(fd, 1, null);
     }
@@ -158,6 +160,7 @@ var fs = (function() {
     if (!openedFiles[fd]) {
       return null;
     }
+console.log("fs read " + openedFiles[fd].path);
 
     var buffer = openedFiles[fd].buffer;
 
@@ -178,6 +181,8 @@ var fs = (function() {
   }
 
   function write(fd, data, from) {
+console.log("fs write " + openedFiles[fd].path);
+
     if (typeof from == "undefined") {
       from = openedFiles[fd].position;
     }
@@ -218,6 +223,8 @@ var fs = (function() {
   }
 
   function flush(fd, cb) {
+console.log("fs flush " + openedFiles[fd].path);
+
     var openedFile = openedFiles[fd];
 
     // Bail early if the file has not been modified.
@@ -239,6 +246,7 @@ var fs = (function() {
 
   function list(path, cb) {
     path = normalizePath(path);
+console.log("fs list " + path);
 
     asyncStorage.getItem(path, function(files) {
       if (files == null || files instanceof Blob) {
@@ -251,6 +259,7 @@ var fs = (function() {
 
   function exists(path, cb) {
     path = normalizePath(path);
+console.log("fs exists " + path);
 
     stat(path, function(stat) {
       cb(stat ? true : false);
@@ -259,6 +268,7 @@ var fs = (function() {
 
   function truncate(path, cb) {
     path = normalizePath(path);
+console.log("fs truncate " + path);
 
     stat(path, function(stat) {
       if (stat && !stat.isDir) {
@@ -273,6 +283,8 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
+console.log("fs ftruncate " + openedFiles[fd].path);
+
     var file = openedFiles[fd];
     if (size != file.buffer.contentSize) {
       file.buffer.setSize(size);
@@ -283,6 +295,7 @@ var fs = (function() {
 
   function remove(path, cb) {
     path = normalizePath(path);
+console.log("fs remove " + path);
 
     if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
       setZeroTimeout(function() { cb(false); });
@@ -339,6 +352,7 @@ var fs = (function() {
 
   function create(path, blob, cb) {
     path = normalizePath(path);
+console.log("fs create " + path);
 
     createInternal(path, blob, function(created) {
       if (created) {
@@ -353,6 +367,7 @@ var fs = (function() {
 
   function mkdir(path, cb) {
     path = normalizePath(path);
+console.log("fs mkdir " + path);
 
     createInternal(path, [], function(created) {
       if (created) {
@@ -366,6 +381,8 @@ var fs = (function() {
   }
 
   function mkdirp(path, cb) {
+console.log("fs mkdirp " + path);
+
     if (path[0] !== "/") {
       console.error("mkdirp called on relative path: " + path);
       cb(false);
@@ -409,6 +426,7 @@ var fs = (function() {
 
   function size(path, cb) {
     path = normalizePath(path);
+console.log("fs size " + path);
 
     if (fileStats[path] && typeof fileStats[path].size != "undefined") {
       cb(fileStats[path].size);
@@ -432,6 +450,7 @@ var fs = (function() {
   function rename(oldPath, newPath, cb) {
     oldPath = normalizePath(oldPath);
     newPath = normalizePath(newPath);
+console.log("fs rename " + oldPath + " -> " + newPath);
 
     if (openedFiles.findIndex(function(file) { return file && file.path === oldPath; }) != -1) {
       setZeroTimeout(function() { cb(false); });
@@ -467,17 +486,22 @@ var fs = (function() {
   }
 
   function setStat(path, stat, cb) {
+console.log("fs setStat " + path);
+
     fileStats[path] = stat;
     asyncStorage.setItem("!" + path, stat, cb);
   }
 
   function removeStat(path, cb) {
+console.log("fs removeStat " + path);
+
     delete fileStats[path];
     asyncStorage.removeItem("!" + path, cb);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
+console.log("fs stat " + path);
 
     var stat = fileStats[path];
     if (stat) {
