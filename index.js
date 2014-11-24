@@ -261,11 +261,7 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
 
             var fileReader = new FileReader();
             fileReader.onload = function() {
-                // Turn the buffer into a regular Array to traverse the mozbrowser boundary.
-                var array = Array.prototype.slice.call(new Uint8Array(fileReader.result));
-                array.constructor = Array;
-
-                sender({ type: "data", data: array });
+                sender({ type: "data", data: fileReader.result });
             };
             fileReader.readAsArrayBuffer(e.data);
         };

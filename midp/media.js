@@ -670,8 +670,7 @@ AudioRecorder.prototype.stop = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            this.data = new Uint8Array(message.data.length);
-            this.data.set(message.data);
+            this.data = new Uint8Array(message.data);
             resolve(1);
         }.bind(this);
 
@@ -705,8 +704,7 @@ AudioRecorder.prototype.pause = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            this.data = new Uint8Array(message.data.length);
-            this.data.set(message.data);
+            this.data = new Uint8Array(message.data);
             resolve(1);
         }.bind(this);
 
