@@ -267,7 +267,11 @@ DumbPipe.registerOpener("socket", function(message, sender) {
 
 DumbPipe.registerOpener("audiorecorder", function(message, sender) {
     var mediaRecorder = null;
+    var localAudioStream = null;
+
     function startRecording(localStream) {
+        localAudioStream = localStream;
+
         mediaRecorder = new MediaRecorder(localStream, {
             mimeType: message.mimeType // 'audio/3gpp' // need to be certified app.
         });
@@ -309,22 +313,23 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
         mediaRecorder.onstart = function(e) {
             sender({ type: "start" });
         };
-    }
 
-    navigator.mozGetUserMedia({
-        audio: true
-    }, function(localStream) {
-        sender({ type: "start" });
-        startRecording(localStream);
-    }, function(e) {
-        sender({ type: "error", error: e });
-    });
+        mediaRecorder.start();
+    }
 
     return function(message) {
         switch(message.type) {
             case "start":
                 try {
-                    if (mediaRecorder.state == "paused") {
+                    if (!mediaRecorder) {
+                        navigator.mozGetUserMedia({
+                            audio: true
+                        }, function(localStream) {
+                            startRecording(localStream);
+                        }, function(e) {
+                            sender({ type: "error", error: e });
+                        });
+                    } else if (mediaRecorder.state == "paused") {
                         mediaRecorder.resume();
                     } else {
                         mediaRecorder.start();
@@ -351,6 +356,9 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
             case "stop":
                 try {
                     mediaRecorder.stop();
+                    localAudioStream.stop();
+                    mediaRecorder = null;
+                    localAudioStream = null;
                 } catch (e) {
                     sender({ type: "error", error: e });
                 }

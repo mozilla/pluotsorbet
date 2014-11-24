@@ -18,6 +18,7 @@ import javax.microedition.media.Player;
 import javax.microedition.media.control.RecordControl;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
+import javax.microedition.media.PlayerListener;
 
 public class AudioRecorder extends MIDlet implements CommandListener,
 		ItemCommandListener {
@@ -71,6 +72,17 @@ public class AudioRecorder extends MIDlet implements CommandListener,
 			try {
 				player = Manager.createPlayer("capture://audio");
 				player.realize();
+
+				player.addPlayerListener(new PlayerListener() {
+					public void playerUpdate(Player player, String event, Object eventData) {
+						if (PlayerListener.RECORD_ERROR.equals(event)) {
+							logMessage("Error occurs when start recording: " + eventData);
+							recording = false;
+							updateRecordingMessage();
+						}
+					}
+				});
+
 				recordControl = (RecordControl) player
 						.getControl("RecordControl");
 				outputStream = new ByteArrayOutputStream();

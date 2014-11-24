@@ -646,10 +646,12 @@ AudioRecorder.prototype.start = function() {
     return new Promise(function(resolve, reject) {
         this.onstart = function() {
             this.onstart = null;
+            this.onerror = null;
             resolve(1);
         }.bind(this);
 
         this.onerror = function() {
+            this.onstart = null;
             this.onerror = null;
             resolve(0);
         }.bind(this);
