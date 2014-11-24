@@ -264,3 +264,106 @@ DumbPipe.registerOpener("socket", function(message, sender) {
     }
   };
 });
+
+DumbPipe.registerOpener("audiorecorder", function(message, sender) {
+    var mediaRecorder = null;
+    var localAudioStream = null;
+
+    function startRecording(localStream) {
+        localAudioStream = localStream;
+
+        mediaRecorder = new MediaRecorder(localStream, {
+            mimeType: message.mimeType // 'audio/3gpp' // need to be certified app.
+        });
+
+        mediaRecorder.ondataavailable = function(e) {
+            if (e.data.size == 0) {
+                return;
+            }
+
+            var fileReader = new FileReader();
+            fileReader.onload = function() {
+                // Turn the buffer into a regular Array to traverse the mozbrowser boundary.
+                var array = Array.prototype.slice.call(new Uint8Array(fileReader.result));
+                array.constructor = Array;
+
+                sender({ type: "data", data: array });
+            };
+            fileReader.readAsArrayBuffer(e.data);
+        };
+
+        mediaRecorder.onstop = function(e) {
+            // Do nothing here, just relay the event.
+            //
+            // We can't close the pipe here, one reason is |onstop| is fired before |ondataavailable|,
+            // if close pipe here, there is no chance to deliever the recorded voice. Another reason is
+            // the recording might be stopped and started back and forth. So let's do the pipe
+            // closing on the other side instead, i.e. DirectRecord::nClose.
+            sender({ type: "stop" });
+        };
+
+        mediaRecorder.onerror = function(e) {
+            sender({ type: "error" });
+        };
+
+        mediaRecorder.onpause = function(e) {
+            sender({ type: "pause" });
+        };
+
+        mediaRecorder.onstart = function(e) {
+            sender({ type: "start" });
+        };
+
+        mediaRecorder.start();
+    }
+
+    return function(message) {
+        switch(message.type) {
+            case "start":
+                try {
+                    if (!mediaRecorder) {
+                        navigator.mozGetUserMedia({
+                            audio: true
+                        }, function(localStream) {
+                            startRecording(localStream);
+                        }, function(e) {
+                            sender({ type: "error", error: e });
+                        });
+                    } else if (mediaRecorder.state == "paused") {
+                        mediaRecorder.resume();
+                    } else {
+                        mediaRecorder.start();
+                    }
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+            case "requestData":
+                try {
+                    // An InvalidState error might be thrown.
+                    mediaRecorder.requestData();
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+            case "pause":
+                try {
+                    mediaRecorder.pause();
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+            case "stop":
+                try {
+                    mediaRecorder.stop();
+                    localAudioStream.stop();
+                    mediaRecorder = null;
+                    localAudioStream = null;
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+        }
+    };
+});
+

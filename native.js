@@ -76,6 +76,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "microedition.amms.version":
         value = "1.1";
         break;
+    case "microedition.media.version":
+        value = '1.2';
+        break;
     case "mmapi-configuration":
         value = null;
         break;
@@ -173,6 +176,15 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         break;
     case "classpathext":
         value = null;
+        break;
+    case "supports.audio.capture":
+        value = "true";
+        break;
+    case "supports.recording":
+        value = "true";
+        break;
+    case "audio.encodings":
+        value = "audio/ogg";
         break;
     default:
         console.warn("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));

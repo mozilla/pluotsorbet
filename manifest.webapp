@@ -23,7 +23,10 @@
     "mobilenetwork": {
       "description:": "Required to verify your phone number"
     },
-    "browser": {}
+    "browser": {},
+    "audio-capture": {
+       "description": "Required to capture audio via getUserMedia"
+    }
   },
   "type": "privileged"
 }
