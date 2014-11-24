@@ -13,3 +13,4 @@
 ///<reference path='blockMap.ts' />
 ///<reference path='builder.ts' />
 ///<reference path='compiler.ts' />
+///<reference path='runtime.ts' />

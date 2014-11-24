@@ -295,7 +295,7 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMString.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.CallExpression(new AST.Identifier("$.S"), [constant(this.value)]);
+    return new AST.CallExpression(new AST.Identifier("S"), [constant(this.value)]);
   };
 
   IR.JVMClass.prototype.compile = function (cx: Context): AST.Node {
@@ -304,12 +304,12 @@ module J2ME.C4.Backend {
 
   IR.JVMCheckCast.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    return new AST.CallExpression(new AST.Identifier("check"), [object, id(mangleClass(this.classInfo))]);
+    return new AST.CallExpression(new AST.Identifier("$CCC"), [object, id(mangleClass(this.classInfo))]);
   };
 
   IR.JVMInstanceOf.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    return new AST.CallExpression(new AST.Identifier("instanceOf"), [object, id(mangleClass(this.classInfo))]);
+    return new AST.CallExpression(new AST.Identifier("$CIO"), [object, id(mangleClass(this.classInfo))]);
   };
 
   IR.JVMCheckArithmetic.prototype.compile = function (cx: Context): AST.Node {

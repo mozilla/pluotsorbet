@@ -36,7 +36,7 @@ module J2ME {
       writer.writeLn("/** @constructor */");
     }
 
-    function emitFields(fields, emitStatic) {
+    function emitFields(fields: FieldInfo [], emitStatic: boolean) {
       for (var i = 0; i < fields.length; i++) {
         var fieldInfo = fields[i];
         if (fieldInfo.isStatic !== emitStatic) {
@@ -64,12 +64,14 @@ module J2ME {
       }
     }
 
+    // Emit class initializer.
     writer.enter("function " + mangledClassName + "() {");
     getClassInheritanceChain(classInfo).forEach(function (klass) {
       emitFields(klass.fields, false);
     });
     writer.leave("}");
 
+    // Emit class static initializer if it has any static fields.
     if (classInfo.fields.some(f => f.isStatic)) {
       writer.enter(mangledClassName + ".staticInitializer = function() {");
       emitFields(classInfo.fields, true);
@@ -82,10 +84,12 @@ module J2ME {
 
     if (classInfo.superClass) {
       var mangledSuperClassName = mangleClass(classInfo.superClass);
-      writer.writeLn(mangledClassName + ".prototype = Object.create(" + mangledSuperClassName + ".prototype);");
+      writer.writeLn("$EK(" + mangledClassName + ", " + mangledSuperClassName + ")");
+    } else {
+      writer.writeLn("$EK(" + mangledClassName + ", null)");
     }
 
-    writer.writeLn("registerClass(" + mangledClassName + "," +
+    writer.writeLn("$RK(" + mangledClassName + "," +
                    quote(mangledClassName) + "," +
                    quote(classInfo.className) + ")");
   }
