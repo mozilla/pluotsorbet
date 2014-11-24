@@ -500,10 +500,8 @@ Native.create("com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V", functi
 });
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V", function(fd) {
-    return new Promise(function(resolve, reject) {
-        fs.close(fd, resolve);
-    });
-}, true);
+    fs.close(fd);
+});
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", function(jPath) {
     var path = util.decodeUtf8(jPath);
@@ -559,10 +557,8 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"
 }, true);
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V", function(fd) {
-    return new Promise(function(resolve, reject) {
-        fs.flush(fd, resolve);
-    });
-}, true);
+    fs.flush(fd, function() {});
+});
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V", function(val, fd) {
     var buf = new Uint8Array(1);

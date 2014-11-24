@@ -1,6 +1,38 @@
 'use strict';
 
 var fs = (function() {
+  var realAsyncStorage = asyncStorage;
+  var Store = function() {
+    this.map = new Map();
+  };
+  Store.prototype.getItem = function(key, cb) {
+    if (this.map.has(key)) {
+      var value = this.map.get(key);
+      window.setZeroTimeout(function() { cb(value) });
+    } else {
+      realAsyncStorage.getItem(key, (function(value) {
+        this.map.set(key, value);
+        cb(value);
+      }).bind(this));
+    }
+  };
+  Store.prototype.setItem = function(key, value, cb) {
+    this.map.set(key, value);
+    window.setZeroTimeout(function() { (cb || function() {})() });
+    realAsyncStorage.setItem(key, value);
+  };
+  Store.prototype.removeItem = function(key, cb) {
+    this.map.delete(key);
+    window.setZeroTimeout(function() { cb() });
+    realAsyncStorage.removeItem(key);
+  };
+  Store.prototype.clear = function(cb) {
+    this.map.clear();
+    realAsyncStorage.clear();
+    window.setZeroTimeout(function() { if (cb) cb() });
+  }
+  asyncStorage = new Store();
+
   var FileBuffer = function(array) {
     this.array = array;
     this.contentSize = array.byteLength;
@@ -114,18 +146,11 @@ var fs = (function() {
 
   function close(fd, cb) {
     if (fd >= 0 && openedFiles[fd]) {
-      flush(fd, function() {
-        // Replace descriptor object with null value instead of removing it from
-        // the array so we don't change the indexes of the other objects.
-        openedFiles.splice(fd, 1, null);
-        if (cb) {
-          cb();
-        }
-      });
-    } else {
-      if (cb) {
-        cb();
-      }
+      flush(fd, function() {});
+      openedFiles.splice(fd, 1, null);
+    }
+    if (cb) {
+      setZeroTimeout(cb);
     }
   }
 
@@ -193,17 +218,19 @@ var fs = (function() {
   }
 
   function flush(fd, cb) {
+    var openedFile = openedFiles[fd];
+
     // Bail early if the file has not been modified.
-    if (!openedFiles[fd].dirty) {
+    if (!openedFile.dirty) {
       cb();
       return;
     }
 
-    var blob = new Blob([openedFiles[fd].buffer.getContent()]);
-    asyncStorage.setItem(openedFiles[fd].path, blob, function() {
-      openedFiles[fd].dirty = false;
-      if (openedFiles[fd].stat) {
-        setStat(openedFiles[fd].path, openedFiles[fd].stat, cb);
+    var blob = new Blob([openedFile.buffer.getContent()]);
+    asyncStorage.setItem(openedFile.path, blob, function() {
+      openedFile.dirty = false;
+      if (openedFile.stat) {
+        setStat(openedFile.path, openedFile.stat, cb);
       } else {
         cb();
       }
