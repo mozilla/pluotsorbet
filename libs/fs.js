@@ -195,14 +195,11 @@ var fs = (function() {
     });
   }
 
-  function close(fd, cb) {
+  function close(fd) {
     if (fd >= 0 && openedFiles[fd]) {
       if (DEBUG_FS) { console.log("fs close " + openedFiles[fd].path); }
-      flush(fd, function() {});
+      flush(fd);
       openedFiles.splice(fd, 1, null);
-    }
-    if (cb) {
-      setZeroTimeout(cb);
     }
   }
 
@@ -272,14 +269,13 @@ var fs = (function() {
     return openedFiles[fd].buffer.contentSize;
   }
 
-  function flush(fd, cb) {
+  function flush(fd) {
     if (DEBUG_FS) { console.log("fs flush " + openedFiles[fd].path); }
 
     var openedFile = openedFiles[fd];
 
     // Bail early if the file has not been modified.
     if (!openedFile.dirty) {
-      cb();
       return;
     }
 
@@ -289,7 +285,6 @@ var fs = (function() {
     if (openedFile.stat) {
       setStat(openedFile.path, openedFile.stat);
     }
-    cb();
   }
 
   function list(path, cb) {

@@ -68,15 +68,18 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.close(-1, next);
+  fs.close(-1);
+  next();
 });
 
 tests.push(function() {
-  fs.close(0, next);
+  fs.close(0);
+  next();
 });
 
 tests.push(function() {
-  fs.close(1, next);
+  fs.close(1);
+  next();
 });
 
 tests.push(function() {
@@ -332,7 +335,8 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.close(3, next);
+  fs.close(3);
+  next();
 });
 
 tests.push(function() {
@@ -501,10 +505,9 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.flush(fd, function() {
-    ok(true, "file data flushed");
-    next();
-  });
+  fs.flush(fd);
+  ok(true, "file data flushed");
+  next();
 });
 
 tests.push(function() {
@@ -550,7 +553,8 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.close(fd, next);
+  fs.close(fd);
+  next();
 });
 
 tests.push(function() {
@@ -677,12 +681,11 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd, function() {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          is(stat.mtime, lastTime, "flush on just opened file doesn't update mtime");
-          lastTime = stat.mtime;
-          next();
-        });
+      fs.flush(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "flush on just opened file doesn't update mtime");
+        lastTime = stat.mtime;
+        next();
       });
     }, 1);
   });
@@ -701,24 +704,22 @@ tests.push(function() {
   tests.push(function() {
     window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("sc"));
-      fs.flush(fd, function() {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          ok(stat.mtime > lastTime, "write and then flush updates mtime");
-          lastTime = stat.mtime;
-          next();
-        });
+      fs.flush(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "write and then flush updates mtime");
+        lastTime = stat.mtime;
+        next();
       });
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd, function() {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          is(stat.mtime, lastTime, "flush on non-dirty file doesn't change mtime");
-          lastTime = stat.mtime;
-          next();
-        });
+      fs.flush(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "flush on non-dirty file doesn't change mtime");
+        lastTime = stat.mtime;
+        next();
       });
     }, 1);
   });
@@ -758,13 +759,11 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd, function() {
-        fs.close(fd, function() {
-          fs.stat("/tmp/stat.txt", function(stat) {
-            is(stat.mtime, lastTime, "close doesn't update mtime");
-            next();
-          });
-        });
+      fs.flush(fd);
+      fs.close(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "close doesn't update mtime");
+        next();
       });
     }, 1);
   });

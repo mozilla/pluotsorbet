@@ -109,25 +109,17 @@ Native.create("com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V", function(h
 });
 
 Native.create("com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V", function(handle) {
-    return new Promise(function(resolve, reject) {
-      fs.flush(handle, resolve);
-    });
-}, true);
+    fs.flush(handle);
+});
 
 Native.create("com/sun/midp/rms/RecordStoreFile.closeFile.(I)V", function(handle) {
-    return new Promise(function(resolve, reject) {
-      fs.close(handle, resolve);
-    });
-}, true);
+    fs.close(handle);
+});
 
 Native.create("com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V", function(handle, size) {
-    return new Promise(function(resolve, reject) {
-      fs.flush(handle, function() {
-          fs.ftruncate(handle, size);
-          resolve();
-      });
-    });
-}, true);
+    fs.flush(handle);
+    fs.ftruncate(handle, size);
+});
 
 MIDP.RecordStoreCache = [];
 
@@ -442,7 +434,8 @@ Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", func
           }
 
           fs.ftruncate(fd, newLength.toNumber());
-          fs.close(fd, resolve);
+          fs.close(fd);
+          resolve();
         });
     });
 }, true);
@@ -557,7 +550,7 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"
 }, true);
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V", function(fd) {
-    fs.flush(fd, function() {});
+    fs.flush(fd);
 });
 
 Native.create("com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V", function(val, fd) {
@@ -626,10 +619,8 @@ function(handle, buffer, offset, length) {
 });
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V", function(handle) {
-    return new Promise(function(resolve, reject) {
-        fs.flush(handle, resolve);
-    });
-}, true);
+    fs.flush(handle);
+});
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V", function(handle, position) {
     fs.setpos(handle, position);
@@ -646,10 +637,8 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I", fun
 });
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", function(handle) {
-    return new Promise(function(resolve, reject) {
-        fs.close(handle, resolve);
-    });
-}, true);
+        fs.close(handle);
+});
 
 Native.create("javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;", function() {
     var array = util.newArray("[Ljava/lang/String;", 1);
