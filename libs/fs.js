@@ -1,7 +1,6 @@
 'use strict';
 
 var fs = (function() {
-  var realAsyncStorage = asyncStorage;
   var MemoryStore = function() {
     this.map = new Map();
   };
@@ -10,7 +9,7 @@ var fs = (function() {
       var value = this.map.get(key);
       window.setZeroTimeout(function() { cb(value) });
     } else {
-      realAsyncStorage.getItem(key, (function(value) {
+      asyncStorage.getItem(key, (function(value) {
         this.map.set(key, value);
         cb(value);
       }).bind(this));
@@ -19,19 +18,19 @@ var fs = (function() {
   MemoryStore.prototype.setItem = function(key, value, cb) {
     this.map.set(key, value);
     window.setZeroTimeout(function() { (cb || function() {})() });
-    realAsyncStorage.setItem(key, value);
+    asyncStorage.setItem(key, value);
   };
   MemoryStore.prototype.removeItem = function(key, cb) {
     this.map.delete(key);
     window.setZeroTimeout(function() { cb() });
-    realAsyncStorage.removeItem(key);
+    asyncStorage.removeItem(key);
   };
   MemoryStore.prototype.clear = function(cb) {
     this.map.clear();
-    realAsyncStorage.clear();
+    asyncStorage.clear();
     window.setZeroTimeout(function() { if (cb) cb() });
   }
-  asyncStorage = new MemoryStore();
+  var store = new MemoryStore();
 
   var FileBuffer = function(array) {
     this.array = array;
@@ -108,11 +107,11 @@ var fs = (function() {
   }
 
   function init(cb) {
-    asyncStorage.getItem("/", function(data) {
+    store.getItem("/", function(data) {
       if (data) {
         cb();
       } else {
-        asyncStorage.setItem("/", [], function() {
+        store.setItem("/", [], function() {
           setStat("/", { mtime: Date.now(), isDir: true }, cb);
         });
       }
@@ -126,7 +125,7 @@ var fs = (function() {
     path = normalizePath(path);
 console.log("fs open " + path);
 
-    asyncStorage.getItem(path, function(blob) {
+    store.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
@@ -234,7 +233,7 @@ console.log("fs flush " + openedFiles[fd].path);
     }
 
     var blob = new Blob([openedFile.buffer.getContent()]);
-    asyncStorage.setItem(openedFile.path, blob, function() {
+    store.setItem(openedFile.path, blob, function() {
       openedFile.dirty = false;
       if (openedFile.stat) {
         setStat(openedFile.path, openedFile.stat, cb);
@@ -248,7 +247,7 @@ console.log("fs flush " + openedFiles[fd].path);
     path = normalizePath(path);
 console.log("fs list " + path);
 
-    asyncStorage.getItem(path, function(files) {
+    store.getItem(path, function(files) {
       if (files == null || files instanceof Blob) {
         cb(null);
       } else {
@@ -272,7 +271,7 @@ console.log("fs truncate " + path);
 
     stat(path, function(stat) {
       if (stat && !stat.isDir) {
-        asyncStorage.setItem(path, new Blob(), function() {
+        store.setItem(path, new Blob(), function() {
           setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
           cb(true);
         });
@@ -320,8 +319,8 @@ console.log("fs remove " + path);
         }
 
         files.splice(index, 1);
-        asyncStorage.setItem(dir, files, function() {
-          asyncStorage.removeItem(path, function() {
+        store.setItem(dir, files, function() {
+          store.removeItem(path, function() {
             removeStat(path, function() {
               cb(true);
             });
@@ -342,8 +341,8 @@ console.log("fs remove " + path);
       }
 
       files.push(name);
-      asyncStorage.setItem(dir, files, function() {
-        asyncStorage.setItem(path, data, function() {
+      store.setItem(dir, files, function() {
+        store.setItem(path, data, function() {
           cb(true);
         });
       });
@@ -433,7 +432,7 @@ console.log("fs size " + path);
       return;
     }
 
-    asyncStorage.getItem(path, function(blob) {
+    store.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
@@ -463,7 +462,7 @@ console.log("fs rename " + oldPath + " -> " + newPath);
         return;
       }
 
-      asyncStorage.getItem(oldPath, function(data) {
+      store.getItem(oldPath, function(data) {
         if (data == null) {
           cb(false);
           return;
@@ -489,14 +488,14 @@ console.log("fs rename " + oldPath + " -> " + newPath);
 console.log("fs setStat " + path);
 
     fileStats[path] = stat;
-    asyncStorage.setItem("!" + path, stat, cb);
+    store.setItem("!" + path, stat, cb);
   }
 
   function removeStat(path, cb) {
 console.log("fs removeStat " + path);
 
     delete fileStats[path];
-    asyncStorage.removeItem("!" + path, cb);
+    store.removeItem("!" + path, cb);
   }
 
   function stat(path, cb) {
@@ -515,7 +514,7 @@ console.log("fs stat " + path);
       return;
     }
 
-    asyncStorage.getItem("!" + path, function(stat) {
+    store.getItem("!" + path, function(stat) {
       if (stat) {
         fileStats[path] = stat;
       }
