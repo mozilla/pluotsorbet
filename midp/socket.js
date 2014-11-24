@@ -80,9 +80,10 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBy
 
         this.socket.ondata = (function(message) {
             // console.log("this.socket.ondata: " + JSON.stringify(message));
-            var newArray = new Uint8Array(this.data.byteLength + message.data.length);
+            var newData = new Uint8Array(message.data);
+            var newArray = new Uint8Array(this.data.byteLength + newData.byteLength);
             newArray.set(this.data);
-            newArray.set(message.data, this.data.byteLength);
+            newArray.set(newData, this.data.byteLength);
             this.data = newArray;
 
             if (this.waitingData) {

@@ -36,10 +36,6 @@ var DumbPipe = {
   // Functions that receive messages from the other side for active pipes.
   recipients: {},
 
-  // Queue of messages to send to the other side.  Retrieved by the other side
-  // via a "get" message.
-  outgoingMessages: [],
-
   // Every time we want to make the other side retrieve messages, the hash
   // of the other side's web page has to change, so we increment it.
   nextHashID: 0,
@@ -76,9 +72,6 @@ var DumbPipe = {
         //console.log("outer recv: " + JSON.stringify(envelope));
         this.receiveMessage(envelope.pipeID, envelope.message);
         break;
-      case "get":
-        this.getMessages(event);
-        break;
       case "close":
         //console.log("outer recv: " + JSON.stringify(envelope));
         this.closePipe(envelope.pipeID);
@@ -109,12 +102,12 @@ var DumbPipe = {
     // Oh my shod, that's some funky git!
     var envelope = { pipeID: pipeID, message: message };
     //console.log("outer send: " + JSON.stringify(envelope));
-    this.outgoingMessages.push(envelope);
 
-    var mozbrowser = document.getElementById("mozbrowser");
-    window.setZeroTimeout(function() {
-      mozbrowser.src = mozbrowser.src.split("#")[0] + "#" + this.nextHashID++;
-    }.bind(this));
+    try {
+      document.getElementById("mozbrowser").contentWindow.postMessage(envelope, "*");
+    } catch (e) {
+      console.log("Error " + e + " while sending message: " + JSON.stringify(message));
+    }
   },
 
   receiveMessage: function(pipeID, message, detail) {
@@ -130,17 +123,6 @@ var DumbPipe = {
         console.error(ex + "\n" + ex.stack);
       }
     }.bind(this));
-  },
-
-  getMessages: function(event) {
-    try {
-      event.detail.returnValue = JSON.stringify(this.outgoingMessages);
-    } catch(ex) {
-      console.error("failed to stringify outgoing messages: " + ex);
-    } finally {
-      this.outgoingMessages = [];
-      event.detail.unblock();
-    }
   },
 
   closePipe: function(pipeID) {
@@ -226,11 +208,7 @@ DumbPipe.registerOpener("socket", function(message, sender) {
   }
 
   socket.ondata = function(event) {
-    // Turn the buffer into a regular Array to traverse the mozbrowser boundary.
-    var array = Array.prototype.slice.call(new Uint8Array(event.data));
-    array.constructor = Array;
-
-    sender({ type: "data", data: array });
+    sender({ type: "data", data: event.data });
   }
 
   socket.ondrain = function(event) {
