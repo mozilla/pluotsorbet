@@ -61,6 +61,8 @@ public class TestMediaImage implements Testlet, PlayerListener {
 
             player.start();
 
+            player.removePlayerListener(this);
+
             file.delete();
             file.close();
         } catch (Exception e) {

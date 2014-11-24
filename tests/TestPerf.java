@@ -1,17 +1,9 @@
-package com.ibm.oti.connection.file;
-
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
-import java.util.Enumeration;
-import java.util.Vector;
-import java.util.Hashtable;
 import java.io.*;
 
-import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
-
-public class TestFileConnectionPerf implements Testlet {
-    public void test(TestHarness th) {
+public class TestPerf {
+    public static void main(String args[]) {
         try {
             String dirPath = System.getProperty("fileconn.dir.private");
 
@@ -38,7 +30,7 @@ public class TestFileConnectionPerf implements Testlet {
             file.close();
             System.out.println("Time to close file: " + (System.currentTimeMillis() - then) + "ms");
         } catch (Exception e) {
-            th.fail("Unexpected exception: " + e);
+            System.out.println("Unexpected exception: " + e);
             e.printStackTrace();
         }
     }

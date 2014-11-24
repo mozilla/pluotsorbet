@@ -365,10 +365,7 @@ var fs = (function() {
         store.setItem(dir, files);
         store.removeItem(path);
         removeStat(path);
-        // Calling this synchronously changes the number of passing tests,
-        // although it doesn't change the number of failures.
-        // XXX Figure out why.
-        window.setZeroTimeout(function() { cb(true) });
+        cb(true);
       });
     });
   }
