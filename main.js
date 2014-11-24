@@ -63,7 +63,7 @@ if (urlParams.pushConn && urlParams.pushMidlet) {
 var initFS = new Promise(function(resolve, reject) {
   fs.init(resolve);
 }).then(function() {
-  return Promise.all([
+  var fsPromises = [
     new Promise(function(resolve, reject) {
       fs.mkdir("/Persistent", resolve);
     }),
@@ -81,7 +81,27 @@ var initFS = new Promise(function(resolve, reject) {
         }
       });
     }),
-  ]);
+  ];
+
+  if (MIDP.midletClassName == "RunTests") {
+    fsPromises.push(
+      new Promise(function(resolve, reject) {
+        fs.exists("/_test.ks", function(exists) {
+          if (exists) {
+            resolve();
+          } else {
+            load("certs/_test.ks", "blob").then(function(data) {
+              fs.create("/_test.ks", data, function() {
+                resolve();
+              });
+            });
+          }
+        });
+      })
+    );
+  }
+
+  return Promise.all(fsPromises);
 });
 
 // Mobile info gets accessed a lot, so we cache it on startup.
@@ -120,21 +140,6 @@ if (MIDP.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"));
-  loadingPromises.push(
-    new Promise(function(resolve, reject) {
-      fs.exists("/_test.ks", function(exists) {
-        if (exists) {
-          resolve();
-        } else {
-          load("certs/_test.ks", "blob").then(function(data) {
-            fs.create("/_test.ks", data, function() {
-              resolve();
-            });
-          });
-        }
-      });
-    })
-  );
 }
 
 Promise.all(loadingPromises).then(function() {

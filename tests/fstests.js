@@ -809,8 +809,8 @@ tests.push(function() {
   });
 });
 
-fs.clear(function() {
-  fs.init(function() {
+fs.init(function() {
+  fs.clear(function() {
     next();
   });
 });

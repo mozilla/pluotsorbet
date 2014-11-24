@@ -3,35 +3,72 @@
 var DEBUG_FS = false;
 
 var fs = (function() {
+  var DBNAME = 'asyncStorage';
+  var DBVERSION = 1;
+  var STORENAME = 'keyvaluepairs';
+  var db = null;
+
   var MemoryStore = function() {
     this.map = new Map();
   };
+
   MemoryStore.prototype.getItem = function(key, cb) {
     if (this.map.has(key)) {
       var value = this.map.get(key);
       window.setZeroTimeout(function() { cb(value) });
     } else {
-      asyncStorage.getItem(key, (function(value) {
+      var transaction = db.transaction(STORENAME, "readonly");
+      var objectStore = transaction.objectStore(STORENAME);
+      var req = objectStore.get(key);
+      req.onerror = function() {
+        console.error("Error getting " + key + ": " + req.error.name);
+      };
+      transaction.oncomplete = (function() {
+        var value = req.result;
+        if (value === undefined) {
+          value = null;
+        }
         this.map.set(key, value);
         cb(value);
-      }).bind(this));
+      }).bind(this);
     }
   };
+
   MemoryStore.prototype.setItem = function(key, value, cb) {
     this.map.set(key, value);
     window.setZeroTimeout(function() { (cb || function() {})() });
-    asyncStorage.setItem(key, value);
+
+    var transaction = db.transaction(STORENAME, "readwrite");
+    var objectStore = transaction.objectStore(STORENAME);
+    var req = objectStore.put(value, key);
+    req.onerror = function() {
+      console.error("Error putting " + key + ": " + req.error.name);
+    };
   };
+
   MemoryStore.prototype.removeItem = function(key, cb) {
     this.map.delete(key);
     window.setZeroTimeout(function() { cb() });
-    asyncStorage.removeItem(key);
+
+    var transaction = db.transaction(STORENAME, "readwrite");
+    var objectStore = transaction.objectStore(STORENAME);
+    var req = objectStore.delete(key);
+    req.onerror = function() {
+      console.error("Error deleting " + key + ": " + req.error.name);
+    };
   };
-  MemoryStore.prototype.clear = function(cb) {
+
+  MemoryStore.prototype.clear = function() {
     this.map.clear();
-    asyncStorage.clear();
-    window.setZeroTimeout(function() { if (cb) cb() });
+
+    var transaction = db.transaction(STORENAME, "readwrite");
+    var objectStore = transaction.objectStore(STORENAME);
+    var req = objectStore.clear();
+    req.onerror = function() {
+      console.error("Error clearing store: " + req.error.name);
+    };
   }
+
   var store = new MemoryStore();
 
   var FileBuffer = function(array) {
@@ -108,7 +145,7 @@ var fs = (function() {
     return path.slice(path.lastIndexOf("/") + 1);
   }
 
-  function init(cb) {
+  function initRootDir(cb) {
     store.getItem("/", function(data) {
       if (data) {
         cb();
@@ -118,6 +155,20 @@ var fs = (function() {
         });
       }
     });
+  }
+
+  function init(cb) {
+    var openreq = indexedDB.open(DBNAME, DBVERSION);
+    openreq.onerror = function() {
+      console.error("error opening database: " + openreq.error.name);
+    };
+    openreq.onupgradeneeded = function() {
+      openreq.result.createObjectStore(STORENAME);
+    };
+    openreq.onsuccess = function() {
+      db = openreq.result;
+      initRootDir(cb);
+    };
   }
 
   var openedFiles = [null, null, null];
@@ -525,7 +576,8 @@ var fs = (function() {
   }
 
   function clear(cb) {
-    store.clear(cb);
+    store.clear();
+    initRootDir(cb);
   }
 
   return {
