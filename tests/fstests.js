@@ -1,6 +1,6 @@
 'use strict';
 
-var passed = 0, failed = 0;
+var passed = 0, failed = 0, then = performance.now();
 function is(a, b, msg) {
   if (a == b) {
     ++passed;
@@ -30,7 +30,8 @@ var fd;
 function next() {
   if (tests.length == 0) {
     ok(true, "TESTS COMPLETED");
-    console.log("DONE: " + passed + " PASS, " + failed + " FAIL");
+    console.log("DONE: " + passed + " PASS, " + failed + " FAIL, " +
+                (Math.round(performance.now() - then)) + " TIME");
   } else {
     var test = tests.shift();
     test();
