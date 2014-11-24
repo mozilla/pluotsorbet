@@ -34,9 +34,8 @@ var fs = (function() {
     }
   };
 
-  MemoryStore.prototype.setItem = function(key, value, cb) {
+  MemoryStore.prototype.setItem = function(key, value) {
     this.map.set(key, value);
-    window.setZeroTimeout(function() { (cb || function() {})() });
 
     var transaction = db.transaction(STORENAME, "readwrite");
     var objectStore = transaction.objectStore(STORENAME);
@@ -149,9 +148,9 @@ var fs = (function() {
       if (data) {
         cb();
       } else {
-        store.setItem("/", [], function() {
-          setStat("/", { mtime: Date.now(), isDir: true }, cb);
-        });
+        store.setItem("/", []);
+        setStat("/", { mtime: Date.now(), isDir: true });
+        cb();
       }
     });
   }
@@ -166,7 +165,7 @@ var fs = (function() {
     };
     openreq.onsuccess = function() {
       db = openreq.result;
-      initRootDir(cb);
+      initRootDir(cb || function() {});
     };
   }
 
@@ -285,14 +284,12 @@ var fs = (function() {
     }
 
     var blob = new Blob([openedFile.buffer.getContent()]);
-    store.setItem(openedFile.path, blob, function() {
-      openedFile.dirty = false;
-      if (openedFile.stat) {
-        setStat(openedFile.path, openedFile.stat, cb);
-      } else {
-        cb();
-      }
-    });
+    store.setItem(openedFile.path, blob);
+    openedFile.dirty = false;
+    if (openedFile.stat) {
+      setStat(openedFile.path, openedFile.stat);
+    }
+    cb();
   }
 
   function list(path, cb) {
@@ -323,10 +320,9 @@ var fs = (function() {
 
     stat(path, function(stat) {
       if (stat && !stat.isDir) {
-        store.setItem(path, new Blob(), function() {
-          setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
-          cb(true);
-        });
+        store.setItem(path, new Blob());
+        setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
+        cb(true);
       } else {
         cb(false);
       }
@@ -371,11 +367,13 @@ var fs = (function() {
         }
 
         files.splice(index, 1);
-        store.setItem(dir, files, function() {
-          store.removeItem(path);
-          removeStat(path);
-          cb(true);
-        });
+        store.setItem(dir, files);
+        store.removeItem(path);
+        removeStat(path);
+        // Calling this synchronously changes the number of passing tests,
+        // although it doesn't change the number of failures.
+        // XXX Figure out why.
+        window.setZeroTimeout(function() { cb(true) });
       });
     });
   }
@@ -391,11 +389,9 @@ var fs = (function() {
       }
 
       files.push(name);
-      store.setItem(dir, files, function() {
-        store.setItem(path, data, function() {
-          cb(true);
-        });
-      });
+      store.setItem(dir, files);
+      store.setItem(path, data);
+      cb(true);
     });
   }
 
@@ -405,12 +401,9 @@ var fs = (function() {
 
     createInternal(path, blob, function(created) {
       if (created) {
-        setStat(path, { mtime: Date.now(), isDir: false, size: blob.size }, function() {
-          cb(created);
-        });
-      } else {
-        cb(created);
+        setStat(path, { mtime: Date.now(), isDir: false, size: blob.size });
       }
+      cb(created);
     });
   }
 
@@ -420,12 +413,9 @@ var fs = (function() {
 
     createInternal(path, [], function(created) {
       if (created) {
-        setStat(path, { mtime: Date.now(), isDir: true }, function() {
-          cb(created);
-        });
-      } else {
-        cb(created);
+        setStat(path, { mtime: Date.now(), isDir: true });
       }
+      cb(created);
     });
   }
 
@@ -534,11 +524,11 @@ var fs = (function() {
     });
   }
 
-  function setStat(path, stat, cb) {
+  function setStat(path, stat) {
     if (DEBUG_FS) { console.log("fs setStat " + path); }
 
     fileStats[path] = stat;
-    store.setItem("!" + path, stat, cb);
+    store.setItem("!" + path, stat);
   }
 
   function removeStat(path) {
@@ -574,7 +564,7 @@ var fs = (function() {
 
   function clear(cb) {
     store.clear();
-    initRootDir(cb);
+    initRootDir(cb || function() {});
   }
 
   return {
