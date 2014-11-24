@@ -46,9 +46,8 @@ var fs = (function() {
     };
   };
 
-  MemoryStore.prototype.removeItem = function(key, cb) {
+  MemoryStore.prototype.removeItem = function(key) {
     this.map.delete(key);
-    window.setZeroTimeout(function() { cb() });
 
     var transaction = db.transaction(STORENAME, "readwrite");
     var objectStore = transaction.objectStore(STORENAME);
@@ -373,11 +372,9 @@ var fs = (function() {
 
         files.splice(index, 1);
         store.setItem(dir, files, function() {
-          store.removeItem(path, function() {
-            removeStat(path, function() {
-              cb(true);
-            });
-          });
+          store.removeItem(path);
+          removeStat(path);
+          cb(true);
         });
       });
     });
@@ -544,11 +541,11 @@ var fs = (function() {
     store.setItem("!" + path, stat, cb);
   }
 
-  function removeStat(path, cb) {
+  function removeStat(path) {
     if (DEBUG_FS) { console.log("fs removeStat " + path); }
 
     delete fileStats[path];
-    store.removeItem("!" + path, cb);
+    store.removeItem("!" + path);
   }
 
   function stat(path, cb) {
