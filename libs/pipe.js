@@ -79,11 +79,11 @@ var DumbPipe = {
   },
 
   receiveMessage: function(event) {
-    var envelope = event.data;
-
-    if (envelope === "zero-timeout-message") {
+    if (event.source === window) {
       return;
     }
+
+    var envelope = event.data;
 
     if (this.recipients[envelope.pipeID]) {
       try {
