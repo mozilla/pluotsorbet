@@ -80,6 +80,8 @@ Media.contentTypeToFormat = new Map([
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
 
+Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
+
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
     var types = [];
@@ -427,6 +429,14 @@ ImageRecorder.prototype.recipient = function(message) {
         case "snapshot":
             this.snapshotData = new Int8Array(message.data);
 
+            MIDP.sendNativeEvent({
+                type: MIDP.MMAPI_EVENT,
+                intParam1: this.playerContainer.handle,
+                intParam2: 0,
+                intParam3: 0,
+                intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
+            }, MIDP.foregroundIsolateId);
+
             break;
     }
 }
@@ -464,6 +474,10 @@ ImageRecorder.prototype.setVisible = function(visible) {
 
 ImageRecorder.prototype.startSnapshot = function(imageType) {
     this.sender({ type: "snapshot", imageType: imageType });
+}
+
+ImageRecorder.prototype.getSnapshotData = function(imageType) {
+    return this.snapshotData;
 }
 
 function PlayerContainer(url) {
@@ -679,6 +693,10 @@ PlayerContainer.prototype.getRecordedData = function(offset, size, buffer) {
 
 PlayerContainer.prototype.startSnapshot = function(imageType) {
     this.player.startSnapshot(imageType);
+}
+
+PlayerContainer.prototype.getSnapshotData = function() {
+    return this.player.getSnapshotData();
 }
 
 var AudioRecorder = function(aMimeType) {
@@ -1106,4 +1124,8 @@ Native.create("com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z", function(appId) 
 
 Native.create("com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V", function(handle, imageType) {
     Media.PlayerCache[handle].startSnapshot(imageType);
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B", function(handle) {
+    return Media.PlayerCache[handle].getSnapshotData();
 });
