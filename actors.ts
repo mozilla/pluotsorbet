@@ -12,20 +12,12 @@ module J2ME {
 
   export class FieldInfo {
     private static _nextiId = 0;
-    name: string;
-    signature: any;
-    classInfo: ClassInfo;
-    access_flags: any;
     id: number;
     isStatic: boolean;
     mangledName: string;
     constantValue: any;
 
-    constructor(classInfo, access_flags, name, signature) {
-      this.classInfo = classInfo;
-      this.access_flags = access_flags;
-      this.name = name;
-      this.signature = signature;
+    constructor(public classInfo: ClassInfo, public access_flags: number, public name: string, public signature: string) {
       this.id = FieldInfo._nextiId++;
       this.isStatic = ACCESS_FLAGS.isStatic(access_flags);
       this.mangledName = J2ME.C4.Backend.mangleField(this);
@@ -158,7 +150,7 @@ module J2ME {
     superClass: ClassInfo;
     interfaces: ClassInfo [];
     fields: FieldInfo [];
-    methods: any [];
+    methods: MethodInfo [];
     classes: any [];
     constant_pool: ConstantPoolEntry [];
     isArrayClass: boolean;
@@ -243,11 +235,11 @@ module J2ME {
       });
     }
 
-    get isInterface() {
+    get isInterface() : boolean {
       return ACCESS_FLAGS.isInterface(this.access_flags);
     }
 
-    implementsInterface(iface) {
+    implementsInterface(iface) : boolean {
       var classInfo = this;
       do {
         var interfaces = classInfo.interfaces;
@@ -260,7 +252,7 @@ module J2ME {
       return false;
     }
 
-    isAssignableTo(toClass) {
+    isAssignableTo(toClass) : boolean {
       if (this === toClass || toClass === ClassInfo.java_lang_Object)
         return true;
       if (ACCESS_FLAGS.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
@@ -282,7 +274,7 @@ module J2ME {
       return classObject;
     }
 
-    getField(fieldKey) {
+    getField(fieldKey) : FieldInfo{
       return CLASSES.getField(this, fieldKey);
     }
 
