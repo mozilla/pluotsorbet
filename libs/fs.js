@@ -3,13 +3,27 @@
 var DEBUG_FS = false;
 
 var fs = (function() {
-  var DBNAME = 'asyncStorage';
-  var DBVERSION = 1;
-  var STORENAME = 'keyvaluepairs';
-  var db = null;
-
   var Store = function() {
     this.map = new Map();
+    this.db = null;
+  };
+
+  Store.DBNAME = "asyncStorage";
+  Store.DBVERSION = 1;
+  Store.DBSTORENAME = "keyvaluepairs";
+
+  Store.prototype.init = function(cb) {
+    var openreq = indexedDB.open(Store.DBNAME, Store.DBVERSION);
+    openreq.onerror = function() {
+      console.error("error opening database: " + openreq.error.name);
+    };
+    openreq.onupgradeneeded = function() {
+      openreq.result.createObjectStore(Store.DBSTORENAME);
+    };
+    openreq.onsuccess = (function() {
+      this.db = openreq.result;
+      cb();
+    }).bind(this);
   };
 
   Store.prototype.getItem = function(key, cb) {
@@ -17,8 +31,8 @@ var fs = (function() {
       var value = this.map.get(key);
       window.setZeroTimeout(function() { cb(value) });
     } else {
-      var transaction = db.transaction(STORENAME, "readonly");
-      var objectStore = transaction.objectStore(STORENAME);
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
       var req = objectStore.get(key);
       req.onerror = function() {
         console.error("Error getting " + key + ": " + req.error.name);
@@ -37,8 +51,8 @@ var fs = (function() {
   Store.prototype.setItem = function(key, value) {
     this.map.set(key, value);
 
-    var transaction = db.transaction(STORENAME, "readwrite");
-    var objectStore = transaction.objectStore(STORENAME);
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
     var req = objectStore.put(value, key);
     req.onerror = function() {
       console.error("Error putting " + key + ": " + req.error.name);
@@ -48,8 +62,8 @@ var fs = (function() {
   Store.prototype.removeItem = function(key) {
     this.map.delete(key);
 
-    var transaction = db.transaction(STORENAME, "readwrite");
-    var objectStore = transaction.objectStore(STORENAME);
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
     var req = objectStore.delete(key);
     req.onerror = function() {
       console.error("Error deleting " + key + ": " + req.error.name);
@@ -59,8 +73,8 @@ var fs = (function() {
   Store.prototype.clear = function() {
     this.map.clear();
 
-    var transaction = db.transaction(STORENAME, "readwrite");
-    var objectStore = transaction.objectStore(STORENAME);
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
     var req = objectStore.clear();
     req.onerror = function() {
       console.error("Error clearing store: " + req.error.name);
@@ -156,17 +170,9 @@ var fs = (function() {
   }
 
   function init(cb) {
-    var openreq = indexedDB.open(DBNAME, DBVERSION);
-    openreq.onerror = function() {
-      console.error("error opening database: " + openreq.error.name);
-    };
-    openreq.onupgradeneeded = function() {
-      openreq.result.createObjectStore(STORENAME);
-    };
-    openreq.onsuccess = function() {
-      db = openreq.result;
+    store.init(function() {
       initRootDir(cb || function() {});
-    };
+    });
   }
 
   var openedFiles = [null, null, null];
