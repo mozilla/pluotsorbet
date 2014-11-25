@@ -392,6 +392,69 @@ ImagePlayer.prototype.setVisible = function(visible) {
     this.image.style.visibility = visible ? "visible" : "hidden";
 }
 
+function ImageRecorder(playerContainer) {
+    this.playerContainer = playerContainer;
+
+    this.sender = null;
+
+    this.width = -1;
+    this.height = -1;
+
+    this.isVideoControlSupported = true;
+    this.isAudioControlSupported = false;
+
+    this.realizeResolver = null;
+}
+
+ImageRecorder.prototype.realize = function() {
+    return new Promise((function(resolve, reject) {
+        this.realizeResolver = resolve;
+        this.sender = DumbPipe.open("camera", {}, this.recipient.bind(this));
+    }).bind(this));
+}
+
+ImageRecorder.prototype.recipient = function(message) {
+    switch (message.type) {
+        case "gotstream":
+            this.width = message.width;
+            this.height = message.height;
+            this.realizeResolver(true);
+            this.realizeResolver = null;
+            break;
+    }
+}
+
+ImageRecorder.prototype.start = function() {
+}
+
+ImageRecorder.prototype.pause = function() {
+}
+
+ImageRecorder.prototype.close = function() {
+    this.sender({ type: "close" });
+}
+
+ImageRecorder.prototype.getMediaTime = function() {
+    return -1;
+}
+
+ImageRecorder.prototype.getWidth = function() {
+    return this.width;
+}
+
+ImageRecorder.prototype.getHeight = function() {
+    return this.height;
+}
+
+ImageRecorder.prototype.setLocation = function(x, y, w, h) {
+    var offX = document.getElementById("display").offsetLeft;
+    this.sender({ type: "setPosition", x: offX + x, y: y, w: w, h: h });
+}
+
+ImageRecorder.prototype.setVisible = function(visible) {
+    this.sender({ type: "setVisible", visible: visible });
+}
+
 function PlayerContainer(url) {
     this.url = url;
 
@@ -407,6 +470,10 @@ function PlayerContainer(url) {
 
 // default buffer size 1 MB
 PlayerContainer.DEFAULT_BUFFER_SIZE  = 1024 * 1024;
+
+PlayerContainer.prototype.isImageCapture = function() {
+    return !!(this.url && this.url.startsWith("capture://image"));
+};
 
 PlayerContainer.prototype.isAudioCapture = function() {
     return !!(this.url && this.url.startsWith("capture://audio"));
@@ -425,6 +492,10 @@ PlayerContainer.prototype.guessFormatFromURL = function() {
         var format = Media.contentTypeToFormat.get(encoding);
 
         return format || "UNKNOWN";
+    }
+
+    if (this.isImageCapture()) {
+        return "JPEG";
     }
 
     return Media.extToFormat.get(this.url.substr(this.url.lastIndexOf(".") + 1)) || "UNKNOWN";
@@ -449,7 +520,11 @@ PlayerContainer.prototype.realize = function(contentType) {
             }
             this.player.realize().then(resolve);
         } else if (Media.supportedImageFormats.indexOf(this.mediaFormat) !== -1) {
-            this.player = new ImagePlayer(this);
+            if (this.isImageCapture()) {
+                this.player = new ImageRecorder(this);
+            } else {
+                this.player = new ImagePlayer(this);
+            }
             this.player.realize().then(resolve);
         } else {
             console.warn("Unsupported media format (" + this.mediaFormat + ") for " + this.url);

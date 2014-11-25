@@ -341,3 +341,59 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
     };
 });
 
+DumbPipe.registerOpener("camera", function(message, sender) {
+  var mediaStream = null;
+
+  var video = document.createElement("video");
+  document.body.appendChild(video);
+  video.style.position = "absolute";
+  video.style.visibility = "hidden";
+
+  var curW = 0, curH = 0;
+
+  video.addEventListener('canplay', function(ev) {
+    // We should use videoWidth and videoHeight, but they are unavailable (https://bugzilla.mozilla.org/show_bug.cgi?id=926753)
+    sender({ type: "gotstream", width: 320, height: 320 });
+  }, false);
+
+  navigator.mozGetUserMedia({
+    video: true,
+    audio: false,
+  }, function(localMediaStream) {
+    mediaStream = localMediaStream;
+
+    video.src = URL.createObjectURL(localMediaStream);
+    video.play();
+  }, function(err) {
+    console.log("Error: " + err);
+  });
+
+  return function(message) {
+    switch (message.type) {
+      case "setPosition":
+        video.style.left = message.x + "px";
+        video.style.top = message.y + "px";
+        video.style.width = message.w + "px";
+        video.style.height = message.h + "px";
+
+        curW = message.w;
+        curH = message.h;
+        break;
+
+      case "setVisible":
+        video.style.visibility = message.visible ? "visible" : "hidden";
+        break;
+
+      case "close":
+        if (mediaStream) {
+          mediaStream.stop();
+        }
+
+        if (video.parentNode) {
+          document.body.removeChild(video);
+        }
+
+        break;
+    }
+  };
+});
