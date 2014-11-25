@@ -464,8 +464,14 @@ ImageRecorder.prototype.getHeight = function() {
 }
 
 ImageRecorder.prototype.setLocation = function(x, y, w, h) {
-    var offX = document.getElementById("display").offsetLeft;
-    this.sender({ type: "setPosition", x: offX + x, y: y, w: w, h: h });
+    var displayElem = document.getElementById("display");
+    this.sender({
+        type: "setPosition",
+        x: x + displayElem.offsetLeft,
+        y: y + displayElem.offsetTop,
+        w: w,
+        h: h,
+    });
 }
 
 ImageRecorder.prototype.setVisible = function(visible) {
