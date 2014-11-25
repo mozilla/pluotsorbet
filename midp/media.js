@@ -473,7 +473,7 @@ ImageRecorder.prototype.setVisible = function(visible) {
 }
 
 ImageRecorder.prototype.startSnapshot = function(imageType) {
-    var type = this.playerContainer.getEncodingParam(imageType);
+    var type = imageType ? this.playerContainer.getEncodingParam(imageType) : "image/jpeg";
     if (type === "jpeg") {
         type = "image/jpeg";
     }
