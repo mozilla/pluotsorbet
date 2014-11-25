@@ -1134,7 +1134,7 @@ Native.create("com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z", function(appId) 
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V", function(handle, imageType) {
-    Media.PlayerCache[handle].startSnapshot(imageType);
+    Media.PlayerCache[handle].startSnapshot(util.fromJavaString(imageType));
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B", function(handle) {
