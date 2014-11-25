@@ -304,7 +304,16 @@ module J2ME.C4.Backend {
 
   IR.JVMCheckCast.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    return new AST.CallExpression(new AST.Identifier("$CCC"), [object, id(mangleClass(this.classInfo))]);
+    var runtimeFunction;
+    if (this.classInfo.isArrayClass) {
+      runtimeFunction = "$CCA";
+    } else {
+      runtimeFunction = "$CCC";
+      if (this.classInfo.isInterface) {
+        runtimeFunction = "$CCI";
+      }
+    }
+    return new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]);
   };
 
   IR.JVMInstanceOf.prototype.compile = function (cx: Context): AST.Node {
@@ -633,11 +642,15 @@ module J2ME.C4.Backend {
   }
 
   export function mangleClass(classInfo: ClassInfo) {
-    if (friendlyMangledNames) {
-      return mangleString(classInfo.className);
+    if (classInfo.isArrayClass) {
+      return "arrayOf(" + mangleClass(classInfo.elementClass) + ")";
+    } else {
+      if (friendlyMangledNames) {
+        return mangleString(classInfo.className);
+      }
+      var hash = hashString(classInfo.className);
+      return StringUtilities.variableLengthEncodeInt32(hash);
     }
-    var hash = hashString(classInfo.className);
-    return StringUtilities.variableLengthEncodeInt32(hash);
   }
 
   export function mangleClassAndField(fieldInfo: FieldInfo) {

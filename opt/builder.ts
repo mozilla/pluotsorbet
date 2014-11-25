@@ -121,6 +121,7 @@ module J2ME {
     classes: any [];
     constant_pool: ConstantPoolEntry [];
     isArrayClass: boolean;
+    elementClass: ClassInfo;
   }
 
   export interface ExceptionHandler {

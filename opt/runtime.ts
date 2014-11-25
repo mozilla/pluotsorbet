@@ -90,6 +90,12 @@ class Runtime extends RuntimeTemplate {
   }
 }
 
+class Class {
+  constructor(public klass: Klass) {
+    // ...
+  }
+}
+
 /**
  * Representation of a template class.
  */
@@ -116,6 +122,11 @@ interface Klass extends Function {
    * Static constructor, not all klasses have one.
    */
   staticConstructor: () => void;
+
+  /**
+   * Java class object. This is only available on runtime klasses.
+   */
+  class: Class
 }
 
 interface Object {
@@ -137,6 +148,7 @@ function registerKlass(klass: Klass, mangledClassName: string, className: string
     get: function() {
       var runtimeKlass = klass.bind(null);
       runtimeKlass.klass = klass;
+      runtimeKlass.class = new Class(runtimeKlass);
       var classInfo = CLASSES.getClass(className);
       Object.defineProperty(this, mangledClassName, {
         configurable: false,
@@ -177,19 +189,41 @@ var $EK = function extendKlass(klass: Klass, superKlass: Klass) {
   initializeKlassTables(klass);
 };
 
-function classInstanceOf(object: Object, klass: Klass) {
+function instanceOfKlass(object: Object, klass: Klass) {
   return object.klass.display[klass.depth] === klass;
 }
 
-function classCheckCast(object: Object, klass: Klass) {
-  if (!classInstanceOf(object, klass)) {
+function instanceOfInterface(object: Object, klass: Klass) {
+  return object.klass.display[klass.depth] === klass;
+}
+
+function instanceOfArray(object: Object, klass: Klass) {
+  return object.klass.display[klass.depth] === klass;
+}
+
+function checkCastKlass(object: Object, klass: Klass) {
+  if (!instanceOfKlass(object, klass)) {
     throw new TypeError();
   }
+}
+
+function checkCastInterface(object: Object, klass: Klass) {
+
+}
+
+function checkCastArray(object: Object, klass: Klass) {
+
 }
 
 /**
  * Runtime exports for compiled code.
  */
 var $RK = registerKlass;
-var $CIO = classInstanceOf;
-var $CCC = classCheckCast;
+
+var $IOK = instanceOfKlass;
+var $IOI = instanceOfInterface;
+var $IOA = instanceOfArray;
+
+var $CCK = checkCastKlass;
+var $CCI = checkCastInterface;
+var $CCA = checkCastArray;
