@@ -8,15 +8,13 @@ module J2ME {
   declare var JavaException;
 
   export class Context {
-    runtime: any;
     frames: any [];
     frameSets: any [];
     lockTimeout: number;
     lockLevel: number;
     thread: any;
-    methodInfos: any;
 
-    constructor(runtime: Runtime) {
+    constructor(public runtime: Runtime) {
       this.frames = [];
       this.frameSets = [];
       this.runtime = runtime;
@@ -78,7 +76,7 @@ module J2ME {
       return returnValue;
     }
 
-    getClassInitFrame(classInfo) {
+    getClassInitFrame(classInfo: ClassInfo) {
       if (this.runtime.initialized[classInfo.className])
         return;
       classInfo.thread = this.thread;
@@ -119,7 +117,7 @@ module J2ME {
       return new Frame(syntheticMethod, [classInfo.getClassObject(this)], 0);
     }
 
-    pushClassInitFrame(classInfo) {
+    pushClassInitFrame(classInfo: ClassInfo) {
       if (this.runtime.initialized[classInfo.className])
         return;
       var classInitFrame = this.getClassInitFrame(classInfo);
@@ -166,25 +164,6 @@ module J2ME {
     raiseExceptionAndYield(className, message?) {
       this.raiseException(className, message);
       throw VM.Yield;
-    }
-
-    invokeCompiledFn(methodInfo, args) {
-      args.unshift(this);
-      var fn = methodInfo.fn;
-      this.frameSets.push(this.frames);
-      this.frames = [];
-      var returnValue = fn.apply(null, args);
-      this.frames = this.frameSets.pop();
-      return returnValue;
-    }
-
-    compileMethodInfo(methodInfo) {
-      var fn = J2ME.compileMethodInfo(methodInfo, this, J2ME.CompilationTarget.Runtime);
-      if (fn) {
-        methodInfo.fn = fn;
-      } else {
-        methodInfo.dontCompile = true;
-      }
     }
 
     setCurrent() {
@@ -387,33 +366,6 @@ module J2ME {
           throw new Error("not support constant type");
       }
       return constant;
-    }
-
-    triggerBailout(e, methodInfoId, compiledDepth, cpi, locals, stack) {
-      throw VM.Yield;
-    }
-
-    JVMBailout(e, methodInfoId, compiledDepth, cpi, locals, stack) {
-      var methodInfo = this.methodInfos[methodInfoId];
-      var frame = new Frame(methodInfo, locals, 0);
-      frame.stack = stack;
-      frame.ip = cpi;
-      this.frames.unshift(frame);
-      if (compiledDepth === 0 && this.frameSets.length) {
-        // Append all the current frames to the parent frame set, so a single frame stack
-        // exists when the bailout finishes.
-        var currentFrames = this.frames;
-        this.frames = this.frameSets.pop();
-        for (var i = 0; i < currentFrames.length; i++) {
-          this.frames.push(currentFrames[i]);
-        }
-      }
-    }
-
-    classInitCheck(className) {
-      if (this.runtime.initialized[className])
-        return;
-      throw VM.Yield;
     }
   }
 }

@@ -160,6 +160,7 @@ module J2ME {
     vmc: any;
     vfc: any;
     mangledName: string;
+    thread: any;
 
     static java_lang_Object: ClassInfo;
 
@@ -252,7 +253,7 @@ module J2ME {
       return false;
     }
 
-    isAssignableTo(toClass) : boolean {
+    isAssignableTo(toClass: ClassInfo) : boolean {
       if (this === toClass || toClass === ClassInfo.java_lang_Object)
         return true;
       if (ACCESS_FLAGS.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
@@ -262,7 +263,7 @@ module J2ME {
       return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
     }
 
-    getClassObject(ctx) {
+    getClassObject(ctx: Context) {
       var className = this.className;
       var classObjects = ctx.runtime.classObjects;
       var classObject = classObjects[className];
@@ -274,7 +275,7 @@ module J2ME {
       return classObject;
     }
 
-    getField(fieldKey) : FieldInfo{
+    getField(fieldKey: string) : FieldInfo {
       return CLASSES.getField(this, fieldKey);
     }
 
