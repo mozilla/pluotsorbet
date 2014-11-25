@@ -308,7 +308,7 @@ module J2ME.C4.Backend {
     if (this.classInfo.isArrayClass) {
       runtimeFunction = "$CCA";
     } else {
-      runtimeFunction = "$CCC";
+      runtimeFunction = "$CCK";
       if (this.classInfo.isInterface) {
         runtimeFunction = "$CCI";
       }
@@ -318,7 +318,16 @@ module J2ME.C4.Backend {
 
   IR.JVMInstanceOf.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    return new AST.CallExpression(new AST.Identifier("$CIO"), [object, id(mangleClass(this.classInfo))]);
+    var runtimeFunction;
+    if (this.classInfo.isArrayClass) {
+      runtimeFunction = "$IOA";
+    } else {
+      runtimeFunction = "$IOK";
+      if (this.classInfo.isInterface) {
+        runtimeFunction = "$IOI";
+      }
+    }
+    return new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]);
   };
 
   IR.JVMCheckArithmetic.prototype.compile = function (cx: Context): AST.Node {

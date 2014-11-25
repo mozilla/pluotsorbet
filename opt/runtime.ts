@@ -129,8 +129,33 @@ interface Klass extends Function {
   class: Class
 }
 
-interface Object {
-  klass: Klass
+module java.lang {
+  export interface Object {
+    /**
+     * Reference to the runtime klass.
+     */
+    klass: Klass
+
+    clone(): java.lang.Object;
+    equals(obj: java.lang.Object): boolean;
+    finalize(): void;
+    getClass(): java.lang.Class;
+    hashCode(): number;
+    notify(): void;
+    notifyAll(): void;
+    toString(): java.lang.String;
+    notify(): void;
+    notify(timeout: number): void;
+    notify(timeout: number, nanos: number): void;
+  }
+
+  export interface Class extends java.lang.Object {
+
+  }
+
+  export interface String extends java.lang.Object {
+
+  }
 }
 
 declare var CLASSES;
@@ -189,29 +214,29 @@ var $EK = function extendKlass(klass: Klass, superKlass: Klass) {
   initializeKlassTables(klass);
 };
 
-function instanceOfKlass(object: Object, klass: Klass) {
+function instanceOfKlass(object: java.lang.Object, klass: Klass) {
   return object.klass.display[klass.depth] === klass;
 }
 
-function instanceOfInterface(object: Object, klass: Klass) {
+function instanceOfInterface(object: java.lang.Object, klass: Klass) {
   return object.klass.display[klass.depth] === klass;
 }
 
-function instanceOfArray(object: Object, klass: Klass) {
+function instanceOfArray(object: java.lang.Object, klass: Klass) {
   return object.klass.display[klass.depth] === klass;
 }
 
-function checkCastKlass(object: Object, klass: Klass) {
+function checkCastKlass(object: java.lang.Object, klass: Klass) {
   if (!instanceOfKlass(object, klass)) {
     throw new TypeError();
   }
 }
 
-function checkCastInterface(object: Object, klass: Klass) {
+function checkCastInterface(object: java.lang.Object, klass: Klass) {
 
 }
 
-function checkCastArray(object: Object, klass: Klass) {
+function checkCastArray(object: java.lang.Object, klass: Klass) {
 
 }
 
