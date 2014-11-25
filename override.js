@@ -12,16 +12,20 @@ function JavaException(className, message) {
 JavaException.prototype = Object.create(Error.prototype);
 
 function boolReturnType(stack, ret) {
+  var value;
   if (ret) {
-    stack.push(1);
+    value = 1;
   } else {
-    stack.push(0);
+    value = 0;
   }
+  stack.push(value);
+  return value;
 }
 
 function doubleReturnType(stack, ret) {
   // double types require two stack frames
   stack.push2(ret);
+  return ret;
 }
 
 function voidReturnType(stack, ret) {
@@ -29,20 +33,26 @@ function voidReturnType(stack, ret) {
 }
 
 function stringReturnType(stack, ret) {
+  var value;
   if (typeof ret === "string") {
-    stack.push(util.newString(ret));
+    value = util.newString(ret);
   } else {
     // already a native string or null
-    stack.push(ret);
+    value = ret;
   }
+  stack.push(value);
+  return value;
 }
 
 function defaultReturnType(stack, ret) {
     stack.push(ret);
+    return ret;
 }
 
 function intReturnType(stack, ret) {
-    stack.push(ret | 0);
+    var value = ret | 0;
+    stack.push(value);
+    return value;
 }
 
 function getReturnFunction(sig) {
@@ -132,12 +142,13 @@ function createAlternateImpl(object, key, fn, usesPromise) {
     try {
       var self = isStatic ? null : stack.pop();
       var ret = fn.apply(self, args);
-      postExec(stack, ret, doReturn, ctx, key, cb);
+      return postExec(stack, ret, doReturn, ctx, key, cb);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throw e;
       } else if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
+        console.log(e.stack);
         ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {
         ctx.raiseExceptionAndYield(e.javaClassName, e.message);
