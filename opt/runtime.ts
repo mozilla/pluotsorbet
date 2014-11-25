@@ -29,10 +29,6 @@ module J2ME {
 
   }
 
-  export interface Context {
-
-  }
-
   /**
    * This class is abstract and should never be initialized. It only acts as a template for
    * actual runtime objects.

@@ -63,6 +63,8 @@ interface String {
   endsWith(s: string): boolean;
 }
 
+
+
 interface Function {
   boundTo: boolean;
 }

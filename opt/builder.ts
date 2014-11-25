@@ -66,21 +66,6 @@ module J2ME {
     Static
   }
 
-  export interface Context {
-    pushClassInitFrame(classInfo: ClassInfo);
-    runtime: any;
-    resolve(constantPool: ConstantPoolEntry [], idx: number, isStatic: boolean) : any;
-  }
-
-  export interface FieldInfo {
-    name: string;
-    signature: any;
-    classInfo: ClassInfo;
-    access_flags: any;
-    id: number;
-    isStatic: boolean;
-  }
-
   export enum TAGS {
     CONSTANT_Class = 7,
     CONSTANT_Fieldref = 9,
@@ -111,21 +96,6 @@ module J2ME {
     lowBits: number;
   }
 
-  export interface ClassInfo {
-    className: string;
-    superClassName: string;
-    superClass: ClassInfo;
-    interfaces: ClassInfo [];
-    fields: FieldInfo [];
-    methods: any [];
-    classes: any [];
-    constant_pool: ConstantPoolEntry [];
-    isArrayClass: boolean;
-    elementClass: ClassInfo;
-    klass: Klass;
-    isInterface: boolean;
-  }
-
   export interface ExceptionHandler {
     start_pc: number;
     end_pc: number;
@@ -133,24 +103,6 @@ module J2ME {
     catch_type: number;
   }
 
-  export interface MethodInfo {
-    name: string;
-    classInfo: ClassInfo;
-    code: Uint8Array;
-    isNative: boolean;
-    isPublic: boolean;
-    isStatic: boolean;
-    isSynchronized: boolean;
-    exception_table: ExceptionHandler [];
-    max_locals: number;
-    max_stack: number;
-    consumes: number;
-    signature: string;
-    implKey: string;
-    key: string;
-    alternateImpl: {()};
-    fn: {()};
-  }
 
   declare var Frame;
 

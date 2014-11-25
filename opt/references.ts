@@ -12,5 +12,7 @@
 ///<reference path='types.ts' />
 ///<reference path='blockMap.ts' />
 ///<reference path='builder.ts' />
+///<reference path='actors.ts' />
 ///<reference path='compiler.ts' />
 ///<reference path='runtime.ts' />
+///<reference path='context.ts' />
