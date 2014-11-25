@@ -390,7 +390,7 @@ DumbPipe.registerOpener("camera", function(message, sender) {
         canvas.height = curH;
         var ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0, curW, curH);
-        // TODO: Remove hardcoded image type
+
         canvas.toBlob(function(blob) {
           var fileReader = new FileReader();
 
@@ -399,7 +399,7 @@ DumbPipe.registerOpener("camera", function(message, sender) {
           }
 
           fileReader.readAsArrayBuffer(blob);
-        }, "image/jpeg");
+        }, message.imageType);
         break;
 
       case "close":

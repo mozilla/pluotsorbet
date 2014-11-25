@@ -473,7 +473,12 @@ ImageRecorder.prototype.setVisible = function(visible) {
 }
 
 ImageRecorder.prototype.startSnapshot = function(imageType) {
-    this.sender({ type: "snapshot", imageType: imageType });
+    var type = this.playerContainer.getEncodingParam(imageType);
+    if (type === "jpeg") {
+        type = "image/jpeg";
+    }
+
+    this.sender({ type: "snapshot", imageType: type });
 }
 
 ImageRecorder.prototype.getSnapshotData = function(imageType) {
@@ -504,15 +509,21 @@ PlayerContainer.prototype.isAudioCapture = function() {
     return !!(this.url && this.url.startsWith("capture://audio"));
 };
 
+PlayerContainer.prototype.getEncodingParam = function(url) {
+    var encoding = null;
+
+    var idx = url.indexOf("encoding=");
+    if (idx > 0) {
+        var encodingKeyPair = url.substring(idx).split("&")[0].split("=");
+        encoding = encodingKeyPair.length == 2 ? encodingKeyPair[1] : encoding;
+    }
+
+    return encoding;
+};
+
 PlayerContainer.prototype.guessFormatFromURL = function() {
     if (this.isAudioCapture()) {
-        var encoding = "audio/ogg"; // Same as system property |audio.encodings|
-
-        var idx = this.url.indexOf("encoding=");
-        if (idx > 0) {
-            var encodingKeyPair = this.url.substring(idx).split("&")[0].split("=");
-            encoding = encodingKeyPair.length == 2 ? encodingKeyPair[1] : encoding;
-        }
+        var encoding = "audio/ogg" || this.getEncodingParam(this.url); // Same as system property |audio.encodings|
 
         var format = Media.contentTypeToFormat.get(encoding);
 
