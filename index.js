@@ -384,6 +384,24 @@ DumbPipe.registerOpener("camera", function(message, sender) {
         video.style.visibility = message.visible ? "visible" : "hidden";
         break;
 
+      case "snapshot":
+        var canvas = document.createElement("canvas");
+        canvas.width = curW;
+        canvas.height = curH;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, curW, curH);
+        // TODO: Remove hardcoded image type
+        canvas.toBlob(function(blob) {
+          var fileReader = new FileReader();
+
+          fileReader.onload = function(data) {
+            sender({ type: "snapshot", data: fileReader.result });
+          }
+
+          fileReader.readAsArrayBuffer(blob);
+        }, "image/jpeg");
+        break;
+
       case "close":
         if (mediaStream) {
           mediaStream.stop();

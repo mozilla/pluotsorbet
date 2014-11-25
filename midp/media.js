@@ -404,6 +404,8 @@ function ImageRecorder(playerContainer) {
     this.isAudioControlSupported = false;
 
     this.realizeResolver = null;
+
+    this.snapshotData = null;
 }
 
 ImageRecorder.prototype.realize = function() {
@@ -420,6 +422,11 @@ ImageRecorder.prototype.recipient = function(message) {
             this.height = message.height;
             this.realizeResolver(true);
             this.realizeResolver = null;
+            break;
+
+        case "snapshot":
+            this.snapshotData = new Int8Array(message.data);
+
             break;
     }
 }
@@ -453,6 +460,10 @@ ImageRecorder.prototype.setLocation = function(x, y, w, h) {
 
 ImageRecorder.prototype.setVisible = function(visible) {
     this.sender({ type: "setVisible", visible: visible });
+}
+
+ImageRecorder.prototype.startSnapshot = function(imageType) {
+    this.sender({ type: "snapshot", imageType: imageType });
 }
 
 function PlayerContainer(url) {
@@ -665,6 +676,10 @@ PlayerContainer.prototype.getRecordedData = function(offset, size, buffer) {
     buffer.set(this.audioRecorder.data.subarray(0, toRead), offset);
     this.audioRecorder.data = new Uint8Array(this.audioRecorder.data.buffer.slice(toRead));
 };
+
+PlayerContainer.prototype.startSnapshot = function(imageType) {
+    this.player.startSnapshot(imageType);
+}
 
 var AudioRecorder = function(aMimeType) {
     this.mimeType = aMimeType || "audio/ogg";
@@ -1087,4 +1102,8 @@ Native.create("com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z", function(appI
 Native.create("com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z", function(appId) {
     console.warn("com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z not implemented.");
     return true;
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V", function(handle, imageType) {
+    Media.PlayerCache[handle].startSnapshot(imageType);
 });
