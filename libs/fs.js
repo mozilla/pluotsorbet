@@ -176,7 +176,6 @@ var fs = (function() {
   }
 
   var openedFiles = [null, null, null];
-  var fileStats = {};
 
   function open(path, cb) {
     path = normalizePath(path);
@@ -256,7 +255,6 @@ var fs = (function() {
     file.position = from + data.byteLength;
     file.stat = { mtime: Date.now(), isDir: false, size: buffer.contentSize };
     file.dirty = true;
-    fileStats[file.path] = file.stat;
   }
 
   function getpos(fd) {
@@ -337,7 +335,7 @@ var fs = (function() {
     if (size != file.buffer.contentSize) {
       file.buffer.setSize(size);
       file.dirty = true;
-      fileStats[file.path] = file.stat = { mtime: Date.now(), isDir: false, size: size };
+      file.stat = { mtime: Date.now(), isDir: false, size: size };
     }
   }
 
@@ -465,18 +463,10 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs size " + path); }
 
-    if (fileStats[path] && typeof fileStats[path].size != "undefined") {
-      cb(fileStats[path].size);
-      return;
-    }
-
     store.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
-        if (fileStats[path]) {
-          fileStats[path].size = blob.size;
-        }
         cb(blob.size);
       }
     });
@@ -525,14 +515,12 @@ var fs = (function() {
   function setStat(path, stat) {
     if (DEBUG_FS) { console.log("fs setStat " + path); }
 
-    fileStats[path] = stat;
     store.setItem("!" + path, stat);
   }
 
   function removeStat(path) {
     if (DEBUG_FS) { console.log("fs removeStat " + path); }
 
-    delete fileStats[path];
     store.removeItem("!" + path);
   }
 
@@ -540,24 +528,13 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs stat " + path); }
 
-    var stat = fileStats[path];
-    if (stat) {
-      setZeroTimeout(function() { cb(stat); });
-      return;
-    }
-
     var file = openedFiles.find(function (file) { return file && file.stat && file.path === path });
     if (file) {
       setZeroTimeout(function() { cb(file.stat); });
       return;
     }
 
-    store.getItem("!" + path, function(stat) {
-      if (stat) {
-        fileStats[path] = stat;
-      }
-      cb(stat);
-    });
+    store.getItem("!" + path, cb);
   }
 
   function clear(cb) {
