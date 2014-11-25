@@ -186,6 +186,12 @@ var ClassInfo = function(classBytes) {
     });
 }
 
+Object.defineProperty(ClassInfo.prototype, "isInterface", {
+  get: function () {
+    return ACCESS_FLAGS.isInterface(this.access_flags);
+  }
+});
+
 ClassInfo.prototype.implementsInterface = function(iface) {
     var classInfo = this;
     do {
@@ -250,25 +256,36 @@ ArrayClass.prototype.isAssignableTo = ClassInfo.prototype.isAssignableTo;
 
 ArrayClass.prototype.getClassObject = ClassInfo.prototype.getClassObject;
 
-function getOnce(obj, key, getter) {
-    Object.defineProperty(obj, key, {
-      get: function() {
-        var value = getter();
-        Object.defineProperty(obj, key, {
-          value: value,
-          configurable: true,
-          enumerable: true
-        });
-        return value;
-      },
-      configurable: true,
-      enumerable: true
+function getOnce(objectKeyPairs, getter) {
+  objectKeyPairs.forEach(function(pair) {
+      var obj = pair[0];
+      var key = pair[1];
+      Object.defineProperty(obj, key, {
+        get: function() {
+          var value = getter();
+          objectKeyPairs.forEach(function(pair) {
+            Object.defineProperty(pair[0], pair[1], {
+              value: value,
+              configurable: true,
+              enumerable: true
+            });
+          });
+          return value;
+        },
+        configurable: true,
+        enumerable: true
+      });
     });
 }
 
 
-function trampoline(obj, key, className, methodKey) {
-    getOnce(obj, key, function() {
+function trampoline(mangledClassName, mangledMethodName, mangledClassAndMethodName, className, methodKey, isStatic) {
+    var objectKeyPairs = [];
+    objectKeyPairs.push([jsGlobal, mangledClassAndMethodName]);
+    if (!isStatic) {
+      objectKeyPairs.push([jsGlobal[mangledClassName].prototype, mangledMethodName]);
+    }
+    getOnce(objectKeyPairs, function() {
         var classInfo = CLASSES.getClass(className);
         var methodInfo = CLASSES.getMethod(classInfo, methodKey);
         function native() {
