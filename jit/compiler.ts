@@ -12,7 +12,8 @@ module J2ME {
       public writer: IndentingWriter,
       public closure: boolean,
       public debugInfo: boolean,
-      public klassHeaderOnly: boolean = false
+      public klassHeaderOnly: boolean = false,
+      public definitions: boolean = false
     ) {
       // ...
     }
@@ -26,6 +27,107 @@ module J2ME {
       klass = klass.superClass;
     }
     return list;
+  }
+
+  function typeDescriptorToDefinition(value: string): string {
+    var typeDescriptor = TypeDescriptor.parseTypeDescriptor(value, 0);
+    var type = "";
+    if (typeDescriptor.kind === Kind.Reference) {
+      var dimensions = TypeDescriptor.getArrayDimensions(typeDescriptor);
+      if (dimensions) {
+        var elementType = typeDescriptor.value.substring(dimensions);
+        var elementTypeDescriptor = TypeDescriptor.parseTypeDescriptor(elementType, 0);
+        dimensions --;
+        switch (elementTypeDescriptor.kind) {
+          case Kind.Int:
+            type = "Int32Array";
+            break;
+          case Kind.Char:
+          case Kind.Short:
+            type = "Int16Array";
+            break;
+          case Kind.Byte:
+          case Kind.Boolean:
+            type = "Int8Array";
+            break;
+          case Kind.Float:
+            type = "Float32Array";
+            break;
+          case Kind.Long:
+            type = "Array";
+            break;
+          case Kind.Double:
+            type = "Float64Array";
+            break;
+          default:
+            type = typeDescriptorToDefinition(elementType);
+            dimensions ++;
+            break;
+        }
+      } else {
+        type = typeDescriptor.value.substring(dimensions + 1, typeDescriptor.value.length - 1);
+        type = type.replace(/\//g, '.');
+      }
+      for (var i = 0; i < dimensions; i++) {
+        type += "[]";
+      }
+    } else {
+      switch (typeDescriptor.kind) {
+        case Kind.Boolean: return "boolean";
+        case Kind.Byte:
+        case Kind.Short:
+        case Kind.Char:
+        case Kind.Int:
+        case Kind.Float:
+        case Kind.Double:
+          return "number";
+        case Kind.Long:
+          return "number"; // Should be Long.
+        case Kind.Void:
+          return "void";
+        default: throw Debug.unexpected("Unknown kind: " + typeDescriptor.kind);
+
+      }
+    }
+    return type;
+  }
+
+  function signatureToDefinition(signature: string, includeReturnType = true): string {
+    var types = SignatureDescriptor.makeSignatureDescriptor(signature).typeDescriptors;
+    var argumentNames = "abcdefghijklmnopqrstuvwxyz";
+    var i = 0;
+    var result = "(" + types.slice(1).map(t => argumentNames[i++] + ": " + typeDescriptorToDefinition(t.value)).join(", ") + ")";
+    J2ME.Debug.assert(i < argumentNames.length);
+    if (includeReturnType) {
+      result += " => " + typeDescriptorToDefinition(types[0].value);
+    }
+    return result;
+  }
+
+
+  export function emitMethodDefinition(emitter: Emitter, methodInfo: MethodInfo) {
+    if (methodInfo.name === "<clinit>") {
+      return;
+    }
+    if (methodInfo.isStatic && methodInfo.classInfo.isInterface) {
+      return;
+    }
+    var isStaticString = methodInfo.isStatic ? "static " : "";
+    var isConstructor = methodInfo.name === "<init>";
+    if (isConstructor) {
+      // emitter.writer.writeLn("constructor" + signatureToDefinition(methodInfo.signature, false) + " {}");
+    } else {
+      var name = methodInfo.name + methodInfo.signature;
+      emitter.writer.writeLn(isStaticString + quote(name) + ": " + signatureToDefinition(methodInfo.signature) + ";");
+    }
+  }
+
+  export function emitFieldDefinition(emitter: Emitter, fieldInfo: FieldInfo) {
+    if (fieldInfo.isStatic && fieldInfo.classInfo.isInterface) {
+      return;
+    }
+    var isStaticString = fieldInfo.isStatic ? "static " : "";
+    emitter.writer.writeLn(isStaticString + fieldInfo.name + ": " + typeDescriptorToDefinition(fieldInfo.signature) + ";");
   }
 
   export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
@@ -55,12 +157,22 @@ module J2ME {
           defaultValue = "0";
           break;
         }
-        if (emitter.closure) {
-          writer.writeLn("this[" + quote(mangleField(fieldInfo)) + "] = " + defaultValue + ";");
+        if (emitter.definitions) {
+          emitFieldDefinition(emitter, fieldInfo);
         } else {
-          writer.writeLn("this." + mangleField(fieldInfo) + " = " + defaultValue + ";");
+          if (emitter.closure) {
+            writer.writeLn("this[" + quote(mangleField(fieldInfo)) + "] = " + defaultValue + ";");
+          } else {
+            writer.writeLn("this." + mangleField(fieldInfo) + " = " + defaultValue + ";");
+          }
         }
       }
+    }
+
+    if (emitter.definitions) {
+      emitFields(classInfo.fields, false);
+      emitFields(classInfo.fields, true);
+      return;
     }
 
     // Emit class initializer.
@@ -100,11 +212,31 @@ module J2ME {
                    quote(classInfo.className) + ")");
   }
 
+  function classNameWithDots(classInfo: ClassInfo) {
+    return classInfo.className.replace(/\//g, '.');
+  }
+
   function compileClassInfo(emitter: Emitter, classInfo: ClassInfo, ctx: Context): CompiledMethodInfo [] {
     var writer = emitter.writer;
     var mangledClassName = mangleClass(classInfo);
     if (!J2ME.C4.Backend.isIdentifierName(mangledClassName)) {
       mangledClassName = quote(mangledClassName);
+    }
+
+    var classNameParts;
+    if (emitter.definitions) {
+      classNameParts = classInfo.className.split("/");
+      if (classNameParts.length > 1) {
+        writer.enter("module " + classNameParts.slice(0, classNameParts.length - 1).join(".") + " {");
+      }
+      var classOrInterfaceString = classInfo.isInterface ? "interface" : "class";
+      var extendsString = classInfo.superClass ? " extends " + classNameWithDots(classInfo.superClass) : "";
+      if (classInfo.isInterface) {
+        extendsString = "";
+      }
+      // var implementsString = classInfo.interfaces.length ? " implements " + classInfo.interfaces.map(i => classNameWithDots(i)).join(", ") : "";
+      var implementsString = "";
+      writer.enter("export " + classOrInterfaceString + " " + classNameParts[classNameParts.length - 1] + extendsString + implementsString + " {");
     }
 
     emitKlass(emitter, classInfo);
@@ -116,6 +248,10 @@ module J2ME {
       var mangledMethodName = mangleMethod(method);
       if (!J2ME.C4.Backend.isIdentifierName(mangledMethodName)) {
         mangledMethodName = quote(mangledMethodName);
+      }
+      if (emitter.definitions) {
+        emitMethodDefinition(emitter, method);
+        continue;
       }
       try {
         if (emitter.debugInfo) {
@@ -156,10 +292,17 @@ module J2ME {
       }
     }
 
+    if (emitter.definitions) {
+      if (classNameParts.length > 1) {
+        writer.leave("}");
+      }
+      writer.leave("}");
+    }
+
     return compiledMethods;
   }
 
-  export function compile(jvm: any, classFilter: string, debugInfo: boolean) {
+  export function compile(jvm: any, classFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
     var classFiles = CLASSES.classfiles;
     var ctx = new Context(runtime);
@@ -169,7 +312,7 @@ module J2ME {
       code += s + "\n";
     });
 
-    var emitter = new Emitter(writer, false, debugInfo);
+    var emitter = new Emitter(writer, false, debugInfo, false, tsDefinitions);
 
     var compiledMethods: CompiledMethodInfo [] = [];
     var classInfoList: ClassInfo [] = [];
@@ -194,22 +337,31 @@ module J2ME {
 
     var orderedClassInfoList: ClassInfo [] = [];
 
-    function indexOf(list, classInfo) {
-      if (!classInfo) {
-        return -1;
+    function hasDependencies(list, classInfo) {
+      var superClass = classInfo.superClass;
+      if (!superClass && classInfo.interfaces.length === 0) {
+        return false;
       }
       for (var i = 0; i < list.length; i++) {
-        if (list[i].className === classInfo.className) {
-          return i;
+        if (list[i].className === superClass.className) {
+          return true;
         }
       }
-      return -1;
+
+      for (var j = 0; j < classInfo.interfaces; j++) {
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].className === classInfo.interfaces[j].className) {
+            return true;
+          }
+        }
+      }
+
+      return false;
     }
     while (classInfoList.length) {
       for (var i = 0; i < classInfoList.length; i++) {
         var classInfo = classInfoList[i];
-        // writer.writeLn(nameOf(classInfo) + " " + nameOf(classInfo.superClass) + " " + classInfoList.indexOf(classInfo.superClass));
-        if (indexOf(classInfoList, classInfo.superClass) < 0) {
+        if (!hasDependencies(classInfoList, classInfo)) {
           orderedClassInfoList.push(classInfo);
           classInfoList.splice(i--, 1);
           break;
@@ -224,21 +376,6 @@ module J2ME {
       }
       ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, ctx));
     }
-
-    /*
-    writer.enter("referencedClasses: [");
-    var referencedClasses = Object.create(null);
-    compiledMethods.forEach(compiledMethod => {
-      compiledMethod.referencedClasses.forEach(classInfo => {
-        referencedClasses[classInfo.className] = true;
-      });
-    });
-    var classNames = Object.keys(referencedClasses);
-    for (var i = 0; i < classNames.length; i++) {
-      writer.writeLn(quote(classNames[i]) + (i < classNames.length - 1 ? "," : ""));
-    }
-    writer.leave("]");
-    */
     consoleWriter.writeLn(code);
   }
 }

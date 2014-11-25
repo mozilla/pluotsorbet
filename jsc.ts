@@ -84,6 +84,7 @@ module J2ME {
   var classFilterOption: Options.Option;
   var debuggerOption: Options.Option;
   var releaseOption: Options.Option;
+  var definitionOption: Options.Option;
 
 
   function main(commandLineArguments: string []) {
@@ -98,6 +99,7 @@ module J2ME {
     classFilterOption = shellOptions.register(new Options.Option("f", "filter", "string", ".*", "Compile Filter"));
     debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
     releaseOption = shellOptions.register(new Options.Option("r", "release", "boolean", false, "Release mode"));
+    definitionOption = shellOptions.register(new Options.Option("t", "definition", "boolean", false, "Emit Definition"));
 
     var argumentParser = new Options.ArgumentParser();
     argumentParser.addBoundOptionSet(shellOptions);
@@ -177,7 +179,7 @@ module J2ME {
       if (verboseOption.value) {
         writer.writeLn("Compiling Pattern: " + classFilterOption.value);
       }
-      compile(jvm, classFilterOption.value, debuggerOption.value);
+      compile(jvm, classFilterOption.value, debuggerOption.value, definitionOption.value);
     }
     jvm.initializeBuiltinClasses();
   }
