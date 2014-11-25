@@ -7,8 +7,6 @@ module J2ME {
 
   declare var JVM, CLASSES, Context, release;
 
-  var consoleWriter = new IndentingWriter();
-
   export class Emitter {
     constructor(
       public writer: IndentingWriter,
@@ -67,6 +65,9 @@ module J2ME {
 
     // Emit class initializer.
     writer.enter("function " + mangledClassName + "() {");
+    // Emit call to create hash code. We may also want to save the context that created this
+    // object in debug builds for extra assertions.
+    writer.writeLn("this.__hashCode__ = $.nextHashCode(this);");
     getClassInheritanceChain(classInfo).forEach(function (ci) {
       emitFields(ci.fields, false);
     });

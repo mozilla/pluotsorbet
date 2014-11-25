@@ -131,8 +131,9 @@ var util = (function () {
     return array;
   }
 
+  // Remove
   function newObject(classInfo) {
-      return new (classInfo.constructor)();
+      return J2ME.newObject(classInfo.klass);
   }
 
   function newString(s) {

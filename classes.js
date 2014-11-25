@@ -76,7 +76,10 @@ Classes.prototype.loadClassFile = function(fileName) {
     classes.forEach(function (c, n) {
         classes[n] = self.loadClass(c);
     });
-    J2ME.linkKlass(classInfo);
+    if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
+        J2ME.linkKlass(classInfo);
+    }
+
     return classInfo;
 }
 

@@ -17,7 +17,7 @@ var FieldInfo = (function() {
 })();
 
 FieldInfo.prototype.get = function(obj) {
-    print("READING: " + obj.hashCode + " " + this.mangledName);
+    print("get " + J2ME.toDebugString(obj) + "." + this.mangledName);
     var value = obj[this.mangledName];
     release || J2ME.Debug.assert(value !== undefined, this.name + " - " + obj[this.id]);
     return value;
@@ -25,8 +25,7 @@ FieldInfo.prototype.get = function(obj) {
 
 FieldInfo.prototype.set = function(obj, value) {
     release || J2ME.Debug.assert(value !== undefined);
-    print("WRITING: "  + obj.hashCode + " " + this.mangledName + " " + value);
-    print(J2ME.Debug.backtrace());
+    print("set " + J2ME.toDebugString(obj) + "." + this.mangledName + " = " + value);
     obj[this.mangledName] = value
 };
 

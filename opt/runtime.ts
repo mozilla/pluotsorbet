@@ -3,19 +3,29 @@ var $: J2ME.Runtime; // The currently-executing runtime.
 var runtimeTemplate = {};
 
 module J2ME {
-  export enum ExecutionMode {
+
+  export var consoleWriter = new IndentingWriter();
+
+  export enum ExecutionPhase {
+    /**
+     * Default runtime behaviour.
+     */
     Runtime = 0,
+
+    /**
+     * When compiling code statically.
+     */
     Compiler = 1
   }
 
-  export var mode = ExecutionMode.Runtime;
+  export var phase = ExecutionPhase.Runtime;
 
   declare var internedStrings: Map<string, string>;
   declare var util;
 
   import assert = J2ME.Debug.assert;
 
-  export interface JVM {sub
+  export interface JVM {
 
   }
 
@@ -39,6 +49,10 @@ module J2ME {
     classObjects: any;
     ctx: Context;
 
+    private static _nextRuntimeId: number = 0;
+    private _runtimeId: number;
+    private _nextHashCode: number;
+
     constructor(vm: JVM) {
       this.vm = vm;
       this.status = 1; // NEW
@@ -49,6 +63,15 @@ module J2ME {
       this.staticFields = {};
       this.classObjects = {};
       this.ctx = null;
+      this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
+      this._nextHashCode = this._runtimeId << 24;
+    }
+
+    /**
+     * Generates a new hash code for the specified |object|.
+     */
+    nextHashCode(object: java.lang.Object): number {
+      return this._nextHashCode ++;
     }
 
     waitStatus(callback) {
@@ -118,6 +141,8 @@ module J2ME {
    * Representation of a template class.
    */
   export interface Klass extends Function {
+    new (): java.lang.Object;
+
     superKlass: Klass;
 
     /**
@@ -162,6 +187,11 @@ module J2ME {
        * Reference to the runtime klass.
        */
       klass: Klass
+
+      /**
+       * All objects have an internal hash code.
+       */
+      __hashCode__: number;
 
       clone(): java.lang.Object;
       equals(obj: java.lang.Object): boolean;
@@ -225,26 +255,19 @@ module J2ME {
     if (classInfo.klass) {
       return classInfo.klass;
     }
-    // TODO: This should initialize the instance fields.
     var klass = null;
-    var ww = new IndentingWriter();
-
-    ww.writeLn(classInfo.className);
     if (classInfo.isInterface) {
       klass = <Klass><any> function () {};
     } else {
-      var s = "";
-      var writer = new IndentingWriter(false, x => s += x);
+      // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
+      // creating a closure, which will probably be slower at runtime.
+      var source = "";
+      var writer = new IndentingWriter(false, x => source += x + "\n");
       var emitter = new Emitter(writer, false, true, true);
-
       J2ME.emitKlass(emitter, classInfo);
-      (1, eval)(s);
-      ww.writeLn("C: " + classInfo.className);
-      if (classInfo.superClass) {
-        ww.writeLn("S: " + classInfo.superClass.className);
-      }
-      ww.writeLn(s);
-      ww.writeLn("");
+      (1, eval)(source);
+      // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
+      // consoleWriter.writeLn(source);
       var mangledName = J2ME.C4.Backend.mangleClass(classInfo);
       klass = jsGlobal[mangledName];
       assert(klass, mangledName);
@@ -258,9 +281,6 @@ module J2ME {
   }
 
   export function linkKlass(classInfo: ClassInfo) {
-    if (mode !== ExecutionMode.Runtime) {
-      return;
-    }
     var mangledName = J2ME.C4.Backend.mangleClass(classInfo);
     var klass = jsGlobal[mangledName];
     if (klass) {
@@ -333,6 +353,17 @@ module J2ME {
 
   export function checkCastArray(object: java.lang.Object, klass: Klass) {
 
+  }
+
+  export function newObject(klass: Klass): java.lang.Object {
+    return new klass();
+  }
+
+  export function toDebugString(object: java.lang.Object): string {
+    if (!object) {
+      return "null";
+    }
+    return "[" + object.klass.classInfo.className + " 0x" + object.__hashCode__.toString(16).toUpperCase() + "]";
   }
 }
 

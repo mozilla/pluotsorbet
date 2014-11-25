@@ -28,6 +28,7 @@ JVM.prototype.initializeBuiltinClasses = function() {
 JVM.prototype.startIsolate0 = function(className, args) {
     var runtime = new J2ME.Runtime(this);
     var ctx = new Context(runtime);
+    ctx.setCurrent();
 
     var com_sun_cldc_isolate_Isolate = CLASSES.getClass("com/sun/cldc/isolate/Isolate");
 
@@ -55,6 +56,7 @@ JVM.prototype.startIsolate = function(isolate) {
 
     var runtime = new J2ME.Runtime(this);
     var ctx = new Context(runtime);
+    ctx.setCurrent();
 
     isolate.runtime = runtime;
     runtime.isolate = isolate;
