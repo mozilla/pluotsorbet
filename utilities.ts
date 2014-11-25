@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-///<reference path='references.ts' />
+///<reference path='opt/references.ts' />
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
 var inBrowser = typeof console != "undefined";
 

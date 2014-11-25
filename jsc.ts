@@ -1,4 +1,4 @@
-///<reference path='build/opt.d.ts' />
+///<reference path='opt/build/opt.d.ts' />
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
 var CC = {};
