@@ -622,7 +622,7 @@ MIDP.Context2D = (function() {
     // both. A distance threshold ensures that touches with an "intent
     // to tap" will likely result in a tap.
 
-    var LONG_PRESS_TIMEOUT = 500;
+    var LONG_PRESS_TIMEOUT = 1000;
     var MIN_DRAG_DISTANCE_SQUARED = 5 * 5;
     var mouseDownInfo = null;
     var longPressTimeoutID = null;
@@ -646,6 +646,12 @@ MIDP.Context2D = (function() {
             return; // Mousemove on desktop; ignored.
         }
         event.preventDefault();
+
+        if (longPressTimeoutID) {
+            clearTimeout(longPressTimeoutID);
+            longPressTimeoutID = null;
+        }
+
         var pt = getEventPoint(event);
         sendPenEvent(pt, MIDP.DRAGGED);
         var distance = {
@@ -660,7 +666,9 @@ MIDP.Context2D = (function() {
             mouseDownInfo.isDragging = true;
             mouseDownInfo.x = pt.x;
             mouseDownInfo.y = pt.y;
-            sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
+            if (!longPressDetected) {
+                sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
+            }
         }
     });
 
@@ -671,15 +679,16 @@ MIDP.Context2D = (function() {
         }
         event.preventDefault();
 
-        clearTimeout(longPressTimeoutID);
+        if (longPressTimeoutID) {
+            clearTimeout(longPressTimeoutID);
+            longPressTimeoutID = null;
+        }
 
         var pt = getEventPoint(event);
         sendPenEvent(pt, MIDP.RELEASED);
 
-        if (mouseDownInfo.isDragging) {
-            sendGestureEvent(pt, null, MIDP.GESTURE_DROP);
-        } else if (!longPressDetected) {
-            sendGestureEvent(pt, null, MIDP.GESTURE_TAP);
+        if (!longPressDetected) {
+            sendGestureEvent(pt, null, mouseDownInfo.isDragging ? MIDP.GESTURE_DROP : MIDP.GESTURE_TAP);
         }
 
         mouseDownInfo = null; // Clear the way for the next gesture.
