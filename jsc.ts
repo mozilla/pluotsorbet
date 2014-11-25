@@ -1,4 +1,4 @@
-///<reference path='opt/build/opt.d.ts' />
+///<reference path='build/j2me.d.ts' />
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
 var CC = {};
@@ -67,9 +67,9 @@ module J2ME {
     }
   }
 
-  loadFiles("jvm.js", "classes.js", "libs/zipfile.js", "opt/build/opt.js", "classinfo.js", "classfile/classfile.js",
-    "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js", "runtime.js",
-    "context.js", "libs/encoding.js", "util.js", "frame.js", "arrays.js",
+  loadFiles("jvm.js", "classes.js", "libs/zipfile.js", "build/j2me.js", "classinfo.js", "classfile/classfile.js",
+    "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js",
+    "libs/encoding.js", "util.js", "frame.js", "arrays.js",
     "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
     "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");

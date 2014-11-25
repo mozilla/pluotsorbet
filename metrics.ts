@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path='opt/references.ts' />
 module J2ME.Metrics {
   export class Timer {
     private static _base: Timer = new Timer(null, "Total");

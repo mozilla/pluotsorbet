@@ -363,6 +363,9 @@ module J2ME {
   }
 }
 
+var Runtime = J2ME.Runtime;
+
+
 /**
  * Runtime exports for compiled code.
  */

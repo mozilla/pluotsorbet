@@ -417,3 +417,5 @@ module J2ME {
     }
   }
 }
+
+var Context = J2ME.Context;

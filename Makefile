@@ -1,6 +1,6 @@
-.PHONY: all opt test tests java certs app clean
+.PHONY: all test tests j2me java certs app clean
 
-all: java tests opt
+all: java tests j2me
 
 test: all
 	rm -f test.log
@@ -17,8 +17,11 @@ test: all
 	else true; \
 	fi
 
-opt:
-	make -C opt
+j2me:
+	@echo "Building J2ME"
+	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js
+	@echo "Building J2ME JSC CLI"
+	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out build/jsc.js
 
 tests:
 	make -C tests
