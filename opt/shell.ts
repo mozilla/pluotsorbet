@@ -74,6 +74,8 @@ module J2ME {
     "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
 
+  mode = ExecutionMode.Compiler;
+
   writer = new IndentingWriter();
 
   var verboseOption: Options.Option;

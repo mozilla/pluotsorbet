@@ -26,7 +26,7 @@ JVM.prototype.initializeBuiltinClasses = function() {
 }
 
 JVM.prototype.startIsolate0 = function(className, args) {
-    var runtime = new Runtime(this);
+    var runtime = new J2ME.Runtime(this);
     var ctx = new Context(runtime);
 
     var com_sun_cldc_isolate_Isolate = CLASSES.getClass("com/sun/cldc/isolate/Isolate");
@@ -47,13 +47,13 @@ JVM.prototype.startIsolate0 = function(className, args) {
 }
 
 JVM.prototype.startIsolate = function(isolate) {
-    var mainClass = util.fromJavaString(isolate.class.getField("I._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
-    var mainArgs = isolate.class.getField("I._mainArgs.[Ljava/lang/String;").get(isolate);
+    var mainClass = util.fromJavaString(isolate.klass.classInfo.getField("I._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
+    var mainArgs = isolate.klass.classInfo.getField("I._mainArgs.[Ljava/lang/String;").get(isolate);
     mainArgs.forEach(function(str, n) {
         mainArgs[n] = util.fromJavaString(str);
     });
 
-    var runtime = new Runtime(this);
+    var runtime = new J2ME.Runtime(this);
     var ctx = new Context(runtime);
 
     isolate.runtime = runtime;

@@ -17,20 +17,22 @@ var FieldInfo = (function() {
 })();
 
 FieldInfo.prototype.get = function(obj) {
-    var value = obj[this.id];
-    if (typeof value === "undefined") {
-        value = util.defaultValue(this.signature);
-    }
+    print("READING: " + obj.hashCode + " " + this.mangledName);
+    var value = obj[this.mangledName];
+    release || J2ME.Debug.assert(value !== undefined, this.name + " - " + obj[this.id]);
     return value;
-}
+};
 
 FieldInfo.prototype.set = function(obj, value) {
-    obj[this.id] = value;
-}
+    release || J2ME.Debug.assert(value !== undefined);
+    print("WRITING: "  + obj.hashCode + " " + this.mangledName + " " + value);
+    print(J2ME.Debug.backtrace());
+    obj[this.mangledName] = value
+};
 
 FieldInfo.prototype.toString = function() {
     return "[field " + this.name + "]";
-}
+};
 
 function missingNativeImpl(key, ctx, stack) {
     console.error("Attempted to invoke missing native:", key);
@@ -130,15 +132,18 @@ var ClassInfo = function(classBytes) {
 
     this.mangledName = J2ME.C4.Backend.mangleClass(this);
 
+    /*
     if (jsGlobal[this.mangledName]) {
         this.constructor = jsGlobal[this.mangledName];
     } else {
         this.constructor = function () {};
     }
+
     this.constructor.prototype.class = this;
     this.constructor.prototype.toString = function() {
         return '[instance ' + this.class.className + ']';
     };
+    */
 
 
     var self = this;

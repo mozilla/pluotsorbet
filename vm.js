@@ -74,8 +74,8 @@ VM.execute = function(ctx) {
 
 
     function buildExceptionLog(ex, stackTrace) {
-        var className = ex.class.className;
-        var detailMessage = util.fromJavaString(CLASSES.getField(ex.class, "I.detailMessage.Ljava/lang/String;").get(ex));
+        var className = ex.klass.classInfo.className;
+        var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
         return className + ": " + (detailMessage || "") + "\n" + stackTrace.join("\n") + "\n\n";
     }
 
@@ -93,7 +93,7 @@ VM.execute = function(ctx) {
                         handler_pc = exception_table[i].handler_pc;
                     } else {
                         var classInfo = resolve(exception_table[i].catch_type);
-                        if (ex.class.isAssignableTo(classInfo)) {
+                        if (J2ME.isAssignableTo(ex.klass, classInfo.klass)) {
                             handler_pc = exception_table[i].handler_pc;
                             break;
                         }
@@ -368,7 +368,7 @@ VM.execute = function(ctx) {
             var idx = stack.pop();
             var refArray = stack.pop();
             checkArrayAccess(refArray, idx);
-            if (val && !val.class.isAssignableTo(refArray.class.elementClass)) {
+            if (val && !J2ME.isAssignableTo(val.klass, refArray.klass.elementKlass)) {
                 ctx.raiseExceptionAndYield("java/lang/ArrayStoreException");
             }
             refArray[idx] = val;
@@ -914,9 +914,9 @@ VM.execute = function(ctx) {
             if (classInfo.tag)
                 classInfo = resolve(idx);
             var obj = stack[stack.length - 1];
-            if (obj && !obj.class.isAssignableTo(classInfo)) {
+            if (obj && !J2ME.isAssignableTo(obj.klass, classInfo.klass)) {
                 ctx.raiseExceptionAndYield("java/lang/ClassCastException",
-                                           obj.class.className + " is not assignable to " +
+                                           obj.klass.classInfo.className + " is not assignable to " +
                                            classInfo.className);
             }
             break;
@@ -1039,13 +1039,9 @@ VM.execute = function(ctx) {
                     switch (op) {
                     case OPCODES.invokevirtual:
                     case OPCODES.invokeinterface:
-                        if (methodInfo.classInfo != obj.class) {
-                            // Check if the method is already in the virtual method cache
-                            if (obj.class.vmc[methodInfo.key]) {
-                              methodInfo = obj.class.vmc[methodInfo.key];
-                            } else {
-                              methodInfo = CLASSES.getMethod(obj.class, methodInfo.key);
-                            }
+                        // Note don't use classInfos.
+                        if (methodInfo.classInfo != obj.klass.classInfo) {
+                            methodInfo = CLASSES.getMethod(obj.klass.classInfo, methodInfo.key);
                         }
                         break;
                     }

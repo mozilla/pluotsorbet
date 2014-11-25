@@ -5,7 +5,7 @@ module J2ME {
   import mangleMethod = J2ME.C4.Backend.mangleMethod;
   import mangleClassAndMethod = J2ME.C4.Backend.mangleClassAndMethod;
 
-  declare var JVM, Runtime, CLASSES, Context, release;
+  declare var JVM, CLASSES, Context, release;
 
   var consoleWriter = new IndentingWriter();
 
@@ -13,7 +13,8 @@ module J2ME {
     constructor(
       public writer: IndentingWriter,
       public closure: boolean,
-      public debugInfo: boolean
+      public debugInfo: boolean,
+      public klassHeaderOnly: boolean = false
     ) {
       // ...
     }
@@ -29,7 +30,7 @@ module J2ME {
     return list;
   }
 
-  function emitClass(emitter: Emitter, classInfo: ClassInfo) {
+  export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
     var mangledClassName = mangleClass(classInfo);
     if (emitter.closure) {
@@ -66,8 +67,8 @@ module J2ME {
 
     // Emit class initializer.
     writer.enter("function " + mangledClassName + "() {");
-    getClassInheritanceChain(classInfo).forEach(function (klass) {
-      emitFields(klass.fields, false);
+    getClassInheritanceChain(classInfo).forEach(function (ci) {
+      emitFields(ci.fields, false);
     });
     writer.leave("}");
 
@@ -76,6 +77,10 @@ module J2ME {
       writer.enter(mangledClassName + ".staticInitializer = function() {");
       emitFields(classInfo.fields, true);
       writer.leave("}");
+    }
+
+    if (emitter.klassHeaderOnly) {
+      return;
     }
 
     if (emitter.closure) {
@@ -101,7 +106,7 @@ module J2ME {
       mangledClassName = quote(mangledClassName);
     }
 
-    emitClass(emitter, classInfo);
+    emitKlass(emitter, classInfo);
 
     var methods = classInfo.methods;
     var compiledMethods: CompiledMethodInfo [] = [];

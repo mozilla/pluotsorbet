@@ -1,6 +1,6 @@
-.PHONY: all test tests java certs app clean
+.PHONY: all opt test tests java certs app clean
 
-all: java tests
+all: java tests opt
 
 test: all
 	rm -f test.log
@@ -16,6 +16,9 @@ test: all
 	then false; \
 	else true; \
 	fi
+
+opt:
+	make -C opt
 
 tests:
 	make -C tests
