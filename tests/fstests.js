@@ -499,7 +499,7 @@ tests.push(function() {
 
 tests.push(function() {
   fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 12, "unflushed file's size is 12");
+    is(size, 0, "unflushed file's size is 0");
     next();
   });
 });
