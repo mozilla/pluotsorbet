@@ -61,6 +61,12 @@ public class TestMediaImage implements Testlet, PlayerListener {
 
             player.start();
 
+            // We have to remove the listener now that we're done testing.
+            // Otherwise, it could receive additional calls to playerUpdate,
+            // including after we've returned, and the harness has tallied
+            // our total number of passed tests!
+            player.removePlayerListener(this);
+
             file.delete();
             file.close();
         } catch (Exception e) {
