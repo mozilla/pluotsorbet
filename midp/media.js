@@ -328,6 +328,14 @@ AudioPlayer.prototype.setMute = function(mute) {
     }
 }
 
+AudioPlayer.prototype.getDuration = function() {
+    if (!this.audioBuffer) {
+        return -1; // Player.TIME_UNKNOWN
+    }
+
+    return this.duration * 1000;
+}
+
 function ImagePlayer(playerContainer) {
     this.url = playerContainer.url;
 
@@ -590,6 +598,10 @@ PlayerContainer.prototype.getRecordedData = function(offset, size, buffer) {
     buffer.set(this.audioRecorder.data.subarray(0, toRead), offset);
     this.audioRecorder.data = new Uint8Array(this.audioRecorder.data.buffer.slice(toRead));
 };
+
+PlayerContainer.prototype.getDuration = function() {
+    return this.player.getDuration();
+}
 
 var AudioRecorder = function(aMimeType) {
     this.mimeType = aMimeType || "audio/ogg";
@@ -925,6 +937,10 @@ Native.create("com/sun/mmedia/DirectPlayer.nSetVisible.(IZ)Z", function(handle, 
 Native.create("com/sun/mmedia/DirectPlayer.nIsRecordControlSupported.(I)Z", function(handle) {
     return !!(Media.PlayerCache[handle] && Media.PlayerCache[handle].audioRecorder);
 });
+
+Native.create("com/sun/mmedia/DirectPlayer.nGetDuration.(I)I", function(handle) {
+    return Media.PlayerCache[handle].getDuration();
+})
 
 Native.create("com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I", function(handle, locator) {
     console.warn("com/sun/mmedia/DirectRecord.nSetLocator.(I)I not implemented.");
