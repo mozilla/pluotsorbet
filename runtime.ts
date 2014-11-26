@@ -151,7 +151,7 @@ module J2ME {
     new (): java.lang.Object;
 
     /**
-     * Array klass of this klass constructed via \arrayKlass\.
+     * Array klass of this klass, constructed via \arrayKlass\.
      */
     arrayKlass: ArrayKlass;
 
@@ -186,12 +186,22 @@ module J2ME {
     /**
      * Java class object. This is only available on runtime klasses.
      */
-    class: java.lang.Class
+    classObject: java.lang.Class;
+
+    /**
+     * Wether this class is a runtime class.
+     */
+    isRuntimeKlass: boolean;
   }
 
   export interface ArrayKlass extends Klass {
     elementKlass: Klass;
+  }
 
+  export class Lock {
+    constructor(public thread: java.lang.Thread, public level: number) {
+      // ...
+    }
   }
 
   export module java.lang {
@@ -205,6 +215,11 @@ module J2ME {
        * All objects have an internal hash code.
        */
       __hashCode__: number;
+
+      /**
+       * Some objects may have a lock.
+       */
+      __lock__: Lock;
 
       clone(): java.lang.Object;
       equals(obj: java.lang.Object): boolean;
@@ -220,15 +235,26 @@ module J2ME {
     }
 
     export interface Class extends java.lang.Object {
-
+      runtimeKlass: Klass;
     }
 
     export interface String extends java.lang.Object {
 
     }
+
+    export interface Thread extends java.lang.Object {
+
+    }
   }
 
   declare var CLASSES;
+
+  function initializeClassObject(klass: Klass) {
+    assert(klass.isRuntimeKlass, "Can only create class objects for runtime klasses.");
+    assert(!klass.classObject);
+    klass.classObject = <java.lang.Class>newObject(Klasses.java.lang.Class);
+    klass.classObject.runtimeKlass = klass;
+  }
 
   /**
    * Called by compiled code to initialize the klass. Klass initializers are reflected as
@@ -241,9 +267,11 @@ module J2ME {
     Object.defineProperty(RuntimeTemplate.prototype, mangledClassName, {
       configurable: true,
       get: function () {
+        assert(!klass.isRuntimeKlass);
         var runtimeKlass = klass.bind(null);
         runtimeKlass.klass = klass;
-        runtimeKlass.class = new Class(runtimeKlass);
+        runtimeKlass.isRuntimeKlass = true;
+        initializeClassObject(runtimeKlass);
         var classInfo = CLASSES.getClass(className);
         Object.defineProperty(this, mangledClassName, {
           configurable: false,
@@ -259,6 +287,13 @@ module J2ME {
         return runtimeKlass;
       }
     });
+  }
+
+  export function runtimeKlass(runtime: Runtime, klass: Klass): Klass {
+    assert(!klass.isRuntimeKlass);
+    var runtimeKlass = runtime[klass.classInfo.mangledName];
+    assert(runtimeKlass.isRuntimeKlass);
+    return runtimeKlass;
   }
 
   export function createKlass(classInfo: ClassInfo): Klass {
@@ -390,11 +425,20 @@ module J2ME {
     return arrayKlass;
   }
 
-  export function toDebugString(object: java.lang.Object): string {
-    if (!object) {
+  export function toDebugString(value: any): string {
+    if (typeof value !== "object") {
+      return String(value);
+    }
+    if (!value) {
       return "null";
     }
-    return "[" + object.klass.classInfo.className + " 0x" + object.__hashCode__.toString(16).toUpperCase() + "]";
+    if (!value.klass) {
+      return "no klass";
+    }
+    if (!value.klass.classInfo) {
+      return value.klass + " no classInfo"
+    }
+    return "[" + value.klass.classInfo.className + " 0x" + value.__hashCode__.toString(16).toUpperCase() + "]";
   }
 }
 

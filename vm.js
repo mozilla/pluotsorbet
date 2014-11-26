@@ -18,6 +18,8 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
+var traceWriter = new J2ME.IndentingWriter();
+
 VM.execute = function(ctx) {
     var frame = ctx.current();
 
@@ -27,6 +29,13 @@ VM.execute = function(ctx) {
 
     function pushFrame(methodInfo) {
         var caller = frame;
+        if (traceWriter) {
+            var args = stack.slice(stack.length - methodInfo.consumes).map(function (x) {
+                return J2ME.toDebugString(x);
+            }).join(", ")
+            traceWriter.enter(methodInfo.implKey + " " + args);
+        }
+
         frame = ctx.pushFrame(methodInfo);
         stack = frame.stack;
         cp = frame.cp;
@@ -43,6 +52,7 @@ VM.execute = function(ctx) {
     }
 
     function popFrame(consumes) {
+        traceWriter && traceWriter.outdent();
         if (frame.lockObject)
             ctx.monitorExit(frame.lockObject);
         var callee = frame;

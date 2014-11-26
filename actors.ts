@@ -263,16 +263,9 @@ module J2ME {
       return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
     }
 
-    getClassObject(ctx: Context) {
-      var className = this.className;
-      var classObjects = ctx.runtime.classObjects;
-      var classObject = classObjects[className];
-      if (!classObject) {
-        classObject = util.newObject(CLASSES.java_lang_Class);
-        classObject.vmClass = this;
-        classObjects[className] = classObject;
-      }
-      return classObject;
+    getClassObject(ctx: Context): java.lang.Class {
+      // TODO: Check to make sure that it doesn't matter if this is done eagerly.
+      return runtimeKlass(ctx.runtime, this.klass).classObject;
     }
 
     getField(fieldKey: string) : FieldInfo {

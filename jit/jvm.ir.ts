@@ -607,7 +607,7 @@ module J2ME.C4.Backend {
 
   var friendlyMangledNames = true;
 
-  export function mangleString(s: string) {
+  export function escapeString(s: string) {
     var invalidChars = "[];/<>()";
     var replaceChars = "abc_defg";
     var result = "";
@@ -625,7 +625,7 @@ module J2ME.C4.Backend {
   export function mangleClassAndMethod(methodInfo: MethodInfo) {
     var name = methodInfo.classInfo.className + methodInfo.name + methodInfo.signature;
     if (friendlyMangledNames) {
-      return mangleString(name);
+      return escapeString(name);
     }
     var hash = hashString(name);
     return StringUtilities.variableLengthEncodeInt32(hash);
@@ -634,7 +634,7 @@ module J2ME.C4.Backend {
   export function mangleMethod(methodInfo: MethodInfo) {
     var name = methodInfo.name + methodInfo.signature;
     if (friendlyMangledNames) {
-      return mangleString(name);
+      return escapeString(name);
     }
     var hash = hashString(name);
     return StringUtilities.variableLengthEncodeInt32(hash);
@@ -645,24 +645,15 @@ module J2ME.C4.Backend {
       return "$AK(" + mangleClass(classInfo.elementClass) + ")";
     } else {
       if (friendlyMangledNames) {
-        return mangleString(classInfo.className);
+        return escapeString(classInfo.className);
       }
       var hash = hashString(classInfo.className);
       return StringUtilities.variableLengthEncodeInt32(hash);
     }
   }
 
-  export function mangleClassAndField(fieldInfo: FieldInfo) {
-    var name = fieldInfo.classInfo.className + fieldInfo.name;
-    if (friendlyMangledNames) {
-      return mangleString(name);
-    }
-    var hash = hashString(name);
-    return StringUtilities.variableLengthEncodeInt32(hash);
-  }
-
   export function mangleField(fieldInfo: FieldInfo) {
-    return mangleString(fieldInfo.name);
+    return "$" + escapeString(fieldInfo.name);
   }
 
   function getRuntimeClass(classInfo: ClassInfo) {
