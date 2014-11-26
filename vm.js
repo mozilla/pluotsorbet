@@ -936,7 +936,7 @@ VM.execute = function(ctx) {
             if (classInfo.tag)
                 classInfo = resolve(idx);
             var obj = stack.pop();
-            var result = !obj ? false : obj.class.isAssignableTo(classInfo);
+            var result = !obj ? false : J2ME.isAssignableTo(obj.klass, classInfo.klass);
             stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow

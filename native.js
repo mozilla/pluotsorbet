@@ -229,7 +229,7 @@ Native.create("java/lang/Object.notifyAll.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
-    var classInfo = this.runtimeKlass.classInfo;
+    var classInfo = this.runtimeKlass.klass.classInfo;
     var className = classInfo.className;
     var runtime = ctx.runtime;
     if (runtime.initialized[className] || runtime.pending[className])
@@ -256,7 +256,7 @@ Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.init9.()V", function(ctx) {
-    var classInfo = this.runtimeKlass.classInfo;
+    var classInfo = this.runtimeKlass.klass.classInfo;
     var className = classInfo.className;
     var runtime = ctx.runtime;
     if (runtime.initialized[className])
@@ -266,7 +266,7 @@ Native.create("java/lang/Class.init9.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.getName.()Ljava/lang/String;", function() {
-    return this.runtimeKlass.classInfo.className.replace(/\//g, ".");
+    return this.runtimeKlass.klass.classInfo.className.replace(/\//g, ".");
 });
 
 Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", function(name, ctx) {
@@ -285,7 +285,7 @@ Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", f
 });
 
 Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) {
-    var className = this.runtimeKlass.classInfo.className;
+    var className = this.runtimeKlass.klass.classInfo.className;
     var syntheticMethod = new MethodInfo({
       name: "ClassNewInstanceSynthetic",
       signature: "()Ljava/lang/Object;",
@@ -315,21 +315,21 @@ Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) 
 });
 
 Native.create("java/lang/Class.isInterface.()Z", function() {
-    return ACCESS_FLAGS.isInterface(this.runtimeKlass.classInfo.access_flags);
+    return ACCESS_FLAGS.isInterface(this.runtimeKlass.klass.classInfo.access_flags);
 });
 
 Native.create("java/lang/Class.isArray.()Z", function() {
-    return !!this.runtimeKlass.classInfo.isArrayClass;
+    return !!this.runtimeKlass.klass.classInfo.isArrayClass;
 });
 
 Native.create("java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z", function(fromClass) {
     if (!fromClass)
         throw new JavaException("java/lang/NullPointerException");
-    return fromClass.runtimeKlass.classInfo.isAssignableTo(this.runtimeKlass.classInfo);
+    return fromClass.runtimeKlass.classInfo.isAssignableTo(this.runtimeKlass.klass.classInfo);
 });
 
 Native.create("java/lang/Class.isInstance.(Ljava/lang/Object;)Z", function(obj) {
-    return obj && obj.class.isAssignableTo(this.runtimeKlass.classInfo);
+    return obj && obj.class.isAssignableTo(this.runtimeKlass.klass.classInfo);
 });
 
 Native.create("java/lang/Float.floatToIntBits.(F)I", (function() {
