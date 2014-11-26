@@ -162,8 +162,11 @@ var fs = (function() {
       if (data) {
         cb();
       } else {
-        store.setItem("/", []);
-        setStat("/", { mtime: Date.now(), isDir: true });
+        store.setItem("/", {
+          isDir: true,
+          mtime: Date.now(),
+          files: [],
+        });
         cb();
       }
     });
@@ -181,8 +184,8 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs open " + path); }
 
-    store.getItem(path, function(blob) {
-      if (blob == null || !(blob instanceof Blob)) {
+    store.getItem(path, function(record) {
+      if (record == null || record.isDir || !(record.data instanceof Blob)) {
         cb(-1);
       } else {
         var reader = new FileReader();
@@ -192,10 +195,11 @@ var fs = (function() {
             path: path,
             buffer: new FileBuffer(new Uint8Array(reader.result)),
             position: 0,
+            record: record,
           }) - 1;
           cb(fd);
         });
-        reader.readAsArrayBuffer(blob);
+        reader.readAsArrayBuffer(record.data);
       }
     });
   }
@@ -253,7 +257,8 @@ var fs = (function() {
 
     var file = openedFiles[fd];
     file.position = from + data.byteLength;
-    file.stat = { mtime: Date.now(), isDir: false, size: buffer.contentSize };
+    file.record.mtime = Date.now();
+    file.record.size = buffer.contentSize;
     file.dirty = true;
   }
 
@@ -283,23 +288,20 @@ var fs = (function() {
       return;
     }
 
-    var blob = new Blob([openedFile.buffer.getContent()]);
-    store.setItem(openedFile.path, blob);
+    openedFile.record.data = new Blob([openedFile.buffer.getContent()]);
+    store.setItem(openedFile.path, openedFile.record);
     openedFile.dirty = false;
-    if (openedFile.stat) {
-      setStat(openedFile.path, openedFile.stat);
-    }
   }
 
   function list(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs list " + path); }
 
-    store.getItem(path, function(files) {
-      if (files == null || files instanceof Blob) {
+    store.getItem(path, function(record) {
+      if (record == null || !record.isDir) {
         cb(null);
       } else {
-        cb(files);
+        cb(record.files);
       }
     });
   }
@@ -308,8 +310,8 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs exists " + path); }
 
-    stat(path, function(stat) {
-      cb(stat ? true : false);
+    store.getItem(path, function(record) {
+      cb(record ? true : false);
     });
   }
 
@@ -317,13 +319,15 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs truncate " + path); }
 
-    stat(path, function(stat) {
-      if (stat && !stat.isDir) {
-        store.setItem(path, new Blob());
-        setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
-        cb(true);
-      } else {
+    store.getItem(path, function(record) {
+      if (record == null || record.isDir) {
         cb(false);
+      } else {
+        record.data = new Blob();
+        record.mtime = Date.now();
+        record.size = 0;
+        store.setItem(path, record);
+        cb(true);
       }
     });
   }
@@ -335,7 +339,8 @@ var fs = (function() {
     if (size != file.buffer.contentSize) {
       file.buffer.setSize(size);
       file.dirty = true;
-      file.stat = { mtime: Date.now(), isDir: false, size: size };
+      file.record.mtime = Date.now();
+      file.record.size = size;
     }
   }
 
@@ -348,8 +353,9 @@ var fs = (function() {
       return;
     }
 
-    list(path, function(files) {
-      if (files != null && files.length > 0) {
+    store.getItem(path, function(record) {
+      // If it's a directory that isn't empty, then we can't remove it.
+      if (record && record.isDir && record.files.length > 0) {
         cb(false);
         return;
       }
@@ -357,36 +363,44 @@ var fs = (function() {
       var name = basename(path);
       var dir = dirname(path);
 
-      list(dir, function(files) {
+      store.getItem(dir, function(parentRecord) {
         var index = -1;
 
-        if (files == null || (index = files.indexOf(name)) < 0) {
+        // If it isn't in the parent directory, then we can't remove it.
+        if (parentRecord == null || (index = parentRecord.files.indexOf(name)) < 0) {
           cb(false);
           return;
         }
 
-        files.splice(index, 1);
-        store.setItem(dir, files);
+        parentRecord.files.splice(index, 1);
+        store.setItem(dir, parentRecord);
         store.removeItem(path);
-        removeStat(path);
         cb(true);
       });
     });
   }
 
-  function createInternal(path, data, cb) {
+  function createInternal(path, record, cb) {
     var name = basename(path);
     var dir = dirname(path);
 
-    list(dir, function(files) {
-      if (files == null || files.indexOf(name) >= 0) {
+    store.getItem(dir, function(parentRecord) {
+      // If the parent directory doesn't exist or isn't a directory,
+      // then we can't create the file.
+      if (parentRecord == null || !parentRecord.isDir) {
         cb(false);
         return;
       }
 
-      files.push(name);
-      store.setItem(dir, files);
-      store.setItem(path, data);
+      // If the file already exists, we can't create it.
+      if (parentRecord.files.indexOf(name) >= 0) {
+        cb(false);
+        return;
+      }
+
+      parentRecord.files.push(name);
+      store.setItem(dir, parentRecord);
+      store.setItem(path, record);
       cb(true);
     });
   }
@@ -395,24 +409,27 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs create " + path); }
 
-    createInternal(path, blob, function(created) {
-      if (created) {
-        setStat(path, { mtime: Date.now(), isDir: false, size: blob.size });
-      }
-      cb(created);
-    });
+    var record = {
+      isDir: false,
+      mtime: Date.now(),
+      data: blob,
+      size: blob.size,
+    };
+
+    createInternal(path, record, cb);
   }
 
   function mkdir(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs mkdir " + path); }
 
-    createInternal(path, [], function(created) {
-      if (created) {
-        setStat(path, { mtime: Date.now(), isDir: true });
-      }
-      cb(created);
-    });
+    var record = {
+      isDir: true,
+      mtime: Date.now(),
+      files: [],
+    };
+
+    createInternal(path, record, cb);
   }
 
   function mkdirp(path, cb) {
@@ -439,12 +456,12 @@ var fs = (function() {
 
       partPath += "/" + parts.shift();
 
-      stat(partPath, function(stat) {
-        if (!stat) {
+      store.getItem(partPath, function(record) {
+        if (!record) {
           // The part doesn't exist; make it, then continue to next part.
           mkdir(partPath, mkpart);
         }
-        else if (stat.isDir) {
+        else if (record.isDir) {
           // The part exists and is a directory; continue to next part.
           mkpart(true);
         }
@@ -463,11 +480,11 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs size " + path); }
 
-    store.getItem(path, function(blob) {
-      if (blob == null || !(blob instanceof Blob)) {
+    store.getItem(path, function(record) {
+      if (record == null || record.isDir || !(record.data instanceof Blob)) {
         cb(-1);
       } else {
-        cb(blob.size);
+        cb(record.data.size);
       }
     });
   }
@@ -484,57 +501,63 @@ var fs = (function() {
       return;
     }
 
-    list(oldPath, function(files) {
-      if (files != null && files.length > 0) {
+    store.getItem(oldPath, function(oldRecord) {
+      // If the old path doesn't exist, we can't move it.
+      if (oldRecord == null) {
         cb(false);
         return;
       }
 
-      store.getItem(oldPath, function(data) {
-        if (data == null) {
+      // If the old path is a dir with files in it, we don't move it.
+      // XXX Shouldn't we move it along with its files?
+      if (oldRecord.isDir && oldRecord.files.length > 0) {
+        cb(false);
+        return;
+      }
+
+      remove(oldPath, function(removed) {
+        if (!removed) {
           cb(false);
           return;
         }
 
-        remove(oldPath, function(removed) {
-          if (!removed) {
-            cb(false);
-            return;
-          }
-
-          if (data instanceof Blob) {
-            create(newPath, data, cb);
-          } else {
-            mkdir(newPath, cb);
-          }
-        });
+        if (oldRecord.isDir) {
+          mkdir(newPath, cb);
+        } else {
+          create(newPath, oldRecord.data, cb);
+        }
       });
     });
-  }
-
-  function setStat(path, stat) {
-    if (DEBUG_FS) { console.log("fs setStat " + path); }
-
-    store.setItem("!" + path, stat);
-  }
-
-  function removeStat(path) {
-    if (DEBUG_FS) { console.log("fs removeStat " + path); }
-
-    store.removeItem("!" + path);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs stat " + path); }
 
-    var file = openedFiles.find(function (file) { return file && file.stat && file.path === path });
+    var file = openedFiles.find(function (file) { return file && file.path === path });
     if (file) {
-      setZeroTimeout(function() { cb(file.stat); });
+      var stat = {
+        isDir: file.record.isDir,
+        mtime: file.record.mtime,
+        size: file.record.size,
+      };
+      setZeroTimeout(function() { cb(stat); });
       return;
     }
 
-    store.getItem("!" + path, cb);
+    store.getItem(path, function(record) {
+      if (record == null) {
+        cb(null);
+        return;
+      }
+
+      var stat = {
+        isDir: record.isDir,
+        mtime: record.mtime,
+        size: record.size,
+      };
+      cb(stat);
+    });
   }
 
   function clear(cb) {
