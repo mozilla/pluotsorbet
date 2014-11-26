@@ -4,6 +4,17 @@ var runtimeTemplate = {};
 
 module J2ME {
 
+  export var Klasses = {
+    java: {
+      lang: {
+        Object: null,
+        Class: null,
+        String: null,
+        Thread: null
+      }
+    }
+  };
+
   export var consoleWriter = new IndentingWriter();
 
   export enum ExecutionPhase {
@@ -139,6 +150,11 @@ module J2ME {
   export interface Klass extends Function {
     new (): java.lang.Object;
 
+    /**
+     * Array klass of this klass constructed via \arrayKlass\.
+     */
+    arrayKlass: ArrayKlass;
+
     superKlass: Klass;
 
     /**
@@ -175,6 +191,7 @@ module J2ME {
 
   export interface ArrayKlass extends Klass {
     elementKlass: Klass;
+
   }
 
   export module java.lang {
@@ -284,9 +301,15 @@ module J2ME {
       release || assert(!classInfo.klass);
       classInfo.klass = klass;
     } else {
-      classInfo.klass = createKlass(classInfo);
+      classInfo.klass = klass = createKlass(classInfo);
     }
     classInfo.klass.classInfo = classInfo;
+    switch (classInfo.className) {
+      case "java/lang/Object": Klasses.java.lang.Object = klass; break;
+      case "java/lang/Class": Klasses.java.lang.Class = klass; break;
+      case "java/lang/String": Klasses.java.lang.String = klass; break;
+      case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
+    }
   }
 
   /**
@@ -329,10 +352,6 @@ module J2ME {
     return object.klass.display[klass.depth] === klass;
   }
 
-  export function instanceOfArray(object: java.lang.Object, klass: Klass): boolean {
-    return object.klass.display[klass.depth] === klass;
-  }
-
   export function checkCast(object: java.lang.Object, klass: Klass) {
     return false; // TODO: Generic
   }
@@ -347,12 +366,28 @@ module J2ME {
 
   }
 
-  export function checkCastArray(object: java.lang.Object, klass: Klass) {
-
-  }
-
   export function newObject(klass: Klass): java.lang.Object {
     return new klass();
+  }
+
+  export function newArray(klass: Klass, size: number) {
+    var constructor: any = arrayKlass(klass);
+    return new constructor(size);
+  }
+
+  export function arrayKlass(klass: Klass): Klass {
+    if (klass.arrayKlass) {
+      return klass.arrayKlass;
+    }
+    var arrayKlass = klass.arrayKlass = <ArrayKlass><any>function (size: number) {
+      var array: any = new Array(size);
+      array.klass = arrayKlass;
+      return array;
+    };
+    arrayKlass.elementKlass = klass;
+    arrayKlass.superKlass = Klasses.java.lang.Object;
+    initializeKlassTables(arrayKlass);
+    return arrayKlass;
   }
 
   export function toDebugString(object: java.lang.Object): string {
@@ -374,8 +409,9 @@ var $RK = J2ME.registerKlass;
 
 var $IOK = J2ME.instanceOfKlass;
 var $IOI = J2ME.instanceOfInterface;
-var $IOA = J2ME.instanceOfArray;
 
 var $CCK = J2ME.checkCastKlass;
 var $CCI = J2ME.checkCastInterface;
-var $CCA = J2ME.checkCastArray;
+
+var $AK = J2ME.arrayKlass;
+var $NA = J2ME.newArray;

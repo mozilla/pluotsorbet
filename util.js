@@ -116,8 +116,10 @@ var util = (function () {
     return new constructor(size);
   }
 
-  function newArray(typeName, size) {
-    return new (CLASSES.getClass(typeName).constructor)(size);
+
+  // Remove
+  function newArray(classInfo, size) {
+    return J2ME.newArray(classInfo.klass, size);
   }
 
   function newMultiArray(typeName, lengths) {

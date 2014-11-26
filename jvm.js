@@ -35,7 +35,7 @@ JVM.prototype.startIsolate0 = function(className, args) {
     var isolate = util.newObject(com_sun_cldc_isolate_Isolate);
     isolate.id = util.id();
 
-    var array = util.newArray("[Ljava/lang/String;", args.length);
+    var array = J2ME.newArray(J2ME.Klasses.java.lang.String, args.length);
     for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? util.newString(args[n]) : null;
 
@@ -79,7 +79,7 @@ JVM.prototype.startIsolate = function(isolate) {
                               [ runtime.mainThread, util.newString("main") ], 0));
     ctx.execute();
 
-    var args = util.newArray("[Ljava/lang/String;", mainArgs.length);
+    var args = J2ME.newArray(J2ME.Klasses.java.lang.String, mainArgs.length);
     for (var n = 0; n < mainArgs.length; ++n)
         args[n] = mainArgs[n] ? util.newString(mainArgs[n]) : null;
 

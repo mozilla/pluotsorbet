@@ -304,28 +304,18 @@ module J2ME.C4.Backend {
 
   IR.JVMCheckCast.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    var runtimeFunction;
-    if (this.classInfo.isArrayClass) {
-      runtimeFunction = "$CCA";
-    } else {
-      runtimeFunction = "$CCK";
-      if (this.classInfo.isInterface) {
-        runtimeFunction = "$CCI";
-      }
+    var runtimeFunction = "$CCK";
+    if (this.classInfo.isInterface) {
+      runtimeFunction = "$CCI";
     }
     return new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]);
   };
 
   IR.JVMInstanceOf.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    var runtimeFunction;
-    if (this.classInfo.isArrayClass) {
-      runtimeFunction = "$IOA";
-    } else {
-      runtimeFunction = "$IOK";
-      if (this.classInfo.isInterface) {
-        runtimeFunction = "$IOI";
-      }
+    var runtimeFunction = "$IOK";
+    if (this.classInfo.isInterface) {
+      runtimeFunction = "$IOI";
     }
     return new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]);
   };
@@ -365,7 +355,7 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMNewObjectArray.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.NewExpression(new AST.Identifier("Array"), [compileValue(this.length, cx)]);
+    return call(id("$NA"), [id(this.classInfo.mangledName), compileValue(this.length, cx)]);
   };
 
   IR.JVMStoreIndexed.prototype.compile = function (cx: Context): AST.Node {
@@ -652,7 +642,7 @@ module J2ME.C4.Backend {
 
   export function mangleClass(classInfo: ClassInfo) {
     if (classInfo.isArrayClass) {
-      return "arrayOf(" + mangleClass(classInfo.elementClass) + ")";
+      return "$AK(" + mangleClass(classInfo.elementClass) + ")";
     } else {
       if (friendlyMangledNames) {
         return mangleString(classInfo.className);

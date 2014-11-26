@@ -837,7 +837,7 @@ VM.execute = function(ctx) {
             if (className[0] !== "[")
                 className = "L" + className + ";";
             className = "[" + className;
-            stack.push(util.newArray(className, size));
+            stack.push(util.newArray(classInfo, size));
             break;
         case 0xc5: // multianewarray
             var idx = frame.read16();
