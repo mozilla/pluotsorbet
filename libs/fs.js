@@ -291,6 +291,24 @@ var fs = (function() {
     }
   }
 
+  function flushAll() {
+    for (var fd = 0; fd < openedFiles.length; fd++) {
+      if (!openedFiles[fd] || !openedFiles[fd].dirty) {
+        continue;
+      }
+      flush(fd);
+    }
+  }
+
+  // Due to bug #227, we don't support Object::finalize(). But the Java
+  // filesystem implementation requires the `finalize` method to save cached
+  // file data if user doesn't flush or close the file explicitly. To avoid
+  // losing data, we flush files periodically.
+  setInterval(flushAll, 5000);
+
+  // Flush files when app goes into background.
+  window.addEventListener("pagehide", flushAll);
+
   function list(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs list " + path); }

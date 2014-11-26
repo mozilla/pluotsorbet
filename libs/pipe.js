@@ -78,46 +78,27 @@ var DumbPipe = {
     }
   },
 
-  handleEvent: function(event) {
-    // To ensure we don't fill up the browser history over time, we navigate
-    // "back" every time the other side navigates us "forward" by changing
-    // the hash.  This will trigger a second hashchange event; to avoid getting
-    // messages twice, we only get them for the second hashchange event,
-    // i.e. once we've returned to the hashless page, at which point a second
-    // call to window.history.back() will have had no effect.
-    //
-    // We only do this when we're in mozbrowser (i.e. window.parent === window),
-    // since window.history.back() affects the parent window otherwise.
-    //
-    if (window.parent === window) {
-      var hash = window.location.hash;
-      window.history.back();
-      if (window.location.hash != hash) {
-        return;
-      }
+  receiveMessage: function(event) {
+    if (event.source === window) {
+      return;
     }
 
-    this.send({ command: "get" }, function(envelopes) {
-      envelopes.forEach((function(envelope) {
-        //console.log("inner recv: " + JSON.stringify(envelope));
-        window.setZeroTimeout(function() {
-          if (this.recipients[envelope.pipeID]) {
-            try {
-              this.recipients[envelope.pipeID](envelope.message);
-            } catch(ex) {
-              console.error(ex + "\n" + ex.stack);
-            }
-          } else {
-            console.warn("nonexistent pipe " + envelope.pipeID + " received message " +
-                         JSON.stringify(envelope.message));
-          }
-        }.bind(this));
-      }).bind(this));
-    }.bind(this));
+    var envelope = event.data;
+
+    if (this.recipients[envelope.pipeID]) {
+      try {
+        this.recipients[envelope.pipeID](envelope.message);
+      } catch(ex) {
+        console.error(ex + "\n" + ex.stack);
+      }
+    } else {
+      console.warn("nonexistent pipe " + envelope.pipeID + " received message " +
+                   JSON.stringify(envelope.message));
+    }
   },
 };
 
-window.addEventListener("hashchange", DumbPipe.handleEvent.bind(DumbPipe), false);
+window.addEventListener("message", DumbPipe.receiveMessage.bind(DumbPipe), false);
 
 // If "mozbrowser" isn't enabled on the frame we're loaded in, then override
 // the alert/prompt functions to funnel messages to the endpoint in the parent.

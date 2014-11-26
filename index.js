@@ -36,10 +36,6 @@ var DumbPipe = {
   // Functions that receive messages from the other side for active pipes.
   recipients: {},
 
-  // Queue of messages to send to the other side.  Retrieved by the other side
-  // via a "get" message.
-  outgoingMessages: [],
-
   // Every time we want to make the other side retrieve messages, the hash
   // of the other side's web page has to change, so we increment it.
   nextHashID: 0,
@@ -76,9 +72,6 @@ var DumbPipe = {
         //console.log("outer recv: " + JSON.stringify(envelope));
         this.receiveMessage(envelope.pipeID, envelope.message);
         break;
-      case "get":
-        this.getMessages(event);
-        break;
       case "close":
         //console.log("outer recv: " + JSON.stringify(envelope));
         this.closePipe(envelope.pipeID);
@@ -109,12 +102,12 @@ var DumbPipe = {
     // Oh my shod, that's some funky git!
     var envelope = { pipeID: pipeID, message: message };
     //console.log("outer send: " + JSON.stringify(envelope));
-    this.outgoingMessages.push(envelope);
 
-    var mozbrowser = document.getElementById("mozbrowser");
-    window.setZeroTimeout(function() {
-      mozbrowser.src = mozbrowser.src.split("#")[0] + "#" + this.nextHashID++;
-    }.bind(this));
+    try {
+      document.getElementById("mozbrowser").contentWindow.postMessage(envelope, "*");
+    } catch (e) {
+      console.log("Error " + e + " while sending message: " + JSON.stringify(message));
+    }
   },
 
   receiveMessage: function(pipeID, message, detail) {
@@ -130,17 +123,6 @@ var DumbPipe = {
         console.error(ex + "\n" + ex.stack);
       }
     }.bind(this));
-  },
-
-  getMessages: function(event) {
-    try {
-      event.detail.returnValue = JSON.stringify(this.outgoingMessages);
-    } catch(ex) {
-      console.error("failed to stringify outgoing messages: " + ex);
-    } finally {
-      this.outgoingMessages = [];
-      event.detail.unblock();
-    }
   },
 
   closePipe: function(pipeID) {
@@ -226,11 +208,7 @@ DumbPipe.registerOpener("socket", function(message, sender) {
   }
 
   socket.ondata = function(event) {
-    // Turn the buffer into a regular Array to traverse the mozbrowser boundary.
-    var array = Array.prototype.slice.call(new Uint8Array(event.data));
-    array.constructor = Array;
-
-    sender({ type: "data", data: array });
+    sender({ type: "data", data: event.data });
   }
 
   socket.ondrain = function(event) {
@@ -264,3 +242,102 @@ DumbPipe.registerOpener("socket", function(message, sender) {
     }
   };
 });
+
+DumbPipe.registerOpener("audiorecorder", function(message, sender) {
+    var mediaRecorder = null;
+    var localAudioStream = null;
+
+    function startRecording(localStream) {
+        localAudioStream = localStream;
+
+        mediaRecorder = new MediaRecorder(localStream, {
+            mimeType: message.mimeType // 'audio/3gpp' // need to be certified app.
+        });
+
+        mediaRecorder.ondataavailable = function(e) {
+            if (e.data.size == 0) {
+                return;
+            }
+
+            var fileReader = new FileReader();
+            fileReader.onload = function() {
+                sender({ type: "data", data: fileReader.result });
+            };
+            fileReader.readAsArrayBuffer(e.data);
+        };
+
+        mediaRecorder.onstop = function(e) {
+            // Do nothing here, just relay the event.
+            //
+            // We can't close the pipe here, one reason is |onstop| is fired before |ondataavailable|,
+            // if close pipe here, there is no chance to deliever the recorded voice. Another reason is
+            // the recording might be stopped and started back and forth. So let's do the pipe
+            // closing on the other side instead, i.e. DirectRecord::nClose.
+            sender({ type: "stop" });
+        };
+
+        mediaRecorder.onerror = function(e) {
+            sender({ type: "error" });
+        };
+
+        mediaRecorder.onpause = function(e) {
+            sender({ type: "pause" });
+        };
+
+        mediaRecorder.onstart = function(e) {
+            sender({ type: "start" });
+        };
+
+        mediaRecorder.start();
+    }
+
+    return function(message) {
+        switch(message.type) {
+            case "start":
+                try {
+                    if (!mediaRecorder) {
+                        navigator.mozGetUserMedia({
+                            audio: true
+                        }, function(localStream) {
+                            startRecording(localStream);
+                        }, function(e) {
+                            sender({ type: "error", error: e });
+                        });
+                    } else if (mediaRecorder.state == "paused") {
+                        mediaRecorder.resume();
+                    } else {
+                        mediaRecorder.start();
+                    }
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+            case "requestData":
+                try {
+                    // An InvalidState error might be thrown.
+                    mediaRecorder.requestData();
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+            case "pause":
+                try {
+                    mediaRecorder.pause();
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+            case "stop":
+                try {
+                    mediaRecorder.stop();
+                    localAudioStream.stop();
+                    mediaRecorder = null;
+                    localAudioStream = null;
+                } catch (e) {
+                    sender({ type: "error", error: e });
+                }
+                break;
+        }
+    };
+});
+
