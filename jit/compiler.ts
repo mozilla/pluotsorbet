@@ -5,7 +5,7 @@ module J2ME {
   import mangleMethod = J2ME.C4.Backend.mangleMethod;
   import mangleClassAndMethod = J2ME.C4.Backend.mangleClassAndMethod;
 
-  declare var JVM, CLASSES, Context, release;
+  declare var release;
 
   export class Emitter {
     constructor(
@@ -304,7 +304,7 @@ module J2ME {
 
   export function compile(jvm: any, classFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
-    var classFiles = CLASSES.classfiles;
+    var classFiles = CLASSES.classFiles;
     var ctx = new Context(runtime);
 
     var code = "";

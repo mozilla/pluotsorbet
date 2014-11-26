@@ -6,7 +6,6 @@ module J2ME {
   declare var CC;
   declare var Signature;
   declare var getClassImage;
-  declare var CLASSES;
   declare var classObjects;
   declare var util;
 
@@ -146,8 +145,9 @@ module J2ME {
 
   export class ClassInfo {
     className: string;
-    superClassName: string;
+    c: string;
     superClass: ClassInfo;
+    superClassName: string;
     interfaces: ClassInfo [];
     fields: FieldInfo [];
     methods: MethodInfo [];
@@ -161,8 +161,6 @@ module J2ME {
     vfc: any;
     mangledName: string;
     thread: any;
-
-    static java_lang_Object: ClassInfo;
 
     constructor(classBytes) {
       var classImage = getClassImage(classBytes, this);
@@ -254,7 +252,7 @@ module J2ME {
     }
 
     isAssignableTo(toClass: ClassInfo) : boolean {
-      if (this === toClass || toClass === ClassInfo.java_lang_Object)
+      if (this === toClass || toClass === CLASSES.java_lang_Object)
         return true;
       if (ACCESS_FLAGS.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
         return true;
@@ -276,4 +274,33 @@ module J2ME {
       return "[class " + this.className + "]";
     }
   }
+
+  export class ArrayClassInfo extends ClassInfo {
+    constructor(className: string, elementClass?) {
+      false && super(null);
+      this.className = className;
+      this.superClass = CLASSES.java_lang_Object;
+      this.superClassName = "java/lang/Object";
+      this.access_flags = 0;
+      this.elementClass = elementClass;
+      this.vmc = {};
+      this.vfc = {};
+    }
+    implementsInterface(iface) {
+      return false;
+    }
+  }
+
+  ArrayClassInfo.prototype.methods = [];
+  ArrayClassInfo.prototype.isArrayClass = true;
+
+  export class PrimitiveClassInfo extends ClassInfo {
+    constructor(className: string) {
+      false && super(null);
+      this.className = className;
+    }
+  }
+
+  PrimitiveClassInfo.prototype.fields = [];
+  PrimitiveClassInfo.prototype.methods = [];
 }

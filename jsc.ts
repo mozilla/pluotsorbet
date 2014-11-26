@@ -67,9 +67,9 @@ module J2ME {
     }
   }
 
-  loadFiles("jvm.js", "classes.js", "libs/zipfile.js", "build/j2me.js", "classinfo.js", "classfile/classfile.js",
+  loadFiles("libs/zipfile.js", "build/j2me.js", "classinfo.js", "classfile/classfile.js",
     "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js",
-    "libs/encoding.js", "util.js", "frame.js", "arrays.js",
+    "libs/encoding.js", "util.js", "frame.js",
     "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
     "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
@@ -171,8 +171,7 @@ module J2ME {
         if (verboseOption.value) {
           writer.writeLn("Loading: " + file);
         }
-        jvm.addPath(file, snarf(file, "binary").buffer);
-        // jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+        CLASSES.addPath(file, snarf(file, "binary").buffer);
       }
     }
     if (classFilterOption.value) {
@@ -181,7 +180,7 @@ module J2ME {
       }
       compile(jvm, classFilterOption.value, debuggerOption.value, definitionOption.value);
     }
-    jvm.initializeBuiltinClasses();
+    CLASSES.initializeBuiltinClasses();
   }
 
   var commandLineArguments: string [];

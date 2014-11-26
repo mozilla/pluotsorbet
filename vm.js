@@ -18,7 +18,7 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
-var traceWriter = new J2ME.IndentingWriter();
+var traceWriter = null; new J2ME.IndentingWriter();
 
 VM.execute = function(ctx) {
     var frame = ctx.current();
@@ -858,7 +858,7 @@ VM.execute = function(ctx) {
             var lengths = new Array(dimensions);
             for (var i=0; i<dimensions; i++)
                 lengths[i] = stack.pop();
-            stack.push(util.newMultiArray(classInfo.className, lengths.reverse()));
+            stack.push(util.newMultiArray(classInfo, lengths.reverse()));
             break;
         case 0xbe: // arraylength
             var obj = stack.pop();

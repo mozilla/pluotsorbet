@@ -4,6 +4,8 @@
 ///<reference path='options.ts' />
 ///<reference path='metrics.ts' />
 ///<reference path='types.ts' />
+///<reference path='classRegistry.ts' />
+///<reference path='jvm.ts' />
 ///<reference path='actors.ts' />
 ///<reference path='runtime.ts' />
 ///<reference path='context.ts' />

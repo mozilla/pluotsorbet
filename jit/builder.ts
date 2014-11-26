@@ -48,7 +48,6 @@ module J2ME {
 
   var staticCallGraph = Object.create(null);
 
-  declare var CLASSES: any;
   declare var Long: any;
   declare var VM: any;
 

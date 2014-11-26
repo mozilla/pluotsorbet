@@ -606,11 +606,11 @@ Native.create("com/sun/cldc/isolate/Isolate.registerNewIsolate.()V", function() 
 });
 
 Native.create("com/sun/cldc/isolate/Isolate.getStatus.()I", function() {
-    return this.runtime ? this.runtime.status : 1; // NEW
+    return this.runtime ? this.runtime.status : J2ME.RuntimeStatus.New;
 });
 
 Native.create("com/sun/cldc/isolate/Isolate.nativeStart.()V", function(ctx) {
-    ctx.runtime.vm.startIsolate(this);
+    ctx.runtime.jvm.startIsolate(this);
 });
 
 Native.create("com/sun/cldc/isolate/Isolate.waitStatus.(I)V", function(status) {

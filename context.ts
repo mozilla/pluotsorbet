@@ -3,7 +3,6 @@ module J2ME {
   declare var VM;
   declare var Instrument;
   declare var setZeroTimeout;
-  declare var CLASSES;
   declare var Long;
   declare var JavaException;
 

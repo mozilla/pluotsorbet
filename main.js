@@ -97,7 +97,7 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 var loadingPromises = [initFS, getMobileInfo];
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
-    jvm.addPath(jar, data);
+    CLASSES.addPath(jar, data);
   }));
 });
 
@@ -137,7 +137,7 @@ if (MIDP.midletClassName == "RunTests") {
 }
 
 Promise.all(loadingPromises).then(function() {
-  jvm.initializeBuiltinClasses();
+  CLASSES.initializeBuiltinClasses();
   jvm.startIsolate0(main, urlParams.args);
 });
 

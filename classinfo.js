@@ -11,27 +11,6 @@ var FieldInfo = J2ME.FieldInfo;
 var MethodInfo = J2ME.MethodInfo;
 var ClassInfo = J2ME.ClassInfo;
 
-var ArrayClass = function(className, elementClass) {
-    this.className = className;
-    this.superClassName = "java/lang/Object";
-    this.access_flags = 0;
-    this.elementClass = elementClass;
-    this.vmc = {};
-    this.vfc = {};
-}
-
-ArrayClass.prototype.methods = [];
-
-ArrayClass.prototype.isArrayClass = true;
-
-ArrayClass.prototype.implementsInterface = function(iface) {
-    return false;
-}
-
-ArrayClass.prototype.isAssignableTo = ClassInfo.prototype.isAssignableTo;
-
-ArrayClass.prototype.getClassObject = ClassInfo.prototype.getClassObject;
-
 function getOnce(objectKeyPairs, getter) {
   objectKeyPairs.forEach(function(pair) {
       var obj = pair[0];

@@ -63,9 +63,9 @@ var urlParams = {
 };
 
 try {
-  load("jvm.js", "classes.js", "libs/zipfile.js", "build/j2me.js", "classinfo.js", "classfile/classfile.js",
+  load("libs/zipfile.js", "build/j2me.js", "classinfo.js", "classfile/classfile.js",
        "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js",
-       "libs/encoding.js", "util.js", "frame.js", "arrays.js",
+       "libs/encoding.js", "util.js", "frame.js",
        "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
        "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "build/compiled.js");
@@ -73,12 +73,12 @@ try {
   var dump = print;
   var console = window.console;
 
-  var start = dateNow();
+  CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
+  CLASSES.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  CLASSES.initializeBuiltinClasses();
 
+  var start = dateNow();
   var jvm = new JVM();
-  jvm.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-  jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-  jvm.initializeBuiltinClasses();
 
   print("INITIALIZATION TIME: " + (dateNow() - start));
 

@@ -12,8 +12,31 @@ module J2ME {
         String: null,
         Thread: null
       }
-    }
+    },
+    long: null
   };
+
+  function Int64Array(size: number) {
+    var array = Array(size);
+    // We can't put the klass on the prototype.
+    (<any>array).klass = Klasses.long;
+    return array;
+  }
+
+  var arrays = {
+    'Z': Uint8Array,
+    'C': Uint16Array,
+    'F': Float32Array,
+    'D': Float64Array,
+    'B': Int8Array,
+    'S': Int16Array,
+    'I': Int32Array,
+    'J': Int64Array
+  };
+
+  export function getArrayConstructor(type: string): Function {
+    return arrays[type];
+  }
 
   export var consoleWriter = new IndentingWriter();
 
@@ -36,8 +59,11 @@ module J2ME {
 
   import assert = J2ME.Debug.assert;
 
-  export interface JVM {
-
+  export enum RuntimeStatus {
+    New       = 1,
+    Started   = 2,
+    Stopping  = 3, // Unused
+    Stopped   = 4
   }
 
   /**
@@ -46,8 +72,8 @@ module J2ME {
    */
   export class RuntimeTemplate {
     static all = new Set();
-    vm: JVM;
-    status: number;
+    jvm: JVM;
+    status: RuntimeStatus;
     waiting: any [];
     threadCount: number;
     initialized: any;
@@ -56,13 +82,16 @@ module J2ME {
     classObjects: any;
     ctx: Context;
 
+    isolate: com.sun.cldc.isolate.Isolate;
+    mainThread: java.lang.Thread;
+
     private static _nextRuntimeId: number = 0;
     private _runtimeId: number;
     private _nextHashCode: number;
 
-    constructor(vm: JVM) {
-      this.vm = vm;
-      this.status = 1; // NEW
+    constructor(jvm: JVM) {
+      this.jvm = jvm;
+      this.status = RuntimeStatus.New;
       this.waiting = [];
       this.threadCount = 0;
       this.initialized = {};
@@ -85,7 +114,7 @@ module J2ME {
       this.waiting.push(callback);
     }
 
-    updateStatus(status) {
+    updateStatus(status: RuntimeStatus) {
       this.status = status;
       var waiting = this.waiting;
       this.waiting = [];
@@ -110,7 +139,7 @@ module J2ME {
     removeContext(ctx) {
       if (!--this.threadCount) {
         RuntimeTemplate.all.delete(this);
-        this.updateStatus(4); // STOPPED
+        this.updateStatus(RuntimeStatus.Stopped);
       }
     }
 
@@ -158,7 +187,7 @@ module J2ME {
     superKlass: Klass;
 
     /**
-     * Would be nice to remove this.
+     * Would be nice to remove this. So we try not to depend on it too much.
      */
     classInfo: ClassInfo;
 
@@ -239,15 +268,23 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-
+      str: string;
     }
 
     export interface Thread extends java.lang.Object {
-
+      pid: number;
+      alive: boolean;
     }
   }
 
-  declare var CLASSES;
+  export module com.sun.cldc.isolate {
+    export interface Isolate extends java.lang.Object {
+      id: number;
+      runtime: Runtime;
+      $_mainClass: java.lang.String;
+      $_mainArgs: java.lang.String [];
+    }
+  }
 
   function initializeClassObject(klass: Klass) {
     assert(klass.isRuntimeKlass, "Can only create class objects for runtime klasses.");
@@ -288,7 +325,6 @@ module J2ME {
       }
     });
   }
-
   export function runtimeKlass(runtime: Runtime, klass: Klass): Klass {
     assert(!klass.isRuntimeKlass);
     var runtimeKlass = runtime[klass.classInfo.mangledName];
@@ -296,16 +332,37 @@ module J2ME {
     return runtimeKlass;
   }
 
-  export function createKlass(classInfo: ClassInfo): Klass {
+  export function getKlass(classInfo: ClassInfo): Klass {
     if (!classInfo) {
       return null;
     }
     if (classInfo.klass) {
       return classInfo.klass;
     }
-    var klass = null;
+    var klass;
     if (classInfo.isInterface) {
-      klass = <Klass><any> function () {};
+      klass = <Klass><any> new Function();
+    } else if (classInfo.isArrayClass) {
+      var elementKlass = getKlass(classInfo.elementClass);
+      // Have we already created one? We need to maintain pointer identity.
+      if (elementKlass.arrayKlass) {
+        return elementKlass.arrayKlass;
+      }
+      klass = getArrayConstructor(classInfo.elementClass.className);
+      if (!klass) {
+        klass = <Klass><any> function (size: number) {
+          var array = new Array(size);
+          (<any>array).klass = klass;
+          return array;
+        };
+      } else {
+        assert(!klass.prototype.hasOwnProperty("klass"));
+        klass.prototype.klass = klass;
+      }
+      klass.toString = function () {
+        return "[Array of " + elementKlass + "]";
+      };
+      elementKlass.arrayKlass = klass;
     } else {
       // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
       // creating a closure, which will probably be slower at runtime.
@@ -319,10 +376,13 @@ module J2ME {
       var mangledName = J2ME.C4.Backend.mangleClass(classInfo);
       klass = jsGlobal[mangledName];
       assert(klass, mangledName);
+      klass.toString = function () {
+        return "[Synthesized Klass " + classInfo.className + "]";
+      };
     }
 
     var mangledClassName = J2ME.C4.Backend.mangleClass(classInfo);
-    var superKlass = createKlass(classInfo.superClass);
+    var superKlass = getKlass(classInfo.superClass);
     extendKlass(klass, superKlass);
     registerKlass(klass, mangledClassName, classInfo.className);
     return klass;
@@ -335,8 +395,11 @@ module J2ME {
       release || assert(klass, "Cannot find klass for " + classInfo.className);
       release || assert(!classInfo.klass);
       classInfo.klass = klass;
+      klass.toString = function () {
+        return "[Compiled Klass " + classInfo.className + "]";
+      };
     } else {
-      classInfo.klass = klass = createKlass(classInfo);
+      classInfo.klass = klass = getKlass(classInfo);
     }
     classInfo.klass.classInfo = classInfo;
     switch (classInfo.className) {
@@ -345,6 +408,8 @@ module J2ME {
       case "java/lang/String": Klasses.java.lang.String = klass; break;
       case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
     }
+
+    consoleWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
   }
 
   /**
@@ -406,21 +471,24 @@ module J2ME {
   }
 
   export function newArray(klass: Klass, size: number) {
-    var constructor: any = arrayKlass(klass);
+    var constructor: any = getArrayKlass(klass);
     return new constructor(size);
   }
 
-  export function arrayKlass(klass: Klass): Klass {
+  export function getArrayKlass(klass: Klass): Klass {
     if (klass.arrayKlass) {
       return klass.arrayKlass;
     }
     var arrayKlass = klass.arrayKlass = <ArrayKlass><any>function (size: number) {
-      var array: any = new Array(size);
-      array.klass = arrayKlass;
+      var array = new Array(size);
+      (<any>array).klass = arrayKlass;
       return array;
     };
     arrayKlass.elementKlass = klass;
     arrayKlass.superKlass = Klasses.java.lang.Object;
+    arrayKlass.toString = function () {
+      return "[Array of " + klass + "]";
+    };
     initializeKlassTables(arrayKlass);
     return arrayKlass;
   }
@@ -440,6 +508,13 @@ module J2ME {
     }
     return "[" + value.klass.classInfo.className + " 0x" + value.__hashCode__.toString(16).toUpperCase() + "]";
   }
+
+  export function fromJavaString(value: java.lang.String): string {
+    if (!value) {
+      return null;
+    }
+    return value.str;
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -457,5 +532,5 @@ var $IOI = J2ME.instanceOfInterface;
 var $CCK = J2ME.checkCastKlass;
 var $CCI = J2ME.checkCastInterface;
 
-var $AK = J2ME.arrayKlass;
+var $AK = J2ME.getArrayKlass;
 var $NA = J2ME.newArray;
