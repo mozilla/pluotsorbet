@@ -317,7 +317,7 @@ module J2ME.C4.Backend {
     if (this.classInfo.isInterface) {
       runtimeFunction = "$IOI";
     }
-    return new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]);
+    return new AST.BinaryExpression("|", new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]), new AST.Literal(0));
   };
 
   IR.JVMCheckArithmetic.prototype.compile = function (cx: Context): AST.Node {
