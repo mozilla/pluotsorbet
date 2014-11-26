@@ -71,14 +71,11 @@ function getReturnFunction(sig) {
   return fxn;
 }
 
-function executePromise(stack, ret, doReturn, ctx, key, cb) {
+function executePromise(stack, ret, doReturn, ctx, key) {
   if (ret && ret.then) { // ret.constructor.name == "Promise"
     ret.then(function(res) {
       if (Instrument.profiling) {
         Instrument.exitAsyncNative(key, ret);
-      }
-      if (cb) {
-        stack = cb();
       }
       doReturn(stack, res);
     }, function(e) {
@@ -92,9 +89,6 @@ function executePromise(stack, ret, doReturn, ctx, key, cb) {
     throw VM.Pause;
   } else {
     // !!!! Why does this every hapen? Shouldn't we always have a promise here?
-    if (cb) {
-      stack = cb();
-    }
     doReturn(stack, ret);
   }
 }
@@ -127,7 +121,7 @@ function createAlternateImpl(object, key, fn, usesPromise) {
   var doReturn = getReturnFunction(key);
   var postExec = usesPromise ? executePromise : doReturn;
 
-  object[key] = function(ctx, stack, isStatic, cb) {
+  object[key] = function(ctx, stack, isStatic) {
     var args = new Array(numArgs);
 
     args[numArgs - 1] = ctx;
@@ -142,7 +136,7 @@ function createAlternateImpl(object, key, fn, usesPromise) {
     try {
       var self = isStatic ? null : stack.pop();
       var ret = fn.apply(self, args);
-      return postExec(stack, ret, doReturn, ctx, key, cb);
+      return postExec(stack, ret, doReturn, ctx, key);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throw e;

@@ -3,6 +3,9 @@ var $: J2ME.Runtime; // The currently-executing runtime.
 var runtimeTemplate = {};
 
 module J2ME {
+  declare var Native, Override;
+  declare var VM;
+  declare var Frame;
 
   export var Klasses = {
     java: {
@@ -410,6 +413,122 @@ module J2ME {
     }
 
     consoleWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
+
+    linkKlassMethods(classInfo.klass);
+  }
+
+  function findNativeMethodImplementation(methodInfo: MethodInfo) {
+    var implKey = methodInfo.implKey;
+    if (methodInfo.isNative) {
+      if (implKey in Native) {
+        return Native[implKey];
+      } else {
+        // Some Native MethodInfos are constructed but never called;
+        // that's fine, unless we actually try to call them.
+        return function missingImplementation() {
+          assert (false, "Method " + methodInfo.name + " is native but does not have an implementation.");
+        }
+      }
+    } else if (implKey in Override) {
+      return Override[implKey];
+    }
+    return null;
+  }
+
+  function prepareNativeMethod(methodInfo: MethodInfo, fn: Function): Function {
+    return function native() {
+      try {
+        // TODO Refactor override so we don't have to slice here.
+        var ctx = $.ctx;
+        return fn.call(null, ctx, Array.prototype.slice.call(arguments), methodInfo.isStatic);
+      } catch (e) {
+        if (e === VM.Pause || e === VM.Yield) {
+          throw e;
+        }
+        throw new Error("TODO handle exceptions/yields in alternate impls. " + e + e.stack);
+      }
+    }
+  }
+
+  function prepareInterpreterMethod(methodInfo: MethodInfo): Function {
+    return function interpreter() {
+      var frame = new Frame(methodInfo, [], 0);
+      var ctx = $.ctx;
+      var args = Array.prototype.slice.call(arguments);
+
+      if (!methodInfo.isStatic) {
+        args.unshift(this);
+      }
+      for (var i = 0; i < args.length; i++) {
+        frame.setLocal(i, args[i]);
+      }
+      if (methodInfo.isSynchronized) {
+        if (!frame.lockObject) {
+          frame.lockObject = methodInfo.isStatic
+            ? methodInfo.classInfo.getClassObject(ctx)
+            : frame.getLocal(0);
+        }
+
+        ctx.monitorEnter(frame.lockObject);
+      }
+      return ctx.executeNewFrameSet([frame]);
+    };
+  }
+
+  function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
+    if (methodInfo.isStatic) {
+      return jsGlobal[methodInfo.mangledClassAndMethodName];
+    } else {
+      if (klass.prototype.hasOwnProperty(methodInfo.mangledName)) {
+        return klass.prototype[methodInfo.mangledName];
+      }
+      return null;
+    }
+  }
+
+  function linkKlassMethods(klass: Klass) {
+    consoleWriter.enter("Link Klass Methods: " + klass);
+    var methods = klass.classInfo.methods;
+    for (var i = 0; i < methods.length; i++) {
+      var methodInfo = methods[i];
+      var fn;
+      var nativeMethod = findNativeMethodImplementation(methods[i]);
+      if (nativeMethod) {
+        consoleWriter.writeLn("Method: " + methods[i].name + " -> Native / Override");
+        fn = prepareNativeMethod(methodInfo, nativeMethod);
+      } else {
+        fn = findCompiledMethod(klass, methodInfo);
+        if (fn) {
+          consoleWriter.writeLn("Method: " + methods[i].name + " -> " + fn);
+          return;
+        } else {
+          consoleWriter.warnLn("Method: " + methods[i].name + " -> Interpreter");
+          fn = prepareInterpreterMethod(methodInfo);
+        }
+      }
+      if (methodInfo.isStatic) {
+        jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
+      } else {
+        klass.prototype[methodInfo.mangledName] = fn;
+      }
+    }
+
+    consoleWriter.outdent();
+    //if (typeof CC !== "undefined") {
+    //  var compiledMethod = null;
+    //  var classMangledName = J2ME.C4.Backend.mangleClass(this.classInfo);
+    //  var compiledClass = CC[classMangledName];
+    //  if (compiledClass) {
+    //    var methodMangledName = J2ME.C4.Backend.mangleMethod(this);
+    //    compiledMethod = compiledClass.methods[methodMangledName];
+    //    if (this.isStatic) {
+    //      jsGlobal[methodMangledName] = compiledMethod;
+    //    }
+    //    console.log("HERE: " + compiledMethod + " : ");
+    //
+    //  }
+    //  this.fn = compiledMethod;
+    //}
   }
 
   /**

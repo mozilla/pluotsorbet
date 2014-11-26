@@ -103,35 +103,6 @@ module J2ME {
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
-      if (this.isNative) {
-        if (this.implKey in Native) {
-          this.alternateImpl = Native[this.implKey];
-        } else {
-          // Some Native MethodInfos are constructed but never called;
-          // that's fine, unless we actually try to call them.
-          this.alternateImpl = missingNativeImpl.bind(null, this.implKey);
-        }
-      } else if (this.implKey in Override) {
-        this.alternateImpl = Override[this.implKey];
-      } else {
-        this.alternateImpl = null;
-
-        if (typeof CC !== "undefined") {
-          var compiledMethod = null;
-          var classMangledName = J2ME.C4.Backend.mangleClass(this.classInfo);
-          var compiledClass = CC[classMangledName];
-          if (compiledClass) {
-            var methodMangledName = J2ME.C4.Backend.mangleMethod(this);
-            compiledMethod = compiledClass.methods[methodMangledName];
-            if (this.isStatic) {
-              jsGlobal[methodMangledName] = compiledMethod;
-            }
-            console.log("HERE: " + compiledMethod + " : ");
-
-          }
-          this.fn = compiledMethod;
-        }
-      }
 
       this.mangledName = J2ME.C4.Backend.mangleMethod(this);
       this.mangledClassAndMethodName = J2ME.C4.Backend.mangleClassAndMethod(this);
