@@ -20,7 +20,7 @@ module J2ME {
 
       isolate.id = util.id();
 
-      var array = newArray(Klasses.java.lang.String, args.length);
+      var array = newStringArray(args.length);
       for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? util.newString(args[n]) : null;
 
@@ -60,7 +60,7 @@ module J2ME {
         [ runtime.mainThread, util.newString("main") ], 0));
       ctx.execute();
 
-      var args = J2ME.newArray(J2ME.Klasses.java.lang.String, mainArgs.length);
+      var args = J2ME.newStringArray(mainArgs.length);
       for (var n = 0; n < mainArgs.length; ++n)
         args[n] = mainArgs[n] ? util.newString(mainArgs[n]) : null;
 

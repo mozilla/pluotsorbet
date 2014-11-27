@@ -206,7 +206,7 @@ Native.create("com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J", function() {
 });
 
 Native.create("java/lang/Object.getClass.()Ljava/lang/Class;", function(ctx) {
-    return this.class.getClassObject(ctx);
+    return J2ME.runtimeKlass(ctx.runtime, this.klass).classObject;
 });
 
 Native.create("java/lang/Object.hashCode.()I", function() {
@@ -388,15 +388,15 @@ Native.create("java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;", functi
     var result = null;
     if (this.stackTrace) {
         var depth = this.stackTrace.length;
-        var classNames = util.newArray("[Ljava/lang/Object;", depth);
-        var methodNames = util.newArray("[Ljava/lang/Object;", depth);
+        var classNames = J2ME.newObjectArray(depth);
+        var methodNames = J2ME.newObjectArray(depth);
         var offsets = util.newPrimitiveArray("I", depth);
         this.stackTrace.forEach(function(e, n) {
             classNames[n] = util.newString(e.className);
             methodNames[n] = util.newString(e.methodName);
             offsets[n] = e.offset;
         });
-        result = util.newArray("[Ljava/lang/Object;", 3);
+        result = J2ME.newObjectArray(3);
         result[0] = classNames;
         result[1] = methodNames;
         result[2] = offsets;
@@ -636,7 +636,7 @@ Native.create("com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isol
 });
 
 Native.create("com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;", function() {
-    var isolates = util.newArray("[Ljava/lang/Object;", Runtime.all.keys().length);
+    var isolates = J2ME.newObjectArray(Runtime.all.keys().length);
     var n = 0;
     Runtime.all.forEach(function (runtime) {
         isolates[n++] = runtime.isolate;
@@ -798,7 +798,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", functio
     return total + cur.length;
   }, 0);
 
-  var res = util.newPrimitiveArray("B", totalSize);
+  var res = J2ME.newByteArray(totalSize);
   outputArray.reduce(function(total, cur) {
     res.set(cur, total);
     return total + cur.length;

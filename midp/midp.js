@@ -44,7 +44,7 @@ MIDP.groupTBL = [
 ];
 
 Native.create("com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;", function() {
-    var list = util.newArray("[Ljava/lang/String;", MIDP.groupTBL.length);
+    var list = J2ME.newStringArray(MIDP.groupTBL.length);
     MIDP.groupTBL.forEach(function (e, n) {
         list[n] = util.newString(e);
     });
@@ -147,7 +147,7 @@ Native.create("com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/St
     MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
             var messages = MIDP.messagesTBL[n];
-            list = util.newArray("[Ljava/lang/String;", messages.length);
+            list = J2ME.newStringArray(messages.length);
             messages.forEach(function (e, n) {
                 list[n] = util.newString(e);
             });
@@ -215,7 +215,7 @@ Native.create("com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lan
     MIDP.groupTBL.forEach(function(e, n) {
         if (e === name) {
             var members = MIDP.membersTBL[n];
-            list = util.newArray("[Ljava/lang/String;", members.length);
+            list = J2ME.newStringArray(members.length);
             members.forEach(function (e, n) {
                 list[n] = util.newString(e);
             });
@@ -253,7 +253,7 @@ MIDP.domainTBL = [
 ];
 
 Native.create("com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;", function() {
-    var list = util.newArray("[Ljava/lang/String;", MIDP.domainTBL.length);
+    var list = J2ME.newStringArray(MIDP.domainTBL.length);
     MIDP.domainTBL.forEach(function (e, n) {
         list[n] = util.newString(e);
     });
@@ -465,7 +465,7 @@ Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringA
         throw new JavaException("java/lang/IllegalStateException");
     var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
     MIDP.skinFilePos += 4;
-    var strings = util.newArray("[Ljava/lang/String;", len);
+    var strings = J2ME.newStringArray(len);
     for (var n = 0; n < len; ++n) {
         if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
             throw new JavaException("java/lang/IllegalStateException");
@@ -707,7 +707,7 @@ Native.create("com/sun/midp/midletsuite/InstallInfo.load.()V", function() {
 
 Native.create("com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;", function() {
     var keys = Object.keys(MIDP.manifest);
-    var arr = util.newArray("[Ljava/lang/String;", keys.length * 2);
+    var arr = J2ME.newStringArray(keys.length * 2);
     var i = 0;
     keys.forEach(function(key) {
       arr[i++] = util.newString(key);

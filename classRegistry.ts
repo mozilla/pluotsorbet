@@ -30,6 +30,15 @@ module J2ME {
     longArray: ClassInfo;
     shortArray: ClassInfo;
 
+    boolean$: ClassInfo;
+    byte$: ClassInfo;
+    char$: ClassInfo;
+    double$: ClassInfo;
+    float$: ClassInfo;
+    int$: ClassInfo;
+    long$: ClassInfo;
+    short$: ClassInfo;
+
     constructor() {
       this.classFiles = Object.create(null);
       this.classes = Object.create(null);
@@ -47,7 +56,17 @@ module J2ME {
       for (var i = 0; i < valueKinds.length; i++) {
         var typeName = Kind[valueKinds[i]].toLowerCase();
         this.classes[typeName] = new PrimitiveClassInfo(typeName);
+        linkKlass(this.classes[typeName]);
       }
+
+      this.boolean$ = this.getClass("boolean");
+      this.byte$ = this.getClass("byte");
+      this.char$ = this.getClass("char");
+      this.double$ = this.getClass("double");
+      this.float$ = this.getClass("float");
+      this.int$ = this.getClass("int");
+      this.long$ = this.getClass("long");
+      this.short$ = this.getClass("short");
 
       this.booleanArray = this.getClass("[boolean");
       this.byteArray = this.getClass("[byte");

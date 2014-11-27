@@ -18,6 +18,14 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
+function traceArrayStore(idx, refArray, value) {
+  J2ME.traceWriter.writeLn(J2ME.toDebugString(refArray) + "[" + idx + "] = " + J2ME.toDebugString(value));
+}
+function traceArrayLoad(idx, refArray) {
+  J2ME.Debug.assert(refArray[idx] !== undefined);
+  J2ME.traceWriter.writeLn(J2ME.toDebugString(refArray) + "[" + idx + "] (" + J2ME.toDebugString(refArray[idx]) + ")");
+}
+
 VM.execute = function(ctx) {
     var frame = ctx.current();
 
@@ -289,6 +297,7 @@ VM.execute = function(ctx) {
             var refArray = stack.pop();
             checkArrayAccess(refArray, idx);
             stack.push(refArray[idx]);
+            traceArrayLoad(idx, refArray);
             break;
         case 0x2f: // laload
         case 0x31: // daload
@@ -296,6 +305,7 @@ VM.execute = function(ctx) {
             var refArray = stack.pop();
             checkArrayAccess(refArray, idx);
             stack.push2(refArray[idx]);
+            traceArrayLoad(idx, refArray);
             break;
         case 0x36: // istore
         case 0x38: // fstore
@@ -360,16 +370,19 @@ VM.execute = function(ctx) {
             var refArray = stack.pop();
             checkArrayAccess(refArray, idx);
             refArray[idx] = val;
+            traceArrayStore(idx, refArray, val);
             break;
         case 0x53: // aastore
             var val = stack.pop();
             var idx = stack.pop();
             var refArray = stack.pop();
+
             checkArrayAccess(refArray, idx);
             if (val && !J2ME.isAssignableTo(val.klass, refArray.klass.elementKlass)) {
                 ctx.raiseExceptionAndYield("java/lang/ArrayStoreException");
             }
             refArray[idx] = val;
+            traceArrayStore(idx, refArray, val);
             break;
         case 0x57: // pop
             stack.pop();

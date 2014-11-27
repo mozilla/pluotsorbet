@@ -325,7 +325,7 @@ function(jPath, filterArray, includeHidden) {
 
             files = files.filter(regexp.test.bind(regexp));
 
-            var filesArray = util.newArray("[[B", files.length);
+            var filesArray = J2ME.newArray(CLASSES.byteArray.klass, files.length);
 
             var added = 0;
 

@@ -6,6 +6,7 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var Frame;
+  declare var Long;
 
   export var traceWriter = new J2ME.IndentingWriter();
   export var linkingWriter = null;
@@ -19,11 +20,15 @@ module J2ME {
         Thread: null
       }
     },
-    long: null
+    long: null,
+    byte: null
   };
 
   function Int64Array(size: number) {
     var array = Array(size);
+    for (var i = 0; i < size; i++) {
+      array[i] = Long.ZERO;
+    }
     // We can't put the klass on the prototype.
     (<any>array).klass = Klasses.long;
     return array;
@@ -363,7 +368,7 @@ module J2ME {
       klass = getArrayConstructor(classInfo.elementClass.className);
       if (!klass) {
         klass = <Klass><any> function (size:number) {
-          var array = new Array(size);
+          var array = createEmptyObjectArray(size);
           (<any>array).klass = klass;
           return array;
         };
@@ -424,6 +429,7 @@ module J2ME {
       case "java/lang/Class": Klasses.java.lang.Class = klass; break;
       case "java/lang/String": Klasses.java.lang.String = klass; break;
       case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
+      case "byte": Klasses.byte = klass; break;
     }
 
     linkingWriter && linkingWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
@@ -612,6 +618,14 @@ module J2ME {
 
   }
 
+  function createEmptyObjectArray(size: number) {
+    var array = new Array(size);
+    for (var i = 0; i < size; i++) {
+      array[i] = null;
+    }
+    return array;
+  }
+
   export function newObject(klass: Klass): java.lang.Object {
     return new klass();
   }
@@ -621,12 +635,24 @@ module J2ME {
     return new constructor(size);
   }
 
+  export function newObjectArray(size: number): java.lang.Object[] {
+    return newArray(Klasses.java.lang.Object, size);
+  }
+
+  export function newStringArray(size: number): java.lang.String[]  {
+    return newArray(Klasses.java.lang.String, size);
+  }
+
+  export function newByteArray(size: number): number[]  {
+    return newArray(Klasses.byte, size);
+  }
+
   export function getArrayKlass(klass: Klass): Klass {
     if (klass.arrayKlass) {
       return klass.arrayKlass;
     }
     var arrayKlass = klass.arrayKlass = <ArrayKlass><any>function (size: number) {
-      var array = new Array(size);
+      var array = createEmptyObjectArray(size);
       (<any>array).klass = arrayKlass;
       return array;
     };

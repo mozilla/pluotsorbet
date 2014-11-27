@@ -163,7 +163,7 @@ Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, 
 
   var newcount = count + len;
   if (newcount > buf.length) {
-    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
     this.class.getField("I.buf.[B").set(this, buf);
@@ -179,7 +179,7 @@ Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(value) {
 
   var newcount = count + 1;
   if (newcount > buf.length) {
-    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
     this.class.getField("I.buf.[B").set(this, buf);
@@ -277,14 +277,14 @@ Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;
   var NUMBER_OF_PERMISSIONS = 61;
   var ALLOW = 1;
 
-  var maximums = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
-  var defaults = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var maximums = J2ME.newByteArray(NUMBER_OF_PERMISSIONS);
+  var defaults = J2ME.newByteArray(NUMBER_OF_PERMISSIONS);
 
   for (var i = 0; i < NUMBER_OF_PERMISSIONS; i++) {
     maximums[i] = defaults[i] = ALLOW;
   }
 
-  var permissions = util.newArray("[[B", 2);
+  var permissions = J2ME.newArray(CLASSES.byteArray.klass, 2);
   permissions[0] = maximums;
   permissions[1] = defaults;
 
