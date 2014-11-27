@@ -7,6 +7,9 @@ module J2ME {
   declare var VM;
   declare var Frame;
 
+  export var traceWriter = new J2ME.IndentingWriter();
+  export var linkingWriter = null;
+
   export var Klasses = {
     java: {
       lang: {
@@ -67,6 +70,12 @@ module J2ME {
     Started   = 2,
     Stopping  = 3, // Unused
     Stopped   = 4
+  }
+
+  export enum MethodType {
+    Interpreted,
+    Native,
+    Compiled
   }
 
   /**
@@ -412,7 +421,7 @@ module J2ME {
       case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
     }
 
-    consoleWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
+    linkingWriter && linkingWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
 
     linkKlassMethods(classInfo.klass);
   }
@@ -433,21 +442,6 @@ module J2ME {
       return Override[implKey];
     }
     return null;
-  }
-
-  function prepareNativeMethod(methodInfo: MethodInfo, fn: Function): Function {
-    return function native() {
-      try {
-        // TODO Refactor override so we don't have to slice here.
-        var ctx = $.ctx;
-        return fn.call(null, ctx, Array.prototype.slice.call(arguments), methodInfo.isStatic);
-      } catch (e) {
-        if (e === VM.Pause || e === VM.Yield) {
-          throw e;
-        }
-        throw new Error("TODO handle exceptions/yields in alternate impls. " + e + e.stack);
-      }
-    }
   }
 
   function prepareInterpreterMethod(methodInfo: MethodInfo): Function {
@@ -487,30 +481,58 @@ module J2ME {
   }
 
   function linkKlassMethods(klass: Klass) {
-    consoleWriter.enter("Link Klass Methods: " + klass);
+    linkingWriter && linkingWriter.enter("Link Klass Methods: " + klass);
     var methods = klass.classInfo.methods;
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
       var fn;
+      var methodType;
       var nativeMethod = findNativeMethodImplementation(methods[i]);
       if (nativeMethod) {
-        consoleWriter.writeLn("Method: " + methods[i].name + " -> Native / Override");
-        fn = prepareNativeMethod(methodInfo, nativeMethod);
+        linkingWriter && linkingWriter.writeLn("Method: " + methods[i].name + " -> Native / Override");
+        fn = nativeMethod;
+        methodType = MethodType.Native;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
-          consoleWriter.writeLn("Method: " + methods[i].name + " -> " + fn);
-          return;
+          linkingWriter && linkingWriter.writeLn("Method: " + methods[i].name + " -> " + fn);
+          methodType = MethodType.Compiled;
+          if (!traceWriter) {
+            return;
+          }
         } else {
-          consoleWriter.warnLn("Method: " + methods[i].name + " -> Interpreter");
+          linkingWriter && linkingWriter.warnLn("Method: " + methods[i].name + " -> Interpreter");
+          methodType = MethodType.Interpreted;
           fn = prepareInterpreterMethod(methodInfo);
         }
       }
-      if (methodInfo.isStatic) {
-        jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
-      } else {
+
+      if (traceWriter && methodType !== MethodType.Interpreted) {
+        fn = tracingWrapper(fn, methodInfo, methodType);
+      }
+
+      // Link even non-static methods globally so they can be invoked statically via invokespecial.
+      jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
+      if (!methodInfo.isStatic) {
         klass.prototype[methodInfo.mangledName] = fn;
       }
+    }
+
+    function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
+      return function() {
+        var args = Array.prototype.slice.apply(arguments);
+        var printArgs = args.map(function (x) {
+          return toDebugString(x);
+        }).join(", ");
+        var printObj = "";
+        if (!methodInfo.isStatic) {
+          printObj = " <" + toDebugString(this) + "> ";
+        }
+        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + printArgs + ")");
+        var value = fn.apply(this, args);
+        traceWriter.leave("< " + toDebugString(value));
+        return value;
+      };
     }
 
     consoleWriter.outdent();
@@ -616,6 +638,9 @@ module J2ME {
     if (typeof value !== "object") {
       return String(value);
     }
+    if (value === undefined) {
+      return "undefined";
+    }
     if (!value) {
       return "null";
     }
@@ -625,7 +650,11 @@ module J2ME {
     if (!value.klass.classInfo) {
       return value.klass + " no classInfo"
     }
-    return "[" + value.klass.classInfo.className + " 0x" + value.__hashCode__.toString(16).toUpperCase() + "]";
+    var hashcode = "";
+    if (value.__hashCode__) {
+      hashcode = " 0x" + value.__hashCode__.toString(16).toUpperCase();
+    }
+    return "[" + value.klass.classInfo.className + hashcode + "]";
   }
 
   export function fromJavaString(value: java.lang.String): string {

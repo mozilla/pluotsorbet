@@ -11,28 +11,25 @@ function JavaException(className, message) {
 }
 JavaException.prototype = Object.create(Error.prototype);
 
-function boolReturnType(stack, ret) {
+function boolReturnType(ret) {
   var value;
   if (ret) {
     value = 1;
   } else {
     value = 0;
   }
-  stack.push(value);
   return value;
 }
 
-function doubleReturnType(stack, ret) {
-  // double types require two stack frames
-  stack.push2(ret);
+function doubleReturnType(ret) {
   return ret;
 }
 
-function voidReturnType(stack, ret) {
+function voidReturnType(ret) {
   // no-op
 }
 
-function stringReturnType(stack, ret) {
+function stringReturnType(ret) {
   var value;
   if (typeof ret === "string") {
     value = util.newString(ret);
@@ -40,18 +37,15 @@ function stringReturnType(stack, ret) {
     // already a native string or null
     value = ret;
   }
-  stack.push(value);
   return value;
 }
 
-function defaultReturnType(stack, ret) {
-    stack.push(ret);
+function defaultReturnType(ret) {
     return ret;
 }
 
-function intReturnType(stack, ret) {
+function intReturnType(ret) {
     var value = ret | 0;
-    stack.push(value);
     return value;
 }
 
@@ -71,26 +65,22 @@ function getReturnFunction(sig) {
   return fxn;
 }
 
-function executePromise(stack, ret, doReturn, ctx, key) {
-  if (ret && ret.then) { // ret.constructor.name == "Promise"
-    ret.then(function(res) {
-      if (Instrument.profiling) {
-        Instrument.exitAsyncNative(key, ret);
-      }
-      doReturn(stack, res);
-    }, function(e) {
-      ctx.raiseException(e.javaClassName, e.message);
-    }).then(ctx.start.bind(ctx));
-
-    if (Instrument.profiling) {
-      Instrument.enterAsyncNative(key, ret);
-    }
-
-    throw VM.Pause;
-  } else {
-    // !!!! Why does this every hapen? Shouldn't we always have a promise here?
-    doReturn(stack, ret);
-  }
+function executePromise(ret, doReturn, ctx, key) {
+  throw "TODO: execute promise for async natives";
+//  ret.then(function(res) {
+//    if (Instrument.profiling) {
+//      Instrument.exitAsyncNative(key, ret);
+//    }
+//    doReturn(stack, res);
+//  }, function(e) {
+//    ctx.raiseException(e.javaClassName, e.message);
+//  }).then(ctx.start.bind(ctx));
+//
+//  if (Instrument.profiling) {
+//    Instrument.enterAsyncNative(key, ret);
+//  }
+//
+//  throw VM.Pause;
 }
 
 /**
@@ -121,22 +111,12 @@ function createAlternateImpl(object, key, fn, usesPromise) {
   var doReturn = getReturnFunction(key);
   var postExec = usesPromise ? executePromise : doReturn;
 
-  object[key] = function(ctx, stack, isStatic) {
-    var args = new Array(numArgs);
-
-    args[numArgs - 1] = ctx;
-
-    // NOTE: If your function accepts a Long/Double, you must specify
-    // two arguments (since they take up two stack positions); we
-    // could sugar this someday.
-    for (var i = numArgs - 2; i >= 0; i--) {
-      args[i] = stack.pop();
-    }
-
+  object[key] = function() {
     try {
-      var self = isStatic ? null : stack.pop();
-      var ret = fn.apply(self, args);
-      return postExec(stack, ret, doReturn, ctx, key);
+      var args = Array.prototype.slice.apply(arguments);
+      args.push($.ctx);
+      var ret = fn.apply(this, args);
+      return postExec(ret, doReturn, $.ctx, key);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throw e;

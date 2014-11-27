@@ -23,15 +23,15 @@ module J2ME {
     }
 
     get(object: java.lang.Object) {
-      // print("get " + J2ME.toDebugString(object) + "." + this.mangledName);
+      traceWriter && traceWriter.writeLn("get " + J2ME.toDebugString(object) + "." + this.mangledName);
       var value = object[this.mangledName];
       release || J2ME.Debug.assert(value !== undefined, this.name + " - " + object[this.id]);
       return value;
     }
 
     set(object: java.lang.Object, value: any) {
+      traceWriter && traceWriter.writeLn("set " + J2ME.toDebugString(object) + "." + this.mangledName + " = " + value);
       release || J2ME.Debug.assert(value !== undefined);
-      // print("set " + J2ME.toDebugString(object) + "." + this.mangledName + " = " + value);
       object[this.mangledName] = value
     }
 

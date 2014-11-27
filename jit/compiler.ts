@@ -92,11 +92,16 @@ module J2ME {
     return type;
   }
 
-  function signatureToDefinition(signature: string, includeReturnType = true): string {
+  export function signatureToDefinition(signature: string, includeReturnType = true, excludeArgumentNames = false): string {
     var types = SignatureDescriptor.makeSignatureDescriptor(signature).typeDescriptors;
     var argumentNames = "abcdefghijklmnopqrstuvwxyz";
     var i = 0;
-    var result = "(" + types.slice(1).map(t => argumentNames[i++] + ": " + typeDescriptorToDefinition(t.value)).join(", ") + ")";
+    var result;
+    if (excludeArgumentNames) {
+      result = "(" + types.slice(1).map(t => typeDescriptorToDefinition(t.value)).join(", ") + ")";
+    } else {
+      result = "(" + types.slice(1).map(t => argumentNames[i++] + ": " + typeDescriptorToDefinition(t.value)).join(", ") + ")";
+    }
     J2ME.Debug.assert(i < argumentNames.length);
     if (includeReturnType) {
       result += " => " + typeDescriptorToDefinition(types[0].value);

@@ -18,8 +18,6 @@ VM.trace = function(type, pid, methodInfo, returnVal) {
                    (returnVal ? (" " + returnVal) : "") + "\n";
 }
 
-var traceWriter = null; new J2ME.IndentingWriter();
-
 VM.execute = function(ctx) {
     var frame = ctx.current();
 
@@ -27,36 +25,26 @@ VM.execute = function(ctx) {
     var stack = frame.stack;
     var returnValue = null;
 
-    function pushFrame(methodInfo) {
-        var caller = frame;
-        if (traceWriter) {
-            var args = stack.slice(stack.length - methodInfo.consumes).map(function (x) {
-                return J2ME.toDebugString(x);
-            }).join(", ")
-            traceWriter.enter(methodInfo.implKey + " " + args);
+    if (J2ME.traceWriter) {
+      for (var i = 0; i < ctx.frames.length; i++) {
+        var methodInfo = ctx.frames[i].methodInfo;
+        var printArgs = ctx.frames[i].locals.map(function (x) {
+          return J2ME.toDebugString(x);
+        }).join(", ");
+        var printObj = "";
+        if (!methodInfo.isStatic) {
+          printObj = " <" + J2ME.toDebugString(this) + "> ";
         }
-
-        frame = ctx.pushFrame(methodInfo);
-        stack = frame.stack;
-        cp = frame.cp;
-        if (methodInfo.isSynchronized) {
-            if (!frame.lockObject) {
-                frame.lockObject = methodInfo.isStatic
-                                    ? methodInfo.classInfo.getClassObject(ctx)
-                                    : frame.getLocal(0);
-            }
-
-            ctx.monitorEnter(frame.lockObject);
-        }
-        return frame;
+        J2ME.traceWriter.enter("> " + J2ME.MethodType[J2ME.MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + J2ME.signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + printArgs + ")");
+      }
     }
 
     function popFrame(consumes) {
-        traceWriter && traceWriter.outdent();
         if (frame.lockObject)
             ctx.monitorExit(frame.lockObject);
         var callee = frame;
         frame = ctx.popFrame();
+        J2ME.traceWriter && J2ME.traceWriter.leave("< ");
         if (frame === null) {
             returnValue = null;
             switch (consumes) {
@@ -940,6 +928,7 @@ VM.execute = function(ctx) {
             stack.push(result ? 1 : 0);
             break;
         case 0xbf: // athrow
+          debugger;
             if (ctx.frameSets.length > 0) {
                 // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
                 frame.ip--;
@@ -1028,52 +1017,19 @@ VM.execute = function(ctx) {
                     fn = obj[methodInfo.mangledName];
                     break;
                 case OPCODES.invokespecial:
-                    fn = jsGlobal[J2ME.C4.Backend.mangleClassAndMethod(methodInfo)];
+                    fn = jsGlobal[methodInfo.mangledClassAndMethodName];
                     break;
                 }
             } else {
-                fn = jsGlobal[J2ME.C4.Backend.mangleClassAndMethod(methodInfo)];
+                fn = jsGlobal[methodInfo.mangledClassAndMethodName];
             }
 
             if (VM.DEBUG) {
                 VM.trace("invoke", ctx.thread.pid, methodInfo);
             }
 
-            
-            if (!fn) {
-                if (!isStatic) {
-                    var obj = stack[stack.length - methodInfo.consumes];
-                    if (!obj) {
-                        ctx.raiseExceptionAndYield("java/lang/NullPointerException");
-                    }
-                    switch (op) {
-                    case OPCODES.invokevirtual:
-                    case OPCODES.invokeinterface:
-                        // Note don't use classInfos.
-                        if (methodInfo.classInfo != obj.klass.classInfo) {
-                            methodInfo = CLASSES.getMethod(obj.klass.classInfo, methodInfo.key);
-                        }
-                        break;
-                    }
-                }
-
-                if (VM.DEBUG) {
-                    VM.trace("invoke", ctx.thread.pid, methodInfo);
-                }
-
-                var alternateImpl = methodInfo.alternateImpl;
-                if (alternateImpl) {
-                    Instrument.callPauseHooks(ctx.current());
-                    Instrument.measure(alternateImpl, ctx, methodInfo);
-                    Instrument.callResumeHooks(ctx.current());
-                    break;
-                }
-                pushFrame(methodInfo);
-                break;
-            }
-
             // Take off the arguments from the stack.
-            var args = stack.slice(stack.length - methodInfo.consumes);
+            var args = stack.slice(stack.length - methodInfo.consumes + (obj ? 1 : 0));
             stack.length -= methodInfo.consumes;
             // Invoke the compiled function.
             var returnValue = fn.apply(obj, args);

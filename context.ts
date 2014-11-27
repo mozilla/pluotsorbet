@@ -29,23 +29,6 @@ module J2ME {
       return frames[frames.length - 1];
     }
 
-    pushFrame(methodInfo: MethodInfo) {
-      var caller = this.current();
-      var callee;
-      if (caller === undefined) {
-        if (methodInfo.consumes !== 0) {
-          throw new Error("A frame cannot consume arguments from a compiled frame.");
-        }
-        callee = new Frame(methodInfo, [], 0);
-      } else {
-        callee = new Frame(methodInfo, caller.stack.slice(caller.stack.length - methodInfo.consumes), 0);
-        caller.stack.length -= methodInfo.consumes;
-      }
-      this.frames.push(callee);
-      Instrument.callEnterHooks(methodInfo, caller, callee);
-      return callee;
-    }
-
     popFrame() {
       var callee = this.frames.pop();
       if (this.frames.length === 0) {
