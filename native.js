@@ -186,6 +186,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "audio.encodings":
         value = "audio/ogg";
         break;
+    case "video.snapshot.encodings":
+        value = "encoding=jpeg";
+        break;
     default:
         console.warn("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
         value = null;
