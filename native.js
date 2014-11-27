@@ -10,22 +10,24 @@ Native.create = createAlternateImpl.bind(null, Native);
 Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst)
         throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
-    var srcClass = src.class;
-    var dstClass = dst.class;
-    if (!srcClass.isArrayClass || !dstClass.isArrayClass)
-        throw new JavaException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
+    var srcKlass = src.klass;
+    var dstKlass = dst.klass;
+// !!!!!!!!!!!!!!!! TODO
+//    if (!srcClass.isArrayClass || !dstClass.isArrayClass)
+//        throw new JavaException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
         throw new JavaException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
-    if ((!!srcClass.elementClass != !!dstClass.elementClass) ||
-        (!srcClass.elementClass && srcClass != dstClass)) {
+    if ((!!srcKlass.elementKlass != !!dstKlass.elementKlass) ||
+        (!srcKlass.elementKlass && srcKlass != dstKlass)) {
+// !!!!!!!!!!!!!!!! TODO naming
         throw new JavaException("java/lang/ArrayStoreException",
-                                "Incompatible component types: " + srcClass.constructor.name + " -> " + dstClass.constructor.name);
+                                "Incompatible component types: " + srcKlass.constructor.name + " -> " + dstKlass.constructor.name);
     }
-    if (dstClass.elementClass) {
-        if (srcClass != dstClass && !srcClass.elementClass.isAssignableTo(dstClass.elementClass)) {
+    if (dstKlass.elementKlass) {
+        if (srcKlass != dstKlass && !J2ME.isAssignableTo(srcKlass.elementKlass, dstKlass.elementKlass)) {
             var copy = function(to, from) {
                 var obj = src[from];
-                if (obj && !obj.class.isAssignableTo(dstClass.elementClass))
+                if (obj && !J2ME.isAssignableTo(obj.klass, dstKlass.elementKlass))
                     throw new JavaException("java/lang/ArrayStoreException", "Incompatible component types.");
                 dst[to] = obj;
             }
@@ -272,12 +274,12 @@ Native.create("java/lang/Class.getName.()Ljava/lang/String;", function() {
 Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", function(name, ctx) {
     try {
         if (!name)
-            throw new Classes.ClassNotFoundException();
+            throw new J2ME.ClassNotFoundException();
         var className = util.fromJavaString(name).replace(/\./g, "/");
         var classInfo = null;
         classInfo = CLASSES.getClass(className);
     } catch (e) {
-        if (e instanceof (Classes.ClassNotFoundException))
+        if (e instanceof (J2ME.ClassNotFoundException))
             throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
         throw e;
     }
@@ -325,11 +327,11 @@ Native.create("java/lang/Class.isArray.()Z", function() {
 Native.create("java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z", function(fromClass) {
     if (!fromClass)
         throw new JavaException("java/lang/NullPointerException");
-    return fromClass.runtimeKlass.classInfo.isAssignableTo(this.runtimeKlass.klass.classInfo);
+    return J2ME.isAssignableTo(fromClass.runtimeKlass.klass, this.runtimeKlass.klass);
 });
 
 Native.create("java/lang/Class.isInstance.(Ljava/lang/Object;)Z", function(obj) {
-    return obj && obj.class.isAssignableTo(this.runtimeKlass.klass.classInfo);
+    return obj && J2ME.isAssignableTo(obj.klass, this.runtimeKlass.klass);
 });
 
 Native.create("java/lang/Float.floatToIntBits.(F)I", (function() {

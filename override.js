@@ -20,14 +20,17 @@ function boolReturnType(ret) {
   }
   return value;
 }
+boolReturnType.slotSize = 1;
 
 function doubleReturnType(ret) {
   return ret;
 }
+doubleReturnType.slotSize = 2;
 
 function voidReturnType(ret) {
   // no-op
 }
+voidReturnType.slotSize = 1;
 
 function stringReturnType(ret) {
   var value;
@@ -39,15 +42,18 @@ function stringReturnType(ret) {
   }
   return value;
 }
+stringReturnType.slotSize = 1;
 
 function defaultReturnType(ret) {
     return ret;
 }
+defaultReturnType.slotSize = 1;
 
 function intReturnType(ret) {
     var value = ret | 0;
     return value;
 }
+intReturnType.slotSize = 1;
 
 function getReturnFunction(sig) {
   var retType = sig.substring(sig.lastIndexOf(")") + 1);
@@ -66,21 +72,31 @@ function getReturnFunction(sig) {
 }
 
 function executePromise(ret, doReturn, ctx, key) {
-  throw "TODO: execute promise for async natives";
-//  ret.then(function(res) {
-//    if (Instrument.profiling) {
-//      Instrument.exitAsyncNative(key, ret);
-//    }
-//    doReturn(stack, res);
-//  }, function(e) {
-//    ctx.raiseException(e.javaClassName, e.message);
-//  }).then(ctx.start.bind(ctx));
-//
-//  if (Instrument.profiling) {
-//    Instrument.enterAsyncNative(key, ret);
-//  }
-//
-//  throw VM.Pause;
+  ret.then(function(res) {
+    if (Instrument.profiling) {
+      Instrument.exitAsyncNative(key, ret);
+    }
+    var stack = ctx.current().stack;
+    var convertedValue = doReturn(res);
+    switch (doReturn.slotSize) {
+      case 0:
+        break;
+      case 1:
+        stack.push(convertedValue);
+        break;
+      case 2:
+        stack.push2(convertedValue);
+        break;
+    }
+  }, function(e) {
+    ctx.raiseException(e.javaClassName, e.message);
+  }).then(ctx.start.bind(ctx));
+
+  if (Instrument.profiling) {
+    Instrument.enterAsyncNative(key, ret);
+  }
+
+  throw VM.Pause;
 }
 
 /**
@@ -123,12 +139,12 @@ function createAlternateImpl(object, key, fn, usesPromise) {
       } else if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
         console.log(e.stack);
-        ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
+        $.ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {
-        ctx.raiseExceptionAndYield(e.javaClassName, e.message);
+        $.ctx.raiseExceptionAndYield(e.javaClassName, e.message);
       } else {
         console.error(e, e.stack);
-        ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
+        $.ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
       }
     }
   };

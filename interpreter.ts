@@ -174,7 +174,7 @@ module J2ME {
         if (frame.methodInfo) {
           var sourceLocation = frame.methodInfo.getSourceLocationForBci(frame.ip - 1);
           if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
-            traceWriter.greenLn(sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
+            traceWriter && traceWriter.greenLn(sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
             lastSourceLocation = sourceLocation;
           }
         }
@@ -943,7 +943,6 @@ module J2ME {
           stack.push(result ? 1 : 0);
           break;
         case Bytecodes.ATHROW:
-          debugger;
           if (ctx.frameSets.length > 0) {
             // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
             frame.ip--;

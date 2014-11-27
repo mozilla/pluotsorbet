@@ -108,7 +108,18 @@ var util = (function () {
   }
 
   function newPrimitiveArray(type, size) {
-    var constructor = J2ME.getArrayConstructor(type);
+    // !!! ask mbx should this be using newArray instead?
+    var map = {
+      'Z': 'boolean',
+      'C': 'char',
+      'F': 'float',
+      'D': 'double',
+      'B': 'byte',
+      'S': 'short',
+      'I': 'int',
+      'J': 'long'
+    };
+    var constructor = J2ME.getArrayConstructor(map[type]);
     return new constructor(size);
   }
 

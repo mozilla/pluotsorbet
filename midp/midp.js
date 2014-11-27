@@ -820,7 +820,7 @@ MIDP.waitingNativeEventQueue = {};
 MIDP.copyEvent = function(obj, isolateId) {
     var e = MIDP.nativeEventQueues[isolateId].shift();
     obj.klass.classInfo.getField("I.type.I").set(obj, e.type);
-    obj.class.fields.forEach(function(field) {
+    obj.klass.classInfo.fields.forEach(function(field) {
         field.set(obj, e[field.name]);
     });
 }
@@ -833,7 +833,7 @@ MIDP.deliverWaitForNativeEventResult = function(resolve, nativeEvent, isolateId)
 
 MIDP.sendEvent = function(obj, isolateId) {
     var e = { type: obj.klass.classInfo.getField("I.type.I").get(obj) };
-    obj.class.fields.forEach(function(field) {
+    obj.klass.classInfo.fields.forEach(function(field) {
         e[field.name] = field.get(obj);
     });
     MIDP.sendNativeEvent(e, isolateId);

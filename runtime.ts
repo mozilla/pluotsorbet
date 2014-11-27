@@ -12,7 +12,7 @@ module J2ME {
   declare var Frame;
   declare var Long;
 
-  export var traceWriter = new J2ME.IndentingWriter();
+  export var traceWriter = null; //new J2ME.IndentingWriter();
   export var linkingWriter = null;
 
   export var Klasses = {
@@ -39,14 +39,14 @@ module J2ME {
   }
 
   var arrays = {
-    'Z': Uint8Array,
-    'C': Uint16Array,
-    'F': Float32Array,
-    'D': Float64Array,
-    'B': Int8Array,
-    'S': Int16Array,
-    'I': Int32Array,
-    'J': Int64Array
+    'boolean': Uint8Array,
+    'char': Uint16Array,
+    'float': Float32Array,
+    'double': Float64Array,
+    'byte': Int8Array,
+    'short': Int16Array,
+    'int': Int32Array,
+    'long': Int64Array
   };
 
   export function getArrayConstructor(type: string): Function {
