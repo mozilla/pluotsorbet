@@ -51,6 +51,18 @@ module J2ME {
   declare var Long: any;
   declare var VM: any;
 
+  function conditionToOperator(condition: Condition): Operator {
+    switch (condition) {
+      case Condition.EQ: return Operator.EQ;
+      case Condition.NE: return Operator.NE;
+      case Condition.LT: return Operator.LT;
+      case Condition.LE: return Operator.LE;
+      case Condition.GT: return Operator.GT;
+      case Condition.GE: return Operator.GE;
+      default: throw "TODO"
+    }
+  }
+
   export function isTwoSlot(kind: Kind) {
     return kind === Kind.Long || kind === Kind.Double;
   }
@@ -1028,20 +1040,20 @@ module J2ME {
       this.state.apush(Null);
       var y = this.state.apop();
       var x = this.state.apop();
-      this.genIf(stream, new IR.Binary(Bytecode.conditionToOperator(condition), x, y));
+      this.genIf(stream, new IR.Binary(conditionToOperator(condition), x, y));
     }
 
     genIfSame(stream: BytecodeStream, kind: Kind, condition: Condition) {
       var y = this.state.pop(kind);
       var x = this.state.pop(kind);
-      this.genIf(stream, new IR.Binary(Bytecode.conditionToOperator(condition), x, y));
+      this.genIf(stream, new IR.Binary(conditionToOperator(condition), x, y));
     }
 
     genIfZero(stream: BytecodeStream, condition: Condition) {
       this.state.ipush(genConstant(0, Kind.Int));
       var y = this.state.ipop();
       var x = this.state.ipop();
-      this.genIf(stream, new IR.Binary(Bytecode.conditionToOperator(condition), x, y));
+      this.genIf(stream, new IR.Binary(conditionToOperator(condition), x, y));
     }
 
     genCompareOp(kind: Kind, isLessThan: boolean) {

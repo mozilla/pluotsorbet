@@ -1,6 +1,5 @@
 module J2ME.Bytecode {
   import assert = Debug.assert;
-  import Operator = C4.IR.Operator;
 
   export class Bytes {
     /**
@@ -110,18 +109,6 @@ module J2ME.Bytecode {
      * Operation did not produce an overflow.
      */
     NOF
-  }
-
-  export function conditionToOperator(condition: Condition): Operator {
-    switch (condition) {
-      case Condition.EQ: return Operator.EQ;
-      case Condition.NE: return Operator.NE;
-      case Condition.LT: return Operator.LT;
-      case Condition.LE: return Operator.LE;
-      case Condition.GT: return Operator.GT;
-      case Condition.GE: return Operator.GE;
-      default: throw "TODO"
-    }
   }
 
   /**

@@ -2,6 +2,10 @@ var $: J2ME.Runtime; // The currently-executing runtime.
 
 var runtimeTemplate = {};
 
+interface Math {
+  fround(value: number): number;
+}
+
 module J2ME {
   declare var Native, Override;
   declare var VM;
@@ -565,23 +569,6 @@ module J2ME {
         return value;
       };
     }
-
-    consoleWriter.outdent();
-    //if (typeof CC !== "undefined") {
-    //  var compiledMethod = null;
-    //  var classMangledName = J2ME.C4.Backend.mangleClass(this.classInfo);
-    //  var compiledClass = CC[classMangledName];
-    //  if (compiledClass) {
-    //    var methodMangledName = J2ME.C4.Backend.mangleMethod(this);
-    //    compiledMethod = compiledClass.methods[methodMangledName];
-    //    if (this.isStatic) {
-    //      jsGlobal[methodMangledName] = compiledMethod;
-    //    }
-    //    console.log("HERE: " + compiledMethod + " : ");
-    //
-    //  }
-    //  this.fn = compiledMethod;
-    //}
   }
 
   /**

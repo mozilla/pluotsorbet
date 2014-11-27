@@ -3,9 +3,11 @@
 ///<reference path='utilities.ts' />
 ///<reference path='options.ts' />
 ///<reference path='metrics.ts' />
+///<reference path='bytecodes.ts' />
 ///<reference path='types.ts' />
 ///<reference path='classRegistry.ts' />
 ///<reference path='jvm.ts' />
+///<reference path='interpreter.ts' />
 ///<reference path='actors.ts' />
 ///<reference path='runtime.ts' />
 ///<reference path='context.ts' />
@@ -18,7 +20,6 @@
 ///<reference path='jit/c4/ast.ts' />
 ///<reference path='jit/c4/looper.ts' />
 ///<reference path='jit/c4/backend.ts' />
-///<reference path='jit/bytecodes.ts' />
 ///<reference path='jit/jvm.ir.ts' />
 ///<reference path='jit/blockMap.ts' />
 ///<reference path='jit/builder.ts' />
