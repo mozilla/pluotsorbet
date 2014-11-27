@@ -233,7 +233,6 @@ module J2ME {
     }
 
     getClassObject(ctx: Context): java.lang.Class {
-      // TODO: Check to make sure that it doesn't matter if this is done eagerly.
       return runtimeKlass(ctx.runtime, this.klass).classObject;
     }
 
@@ -263,6 +262,7 @@ module J2ME {
   }
 
   ArrayClassInfo.prototype.methods = [];
+  ArrayClassInfo.prototype.interfaces = [];
   ArrayClassInfo.prototype.isArrayClass = true;
 
   export class PrimitiveClassInfo extends ClassInfo {
@@ -274,6 +274,7 @@ module J2ME {
 
   PrimitiveClassInfo.prototype.fields = [];
   PrimitiveClassInfo.prototype.methods = [];
+  PrimitiveClassInfo.prototype.interfaces = [];
 }
 
 var FieldInfo = J2ME.FieldInfo;

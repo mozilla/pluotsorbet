@@ -215,6 +215,12 @@ module J2ME {
     display: Klass [];
 
     /**
+     * Flattened array of super klasses. This makes type checking easy,
+     * see |classInstanceOf|.
+     */
+    interfaces: Klass [];
+
+    /**
      * Depth in the class hierarchy.
      */
     depth: number;
@@ -235,9 +241,14 @@ module J2ME {
     classObject: java.lang.Class;
 
     /**
-     * Wether this class is a runtime class.
+     * Whether this class is a runtime class.
      */
     isRuntimeKlass: boolean;
+
+    /**
+     * Whether this class is an interface class.
+     */
+    isInterfaceKlass: boolean;
   }
 
   export interface ArrayKlass extends Klass {
@@ -358,7 +369,11 @@ module J2ME {
     }
     var klass;
     if (classInfo.isInterface) {
-      klass = <Klass><any> new Function();
+      klass = function() { Debug.unexpected("Should never be instantiated.") };
+      klass.isInterfaceKlass = true;
+      klass.toString = function () {
+        return "[Interface Klass " + classInfo.className + "]";
+      };
     } else if (classInfo.isArrayClass) {
       var elementKlass = getKlass(classInfo.elementClass);
       // Have we already created one? We need to maintain pointer identity.
@@ -407,6 +422,11 @@ module J2ME {
     var superKlass = getKlass(classInfo.superClass);
     extendKlass(klass, superKlass);
     registerKlass(klass, mangledClassName, classInfo.className);
+
+    if (!classInfo.isInterface) {
+      initializeInterfaces(klass, classInfo);
+    }
+
     return klass;
   }
 
@@ -570,12 +590,24 @@ module J2ME {
   function initializeKlassTables(klass: Klass) {
     klass.depth = klass.superKlass ? klass.superKlass.depth + 1 : 0;
     var display = klass.display = new Array(32);
+
+
     var i = klass.depth;
     while (klass) {
       display[i--] = klass;
       klass = klass.superKlass;
     }
     J2ME.Debug.assert(i === -1, i);
+  }
+
+  function initializeInterfaces(klass: Klass, classInfo: ClassInfo) {
+    assert (!klass.interfaces);
+    var interfaces = klass.interfaces = klass.superKlass ? klass.superKlass.interfaces.slice() : [];
+
+    var interfaceClassInfos = classInfo.interfaces;
+    for (var j = 0; j < interfaceClassInfos.length; j++) {
+      ArrayUtilities.pushUnique(interfaces, getKlass(interfaceClassInfos[j]));
+    }
   }
 
   export function extendKlass(klass: Klass, superKlass: Klass) {
@@ -588,34 +620,41 @@ module J2ME {
   }
 
   export function isAssignableTo(from: Klass, to: Klass): boolean {
-    // TODO: This needs to deal with arrays an interfaces too.
+    if (to.isInterfaceKlass) {
+      return from.interfaces.indexOf(to) >= 0;
+    }
     return from.display[to.depth] === to;
   }
 
   export function instanceOf(object: java.lang.Object, klass: Klass): boolean {
-    return false; // TODO: Generic
+    return object === null && isAssignableTo(object.klass, klass);
   }
 
   export function instanceOfKlass(object: java.lang.Object, klass: Klass): boolean {
-    return object.klass.display[klass.depth] === klass;
+    return object === null && object.klass.display[klass.depth] === klass;
   }
 
   export function instanceOfInterface(object: java.lang.Object, klass: Klass): boolean {
-    return object.klass.display[klass.depth] === klass;
+    assert(klass.isInterfaceKlass);
+    return object === null && object.klass.interfaces.indexOf(klass) >= 0;
   }
 
   export function checkCast(object: java.lang.Object, klass: Klass) {
-    return false; // TODO: Generic
+    if (object !== null && !isAssignableTo(object.klass, klass)) {
+      throw new TypeError();
+    }
   }
 
   export function checkCastKlass(object: java.lang.Object, klass: Klass) {
-    if (!instanceOfKlass(object, klass)) {
+    if (object !== null && object.klass.display[klass.depth] !== klass) {
       throw new TypeError();
     }
   }
 
   export function checkCastInterface(object: java.lang.Object, klass: Klass) {
-
+    if (object !== null && object.klass.interfaces.indexOf(klass) < 0) {
+      throw new TypeError();
+    }
   }
 
   function createEmptyObjectArray(size: number) {
