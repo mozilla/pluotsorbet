@@ -563,6 +563,13 @@ Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljav
     return obj;
 });
 
+Native.create("com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;", function(source) {
+    var obj = util.newObject(CLASSES.java_lang_Object);
+    obj.data = new Uint8Array(source.data);
+    obj.pos = source.pos;
+    return obj;
+});
+
 Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function() {
     var handle = this.class.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
