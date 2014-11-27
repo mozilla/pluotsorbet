@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 35000;
+casper.options.waitTimeout = 38000;
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
@@ -58,7 +58,7 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71176 },
+  { name: "pass", number: 71194 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
