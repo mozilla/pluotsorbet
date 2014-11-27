@@ -1,14 +1,3 @@
-
-//
-//VM.traceLog = "";
-//VM.trace = function(type, pid, methodInfo, returnVal) {
-//  VM.traceLog += type + " " + pid + " " + methodInfo.classInfo.className + "." +
-//           methodInfo.name + ":" + methodInfo.signature +
-//           (returnVal ? (" " + returnVal) : "") + "\n";
-//}
-
-
-
 module J2ME {
   declare var util;
   declare var Long;
@@ -180,191 +169,191 @@ module J2ME {
       var op: Bytecodes = frame.read8();
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
       switch (op) {
-        case 0x00: // nop
+        case Bytecodes.NOP:
           break;
-        case 0x01: // aconst_null
+        case Bytecodes.ACONST_NULL:
           stack.push(null);
           break;
-        case 0x02: // aconst_m1
+        case Bytecodes.ICONST_M1:
           stack.push(-1);
           break;
-        case 0x03: // iconst_0
-        case 0x0b: // fconst_0
+        case Bytecodes.ICONST_0:
+        case Bytecodes.FCONST_0:
           stack.push(0);
           break;
-        case 0x0e: // dconst_0
+        case Bytecodes.DCONST_0:
           stack.push2(0);
           break;
-        case 0x04: // iconst_1
-        case 0x0c: // fconst_1
+        case Bytecodes.ICONST_1:
+        case Bytecodes.FCONST_1:
           stack.push(1);
           break;
-        case 0x0f: // dconst_1
+        case Bytecodes.DCONST_1:
           stack.push2(1);
           break;
-        case 0x05: // iconst_2
-        case 0x0d: // fconst_2
+        case Bytecodes.ICONST_2:
+        case Bytecodes.FCONST_2:
           stack.push(2);
           break;
-        case 0x06: // iconst_3
+        case Bytecodes.ICONST_3:
           stack.push(3);
           break;
-        case 0x07: // iconst_4
+        case Bytecodes.ICONST_4:
           stack.push(4);
           break;
-        case 0x08: // iconst_5
+        case Bytecodes.ICONST_5:
           stack.push(5);
           break;
-        case 0x09: // lconst_0
+        case Bytecodes.LCONST_0:
           stack.push2(Long.fromInt(0));
           break;
-        case 0x0a: // lconst_1
+        case Bytecodes.LCONST_1:
           stack.push2(Long.fromInt(1));
           break;
-        case 0x10: // bipush
+        case Bytecodes.BIPUSH:
           stack.push(frame.read8signed());
           break;
-        case 0x11: // sipush
+        case Bytecodes.SIPUSH:
           stack.push(frame.read16signed());
           break;
-        case 0x12: // ldc
-        case 0x13: // ldc_w
+        case Bytecodes.LDC:
+        case Bytecodes.LDC_W:
           var idx = (op === 0x12) ? frame.read8() : frame.read16();
           var constant = cp[idx];
           if (constant.tag)
             constant = resolve(idx);
           stack.push(constant);
           break;
-        case 0x14: // ldc2_w
+        case Bytecodes.LDC2_W:
           var idx = frame.read16();
           var constant = cp[idx];
           if (constant.tag)
             constant = resolve(idx);
           stack.push2(constant);
           break;
-        case 0x15: // iload
-        case 0x17: // fload
-        case 0x19: // aload
+        case Bytecodes.ILOAD:
+        case Bytecodes.FLOAD:
+        case Bytecodes.ALOAD:
           stack.push(frame.getLocal(frame.read8()));
           break;
-        case 0x16: // lload
-        case 0x18: // dload
+        case Bytecodes.LLOAD:
+        case Bytecodes.DLOAD:
           stack.push2(frame.getLocal(frame.read8()));
           break;
-        case 0x1a: // iload_0
-        case 0x22: // fload_0
-        case 0x2a: // aload_0
+        case Bytecodes.ILOAD_0:
+        case Bytecodes.FLOAD_0:
+        case Bytecodes.ALOAD_0:
           stack.push(frame.getLocal(0));
           break;
-        case 0x1b: // iload_1
-        case 0x23: // fload_1
-        case 0x2b: // aload_1
+        case Bytecodes.ILOAD_1:
+        case Bytecodes.FLOAD_1:
+        case Bytecodes.ALOAD_1:
           stack.push(frame.getLocal(1));
           break;
-        case 0x1c: // iload_2
-        case 0x24: // fload_2
-        case 0x2c: // aload_2
+        case Bytecodes.ILOAD_2:
+        case Bytecodes.FLOAD_2:
+        case Bytecodes.ALOAD_2:
           stack.push(frame.getLocal(2));
           break;
-        case 0x1d: // iload_3
-        case 0x25: // fload_3
-        case 0x2d: // aload_3
+        case Bytecodes.ILOAD_3:
+        case Bytecodes.FLOAD_3:
+        case Bytecodes.ALOAD_3:
           stack.push(frame.getLocal(3));
           break;
-        case 0x1e: // lload_0
-        case 0x26: // dload_0
+        case Bytecodes.LLOAD_0:
+        case Bytecodes.DLOAD_0:
           stack.push2(frame.getLocal(0));
           break;
-        case 0x1f: // lload_1
-        case 0x27: // dload_1
+        case Bytecodes.LLOAD_1:
+        case Bytecodes.DLOAD_1:
           stack.push2(frame.getLocal(1));
           break;
-        case 0x20: // lload_2
-        case 0x28: // dload_2
+        case Bytecodes.LLOAD_2:
+        case Bytecodes.DLOAD_2:
           stack.push2(frame.getLocal(2));
           break;
-        case 0x21: // lload_3
-        case 0x29: // dload_3
+        case Bytecodes.LLOAD_3:
+        case Bytecodes.DLOAD_3:
           stack.push2(frame.getLocal(3));
           break;
-        case 0x2e: // iaload
-        case 0x30: // faload
-        case 0x32: // aaload
-        case 0x33: // baload
-        case 0x34: // caload
-        case 0x35: // saload
+        case Bytecodes.IALOAD:
+        case Bytecodes.FALOAD:
+        case Bytecodes.AALOAD:
+        case Bytecodes.BALOAD:
+        case Bytecodes.CALOAD:
+        case Bytecodes.SALOAD:
           var idx = stack.pop();
           var refArray = stack.pop();
           checkArrayAccess(refArray, idx);
           stack.push(refArray[idx]);
           traceArrayLoad(idx, refArray);
           break;
-        case 0x2f: // laload
-        case 0x31: // daload
+        case Bytecodes.LALOAD:
+        case Bytecodes.DALOAD:
           var idx = stack.pop();
           var refArray = stack.pop();
           checkArrayAccess(refArray, idx);
           stack.push2(refArray[idx]);
           traceArrayLoad(idx, refArray);
           break;
-        case 0x36: // istore
-        case 0x38: // fstore
-        case 0x3a: // astore
+        case Bytecodes.ISTORE:
+        case Bytecodes.FSTORE:
+        case Bytecodes.ASTORE:
           frame.setLocal(frame.read8(), stack.pop());
           break;
-        case 0x37: // lstore
-        case 0x39: // dstore
+        case Bytecodes.LSTORE:
+        case Bytecodes.DSTORE:
           frame.setLocal(frame.read8(), stack.pop2());
           break;
-        case 0x3b: // istore_0
-        case 0x43: // fstore_0
-        case 0x4b: // astore_0
+        case Bytecodes.ISTORE_0:
+        case Bytecodes.FSTORE_0:
+        case Bytecodes.ASTORE_0:
           frame.setLocal(0, stack.pop());
           break;
-        case 0x3c: // istore_1
-        case 0x44: // fstore_1
-        case 0x4c: // astore_1
+        case Bytecodes.ISTORE_1:
+        case Bytecodes.FSTORE_1:
+        case Bytecodes.ASTORE_1:
           frame.setLocal(1, stack.pop());
           break;
-        case 0x3d: // istore_2
-        case 0x45: // fstore_2
-        case 0x4d: // astore_2
+        case Bytecodes.ISTORE_2:
+        case Bytecodes.FSTORE_2:
+        case Bytecodes.ASTORE_2:
           frame.setLocal(2, stack.pop());
           break;
-        case 0x3e: // istore_3
-        case 0x46: // fstore_3
-        case 0x4e: // astore_3
+        case Bytecodes.ISTORE_3:
+        case Bytecodes.FSTORE_3:
+        case Bytecodes.ASTORE_3:
           frame.setLocal(3, stack.pop());
           break;
-        case 0x3f: // lstore_0
-        case 0x47: // dstore_0
+        case Bytecodes.LSTORE_0:
+        case Bytecodes.DSTORE_0:
           frame.setLocal(0, stack.pop2());
           break;
-        case 0x40: // lstore_1
-        case 0x48: // dstore_1
+        case Bytecodes.LSTORE_1:
+        case Bytecodes.DSTORE_1:
           frame.setLocal(1, stack.pop2());
           break;
-        case 0x41: // lstore_2
-        case 0x49: // dstore_2
+        case Bytecodes.LSTORE_2:
+        case Bytecodes.DSTORE_2:
           frame.setLocal(2, stack.pop2());
           break;
-        case 0x42: // lstore_3
-        case 0x4a: // dstore_3
+        case Bytecodes.LSTORE_3:
+        case Bytecodes.DSTORE_3:
           frame.setLocal(3, stack.pop2());
           break;
-        case 0x4f: // iastore
-        case 0x51: // fastore
-        case 0x54: // bastore
-        case 0x55: // castore
-        case 0x56: // sastore
+        case Bytecodes.IASTORE:
+        case Bytecodes.FASTORE:
+        case Bytecodes.BASTORE:
+        case Bytecodes.CASTORE:
+        case Bytecodes.SASTORE:
           var val = stack.pop();
           var idx = stack.pop();
           var refArray = stack.pop();
           checkArrayAccess(refArray, idx);
           refArray[idx] = val;
           break;
-        case 0x50: // lastore
-        case 0x52: // dastore
+        case Bytecodes.LASTORE:
+        case Bytecodes.DASTORE:
           var val = stack.pop2();
           var idx = stack.pop();
           var refArray = stack.pop();
@@ -372,7 +361,7 @@ module J2ME {
           refArray[idx] = val;
           traceArrayStore(idx, refArray, val);
           break;
-        case 0x53: // aastore
+        case Bytecodes.AASTORE:
           var val = stack.pop();
           var idx = stack.pop();
           var refArray = stack.pop();
@@ -384,25 +373,25 @@ module J2ME {
           refArray[idx] = val;
           traceArrayStore(idx, refArray, val);
           break;
-        case 0x57: // pop
+        case Bytecodes.POP:
           stack.pop();
           break;
-        case 0x58: // pop2
+        case Bytecodes.POP2:
           stack.pop2();
           break;
-        case 0x59: // dup
+        case Bytecodes.DUP:
           var val = stack.pop();
           stack.push(val);
           stack.push(val);
           break;
-        case 0x5a: // dup_x1
+        case Bytecodes.DUP_X1:
           var a = stack.pop();
           var b = stack.pop();
           stack.push(a);
           stack.push(b);
           stack.push(a);
           break;
-        case 0x5b: // dup_x2
+        case Bytecodes.DUP_X2:
           var a = stack.pop();
           var b = stack.pop();
           var c = stack.pop();
@@ -411,7 +400,7 @@ module J2ME {
           stack.push(b);
           stack.push(a);
           break;
-        case 0x5c: // dup2
+        case Bytecodes.DUP2:
           var a = stack.pop();
           var b = stack.pop();
           stack.push(b);
@@ -419,7 +408,7 @@ module J2ME {
           stack.push(b);
           stack.push(a);
           break;
-        case 0x5d: // dup2_x1
+        case Bytecodes.DUP2_X1:
           var a = stack.pop();
           var b = stack.pop();
           var c = stack.pop();
@@ -429,7 +418,7 @@ module J2ME {
           stack.push(b);
           stack.push(a);
           break;
-        case 0x5e: // dup2_x2
+        case Bytecodes.DUP2_X2:
           var a = stack.pop();
           var b = stack.pop();
           var c = stack.pop();
@@ -441,54 +430,54 @@ module J2ME {
           stack.push(b);
           stack.push(a);
           break;
-        case 0x5f: // swap
+        case Bytecodes.SWAP:
           var a = stack.pop();
           var b = stack.pop();
           stack.push(a);
           stack.push(b);
           break;
-        case 0x84: // iinc
+        case Bytecodes.IINC:
           var idx = frame.read8();
           var val = frame.read8signed();
           frame.setLocal(idx, frame.getLocal(idx) + val);
           break;
-        case 0x60: // iadd
+        case Bytecodes.IADD:
           stack.push((stack.pop() + stack.pop())|0);
           break;
-        case 0x61: // ladd
+        case Bytecodes.LADD:
           stack.push2(stack.pop2().add(stack.pop2()));
           break;
-        case 0x62: // fadd
+        case Bytecodes.FADD:
           stack.push(Math.fround(stack.pop() + stack.pop()));
           break;
-        case 0x63: // dadd
+        case Bytecodes.DADD:
           stack.push2(stack.pop2() + stack.pop2());
           break;
-        case 0x64: // isub
+        case Bytecodes.ISUB:
           stack.push((- stack.pop() + stack.pop())|0);
           break;
-        case 0x65: // lsub
+        case Bytecodes.LSUB:
           stack.push2(stack.pop2().negate().add(stack.pop2()));
           break;
-        case 0x66: // fsub
+        case Bytecodes.FSUB:
           stack.push(Math.fround(- stack.pop() + stack.pop()));
           break;
-        case 0x67: // dsub
+        case Bytecodes.DSUB:
           stack.push2(- stack.pop2() + stack.pop2());
           break;
-        case 0x68: // imul
+        case Bytecodes.IMUL:
           stack.push(Math.imul(stack.pop(), stack.pop()));
           break;
-        case 0x69: // lmul
+        case Bytecodes.LMUL:
           stack.push2(stack.pop2().multiply(stack.pop2()));
           break;
-        case 0x6a: // fmul
+        case Bytecodes.FMUL:
           stack.push(Math.fround(stack.pop() * stack.pop()));
           break;
-        case 0x6b: // dmul
+        case Bytecodes.DMUL:
           stack.push2(stack.pop2() * stack.pop2());
           break;
-        case 0x6c: // idiv
+        case Bytecodes.IDIV:
           var b = stack.pop();
           var a = stack.pop();
           if (!b) {
@@ -496,7 +485,7 @@ module J2ME {
           }
           stack.push((a === util.INT_MIN && b === -1) ? a : ((a / b)|0));
           break;
-        case 0x6d: // ldiv
+        case Bytecodes.LDIV:
           var b = stack.pop2();
           var a = stack.pop2();
           if (b.isZero()) {
@@ -504,17 +493,17 @@ module J2ME {
           }
           stack.push2(a.div(b));
           break;
-        case 0x6e: // fdiv
+        case Bytecodes.FDIV:
           var b = stack.pop();
           var a = stack.pop();
           stack.push(Math.fround(a / b));
           break;
-        case 0x6f: // ddiv
+        case Bytecodes.DDIV:
           var b = stack.pop2();
           var a = stack.pop2();
           stack.push2(a / b);
           break;
-        case 0x70: // irem
+        case Bytecodes.IREM:
           var b = stack.pop();
           var a = stack.pop();
           if (!b) {
@@ -522,7 +511,7 @@ module J2ME {
           }
           stack.push(a % b);
           break;
-        case 0x71: // lrem
+        case Bytecodes.LREM:
           var b = stack.pop2();
           var a = stack.pop2();
           if (b.isZero()) {
@@ -530,77 +519,77 @@ module J2ME {
           }
           stack.push2(a.modulo(b));
           break;
-        case 0x72: // frem
+        case Bytecodes.FREM:
           var b = stack.pop();
           var a = stack.pop();
           stack.push(Math.fround(a % b));
           break;
-        case 0x73: // drem
+        case Bytecodes.DREM:
           var b = stack.pop2();
           var a = stack.pop2();
           stack.push2(a % b);
           break;
-        case 0x74: // ineg
+        case Bytecodes.INEG:
           stack.push((- stack.pop())|0);
           break;
-        case 0x75: // lneg
+        case Bytecodes.LNEG:
           stack.push2(stack.pop2().negate());
           break;
-        case 0x76: // fneg
+        case Bytecodes.FNEG:
           stack.push(- stack.pop());
           break;
-        case 0x77: // dneg
+        case Bytecodes.DNEG:
           stack.push2(- stack.pop2());
           break;
-        case 0x78: // ishl
+        case Bytecodes.ISHL:
           var b = stack.pop();
           var a = stack.pop();
           stack.push(a << b);
           break;
-        case 0x79: // lshl
+        case Bytecodes.LSHL:
           var b = stack.pop();
           var a = stack.pop2();
           stack.push2(a.shiftLeft(b));
           break;
-        case 0x7a: // ishr
+        case Bytecodes.ISHR:
           var b = stack.pop();
           var a = stack.pop();
           stack.push(a >> b);
           break;
-        case 0x7b: // lshr
+        case Bytecodes.LSHR:
           var b = stack.pop();
           var a = stack.pop2();
           stack.push2(a.shiftRight(b));
           break;
-        case 0x7c: // iushr
+        case Bytecodes.IUSHR:
           var b = stack.pop();
           var a = stack.pop();
           stack.push(a >>> b);
           break;
-        case 0x7d: // lushr
+        case Bytecodes.LUSHR:
           var b = stack.pop();
           var a = stack.pop2();
           stack.push2(a.shiftRightUnsigned(b));
           break;
-        case 0x7e: // iand
+        case Bytecodes.IAND:
           stack.push(stack.pop() & stack.pop());
           break;
-        case 0x7f: // land
+        case Bytecodes.LAND:
           stack.push2(stack.pop2().and(stack.pop2()));
           break;
-        case 0x80: // ior
+        case Bytecodes.IOR:
           stack.push(stack.pop() | stack.pop());
           break;
-        case 0x81: // lor
+        case Bytecodes.LOR:
           stack.push2(stack.pop2().or(stack.pop2()));
           break;
-        case 0x82: // ixor
+        case Bytecodes.IXOR:
           stack.push(stack.pop() ^ stack.pop());
           break;
-        case 0x83: // lxor
+        case Bytecodes.LXOR:
           stack.push2(stack.pop2().xor(stack.pop2()));
           break;
-        case 0x94: // lcmp
+        case Bytecodes.LCMP:
           var b = stack.pop2();
           var a = stack.pop2();
           if (a.greaterThan(b)) {
@@ -611,7 +600,7 @@ module J2ME {
             stack.push(0);
           }
           break;
-        case 0x95: // fcmpl
+        case Bytecodes.FCMPL:
           var b = stack.pop();
           var a = stack.pop();
           if (isNaN(a) || isNaN(b)) {
@@ -624,7 +613,7 @@ module J2ME {
             stack.push(0);
           }
           break;
-        case 0x96: // fcmpg
+        case Bytecodes.FCMPG:
           var b = stack.pop();
           var a = stack.pop();
           if (isNaN(a) || isNaN(b)) {
@@ -637,7 +626,7 @@ module J2ME {
             stack.push(0);
           }
           break;
-        case 0x97: // dcmpl
+        case Bytecodes.DCMPL:
           var b = stack.pop2();
           var a = stack.pop2();
           if (isNaN(a) || isNaN(b)) {
@@ -650,7 +639,7 @@ module J2ME {
             stack.push(0);
           }
           break;
-        case 0x98: // dcmpg
+        case Bytecodes.DCMPG:
           var b = stack.pop2();
           var a = stack.pop2();
           if (isNaN(a) || isNaN(b)) {
@@ -663,134 +652,134 @@ module J2ME {
             stack.push(0);
           }
           break;
-        case 0x99: // ifeq
+        case Bytecodes.IFEQ:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() === 0 ? jmp : frame.ip;
           break;
-        case 0x9a: // ifne
+        case Bytecodes.IFNE:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() !== 0 ? jmp : frame.ip;
           break;
-        case 0x9b: // iflt
+        case Bytecodes.IFLT:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() < 0 ? jmp : frame.ip;
           break;
-        case 0x9c: // ifge
+        case Bytecodes.IFGE:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() >= 0 ? jmp : frame.ip;
           break;
-        case 0x9d: // ifgt
+        case Bytecodes.IFGT:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() > 0 ? jmp : frame.ip;
           break;
-        case 0x9e: // ifle
+        case Bytecodes.IFLE:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() <= 0 ? jmp : frame.ip;
           break;
-        case 0x9f: // if_icmpeq
+        case Bytecodes.IF_ICMPEQ:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() === stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa0: // if_cmpne
+        case Bytecodes.IF_ICMPNE:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() !== stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa1: // if_icmplt
+        case Bytecodes.IF_ICMPLT:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() > stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa2: // if_icmpge
+        case Bytecodes.IF_ICMPGE:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() <= stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa3: // if_icmpgt
+        case Bytecodes.IF_ICMPGT:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() < stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa4: // if_icmple
+        case Bytecodes.IF_ICMPLE:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() >= stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa5: // if_acmpeq
+        case Bytecodes.IF_ACMPEQ:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() === stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa6: // if_acmpne
+        case Bytecodes.IF_ACMPNE:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() !== stack.pop() ? jmp : frame.ip;
           break;
-        case 0xc6: // ifnull
+        case Bytecodes.IFNULL:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = !stack.pop() ? jmp : frame.ip;
           break;
-        case 0xc7: // ifnonnull
+        case Bytecodes.IFNONNULL:
           var jmp = frame.ip - 1 + frame.read16signed();
           frame.ip = stack.pop() ? jmp : frame.ip;
           break;
-        case 0xa7: // goto
+        case Bytecodes.GOTO:
           frame.ip += frame.read16signed() - 1;
           break;
-        case 0xc8: // goto_w
+        case Bytecodes.GOTO_W:
           frame.ip += frame.read32signed() - 1;
           break;
-        case 0xa8: // jsr
+        case Bytecodes.JSR:
           var jmp = frame.read16();
           stack.push(frame.ip);
           frame.ip = jmp;
           break;
-        case 0xc9: // jsr_w
+        case Bytecodes.JSR_W:
           var jmp = frame.read32();
           stack.push(frame.ip);
           frame.ip = jmp;
           break;
-        case 0xa9: // ret
+        case Bytecodes.RET:
           frame.ip = frame.getLocal(frame.read8());
           break;
-        case 0x85: // i2l
+        case Bytecodes.I2L:
           stack.push2(Long.fromInt(stack.pop()));
           break;
-        case 0x86: // i2f
+        case Bytecodes.I2F:
           break;
-        case 0x87: // i2d
+        case Bytecodes.I2D:
           stack.push2(stack.pop());
           break;
-        case 0x88: // l2i
+        case Bytecodes.L2I:
           stack.push(stack.pop2().toInt());
           break;
-        case 0x89: // l2f
+        case Bytecodes.L2F:
           stack.push(Math.fround(stack.pop2().toNumber()));
           break;
-        case 0x8a: // l2d
+        case Bytecodes.L2D:
           stack.push2(stack.pop2().toNumber());
           break;
-        case 0x8b: // f2i
+        case Bytecodes.F2I:
           stack.push(util.double2int(stack.pop()));
           break;
-        case 0x8c: // f2l
+        case Bytecodes.F2L:
           stack.push2(Long.fromNumber(stack.pop()));
           break;
-        case 0x8d: // f2d
+        case Bytecodes.F2D:
           stack.push2(stack.pop());
           break;
-        case 0x8e: // d2i
+        case Bytecodes.D2I:
           stack.push(util.double2int(stack.pop2()));
           break;
-        case 0x8f: // d2l
+        case Bytecodes.D2L:
           stack.push2(util.double2long(stack.pop2()));
           break;
-        case 0x90: // d2f
+        case Bytecodes.D2F:
           stack.push(Math.fround(stack.pop2()));
           break;
-        case 0x91: // i2b
+        case Bytecodes.I2B:
           stack.push((stack.pop() << 24) >> 24);
           break;
-        case 0x92: // i2c
+        case Bytecodes.I2C:
           stack.push(stack.pop() & 0xffff);
           break;
-        case 0x93: // i2s
+        case Bytecodes.I2S:
           stack.push((stack.pop() << 16) >> 16);
           break;
-        case 0xaa: // tableswitch
+        case Bytecodes.TABLESWITCH:
           var startip: number = frame.ip;
           while ((frame.ip & 3) != 0)
             frame.ip++;
@@ -807,7 +796,7 @@ module J2ME {
           }
           frame.ip = startip - 1 + jmp;
           break;
-        case 0xab: // lookupswitch
+        case Bytecodes.LOOKUPSWITCH:
           var startip: number = frame.ip;
           while ((frame.ip & 3) != 0)
             frame.ip++;
@@ -827,7 +816,7 @@ module J2ME {
             }
           frame.ip = startip - 1 + jmp;
           break;
-        case 0xbc: // newarray
+        case Bytecodes.NEWARRAY:
           var type = frame.read8();
           var size = stack.pop();
           if (size < 0) {
@@ -835,7 +824,7 @@ module J2ME {
           }
           stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
           break;
-        case 0xbd: // anewarray
+        case Bytecodes.ANEWARRAY:
           var idx = frame.read16();
           var classInfo = cp[idx];
           if (classInfo.tag)
@@ -850,7 +839,7 @@ module J2ME {
           className = "[" + className;
           stack.push(util.newArray(classInfo, size));
           break;
-        case 0xc5: // multianewarray
+        case Bytecodes.MULTIANEWARRAY:
           var idx = frame.read16();
           var classInfo = cp[idx];
           if (classInfo.tag)
@@ -861,14 +850,14 @@ module J2ME {
             lengths[i] = stack.pop();
           stack.push(util.newMultiArray(classInfo, lengths.reverse()));
           break;
-        case 0xbe: // arraylength
+        case Bytecodes.ARRAYLENGTH:
           var obj = stack.pop();
           if (!obj) {
             ctx.raiseExceptionAndYield("java/lang/NullPointerException");
           }
           stack.push(obj.length);
           break;
-        case 0xb4: // getfield
+        case Bytecodes.GETFIELD:
           var idx = frame.read16();
           var field = cp[idx];
           if (field.tag)
@@ -879,7 +868,7 @@ module J2ME {
           }
           stack.pushType(field.signature, field.get(obj));
           break;
-        case 0xb5: // putfield
+        case Bytecodes.PUTFIELD:
           var idx = frame.read16();
           var field = cp[idx];
           if (field.tag)
@@ -891,7 +880,7 @@ module J2ME {
           }
           field.set(obj, val);
           break;
-        case 0xb2: // getstatic
+        case Bytecodes.GETSTATIC:
           var idx = frame.read16();
           var field = cp[idx];
           if (field.tag)
@@ -903,7 +892,7 @@ module J2ME {
           }
           stack.pushType(field.signature, value);
           break;
-        case 0xb3: // putstatic
+        case Bytecodes.PUTSTATIC:
           var idx = frame.read16();
           var field = cp[idx];
           if (field.tag)
@@ -911,7 +900,7 @@ module J2ME {
           classInitCheck(field.classInfo, frame.ip-3);
           ctx.runtime.setStatic(field, stack.popType(field.signature));
           break;
-        case 0xbb: // new
+        case Bytecodes.NEW:
           var idx = frame.read16();
           var classInfo = cp[idx];
           if (classInfo.tag)
@@ -919,7 +908,7 @@ module J2ME {
           classInitCheck(classInfo, frame.ip-3);
           stack.push(util.newObject(classInfo));
           break;
-        case 0xc0: // checkcast
+        case Bytecodes.CHECKCAST:
           var idx = frame.read16();
           var classInfo = cp[idx];
           if (classInfo.tag)
@@ -931,7 +920,7 @@ module J2ME {
               classInfo.className);
           }
           break;
-        case 0xc1: // instanceof
+        case Bytecodes.INSTANCEOF:
           var idx = frame.read16();
           var classInfo = cp[idx];
           if (classInfo.tag)
@@ -940,7 +929,7 @@ module J2ME {
           var result = !obj ? false : isAssignableTo(obj.klass, classInfo.klass);
           stack.push(result ? 1 : 0);
           break;
-        case 0xbf: // athrow
+        case Bytecodes.ATHROW:
           debugger;
           if (ctx.frameSets.length > 0) {
             // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
@@ -953,46 +942,46 @@ module J2ME {
           }
           throw_(obj, ctx);
           break;
-        case 0xc2: // monitorenter
+        case Bytecodes.MONITORENTER:
           var obj = stack.pop();
           if (!obj) {
             ctx.raiseExceptionAndYield("java/lang/NullPointerException");
           }
           ctx.monitorEnter(obj);
           break;
-        case 0xc3: // monitorexit
+        case Bytecodes.MONITOREXIT:
           var obj = stack.pop();
           if (!obj) {
             ctx.raiseExceptionAndYield("java/lang/NullPointerException");
           }
           ctx.monitorExit(obj);
           break;
-        case 0xc4: // wide
+        case Bytecodes.WIDE:
           switch (op = frame.read8()) {
-            case 0x15: // iload
-            case 0x17: // fload
-            case 0x19: // aload
+            case Bytecodes.ILOAD:
+            case Bytecodes.FLOAD:
+            case Bytecodes.ALOAD:
               stack.push(frame.getLocal(frame.read16()));
               break;
-            case 0x16: // lload
-            case 0x18: // dload
+            case Bytecodes.LLOAD:
+            case Bytecodes.DLOAD:
               stack.push2(frame.getLocal(frame.read16()));
               break;
-            case 0x36: // istore
-            case 0x38: // fstore
-            case 0x3a: // astore
+            case Bytecodes.ISTORE:
+            case Bytecodes.FSTORE:
+            case Bytecodes.ASTORE:
               frame.setLocal(frame.read16(), stack.pop());
               break;
-            case 0x37: // lstore
-            case 0x39: // dstore
+            case Bytecodes.LSTORE:
+            case Bytecodes.DSTORE:
               frame.setLocal(frame.read16(), stack.pop2());
               break;
-            case 0x84: // iinc
+            case Bytecodes.IINC:
               var idx = frame.read16();
               var val = frame.read16signed();
               frame.setLocal(idx, frame.getLocal(idx) + val);
               break;
-            case 0xa9: // ret
+            case Bytecodes.RET:
               frame.ip = frame.getLocal(frame.read16());
               break;
             default:
@@ -1000,10 +989,10 @@ module J2ME {
               throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
           }
           break;
-        case 0xb6: // invokevirtual
-        case 0xb7: // invokespecial
-        case 0xb8: // invokestatic
-        case 0xb9: // invokeinterface
+        case Bytecodes.INVOKEVIRTUAL:
+        case Bytecodes.INVOKESPECIAL:
+        case Bytecodes.INVOKESTATIC:
+        case Bytecodes.INVOKEINTERFACE:
           var startip: number = frame.ip - 1;
           var idx = frame.read16();
           if (op === 0xb9) {
@@ -1056,22 +1045,22 @@ module J2ME {
               break;
           }
           break;
-        case 0xb1: // return
+        case Bytecodes.RETURN:
           var shouldReturn = popFrame(0);
           if (shouldReturn) {
             return returnValue;
           }
           break;
-        case 0xac: // ireturn
-        case 0xae: // freturn
-        case 0xb0: // areturn
+        case Bytecodes.IRETURN:
+        case Bytecodes.FRETURN:
+        case Bytecodes.ARETURN:
           var shouldReturn = popFrame(1);
           if (shouldReturn) {
             return returnValue;
           }
           break;
-        case 0xad: // lreturn
-        case 0xaf: // dreturn
+        case Bytecodes.LRETURN:
+        case Bytecodes.DRETURN:
           var shouldReturn = popFrame(2);
           if (shouldReturn) {
             return returnValue;
