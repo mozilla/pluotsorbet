@@ -149,6 +149,47 @@ public class TestFileConnection implements Testlet {
         file.close();
     }
 
+    class CreateFileThread extends Thread {
+        String name;
+        TestHarness th;
+        public CreateFileThread(String name, TestHarness th) {
+            this.name = name;
+            this.th = th;
+        }
+
+        public void run() {
+            try {
+                ((FileConnection)Connector.open(name)).create();
+            } catch (IOException ioe) {
+                th.fail("Unexpected failure.");
+                ioe.printStackTrace();
+            }
+        }
+    }
+
+    class RemoveFileThread extends Thread {
+        String name;
+        TestHarness th;
+
+        public RemoveFileThread(String name, TestHarness th) {
+            this.name = name;
+            this.th = th;
+        }
+
+        public void run() {
+            try {
+                FileConnection file = (FileConnection)Connector.open(name);
+                th.check(file.exists(), name + " exists.");
+                file.delete();
+                th.check(!file.exists(), name + " has been removed.");
+                file.close();
+            } catch (IOException ioe) {
+                th.fail("Unexpected failure.");
+                ioe.printStackTrace();
+            }
+        }
+    }
+
     public void test(TestHarness th) {
         try {
             dirPath = System.getProperty("fileconn.dir.private");
@@ -395,7 +436,44 @@ public class TestFileConnection implements Testlet {
             file.delete();
             file.close();
 
+            // Check creating files in multi-thread
+            Hashtable expected = new Hashtable();
+            expected.put("ThreadFile1", "");
+            expected.put("ThreadFile2", "");
+            expected.put("ThreadFile3", "");
+
+            Thread t1 = new CreateFileThread(dirPath + "provaDir/" + "ThreadFile1", th);
+            Thread t2 = new CreateFileThread(dirPath + "provaDir/" + "ThreadFile2", th);
+            Thread t3 = new CreateFileThread(dirPath + "provaDir/" + "ThreadFile3", th);
+            t1.start();
+            t2.start();
+            t3.start();
+            t1.join();
+            t2.join();
+            t3.join();
+
             dir = (FileConnection)Connector.open(dirPath + "provaDir");
+            files = dir.list();
+            while (files.hasMoreElements()) {
+                String fileName = (String)files.nextElement();
+                th.check(expected.remove(fileName) != null);
+            }
+            th.check(expected.isEmpty(), "3 files were created and removed.");
+
+            // Check removing files in multi-thread
+            t1 = new RemoveFileThread(dirPath + "provaDir/" + "ThreadFile1", th);
+            t2 = new RemoveFileThread(dirPath + "provaDir/" + "ThreadFile2", th);
+            t3 = new RemoveFileThread(dirPath + "provaDir/" + "ThreadFile3", th);
+            t1.start();
+            t2.start();
+            t3.start();
+            t1.join();
+            t2.join();
+            t3.join();
+
+            files = dir.list();
+            th.check(!files.hasMoreElements(), "dir is empty.");
+
             dir.delete();
             th.check(!dir.exists());
             dir.close();
