@@ -13,6 +13,27 @@ module J2ME {
   declare var ACCESS_FLAGS;
   declare var snarf;
 
+
+  /**
+   * To unify all class name handling, we give primitive type names valid
+   * class names (which hopefully can't be created from source, if they can
+   * we'll have to mangle them.
+   */
+  function convertPrimitiveArrayTypeName(typeName: string): string {
+    switch (typeName) {
+      case "[Z": return "[boolean";
+      case "[B": return "[byte";
+      case "[C": return "[char";
+      case "[D": return "[double";
+      case "[F": return "[float";
+      case "[I": return "[int";
+      case "[J": return "[long";
+      case "[S": return "[short";
+      default:
+        return typeName;
+    }
+  }
+
   export class ClassRegistry {
     /**
      * List of directories to look for source files in.
@@ -227,6 +248,7 @@ module J2ME {
     }
 
     createArrayClass(typeName: string): ArrayClassInfo {
+      typeName = convertPrimitiveArrayTypeName(typeName);
       var elementType = typeName.substr(1);
       var constructor = getArrayConstructor(elementType);
       var classInfo;
