@@ -14,13 +14,9 @@ public class DeviceControl {
         throw new RuntimeException("DeviceControl::flashLights(long) not implemented");
     }
 
-    public static void startVibra(int freq, long duration) {
-        System.out.println("DeviceControl::startVibra(int,long) not implemented");
-    }
+    public static native void startVibra(int freq, long duration);
 
-    public static void stopVibra() {
-        System.out.println("DeviceControl::stopVibra() not implemented");
-    }
+    public static native void stopVibra();
 
     public static int getUserInactivityTime() {
         throw new RuntimeException("DeviceControl::getUserInactivityTime() not implemented");
