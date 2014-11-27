@@ -44,19 +44,19 @@ module J2ME {
       this.java_lang_String = this.loadClass("java/lang/String");
       this.java_lang_Thread = this.loadClass("java/lang/Thread");
 
-      for (var i = 0; i < "ZCFDBSIJ".length; i++) {
-        var typeName = "ZCFDBSIJ"[i];
+      for (var i = 0; i < valueKinds.length; i++) {
+        var typeName = Kind[valueKinds[i]].toLowerCase();
         this.classes[typeName] = new PrimitiveClassInfo(typeName);
       }
 
-      this.booleanArray = this.getClass("[Z");
-      this.byteArray = this.getClass("[B");
-      this.charArray = this.getClass("[C");
-      this.doubleArray = this.getClass("[D");
-      this.floatArray = this.getClass("[F");
-      this.intArray = this.getClass("[I");
-      this.longArray = this.getClass("[J");
-      this.shortArray = this.getClass("[S");
+      this.booleanArray = this.getClass("[boolean");
+      this.byteArray = this.getClass("[byte");
+      this.charArray = this.getClass("[char");
+      this.doubleArray = this.getClass("[double");
+      this.floatArray = this.getClass("[float");
+      this.intArray = this.getClass("[int");
+      this.longArray = this.getClass("[long");
+      this.shortArray = this.getClass("[short");
     }
 
     addPath(name: string, buffer: ArrayBuffer) {

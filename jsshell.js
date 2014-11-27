@@ -63,7 +63,7 @@ var urlParams = {
 };
 
 try {
-  load("libs/zipfile.js", "build/j2me.js", "classinfo.js", "classfile/classfile.js",
+  load("libs/zipfile.js", "build/j2me.js", "classfile/classfile.js",
        "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js",
        "libs/encoding.js", "util.js", "frame.js",
        "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",

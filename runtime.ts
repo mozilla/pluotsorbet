@@ -362,7 +362,7 @@ module J2ME {
       }
       klass = getArrayConstructor(classInfo.elementClass.className);
       if (!klass) {
-        klass = <Klass><any> function (size: number) {
+        klass = <Klass><any> function (size:number) {
           var array = new Array(size);
           (<any>array).klass = klass;
           return array;
@@ -375,6 +375,11 @@ module J2ME {
         return "[Array of " + elementKlass + "]";
       };
       elementKlass.arrayKlass = klass;
+    } else if (classInfo instanceof PrimitiveClassInfo) {
+      klass = function() { Debug.unexpected("Should never be instantiated.") };
+      klass.toString = function () {
+        return "[Primitive Klass " + classInfo.className + "]";
+      };
     } else {
       // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
       // creating a closure, which will probably be slower at runtime.

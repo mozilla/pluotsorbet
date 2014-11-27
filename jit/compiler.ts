@@ -281,15 +281,6 @@ module J2ME {
             }
           }
           compiledMethods.push(compiledMethod);
-        } else {
-          writer.writeLn("trampoline(" +
-                         quote(mangledClassName) + "," +
-                         quote(mangledMethodName) + "," +
-                         quote(mangledClassAndMethodName) + "," +
-                         quote(classInfo.className) + "," +
-                         quote(method.key) + "," +
-                         method.isStatic +
-                         ");");
         }
       } catch (x) {
         consoleWriter.writeLn("XXXX: " + x);

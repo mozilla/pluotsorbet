@@ -682,7 +682,7 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMNew.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.NewExpression(id(mangleClass(this.classInfo)), []);
+    return new AST.NewExpression(getRuntimeClass(this.classInfo), []);
   };
 
   IR.JVMThrow.prototype.compile = function (cx: Context): AST.Node {

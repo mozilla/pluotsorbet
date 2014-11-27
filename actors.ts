@@ -275,3 +275,7 @@ module J2ME {
   PrimitiveClassInfo.prototype.fields = [];
   PrimitiveClassInfo.prototype.methods = [];
 }
+
+var FieldInfo = J2ME.FieldInfo;
+var MethodInfo = J2ME.MethodInfo;
+var ClassInfo = J2ME.ClassInfo;

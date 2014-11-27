@@ -20,6 +20,17 @@ module J2ME {
     Store
   }
 
+  export var valueKinds = [
+    Kind.Boolean,
+    Kind.Char,
+    Kind.Float,
+    Kind.Double,
+    Kind.Byte,
+    Kind.Short,
+    Kind.Int,
+    Kind.Long
+  ];
+
   export function stackKind(kind: Kind): Kind {
     switch (kind) {
       case Kind.Boolean: return Kind.Int;
