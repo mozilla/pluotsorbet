@@ -2,7 +2,7 @@ import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.io.*;
 
-public class TestPerf {
+public class TestFileSystemPerf {
     public static void main(String args[]) {
         try {
             String dirPath = System.getProperty("fileconn.dir.private");
