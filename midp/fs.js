@@ -210,7 +210,7 @@ Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)
 });
 
 Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V", function() {
-    var lookupId = this.class.getField("I.lookupId.I").get(this);
+    var lookupId = this.klass.classInfo.getField("I.lookupId.I").get(this);
     if (MIDP.RecordStoreCache[lookupId] &&
         --MIDP.RecordStoreCache[lookupId].refCount <= 0) {
         // Set to null instead of removing from array to maintain

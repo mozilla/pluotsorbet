@@ -473,7 +473,7 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
         throw new JavaException("java/lang/IllegalThreadStateException");
     this.alive = true;
     this.pid = util.id();
-    var run = CLASSES.getMethod(this.class, "I.run.()V");
+    var run = CLASSES.getMethod(this.klass.classInfo, "I.run.()V");
     // Create a context for the thread and start it.
     var ctx = new Context(ctx.runtime);
     ctx.thread = this;
@@ -482,7 +482,7 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
       name: "ThreadStart0Synthetic",
       signature: "()V",
       classInfo: {
-        className: this.class.className,
+        className: this.klass.classInfo.className,
         vmc: {},
         vfc: {},
         constant_pool: [

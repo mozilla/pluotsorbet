@@ -98,11 +98,11 @@ function(port, msid, handle, smsPacket) {
                 address[i] = addr.charCodeAt(i);
             }
 
-            smsPacket.class.getField("I.message.[B").set(smsPacket, message);
-            smsPacket.class.getField("I.address.[B").set(smsPacket, address);
-            smsPacket.class.getField("I.port.I").set(smsPacket, port);
-            smsPacket.class.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
-            smsPacket.class.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
+            smsPacket.klass.classInfo.getField("I.message.[B").set(smsPacket, message);
+            smsPacket.klass.classInfo.getField("I.address.[B").set(smsPacket, address);
+            smsPacket.klass.classInfo.getField("I.port.I").set(smsPacket, port);
+            smsPacket.klass.classInfo.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
+            smsPacket.klass.classInfo.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
 
             return text.length;
         }
