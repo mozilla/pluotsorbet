@@ -73,6 +73,9 @@ try {
   var dump = print;
   var console = window.console;
 
+  CLASSES.addSourceDirectory("java/cldc1.1.1");
+  CLASSES.addSourceDirectory("java/midp");
+
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   CLASSES.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
   CLASSES.initializeBuiltinClasses();

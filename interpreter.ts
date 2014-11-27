@@ -29,9 +29,9 @@ module J2ME {
           return toDebugString(x);
         }).join(", ");
         var printObj = "";
-        if (!methodInfo.isStatic) {
-          printObj = " <" + toDebugString(this) + "> ";
-        }
+        //if (!methodInfo.isStatic) {
+        //  printObj = " <" + toDebugString(this) + "> ";
+        //}
         traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + printArgs + ")");
       }
     }
@@ -165,8 +165,21 @@ module J2ME {
       }
     }
 
+    var traceSourceLocation = true;
+    var lastSourceLocation;
+
     while (true) {
       var op: Bytecodes = frame.read8();
+      if (traceSourceLocation) {
+        if (frame.methodInfo) {
+          var sourceLocation = frame.methodInfo.getSourceLocationForBci(frame.ip - 1);
+          if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
+            traceWriter.greenLn(sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
+            lastSourceLocation = sourceLocation;
+          }
+        }
+      }
+
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
       switch (op) {
         case Bytecodes.NOP:

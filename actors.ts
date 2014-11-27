@@ -9,6 +9,21 @@ module J2ME {
   declare var classObjects;
   declare var util;
 
+  export class SourceLocation {
+    constructor(public className: string, public sourceFile: string, public lineNumber: number) {
+      // ...
+    }
+    toString() {
+      return this.sourceFile + ":" + this.lineNumber;
+    }
+    equals(other: SourceLocation): boolean {
+      if (!other) {
+        return false;
+      }
+      return this.sourceFile === other.sourceFile &&
+             this.lineNumber === other.lineNumber;
+    }
+  }
   export class FieldInfo {
     private static _nextiId = 0;
     id: number;
@@ -72,6 +87,8 @@ module J2ME {
     mangledName: string;
     mangledClassAndMethodName: string;
 
+    line_number_table: {start_pc: number; line_number: number} [];
+
     constructor(opts) {
       this.name = opts.name;
       this.signature = opts.signature;
@@ -91,6 +108,14 @@ module J2ME {
             this.exception_table = a.info.exception_table;
             this.max_locals = a.info.max_locals;
             this.max_stack = a.info.max_stack;
+
+            var codeAttributes = a.info.attributes;
+            for (var j = 0; j < codeAttributes.length; j++) {
+              var b = codeAttributes[j];
+              if (b.info.type === ATTRIBUTE_TYPES.LineNumberTable) {
+                this.line_number_table = b.info.line_number_table;
+              }
+            }
             break;
           }
         }
@@ -111,6 +136,25 @@ module J2ME {
       if (!this.isStatic) {
         this.consumes++;
       }
+    }
+
+    getSourceLocationForBci(bci: number): SourceLocation {
+      var sourceFile = this.classInfo.sourceFile || null;
+      if (!sourceFile) {
+        return null;
+      }
+      var lineNumber = -1;
+      if (this.line_number_table && this.line_number_table.length) {
+        var table = this.line_number_table;
+        for (var i = 0; i < table.length; i++) {
+          if (bci >= table[i].start_pc) {
+            lineNumber = table[i].line_number;
+          } else if (bci < table[i].start_pc) {
+            break;
+          }
+        }
+      }
+      return new SourceLocation(this.classInfo.className, sourceFile, lineNumber)
     }
   }
 
@@ -133,6 +177,7 @@ module J2ME {
     mangledName: string;
     thread: any;
 
+    sourceFile: string;
     constructor(classBytes) {
       var classImage = getClassImage(classBytes, this);
       var cp = classImage.constant_pool;
@@ -201,6 +246,8 @@ module J2ME {
             if (c.outer_class_info_index)
               classes.push(cp[cp[c.outer_class_info_index].name_index].bytes);
           });
+        } else if (a.info.type === ATTRIBUTE_TYPES.SourceFile) {
+          self.sourceFile = cp[a.info.sourcefile_index].bytes;
         }
       });
     }

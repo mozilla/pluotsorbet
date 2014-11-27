@@ -11,8 +11,25 @@
 module J2ME {
   declare var ZipFile;
   declare var ACCESS_FLAGS;
+  declare var snarf;
 
   export class ClassRegistry {
+    /**
+     * List of directories to look for source files in.
+     */
+    sourceDirectories: string [];
+
+    /**
+     * All source code, only ever used for debugging.
+     */
+    sourceFiles: Map<string, string []>;
+
+    /**
+     * List of classes whose sources files were not found. We keep track
+     * of them so we don't have to search for them over and over.
+     */
+    missingSourceFiles: Map<string, string []>;
+
     classFiles: Map<string, any>;
     classes: Map<string, ClassInfo>;
 
@@ -40,6 +57,10 @@ module J2ME {
     short$: ClassInfo;
 
     constructor() {
+      this.sourceDirectories = [];
+      this.sourceFiles = Object.create(null);
+      this.missingSourceFiles = Object.create(null);
+
       this.classFiles = Object.create(null);
       this.classes = Object.create(null);
     }
@@ -84,6 +105,37 @@ module J2ME {
       } else {
         this.classFiles[name] = buffer;  
       }
+    }
+
+    addSourceDirectory(name: string) {
+      this.sourceDirectories.push(name);
+    }
+
+    getSourceLine(sourceLocation: SourceLocation): string {
+      if (typeof snarf === "undefined") {
+        // Sorry, no snarf in the browser. Do async loading instead.
+        return null;
+      }
+      var source = this.sourceFiles[sourceLocation.className];
+      if (!source && !this.missingSourceFiles[sourceLocation.className]) {
+        for (var i = 0; i < this.sourceDirectories.length; i++) {
+          try {
+            var path = this.sourceDirectories[i] + "/" + sourceLocation.className + ".java";
+            var file = snarf(path);
+            if (file) {
+              source = this.sourceFiles[sourceLocation.className] = file.split("\n");
+            }
+          } catch (x) {
+            // Keep looking.
+            consoleWriter.writeLn("" + x);
+          }
+        }
+      }
+      if (source) {
+        return source[sourceLocation.lineNumber - 1];
+      }
+      this.missingSourceFiles[sourceLocation.className] = true;
+      return null;
     }
 
     loadFileFromJar(jarName: string, fileName: string): ArrayBuffer {
