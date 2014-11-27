@@ -16,6 +16,27 @@ public class TestFileSystemPerf {
             System.out.println("Time to open file: " + (System.currentTimeMillis() - then) + "ms");
 
             then = System.currentTimeMillis();
+            boolean exists = file.exists();
+            System.out.println("Time to check if file exists: " + (System.currentTimeMillis() - then) + "ms");
+
+            if (exists) {
+                then = System.currentTimeMillis();
+                InputStream in = file.openInputStream();
+                byte[] input = new byte[1024];
+                int numBytes;
+                int totalNumBytes = 0;
+                while ((numBytes = in.read(input)) != -1) {
+                    totalNumBytes += numBytes;
+                }
+                in.close();
+                System.out.println("Time to read " + totalNumBytes + " bytes: " + (System.currentTimeMillis() - then) + "ms");
+
+                then = System.currentTimeMillis();
+                file.delete();
+                System.out.println("Time to delete file: " + (System.currentTimeMillis() - then) + "ms");
+            }
+
+            then = System.currentTimeMillis();
             file.create();
             System.out.println("Time to create file: " + (System.currentTimeMillis() - then) + "ms");
 
@@ -25,15 +46,11 @@ public class TestFileSystemPerf {
                 out.write(bytes);
                 out.flush();
             }
-            System.out.println("Time to write/flush to output stream: " + (System.currentTimeMillis() - then) + "ms");
+            System.out.println("Time to write/flush 1000 times: " + (System.currentTimeMillis() - then) + "ms");
 
             then = System.currentTimeMillis();
             out.close();
             System.out.println("Time to close output stream: " + (System.currentTimeMillis() - then) + "ms");
-
-            then = System.currentTimeMillis();
-            file.delete();
-            System.out.println("Time to delete file: " + (System.currentTimeMillis() - then) + "ms");
 
             then = System.currentTimeMillis();
             file.close();
@@ -42,6 +59,10 @@ public class TestFileSystemPerf {
             then = System.currentTimeMillis();
             file = (FileConnection)Connector.open(dirPath + "test.txt");
             System.out.println("Time to reopen file: " + (System.currentTimeMillis() - then) + "ms");
+
+            then = System.currentTimeMillis();
+            file.close();
+            System.out.println("Time to reclose file: " + (System.currentTimeMillis() - then) + "ms");
 
             then = System.currentTimeMillis();
             file = (FileConnection)Connector.open(dirPath + "test2.txt");
@@ -53,7 +74,6 @@ public class TestFileSystemPerf {
             file.delete();
             file.close();
             System.out.println("Time to access another file: " + (System.currentTimeMillis() - then) + "ms");
-
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace();
