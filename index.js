@@ -349,11 +349,14 @@ DumbPipe.registerOpener("camera", function(message, sender) {
   video.style.position = "absolute";
   video.style.visibility = "hidden";
 
-  var curW = 0, curH = 0;
-
   video.addEventListener('canplay', function(ev) {
     // We should use videoWidth and videoHeight, but they are unavailable (https://bugzilla.mozilla.org/show_bug.cgi?id=926753)
-    sender({ type: "gotstream", width: 320, height: 320 });
+    var getDimensions = setInterval(function() {
+      if (video.videoWidth > 0 && video.videoHeight > 0) {
+        clearInterval(getDimensions);
+        sender({ type: "gotstream", width: video.videoWidth, height: video.videoHeight });
+      }
+    }, 50);
   }, false);
 
   navigator.mozGetUserMedia({
@@ -375,9 +378,6 @@ DumbPipe.registerOpener("camera", function(message, sender) {
         video.style.top = message.y + "px";
         video.style.width = message.w + "px";
         video.style.height = message.h + "px";
-
-        curW = message.w;
-        curH = message.h;
         break;
 
       case "setVisible":
@@ -386,10 +386,10 @@ DumbPipe.registerOpener("camera", function(message, sender) {
 
       case "snapshot":
         var canvas = document.createElement("canvas");
-        canvas.width = curW;
-        canvas.height = curH;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         var ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, curW, curH);
+        ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
         canvas.toBlob(function(blob) {
           var fileReader = new FileReader();
