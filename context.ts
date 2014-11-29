@@ -52,7 +52,7 @@ module J2ME {
         for (var i = 0; i < currentFrames.length; i++) {
           this.frames.push(currentFrames[i]);
         }
-        throw e;
+        throwHelper(e);
       }
       this.frames = this.frameSets.pop();
       return returnValue;
@@ -168,7 +168,7 @@ module J2ME {
               Instrument.callPauseHooks(this.current());
               return;
             default:
-              throw e;
+              throwHelper(e);
           }
         }
       } while (this.frames.length !== 0);

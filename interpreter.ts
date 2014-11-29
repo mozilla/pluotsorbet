@@ -149,7 +149,7 @@ module J2ME {
         ctx.pushClassInitFrame(classInfo);
       } catch (e) {
         frame.ip = ip;
-        throw e;
+        throwHelper(e);
       }
     }
 
@@ -160,7 +160,7 @@ module J2ME {
         if (e instanceof JavaException) {
           ctx.raiseExceptionAndYield(e.javaClassName, e.message);
         } else {
-          throw e;
+          throwHelper(e);
         }
       }
     }

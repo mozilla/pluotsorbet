@@ -1,10 +1,10 @@
 var $: J2ME.Runtime; // The currently-executing runtime.
 
-var runtimeTemplate = {};
-
 interface Math {
   fround(value: number): number;
 }
+
+declare var throwHelper;
 
 module J2ME {
   declare var Native, Override;
