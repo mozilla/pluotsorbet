@@ -527,7 +527,7 @@ PlayerContainer.prototype.getEncodingParam = function(url) {
     var encoding = null;
 
     var idx = url.indexOf("encoding=");
-    if (idx > 0) {
+    if (idx > -1) {
         var encodingKeyPair = url.substring(idx).split("&")[0].split("=");
         encoding = encodingKeyPair.length == 2 ? encodingKeyPair[1] : encoding;
     }
