@@ -204,17 +204,6 @@ module J2ME {
     if (emitter.closure) {
       writer.writeLn("window[" + quote(mangledClassName) + "] = " + mangledClassName + ";");
     }
-
-    if (classInfo.superClass) {
-      var mangledSuperClassName = mangleClass(classInfo.superClass);
-      writer.writeLn("$EK(" + mangledClassName + ", " + mangledSuperClassName + ")");
-    } else {
-      writer.writeLn("$EK(" + mangledClassName + ", null)");
-    }
-
-    writer.writeLn("$RK(" + mangledClassName + "," +
-                   quote(mangledClassName) + "," +
-                   quote(classInfo.className) + ")");
   }
 
   function classNameWithDots(classInfo: ClassInfo) {

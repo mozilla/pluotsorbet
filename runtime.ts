@@ -53,6 +53,27 @@ module J2ME {
     return arrays[type];
   }
 
+  /**
+   * We can't always mutate the |__proto__|.
+   */
+  function isPrototypeOfFunctionMutable(fn: Function): boolean {
+    // We don't list all builtins here, since not all of them are used in the object
+    // hierarchy.
+    switch (fn) {
+      case Object:
+      case Uint8Array:
+      case Uint16Array:
+      case Float32Array:
+      case Float64Array:
+      case Int8Array:
+      case Int16Array:
+      case Int32Array:
+        return false;
+      default:
+        return true;
+    }
+  }
+
   export var consoleWriter = new IndentingWriter();
 
   export enum ExecutionPhase {
@@ -326,24 +347,20 @@ module J2ME {
     klass.classObject.runtimeKlass = klass;
   }
 
-  /**
-   * Called by compiled code to initialize the klass. Klass initializers are reflected as
-   * memoizing getters on the |RuntimeTemplate.prototype|. Once they are first accessed,
-   * concrete klasses are created.
-   */
-  export function registerKlass(klass: Klass, mangledClassName: string, className: string) {
+  export function registerRuntimeKlass(klass: Klass, classInfo: ClassInfo) {
     // Ensure each Runtime instance receives its own copy of the class
     // constructor, hoisted off the current runtime.
-    Object.defineProperty(RuntimeTemplate.prototype, mangledClassName, {
+    linkingWriter && linkingWriter.writeLn("Registering Runtime Class: " + classInfo.className);
+    Object.defineProperty(RuntimeTemplate.prototype, classInfo.mangledName, {
       configurable: true,
       get: function () {
+        linkingWriter && linkingWriter.writeLn("Initializing Runtime Class: " + classInfo.className);
         assert(!klass.isRuntimeKlass);
         var runtimeKlass = klass.bind(null);
         runtimeKlass.klass = klass;
         runtimeKlass.isRuntimeKlass = true;
         initializeClassObject(runtimeKlass);
-        var classInfo = CLASSES.getClass(className);
-        Object.defineProperty(this, mangledClassName, {
+        Object.defineProperty(this, classInfo.mangledName, {
           configurable: false,
           value: runtimeKlass
         });
@@ -358,6 +375,7 @@ module J2ME {
       }
     });
   }
+
   export function runtimeKlass(runtime: Runtime, klass: Klass): Klass {
     assert(!klass.isRuntimeKlass);
     var runtimeKlass = runtime[klass.classInfo.mangledName];
@@ -372,47 +390,60 @@ module J2ME {
     if (classInfo.klass) {
       return classInfo.klass;
     }
-    var klass;
-    if (classInfo.isInterface) {
-      klass = function() { Debug.unexpected("Should never be instantiated.") };
-      klass.isInterfaceKlass = true;
+    var klass = jsGlobal[classInfo.mangledName];
+    if (klass) {
+      linkingWriter && linkingWriter.purpleLn("Found Compiled Klass: " + classInfo.className);
+      release || assert(!classInfo.klass);
+      classInfo.klass = klass;
       klass.toString = function () {
-        return "[Interface Klass " + classInfo.className + "]";
-      };
-    } else if (classInfo.isArrayClass) {
-      var elementKlass = getKlass(classInfo.elementClass);
-      // Have we already created one? We need to maintain pointer identity.
-      if (elementKlass.arrayKlass) {
-        return elementKlass.arrayKlass;
-      }
-      klass = getArrayKlass(elementKlass);
-    } else if (classInfo instanceof PrimitiveClassInfo) {
-      klass = function() { Debug.unexpected("Should never be instantiated.") };
-      klass.toString = function () {
-        return "[Primitive Klass " + classInfo.className + "]";
+        return "[Compiled Klass " + classInfo.className + "]";
       };
     } else {
-      // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
-      // creating a closure, which will probably be slower at runtime.
-      var source = "";
-      var writer = new IndentingWriter(false, x => source += x + "\n");
-      var emitter = new Emitter(writer, false, true, true);
-      J2ME.emitKlass(emitter, classInfo);
-      (1, eval)(source);
-      // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
-      // consoleWriter.writeLn(source);
-      var mangledName = J2ME.C4.Backend.mangleClass(classInfo);
-      klass = jsGlobal[mangledName];
-      assert(klass, mangledName);
-      klass.toString = function () {
-        return "[Synthesized Klass " + classInfo.className + "]";
-      };
+      if (classInfo.isInterface) {
+        klass = function () {
+          Debug.unexpected("Should never be instantiated.")
+        };
+        klass.isInterfaceKlass = true;
+        klass.toString = function () {
+          return "[Interface Klass " + classInfo.className + "]";
+        };
+      } else if (classInfo.isArrayClass) {
+        var elementKlass = getKlass(classInfo.elementClass);
+        // Have we already created one? We need to maintain pointer identity.
+        if (elementKlass.arrayKlass) {
+          return elementKlass.arrayKlass;
+        }
+        klass = getArrayKlass(elementKlass);
+      } else if (classInfo instanceof PrimitiveClassInfo) {
+        klass = function () {
+          Debug.unexpected("Should never be instantiated.")
+        };
+        klass.toString = function () {
+          return "[Primitive Klass " + classInfo.className + "]";
+        };
+      } else {
+        // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
+        // creating a closure, which will probably be slower at runtime.
+        var source = "";
+        var writer = new IndentingWriter(false, x => source += x + "\n");
+        var emitter = new Emitter(writer, false, true, true);
+        J2ME.emitKlass(emitter, classInfo);
+        (1, eval)(source);
+        // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
+        // consoleWriter.writeLn(source);
+        var mangledName = J2ME.C4.Backend.mangleClass(classInfo);
+        klass = jsGlobal[mangledName];
+        assert(klass, mangledName);
+        klass.toString = function () {
+          return "[Synthesized Klass " + classInfo.className + "]";
+        };
+      }
     }
 
-    var mangledClassName = J2ME.C4.Backend.mangleClass(classInfo);
     var superKlass = getKlass(classInfo.superClass);
+
     extendKlass(klass, superKlass);
-    registerKlass(klass, mangledClassName, classInfo.className);
+    registerRuntimeKlass(klass, classInfo);
 
     if (!classInfo.isInterface) {
       initializeInterfaces(klass, classInfo);
@@ -423,17 +454,8 @@ module J2ME {
 
   export function linkKlass(classInfo: ClassInfo) {
     var mangledName = J2ME.C4.Backend.mangleClass(classInfo);
-    var klass = jsGlobal[mangledName];
-    if (klass) {
-      release || assert(klass, "Cannot find klass for " + classInfo.className);
-      release || assert(!classInfo.klass);
-      classInfo.klass = klass;
-      klass.toString = function () {
-        return "[Compiled Klass " + classInfo.className + "]";
-      };
-    } else {
-      classInfo.klass = klass = getKlass(classInfo);
-    }
+    var klass;
+    classInfo.klass = klass = getKlass(classInfo);
     classInfo.klass.classInfo = classInfo;
     switch (classInfo.className) {
       case "java/lang/Object": Klasses.java.lang.Object = klass; break;
@@ -520,6 +542,7 @@ module J2ME {
           linkingWriter && linkingWriter.writeLn("Method: " + methods[i].name + " -> " + fn);
           methodType = MethodType.Compiled;
           if (!traceWriter) {
+            linkingWriter && linkingWriter.outdent();
             return;
           }
         } else {
@@ -539,6 +562,8 @@ module J2ME {
         klass.prototype[methodInfo.mangledName] = fn;
       }
     }
+
+    linkingWriter && linkingWriter.outdent();
 
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
@@ -587,7 +612,13 @@ module J2ME {
   export function extendKlass(klass: Klass, superKlass: Klass) {
     klass.superKlass = superKlass;
     if (superKlass) {
-      klass.prototype = Object.create(superKlass.prototype);
+      if (isPrototypeOfFunctionMutable(klass)) {
+        linkingWriter && linkingWriter.writeLn("Extending: " + klass + " -> " + superKlass);
+        (<any>Object).setPrototypeOf(klass.prototype, superKlass.prototype);
+        assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype);
+      } else {
+        // TODO: Copy properties over.
+      }
     }
     klass.prototype.klass = klass;
     initializeKlassTables(klass);
@@ -730,9 +761,6 @@ var Runtime = J2ME.Runtime;
 /**
  * Runtime exports for compiled code.
  */
-var $EK = J2ME.extendKlass;
-var $RK = J2ME.registerKlass;
-
 var $IOK = J2ME.instanceOfKlass;
 var $IOI = J2ME.instanceOfInterface;
 
