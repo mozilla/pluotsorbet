@@ -11,6 +11,9 @@ test: all
 	cd tests && python sslEchoServer.py &
 	cd tests && python waitServers.py
 	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
+	cp -r tests/profiles/fs-v1 test-profile-fs-v1
+	casperjs --engine=slimerjs test -profile `pwd`/test-profile-fs-v1 `pwd`/tests/automation.js >> test.log
+	rm -rf test-profile-fs-v1
 	killall python Python || true
 	python dumplog.py
 	if grep -q FAIL test.log; \
