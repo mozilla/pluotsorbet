@@ -12,25 +12,28 @@ Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;
         throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
     var srcKlass = src.klass;
     var dstKlass = dst.klass;
-// !!!!!!!!!!!!!!!! TODO
-//    if (!srcClass.isArrayClass || !dstClass.isArrayClass)
-//        throw new JavaException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
+
+    if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass)
+        throw new JavaException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
         throw new JavaException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
-    if ((!!srcKlass.elementKlass != !!dstKlass.elementKlass) ||
-        (!srcKlass.elementKlass && srcKlass != dstKlass)) {
-// !!!!!!!!!!!!!!!! TODO naming
+    var srcIsPrimitive = !(src instanceof Array);
+    var dstIsPrimitive = !(dst instanceof Array);
+    if ((srcIsPrimitive && dstIsPrimitive && srcKlass !== dstKlass) ||
+        (srcIsPrimitive && !dstIsPrimitive) ||
+        (!srcIsPrimitive && dstIsPrimitive)) {
         throw new JavaException("java/lang/ArrayStoreException",
-                                "Incompatible component types: " + srcKlass.constructor.name + " -> " + dstKlass.constructor.name);
+                                "Incompatible component types: " + srcKlass + " -> " + dstKlass);
     }
-    if (dstKlass.elementKlass) {
+    if (!dstIsPrimitive) {
         if (srcKlass != dstKlass && !J2ME.isAssignableTo(srcKlass.elementKlass, dstKlass.elementKlass)) {
             var copy = function(to, from) {
                 var obj = src[from];
-                if (obj && !J2ME.isAssignableTo(obj.klass, dstKlass.elementKlass))
+                if (obj && !J2ME.isAssignableTo(obj.klass, dstKlass.elementKlass)) {
                     throw new JavaException("java/lang/ArrayStoreException", "Incompatible component types.");
+                }
                 dst[to] = obj;
-            }
+            };
             if (dst !== src || dstOffset < srcOffset) {
                 for (var n = 0; n < length; ++n)
                     copy(dstOffset++, srcOffset++);

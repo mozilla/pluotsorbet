@@ -257,6 +257,7 @@ module J2ME {
 
   export interface ArrayKlass extends Klass {
     elementKlass: Klass;
+    isArrayKlass: boolean;
   }
 
   export class Lock {
@@ -384,21 +385,7 @@ module J2ME {
       if (elementKlass.arrayKlass) {
         return elementKlass.arrayKlass;
       }
-      klass = getArrayConstructor(classInfo.elementClass.className);
-      if (!klass) {
-        klass = <Klass><any> function (size:number) {
-          var array = createEmptyObjectArray(size);
-          (<any>array).klass = klass;
-          return array;
-        };
-      } else {
-        assert(!klass.prototype.hasOwnProperty("klass"));
-        klass.prototype.klass = klass;
-      }
-      klass.toString = function () {
-        return "[Array of " + elementKlass + "]";
-      };
-      elementKlass.arrayKlass = klass;
+      klass = getArrayKlass(elementKlass);
     } else if (classInfo instanceof PrimitiveClassInfo) {
       klass = function() { Debug.unexpected("Should never be instantiated.") };
       klass.toString = function () {
@@ -673,22 +660,37 @@ module J2ME {
     return newArray(Klasses.byte, size);
   }
 
-  export function getArrayKlass(klass: Klass): Klass {
-    if (klass.arrayKlass) {
-      return klass.arrayKlass;
+  export function getArrayKlass(elementKlass: Klass): Klass {
+    // Have we already created one? We need to maintain pointer identity.
+    if (elementKlass.arrayKlass) {
+      return elementKlass.arrayKlass;
     }
-    var arrayKlass = klass.arrayKlass = <ArrayKlass><any>function (size: number) {
-      var array = createEmptyObjectArray(size);
-      (<any>array).klass = arrayKlass;
-      return array;
+    var klass = <ArrayKlass><any> getArrayConstructor(elementKlass.classInfo.className);
+    if (!klass) {
+      klass = <ArrayKlass><any> function (size:number) {
+        var array = createEmptyObjectArray(size);
+        (<any>array).klass = klass;
+        return array;
+      };
+      if (elementKlass === Klasses.java.lang.Object) {
+        klass.superKlass = Klasses.java.lang.Object;
+      } else {
+        klass.superKlass = getArrayKlass(Klasses.java.lang.Object);
+      }
+    } else {
+      assert(!klass.prototype.hasOwnProperty("klass"));
+      klass.prototype.klass = klass;
+      klass.superKlass = Klasses.java.lang.Object;
+    }
+    klass.isArrayKlass = true;
+    klass.toString = function () {
+      return "[Array of " + elementKlass + "]";
     };
-    arrayKlass.elementKlass = klass;
-    arrayKlass.superKlass = Klasses.java.lang.Object;
-    arrayKlass.toString = function () {
-      return "[Array of " + klass + "]";
-    };
-    initializeKlassTables(arrayKlass);
-    return arrayKlass;
+    elementKlass.arrayKlass = klass;
+    klass.elementKlass = elementKlass;
+
+    initializeKlassTables(klass);
+    return klass;
   }
 
   export function toDebugString(value: any): string {
