@@ -76,6 +76,9 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         try {
             player.addPlayerListener(this);
 
+            // Check duration
+            th.check(player.getDuration(), Player.TIME_UNKNOWN);
+
             // Start playing.
             player.realize();
             player.prefetch();
@@ -101,6 +104,9 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             Thread.sleep(100);
             long m = player.getMediaTime() / 1000;
             th.check(Math.abs(m - mediaTime - 100) < TIME_TOLERANCE);
+
+            // Check duration
+            th.check(player.getDuration(), 500000);
 
             player.close();
         } catch (Exception e) {
