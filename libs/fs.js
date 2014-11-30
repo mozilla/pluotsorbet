@@ -81,6 +81,19 @@ var fs = (function() {
     };
   }
 
+  Store.prototype.sync = function(cb) {
+    // Process a readwrite transaction to ensure previous writes have completed,
+    // so we leave the datastore in a consistent state.  This is a bit hacky;
+    // we should instead monitor ongoing transactions and call our callback
+    // once they've all completed.
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
+    objectStore.get("");
+    transaction.oncomplete = function() {
+      cb();
+    };
+  }
+
   var store = new Store();
 
   var FileBuffer = function(array) {
@@ -560,6 +573,10 @@ var fs = (function() {
     initRootDir(cb || function() {});
   }
 
+  function storeSync(cb) {
+    store.sync(cb);
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -583,5 +600,6 @@ var fs = (function() {
     rename: rename,
     stat: stat,
     clear: clear,
+    storeSync: storeSync,
   };
 })();
