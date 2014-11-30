@@ -575,7 +575,7 @@ var fs = (function() {
 
   function storeSync(cb) {
     store.sync(cb);
-  },
+  }
 
   return {
     dirname: dirname,
