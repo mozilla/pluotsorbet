@@ -9,16 +9,65 @@ var fs = (function() {
   };
 
   Store.DBNAME = "asyncStorage";
-  Store.DBVERSION = 1;
-  Store.DBSTORENAME = "keyvaluepairs";
+  Store.DBVERSION = 2;
+  Store.DBSTORENAME = "fs";
 
   Store.prototype.init = function(cb) {
     var openreq = indexedDB.open(Store.DBNAME, Store.DBVERSION);
     openreq.onerror = function() {
       console.error("error opening database: " + openreq.error.name);
     };
-    openreq.onupgradeneeded = function() {
-      openreq.result.createObjectStore(Store.DBSTORENAME);
+    openreq.onupgradeneeded = function(event) {
+      if (DEBUG_FS) { console.log("upgrade needed from " + event.oldVersion + " to " + event.newVersion); }
+
+      var db = event.target.result;
+      var transaction = openreq.transaction;
+
+      if (event.oldVersion == 0) {
+        // If the database doesn't exist yet, then all we have to do
+        // is create the object store for the latest version of the database.
+        openreq.result.createObjectStore(Store.DBSTORENAME);
+      } else if (event.oldVersion == 1) {
+        // Create new object store.
+        var newObjectStore = openreq.result.createObjectStore(Store.DBSTORENAME);
+
+        // Iterate the keys in the old object store and copy their values
+        // to the new one, converting them from old- to new-style records.
+        var oldObjectStore = transaction.objectStore("keyvaluepairs");
+        var oldRecords = {};
+        oldObjectStore.openCursor().onsuccess = function(event) {
+          var cursor = event.target.result;
+
+          if (cursor) {
+            oldRecords[cursor.key] = cursor.value;
+            cursor.continue();
+            return;
+          }
+
+          // Convert the old records to new ones.
+          for (var key in oldRecords) {
+            // Records that start with an exclamation mark are stats,
+            // which we don't iterate (but do use below when processing
+            // their equivalent data records).
+            if (key[0] == "!") {
+              continue;
+            }
+
+            var oldRecord = oldRecords[key];
+            var oldStat = oldRecords["!" + key];
+            var newRecord = oldStat;
+            if (newRecord.isDir) {
+              newRecord.files = oldRecord;
+            } else {
+              newRecord.data = oldRecord;
+            }
+
+            newObjectStore.put(newRecord, key);
+          }
+
+          db.deleteObjectStore("keyvaluepairs");
+        };
+      }
     };
     openreq.onsuccess = (function() {
       this.db = openreq.result;
