@@ -300,7 +300,7 @@ Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;
     maximums[i] = defaults[i] = ALLOW;
   }
 
-  var permissions = J2ME.newArray(CLASSES.byteArray.klass, 2);
+  var permissions = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, 2);
   permissions[0] = maximums;
   permissions[1] = defaults;
 

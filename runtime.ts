@@ -13,8 +13,8 @@ module J2ME {
   declare var Long;
 
 
-  export var traceWriter = new IndentingWriter(false, IndentingWriter.stderr);
-  export var linkingWriter = new IndentingWriter(false, IndentingWriter.stderr);
+  export var traceWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
+  export var linkingWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {
     java: {
@@ -25,8 +25,14 @@ module J2ME {
         Thread: null
       }
     },
-    long: null,
-    byte: null
+    boolean: null,
+    char: null,
+    float: null,
+    double: null,
+    byte: null,
+    short: null,
+    int: null,
+    long: null
   };
 
   function Int64Array(size: number) {
@@ -40,14 +46,14 @@ module J2ME {
   }
 
   var arrays = {
-    'boolean': Uint8Array,
-    'char': Uint16Array,
-    'float': Float32Array,
-    'double': Float64Array,
-    'byte': Int8Array,
-    'short': Int16Array,
-    'int': Int32Array,
-    'long': Int64Array
+    'Z': Uint8Array,
+    'C': Uint16Array,
+    'F': Float32Array,
+    'D': Float64Array,
+    'B': Int8Array,
+    'S': Int16Array,
+    'I': Int32Array,
+    'J': Int64Array
   };
 
   export function getArrayConstructor(type: string): Function {
@@ -437,6 +443,7 @@ module J2ME {
 
   export function runtimeKlass(runtime: Runtime, klass: Klass): Klass {
     assert(!klass.isRuntimeKlass);
+    assert(klass.classInfo.mangledName);
     var runtimeKlass = runtime[klass.classInfo.mangledName];
     assert(runtimeKlass.isRuntimeKlass);
     return runtimeKlass;
@@ -519,12 +526,25 @@ module J2ME {
     var klass;
     classInfo.klass = klass = getKlass(classInfo);
     classInfo.klass.classInfo = classInfo;
-    switch (classInfo.className) {
-      case "java/lang/Object": Klasses.java.lang.Object = klass; break;
-      case "java/lang/Class": Klasses.java.lang.Class = klass; break;
-      case "java/lang/String": Klasses.java.lang.String = klass; break;
-      case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
-      case "byte": Klasses.byte = klass; break;
+    if (classInfo instanceof PrimitiveClassInfo) {
+      switch (classInfo) {
+        case PrimitiveClassInfo.Z: Klasses.boolean = klass; break;
+        case PrimitiveClassInfo.C: Klasses.char    = klass; break;
+        case PrimitiveClassInfo.F: Klasses.float   = klass; break;
+        case PrimitiveClassInfo.D: Klasses.double  = klass; break;
+        case PrimitiveClassInfo.B: Klasses.byte    = klass; break;
+        case PrimitiveClassInfo.S: Klasses.short   = klass; break;
+        case PrimitiveClassInfo.I: Klasses.int     = klass; break;
+        case PrimitiveClassInfo.J: Klasses.long    = klass; break;
+        default: J2ME.Debug.assertUnreachable("linking primitive " + classInfo.className)
+      }
+    } else {
+      switch (classInfo.className) {
+        case "java/lang/Object": Klasses.java.lang.Object = klass; break;
+        case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
+        case "java/lang/String": Klasses.java.lang.String = klass; break;
+        case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
+      }
     }
 
     linkingWriter && linkingWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
@@ -773,14 +793,15 @@ module J2ME {
         return array;
       };
       if (elementKlass === Klasses.java.lang.Object) {
-        klass.superKlass = Klasses.java.lang.Object;
+        extendKlass(klass, Klasses.java.lang.Object);
+        extendKlass(<ArrayKlass><any>Array, Klasses.java.lang.Object);
       } else {
-        klass.superKlass = getArrayKlass(Klasses.java.lang.Object);
+        extendKlass(klass, getArrayKlass(Klasses.java.lang.Object));
       }
     } else {
       assert(!klass.prototype.hasOwnProperty("klass"));
       klass.prototype.klass = klass;
-      klass.superKlass = Klasses.java.lang.Object;
+      extendKlass(klass, Klasses.java.lang.Object);
     }
     klass.isArrayKlass = true;
     klass.toString = function () {
@@ -788,8 +809,13 @@ module J2ME {
     };
     elementKlass.arrayKlass = klass;
     klass.elementKlass = elementKlass;
+    var className = elementKlass.classInfo.className;
+    if (!(elementKlass.classInfo instanceof PrimitiveClassInfo) && className[0] !== "[")
+      className = "L" + className + ";";
+    className = "[" + className;
+    klass.classInfo = CLASSES.getClass(className);
 
-    initializeKlassTables(klass);
+    registerRuntimeKlass(klass, klass.classInfo);
     return klass;
   }
 
