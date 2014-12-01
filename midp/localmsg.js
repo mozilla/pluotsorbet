@@ -187,6 +187,56 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
   });
 }
 
+var NokiaSASrvRegLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaSASrvRegLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaSASrvRegLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  var encoder = new DataEncoder();
+
+  switch (name) {
+    case "Common":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "2.0");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+      break;
+    case "Discovery":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Discovery");
+      encoder.put(DataType.BYTE, "unknown_byte_1", 1);
+      encoder.put(DataType.STRING, "unknown_string_1", "");
+      encoder.putStart(DataType.ARRAY, "services");
+      encoder.putStart(DataType.STRUCT, "service");
+      encoder.put(DataType.STRING, "ServiceName", "file_ui");
+      encoder.put(DataType.URI, "ServiceURI", "nokia.file-ui");
+      encoder.put(DataType.STRING, "unknown_string_2", "");
+      encoder.put(DataType.WSTRING, "unknown_string_3", "");
+      encoder.put(DataType.STRING, "unknown_string_4", "");
+      encoder.putEnd(DataType.STRUCT, "service");
+      encoder.putEnd(DataType.ARRAY, "services");
+      encoder.putEnd(DataType.STRUCT, "event");
+      break;
+  }
+
+  var data = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient({
+      data: data,
+      length: data.length,
+      offset: 0,
+  });
+};
+
 var NokiaPhoneStatusLocalMsgConnection = function() {
     LocalMsgConnection.call(this);
 };
@@ -289,6 +339,10 @@ NokiaContactsLocalMsgConnection.prototype.encodeContact = function(encoder, cont
 }
 
 NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, contact) {
+    if (!contact.tel) {
+        return;
+    }
+
     var encoder = new DataEncoder();
     encoder.putStart(DataType.STRUCT, "event");
     encoder.put(DataType.METHOD, "name", "Notify");
@@ -344,7 +398,12 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       }
 
-      contacts.getNext((function(contact) {
+      var gotContact = (function(contact) {
+        if (contact && !contact.tel) {
+          contacts.getNext(gotContact);
+          return;
+        }
+
         var encoder = new DataEncoder();
         encoder.putStart(DataType.STRUCT, "event");
         encoder.put(DataType.METHOD, "name", "getFirst");
@@ -365,7 +424,9 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
             length: data.length,
             offset: 0,
         });
-      }).bind(this));
+      }).bind(this);
+
+      contacts.getNext(gotContact);
     break;
 
     case "getNext":
@@ -484,16 +545,38 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
       var multipleSelection = decoder.getValue(DataType.BOOLEAN);
       var startingURL = decoder.getValue(DataType.STRING);
 
+      var accept = '';
+
+      switch (mediaType) {
+        case "Picture":
+          accept = "image/*";
+        break;
+
+        case "Video":
+          accept = "video/*";
+        break;
+
+        case "Music":
+          accept = "audio/*";
+        break;
+
+        default:
+          throw new Error("Media type '" + mediaType + "' not supported");
+      }
+
       var el = document.getElementById('nokia-fileui-prompt').cloneNode(true);
       el.style.display = 'block';
       el.classList.add('visible');
+
+      var fileInput = el.querySelector('input');
+      fileInput.accept = accept;
 
       var btnDone = el.querySelector('button.recommend');
       btnDone.disabled = true;
 
       var selectedFile = null;
 
-      el.querySelector('input').addEventListener('change', function() {
+      fileInput.addEventListener('change', function() {
         btnDone.disabled = false;
         selectedFile = this.files[0];
       });
@@ -663,6 +746,7 @@ MIDP.LocalMsgConnections["nokia.messaging"] = new NokiaMessagingLocalMsgConnecti
 MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.file-ui"] = new NokiaFileUILocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.image-processing"] = new NokiaImageProcessingLocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.sa.service-registry"] = new NokiaSASrvRegLocalMsgConnection();
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);

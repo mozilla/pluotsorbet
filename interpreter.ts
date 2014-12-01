@@ -95,6 +95,7 @@ module J2ME {
           if (frame.bci >= exception_table[i].start_pc && frame.bci <= exception_table[i].end_pc) {
             if (exception_table[i].catch_type === 0) {
               handler_pc = exception_table[i].handler_pc;
+              break;
             } else {
               var classInfo = resolve(exception_table[i].catch_type);
               if (isAssignableTo(ex.klass, classInfo.klass)) {
