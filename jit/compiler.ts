@@ -210,6 +210,22 @@ module J2ME {
     return classInfo.className.replace(/\//g, '.');
   }
 
+  export function emitReferencedSymbols(emitter: Emitter, classInfo: ClassInfo, compiledMethods: CompiledMethodInfo []) {
+    var referencedClasses = [];
+    for (var i = 0; i < compiledMethods.length; i++) {
+      var compiledMethod = compiledMethods[i];
+      compiledMethod.referencedClasses.forEach(classInfo => {
+        ArrayUtilities.pushUnique(referencedClasses, classInfo);
+      });
+    }
+
+    var mangledClassName = mangleClass(classInfo);
+
+    emitter.writer.writeLn(mangledClassName + ".classSymbols = [" + referencedClasses.map(classInfo => {
+      return quote(classInfo.className);
+    }).join(", ") + "];");
+  }
+
   function compileClassInfo(emitter: Emitter, classInfo: ClassInfo, ctx: Context): CompiledMethodInfo [] {
     var writer = emitter.writer;
     var mangledClassName = mangleClass(classInfo);
@@ -272,10 +288,12 @@ module J2ME {
           compiledMethods.push(compiledMethod);
         }
       } catch (x) {
-        consoleWriter.writeLn("XXXX: " + x);
-        consoleWriter.writeLn(x.stack);
+        stderrWriter.writeLn("XXXX: " + x);
+        stderrWriter.writeLn(x.stack);
       }
     }
+
+    emitReferencedSymbols(emitter, classInfo, compiledMethods);
 
     if (emitter.definitions) {
       if (classNameParts.length > 1) {
@@ -361,7 +379,8 @@ module J2ME {
       }
       ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, ctx));
     }
-    consoleWriter.writeLn(code);
+
+    stdoutWriter.writeLn(code);
   }
 }
 

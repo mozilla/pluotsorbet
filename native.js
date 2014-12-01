@@ -234,7 +234,7 @@ Native.create("java/lang/Object.notifyAll.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
-    var classInfo = this.runtimeKlass.klass.classInfo;
+    var classInfo = this.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.className;
     var runtime = ctx.runtime;
     if (runtime.initialized[className] || runtime.pending[className])
@@ -242,7 +242,8 @@ Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
     runtime.pending[className] = true;
     if (className === "com/sun/cldc/isolate/Isolate") {
         // The very first isolate is granted access to the isolate API.
-        ctx.runtime.setStatic(CLASSES.getField(classInfo, "S._API_access_ok.I"), 1);
+        // ctx.runtime.setStatic(CLASSES.getField(classInfo, "S._API_access_ok.I"), 1);
+        CLASSES.getField(classInfo, "S._API_access_ok.I").set(this, 1);
     }
     var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
     var frames = [];
@@ -261,7 +262,7 @@ Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.init9.()V", function(ctx) {
-    var classInfo = this.runtimeKlass.klass.classInfo;
+    var classInfo = this.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.className;
     var runtime = ctx.runtime;
     if (runtime.initialized[className])
@@ -271,7 +272,7 @@ Native.create("java/lang/Class.init9.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.getName.()Ljava/lang/String;", function() {
-    return this.runtimeKlass.klass.classInfo.className.replace(/\//g, ".");
+    return this.runtimeKlass.templateKlass.classInfo.className.replace(/\//g, ".");
 });
 
 Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", function(name, ctx) {
@@ -290,7 +291,7 @@ Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", f
 });
 
 Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) {
-    var className = this.runtimeKlass.klass.classInfo.className;
+    var className = this.runtimeKlass.templateKlass.classInfo.className;
     var syntheticMethod = new MethodInfo({
       name: "ClassNewInstanceSynthetic",
       signature: "()Ljava/lang/Object;",
@@ -320,21 +321,21 @@ Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) 
 });
 
 Native.create("java/lang/Class.isInterface.()Z", function() {
-    return ACCESS_FLAGS.isInterface(this.runtimeKlass.klass.classInfo.access_flags);
+    return ACCESS_FLAGS.isInterface(this.runtimeKlass.templateKlass.classInfo.access_flags);
 });
 
 Native.create("java/lang/Class.isArray.()Z", function() {
-    return !!this.runtimeKlass.klass.classInfo.isArrayClass;
+    return !!this.runtimeKlass.templateKlass.classInfo.isArrayClass;
 });
 
 Native.create("java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z", function(fromClass) {
     if (!fromClass)
         throw new JavaException("java/lang/NullPointerException");
-    return J2ME.isAssignableTo(fromClass.runtimeKlass.klass, this.runtimeKlass.klass);
+    return J2ME.isAssignableTo(fromClass.runtimeKlass.templateKlass, this.runtimeKlass.templateKlass);
 });
 
 Native.create("java/lang/Class.isInstance.(Ljava/lang/Object;)Z", function(obj) {
-    return obj && J2ME.isAssignableTo(obj.klass, this.runtimeKlass.klass);
+    return obj && J2ME.isAssignableTo(obj.klass, this.runtimeKlass.templateKlass);
 });
 
 Native.create("java/lang/Float.floatToIntBits.(F)I", (function() {

@@ -18,6 +18,7 @@ var jsGlobal = (function() { return this || (1, eval)('this'); })();
 var inBrowser = typeof console != "undefined";
 
 declare var putstr;
+declare var printErr;
 // declare var print;
 // declare var console;
 // declare var performance;
@@ -1713,8 +1714,9 @@ module J2ME {
 
     public static logLevel: LogLevel = LogLevel.All;
 
-    private static _consoleOut = inBrowser ? console.info.bind(console) : print;
-    private static _consoleOutNoNewline = inBrowser ? console.info.bind(console) : putstr;
+    public static stdout = inBrowser ? console.info.bind(console) : print;
+    public static stdoutNoNewline = inBrowser ? console.info.bind(console) : putstr;
+    public static stderr = inBrowser ? console.error.bind(console) : printErr;
 
     private _tab: string;
     private _padding: string;
@@ -1726,8 +1728,8 @@ module J2ME {
       this._tab = "  ";
       this._padding = "";
       this._suppressOutput = suppressOutput;
-      this._out = out || IndentingWriter._consoleOut;
-      this._outNoNewline = out || IndentingWriter._consoleOutNoNewline;
+      this._out = out || IndentingWriter.stdout;
+      this._outNoNewline = out || IndentingWriter.stdoutNoNewline;
     }
 
     write(str: string = "", writePadding = false) {
