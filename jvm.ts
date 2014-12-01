@@ -2,7 +2,6 @@
 module J2ME {
   export var CLASSES = new ClassRegistry();
   declare var util;
-  declare var Frame;
 
   import Isolate = com.sun.cldc.isolate.Isolate;
   export class JVM {

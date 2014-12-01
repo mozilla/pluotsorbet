@@ -9,7 +9,6 @@ declare var throwHelper;
 module J2ME {
   declare var Native, Override;
   declare var VM;
-  declare var Frame;
   declare var Long;
 
 

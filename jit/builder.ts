@@ -114,9 +114,6 @@ module J2ME {
     catch_type: number;
   }
 
-
-  declare var Frame;
-
   export class CompiledMethodInfo {
     constructor(public args: string [], public body: string, public referencedClasses: ClassInfo []) {
       // ...

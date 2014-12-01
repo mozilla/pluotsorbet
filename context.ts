@@ -1,10 +1,69 @@
 module J2ME {
-  declare var Frame;
   declare var VM;
   declare var Instrument;
   declare var setZeroTimeout;
   declare var Long;
   declare var JavaException;
+
+  export class Frame {
+    methodInfo: MethodInfo;
+    locals: any [];
+    stack: any [];
+    code: Uint8Array;
+    bci: number;
+    cp: any;
+    localsBase: number;
+    lockObject: java.lang.Object;
+    profileData: any;
+
+    constructor(methodInfo: MethodInfo, locals: any [], localsBase: number) {
+      this.methodInfo = methodInfo;
+      this.cp = methodInfo.classInfo.constant_pool;
+      this.code = methodInfo.code;
+      this.bci = 0;
+      this.stack = [];
+      this.locals = locals;
+      this.localsBase = localsBase;
+      this.lockObject = null;
+      this.profileData = null;
+    }
+
+    getLocal(i: number): any {
+      return this.locals[this.localsBase + i];
+    }
+
+    setLocal(i: number, value: any) {
+      this.locals[this.localsBase + i] = value;
+    }
+
+    read8(): number {
+      return this.code[this.bci++];
+    }
+
+    read16(): number {
+      return this.read8() << 8 | this.read8();
+    }
+
+    read32(): number {
+      return this.read16() << 16 | this.read16();
+    }
+
+    read8signed(): number {
+      var x = this.read8();
+      return (x > 0x7f) ? (x - 0x100) : x;
+    }
+
+    read16signed(): number {
+      var x = this.read16();
+      return (x > 0x7fff) ? (x - 0x10000) : x;
+    }
+
+    read32signed(): number {
+      var x = this.read32();
+      return (x > 0x7fffffff) ? (x - 0x100000000) : x;
+    }
+
+  }
 
   export class Context {
     frames: any [];
@@ -353,3 +412,4 @@ module J2ME {
 }
 
 var Context = J2ME.Context;
+var Frame = J2ME.Frame;
