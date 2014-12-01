@@ -1056,16 +1056,21 @@ module J2ME {
           var returnValue = fn.apply(obj, args);
           // Push return value back on the stack.
           var returnType = methodInfo.signature[methodInfo.signature.length - 1];
-          switch (returnType) {
-            case 'V':
-              break;
-            case 'J':
-            case 'D':
-              stack.push2(returnValue);
-              break;
-            default:
-              stack.push(returnValue);
-              break;
+          var isArrayReturnType = methodInfo.signature[methodInfo.signature.length - 2] === "[";
+          if (isArrayReturnType) {
+            stack.push(returnValue);
+          } else {
+            switch (returnType) {
+              case 'V':
+                break;
+              case 'J':
+              case 'D':
+                stack.push2(returnValue);
+                break;
+              default:
+                stack.push(returnValue);
+                break;
+            }
           }
           break;
         case Bytecodes.RETURN:
