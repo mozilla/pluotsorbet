@@ -309,7 +309,6 @@ module J2ME {
     var runtime = new Runtime(jvm);
     var classFiles = CLASSES.classFiles;
     var ctx = new Context(runtime);
-
     var code = "";
     var writer = new J2ME.IndentingWriter(false, function (s) {
       code += s + "\n";
@@ -328,11 +327,15 @@ module J2ME {
         if (fileName.substr(-6) !== '.class') {
           return true;
         }
-        var classInfo = CLASSES.loadClassFile(fileName);
-        if (!classInfo.className.match(classFilter)) {
-          return true;
+        try {
+          var classInfo = CLASSES.loadClassFile(fileName);
+          if (!classInfo.className.match(classFilter)) {
+            return true;
+          }
+          classInfoList.push(classInfo);
+        } catch (e) {
+          stderrWriter.writeLn(e);
         }
-        classInfoList.push(classInfo);
         return true;
       }.bind(this));
       return true;

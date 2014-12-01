@@ -13,8 +13,8 @@ module J2ME {
   declare var Long;
 
 
-  export var traceWriter = null; new IndentingWriter(false, IndentingWriter.stderr);
-  export var linkingWriter = null; new IndentingWriter(false, IndentingWriter.stderr);
+  export var traceWriter = new IndentingWriter(false, IndentingWriter.stderr);
+  export var linkingWriter = new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {
     java: {
@@ -822,6 +822,10 @@ module J2ME {
     }
     return value.str;
   }
+
+  export function checkDivideByZero(value: number) {
+    // ...
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -839,3 +843,4 @@ var $CCI = J2ME.checkCastInterface;
 var $AK = J2ME.getArrayKlass;
 var $NA = J2ME.newArray;
 var $S = J2ME.newString;
+var $CDZ = J2ME.checkDivideByZero;

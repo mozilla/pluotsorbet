@@ -148,7 +148,7 @@ module J2ME {
             }
           } catch (x) {
             // Keep looking.
-            consoleWriter.writeLn("" + x);
+            // stderrWriter.writeLn("" + x);
           }
         }
       }

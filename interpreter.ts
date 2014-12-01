@@ -27,14 +27,19 @@ module J2ME {
     if (traceWriter) {
       for (var i = 0; i < ctx.frames.length; i++) {
         var methodInfo = ctx.frames[i].methodInfo;
-        var printArgs = ctx.frames[i].locals.map(function (x) {
+        var localsStr = ctx.frames[i].locals.map(function (x) {
           return toDebugString(x);
         }).join(", ");
+        var stackStr = ctx.frames[i].stack.map(function (x) {
+          return toDebugString(x);
+        }).join(", ");
+
+
         var printObj = "";
         //if (!methodInfo.isStatic) {
         //  printObj = " <" + toDebugString(this) + "> ";
         //}
-        traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + printArgs + ")");
+        traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + localsStr + " | " + stackStr + ")");
       }
     }
 

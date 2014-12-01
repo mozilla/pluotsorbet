@@ -322,7 +322,7 @@ module J2ME.C4.Backend {
 
   IR.JVMCheckArithmetic.prototype.compile = function (cx: Context): AST.Node {
     var value = compileValue(this.value, cx);
-    return new AST.CallExpression(new AST.Identifier("checkDivideByZero"), [value]);
+    return new AST.CallExpression(new AST.Identifier("$CDZ"), [value]);
   };
 
   IR.JVMNewArray.prototype.compile = function (cx: Context): AST.Node {
@@ -580,6 +580,9 @@ module J2ME.C4.Backend {
     } else {
       release || assert (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESTATIC);
       callee = id(mangleClassAndMethod(this.methodInfo));
+      if (true) {
+        callee = new AST.SequenceExpression([getRuntimeClass(this.methodInfo.classInfo), callee]);
+      }
       result = call(callee, args);
     }
     if (false && this.state) {

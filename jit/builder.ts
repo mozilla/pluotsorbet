@@ -7,7 +7,7 @@ module J2ME {
   export var counter = new J2ME.Metrics.Counter(true);
 
   export function printResults() {
-    counter.trace(new IndentingWriter());
+    counter.trace(stderrWriter);
     consoleWriter.writeLn(JSON.stringify(staticCallGraph, null, 2));
   }
 
@@ -464,8 +464,8 @@ module J2ME {
       counter.count("Compiled");
     } catch (e) {
       counter.count("Failed to Compile " + e);
-      // consoleWriter.writeLn(e);
-      // consoleWriter.writeLns(e.stack);
+      //consoleWriter.writeLn(e);
+      //consoleWriter.writeLns(e.stack);
       debug && Debug.warning("Failed to compile " + methodInfo.implKey + " " + e + " " + e.stack);
       if (e.message.indexOf("Not Implemented ") === -1) {
         throw e;

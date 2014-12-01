@@ -77,7 +77,7 @@ try {
   CLASSES.addSourceDirectory("java/midp");
 
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-  CLASSES.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
   CLASSES.initializeBuiltinClasses();
 
   var start = dateNow();
