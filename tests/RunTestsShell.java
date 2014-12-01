@@ -53,7 +53,7 @@ static String[] list = {
 "gnu/testlet/vm/OverrideTest",
 // "gnu/testlet/vm/RuntimeTest",
 // "gnu/testlet/vm/StringBufferTest",
-// "gnu/testlet/vm/StringTest",
+"gnu/testlet/vm/StringTest",
 // "gnu/testlet/vm/SystemTest",
 "gnu/testlet/vm/TestArithmetic",
 // "gnu/testlet/vm/TestIsolate",
