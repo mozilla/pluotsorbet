@@ -146,9 +146,7 @@ var util = (function () {
   }
 
   function newString(s) {
-    var obj = newObject(CLASSES.java_lang_String);
-    obj.str = s;
-    return obj;
+    return J2ME.newString(s);
   }
 
   /**

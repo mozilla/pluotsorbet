@@ -163,7 +163,6 @@ module J2ME {
     }
 
     release = releaseOption.value;
-
     var jvm = new JVM();
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
@@ -174,13 +173,16 @@ module J2ME {
         CLASSES.addPath(file, snarf(file, "binary").buffer);
       }
     }
+    CLASSES.initializeBuiltinClasses();
     if (classFilterOption.value) {
       if (verboseOption.value) {
         writer.writeLn("Compiling Pattern: " + classFilterOption.value);
       }
       compile(jvm, classFilterOption.value, debuggerOption.value, definitionOption.value);
+      if (verboseOption.value) {
+        printResults();
+      }
     }
-    CLASSES.initializeBuiltinClasses();
   }
 
   var commandLineArguments: string [];

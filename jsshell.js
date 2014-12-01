@@ -89,6 +89,9 @@ try {
   var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
 
   print("RUNNING TIME: " + (dateNow() - start));
+
+  //J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+
 } catch (x) {
   print(x);
   print(x.stack);

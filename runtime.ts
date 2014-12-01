@@ -12,8 +12,9 @@ module J2ME {
   declare var Frame;
   declare var Long;
 
-  export var traceWriter = null; //new J2ME.IndentingWriter();
-  export var linkingWriter = null;
+
+  export var traceWriter = null; new IndentingWriter(false, IndentingWriter.stderr);
+  export var linkingWriter = null; new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {
     java: {
@@ -74,7 +75,8 @@ module J2ME {
     }
   }
 
-  export var consoleWriter = new IndentingWriter();
+  export var stdoutWriter = new IndentingWriter();
+  export var stderrWriter = new IndentingWriter(false, IndentingWriter.stderr);
 
   export enum ExecutionPhase {
     /**
@@ -250,6 +252,9 @@ module J2ME {
      */
     depth: number;
 
+
+    classSymbols: string [];
+
     /**
      * Initializes static fields to their default values, not all klasses have one.
      */
@@ -261,7 +266,8 @@ module J2ME {
     staticConstructor: () => void;
 
     /**
-     * Java class object. This is only available on runtime klasses.
+     * Java class object. This is only available on runtime klasses and it points to itself. We go trough
+     * this indirection in VM code for now so that we can easily change it later if we need to.
      */
     classObject: java.lang.Class;
 
@@ -269,6 +275,8 @@ module J2ME {
      * Whether this class is a runtime class.
      */
     isRuntimeKlass: boolean;
+
+    templateKlass: Klass;
 
     /**
      * Whether this class is an interface class.
@@ -341,39 +349,90 @@ module J2ME {
   }
 
   function initializeClassObject(klass: Klass) {
+    linkingWriter && linkingWriter.writeLn("Initializing Class Object For: " + klass);
     assert(klass.isRuntimeKlass, "Can only create class objects for runtime klasses.");
     assert(!klass.classObject);
-    klass.classObject = <java.lang.Class>newObject(Klasses.java.lang.Class);
+    klass.classObject = <java.lang.Class><any>klass;
+    (<any>Object).setPrototypeOf(klass.classObject, Klasses.java.lang.Class.prototype);
+    // <java.lang.Class>newObject(Klasses.java.lang.Class);
     klass.classObject.runtimeKlass = klass;
+    var fields = klass.templateKlass.classInfo.fields;
+    for (var i = 0; i < fields.length; i++) {
+      var field = fields[i];
+      if (field.isStatic) {
+        var kind = TypeDescriptor.makeTypeDescriptor(field.signature).kind;
+        var defaultValue;
+        switch (kind) {
+          case Kind.Reference:
+            defaultValue = null;
+            break;
+          case Kind.Long:
+            defaultValue = Long.ZERO;
+            break;
+          default:
+            defaultValue = 0;
+            break;
+        }
+        field.set(klass.classObject, defaultValue);
+      }
+    }
   }
 
   export function registerRuntimeKlass(klass: Klass, classInfo: ClassInfo) {
     // Ensure each Runtime instance receives its own copy of the class
     // constructor, hoisted off the current runtime.
-    linkingWriter && linkingWriter.writeLn("Registering Runtime Class: " + classInfo.className);
+    linkingWriter && linkingWriter.writeLn("Registering Runtime Klass: " + classInfo.className + " as " + classInfo.mangledName);
     Object.defineProperty(RuntimeTemplate.prototype, classInfo.mangledName, {
       configurable: true,
       get: function () {
-        linkingWriter && linkingWriter.writeLn("Initializing Runtime Class: " + classInfo.className);
+        linkingWriter && linkingWriter.writeLn("Initializing Runtime Klass: " + classInfo.className);
         assert(!klass.isRuntimeKlass);
         var runtimeKlass = klass.bind(null);
-        runtimeKlass.klass = klass;
+        runtimeKlass.templateKlass = klass;
         runtimeKlass.isRuntimeKlass = true;
         initializeClassObject(runtimeKlass);
         Object.defineProperty(this, classInfo.mangledName, {
           configurable: false,
           value: runtimeKlass
         });
-        // TODO: monitorEnter
-        if (klass.staticInitializer) {
-          klass.staticInitializer.call(runtimeKlass);
+        if (classInfo.className === "com/sun/cldc/i18n/StreamWriter") {
+          debugger;
         }
-        if (klass.staticConstructor) {
-          klass.staticConstructor.call(runtimeKlass);
-        }
+        linkingWriter && linkingWriter.writeLn("Running Static Initializer: " + classInfo.className);
+        $.ctx.pushClassInitFrame(classInfo);
+        //// TODO: monitorEnter
+        //if (klass.staticInitializer) {
+        //  klass.staticInitializer.call(runtimeKlass);
+        //}
+        //if (klass.staticConstructor) {
+        //  klass.staticConstructor.call(runtimeKlass);
+        //}
         return runtimeKlass;
       }
     });
+  }
+
+  export function registerKlassSymbol(className: string) {
+    linkingWriter && linkingWriter.writeLn("Registering Klass: " + className);
+    var mangledName = J2ME.C4.Backend.escapeString(className);
+    if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
+      return;
+    }
+    Object.defineProperty(RuntimeTemplate.prototype, mangledName, {
+      configurable: true,
+      get: function () {
+        linkingWriter && linkingWriter.writeLn("Initializing Klass: " + className);
+        CLASSES.getClass(className);
+        return this[mangledName]; // This should not be recursive.
+      }
+    });
+  }
+
+  export function registerKlassSymbols(classNames: string []) {
+    for (var i = 0; i < classNames.length; i++) {
+      var className = classNames[i];
+      registerKlassSymbol(className);
+    }
   }
 
   export function runtimeKlass(runtime: Runtime, klass: Klass): Klass {
@@ -392,12 +451,15 @@ module J2ME {
     }
     var klass = jsGlobal[classInfo.mangledName];
     if (klass) {
-      linkingWriter && linkingWriter.purpleLn("Found Compiled Klass: " + classInfo.className);
+      linkingWriter && linkingWriter.greenLn("Found Compiled Klass: " + classInfo.className);
       release || assert(!classInfo.klass);
       classInfo.klass = klass;
       klass.toString = function () {
         return "[Compiled Klass " + classInfo.className + "]";
       };
+      if (klass.classSymbols) {
+        registerKlassSymbols(klass.classSymbols);
+      }
     } else {
       if (classInfo.isInterface) {
         klass = function () {
@@ -532,21 +594,22 @@ module J2ME {
       var fn;
       var methodType;
       var nativeMethod = findNativeMethodImplementation(methods[i]);
+      var methodDescription = methods[i].name + methods[i].signature;
       if (nativeMethod) {
-        linkingWriter && linkingWriter.writeLn("Method: " + methods[i].name + " -> Native / Override");
+        linkingWriter && linkingWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
         fn = nativeMethod;
         methodType = MethodType.Native;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
-          linkingWriter && linkingWriter.writeLn("Method: " + methods[i].name + " -> " + fn);
+          linkingWriter && linkingWriter.greenLn("Method: " + methodDescription + " -> Compiled");
           methodType = MethodType.Compiled;
           if (!traceWriter) {
             linkingWriter && linkingWriter.outdent();
-            return;
+            continue;
           }
         } else {
-          linkingWriter && linkingWriter.warnLn("Method: " + methods[i].name + " -> Interpreter");
+          linkingWriter && linkingWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
           fn = prepareInterpreterMethod(methodInfo);
         }
@@ -674,6 +737,12 @@ module J2ME {
     return new klass();
   }
 
+  export function newString(str: string): java.lang.String {
+    var object = <java.lang.String>newObject(Klasses.java.lang.String);
+    object.str = str;
+    return object;
+  }
+
   export function newArray(klass: Klass, size: number) {
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
@@ -769,3 +838,4 @@ var $CCI = J2ME.checkCastInterface;
 
 var $AK = J2ME.getArrayKlass;
 var $NA = J2ME.newArray;
+var $S = J2ME.newString;

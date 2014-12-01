@@ -295,7 +295,7 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMString.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.CallExpression(new AST.Identifier("S"), [constant(this.value)]);
+    return new AST.CallExpression(new AST.Identifier("$S"), [constant(this.value)]);
   };
 
   IR.JVMClass.prototype.compile = function (cx: Context): AST.Node {

@@ -50,6 +50,14 @@ module J2ME {
       object[this.mangledName] = value
     }
 
+    getStatic() {
+      return this.get(this.classInfo.getClassObject($.ctx));
+    }
+
+    setStatic(value: any) {
+      return this.set(this.classInfo.getClassObject($.ctx), value);
+    }
+
     toString() {
       return "[field " + this.name + "]";
     }

@@ -6,6 +6,8 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
 
+  export var interpreterCounter = null; new Metrics.Counter(true);
+
   function traceArrayStore(idx: number, array: any [], value: any) {
     traceWriter && traceWriter.writeLn(toDebugString(array) + "[" + idx + "] = " + toDebugString(value));
   }
@@ -35,6 +37,8 @@ module J2ME {
         traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + printArgs + ")");
       }
     }
+
+    interpreterCounter && interpreterCounter.count(frame.methodInfo.implKey);
 
     function popFrame(consumes) {
       if (frame.lockObject)
@@ -179,6 +183,8 @@ module J2ME {
           }
         }
       }
+
+      interpreterCounter && interpreterCounter.count(Bytecodes[op]);
 
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.ip - 1) + " " + OPCODES[op] + " " + stack.join(","));
       switch (op) {
@@ -899,7 +905,7 @@ module J2ME {
           if (field.tag)
             field = resolve(idx, true);
           classInitCheck(field.classInfo, frame.ip-3);
-          var value = ctx.runtime.getStatic(field);
+          var value = field.getStatic();
           if (typeof value === "undefined") {
             value = util.defaultValue(field.signature);
           }
@@ -911,7 +917,7 @@ module J2ME {
           if (field.tag)
             field = resolve(idx, true);
           classInitCheck(field.classInfo, frame.ip-3);
-          ctx.runtime.setStatic(field, stack.popType(field.signature));
+          field.setStatic(stack.popType(field.signature));
           break;
         case Bytecodes.NEW:
           var idx = frame.read16();
