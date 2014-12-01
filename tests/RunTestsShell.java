@@ -47,11 +47,10 @@ static String[] list = {
 "gnu/testlet/vm/LongTest",
 "gnu/testlet/vm/MathTest",
 "gnu/testlet/vm/MethodNotFoundException",
-// "gnu/testlet/vm/NativeTest", // WORKS IN BROWSER
 // "gnu/testlet/vm/NestedExceptionTest",
 // "gnu/testlet/vm/ObjectsTest",
 "gnu/testlet/vm/OpsTest",
-// "gnu/testlet/vm/OverrideTest",
+"gnu/testlet/vm/OverrideTest",
 // "gnu/testlet/vm/RuntimeTest",
 // "gnu/testlet/vm/StringBufferTest",
 // "gnu/testlet/vm/StringTest",
@@ -85,6 +84,8 @@ static String[] list = {
 "test/org/jikesrvm/basic/core/classloading/TestUTF8",
 "test/org/jikesrvm/basic/java/lang/TestMath",
 
+// -------The Following will only work in browser-------
+// "gnu/testlet/vm/NativeTest",
 
 // -------The Following will probably only work with the midlets-------
 // "org/mozilla/io/TestLocalMsgProtocol",
