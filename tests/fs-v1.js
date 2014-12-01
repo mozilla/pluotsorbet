@@ -32,12 +32,14 @@ var fs = (function() {
       window.setZeroTimeout(function() { cb(value) });
     } else {
       var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      if (DEBUG_FS) { console.log("get " + key + " initiated"); }
       var objectStore = transaction.objectStore(Store.DBSTORENAME);
       var req = objectStore.get(key);
       req.onerror = function() {
         console.error("Error getting " + key + ": " + req.error.name);
       };
       transaction.oncomplete = (function() {
+        if (DEBUG_FS) { console.log("get " + key + " completed"); }
         var value = req.result;
         if (value === undefined) {
           value = null;
@@ -52,10 +54,14 @@ var fs = (function() {
     this.map.set(key, value);
 
     var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("put " + key + " initiated"); }
     var objectStore = transaction.objectStore(Store.DBSTORENAME);
     var req = objectStore.put(value, key);
     req.onerror = function() {
       console.error("Error putting " + key + ": " + req.error.name);
+    };
+    transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("put " + key + " completed"); }
     };
   };
 
@@ -63,10 +69,14 @@ var fs = (function() {
     this.map.delete(key);
 
     var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("delete " + key + " initiated"); }
     var objectStore = transaction.objectStore(Store.DBSTORENAME);
     var req = objectStore.delete(key);
     req.onerror = function() {
       console.error("Error deleting " + key + ": " + req.error.name);
+    };
+    transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("delete " + key + " completed"); }
     };
   };
 
@@ -74,10 +84,14 @@ var fs = (function() {
     this.map.clear();
 
     var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("clear initiated"); }
     var objectStore = transaction.objectStore(Store.DBSTORENAME);
     var req = objectStore.clear();
     req.onerror = function() {
       console.error("Error clearing store: " + req.error.name);
+    };
+    transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("clear completed"); }
     };
   }
 
@@ -87,9 +101,11 @@ var fs = (function() {
     // we should instead monitor ongoing transactions and call our callback
     // once they've all completed.
     var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("get \"\" initiated"); }
     var objectStore = transaction.objectStore(Store.DBSTORENAME);
     objectStore.get("");
     transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("get \"\" completed"); }
       cb();
     };
   }
