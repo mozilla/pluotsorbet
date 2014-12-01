@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8">
-  <script type="text/javascript" src="fs-v1.js" defer></script>
+  <script type="text/javascript" src="../timer.js"></script>
+  <script type="text/javascript" src="fs-v1.js"></script>
 </head>
 
 <body>
@@ -58,11 +59,11 @@
           }
         });
       }),
-
-      new Promise(function(resolve, reject) {
-        fs.storeSync(resolve);
-      }),
     ]);
+  }).then(function() {
+    return new Promise(function(resolve, reject) {
+      fs.storeSync(resolve);
+    });
   }).then(function() {
     document.body.appendChild(document.createTextNode("DONE"));
   });
