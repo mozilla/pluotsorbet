@@ -641,7 +641,9 @@ module J2ME.C4.Backend {
   }
 
   export function mangleClass(classInfo: ClassInfo) {
-    if (classInfo.isArrayClass) {
+    if (classInfo instanceof PrimitiveClassInfo) {
+      return classInfo.mangledName;
+    } else if (classInfo.isArrayClass) {
       return "$AK(" + mangleClass(classInfo.elementClass) + ")";
     } else {
       if (friendlyMangledNames) {

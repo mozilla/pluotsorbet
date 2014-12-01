@@ -13,27 +13,6 @@ module J2ME {
   declare var ACCESS_FLAGS;
   declare var snarf;
 
-
-  /**
-   * To unify all class name handling, we give primitive type names valid
-   * class names (which hopefully can't be created from source, if they can
-   * we'll have to mangle them.
-   */
-  function convertPrimitiveArrayTypeName(typeName: string): string {
-    switch (typeName) {
-      case "[Z": return "[boolean";
-      case "[B": return "[byte";
-      case "[C": return "[char";
-      case "[D": return "[double";
-      case "[F": return "[float";
-      case "[I": return "[int";
-      case "[J": return "[long";
-      case "[S": return "[short";
-      default:
-        return typeName;
-    }
-  }
-
   export class ClassRegistry {
     /**
      * List of directories to look for source files in.
@@ -59,24 +38,6 @@ module J2ME {
     java_lang_String: ClassInfo;
     java_lang_Thread: ClassInfo;
 
-    booleanArray: ClassInfo;
-    byteArray: ClassInfo;
-    charArray: ClassInfo;
-    doubleArray: ClassInfo;
-    floatArray: ClassInfo;
-    intArray: ClassInfo;
-    longArray: ClassInfo;
-    shortArray: ClassInfo;
-
-    boolean$: ClassInfo;
-    byte$: ClassInfo;
-    char$: ClassInfo;
-    double$: ClassInfo;
-    float$: ClassInfo;
-    int$: ClassInfo;
-    long$: ClassInfo;
-    short$: ClassInfo;
-
     constructor() {
       this.sourceDirectories = [];
       this.sourceFiles = Object.create(null);
@@ -88,36 +49,17 @@ module J2ME {
 
     initializeBuiltinClasses() {
       // These classes are guaranteed to not have a static initializer.
-
-
       this.java_lang_Object = this.loadClass("java/lang/Object");
       this.java_lang_Class = this.loadClass("java/lang/Class");
       this.java_lang_String = this.loadClass("java/lang/String");
       this.java_lang_Thread = this.loadClass("java/lang/Thread");
 
-      for (var i = 0; i < valueKinds.length; i++) {
-        var typeName = Kind[valueKinds[i]].toLowerCase();
-        this.classes[typeName] = new PrimitiveClassInfo(typeName);
-        linkKlass(this.classes[typeName]);
+      // Link primitive values and primitive arrays.
+      for (var i = 0; i < "ZCFDBSIJ".length; i++) {
+        var typeName = "ZCFDBSIJ"[i];
+        linkKlass(PrimitiveClassInfo[typeName]);
+        this.getClass("[" + typeName);
       }
-
-      this.boolean$ = this.getClass("boolean");
-      this.byte$ = this.getClass("byte");
-      this.char$ = this.getClass("char");
-      this.double$ = this.getClass("double");
-      this.float$ = this.getClass("float");
-      this.int$ = this.getClass("int");
-      this.long$ = this.getClass("long");
-      this.short$ = this.getClass("short");
-
-      this.booleanArray = this.getClass("[boolean");
-      this.byteArray = this.getClass("[byte");
-      this.charArray = this.getClass("[char");
-      this.doubleArray = this.getClass("[double");
-      this.floatArray = this.getClass("[float");
-      this.intArray = this.getClass("[int");
-      this.longArray = this.getClass("[long");
-      this.shortArray = this.getClass("[short");
     }
 
     addPath(name: string, buffer: ArrayBuffer) {
@@ -248,12 +190,11 @@ module J2ME {
     }
 
     createArrayClass(typeName: string): ArrayClassInfo {
-      typeName = convertPrimitiveArrayTypeName(typeName);
       var elementType = typeName.substr(1);
       var constructor = getArrayConstructor(elementType);
       var classInfo;
       if (constructor) {
-        classInfo = new ArrayClassInfo(typeName, this.getClass(elementType));
+        classInfo = PrimitiveArrayClassInfo[elementType];
       } else {
         if (elementType[0] === "L") {
           elementType = elementType.substr(1).replace(";", "");

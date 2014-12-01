@@ -846,10 +846,6 @@ module J2ME {
           if (size < 0) {
             ctx.raiseExceptionAndYield("java/lang/NegativeArraySizeException", size);
           }
-          var className = classInfo.className;
-          if (className[0] !== "[")
-            className = "L" + className + ";";
-          className = "[" + className;
           stack.push(util.newArray(classInfo, size));
           break;
         case Bytecodes.MULTIANEWARRAY:

@@ -296,6 +296,8 @@ module J2ME {
     constructor(className: string, elementClass?) {
       false && super(null);
       this.className = className;
+      // TODO this may need to change for compiled code.
+      this.mangledName = className;
       this.superClass = CLASSES.java_lang_Object;
       this.superClassName = "java/lang/Object";
       this.access_flags = 0;
@@ -313,10 +315,42 @@ module J2ME {
   ArrayClassInfo.prototype.isArrayClass = true;
 
   export class PrimitiveClassInfo extends ClassInfo {
-    constructor(className: string) {
+    constructor(className: string, mangledName: string) {
       false && super(null);
       this.className = className;
+      this.mangledName = mangledName;
     }
+    static Z = new PrimitiveClassInfo("Z", "boolean");
+    static C = new PrimitiveClassInfo("C", "char");
+    static F = new PrimitiveClassInfo("F", "float");
+    static D = new PrimitiveClassInfo("D", "double");
+    static B = new PrimitiveClassInfo("B", "byte");
+    static S = new PrimitiveClassInfo("S", "short");
+    static I = new PrimitiveClassInfo("I", "int");
+    static J = new PrimitiveClassInfo("J", "long");
+  }
+
+  PrimitiveClassInfo.prototype.fields = [];
+  PrimitiveClassInfo.prototype.methods = [];
+  PrimitiveClassInfo.prototype.interfaces = [];
+
+  export class PrimitiveArrayClassInfo extends ArrayClassInfo {
+    constructor(className: string, elementClass?) {
+      super(className, elementClass);
+    }
+
+    get superClass() {
+      return CLASSES.java_lang_Object;
+    }
+
+    static Z = new PrimitiveArrayClassInfo("[Z", PrimitiveClassInfo.Z);
+    static C = new PrimitiveArrayClassInfo("[C", PrimitiveClassInfo.C);
+    static F = new PrimitiveArrayClassInfo("[F", PrimitiveClassInfo.F);
+    static D = new PrimitiveArrayClassInfo("[D", PrimitiveClassInfo.D);
+    static B = new PrimitiveArrayClassInfo("[B", PrimitiveClassInfo.B);
+    static S = new PrimitiveArrayClassInfo("[S", PrimitiveClassInfo.S);
+    static I = new PrimitiveArrayClassInfo("[I", PrimitiveClassInfo.I);
+    static J = new PrimitiveArrayClassInfo("[J", PrimitiveClassInfo.J);
   }
 
   PrimitiveClassInfo.prototype.fields = [];
