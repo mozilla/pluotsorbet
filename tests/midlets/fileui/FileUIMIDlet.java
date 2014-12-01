@@ -63,7 +63,6 @@ public class FileUIMIDlet extends MIDlet {
             dataEncoder.putStart(14, "event");
             dataEncoder.put(13, "name", "FileSelect");
             dataEncoder.put(5, "trans_id", (short)(int)(System.currentTimeMillis() % 255L));
-            dataEncoder.putEnd(14, "event");
             dataEncoder.put(10, "memory", "Internal");
             dataEncoder.put(10, "media_type", "Picture");
             dataEncoder.put(0, "multiple_selection", false);

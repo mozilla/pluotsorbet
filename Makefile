@@ -11,6 +11,7 @@ test: all
 	python tests/echoServer.py &
 	cd tests && python httpsServer.py &
 	cd tests && python sslEchoServer.py &
+	cd tests && python waitServers.py
 	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
 	killall python Python || true
 	python dumplog.py

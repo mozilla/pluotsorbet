@@ -70,7 +70,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = urlParams.platform ? urlParams.platform : "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
         break;
     case "microedition.platformimpl":
-        value = "";
+        value = null;
         break;
     case "microedition.profiles":
         value = "MIDP-2.0"
@@ -80,6 +80,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         break;
     case "microedition.amms.version":
         value = "1.1";
+        break;
+    case "microedition.media.version":
+        value = '1.2';
         break;
     case "mmapi-configuration":
         value = null;
@@ -148,6 +151,10 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         console.warn("Property 'com.nokia.multisim.imsi.sim2' is a stub");
         value = null;
         break;
+    case "com.nokia.mid.batterylevel":
+        // http://developer.nokia.com/community/wiki/Checking_battery_level_in_Java_ME
+        value = Math.floor(navigator.battery.level * 100).toString();
+        break;
     case "com.nokia.mid.imsi":
         console.warn("Property 'com.nokia.mid.imsi' is a stub");
         value = "000000000000000";
@@ -175,11 +182,24 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "classpathext":
         value = null;
         break;
+    case "supports.audio.capture":
+        value = "true";
+        break;
+    case "supports.recording":
+        value = "true";
+        break;
+    case "audio.encodings":
+        value = "audio/ogg";
+        break;
+    case "video.snapshot.encodings":
+        value = "encoding=jpeg";
+        break;
     default:
         console.warn("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
+        value = null;
         break;
     }
-    return value ? value : null;
+    return value;
 });
 
 Native.create("java/lang/System.currentTimeMillis.()J", function() {
@@ -556,6 +576,13 @@ Native.create("com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljav
     return obj;
 });
 
+Native.create("com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;", function(source) {
+    var obj = util.newObject(CLASSES.java_lang_Object);
+    obj.data = new Uint8Array(source.data);
+    obj.pos = source.pos;
+    return obj;
+});
+
 Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function() {
     var handle = this.$fileDecoder;
 
@@ -736,6 +763,47 @@ Native.create("java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;", funct
             throw new JavaException("java/io/UTFDataFormatException");
         }
     }
+});
+
+Native.create("java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B", function(jStr) {
+    var str = util.fromJavaString(jStr);
+
+    var utflen = 0;
+
+    for (var i = 0; i < str.length; i++) {
+        var c = str.charCodeAt(i);
+        if ((c >= 0x0001) && (c <= 0x007F)) {
+            utflen++;
+        } else if (c > 0x07FF) {
+            utflen += 3;
+        } else {
+            utflen += 2;
+        }
+    }
+
+    if (utflen > 65535) {
+        throw new JavaException("java/io/UTFDataFormatException");
+    }
+
+    var count = 0;
+    var bytearr = util.newPrimitiveArray("B", utflen + 2);
+    bytearr[count++] = (utflen >>> 8) & 0xFF;
+    bytearr[count++] = (utflen >>> 0) & 0xFF;
+    for (var i = 0; i < str.length; i++) {
+        var c = str.charCodeAt(i);
+        if ((c >= 0x0001) && (c <= 0x007F)) {
+            bytearr[count++] = c;
+        } else if (c > 0x07FF) {
+            bytearr[count++] = 0xE0 | ((c >> 12) & 0x0F);
+            bytearr[count++] = 0x80 | ((c >>  6) & 0x3F);
+            bytearr[count++] = 0x80 | ((c >>  0) & 0x3F);
+        } else {
+            bytearr[count++] = 0xC0 | ((c >>  6) & 0x1F);
+            bytearr[count++] = 0x80 | ((c >>  0) & 0x3F);
+        }
+    }
+
+    return bytearr;
 });
 
 Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len) {

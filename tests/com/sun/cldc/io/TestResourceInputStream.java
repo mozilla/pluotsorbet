@@ -6,6 +6,8 @@ import gnu.testlet.Testlet;
 import java.io.*;
 
 public class TestResourceInputStream implements Testlet {
+    TestHarness th;
+
     private String readLine(InputStreamReader reader) throws IOException {
         // Test whether the end of file has been reached. If so, return null.
         int readChar = reader.read();
@@ -29,11 +31,21 @@ public class TestResourceInputStream implements Testlet {
         return string.toString();
     }
 
+    public void readWithStreamReader(ResourceInputStream stream) throws IOException {
+        InputStreamReader reader = new InputStreamReader(stream);
+        th.check(readLine(reader), "ξεσκεπάζω τὴν ψυχοφθόρα βδελυγμία");
+        th.check(readLine(reader) == null);
+    }
+
     public void test(TestHarness th) {
+        this.th = th;
+
         try {
-            InputStreamReader reader = new InputStreamReader(getClass().getResourceAsStream("utf8.txt"));
-            th.check(readLine(reader), "ξεσκεπάζω τὴν ψυχοφθόρα βδελυγμία");
-            th.check(readLine(reader) == null);
+            ResourceInputStream stream = (ResourceInputStream)getClass().getResourceAsStream("utf8.txt");
+            stream.mark(0);
+            readWithStreamReader(stream);
+            stream.reset();
+            readWithStreamReader(stream);
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();

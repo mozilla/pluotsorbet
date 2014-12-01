@@ -67,3 +67,11 @@ Native.create("gnu/testlet/vm/NativeTest.dumbPipe.()Z", function() {
     });
   });
 }, true);
+
+Native.create("com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V", function() {
+  DumbPipe.open("hideKeyboard", null, function(message) {});
+});
+
+Native.create("com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V", function() {
+  DumbPipe.open("showKeyboard", null, function(message) {});
+});

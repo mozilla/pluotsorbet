@@ -20,6 +20,7 @@
  *    midletClassName
  *    network_mcc
  *    network_mnc
+ *    platform
  *    profile
  *    pushConn
  *    pushMidlet
@@ -38,7 +39,7 @@ var urlParams = (function() {
     params[param[0]] = param[1];
   });
 
-  params.args = (params.args || "").split(",");
+  params.args = (params.args || "").replace(".", "/", "g").split(",");
 
   return params;
 })();
