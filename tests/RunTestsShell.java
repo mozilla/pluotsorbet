@@ -57,7 +57,7 @@ static String[] list = {
 // "gnu/testlet/vm/StringTest",
 // "gnu/testlet/vm/SystemTest",
 "gnu/testlet/vm/TestArithmetic",
-"gnu/testlet/vm/TestIsolate",
+// "gnu/testlet/vm/TestIsolate",
 "gnu/testlet/vm/ThrowableTest",
 "java/lang/TestArrayPrameter",
 "java/lang/TestString",

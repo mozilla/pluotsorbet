@@ -318,6 +318,7 @@ module J2ME {
     }
   }
 
+  ArrayClassInfo.prototype.fields = [];
   ArrayClassInfo.prototype.methods = [];
   ArrayClassInfo.prototype.interfaces = [];
   ArrayClassInfo.prototype.isArrayClass = true;
