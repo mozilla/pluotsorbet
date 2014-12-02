@@ -263,7 +263,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs open " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir || !(record.data instanceof Blob)) {
+      if (record == null || record.isDir) {
         cb(-1);
       } else {
         var reader = new FileReader();
@@ -577,7 +577,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs size " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir || !(record.data instanceof Blob)) {
+      if (record == null || record.isDir) {
         cb(-1);
       } else {
         cb(record.data.size);
