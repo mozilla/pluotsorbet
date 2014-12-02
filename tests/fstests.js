@@ -808,6 +808,16 @@ tests.push(function() {
   });
 });
 
+tests.push(function() {
+  fs.storeSync(function() {
+    // There's nothing we can check, since the sync status of the store
+    // is private to the fs module, but we have at least confirmed that the call
+    // resulted in the callback being called.
+    ok(true, "storeSync callback called");
+    next();
+  });
+});
+
 fs.init(function() {
   fs.clear(function() {
     next();
