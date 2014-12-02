@@ -38,6 +38,7 @@ var gfxTests = [
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 0 },
 ];
 
 var expectedUnitTestResults = [
@@ -101,7 +102,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 126 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 127 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper

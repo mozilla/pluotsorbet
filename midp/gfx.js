@@ -816,10 +816,9 @@
             texture = texture.canvas; // Render the canvas, not the context.
         }
 
-        var w = sw, h = sh;
         var g = this;
         withGraphics(g, function(c) {
-            withAnchor(g, c, anchor, x, y, w, h, function(x, y) {
+            withAnchor(g, c, anchor, x, y, sw, sh, function(x, y) {
                 c.translate(x, y);
                 if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
                     c.scale(-1, 1);
@@ -831,7 +830,7 @@
                     c.rotate(Math.PI);
                 if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                     c.rotate(1.5 * Math.PI);
-                c.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
+                c.drawImage(texture, sx, sy, sw, sh, 0, 0, sw, sh);
             });
         });
     });
@@ -843,12 +842,11 @@
             withClip(g, c, x1, y1, function(x, y) {
                 withSize(dx, dy, function(dx, dy) {
                     withPixel(g, c, function() {
-                        var ctx = MIDP.Context2D;
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + dx, y + dy);
-                        ctx.stroke();
-                        ctx.closePath();
+                        c.beginPath();
+                        c.moveTo(x, y);
+                        c.lineTo(x + dx, y + dy);
+                        c.stroke();
+                        c.closePath();
                     });
                 });
             });
