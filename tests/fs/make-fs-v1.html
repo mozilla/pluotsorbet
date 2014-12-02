@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <script type="text/javascript" src="../timer.js"></script>
+  <script type="text/javascript" src="../../timer.js"></script>
   <script type="text/javascript" src="fs-v1.js"></script>
 </head>
 
@@ -37,7 +37,7 @@
           if (exists) {
             resolve();
           } else {
-            load("../certs/_main.ks", "blob").then(function(data) {
+            load("../../certs/_main.ks", "blob").then(function(data) {
               fs.create("/_main.ks", data, function() {
                 resolve();
               });
@@ -51,7 +51,7 @@
           if (exists) {
             resolve();
           } else {
-            load("../certs/_test.ks", "blob").then(function(data) {
+            load("../../certs/_test.ks", "blob").then(function(data) {
               fs.create("/_test.ks", data, function() {
                 resolve();
               });

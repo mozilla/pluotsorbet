@@ -6,7 +6,7 @@ var casper = require('casper').create({
     logLevel: "debug",
 });
 
-casper.start("http://localhost:8000/tests/make-fs-v1.html");
+casper.start("http://localhost:8000/tests/fs/make-fs-v1.html");
 
 casper.waitForText(
   "DONE",
