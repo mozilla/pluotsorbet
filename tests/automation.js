@@ -38,6 +38,7 @@ var gfxTests = [
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 0 },
 ];
 
 var expectedUnitTestResults = [
