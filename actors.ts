@@ -86,6 +86,7 @@ module J2ME {
     max_locals: number;
     max_stack: number;
     consumes: number;
+    signatureDescriptor: SignatureDescriptor;
     signature: string;
     implKey: string;
     key: string;
@@ -140,10 +141,15 @@ module J2ME {
       this.mangledName = J2ME.C4.Backend.mangleMethod(this);
       this.mangledClassAndMethodName = J2ME.C4.Backend.mangleClassAndMethod(this);
 
-      this.consumes = Signature.getINSlots(this.signature);
+      this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
+      this.consumes = this.signatureDescriptor.getArgumentSlotCount();
       if (!this.isStatic) {
         this.consumes++;
       }
+    }
+
+    public getReturnKind(): Kind {
+      return this.signatureDescriptor.typeDescriptors[0].kind;
     }
 
     getSourceLocationForBci(bci: number): SourceLocation {

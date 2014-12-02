@@ -12,7 +12,7 @@ module J2ME {
   declare var Long;
 
 
-  export var traceWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
+  export var traceWriter = new IndentingWriter(false, IndentingWriter.stderr);
   export var linkingWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {
@@ -569,28 +569,33 @@ module J2ME {
     return null;
   }
 
-  function prepareInterpreterMethod(methodInfo: MethodInfo): Function {
-    return function interpreter() {
+  function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
+    return function interpreterFrameAdapter() {
       var frame = new Frame(methodInfo, [], 0);
-      var ctx = $.ctx;
-      var args = Array.prototype.slice.call(arguments);
-
+      var j = 0;
       if (!methodInfo.isStatic) {
-        args.unshift(this);
+        frame.setLocal(j++, this);
       }
-      for (var i = 0; i < args.length; i++) {
-        frame.setLocal(i, args[i]);
+      var typeDescriptors = methodInfo.signatureDescriptor.typeDescriptors;
+      release || assert (arguments.length === typeDescriptors.length - 1,
+        "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor " +
+        methodInfo.signatureDescriptor);
+      for (var i = 1; i < typeDescriptors.length; i++) {
+        frame.setLocal(j++, arguments[i - 1]);
+        if (isTwoSlot(typeDescriptors[i].kind)) {
+          frame.setLocal(j++, null);
+        }
       }
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject(ctx)
+            ? methodInfo.classInfo.getClassObject($.ctx)
             : frame.getLocal(0);
         }
 
-        ctx.monitorEnter(frame.lockObject);
+        $.ctx.monitorEnter(frame.lockObject);
       }
-      return ctx.executeNewFrameSet([frame]);
+      return $.ctx.executeNewFrameSet([frame]);
     };
   }
 
@@ -630,7 +635,7 @@ module J2ME {
         } else {
           linkingWriter && linkingWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
-          fn = prepareInterpreterMethod(methodInfo);
+          fn = prepareInterpretedMethod(methodInfo);
         }
       }
 
@@ -659,7 +664,11 @@ module J2ME {
         }
         traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + printArgs + ")");
         var value = fn.apply(this, args);
-        traceWriter.leave("< " + toDebugString(value));
+        if (methodInfo.getReturnKind() !== Kind.Void) {
+          traceWriter.leave("< " + toDebugString(value));
+        } else {
+          traceWriter.leave("<");
+        }
         return value;
       };
     }
