@@ -400,9 +400,6 @@ module J2ME {
           configurable: false,
           value: runtimeKlass
         });
-        if (classInfo.className === "com/sun/cldc/i18n/StreamWriter") {
-          debugger;
-        }
         linkingWriter && linkingWriter.writeLn("Running Static Initializer: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
         //// TODO: monitorEnter
