@@ -32,8 +32,8 @@ module J2ME {
     }
 
     startIsolate(isolate: Isolate) {
-      var mainClass = fromJavaString(isolate.$_mainClass).replace(/\./g, "/");
-      var mainArgs = isolate.$_mainArgs.map(fromJavaString);
+      var mainClass = fromJavaString(isolate.$com_sun_cldc_isolate_Isolate_mainClass).replace(/\./g, "/");
+      var mainArgs = isolate.$com_sun_cldc_isolate_Isolate_mainArgs.map(fromJavaString);
       var runtime = new J2ME.Runtime(this);
       var ctx = new Context(runtime);
       ctx.setCurrent();

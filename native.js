@@ -584,7 +584,7 @@ Native.create("com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Lja
 });
 
 Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function() {
-    var handle = this.$fileDecoder;
+    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
     if (!handle) {
         throw new JavaException("java/io/IOException");
@@ -594,7 +594,7 @@ Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function() 
 });
 
 Override.create("com/sun/cldc/io/ResourceInputStream.read.()I", function() {
-    var handle = this.$fileDecoder;
+    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
     if (!handle) {
         throw new JavaException("java/io/IOException");
@@ -725,7 +725,7 @@ Native.create("com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Li
 Native.create("com/sun/midp/links/Link.init0.(II)V", function(sender, receiver) {
     this.sender = sender;
     this.receiver = receiver;
-    this.$nativePointer = util.id();
+    this.klass.classInfo.getField("I.nativePointer.I").set(this, util.id());
 });
 
 Native.create("com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V", function(linkMessage, link) {
@@ -809,7 +809,7 @@ Native.create("java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B", func
 Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", function(cbuf, off, len) {
   var outputArray = [];
 
-  var pendingSurrogate = this.$pendingSurrogate;
+  var pendingSurrogate = this.klass.classInfo.getField("I.pendingSurrogate.I").get(this);
 
   var inputChar = 0;
   var outputSize = 0;
@@ -866,7 +866,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B", functio
     count++;
   }
 
-  this.$pendingSurrogate = pendingSurrogate;
+  this.klass.classInfo.getField("I.pendingSurrogate.I").set(this, pendingSurrogate);
 
   var totalSize = outputArray.reduce(function(total, cur) {
     return total + cur.length;
@@ -886,7 +886,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I", function(cbu
   var outputSize = 0;
   var outputCount = 0;
   var count = 0;
-  var localPendingSurrogate = this.$pendingSurrogate;
+  var localPendingSurrogate = this.klass.classInfo.getField("I.pendingSurrogate.I").get(this);
   while (count < length) {
     inputChar = 0xffff & cbuf[offset + count];
     if (0 != localPendingSurrogate) {
