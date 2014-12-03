@@ -36,6 +36,7 @@ module J2ME {
       var mainArgs = isolate.$com_sun_cldc_isolate_Isolate_mainArgs.map(fromJavaString);
       var runtime = new J2ME.Runtime(this);
       var ctx = new Context(runtime);
+      var oldCtx = $.ctx;
       ctx.setCurrent();
 
       isolate.runtime = runtime;
@@ -65,6 +66,7 @@ module J2ME {
 
       ctx.frames.push(new Frame(entryPoint, [ args ], 0));
       ctx.start();
+      oldCtx.setCurrent();
     }
 
   }

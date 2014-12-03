@@ -508,6 +508,11 @@ module J2ME {
       }
     }
 
+    if (classInfo.superClass && !classInfo.superClass.klass &&
+        J2ME.phase === J2ME.ExecutionPhase.Runtime) {
+      J2ME.linkKlass(classInfo.superClass);
+    }
+
     var superKlass = getKlass(classInfo.superClass);
 
     extendKlass(klass, superKlass);
