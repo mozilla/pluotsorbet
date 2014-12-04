@@ -268,7 +268,7 @@
         else
             face = "Arial, Helvetica, sans-serif";
 
-        this.class.getField("I.baseline.I").set(this, (size/2)|0);
+        this.class.getField("I.baseline.I").set(this, size | 0);
         this.class.getField("I.height.I").set(this, (size * 1.3)|0);
         this.css = style + " " + size + "pt " + face;
     });
