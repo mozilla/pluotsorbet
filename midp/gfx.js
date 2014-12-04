@@ -538,6 +538,10 @@
         return swapRB(rgb) | 0xff000000;
     });
 
+    // DirectGraphics constants
+    var TYPE_USHORT_4444_ARGB = 4444;
+    var TYPE_USHORT_565_RGB = 565;
+
     Native.create("com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V", function(rgba) {
         var g = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var red = (rgba >> 16) & 0xff;
@@ -562,7 +566,7 @@
         }
 
         var converterFunc = null;
-        if (format == 4444) { // TYPE_USHORT_4444_ARGB
+        if (format == TYPE_USHORT_4444_ARGB) {
             converterFunc = function(abgr) {
                 var a = (abgr & 0xF0000000) >>> 16;
                 var r = (abgr & 0x000000F0) << 4;
@@ -570,7 +574,7 @@
                 var b = (abgr & 0x00F00000) >>> 20;
                 return (a | r | g | b);
             };
-        } else if (format == 565) { // TYPE_USHORT_565_RGB
+        } else if (format == TYPE_USHORT_565_RGB) {
             converterFunc = function(abgr) {
                 var r = (abgr & 0b000000000000000011111000) << 8;
                 var g = (abgr & 0b000000001111110000000000) >>> 5;
@@ -598,7 +602,7 @@
         }
 
         var converterFunc = null;
-        if (format == 4444 && transparency && !manipulation) {
+        if (format == TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
             converterFunc = function(argb) {
                 var a = (argb & 0xF000) << 16;
                 var r = (argb & 0x0F00) >>> 4;
