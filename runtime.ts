@@ -129,6 +129,7 @@ module J2ME {
     pending: any;
     staticFields: any;
     classObjects: any;
+    classInitLockObjects: any;
     ctx: Context;
 
     isolate: com.sun.cldc.isolate.Isolate;
@@ -148,6 +149,7 @@ module J2ME {
       this.staticFields = {};
       this.classObjects = {};
       this.ctx = null;
+      this.classInitLockObjects = {};
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
       this._nextHashCode = this._runtimeId << 24;
     }

@@ -254,7 +254,7 @@ Native.create("java/lang/Object.notifyAll.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
-    var classInfo = this.runtimeKlass.templateKlass.classInfo;
+    var classInfo = this.classInfo;
     var className = classInfo.className;
     var runtime = ctx.runtime;
     if (runtime.initialized[className] || runtime.pending[className])
@@ -263,7 +263,8 @@ Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
     if (className === "com/sun/cldc/isolate/Isolate") {
         // The very first isolate is granted access to the isolate API.
         // ctx.runtime.setStatic(CLASSES.getField(classInfo, "S._API_access_ok.I"), 1);
-        CLASSES.getField(classInfo, "S._API_access_ok.I").set(this, 1);
+        var isolate = classInfo.getClassObject(ctx).classObject;
+        CLASSES.getField(classInfo, "S._API_access_ok.I").set(isolate, 1);
     }
     var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
     var frames = [];
@@ -282,7 +283,7 @@ Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
 });
 
 Native.create("java/lang/Class.init9.()V", function(ctx) {
-    var classInfo = this.runtimeKlass.templateKlass.classInfo;
+    var classInfo = this.classInfo;
     var className = classInfo.className;
     var runtime = ctx.runtime;
     if (runtime.initialized[className])
