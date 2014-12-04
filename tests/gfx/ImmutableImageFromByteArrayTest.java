@@ -6,6 +6,7 @@ package gfx;
 * Copyright John W. Muchow   http://www.CoreJ2ME.com
 * You may use/modify for any non-commercial purpose
 *-------------------------------------------------*/
+// Source: http://www.java2s.com/Code/Java/J2ME/ImmutableImageFromByteArray.htm
 
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
