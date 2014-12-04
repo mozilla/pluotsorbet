@@ -701,7 +701,10 @@ module J2ME {
         (<any>Object).setPrototypeOf(klass.prototype, superKlass.prototype);
         assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype);
       } else {
-        // TODO: Copy properties over.
+          assert(!superKlass.superKlass, "Should not have a super-super-klass.");
+          for (var key in superKlass.prototype) {
+              klass.prototype[key] = superKlass.prototype[key];
+          }
       }
     }
     klass.prototype.klass = klass;

@@ -650,10 +650,10 @@ module J2ME.C4.Backend {
       return "$AK(" + mangleClass(classInfo.elementClass) + ")";
     } else {
       if (friendlyMangledNames) {
-        return escapeString(classInfo.className);
+        return "$" + escapeString(classInfo.className);
       }
       var hash = hashString(classInfo.className);
-      return StringUtilities.variableLengthEncodeInt32(hash);
+      return "$" + StringUtilities.variableLengthEncodeInt32(hash);
     }
   }
 
