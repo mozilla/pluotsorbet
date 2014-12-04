@@ -928,3 +928,7 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I", function(cbu
 
   return outputCount;
 });
+
+Native.create("com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V", function(suiteId, className) {
+  // ???
+});
