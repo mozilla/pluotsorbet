@@ -538,6 +538,10 @@
         return swapRB(rgb) | 0xff000000;
     });
 
+    // DirectGraphics constants
+    var TYPE_USHORT_4444_ARGB = 4444;
+    var TYPE_USHORT_565_RGB = 565;
+
     Native.create("com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V", function(rgba) {
         var g = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var red = (rgba >> 16) & 0xff;
@@ -562,19 +566,19 @@
         }
 
         var converterFunc = null;
-        if (format == 4444) { // TYPE_USHORT_4444_ARGB
-            converterFunc = function(rgba) {
-                var r = (rgba & 0xF0000000) >>> 20;
-                var g = (rgba & 0x00F00000) >> 16;
-                var b = (rgba & 0x0000F000) >> 12;
-                var a = (rgba & 0x000000F0) << 8;
+        if (format == TYPE_USHORT_4444_ARGB) {
+            converterFunc = function(abgr) {
+                var a = (abgr & 0xF0000000) >>> 16;
+                var r = (abgr & 0x000000F0) << 4;
+                var g = (abgr & 0x0000F000) >> 8;
+                var b = (abgr & 0x00F00000) >>> 20;
                 return (a | r | g | b);
             };
-        } else if (format == 565) { // TYPE_USHORT_565_RGB
-            converterFunc = function(rgba) {
-                var r = (rgba & 0xF8000000) >>> 16;
-                var g = (rgba & 0xFC0000) >>> 13;
-                var b = (rgba & 0xF800) >>> 11;
+        } else if (format == TYPE_USHORT_565_RGB) {
+            converterFunc = function(abgr) {
+                var r = (abgr & 0b000000000000000011111000) << 8;
+                var g = (abgr & 0b000000001111110000000000) >>> 5;
+                var b = (abgr & 0b111110000000000000000000) >>> 19;
                 return (r | g | b);
             };
         } else {
@@ -583,6 +587,9 @@
 
         var graphics = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var image = graphics.class.getField("I.img.Ljavax/microedition/lcdui/Image;").get(graphics);
+        if (!image) {
+            throw new JavaException("java/lang/IllegalArgumentException", "getPixels with no image not yet supported");
+        }
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
         contextToRgbData(convertNativeImageData(imageData), pixels, offset, scanlength, x, y, width, height, converterFunc);
@@ -595,13 +602,13 @@
         }
 
         var converterFunc = null;
-        if (format == 4444 && transparency && !manipulation) {
+        if (format == TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
             converterFunc = function(argb) {
-                var a = (argb & 0xF000) >>> 8;
-                var r = (argb & 0x0F00) << 20;
-                var g = (argb & 0x00F0) << 16;
-                var b = (argb & 0x000F) << 12;
-                return (r | g | b | a);
+                var a = (argb & 0xF000) << 16;
+                var r = (argb & 0x0F00) >>> 4;
+                var g = (argb & 0x00F0) << 8;
+                var b = (argb & 0x000F) << 20;
+                return (a | b | g | r);
             };
         } else {
             throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
