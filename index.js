@@ -181,7 +181,7 @@ DumbPipe.registerOpener("contacts", function(message, sender) {
     var contact = req.result;
     // Transform the mozContact into a normal object, otherwise
     // the pipe won't be able to send it.
-    sender(JSON.parse(JSON.stringify(contact)));
+    sender(contact ? JSON.parse(JSON.stringify(contact)) : null);
     if (contact) {
       req.continue();
     }
