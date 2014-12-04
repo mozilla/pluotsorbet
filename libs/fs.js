@@ -137,6 +137,18 @@ var fs = (function() {
     };
   }
 
+  Store.prototype.purge = function(cb) {
+    cb = cb || function() {};
+
+    // We have to sync to the persistent store before we purge the memory cache
+    // to ensure a caller who writes data to a file, purges the cache, and then
+    // immediately reads the file will get the data.
+    this.sync((function() {
+      this.map.clear();
+      cb();
+    }).bind(this));
+  }
+
   Store.prototype.sync = function(cb) {
     cb = cb || function() {};
 
@@ -153,19 +165,18 @@ var fs = (function() {
 
     this.changesToSync.forEach((function(change, key) {
       var req;
-      switch(change.type) {
-        case "put":
-          req = objectStore.put(change.value, key);
-          if (DEBUG_FS) { console.log("put " + key); }
-          req.onerror = function() {
-            console.error("Error putting " + key + ": " + req.error.name);
-          };
-        case "delete":
-          req = objectStore.delete(key);
-          if (DEBUG_FS) { console.log("delete " + key); }
-          req.onerror = function() {
-            console.error("Error deleting " + key + ": " + req.error.name);
-          };
+      if (change.type == "put") {
+        req = objectStore.put(change.value, key);
+        if (DEBUG_FS) { console.log("put " + key); }
+        req.onerror = function() {
+          console.error("Error putting " + key + ": " + req.error.name);
+        };
+      } else if (change.type == "delete") {
+        req = objectStore.delete(key);
+        if (DEBUG_FS) { console.log("delete " + key); }
+        req.onerror = function() {
+          console.error("Error deleting " + key + ": " + req.error.name);
+        };
       }
     }).bind(this));
 
@@ -402,7 +413,7 @@ var fs = (function() {
     // at different interval (f.e. flushing to memory every five seconds
     // but only syncing to the persistent datastore every minute or so), though
     // we should continue to do both immediately on pagehide.
-    storeSync();
+    syncStore();
   }
 
   // Due to bug #227, we don't support Object::finalize(). But the Java
@@ -686,8 +697,12 @@ var fs = (function() {
     initRootDir(cb || function() {});
   }
 
-  function storeSync(cb) {
+  function syncStore(cb) {
     store.sync(cb);
+  }
+
+  function purgeStore(cb) {
+    store.purge(cb);
   }
 
   return {
@@ -713,6 +728,7 @@ var fs = (function() {
     rename: rename,
     stat: stat,
     clear: clear,
-    storeSync: storeSync,
+    syncStore: syncStore,
+    purgeStore: purgeStore,
   };
 })();
