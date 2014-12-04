@@ -87,15 +87,15 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             // Check content type.
             th.check(player.getContentType(), "audio/x-wav");
 
-            // Sleep 100 milliseconds and check if the media time is around the
-            // time interval slept.  We calculate the actual time slept because
-            // it could be much different from the amount we intend to sleep
-            // (if another thread hogs the CPU in the meantime).
-            long beforeSleep = System.currentTimeMillis();
+            // Sleep 100 milliseconds and check if the change in media time
+            // is around the time interval slept. We calculate the actual time
+            // slept because it could be much different from the amount we
+            // intend to sleep (if another thread hogs the CPU in the meantime).
+            long currentTimeBeforeSleep = System.currentTimeMillis();
+            long mediaTimeBeforeSleep = player.getMediaTime() / 1000;
             Thread.sleep(100);
-            long actualTimeSlept = System.currentTimeMillis() - beforeSleep;
-            long mediaTime = player.getMediaTime() / 1000;
-System.out.println("mediaTime: " + mediaTime + "; actualTimeSlept: " + actualTimeSlept);
+            long actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
+            long mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
             th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
 
             // Pause
@@ -106,11 +106,12 @@ System.out.println("mediaTime: " + mediaTime + "; actualTimeSlept: " + actualTim
 
             // Resume
             player.start();
-            beforeSleep = System.currentTimeMillis();
+            currentTimeBeforeSleep = System.currentTimeMillis();
+            mediaTimeBeforeSleep = player.getMediaTime() / 1000;
             Thread.sleep(100);
-            actualTimeSlept = System.currentTimeMillis() - beforeSleep;
-            long m = player.getMediaTime() / 1000;
-            th.check(Math.abs(m - mediaTime - actualTimeSlept) < TIME_TOLERANCE);
+            actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
+            mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
+            th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
 
             // Check duration
             th.check(player.getDuration(), 500000);
