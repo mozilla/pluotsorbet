@@ -9,65 +9,16 @@ var fs = (function() {
   };
 
   Store.DBNAME = "asyncStorage";
-  Store.DBVERSION = 2;
-  Store.DBSTORENAME = "fs";
+  Store.DBVERSION = 1;
+  Store.DBSTORENAME = "keyvaluepairs";
 
   Store.prototype.init = function(cb) {
     var openreq = indexedDB.open(Store.DBNAME, Store.DBVERSION);
     openreq.onerror = function() {
       console.error("error opening database: " + openreq.error.name);
     };
-    openreq.onupgradeneeded = function(event) {
-      if (DEBUG_FS) { console.log("upgrade needed from " + event.oldVersion + " to " + event.newVersion); }
-
-      var db = event.target.result;
-      var transaction = openreq.transaction;
-
-      if (event.oldVersion == 0) {
-        // If the database doesn't exist yet, then all we have to do
-        // is create the object store for the latest version of the database.
-        openreq.result.createObjectStore(Store.DBSTORENAME);
-      } else if (event.oldVersion == 1) {
-        // Create new object store.
-        var newObjectStore = openreq.result.createObjectStore(Store.DBSTORENAME);
-
-        // Iterate the keys in the old object store and copy their values
-        // to the new one, converting them from old- to new-style records.
-        var oldObjectStore = transaction.objectStore("keyvaluepairs");
-        var oldRecords = {};
-        oldObjectStore.openCursor().onsuccess = function(event) {
-          var cursor = event.target.result;
-
-          if (cursor) {
-            oldRecords[cursor.key] = cursor.value;
-            cursor.continue();
-            return;
-          }
-
-          // Convert the old records to new ones.
-          for (var key in oldRecords) {
-            // Records that start with an exclamation mark are stats,
-            // which we don't iterate (but do use below when processing
-            // their equivalent data records).
-            if (key[0] == "!") {
-              continue;
-            }
-
-            var oldRecord = oldRecords[key];
-            var oldStat = oldRecords["!" + key];
-            var newRecord = oldStat;
-            if (newRecord.isDir) {
-              newRecord.files = oldRecord;
-            } else {
-              newRecord.data = oldRecord;
-            }
-
-            newObjectStore.put(newRecord, key);
-          }
-
-          db.deleteObjectStore("keyvaluepairs");
-        };
-      }
+    openreq.onupgradeneeded = function() {
+      openreq.result.createObjectStore(Store.DBSTORENAME);
     };
     openreq.onsuccess = (function() {
       this.db = openreq.result;
@@ -240,11 +191,8 @@ var fs = (function() {
       if (data) {
         cb();
       } else {
-        store.setItem("/", {
-          isDir: true,
-          mtime: Date.now(),
-          files: [],
-        });
+        store.setItem("/", []);
+        setStat("/", { mtime: Date.now(), isDir: true });
         cb();
       }
     });
@@ -262,8 +210,8 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs open " + path); }
 
-    store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+    store.getItem(path, function(blob) {
+      if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
         var reader = new FileReader();
@@ -273,11 +221,10 @@ var fs = (function() {
             path: path,
             buffer: new FileBuffer(new Uint8Array(reader.result)),
             position: 0,
-            record: record,
           }) - 1;
           cb(fd);
         });
-        reader.readAsArrayBuffer(record.data);
+        reader.readAsArrayBuffer(blob);
       }
     });
   }
@@ -335,8 +282,7 @@ var fs = (function() {
 
     var file = openedFiles[fd];
     file.position = from + data.byteLength;
-    file.record.mtime = Date.now();
-    file.record.size = buffer.contentSize;
+    file.stat = { mtime: Date.now(), isDir: false, size: buffer.contentSize };
     file.dirty = true;
   }
 
@@ -366,9 +312,12 @@ var fs = (function() {
       return;
     }
 
-    openedFile.record.data = new Blob([openedFile.buffer.getContent()]);
-    store.setItem(openedFile.path, openedFile.record);
+    var blob = new Blob([openedFile.buffer.getContent()]);
+    store.setItem(openedFile.path, blob);
     openedFile.dirty = false;
+    if (openedFile.stat) {
+      setStat(openedFile.path, openedFile.stat);
+    }
   }
 
   function flushAll() {
@@ -393,11 +342,11 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs list " + path); }
 
-    store.getItem(path, function(record) {
-      if (record == null || !record.isDir) {
+    store.getItem(path, function(files) {
+      if (files == null || files instanceof Blob) {
         cb(null);
       } else {
-        cb(record.files);
+        cb(files);
       }
     });
   }
@@ -406,8 +355,8 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs exists " + path); }
 
-    store.getItem(path, function(record) {
-      cb(record ? true : false);
+    stat(path, function(stat) {
+      cb(stat ? true : false);
     });
   }
 
@@ -415,15 +364,13 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs truncate " + path); }
 
-    store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
-        cb(false);
-      } else {
-        record.data = new Blob();
-        record.mtime = Date.now();
-        record.size = 0;
-        store.setItem(path, record);
+    stat(path, function(stat) {
+      if (stat && !stat.isDir) {
+        store.setItem(path, new Blob());
+        setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
         cb(true);
+      } else {
+        cb(false);
       }
     });
   }
@@ -435,8 +382,7 @@ var fs = (function() {
     if (size != file.buffer.contentSize) {
       file.buffer.setSize(size);
       file.dirty = true;
-      file.record.mtime = Date.now();
-      file.record.size = size;
+      file.stat = { mtime: Date.now(), isDir: false, size: size };
     }
   }
 
@@ -449,9 +395,8 @@ var fs = (function() {
       return;
     }
 
-    store.getItem(path, function(record) {
-      // If it's a directory that isn't empty, then we can't remove it.
-      if (record && record.isDir && record.files.length > 0) {
+    list(path, function(files) {
+      if (files != null && files.length > 0) {
         cb(false);
         return;
       }
@@ -459,44 +404,36 @@ var fs = (function() {
       var name = basename(path);
       var dir = dirname(path);
 
-      store.getItem(dir, function(parentRecord) {
+      list(dir, function(files) {
         var index = -1;
 
-        // If it isn't in the parent directory, then we can't remove it.
-        if (parentRecord == null || (index = parentRecord.files.indexOf(name)) < 0) {
+        if (files == null || (index = files.indexOf(name)) < 0) {
           cb(false);
           return;
         }
 
-        parentRecord.files.splice(index, 1);
-        store.setItem(dir, parentRecord);
+        files.splice(index, 1);
+        store.setItem(dir, files);
         store.removeItem(path);
+        removeStat(path);
         cb(true);
       });
     });
   }
 
-  function createInternal(path, record, cb) {
+  function createInternal(path, data, cb) {
     var name = basename(path);
     var dir = dirname(path);
 
-    store.getItem(dir, function(parentRecord) {
-      // If the parent directory doesn't exist or isn't a directory,
-      // then we can't create the file.
-      if (parentRecord == null || !parentRecord.isDir) {
+    list(dir, function(files) {
+      if (files == null || files.indexOf(name) >= 0) {
         cb(false);
         return;
       }
 
-      // If the file already exists, we can't create it.
-      if (parentRecord.files.indexOf(name) >= 0) {
-        cb(false);
-        return;
-      }
-
-      parentRecord.files.push(name);
-      store.setItem(dir, parentRecord);
-      store.setItem(path, record);
+      files.push(name);
+      store.setItem(dir, files);
+      store.setItem(path, data);
       cb(true);
     });
   }
@@ -505,27 +442,24 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs create " + path); }
 
-    var record = {
-      isDir: false,
-      mtime: Date.now(),
-      data: blob,
-      size: blob.size,
-    };
-
-    createInternal(path, record, cb);
+    createInternal(path, blob, function(created) {
+      if (created) {
+        setStat(path, { mtime: Date.now(), isDir: false, size: blob.size });
+      }
+      cb(created);
+    });
   }
 
   function mkdir(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs mkdir " + path); }
 
-    var record = {
-      isDir: true,
-      mtime: Date.now(),
-      files: [],
-    };
-
-    createInternal(path, record, cb);
+    createInternal(path, [], function(created) {
+      if (created) {
+        setStat(path, { mtime: Date.now(), isDir: true });
+      }
+      cb(created);
+    });
   }
 
   function mkdirp(path, cb) {
@@ -552,12 +486,12 @@ var fs = (function() {
 
       partPath += "/" + parts.shift();
 
-      store.getItem(partPath, function(record) {
-        if (!record) {
+      stat(partPath, function(stat) {
+        if (!stat) {
           // The part doesn't exist; make it, then continue to next part.
           mkdir(partPath, mkpart);
         }
-        else if (record.isDir) {
+        else if (stat.isDir) {
           // The part exists and is a directory; continue to next part.
           mkpart(true);
         }
@@ -576,11 +510,11 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs size " + path); }
 
-    store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+    store.getItem(path, function(blob) {
+      if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
-        cb(record.data.size);
+        cb(blob.size);
       }
     });
   }
@@ -597,63 +531,57 @@ var fs = (function() {
       return;
     }
 
-    store.getItem(oldPath, function(oldRecord) {
-      // If the old path doesn't exist, we can't move it.
-      if (oldRecord == null) {
+    list(oldPath, function(files) {
+      if (files != null && files.length > 0) {
         cb(false);
         return;
       }
 
-      // If the old path is a dir with files in it, we don't move it.
-      // XXX Shouldn't we move it along with its files?
-      if (oldRecord.isDir && oldRecord.files.length > 0) {
-        cb(false);
-        return;
-      }
-
-      remove(oldPath, function(removed) {
-        if (!removed) {
+      store.getItem(oldPath, function(data) {
+        if (data == null) {
           cb(false);
           return;
         }
 
-        if (oldRecord.isDir) {
-          mkdir(newPath, cb);
-        } else {
-          create(newPath, oldRecord.data, cb);
-        }
+        remove(oldPath, function(removed) {
+          if (!removed) {
+            cb(false);
+            return;
+          }
+
+          if (data instanceof Blob) {
+            create(newPath, data, cb);
+          } else {
+            mkdir(newPath, cb);
+          }
+        });
       });
     });
+  }
+
+  function setStat(path, stat) {
+    if (DEBUG_FS) { console.log("fs setStat " + path); }
+
+    store.setItem("!" + path, stat);
+  }
+
+  function removeStat(path) {
+    if (DEBUG_FS) { console.log("fs removeStat " + path); }
+
+    store.removeItem("!" + path);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs stat " + path); }
 
-    var file = openedFiles.find(function (file) { return file && file.path === path });
+    var file = openedFiles.find(function (file) { return file && file.stat && file.path === path });
     if (file) {
-      var stat = {
-        isDir: file.record.isDir,
-        mtime: file.record.mtime,
-        size: file.record.size,
-      };
-      setZeroTimeout(function() { cb(stat); });
+      setZeroTimeout(function() { cb(file.stat); });
       return;
     }
 
-    store.getItem(path, function(record) {
-      if (record == null) {
-        cb(null);
-        return;
-      }
-
-      var stat = {
-        isDir: record.isDir,
-        mtime: record.mtime,
-        size: record.size,
-      };
-      cb(stat);
-    });
+    store.getItem("!" + path, cb);
   }
 
   function clear(cb) {
