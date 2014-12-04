@@ -13,4 +13,5 @@ var ATTRIBUTE_TYPES = {
     LineNumberTable: "LineNumberTable",
     LocalVariableTable: "LocalVariableTable",
     Deprecated: "Deprecated",
+    StackMap: "StackMap"
 };

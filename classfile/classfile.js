@@ -101,6 +101,10 @@ var getClassImage = function(classBytes) {
                         attribute.type = ATTRIBUTE_TYPES.Deprecated;
                         return attribute;
 
+                  case ATTRIBUTE_TYPES.StackMap:
+                    attribute.type = ATTRIBUTE_TYPES.StackMap;
+                    return attribute;
+
                     default:
                         throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");
                 }
