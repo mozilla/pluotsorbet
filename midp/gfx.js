@@ -353,16 +353,21 @@
             var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
             c.textAlign = "left";
             c.textBaseline = "top";
-            if (anchor & RIGHT)
+
+            if (anchor & RIGHT) {
                 x -= w;
-            if (anchor & HCENTER)
-                x -= (w/2)|0;
-            if (anchor & BOTTOM)
+            } else if (anchor & HCENTER) {
+                x -= (w >>> 1) | 0;
+            }
+
+            if (anchor & BOTTOM) {
                 c.textBaseline = "bottom";
-            if (anchor & VCENTER)
-                c.textBaseline = "middle";
-            if (anchor & BASELINE)
+            } else if (anchor & BASELINE) {
                 c.textBaseline = "alphabetic";
+            } else if (anchor & VCENTER) {
+                throw new JavaException("java/lang/IllegalArgumentException", "VCENTER not allowed with text");
+            }
+
             cb(x, y, w);
         });
     }
