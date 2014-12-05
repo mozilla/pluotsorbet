@@ -785,13 +785,63 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
   }
 };
 
+var NokiaActiveStandbyLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+}
+
+NokiaActiveStandbyLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var encoder = new DataEncoder();
+
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+
+  decoder.getStart(DataType.STRUCT);
+  var name = decoder.getValue(DataType.METHOD);
+
+  switch (name) {
+    case "Common":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "1.[0-10]");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+    break;
+
+    case "Register":
+      var client_id = decoder.getValue(DataType.STRING);
+      var personalize_view_text = decoder.getValue(DataType.WSTRING);
+      decoder.getValue(DataType.BOOLEAN);
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Register");
+      encoder.put(DataType.WSTRING, "client_id", personalize_view_text);
+      encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+      encoder.putEnd(DataType.STRUCT, "event");
+    break;
+
+    default:
+      console.error("(nokia.active-standby) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+
+  var data = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient({
+    data: data,
+    length: data.length,
+    offset: 0,
+  });
+}
+
 MIDP.LocalMsgConnections = {};
 
 // Add some fake servers because some MIDlets assume they exist.
 // MIDlets are usually happy even if the servers don't reply, but we should
 // remember to implement them in case they will be needed.
-MIDP.FakeLocalMsgServers = [ "nokia.active-standby", "nokia.profile",
-                             "nokia.connectivity-settings" ];
+MIDP.FakeLocalMsgServers = [ "nokia.profile", "nokia.connectivity-settings" ];
 
 MIDP.FakeLocalMsgServers.forEach(function(server) {
     MIDP.LocalMsgConnections[server] = new LocalMsgConnection();
@@ -803,6 +853,7 @@ MIDP.LocalMsgConnections["nokia.phone-status"] = new NokiaPhoneStatusLocalMsgCon
 MIDP.LocalMsgConnections["nokia.file-ui"] = new NokiaFileUILocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.image-processing"] = new NokiaImageProcessingLocalMsgConnection();
 MIDP.LocalMsgConnections["nokia.sa.service-registry"] = new NokiaSASrvRegLocalMsgConnection();
+MIDP.LocalMsgConnections["nokia.activity-standby"] = new NokiaActiveStandbyLocalMsgConnection();
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);
