@@ -1,0 +1,1 @@
+// Midlet-specific customization code.
