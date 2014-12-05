@@ -86,7 +86,7 @@ Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/
     var protocol = util.fromJavaString(jProtocol);
     var types = [];
     if (protocol) {
-        types = Media.ContentTypes[protocol];
+        types = Media.ContentTypes[protocol].slice();
         if (!types) {
             console.warn("Unknown protocol type: " + protocol);
             return 0;
@@ -346,7 +346,7 @@ function ImagePlayer(playerContainer) {
     this.image.style.visibility = "hidden";
 
     this.isVideoControlSupported = true;
-    this.isAudioControlSupported = false;
+    this.isVolumeControlSupported = false;
 }
 
 ImagePlayer.prototype.realize = function() {
@@ -411,7 +411,7 @@ function ImageRecorder(playerContainer) {
     this.height = -1;
 
     this.isVideoControlSupported = true;
-    this.isAudioControlSupported = false;
+    this.isVolumeControlSupported = false;
 
     this.realizeResolver = null;
 
@@ -439,7 +439,7 @@ ImageRecorder.prototype.recipient = function(message) {
 
             MIDP.sendNativeEvent({
                 type: MIDP.MMAPI_EVENT,
-                intParam1: this.playerContainer.handle,
+                intParam1: this.playerContainer.pId,
                 intParam2: 0,
                 intParam3: 0,
                 intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
@@ -499,8 +499,12 @@ ImageRecorder.prototype.getSnapshotData = function(imageType) {
     return this.snapshotData;
 }
 
-function PlayerContainer(url) {
+function PlayerContainer(url, pId) {
     this.url = url;
+    // `pId` is the player id used in PlayerImpl.java, don't confuse with the id we used
+    // here in Javascript. The reason we need to hold this `pId` is we need to send it
+    // back when dispatch Media.EVENT_MEDIA_SNAPSHOT_FINISHED.
+    this.pId = pId;
 
     this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
     this.contentType = "";
@@ -870,7 +874,7 @@ AudioRecorder.prototype.close = function() {
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
     var url = util.fromJavaString(jURI);
     var id = pId + (appId << 32);
-    Media.PlayerCache[id] = new PlayerContainer(url);
+    Media.PlayerCache[id] = new PlayerContainer(url, pId);
     return id;
 });
 
@@ -1145,13 +1149,104 @@ Native.create("com/sun/mmedia/DirectVolume.nSetMute.(IZ)Z", function(handle, mut
     return true;
 });
 
+Media.TonePlayerCache = {
+};
+
+function TonePlayer() {
+    this.audioContext = new AudioContext();
+
+    // Use oscillator to generate tone.
+    // @type {OscillatorNode}
+    this.oscillator = null;
+
+    // The gain node to control volume.
+    this.gainNode = this.audioContext.createGain();
+    this.gainNode.connect(this.audioContext.destination);
+}
+
+// Volume fade time in seconds.
+TonePlayer.FADE_TIME = 0.1;
+
+/*
+ * Play back a tone as specified by a note and its duration.
+ * A note is given in the range of 0 to 127 inclusive.  The frequency
+ * of the note can be calculated from the following formula:
+ *     SEMITONE_CONST = 17.31234049066755 = 1/(ln(2^(1/12)))
+ *     note = ln(freq/8.176)*SEMITONE_CONST
+ *     The musical note A = MIDI note 69 (0x45) = 440 Hz.
+ * For the Asha implementaion, the note is shift by adding 21.
+ * @param  note  Defines the tone of the note as specified by the above formula.
+ * @param  duration  The duration of the tone in milli-seconds. Duration must be
+ * positive.
+ * @param  volume Audio volume range from 0 to 100.
+ */
+TonePlayer.prototype.playTone = function(note, duration, volume) {
+    if (duration <= 0) {
+        return;
+    }
+    duration /= 1000;
+
+    if (note < 0) {
+        note = 0;
+    } else if (note > 127) {
+        note = 127;
+    }
+    if (volume < 0) {
+        volume = 0;
+    } else if (volume > 100) {
+        volume = 100;
+    }
+    volume /= 100;
+
+    // Abort the previous tone.
+    if (this.oscillator) {
+        this.oscillator.onended = null;
+        this.oscillator.disconnect();
+    }
+
+    var current = this.audioContext.currentTime;
+
+    this.oscillator = this.audioContext.createOscillator();
+    this.oscillator.connect(this.gainNode);
+
+    // The default fequency is equivalent to 69 - 21 note and while 1 note = 100
+    // cents.
+    // Detune the frequency to the target note.
+    this.oscillator.detune.value = (note - 69 + 21) * 100;
+
+    // Fade in.
+    this.oscillator.start(current);
+    this.gainNode.gain.linearRampToValueAtTime(0, current);
+    this.gainNode.gain.linearRampToValueAtTime(volume, current + TonePlayer.FADE_TIME);
+
+    // Fade out.
+    this.oscillator.stop(current + duration);
+    this.gainNode.gain.linearRampToValueAtTime(volume, current + duration - TonePlayer.FADE_TIME);
+    this.gainNode.gain.linearRampToValueAtTime(0, current + duration);
+    this.oscillator.onended = function() {
+        this.oscillator.disconnect();
+        this.oscillator = null;
+    }.bind(this);
+};
+
+TonePlayer.prototype.stopTone = function() {
+    if (!this.oscillator) {
+        return;
+    }
+    var current = this.audioContext.currentTime;
+    this.gainNode.gain.linearRampToValueAtTime(0, current + TonePlayer.FADE_TIME);
+};
+
 Native.create("com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z", function(appId, note, duration, volume) {
-    console.warn("com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z not implemented.");
+    if (!Media.TonePlayerCache[appId]) {
+        Media.TonePlayerCache[appId] = new TonePlayer();
+    }
+    Media.TonePlayerCache[appId].playTone(note, duration, volume);
     return true;
 });
 
 Native.create("com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z", function(appId) {
-    console.warn("com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z not implemented.");
+    Media.TonePlayerCache[appId].stopTone();
     return true;
 });
 

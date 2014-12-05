@@ -350,6 +350,10 @@ DumbPipe.registerOpener("camera", function(message, sender) {
   document.body.appendChild(video);
   video.style.position = "absolute";
   video.style.visibility = "hidden";
+  // Some MIDlets need user touch/click on the screen to complete the snapshot,
+  // to make sure the MIDlet itself instead of the video element can capture
+  // the mouse/touch events, we need to set `pointer-events` as `none`.
+  video.style.pointerEvents = "none";
 
   video.addEventListener('canplay', function(ev) {
     // We should use videoWidth and videoHeight, but they are unavailable (https://bugzilla.mozilla.org/show_bug.cgi?id=926753)

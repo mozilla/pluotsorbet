@@ -24,7 +24,9 @@ function receiveSms(text, addr) {
     MIDP.nokiaSMSMessages.push(sms);
     MIDP.j2meSMSMessages.push(sms);
 
-    MIDP.LocalMsgConnections["nokia.messaging"].receiveSMS(sms);
+    window.dispatchEvent(new CustomEvent("nokia.messaging", {
+      detail: sms
+    }));
 
     if (MIDP.j2meSMSWaiting) {
       MIDP.j2meSMSWaiting();
