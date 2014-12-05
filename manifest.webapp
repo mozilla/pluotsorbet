@@ -24,6 +24,9 @@
       "description:": "Required to verify your phone number"
     },
     "browser": {},
+    "audio-capture": {
+       "description": "Required to capture audio via getUserMedia"
+    },
     "desktop-notification": {
       "description": "Required to display notifications"
     }

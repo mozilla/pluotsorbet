@@ -1,6 +1,6 @@
 'use strict';
 
-var passed = 0, failed = 0;
+var passed = 0, failed = 0, then = performance.now();
 function is(a, b, msg) {
   if (a == b) {
     ++passed;
@@ -25,10 +25,13 @@ function ok(a, msg) {
 
 var tests = [];
 
+var fd;
+
 function next() {
   if (tests.length == 0) {
     ok(true, "TESTS COMPLETED");
-    console.log("DONE: " + passed + " PASS, " + failed + " FAIL");
+    console.log("DONE: " + passed + " PASS, " + failed + " FAIL, " +
+                (Math.round(performance.now() - then)) + " TIME");
   } else {
     var test = tests.shift();
     test();
@@ -326,168 +329,169 @@ tests.push(function() {
 
 tests.push(function() {
   fs.open("/tmp/tmp.txt", function(fd) {
-    is(fd, 0, "opened a file");
+    is(fd, 3, "opened a file");
     next();
   });
 });
 
 tests.push(function() {
-  fs.close(0);
+  fs.close(3);
   next();
 });
 
 tests.push(function() {
-  fs.open("/tmp/tmp.txt", function(fd) {
-    is(fd, 1, "reopened a file");
+  fs.open("/tmp/tmp.txt", function(newFd) {
+    is(newFd, 4, "reopened a file");
+    fd = newFd;
     next();
   });
 });
 
 tests.push(function() {
-  var data = fs.read(1);
+  var data = fs.read(fd);
   is(data.byteLength, 0, "read from an empty file");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 5);
+  var data = fs.read(fd, 5);
   is(data.byteLength, 0, "trying to read empty file with from > file size");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 0, 5);
+  var data = fs.read(fd, 0, 5);
   is(data.byteLength, 0, "trying to read too much with empty file");
   next();
 });
 
 tests.push(function() {
-  fs.write(1, new TextEncoder().encode("marco"));
+  fs.write(fd, new TextEncoder().encode("marco"));
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 10);
+  var data = fs.read(fd, 10);
   is(data.byteLength, 0, "trying to read with from > file size");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 5);
+  var data = fs.read(fd, 5);
   is(data.byteLength, 0, "trying to read with from == file size");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 0, 10);
+  var data = fs.read(fd, 0, 10);
   is(data.byteLength, 5, "trying to read too much");
   is(new TextDecoder().decode(data), "marco", "read correct");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  var data = fs.read(1);
+  fs.setpos(fd, 0);
+  var data = fs.read(fd);
   is(data.byteLength, 5, "read from a file with 5 bytes");
   is(new TextDecoder().decode(data), "marco", "read correct");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  fs.write(1, new TextEncoder().encode("marco2"));
+  fs.setpos(fd, 0);
+  fs.write(fd, new TextEncoder().encode("marco2"));
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  var data = fs.read(1);
+  fs.setpos(fd, 0);
+  var data = fs.read(fd);
   is(data.byteLength, 6, "read from a file with 6 bytes");
   is(new TextDecoder().decode(data), "marco2", "read correct");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 1);
+  var data = fs.read(fd, 1);
   is(data.byteLength, 5, "read 5 bytes from a file with 6 bytes");
   is(new TextDecoder().decode(data), "arco2", "read correct");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 0, 1);
+  var data = fs.read(fd, 0, 1);
   is(data.byteLength, 1, "read 1 byte from a file with 6 bytes");
   is(new TextDecoder().decode(data), "m", "read correct");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 1, 3);
+  var data = fs.read(fd, 1, 3);
   is(data.byteLength, 2, "read 2 bytes from a file with 6 bytes");
   is(new TextDecoder().decode(data), "ar", "read correct");
   next();
 });
 
 tests.push(function() {
-  var data = fs.read(1, 1, 1);
+  var data = fs.read(fd, 1, 1);
   is(data.byteLength, 0, "read 0 bytes from a file with 5 bytes");
   is(new TextDecoder().decode(data), "", "read correct");
   next();
 });
 
 tests.push(function() {
-  fs.write(1, new TextEncoder().encode("marco"), 1);
+  fs.write(fd, new TextEncoder().encode("marco"), 1);
   ok(true, "write with from");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  var data = fs.read(1);
+  fs.setpos(fd, 0);
+  var data = fs.read(fd);
   is(data.byteLength, 6, "read from a file with 6 bytes");
   is(new TextDecoder().decode(data), "mmarco", "read correct");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  fs.write(1, new TextEncoder().encode("mar"));
+  fs.setpos(fd, 0);
+  fs.write(fd, new TextEncoder().encode("mar"));
   ok(true, "write overwriting first bytes");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  var data = fs.read(1);
+  fs.setpos(fd, 0);
+  var data = fs.read(fd);
   is(data.byteLength, 6, "read from a file with 6 bytes");
   is(new TextDecoder().decode(data), "marrco", "read correct");
   next();
 });
 
 tests.push(function() {
-  fs.write(1, new TextEncoder().encode("marco"), 2);
+  fs.write(fd, new TextEncoder().encode("marco"), 2);
   ok(true, "write overwriting and appending");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  var data = fs.read(1);
+  fs.setpos(fd, 0);
+  var data = fs.read(fd);
   is(data.byteLength, 7, "read from a file with 7 bytes");
   is(new TextDecoder().decode(data), "mamarco", "read correct");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  fs.write(1, new TextEncoder().encode("marco"), 20);
+  fs.setpos(fd, 0);
+  fs.write(fd, new TextEncoder().encode("marco"), 20);
   ok(true, "write appending with from > size of file");
   next();
 });
 
 tests.push(function() {
-  fs.setpos(1, 0);
-  var data = fs.read(1);
+  fs.setpos(fd, 0);
+  var data = fs.read(fd);
   is(data.byteLength, 12, "read from a file with 12 bytes");
   is(new TextDecoder().decode(data), "mamarcomarco", "read correct");
   next();
@@ -501,14 +505,13 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.flush(1, function() {
-    ok(true, "file data flushed");
-    next();
-  });
+  fs.flush(fd);
+  ok(true, "file data flushed");
+  next();
 });
 
 tests.push(function() {
-  is(fs.getsize(1), 12, "file's size is 12");
+  is(fs.getsize(fd), 12, "file's size is 12");
   next();
 });
 
@@ -518,18 +521,18 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.ftruncate(1, 6);
-  is(fs.getsize(1), 6, "truncated file's size is 6");
+  fs.ftruncate(fd, 6);
+  is(fs.getsize(fd), 6, "truncated file's size is 6");
   next();
 });
 
 tests.push(function() {
   // Test writing enough data to make the fs internal buffer increase (exponentially)
-  fs.write(1, new Uint8Array(6065), 6);
+  fs.write(fd, new Uint8Array(6065), 6);
 
-  is(fs.getsize(1), 6071, "file size is now 6071");
+  is(fs.getsize(fd), 6071, "file size is now 6071");
 
-  var data = fs.read(1, 0);
+  var data = fs.read(fd, 0);
 
   is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
 
@@ -538,11 +541,11 @@ tests.push(function() {
 
 tests.push(function() {
   // Test writing enough data to make the fs internal buffer increase (linearly)
-  fs.write(1, new Uint8Array(131073), 6);
+  fs.write(fd, new Uint8Array(131073), 6);
 
-  is(fs.getsize(1), 131079, "file size is now 131079");
+  is(fs.getsize(fd), 131079, "file size is now 131079");
 
-  var data = fs.read(1, 0);
+  var data = fs.read(fd, 0);
 
   is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
 
@@ -550,7 +553,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.close(1);
+  fs.close(fd);
   next();
 });
 
@@ -678,12 +681,11 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd, function() {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          is(stat.mtime, lastTime, "flush on just opened file doesn't update mtime");
-          lastTime = stat.mtime;
-          next();
-        });
+      fs.flush(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "flush on just opened file doesn't update mtime");
+        lastTime = stat.mtime;
+        next();
       });
     }, 1);
   });
@@ -702,24 +704,22 @@ tests.push(function() {
   tests.push(function() {
     window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("sc"));
-      fs.flush(fd, function() {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          ok(stat.mtime > lastTime, "write and then flush updates mtime");
-          lastTime = stat.mtime;
-          next();
-        });
+      fs.flush(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        ok(stat.mtime > lastTime, "write and then flush updates mtime");
+        lastTime = stat.mtime;
+        next();
       });
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd, function() {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          is(stat.mtime, lastTime, "flush on non-dirty file doesn't change mtime");
-          lastTime = stat.mtime;
-          next();
-        });
+      fs.flush(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "flush on non-dirty file doesn't change mtime");
+        lastTime = stat.mtime;
+        next();
       });
     }, 1);
   });
@@ -759,12 +759,11 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd, function() {
-        fs.close(fd);
-        fs.stat("/tmp/stat.txt", function(stat) {
-          is(stat.mtime, lastTime, "close doesn't update mtime");
-          next();
-        });
+      fs.flush(fd);
+      fs.close(fd);
+      fs.stat("/tmp/stat.txt", function(stat) {
+        is(stat.mtime, lastTime, "close doesn't update mtime");
+        next();
       });
     }, 1);
   });
@@ -809,8 +808,18 @@ tests.push(function() {
   });
 });
 
-asyncStorage.clear(function() {
-  fs.init(function() {
+tests.push(function() {
+  fs.storeSync(function() {
+    // There's nothing we can check, since the sync status of the store
+    // is private to the fs module, but we have at least confirmed that the call
+    // resulted in the callback being called.
+    ok(true, "storeSync callback called");
+    next();
+  });
+});
+
+fs.init(function() {
+  fs.clear(function() {
     next();
   });
 });

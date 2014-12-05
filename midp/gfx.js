@@ -538,6 +538,10 @@
         return swapRB(rgb) | 0xff000000;
     });
 
+    // DirectGraphics constants
+    var TYPE_USHORT_4444_ARGB = 4444;
+    var TYPE_USHORT_565_RGB = 565;
+
     Native.create("com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V", function(rgba) {
         var g = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var red = (rgba >> 16) & 0xff;
@@ -562,19 +566,19 @@
         }
 
         var converterFunc = null;
-        if (format == 4444) { // TYPE_USHORT_4444_ARGB
-            converterFunc = function(rgba) {
-                var r = (rgba & 0xF0000000) >>> 20;
-                var g = (rgba & 0x00F00000) >> 16;
-                var b = (rgba & 0x0000F000) >> 12;
-                var a = (rgba & 0x000000F0) << 8;
+        if (format == TYPE_USHORT_4444_ARGB) {
+            converterFunc = function(abgr) {
+                var a = (abgr & 0xF0000000) >>> 16;
+                var r = (abgr & 0x000000F0) << 4;
+                var g = (abgr & 0x0000F000) >> 8;
+                var b = (abgr & 0x00F00000) >>> 20;
                 return (a | r | g | b);
             };
-        } else if (format == 565) { // TYPE_USHORT_565_RGB
-            converterFunc = function(rgba) {
-                var r = (rgba & 0xF8000000) >>> 16;
-                var g = (rgba & 0xFC0000) >>> 13;
-                var b = (rgba & 0xF800) >>> 11;
+        } else if (format == TYPE_USHORT_565_RGB) {
+            converterFunc = function(abgr) {
+                var r = (abgr & 0b000000000000000011111000) << 8;
+                var g = (abgr & 0b000000001111110000000000) >>> 5;
+                var b = (abgr & 0b111110000000000000000000) >>> 19;
                 return (r | g | b);
             };
         } else {
@@ -583,6 +587,9 @@
 
         var graphics = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var image = graphics.class.getField("I.img.Ljavax/microedition/lcdui/Image;").get(graphics);
+        if (!image) {
+            throw new JavaException("java/lang/IllegalArgumentException", "getPixels with no image not yet supported");
+        }
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
         contextToRgbData(convertNativeImageData(imageData), pixels, offset, scanlength, x, y, width, height, converterFunc);
@@ -595,13 +602,13 @@
         }
 
         var converterFunc = null;
-        if (format == 4444 && transparency && !manipulation) {
+        if (format == TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
             converterFunc = function(argb) {
-                var a = (argb & 0xF000) >>> 8;
-                var r = (argb & 0x0F00) << 20;
-                var g = (argb & 0x00F0) << 16;
-                var b = (argb & 0x000F) << 12;
-                return (r | g | b | a);
+                var a = (argb & 0xF000) << 16;
+                var r = (argb & 0x0F00) >>> 4;
+                var g = (argb & 0x00F0) << 8;
+                var b = (argb & 0x000F) << 20;
+                return (a | b | g | r);
             };
         } else {
             throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
@@ -816,10 +823,9 @@
             texture = texture.canvas; // Render the canvas, not the context.
         }
 
-        var w = sw, h = sh;
         var g = this;
         withGraphics(g, function(c) {
-            withAnchor(g, c, anchor, x, y, w, h, function(x, y) {
+            withAnchor(g, c, anchor, x, y, sw, sh, function(x, y) {
                 c.translate(x, y);
                 if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
                     c.scale(-1, 1);
@@ -831,7 +837,7 @@
                     c.rotate(Math.PI);
                 if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
                     c.rotate(1.5 * Math.PI);
-                c.drawImage(texture, sx, sy, w, h, 0, 0, sw, sh);
+                c.drawImage(texture, sx, sy, sw, sh, 0, 0, sw, sh);
             });
         });
     });
@@ -843,12 +849,11 @@
             withClip(g, c, x1, y1, function(x, y) {
                 withSize(dx, dy, function(dx, dy) {
                     withPixel(g, c, function() {
-                        var ctx = MIDP.Context2D;
-                        ctx.beginPath();
-                        ctx.moveTo(x, y);
-                        ctx.lineTo(x + dx, y + dy);
-                        ctx.stroke();
-                        ctx.closePath();
+                        c.beginPath();
+                        c.moveTo(x, y);
+                        c.lineTo(x + dx, y + dy);
+                        c.stroke();
+                        c.closePath();
                     });
                 });
             });
@@ -1095,6 +1100,87 @@
         return dirtyEditors.shift();
     });
 
+    var initialWindowHeight = window.innerHeight;
+    var isVKVisible = false;
+    var keyboardHeight = 0;
+    var pendingShowNotify = false;
+    var pendingHideNotify = false;
+    var keyboardVisibilityListenerResolve;
+    window.addEventListener("resize", function(evt) {
+        if (window.innerHeight < initialWindowHeight) {
+            if (isVKVisible) {
+                console.warn("Window shrunk but we thought the keyboard was already visible!");
+            }
+            isVKVisible = true;
+            keyboardHeight = initialWindowHeight - window.innerHeight;
+            if (pendingHideNotify) {
+                pendingHideNotify = false;
+                return;
+            } else if (keyboardVisibilityListenerResolve) {
+                keyboardVisibilityListenerResolve(true);
+                keyboardVisibilityListenerResolve = null;
+            } else {
+                pendingShowNotify = true;
+            }
+        } else if (window.innerHeight >= initialWindowHeight) {
+            if (window.innerHeight > initialWindowHeight) {
+                console.warn("Window grew beyond initial size!");
+                initialWindowHeight = window.innerHeight;
+            }
+            if (!isVKVisible) {
+                console.warn("Window grew but we thought the keyboard was already hidden!");
+            }
+            isVKVisible = false;
+            keyboardHeight = 0;
+            if (pendingShowNotify) {
+                pendingShowNotify = false;
+                return;
+            } else if (keyboardVisibilityListenerResolve) {
+                keyboardVisibilityListenerResolve(false);
+                keyboardVisibilityListenerResolve = null;
+            } else {
+                pendingHideNotify = true;
+            }
+        }
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z", function() {
+        return isVKVisible;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I", function() {
+        return 0;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I", function() {
+        // We should return the number of pixels between the top of the
+        // screen and the top of the keyboard
+        return window.innerHeight;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getWidth.()I", function() {
+        return window.innerWidth;
+    });
+
+    Native.create("com/nokia/mid/ui/VirtualKeyboard.getHeight.()I", function() {
+        return keyboardHeight;
+    });
+
+    Native.create("com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z", function() {
+        return new Promise(function(resolve, reject) {
+            if (pendingShowNotify) {
+                resolve(true);
+                pendingShowNotify = false;
+            } else if (pendingHideNotify) {
+                resolve(false);
+                pendingHideNotify = false;
+            } else {
+                keyboardVisibilityListenerResolve = resolve;
+            }
+        });
+    }, true);
+
+    
     Native.create("com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V", function(active) {
         if (active) {
             //var image = this.class.getField("I.image.Ljavax/microedition/lcdui/Image;").get(this);

@@ -41,11 +41,16 @@ function defaultReturnType(stack, ret) {
     stack.push(ret);
 }
 
+function intReturnType(stack, ret) {
+    stack.push(ret | 0);
+}
+
 function getReturnFunction(sig) {
   var retType = sig.substring(sig.lastIndexOf(")") + 1);
   var fxn;
   switch (retType) {
     case 'V': fxn = voidReturnType; break;
+    case 'I': fxn = intReturnType; break;
     case 'Z': fxn = boolReturnType; break;
     case 'J':
     case 'D': fxn = doubleReturnType; break;
@@ -60,7 +65,7 @@ function executePromise(stack, ret, doReturn, ctx, key) {
   if (ret && ret.then) { // ret.constructor.name == "Promise"
     ret.then(function(res) {
       if (Instrument.profiling) {
-        Instrument.exitAsyncNative(key);
+        Instrument.exitAsyncNative(key, ret);
       }
 
       doReturn(stack, res);
@@ -69,7 +74,7 @@ function executePromise(stack, ret, doReturn, ctx, key) {
     }).then(ctx.start.bind(ctx));
 
     if (Instrument.profiling) {
-      Instrument.enterAsyncNative(key);
+      Instrument.enterAsyncNative(key, ret);
     }
 
     throw VM.Pause;

@@ -1,4 +1,4 @@
-.PHONY: all test tests java certs clean
+.PHONY: all test tests java certs app clean
 
 all: java tests
 
@@ -9,6 +9,7 @@ test: all
 	python tests/echoServer.py &
 	cd tests && python httpsServer.py &
 	cd tests && python sslEchoServer.py &
+	cd tests && python waitServers.py
 	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
 	killall python Python || true
 	python dumplog.py
@@ -25,6 +26,10 @@ java:
 
 certs:
 	make -C certs
+
+# Makes an output/ directory containing the packaged open web app files.
+app: java certs
+	tools/package.sh
 
 clean:
 	rm -f j2me.js `find . -name "*~"`

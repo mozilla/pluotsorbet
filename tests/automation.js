@@ -17,7 +17,7 @@ casper.options.onWaitTimeout = function() {
 
 var gfxTests = [
   { name: "gfx/AlertTest", maxDifferent: 1621 },
-  { name: "gfx/CanvasTest", maxDifferent: 269 },
+  { name: "gfx/CanvasTest", maxDifferent: 271 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
@@ -38,18 +38,49 @@ var gfxTests = [
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1329 },
+  { name: "gfx/DirectUtilsClipAfter", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipAfterWithNormalImage", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBefore", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+];
+
+var expectedUnitTestResults = [
+  { name: "pass", number: 71175 },
+  { name: "fail", number: 0 },
+  { name: "known fail", number: 180 },
+  { name: "unknown pass", number: 0 }
 ];
 
 casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
-            if (content.contains("DONE: 71085 pass, 0 fail, 180 known fail, 0 unknown pass")) {
-                test.pass('main unit tests');
-            } else {
+            var regex = /DONE: (\d+) pass, (\d+) fail, (\d+) known fail, (\d+) unknown pass/;
+            var match = content.match(regex);
+            if (!match || !match.length || match.length < 5) {
                 this.debugPage();
                 this.echo(this.captureBase64('png'));
-                test.fail('main unit tests');
+                test.fail('failed to parse status line of main unit tests');
+            } else {
+                var msg = "";
+                for (var i = 0; i < expectedUnitTestResults.length; i++) {
+                    if (match[i+1] != expectedUnitTestResults[i].number) {
+                        msg += "\n\tExpected " + expectedUnitTestResults[i].number + " " + expectedUnitTestResults[i].name + ". Got " + match[i+1];
+                    }
+                }
+                if (!msg) {
+                    test.pass('main unit tests');
+                } else {
+                    this.debugPage();
+                    this.echo(this.captureBase64('png'));
+                    test.fail(msg);
+                }
             }
         });
     }
@@ -80,7 +111,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 126 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 127 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper

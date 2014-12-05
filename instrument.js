@@ -78,20 +78,20 @@ var Instrument = {
     }
   },
 
-  enterAsyncNative: function(key) {
+  enterAsyncNative: function(key, promise) {
     var profileData = this.asyncProfile[key] || (this.asyncProfile[key] = { count: 0, cost: 0 });
-    profileData.then = performance.now();
+    promise.startTime = performance.now();
   },
 
-  exitAsyncNative: function(key) {
+  exitAsyncNative: function(key, promise) {
     var profileData = this.asyncProfile[key];
-    if (!profileData) {
+    if (!profileData || !promise.startTime) {
       // Ignore native without profile data, which can happen when you start
       // profiling while the native is pending.
       return;
     }
     profileData.count++;
-    profileData.cost += performance.now() - profileData.then;
+    profileData.cost += performance.now() - promise.startTime;
   },
 
   startProfile: function() {

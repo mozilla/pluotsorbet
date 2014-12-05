@@ -75,14 +75,14 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I",
       host: util.fromJavaString(host),
     };
 
-    promptForMessageText();
-
     return ++MIDP.lastSMSConnection;
 });
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I",
 function(port, msid, handle, smsPacket) {
     return new Promise(function(resolve, reject) {
+        promptForMessageText();
+
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
             var text = sms.text;
@@ -122,3 +122,30 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(port, 
     delete MIDP.smsConnections[handle];
     return 0;
 });
+
+Native.create("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I", function(msgBuffer, msgLen, msgType, hasPort) {
+    console.warn("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I not implemented");
+    return 1;
+});
+
+Native.create("com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I",
+function(handle, type, host, destPort, sourcePort, message) {
+    return new Promise(function(resolve, reject) {
+        var activity = new MozActivity({
+            name: "new",
+            data: {
+              type: "websms/sms",
+              number: util.fromJavaString(host),
+              body: new TextDecoder('utf-16be').decode(message),
+            },
+        });
+
+        activity.onsuccess = function() {
+          resolve(message.byteLength);
+        };
+
+        activity.onerror = function() {
+          reject(new JavaException("java/io/IOException", "Error while sending SMS message"));
+        };
+    });
+}, true);

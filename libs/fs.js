@@ -1,6 +1,117 @@
 'use strict';
 
+var DEBUG_FS = false;
+
 var fs = (function() {
+  var Store = function() {
+    this.map = new Map();
+    this.db = null;
+  };
+
+  Store.DBNAME = "asyncStorage";
+  Store.DBVERSION = 1;
+  Store.DBSTORENAME = "keyvaluepairs";
+
+  Store.prototype.init = function(cb) {
+    var openreq = indexedDB.open(Store.DBNAME, Store.DBVERSION);
+    openreq.onerror = function() {
+      console.error("error opening database: " + openreq.error.name);
+    };
+    openreq.onupgradeneeded = function() {
+      openreq.result.createObjectStore(Store.DBSTORENAME);
+    };
+    openreq.onsuccess = (function() {
+      this.db = openreq.result;
+      cb();
+    }).bind(this);
+  };
+
+  Store.prototype.getItem = function(key, cb) {
+    if (this.map.has(key)) {
+      var value = this.map.get(key);
+      window.setZeroTimeout(function() { cb(value) });
+    } else {
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      if (DEBUG_FS) { console.log("get " + key + " initiated"); }
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var req = objectStore.get(key);
+      req.onerror = function() {
+        console.error("Error getting " + key + ": " + req.error.name);
+      };
+      transaction.oncomplete = (function() {
+        if (DEBUG_FS) { console.log("get " + key + " completed"); }
+        var value = req.result;
+        if (value === undefined) {
+          value = null;
+        }
+        this.map.set(key, value);
+        cb(value);
+      }).bind(this);
+    }
+  };
+
+  Store.prototype.setItem = function(key, value) {
+    this.map.set(key, value);
+
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("put " + key + " initiated"); }
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
+    var req = objectStore.put(value, key);
+    req.onerror = function() {
+      console.error("Error putting " + key + ": " + req.error.name);
+    };
+    transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("put " + key + " completed"); }
+    };
+  };
+
+  Store.prototype.removeItem = function(key) {
+    this.map.delete(key);
+
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("delete " + key + " initiated"); }
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
+    var req = objectStore.delete(key);
+    req.onerror = function() {
+      console.error("Error deleting " + key + ": " + req.error.name);
+    };
+    transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("delete " + key + " completed"); }
+    };
+  };
+
+  Store.prototype.clear = function() {
+    this.map.clear();
+
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("clear initiated"); }
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
+    var req = objectStore.clear();
+    req.onerror = function() {
+      console.error("Error clearing store: " + req.error.name);
+    };
+    transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("clear completed"); }
+    };
+  }
+
+  Store.prototype.sync = function(cb) {
+    // Process a readwrite transaction to ensure previous writes have completed,
+    // so we leave the datastore in a consistent state.  This is a bit hacky;
+    // we should instead monitor ongoing transactions and call our callback
+    // once they've all completed.
+    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    if (DEBUG_FS) { console.log("get \"\" initiated"); }
+    var objectStore = transaction.objectStore(Store.DBSTORENAME);
+    objectStore.get("");
+    transaction.oncomplete = function() {
+      if (DEBUG_FS) { console.log("get \"\" completed"); }
+      cb();
+    };
+  }
+
+  var store = new Store();
+
   var FileBuffer = function(array) {
     this.array = array;
     this.contentSize = array.byteLength;
@@ -75,24 +186,31 @@ var fs = (function() {
     return path.slice(path.lastIndexOf("/") + 1);
   }
 
-  function init(cb) {
-    asyncStorage.getItem("/", function(data) {
+  function initRootDir(cb) {
+    store.getItem("/", function(data) {
       if (data) {
         cb();
       } else {
-        asyncStorage.setItem("/", [], function() {
-          setStat("/", { mtime: Date.now(), isDir: true }, cb);
-        });
+        store.setItem("/", []);
+        setStat("/", { mtime: Date.now(), isDir: true });
+        cb();
       }
     });
   }
 
-  var openedFiles = [];
+  function init(cb) {
+    store.init(function() {
+      initRootDir(cb || function() {});
+    });
+  }
+
+  var openedFiles = [null, null, null];
 
   function open(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs open " + path); }
 
-    asyncStorage.getItem(path, function(blob) {
+    store.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
@@ -111,20 +229,11 @@ var fs = (function() {
     });
   }
 
-  function close(fd, cb) {
+  function close(fd) {
     if (fd >= 0 && openedFiles[fd]) {
-      flush(fd, function() {
-        // Replace descriptor object with null value instead of removing it from
-        // the array so we don't change the indexes of the other objects.
-        openedFiles.splice(fd, 1, null);
-        if (cb) {
-          cb();
-        }
-      });
-    } else {
-      if (cb) {
-        cb();
-      }
+      if (DEBUG_FS) { console.log("fs close " + openedFiles[fd].path); }
+      flush(fd);
+      openedFiles.splice(fd, 1, null);
     }
   }
 
@@ -132,6 +241,7 @@ var fs = (function() {
     if (!openedFiles[fd]) {
       return null;
     }
+    if (DEBUG_FS) { console.log("fs read " + openedFiles[fd].path); }
 
     var buffer = openedFiles[fd].buffer;
 
@@ -152,6 +262,8 @@ var fs = (function() {
   }
 
   function write(fd, data, from) {
+    if (DEBUG_FS) { console.log("fs write " + openedFiles[fd].path); }
+
     if (typeof from == "undefined") {
       from = openedFiles[fd].position;
     }
@@ -168,9 +280,10 @@ var fs = (function() {
 
     buffer.array.set(data, from);
 
-    openedFiles[fd].position = from + data.byteLength;
-    openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
-    openedFiles[fd].dirty = true;
+    var file = openedFiles[fd];
+    file.position = from + data.byteLength;
+    file.stat = { mtime: Date.now(), isDir: false, size: buffer.contentSize };
+    file.dirty = true;
   }
 
   function getpos(fd) {
@@ -189,28 +302,47 @@ var fs = (function() {
     return openedFiles[fd].buffer.contentSize;
   }
 
-  function flush(fd, cb) {
+  function flush(fd) {
+    if (DEBUG_FS) { console.log("fs flush " + openedFiles[fd].path); }
+
+    var openedFile = openedFiles[fd];
+
     // Bail early if the file has not been modified.
-    if (!openedFiles[fd].dirty) {
-      cb();
+    if (!openedFile.dirty) {
       return;
     }
 
-    var blob = new Blob([openedFiles[fd].buffer.getContent()]);
-    asyncStorage.setItem(openedFiles[fd].path, blob, function() {
-      openedFiles[fd].dirty = false;
-      if (openedFiles[fd].stat) {
-        setStat(openedFiles[fd].path, openedFiles[fd].stat, cb);
-      } else {
-        cb();
-      }
-    });
+    var blob = new Blob([openedFile.buffer.getContent()]);
+    store.setItem(openedFile.path, blob);
+    openedFile.dirty = false;
+    if (openedFile.stat) {
+      setStat(openedFile.path, openedFile.stat);
+    }
   }
+
+  function flushAll() {
+    for (var fd = 0; fd < openedFiles.length; fd++) {
+      if (!openedFiles[fd] || !openedFiles[fd].dirty) {
+        continue;
+      }
+      flush(fd);
+    }
+  }
+
+  // Due to bug #227, we don't support Object::finalize(). But the Java
+  // filesystem implementation requires the `finalize` method to save cached
+  // file data if user doesn't flush or close the file explicitly. To avoid
+  // losing data, we flush files periodically.
+  setInterval(flushAll, 5000);
+
+  // Flush files when app goes into background.
+  window.addEventListener("pagehide", flushAll);
 
   function list(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs list " + path); }
 
-    asyncStorage.getItem(path, function(files) {
+    store.getItem(path, function(files) {
       if (files == null || files instanceof Blob) {
         cb(null);
       } else {
@@ -221,6 +353,7 @@ var fs = (function() {
 
   function exists(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs exists " + path); }
 
     stat(path, function(stat) {
       cb(stat ? true : false);
@@ -229,13 +362,13 @@ var fs = (function() {
 
   function truncate(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs truncate " + path); }
 
     stat(path, function(stat) {
       if (stat && !stat.isDir) {
-        asyncStorage.setItem(path, new Blob(), function() {
-          setStat(path, { mtime: Date.now(), isDir: false });
-          cb(true);
-        });
+        store.setItem(path, new Blob());
+        setStat(path, { mtime: Date.now(), isDir: false, size: 0 });
+        cb(true);
       } else {
         cb(false);
       }
@@ -243,18 +376,22 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
-    if (size != openedFiles[fd].buffer.contentSize) {
-      openedFiles[fd].buffer.setSize(size);
-      openedFiles[fd].stat = { mtime: Date.now(), isDir: false };
-      openedFiles[fd].dirty = true;
+    if (DEBUG_FS) { console.log("fs ftruncate " + openedFiles[fd].path); }
+
+    var file = openedFiles[fd];
+    if (size != file.buffer.contentSize) {
+      file.buffer.setSize(size);
+      file.dirty = true;
+      file.stat = { mtime: Date.now(), isDir: false, size: size };
     }
   }
 
   function remove(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs remove " + path); }
 
-    if (openedFiles.findIndex(file => file && file.path === path) != -1) {
-      setTimeout(() => cb(false), 0);
+    if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
+      setZeroTimeout(function() { cb(false); });
       return;
     }
 
@@ -276,13 +413,10 @@ var fs = (function() {
         }
 
         files.splice(index, 1);
-        asyncStorage.setItem(dir, files, function() {
-          asyncStorage.removeItem(path, function() {
-            removeStat(path, function() {
-              cb(true);
-            });
-          });
-        });
+        store.setItem(dir, files);
+        store.removeItem(path);
+        removeStat(path);
+        cb(true);
       });
     });
   }
@@ -298,43 +432,39 @@ var fs = (function() {
       }
 
       files.push(name);
-      asyncStorage.setItem(dir, files, function() {
-        asyncStorage.setItem(path, data, function() {
-          cb(true);
-        });
-      });
+      store.setItem(dir, files);
+      store.setItem(path, data);
+      cb(true);
     });
   }
 
   function create(path, blob, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs create " + path); }
 
     createInternal(path, blob, function(created) {
       if (created) {
-        setStat(path, { mtime: Date.now(), isDir: false }, function() {
-          cb(created);
-        });
-      } else {
-        cb(created);
+        setStat(path, { mtime: Date.now(), isDir: false, size: blob.size });
       }
+      cb(created);
     });
   }
 
   function mkdir(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs mkdir " + path); }
 
     createInternal(path, [], function(created) {
       if (created) {
-        setStat(path, { mtime: Date.now(), isDir: true }, function() {
-          cb(created);
-        });
-      } else {
-        cb(created);
+        setStat(path, { mtime: Date.now(), isDir: true });
       }
+      cb(created);
     });
   }
 
   function mkdirp(path, cb) {
+    if (DEBUG_FS) { console.log("fs mkdirp " + path); }
+
     if (path[0] !== "/") {
       console.error("mkdirp called on relative path: " + path);
       cb(false);
@@ -378,8 +508,9 @@ var fs = (function() {
 
   function size(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs size " + path); }
 
-    asyncStorage.getItem(path, function(blob) {
+    store.getItem(path, function(blob) {
       if (blob == null || !(blob instanceof Blob)) {
         cb(-1);
       } else {
@@ -393,9 +524,10 @@ var fs = (function() {
   function rename(oldPath, newPath, cb) {
     oldPath = normalizePath(oldPath);
     newPath = normalizePath(newPath);
+    if (DEBUG_FS) { console.log("fs rename " + oldPath + " -> " + newPath); }
 
-    if (openedFiles.findIndex(file => file && file.path === oldPath) != -1) {
-      setTimeout(() => cb(false), 0);
+    if (openedFiles.findIndex(function(file) { return file && file.path === oldPath; }) != -1) {
+      setZeroTimeout(function() { cb(false); });
       return;
     }
 
@@ -405,7 +537,7 @@ var fs = (function() {
         return;
       }
 
-      asyncStorage.getItem(oldPath, function(data) {
+      store.getItem(oldPath, function(data) {
         if (data == null) {
           cb(false);
           return;
@@ -427,24 +559,38 @@ var fs = (function() {
     });
   }
 
-  function setStat(path, stat, cb) {
-    asyncStorage.setItem("!" + path, stat, cb);
+  function setStat(path, stat) {
+    if (DEBUG_FS) { console.log("fs setStat " + path); }
+
+    store.setItem("!" + path, stat);
   }
 
-  function removeStat(path, cb) {
-    asyncStorage.removeItem("!" + path, cb);
+  function removeStat(path) {
+    if (DEBUG_FS) { console.log("fs removeStat " + path); }
+
+    store.removeItem("!" + path);
   }
 
   function stat(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs stat " + path); }
 
-    var file = openedFiles.find(file => file && file.stat && file.path === path);
+    var file = openedFiles.find(function (file) { return file && file.stat && file.path === path });
     if (file) {
-      setTimeout(() => cb(file.stat), 0);
+      setZeroTimeout(function() { cb(file.stat); });
       return;
     }
 
-    asyncStorage.getItem("!" + path, cb);
+    store.getItem("!" + path, cb);
+  }
+
+  function clear(cb) {
+    store.clear();
+    initRootDir(cb || function() {});
+  }
+
+  function storeSync(cb) {
+    store.sync(cb);
   }
 
   return {
@@ -469,5 +615,7 @@ var fs = (function() {
     size: size,
     rename: rename,
     stat: stat,
+    clear: clear,
+    storeSync: storeSync,
   };
 })();

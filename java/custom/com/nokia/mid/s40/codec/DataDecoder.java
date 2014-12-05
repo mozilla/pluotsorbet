@@ -30,6 +30,7 @@ public class DataDecoder {
     public native boolean getBoolean() throws IOException;
 
     public byte[] getByteArray() throws IOException {
-        throw new RuntimeException("DataDecoder::getByteArray() not implemented");
+        System.out.println("DataDecoder::getByteArray() not implemented");
+        return new byte[0];
     }
 }

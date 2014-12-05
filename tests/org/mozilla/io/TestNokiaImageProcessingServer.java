@@ -61,16 +61,19 @@ public class TestNokiaImageProcessingServer implements Testlet {
         return buffer;
     }
 
-    public void testScaleImage(TestHarness th) throws IOException {
+    public void testScaleImage(TestHarness th, int maxKb, int maxHres, int maxVres) throws IOException {
         // Store an image in the fs
         FileConnection originalImage = (FileConnection)Connector.open("file:///test.jpg", Connector.READ_WRITE);
         if (!originalImage.exists()) {
             originalImage.create();
         }
+
         OutputStream os = originalImage.openDataOutputStream();
         InputStream is = getClass().getResourceAsStream("test.jpg");
         os.write(read(is));
         os.close();
+
+        long origFileSize = originalImage.fileSize();
 
         DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
         dataEncoder.putStart(14, "event");
@@ -78,8 +81,15 @@ public class TestNokiaImageProcessingServer implements Testlet {
         dataEncoder.put(2, "trans_id", 42);
         dataEncoder.put(11, "filename", "test.jpg");
         dataEncoder.putStart(15, "limits");
-        dataEncoder.put(5, "max_hres", 100);
-        dataEncoder.put(5, "max_vres", 100);
+        if (maxVres > 0) {
+            dataEncoder.put(5, "max_vres", maxVres);
+        }
+        if (maxKb > 0) {
+            dataEncoder.put(5, "max_kb", maxKb);
+        }
+        if (maxHres > 0) {
+            dataEncoder.put(5, "max_hres", maxHres);
+        }
         dataEncoder.putEnd(15, "limits");
         dataEncoder.put(10, "aspect", "FullImage");
         dataEncoder.put(2, "quality", 80);
@@ -100,6 +110,21 @@ public class TestNokiaImageProcessingServer implements Testlet {
 
         FileConnection file = (FileConnection)Connector.open(path);
         th.check(file.exists(), "File exists");
+
+        if (maxKb > 0) {
+            long scaledFileSize = file.fileSize();
+            if (origFileSize > maxKb * 1024) {
+                th.check(origFileSize > scaledFileSize, "Image is scaled.");
+            } else {
+                if ((maxHres > 0 && maxHres < 195 /*  height of test.jpg */ ) ||
+                    (maxVres > 0 && maxVres < 195 /*  width of test.jpg */ )) {
+                    th.check(origFileSize > scaledFileSize, "Image is scaled.");
+                } else {
+                    th.check(origFileSize == scaledFileSize, "Image is not scaled");
+                }
+            }
+        }
+
         file.delete();
         file.close();
 
@@ -113,7 +138,11 @@ public class TestNokiaImageProcessingServer implements Testlet {
             client = (LocalMessageProtocolConnection)Connector.open("localmsg://" + PROTO_NAME);
 
             testProtocolVersion(th);
-            testScaleImage(th);
+            testScaleImage(th, 0, 100, 100);
+            testScaleImage(th, 1, 0, 0);
+            testScaleImage(th, 10000, 0, 0);
+            testScaleImage(th, 10000, 101, 101);
+            testScaleImage(th, 10000, 10000, 10000);
 
             client.close();
        } catch (IOException ioe) {

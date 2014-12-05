@@ -227,10 +227,22 @@ Native.create("com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lan
 Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z", function(request) {
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
-      window.open(request);
+        window.open(request);
+    } else if (request.startsWith("x-contacts:add?number=")) {
+        new MozActivity({
+            name: "new",
+            data: {
+                type: "webcontacts/contact",
+                params: {
+                    tel: request.substring(22),
+                },
+            },
+        });
     } else {
       console.warn("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z not implemented for: " + request);
     }
+
+    return false;
 });
 
 Native.create("com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V", function(state) {
@@ -421,7 +433,7 @@ Native.create("com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)
         value = null;
         break;
     }
-    return value ? value : null;
+    return value;
 });
 
 Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V", function(fileName) {
@@ -610,14 +622,23 @@ MIDP.Context2D = (function() {
     // both. A distance threshold ensures that touches with an "intent
     // to tap" will likely result in a tap.
 
+    var LONG_PRESS_TIMEOUT = 1000;
     var MIN_DRAG_DISTANCE_SQUARED = 5 * 5;
     var mouseDownInfo = null;
+    var longPressTimeoutID = null;
+    var longPressDetected = false;
 
     c.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
         event.preventDefault(); // Prevent unnecessary fake mouse events.
         var pt = getEventPoint(event);
         sendPenEvent(pt, MIDP.PRESSED);
         mouseDownInfo = pt;
+
+        longPressDetected = false;
+        longPressTimeoutID = setTimeout(function() {
+            longPressDetected = true;
+            sendGestureEvent(pt, null, MIDP.GESTURE_LONG_PRESS);
+        }, LONG_PRESS_TIMEOUT);
     });
 
     c.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
@@ -625,6 +646,12 @@ MIDP.Context2D = (function() {
             return; // Mousemove on desktop; ignored.
         }
         event.preventDefault();
+
+        if (longPressTimeoutID) {
+            clearTimeout(longPressTimeoutID);
+            longPressTimeoutID = null;
+        }
+
         var pt = getEventPoint(event);
         sendPenEvent(pt, MIDP.DRAGGED);
         var distance = {
@@ -639,7 +666,9 @@ MIDP.Context2D = (function() {
             mouseDownInfo.isDragging = true;
             mouseDownInfo.x = pt.x;
             mouseDownInfo.y = pt.y;
-            sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
+            if (!longPressDetected) {
+                sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
+            }
         }
     });
 
@@ -650,9 +679,17 @@ MIDP.Context2D = (function() {
         }
         event.preventDefault();
 
+        if (longPressTimeoutID) {
+            clearTimeout(longPressTimeoutID);
+            longPressTimeoutID = null;
+        }
+
         var pt = getEventPoint(event);
         sendPenEvent(pt, MIDP.RELEASED);
-        sendGestureEvent(pt, null, mouseDownInfo.isDragging ? MIDP.GESTURE_DROP : MIDP.GESTURE_TAP);
+
+        if (!longPressDetected) {
+            sendGestureEvent(pt, null, mouseDownInfo.isDragging ? MIDP.GESTURE_DROP : MIDP.GESTURE_TAP);
+        }
 
         mouseDownInfo = null; // Clear the way for the next gesture.
     });
@@ -855,6 +892,7 @@ MIDP.RELEASED = 2;
 MIDP.DRAGGED = 3;
 MIDP.COMMAND_EVENT = 3;
 MIDP.EVENT_QUEUE_SHUTDOWN = 31;
+MIDP.MMAPI_EVENT = 45;
 MIDP.GESTURE_EVENT = 71;
 MIDP.GESTURE_TAP = 0x1;
 MIDP.GESTURE_LONG_PRESS = 0x2;
@@ -1227,7 +1265,7 @@ Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I",
 
 Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V", function(suiteId, className) {
     console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
-                 suiteId + ", " + className + ")");
+                 suiteId + ", " + util.fromJavaString(className) + ")");
 });
 
 Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I", function(name) {
