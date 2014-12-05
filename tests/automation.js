@@ -159,7 +159,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name + "&jars=tests/tests.jar")
+        .thenOpen("http://localhost:8000/index.html?fontSize=10&main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name + "&jars=tests/tests.jar")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {
