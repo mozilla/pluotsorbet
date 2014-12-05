@@ -56,19 +56,23 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     var value;
     switch (util.fromJavaString(key)) {
     case "microedition.encoding":
+        // The value of this property is different than the value on a real Nokia Asha 503 phone.
+        // On the phone, it is: ISO8859_1.
+        // If we changed this, we would need to remove the optimizations for UTF_8_Reader and
+        // UTF_8_Writer and optimize the ISO8859_1 alternatives.
         value = "UTF-8";
         break;
     case "microedition.locale":
         value = navigator.language;
         break;
     case "microedition.platform":
-        value = urlParams.platform ? urlParams.platform : "NOKIA503/JAVA_RUNTIME_VERSION=NOKIA_ASHA_1_2";
+        value = urlParams.platform ? urlParams.platform : "Nokia503/14.0.4/java_runtime_version=Nokia_Asha_1_2";
         break;
     case "microedition.platformimpl":
         value = null;
         break;
     case "microedition.profiles":
-        value = "MIDP-2.0"
+        value = "MIDP-2.1"
         break;
     case "microedition.pim.version":
         value = "1.0";
@@ -155,8 +159,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "000000000000000";
         break;
     case "com.nokia.mid.ui.version":
-        console.warn("Property 'com.nokia.mid.ui.version' is a stub");
-        value = "1.6";
+        value = "1.7";
         break;
     case "com.nokia.mid.mnc":
         // The concatenation of the MCC and MNC for the ICC (i.e. SIM card).
@@ -171,8 +174,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "";
         break;
     case "com.nokia.mid.ui.customfontsize":
-        console.warn("Property 'com.nokia.mid.ui.customfontsize' is a stub");
-        value = "false";
+        value = "true";
         break;
     case "classpathext":
         value = null;
@@ -180,10 +182,15 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "supports.audio.capture":
         value = "true";
         break;
+    case "supports.video.capture":
+        value = "true";
+        break;
     case "supports.recording":
         value = "true";
         break;
     case "audio.encodings":
+        // The value of this property is different than the value on a real Nokia Asha 503 phone.
+        // On a real phone, it is: encoding=audio/amr
         value = "audio/ogg";
         break;
     case "video.snapshot.encodings":
