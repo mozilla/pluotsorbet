@@ -25,6 +25,7 @@
  *    pushConn
  *    pushMidlet
  *    autosize
+ *    fontSize
  *
  * Keep this list up-to-date!
  */
