@@ -48,6 +48,13 @@ var gfxTests = [
   { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
   { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+  { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
+  { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
+  { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
+  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferent: 327 },
+  { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
+  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
+  { name: "gfx/RectAfterText", maxDifferent: 637 },
 ];
 
 var expectedUnitTestResults = [
