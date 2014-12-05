@@ -54,6 +54,13 @@ DataEncoder.prototype.put = function(tag, name, value) {
   });
 }
 
+DataEncoder.prototype.putNoTag = function(name, value) {
+  this.data.push({
+    name: name,
+    value: value,
+  });
+}
+
 DataEncoder.prototype.getData = function() {
   return JSON.stringify(this.data);
 }
@@ -146,6 +153,12 @@ Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V",
 
 Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V", function(tag, name, value) {
   this.encoder.put(tag, util.fromJavaString(name), value);
+});
+
+Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(Ljava/lang/String;[BI)V", function(name, data, length) {
+  var array = Array.prototype.slice.call(data.subarray(0, length));
+  array.constructor = Array;
+  this.encoder.putNoTag(util.fromJavaString(name), array);
 });
 
 Native.create("com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V", function(tag, name) {
