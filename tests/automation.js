@@ -50,11 +50,11 @@ var gfxTests = [
   { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
   { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
   { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
-  { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 209 },
-  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferent: 0 },
-  { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 0 },
-  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 0 },
-  { name: "gfx/RectAfterText", maxDifferent: 0 },
+  { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 262 },
+  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferent: 277 },
+  { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 277 },
+  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 253 },
+  { name: "gfx/RectAfterText", maxDifferent: 526 },
 ];
 
 var expectedUnitTestResults = [
