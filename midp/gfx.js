@@ -245,7 +245,7 @@
     var SIZE_LARGE = 16;
 
     Native.create("javax/microedition/lcdui/Font.init.(III)V", function(face, style, size) {
-        var defaultSize = Math.max(10, (MIDP.Context2D.canvas.height / 48) | 0);
+        var defaultSize = urlParams.fontSize ? urlParams.fontSize : Math.max(10, (MIDP.Context2D.canvas.height / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
