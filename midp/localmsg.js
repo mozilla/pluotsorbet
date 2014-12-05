@@ -779,6 +779,13 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       encoder.put(DataType.STRING, "version", "1.[0-10]");
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
     break;
 
     case "Register":
@@ -788,9 +795,38 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
 
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "Register");
-      encoder.put(DataType.WSTRING, "client_id", personalize_view_text);
+      encoder.put(DataType.WSTRING, "client_id", client_id);
       encoder.put(DataType.STRING, "result", "OK"); // Name unknown
       encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
+
+      setZeroTimeout((function() {
+        var encoder = new DataEncoder();
+
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.METHOD, "name", "Activated");
+        encoder.put(DataType.WSTRING, "client_id", client_id);
+        encoder.putStart(DataType.LIST, "unknown_list");
+        // Unknown DataType.STRING elements
+        encoder.putEnd(DataType.LIST, "unknown_list");
+        encoder.put(DataType.BYTE, "unkown_byte", 1); // Name unknown
+        encoder.put(DataType.SHORT, "unknown_short_1", 0); // Name and value unknown
+        encoder.put(DataType.SHORT, "unknown_short_2", 0); // Name and value unknown
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+        });
+      }).bind(this));
     break;
 
     default:
@@ -798,13 +834,6 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
                     util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       return;
   }
-
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-    data: data,
-    length: data.length,
-    offset: 0,
-  });
 }
 
 MIDP.LocalMsgConnections = {};
@@ -824,8 +853,7 @@ MIDP.LocalMsgConnections["nokia.phone-status"] = NokiaPhoneStatusLocalMsgConnect
 MIDP.LocalMsgConnections["nokia.file-ui"] = NokiaFileUILocalMsgConnection;
 MIDP.LocalMsgConnections["nokia.image-processing"] = NokiaImageProcessingLocalMsgConnection;
 MIDP.LocalMsgConnections["nokia.sa.service-registry"] = NokiaSASrvRegLocalMsgConnection;
-MIDP.LocalMsgConnections["nokia.activity-standby"] = NokiaActiveStandbyLocalMsgConnection;
-
+MIDP.LocalMsgConnections["nokia.active-standby"] = NokiaActiveStandbyLocalMsgConnection;
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);

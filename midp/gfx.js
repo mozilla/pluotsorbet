@@ -1184,30 +1184,4 @@
             }
         });
     }, true);
-
-    
-    Native.create("com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V", function(active) {
-        if (active) {
-            //var image = this.class.getField("I.image.Ljavax/microedition/lcdui/Image;").get(this);
-            //var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
-
-            var text = "Notification from ";
-            if (MIDP.manifest["MIDlet-Name"]) {
-                text += MIDP.manifest["MIDlet-Name"];
-            } else {
-                text += "j2me.js";
-            }
-
-            var message = {
-                text: text,
-                options: {
-                    //icon: convertNativeImageData(imageData).canvas.toDataURL(),
-                },
-            }
-
-            var sender = DumbPipe.open("notification", message, function() {
-                DumbPipe.close(sender)
-            });
-        }
-    });
 })(Native);
