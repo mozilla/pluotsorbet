@@ -245,7 +245,7 @@
     var SIZE_LARGE = 16;
 
     Native.create("javax/microedition/lcdui/Font.init.(III)V", function(face, style, size) {
-        var defaultSize = urlParams.fontSize ? urlParams.fontSize : Math.max(10, (MIDP.Context2D.canvas.height / 27) | 0);
+        var defaultSize = urlParams.fontSize ? urlParams.fontSize : Math.max(10, (MIDP.Context2D.canvas.height / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
@@ -268,7 +268,7 @@
         else
             face = "Arial, Helvetica, sans-serif";
 
-        this.class.getField("I.baseline.I").set(this, (size/2)|0);
+        this.class.getField("I.baseline.I").set(this, size | 0);
         this.class.getField("I.height.I").set(this, (size * 1.3)|0);
         this.css = style + " " + size + "pt " + face;
     });
@@ -353,16 +353,21 @@
             var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
             c.textAlign = "left";
             c.textBaseline = "top";
-            if (anchor & RIGHT)
+
+            if (anchor & RIGHT) {
                 x -= w;
-            if (anchor & HCENTER)
-                x -= (w/2)|0;
-            if (anchor & BOTTOM)
+            } else if (anchor & HCENTER) {
+                x -= (w >>> 1) | 0;
+            }
+
+            if (anchor & BOTTOM) {
                 c.textBaseline = "bottom";
-            if (anchor & VCENTER)
-                c.textBaseline = "middle";
-            if (anchor & BASELINE)
+            } else if (anchor & BASELINE) {
                 c.textBaseline = "alphabetic";
+            } else if (anchor & VCENTER) {
+                throw new JavaException("java/lang/IllegalArgumentException", "VCENTER not allowed with text");
+            }
+
             cb(x, y, w);
         });
     }
