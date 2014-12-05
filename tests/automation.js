@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 35000;
+casper.options.waitTimeout = 38000;
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
@@ -48,10 +48,17 @@ var gfxTests = [
   { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
   { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+  { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
+  { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
+  { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
+  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferent: 327 },
+  { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
+  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
+  { name: "gfx/RectAfterText", maxDifferent: 637 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71175 },
+  { name: "pass", number: 71194 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
