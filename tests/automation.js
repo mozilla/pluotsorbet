@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 35000;
+casper.options.waitTimeout = 38000;
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
@@ -39,10 +39,26 @@ var gfxTests = [
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
   { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1329 },
+  { name: "gfx/DirectUtilsClipAfter", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipAfterWithNormalImage", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBefore", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+  { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
+  { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
+  { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
+  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferent: 327 },
+  { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
+  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
+  { name: "gfx/RectAfterText", maxDifferent: 637 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71145 },
+  { name: "pass", number: 71194 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }

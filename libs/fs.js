@@ -705,6 +705,53 @@ var fs = (function() {
     store.purge(cb);
   }
 
+  var _creatingFile = false;
+  var _creatingQueue = [];
+  function createUniqueFile(parentDir, completeName, blob, callback) {
+    if (_creatingFile) {
+      _creatingQueue.push({
+        parentDir: parentDir,
+        completeName: completeName,
+        blob: blob,
+        callback: callback
+      });
+      return;
+    }
+
+    _creatingFile = true;
+
+    var name = completeName;
+    var ext = "";
+    var extIndex = name.lastIndexOf(".");
+    if (extIndex !== -1) {
+      ext = name.substring(extIndex);
+      name = name.substring(0, extIndex);
+    }
+
+    var i = 0;
+    function tryFile(fileName) {
+      exists(parentDir + "/" + fileName, function(exists) {
+        if (exists) {
+          i++;
+          tryFile(name + "-" + i + ext);
+        } else {
+          mkdir(parentDir, function() {
+            create(parentDir + "/" + fileName, blob, function() {
+              callback(fileName);
+              _creatingFile = false;
+              if (_creatingQueue.length > 0) {
+                var tmp = _creatingQueue.shift();
+                createUniqueFile(tmp.parentDir, tmp.completeName, tmp.blob, tmp.callback);
+              }
+            });
+          });
+        }
+      });
+    }
+
+    tryFile(completeName);
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -730,5 +777,6 @@ var fs = (function() {
     clear: clear,
     syncStore: syncStore,
     purgeStore: purgeStore,
+    createUniqueFile: createUniqueFile,
   };
 })();
