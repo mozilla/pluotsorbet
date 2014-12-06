@@ -829,6 +829,34 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       }).bind(this));
     break;
 
+    case "Update":
+      var client_id = decoder.getValue(DataType.STRING);
+      var personalise_view_text = decoder.getValue(DataType.WSTRING);
+      var activate_scroll_events = decoder.getValue(DataType.BOOLEAN);
+      var content_icon = decoder.getNextValue();
+      var mime_type = decoder.getValue(DataType.STRING);
+      var context_text = decoder.getValue(DataType.WSTRING);
+
+      console.log("personalise_view_text: " + personalise_view_text);
+      console.log("context_text: " + context_text);
+      var img = new Image();
+      img.src = URL.createObjectURL(new Blob([new Uint8Array(content_icon)]));
+      document.body.appendChild(img);
+
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Update");
+      encoder.put(DataType.WSTRING, "client_id", client_id);
+      encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
+      break;
+
     default:
       console.error("(nokia.active-standby) event " + name + " not implemented " +
                     util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
