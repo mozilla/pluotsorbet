@@ -650,15 +650,15 @@ module J2ME.C4.Backend {
       return "$AK(" + mangleClass(classInfo.elementClass) + ")";
     } else {
       if (friendlyMangledNames) {
-        return escapeString(classInfo.className);
+        return "$" + escapeString(classInfo.className);
       }
       var hash = hashString(classInfo.className);
-      return StringUtilities.variableLengthEncodeInt32(hash);
+      return "$" + StringUtilities.variableLengthEncodeInt32(hash);
     }
   }
 
   export function mangleField(fieldInfo: FieldInfo) {
-    return "$" + escapeString(fieldInfo.name);
+    return "$" + escapeString(fieldInfo.classInfo.className) + escapeString(fieldInfo.name);
   }
 
   function getRuntimeClass(classInfo: ClassInfo) {

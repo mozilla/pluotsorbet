@@ -301,6 +301,15 @@ module J2ME {
       return CLASSES.getField(this, fieldKey);
     }
 
+    getClassInitLockObject(ctx: Context) {
+      if (!(this.className in ctx.runtime.classInitLockObjects)) {
+        ctx.runtime.classInitLockObjects[this.className] = {
+          classInfo: this
+        };
+      }
+      return ctx.runtime.classInitLockObjects[this.className];
+    }
+
     toString() {
       return "[class " + this.className + "]";
     }

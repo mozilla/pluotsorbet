@@ -197,8 +197,7 @@ module J2ME {
           0xb1,             // return
         ])
       });
-      debugger;
-      return new Frame(syntheticMethod, [classInfo.getClassObject(this)], 0);
+      return new Frame(syntheticMethod, [classInfo.getClassInitLockObject(this)], 0);
     }
 
     pushClassInitFrame(classInfo: ClassInfo) {

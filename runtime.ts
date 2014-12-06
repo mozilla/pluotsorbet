@@ -13,7 +13,7 @@ module J2ME {
 
 
   export var traceWriter = new IndentingWriter(false, IndentingWriter.stderr);
-  export var linkingWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
+  export var linkingWriter = new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {
     java: {
@@ -129,6 +129,7 @@ module J2ME {
     pending: any;
     staticFields: any;
     classObjects: any;
+    classInitLockObjects: any;
     ctx: Context;
 
     isolate: com.sun.cldc.isolate.Isolate;
@@ -148,6 +149,7 @@ module J2ME {
       this.staticFields = {};
       this.classObjects = {};
       this.ctx = null;
+      this.classInitLockObjects = {};
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
       this._nextHashCode = this._runtimeId << 24;
     }
@@ -348,8 +350,8 @@ module J2ME {
     export interface Isolate extends java.lang.Object {
       id: number;
       runtime: Runtime;
-      $_mainClass: java.lang.String;
-      $_mainArgs: java.lang.String [];
+      $com_sun_cldc_isolate_Isolate_mainClass: java.lang.String;
+      $com_sun_cldc_isolate_Isolate_mainArgs: java.lang.String [];
     }
   }
 
@@ -400,9 +402,6 @@ module J2ME {
           configurable: false,
           value: runtimeKlass
         });
-        if (classInfo.className === "com/sun/cldc/i18n/StreamWriter") {
-          debugger;
-        }
         linkingWriter && linkingWriter.writeLn("Running Static Initializer: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
         //// TODO: monitorEnter
@@ -506,6 +505,11 @@ module J2ME {
           return "[Synthesized Klass " + classInfo.className + "]";
         };
       }
+    }
+
+    if (classInfo.superClass && !classInfo.superClass.klass &&
+        J2ME.phase === J2ME.ExecutionPhase.Runtime) {
+      J2ME.linkKlass(classInfo.superClass);
     }
 
     var superKlass = getKlass(classInfo.superClass);
@@ -662,12 +666,14 @@ module J2ME {
         if (!methodInfo.isStatic) {
           printObj = " <" + toDebugString(this) + "> ";
         }
-        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + printArgs + ")");
+        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + printArgs);
+        var s = performance.now();
         var value = fn.apply(this, args);
+        var elapsedStr = " " + (performance.now() - s).toFixed(4);
         if (methodInfo.getReturnKind() !== Kind.Void) {
-          traceWriter.leave("< " + toDebugString(value));
+          traceWriter.leave("< " + toDebugString(value) + elapsedStr);
         } else {
-          traceWriter.leave("<");
+          traceWriter.leave("<" + elapsedStr);
         }
         return value;
       };
@@ -708,7 +714,10 @@ module J2ME {
         (<any>Object).setPrototypeOf(klass.prototype, superKlass.prototype);
         assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype);
       } else {
-        // TODO: Copy properties over.
+          assert(!superKlass.superKlass, "Should not have a super-super-klass.");
+          for (var key in superKlass.prototype) {
+              klass.prototype[key] = superKlass.prototype[key];
+          }
       }
     }
     klass.prototype.klass = klass;

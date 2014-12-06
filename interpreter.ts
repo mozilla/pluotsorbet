@@ -35,7 +35,7 @@ module J2ME {
         //if (!methodInfo.isStatic) {
         //  printObj = " <" + toDebugString(this) + "> ";
         //}
-        traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + " (" + localsStr + ")");
+        traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + localsStr);
       }
     }
 

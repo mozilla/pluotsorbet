@@ -30,7 +30,7 @@ doubleReturnType.slotSize = 2;
 function voidReturnType(ret) {
   // no-op
 }
-voidReturnType.slotSize = 1;
+voidReturnType.slotSize = 0;
 
 function stringReturnType(ret) {
   var value;
