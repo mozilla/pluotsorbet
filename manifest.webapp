@@ -26,6 +26,9 @@
     "browser": {},
     "audio-capture": {
        "description": "Required to capture audio via getUserMedia"
+    },
+    "video-capture": {
+       "description": "Required to take pictures"
     }
   },
   "type": "privileged"
