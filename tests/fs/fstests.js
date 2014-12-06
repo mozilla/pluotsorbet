@@ -809,12 +809,32 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.storeSync(function() {
+  fs.syncStore(function() {
     // There's nothing we can check, since the sync status of the store
     // is private to the fs module, but we have at least confirmed that the call
     // resulted in the callback being called.
-    ok(true, "storeSync callback called");
+    ok(true, "syncStore callback called");
     next();
+  });
+});
+
+tests.push(function() {
+  fs.create("/write-purge-read", new Blob(), function(created) {
+    fs.open("/write-purge-read", function(fd) {
+      fs.write(fd, new TextEncoder().encode("marco"));
+      fs.close(fd);
+      fs.purgeStore(function() {
+        fs.open("/write-purge-read", function(fd) {
+          var data = fs.read(fd);
+          is(data.byteLength, 5, "read from a file with 5 bytes");
+          is(new TextDecoder().decode(data), "marco", "read correct");
+          fs.close(fd);
+          fs.remove("/write-purge-read", function() {
+            next();
+          });
+        });
+      });
+    });
   });
 });
 
