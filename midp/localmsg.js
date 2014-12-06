@@ -837,8 +837,9 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       var mime_type = decoder.getValue(DataType.STRING);
       var context_text = decoder.getValue(DataType.WSTRING);
 
-      console.log("personalise_view_text: " + personalise_view_text);
-      console.log("context_text: " + context_text);
+      // Should show the notification when Indicator.setActive(true), should remove when Indicator.setActive(false)
+      console.log("personalise_view_text: " + personalise_view_text); // WhatsApp
+      console.log("context_text: " + context_text); // unread chat messages with XXX
       var img = new Image();
       img.src = URL.createObjectURL(new Blob([new Uint8Array(content_icon)]));
       document.body.appendChild(img);
@@ -899,7 +900,7 @@ Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", fu
             // for apps that use the Nokia built-in servers (because we haven't
             // implemented them yet).
             if (!MIDP.LocalMsgConnections[this.protocolName]) {
-                console.warn("localmsg server (" + this.protocolName + ") unimplemented");
+                console.error("localmsg server (" + this.protocolName + ") unimplemented");
                 // Return without resolving the promise, we want the thread that is connecting
                 // to this unimplemented server to stop indefinitely.
                 return;
