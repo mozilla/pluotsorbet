@@ -156,6 +156,9 @@ Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
+    if (range[i] == 0) {
+      break;
+    }
     connection.logBuffer += String.fromCharCode(range[i] & 0xff);
   }
 };
@@ -174,6 +177,9 @@ Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
   var connection = _this.class.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
+    if (range[i] == 0) {
+      break;
+    }
     connection.logBuffer += String.fromCharCode(range[i] & 0xff);
   }
 };

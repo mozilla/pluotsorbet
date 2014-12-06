@@ -439,7 +439,7 @@ ImageRecorder.prototype.recipient = function(message) {
 
             MIDP.sendNativeEvent({
                 type: MIDP.MMAPI_EVENT,
-                intParam1: this.playerContainer.handle,
+                intParam1: this.playerContainer.pId,
                 intParam2: 0,
                 intParam3: 0,
                 intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
@@ -499,8 +499,12 @@ ImageRecorder.prototype.getSnapshotData = function(imageType) {
     return this.snapshotData;
 }
 
-function PlayerContainer(url) {
+function PlayerContainer(url, pId) {
     this.url = url;
+    // `pId` is the player id used in PlayerImpl.java, don't confuse with the id we used
+    // here in Javascript. The reason we need to hold this `pId` is we need to send it
+    // back when dispatch Media.EVENT_MEDIA_SNAPSHOT_FINISHED.
+    this.pId = pId;
 
     this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
     this.contentType = "";
@@ -870,7 +874,7 @@ AudioRecorder.prototype.close = function() {
 Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
     var url = util.fromJavaString(jURI);
     var id = pId + (appId << 32);
-    Media.PlayerCache[id] = new PlayerContainer(url);
+    Media.PlayerCache[id] = new PlayerContainer(url, pId);
     return id;
 });
 
