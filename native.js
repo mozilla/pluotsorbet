@@ -99,7 +99,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "file:///";
         break;
     case "fileconn.dir.photos":
-        value = "file:///Photos/";
+        // We need to create the dir in the FS init process if it's
+        // not the root dir.
+        value = "file:///";
         break;
     case "fileconn.dir.roots.names":
         // The names here should be localized.
@@ -194,7 +196,10 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "audio/ogg";
         break;
     case "video.snapshot.encodings":
-        value = "encoding=jpeg";
+        // FIXME Some MIDlets pass a string that contains lots of constraints
+        // as the `imageType` which is not yet handled in DirectVideo.jpp, let's
+        // just put the whole string here as a workaround and fix this in issue #688.
+        value = "encoding=jpeg&quality=80&progressive=true&type=jfif&width=400&height=400";
         break;
     default:
         console.warn("UNKNOWN PROPERTY (java/lang/System): " + util.fromJavaString(key));
