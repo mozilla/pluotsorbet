@@ -129,8 +129,10 @@ if (urlParams.jad) {
     .split("\n")
     .forEach(function(entry) {
       if (entry) {
-        var keyval = entry.split(':');
-        MIDP.manifest[keyval[0]] = keyval[1].trim();
+        var keyEnd = entry.indexOf(":");
+        var key = entry.substring(0, keyEnd);
+        var val = entry.substring(keyEnd + 1).trim();
+        manifest[key] = val;
       }
     });
   }));
