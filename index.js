@@ -424,7 +424,7 @@ DumbPipe.registerOpener("camera", function(message, sender) {
 
 function load(file, responseType) {
   return new Promise(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
+    var xhr = new XMLHttpRequest({ mozSystem: true });
     xhr.open("GET", file, true);
     xhr.responseType = responseType;
     xhr.onload = function () {

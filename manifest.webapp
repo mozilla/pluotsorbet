@@ -29,6 +29,9 @@
     },
     "video-capture": {
        "description": "Required to take pictures"
+    },
+    "systemXHR": {
+       "description": "Required to download MIDlets"
     }
   },
   "type": "privileged"
