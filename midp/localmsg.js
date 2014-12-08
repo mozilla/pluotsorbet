@@ -760,7 +760,19 @@ var NokiaActiveStandbyLocalMsgConnection = function() {
     LocalMsgConnection.call(this);
 }
 
+NokiaActiveStandbyLocalMsgConnection.indicatorActive = false;
+NokiaActiveStandbyLocalMsgConnection.pipeSender = null;
+
 NokiaActiveStandbyLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaActiveStandbyLocalMsgConnection.prototype.recipient = function(message) {
+  switch (message.type) {
+    case "close":
+      DumbPipe.close(NokiaActiveStandbyLocalMsgConnection.pipeSender);
+      NokiaActiveStandbyLocalMsgConnection.pipeSender = null;
+    break;
+  }
+}
 
 NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(message) {
   var encoder = new DataEncoder();
@@ -790,7 +802,7 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
 
     case "Register":
       var client_id = decoder.getValue(DataType.STRING);
-      var personalize_view_text = decoder.getValue(DataType.WSTRING);
+      var personalise_view_text = decoder.getValue(DataType.WSTRING);
       decoder.getValue(DataType.BOOLEAN);
 
       encoder.putStart(DataType.STRUCT, "event");
@@ -837,12 +849,16 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       var mime_type = decoder.getValue(DataType.STRING);
       var context_text = decoder.getValue(DataType.WSTRING);
 
-      // Should show the notification when Indicator.setActive(true), should remove when Indicator.setActive(false)
-      console.log("personalise_view_text: " + personalise_view_text); // WhatsApp
-      console.log("context_text: " + context_text); // unread chat messages with XXX
-      var img = new Image();
-      img.src = URL.createObjectURL(new Blob([new Uint8Array(content_icon)]));
-      document.body.appendChild(img);
+      if (NokiaActiveStandbyLocalMsgConnection.indicatorActive) {
+        NokiaActiveStandbyLocalMsgConnection.pipeSender = DumbPipe.open("notification", {
+          title: personalise_view_text,
+          options: {
+            body: context_text,
+          },
+          icon: content_icon,
+          mime_type: mime_type,
+        }, this.recipient.bind(this));
+      }
 
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "Update");
@@ -864,6 +880,14 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       return;
   }
 }
+
+Native.create("com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V", function(active) {
+  NokiaActiveStandbyLocalMsgConnection.indicatorActive = active;
+
+  if (!active && NokiaActiveStandbyLocalMsgConnection.pipeSender) {
+    NokiaActiveStandbyLocalMsgConnection.pipeSender({ type: "close" });
+  }
+});
 
 MIDP.LocalMsgConnections = {};
 

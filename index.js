@@ -106,7 +106,7 @@ var DumbPipe = {
     try {
       document.getElementById("mozbrowser").contentWindow.postMessage(envelope, "*");
     } catch (e) {
-      console.log("Error " + e + " while sending message: " + JSON.stringify(message));
+      console.log("Error " + e + " while sending message: " + JSON.stringify(envelope));
     }
   },
 
@@ -422,16 +422,42 @@ DumbPipe.registerOpener("camera", function(message, sender) {
   };
 });
 
+var notification = null;
 DumbPipe.registerOpener("notification", function(message, sender) {
+  if (notification) {
+    notification.close();
+    notification = null;
+  }
+
+  //message.options.icon = URL.createObjectURL(new Blob([ new Uint8Array(message.icon) ], { type : message.mime_type }));
+
+  function permissionGranted() {
+    notification = new Notification(message.title, message.options);
+    notification.onshow = function() {
+      sender();
+    };
+  }
+
   if (Notification.permission === "granted") {
-    new Notification(message.text, message.options);
+    permissionGranted();
   } else if (Notification.permission !== 'denied') {
     Notification.requestPermission(function(permission) {
       if (permission === "granted") {
-        new Notification(message.text, message.options);
+        permissionGranted();
       }
     });
   }
 
-  sender();
+  return function(message) {
+    switch(message.type) {
+      case "close":
+        if (notification) {
+          notification.close();
+          notification = null;
+        }
+
+        sender({ type: "close" });
+      break;
+    }
+  }
 });
