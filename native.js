@@ -231,7 +231,7 @@ Native.create("com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J", function() {
 });
 
 Native.create("java/lang/Object.getClass.()Ljava/lang/Class;", function(ctx) {
-    return J2ME.runtimeKlass(ctx.runtime, this.klass).classObject;
+    return J2ME.getRuntimeKlass(ctx.runtime, this.klass).classObject;
 });
 
 Native.create("java/lang/Object.hashCode.()I", function() {

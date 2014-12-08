@@ -294,7 +294,7 @@ module J2ME {
     }
 
     getClassObject(ctx: Context): java.lang.Class {
-      return runtimeKlass(ctx.runtime, this.klass).classObject;
+      return getRuntimeKlass(ctx.runtime, this.klass).classObject;
     }
 
     getField(fieldKey: string) : FieldInfo {

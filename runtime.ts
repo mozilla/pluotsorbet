@@ -12,7 +12,7 @@ module J2ME {
   declare var Long;
 
 
-  export var traceWriter = new IndentingWriter(false, IndentingWriter.stderr);
+  export var traceWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
   export var linkingWriter = new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {
@@ -67,6 +67,7 @@ module J2ME {
     // hierarchy.
     switch (fn) {
       case Object:
+      case Array:
       case Uint8Array:
       case Uint16Array:
       case Float32Array:
@@ -259,7 +260,6 @@ module J2ME {
      */
     depth: number;
 
-
     classSymbols: string [];
 
     /**
@@ -273,6 +273,15 @@ module J2ME {
     staticConstructor: () => void;
 
     /**
+     * Whether this class is an interface class.
+     */
+    isInterfaceKlass: boolean;
+  }
+
+  export class RuntimeKlass {
+    templateKlass: Klass;
+
+    /**
      * Java class object. This is only available on runtime klasses and it points to itself. We go trough
      * this indirection in VM code for now so that we can easily change it later if we need to.
      */
@@ -281,14 +290,11 @@ module J2ME {
     /**
      * Whether this class is a runtime class.
      */
-    isRuntimeKlass: boolean;
+    // isRuntimeKlass: boolean;
 
-    templateKlass: Klass;
-
-    /**
-     * Whether this class is an interface class.
-     */
-    isInterfaceKlass: boolean;
+    constructor(templateKlass: Klass) {
+      this.templateKlass = templateKlass;
+    }
   }
 
   export interface ArrayKlass extends Klass {
@@ -333,7 +339,7 @@ module J2ME {
     }
 
     export interface Class extends java.lang.Object {
-      runtimeKlass: Klass;
+      runtimeKlass: RuntimeKlass;
     }
 
     export interface String extends java.lang.Object {
@@ -355,15 +361,16 @@ module J2ME {
     }
   }
 
-  function initializeClassObject(klass: Klass) {
-    linkingWriter && linkingWriter.writeLn("Initializing Class Object For: " + klass);
-    assert(klass.isRuntimeKlass, "Can only create class objects for runtime klasses.");
-    assert(!klass.classObject);
-    klass.classObject = <java.lang.Class><any>klass;
-    (<any>Object).setPrototypeOf(klass.classObject, Klasses.java.lang.Class.prototype);
+  function initializeClassObject(runtimeKlass: RuntimeKlass) {
+    linkingWriter && linkingWriter.writeLn("Initializing Class Object For: " + runtimeKlass.templateKlass);
+    assert(!runtimeKlass.classObject);
+    runtimeKlass.classObject = <java.lang.Class><any>runtimeKlass;
+    // TODO: Make this look like a Class instance but don't change the __proto__
+    (<any>Object).setPrototypeOf(runtimeKlass.classObject, Klasses.java.lang.Class.prototype);
+
     // <java.lang.Class>newObject(Klasses.java.lang.Class);
-    klass.classObject.runtimeKlass = klass;
-    var fields = klass.templateKlass.classInfo.fields;
+    runtimeKlass.classObject.runtimeKlass = runtimeKlass;
+    var fields = runtimeKlass.templateKlass.classInfo.fields;
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       if (field.isStatic) {
@@ -380,7 +387,7 @@ module J2ME {
             defaultValue = 0;
             break;
         }
-        field.set(klass.classObject, defaultValue);
+        field.set(runtimeKlass.classObject, defaultValue);
       }
     }
   }
@@ -393,13 +400,11 @@ module J2ME {
       configurable: true,
       get: function () {
         linkingWriter && linkingWriter.writeLn("Initializing Runtime Klass: " + classInfo.className);
-        assert(!klass.isRuntimeKlass);
-        var runtimeKlass = klass.bind(null);
-        runtimeKlass.templateKlass = klass;
-        runtimeKlass.isRuntimeKlass = true;
+        assert(!(klass instanceof RuntimeKlass));
+        var runtimeKlass = new RuntimeKlass(klass);
         initializeClassObject(runtimeKlass);
+        // this[classInfo.mangledName] = runtimeKlass;
         Object.defineProperty(this, classInfo.mangledName, {
-          configurable: false,
           value: runtimeKlass
         });
         linkingWriter && linkingWriter.writeLn("Running Static Initializer: " + classInfo.className);
@@ -418,7 +423,8 @@ module J2ME {
 
   export function registerKlassSymbol(className: string) {
     linkingWriter && linkingWriter.writeLn("Registering Klass: " + className);
-    var mangledName = J2ME.C4.Backend.escapeString(className);
+    // TODO: This needs to be kept in sync to how mangleClass works.
+    var mangledName = "$" + J2ME.C4.Backend.escapeString(className);
     if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       return;
     }
@@ -439,11 +445,11 @@ module J2ME {
     }
   }
 
-  export function runtimeKlass(runtime: Runtime, klass: Klass): Klass {
-    assert(!klass.isRuntimeKlass);
+  export function getRuntimeKlass(runtime: Runtime, klass: Klass): RuntimeKlass {
+    assert(!(klass instanceof RuntimeKlass));
     assert(klass.classInfo.mangledName);
     var runtimeKlass = runtime[klass.classInfo.mangledName];
-    assert(runtimeKlass.isRuntimeKlass);
+    // assert(runtimeKlass instanceof RuntimeKlass);
     return runtimeKlass;
   }
 
@@ -604,14 +610,14 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    if (methodInfo.isStatic) {
+    // if (methodInfo.isStatic) {
       return jsGlobal[methodInfo.mangledClassAndMethodName];
-    } else {
-      if (klass.prototype.hasOwnProperty(methodInfo.mangledName)) {
-        return klass.prototype[methodInfo.mangledName];
-      }
-      return null;
-    }
+    //} else {
+    //  if (klass.prototype.hasOwnProperty(methodInfo.mangledName)) {
+    //    return klass.prototype[methodInfo.mangledName];
+    //  }
+    //  return null;
+    //}
   }
 
   function linkKlassMethods(klass: Klass) {
@@ -634,7 +640,6 @@ module J2ME {
           methodType = MethodType.Compiled;
           if (!traceWriter) {
             linkingWriter && linkingWriter.outdent();
-            continue;
           }
         } else {
           linkingWriter && linkingWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
@@ -711,7 +716,8 @@ module J2ME {
     if (superKlass) {
       if (isPrototypeOfFunctionMutable(klass)) {
         linkingWriter && linkingWriter.writeLn("Extending: " + klass + " -> " + superKlass);
-        (<any>Object).setPrototypeOf(klass.prototype, superKlass.prototype);
+        klass.prototype = Object.create(superKlass.prototype);
+        // (<any>Object).setPrototypeOf(klass.prototype, superKlass.prototype);
         assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype);
       } else {
           assert(!superKlass.superKlass, "Should not have a super-super-klass.");
@@ -855,6 +861,9 @@ module J2ME {
     var hashcode = "";
     if (value.__hashCode__) {
       hashcode = " 0x" + value.__hashCode__.toString(16).toUpperCase();
+    }
+    if (value instanceof Klasses.java.lang.String) {
+      return "\"" + value.str + "\"";
     }
     return "[" + value.klass.classInfo.className + hashcode + "]";
   }

@@ -6,7 +6,7 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
 
-  export var interpreterCounter = null; new Metrics.Counter(true);
+  export var interpreterCounter = new Metrics.Counter(true);
 
   function traceArrayStore(idx: number, array: any [], value: any) {
     traceWriter && traceWriter.writeLn(toDebugString(array) + "[" + idx + "] = " + toDebugString(value));
@@ -171,25 +171,28 @@ module J2ME {
       }
     }
 
+    var traceBytecodes = false;
     var traceSourceLocation = true;
     var lastSourceLocation;
 
     while (true) {
       var op: Bytecodes = frame.read8();
-      if (traceSourceLocation) {
-        if (frame.methodInfo) {
-          var sourceLocation = frame.methodInfo.getSourceLocationForBci(frame.bci - 1);
-          if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
-            traceWriter && traceWriter.greenLn(sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
-            lastSourceLocation = sourceLocation;
+      if (traceBytecodes) {
+        if (traceSourceLocation) {
+          if (frame.methodInfo) {
+            var sourceLocation = frame.methodInfo.getSourceLocationForBci(frame.bci - 1);
+            if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
+              traceWriter && traceWriter.greenLn(sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
+              lastSourceLocation = sourceLocation;
+            }
           }
         }
-      }
-      if (traceWriter) {
-        frame.trace(traceWriter);
+        if (traceWriter) {
+          frame.trace(traceWriter);
+        }
       }
 
-      interpreterCounter && interpreterCounter.count(Bytecodes[op]);
+      // interpreterCounter && interpreterCounter.count(Bytecodes[op]);
 
 
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.bci - 1) + " " + OPCODES[op] + " " + stack.join(","));
@@ -1013,7 +1016,6 @@ module J2ME {
         case Bytecodes.INVOKESPECIAL:
         case Bytecodes.INVOKESTATIC:
         case Bytecodes.INVOKEINTERFACE:
-          debugger;
           var startip: number = frame.bci - 1;
           var idx = frame.read16();
           if (op === 0xb9) {
