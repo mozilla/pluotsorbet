@@ -421,3 +421,46 @@ DumbPipe.registerOpener("camera", function(message, sender) {
     }
   };
 });
+
+function load(file, responseType) {
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", file, true);
+    xhr.responseType = responseType;
+    xhr.onload = function () {
+      resolve(xhr.response);
+    };
+    xhr.onerror = function() {
+      reject();
+    };
+    xhr.send(null);
+  });
+}
+
+DumbPipe.registerOpener("JARDownloader", function(message, sender) {
+  load(urlParams.downloadJAD, "text").then(function(data) {
+    var manifest = {};
+
+    data
+    .replace(/\r\n|\r/g, "\n")
+    .replace(/\n /g, "")
+    .split("\n")
+    .forEach(function(entry) {
+      if (entry) {
+        var keyval = entry.split(':');
+        manifest[keyval[0]] = keyval[1].trim();
+      }
+    });
+
+    var jarURL = manifest["MIDlet-Jar-URL"];
+
+    if (!jarURL.startsWith("http")) {
+      var jarName = jarURL.substring(jarURL.lastIndexOf("/") + 1);
+      jarURL = urlParams.downloadJAD.substring(0, urlParams.downloadJAD.lastIndexOf("/") + 1) + jarName;
+    }
+
+    load(jarURL, "arraybuffer").then(function(data) {
+      sender({ data: data });
+    });
+  });
+});

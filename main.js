@@ -136,6 +136,32 @@ if (urlParams.jad) {
   }));
 }
 
+if (urlParams.downloadJAD) {
+  loadingPromises.push(new Promise(function(resolve, reject) {
+    initFS.then(function() {
+      fs.exists("/app.jar", function(exists) {
+        if (exists) {
+          fs.open("/app.jar", function(fd) {
+            var data = fs.read(fd);
+            fs.close();
+            jvm.addPath("app.jar", data.buffer);
+            resolve();
+          });
+        } else {
+          var sender = DumbPipe.open("JARDownloader", {}, function(message) {
+            jvm.addPath("app.jar", message.data);
+
+            fs.create("/app.jar", new Blob([message.data]), function() {});
+
+            DumbPipe.close(sender);
+            resolve();
+          });
+        }
+      });
+    });
+  }));
+}
+
 if (MIDP.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
