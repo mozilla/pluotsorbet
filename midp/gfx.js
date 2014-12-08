@@ -81,16 +81,87 @@
         return swapRB(pixel) | 0xff000000;
     }
 
+    function ABGRToARGB(pixels, rgbData, width, height, offset, scanlength) {
+        var i = 0;
+        for (var y = 0; y < height; y++) {
+            var j = offset + y * scanlength;
+
+            for (var x = 0; x < width; x++) {
+                rgbData[j++] = swapRB(pixels[i++]);
+            }
+        }
+    }
+
+    function ABGRToARGB4444(pixels, rgbData, width, height, offset, scanlength) {
+        var i = 0;
+        for (var y = 0; y < height; y++) {
+            var j = offset + y * scanlength;
+
+            for (var x = 0; x < width; x++) {
+                var abgr = pixels[i++];
+                rgbData[j++] = (abgr & 0xF0000000) >>> 16 |
+                               (abgr & 0x000000F0) << 4 |
+                               (abgr & 0x0000F000) >> 8 |
+                               (abgr & 0x00F00000) >>> 20;
+            }
+        }
+    }
+
+    function ABGRToRGB565(pixels, rgbData, width, height, offset, scanlength) {
+        var i = 0;
+        for (var y = 0; y < height; y++) {
+            var j = offset + y * scanlength;
+
+            for (var x = 0; x < width; x++) {
+                var abgr = pixels[i++];
+                rgbData[j++] = (abgr & 0b000000000000000011111000) << 8 |
+                               (abgr & 0b000000001111110000000000) >>> 5 |
+                               (abgr & 0b111110000000000000000000) >>> 19;
+            }
+        }
+    }
+
     /**
      * Extract the image data from `context` and place it in `rgbData`.
      */
     function contextToRgbData(context, rgbData, offset, scanlength, x, y, width, height, converterFunc) {
         var pixels = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
+        converterFunc(pixels, rgbData, width, height, offset, scanlength);
+    }
 
+    function ARGBToABGR(pixels, rgbData, width, height, offset, scanlength) {
         var i = 0;
-        for (var y1 = y; y1 < y + height; y1++) {
-            for (var x1 = x; x1 < x + width; x1++) {
-                rgbData[offset + (x1 - x) + (y1 - y) * scanlength] = converterFunc(pixels[i++]);
+        for (var y = 0; y < height; ++y) {
+            var j = offset + y * scanlength;
+
+            for (var x = 0; x < width; ++x) {
+                pixels[i++] = swapRB(rgbData[j++]);
+            }
+        }
+    }
+
+    function ARGBTo1BGR(pixels, rgbData, width, height, offset, scanlength) {
+        var i = 0;
+        for (var y = 0; y < height; ++y) {
+            var j = offset + y * scanlength;
+
+            for (var x = 0; x < width; ++x) {
+                pixels[i++] = swapRB(rgbData[j++]) | 0xFF000000;
+            }
+        }
+    }
+
+    function ARGB4444ToABGR(pixels, rgbData, width, height, offset, scanlength) {
+        var i = 0;
+        for (var y = 0; y < height; ++y) {
+            var j = offset + y * scanlength;
+
+            for (var x = 0; x < width; ++x) {
+                var argb = rgbData[j++];
+                pixels[i++] = (argb & 0xF000) << 16 |
+                              (argb & 0x0F00) >>> 4 |
+                              (argb & 0x00F0) << 8 |
+                              (argb & 0x000F) << 20;
             }
         }
     }
@@ -104,14 +175,7 @@
         var imageData = context.createImageData(width, height);
         var pixels = new Uint32Array(imageData.data.buffer);
 
-        var i = 0;
-        for (var y = 0; y < height; ++y) {
-            var j = offset + y * scanlength;
-
-            for (var x = 0; x < width; ++x) {
-                pixels[i++] = converterFunc(rgbData[j++]);
-            }
-        }
+        converterFunc(pixels, rgbData, width, height, offset, scanlength);
 
         context.putImageData(imageData, 0, 0);
     }
@@ -197,12 +261,12 @@
     Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V",
     function(imageData, rgbData, width, height, processAlpha) {
         var context = createContext2d(width, height);
-        rgbDataToContext(context, rgbData, 0, width, processAlpha ? swapRB : swapRBAndSetAlpha);
+        rgbDataToContext(context, rgbData, 0, width, processAlpha ? ARGBToABGR : ARGBTo1BGR);
         setImageData(imageData, width, height, context);
     });
 
     Native.create("javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V", function(rgbData, offset, scanlength, x, y, width, height) {
-        contextToRgbData(convertNativeImageData(this), rgbData, offset, scanlength, x, y, width, height, swapRB);
+        contextToRgbData(convertNativeImageData(this), rgbData, offset, scanlength, x, y, width, height, ABGRToARGB);
     });
 
     Native.create("com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V", function(image) {
@@ -572,20 +636,9 @@
 
         var converterFunc = null;
         if (format == TYPE_USHORT_4444_ARGB) {
-            converterFunc = function(abgr) {
-                var a = (abgr & 0xF0000000) >>> 16;
-                var r = (abgr & 0x000000F0) << 4;
-                var g = (abgr & 0x0000F000) >> 8;
-                var b = (abgr & 0x00F00000) >>> 20;
-                return (a | r | g | b);
-            };
+            converterFunc = ABGRToARGB4444;
         } else if (format == TYPE_USHORT_565_RGB) {
-            converterFunc = function(abgr) {
-                var r = (abgr & 0b000000000000000011111000) << 8;
-                var g = (abgr & 0b000000001111110000000000) >>> 5;
-                var b = (abgr & 0b111110000000000000000000) >>> 19;
-                return (r | g | b);
-            };
+            converterFunc = ABGRToRGB565;
         } else {
             throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
         }
@@ -608,13 +661,7 @@
 
         var converterFunc = null;
         if (format == TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
-            converterFunc = function(argb) {
-                var a = (argb & 0xF000) << 16;
-                var r = (argb & 0x0F00) >>> 4;
-                var g = (argb & 0x00F0) << 8;
-                var b = (argb & 0x000F) << 20;
-                return (a | b | g | r);
-            };
+            converterFunc = ARGB4444ToABGR;
         } else {
             throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
         }
@@ -868,7 +915,7 @@
     Native.create("javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V",
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         var context = createContext2d(width, height);
-        rgbDataToContext(context, rgbData, offset, scanlength, processAlpha ? swapRB : swapRBAndSetAlpha);
+        rgbDataToContext(context, rgbData, offset, scanlength, processAlpha ? ARGBToABGR : ARGBTo1BGR);
         var g = this;
         withGraphics(g, function(c) {
             withClip(g, c, x, y, function(x, y) {
