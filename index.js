@@ -429,23 +429,36 @@ DumbPipe.registerOpener("notification", function(message, sender) {
     notification = null;
   }
 
-  //message.options.icon = URL.createObjectURL(new Blob([ new Uint8Array(message.icon) ], { type : message.mime_type }));
+  var img = new Image();
+  img.src = URL.createObjectURL(new Blob([ new Uint8Array(message.icon) ], { type : message.mime_type }));
+  img.onload = function() {
+    var width = Math.min(32, img.naturalWidth);
+    var height = Math.min(32, img.naturalHeight);
 
-  function permissionGranted() {
-    notification = new Notification(message.title, message.options);
-    notification.onshow = function() {
-      sender();
-    };
-  }
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, width, height);
 
-  if (Notification.permission === "granted") {
-    permissionGranted();
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission(function(permission) {
-      if (permission === "granted") {
-        permissionGranted();
-      }
-    });
+    message.options.icon = canvas.toDataURL();
+
+    function permissionGranted() {
+      notification = new Notification(message.title, message.options);
+      notification.onshow = function() {
+        sender({ type: "opened" });
+      };
+    }
+
+    if (Notification.permission === "granted") {
+      permissionGranted();
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission(function(permission) {
+        if (permission === "granted") {
+          permissionGranted();
+        }
+      });
+    }
   }
 
   return function(message) {
