@@ -350,8 +350,6 @@ module J2ME {
     export interface Isolate extends java.lang.Object {
       id: number;
       runtime: Runtime;
-      $com_sun_cldc_isolate_Isolate_mainClass: java.lang.String;
-      $com_sun_cldc_isolate_Isolate_mainArgs: java.lang.String [];
     }
   }
 
