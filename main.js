@@ -132,7 +132,7 @@ if (urlParams.jad) {
         var keyEnd = entry.indexOf(":");
         var key = entry.substring(0, keyEnd);
         var val = entry.substring(keyEnd + 1).trim();
-        manifest[key] = val;
+        MIDP.manifest[key] = val;
       }
     });
   }));
