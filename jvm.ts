@@ -61,8 +61,9 @@ module J2ME {
       ctx.execute();
 
       var args = J2ME.newStringArray(mainArgs.length);
-      for (var n = 0; n < mainArgs.length; ++n)
-        args[n] = mainArgs[n] ? util.newString(mainArgs[n]) : null;
+      for (var n = 0; n < mainArgs.length; ++n) {
+        args[n] = mainArgs[n];
+      }
 
       ctx.frames.push(new Frame(entryPoint, [ args ], 0));
       ctx.start();
