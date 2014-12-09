@@ -1163,7 +1163,7 @@ MIDP.ConnectionRegistry = {
     }
 };
 
-Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I", function(time, _) {
+Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I", function(time) {
     return new Promise(function(resolve, reject) {
         MIDP.ConnectionRegistry.waitForRegistration(function(id) {
             resolve(id);
@@ -1186,7 +1186,7 @@ Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/Str
     return 0;
 });
 
-Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J", function(jMidlet, jTime, _) {
+Native.create("com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J", function(jMidlet, jTime) {
     var time = jTime.toNumber(), midlet = util.decodeUtf8(jMidlet);
 
     var lastAlarm = 0;

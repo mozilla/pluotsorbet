@@ -5,11 +5,11 @@ Native.create("gnu/testlet/vm/NativeTest.getInt.()I", function() {
   return 0xFFFFFFFF;
 });
 
-Native.create("gnu/testlet/vm/NativeTest.getLongReturnLong.(J)J", function(val, _) {
+Native.create("gnu/testlet/vm/NativeTest.getLongReturnLong.(J)J", function(val) {
   return Long.fromNumber(40 + val.toNumber());
 });
 
-Native.create("gnu/testlet/vm/NativeTest.getLongReturnInt.(J)I", function(val, _) {
+Native.create("gnu/testlet/vm/NativeTest.getLongReturnInt.(J)I", function(val) {
   return 40 + val.toNumber();
 });
 

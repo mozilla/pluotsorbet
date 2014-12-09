@@ -937,7 +937,7 @@ Native.create("com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z", fun
     return true;
 });
 
-Native.create("com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V", function(handle, contentSize, _) {
+Native.create("com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V", function(handle, contentSize) {
     var player = Media.PlayerCache[handle];
     player.wholeContentSize = contentSize.toNumber();
 });

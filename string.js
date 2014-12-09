@@ -307,7 +307,7 @@ Override.create("java/lang/String.valueOf.(I)Ljava/lang/String;", function(n) {
   return n.toString();
 });
 
-Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(n, _) {
+Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(n) {
   // This function takes a dummy second argument, since we're taking a
   // Long and need to pop two items off the stack.
   return n.toString();
@@ -498,7 +498,7 @@ Override.create("java/lang/StringBuffer.append.(I)Ljava/lang/StringBuffer;", fun
   return stringBufferAppend.call(this, n + "");
 });
 
-Override.create("java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;", function(n, _) {
+Override.create("java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;", function(n) {
   return stringBufferAppend.call(this, n + "");
 });
 
@@ -595,7 +595,7 @@ Override.create("java/lang/StringBuffer.insert.(II)Ljava/lang/StringBuffer;", fu
   return stringBufferInsert.call(this, offset, n + "");
 });
 
-Override.create("java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;", function(offset, n, _) {
+Override.create("java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;", function(offset, n) {
   return stringBufferInsert.call(this, offset, n + "");
 });
 
