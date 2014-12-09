@@ -42,6 +42,8 @@
     }
 
     this.levelName = levelName;
+    this.thread = (typeof $ !== "undefined" ?
+                   String.fromCharCode.apply(null, $.ctx.thread["$java_lang_Thread_name_aC"]) : "no thread");
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
   }
@@ -50,7 +52,7 @@
 
     get message() {
       if (this._message === undefined) {
-        this._message = this.args.join(" ");
+        this._message = "[" + this.thread + "] " + this.args.join(" ");
       }
       return this._message;
     },
