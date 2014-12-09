@@ -255,7 +255,7 @@ Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(b, off, le
   return len;
 });
 
-Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(long, _) {
+Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(long) {
   var n = long.toNumber();
 
   if (this.pos + n > this.count) {

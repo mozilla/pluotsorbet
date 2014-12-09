@@ -82,6 +82,7 @@ module J2ME {
   var classpathOption: Options.Option;
   var callGraphOption: Options.Option;
   var classFilterOption: Options.Option;
+  var fileFilterOption: Options.Option;
   var debuggerOption: Options.Option;
   var releaseOption: Options.Option;
   var definitionOption: Options.Option;
@@ -96,7 +97,8 @@ module J2ME {
     callGraphOption = shellOptions.register(new Options.Option("cg", "callGraph", "string []", [], "Call Grpah Files"));
 
 
-    classFilterOption = shellOptions.register(new Options.Option("f", "filter", "string", ".*", "Compile Filter"));
+    classFilterOption = shellOptions.register(new Options.Option("cf", "classFilter", "string", ".*", "Compile Class Filter"));
+    fileFilterOption = shellOptions.register(new Options.Option("ff", "fileFilter", "string", ".*", "Compile File Filter"));
     debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
     releaseOption = shellOptions.register(new Options.Option("r", "release", "boolean", false, "Release mode"));
     definitionOption = shellOptions.register(new Options.Option("t", "definition", "boolean", false, "Emit Definition"));
@@ -174,14 +176,12 @@ module J2ME {
       }
     }
     CLASSES.initializeBuiltinClasses();
-    if (classFilterOption.value) {
-      if (verboseOption.value) {
-        writer.writeLn("Compiling Pattern: " + classFilterOption.value);
-      }
-      compile(jvm, classFilterOption.value, debuggerOption.value, definitionOption.value);
-      if (verboseOption.value) {
-        printResults();
-      }
+    if (verboseOption.value) {
+      writer.writeLn("Compiling Pattern: " + classFilterOption.value);
+    }
+    compile(jvm, classFilterOption.value, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    if (verboseOption.value) {
+      printResults();
     }
   }
 

@@ -3,7 +3,7 @@
 
 'use strict';
 
-Native.create("com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V", function(freq, longDuration, _) {
+Native.create("com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V", function(freq, longDuration) {
   // If method is called during a previously called vibration that has been
   // activated from this method, the previous vibration is stopped and the new
   // one is activated using the new set of parameters.

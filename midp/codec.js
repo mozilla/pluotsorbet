@@ -140,7 +140,7 @@ Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava
   this.encoder.put(tag, util.fromJavaString(name), util.fromJavaString(value));
 });
 
-Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V", function(tag, name, value, _) {
+Native.create("com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V", function(tag, name, value) {
   this.encoder.put(tag, util.fromJavaString(name), value.toNumber());
 });
 

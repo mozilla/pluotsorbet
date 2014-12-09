@@ -355,7 +355,7 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMNewObjectArray.prototype.compile = function (cx: Context): AST.Node {
-    return call(id("$NA"), [id(this.classInfo.mangledName), compileValue(this.length, cx)]);
+    return call(id("$NA"), [id(mangleClass(this.classInfo)), compileValue(this.length, cx)]);
   };
 
   IR.JVMStoreIndexed.prototype.compile = function (cx: Context): AST.Node {
@@ -645,6 +645,17 @@ module J2ME.C4.Backend {
 
   export function mangleClass(classInfo: ClassInfo) {
     if (classInfo instanceof PrimitiveClassInfo) {
+      switch (classInfo.mangledName) {
+        case "int":
+          return "Int32Array";
+        case "boolean":
+        case "byte":
+          return "Int8Array";
+          break;
+        case "char":
+          return "Int16Array";
+          break;
+      }
       return classInfo.mangledName;
     } else if (classInfo.isArrayClass) {
       return "$AK(" + mangleClass(classInfo.elementClass) + ")";
@@ -687,7 +698,11 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMNew.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.NewExpression(getRuntimeClass(this.classInfo), []);
+    var callee: AST.Node = id(mangleClass(this.classInfo));
+    if (true) {
+      callee = new AST.SequenceExpression([getRuntimeClass(this.classInfo), callee]);
+    }
+    return new AST.NewExpression(callee, []);
   };
 
   IR.JVMThrow.prototype.compile = function (cx: Context): AST.Node {

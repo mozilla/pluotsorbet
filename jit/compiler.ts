@@ -265,7 +265,7 @@ module J2ME {
       }
       try {
         if (emitter.debugInfo) {
-          writer.writeLn("// " + classInfo.className + "/" + method.name);
+          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.getSourceLocationForBci(0));
         }
         var mangledClassAndMethodName = mangleClassAndMethod(method);
         var compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
@@ -276,11 +276,11 @@ module J2ME {
           if (method.name === "<clinit>") {
             writer.writeLn(mangledClassName + ".staticConstructor = " + mangledClassAndMethodName);
           } else if (!method.isStatic) {
-            if (emitter.closure) {
-              writer.writeLn(mangledClassName + ".prototype[" + quote(mangledMethodName) + "] = " + mangledClassAndMethodName + ";");
-            } else {
-              writer.writeLn(mangledClassName + ".prototype." + mangledMethodName + " = " + mangledClassAndMethodName + ";");
-            }
+            //if (emitter.closure) {
+            //  writer.writeLn(mangledClassName + ".prototype[" + quote(mangledMethodName) + "] = " + mangledClassAndMethodName + ";");
+            //} else {
+            //  writer.writeLn(mangledClassName + ".prototype." + mangledMethodName + " = " + mangledClassAndMethodName + ";");
+            //}
             if (emitter.closure) {
               writer.writeLn("window[" + quote(mangledClassAndMethodName) + "] = " + mangledClassAndMethodName + ";");
             }
@@ -305,7 +305,7 @@ module J2ME {
     return compiledMethods;
   }
 
-  export function compile(jvm: any, classFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
+  export function compile(jvm: any, classFilter: string, fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
     var classFiles = CLASSES.classFiles;
     var ctx = new Context(runtime);
@@ -329,6 +329,9 @@ module J2ME {
         }
         try {
           var classInfo = CLASSES.loadClassFile(fileName);
+          if (classInfo.sourceFile && !classInfo.sourceFile.match(fileFilter)) {
+            return true;
+          }
           if (!classInfo.className.match(classFilter)) {
             return true;
           }

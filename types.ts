@@ -212,6 +212,7 @@ module J2ME {
     private static canonicalSignatureDescriptors: SignatureDescriptor [] = [];
 
     public typeDescriptors: TypeDescriptor [];
+    private _argumentSlotCount: number = -1;
 
     constructor(public value: string) {
       assert (!SignatureDescriptor.canonicalSignatureDescriptors[value]);
@@ -221,6 +222,33 @@ module J2ME {
 
     toString(): string {
       return this.value;
+    }
+
+
+    public hasTwoSlotArguments() {
+      return this.getArgumentCount() < this.getArgumentSlotCount();
+    }
+
+    /**
+     * Number of arguments, this may be less than the value returned by |getArgumentSlotCount|.
+     */
+    public getArgumentCount(): number {
+      return this.typeDescriptors.length - 1;
+    }
+
+    /**
+     * Number of slots consumed by the arguments.
+     */
+    public getArgumentSlotCount(): number {
+      if (this._argumentSlotCount < 0) {
+        var count = 0;
+        for (var i = 1; i < this.typeDescriptors.length; i++) {
+          var typeDescriptor = this.typeDescriptors[i];
+          count += isTwoSlot(typeDescriptor.kind) ? 2 : 1;
+        }
+        this._argumentSlotCount = count;
+      }
+      return this._argumentSlotCount;
     }
 
     public static makeSignatureDescriptor(value: string) {

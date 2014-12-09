@@ -1,4 +1,5 @@
 module J2ME {
+  import assert = Debug.assert;
   declare var VM;
   declare var Instrument;
   declare var setZeroTimeout;
@@ -63,6 +64,47 @@ module J2ME {
       return (x > 0x7fffffff) ? (x - 0x100000000) : x;
     }
 
+    /**
+     * Returns the |object| on which a call to the specified |methodInfo| would be
+     * called.
+     */
+    peekInvokeObject(methodInfo: MethodInfo): java.lang.Object {
+      release || assert(!methodInfo.isStatic);
+      var argumentSlotCount = methodInfo.signatureDescriptor.getArgumentSlotCount();
+      var i = this.stack.length - argumentSlotCount - 1;
+      release || assert (i >= 0);
+      release || assert (this.stack[i] !== undefined);
+      return this.stack[i];
+    }
+
+    popArguments(signatureDescriptor: SignatureDescriptor): any [] {
+      var stack = this.stack;
+      var typeDescriptors = signatureDescriptor.typeDescriptors;
+      var argumentSlotCount = signatureDescriptor.getArgumentSlotCount();
+      var args = new Array(signatureDescriptor.getArgumentCount());
+      for (var i = 1, j = stack.length - argumentSlotCount, k = 0; i < typeDescriptors.length; i++) {
+        var typeDescriptor = typeDescriptors[i];
+        args[k++] = stack[j++];
+        if (isTwoSlot(typeDescriptor.kind)) {
+          j++;
+        }
+      }
+      release || assert(j === stack.length && k === signatureDescriptor.getArgumentCount());
+      stack.length -= argumentSlotCount;
+      return args;
+    }
+
+    trace(writer: IndentingWriter) {
+      var localsStr = this.locals.map(function (x) {
+        return toDebugString(x);
+      }).join(", ");
+
+      var stackStr = this.stack.map(function (x) {
+        return toDebugString(x);
+      }).join(", ");
+
+      writer.writeLn(this.bci + " " + localsStr + " | " + stackStr);
+    }
   }
 
   export class Context {
