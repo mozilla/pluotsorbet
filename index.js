@@ -375,6 +375,7 @@ DumbPipe.registerOpener("camera", function(message, sender) {
     video.play();
   }, function(err) {
     console.log("Error: " + err);
+    sender({ type: "initerror", name: err.name, message: err.message });
   });
 
   return function(message) {
