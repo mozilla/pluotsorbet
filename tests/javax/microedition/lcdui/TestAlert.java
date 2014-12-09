@@ -8,55 +8,37 @@ import gnu.testlet.Testlet;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Canvas;
-import javax.microedition.lcdui.Display;
-import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Graphics;
 
 public class TestAlert extends Canvas implements Testlet {
     private native boolean isTextEditorReallyFocused();
-    private TestHarness th;
 
-    private void waitForScreen(Displayable screen) {
-        try {
-            do {
-                Thread.sleep(100);
-            } while (!screen.isShown());
-        } catch (InterruptedException e) {
-            th.fail("INTERRUPTED");
-        }
-    }
-
-    public void test(TestHarness harness) {
+    public void test(TestHarness th) {
         Alert alert = new Alert("Hello World", "Some text", null, AlertType.INFO);
         TextEditor textEditor = TextEditor.createTextEditor("Hello, world!", 20, 0, 100, 24);
-        th = harness;
-        Display display = th.getDisplay();
         textEditor.setParent(this);
 
-        display.setCurrent(this);
-        waitForScreen(this);
+        th.setScreenAndWait(this);
 
         textEditor.setFocus(true);
         th.check(textEditor.hasFocus(), "TextEditor gained focus");
         th.check(isTextEditorReallyFocused(), "TextEditor really gained focus");
 
-        display.setCurrent(alert);
-        waitForScreen(alert);
+        th.setScreenAndWait(alert);
+        int threshold = 1621;
         int numDifferent = th.compareScreenToReferenceImage("gfx/AlertTest.png");
-        th.check(numDifferent < 1621, "Screen must match");
+        th.check(numDifferent < threshold, "Threshold: " + threshold + ". Different: " + numDifferent);
         th.check(textEditor.hasFocus(), "TextEditor kept focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
 
-        display.setCurrent(this);
-        waitForScreen(this);
+        th.setScreenAndWait(this);
         textEditor.setFocus(true);
         th.check(textEditor.hasFocus(), "TextEditor maintained focus");
         th.check(isTextEditorReallyFocused(), "TextEditor really regained focus");
 
-        display.setCurrent(alert);
-        waitForScreen(alert);
+        th.setScreenAndWait(alert);
         numDifferent = th.compareScreenToReferenceImage("gfx/AlertTest.png");
-        th.check(numDifferent < 1621, "Screen must match");
+        th.check(numDifferent < threshold, "Threshold: " + threshold + ". Different: " + numDifferent);
         th.check(textEditor.hasFocus(), "TextEditor still has focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
     }

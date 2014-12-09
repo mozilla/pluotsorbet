@@ -3,7 +3,7 @@
 package gnu.testlet;
 
 import javax.microedition.lcdui.Display;
-import javax.microedition.lcdui.Screen;
+import javax.microedition.lcdui.Displayable;
 
 public abstract class TestHarness {
     public abstract void check(boolean ok);
@@ -139,9 +139,9 @@ public abstract class TestHarness {
         display = d;
     }
 
-    public void setScreenAndWait(Screen s) {
+    public void setScreenAndWait(Displayable s) {
         display.setCurrent(s);
-        while (s != display.getCurrent()) {
+        while (!s.isShown()) {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
