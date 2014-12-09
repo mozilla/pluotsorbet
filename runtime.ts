@@ -13,7 +13,7 @@ module J2ME {
 
 
   export var traceWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
-  export var linkingWriter = new IndentingWriter(false, IndentingWriter.stderr);
+  export var linkingWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {
     java: {
