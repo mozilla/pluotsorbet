@@ -32,8 +32,8 @@ module J2ME {
     }
 
     startIsolate(isolate: Isolate) {
-      var mainClass = fromJavaString(isolate.$com_sun_cldc_isolate_Isolate_mainClass).replace(/\./g, "/");
-      var mainArgs = isolate.$com_sun_cldc_isolate_Isolate_mainArgs.map(fromJavaString);
+      var mainClass = util.fromJavaString(isolate.klass.classInfo.getField("I._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
+      var mainArgs = isolate.klass.classInfo.getField("I._mainArgs.[Ljava/lang/String;").get(isolate);
       var runtime = new J2ME.Runtime(this);
       var ctx = new Context(runtime);
       var oldCtx = $.ctx;
@@ -61,8 +61,9 @@ module J2ME {
       ctx.execute();
 
       var args = J2ME.newStringArray(mainArgs.length);
-      for (var n = 0; n < mainArgs.length; ++n)
-        args[n] = mainArgs[n] ? util.newString(mainArgs[n]) : null;
+      for (var n = 0; n < mainArgs.length; ++n) {
+        args[n] = mainArgs[n];
+      }
 
       ctx.frames.push(new Frame(entryPoint, [ args ], 0));
       ctx.start();

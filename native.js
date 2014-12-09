@@ -708,8 +708,8 @@ Native.create("com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Lin
     var isolateId = ctx.runtime.isolate.id;
 
     for (var i = 0; i < links[isolateId].length; i++) {
-        var nativePointer = links[isolateId][i].$nativePointer;
-        linkArray[i].$nativePointer = nativePointer;
+        var nativePointer = links[isolateId][i].klass.classInfo.getField("I.nativePointer.I").get(links[isolateId][i]);
+        linkArray[i].klass.classInfo.getField("I.nativePointer.I").set(linkArray[i], nativePointer);
         linkArray[i].sender = links[isolateId][i].sender;
         linkArray[i].receiver = links[isolateId][i].receiver;
     }

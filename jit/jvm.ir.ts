@@ -669,7 +669,7 @@ module J2ME.C4.Backend {
   }
 
   export function mangleField(fieldInfo: FieldInfo) {
-    return "$" + escapeString(fieldInfo.classInfo.className) + escapeString(fieldInfo.name);
+    return "$" + escapeString(fieldInfo.classInfo.className + "_" + fieldInfo.name + "_" + fieldInfo.signature);
   }
 
   function getRuntimeClass(classInfo: ClassInfo) {
