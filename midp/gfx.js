@@ -121,14 +121,6 @@
         }
     }
 
-    /**
-     * Extract the image data from `context` and place it in `rgbData`.
-     */
-    function contextToRgbData(context, rgbData, offset, scanlength, x, y, width, height, converterFunc) {
-        var pixels = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
-        converterFunc(pixels, rgbData, width, height, offset, scanlength);
-    }
-
     function ARGBToABGR(argbData, abgrData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; ++y) {
@@ -266,7 +258,9 @@
     });
 
     Native.create("javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V", function(rgbData, offset, scanlength, x, y, width, height) {
-        contextToRgbData(convertNativeImageData(this), rgbData, offset, scanlength, x, y, width, height, ABGRToARGB);
+        var context = convertNativeImageData(this);
+        var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
+        ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     });
 
     Native.create("com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V", function(image) {
@@ -650,7 +644,9 @@
         }
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
-        contextToRgbData(convertNativeImageData(imageData), pixels, offset, scanlength, x, y, width, height, converterFunc);
+        var context = convertNativeImageData(imageData);
+        var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
+        converterFunc(abgrData, pixels, width, height, offset, scanlength);
     });
 
     Native.create("com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V",
