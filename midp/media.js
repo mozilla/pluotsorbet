@@ -361,8 +361,10 @@ ImagePlayer.prototype.realize = function() {
                 this.image.src = URL.createObjectURL(new Blob([ imgData ]));
             }).bind(this));
         } else {
+            this.image.onload = function() {
+                resolve(true);
+            };
             this.image.src = this.url;
-            resolve(true);
         }
     }).bind(this));
 }
