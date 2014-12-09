@@ -158,20 +158,6 @@
         }
     }
 
-    /**
-     * Insert `rgbData` into `context`.
-     */
-    function rgbDataToContext(context, rgbData, offset, scanlength, converterFunc) {
-        var width = context.canvas.width;
-        var height = context.canvas.height;
-        var imageData = context.createImageData(width, height);
-        var pixels = new Uint32Array(imageData.data.buffer);
-
-        converterFunc(rgbData, pixels, width, height, offset, scanlength);
-
-        context.putImageData(imageData, 0, 0);
-    }
-
     function createContext2d(width, height) {
         var canvas = document.createElement("canvas");
         canvas.width = width;
@@ -253,7 +239,14 @@
     Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V",
     function(imageData, rgbData, width, height, processAlpha) {
         var context = createContext2d(width, height);
-        rgbDataToContext(context, rgbData, 0, width, processAlpha ? ARGBToABGR : ARGBTo1BGR);
+        var ctxImageData = context.createImageData(width, height);
+        var abgrData = new Uint32Array(ctxImageData.data.buffer);
+
+        var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
+        converterFunc(rgbData, abgrData, width, height, 0, width);
+
+        context.putImageData(ctxImageData, 0, 0);
+
         setImageData(imageData, width, height, context);
     });
 
@@ -665,7 +658,13 @@
         var graphics = this.class.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
 
         var context = createContext2d(width, height);
-        rgbDataToContext(context, pixels, offset, scanlength, converterFunc);
+        var imageData = context.createImageData(width, height);
+        var abgrData = new Uint32Array(imageData.data.buffer);
+
+        converterFunc(pixels, abgrData, width, height, offset, scanlength);
+
+        context.putImageData(imageData, 0, 0);
+
         withGraphics(graphics, function(c) {
             withClip(graphics, c, x, y, function(x, y) {
                 c.drawImage(context.canvas, x, y);
@@ -911,7 +910,14 @@
     Native.create("javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V",
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         var context = createContext2d(width, height);
-        rgbDataToContext(context, rgbData, offset, scanlength, processAlpha ? ARGBToABGR : ARGBTo1BGR);
+        var imageData = context.createImageData(width, height);
+        var abgrData = new Uint32Array(imageData.data.buffer);
+
+        var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
+        converterFunc(rgbData, abgrData, width, height, offset, scanlength);
+
+        context.putImageData(imageData, 0, 0);
+
         var g = this;
         withGraphics(g, function(c) {
             withClip(g, c, x, y, function(x, y) {
