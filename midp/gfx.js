@@ -898,6 +898,7 @@
         this.textEditorId = ++textEditorId;
         this.textEditor = TextEditorProvider.createEditor(constraints);
         this.visible = false;
+        this.focused = false;
         this.backgroundColor = 0xFFFFFFFF | 0; // opaque white
         this.foregroundColor = 0xFF000000 | 0; // opaque black
         this.textEditor.setStyle("border", "none");
@@ -950,26 +951,6 @@
         this.textEditor.setParent(null);
     });
 
-    var currentlyFocusedTextEditor;
-    Native.create("javax/microedition/lcdui/Display.unfocusTextEditorForScreenChange.()V", function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-            currentlyFocusedTextEditor = null;
-        }
-    });
-
-    Native.create("javax/microedition/lcdui/Display.unfocusTextEditorForAlert.()V", function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-        }
-    });
-
-    Native.create("javax/microedition/lcdui/Display.refocusTextEditorAfterAlert.()V", function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.focus();
-        }
-    });
-
     Native.create("com/nokia/mid/ui/CanvasItem.setSize.(II)V", function(width, height) {
         this.textEditor.setStyle("width", width + "px");
         this.textEditor.setStyle("height", height + "px");
@@ -1017,19 +998,17 @@
         return this.textEditor.getConstraints();
     });
 
-    Native.create("com/nokia/mid/ui/TextEditor.setFocus.(Z)V", function(shouldFocus) {
-        if (shouldFocus && (currentlyFocusedTextEditor != this.textEditor)) {
+    Native.create("com/nokia/mid/ui/TextEditor.setFocus.(Z)V", function(focused) {
+        if (focused && !this.focused) {
             this.textEditor.focus();
-            currentlyFocusedTextEditor = this.textEditor;
-        } else if (!shouldFocus && (currentlyFocusedTextEditor == this.textEditor)) {
+        } else if (!focused && this.focused) {
             this.textEditor.blur();
-            currentlyFocusedTextEditor = null;
         }
-        this.focused = shouldFocus;
+        this.focused = focused;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.hasFocus.()Z", function() {
-        return (this.textEditor == currentlyFocusedTextEditor);
+        return this.focused;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.setCaret.(I)V", function(index) {

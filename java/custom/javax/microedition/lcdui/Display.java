@@ -1943,7 +1943,6 @@ public class Display {
      *
      * @param da The <code>Displayable</code> object whose LF to make current
      */
-    private DisplayableLF lastNonAlertScreen;
     void callScreenChange(Displayable da) {
 
         // Assert (da != null)
@@ -1971,16 +1970,6 @@ public class Display {
 
             if (oldCurrent != null) {
                 oldCurrent.lSetDisplay(null);
-            }
-
-            if (oldCurrent instanceof CanvasLF) {
-                if (newCurrent instanceof AlertLF) {
-                    lastNonAlertScreen = oldCurrent;
-                    unfocusTextEditorForAlert();
-                } else {
-                    lastNonAlertScreen = null;
-                    unfocusTextEditorForScreenChange();
-                }
             }
 
             // Pre-grant the new current with access to this Display
@@ -2043,12 +2032,6 @@ public class Display {
             // Switch to new current screen
             current = newCurrent;
             transitionCurrent = null;
-
-            if (oldCurrent instanceof AlertLF &&
-                newCurrent instanceof CanvasLF &&
-                lastNonAlertScreen == newCurrent) {
-                refocusTextEditorAfterAlert();
-            }
 
             if (!hasForegroundCopy) {
                 return;
@@ -2515,10 +2498,6 @@ public class Display {
 /*
  * ************* private methods
  */
-
-    private native void unfocusTextEditorForScreenChange();
-    private native void unfocusTextEditorForAlert();
-    private native void refocusTextEditorAfterAlert();
 
      /**
      * Control the drawing of the trusted <code>MIDlet<code> icon in native.
