@@ -320,7 +320,8 @@ module J2ME {
         var ctx = obj[queue].pop();
         if (!ctx)
           continue;
-        callback(ctx);
+        // Wait until next tick, so that we are sure to notify all waiting.
+        (<any>window).setZeroTimeout(callback.bind(null, ctx));
         if (!notifyAll)
           break;
       }

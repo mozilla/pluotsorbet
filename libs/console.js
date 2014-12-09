@@ -42,6 +42,8 @@
     }
 
     this.levelName = levelName;
+    this.thread = (typeof $ !== "undefined" ?
+                   String.fromCharCode.apply(null, $.ctx.thread["$java_lang_Thread_name_aC"]) : "no thread");
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
   }
@@ -50,7 +52,7 @@
 
     get message() {
       if (this._message === undefined) {
-        this._message = this.args.join(" ");
+        this._message = "[" + this.thread + "] " + this.args.join(" ");
       }
       return this._message;
     },
@@ -101,6 +103,8 @@
     this.currentFilterText = "";
     window.addEventListener(
       'console-filters-changed', this.onFiltersChanged.bind(this));
+    window.addEventListener(
+      'console-clear', this.onClear.bind(this));
   }
 
   PageConsole.prototype = {
@@ -129,6 +133,11 @@
       }, this);
       this.el.innerHTML = "";
       this.el.appendChild(fragment);
+    },
+
+    onClear: function() {
+      this.items = [];
+      this.el.innerHTML = "";
     }
 
   };
@@ -220,6 +229,10 @@
   var logLevelSelect = document.querySelector('#loglevel');
   var consoleFilterTextInput = document.querySelector('#console-filter-input');
   var autoScrollCheckbox = document.querySelector('#auto-scroll');
+
+  document.querySelector('#console-clear').addEventListener('click', function() {
+    window.dispatchEvent(new CustomEvent('console-clear'));
+  });
 
   function updateFilters() {
     minLogLevel = logLevelSelect.value;
