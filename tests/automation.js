@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 35000;
+casper.options.waitTimeout = 38000;
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
@@ -38,11 +38,27 @@ var gfxTests = [
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
-  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 0 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1329 },
+  { name: "gfx/DirectUtilsClipAfter", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipAfterWithNormalImage", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBefore", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
+  { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+  { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
+  { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
+  { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
+  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferent: 327 },
+  { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
+  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
+  { name: "gfx/RectAfterText", maxDifferent: 637 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71145 },
+  { name: "pass", number: 71194 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
@@ -93,9 +109,9 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/tests/fstests.html")
+    .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 126 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 129 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
@@ -143,7 +159,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name + "&jars=tests/tests.jar")
+        .thenOpen("http://localhost:8000/index.html?fontSize=10&main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name + "&jars=tests/tests.jar")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {

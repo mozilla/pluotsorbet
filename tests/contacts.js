@@ -36,14 +36,35 @@ var fakeContacts = [{
   },],
 },];
 
-// Override the regular "contacts" registration with our fake one.
-DumbPipe.registerOpener("contacts", function(message, sender) {
-  fakeContacts.forEach(function(contact) {
-    window.setTimeout(function() {
-      sender(contact);
-    }, 0);
-  });
-  window.setTimeout(function() {
-    sender(null);
-  }, 0);
-});
+// Turn the contact object into a mozContact to make the testing
+// environment more similar to reality.
+function toMozContact(fakeContact) {
+  var contact = new mozContact();
+
+  for (var attr in fakeContact) {
+    if (fakeContact.hasOwnProperty(attr)) {
+      contact[attr] = fakeContact[attr];
+    }
+  }
+
+  return contact;
+}
+
+navigator.mozContacts = {
+  getAll: function() {
+    var req = {};
+
+    var contacts = fakeContacts.slice(0);
+
+    req.continue = function() {
+      setZeroTimeout(function() {
+        req.result = (contacts.length > 0) ? toMozContact(contacts.shift()) : null;
+        req.onsuccess();
+      });
+    };
+
+    req.continue();
+
+    return req;
+  }
+};

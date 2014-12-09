@@ -87,11 +87,16 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             // Check content type.
             th.check(player.getContentType(), "audio/x-wav");
 
-            // Sleep 100 mili seconds and check if the media time is around the
-            // time interval slept.
+            // Sleep 100 milliseconds and check if the change in media time
+            // is around the time interval slept. We calculate the actual time
+            // slept because it could be much different from the amount we
+            // intend to sleep (if another thread hogs the CPU in the meantime).
+            long currentTimeBeforeSleep = System.currentTimeMillis();
+            long mediaTimeBeforeSleep = player.getMediaTime() / 1000;
             Thread.sleep(100);
-            long mediaTime = player.getMediaTime() / 1000;
-            th.check(Math.abs(mediaTime - 100) < TIME_TOLERANCE);
+            long actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
+            long mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
+            th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
 
             // Pause
             player.stop();
@@ -101,9 +106,12 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
 
             // Resume
             player.start();
+            currentTimeBeforeSleep = System.currentTimeMillis();
+            mediaTimeBeforeSleep = player.getMediaTime() / 1000;
             Thread.sleep(100);
-            long m = player.getMediaTime() / 1000;
-            th.check(Math.abs(m - mediaTime - 100) < TIME_TOLERANCE);
+            actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
+            mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
+            th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
 
             // Check duration
             th.check(player.getDuration(), 500000);
