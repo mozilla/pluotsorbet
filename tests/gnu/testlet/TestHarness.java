@@ -1,4 +1,9 @@
+/* vim: set filetype=java shiftwidth=4 tabstop=8 autoindent cindent expandtab : */
+
 package gnu.testlet;
+
+import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Screen;
 
 public abstract class TestHarness {
     public abstract void check(boolean ok);
@@ -125,4 +130,28 @@ public abstract class TestHarness {
         setNote(note);
         todo(result);
     }
+
+    public Display getDisplay() {
+        return display;
+    }
+
+    public TestHarness(Display d) {
+        display = d;
+    }
+
+    public void setScreenAndWait(Screen s) {
+        display.setCurrent(s);
+        while (s != display.getCurrent()) {
+            try {
+                Thread.sleep(25);
+            } catch (InterruptedException e) {
+                fail("INTERRUPTED");
+                break;
+            }
+        }
+    }
+
+    public native int compareScreenToReferenceImage(String referenceImagePath);
+
+    private Display display;
 }
