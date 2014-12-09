@@ -81,25 +81,25 @@
         return swapRB(pixel) | 0xff000000;
     }
 
-    function ABGRToARGB(pixels, rgbData, width, height, offset, scanlength) {
+    function ABGRToARGB(abgrData, argbData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; y++) {
             var j = offset + y * scanlength;
 
             for (var x = 0; x < width; x++) {
-                rgbData[j++] = swapRB(pixels[i++]);
+                argbData[j++] = swapRB(abgrData[i++]);
             }
         }
     }
 
-    function ABGRToARGB4444(pixels, rgbData, width, height, offset, scanlength) {
+    function ABGRToARGB4444(abgrData, argbData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; y++) {
             var j = offset + y * scanlength;
 
             for (var x = 0; x < width; x++) {
-                var abgr = pixels[i++];
-                rgbData[j++] = (abgr & 0xF0000000) >>> 16 |
+                var abgr = abgrData[i++];
+                argbData[j++] = (abgr & 0xF0000000) >>> 16 |
                                (abgr & 0x000000F0) << 4 |
                                (abgr & 0x0000F000) >> 8 |
                                (abgr & 0x00F00000) >>> 20;
@@ -107,13 +107,13 @@
         }
     }
 
-    function ABGRToRGB565(pixels, rgbData, width, height, offset, scanlength) {
+    function ABGRToRGB565(abgrData, rgbData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; y++) {
             var j = offset + y * scanlength;
 
             for (var x = 0; x < width; x++) {
-                var abgr = pixels[i++];
+                var abgr = abgrData[i++];
                 rgbData[j++] = (abgr & 0b000000000000000011111000) << 8 |
                                (abgr & 0b000000001111110000000000) >>> 5 |
                                (abgr & 0b111110000000000000000000) >>> 19;
@@ -129,36 +129,36 @@
         converterFunc(pixels, rgbData, width, height, offset, scanlength);
     }
 
-    function ARGBToABGR(pixels, rgbData, width, height, offset, scanlength) {
+    function ARGBToABGR(argbData, abgrData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
 
             for (var x = 0; x < width; ++x) {
-                pixels[i++] = swapRB(rgbData[j++]);
+                abgrData[i++] = swapRB(argbData[j++]);
             }
         }
     }
 
-    function ARGBTo1BGR(pixels, rgbData, width, height, offset, scanlength) {
+    function ARGBTo1BGR(argbData, abgrData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
 
             for (var x = 0; x < width; ++x) {
-                pixels[i++] = swapRB(rgbData[j++]) | 0xFF000000;
+                abgrData[i++] = swapRB(argbData[j++]) | 0xFF000000;
             }
         }
     }
 
-    function ARGB4444ToABGR(pixels, rgbData, width, height, offset, scanlength) {
+    function ARGB4444ToABGR(argbData, abgrData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; ++y) {
             var j = offset + y * scanlength;
 
             for (var x = 0; x < width; ++x) {
-                var argb = rgbData[j++];
-                pixels[i++] = (argb & 0xF000) << 16 |
+                var argb = argbData[j++];
+                abgrData[i++] = (argb & 0xF000) << 16 |
                               (argb & 0x0F00) >>> 4 |
                               (argb & 0x00F0) << 8 |
                               (argb & 0x000F) << 20;
@@ -175,7 +175,7 @@
         var imageData = context.createImageData(width, height);
         var pixels = new Uint32Array(imageData.data.buffer);
 
-        converterFunc(pixels, rgbData, width, height, offset, scanlength);
+        converterFunc(rgbData, pixels, width, height, offset, scanlength);
 
         context.putImageData(imageData, 0, 0);
     }
