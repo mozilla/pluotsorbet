@@ -927,3 +927,66 @@ Native.create("com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I", function(cbu
 
   return outputCount;
 });
+
+Native.create("com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V", function(content) {
+    var fileName = util.fromJavaString(content);
+
+    var ext = fileName.split('.').pop().toLowerCase();
+    // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#Supported_image_formats
+    if (["jpg", "jpeg", "gif", "apng", "png", "bmp", "ico"].indexOf(ext) == -1) {
+        console.error("File not supported: " + fileName);
+        throw new JavaException("java/lang/Exception", "File not supported: " + fileName);
+    }
+
+    return new Promise(function(resolve, reject) {
+        // `fileName` is supposed to be a full path, but we don't support
+        // partition, e.g. `C:` or `E:` etc, so the `fileName` we got here
+        // is something like: `Photos/sampleImage.jpg`, we need to prepend
+        // the root dir to make sure it's valid.
+        fileName = "/" + fileName;
+        fs.open(fileName, function(fd) {
+            if (fd == -1) {
+                console.error("File not found: " + fileName);
+                reject(new JavaException("java/lang/Exception", "File not found: " + fileName));
+                return;
+            }
+
+            var maskId = "image-launcher";
+            var mask = document.getElementById(maskId);
+
+            function _revokeImageURL() {
+                URL.revokeObjectURL(/url\((.+)\)/ig.exec(mask.style.backgroundImage)[1]);
+            }
+
+            if (mask) {
+                _revokeImageURL();
+            } else {
+                mask = document.createElement("div");
+                mask.id = maskId;
+                mask.style.position = "absolute";
+                mask.style.top = 0;
+                mask.style.left = 0;
+                mask.style.height = "100%";
+                mask.style.width = "100%";
+                mask.style.backgroundColor = "#000";
+                mask.style.backgroundPosition = "center center";
+                mask.style.backgroundRepeat = "no-repeat";
+                mask.style.backgroundSize = "contain";
+
+                mask.onclick = mask.ontouchstart = function() {
+                    _revokeImageURL();
+                    mask.parentNode.removeChild(mask);
+                };
+
+                document.getElementById("display").appendChild(mask);
+            }
+
+            mask.style.backgroundImage = "url(" +
+              URL.createObjectURL(new Blob([fs.read(fd)])) + ")";
+
+            fs.close(fd);
+            resolve();
+        });
+    });
+}, true);
+

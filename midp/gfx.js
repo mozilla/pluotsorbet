@@ -308,7 +308,10 @@ var currentlyFocusedTextEditor;
             var imgData = img.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(img),
                 c = imgData.nativeImageData;
         }
+
+        c.save();
         cb(c);
+        c.restore();
     }
 
     function withClip(g, c, x, y, cb) {
@@ -319,15 +322,17 @@ var currentlyFocusedTextEditor;
             clipped = g.class.getField("I.clipped.Z").get(g),
             transX = g.class.getField("I.transX.I").get(g),
             transY = g.class.getField("I.transY.I").get(g);
-        c.save();
+
         if (clipped) {
             c.beginPath();
             c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
             c.clip();
         }
-        c.translate(transX, transY);
+
+        x += transX;
+        y += transY;
+
         cb(x, y);
-        c.restore();
     }
 
     function withAnchor(g, c, anchor, x, y, w, h, cb) {
@@ -383,10 +388,8 @@ var currentlyFocusedTextEditor;
 
     function withPixel(g, c, cb) {
         var pixel = g.class.getField("I.pixel.I").get(g);
-        c.save();
         c.fillStyle = c.strokeStyle = abgrIntToCSS(pixel);
         cb();
-        c.restore();
     }
 
     /**
@@ -445,14 +448,13 @@ var currentlyFocusedTextEditor;
      */
     function withOpaquePixel(g, c, cb) {
         var pixel = g.class.getField("I.pixel.I").get(g);
-        c.save();
+
         var b = (pixel >> 16) & 0xff;
         var g = (pixel >> 8) & 0xff;
         var r = pixel & 0xff;
         var style = "rgba(" + r + "," + g + "," + b + "," + 1 + ")";
         c.fillStyle = c.strokeStyle = style;
         cb();
-        c.restore();
     }
 
     function withSize(dx, dy, cb) {

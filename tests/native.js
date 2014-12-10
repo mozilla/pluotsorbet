@@ -119,3 +119,7 @@ Native.create("gnu/testlet/TestHarness.compareScreenToReferenceImage.(Ljava/lang
     };
   });
 }, true);
+
+Native.create("com/nokia/mid/impl/jms/core/TestLauncher.checkImageModalDialog.()Z", function() {
+  return document.getElementById("image-launcher") != null;
+});
