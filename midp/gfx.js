@@ -156,9 +156,14 @@
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
                 setImageData(imageData, img.naturalWidth, img.naturalHeight, img);
+                convertNativeImageData(imageData);
+                URL.revokeObjectURL(img.src);
+                img.src = '';
                 resolve();
             }
             img.onerror = function(e) {
+                URL.revokeObjectURL(img.src);
+                img.src = '';
                 reject(new JavaException("java/lang/IllegalArgumentException", "error decoding image"));
             }
         });
@@ -180,7 +185,8 @@
             context.rotate(1.5 * Math.PI);
         }
 
-        context.drawImage(dataSource.nativeImageData, x, y, width, height, 0, 0, width, height);
+        var imgdata = dataSource.nativeImageData.getImageData(x, y, width, height);
+        context.putImageData(imgdata, 0, 0);
 
         setImageData(dataDest, width, height, context);
         dataDest.class.getField("I.isMutable.Z").set(dataDest, isMutable);
