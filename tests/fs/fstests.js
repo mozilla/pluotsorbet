@@ -838,6 +838,22 @@ tests.push(function() {
   });
 });
 
+tests.push(function() {
+  fs.addTransientPath("/transient-path");
+  fs.create("/transient-path", new Blob(), function(created) {
+    fs.open("/transient-path", function(fd) {
+      fs.write(fd, new TextEncoder().encode("marco"));
+      fs.close(fd);
+      fs.purgeStore(function() {
+        fs.exists("/transient-path", function(exists) {
+          is(exists, false, "transient file doesn't exist after purge");
+          next();
+        });
+      });
+    });
+  });
+});
+
 fs.init(function() {
   fs.clear(function() {
     next();
