@@ -100,9 +100,9 @@
             for (var x = 0; x < width; x++) {
                 var abgr = abgrData[i++];
                 argbData[j++] = (abgr & 0xF0000000) >>> 16 |
-                               (abgr & 0x000000F0) << 4 |
-                               (abgr & 0x0000F000) >> 8 |
-                               (abgr & 0x00F00000) >>> 20;
+                                (abgr & 0x000000F0) << 4 |
+                                (abgr & 0x0000F000) >> 8 |
+                                (abgr & 0x00F00000) >>> 20;
             }
         }
     }
@@ -151,9 +151,9 @@
             for (var x = 0; x < width; ++x) {
                 var argb = argbData[j++];
                 abgrData[i++] = (argb & 0xF000) << 16 |
-                              (argb & 0x0F00) >>> 4 |
-                              (argb & 0x00F0) << 8 |
-                              (argb & 0x000F) << 20;
+                                (argb & 0x0F00) >>> 4 |
+                                (argb & 0x00F0) << 8 |
+                                (argb & 0x000F) << 20;
             }
         }
     }
