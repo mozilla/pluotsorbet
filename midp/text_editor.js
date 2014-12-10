@@ -47,7 +47,7 @@ var TextEditorProvider = (function() {
             }
 
             this.textEditorElem.oninput = function() {
-                this.content = this.textEditorElem.value;
+                this.content = this.textEditorElem.innerHTML;
                 this.oninputCallback && this.oninputCallback();
             }.bind(this);
 
@@ -64,7 +64,7 @@ var TextEditorProvider = (function() {
                 }
             }
 
-            this.textEditorElem.value = this.content || '';
+            this.textEditorElem.innerHTML = this.content || '';
             if (this.selectionRange) {
                 this.textEditorElem.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
                 delete this.selectionRange;
@@ -100,7 +100,7 @@ var TextEditorProvider = (function() {
                 return;
             }
 
-            this.textEditorElem.value = content;
+            this.textEditorElem.innerHTML = content;
         },
 
         focus: function() {
@@ -145,7 +145,8 @@ var TextEditorProvider = (function() {
 
         getSelectionStart: function() {
             if (this.textEditorElem) {
-                return this.textEditorElem.selectionStart;
+                //return this.textEditorElem.selectionStart;
+                return 0;
             }
 
             return 0;
@@ -155,7 +156,7 @@ var TextEditorProvider = (function() {
             if (!this.textEditorElem) {
                 this.selectionRange = [from, to];
             } else {
-                this.textEditorElem.setSelectionRange(from, to);
+                //this.textEditorElem.setSelectionRange(from, to);
             }
         },
 
@@ -186,7 +187,9 @@ var TextEditorProvider = (function() {
     function TextAreaEditor() { }
     TextAreaEditor.prototype = extendsObject({
         createTextEditorElem: function() {
-            this.textEditorElem = document.createElement('textarea');
+            this.textEditorElem = document.createElement('div');
+            this.textEditorElem.contentEditable = true;
+            this.setStyle('word-break', 'break-all');
         }
     }, CommonEditorPrototype);
 
@@ -325,7 +328,7 @@ var TextEditorProvider = (function() {
         },
 
         setSelectionRange: function(from, to) {
-            this.textEditor.setSelectionRange(from, to);
+            //this.textEditor.setSelectionRange(from, to);
         },
 
         setAttribute: function(attrName, value) {

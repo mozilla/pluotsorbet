@@ -933,6 +933,7 @@
         this.textEditor.setStyle("position", "absolute");
         this.textEditor.setVisible(false);
         this.textEditor.oninput(function(e) {
+            console.log("ON INPUT");
             wakeTextEditorThread(this.textEditorId);
         }.bind(this));
         return textEditorId;

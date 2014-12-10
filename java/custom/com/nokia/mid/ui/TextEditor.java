@@ -17,6 +17,7 @@ class TextEditorThread implements Runnable {
     public void run() {
         while (true) {
             sleep();
+            System.out.println("WAKE UP");
             int dirty = getNextDirtyEditor();
             TextEditor t = (TextEditor)listeners.get("" + dirty);
             t.myListener.inputAction(t, TextEditorListener.ACTION_CONTENT_CHANGE);
@@ -104,11 +105,16 @@ public class TextEditor extends CanvasItem {
     public int getContentHeight() {
         System.out.println("TextEditor::getContentHeight needs a more correct implementation");
         int lineHeight = getFont().getHeight();
+        System.out.println("PORCO DIO");
         int numLines = 1;
+
+        System.out.println("CONTENT: " + getContent());
 
         if (isMultiline()) {
             String content = getContent();
+            System.out.println(content);
             for (int i = 0; i < content.length(); i++) {
+                System.out.println(content.charAt(i));
                 if (content.charAt(i) == '\n') {
                     numLines++;
                 }
