@@ -23,6 +23,9 @@ public class IndicatorManager {
     }
 
     public int appendIndicator(Indicator indicator, boolean paramBoolean) {
+        if (paramBoolean) {
+            System.out.println("IndicatorManager.appendIndicator(L...Indicator;Z)I unexpected value");
+        }
         return 0;
     }
 }

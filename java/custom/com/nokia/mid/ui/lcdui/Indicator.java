@@ -23,6 +23,9 @@ public class Indicator {
     Image image;
 
     public Indicator(int aInt, Image aImage) {
+        if (aInt != 0) {
+          System.out.println("Indicator(IL...Image;) unexpected value (" + aInt + ", " + aImage + ")");
+        }
         setIcon(aImage);
     }
 
