@@ -129,25 +129,6 @@
         imageData.nativeImageData = data;
     }
 
-    /**
-     * Ensure the nativeImageData of the given image points to a
-     * Canvas Context2D, converting (and saving) it if necessary.
-     *
-     * @return {CanvasRenderingContext2D} context
-     */
-    function convertNativeImageData(imageData) {
-        var data = imageData.nativeImageData;
-
-        if (!(data instanceof CanvasRenderingContext2D)) {
-            // Assume it's an image.
-            var context = createContext2d(data.width, data.height);
-            context.drawImage(data, 0, 0);
-            imageData.nativeImageData = data = context;
-        }
-
-        return data;
-    }
-
     Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V",
     function(imageData, bytes, offset, length) {
         return new Promise(function(resolve, reject) {
@@ -155,8 +136,10 @@
             var img = new Image();
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
-                setImageData(imageData, img.naturalWidth, img.naturalHeight, img);
-                convertNativeImageData(imageData);
+                var context = createContext2d(img.width, img.height);
+                context.drawImage(img, 0, 0);
+                setImageData(imageData, img.naturalWidth, img.naturalHeight, context);
+
                 URL.revokeObjectURL(img.src);
                 img.src = '';
                 resolve();
@@ -208,7 +191,7 @@
     });
 
     Native.create("javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V", function(rgbData, offset, scanlength, x, y, width, height) {
-        contextToRgbData(convertNativeImageData(this), rgbData, offset, scanlength, x, y, width, height, swapRB);
+        contextToRgbData(this.nativeImageData, rgbData, offset, scanlength, x, y, width, height, swapRB);
     });
 
     Native.create("com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V", function(image) {
@@ -603,7 +586,7 @@
         }
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
-        contextToRgbData(convertNativeImageData(imageData), pixels, offset, scanlength, x, y, width, height, converterFunc);
+        contextToRgbData(imageData.nativeImageData, pixels, offset, scanlength, x, y, width, height, converterFunc);
     });
 
     Native.create("com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V",
