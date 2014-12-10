@@ -47,7 +47,7 @@ var TextEditorProvider = (function() {
             }
 
             this.textEditorElem.oninput = function() {
-                this.content = this.textEditorElem.innerHTML;
+                this.content = this.textEditorElem.textContent;
                 this.oninputCallback && this.oninputCallback();
             }.bind(this);
 
@@ -64,7 +64,7 @@ var TextEditorProvider = (function() {
                 }
             }
 
-            this.textEditorElem.innerHTML = this.content || '';
+            this.textEditorElem.textContent = this.content || '';
             if (this.selectionRange) {
                 this.textEditorElem.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
                 delete this.selectionRange;
@@ -100,7 +100,7 @@ var TextEditorProvider = (function() {
                 return;
             }
 
-            this.textEditorElem.innerHTML = content;
+            this.textEditorElem.textContent = content;
         },
 
         focus: function() {
