@@ -75,3 +75,7 @@ Native.create("com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V", function(
 Native.create("com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V", function() {
   DumbPipe.open("showKeyboard", null, function(message) {});
 });
+
+Native.create("com/nokia/mid/impl/jms/core/TestLauncher.checkImageModalDialog.()Z", function() {
+  return document.getElementById("image-launcher") != null;
+});

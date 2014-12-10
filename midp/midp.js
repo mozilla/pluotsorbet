@@ -754,8 +754,8 @@ Native.create("com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/Strin
 });
 
 Native.create("javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z", function(imageData, suiteId, fileName) {
-    console.warn("SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(L...ImageData;IL...String;)Z " +
-                 "not implemented (" + imageData + ", " + suiteId + ", " + util.fromJavaString(fileName) + ")");
+    // We're not implementing the cache because looks like it isn't used much.
+    // In a MIDlet I've been testing for a few minutes, there's been only one hit.
     return false;
 });
 
