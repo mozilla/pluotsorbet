@@ -1704,6 +1704,12 @@ module J2ME {
     All = 0x1f
   }
 
+  export function dumpLine(s) {
+    if (typeof dump !== "undefined") {
+      dump(s + "\n");
+    }
+  }
+
   export class IndentingWriter {
     public static PURPLE = '\033[94m';
     public static YELLOW = '\033[93m';

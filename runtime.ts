@@ -5,6 +5,8 @@ interface Math {
 }
 
 declare var throwHelper;
+declare var throwPause;
+declare var throwYield;
 
 module J2ME {
   declare var Native, Override;
@@ -12,7 +14,8 @@ module J2ME {
   declare var Long;
 
 
-  export var traceWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
+  // If you want to enable trace logging, do so in context.ts.
+  export var traceWriter = null;
   export var linkingWriter = new IndentingWriter(false, IndentingWriter.stderr);
 
   export var Klasses = {

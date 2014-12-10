@@ -108,17 +108,23 @@ module J2ME {
   }
 
   export class Context {
+    private static _nextId: number = 0;
+    id: number
     frames: any [];
     frameSets: any [];
     lockTimeout: number;
     lockLevel: number;
     thread: java.lang.Thread;
-
+    traceWriter: IndentingWriter;
     constructor(public runtime: Runtime) {
+      var id = this.id = Context._nextId ++;
       this.frames = [];
       this.frameSets = [];
       this.runtime = runtime;
       this.runtime.addContext(this);
+      this.traceWriter = new IndentingWriter(false, function (s) {
+        dumpLine(id + " | " + s);
+      });
     }
 
     kill() {
@@ -140,11 +146,19 @@ module J2ME {
       return caller;
     }
 
-    executeNewFrameSet(frames) {
+    executeNewFrameSet(frames: Frame []) {
       this.frameSets.push(this.frames);
       this.frames = frames;
       try {
+        if (traceWriter) {
+          var firstFrame = frames[0];
+          var frameDetails = firstFrame.methodInfo.classInfo.className + "/" + firstFrame.methodInfo.name + signatureToDefinition(firstFrame.methodInfo.signature, true, true);
+          traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + frameDetails);
+        }
         var returnValue = VM.execute(this);
+        if (traceWriter) {
+          traceWriter.leave("<");
+        }
       } catch (e) {
         // Append all the current frames to the parent frame set, so a single frame stack
         // exists when the bailout finishes.
@@ -152,6 +166,9 @@ module J2ME {
         this.frames = this.frameSets.pop();
         for (var i = 0; i < currentFrames.length; i++) {
           this.frames.push(currentFrames[i]);
+        }
+        if (traceWriter) {
+          traceWriter.leave("< " + e);
         }
         throwHelper(e);
       }
@@ -246,12 +263,16 @@ module J2ME {
 
     raiseExceptionAndYield(className, message?) {
       this.raiseException(className, message);
-      throw VM.Yield;
+      throwYield();
     }
 
     setCurrent() {
       $ = this.runtime;
+      if ($.ctx === this) {
+        return;
+      }
       $.ctx = this;
+      traceWriter = null; // this.traceWriter;
     }
 
     execute() {
@@ -312,7 +333,7 @@ module J2ME {
         obj[queue] = [];
       obj[queue].push(this);
       this.lockLevel = lockLevel;
-      throw VM.Pause;
+      throwPause();
     }
 
     unblock(obj, queue, notifyAll, callback) {

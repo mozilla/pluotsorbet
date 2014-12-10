@@ -4,5 +4,14 @@
  */
 
 function throwHelper(e) {
+  J2ME.traceWriter && J2ME.traceWriter.writeLn("Throw " + e);
   throw e;
+}
+
+function throwYield() {
+  throwHelper(VM.Yield);
+}
+
+function throwPause() {
+  throwHelper(VM.Pause);
 }
