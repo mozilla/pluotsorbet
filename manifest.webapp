@@ -30,6 +30,9 @@
     "video-capture": {
        "description": "Required to take pictures"
     },
+    "desktop-notification": {
+      "description": "Required to display notifications"
+    },
     "systemXHR": {
        "description": "Required to download MIDlets"
     }

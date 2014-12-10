@@ -106,7 +106,7 @@ var DumbPipe = {
     try {
       document.getElementById("mozbrowser").contentWindow.postMessage(envelope, "*");
     } catch (e) {
-      console.log("Error " + e + " while sending message: " + JSON.stringify(message));
+      console.log("Error " + e + " while sending message: " + JSON.stringify(envelope));
     }
   },
 
@@ -420,6 +420,59 @@ DumbPipe.registerOpener("camera", function(message, sender) {
         break;
     }
   };
+});
+
+var notification = null;
+DumbPipe.registerOpener("notification", function(message, sender) {
+  if (notification) {
+    notification.close();
+    notification = null;
+  }
+
+  var img = new Image();
+  img.src = URL.createObjectURL(new Blob([ new Uint8Array(message.icon) ], { type : message.mime_type }));
+  img.onload = function() {
+    var width = Math.min(32, img.naturalWidth);
+    var height = Math.min(32, img.naturalHeight);
+
+    var canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, width, height);
+
+    message.options.icon = canvas.toDataURL();
+
+    function permissionGranted() {
+      notification = new Notification(message.title, message.options);
+      notification.onshow = function() {
+        sender({ type: "opened" });
+      };
+    }
+
+    if (Notification.permission === "granted") {
+      permissionGranted();
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission(function(permission) {
+        if (permission === "granted") {
+          permissionGranted();
+        }
+      });
+    }
+  }
+
+  return function(message) {
+    switch(message.type) {
+      case "close":
+        if (notification) {
+          notification.close();
+          notification = null;
+        }
+
+        sender({ type: "close" });
+      break;
+    }
+  }
 });
 
 function load(file, responseType) {

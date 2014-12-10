@@ -23,7 +23,5 @@ public class DataEncoder {
 
     public native void put(int tag, String name, double value) throws IOException;
 
-    public void put(String aString, byte[] aArray, int aInt) throws IOException {
-        throw new RuntimeException("DataEncoder::put(String,byte[],int) not implemented");
-    }
+    public native void put(String name, byte[] data, int length) throws IOException;
 }
