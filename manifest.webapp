@@ -29,6 +29,9 @@
     },
     "video-capture": {
        "description": "Required to take pictures"
+    },
+    "desktop-notification": {
+      "description": "Required to display notifications"
     }
   },
   "type": "privileged"
