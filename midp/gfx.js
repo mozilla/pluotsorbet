@@ -171,25 +171,6 @@
         imageData.nativeImageData = data;
     }
 
-    /**
-     * Ensure the nativeImageData of the given image points to a
-     * Canvas Context2D, converting (and saving) it if necessary.
-     *
-     * @return {CanvasRenderingContext2D} context
-     */
-    function convertNativeImageData(imageData) {
-        var data = imageData.nativeImageData;
-
-        if (!(data instanceof CanvasRenderingContext2D)) {
-            // Assume it's an image.
-            var context = createContext2d(data.width, data.height);
-            context.drawImage(data, 0, 0);
-            imageData.nativeImageData = data = context;
-        }
-
-        return data;
-    }
-
     Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V",
     function(imageData, bytes, offset, length) {
         return new Promise(function(resolve, reject) {
@@ -197,10 +178,17 @@
             var img = new Image();
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
-                setImageData(imageData, img.naturalWidth, img.naturalHeight, img);
+                var context = createContext2d(img.width, img.height);
+                context.drawImage(img, 0, 0);
+                setImageData(imageData, img.naturalWidth, img.naturalHeight, context);
+
+                URL.revokeObjectURL(img.src);
+                img.src = '';
                 resolve();
             }
             img.onerror = function(e) {
+                URL.revokeObjectURL(img.src);
+                img.src = '';
                 reject(new JavaException("java/lang/IllegalArgumentException", "error decoding image"));
             }
         });
@@ -222,7 +210,8 @@
             context.rotate(1.5 * Math.PI);
         }
 
-        context.drawImage(dataSource.nativeImageData, x, y, width, height, 0, 0, width, height);
+        var imgdata = dataSource.nativeImageData.getImageData(x, y, width, height);
+        context.putImageData(imgdata, 0, 0);
 
         setImageData(dataDest, width, height, context);
         dataDest.class.getField("I.isMutable.Z").set(dataDest, isMutable);
@@ -251,7 +240,7 @@
     });
 
     Native.create("javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V", function(rgbData, offset, scanlength, x, y, width, height) {
-        var context = convertNativeImageData(this);
+        var context = this.nativeImageData;
         var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     });
@@ -639,7 +628,7 @@
         }
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
-        var context = convertNativeImageData(imageData);
+        var context = imageData.nativeImageData;
         var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     });
