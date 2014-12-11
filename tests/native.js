@@ -75,3 +75,51 @@ Native.create("com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V", function(
 Native.create("com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V", function() {
   DumbPipe.open("showKeyboard", null, function(message) {});
 });
+
+Native.create("javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z", function() {
+  return currentlyFocusedTextEditor.textEditor.focused;
+});
+
+Native.create("gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I", function(pathStr) {
+  var path = util.fromJavaString(pathStr);
+  return new Promise(function(resolve, reject) {
+    var gotCanvas = document.getElementById("canvas");
+    var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
+
+    var img = new Image();
+    img.src = "tests/" + path;
+
+    img.onerror = reject;
+    img.onload = function() {
+      var expectedCanvas = document.createElement('canvas');
+      expectedCanvas.width = img.width;
+      expectedCanvas.height = img.height;
+      expectedCanvas.getContext("2d").drawImage(img, 0, 0);
+
+      var expectedPixels = new Uint32Array(expectedCanvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
+
+      if (expectedCanvas.width !== gotCanvas.width || expectedCanvas.height !== gotCanvas.height) {
+        reject();
+        return;
+      }
+
+      var different = 0;
+      var i = 0;
+      for (var x = 0; x < gotCanvas.width; x++) {
+        for (var y = 0; y < gotCanvas.height; y++) {
+          if (expectedPixels[i] !== gotPixels[i]) {
+            different++;
+          }
+
+          i++;
+        }
+      }
+
+      resolve(different);
+    };
+  });
+}, true);
+
+Native.create("com/nokia/mid/impl/jms/core/TestLauncher.checkImageModalDialog.()Z", function() {
+  return document.getElementById("image-launcher") != null;
+});

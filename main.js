@@ -129,9 +129,37 @@ if (urlParams.jad) {
     .split("\n")
     .forEach(function(entry) {
       if (entry) {
-        var keyval = entry.split(':');
-        MIDP.manifest[keyval[0]] = keyval[1].trim();
+        var keyEnd = entry.indexOf(":");
+        var key = entry.substring(0, keyEnd);
+        var val = entry.substring(keyEnd + 1).trim();
+        MIDP.manifest[key] = val;
       }
+    });
+  }));
+}
+
+if (urlParams.downloadJAD) {
+  loadingPromises.push(new Promise(function(resolve, reject) {
+    initFS.then(function() {
+      fs.exists("/app.jar", function(exists) {
+        if (exists) {
+          fs.open("/app.jar", function(fd) {
+            var data = fs.read(fd);
+            fs.close();
+            jvm.addPath("app.jar", data.buffer);
+            resolve();
+          });
+        } else {
+          var sender = DumbPipe.open("JARDownloader", {}, function(message) {
+            jvm.addPath("app.jar", message.data);
+
+            fs.create("/app.jar", new Blob([message.data]), function() {});
+
+            DumbPipe.close(sender);
+            resolve();
+          });
+        }
+      });
     });
   }));
 }
