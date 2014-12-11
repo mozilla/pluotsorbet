@@ -183,7 +183,7 @@ function(lookupId, headerData, headerDataSize, headerVersion) {
         if (size > headerDataSize) {
             size = headerDataSize;
         }
-        var sharedHeaderData = new Uint8Array(sharedHeader.headerData);
+        var sharedHeaderData = new Int8Array(sharedHeader.headerData);
         for (var i = 0; i < size; i++) {
             headerData[i] = sharedHeaderData[i];
         }
