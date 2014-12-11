@@ -724,7 +724,7 @@ var fs = (function() {
         return;
       }
 
-      var foo = remove.bind(null, oldPath, function(removed) {
+      var recreatePath = remove.bind(null, oldPath, function(removed) {
         if (!removed) {
           cb(false);
           return;
@@ -746,10 +746,10 @@ var fs = (function() {
             return;
           }
 
-          foo();
+          recreatePath();
         });
       } else {
-        foo();
+        recreatePath();
       }
     });
   }
