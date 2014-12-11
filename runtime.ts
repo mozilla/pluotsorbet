@@ -600,8 +600,13 @@ module J2ME {
             ? methodInfo.classInfo.getClassObject($.ctx)
             : frame.getLocal(0);
         }
-
-        $.ctx.monitorEnter(frame.lockObject);
+        try {
+          $.ctx.monitorEnter(frame.lockObject);
+        } catch (e) {
+          // Ensure the frame gets pushed on vm pause.
+          $.ctx.frames.push(frame);
+          throw e;
+        }
       }
       return $.ctx.executeNewFrameSet([frame]);
     };
