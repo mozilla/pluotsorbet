@@ -32,6 +32,9 @@
     },
     "desktop-notification": {
       "description": "Required to display notifications"
+    },
+    "systemXHR": {
+       "description": "Required to download MIDlets"
     }
   },
   "type": "privileged"

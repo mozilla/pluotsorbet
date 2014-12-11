@@ -64,7 +64,7 @@ var expectedUnitTestResults = [
   { name: "unknown pass", number: 0 }
 ];
 
-casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
@@ -247,6 +247,31 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
                     });
                 });
             });
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.pass();
+        });
+    });
+
+    // Run the test a second time to ensure loading the JAR stored in the FS works correctly.
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.pass();
         });
     });
 
