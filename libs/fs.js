@@ -1,6 +1,6 @@
 'use strict';
 
-var DEBUG_FS = true;
+var DEBUG_FS = false;
 
 var fs = (function() {
   var Store = function() {
