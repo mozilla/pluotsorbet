@@ -183,7 +183,7 @@ tests.push(function() {
 tests.push(function() {
   fs.list("/", function(files) {
     ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files is an array with 1 element");
+    is(files.length, 1, "files is an array with 1 element: " + files);
     is(files[0], "tmp", "tmp is in files");
     next();
   })
@@ -253,8 +253,8 @@ tests.push(function() {
   fs.list("/tmp/ciao", function(files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files has 2 entries");
-    is(files[0], "tmp.txt", "tmp.txt is in files");
-    is(files[1], "tmp", "tmp is in files");
+    is(files[0], "tmp", "tmp is in files");
+    is(files[1], "tmp.txt", "tmp.txt is in files");
     next();
   })
 });

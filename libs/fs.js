@@ -1,6 +1,6 @@
 'use strict';
 
-var DEBUG_FS = false;
+var DEBUG_FS = true;
 
 var fs = (function() {
   var Store = function() {
@@ -204,6 +204,28 @@ var fs = (function() {
       if (DEBUG_FS) { console.log("sync completed"); }
       cb();
     };
+  }
+
+  Store.prototype.getKeys = function(cb) {
+    this.sync((function() {
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      if (DEBUG_FS) { console.log("getKeys initiated"); }
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var keys = [];
+
+      objectStore.openCursor().onsuccess = function(event) {
+        var cursor = event.target.result;
+        if (cursor) {
+          keys.push(cursor.key);
+          cursor.continue();
+        }
+      };
+
+      transaction.oncomplete = function() {
+        if (DEBUG_FS) { console.log("getKeys completed"); }
+        cb(keys);
+      };
+    }).bind(this));
   }
 
   Store.prototype.addTransientPath = function(path) {
@@ -455,16 +477,18 @@ var fs = (function() {
       if (record == null || !record.isDir) {
         cb(null);
       } else {
-        cb(record.files);
+        store.getKeys(function(keys) {
+          cb(keys.filter(function(v) { return dirname(v) === path && v !== path }).map(function(v) { return basename(v) }).sort());
+        });
       }
     });
   }
 
   function exists(path, cb) {
     path = normalizePath(path);
-    if (DEBUG_FS) { console.log("fs exists " + path); }
 
     store.getItem(path, function(record) {
+      if (DEBUG_FS) { console.log("fs exists " + path + ": " + !!record); }
       cb(record ? true : false);
     });
   }
@@ -508,29 +532,23 @@ var fs = (function() {
     }
 
     store.getItem(path, function(record) {
-      // If it's a directory that isn't empty, then we can't remove it.
-      if (record && record.isDir && record.files.length > 0) {
-        cb(false);
-        return;
-      }
+      if (!record) {
+        cb(true);
+      } else if (record.isDir) {
+        list(path, function(files) {
+          // If it's a directory that isn't empty, then we can't remove it.
+          if (files.length > 0) {
+            cb(false);
+            return;
+          }
 
-      var name = basename(path);
-      var dir = dirname(path);
-
-      store.getItem(dir, function(parentRecord) {
-        var index = -1;
-
-        // If it isn't in the parent directory, then we can't remove it.
-        if (parentRecord == null || (index = parentRecord.files.indexOf(name)) < 0) {
-          cb(false);
-          return;
-        }
-
-        parentRecord.files.splice(index, 1);
-        store.setItem(dir, parentRecord);
+          store.removeItem(path);
+          cb(true);
+        });
+      } else {
         store.removeItem(path);
         cb(true);
-      });
+      }
     });
   }
 
@@ -542,20 +560,23 @@ var fs = (function() {
       // If the parent directory doesn't exist or isn't a directory,
       // then we can't create the file.
       if (parentRecord == null || !parentRecord.isDir) {
+if (DEBUG_FS) { console.log("fs createInternal parentRecord == null || !parentRecord.isDir " + path); }
         cb(false);
         return;
       }
 
-      // If the file already exists, we can't create it.
-      if (parentRecord.files.indexOf(name) >= 0) {
-        cb(false);
-        return;
-      }
+      store.getItem(path, function(existingRecord) {
+        // If the file already exists, then we can't create it.
+        if (existingRecord) {
+          cb(false);
+          return;
+        }
 
-      parentRecord.files.push(name);
-      store.setItem(dir, parentRecord);
-      store.setItem(path, record);
-      cb(true);
+        // Create the file.
+        store.setItem(path, record);
+  if (DEBUG_FS) { console.log("fs createInternal created " + path); }
+        cb(true);
+      });
     });
   }
 
@@ -662,14 +683,7 @@ var fs = (function() {
         return;
       }
 
-      // If the old path is a dir with files in it, we don't move it.
-      // XXX Shouldn't we move it along with its files?
-      if (oldRecord.isDir && oldRecord.files.length > 0) {
-        cb(false);
-        return;
-      }
-
-      remove(oldPath, function(removed) {
+      var foo = remove.bind(null, oldPath, function(removed) {
         if (!removed) {
           cb(false);
           return;
@@ -681,6 +695,21 @@ var fs = (function() {
           create(newPath, oldRecord.data, cb);
         }
       });
+
+      if (oldRecord.isDir) {
+        list(oldPath, function(files) {
+          // If the old path is a dir with files in it, we don't move it.
+          // XXX Shouldn't we move it along with its files?
+          if (files.length > 0) {
+            cb(false);
+            return;
+          }
+
+          foo();
+        });
+      } else {
+        foo();
+      }
     });
   }
 
