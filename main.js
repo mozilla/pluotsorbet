@@ -138,6 +138,53 @@ if (urlParams.jad) {
   }));
 }
 
+function performDownload(dialog, callback) {
+  var progressBar = dialog.querySelector('progress.pack-activity');
+
+  var sender = DumbPipe.open("JARDownloader", {}, function(message) {
+    switch (message.type) {
+      case "done":
+        DumbPipe.close(sender);
+
+        callback(message.data);
+
+        break;
+
+      case "progress":
+        progressBar.value = message.progress;
+        break;
+
+      case "fail":
+        DumbPipe.close(sender);
+
+        progressBar.value = 0;
+        progressBar.style.display = "none";
+
+        var dialogText = dialog.querySelector('h1.download-dialog-text');
+        var oldText = dialogText.textContent;
+        dialogText.textContent = "Download failure";
+
+        var btnRetry = dialog.querySelector('button.recommend');
+        btnRetry.style.display = '';
+
+        btnRetry.addEventListener('click', function onclick(e) {
+          e.preventDefault();
+          btnRetry.removeEventListener('click', onclick);
+
+          btnRetry.style.display = "none";
+
+          progressBar.style.display = '';
+
+          dialogText.textContent = oldText;
+
+          performDownload(dialog, callback);
+        });
+
+        break;
+    }
+  });
+}
+
 if (urlParams.downloadJAD) {
   loadingPromises.push(new Promise(function(resolve, reject) {
     initFS.then(function() {
@@ -150,12 +197,18 @@ if (urlParams.downloadJAD) {
             resolve();
           });
         } else {
-          var sender = DumbPipe.open("JARDownloader", {}, function(message) {
-            jvm.addPath("app.jar", message.data);
+          var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+          dialog.style.display = 'block';
+          dialog.classList.add('visible');
+          document.body.appendChild(dialog);
 
-            fs.create("/app.jar", new Blob([message.data]), function() {});
+          performDownload(dialog, function(data) {
+            dialog.parentElement.removeChild(dialog);
 
-            DumbPipe.close(sender);
+            jvm.addPath("app.jar", data);
+
+            fs.create("/app.jar", new Blob([ data ]), function() {});
+
             resolve();
           });
         }
