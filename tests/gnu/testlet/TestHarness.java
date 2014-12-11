@@ -141,9 +141,9 @@ public abstract class TestHarness {
 
     public void setScreenAndWait(Displayable s) {
         display.setCurrent(s);
-        while (!s.isShown()) {
+        while (!(s.isShown() && (display.getCurrent() == s))) {
             try {
-                Thread.sleep(25);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 fail("INTERRUPTED");
                 break;
@@ -151,7 +151,12 @@ public abstract class TestHarness {
         }
     }
 
-    public native int compareScreenToReferenceImage(String referenceImagePath);
+    public void compareScreenToReferenceImage(String referenceImagePath, int maxDifferingPixels, String message) {
+        int numDifferent = getNumDifferingPixels(referenceImagePath);
+        check(numDifferent <= maxDifferingPixels, message + ". " + numDifferent + " > " + maxDifferingPixels);
+    }
+
+    public native int getNumDifferingPixels(String referenceImagePath);
 
     private Display display;
 }

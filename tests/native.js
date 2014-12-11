@@ -80,7 +80,7 @@ Native.create("javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"
   return currentlyFocusedTextEditor.textEditor.focused;
 });
 
-Native.create("gnu/testlet/TestHarness.compareScreenToReferenceImage.(Ljava/lang/String;)I", function(pathStr) {
+Native.create("gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I", function(pathStr) {
   var path = util.fromJavaString(pathStr);
   return new Promise(function(resolve, reject) {
     var gotCanvas = document.getElementById("canvas");

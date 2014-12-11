@@ -25,20 +25,17 @@ public class TestAlert extends Canvas implements Testlet {
         th.check(isTextEditorReallyFocused(), "TextEditor really gained focus");
 
         th.setScreenAndWait(alert);
-        int threshold = 1621;
-        int numDifferent = th.compareScreenToReferenceImage("gfx/AlertTest.png");
-        th.check(numDifferent < threshold, "Threshold: " + threshold + ". Different: " + numDifferent);
+        int threshold = 1750;
+        th.compareScreenToReferenceImage("gfx/AlertTest.png", threshold, "First alert");
         th.check(textEditor.hasFocus(), "TextEditor kept focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
 
         th.setScreenAndWait(this);
-        textEditor.setFocus(true);
         th.check(textEditor.hasFocus(), "TextEditor maintained focus");
         th.check(isTextEditorReallyFocused(), "TextEditor really regained focus");
 
         th.setScreenAndWait(alert);
-        numDifferent = th.compareScreenToReferenceImage("gfx/AlertTest.png");
-        th.check(numDifferent < threshold, "Threshold: " + threshold + ". Different: " + numDifferent);
+        th.compareScreenToReferenceImage("gfx/AlertTest.png", threshold, "Second alert");
         th.check(textEditor.hasFocus(), "TextEditor still has focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
     }
