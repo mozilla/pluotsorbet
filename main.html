@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="style/main.css">
   <link rel="stylesheet" type="text/css" href="style/confirm.css">
+  <link rel="stylesheet" type="text/css" href="style/progress_activity.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
@@ -126,6 +127,18 @@
     <menu>
       <button class="cancel">Cancel</button>
       <button class="recommend">Done</button>
+    </menu>
+  </form>
+
+  <form role="dialog" data-type="confirm"
+        class="download-progress-dialog"
+        id="download-progress-dialog" style="display: none">
+    <section>
+      <h1 class="download-dialog-text">Downloading MIDlet...</h1>
+      <progress class="pack-activity" value="0" max="100"></progress>
+    </section>
+    <menu style="text-align: center">
+      <button class="recommend" style="display: none">Retry</button>
     </menu>
   </form>
 
