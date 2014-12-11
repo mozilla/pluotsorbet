@@ -1,5 +1,9 @@
+/* vim: set filetype=java shiftwidth=4 tabstop=4 autoindent cindent expandtab : */
+
 import gnu.testlet.*;
 
+import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.*;
 import java.util.Vector;
 
@@ -13,7 +17,8 @@ public class RunTests extends MIDlet {
         private int knownFail = 0;
         private int unknownPass = 0;
 
-        public Harness(String note) {
+        public Harness(String note, Display d) {
+            super(d);
             this.testName = note;
         }
 
@@ -71,7 +76,12 @@ public class RunTests extends MIDlet {
 
     void runTest(String name) {
         name = name.replace('/', '.');
-        Harness harness = new Harness(name);
+
+        Form form = new Form(name);
+        Display display = Display.getDisplay(this);
+        Harness harness = new Harness(name, display);
+        harness.setScreenAndWait(form);
+
         Class c = null;
         try {
             c = Class.forName(name);

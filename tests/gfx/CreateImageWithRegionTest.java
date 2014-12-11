@@ -19,7 +19,13 @@ public class CreateImageWithRegionTest extends MIDlet {
                 return;
             }
 
-            Image image2 = Image.createImage(image, 30, 30, 120, 120, Sprite.TRANS_NONE);
+            Image image2;
+            try {
+                image2 = Image.createImage(image, 30, 30, 120, 120, Sprite.TRANS_NONE);
+            } catch (Exception e) {
+                System.out.println("FAIL - " + e);
+                return;
+            }
 
             screenG.drawImage(image2, 10, 10, Graphics.TOP | Graphics.LEFT);
 

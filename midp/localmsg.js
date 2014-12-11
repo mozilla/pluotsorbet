@@ -672,7 +672,19 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       }
 
       fs.open("/" + fileName, (function(fd) {
+        var img = null;
+
+        function _cleanupImg() {
+          if (img) {
+            URL.revokeObjectURL(img.src);
+            img.src = '';
+            img = null;
+          }
+        }
+
         var _sendBackScaledImage = function(blob) {
+          _cleanupImg();
+
           fs.createUniqueFile("/nokiaimageprocessing", "image", blob, (function(fileName) {
             var encoder = new DataEncoder();
 
@@ -696,8 +708,9 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         var fileSize = fs.getsize(fd);
         fs.close(fd);
 
-        var img = new Image();
+        img = new Image();
         img.src = URL.createObjectURL(new Blob([ imgData ]));
+
         img.onload = (function() {
           // If the image size is less than the given max_kb, and height/width
           // are less than max_hres/max_wres, send the original image immediately
@@ -745,6 +758,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
 
         img.onerror = function(e) {
           console.error("Error in decoding image");
+          _cleanupImg();
         };
       }).bind(this));
     break;
