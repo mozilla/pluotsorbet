@@ -351,17 +351,16 @@ function ImagePlayer(playerContainer) {
 
 ImagePlayer.prototype.realize = function() {
     return new Promise((function(resolve, reject) {
+        this.image.onload = resolve.bind(null, true);
+        this.image.onerror = reject;
         if (this.url.startsWith("file")) {
             fs.open(this.url.substring(7), (function(fd) {
                 var imgData = fs.read(fd);
                 fs.close(fd);
-
                 this.image.src = URL.createObjectURL(new Blob([ imgData ]));
-                resolve(true);
             }).bind(this));
         } else {
             this.image.src = this.url;
-            resolve(true);
         }
     }).bind(this));
 }

@@ -42,7 +42,7 @@
     }
 
     this.levelName = levelName;
-    this.thread = (typeof $ !== "undefined" ?
+    this.thread = (typeof $ !== "undefined" && $.ctx.thread ?
                    String.fromCharCode.apply(null, $.ctx.thread["$java_lang_Thread_name_aC"]) : "no thread");
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
