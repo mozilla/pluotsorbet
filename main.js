@@ -139,6 +139,9 @@ if (urlParams.jad) {
 }
 
 function performDownload(dialog, callback) {
+  var dialogText = dialog.querySelector('h1.download-dialog-text');
+  dialogText.textContent = "Downloading " + MIDlet.name + "...";
+
   var progressBar = dialog.querySelector('progress.pack-activity');
 
   var sender = DumbPipe.open("JARDownloader", {}, function(message) {
@@ -161,7 +164,6 @@ function performDownload(dialog, callback) {
         progressBar.style.display = "none";
 
         var dialogText = dialog.querySelector('h1.download-dialog-text');
-        var oldText = dialogText.textContent;
         dialogText.textContent = "Download failure";
 
         var btnRetry = dialog.querySelector('button.recommend');
@@ -174,8 +176,6 @@ function performDownload(dialog, callback) {
           btnRetry.style.display = "none";
 
           progressBar.style.display = '';
-
-          dialogText.textContent = oldText;
 
           performDownload(dialog, callback);
         });
