@@ -2,7 +2,9 @@ package com.nokia.mid.ui;
 
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
+import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.TextField;
@@ -100,6 +102,8 @@ public class TestTextEditor extends Canvas implements Testlet {
 
         textEditor.setParent(null);
     }
+
+    private native boolean isTextEditorReallyFocused();
 
     public void test(TestHarness th) {
         testConstraints(th, TextField.ANY);
