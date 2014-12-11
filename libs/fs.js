@@ -600,7 +600,7 @@ var fs = (function() {
       // If the parent directory doesn't exist or isn't a directory,
       // then we can't create the file.
       if (parentRecord == null || !parentRecord.isDir) {
-        if (DEBUG_FS) { console.log("fs createInternal parent directory doesn't exist or isn't a directory " + path); }
+        console.error("parent directory of file '" + path + "' doesn't exist or isn't a directory");
         cb(false);
         return;
       }
@@ -608,14 +608,13 @@ var fs = (function() {
       store.getItem(path, function(existingRecord) {
         // If the file already exists, then we can't create it.
         if (existingRecord) {
-          if (DEBUG_FS) { console.log("fs createInternal file already exists " + path); }
+          console.error("file '" + path + "' already exists");
           cb(false);
           return;
         }
 
         // Create the file.
         store.setItem(path, record);
-        if (DEBUG_FS) { console.log("fs createInternal created " + path); }
         cb(true);
       });
     });
