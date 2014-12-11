@@ -673,11 +673,10 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
 
       fs.open("/" + fileName, (function(fd) {
         var img = null;
-        var imgUrl;
 
         function _cleanupImg() {
           if (img) {
-            URL.revokeObjectURL(imgUrl);
+            URL.revokeObjectURL(img.src);
             img.src = '';
             img = null;
           }
@@ -710,8 +709,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         fs.close(fd);
 
         img = new Image();
-        imgUrl = URL.createObjectURL(new Blob([ imgData ]));
-        img.src = imgUrl;
+        img.src = URL.createObjectURL(new Blob([ imgData ]));
 
         img.onload = (function() {
           // If the image size is less than the given max_kb, and height/width
