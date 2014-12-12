@@ -534,7 +534,7 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
       load(jarURL, "arraybuffer", function(data) {
         sender({ type: "done", data: data });
       }, function() {
-        sender({ type: "fail" })
+        sender({ type: "fail" });
       }, function(progress) {
         sender({ type: "progress", progress: progress });
       }, manifest["MIDlet-Jar-Size"] || 0);
@@ -542,6 +542,6 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
       sender({ type: "fail" });
     }
   }, function() {
-    sender({ type: "fail" })
+    sender({ type: "fail" });
   });
 });
