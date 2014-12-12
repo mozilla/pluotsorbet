@@ -770,6 +770,60 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
   }
 };
 
+var NokiaProductInfoLocalMsgConnection = function() {
+    LocalMsgConnection.call(this);
+};
+
+NokiaProductInfoLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaProductInfoLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+  var encoder = new DataEncoder();
+  var decoder = new DataDecoder(message.data, message.offset, message.length);
+  decoder.getStart(DataType.STRUCT);
+
+  var name = decoder.getValue(DataType.METHOD);
+  switch (name) {
+    case "Common":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "Common");
+      encoder.putStart(DataType.STRUCT, "message");
+      encoder.put(DataType.METHOD, "name", "ProtocolVersion");
+      encoder.put(DataType.STRING, "version", "1.1");
+      encoder.putEnd(DataType.STRUCT, "message");
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
+      break;
+    case "ReadProductInfo":
+      encoder.putStart(DataType.STRUCT, "event");
+      encoder.put(DataType.METHOD, "name", "ReadProductInfo");
+      encoder.put(DataType.STRING, "result", "OK");
+      encoder.put(DataType.STRING, "unkown_str_1", "");
+      encoder.put(DataType.STRING, "unkown_str_2", "");
+      encoder.put(DataType.STRING, "unkown_str_3", "");
+      encoder.put(DataType.STRING, "unkown_str_4", ""); // Probably RMCODE
+      encoder.put(DataType.STRING, "unkown_str_5", "");
+      encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
+      break;
+    default:
+      console.error("(nokia.status-info) event " + name + " not implemented " +
+                    util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+      return;
+  }
+};
+
 var NokiaActiveStandbyLocalMsgConnection = function() {
     LocalMsgConnection.call(this);
 }
@@ -921,6 +975,7 @@ MIDP.LocalMsgConnections["nokia.file-ui"] = NokiaFileUILocalMsgConnection;
 MIDP.LocalMsgConnections["nokia.image-processing"] = NokiaImageProcessingLocalMsgConnection;
 MIDP.LocalMsgConnections["nokia.sa.service-registry"] = NokiaSASrvRegLocalMsgConnection;
 MIDP.LocalMsgConnections["nokia.active-standby"] = NokiaActiveStandbyLocalMsgConnection;
+MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnection;
 
 Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
     var name = util.fromJavaString(jName);
