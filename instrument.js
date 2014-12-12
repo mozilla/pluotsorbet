@@ -141,18 +141,18 @@ var Instrument = {
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.<init>.(Ljava/lang/String;ILjava/io/InputStream;Ljava/io/OutputStream;Lcom/sun/midp/pki/CertStore;)V"] = function(caller, callee) {
-  var _this = caller.stack.read(6), port = caller.stack.read(4), host = util.fromJavaString(caller.stack.read(5));
+  var _this = callee.locals.read(6), port = callee.locals.read(4), host = util.fromJavaString(callee.locals.read(5));
   _this.logBuffer = "SSLStreamConnection to " + host + ":" + port + ":\n";
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.(I)V"] = function(caller, callee) {
-  var _this = caller.stack.read(3);
+  var _this = callee.locals.read(3);
   var connection = _this.klass.classInfo.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   connection.logBuffer += String.fromCharCode(callee.stack.read(1));
 };
 
 Instrument.enter["com/sun/midp/ssl/Out.write.([BII)V"] = function(caller, callee) {
-  var len = caller.stack.read(1), off = caller.stack.read(2), b = caller.stack.read(3), _this = caller.stack.read(4);
+  var len = callee.locals.read(1), off = callee.locals.read(2), b = callee.locals.read(3), _this = callee.locals.read(4);
   var connection = _this.klass.classInfo.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
@@ -173,7 +173,7 @@ Instrument.exit["com/sun/midp/ssl/In.read.()I"] = function(caller, callee) {
 };
 
 Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
-  var len = caller.stack.read(4), off = caller.stack.read(5), b = caller.stack.read(6), _this = caller.stack.read(7);
+  var len = callee.locals.read(4), off = callee.locals.read(5), b = callee.locals.read(6), _this = callee.locals.read(7);
   var connection = _this.klass.classInfo.getField("I.ssc.Lcom/sun/midp/ssl/SSLStreamConnection;").get(_this);
   var range = b.subarray(off, off + len);
   for (var i = 0; i < range.length; i++) {
@@ -185,7 +185,7 @@ Instrument.exit["com/sun/midp/ssl/In.read.([BII)I"] = function(caller, callee) {
 };
 
 Instrument.enter["com/sun/midp/ssl/SSLStreamConnection.close.()V"] = function(caller, callee) {
-  var _this = caller.stack.read(1);
+  var _this = callee.locals.read(1);
   if ("logBuffer" in _this) {
     console.log(_this.logBuffer);
     delete _this.logBuffer;

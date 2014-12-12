@@ -128,23 +128,24 @@ function createAlternateImpl(object, key, fn, usesPromise) {
   var postExec = usesPromise ? executePromise : doReturn;
 
   object[key] = function() {
+    var ctx = $.ctx;
     try {
       var args = Array.prototype.slice.apply(arguments);
-      args.push($.ctx);
+      args.push(ctx);
       var ret = fn.apply(this, args);
-      return postExec(ret, doReturn, $.ctx, key);
+      return postExec(ret, doReturn, ctx, key);
     } catch(e) {
       if (e === VM.Pause || e === VM.Yield) {
         throwHelper(e);
       } else if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
         console.log(e.stack);
-        $.ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
+        ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {
-        $.ctx.raiseExceptionAndYield(e.javaClassName, e.message);
+        ctx.raiseExceptionAndYield(e.javaClassName, e.message);
       } else {
         console.error(e, e.stack);
-        $.ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
+        ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
       }
     }
   };

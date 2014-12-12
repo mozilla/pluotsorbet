@@ -12,7 +12,7 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var Long;
-
+  declare var Instrument;
   export var traceWriter = null;
   export var linkWriter = null;
   export var initWriter = null;
@@ -688,6 +688,9 @@ module J2ME {
           frame.setLocal(j++, null);
         }
       }
+      var caller = $.ctx.current();
+      var callee = frame;
+      Instrument.callEnterHooks(methodInfo, caller, callee);
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
