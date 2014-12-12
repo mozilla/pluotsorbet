@@ -123,3 +123,7 @@ Native.create("gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;
 Native.create("com/nokia/mid/impl/jms/core/TestLauncher.checkImageModalDialog.()Z", function() {
   return document.getElementById("image-launcher") != null;
 });
+
+Native.create("org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOnlineEvent.()V", function() {
+  window.dispatchEvent(new CustomEvent("online"));
+});

@@ -19,7 +19,7 @@ public class TestNokiaPhoneStatusServer implements Testlet {
         dataEncoder.put(13, "name", "Common");
         dataEncoder.putStart(14, "message");
         dataEncoder.put(13, "name", "ProtocolVersion");
-        dataEncoder.put(10, "version", "2.[0-10]");
+        dataEncoder.put(10, "version", "1.[0-10]");
         dataEncoder.putEnd(14, "message");
         dataEncoder.putEnd(14, "event");
         byte[] sendData = dataEncoder.getData();
@@ -65,6 +65,8 @@ public class TestNokiaPhoneStatusServer implements Testlet {
         th.check(dataDecoder.getString(13), "Query");
         th.check(dataDecoder.getString(10), "OK");
         dataDecoder.getStart(15);
+
+        int i = 0;
         while (dataDecoder.listHasMoreItems()) {
             String name = dataDecoder.getName();
             if (name.equals("battery")) {
@@ -74,14 +76,69 @@ public class TestNokiaPhoneStatusServer implements Testlet {
                 dataDecoder.getEnd(14);
             } else if (name.equals("network_status")) {
                 dataDecoder.getStart(14);
-                th.check(dataDecoder.getString(10), "");
+                th.check(dataDecoder.getString(10), "Home");
                 dataDecoder.getEnd(14);
             } else if (name.equals("wifi_status")) {
                 dataDecoder.getStart(14);
                 th.check(dataDecoder.getBoolean(), true);
                 dataDecoder.getEnd(14);
+            } else {
+                th.fail("Unexpected name: " + name);
             }
+
+            i++;
         }
+
+        th.check(i, 3);
+
+        dataDecoder.getEnd(15);
+    }
+
+    private native void sendFakeOnlineEvent();
+
+    public void testChangeNotify(TestHarness th) throws IOException {
+        DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
+        dataEncoder.putStart(14, "event");
+        dataEncoder.put(13, "name", "Query");
+        dataEncoder.putStart(15, "subscriptions");
+        dataEncoder.put(10, "battery", "Disable");
+        dataEncoder.put(10, "wifi_status", "Enable");
+        dataEncoder.put(10, "network_status", "Enable");
+        dataEncoder.putEnd(15, "subscriptions");
+        dataEncoder.putEnd(14, "event");
+        byte[] sendData = dataEncoder.getData();
+        client.send(sendData, 0, sendData.length);
+
+        sendFakeOnlineEvent();
+
+        LocalMessageProtocolMessage msg = client.newMessage(null);
+        client.receive(msg);
+        byte[] clientData = msg.getData();
+
+        DataDecoder dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(13), "ChangeNotify");
+        dataDecoder.getString(10);
+        dataDecoder.getStart(15);
+        th.check(dataDecoder.getName(), "network_status");
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(10), "Home");
+        dataDecoder.getEnd(14);
+        dataDecoder.getEnd(15);
+
+        msg = client.newMessage(null);
+        client.receive(msg);
+        clientData = msg.getData();
+
+        dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(13), "ChangeNotify");
+        dataDecoder.getString(10);
+        dataDecoder.getStart(15);
+        th.check(dataDecoder.getName(), "wifi_status");
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getBoolean(), true);
+        dataDecoder.getEnd(14);
         dataDecoder.getEnd(15);
     }
 
@@ -91,6 +148,7 @@ public class TestNokiaPhoneStatusServer implements Testlet {
 
             testProtocolVersion(th);
             testSubscribeMessages(th);
+            testChangeNotify(th);
 
             client.close();
        } catch (IOException ioe) {
