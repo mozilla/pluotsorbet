@@ -78,6 +78,12 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBy
             reject(new JavaException("java/io/IOException", message.error));
         }
 
+        this.socket.onclose = function() {
+            if (this.waitingData) {
+                this.waitingData();
+            }
+        }.bind(this);
+
         this.socket.ondata = (function(message) {
             // console.log("this.socket.ondata: " + JSON.stringify(message));
             var newArray = new Uint8Array(this.data.byteLength + message.data.byteLength);
