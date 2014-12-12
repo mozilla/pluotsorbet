@@ -451,6 +451,10 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs list " + path); }
 
+    // Query the datastore for the record, and return its list of files.
+    // This isn't foolproof, as the keys in the database are the source of truth
+    // about the files in the filesystem.  But the list of files is consistent
+    // with those records, in theory, and retrieving it is faster.
     store.getItem(path, function(record) {
       if (record === null || !record.isDir) {
         cb(null);
@@ -508,8 +512,17 @@ var fs = (function() {
     }
 
     store.getItem(path, function(record) {
-      // If it's a directory that isn't empty, then we can't remove it.
-      if (record !== null && record.isDir && record.files.length > 0) {
+      if (record === null) {
+        cb(false);
+        return;
+      }
+
+      // If it's a directory with files in it, then we can't remove it.
+      // Checking the list of files isn't foolproof, as there could still be
+      // a record in the database for a file in this directory.  But querying
+      // the database would take longer, so we do this instead and hope it
+      // remains consistent.
+      if (record.isDir && record.files.length > 0) {
         cb(false);
         return;
       }
@@ -518,16 +531,16 @@ var fs = (function() {
       var dir = dirname(path);
 
       store.getItem(dir, function(parentRecord) {
+        // Remove it from the parent directory's list of files.
+        // In theory, the parent should have a record, and its list of files
+        // should include this one, but we check first in case the list
+        // has become inconsistent with the file records in the datastore.
         var index = -1;
-
-        // If it isn't in the parent directory, then we can't remove it.
-        if (parentRecord === null || (index = parentRecord.files.indexOf(name)) < 0) {
-          cb(false);
-          return;
+        if (parentRecord !== null && (index = parentRecord.files.indexOf(name)) >= 0) {
+          parentRecord.files.splice(index, 1);
+          store.setItem(dir, parentRecord);
         }
 
-        parentRecord.files.splice(index, 1);
-        store.setItem(dir, parentRecord);
         store.removeItem(path);
         cb(true);
       });
