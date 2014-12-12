@@ -205,13 +205,14 @@ module J2ME.C4.IR {
   JVMNew.prototype.nodeName = "JVMNew";
 
   export class JVMThrow extends StoreDependent {
-    constructor(control: Control, store: Store) {
+    constructor(control: Control, store: Store, public object: Value) {
       super(control, store);
       this.handlesAssignment = true;
     }
     visitInputs(visitor: NodeVisitor) {
       this.control && visitor(this.control);
       this.store && visitor(this.store);
+      visitor(this.object);
     }
   }
 
@@ -355,7 +356,12 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMNewObjectArray.prototype.compile = function (cx: Context): AST.Node {
-    return call(id("$NA"), [id(mangleClass(this.classInfo)), compileValue(this.length, cx)]);
+    var emitClassInitializationCheck = true;
+    var callee: AST.Node = call(id("$NA"), [id(mangleClass(this.classInfo)), compileValue(this.length, cx)]);
+    if (emitClassInitializationCheck) {
+      callee = new AST.SequenceExpression([getRuntimeClass(this.classInfo), callee]);
+    }
+    return callee;
   };
 
   IR.JVMStoreIndexed.prototype.compile = function (cx: Context): AST.Node {
@@ -580,7 +586,8 @@ module J2ME.C4.Backend {
     } else {
       release || assert (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESTATIC);
       callee = id(mangleClassAndMethod(this.methodInfo));
-      if (true) {
+      var emitClassInitializationCheck = true;
+      if (emitClassInitializationCheck) {
         callee = new AST.SequenceExpression([getRuntimeClass(this.methodInfo.classInfo), callee]);
       }
       result = call(callee, args);
@@ -600,77 +607,6 @@ module J2ME.C4.Backend {
     return result;
   };
 
-  function hashString(s: string) {
-    var data = new Int32Array(s.length);
-    for (var i = 0; i < s.length; i++) {
-      data[i] = s.charCodeAt(i);
-    }
-    return HashUtilities.hashBytesTo32BitsMD5(data, 0, s.length);
-  }
-
-  var friendlyMangledNames = true;
-
-  export function escapeString(s: string) {
-    var invalidChars = "[];/<>()";
-    var replaceChars = "abc_defg";
-    var result = "";
-    for (var i = 0; i < s.length; i++) {
-      if ((i === 0 && isIdentifierStart(s[i])) || (i > 0 && isIdentifierPart(s[i]))) {
-        result += s[i];
-      } else {
-        release || assert (invalidChars.indexOf(s[i]) >= 0, s[i] + " " + s);
-        result += replaceChars[invalidChars.indexOf(s[i])];
-      }
-    }
-    return result;
-  }
-
-  export function mangleClassAndMethod(methodInfo: MethodInfo) {
-    var name = methodInfo.classInfo.className + methodInfo.name + methodInfo.signature;
-    if (friendlyMangledNames) {
-      return escapeString(name);
-    }
-    var hash = hashString(name);
-    return StringUtilities.variableLengthEncodeInt32(hash);
-  }
-
-  export function mangleMethod(methodInfo: MethodInfo) {
-    var name = methodInfo.name + methodInfo.signature;
-    if (friendlyMangledNames) {
-      return escapeString(name);
-    }
-    var hash = hashString(name);
-    return StringUtilities.variableLengthEncodeInt32(hash);
-  }
-
-  export function mangleClass(classInfo: ClassInfo) {
-    if (classInfo instanceof PrimitiveClassInfo) {
-      switch (classInfo.mangledName) {
-        case "int":
-          return "Int32Array";
-        case "boolean":
-        case "byte":
-          return "Int8Array";
-          break;
-        case "char":
-          return "Int16Array";
-          break;
-      }
-      return classInfo.mangledName;
-    } else if (classInfo.isArrayClass) {
-      return "$AK(" + mangleClass(classInfo.elementClass) + ")";
-    } else {
-      if (friendlyMangledNames) {
-        return "$" + escapeString(classInfo.className);
-      }
-      var hash = hashString(classInfo.className);
-      return "$" + StringUtilities.variableLengthEncodeInt32(hash);
-    }
-  }
-
-  export function mangleField(fieldInfo: FieldInfo) {
-    return "$" + escapeString(fieldInfo.classInfo.className + "_" + fieldInfo.name + "_" + fieldInfo.signature);
-  }
 
   function getRuntimeClass(classInfo: ClassInfo) {
     return new AST.MemberExpression(id("$"), id(mangleClass(classInfo)), false);
@@ -679,10 +615,10 @@ module J2ME.C4.Backend {
   IR.JVMGetField.prototype.compile = function (cx: Context): AST.Node {
     if (this.object) {
       var object = compileValue(this.object, cx);
-      return new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false);
+      return new AST.MemberExpression(object, id(this.fieldInfo.mangledName), false);
     } else {
       assert(this.fieldInfo.isStatic);
-      return new AST.MemberExpression(getRuntimeClass(this.fieldInfo.classInfo), id(mangleField(this.fieldInfo)), false);
+      return new AST.MemberExpression(getRuntimeClass(this.fieldInfo.classInfo), id(this.fieldInfo.mangledName), false);
     }
   };
 
@@ -690,22 +626,24 @@ module J2ME.C4.Backend {
     var value = compileValue(this.value, cx);
     if (this.object) {
       var object = compileValue(this.object, cx);
-      return assignment(new AST.MemberExpression(object, id(mangleField(this.fieldInfo)), false), value);
+      return assignment(new AST.MemberExpression(object, id(this.fieldInfo.mangledName), false), value);
     } else {
       assert(this.fieldInfo.isStatic);
-      return assignment(new AST.MemberExpression(getRuntimeClass(this.fieldInfo.classInfo), id(mangleField(this.fieldInfo)), false), value);
+      return assignment(new AST.MemberExpression(getRuntimeClass(this.fieldInfo.classInfo), id(this.fieldInfo.mangledName), false), value);
     }
   };
 
   IR.JVMNew.prototype.compile = function (cx: Context): AST.Node {
     var callee: AST.Node = id(mangleClass(this.classInfo));
-    if (true) {
+    var emitClassInitializationCheck = true;
+    if (emitClassInitializationCheck) {
       callee = new AST.SequenceExpression([getRuntimeClass(this.classInfo), callee]);
     }
     return new AST.NewExpression(callee, []);
   };
 
   IR.JVMThrow.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.ThrowStatement(constant(null));
+    var object = compileValue(this.object, cx);
+    return new AST.ThrowStatement(object);
   };
 }

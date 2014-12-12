@@ -1,10 +1,5 @@
 module J2ME {
 
-  import mangleClass = J2ME.C4.Backend.mangleClass;
-  import mangleField = J2ME.C4.Backend.mangleField;
-  import mangleMethod = J2ME.C4.Backend.mangleMethod;
-  import mangleClassAndMethod = J2ME.C4.Backend.mangleClassAndMethod;
-
   declare var release;
 
   export class Emitter {
@@ -166,9 +161,9 @@ module J2ME {
           emitFieldDefinition(emitter, fieldInfo);
         } else {
           if (emitter.closure) {
-            writer.writeLn("this[" + quote(mangleField(fieldInfo)) + "] = " + defaultValue + ";");
+            writer.writeLn("this[" + quote(fieldInfo.mangledName) + "] = " + defaultValue + ";");
           } else {
-            writer.writeLn("this." + mangleField(fieldInfo) + " = " + defaultValue + ";");
+            writer.writeLn("this." + fieldInfo.mangledName + " = " + defaultValue + ";");
           }
         }
       }
@@ -305,7 +300,7 @@ module J2ME {
     return compiledMethods;
   }
 
-  export function compile(jvm: any, classFilter: string, fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
+  export function compile(jvm: any, classFilter: (classInfo: ClassInfo) => boolean, fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
     var classFiles = CLASSES.classFiles;
     var ctx = new Context(runtime);
@@ -332,7 +327,7 @@ module J2ME {
           if (classInfo.sourceFile && !classInfo.sourceFile.match(fileFilter)) {
             return true;
           }
-          if (!classInfo.className.match(classFilter)) {
+          if (!classFilter(classInfo)) {
             return true;
           }
           classInfoList.push(classInfo);

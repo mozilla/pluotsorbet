@@ -115,15 +115,15 @@ module J2ME {
     lockTimeout: number;
     lockLevel: number;
     thread: java.lang.Thread;
-    traceWriter: IndentingWriter;
+    writer: IndentingWriter;
     constructor(public runtime: Runtime) {
       var id = this.id = Context._nextId ++;
       this.frames = [];
       this.frameSets = [];
       this.runtime = runtime;
       this.runtime.addContext(this);
-      this.traceWriter = new IndentingWriter(false, function (s) {
-        dumpLine(id + " | " + s);
+      this.writer = new IndentingWriter(false, function (s) {
+        dumpLine(runtime.id + ":" + id + " | " + s);
       });
     }
 
@@ -272,7 +272,9 @@ module J2ME {
         return;
       }
       $.ctx = this;
-      traceWriter = null; // this.traceWriter;
+      traceWriter = null; // this.writer;
+      linkWriter = null; // this.writer;
+      initWriter = this.writer;
     }
 
     execute() {

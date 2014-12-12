@@ -71,7 +71,7 @@ try {
        "string.js", "libs/console.js", "midp/midp.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "build/compiled.js");
 
-  var dump = print;
+  var dump = putstr;
   var console = window.console;
 
   CLASSES.addSourceDirectory("java/cldc1.1.1");

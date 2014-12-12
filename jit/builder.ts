@@ -37,11 +37,6 @@ module J2ME {
   import BytecodeStream = Bytecode.BytecodeStream;
   import Condition = Bytecode.Condition;
 
-
-  import mangleMethod = J2ME.C4.Backend.mangleMethod;
-  import mangleClass = J2ME.C4.Backend.mangleClass;
-  import mangleField = J2ME.C4.Backend.mangleField;
-
   function kindsFromSignature(signature: string) {
 
   }
@@ -1131,7 +1126,8 @@ module J2ME {
     }
 
     genThrow(bci: number) {
-      var _throw = new IR.JVMThrow(this.region, this.state.store);
+      var object = this.state.peek();
+      var _throw = new IR.JVMThrow(this.region, this.state.store, object);
       this.recordStore(_throw);
       this.methodReturnInfos.push(new ReturnInfo(
         this.region,

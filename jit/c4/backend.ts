@@ -134,14 +134,6 @@ module J2ME.C4.Backend {
     return new Identifier(name);
   }
 
-  export function isIdentifierStart(c) {
-    return (c === '$') || (c === '_') || (c === '\\') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-  }
-
-  export function isIdentifierPart(c) {
-    return (c === '$') || (c === '_') || (c === '\\') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || ((c >= '0') && (c <= '9'));
-  }
-
   export function isIdentifierName(s) {
     if (!isIdentifierStart(s[0])) {
       return false;

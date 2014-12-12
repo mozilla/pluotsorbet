@@ -30,14 +30,14 @@ module J2ME {
   export class FieldInfo {
     private static _nextiId = 0;
     id: number;
-    isStatic: boolean;
-    mangledName: string;
+    isStatic: boolean ;
     constantValue: any;
+    mangledName: string;
 
     constructor(public classInfo: ClassInfo, public access_flags: number, public name: string, public signature: string) {
       this.id = FieldInfo._nextiId++;
       this.isStatic = ACCESS_FLAGS.isStatic(access_flags);
-      this.mangledName = J2ME.C4.Backend.mangleField(this);
+      this.mangledName = undefined;
     }
 
     get(object: java.lang.Object) {
@@ -141,8 +141,8 @@ module J2ME {
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
 
-      this.mangledName = J2ME.C4.Backend.mangleMethod(this);
-      this.mangledClassAndMethodName = J2ME.C4.Backend.mangleClassAndMethod(this);
+      this.mangledName = mangleMethod(this);
+      this.mangledClassAndMethodName = mangleClassAndMethod(this);
 
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
       this.consumes = this.signatureDescriptor.getArgumentSlotCount();
@@ -206,21 +206,7 @@ module J2ME {
       this.vmc = {};
       this.vfc = {};
 
-      this.mangledName = J2ME.C4.Backend.mangleClass(this);
-
-      /*
-       if (jsGlobal[this.mangledName]) {
-       this.constructor = jsGlobal[this.mangledName];
-       } else {
-       this.constructor = function () {};
-       }
-
-       this.constructor.prototype.class = this;
-       this.constructor.prototype.toString = function() {
-       return '[instance ' + this.class.className + ']';
-       };
-       */
-
+      this.mangledName = mangleClass(this);
 
       var self = this;
 
@@ -267,6 +253,57 @@ module J2ME {
           self.sourceFile = cp[a.info.sourcefile_index].bytes;
         }
       });
+    }
+
+    public complete() {
+      this._mangleFields();
+    }
+
+    /**
+     * Gets the class hierarchy in derived -> base order.
+     */
+    private _getClassHierarchy(): ClassInfo [] {
+      var classHierarchy = [];
+      var classInfo = this;
+      do {
+        classHierarchy.push(classInfo);
+        classInfo = classInfo.superClass;
+      } while (classInfo);
+      return classHierarchy;
+    }
+
+    private _mangleFields() {
+      if (false) {
+        // Safe mangling that includes className, fieldName and signature.
+        var fields = this.fields;
+        for (var j = 0; j < fields.length; j++) {
+          var fieldInfo = fields[j];
+          fieldInfo.mangledName = "$" + escapeString(fieldInfo.classInfo.className + "_" + fieldInfo.name + "_" + fieldInfo.signature);
+        }
+        return;
+      }
+
+      // Keep track of how many times a field name was used and resolve conflicts by
+      // prefixing filed names with numbers.
+      var classHierarchy = this._getClassHierarchy();
+      var count = Object.create(null);
+      for (var i = classHierarchy.length - 1; i >= 0; i--) {
+        classInfo = classHierarchy[i];
+        var fields = classInfo.fields;
+        for (var j = 0; j < fields.length; j++) {
+          var field = fields[j];
+          var fieldName = field.name;
+          if (count[field.name] === undefined) {
+            count[fieldName] = 0;
+          }
+          var fieldCount = count[fieldName];
+          // Only mangle this classInfo's fields.
+          if (i === 0) {
+            field.mangledName = "$" + (fieldCount ? "$" + fieldCount : "") + field.name;
+          }
+          count[fieldName] ++;
+        }
+      }
     }
 
     get isInterface() : boolean {

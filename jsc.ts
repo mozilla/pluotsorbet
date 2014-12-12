@@ -55,7 +55,6 @@ jsGlobal.urlParams = {
 module J2ME {
   declare var load: (string) => void;
   declare var process, require, global, quit, help, scriptArgs, arguments, snarf;
-  declare var JVM, Runtime, CLASSES, Context, release;
 
   var isNode = typeof process === 'object';
   var writer: IndentingWriter;
@@ -179,7 +178,21 @@ module J2ME {
     if (verboseOption.value) {
       writer.writeLn("Compiling Pattern: " + classFilterOption.value);
     }
-    compile(jvm, classFilterOption.value, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    var classPattern;
+    var file = snarf(classFilterOption.value, "text");
+    if (file) {
+      classPattern = file.split("\n");
+    } else {
+      classPattern = classFilterOption.value;
+    }
+    function classFilter(classInfo: ClassInfo): boolean {
+      if (typeof classPattern === "string") {
+        return !!classInfo.className.match(classFilterOption.value);
+      } else {
+        return classPattern.indexOf(classInfo.className) >= 0;
+      }
+    }
+    compile(jvm, classFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
     if (verboseOption.value) {
       printResults();
     }

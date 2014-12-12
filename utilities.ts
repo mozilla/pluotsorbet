@@ -108,6 +108,14 @@ declare var Uint8ClampedArray: {
 
 module J2ME {
 
+  export function isIdentifierStart(c) {
+    return (c === '$') || (c === '_') || (c === '\\') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+  }
+
+  export function isIdentifierPart(c) {
+    return (c === '$') || (c === '_') || (c === '\\') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || ((c >= '0') && (c <= '9'));
+  }
+
   export enum CharacterCodes {
     _0 = 48,
     _1 = 49,
