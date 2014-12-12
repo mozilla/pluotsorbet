@@ -116,7 +116,8 @@ var fs = (function() {
       if (event.oldVersion == 0) {
         // If the database doesn't exist yet, then all we have to do
         // is create the object store for the latest version of the database.
-        openreq.result.createObjectStore(Store.DBSTORENAME);
+        var objectStore = openreq.result.createObjectStore(Store.DBSTORENAME);
+        objectStore.createIndex("parentDir", "parentDir", { unique: false });
       } else {
         var version = event.oldVersion;
         var next = (function() {
