@@ -269,6 +269,26 @@ var fs = (function() {
     }).bind(this));
   }
 
+  Store.prototype.isEmpty = function(dir, cb) {
+    this.sync((function() {
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      if (DEBUG_FS) { console.log("isEmpty initiated"); }
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var index = objectStore.index("parentDir");
+      index.count(IDBKeyRange.only(dir)).onsuccess = function(event) {
+        var count = event.target.result;
+        if (count > 0) {
+          cb(false);
+        } else {
+          cb(true);
+        }
+      };
+      transaction.oncomplete = function() {
+        if (DEBUG_FS) { console.log("isEmpty completed"); }
+      };
+    }).bind(this));
+  }
+
   Store.prototype.addTransientPath = function(path) {
     this.transientPaths.set(path, true);
   }
@@ -576,9 +596,9 @@ var fs = (function() {
       if (!record) {
         cb(true);
       } else if (record.isDir) {
-        list(path, function(files) {
-          // If it's a directory that isn't empty, then we can't remove it.
-          if (files.length > 0) {
+        // If the directory isn't empty, then we can't remove it.
+        store.isEmpty(path, function(empty) {
+          if (!empty) {
             cb(false);
             return;
           }
@@ -739,15 +759,15 @@ var fs = (function() {
       });
 
       if (oldRecord.isDir) {
-        list(oldPath, function(files) {
-          // If the old path is a dir with files in it, we don't move it.
-          // XXX Shouldn't we move it along with its files?
-          if (files.length > 0) {
+        store.isEmpty(oldPath, function(empty) {
+          if (empty) {
+            recreatePath();
+          } else {
+            // If the old path is a dir with files in it, we don't move it.
+            // XXX Shouldn't we move it along with its files?
             cb(false);
             return;
           }
-
-          recreatePath();
         });
       } else {
         recreatePath();
