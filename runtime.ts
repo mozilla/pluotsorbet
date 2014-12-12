@@ -15,8 +15,15 @@ module J2ME {
 
 
   // If you want to enable trace logging, do so in context.ts.
-  export var traceWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
-  export var linkingWriter = null; // new IndentingWriter(false, IndentingWriter.stderr);
+  export var traceWriter = null;
+
+  export var linkingWriter = new IndentingWriter(false, function (s) {
+    dumpLine(s);
+  });
+
+  export var profileWriter = new IndentingWriter(false, function (s) {
+    dumpLine(s);
+  });
 
   export var Klasses = {
     java: {

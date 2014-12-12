@@ -22,12 +22,12 @@ all: tests.jar
 ../java/classes.jar:
 	cd ../java && make
 
-Testlets.java: $(SRCS) Makefile
-	echo "public class Testlets {" > $@
-	echo "  static String[] list = {" >> $@
-	grep "implements Testlet" `find . -name "*.java"` | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
-	echo "  null};" >> $@
-	echo "};" >> $@
+# Testlets.java: $(SRCS) Makefile
+# 	echo "public class Testlets {" > $@
+# 	echo "  static String[] list = {" >> $@
+# 	grep "implements Testlet" `find . -name "*.java"` | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
+# 	echo "  null};" >> $@
+# 	echo "};" >> $@
 
 tests.jar: $(SRCS) Testlets.java
 	rm -rf build

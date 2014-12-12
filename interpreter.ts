@@ -26,7 +26,7 @@ module J2ME {
     var stack = frame.stack;
     var returnValue = null;
 
-    interpreterCounter && interpreterCounter.count(frame.methodInfo.implKey);
+    interpreterCounter && interpreterCounter.count("Method " + frame.methodInfo.implKey);
 
     function popFrame(consumes) {
       if (frame.lockObject)
@@ -178,7 +178,7 @@ module J2ME {
         }
       }
 
-      // interpreterCounter && interpreterCounter.count(Bytecodes[op]);
+      interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
 
 
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.bci - 1) + " " + OPCODES[op] + " " + stack.join(","));

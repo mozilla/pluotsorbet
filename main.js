@@ -144,7 +144,7 @@ if (MIDP.midletClassName == "RunTests") {
 
 Promise.all(loadingPromises).then(function() {
   CLASSES.initializeBuiltinClasses();
-  jvm.startIsolate0(main, urlParams.args);
+  jvm.startIsolate0(main, []);
 });
 
 function getIsOff(button) {
@@ -167,6 +167,9 @@ window.onload = function() {
    VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
    toggle(this);
  };
+  document.getElementById("dumpMethods").onclick = function() {
+    J2ME.interpreterCounter.traceSorted(J2ME.profileWriter);
+  };
  document.getElementById("profile").onclick = function() {
    if (getIsOff(this)) {
      Instrument.startProfile();

@@ -94,7 +94,7 @@ try {
 
   print("RUNNING TIME: " + (dateNow() - start));
 
-  J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+  // J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
 
 } catch (x) {
   print(x);
