@@ -12,7 +12,7 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var Long;
-
+  declare var Instrument;
 
   // If you want to enable trace logging, do so in context.ts.
   export var traceWriter = null;
@@ -600,6 +600,9 @@ module J2ME {
           frame.setLocal(j++, null);
         }
       }
+      var caller = $.ctx.current();
+      var callee = frame;
+      Instrument.callEnterHooks(methodInfo, caller, callee);
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic

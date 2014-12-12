@@ -2,6 +2,7 @@ module J2ME {
   declare var util;
   declare var Long;
   declare var JavaException;
+  declare var Instrument;
 
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
@@ -33,6 +34,8 @@ module J2ME {
         ctx.monitorExit(frame.lockObject);
       var callee = frame;
       frame = ctx.popFrame();
+      var caller = ctx.current();
+      Instrument.callExitHooks(callee.methodInfo, caller, callee);
       if (frame === null) {
         returnValue = null;
         switch (consumes) {
