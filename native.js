@@ -567,7 +567,7 @@ Native.create("java/lang/Thread.sleep.(J)V", function(delay) {
 }, true);
 
 Native.create("java/lang/Thread.yield.()V", function() {
-    throw VM.Yield;
+    throwYield();
 });
 
 Native.create("java/lang/Thread.activeCount.()I", function(ctx) {

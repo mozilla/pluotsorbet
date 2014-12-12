@@ -135,7 +135,7 @@ module J2ME.Metrics {
       var name = pair[0];
       var count = pair[1];
       var time = times[name];
-      var line = name + ": " + count;
+      var line =  count + ": " + name;
       if (time) {
         line += ", " + time.toFixed(4);
         if (count > 1) {

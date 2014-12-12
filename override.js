@@ -96,7 +96,7 @@ function executePromise(ret, doReturn, ctx, key) {
     Instrument.enterAsyncNative(key, ret);
   }
 
-  throwHelper(VM.Pause);
+  throwPause();
 }
 
 /**

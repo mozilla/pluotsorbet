@@ -29,6 +29,8 @@
   //================================================================
 
 
+  var startTime = performance.now();
+
   /**
    * Every log entry serializes itself into a LogItem, so that it can
    * subsequently be piped to various consoles.
@@ -42,17 +44,19 @@
     }
 
     this.levelName = levelName;
-    this.thread = (typeof $ !== "undefined" && $.ctx.thread ?
-                   String.fromCharCode.apply(null, $.ctx.thread["$java_lang_Thread_name_aC"]) : "no thread");
+    // this.thread = (typeof $ !== "undefined" ?
+    //                String.fromCharCode.apply(null, $.ctx.thread["$java_lang_Thread_name_aC"]) : "no thread");
+    this.thread = "X";
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
+    this.time = performance.now() - startTime;
   }
 
   LogItem.prototype = {
 
     get message() {
       if (this._message === undefined) {
-        this._message = "[" + this.thread + "] " + this.args.join(" ");
+        this._message = this.time.toFixed(2) + " [" + this.thread + "] " + this.args.join(" ") + " ";
       }
       return this._message;
     },

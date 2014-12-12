@@ -6,15 +6,17 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
 
-  export var interpreterCounter = new Metrics.Counter(true);
+  export var interpreterCounter = null; // new Metrics.Counter(true);
+
+  var traceArrayAccess = false;
 
   function traceArrayStore(idx: number, array: any [], value: any) {
-    traceWriter && traceWriter.writeLn(toDebugString(array) + "[" + idx + "] = " + toDebugString(value));
+    traceWriter.writeLn(toDebugString(array) + "[" + idx + "] = " + toDebugString(value));
   }
 
   function traceArrayLoad(idx: number, array: any []) {
     assert(array[idx] !== undefined);
-    traceWriter && traceWriter.writeLn(toDebugString(array) + "[" + idx + "] (" + toDebugString(array[idx]) + ")");
+    traceWriter.writeLn(toDebugString(array) + "[" + idx + "] (" + toDebugString(array[idx]) + ")");
   }
 
   export function interpret(ctx: Context) {
@@ -24,29 +26,13 @@ module J2ME {
     var stack = frame.stack;
     var returnValue = null;
 
-    if (traceWriter) {
-      for (var i = 0; i < ctx.frames.length; i++) {
-        var methodInfo = ctx.frames[i].methodInfo;
-        var localsStr = ctx.frames[i].locals.map(function (x) {
-          return toDebugString(x);
-        }).join(", ");
-
-        var printObj = "";
-        //if (!methodInfo.isStatic) {
-        //  printObj = " <" + toDebugString(this) + "> ";
-        //}
-        traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + localsStr);
-      }
-    }
-
-    interpreterCounter && interpreterCounter.count(frame.methodInfo.implKey);
+    interpreterCounter && interpreterCounter.count("Method " + frame.methodInfo.implKey);
 
     function popFrame(consumes) {
       if (frame.lockObject)
         ctx.monitorExit(frame.lockObject);
       var callee = frame;
       frame = ctx.popFrame();
-      traceWriter && traceWriter.leave("< ");
       if (frame === null) {
         returnValue = null;
         switch (consumes) {
@@ -192,7 +178,7 @@ module J2ME {
         }
       }
 
-      // interpreterCounter && interpreterCounter.count(Bytecodes[op]);
+      interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
 
 
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.bci - 1) + " " + OPCODES[op] + " " + stack.join(","));
@@ -314,7 +300,7 @@ module J2ME {
           var refArray = stack.pop();
           checkArrayAccess(refArray, idx);
           stack.push(refArray[idx]);
-          traceArrayLoad(idx, refArray);
+          traceArrayAccess && traceWriter && traceArrayLoad(idx, refArray);
           break;
         case Bytecodes.LALOAD:
         case Bytecodes.DALOAD:
@@ -322,7 +308,7 @@ module J2ME {
           var refArray = stack.pop();
           checkArrayAccess(refArray, idx);
           stack.push2(refArray[idx]);
-          traceArrayLoad(idx, refArray);
+          traceArrayAccess && traceWriter && traceArrayLoad(idx, refArray);
           break;
         case Bytecodes.ISTORE:
         case Bytecodes.FSTORE:
@@ -387,7 +373,7 @@ module J2ME {
           var refArray = stack.pop();
           checkArrayAccess(refArray, idx);
           refArray[idx] = val;
-          traceArrayStore(idx, refArray, val);
+          traceArrayAccess && traceWriter && traceArrayStore(idx, refArray, val);
           break;
         case Bytecodes.AASTORE:
           var val = stack.pop();
@@ -399,7 +385,7 @@ module J2ME {
             ctx.raiseExceptionAndYield("java/lang/ArrayStoreException");
           }
           refArray[idx] = val;
-          traceArrayStore(idx, refArray, val);
+          traceArrayAccess && traceWriter && traceArrayStore(idx, refArray, val);
           break;
         case Bytecodes.POP:
           stack.pop();
@@ -957,7 +943,7 @@ module J2ME {
           if (ctx.frameSets.length > 0) {
             // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
             frame.bci--;
-            throw VM.Yield;
+            throwYield();
           }
           var obj = stack.pop();
           if (!obj) {
@@ -1119,8 +1105,8 @@ module J2ME {
 
   export class VM {
     static execute = interpret;
-    static Yield = {};
-    static Pause = {};
+    static Yield = {toString: function () { return "YIELD" }};
+    static Pause = {toString: function () { return "PAUSE" }};
     static DEBUG = false;
     static DEBUG_PRINT_ALL_EXCEPTIONS = false;
   }

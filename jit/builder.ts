@@ -437,10 +437,11 @@ module J2ME {
       return;
     }
     counter.count("Trying to Compile");
-    if (methodInfo.isSynchronized) {
-      counter.count("Cannot Compile: Method is synchronized.");
-      return;
-    } else if (methodInfo.exception_table.length) {
+    //if (methodInfo.isSynchronized) {
+    //  counter.count("Cannot Compile: Method is synchronized.");
+    //  return;
+    //} else
+    if (methodInfo.exception_table.length) {
       counter.count("Cannot Compile: Method has exception handlers.");
       return;
     }
