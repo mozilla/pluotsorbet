@@ -314,7 +314,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs open " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+      if (record === null || record.isDir) {
         cb(-1);
       } else {
         var reader = new FileReader();
@@ -452,7 +452,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs list " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || !record.isDir) {
+      if (record === null || !record.isDir) {
         cb(null);
       } else {
         cb(record.files);
@@ -465,7 +465,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs exists " + path); }
 
     store.getItem(path, function(record) {
-      cb(record ? true : false);
+      cb(record === null ? false : true);
     });
   }
 
@@ -474,7 +474,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs truncate " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+      if (record === null || record.isDir) {
         cb(false);
       } else {
         record.data = new Blob();
@@ -509,7 +509,7 @@ var fs = (function() {
 
     store.getItem(path, function(record) {
       // If it's a directory that isn't empty, then we can't remove it.
-      if (record && record.isDir && record.files.length > 0) {
+      if (record !== null && record.isDir && record.files.length > 0) {
         cb(false);
         return;
       }
@@ -521,7 +521,7 @@ var fs = (function() {
         var index = -1;
 
         // If it isn't in the parent directory, then we can't remove it.
-        if (parentRecord == null || (index = parentRecord.files.indexOf(name)) < 0) {
+        if (parentRecord === null || (index = parentRecord.files.indexOf(name)) < 0) {
           cb(false);
           return;
         }
@@ -541,7 +541,7 @@ var fs = (function() {
     store.getItem(dir, function(parentRecord) {
       // If the parent directory doesn't exist or isn't a directory,
       // then we can't create the file.
-      if (parentRecord == null || !parentRecord.isDir) {
+      if (parentRecord === null || !parentRecord.isDir) {
         cb(false);
         return;
       }
@@ -611,7 +611,7 @@ var fs = (function() {
       partPath += "/" + parts.shift();
 
       store.getItem(partPath, function(record) {
-        if (!record) {
+        if (record === null) {
           // The part doesn't exist; make it, then continue to next part.
           mkdir(partPath, mkpart);
         }
@@ -635,7 +635,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs size " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+      if (record === null || record.isDir) {
         cb(-1);
       } else {
         cb(record.data.size);
@@ -657,7 +657,7 @@ var fs = (function() {
 
     store.getItem(oldPath, function(oldRecord) {
       // If the old path doesn't exist, we can't move it.
-      if (oldRecord == null) {
+      if (oldRecord === null) {
         cb(false);
         return;
       }
@@ -700,7 +700,7 @@ var fs = (function() {
     }
 
     store.getItem(path, function(record) {
-      if (record == null) {
+      if (record === null) {
         cb(null);
         return;
       }
