@@ -272,7 +272,7 @@ Native.create("java/lang/Class.invoke_clinit.()V", function(ctx) {
         ctx.runtime.setStatic(CLASSES.getField(classInfo, "S._API_access_ok.I"), 1);
     }
     var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
-    if (clinit)
+    if (clinit && clinit.classInfo.className === className)
         ctx.pushFrame(clinit, 0);
     if (classInfo.superClass)
         ctx.pushClassInitFrame(classInfo.superClass);

@@ -296,9 +296,9 @@ var currentlyFocusedTextEditor;
         size |= 0;
 
         if (style & STYLE_BOLD)
-            style = "bold";
+            style = "bold ";
         else if (style & STYLE_ITALIC)
-            style = "italic";
+            style = "italic ";
         else
             style = "";
 
@@ -307,11 +307,11 @@ var currentlyFocusedTextEditor;
         else if (face & FACE_PROPORTIONAL)
             face = "sans-serif";
         else
-            face = "Arial, Helvetica, sans-serif";
+            face = "Arial,Helvetica,sans-serif";
 
         this.class.getField("I.baseline.I").set(this, size | 0);
         this.class.getField("I.height.I").set(this, (size * 1.3)|0);
-        this.css = style + " " + size + "pt " + face;
+        this.css = style  + size + "pt " + face;
     });
 
     Native.create("javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I", function(str) {
@@ -390,7 +390,9 @@ var currentlyFocusedTextEditor;
     }
 
     function withFont(font, c, str) {
-        c.font = font.css;
+        if (c.font != font.css) {
+          c.font = font.css;
+        }
         return c.measureText(str).width | 0;
     }
 
