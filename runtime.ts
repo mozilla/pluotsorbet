@@ -21,10 +21,6 @@ module J2ME {
     dumpLine(s);
   });
 
-  export var profileWriter = new IndentingWriter(false, function (s) {
-    dumpLine(s);
-  });
-
   export var Klasses = {
     java: {
       lang: {

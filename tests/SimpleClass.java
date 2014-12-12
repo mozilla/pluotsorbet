@@ -1,44 +1,41 @@
-import java.lang.Integer;
-
 interface TestInterface {
-    public void asd();
-}
-
-class Point {
-  int x;
-  int y;
-  static int z;
-  public Point(int x, int y) {
-    this.x = x;
-    this.y = y;
-  }
+  public void asd();
 }
 
 class SimpleClass {
-    public static int run() {
-      int s = 0;
-      int c = 1024 * 1024;
-      Point a = new Point(1, 2);
-      for (int i = 0; i < c; i++) {
-        a.x += a.y;
-        s += a.x + a.y;
-        s += Point.z;
+
+  private static void bubbleSort(int [] a, int left, int right) {
+    for (int i = right; i > 1; i--) {
+      for (int j = left; j < i; j++) {
+        if(a[j] > a[j + 1]) {
+          int temp = a[j];
+          a[j] = a[j + 1];
+          a[j + 1] = temp;
+        }
       }
-      return s;
+    }
+  }
+
+  public static void main(String[] args) {
+    System.out.println("I'm hungry");
+
+    int [] array = new int [1024];
+
+    for (int i = 0; i < array.length; i++) {
+      array[i] = array.length - i;
     }
 
-    public static void main(String[] args) {
-//      checkFalse(((Object) new SimpleClass[10]) instanceof SimpleClass);
-//      checkTrue(((Object) new SimpleClass[10]) instanceof SimpleClass[]);
-//
-//      checkTrue(((Object) new int[10]) instanceof Object);
-//      checkFalse(((Object) new int[10]) instanceof Integer);
-//      checkTrue(((Object)new int[10]) instanceof int []);
-//      checkFalse(((Object) new int[10]) instanceof short[]);
-//      checkFalse(((Object) new SimpleClass[10][10]) instanceof SimpleClass[]);
-//      checkTrue(((Object) new SimpleClass[10][10]) instanceof SimpleClass[][]);
-//      checkTrue(((Object) new SimpleClass[10]) instanceof Object[]);
-
-      run();
+    for (int i = 0; i < 100; i++) {
+      for (int j = 0; j < array.length; j++) {
+        array[j] = array.length - j;
+      }
+      SimpleClass.bubbleSort(array, 0, array.length - 1);
     }
+
+    String s = "";
+    for (int i = 0; i < array.length; i++) {
+      s += array[i] + " ";
+    }
+    System.out.println(s);
+  }
 }
