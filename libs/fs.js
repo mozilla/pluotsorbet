@@ -547,15 +547,17 @@ var fs = (function() {
       }
 
       // If the file already exists, we can't create it.
-      if (parentRecord.files.indexOf(name) >= 0) {
-        cb(false);
-        return;
-      }
+      exists(path, function(exists) {
+        if (exists) {
+          cb(false);
+          return;
+        }
 
-      parentRecord.files.push(name);
-      store.setItem(dir, parentRecord);
-      store.setItem(path, record);
-      cb(true);
+        parentRecord.files.push(name);
+        store.setItem(dir, parentRecord);
+        store.setItem(path, record);
+        cb(true);
+      });
     });
   }
 
