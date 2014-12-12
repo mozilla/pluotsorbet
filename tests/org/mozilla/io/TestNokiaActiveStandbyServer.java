@@ -128,7 +128,7 @@ public class TestNokiaActiveStandbyServer implements Testlet {
 
             Indicator indicator = new Indicator(0, null);
             IndicatorManager indicatorManager = IndicatorManager.getIndicatorManager();
-            indicatorManager.appendIndicator(indicator, true);
+            indicatorManager.appendIndicator(indicator, false);
 
             indicator.setActive(true);
 
