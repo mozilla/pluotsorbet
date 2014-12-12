@@ -514,8 +514,9 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
     this.pid = util.id();
     var run = CLASSES.getMethod(this.klass.classInfo, "I.run.()V");
     // Create a context for the thread and start it.
-    var ctx = new Context(ctx.runtime);
-    ctx.thread = this;
+    var newCtx = new Context(ctx.runtime);
+    newCtx.thread = this;
+
 
     var syntheticMethod = new MethodInfo({
       name: "ThreadStart0Synthetic",
@@ -547,8 +548,8 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
       ])
     });
 
-    ctx.frames.push(new Frame(syntheticMethod, [ this ], 0));
-    ctx.resume();
+    newCtx.frames.push(new Frame(syntheticMethod, [ this ], 0));
+    newCtx.resume();
 });
 
 Native.create("java/lang/Thread.internalExit.()V", function() {

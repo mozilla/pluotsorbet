@@ -36,8 +36,6 @@ module J2ME {
       var mainArgs = isolate.klass.classInfo.getField("I._mainArgs.[Ljava/lang/String;").get(isolate);
       var runtime = new J2ME.Runtime(this);
       var ctx = new Context(runtime);
-      var oldCtx = $.ctx;
-      ctx.setCurrent();
 
       isolate.runtime = runtime;
       runtime.isolate = isolate;
@@ -58,7 +56,9 @@ module J2ME {
 
       ctx.frames.push(new Frame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
         [ runtime.mainThread, util.newString("main") ], 0));
+      var oldCtx = $.ctx;
       ctx.execute();
+      oldCtx.setCurrent();
 
       var args = J2ME.newStringArray(mainArgs.length);
       for (var n = 0; n < mainArgs.length; ++n) {
@@ -66,8 +66,7 @@ module J2ME {
       }
 
       ctx.frames.push(new Frame(entryPoint, [ args ], 0));
-      ctx.start();
-      oldCtx.setCurrent();
+      ctx.resume();
     }
 
   }
