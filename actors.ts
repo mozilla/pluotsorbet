@@ -285,6 +285,7 @@ module J2ME {
 
       // Keep track of how many times a field name was used and resolve conflicts by
       // prefixing filed names with numbers.
+      var classInfo: ClassInfo;
       var classHierarchy = this._getClassHierarchy();
       var count = Object.create(null);
       for (var i = classHierarchy.length - 1; i >= 0; i--) {
