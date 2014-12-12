@@ -140,7 +140,7 @@ if (urlParams.jad) {
 
 function performDownload(dialog, callback) {
   var dialogText = dialog.querySelector('h1.download-dialog-text');
-  dialogText.textContent = "Downloading " + MIDlet.name + "...";
+  dialogText.textContent = "Downloading " + MIDlet.name + "…";
 
   var progressBar = dialog.querySelector('progress.pack-activity');
 
