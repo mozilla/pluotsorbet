@@ -33,30 +33,18 @@
       }),
 
       new Promise(function(resolve, reject) {
-        fs.exists("/_main.ks", function(exists) {
-          if (exists) {
+        load("../../certs/_main.ks", "blob").then(function(data) {
+          fs.create("/_main.ks", data, function() {
             resolve();
-          } else {
-            load("../../certs/_main.ks", "blob").then(function(data) {
-              fs.create("/_main.ks", data, function() {
-                resolve();
-              });
-            });
-          }
+          });
         });
       }),
 
       new Promise(function(resolve, reject) {
-        fs.exists("/_test.ks", function(exists) {
-          if (exists) {
+        load("../../certs/_test.ks", "blob").then(function(data) {
+          fs.create("/_test.ks", data, function() {
             resolve();
-          } else {
-            load("../../certs/_test.ks", "blob").then(function(data) {
-              fs.create("/_test.ks", data, function() {
-                resolve();
-              });
-            });
-          }
+          });
         });
       }),
     ]);
