@@ -314,7 +314,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs open " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+      if (record === null || record.isDir) {
         cb(-1);
       } else {
         var reader = new FileReader();
@@ -451,8 +451,12 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs list " + path); }
 
+    // Query the datastore for the record, and return its list of files.
+    // This isn't foolproof, as the keys in the database are the source of truth
+    // about the files in the filesystem.  But the list of files is consistent
+    // with those records, in theory, and retrieving it is faster.
     store.getItem(path, function(record) {
-      if (record == null || !record.isDir) {
+      if (record === null || !record.isDir) {
         cb(null);
       } else {
         cb(record.files);
@@ -465,7 +469,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs exists " + path); }
 
     store.getItem(path, function(record) {
-      cb(record ? true : false);
+      cb(record === null ? false : true);
     });
   }
 
@@ -474,7 +478,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs truncate " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+      if (record === null || record.isDir) {
         cb(false);
       } else {
         record.data = new Blob();
@@ -508,8 +512,17 @@ var fs = (function() {
     }
 
     store.getItem(path, function(record) {
-      // If it's a directory that isn't empty, then we can't remove it.
-      if (record && record.isDir && record.files.length > 0) {
+      if (record === null) {
+        cb(false);
+        return;
+      }
+
+      // If it's a directory with files in it, then we can't remove it.
+      // Checking the list of files isn't foolproof, as there could still be
+      // a record in the database for a file in this directory.  But querying
+      // the database would take longer, so we do this instead and hope it
+      // remains consistent.
+      if (record.isDir && record.files.length > 0) {
         cb(false);
         return;
       }
@@ -518,16 +531,16 @@ var fs = (function() {
       var dir = dirname(path);
 
       store.getItem(dir, function(parentRecord) {
+        // Remove it from the parent directory's list of files.
+        // In theory, the parent should have a record, and its list of files
+        // should include this one, but we check first in case the list
+        // has become inconsistent with the file records in the datastore.
         var index = -1;
-
-        // If it isn't in the parent directory, then we can't remove it.
-        if (parentRecord == null || (index = parentRecord.files.indexOf(name)) < 0) {
-          cb(false);
-          return;
+        if (parentRecord !== null && (index = parentRecord.files.indexOf(name)) >= 0) {
+          parentRecord.files.splice(index, 1);
+          store.setItem(dir, parentRecord);
         }
 
-        parentRecord.files.splice(index, 1);
-        store.setItem(dir, parentRecord);
         store.removeItem(path);
         cb(true);
       });
@@ -541,21 +554,23 @@ var fs = (function() {
     store.getItem(dir, function(parentRecord) {
       // If the parent directory doesn't exist or isn't a directory,
       // then we can't create the file.
-      if (parentRecord == null || !parentRecord.isDir) {
+      if (parentRecord === null || !parentRecord.isDir) {
         cb(false);
         return;
       }
 
       // If the file already exists, we can't create it.
-      if (parentRecord.files.indexOf(name) >= 0) {
-        cb(false);
-        return;
-      }
+      exists(path, function(exists) {
+        if (exists) {
+          cb(false);
+          return;
+        }
 
-      parentRecord.files.push(name);
-      store.setItem(dir, parentRecord);
-      store.setItem(path, record);
-      cb(true);
+        parentRecord.files.push(name);
+        store.setItem(dir, parentRecord);
+        store.setItem(path, record);
+        cb(true);
+      });
     });
   }
 
@@ -611,7 +626,7 @@ var fs = (function() {
       partPath += "/" + parts.shift();
 
       store.getItem(partPath, function(record) {
-        if (!record) {
+        if (record === null) {
           // The part doesn't exist; make it, then continue to next part.
           mkdir(partPath, mkpart);
         }
@@ -635,7 +650,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs size " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || record.isDir) {
+      if (record === null || record.isDir) {
         cb(-1);
       } else {
         cb(record.data.size);
@@ -657,7 +672,7 @@ var fs = (function() {
 
     store.getItem(oldPath, function(oldRecord) {
       // If the old path doesn't exist, we can't move it.
-      if (oldRecord == null) {
+      if (oldRecord === null) {
         cb(false);
         return;
       }
@@ -700,7 +715,7 @@ var fs = (function() {
     }
 
     store.getItem(path, function(record) {
-      if (record == null) {
+      if (record === null) {
         cb(null);
         return;
       }
