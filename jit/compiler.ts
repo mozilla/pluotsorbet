@@ -260,7 +260,7 @@ module J2ME {
       }
       try {
         if (emitter.debugInfo) {
-          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.getSourceLocationForBci(0));
+          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " " + method.getSourceLocationForBci(0));
         }
         var mangledClassAndMethodName = mangleClassAndMethod(method);
         var compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
