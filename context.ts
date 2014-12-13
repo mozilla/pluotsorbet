@@ -109,6 +109,13 @@ module J2ME {
 
   export class Context {
     private static _nextId: number = 0;
+    private static _colors = [
+      IndentingWriter.PURPLE,
+      IndentingWriter.YELLOW,
+      IndentingWriter.GREEN,
+      IndentingWriter.RED,
+      IndentingWriter.BOLD_RED
+    ];
     id: number
     frames: any [];
     frameSets: any [];
@@ -123,8 +130,21 @@ module J2ME {
       this.runtime = runtime;
       this.runtime.addContext(this);
       this.writer = new IndentingWriter(false, function (s) {
-        dumpLine(runtime.id + ":" + id + " | " + s);
+        console.log(s);
       });
+    }
+
+    public static color(id) {
+      if (inBrowser) {
+        return id;
+      }
+      return Context._colors[id % Context._colors.length] + id + IndentingWriter.ENDC;
+    }
+    public static currentContextPrefix() {
+      if ($) {
+        return Context.color($.id) + ":" + Context.color($.ctx.id);
+      }
+      return "";
     }
 
     kill() {

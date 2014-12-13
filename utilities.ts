@@ -19,6 +19,7 @@ var inBrowser = typeof console != "undefined";
 
 declare var putstr;
 declare var printErr;
+
 // declare var print;
 // declare var console;
 // declare var performance;
@@ -32,6 +33,12 @@ declare var printErr;
 declare var dateNow: () => number;
 
 declare var dump: (message: string) => void;
+
+function dumpLine(s) {
+  if (typeof dump !== "undefined") {
+    dump(s + "\n");
+  }
+}
 
 if (!jsGlobal.performance) {
   jsGlobal.performance = {};
@@ -62,8 +69,6 @@ interface String {
   padLeft(c: string, n: number): string;
   endsWith(s: string): boolean;
 }
-
-
 
 interface Function {
   boundTo: boolean;
@@ -1710,12 +1715,6 @@ module J2ME {
     Log = 0x8,
     Info = 0x10,
     All = 0x1f
-  }
-
-  export function dumpLine(s) {
-    if (typeof dump !== "undefined") {
-      dump(s + "\n");
-    }
   }
 
   export class IndentingWriter {
