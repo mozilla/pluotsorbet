@@ -88,11 +88,14 @@ var fs = (function() {
       objectStore.openCursor().onsuccess = function(event) {
         var cursor = event.target.result;
         if (cursor) {
-          if (cursor.value.isDir) {
-            delete cursor.value.files;
+          var newRecord = cursor.value;
+          if (newRecord.isDir) {
+            delete newRecord.files;
           }
-          cursor.value.parentDir = dirname(cursor.key);
-          objectStore.put(cursor.value, cursor.key);
+          var path = cursor.key;
+          newRecord.parentDir = (path === "/" ? null : dirname(path));
+          cursor.update(newRecord);
+          cursor.continue();
         } else {
           next();
         }
