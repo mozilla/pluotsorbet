@@ -1051,32 +1051,6 @@ module J2ME {
               stack.push(returnValue);
             }
           }
-          /*
-          // Take off the arguments from the stack.
-          var args = stack.slice(stack.length - methodInfo.consumes + (obj ? 1 : 0));
-          stack.length -= methodInfo.signatureDescriptor.getArgumentSlotCount();
-          // Invoke the compiled function.
-          var returnValue = fn.apply(obj, args);
-          // Push return value back on the stack.
-          var returnType = methodInfo.signature[methodInfo.signature.length - 1];
-          var isArrayReturnType = methodInfo.signature[methodInfo.signature.length - 2] === "[";
-          if (isArrayReturnType) {
-            stack.push(returnValue);
-          } else {
-            switch (returnType) {
-              case 'V':
-                break;
-              case 'J':
-              case 'D':
-                stack.push2(returnValue);
-                break;
-              default:
-                stack.push(returnValue);
-                break;
-            }
-          }
-          */
-
           break;
         case Bytecodes.RETURN:
           var shouldReturn = popFrame(0);
