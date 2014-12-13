@@ -46,11 +46,6 @@ var TextEditorProvider = (function() {
                 this.parentNode.appendChild(this.textEditorElem);
             }
 
-            this.textEditorElem.oninput = function() {
-                this.content = this.textEditorElem.textContent;
-                this.oninputCallback && this.oninputCallback();
-            }.bind(this);
-
             // Set attributes and styles.
             if (this.attributes) {
                 for (var attr in this.attributes) {
@@ -64,9 +59,9 @@ var TextEditorProvider = (function() {
                 }
             }
 
-            this.textEditorElem.textContent = this.content || '';
+            this.setContent(this.content || '');
             if (this.selectionRange) {
-                this.textEditorElem.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
+                this.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
                 delete this.selectionRange;
             }
 
@@ -88,19 +83,6 @@ var TextEditorProvider = (function() {
 
         getStyle:  function(styleKey) {
             return (this.styles && this.styles[styleKey]) || null;
-        },
-
-        getContent: function() {
-            return this.content || '';
-        },
-
-        setContent: function(content) {
-            this.content = content;
-            if (!this.textEditorElem) {
-                return;
-            }
-
-            this.textEditorElem.textContent = content;
         },
 
         focus: function() {
@@ -143,23 +125,6 @@ var TextEditorProvider = (function() {
             }
         },
 
-        getSelectionStart: function() {
-            if (this.textEditorElem) {
-                //return this.textEditorElem.selectionStart;
-                return 0;
-            }
-
-            return 0;
-        },
-
-        setSelectionRange: function(from, to) {
-            if (!this.textEditorElem) {
-                this.selectionRange = [from, to];
-            } else {
-                //this.textEditorElem.setSelectionRange(from, to);
-            }
-        },
-
         setAttribute: function(attrName, value) {
             if (!this.attributes) {
                 this.attributes = { };
@@ -190,7 +155,79 @@ var TextEditorProvider = (function() {
             this.textEditorElem = document.createElement('div');
             this.textEditorElem.contentEditable = true;
             this.setStyle('word-break', 'break-all');
-        }
+            this.setStyle('-moz-appearance', 'textfield-multiline');
+
+            this.textEditorElem.oninput = function() {
+                this.content = this.textEditorElem.textContent;
+                this.oninputCallback && this.oninputCallback();
+            }.bind(this);
+        },
+
+        getContent: function() {
+            return this.content || '';
+        },
+
+        setContent: function(content) {
+            this.content = content;
+            if (!this.textEditorElem) {
+                return;
+            }
+
+            this.textEditorElem.textContent = content;
+        },
+
+        getSelectionStart: function() {
+            if (this.textEditorElem) {
+                var sel = window.getSelection();
+
+                if (sel.anchorNode !== this.textEditorElem &&
+                    sel.anchorNode.parentNode !== this.textEditorElem) {
+                    // The editor isn't currently selected
+                    console.log("GET SELECTION WHILE UNFOCUSED");
+                    return 0;
+                }
+
+                var count = sel.anchorOffset;
+
+                if (sel.anchorNode != this.textEditorElem) {
+                    var prev = sel.anchorNode.previousSibling;
+
+                    while (prev !== null) {
+                        count += (prev.textContent) ? prev.textContent.length : 1;
+                        prev = prev.previousSibling;
+                    }
+                }
+
+                return count;
+            }
+
+            return 0;
+        },
+
+        setSelectionRange: function(from, to) {
+            if (!this.textEditorElem) {
+                this.selectionRange = [from, to];
+            } else {
+                if (from != to) {
+                    console.warn("setSelectionRange not supported when from != to");
+                }
+
+                var sel = window.getSelection();
+                var range = sel.getRangeAt(0);
+
+                var children = this.textEditorElem.childNodes;
+                for (var i = 0; i < children.length; i++) {
+                    var cur = children[i];
+                    var length = (cur.textContent) ? cur.textContent.length : 1;
+                    if (length > from) {
+                        range.setStart(cur, from);
+                        range.collapse(true);
+                        break;
+                    }
+                    from -= length;
+                }
+            }
+        },
     }, CommonEditorPrototype);
 
     function PasswordEditor() {}
@@ -198,7 +235,41 @@ var TextEditorProvider = (function() {
         createTextEditorElem: function() {
             this.textEditorElem = document.createElement('input');
             this.textEditorElem.type = 'password';
-        }
+
+            this.textEditorElem.oninput = function() {
+                this.content = this.textEditorElem.value;
+                this.oninputCallback && this.oninputCallback();
+            }.bind(this);
+        },
+
+        getContent: function() {
+            return this.content || '';
+        },
+
+        setContent: function(content) {
+            this.content = content;
+            if (!this.textEditorElem) {
+                return;
+            }
+
+            this.textEditorElem.value = content;
+        },
+
+        getSelectionStart: function() {
+            if (this.textEditorElem) {
+                return this.textEditorElem.selectionStart;
+            }
+
+            return 0;
+        },
+
+        setSelectionRange: function(from, to) {
+            if (!this.textEditorElem) {
+                this.selectionRange = [from, to];
+            } else {
+                this.textEditorElem.setSelectionRange(from, to);
+            }
+        },
     }, CommonEditorPrototype);
 
     function TextEditorWrapper(constraints) {
@@ -328,7 +399,7 @@ var TextEditorProvider = (function() {
         },
 
         setSelectionRange: function(from, to) {
-            //this.textEditor.setSelectionRange(from, to);
+            this.textEditor.setSelectionRange(from, to);
         },
 
         setAttribute: function(attrName, value) {
