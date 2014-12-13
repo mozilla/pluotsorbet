@@ -6,6 +6,10 @@ var casper = require('casper').create({
     logLevel: "debug",
 });
 
+casper.on('remote.message', function(message) {
+    this.echo(message);
+});
+
 casper.start("http://localhost:8000/tests/fs/make-fs-v1.html");
 
 casper.waitForText(
