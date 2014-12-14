@@ -198,6 +198,20 @@ var util = (function () {
     return "0".repeat(len - num.toString().length) + num;
   }
 
+  function toCodePointArray(str) {
+    var chars = [];
+
+    var str = str.slice();
+
+    while (str.length > 0) {
+      var ucsChars = String.fromCodePoint(str.codePointAt(0));
+      chars.push(ucsChars);
+      str = str.substr(ucsChars.length);
+    }
+
+    return chars;
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -219,5 +233,6 @@ var util = (function () {
     tag: tag,
     compareTypedArrays: compareTypedArrays,
     pad: pad,
+    toCodePointArray: toCodePointArray,
   };
 })();
