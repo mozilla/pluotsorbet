@@ -967,7 +967,7 @@ var currentlyFocusedTextEditor;
         };
 
         this.textEditor.setContent(util.fromJavaString(text));
-        this.setCaretPosition(this.textEditor.getContent().length);
+        this.setCaretPosition(this.textEditor.getSize());
 
         this.textEditor.setAttribute("maxlength", maxSize);
         this.textEditor.setStyle("width", width + "px");
@@ -1019,11 +1019,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.setVisible.(Z)V", function(visible) {
-        if (visible && !this.visible) {
-            this.textEditor.setVisible(true);
-        } else if (!visible && this.visible) {
-            this.textEditor.setVisible(false);
-        }
+        this.textEditor.setVisible(visible ? true : false);
         this.visible = visible;
     });
 
@@ -1105,14 +1101,14 @@ var currentlyFocusedTextEditor;
     Native.create("com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V", function(jStr) {
         var str = util.fromJavaString(jStr);
         this.textEditor.setContent(str);
-        this.setCaretPosition(str.length); // FIX THIS FOR UNICODE EMOJI THAT USE 2 CHARS
+        this.setCaretPosition(this.textEditor.getSize());
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(jStr, pos) {
         var old = this.textEditor.getContent();
         var str = util.fromJavaString(jStr);
         this.textEditor.setContent(old.slice(0, pos) + str + old.slice(pos));
-        this.setCaretPosition(pos + str.length);
+        this.setCaretPosition(this.textEditor.getSize());
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.delete.(II)V", function(offset, length) {
@@ -1131,7 +1127,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.setMaxSize.(I)I", function(maxSize) {
-        if (this.textEditor.getContent().length > maxSize) {
+        if (this.textEditor.getSize() > maxSize) {
             this.textEditor.setContent(this.textEditor.getContent().substring(0, maxSize));
             if (this.getCaretPosition() > maxSize) {
                 this.setCaretPosition(maxSize);
@@ -1147,7 +1143,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.size.()I", function() {
-        return this.textEditor.getContent().length;
+        return this.textEditor.getSize();
     });
 
     Native.create("com/nokia/mid/ui/TextEditorThread.sleep.()V", function() {

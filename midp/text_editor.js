@@ -102,15 +102,6 @@ var TextEditorProvider = (function() {
         setVisible: function(aVisible) {
             this.visible = aVisible;
 
-            if (!this.textEditorElem) {
-                if (!aVisible) return;
-
-                // Only create and initialize the text editor element when changing
-                // the visibility to true at the first time.
-                this.createTextEditorElem();
-                this.decorateTextEditorElem();
-            }
-
             if (aVisible) {
                 // Sometimes in Java, setVisible() is called after focus(), to make
                 // sure the native input won't lose focus, we change opacity instead
@@ -149,20 +140,18 @@ var TextEditorProvider = (function() {
         }
     }
 
-    function TextAreaEditor() { }
+    function TextAreaEditor() {
+        this.textEditorElem = document.createElement('div');
+        this.textEditorElem.contentEditable = true;
+        this.setStyle('word-break', 'break-all');
+        this.setStyle('-moz-appearance', 'textfield-multiline');
+
+        this.textEditorElem.oninput = function() {
+            this.content = this.textEditorElem.textContent;
+            this.oninputCallback && this.oninputCallback();
+        }.bind(this);
+    }
     TextAreaEditor.prototype = extendsObject({
-        createTextEditorElem: function() {
-            this.textEditorElem = document.createElement('div');
-            this.textEditorElem.contentEditable = true;
-            this.setStyle('word-break', 'break-all');
-            this.setStyle('-moz-appearance', 'textfield-multiline');
-
-            this.textEditorElem.oninput = function() {
-                this.content = this.textEditorElem.textContent;
-                this.oninputCallback && this.oninputCallback();
-            }.bind(this);
-        },
-
         getContent: function() {
             return this.content || '';
         },
@@ -246,20 +235,29 @@ var TextEditorProvider = (function() {
                 }
             }
         },
+
+        getSize: function() {
+            var length = 0;
+            var children = this.textEditorElem.childNodes;
+            for (var i = 0; i < children.length; i++) {
+                length += children[i].textContent ? children[i].textContent.length : 1;
+            }
+
+            return length;
+        },
     }, CommonEditorPrototype);
 
-    function PasswordEditor() {}
+    function PasswordEditor() {
+        this.textEditorElem = document.createElement('input');
+        this.textEditorElem.type = 'password';
+
+        this.textEditorElem.oninput = function() {
+            this.content = this.textEditorElem.value;
+            this.oninputCallback && this.oninputCallback();
+        }.bind(this);
+    }
+
     PasswordEditor.prototype = extendsObject({
-        createTextEditorElem: function() {
-            this.textEditorElem = document.createElement('input');
-            this.textEditorElem.type = 'password';
-
-            this.textEditorElem.oninput = function() {
-                this.content = this.textEditorElem.value;
-                this.oninputCallback && this.oninputCallback();
-            }.bind(this);
-        },
-
         getContent: function() {
             return this.content || '';
         },
@@ -288,11 +286,16 @@ var TextEditorProvider = (function() {
                 this.textEditorElem.setSelectionRange(from, to);
             }
         },
+
+        getSize: function() {
+            return this.content.length;
+        },
     }, CommonEditorPrototype);
 
     function TextEditorWrapper(constraints) {
         this.textEditor = null;
         this.setConstraints(constraints);
+        this.textEditor.decorateTextEditorElem();
     }
 
     TextEditorWrapper.prototype = {
@@ -426,6 +429,10 @@ var TextEditorProvider = (function() {
 
         getAttribute: function(attrName) {
             return this.textEditor.getAttribute(attrName);
+        },
+
+        getSize: function() {
+            return this.textEditor.getSize();
         },
 
         oninput: function(callback) {
