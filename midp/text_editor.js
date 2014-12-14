@@ -173,7 +173,13 @@ var TextEditorProvider = (function() {
                 return;
             }
 
-            this.textEditorElem.textContent = content;
+            var ranges = [
+              '\ud83c[\udf00-\udfff]', // U+1F300 to U+1F3FF
+              '\ud83d[\udc00-\ude4f]', // U+1F400 to U+1F64F
+              '\ud83d[\ude80-\udeff]'  // U+1F680 to U+1F6FF
+            ];
+            var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="16" width="16">';
+            this.textEditorElem.innerHTML = content.replace(new RegExp(ranges.join('|'), 'g'), img);
         },
 
         getSelectionStart: function() {
