@@ -9,6 +9,8 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
     private Command insertEmoji;
     private Command getPosition;
     private Command getSize;
+    private Command getContent;
+    private Command getContentHeight;
     private Command quitCommand;
     private TextEditor textEditor;
     private TextEditorListener listener;
@@ -97,12 +99,16 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         insertEmoji = new Command("Insert Emoji", Command.SCREEN, 1);
         getPosition = new Command("Get position", Command.SCREEN, 2);
         getSize = new Command("Get size", Command.SCREEN, 3);
-        quitCommand = new Command("Quit", Command.EXIT, 4);
+        getContent = new Command("Get content", Command.SCREEN, 4);
+        getContentHeight = new Command("Get content height", Command.SCREEN, 5);
+        quitCommand = new Command("Quit", Command.EXIT, 6);
 
         TestCanvas canvas = new TestCanvas();
         canvas.addCommand(insertEmoji);
         canvas.addCommand(getPosition);
         canvas.addCommand(getSize);
+        canvas.addCommand(getContent);
+        canvas.addCommand(getContentHeight);
         canvas.addCommand(quitCommand);
         canvas.setCommandListener(this);
         display.setCurrent(canvas);
@@ -133,6 +139,22 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
             }
         } else if (c == getSize) {
             Alert alert = new Alert("Size", "Size: " + textEditor.size(), null, AlertType.INFO);
+            Display display = Display.getDisplay(this);
+            Displayable current = display.getCurrent();
+            if (!(current instanceof Alert)) {
+                // This next call can't be done when current is an Alert
+                display.setCurrent(alert, current);
+            }
+        } else if (c == getContent) {
+            Alert alert = new Alert("Content", "Content: " + textEditor.getContent(), null, AlertType.INFO);
+            Display display = Display.getDisplay(this);
+            Displayable current = display.getCurrent();
+            if (!(current instanceof Alert)) {
+                // This next call can't be done when current is an Alert
+                display.setCurrent(alert, current);
+            }
+        } else if (c == getContentHeight) {
+            Alert alert = new Alert("Content height", "Content height: " + textEditor.getContentHeight(), null, AlertType.INFO);
             Display display = Display.getDisplay(this);
             Displayable current = display.getCurrent();
             if (!(current instanceof Alert)) {
