@@ -148,11 +148,6 @@ var TextEditorProvider = (function() {
         this.setStyle('overflow', 'auto');
         this.setStyle('-moz-appearance', 'textfield-multiline');
 
-        this.textEditorElem.oninput = function() {
-            this.content = this.textEditorElem.textContent;
-            this.oninputCallback && this.oninputCallback();
-        }.bind(this);
-
         this.textEditorElem.onkeydown = function(e) {
             var keycode = e.keyCode;
 
@@ -164,6 +159,25 @@ var TextEditorProvider = (function() {
                 (keycode > 185 && keycode < 193) || // ;=,-./` (in order)
                 (keycode > 218 && keycode < 223)) { // [\]' (in order)
                 return this.getSize() < this.getAttribute("maxlength");
+            }
+
+            if (keycode == 8) {
+                var index = this.getSelectionStart();
+                this.setContent(this.getSlice(0, index-1) + this.getSlice(index));
+                this.setSelectionRange(index-1, index-1);
+                return false;
+            } else if (keycode == 13) {
+                this.content += "\n";
+            }
+        }.bind(this);
+
+        this.textEditorElem.onkeypress = function(e) {
+            if (e.charCode) {
+                this.content += String.fromCharCode(e.charCode);
+            }
+
+            if (this.oninputCallback) {
+                this.oninputCallback();
             }
         }.bind(this);
     }
