@@ -1105,20 +1105,20 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(jStr, pos) {
-        var old = this.textEditor.getContent();
         var str = util.fromJavaString(jStr);
-        this.textEditor.setContent(old.slice(0, pos) + str + old.slice(pos));
+        this.textEditor.setContent(this.textEditor.getSlice(0, pos) + str + this.textEditor.getSlice(pos));
         this.setCaretPosition(this.textEditor.getSize());
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.delete.(II)V", function(offset, length) {
         var old = this.textEditor.getContent();
 
-        if (offset < 0 || offset > old.length || length < 0 || offset + length > old.length) {
+        var size = this.textEditor.getSize();
+        if (offset < 0 || offset > size || length < 0 || offset + length > size) {
             throw new JavaException("java.lang.StringIndexOutOfBoundsException", "offset/length invalid");
         }
 
-        this.textEditor.setContent(old.slice(0, offset) + old.slice(offset + length));
+        this.textEditor.setContent(this.textEditor.getSlice(0, offset) + this.textEditor.getSlice(offset + length));
         this.setCaretPosition(offset);
     });
 

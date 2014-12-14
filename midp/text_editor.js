@@ -152,23 +152,25 @@ var TextEditorProvider = (function() {
         }.bind(this);
     }
     TextAreaEditor.prototype = extendsObject({
+        ranges: [
+            '\ud83c[\udf00-\udfff]', // U+1F300 to U+1F3FF
+            '\ud83d[\udc00-\ude4f]', // U+1F400 to U+1F64F
+            '\ud83d[\ude80-\udeff]'  // U+1F680 to U+1F6FF
+        ],
+
         getContent: function() {
             return this.content || '';
         },
 
         setContent: function(content) {
             this.content = content;
+
             if (!this.textEditorElem) {
                 return;
             }
 
-            var ranges = [
-              '\ud83c[\udf00-\udfff]', // U+1F300 to U+1F3FF
-              '\ud83d[\udc00-\ude4f]', // U+1F400 to U+1F64F
-              '\ud83d[\ude80-\udeff]'  // U+1F680 to U+1F6FF
-            ];
             var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="16" width="16">';
-            this.textEditorElem.innerHTML = content.replace(new RegExp(ranges.join('|'), 'g'), img);
+            this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img);
         },
 
         getSelectionStart: function() {
@@ -236,14 +238,24 @@ var TextEditorProvider = (function() {
             }
         },
 
-        getSize: function() {
-            var length = 0;
-            var children = this.textEditorElem.childNodes;
-            for (var i = 0; i < children.length; i++) {
-                length += children[i].textContent ? children[i].textContent.length : 1;
+        getSlice: function(from, to) {
+            var codePointsLen = this.content.replace(new RegExp(this.ranges.join('|'), 'g'), " ").length;
+
+            if (typeof to === 'undefined') {
+                to = codePointsLen - 1;
             }
 
-            return length;
+            var chars = [];
+            for (var i = from; i < to; i++) {
+                var codePoint = this.content.codePointAt(i);
+                chars.push(String.fromCodePoint(codePoint));
+            }
+
+            return chars.join("");
+        },
+
+        getSize: function() {
+            return this.content.replace(new RegExp(this.ranges.join('|'), 'g'), " ").length;
         },
     }, CommonEditorPrototype);
 
@@ -285,6 +297,10 @@ var TextEditorProvider = (function() {
             } else {
                 this.textEditorElem.setSelectionRange(from, to);
             }
+        },
+
+        getSlice: function(from, to) {
+            return this.content.slice(from, to);
         },
 
         getSize: function() {
@@ -435,9 +451,13 @@ var TextEditorProvider = (function() {
             return this.textEditor.getSize();
         },
 
+        getSlice: function(from, to) {
+            return this.textEditor.getSlice(from, to);
+        },
+
         oninput: function(callback) {
             this.textEditor.oninput(callback);
-        }
+        },
     };
 
     return {
