@@ -144,6 +144,8 @@ var TextEditorProvider = (function() {
         this.textEditorElem = document.createElement('div');
         this.textEditorElem.contentEditable = true;
         this.setStyle('word-break', 'break-all');
+        this.setStyle('word-wrap', 'break-word');
+        this.setStyle('overflow', 'auto');
         this.setStyle('-moz-appearance', 'textfield-multiline');
 
         this.textEditorElem.oninput = function() {
