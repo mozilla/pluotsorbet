@@ -1109,6 +1109,10 @@ var currentlyFocusedTextEditor;
         this.setCaretPosition(this.textEditor.getSize());
     });
 
+    Native.create("com/nokia/mid/ui/TextEditor.getContentHeight.()I", function() {
+        return this.textEditor.getContentHeight();
+    });
+
     Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(jStr, pos) {
         var str = util.fromJavaString(jStr);
         var len = util.toCodePointArray(str).length;

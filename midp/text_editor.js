@@ -137,7 +137,7 @@ var TextEditorProvider = (function() {
 
         oninput: function(callback) {
             if (typeof callback == 'function') this.oninputCallback = callback;
-        }
+        },
     }
 
     function TextAreaEditor() {
@@ -236,7 +236,7 @@ var TextEditorProvider = (function() {
                 if (sel.focusNode !== this.textEditorElem &&
                     sel.focusNode.parentNode !== this.textEditorElem) {
                     // The editor isn't currently selected
-                    console.log("GET SELECTION WHILE UNFOCUSED");
+                    console.warn("GET SELECTION WHILE UNFOCUSED");
                     return 0;
                 }
 
@@ -272,7 +272,7 @@ var TextEditorProvider = (function() {
                 if (sel.anchorNode !== this.textEditorElem &&
                     sel.anchorNode.parentNode !== this.textEditorElem) {
                     // The editor isn't currently selected
-                    console.log("GET SELECTION WHILE UNFOCUSED");
+                    console.warn("GET SELECTION WHILE UNFOCUSED");
                     return 0;
                 }
 
@@ -337,6 +337,21 @@ var TextEditorProvider = (function() {
         getSize: function() {
             return util.toCodePointArray(this.content).length;
         },
+
+        getContentHeight: function() {
+            var div = document.createElement("div");
+            div.style["width"] = this.getStyle("width");
+            div.style["word-break"] = this.getStyle("break-all");
+            div.style["word-wrap"] = this.getStyle("break-word");
+            div.innerHTML = this.textEditorElem.innerHTML;
+            document.body.appendChild(div);
+
+            var height = div.offsetHeight;
+
+            document.body.removeChild(div);
+
+            return height;
+        },
     }, CommonEditorPrototype);
 
     function PasswordEditor() {
@@ -385,6 +400,10 @@ var TextEditorProvider = (function() {
 
         getSize: function() {
             return this.content.length;
+        },
+
+        getContentHeight: function() {
+            return this.textEditorElem.clientHeight;
         },
     }, CommonEditorPrototype);
 
@@ -533,6 +552,10 @@ var TextEditorProvider = (function() {
 
         getSlice: function(from, to) {
             return this.textEditor.getSlice(from, to);
+        },
+
+        getContentHeight: function() {
+            return this.textEditor.getContentHeight();
         },
 
         oninput: function(callback) {

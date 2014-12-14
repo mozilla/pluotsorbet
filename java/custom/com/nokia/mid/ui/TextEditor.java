@@ -99,31 +99,7 @@ public class TextEditor extends CanvasItem {
         return 0;
     }
 
-    // Gets the whole content height in this TextEditor in pixels. We calculate
-    // this from the height of the font, which includes leading (margin below
-    // the text), although this will be inaccurate if the native implementation
-    // uses a different font.
-    public int getContentHeight() {
-        System.out.println("TextEditor::getContentHeight needs a more correct implementation");
-        int lineHeight = getFont().getHeight();
-        System.out.println("PORCO DIO");
-        int numLines = 1;
-
-        System.out.println("CONTENT: " + getContent());
-
-        if (isMultiline()) {
-            String content = getContent();
-            System.out.println(content);
-            for (int i = 0; i < content.length(); i++) {
-                System.out.println(content.charAt(i));
-                if (content.charAt(i) == '\n') {
-                    numLines++;
-                }
-            }
-        }
-
-        return lineHeight * numLines;
-    }
+    native public int getContentHeight();
 
     // Sets the index of the caret.
     native public void setCaret(int index);
