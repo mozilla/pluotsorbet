@@ -146,26 +146,48 @@ var TextEditorProvider = (function() {
         this.setStyle('word-break', 'break-all');
         this.setStyle('word-wrap', 'break-word');
         this.setStyle('overflow', 'auto');
+        this.setStyle('white-space', 'pre-wrap');
         this.setStyle('-moz-appearance', 'textfield-multiline');
 
         this.textEditorElem.onkeydown = function(e) {
             var keycode = e.keyCode;
 
+            console.log(keycode);
+
             // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-            if ((keycode > 47 && keycode < 58)   || // number keys
+            if (((keycode > 47 && keycode < 58)   || // number keys
                 keycode == 32 || keycode == 13   || // spacebar & return key(s) (if you want to allow carriage returns)
                 (keycode > 64 && keycode < 91)   || // letter keys
                 (keycode > 95 && keycode < 112)  || // numpad keys
                 (keycode > 185 && keycode < 193) || // ;=,-./` (in order)
-                (keycode > 218 && keycode < 223)) { // [\]' (in order)
-                return this.getSize() < this.getAttribute("maxlength");
+                (keycode > 218 && keycode < 223)) && // [\]' (in order)
+                (this.getSize() >= this.getAttribute("maxlength"))) {
+                return false;
             }
+
+            console.log(keycode);
 
             if (keycode == 8) {
                 var indexStart = this.getSelectionStart();
                 var indexEnd = this.getSelectionEnd();
-                this.setContent(this.getSlice(0, indexStart-1) + this.getSlice(indexEnd));
-                this.setSelectionRange(indexStart-1, indexStart-1);
+
+                console.log("INDEX START: " + indexStart);
+                console.log("INDEX END: " + indexEnd);
+
+                if (indexStart > indexEnd) {
+                    [ indexStart, indexEnd ] = [ indexEnd, indexStart ];
+                }
+
+                if (indexStart != indexEnd) {
+                    this.setContent(this.getSlice(0, indexStart) + this.getSlice(indexEnd));
+                    this.setSelectionRange(indexStart, indexStart);
+                } else {
+                    this.setContent(this.getSlice(0, indexStart-1) + this.getSlice(indexStart));
+                    this.setSelectionRange(indexStart-1, indexStart-1);
+                }
+
+                console.log("CONTENT: " + this.content);
+                console.log("INNERHTML: " + this.textEditorElem.innerHTML);
                 return false;
             } else if (keycode == 13) {
                 this.content += "\n";
@@ -175,6 +197,8 @@ var TextEditorProvider = (function() {
         this.textEditorElem.onkeypress = function(e) {
             if (e.charCode) {
                 this.content += String.fromCharCode(e.charCode);
+                console.log("CONTENT: " + this.content);
+                console.log("INNERHTML: " + this.textEditorElem.innerHTML);
             }
 
             if (this.oninputCallback) {
@@ -201,7 +225,8 @@ var TextEditorProvider = (function() {
             }
 
             var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="' + this.getStyle("height") + '" width="' + this.getStyle("height") + '">';
-            this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img);
+            this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img)
+                                                   .replace(/\n/g, "<br>");
         },
 
         getSelectionEnd: function() {
@@ -218,9 +243,11 @@ var TextEditorProvider = (function() {
                 var count = 0;
 
                 if (sel.focusNode.nodeType === 3) {
-                    count = sel.anchorOffset;
-                    var prev = sel.focusOffset.previousSibling;
-                    while (prev !== null) {
+                    console.log("FOCUSOFFSET: " + sel.focusOffset);
+                    console.log(sel.focusNode);
+                    count = sel.focusOffset;
+                    var prev = sel.focusNode.previousSibling;
+                    while (prev) {
                         count += (prev.textContent) ? prev.textContent.length : 1;
                         prev = prev.previousSibling;
                     }
@@ -254,7 +281,7 @@ var TextEditorProvider = (function() {
                 if (sel.anchorNode.nodeType === 3) {
                     count = sel.anchorOffset;
                     var prev = sel.anchorNode.previousSibling;
-                    while (prev !== null) {
+                    while (prev) {
                         count += (prev.textContent) ? prev.textContent.length : 1;
                         prev = prev.previousSibling;
                     }
@@ -308,7 +335,7 @@ var TextEditorProvider = (function() {
         },
 
         getSize: function() {
-            return this.content.replace(new RegExp(this.ranges.join('|'), 'g'), " ").length;
+            return util.toCodePointArray(this.content).length;
         },
     }, CommonEditorPrototype);
 
