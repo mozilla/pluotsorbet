@@ -38,6 +38,7 @@ public class TextEditor extends CanvasItem {
     private boolean multiline = false;
     private int myId;
     private static TextEditorThread textEditorThread;
+    private Font font = Font.getDefaultFont();
 
     protected TextEditor(String text, int maxSize, int constraints, int width, int height) {
         myId = init(text, maxSize, constraints, width, height);
@@ -138,13 +139,12 @@ public class TextEditor extends CanvasItem {
 
     // Gets the font being used in rendering the text content in this TextEditor.
     public Font getFont() {
-        System.out.println("TextEditor::getFont(Font) not implemented");
-        return Font.getDefaultFont();
+        return this.font;
     }
 
     // Sets the application preferred font for rendering the text content in this TextEditor.
     public void setFont(Font font) {
-        System.out.println("TextEditor::setFont(Font) not implemented");
+        this.font = font;
     }
 
     // Gets the background color and alpha of this TextEditor.
