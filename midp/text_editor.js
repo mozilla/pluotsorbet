@@ -162,9 +162,10 @@ var TextEditorProvider = (function() {
             }
 
             if (keycode == 8) {
-                var index = this.getSelectionStart();
-                this.setContent(this.getSlice(0, index-1) + this.getSlice(index));
-                this.setSelectionRange(index-1, index-1);
+                var indexStart = this.getSelectionStart();
+                var indexEnd = this.getSelectionEnd();
+                this.setContent(this.getSlice(0, indexStart-1) + this.getSlice(indexEnd));
+                this.setSelectionRange(indexStart-1, indexStart-1);
                 return false;
             } else if (keycode == 13) {
                 this.content += "\n";
@@ -199,8 +200,42 @@ var TextEditorProvider = (function() {
                 return;
             }
 
-            var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="16" width="16">';
+            var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="' + this.getStyle("height") + '" width="' + this.getStyle("height") + '">';
             this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img);
+        },
+
+        getSelectionEnd: function() {
+            if (this.textEditorElem) {
+                var sel = window.getSelection();
+
+                if (sel.focusNode !== this.textEditorElem &&
+                    sel.focusNode.parentNode !== this.textEditorElem) {
+                    // The editor isn't currently selected
+                    console.log("GET SELECTION WHILE UNFOCUSED");
+                    return 0;
+                }
+
+                var count = 0;
+
+                if (sel.focusNode.nodeType === 3) {
+                    count = sel.anchorOffset;
+                    var prev = sel.focusOffset.previousSibling;
+                    while (prev !== null) {
+                        count += (prev.textContent) ? prev.textContent.length : 1;
+                        prev = prev.previousSibling;
+                    }
+                } else {
+                    var children = sel.focusNode.childNodes;
+                    for (var i = 0; i < sel.focusOffset; i++) {
+                        var cur = children[i];
+                        count += (cur.textContent) ? cur.textContent.length : 1;
+                    }
+                }
+
+                return count;
+            }
+
+            return 0;
         },
 
         getSelectionStart: function() {
