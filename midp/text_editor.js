@@ -188,6 +188,10 @@ var TextEditorProvider = (function() {
 
                 console.log("CONTENT: " + this.content);
                 console.log("INNERHTML: " + this.textEditorElem.innerHTML);
+                if (this.oninputCallback) {
+                    this.oninputCallback();
+                }
+
                 return false;
             } else if (keycode == 13) {
                 this.content += "\n";
@@ -224,7 +228,7 @@ var TextEditorProvider = (function() {
                 return;
             }
 
-            var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="' + this.getStyle("height") + '" width="' + this.getStyle("height") + '">';
+            var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="12px" width="12px">';
             this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img)
                                                    .replace(/\n/g, "<br>");
         },
