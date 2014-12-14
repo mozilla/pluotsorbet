@@ -241,19 +241,7 @@ var TextEditorProvider = (function() {
         },
 
         getSlice: function(from, to) {
-            var codePointsLen = this.content.replace(new RegExp(this.ranges.join('|'), 'g'), " ").length;
-
-            if (typeof to === 'undefined') {
-                to = codePointsLen - 1;
-            }
-
-            var chars = [];
-            for (var i = from; i < to; i++) {
-                var codePoint = this.content.codePointAt(i);
-                chars.push(String.fromCodePoint(codePoint));
-            }
-
-            return chars.join("");
+            return util.toCodePointArray(this.content).slice(from, to).join("");
         },
 
         getSize: function() {
