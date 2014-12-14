@@ -1111,8 +1111,14 @@ var currentlyFocusedTextEditor;
 
     Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(jStr, pos) {
         var str = util.fromJavaString(jStr);
+        var len = util.toCodePointArray(str).length;
+
+        if (this.textEditor.getSize() + len > this.textEditor.getAttribute("maxlength")) {
+            throw new JavaException("java/lang/IllegalArgumentException");
+        }
+
         this.textEditor.setContent(this.textEditor.getSlice(0, pos) + str + this.textEditor.getSlice(pos));
-        this.setCaretPosition(pos + util.toCodePointArray(str).length);
+        this.setCaretPosition(pos + len);
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.delete.(II)V", function(offset, length) {
