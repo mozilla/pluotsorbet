@@ -113,7 +113,7 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         canvas.setCommandListener(this);
         display.setCurrent(canvas);
 
-        textEditor = TextEditor.createTextEditor("Hello, world!", 200, TextField.ANY, 150, 50);
+        textEditor = TextEditor.createTextEditor("AAAAA", 50, TextField.ANY, 70, 70);
         textEditor.setTextEditorListener(this);
 
         textEditor.setParent(canvas);
@@ -146,7 +146,16 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
                 display.setCurrent(alert, current);
             }
         } else if (c == getContent) {
-            Alert alert = new Alert("Content", "Content: " + textEditor.getContent(), null, AlertType.INFO);
+            String val = "";
+            try {
+                byte arr[] = textEditor.getContent().getBytes("UTF-8");
+                for(int i=0; i < arr.length; i++) {
+                    val += arr[i] + ", ";
+                }
+            } catch (Exception e) {
+            }
+
+            Alert alert = new Alert("Content", "Content: " + val, null, AlertType.INFO);
             Display display = Display.getDisplay(this);
             Displayable current = display.getCurrent();
             if (!(current instanceof Alert)) {
