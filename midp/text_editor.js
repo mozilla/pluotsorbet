@@ -187,14 +187,20 @@ var TextEditorProvider = (function() {
                     return 0;
                 }
 
-                var count = sel.anchorOffset;
+                var count = 0;
 
-                if (sel.anchorNode != this.textEditorElem) {
+                if (sel.anchorNode.nodeType === 3) {
+                    count = sel.anchorOffset;
                     var prev = sel.anchorNode.previousSibling;
-
                     while (prev !== null) {
                         count += (prev.textContent) ? prev.textContent.length : 1;
                         prev = prev.previousSibling;
+                    }
+                } else {
+                    var children = sel.anchorNode.childNodes;
+                    for (var i = 0; i < sel.anchorOffset; i++) {
+                        var cur = children[i];
+                        count += (cur.textContent) ? cur.textContent.length : 1;
                     }
                 }
 
@@ -219,11 +225,17 @@ var TextEditorProvider = (function() {
                 for (var i = 0; i < children.length; i++) {
                     var cur = children[i];
                     var length = (cur.textContent) ? cur.textContent.length : 1;
-                    if (length > from) {
-                        range.setStart(cur, from);
+
+                    if (length >= from) {
+                        if (cur.textContent) {
+                            range.setStart(cur, from);
+                        } else {
+                            range.setStartAfter(cur);
+                        }
                         range.collapse(true);
                         break;
                     }
+
                     from -= length;
                 }
             }

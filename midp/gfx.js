@@ -1105,7 +1105,7 @@ var currentlyFocusedTextEditor;
     Native.create("com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V", function(jStr) {
         var str = util.fromJavaString(jStr);
         this.textEditor.setContent(str);
-        this.setCaretPosition(str.length);
+        this.setCaretPosition(str.length); // FIX THIS FOR UNICODE EMOJI THAT USE 2 CHARS
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(jStr, pos) {
