@@ -93,11 +93,23 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getCaretPosition(), 5);
         textEditor.setCaret(3);
         th.check(textEditor.getCaretPosition(), 3);
-        textEditor.setCaret(6);
+        textEditor.setCaret(5);
         th.check(textEditor.getCaretPosition(), 5);
         textEditor.setCaret(0);
         th.check(textEditor.getCaretPosition(), 0);
-        textEditor.setCaret(-1);
+        try {
+            textEditor.setCaret(-1);
+            th.fail("Exception expected");
+        } catch (StringIndexOutOfBoundsException e) {
+            th.check(true, "Exception expected");
+        }
+        th.check(textEditor.getCaretPosition(), 0);
+        try {
+            textEditor.setCaret(6);
+            th.fail("Exception expected");
+        } catch (StringIndexOutOfBoundsException e) {
+            th.check(true, "Exception expected");
+        }
         th.check(textEditor.getCaretPosition(), 0);
 
         textEditor.setParent(null);
