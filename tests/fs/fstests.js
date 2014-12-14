@@ -132,6 +132,20 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  fs.create("/non-existent-dir/tmp", new Blob(), function(created) {
+    is(created, false, "can't create a file in a non-existent directory");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.exists("/non-existent-dir", function(exists) {
+    is(exists, false, "non-existent directory still doesn't exist");
+    next();
+  });
+});
+
+tests.push(function() {
   fs.mkdir("/tmp", function(created) {
     is(created, false, "can't create a directory with the same path of an already existing directory");
     next();
@@ -141,6 +155,13 @@ tests.push(function() {
 tests.push(function() {
   fs.create("/tmp/tmp.txt", new Blob(), function(created) {
     is(created, true, "created a file");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.create("/tmp/tmp.txt", new Blob(), function(created) {
+    is(created, false, "can't create a file that already exists");
     next();
   });
 });

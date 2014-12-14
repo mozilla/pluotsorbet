@@ -22,7 +22,16 @@ var expectedUnitTestResults = [
   { name: "unknown pass", number: 0 }
 ];
 
-casper.test.begin("unit tests", 6, function(test) {
+casper.test.begin("unit tests", 7, function(test) {
+    // Before we do anything else, test the initial state of the fs.
+    // This depends on the make recipe first creating a Gecko profile
+    // and populating it with the initial directories and files.
+    casper
+    .start("http://localhost:8000/tests/fs/test-fs-init.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 12 PASS, 0 FAIL", "test fs init");
+    });
+
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
@@ -51,13 +60,13 @@ casper.test.begin("unit tests", 6, function(test) {
     }
 
     casper
-    .start("http://localhost:8000/index.html")
+    .thenOpen("http://localhost:8000/index.html")
     .withFrame(0, basicUnitTests);
 
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 130 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
