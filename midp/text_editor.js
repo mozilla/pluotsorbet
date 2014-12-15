@@ -150,29 +150,20 @@ var TextEditorProvider = (function() {
         this.setStyle('-moz-appearance', 'textfield-multiline');
 
         this.textEditorElem.onkeydown = function(e) {
-            var keycode = e.keyCode;
-
-            console.log(keycode);
-
             // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-            if (((keycode > 47 && keycode < 58)   || // number keys
-                keycode == 32 || keycode == 13   || // spacebar & return key(s) (if you want to allow carriage returns)
-                (keycode > 64 && keycode < 91)   || // letter keys
-                (keycode > 95 && keycode < 112)  || // numpad keys
-                (keycode > 185 && keycode < 193) || // ;=,-./` (in order)
-                (keycode > 218 && keycode < 223)) && // [\]' (in order)
-                (this.getSize() >= this.getAttribute("maxlength"))) {
+            if (((e.keyCode > 47 && e.keyCode < 58)  || // number keys
+                e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
+                (e.keyCode > 64 && e.keyCode < 91)   || // letter keys
+                (e.keyCode > 95 && e.keyCode < 112)  || // numpad keys
+                (e.keyCode > 185 && e.keyCode < 193) || // ;=,-./` (in order)
+                (e.keyCode > 218 && e.keyCode < 223)) && // [\]' (in order)
+                this.getSize() >= this.getAttribute("maxlength")) {
                 return false;
             }
 
-            console.log(keycode);
-
-            if (keycode == 8) {
+            if (e.keyCode == 8) {
                 var indexStart = this.getSelectionStart();
                 var indexEnd = this.getSelectionEnd();
-
-                console.log("INDEX START: " + indexStart);
-                console.log("INDEX END: " + indexEnd);
 
                 if (indexStart > indexEnd) {
                     [ indexStart, indexEnd ] = [ indexEnd, indexStart ];
@@ -186,14 +177,12 @@ var TextEditorProvider = (function() {
                     this.setSelectionRange(indexStart-1, indexStart-1);
                 }
 
-                console.log("CONTENT: " + this.content);
-                console.log("INNERHTML: " + this.textEditorElem.innerHTML);
                 if (this.oninputCallback) {
                     this.oninputCallback();
                 }
 
                 return false;
-            } else if (keycode == 13) {
+            } else if (e.keyCode == 13) {
                 this.content += "\n";
             }
         }.bind(this);
@@ -201,8 +190,6 @@ var TextEditorProvider = (function() {
         this.textEditorElem.onkeypress = function(e) {
             if (e.charCode) {
                 this.content += String.fromCharCode(e.charCode);
-                console.log("CONTENT: " + this.content);
-                console.log("INNERHTML: " + this.textEditorElem.innerHTML);
             }
 
             if (this.oninputCallback) {
@@ -239,7 +226,6 @@ var TextEditorProvider = (function() {
 
                 if (sel.focusNode !== this.textEditorElem &&
                     sel.focusNode.parentNode !== this.textEditorElem) {
-                    // The editor isn't currently selected
                     console.warn("GET SELECTION WHILE UNFOCUSED");
                     return 0;
                 }
@@ -247,8 +233,6 @@ var TextEditorProvider = (function() {
                 var count = 0;
 
                 if (sel.focusNode.nodeType === 3) {
-                    console.log("FOCUSOFFSET: " + sel.focusOffset);
-                    console.log(sel.focusNode);
                     count = sel.focusOffset;
                     var prev = sel.focusNode.previousSibling;
                     while (prev) {
@@ -275,7 +259,6 @@ var TextEditorProvider = (function() {
 
                 if (sel.anchorNode !== this.textEditorElem &&
                     sel.anchorNode.parentNode !== this.textEditorElem) {
-                    // The editor isn't currently selected
                     console.warn("GET SELECTION WHILE UNFOCUSED");
                     return 0;
                 }
@@ -345,8 +328,14 @@ var TextEditorProvider = (function() {
         getContentHeight: function() {
             var div = document.createElement("div");
             div.style["width"] = this.getStyle("width");
-            div.style["word-break"] = this.getStyle("break-all");
-            div.style["word-wrap"] = this.getStyle("break-word");
+            div.style["overflow"] = "none";
+            div.style["word-break"] = "break-all";
+            div.style["word-wrap"] = "break-word";
+            div.style["white-space"] = "pre-wrap";
+            div.style["position"] = "absolute";
+            div.style["left"] = "0px";
+            div.style["top"] = "0px";
+            div.style["visibility"] = "visible";
             div.innerHTML = this.textEditorElem.innerHTML;
             document.body.appendChild(div);
 
