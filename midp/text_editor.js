@@ -140,6 +140,16 @@ var TextEditorProvider = (function() {
         },
     }
 
+    function countNewlines(str) {
+        var count = 0;
+        for (var i = 0; i < str.length; i++) {
+            if (str.charCodeAt(i) == 10) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     function TextAreaEditor() {
         this.textEditorElem = document.createElement('div');
         this.textEditorElem.contentEditable = true;
@@ -184,16 +194,37 @@ var TextEditorProvider = (function() {
                 return false;
             } else if (e.keyCode == 13) {
                 this.content += "\n";
+                this.textEditorElem.innerHTML += "\n";
+
+                var size = this.getSize();
+                this.setSelectionRange(size, size);
+
+                if (this.oninputCallback) {
+                    this.oninputCallback();
+                }
+
+                return false;
             }
         }.bind(this);
 
         this.textEditorElem.onkeypress = function(e) {
             if (e.charCode) {
-                this.content += String.fromCharCode(e.charCode);
+                this.setContent(this.content + String.fromCharCode(e.charCode));
+                var size = this.getSize();
+                this.setSelectionRange(size, size);
             }
+
+            console.log("CONTENT: " + countNewlines(this.content));
+            console.log("INNERHTML: " + countNewlines(this.textEditorElem.innerHTML));
+            console.log("CONTENT: " + this.content);
+            console.log("INNERHTML: " + this.textEditorElem.innerHTML);
 
             if (this.oninputCallback) {
                 this.oninputCallback();
+            }
+
+            if (e.charCode) {
+                return false;
             }
         }.bind(this);
     }
@@ -216,8 +247,7 @@ var TextEditorProvider = (function() {
             }
 
             var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="12px" width="12px">';
-            this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img)
-                                                   .replace(/\n/g, "<br>");
+            this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img) + "\n";
         },
 
         getSelectionEnd: function() {
@@ -226,7 +256,7 @@ var TextEditorProvider = (function() {
 
                 if (sel.focusNode !== this.textEditorElem &&
                     sel.focusNode.parentNode !== this.textEditorElem) {
-                    console.warn("GET SELECTION WHILE UNFOCUSED");
+                    console.warn("getSelectionEnd called while the editor is unfocused");
                     return 0;
                 }
 
@@ -247,6 +277,14 @@ var TextEditorProvider = (function() {
                     }
                 }
 
+                // If the position returned is higher than the size of the content,
+                // the selected character is the additional "\n" that we have in the
+                // div innerHTML. We subtract 1 to the position to retrieve the correct
+                // value.
+                if (count > this.getSize()) {
+                    count = count - 1;
+                }
+
                 return count;
             }
 
@@ -259,7 +297,7 @@ var TextEditorProvider = (function() {
 
                 if (sel.anchorNode !== this.textEditorElem &&
                     sel.anchorNode.parentNode !== this.textEditorElem) {
-                    console.warn("GET SELECTION WHILE UNFOCUSED");
+                    console.warn("getSelectionStart called while the editor is unfocused");
                     return 0;
                 }
 
@@ -280,6 +318,14 @@ var TextEditorProvider = (function() {
                     }
                 }
 
+                // If the position returned is higher than the size of the content,
+                // the selected character is the additional "\n" that we have in the
+                // div innerHTML. We subtract 1 to the position to retrieve the correct
+                // value.
+                if (count > this.getSize()) {
+                    count = count - 1;
+                }
+
                 return count;
             }
 
@@ -292,6 +338,14 @@ var TextEditorProvider = (function() {
             } else {
                 if (from != to) {
                     console.warn("setSelectionRange not supported when from != to");
+                }
+
+                // If we're trying to set the selection to the last character and
+                // the last character is a "\n", we need to add 1 to the position
+                // because of the additional "\n" we have in the div innerHTML.
+                var size = this.getSize();
+                if (from === size && this.content[this.content.length-1] == "\n") {
+                    from = from + 1;
                 }
 
                 var sel = window.getSelection();
