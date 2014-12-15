@@ -55,7 +55,7 @@ var TextEditorProvider = (function() {
 
             if (this.styles) {
                 for (var styleKey in this.styles) {
-                    this.textEditorElem.style[styleKey] = this.styles[styleKey];
+                    this.textEditorElem.style.setProperty(styleKey, this.styles[styleKey]);
                 }
             }
 
@@ -77,7 +77,7 @@ var TextEditorProvider = (function() {
 
             this.styles[styleKey] = styleValue;
             if (this.textEditorElem) {
-                this.textEditorElem.style[styleKey] = styleValue;
+                this.textEditorElem.style.setProperty(styleKey, styleValue);
             }
         },
 
@@ -327,16 +327,16 @@ var TextEditorProvider = (function() {
 
         getContentHeight: function() {
             var div = document.createElement("div");
-            div.style["width"] = this.getStyle("width");
-            div.style["overflow"] = "none";
-            div.style["word-break"] = "break-all";
-            div.style["word-wrap"] = "break-word";
-            div.style["white-space"] = "pre-wrap";
-            div.style["position"] = "absolute";
-            div.style["left"] = "0px";
-            div.style["top"] = "0px";
-            div.style["visibility"] = "hidden";
-            div.style["display"] = "block";
+            div.style.setProperty("width", this.getStyle("width"));
+            div.style.setProperty("overflow", "none");
+            div.style.setProperty("word-break", "break-all");
+            div.style.setProperty("word-wrap", "break-word");
+            div.style.setProperty("white-space", "pre-wrap");
+            div.style.setProperty("position", "absolute");
+            div.style.setProperty("left", "0px");
+            div.style.setProperty("top", "0px");
+            div.style.setProperty("visibility", "hidden");
+            div.style.setProperty("display", "block");
             div.innerHTML = this.textEditorElem.innerHTML;
             document.body.appendChild(div);
 
