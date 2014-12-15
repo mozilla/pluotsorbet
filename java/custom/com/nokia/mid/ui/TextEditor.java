@@ -118,9 +118,7 @@ public class TextEditor extends CanvasItem {
     }
 
     // Sets the application preferred font for rendering the text content in this TextEditor.
-    public void setFont(Font font) {
-        this.font = font;
-    }
+    native public void setFont(Font font);
 
     // Gets the background color and alpha of this TextEditor.
     native public int getBackgroundColor();
