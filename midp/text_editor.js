@@ -135,6 +135,13 @@ var TextEditorProvider = (function() {
             return this.attributes[attrName];
         },
 
+        setFont: function(font) {
+            this.font = font;
+            this.setStyle("font-style", font.style);
+            this.setStyle("font-size", font.size);
+            this.setStyle("font-face", font.face);
+        },
+
         oninput: function(callback) {
             if (typeof callback == 'function') this.oninputCallback = callback;
         },
@@ -395,6 +402,9 @@ var TextEditorProvider = (function() {
             div.style.setProperty("top", "0px");
             div.style.setProperty("visibility", "hidden");
             div.style.setProperty("display", "block");
+            div.style.setProperty("font-style", this.getStyle("font-style"));
+            div.style.setProperty("font-size", this.getStyle("font-size"));
+            div.style.setProperty("font-face", this.getStyle("font-face"));
             div.innerHTML = this.textEditorElem.innerHTML;
             document.body.appendChild(div);
 
@@ -403,13 +413,6 @@ var TextEditorProvider = (function() {
             document.body.removeChild(div);
 
             return height;
-        },
-
-        setFont: function(font) {
-            this.font = font;
-            this.textEditorElem.style.setProperty("font-style", font.style);
-            this.textEditorElem.style.setProperty("font-size", font.size);
-            this.textEditorElem.style.setProperty("font-face", font.face);
         },
     }, CommonEditorPrototype);
 
@@ -462,14 +465,16 @@ var TextEditorProvider = (function() {
         },
 
         getContentHeight: function() {
-            return this.font.class.getField("I.height.I").get(this.font);
-        },
+            var lineHeight = this.font.class.getField("I.height.I").get(this.font);
 
-        setFont: function(font) {
-            this.font = font;
-            this.textEditorElem.style.setProperty("font-style", font.style);
-            this.textEditorElem.style.setProperty("font-size", font.size);
-            this.textEditorElem.style.setProperty("font-face", font.face);
+            var count = 1;
+            for (var i = 0; i < this.content.length; i++) {
+                if (this.content[i] == "\n") {
+                    count++;
+                }
+            }
+
+            return count * lineHeight;
         },
     }, CommonEditorPrototype);
 
@@ -547,6 +552,8 @@ var TextEditorProvider = (function() {
                     newEditor.setParent(this.textEditor.parentNode);
                 }
                 newEditor.setContent(this.textEditor.getContent());
+
+                newEditor.font = this.textEditor.font;
 
                 this.textEditor.destroy();
                 this.textEditor = newEditor;
