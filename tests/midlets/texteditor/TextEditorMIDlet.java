@@ -116,6 +116,7 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         textEditor = TextEditor.createTextEditor("AAAAA", 50, TextField.ANY, 70, 70);
         textEditor.setTextEditorListener(this);
 
+        textEditor.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE));
         textEditor.setParent(canvas);
         textEditor.setMultiline(true);
         textEditor.setBackgroundColor(0x00FFFFFF);
