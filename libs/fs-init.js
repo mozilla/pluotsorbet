@@ -16,7 +16,7 @@ var initFS = new Promise(function(resolve, reject) {
         if (exists) {
           resolve();
         } else {
-          load("certs/_main.ks", "blob").then(function(data) {
+          load(APP_BASE_DIR + "certs/_main.ks", "blob").then(function(data) {
             fs.create("/_main.ks", data, function() {
               resolve();
             });
@@ -26,14 +26,14 @@ var initFS = new Promise(function(resolve, reject) {
     }),
   ];
 
-  if (MIDP && MIDP.midletClassName == "RunTests") {
+  if (typeof MIDP !== "undefined" && MIDP.midletClassName == "RunTests") {
     fsPromises.push(
       new Promise(function(resolve, reject) {
         fs.exists("/_test.ks", function(exists) {
           if (exists) {
             resolve();
           } else {
-            load("certs/_test.ks", "blob").then(function(data) {
+            load(APP_BASE_DIR + "certs/_test.ks", "blob").then(function(data) {
               fs.create("/_test.ks", data, function() {
                 resolve();
               });

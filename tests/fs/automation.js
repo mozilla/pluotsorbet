@@ -23,13 +23,14 @@ var expectedUnitTestResults = [
 ];
 
 casper.test.begin("unit tests", 7, function(test) {
-    // Before we do anything else, test the initial state of the fs.
-    // This depends on the make recipe first creating a Gecko profile
-    // and populating it with the initial directories and files.
     casper
-    .start("http://localhost:8000/tests/fs/test-fs-init.html")
+    .start("http://localhost:8000/tests/fs/make-fs-v1.html")
+    .waitForText("DONE");
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 12 PASS, 0 FAIL", "test fs init");
+        test.assertTextExists("DONE: 10 PASS, 0 FAIL", "test fs init");
     });
 
     function basicUnitTests() {
