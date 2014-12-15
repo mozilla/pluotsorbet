@@ -17,7 +17,6 @@ class TextEditorThread implements Runnable {
     public void run() {
         while (true) {
             sleep();
-            System.out.println("WAKE UP");
             int dirty = getNextDirtyEditor();
             TextEditor t = (TextEditor)listeners.get("" + dirty);
             t.myListener.inputAction(t, TextEditorListener.ACTION_CONTENT_CHANGE);

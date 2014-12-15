@@ -335,7 +335,8 @@ var TextEditorProvider = (function() {
             div.style["position"] = "absolute";
             div.style["left"] = "0px";
             div.style["top"] = "0px";
-            div.style["visibility"] = "visible";
+            div.style["visibility"] = "hidden";
+            div.style["display"] = "block";
             div.innerHTML = this.textEditorElem.innerHTML;
             document.body.appendChild(div);
 
