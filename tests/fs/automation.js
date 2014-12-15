@@ -15,13 +15,6 @@ casper.options.onWaitTimeout = function() {
     this.test.fail("Timeout");
 };
 
-var expectedUnitTestResults = [
-  { name: "pass", number: 71222 },
-  { name: "fail", number: 0 },
-  { name: "known fail", number: 180 },
-  { name: "unknown pass", number: 0 }
-];
-
 casper.test.begin("unit tests", 2, function(test) {
     // The main test automation script already initializes the fs database
     // to its latest version and runs the fs tests against it.  So this script
