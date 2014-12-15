@@ -63,7 +63,21 @@ var expectedUnitTestResults = [
   { name: "unknown pass", number: 0 }
 ];
 
-casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
+    // Run the Init midlet, which does nothing by itself but ensures that any
+    // initialization code gets run before we start a test that depends on it.
+    casper
+    .start("http://localhost:8000/index.html?midletClassName=InitMidlet&jars=tests/tests.jar")
+    .withFrame(0, function() {
+        casper.waitForText("DONE");
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 10 PASS, 0 FAIL", "test fs init");
+    });
+
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
@@ -91,7 +105,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
         });
     }
     casper
-    .start("http://localhost:8000/index.html")
+    .thenOpen("http://localhost:8000/index.html")
     .withFrame(0, basicUnitTests);
 
     casper

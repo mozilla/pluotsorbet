@@ -26,9 +26,9 @@ class HelloGraphics extends Canvas implements Runnable {
             0,
             (int)((double)position / (double)getWidth() * (double)360));
         if (increment) {
-            g.drawString("Hello", getWidth() / 4 * 3, getHeight() / 2, Graphics.HCENTER | Graphics.VCENTER);
+            g.drawString("Hello", getWidth() / 4 * 3, getHeight() / 2, Graphics.HCENTER);
         } else {
-            g.drawString("World", getWidth() / 4 * 3, getHeight() / 2, Graphics.HCENTER | Graphics.VCENTER);
+            g.drawString("World", getWidth() / 4 * 3, getHeight() / 2, Graphics.HCENTER);
         }
         g.setColor(0xFF, 0, 0);
         g.drawRoundRect(0, 0, getWidth() / 4, getHeight() / 4, getWidth() / 8, getHeight() / 8);
@@ -40,7 +40,7 @@ class HelloGraphics extends Canvas implements Runnable {
         offscreenImage = Image.createImage(250, 25);
         Graphics g = offscreenImage.getGraphics();
         g.setColor(0, 0xFF, 0x88);
-	g.drawString("This is a test", 250/2, 25/2, Graphics.HCENTER | Graphics.VCENTER);
+        g.drawString("This is a test", 250/2, 25/2, Graphics.HCENTER);
         int[] arrayOfInt = new int[250 * 25];
         offscreenImage.getRGB(arrayOfInt, 0, 25, 0, 0, 25, 25);
         for (int i = 0; i < arrayOfInt.length; i++) {

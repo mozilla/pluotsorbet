@@ -9,7 +9,6 @@ var paths = [
   "/",
   "/Persistent",
   "/_main.ks",
-  "/_test.ks",
 ];
 
 // The files we expect to find in the filesystem, indexed by parent dir.
@@ -18,7 +17,6 @@ var filesByDir = {
   "/": [
     "Persistent",
     "_main.ks",
-    "_test.ks",
   ],
 
   "/Persistent": [],

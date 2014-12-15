@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 45000;
+casper.options.waitTimeout = 15000;
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
@@ -22,100 +22,32 @@ var expectedUnitTestResults = [
   { name: "unknown pass", number: 0 }
 ];
 
-casper.test.begin("unit tests", 7, function(test) {
-    // Before we do anything else, test the initial state of the fs.
-    // This depends on the make recipe first creating a Gecko profile
-    // and populating it with the initial directories and files.
+casper.test.begin("unit tests", 2, function(test) {
+    // The main test automation script already initializes the fs database
+    // to its latest version and runs the fs tests against it.  So this script
+    // focuses on running tests against a database that is initialized
+    // to the original version and then upgraded by the tests, so we can ensure
+    // that upgrading the database works as expected.
+
+    // In the long run, we may want to move all the fs tests into this script,
+    // including the ones that initialize the database to the latest version,
+    // by deleting and recreating the database between test runs.  We may also
+    // want to move over the other tests that touch the fs.
+
     casper
-    .start("http://localhost:8000/tests/fs/test-fs-init.html")
+    .start("http://localhost:8000/tests/fs/init-fs-v1.html")
+    .waitForText("DONE");
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 12 PASS, 0 FAIL", "test fs init");
+        test.assertTextExists("DONE: 10 PASS, 0 FAIL", "test fs init");
     });
-
-    function basicUnitTests() {
-        casper.waitForText("DONE", function() {
-            var content = this.getPageContent();
-            var regex = /DONE: (\d+) pass, (\d+) fail, (\d+) known fail, (\d+) unknown pass/;
-            var match = content.match(regex);
-            if (!match || !match.length || match.length < 5) {
-                this.debugPage();
-                this.echo(this.captureBase64('png'));
-                test.fail('failed to parse status line of main unit tests');
-            } else {
-                var msg = "";
-                for (var i = 0; i < expectedUnitTestResults.length; i++) {
-                    if (match[i+1] != expectedUnitTestResults[i].number) {
-                        msg += "\n\tExpected " + expectedUnitTestResults[i].number + " " + expectedUnitTestResults[i].name + ". Got " + match[i+1];
-                    }
-                }
-                if (!msg) {
-                    test.pass('main unit tests');
-                } else {
-                    this.debugPage();
-                    this.echo(this.captureBase64('png'));
-                    test.fail(msg);
-                }
-            }
-        });
-    }
-
-    casper
-    .thenOpen("http://localhost:8000/index.html")
-    .withFrame(0, basicUnitTests);
 
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
         test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&jars=tests/tests.jar")
-    .withFrame(0, function() {
-        this.waitForText("START", function() {
-            this.waitUntilVisible(".nokia-fileui-prompt", function() {
-                this.fill("form.nokia-fileui-prompt.visible", {
-                    "nokia-fileui-file": system.args[4],
-                });
-                this.click(".nokia-fileui-prompt.visible input");
-                this.click(".nokia-fileui-prompt.visible button.recommend");
-                this.waitForText("DONE", function() {
-                    var content = this.getPageContent();
-                    if (content.contains("FAIL")) {
-                        this.debugPage();
-                        this.echo(this.captureBase64('png'));
-                        test.fail('file-ui test');
-                    } else {
-                        test.pass("file-ui test");
-                    }
-                });
-            });
-        });
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
-    .withFrame(0, function() {
-        casper.waitForText("DONE", function() {
-            test.pass();
-        });
-    });
-
-    // Run the test a second time to ensure loading the JAR stored in the FS works correctly.
-    casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
-    .withFrame(0, function() {
-        casper.waitForText("DONE", function() {
-            test.pass();
-        });
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet")
-    .withFrame(0, function() {
-        casper.waitForText("DONE", function() {
-            test.pass();
-        });
     });
 
     casper
