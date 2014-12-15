@@ -489,7 +489,7 @@ module J2ME.C4.Backend {
     throw "Unimplemented conversion";
   }
 
-  function compileStateValues(cx: Context, values: IR.Value []): AST.Node [] {
+  function compileStateValues(values: IR.Value [], cx: Context): AST.Node {
     var compiledValues = [];
     for (var i = 0; i < values.length; i++) {
       if (values[i] === null) {
@@ -502,72 +502,14 @@ module J2ME.C4.Backend {
         }
       }
     }
-    return compiledValues;
+    return new AST.ArrayExpression(compiledValues);
   }
 
-  /*
-  IR.JVMCallProperty.prototype.compile = function (cx: Context): AST.Node {
-
-    var localValues = compileStateValues(cx, this.state.local);
-    var stackValues = compileStateValues(cx, this.state.stack);
-    var object = compileValue(this.object, cx);
-    var name = compileValue(this.name, cx);
-    var callee = property(object, name);
-    var args = this.args.map(function (arg) {
-      return compileValue(arg, cx);
-    });
-
-    var objCheck = null;
-    if (this.objectCheck) {
-      var vmc = new AST.MemberExpression(object, new AST.Identifier("class"), false);
-      objCheck = new AST.IfStatement(new AST.UnaryExpression("!", true, new AST.BinaryExpression("in", name, vmc)),
-          new AST.ExpressionStatement(
-            new AST.CallExpression(new AST.Identifier("J2ME.buildCompiledCall"), [
-              vmc,
-              name,
-              new AST.CallExpression(new AST.Identifier("CLASSES.getMethod"), [
-                new AST.MemberExpression(object, new AST.Identifier("class"), false), name])])),
-          null);
-      callee = property(vmc, name);
-    }
-
-    var callNode = call(callee, args);
-
-    var exception = new AST.Identifier("e");
-
-    var body = [];
-    if (objCheck) {
-      body.push(objCheck);
-    }
-    if (this.variable) {
-      body.push(assignment(id(this.variable.name), callNode));
-      cx.useVariable(this.variable);
-    } else {
-      body.push(callNode);
-    }
-
-    // body.push(assignment(to, callNode));
-
-    return new AST.TryStatement(
-      new AST.BlockStatement(body),
-      new AST.CatchClause(exception, null,
-        new AST.BlockStatement([ // Ask mbx: is it bug I need ExpressionStatement here to get the semicolon inserted.
-          new AST.ExpressionStatement(new AST.CallExpression(new AST.Identifier("ctx.JVMBailout"), [
-            exception,
-            new AST.Literal(this.callerMethodInfoId),
-            new AST.Identifier("compiledDepth"),
-            new AST.Literal(this.state.bci),
-            new AST.ArrayExpression(localValues),
-            new AST.ArrayExpression(stackValues)
-          ])),
-          new AST.ThrowStatement(exception)
-        ])
-      ),
-      [],
-      null
-    );
-  };
-  */
+  function compileState(state: State, cx: Context): AST.Node [] {
+    var local = compileStateValues(state.local, cx);
+    var stack = compileStateValues(state.stack, cx);
+    return [new AST.Literal(state.bci), local, stack];
+  }
 
   IR.JVMInvoke.prototype.compile = function (cx: Context): AST.Node {
     var object = this.object ? compileValue(this.object, cx) : null;
@@ -592,13 +534,14 @@ module J2ME.C4.Backend {
       }
       result = call(callee, args);
     }
-    if (false && this.state) {
+
+    if (this.state) {
       var block = new AST.BlockStatement([]);
       var to = id(this.variable.name);
       cx.useVariable(this.variable);
       block.body.push(new AST.ExpressionStatement(assignment(to, result)));
-      var ifYield = new AST.IfStatement(id("$Y"), new AST.BlockStatement([
-        new AST.ExpressionStatement(call(property(id("$"), "B"), [])),
+      var ifYield = new AST.IfStatement(property(id("$"), "Y"), new AST.BlockStatement([
+        new AST.ExpressionStatement(call(property(id("$"), "B"), compileState(this.state, cx))),
         new AST.ReturnStatement(undefined)
       ]));
       block.body.push(ifYield);

@@ -410,7 +410,7 @@ module J2ME.C4.Backend {
     return array instanceof Array;
   }
 
-  function compileValues(values, cx: Context) {
+  export function compileValues(values, cx: Context) {
     release || assert (isArray(values));
     return values.map(function (value) {
       return compileValue(value, cx);

@@ -185,8 +185,9 @@ module J2ME {
     });
     writer.leave("}");
 
-    // Emit class static initializer if it has any static fields.
-    if (classInfo.fields.some(f => f.isStatic)) {
+    // Emit class static initializer if it has any static fields. We don't emit this for now
+    // since it probably doesn't pay off to emit code that only gets executed once.
+    if (false && classInfo.fields.some(f => f.isStatic)) {
       writer.enter(mangledClassName + ".staticInitializer = function() {");
       emitFields(classInfo.fields, true);
       writer.leave("}");

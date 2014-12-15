@@ -80,6 +80,7 @@ module J2ME {
   var verboseOption: Options.Option;
   var classpathOption: Options.Option;
   var callGraphOption: Options.Option;
+  var classFileFilterOption: Options.Option;
   var classFilterOption: Options.Option;
   var fileFilterOption: Options.Option;
   var debuggerOption: Options.Option;
@@ -96,6 +97,7 @@ module J2ME {
     callGraphOption = shellOptions.register(new Options.Option("cg", "callGraph", "string []", [], "Call Grpah Files"));
 
 
+    classFileFilterOption = shellOptions.register(new Options.Option("cff", "classFileFilter", "string", "", "Compile Class File Filter"));
     classFilterOption = shellOptions.register(new Options.Option("cf", "classFilter", "string", ".*", "Compile Class Filter"));
     fileFilterOption = shellOptions.register(new Options.Option("ff", "fileFilter", "string", ".*", "Compile File Filter"));
     debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
@@ -176,21 +178,27 @@ module J2ME {
     }
     CLASSES.initializeBuiltinClasses();
     if (verboseOption.value) {
-      writer.writeLn("Compiling Pattern: " + classFilterOption.value);
+      writer.writeLn("Compiling Pattern: " + classFilterOption.value + " " + classFileFilterOption.value);
     }
-    var classPattern;
-    var file = snarf(classFilterOption.value, "text");
-    if (file) {
-      classPattern = file.split("\n");
-    } else {
-      classPattern = classFilterOption.value;
+    var classNameList;
+    if (classFileFilterOption.value) {
+      var file;
+      try {
+        file = snarf(classFileFilterOption.value, "text");
+      } catch (e) {
+
+      }
+      if (file) {
+        classNameList = file.split("\n");
+      }
     }
     function classFilter(classInfo: ClassInfo): boolean {
-      if (typeof classPattern === "string") {
+      if (classNameList) {
+        return classNameList.indexOf(classInfo.className) >= 0;
+      } else if (classFilterOption.value) {
         return !!classInfo.className.match(classFilterOption.value);
-      } else {
-        return classPattern.indexOf(classInfo.className) >= 0;
       }
+      return false;
     }
     compile(jvm, classFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
     if (verboseOption.value) {

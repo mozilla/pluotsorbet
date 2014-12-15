@@ -288,6 +288,19 @@ module J2ME {
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
     id: number;
+
+    /**
+     * Are we currently unwinding the stack because of a Yield?
+     */
+    Y: boolean = false;
+
+    /**
+     * Bailout callback whenever a JIT frame is unwound.
+     */
+    B(bci: number, local: any [], stack: any []) {
+
+    }
+
     constructor(jvm: JVM) {
       super(jvm);
       this.id = Runtime._nextId ++;
