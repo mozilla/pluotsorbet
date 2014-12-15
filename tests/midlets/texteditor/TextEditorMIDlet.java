@@ -124,6 +124,15 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         textEditor.setVisible(true);
         textEditor.setFocus(true);
         textEditor.setPosition(0, 0);
+
+        TextEditor pwdEditor = TextEditor.createTextEditor("pwd", 50, TextField.PASSWORD, 70, 70);
+        pwdEditor.setParent(canvas);
+        pwdEditor.setMultiline(true);
+        pwdEditor.setBackgroundColor(0x00FFFFFF);
+        pwdEditor.setForegroundColor(0xFF000000);
+        pwdEditor.setVisible(true);
+        pwdEditor.setFocus(false);
+        pwdEditor.setPosition(0, 200);
     }
 
     public void commandAction(Command c, Displayable s) {
