@@ -294,7 +294,7 @@ module J2ME {
       $.ctx = this;
       traceWriter = null; // this.writer;
       linkWriter = null; // this.writer;
-      initWriter = this.writer;
+      initWriter = null; // this.writer;
     }
 
     execute() {
