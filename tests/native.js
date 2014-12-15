@@ -127,3 +127,7 @@ Native.create("com/nokia/mid/impl/jms/core/TestLauncher.checkImageModalDialog.()
 Native.create("org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOnlineEvent.()V", function() {
   window.dispatchEvent(new CustomEvent("online"));
 });
+
+Native.create("org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V", function() {
+  window.dispatchEvent(new CustomEvent("offline"));
+});

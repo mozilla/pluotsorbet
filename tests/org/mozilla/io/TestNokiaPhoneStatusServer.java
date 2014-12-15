@@ -77,6 +77,7 @@ public class TestNokiaPhoneStatusServer implements Testlet {
             } else if (name.equals("network_status")) {
                 dataDecoder.getStart(14);
                 th.check(dataDecoder.getString(10), "Home");
+                th.check(dataDecoder.getBoolean(), true);
                 dataDecoder.getEnd(14);
             } else if (name.equals("wifi_status")) {
                 dataDecoder.getStart(14);
@@ -95,6 +96,40 @@ public class TestNokiaPhoneStatusServer implements Testlet {
     }
 
     private native void sendFakeOnlineEvent();
+    private native void sendFakeOfflineEvent();
+
+    void testNotify(TestHarness th, boolean online) throws IOException {
+        LocalMessageProtocolMessage msg = client.newMessage(null);
+        client.receive(msg);
+        byte[] clientData = msg.getData();
+
+        DataDecoder dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(13), "ChangeNotify");
+        dataDecoder.getString(10);
+        dataDecoder.getStart(15);
+        th.check(dataDecoder.getName(), "network_status");
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(10), "Home");
+        th.check(dataDecoder.getBoolean(), online);
+        dataDecoder.getEnd(14);
+        dataDecoder.getEnd(15);
+
+        msg = client.newMessage(null);
+        client.receive(msg);
+        clientData = msg.getData();
+
+        dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getString(13), "ChangeNotify");
+        dataDecoder.getString(10);
+        dataDecoder.getStart(15);
+        th.check(dataDecoder.getName(), "wifi_status");
+        dataDecoder.getStart(14);
+        th.check(dataDecoder.getBoolean(), online);
+        dataDecoder.getEnd(14);
+        dataDecoder.getEnd(15);
+    }
 
     public void testChangeNotify(TestHarness th) throws IOException {
         DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
@@ -110,36 +145,10 @@ public class TestNokiaPhoneStatusServer implements Testlet {
         client.send(sendData, 0, sendData.length);
 
         sendFakeOnlineEvent();
+        testNotify(th, true);
 
-        LocalMessageProtocolMessage msg = client.newMessage(null);
-        client.receive(msg);
-        byte[] clientData = msg.getData();
-
-        DataDecoder dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
-        dataDecoder.getStart(14);
-        th.check(dataDecoder.getString(13), "ChangeNotify");
-        dataDecoder.getString(10);
-        dataDecoder.getStart(15);
-        th.check(dataDecoder.getName(), "network_status");
-        dataDecoder.getStart(14);
-        th.check(dataDecoder.getString(10), "Home");
-        dataDecoder.getEnd(14);
-        dataDecoder.getEnd(15);
-
-        msg = client.newMessage(null);
-        client.receive(msg);
-        clientData = msg.getData();
-
-        dataDecoder = new DataDecoder("Conv-BEB", clientData, 0, clientData.length);
-        dataDecoder.getStart(14);
-        th.check(dataDecoder.getString(13), "ChangeNotify");
-        dataDecoder.getString(10);
-        dataDecoder.getStart(15);
-        th.check(dataDecoder.getName(), "wifi_status");
-        dataDecoder.getStart(14);
-        th.check(dataDecoder.getBoolean(), true);
-        dataDecoder.getEnd(14);
-        dataDecoder.getEnd(15);
+        sendFakeOfflineEvent();
+        testNotify(th, false);
     }
 
     public void test(TestHarness th) {

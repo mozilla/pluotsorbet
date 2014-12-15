@@ -247,37 +247,37 @@ var NokiaPhoneStatusLocalMsgConnection = function() {
 
   window.addEventListener('online', (function() {
     if (this.listeners["network_status"]) {
-      this.sendChangeNotify(this.buildNetworkStatus.bind(this));
+      this.sendChangeNotify(this.buildNetworkStatus.bind(this), true);
     }
 
     if (this.listeners["wifi_status"]) {
-      this.sendChangeNotify(this.buildWiFiStatus.bind(this));
+      this.sendChangeNotify(this.buildWiFiStatus.bind(this), true);
     }
   }).bind(this));;
 
   window.addEventListener('offline', (function() {
     if (this.listeners["network_status"]) {
-      this.sendChangeNotify(this.buildNetworkStatus.bind(this));
+      this.sendChangeNotify(this.buildNetworkStatus.bind(this), false);
     }
 
     if (this.listeners["wifi_status"]) {
-      this.sendChangeNotify(this.buildWiFiStatus.bind(this));
+      this.sendChangeNotify(this.buildWiFiStatus.bind(this), false);
     }
   }).bind(this));
 };
 
 NokiaPhoneStatusLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaPhoneStatusLocalMsgConnection.prototype.buildNetworkStatus = function(encoder) {
+NokiaPhoneStatusLocalMsgConnection.prototype.buildNetworkStatus = function(encoder, online) {
   encoder.putStart(DataType.STRUCT, "network_status");
   encoder.put(DataType.STRING, "", "Home");  // Name unknown (value is "None", "Home" or "Roam")
-  encoder.put(DataType.BOOLEAN, "", navigator.onLine ? 1 : 0);  // Name unknown
+  encoder.put(DataType.BOOLEAN, "", online ? 1 : 0);  // Name unknown
   encoder.putEnd(DataType.STRUCT, "network_status");
 }
 
-NokiaPhoneStatusLocalMsgConnection.prototype.buildWiFiStatus = function(encoder) {
+NokiaPhoneStatusLocalMsgConnection.prototype.buildWiFiStatus = function(encoder, online) {
   encoder.putStart(DataType.STRUCT, "wifi_status");
-  encoder.put(DataType.BOOLEAN, "", navigator.onLine ? 1 : 0);  // Name unknown, we're assuming we're connected to a wifi network.
+  encoder.put(DataType.BOOLEAN, "", online ? 1 : 0);  // Name unknown, we're assuming we're connected to a wifi network.
   encoder.putEnd(DataType.STRUCT, "wifi_status");
 }
 
@@ -288,14 +288,14 @@ NokiaPhoneStatusLocalMsgConnection.prototype.buildBattery = function(encoder) {
   encoder.putEnd(DataType.STRUCT, "battery");
 }
 
-NokiaPhoneStatusLocalMsgConnection.prototype.sendChangeNotify = function(replyBuilder) {
+NokiaPhoneStatusLocalMsgConnection.prototype.sendChangeNotify = function(replyBuilder, online) {
   var encoder = new DataEncoder();
   encoder.putStart(DataType.STRUCT, "event");
   encoder.put(DataType.METHOD, "name", "ChangeNotify");
   encoder.put(DataType.STRING, "status", "OK"); // Name and value unknown
   encoder.putStart(DataType.LIST, "subscriptions");
 
-  replyBuilder(encoder);
+  replyBuilder(encoder, online);
 
   encoder.putEnd(DataType.LIST, "subscriptions");
   encoder.putEnd(DataType.STRUCT, "event");
@@ -368,11 +368,11 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
 
           switch (name) {
             case "network_status":
-              this.buildNetworkStatus(encoder);
+              this.buildNetworkStatus(encoder, navigator.onLine);
               break;
 
             case "wifi_status":
-              this.buildWiFiStatus(encoder);
+              this.buildWiFiStatus(encoder, navigator.onLine);
               break;
 
             case "battery":
