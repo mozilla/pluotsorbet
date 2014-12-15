@@ -63,7 +63,17 @@ var expectedUnitTestResults = [
   { name: "unknown pass", number: 0 }
 ];
 
-casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
+    casper
+    .start("http://localhost:8000/tests/fs/init-fs.html")
+    .waitForText("DONE", function() {});
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 12 PASS, 0 FAIL", "test fs init");
+    });
+
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
@@ -91,7 +101,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
         });
     }
     casper
-    .start("http://localhost:8000/index.html")
+    .thenOpen("http://localhost:8000/index.html")
     .withFrame(0, basicUnitTests);
 
     casper

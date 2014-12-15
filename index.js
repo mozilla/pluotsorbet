@@ -3,16 +3,6 @@
 
 'use strict';
 
-function loadScript(path) {
-  return new Promise(function(resolve, reject) {
-    var element = document.createElement('script');
-    element.setAttribute("type", "text/javascript");
-    element.setAttribute("src", path);
-    document.getElementsByTagName("head")[0].appendChild(element);
-    element.onload = resolve;
-  });
-}
-
 /**
  * Pre-load dependencies and then load the main page.
  */
