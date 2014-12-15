@@ -318,7 +318,10 @@ var currentlyFocusedTextEditor;
         // with some spaces removed.
         // We need this css string to have the same format as that of the
         // MIDP.Context2D.font to do comparison in withFont() function.
-        this.css = style  + size + "pt " + face;
+        this.css = style + size + "pt " + face;
+        this.size = size;
+        this.style = style;
+        this.face = face;
     });
 
     Native.create("javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I", function(str) {
@@ -973,14 +976,17 @@ var currentlyFocusedTextEditor;
             }
         };
 
-        this.textEditor.setContent(util.fromJavaString(text));
-        this.setCaretPosition(this.textEditor.getSize());
-
         this.textEditor.setAttribute("maxlength", maxSize);
         this.textEditor.setStyle("width", width + "px");
         this.textEditor.setStyle("height", height + "px");
         this.textEditor.setStyle("position", "absolute");
         this.textEditor.setVisible(false);
+        var font = this.class.getField("I.font.Ljavax/microedition/lcdui/Font;").get(this);
+        this.textEditor.setFont(font);
+
+        this.textEditor.setContent(util.fromJavaString(text));
+        this.setCaretPosition(this.textEditor.getSize());
+
         this.textEditor.oninput(function(e) {
             wakeTextEditorThread(this.textEditorId);
         }.bind(this));
@@ -1165,6 +1171,11 @@ var currentlyFocusedTextEditor;
 
     Native.create("com/nokia/mid/ui/TextEditor.size.()I", function() {
         return this.textEditor.getSize();
+    });
+
+    Native.create("com/nokia/mid/ui/TextEditor.setFont.(Ljavax/microedition/lcdui/Font;)V", function(font) {
+        this.class.getField("I.font.Ljavax/microedition/lcdui/Font;").set(this, font);
+        this.textEditor.setFont(font);
     });
 
     Native.create("com/nokia/mid/ui/TextEditorThread.sleep.()V", function() {

@@ -246,8 +246,12 @@ var TextEditorProvider = (function() {
                 return;
             }
 
-            var img = '<img src="http://img1.wikia.nocookie.net/__cb20120718024112/fantendo/images/6/6e/Small-mario.png" height="12px" width="12px">';
-            this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), img) + "\n";
+            var toImg = function(unicode) {
+                return '<img src="style/emoji/' + unicode.codePointAt(0).toString(16) +
+                       '.png" height="' + this.font.size + 'pt" width="' + this.font.size + 'pt">';
+            }.bind(this);
+
+            this.textEditorElem.innerHTML = content.replace(new RegExp(this.ranges.join('|'), 'g'), toImg) + "\n";
         },
 
         getSelectionEnd: function() {
@@ -400,6 +404,13 @@ var TextEditorProvider = (function() {
 
             return height;
         },
+
+        setFont: function(font) {
+            this.font = font;
+            this.textEditorElem.style.setProperty("font-style", font.style);
+            this.textEditorElem.style.setProperty("font-size", font.size);
+            this.textEditorElem.style.setProperty("font-face", font.face);
+        },
     }, CommonEditorPrototype);
 
     function PasswordEditor() {
@@ -451,7 +462,14 @@ var TextEditorProvider = (function() {
         },
 
         getContentHeight: function() {
-            return this.textEditorElem.clientHeight;
+            return this.font.class.getField("I.height.I").get(this.font);
+        },
+
+        setFont: function(font) {
+            this.font = font;
+            this.textEditorElem.style.setProperty("font-style", font.style);
+            this.textEditorElem.style.setProperty("font-size", font.size);
+            this.textEditorElem.style.setProperty("font-face", font.face);
         },
     }, CommonEditorPrototype);
 
@@ -604,6 +622,10 @@ var TextEditorProvider = (function() {
 
         getContentHeight: function() {
             return this.textEditor.getContentHeight();
+        },
+
+        setFont: function(font) {
+            this.textEditor.setFont(font);
         },
 
         oninput: function(callback) {
