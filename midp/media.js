@@ -351,18 +351,18 @@ function ImagePlayer(playerContainer) {
 
 ImagePlayer.prototype.realize = function() {
     return new Promise((function(resolve, reject) {
+        this.image.onload = resolve.bind(null, true);
+        this.image.onerror = function() {
+            reject(new JavaException("javax/microedition/media/MediaException", "Failed to load image"));
+        };
         if (this.url.startsWith("file")) {
             fs.open(this.url.substring(7), (function(fd) {
                 var imgData = fs.read(fd);
                 fs.close(fd);
-                this.image.onload = function() {
-                    resolve(true);
-                };
                 this.image.src = URL.createObjectURL(new Blob([ imgData ]));
             }).bind(this));
         } else {
             this.image.src = this.url;
-            resolve(true);
         }
     }).bind(this));
 }
@@ -422,17 +422,30 @@ function ImageRecorder(playerContainer) {
 ImageRecorder.prototype.realize = function() {
     return new Promise((function(resolve, reject) {
         this.realizeResolver = resolve;
+        this.realizeRejector = reject;
         this.sender = DumbPipe.open("camera", {}, this.recipient.bind(this));
     }).bind(this));
 }
 
 ImageRecorder.prototype.recipient = function(message) {
     switch (message.type) {
+        case "initerror":
+            if (message.name == "PermissionDeniedError") {
+                this.realizeRejector(new JavaException("java/lang/SecurityException", "Not permitted to init camera"));
+            } else {
+                this.realizeRejector(new JavaException("javax/microedition/media/MediaException", "Failed to init camera, no camera?"));
+            }
+            this.realizeResolver = null;
+            this.realizeRejector = null;
+            this.sender({ type: "close" });
+            break;
+
         case "gotstream":
             this.width = message.width;
             this.height = message.height;
             this.realizeResolver(true);
             this.realizeResolver = null;
+            this.realizeRejector = null;
             break;
 
         case "snapshot":
@@ -580,7 +593,7 @@ PlayerContainer.prototype.realize = function(contentType) {
             } else {
                 this.player = new ImagePlayer(this);
             }
-            this.player.realize().then(resolve);
+            this.player.realize().then(resolve, reject);
         } else {
             console.warn("Unsupported media format (" + this.mediaFormat + ") for " + this.url);
             resolve(false);

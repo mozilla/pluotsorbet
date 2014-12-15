@@ -311,6 +311,13 @@ var currentlyFocusedTextEditor;
 
         this.class.getField("I.baseline.I").set(this, size | 0);
         this.class.getField("I.height.I").set(this, (size * 1.3)|0);
+
+        // Note:
+        // When a css string, such as ` 10 pt Arial, Helvetica`, is set to
+        // MIDP.Context2D.font, it will be formatted to `10 pt Arial,Helvetica`
+        // with some spaces removed.
+        // We need this css string to have the same format as that of the
+        // MIDP.Context2D.font to do comparison in withFont() function.
         this.css = style  + size + "pt " + face;
     });
 
