@@ -422,6 +422,9 @@ module J2ME {
     }
 
     export interface Class extends java.lang.Object {
+      /**
+       * RuntimeKlass associated with this Class object.
+       */
       runtimeKlass: RuntimeKlass;
     }
 
@@ -445,11 +448,7 @@ module J2ME {
   function initializeClassObject(runtimeKlass: RuntimeKlass) {
     linkWriter && linkWriter.writeLn("Initializing Class Object For: " + runtimeKlass.templateKlass);
     assert(!runtimeKlass.classObject);
-    runtimeKlass.classObject = <java.lang.Class><any>runtimeKlass;
-    // TODO: Make this look like a Class instance but don't change the __proto__
-    (<any>Object).setPrototypeOf(runtimeKlass.classObject, Klasses.java.lang.Class.prototype);
-
-    // <java.lang.Class>newObject(Klasses.java.lang.Class);
+    runtimeKlass.classObject = <java.lang.Class><any>new Klasses.java.lang.Class();
     runtimeKlass.classObject.runtimeKlass = runtimeKlass;
     var fields = runtimeKlass.templateKlass.classInfo.fields;
     for (var i = 0; i < fields.length; i++) {
@@ -468,7 +467,7 @@ module J2ME {
             defaultValue = 0;
             break;
         }
-        field.set(runtimeKlass.classObject, defaultValue);
+        field.set(<java.lang.Object><any>runtimeKlass, defaultValue);
       }
     }
   }
@@ -707,7 +706,7 @@ module J2ME {
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject($.ctx)
+            ? methodInfo.classInfo.getStaticObject($.ctx)
             : frame.getLocal(0);
         }
         try {
