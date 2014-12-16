@@ -1072,9 +1072,7 @@ module J2ME {
             if (!isStatic) {
               stack.pop();
             }
-if (methodInfo.implKey === "com/sun/midp/lcdui/DisplayEventHandlerFactory.getDisplayEventHandler.(Lcom/sun/midp/security/SecurityToken;)Lcom/sun/midp/lcdui/DisplayEventHandler;") {
-  debugger;
-}
+
             var returnValue = fn.apply(obj, args);
             if ($.Y) {
               return;
