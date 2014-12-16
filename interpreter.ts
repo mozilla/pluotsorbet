@@ -134,9 +134,8 @@ module J2ME {
             ctx.thread.waiting[n] = null;
             waitingCtx.wakeup(ctx.thread);
           });
-        } else {
-          throw new Error(buildExceptionLog(ex, stackTrace));
         }
+        throw new Error(buildExceptionLog(ex, stackTrace));
       } else {
         throw ex;
       }

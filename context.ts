@@ -148,6 +148,9 @@ module J2ME {
     }
 
     kill() {
+      if (this.thread) {
+        this.thread.alive = false;
+      }
       this.runtime.removeContext(this);
     }
 
