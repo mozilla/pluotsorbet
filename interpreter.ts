@@ -71,7 +71,7 @@ module J2ME {
     function throw_(ex, ctx) {
       var exClass = ex.class;
 
-      var stackTrace = [];
+      var stackTrace = ex.stackTrace;
 
       do {
         var exception_table = frame.methodInfo.exception_table;
@@ -108,23 +108,28 @@ module J2ME {
           return;
         }
 
-        if (ctx.frames.length == 1) {
-          break;
-        }
+        // if (ctx.frames.length == 1) {
+        //   break;
+        // }
 
         popFrame(0);
       } while (frame);
-      ctx.kill();
 
-      if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
-        console.error(buildExceptionLog(ex, stackTrace));
+      if (ctx.frameSets.length === 0) {
+        ctx.kill();
 
-        ctx.thread.waiting.forEach(function(waitingCtx, n) {
-          ctx.thread.waiting[n] = null;
-          waitingCtx.wakeup(ctx.thread);
-        });
+        if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
+          console.error(buildExceptionLog(ex, stackTrace));
+
+          ctx.thread.waiting.forEach(function(waitingCtx, n) {
+            ctx.thread.waiting[n] = null;
+            waitingCtx.wakeup(ctx.thread);
+          });
+        } else {
+          throw new Error(buildExceptionLog(ex, stackTrace));
+        }
       } else {
-        throw new Error(buildExceptionLog(ex, stackTrace));
+        throw ex;
       }
     }
 
@@ -943,11 +948,6 @@ module J2ME {
           stack.push(result ? 1 : 0);
           break;
         case Bytecodes.ATHROW:
-          if (ctx.frameSets.length > 0) {
-            // Compiled code can't handle exceptions, so throw a yield to make all the compiled code bailout.
-            frame.bci--;
-            throwYield();
-          }
           var obj = stack.pop();
           if (!obj) {
             ctx.raiseExceptionAndYield("java/lang/NullPointerException");
@@ -1042,7 +1042,14 @@ module J2ME {
           if (!isStatic) {
             stack.pop();
           }
-          var returnValue = fn.apply(obj, args);
+          var returnValue;
+          try {
+            returnValue = fn.apply(obj, args);
+          } catch (ex) {
+            throw_(ex, ctx);
+            continue;
+          }
+
           if (methodInfo.getReturnKind() !== Kind.Void) {
             release || assert(returnValue !== undefined, methodInfo.signatureDescriptor + " " + methodInfo.returnKind + " " + Kind.Void);
             if (isTwoSlot(methodInfo.getReturnKind())) {
