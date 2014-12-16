@@ -401,12 +401,12 @@ module J2ME {
       /**
        * All objects have an internal hash code.
        */
-      __hashCode__: number;
+      _hashCode: number;
 
       /**
        * Some objects may have a lock.
        */
-      __lock__: Lock;
+      _lock: Lock;
 
       clone(): java.lang.Object;
       equals(obj: java.lang.Object): boolean;
@@ -986,8 +986,8 @@ module J2ME {
       return value.klass + " no classInfo"
     }
     var hashcode = "";
-    if (value.__hashCode__) {
-      hashcode = " 0x" + value.__hashCode__.toString(16).toUpperCase();
+    if (value._hashCode) {
+      hashcode = " 0x" + value._hashCode.toString(16).toUpperCase();
     }
     if (value instanceof Klasses.java.lang.String) {
       return "\"" + value.str + "\"";

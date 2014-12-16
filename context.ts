@@ -375,7 +375,7 @@ module J2ME {
         window.clearTimeout(this.lockTimeout);
         this.lockTimeout = null;
       }
-      if (obj.__lock__) {
+      if (obj._lock) {
         if (!obj.ready)
           obj.ready = [];
         obj.ready.push(this);
@@ -387,9 +387,9 @@ module J2ME {
     }
 
     monitorEnter(obj: java.lang.Object) {
-      var lock = obj.__lock__;
+      var lock = obj._lock;
       if (!lock) {
-        obj.__lock__ = new Lock(this.thread, 1);
+        obj._lock = new Lock(this.thread, 1);
         return;
       }
       if (lock.thread === this.thread) {
@@ -400,20 +400,20 @@ module J2ME {
     }
 
     monitorExit(obj) {
-      var lock = obj.__lock__;
+      var lock = obj._lock;
       if (lock.thread !== this.thread)
         this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
       if (--lock.level > 0) {
         return;
       }
-      obj.__lock__ = null;
+      obj._lock = null;
       this.unblock(obj, "ready", false, function (ctx) {
         ctx.wakeup(obj);
       });
     }
 
     wait(obj, timeout) {
-      var lock = obj.__lock__;
+      var lock = obj._lock;
       if (timeout < 0)
         this.raiseExceptionAndYield("java/lang/IllegalArgumentException");
       if (!lock || lock.thread !== this.thread)
@@ -438,7 +438,7 @@ module J2ME {
     }
 
     notify(obj, notifyAll) {
-      if (!obj.__lock__ || obj.__lock__.thread !== this.thread)
+      if (!obj._lock || obj._lock.thread !== this.thread)
         this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
       this.unblock(obj, "waiting", notifyAll, function (ctx) {
         ctx.wakeup(obj);

@@ -179,7 +179,7 @@ module J2ME {
     writer.enter("function " + mangledClassName + "() {");
     // Emit call to create hash code. We may also want to save the context that created this
     // object in debug builds for extra assertions.
-    writer.writeLn("this.__hashCode__ = $.nextHashCode(this);");
+    writer.writeLn("this._hashCode = $.nextHashCode(this);");
     getClassInheritanceChain(classInfo).forEach(function (ci) {
       emitFields(ci.fields, false);
     });
