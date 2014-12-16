@@ -665,7 +665,23 @@ module J2ME {
     linkKlassMethods(classInfo.klass);
   }
 
+  function findNativeMethodBinding(methodInfo: MethodInfo) {
+    var classBindings = Bindings[methodInfo.classInfo.className];
+    if (classBindings && classBindings.native) {
+      var method = classBindings.native[methodInfo.name + "." + methodInfo.signature];
+      if (method) {
+        return method;
+      }
+    }
+    return null;
+  }
+
   function findNativeMethodImplementation(methodInfo: MethodInfo) {
+    // Look in bindings first.
+    var binding = findNativeMethodBinding(methodInfo);
+    if (binding) {
+      return binding;
+    }
     var implKey = methodInfo.implKey;
     if (methodInfo.isNative) {
       if (implKey in Native) {
