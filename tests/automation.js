@@ -37,7 +37,7 @@ var gfxTests = [
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
-  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1329 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1500 },
   { name: "gfx/DirectUtilsClipAfter", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferent: 0, todo: true },
   { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferent: 0 },
@@ -57,7 +57,7 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71250 },
+  { name: "pass", number: 71251 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
