@@ -415,12 +415,12 @@ module J2ME {
       /**
        * All objects have an internal hash code.
        */
-      __hashCode__: number;
+      _hashCode: number;
 
       /**
        * Some objects may have a lock.
        */
-      __lock__: Lock;
+      _lock: Lock;
 
       clone(): java.lang.Object;
       equals(obj: java.lang.Object): boolean;
@@ -436,6 +436,9 @@ module J2ME {
     }
 
     export interface Class extends java.lang.Object {
+      /**
+       * RuntimeKlass associated with this Class object.
+       */
       runtimeKlass: RuntimeKlass;
     }
 
@@ -459,11 +462,7 @@ module J2ME {
   function initializeClassObject(runtimeKlass: RuntimeKlass) {
     linkWriter && linkWriter.writeLn("Initializing Class Object For: " + runtimeKlass.templateKlass);
     assert(!runtimeKlass.classObject);
-    runtimeKlass.classObject = <java.lang.Class><any>runtimeKlass;
-    // TODO: Make this look like a Class instance but don't change the __proto__
-    (<any>Object).setPrototypeOf(runtimeKlass.classObject, Klasses.java.lang.Class.prototype);
-
-    // <java.lang.Class>newObject(Klasses.java.lang.Class);
+    runtimeKlass.classObject = <java.lang.Class><any>new Klasses.java.lang.Class();
     runtimeKlass.classObject.runtimeKlass = runtimeKlass;
     var fields = runtimeKlass.templateKlass.classInfo.fields;
     for (var i = 0; i < fields.length; i++) {
@@ -482,7 +481,7 @@ module J2ME {
             defaultValue = 0;
             break;
         }
-        field.set(runtimeKlass.classObject, defaultValue);
+        field.set(<java.lang.Object><any>runtimeKlass, defaultValue);
       }
     }
   }
@@ -681,7 +680,23 @@ module J2ME {
     linkKlassMethods(classInfo.klass);
   }
 
+  function findNativeMethodBinding(methodInfo: MethodInfo) {
+    var classBindings = Bindings[methodInfo.classInfo.className];
+    if (classBindings && classBindings.native) {
+      var method = classBindings.native[methodInfo.name + "." + methodInfo.signature];
+      if (method) {
+        return method;
+      }
+    }
+    return null;
+  }
+
   function findNativeMethodImplementation(methodInfo: MethodInfo) {
+    // Look in bindings first.
+    var binding = findNativeMethodBinding(methodInfo);
+    if (binding) {
+      return binding;
+    }
     var implKey = methodInfo.implKey;
     if (methodInfo.isNative) {
       if (implKey in Native) {
@@ -722,7 +737,7 @@ module J2ME {
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject($.ctx)
+            ? methodInfo.classInfo.getStaticObject($.ctx)
             : frame.getLocal(0);
         }
         $.ctx.monitorEnter(frame.lockObject);
@@ -863,17 +878,13 @@ module J2ME {
     return from.display[to.depth] === to;
   }
 
-  export function instanceOf(object: java.lang.Object, klass: Klass): boolean {
-    return object === null && isAssignableTo(object.klass, klass);
-  }
-
   export function instanceOfKlass(object: java.lang.Object, klass: Klass): boolean {
-    return object === null && object.klass.display[klass.depth] === klass;
+    return object !== null && object.klass.display[klass.depth] === klass;
   }
 
   export function instanceOfInterface(object: java.lang.Object, klass: Klass): boolean {
     assert(klass.isInterfaceKlass);
-    return object === null && object.klass.interfaces.indexOf(klass) >= 0;
+    return object !== null && object.klass.interfaces.indexOf(klass) >= 0;
   }
 
   export function checkCast(object: java.lang.Object, klass: Klass) {
@@ -988,8 +999,8 @@ module J2ME {
       return value.klass + " no classInfo"
     }
     var hashcode = "";
-    if (value.__hashCode__) {
-      hashcode = " 0x" + value.__hashCode__.toString(16).toUpperCase();
+    if (value._hashCode) {
+      hashcode = " 0x" + value._hashCode.toString(16).toUpperCase();
     }
     if (value instanceof Klasses.java.lang.String) {
       return "\"" + value.str + "\"";

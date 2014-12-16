@@ -179,7 +179,7 @@ module J2ME {
     writer.enter("function " + mangledClassName + "() {");
     // Emit call to create hash code. We may also want to save the context that created this
     // object in debug builds for extra assertions.
-    writer.writeLn("this.__hashCode__ = $.nextHashCode(this);");
+    writer.writeLn("this._hashCode = $.nextHashCode(this);");
     getClassInheritanceChain(classInfo).forEach(function (ci) {
       emitFields(ci.fields, false);
     });
@@ -222,7 +222,9 @@ module J2ME {
     }).join(", ") + "];");
   }
 
-  function compileClassInfo(emitter: Emitter, classInfo: ClassInfo, ctx: Context): CompiledMethodInfo [] {
+  function compileClassInfo(emitter: Emitter, classInfo: ClassInfo,
+                            methodFilter: (methodInfo: MethodInfo) => boolean,
+                            ctx: Context): CompiledMethodInfo [] {
     var writer = emitter.writer;
     var mangledClassName = mangleClass(classInfo);
     if (!J2ME.C4.Backend.isIdentifierName(mangledClassName)) {
@@ -251,6 +253,12 @@ module J2ME {
     var compiledMethods: CompiledMethodInfo [] = [];
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
+      if (method.isNative) {
+        continue;
+      }
+      if (!methodFilter(method)) {
+        continue;
+      }
       var mangledMethodName = mangleMethod(method);
       if (!J2ME.C4.Backend.isIdentifierName(mangledMethodName)) {
         mangledMethodName = quote(mangledMethodName);
@@ -260,11 +268,16 @@ module J2ME {
         continue;
       }
       try {
-        if (emitter.debugInfo) {
-          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " " + method.getSourceLocationForBci(0));
-        }
         var mangledClassAndMethodName = mangleClassAndMethod(method);
-        var compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
+        if (emitter.debugInfo) {
+          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForBci(0));
+        }
+        var compiledMethod = undefined;
+        try {
+          compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
+        } catch (e) {
+          writer.writeLn("// " + e.toString());
+        }
         if (compiledMethod && compiledMethod.body) {
           writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
@@ -301,7 +314,10 @@ module J2ME {
     return compiledMethods;
   }
 
-  export function compile(jvm: any, classFilter: (classInfo: ClassInfo) => boolean, fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
+  export function compile(jvm: any,
+                          classFilter: (classInfo: ClassInfo) => boolean,
+                          methodFilter: (methodInfo: MethodInfo) => boolean,
+                          fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
     var classFiles = CLASSES.classFiles;
     var ctx = new Context(runtime);
@@ -379,7 +395,7 @@ module J2ME {
       if (emitter.debugInfo) {
         writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
       }
-      ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, ctx));
+      ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, methodFilter, ctx));
     }
 
     stdoutWriter.writeLn(code);

@@ -39,8 +39,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      visitor(this.store);
-      visitor(this.control);
+      super.visitInputs(visitor);
       visitor(this.length);
     }
   }
@@ -52,8 +51,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      visitor(this.store);
-      visitor(this.control);
+      super.visitInputs(visitor);
       visitor(this.length);
     }
   }
@@ -116,9 +114,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      visitor(this.control);
-      visitor(this.store);
-      this.loads && visitArrayInputs(this.loads, visitor);
+      super.visitInputs(visitor);
       visitor(this.array);
       visitor(this.index);
       visitor(this.value);
@@ -132,9 +128,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      visitor(this.control);
-      visitor(this.store);
-      this.loads && visitArrayInputs(this.loads, visitor);
+      super.visitInputs(visitor);
       visitor(this.array);
       visitor(this.index);
     }
@@ -170,9 +164,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
-      this.loads && visitArrayInputs(this.loads, visitor);
+      super.visitInputs(visitor);
       this.object && visitor(this.object);
       visitArrayInputs(this.args, visitor);
       if (this.state) {
@@ -196,10 +188,6 @@ module J2ME.C4.IR {
     constructor(control: Control, store: Store, public classInfo: ClassInfo) {
       super(control, store);
     }
-    visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
-    }
   }
 
   JVMNew.prototype.nodeName = "JVMNew";
@@ -210,8 +198,7 @@ module J2ME.C4.IR {
       this.handlesAssignment = true;
     }
     visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
+      super.visitInputs(visitor);
       visitor(this.object);
     }
   }
@@ -223,8 +210,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
+      super.visitInputs(visitor);
       visitor(this.object);
     }
   }
@@ -236,8 +222,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
+      super.visitInputs(visitor);
       visitor(this.object);
     }
   }
@@ -249,8 +234,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
+      super.visitInputs(visitor);
       visitor(this.value);
     }
   }
@@ -262,9 +246,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
-      this.loads && visitArrayInputs(this.loads, visitor);
+      super.visitInputs(visitor);
       this.object && visitor(this.object);
     }
   }
@@ -276,9 +258,7 @@ module J2ME.C4.IR {
       super(control, store);
     }
     visitInputs(visitor: NodeVisitor) {
-      this.control && visitor(this.control);
-      this.store && visitor(this.store);
-      this.loads && visitArrayInputs(this.loads, visitor);
+      super.visitInputs(visitor);
       this.object && visitor(this.object);
       visitor(this.value);
     }

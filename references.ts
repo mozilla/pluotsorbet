@@ -9,6 +9,7 @@
 ///<reference path='jvm.ts' />
 ///<reference path='interpreter.ts' />
 ///<reference path='actors.ts' />
+///<reference path='bindings.ts' />
 ///<reference path='runtime.ts' />
 ///<reference path='context.ts' />
 

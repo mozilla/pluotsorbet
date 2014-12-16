@@ -54,11 +54,11 @@ module J2ME {
     }
 
     getStatic() {
-      return this.get(this.classInfo.getClassObject($.ctx));
+      return this.get(this.classInfo.getStaticObject($.ctx));
     }
 
     setStatic(value: any) {
-      return this.set(this.classInfo.getClassObject($.ctx), value);
+      return this.set(this.classInfo.getStaticObject($.ctx), value);
     }
 
     toString() {
@@ -334,8 +334,19 @@ module J2ME {
       return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
     }
 
+    /**
+     * java.lang.Class object for this class info. This is a not where static properties
+     * are stored for this class.
+     */
     getClassObject(ctx: Context): java.lang.Class {
       return getRuntimeKlass(ctx.runtime, this.klass).classObject;
+    }
+
+    /**
+     * Object that holds static properties for this class.
+     */
+    getStaticObject(ctx: Context): java.lang.Object {
+      return <java.lang.Object><any>getRuntimeKlass(ctx.runtime, this.klass);
     }
 
     getField(fieldKey: string) : FieldInfo {

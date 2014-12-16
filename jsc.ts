@@ -82,6 +82,7 @@ module J2ME {
   var callGraphOption: Options.Option;
   var classFileFilterOption: Options.Option;
   var classFilterOption: Options.Option;
+  var methodFilterOption: Options.Option;
   var fileFilterOption: Options.Option;
   var debuggerOption: Options.Option;
   var releaseOption: Options.Option;
@@ -99,6 +100,8 @@ module J2ME {
 
     classFileFilterOption = shellOptions.register(new Options.Option("cff", "classFileFilter", "string", "", "Compile Class File Filter"));
     classFilterOption = shellOptions.register(new Options.Option("cf", "classFilter", "string", ".*", "Compile Class Filter"));
+    methodFilterOption = shellOptions.register(new Options.Option("mf", "methodFilter", "string", "", "Compile Method Filter"));
+
     fileFilterOption = shellOptions.register(new Options.Option("ff", "fileFilter", "string", ".*", "Compile File Filter"));
     debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
     releaseOption = shellOptions.register(new Options.Option("r", "release", "boolean", false, "Release mode"));
@@ -200,7 +203,13 @@ module J2ME {
       }
       return false;
     }
-    compile(jvm, classFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    function methodFilter(methodInfo: MethodInfo): boolean {
+      if (!methodFilterOption.value) {
+        return true;
+      }
+      return methodInfo.implKey === methodFilterOption.value;
+    }
+    compile(jvm, classFilter, methodFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
     if (verboseOption.value) {
       printResults();
     }
