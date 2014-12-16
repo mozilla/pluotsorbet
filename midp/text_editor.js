@@ -179,19 +179,14 @@ var TextEditorProvider = (function() {
             }
 
             if (e.keyCode == 8) {
-                var indexStart = this.getSelectionStart();
-                var indexEnd = this.getSelectionEnd();
+                var range = this.getSelectionRange();
 
-                if (indexStart > indexEnd) {
-                    [ indexStart, indexEnd ] = [ indexEnd, indexStart ];
-                }
-
-                if (indexStart != indexEnd) {
-                    this.setContent(this.getSlice(0, indexStart) + this.getSlice(indexEnd));
-                    this.setSelectionRange(indexStart, indexStart);
+                if (range[0] != range[1]) {
+                    this.setContent(this.getSlice(0, range[0]) + this.getSlice(range[1]));
+                    this.setSelectionRange(range[0], range[0]);
                 } else {
-                    this.setContent(this.getSlice(0, indexStart-1) + this.getSlice(indexStart));
-                    this.setSelectionRange(indexStart-1, indexStart-1);
+                    this.setContent(this.getSlice(0, range[0] - 1) + this.getSlice(range[0]));
+                    this.setSelectionRange(range[0] - 1, range[0] - 1);
                 }
 
                 if (this.oninputCallback) {
@@ -216,23 +211,25 @@ var TextEditorProvider = (function() {
 
         this.textEditorElem.onkeypress = function(e) {
             if (e.charCode) {
-                this.setContent(this.content + String.fromCharCode(e.charCode));
-                var size = this.getSize();
-                this.setSelectionRange(size, size);
+                var range = this.getSelectionRange();
+
+                this.setContent(this.getSlice(0, range[0]) +
+                                String.fromCharCode(e.charCode) +
+                                this.getSlice(range[1]));
+
+                this.setSelectionRange(range[0] + 1, range[0] + 1);
+
+                if (this.oninputCallback) {
+                    this.oninputCallback();
+                }
+
+                return false;
             }
 
             console.log("CONTENT: " + countNewlines(this.content));
             console.log("INNERHTML: " + countNewlines(this.textEditorElem.innerHTML));
             console.log("CONTENT: " + this.content);
             console.log("INNERHTML: " + this.textEditorElem.innerHTML);
-
-            if (this.oninputCallback) {
-                this.oninputCallback();
-            }
-
-            if (e.charCode) {
-                return false;
-            }
         }.bind(this);
     }
     TextAreaEditor.prototype = extendsObject({
@@ -341,6 +338,19 @@ var TextEditorProvider = (function() {
             }
 
             return 0;
+        },
+
+        getSelectionRange: function() {
+            var indexStart = this.getSelectionStart();
+            var indexEnd = this.getSelectionEnd();
+
+            if (indexStart > indexEnd) {
+                var tmp = indexStart;
+                indexStart = indexEnd;
+                indexEnd = tmp;
+            }
+
+            return [ indexStart, indexEnd ];
         },
 
         setSelectionRange: function(from, to) {
