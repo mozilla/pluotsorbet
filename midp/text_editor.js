@@ -182,9 +182,13 @@ var TextEditorProvider = (function() {
                 var range = this.getSelectionRange();
 
                 if (range[0] != range[1]) {
+                    // If some text has been selected, remove it and set the new caret position
+                    // to the first character before the selection.
                     this.setContent(this.getSlice(0, range[0]) + this.getSlice(range[1]));
                     this.setSelectionRange(range[0], range[0]);
                 } else {
+                    // If there's no text currently selected, remove the first character before
+                    // the current caret position and reduce the caret position by 1.
                     this.setContent(this.getSlice(0, range[0] - 1) + this.getSlice(range[0]));
                     this.setSelectionRange(range[0] - 1, range[0] - 1);
                 }
@@ -195,34 +199,14 @@ var TextEditorProvider = (function() {
 
                 return false;
             } else if (e.keyCode == 13) {
-                this.content += "\n";
-                this.textEditorElem.innerHTML += "\n";
-
-                var size = this.getSize();
-                this.setSelectionRange(size, size);
-
-                if (this.oninputCallback) {
-                    this.oninputCallback();
-                }
-
+                this.addToContent("\n");
                 return false;
             }
         }.bind(this);
 
         this.textEditorElem.onkeypress = function(e) {
             if (e.charCode) {
-                var range = this.getSelectionRange();
-
-                this.setContent(this.getSlice(0, range[0]) +
-                                String.fromCharCode(e.charCode) +
-                                this.getSlice(range[1]));
-
-                this.setSelectionRange(range[0] + 1, range[0] + 1);
-
-                if (this.oninputCallback) {
-                    this.oninputCallback();
-                }
-
+                this.addToContent(String.fromCharCode(e.charCode));
                 return false;
             }
 
@@ -241,6 +225,25 @@ var TextEditorProvider = (function() {
 
         getContent: function() {
             return this.content || '';
+        },
+
+        addToContent: function(newContent) {
+            var range = this.getSelectionRange();
+
+            // Add the new content, replacing the current selection.
+            // If the selection is collapsed, just add the content
+            // at the selected position.
+            this.setContent(this.getSlice(0, range[0]) +
+                            newContent +
+                            this.getSlice(range[1]));
+
+            // Set the current selection after the new added character
+            this.setSelectionRange(range[0] + 1, range[0] + 1);
+
+            // Notify TextEditor listeners
+            if (this.oninputCallback) {
+                this.oninputCallback();
+            }
         },
 
         setContent: function(content) {
