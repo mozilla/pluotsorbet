@@ -167,6 +167,16 @@ module J2ME {
     }
 
     executeNewFrameSet(frames: Frame []) {
+      var self = this;
+      function flattenFrameSet() {
+        // Append all the current frames to the parent frame set, so a single frame stack
+        // exists when the bailout finishes.
+        var currentFrames = self.frames;
+        self.frames = self.frameSets.pop();
+        for (var i = 0; i < currentFrames.length; i++) {
+          self.frames.push(currentFrames[i]);
+        }
+      }
       this.frameSets.push(this.frames);
       this.frames = frames;
       try {
@@ -176,17 +186,15 @@ module J2ME {
           traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + frameDetails);
         }
         var returnValue = VM.execute(this);
+        if ($.Y) {
+          flattenFrameSet();
+          return;
+        }
         if (traceWriter) {
           traceWriter.leave("<");
         }
       } catch (e) {
-        // Append all the current frames to the parent frame set, so a single frame stack
-        // exists when the bailout finishes.
-        var currentFrames = this.frames;
-        this.frames = this.frameSets.pop();
-        for (var i = 0; i < currentFrames.length; i++) {
-          this.frames.push(currentFrames[i]);
-        }
+        flattenFrameSet();
         if (traceWriter) {
           traceWriter.leave("< " + e);
         }
@@ -248,42 +256,17 @@ module J2ME {
       if (!message)
         message = "";
       message = "" + message;
-      var syntheticMethod = new MethodInfo({
-        name: "RaiseExceptionSynthetic",
-        signature: "()V",
-        isStatic: true,
-        classInfo: {
-          className: className,
-          vmc: {},
-          vfc: {},
-          constant_pool: [
-            null,
-            {tag: TAGS.CONSTANT_Class, name_index: 2},
-            {bytes: className},
-            {tag: TAGS.CONSTANT_String, string_index: 4},
-            {bytes: message},
-            {tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 6},
-            {name_index: 7, signature_index: 8},
-            {bytes: "<init>"},
-            {bytes: "(Ljava/lang/String;)V"},
-          ],
-        },
-        code: new Uint8Array([
-          0xbb, 0x00, 0x01, // new <idx=1>
-          0x59,             // dup
-          0x12, 0x03,       // ldc <idx=2>
-          0xb7, 0x00, 0x05, // invokespecial <idx=5>
-          0xbf              // athrow
-        ])
-      });
-      //  pushFrame() is not used since the invoker may be a compiled frame.
-      var callee = new Frame(syntheticMethod, [], 0);
-      this.frames.push(callee);
+      var classInfo = CLASSES.getClass(className);
+
+      var exception = new classInfo.klass();
+      var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
+      jsGlobal[methodInfo.mangledClassAndMethodName](message ? $S(message) : null);
+
+      throw exception;
     }
 
     raiseExceptionAndYield(className, message?) {
       this.raiseException(className, message);
-      throwYield();
     }
 
     setCurrent() {
@@ -301,19 +284,15 @@ module J2ME {
       Instrument.callResumeHooks(this.current());
       this.setCurrent();
       do {
-        try {
-          VM.execute(this);
-        } catch (e) {
-          switch (e) {
-            case VM.Yield:
-              // Ignore the yield and continue executing instructions on this thread.
-              break;
-            case VM.Pause:
-              Instrument.callPauseHooks(this.current());
-              return;
-            default:
-              throwHelper(e);
-          }
+        VM.execute(this);
+        if ($.Y === VmState.Yielding) {
+          // Ignore the yield and continue executing instructions on this thread.
+          $.Y = VmState.Running;
+          continue;
+        } else if ($.Y === VmState.Pausing) {
+          $.Y = VmState.Running;
+          Instrument.callPauseHooks(this.current());
+          return;
         }
       } while (this.frames.length !== 0);
     }
@@ -322,20 +301,13 @@ module J2ME {
       var ctx = this;
       this.setCurrent();
       Instrument.callResumeHooks(ctx.current());
-      try {
-        VM.execute(ctx);
-      } catch (e) {
-        switch (e) {
-          case VM.Yield:
-            break;
-          case VM.Pause:
-            Instrument.callPauseHooks(ctx.current());
-            return;
-          default:
-            console.info(e);
-            throw e;
-        }
+      VM.execute(ctx);
+      if ($.Y === VmState.Pausing) {
+        $.Y = VmState.Running;
+        Instrument.callPauseHooks(this.current());
+        return;
       }
+      $.Y = VmState.Running;
       Instrument.callPauseHooks(ctx.current());
 
       if (ctx.frames.length === 0) {
@@ -355,7 +327,7 @@ module J2ME {
         obj[queue] = [];
       obj[queue].push(this);
       this.lockLevel = lockLevel;
-      throwPause();
+      $.pause();
     }
 
     unblock(obj, queue, notifyAll, callback) {
@@ -380,8 +352,12 @@ module J2ME {
           obj.ready = [];
         obj.ready.push(this);
       } else {
-        while (this.lockLevel-- > 0)
+        while (this.lockLevel-- > 0) {
           this.monitorEnter(obj);
+          if ($.Y === VmState.Pausing) {
+            return;
+          }
+        }
         this.resume();
       }
     }

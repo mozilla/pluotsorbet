@@ -8,10 +8,6 @@ function throwHelper(e) {
   throw e;
 }
 
-function throwYield() {
-  throwHelper(VM.Yield);
-}
-
 function throwPause() {
   throwHelper(VM.Pause);
 }

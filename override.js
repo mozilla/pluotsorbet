@@ -96,7 +96,7 @@ function executePromise(ret, doReturn, ctx, key) {
     Instrument.enterAsyncNative(key, ret);
   }
 
-  throwPause();
+  $.pause();
 }
 
 /**
@@ -135,9 +135,7 @@ function createAlternateImpl(object, key, fn, usesPromise) {
       var ret = fn.apply(this, args);
       return postExec(ret, doReturn, ctx, key);
     } catch(e) {
-      if (e === VM.Pause || e === VM.Yield) {
-        throwHelper(e);
-      } else if (e.name === "TypeError") {
+      if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
         console.log(e.stack);
         ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);

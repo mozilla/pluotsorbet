@@ -70,6 +70,9 @@ module J2ME {
 
     function throw_(ex, ctx) {
       var exClass = ex.class;
+      if (!ex.stackTrace) {
+        ex.stackTrace = [];
+      }
 
       var stackTrace = ex.stackTrace;
 
@@ -960,6 +963,9 @@ module J2ME {
             ctx.raiseExceptionAndYield("java/lang/NullPointerException");
           }
           ctx.monitorEnter(obj);
+          if ($.Y === VmState.Pausing) {
+            return;
+          }
           break;
         case Bytecodes.MONITOREXIT:
           var obj = stack.pop();
@@ -1045,6 +1051,9 @@ module J2ME {
           var returnValue;
           try {
             returnValue = fn.apply(obj, args);
+            if ($.Y) {
+              return;
+            }
           } catch (ex) {
             throw_(ex, ctx);
             continue;

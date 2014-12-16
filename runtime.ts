@@ -285,6 +285,12 @@ module J2ME {
     }
   }
 
+  export enum VmState {
+    Running = 0,
+    Yielding = 1,
+    Pausing = 2
+  }
+
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
     id: number;
@@ -292,13 +298,21 @@ module J2ME {
     /**
      * Are we currently unwinding the stack because of a Yield?
      */
-    Y: boolean = false;
+    Y: VmState = VmState.Running;
 
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
     B(bci: number, local: any [], stack: any []) {
 
+    }
+
+    yield() {
+      this.Y = VmState.Yielding;
+    }
+
+    pause() {
+      this.Y = VmState.Pausing;
     }
 
     constructor(jvm: JVM) {
@@ -710,12 +724,10 @@ module J2ME {
             ? methodInfo.classInfo.getClassObject($.ctx)
             : frame.getLocal(0);
         }
-        try {
-          $.ctx.monitorEnter(frame.lockObject);
-        } catch (e) {
-          // Ensure the frame gets pushed on vm pause.
+        $.ctx.monitorEnter(frame.lockObject);
+        if ($.Y === VmState.Pausing) {
           $.ctx.frames.push(frame);
-          throw e;
+          return;
         }
       }
       return $.ctx.executeNewFrameSet([frame]);
