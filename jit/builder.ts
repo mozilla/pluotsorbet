@@ -258,7 +258,8 @@ module J2ME {
       return "<" + String(this.id + " @ " + this.bci).padRight(' ', 10) +
         (" M: " + State.toBriefString(this.store)).padRight(' ', 14) +
         (" L: " + this.local.map(State.toBriefString).join(", ")).padRight(' ', 40) +
-        (" S: " + this.stack.map(State.toBriefString).join(", ")).padRight(' ', 60);
+        (" S: " + this.stack.map(State.toBriefString).join(", ")).padRight(' ', 60) +
+        (" R: " + this.loads.map(State.toBriefString).join(", ")).padRight(' ', 60);
     }
 
     /**
