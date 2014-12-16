@@ -89,7 +89,36 @@ function executePromise(ret, doReturn, ctx, key) {
         break;
     }
   }, function(e) {
-    ctx.raiseException(e.javaClassName, e.message);
+    var syntheticMethod = new MethodInfo({
+      name: "RaiseExceptionSynthetic",
+      signature: "()V",
+      isStatic: true,
+      classInfo: {
+        className: e.javaClassName,
+        vmc: {},
+        vfc: {},
+        constant_pool: [
+          null,
+          {tag: TAGS.CONSTANT_Class, name_index: 2},
+          {bytes: e.javaClassName},
+          {tag: TAGS.CONSTANT_String, string_index: 4},
+          {bytes: e.message},
+          {tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 6},
+          {name_index: 7, signature_index: 8},
+          {bytes: "<init>"},
+          {bytes: "(Ljava/lang/String;)V"},
+        ],
+      },
+      code: new Uint8Array([
+        0xbb, 0x00, 0x01, // new <idx=1>
+        0x59,             // dup
+        0x12, 0x03,       // ldc <idx=2>
+        0xb7, 0x00, 0x05, // invokespecial <idx=5>
+        0xbf              // athrow
+      ])
+    });
+    var callee = new Frame(syntheticMethod, [], 0);
+    ctx.frames.push(callee);
   }).then(ctx.start.bind(ctx));
 
   if (Instrument.profiling) {

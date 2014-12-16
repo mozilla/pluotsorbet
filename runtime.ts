@@ -505,6 +505,7 @@ module J2ME {
         });
         initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
+        assert(!$.Y);
         //// TODO: monitorEnter
         //if (klass.staticInitializer) {
         //  klass.staticInitializer.call(runtimeKlass);

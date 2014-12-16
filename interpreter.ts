@@ -148,11 +148,11 @@ module J2ME {
     function classInitCheck(classInfo, ip) {
       if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
         return;
-      try {
-        ctx.pushClassInitFrame(classInfo);
-      } catch (e) {
+      ctx.pushClassInitFrame(classInfo);
+
+      if ($.Y) {
         frame.bci = ip;
-        throwHelper(e);
+        return;
       }
     }
 
@@ -918,6 +918,9 @@ module J2ME {
             if (field.tag)
               field = resolve(idx, true);
             classInitCheck(field.classInfo, frame.bci - 3);
+            if ($.Y) {
+              return;
+            }
             var value = field.getStatic();
             if (typeof value === "undefined") {
               value = util.defaultValue(field.signature);
@@ -930,6 +933,9 @@ module J2ME {
             if (field.tag)
               field = resolve(idx, true);
             classInitCheck(field.classInfo, frame.bci - 3);
+            if ($.Y) {
+              return;
+            }
             field.setStatic(stack.popType(field.signature));
             break;
           case Bytecodes.NEW:
@@ -938,6 +944,9 @@ module J2ME {
             if (classInfo.tag)
               classInfo = resolve(idx);
             classInitCheck(classInfo, frame.bci - 3);
+            if ($.Y) {
+              return;
+            }
             stack.push(util.newObject(classInfo));
             break;
           case Bytecodes.CHECKCAST:
@@ -1032,8 +1041,12 @@ module J2ME {
             var methodInfo = cp[idx];
             if (methodInfo.tag) {
               methodInfo = resolve(idx, isStatic);
-              if (isStatic)
+              if (isStatic) {
                 classInitCheck(methodInfo.classInfo, startip);
+                if ($.Y) {
+                  return;
+                }
+              }
             }
             var obj = null;
             var fn;
