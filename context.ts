@@ -194,10 +194,11 @@ module J2ME {
           traceWriter.leave("<");
         }
       } catch (e) {
-        flattenFrameSet();
         if (traceWriter) {
           traceWriter.leave("< " + e);
         }
+        assert(this.frames.length === 0);
+        this.frames = this.frameSets.pop();
         throwHelper(e);
       }
       this.frames = this.frameSets.pop();
@@ -252,7 +253,7 @@ module J2ME {
       this.executeNewFrameSet([classInitFrame]);
     }
 
-    raiseException(className, message) {
+    createException(className, message?) {
       if (!message)
         message = "";
       message = "" + message;
@@ -262,11 +263,7 @@ module J2ME {
       var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
       jsGlobal[methodInfo.mangledClassAndMethodName](message ? $S(message) : null);
 
-      throw exception;
-    }
-
-    raiseExceptionAndYield(className, message?) {
-      this.raiseException(className, message);
+      return exception;
     }
 
     setCurrent() {
@@ -378,7 +375,7 @@ module J2ME {
     monitorExit(obj) {
       var lock = obj.__lock__;
       if (lock.thread !== this.thread)
-        this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
+        throw this.createException("java/lang/IllegalMonitorStateException");
       if (--lock.level > 0) {
         return;
       }
@@ -391,9 +388,9 @@ module J2ME {
     wait(obj, timeout) {
       var lock = obj.__lock__;
       if (timeout < 0)
-        this.raiseExceptionAndYield("java/lang/IllegalArgumentException");
+        throw this.createException("java/lang/IllegalArgumentException");
       if (!lock || lock.thread !== this.thread)
-        this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
+        throw this.createException("java/lang/IllegalMonitorStateException");
       var lockLevel = lock.level;
       while (lock.level > 0)
         this.monitorExit(obj);
@@ -415,7 +412,7 @@ module J2ME {
 
     notify(obj, notifyAll) {
       if (!obj.__lock__ || obj.__lock__.thread !== this.thread)
-        this.raiseExceptionAndYield("java/lang/IllegalMonitorStateException");
+        throw this.createException("java/lang/IllegalMonitorStateException");
       this.unblock(obj, "waiting", notifyAll, function (ctx) {
         ctx.wakeup(obj);
       });
