@@ -67,7 +67,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
-    .start("http://localhost:8000/index.html?midletClassName=InitMidlet&jars=tests/tests.jar")
+    .start("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar")
     .withFrame(0, function() {
         casper.waitForText("DONE");
     });
