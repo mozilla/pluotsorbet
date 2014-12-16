@@ -107,12 +107,12 @@ var TextEditorProvider = (function() {
                 // sure the native input won't lose focus, we change opacity instead
                 // of visibility.
                 this.setStyle('opaque', 1);
-                this.setStyle('zIndex', 999);
+                this.setStyle('z-index', 999);
             } else {
                 this.setStyle('opaque', 0);
                 // To make sure the j2me control could be clicked again to show the
                 // textEditor, we need to put the textEditor at the bottom.
-                this.setStyle('zIndex', -999);
+                this.setStyle('z-index', -999);
             }
         },
 
