@@ -849,17 +849,13 @@ module J2ME {
     return from.display[to.depth] === to;
   }
 
-  export function instanceOf(object: java.lang.Object, klass: Klass): boolean {
-    return object === null && isAssignableTo(object.klass, klass);
-  }
-
   export function instanceOfKlass(object: java.lang.Object, klass: Klass): boolean {
-    return object === null && object.klass.display[klass.depth] === klass;
+    return object !== null && object.klass.display[klass.depth] === klass;
   }
 
   export function instanceOfInterface(object: java.lang.Object, klass: Klass): boolean {
     assert(klass.isInterfaceKlass);
-    return object === null && object.klass.interfaces.indexOf(klass) >= 0;
+    return object !== null && object.klass.interfaces.indexOf(klass) >= 0;
   }
 
   export function checkCast(object: java.lang.Object, klass: Klass) {
