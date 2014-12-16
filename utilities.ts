@@ -273,11 +273,11 @@ module J2ME {
     }
 
     export function error(message: string) {
-      if (!inBrowser) {
-        warn(message + "\n\nStack Trace:\n" + Debug.backtrace());
-      } else {
-        warn(message);
-      }
+      //if (!inBrowser) {
+      //  warn(message + "\n\nStack Trace:\n" + Debug.backtrace());
+      //} else {
+      //  warn(message);
+      //}
       throw new Error(message);
     }
 

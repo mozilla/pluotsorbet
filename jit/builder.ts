@@ -429,43 +429,23 @@ module J2ME {
 
   export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
     if (!methodInfo.code) {
-      counter.count("Cannot Compile: Method has no code.");
-      return;
+      throw new Error("Method: " + methodInfo.implKey + " has no code.");
     }
-    counter.count("Trying to Compile");
-    //if (methodInfo.isSynchronized) {
-    //  counter.count("Cannot Compile: Method is synchronized.");
-    //  return;
-    //} else
+    if (methodInfo.isSynchronized) {
+      throw new Error("Method: " + methodInfo.implKey + " is synchronized.");
+    }
     if (methodInfo.exception_table.length) {
-      counter.count("Cannot Compile: Method has exception handlers.");
-      return;
+      throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
     var builder = new Builder(methodInfo, ctx, target);
     var fn;
-    try {
-      var compilation = builder.build();
-      var args = [];
-      for (var i = 0; i < builder.parameters.length; i++) {
-        var parameter = builder.parameters[i];
-        args.push(parameter.name);
-      }
-      var body = compilation.body;
-      // consoleWriter.writeLn(fnSource);
-      // var fn = new Function(args.join(","), body);
-      // consoleWriter.writeLn(fn.toString());
-      // debug && writer.writeLn(fn.toString());
-      counter.count("Compiled");
-    } catch (e) {
-      counter.count("Failed to Compile " + e);
-      //consoleWriter.writeLn(e);
-      //consoleWriter.writeLns(e.stack);
-      debug && Debug.warning("Failed to compile " + methodInfo.implKey + " " + e + " " + e.stack);
-      if (e.message.indexOf("Not Implemented ") === -1) {
-        throw e;
-      }
+    var compilation = builder.build();
+    var args = [];
+    for (var i = 0; i < builder.parameters.length; i++) {
+      var parameter = builder.parameters[i];
+      args.push(parameter.name);
     }
-
+    var body = compilation.body;
     return new CompiledMethodInfo(args, body, builder.referencedClasses);
   }
 

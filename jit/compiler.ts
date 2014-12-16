@@ -253,6 +253,9 @@ module J2ME {
     var compiledMethods: CompiledMethodInfo [] = [];
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
+      if (method.isNative) {
+        continue;
+      }
       if (!methodFilter(method)) {
         continue;
       }
@@ -265,11 +268,16 @@ module J2ME {
         continue;
       }
       try {
-        if (emitter.debugInfo) {
-          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " " + method.getSourceLocationForBci(0));
-        }
         var mangledClassAndMethodName = mangleClassAndMethod(method);
-        var compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
+        if (emitter.debugInfo) {
+          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForBci(0));
+        }
+        var compiledMethod = undefined;
+        try {
+          compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
+        } catch (e) {
+          writer.writeLn("// " + e.toString());
+        }
         if (compiledMethod && compiledMethod.body) {
           writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
