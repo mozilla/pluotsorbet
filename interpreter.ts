@@ -65,7 +65,9 @@ module J2ME {
     function buildExceptionLog(ex, stackTrace) {
       var className = ex.klass.classInfo.className;
       var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
-      return className + ": " + (detailMessage || "") + "\n" + stackTrace.join("\n") + "\n\n";
+      return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
+        return " - " + entry.className + "." + entry.methodName + "(), bci=" + entry.offset;
+      }).join("\n") + "\n\n";
     }
 
     function throw_(ex, ctx) {
@@ -96,7 +98,11 @@ module J2ME {
 
         var classInfo = frame.methodInfo.classInfo;
         if (classInfo && classInfo.className) {
-          stackTrace.push(" - " + classInfo.className + "." + frame.methodInfo.name + "(), bci=" + frame.bci);
+          stackTrace.push({
+            className: classInfo.className,
+            methodName: frame.methodInfo.name,
+            offset: frame.bci
+          });
         }
 
         if (handler_pc != null) {

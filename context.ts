@@ -261,7 +261,7 @@ module J2ME {
 
       var exception = new classInfo.klass();
       var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
-      jsGlobal[methodInfo.mangledClassAndMethodName](message ? $S(message) : null);
+      jsGlobal[methodInfo.mangledClassAndMethodName].call(exception, message ? $S(message) : null);
 
       return exception;
     }

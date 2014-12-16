@@ -170,6 +170,8 @@ function createAlternateImpl(object, key, fn, usesPromise) {
         throw ctx.createException("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {
         throw ctx.createException(e.javaClassName, e.message);
+      } else if (e.klass) {
+        throw e;
       } else {
         console.error(e, e.stack);
         throw ctx.createException("java/lang/RuntimeException", e);
