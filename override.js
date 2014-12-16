@@ -167,12 +167,12 @@ function createAlternateImpl(object, key, fn, usesPromise) {
       if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
         console.log(e.stack);
-        ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
+        throw ctx.createException("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {
-        ctx.raiseExceptionAndYield(e.javaClassName, e.message);
+        throw ctx.createException(e.javaClassName, e.message);
       } else {
         console.error(e, e.stack);
-        ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
+        throw ctx.createException("java/lang/RuntimeException", e);
       }
     }
   };
