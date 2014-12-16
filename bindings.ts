@@ -4,7 +4,10 @@ module J2ME {
       native: {
         "hashCode.()I": function (): number {
           var self: J2ME.java.lang.Object = this;
-          return self._hashCode;
+          if (self._hashCode) {
+            return self._hashCode;
+          }
+          return self._hashCode = $.nextHashCode();
         }
       }
     }
