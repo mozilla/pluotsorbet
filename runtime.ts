@@ -100,7 +100,7 @@ module J2ME {
 
   export var phase = ExecutionPhase.Runtime;
 
-  declare var internedStrings: Map<string, string>;
+  declare var internedStrings: Map<string, java.lang.String>;
   declare var util;
 
   import assert = J2ME.Debug.assert;
@@ -267,7 +267,7 @@ module J2ME {
       }
     }
 
-    newStringConstant(s) {
+    newStringConstant(s): java.lang.String {
       if (internedStrings.has(s)) {
         return internedStrings.get(s);
       }
