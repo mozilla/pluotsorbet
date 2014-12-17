@@ -194,7 +194,7 @@ module J2ME {
 
       }
       if (file) {
-        classNameList = file.split("\n");
+        classNameList = file.replace(/\r?\n/g, "\n").split("\n");
       }
     }
     function jarFilter(file): boolean {
