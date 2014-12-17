@@ -179,6 +179,10 @@ public class TestTextEditor extends Canvas implements Testlet {
         }
         th.check(textEditor.getCaretPosition(), 0);
 
+        Font font = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
+        textEditor.setFont(font);
+        th.check(textEditor.getFont(), font);
+
         textEditor.setParent(null);
     }
 
@@ -200,7 +204,6 @@ public class TestTextEditor extends Canvas implements Testlet {
 
         th.check(textEditor.getCaretPosition(), 14);
 
-        //code = getSurrogatePairs(checkCodeFormat("1f1ee1f1f9")); // Check on the real Nokia Asha
         textEditor.insert(code, textEditor.getCaretPosition());
 
         th.check(textEditor.getCaretPosition(), 15);
@@ -218,6 +221,63 @@ public class TestTextEditor extends Canvas implements Testlet {
 
         // Emoji + "Hello, world!" + Emoji + Emoji
         th.check(textEditor.getContent(), code + "Hello, world!" + code + code);
+        // Set caret position at the beginning
+        textEditor.setCaret(0);
+        th.check(textEditor.getCaretPosition(), 0);
+        // Set caret position after the first emoji
+        textEditor.setCaret(1);
+        th.check(textEditor.getCaretPosition(), 1);
+        // Set caret position in the middle of the text
+        textEditor.setCaret(7);
+        th.check(textEditor.getCaretPosition(), 7);
+        // Set caret position before an emoji
+        textEditor.setCaret(14);
+        th.check(textEditor.getCaretPosition(), 14);
+        // Set caret position between two emojis
+        textEditor.setCaret(15);
+        th.check(textEditor.getCaretPosition(), 15);
+        // Set caret position at the end
+        textEditor.setCaret(16);
+        th.check(textEditor.getCaretPosition(), 16);
+        try {
+            textEditor.setCaret(17);
+            th.fail("Exception expected");
+        } catch (StringIndexOutOfBoundsException e) {
+            th.check(true, "Exception expected");
+        }
+
+        // Test with empty TextEditor
+        textEditor.setContent("");
+        th.check(textEditor.getContent(), "");
+        th.check(textEditor.getCaretPosition(), 0);
+
+        // Test with a blank line
+        textEditor.setContent("\n");
+        th.check(textEditor.size(), 1);
+        th.check(textEditor.getCaretPosition(), 1);
+        textEditor.setCaret(0);
+        th.check(textEditor.getCaretPosition(), 0);
+        textEditor.setCaret(1);
+        th.check(textEditor.getCaretPosition(), 1);
+
+        // Test setting caret position to 0 with text
+        textEditor.setContent("Ciao");
+        textEditor.setCaret(0);
+        th.check(textEditor.getCaretPosition(), 0);
+
+        // An emoji with 2 codepoints turns into another emoji with 1 codepoint if
+        // you press backspace (or call delete on the second codepoint).
+        // This looks weird to me, but this is how the Nokia implementation works.
+        // Also, the size() and the getCaretPosition() methods return a number
+        // related to the number of codepoints present, not the number of emoji.
+        // So, in theory, you could set the caret position in the middle of an emoji.
+        textEditor.setContent(getSurrogatePairs(checkCodeFormat("1f1ee1f1f9")));
+        th.check(textEditor.getCaretPosition(), 2);
+        th.check(textEditor.size(), 2);
+        textEditor.delete(1, 1);
+        th.check(textEditor.getContent(), getSurrogatePairs(checkCodeFormat("1f1ee")));
+        th.check(textEditor.getCaretPosition(), 1);
+        th.check(textEditor.size(), 1);
     }
 
     private native boolean isTextEditorReallyFocused();
