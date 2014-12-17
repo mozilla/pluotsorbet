@@ -632,7 +632,7 @@ var fs = (function() {
       store.getItem(path, function(existingRecord) {
         // If the file already exists, then we can't create it.
         if (existingRecord) {
-          console.error("file '" + path + "' already exists");
+          if (DEBUG_FS) { console.error("file '" + path + "' already exists"); }
           cb(false);
           return;
         }
