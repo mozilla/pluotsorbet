@@ -15,7 +15,7 @@ casper.options.onWaitTimeout = function() {
     this.test.fail("Timeout");
 };
 
-casper.test.begin("fs tests", 4, function(test) {
+casper.test.begin("fs tests", 5, function(test) {
     // The main test automation script already initializes the fs database
     // to its latest version and runs the fs tests against it.  So this script
     // focuses on running tests against a database that is initialized
@@ -43,6 +43,8 @@ casper.test.begin("fs tests", 4, function(test) {
         test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
+    // Now we run a set of tests starting with a v2 database.
+
     casper
     .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
     .waitForText("DONE");
@@ -61,6 +63,22 @@ casper.test.begin("fs tests", 4, function(test) {
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
         test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
+    });
+
+    // Now run upgrade tests with a more populated v2 database.
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
+    .waitForText("DONE");
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/populate-fs-v2.html")
+    .waitForText("DONE");
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-population.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 12 PASS, 0 FAIL", "test fs population");
     });
 
     casper
