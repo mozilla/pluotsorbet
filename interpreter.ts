@@ -33,8 +33,8 @@ module J2ME {
       if (frame.lockObject)
         ctx.monitorExit(frame.lockObject);
       var callee = frame;
-      frame = ctx.popFrame();
-      var caller = ctx.current();
+      ctx.frames.pop();
+      var caller = frame = ctx.frames.length === 0 ? null : ctx.current();
       Instrument.callExitHooks(callee.methodInfo, caller, callee);
       if (frame === null) {
         returnValue = null;

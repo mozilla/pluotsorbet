@@ -548,8 +548,7 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
       ])
     });
 
-    newCtx.frames.push(new Frame(syntheticMethod, [ this ], 0));
-    newCtx.resume();
+    newCtx.start(new Frame(syntheticMethod, [ this ], 0));
 });
 
 Native.create("java/lang/Thread.internalExit.()V", function() {

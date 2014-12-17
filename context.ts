@@ -161,27 +161,7 @@ module J2ME {
       return frames[frames.length - 1];
     }
 
-    popFrame() {
-      var callee = this.frames.pop();
-      if (this.frames.length === 0) {
-        return null;
-      }
-      var caller = this.current();
-      Instrument.callExitHooks(callee.methodInfo, caller, callee);
-      return caller;
-    }
-
     executeNewFrameSet(frames: Frame []) {
-      var self = this;
-      function flattenFrameSet() {
-        // Append all the current frames to the parent frame set, so a single frame stack
-        // exists when the bailout finishes.
-        var currentFrames = self.frames;
-        self.frames = self.frameSets.pop();
-        for (var i = currentFrames.length - 1; i >= 0; i--) {
-          self.bailoutFrames.unshift(currentFrames[i]);
-        }
-      }
       this.frameSets.push(this.frames);
       this.frames = frames;
       try {
@@ -192,7 +172,13 @@ module J2ME {
         }
         var returnValue = VM.execute(this);
         if (U) {
-          flattenFrameSet();
+          // Append all the current frames to the parent frame set, so a single frame stack
+          // exists when the bailout finishes.
+          var currentFrames = this.frames;
+          this.frames = this.frameSets.pop();
+          for (var i = currentFrames.length - 1; i >= 0; i--) {
+            this.bailoutFrames.unshift(currentFrames[i]);
+          }
           return;
         }
         if (traceWriter) {
@@ -282,7 +268,12 @@ module J2ME {
       initWriter = null; // this.writer;
     }
 
-    execute() {
+    start(frame: Frame) {
+      this.frames = [frame];
+      this.resume();
+    }
+
+    private execute() {
       Instrument.callResumeHooks(this.current());
       this.setCurrent();
       do {
@@ -292,44 +283,20 @@ module J2ME {
           this.bailoutFrames = [];
         }
         if (U === VMState.Yielding) {
-          // Ignore the yield and continue executing instructions on this thread.
           U = VMState.Running;
-          continue;
+          this.resume();
+          return;
         } else if (U === VMState.Pausing) {
           U = VMState.Running;
           Instrument.callPauseHooks(this.current());
           return;
         }
       } while (this.frames.length !== 0);
-    }
-
-    start() {
-      var ctx = this;
-      this.setCurrent();
-      Instrument.callResumeHooks(ctx.current());
-      VM.execute(ctx);
-      if (U) {
-        Array.prototype.push.apply(this.frames, this.bailoutFrames);
-        this.bailoutFrames = [];
-      }
-      if (U === VMState.Pausing) {
-        U = VMState.Running;
-        Instrument.callPauseHooks(this.current());
-        return;
-      }
-      U = VMState.Running;
-      Instrument.callPauseHooks(ctx.current());
-
-      if (ctx.frames.length === 0) {
-        ctx.kill();
-        return;
-      }
-
-      ctx.resume();
+      this.kill();
     }
 
     resume() {
-      (<any>window).setZeroTimeout(this.start.bind(this));
+      (<any>window).setZeroTimeout(this.execute.bind(this));
     }
 
     block(obj, queue, lockLevel) {
