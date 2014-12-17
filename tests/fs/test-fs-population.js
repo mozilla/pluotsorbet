@@ -10,6 +10,7 @@ var paths = [
   "/Persistent",
   "/_main.ks",
   "/tests.jar",
+  "/classes.jar",
 ];
 
 // The files we expect to find in the filesystem, indexed by parent dir.
@@ -19,10 +20,20 @@ var filesByDir = {
     "Persistent",
     "_main.ks",
     "tests.jar",
+    "classes.jar",
   ],
 
   "/Persistent": [],
 };
+
+// Push a ton of files onto the list so we test a large population.
+for (var i = 0; i < 1000; i++) {
+  var filename = "file-" + i + ".png";
+  paths.push("/Persistent/" + filename);
+  filesByDir["/Persistent"].push(filename);
+}
+
+filesByDir["/Persistent"].sort();
 
 tests.push(function() {
   var i = -1;

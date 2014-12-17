@@ -5,7 +5,15 @@
 
 var APP_BASE_DIR = "../../";
 
-initialFiles.push({ sourcePath: "tests/tests.jar", targetPath: "/tests.jar" });
+initialFiles.concat([
+  { sourcePath: "tests/tests.jar", targetPath: "/tests.jar" },
+  { sourcePath: "java/classes.jar", targetPath: "/classes.jar" },
+]);
+
+// Push a ton of files onto the list so we test a large population.
+for (var i = 0; i < 1000; i++) {
+  initialFiles.push({ sourcePath: "tests/gfx/AlertTest.png", targetPath: "/Persistent/file-" + i + ".png" });
+}
 
 initFS.then(function() {
   // We changed the name between versions, so use whichever is available.
