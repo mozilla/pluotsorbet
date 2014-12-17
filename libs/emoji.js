@@ -21,6 +21,16 @@ var emojiRegEx = (function() {
     '\ud83c\uddee\ud83c\uddf9', // U+1F1EE U+1F1F9 (IT)
     '\ud83c\uddf7\ud83c\uddfa', // U+1F1F7 U+1F1FA (RU)
     '\ud83c\uddec\ud83c\udde7', // U+1F1EC U+1F1E7 (GB)
+    '\ud83c\uddef',
+    '\ud83c\uddf0',
+    '\ud83c\udde9',
+    '\ud83c\udde8',
+    '\ud83c\uddfa',
+    '\ud83c\uddeb',
+    '\ud83c\uddea',
+    '\ud83c\uddee',
+    '\ud83c\uddf7',
+    '\ud83c\uddec',
     '\u00a9',
     '\u00ae',
     '\u2122',

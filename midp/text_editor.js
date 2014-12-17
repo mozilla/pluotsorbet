@@ -210,11 +210,6 @@ var TextEditorProvider = (function() {
                 this.addToContent(String.fromCharCode(e.charCode));
                 return false;
             }
-
-            console.log("CONTENT: " + countNewlines(this.content));
-            console.log("INNERHTML: " + countNewlines(this.textEditorElem.innerHTML));
-            console.log("CONTENT: " + this.content);
-            console.log("INNERHTML: " + this.textEditorElem.innerHTML);
         }.bind(this);
     }
     TextAreaEditor.prototype = extendsObject({
@@ -232,10 +227,10 @@ var TextEditorProvider = (function() {
                             newContent +
                             this.getSlice(range[1]));
 
-            // Set the current selection after the new added character
+            // Set the current selection after the new added character.
             this.setSelectionRange(range[0] + 1, range[0] + 1);
 
-            // Notify TextEditor listeners
+            // Notify TextEditor listeners.
             if (this.oninputCallback) {
                 this.oninputCallback();
             }
@@ -251,13 +246,13 @@ var TextEditorProvider = (function() {
             var toImg = function(str) {
                 var firstCodePoint = str.codePointAt(0);
                 var img = firstCodePoint.toString(16);
-                str = str.substr(String.fromCodePoint(firstCodePoint).length);
-                if (str.length > 0) {
-                    img += "-" + str.codePointAt(0).toString(16);
+                var len = String.fromCodePoint(firstCodePoint).length;
+                if (str.length > len) {
+                    img += "-" + str.substr(len).codePointAt(0).toString(16);
                 }
 
                 return '<img src="style/emoji/' + img + '.png" height="' + this.font.size +
-                       'pt" width="' + this.font.size + 'pt">';
+                       'pt" width="' + this.font.size + 'pt" alt="' + str + '">';
             }.bind(this);
 
             this.textEditorElem.innerHTML = content.replace(emojiRegEx, toImg) + "\n";
@@ -269,7 +264,7 @@ var TextEditorProvider = (function() {
 
                 if (sel.focusNode !== this.textEditorElem &&
                     sel.focusNode.parentNode !== this.textEditorElem) {
-                    console.warn("getSelectionEnd called while the editor is unfocused");
+                    console.error("getSelectionEnd called while the editor is unfocused");
                     return 0;
                 }
 
@@ -279,14 +274,14 @@ var TextEditorProvider = (function() {
                     count = sel.focusOffset;
                     var prev = sel.focusNode.previousSibling;
                     while (prev) {
-                        count += (prev.textContent) ? prev.textContent.length : 1;
+                        count += (prev.textContent) ? prev.textContent.length : util.toCodePointArray(prev.alt).length;
                         prev = prev.previousSibling;
                     }
                 } else {
                     var children = sel.focusNode.childNodes;
                     for (var i = 0; i < sel.focusOffset; i++) {
                         var cur = children[i];
-                        count += (cur.textContent) ? cur.textContent.length : 1;
+                        count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
                     }
                 }
 
@@ -310,7 +305,7 @@ var TextEditorProvider = (function() {
 
                 if (sel.anchorNode !== this.textEditorElem &&
                     sel.anchorNode.parentNode !== this.textEditorElem) {
-                    console.warn("getSelectionStart called while the editor is unfocused");
+                    console.error("getSelectionStart called while the editor is unfocused");
                     return 0;
                 }
 
@@ -320,14 +315,14 @@ var TextEditorProvider = (function() {
                     count = sel.anchorOffset;
                     var prev = sel.anchorNode.previousSibling;
                     while (prev) {
-                        count += (prev.textContent) ? prev.textContent.length : 1;
+                        count += (prev.textContent) ? prev.textContent.length : util.toCodePointArray(prev.alt).length;
                         prev = prev.previousSibling;
                     }
                 } else {
                     var children = sel.anchorNode.childNodes;
                     for (var i = 0; i < sel.anchorOffset; i++) {
                         var cur = children[i];
-                        count += (cur.textContent) ? cur.textContent.length : 1;
+                        count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
                     }
                 }
 
@@ -363,7 +358,7 @@ var TextEditorProvider = (function() {
                 this.selectionRange = [from, to];
             } else {
                 if (from != to) {
-                    console.warn("setSelectionRange not supported when from != to");
+                    console.error("setSelectionRange not supported when from != to");
                 }
 
                 // If we're trying to set the selection to the last character and
@@ -374,17 +369,17 @@ var TextEditorProvider = (function() {
                     from = from + 1;
                 }
 
-                var sel = window.getSelection();
-                var range = sel.getRangeAt(0);
-
                 var children = this.textEditorElem.childNodes;
                 for (var i = 0; i < children.length; i++) {
                     var cur = children[i];
-                    var length = (cur.textContent) ? cur.textContent.length : 1;
+                    var length = (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
 
                     if (length >= from) {
+                        var range = window.getSelection().getRangeAt(0);
                         if (cur.textContent) {
                             range.setStart(cur, from);
+                        } else if (from === 0) {
+                            range.setStartBefore(cur);
                         } else {
                             range.setStartAfter(cur);
                         }
@@ -401,10 +396,17 @@ var TextEditorProvider = (function() {
             return util.toCodePointArray(this.content).slice(from, to).join("");
         },
 
+        /*
+         * The TextEditor::size() method returns the length of the content in codepoints
+         */
         getSize: function() {
             return util.toCodePointArray(this.content).length;
         },
 
+        /*
+         * The height of the content is estimated by creating an hidden div
+         * with the same style as the TextEditor element.
+         */
         getContentHeight: function() {
             var div = document.createElement("div");
             div.style.setProperty("width", this.getStyle("width"));
