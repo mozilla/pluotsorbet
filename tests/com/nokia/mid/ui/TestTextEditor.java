@@ -134,17 +134,17 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getForegroundColor(), 0x33333333);
 
         th.check(textEditor.getLineMarginHeight(), 0);
-        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight());
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= 1, "One");
         textEditor.setMultiline(true);
-        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight());
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= 1, "Two");
         textEditor.setContent("A\nB");
-        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 2);
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= 3, "Three");
         textEditor.setContent("A\r\nB");
-        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 2);
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= 3, "Four");
         textEditor.setContent("A\nB\nC");
-        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 3);
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 3) <= 4, "Five");
         textEditor.setContent("");
-        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight()); // Check the value on the Nokia Asha
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= 1, "Six"); // Check the value on the Nokia Asha
 
         th.check(textEditor.getPositionX(), 0);
         th.check(textEditor.getPositionY(), 0);
