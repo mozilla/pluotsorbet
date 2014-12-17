@@ -44,7 +44,7 @@
     }
 
     this.levelName = levelName;
-    this.ctx = typeof $ !== "undefined" ? $.ctx : null;
+    this.ctx = $ ? $.ctx : null;
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
     this.time = performance.now() - startTime;
