@@ -582,6 +582,7 @@ module J2ME {
     }
     var klass = findKlass(classInfo);
     if (klass) {
+      assert (!classInfo.isInterface, "Interfaces should not be compiled.");
       linkWriter && linkWriter.greenLn("Found Compiled Klass: " + classInfo.className);
       release || assert(!classInfo.klass);
       classInfo.klass = klass;

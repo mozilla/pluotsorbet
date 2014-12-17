@@ -395,6 +395,10 @@ module J2ME {
       if (emitter.debugInfo) {
         writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
       }
+      // Don't compile interfaces.
+      if (classInfo.isInterface) {
+        continue;
+      }
       ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, methodFilter, ctx));
     }
 
