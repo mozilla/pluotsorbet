@@ -304,7 +304,7 @@ module J2ME {
      * Bailout callback whenever a JIT frame is unwound.
      */
     B(bci: number, local: any [], stack: any []) {
-
+      $.ctx.bailout((<any>arguments.callee.caller).methodInfo, bci, local, stack);
     }
 
     yield() {
@@ -788,6 +788,8 @@ module J2ME {
           fn = prepareInterpretedMethod(methodInfo);
         }
       }
+
+      fn.methodInfo = methodInfo;
 
       if (traceWriter && methodType !== MethodType.Interpreted) {
         fn = tracingWrapper(fn, methodInfo, methodType);

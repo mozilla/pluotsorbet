@@ -1119,6 +1119,13 @@ module J2ME {
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
       } catch (e) {
+        // This could potentially hide interpreter exceptions. Maybe we should only do this for
+        // compiled/native functions.
+        if (e.name === "TypeError") {
+          // JavaScript's TypeError is analogous to a NullPointerException.
+          e = ctx.createException("java/lang/NullPointerException", e.message);
+        }
+
         throw_(e, ctx);
         continue;
       }

@@ -119,6 +119,7 @@ module J2ME {
     id: number
     frames: any [];
     frameSets: any [];
+    bailoutFrames: any [];
     lockTimeout: number;
     lockLevel: number;
     thread: java.lang.Thread;
@@ -127,6 +128,7 @@ module J2ME {
       var id = this.id = Context._nextId ++;
       this.frames = [];
       this.frameSets = [];
+      this.bailoutFrames = [];
       this.runtime = runtime;
       this.runtime.addContext(this);
       this.writer = new IndentingWriter(false, function (s) {
@@ -176,8 +178,8 @@ module J2ME {
         // exists when the bailout finishes.
         var currentFrames = self.frames;
         self.frames = self.frameSets.pop();
-        for (var i = 0; i < currentFrames.length; i++) {
-          self.frames.push(currentFrames[i]);
+        for (var i = currentFrames.length - 1; i >= 0; i--) {
+          self.bailoutFrames.unshift(currentFrames[i]);
         }
       }
       this.frameSets.push(this.frames);
@@ -285,6 +287,10 @@ module J2ME {
       this.setCurrent();
       do {
         VM.execute(this);
+        if ($.Y) {
+          Array.prototype.push.apply(this.frames, this.bailoutFrames);
+          this.bailoutFrames = [];
+        }
         if ($.Y === VmState.Yielding) {
           // Ignore the yield and continue executing instructions on this thread.
           $.Y = VmState.Running;
@@ -302,6 +308,10 @@ module J2ME {
       this.setCurrent();
       Instrument.callResumeHooks(ctx.current());
       VM.execute(ctx);
+      if ($.Y) {
+        Array.prototype.push.apply(this.frames, this.bailoutFrames);
+        this.bailoutFrames = [];
+      }
       if ($.Y === VmState.Pausing) {
         $.Y = VmState.Running;
         Instrument.callPauseHooks(this.current());
@@ -420,6 +430,13 @@ module J2ME {
       this.unblock(obj, "waiting", notifyAll, function (ctx) {
         ctx.wakeup(obj);
       });
+    }
+
+    bailout(methodInfo: MethodInfo, bci: number, local: any [], stack: any []) {
+      var frame = new Frame(methodInfo, local, 0);
+      frame.stack = stack;
+      frame.bci = bci;
+      this.bailoutFrames.unshift(frame);
     }
 
     resolve(cp, idx: number, isStatic: boolean) {
