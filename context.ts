@@ -281,14 +281,15 @@ module J2ME {
         if (U) {
           Array.prototype.push.apply(this.frames, this.bailoutFrames);
           this.bailoutFrames = [];
-        }
-        if (U === VMState.Yielding) {
+          switch (U) {
+            case VMState.Yielding:
+              this.resume();
+              break;
+            case VMState.Pausing:
+              Instrument.callPauseHooks(this.current());
+              break;
+          }
           U = VMState.Running;
-          this.resume();
-          return;
-        } else if (U === VMState.Pausing) {
-          U = VMState.Running;
-          Instrument.callPauseHooks(this.current());
           return;
         }
       } while (this.frames.length !== 0);
