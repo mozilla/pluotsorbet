@@ -14,6 +14,7 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
     private Command quitCommand;
     private TextEditor textEditor;
     private TextEditorListener listener;
+    private TextEditor emojiCodeEditor;
 
     public static String checkCodeFormat(String code) {
         if (code == null) {
@@ -87,8 +88,8 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         }
     }
 
-    public void inputAction(TextEditor textEditor, int actions) {
-        if ((actions & TextEditorListener.ACTION_CONTENT_CHANGE) != 0) {
+    public void inputAction(TextEditor aTextEditor, int actions) {
+        if (aTextEditor == textEditor && (actions & TextEditorListener.ACTION_CONTENT_CHANGE) != 0) {
             System.out.println("CONTENT CHANGED");
         }
     }
@@ -125,7 +126,18 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         textEditor.setFocus(true);
         textEditor.setPosition(0, 0);
 
+        emojiCodeEditor = TextEditor.createTextEditor("1f609", 50, TextField.ANY, 70, 70);
+        emojiCodeEditor.setTextEditorListener(this);
+        emojiCodeEditor.setParent(canvas);
+        emojiCodeEditor.setMultiline(true);
+        emojiCodeEditor.setBackgroundColor(0x00FFFFFF);
+        emojiCodeEditor.setForegroundColor(0xFF000000);
+        emojiCodeEditor.setVisible(true);
+        emojiCodeEditor.setFocus(false);
+        emojiCodeEditor.setPosition(0, 100);
+
         TextEditor pwdEditor = TextEditor.createTextEditor("pwd", 50, TextField.PASSWORD, 70, 70);
+        pwdEditor.setTextEditorListener(this);
         pwdEditor.setParent(canvas);
         pwdEditor.setMultiline(true);
         pwdEditor.setBackgroundColor(0x00FFFFFF);
@@ -137,7 +149,7 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
 
     public void commandAction(Command c, Displayable s) {
         if (c == insertEmoji) {
-            String code = getSurrogatePairs(checkCodeFormat("1f609"));
+            String code = getSurrogatePairs(checkCodeFormat(emojiCodeEditor.getContent()));
             textEditor.insert(code, textEditor.getCaretPosition());
         } else if (c == getPosition) {
             Alert alert = new Alert("Position", "Position: " + textEditor.getCaretPosition(), null, AlertType.INFO);
