@@ -767,7 +767,8 @@ var fs = (function() {
             recreatePath();
           } else {
             // If the old path is a dir with files in it, we don't move it.
-            // XXX Shouldn't we move it along with its files?
+            // We should move it along with its files
+            console.error("rename directory containing files not implemented: " + oldPath + " to " + newPath);
             cb(false);
             return;
           }
