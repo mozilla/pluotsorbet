@@ -7,7 +7,7 @@ module J2ME {
           if (self._hashCode) {
             return self._hashCode;
           }
-          return self._hashCode = $.nextHashCode(self);
+          return self._hashCode = $.nextHashCode();
         }
       }
     }

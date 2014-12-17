@@ -230,7 +230,7 @@ module J2ME {
     /**
      * Generates a new hash code for the specified |object|.
      */
-    nextHashCode(object: java.lang.Object): number {
+    nextHashCode(): number {
       return this._nextHashCode ++;
     }
 
