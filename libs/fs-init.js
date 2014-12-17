@@ -3,46 +3,50 @@
 
 "use strict";
 
+// Directories in the filesystem.
+var initialDirs = [
+  "/Persistent",
+];
+
+// Files in the filesystem.  We load the data from the source path on the real
+// filesystem and write it to the target path on the virtual filesystem.
+// Source paths are relative to APP_BASE_DIR.
+var initialFiles = [
+  { sourcePath: "certs/_main.ks", targetPath: "/_main.ks" },
+];
+
 var initFS = new Promise(function(resolve, reject) {
   fs.init(resolve);
 }).then(function() {
-  var fsPromises = [
-    new Promise(function(resolve, reject) {
-      fs.mkdir("/Persistent", resolve);
-    }),
+  var dirPromises = [];
 
-    new Promise(function(resolve, reject) {
-      fs.exists("/_main.ks", function(exists) {
-        if (exists) {
-          resolve();
-        } else {
-          load(APP_BASE_DIR + "certs/_main.ks", "blob").then(function(data) {
-            fs.create("/_main.ks", data, function() {
-              resolve();
-            });
-          });
-        }
-      });
-    }),
-  ];
+  initialDirs.forEach(function(dir) {
+    dirPromises.push(new Promise(function(resolve, reject) {
+      fs.mkdir(dir, resolve);
+    }));
+  });
+
+  return Promise.all(dirPromises);
+}).then(function() {
+  var filePromises = [];
 
   if (typeof MIDP !== "undefined" && MIDP.midletClassName == "RunTests") {
-    fsPromises.push(
-      new Promise(function(resolve, reject) {
-        fs.exists("/_test.ks", function(exists) {
+    initialFiles.push({ sourcePath: "certs/_test.ks", targetPath: "/_test.ks" });
+  }
+
+  initialFiles.forEach(function(file) {
+    filePromises.push(new Promise(function(resolve, reject) {
+        fs.exists(file.targetPath, function(exists) {
           if (exists) {
             resolve();
           } else {
-            load(APP_BASE_DIR + "certs/_test.ks", "blob").then(function(data) {
-              fs.create("/_test.ks", data, function() {
-                resolve();
-              });
+            load(APP_BASE_DIR + file.sourcePath, "blob").then(function(data) {
+              fs.create(file.targetPath, data, resolve);
             });
           }
-        });
-      })
-    );
-  }
+      });
+    }));
+  });
 
-  return Promise.all(fsPromises);
+  return Promise.all(filePromises);
 });
