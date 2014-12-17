@@ -237,10 +237,89 @@ NokiaSASrvRegLocalMsgConnection.prototype.sendMessageToServer = function(message
 };
 
 var NokiaPhoneStatusLocalMsgConnection = function() {
-    LocalMsgConnection.call(this);
+  LocalMsgConnection.call(this);
+
+  this.listeners = {
+    "battery": false,
+    "network_status": false,
+    "wifi_status": false,
+  };
+
+  window.addEventListener('online', (function() {
+    if (this.listeners["network_status"]) {
+      this.sendChangeNotify(this.buildNetworkStatus.bind(this), true);
+    }
+
+    if (this.listeners["wifi_status"]) {
+      this.sendChangeNotify(this.buildWiFiStatus.bind(this), true);
+    }
+  }).bind(this));;
+
+  window.addEventListener('offline', (function() {
+    if (this.listeners["network_status"]) {
+      this.sendChangeNotify(this.buildNetworkStatus.bind(this), false);
+    }
+
+    if (this.listeners["wifi_status"]) {
+      this.sendChangeNotify(this.buildWiFiStatus.bind(this), false);
+    }
+  }).bind(this));
 };
 
 NokiaPhoneStatusLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
+
+NokiaPhoneStatusLocalMsgConnection.prototype.buildNetworkStatus = function(encoder, online) {
+  encoder.putStart(DataType.STRUCT, "network_status");
+  encoder.put(DataType.STRING, "", "Home");  // Name unknown (value is "None", "Home" or "Roam")
+  encoder.put(DataType.BOOLEAN, "", online ? 1 : 0);  // Name unknown
+  encoder.putEnd(DataType.STRUCT, "network_status");
+}
+
+NokiaPhoneStatusLocalMsgConnection.prototype.buildWiFiStatus = function(encoder, online) {
+  encoder.putStart(DataType.STRUCT, "wifi_status");
+  encoder.put(DataType.BOOLEAN, "", online ? 1 : 0);  // Name unknown, we're assuming we're connected to a wifi network.
+  encoder.putEnd(DataType.STRUCT, "wifi_status");
+}
+
+NokiaPhoneStatusLocalMsgConnection.prototype.buildBattery = function(encoder) {
+  encoder.putStart(DataType.STRUCT, "battery");
+  encoder.put(DataType.BYTE, "", 1);  // Name unknown
+  encoder.put(DataType.BOOLEAN, "", 1);  // Name unknown
+  encoder.putEnd(DataType.STRUCT, "battery");
+}
+
+NokiaPhoneStatusLocalMsgConnection.prototype.sendChangeNotify = function(replyBuilder, online) {
+  var encoder = new DataEncoder();
+  encoder.putStart(DataType.STRUCT, "event");
+  encoder.put(DataType.METHOD, "name", "ChangeNotify");
+  encoder.put(DataType.STRING, "status", "OK"); // Name and value unknown
+  encoder.putStart(DataType.LIST, "subscriptions");
+
+  replyBuilder(encoder, online);
+
+  encoder.putEnd(DataType.LIST, "subscriptions");
+  encoder.putEnd(DataType.STRUCT, "event");
+
+  var data = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient({
+    data: data,
+    length: data.length,
+    offset: 0,
+  });
+}
+
+NokiaPhoneStatusLocalMsgConnection.prototype.addListener = function(type) {
+  if (type === "battery") {
+    console.warn("Battery notifications not supported");
+    return;
+  }
+
+  this.listeners[type] = true;
+}
+
+NokiaPhoneStatusLocalMsgConnection.prototype.removeListener = function(type) {
+  this.listeners[type] = false;
+}
 
 NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(message) {
   var decoder = new DataDecoder(message.data, message.offset, message.length);
@@ -256,60 +335,81 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
       encoder.put(DataType.METHOD, "name", "Common");
       encoder.putStart(DataType.STRUCT, "message");
       encoder.put(DataType.METHOD, "name", "ProtocolVersion");
-      encoder.put(DataType.STRING, "version", "2.[0-10]");
+      encoder.put(DataType.STRING, "version", "1.[0-10]");
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
+
+      var data = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient({
+        data: data,
+        length: data.length,
+        offset: 0,
+      });
       break;
+
     case "Query":
-      encoder.putStart(DataType.STRUCT, "event");
-      encoder.put(DataType.METHOD, "name", "Query");
-      encoder.put(DataType.STRING, "status", "OK");
-      encoder.putStart(DataType.LIST, "subscriptions");
+      // This will be true if there is at least one "CurrentStateOnly" request.
+      var headerBuilt = false;
 
       // subscriptions
       decoder.getStart(DataType.LIST);
       while (decoder.getTag() == DataType.STRING) {
-        switch (decoder.getName()) {
-          case "network_status":
-            encoder.putStart(DataType.STRUCT, "network_status");
-            encoder.put(DataType.STRING, "", "");  // unknow name
-            encoder.put(DataType.BOOLEAN, "", 1);  // unknow name
-            encoder.putEnd(DataType.STRUCT, "network_status");
-            break;
-          case "wifi_status":
-            encoder.putStart(DataType.STRUCT, "wifi_status");
-            encoder.put(DataType.BOOLEAN, "", 1);  // unknow name, but it should indicate if the wifi is connected, and let's assume it's always connected.
-            encoder.putEnd(DataType.STRUCT, "wifi_status");
-            break;
-          case "battery":
-            encoder.putStart(DataType.STRUCT, "battery");
-            encoder.put(DataType.BYTE, "", 1);  // unknow name
-            encoder.put(DataType.BOOLEAN, "", 1);  // unknow name
-            encoder.putEnd(DataType.STRUCT, "battery");
-            break;
-          default:
-            console.error("(nokia.phone-status) Query " + decoder.getName() + " not implemented " +
-                  util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
-            break;
+        var name = decoder.getName();
+        var queryKind = decoder.getValue(DataType.STRING);
+
+        if (queryKind === "CurrentStateOnly") {
+          if (!headerBuilt) {
+            encoder.putStart(DataType.STRUCT, "event");
+            encoder.put(DataType.METHOD, "name", "Query");
+            encoder.put(DataType.STRING, "status", "OK");
+            encoder.putStart(DataType.LIST, "subscriptions");
+            headerBuilt = true;
+          }
+
+          switch (name) {
+            case "network_status":
+              this.buildNetworkStatus(encoder, navigator.onLine);
+              break;
+
+            case "wifi_status":
+              this.buildWiFiStatus(encoder, navigator.onLine);
+              break;
+
+            case "battery":
+              this.buildBattery(encoder);
+              break;
+
+            default:
+              console.error("(nokia.phone-status) Query " + decoder.getName() + " not implemented " +
+                            util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
+              break;
+          }
+        } else if (queryKind === "Disable") {
+          this.removeListener(name);
+        } else if (queryKind === "Enable") {
+          this.addListener(name);
         }
-        decoder.getValue(DataType.STRING);
       }
 
-      encoder.putEnd(DataType.LIST, "subscriptions");
-      encoder.putEnd(DataType.STRUCT, "event");
+      if (headerBuilt) {
+        encoder.putEnd(DataType.LIST, "subscriptions");
+        encoder.putEnd(DataType.STRUCT, "event");
+
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+        });
+      }
+
       break;
+
     default:
       console.error("(nokia.phone-status) event " + name + " not implemented " +
                     util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       return;
   }
-
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-      data: data,
-      length: data.length,
-      offset: 0,
-  });
 };
 
 var NokiaContactsLocalMsgConnection = function() {
