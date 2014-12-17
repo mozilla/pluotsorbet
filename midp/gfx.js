@@ -230,7 +230,7 @@ var currentlyFocusedTextEditor;
     function(imageData, rgbData, width, height, processAlpha) {
         var context = createContext2d(width, height);
         var ctxImageData = context.createImageData(width, height);
-        var abgrData = new Uint32Array(ctxImageData.data.buffer);
+        var abgrData = new Int32Array(ctxImageData.data.buffer);
 
         var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
         converterFunc(rgbData, abgrData, width, height, 0, width);
@@ -242,7 +242,7 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V", function(rgbData, offset, scanlength, x, y, width, height) {
         var context = this.nativeImageData;
-        var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     });
 
@@ -260,7 +260,7 @@ var currentlyFocusedTextEditor;
         setImageData(imageData, width, height, ctx);
 
         var ctxImageData = ctx.createImageData(width, height);
-        var pixels = new Uint32Array(ctxImageData.data.buffer);
+        var pixels = new Int32Array(ctxImageData.data.buffer);
 
         var color = swapRB(argb);
 
@@ -639,7 +639,7 @@ var currentlyFocusedTextEditor;
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
         var context = imageData.nativeImageData;
-        var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     });
 
@@ -660,7 +660,7 @@ var currentlyFocusedTextEditor;
 
         var context = createContext2d(width, height);
         var imageData = context.createImageData(width, height);
-        var abgrData = new Uint32Array(imageData.data.buffer);
+        var abgrData = new Int32Array(imageData.data.buffer);
 
         converterFunc(pixels, abgrData, width, height, offset, scanlength);
 
@@ -912,7 +912,7 @@ var currentlyFocusedTextEditor;
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         var context = createContext2d(width, height);
         var imageData = context.createImageData(width, height);
-        var abgrData = new Uint32Array(imageData.data.buffer);
+        var abgrData = new Int32Array(imageData.data.buffer);
 
         var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
         converterFunc(rgbData, abgrData, width, height, offset, scanlength);
