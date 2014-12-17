@@ -35,7 +35,7 @@ voidReturnType.slotSize = 0;
 function stringReturnType(ret) {
   var value;
   if (typeof ret === "string") {
-    value = util.newString(ret);
+    value = J2ME.newString(ret);
   } else {
     // already a native string or null
     value = ret;

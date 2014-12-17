@@ -46,7 +46,7 @@ MIDP.groupTBL = [
 Native.create("com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;", function() {
     var list = J2ME.newStringArray(MIDP.groupTBL.length);
     MIDP.groupTBL.forEach(function (e, n) {
-        list[n] = util.newString(e);
+        list[n] = J2ME.newString(e);
     });
     return list;
 });
@@ -149,7 +149,7 @@ Native.create("com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/St
             var messages = MIDP.messagesTBL[n];
             list = J2ME.newStringArray(messages.length);
             messages.forEach(function (e, n) {
-                list[n] = util.newString(e);
+                list[n] = J2ME.newString(e);
             });
         }
     });
@@ -217,7 +217,7 @@ Native.create("com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lan
             var members = MIDP.membersTBL[n];
             list = J2ME.newStringArray(members.length);
             members.forEach(function (e, n) {
-                list[n] = util.newString(e);
+                list[n] = J2ME.newString(e);
             });
         }
     });
@@ -248,11 +248,11 @@ Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Lj
 Native.create("com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V", function(state) {
     var suiteId = (MIDP.midletClassName === "internal") ? -1 : 1;
     state.klass.classInfo.getField("I.suiteId.I").set(state, suiteId);
-    state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, util.newString(MIDP.midletClassName));
+    state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, J2ME.newString(MIDP.midletClassName));
     var args = urlParams.args;
-    state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, util.newString((args.length > 0) ? args[0] : ""));
-    state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, util.newString((args.length > 1) ? args[1] : ""));
-    state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, util.newString((args.length > 2) ? args[2] : ""));
+    state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, J2ME.newString((args.length > 0) ? args[0] : ""));
+    state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, J2ME.newString((args.length > 1) ? args[1] : ""));
+    state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, J2ME.newString((args.length > 2) ? args[2] : ""));
 });
 
 MIDP.domainTBL = [
@@ -267,7 +267,7 @@ MIDP.domainTBL = [
 Native.create("com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;", function() {
     var list = J2ME.newStringArray(MIDP.domainTBL.length);
     MIDP.domainTBL.forEach(function (e, n) {
-        list[n] = util.newString(e);
+        list[n] = J2ME.newString(e);
     });
     return list;
 });
@@ -497,7 +497,7 @@ Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringA
         } else {
             throw new JavaException("java/lang/IllegalStateException");
         }
-        strings[n] = util.newString(str);
+        strings[n] = J2ME.newString(str);
     }
     return strings;
 });
@@ -747,8 +747,8 @@ Native.create("com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/Strin
     var arr = J2ME.newStringArray(keys.length * 2);
     var i = 0;
     keys.forEach(function(key) {
-      arr[i++] = util.newString(key);
-      arr[i++] = util.newString(MIDP.manifest[key]);
+      arr[i++] = J2ME.newString(key);
+      arr[i++] = J2ME.newString(MIDP.manifest[key]);
     });
     return arr;
 });
