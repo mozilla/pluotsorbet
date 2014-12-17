@@ -809,7 +809,6 @@ module J2ME {
       Object.defineProperty(obj, name, {
         get: FunctionUtilities.makeForwardingGetter(otherName),
         set: FunctionUtilities.makeForwardingSetter(otherName),
-        writable: true,
         configurable: true,
         enumerable: false
       });
