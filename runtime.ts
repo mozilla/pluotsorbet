@@ -1046,7 +1046,9 @@ var $CCI = J2ME.checkCastInterface;
 
 var $AK = J2ME.getArrayKlass;
 var $NA = J2ME.newArray;
-var $S = J2ME.newString;
+var $S = function(str: string) {
+  return $.newStringConstant(str);
+};
 var $CDZ = J2ME.checkDivideByZero;
 
 var $ME = function monitorEnter(object: J2ME.java.lang.Object) {
