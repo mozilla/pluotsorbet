@@ -167,9 +167,12 @@ window.onload = function() {
    VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
    toggle(this);
  };
-  document.getElementById("dumpMethods").onclick = function() {
-    J2ME.interpreterCounter.traceSorted(J2ME.profileWriter);
-  };
+ document.getElementById("clearCounters").onclick = function() {
+   J2ME.interpreterCounter.clear();
+ };
+ document.getElementById("dumpCounters").onclick = function() {
+   J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+ };
  document.getElementById("profile").onclick = function() {
    if (getIsOff(this)) {
      Instrument.startProfile();

@@ -568,6 +568,12 @@ module J2ME {
     return runtimeKlass;
   }
 
+  function setKlassSymbol(mangledName: string, klass: Klass) {
+    Object.defineProperty(jsGlobal, mangledName, {
+      value: klass
+    });
+  }
+
   export function getKlass(classInfo: ClassInfo): Klass {
     if (!classInfo) {
       return null;
@@ -588,6 +594,7 @@ module J2ME {
         registerKlassSymbols(klass.classSymbols);
       }
     } else {
+      var mangledName = mangleClass(classInfo);
       if (classInfo.isInterface) {
         klass = function () {
           Debug.unexpected("Should never be instantiated.")
@@ -596,6 +603,7 @@ module J2ME {
         klass.toString = function () {
           return "[Interface Klass " + classInfo.className + "]";
         };
+        setKlassSymbol(mangledName, klass);
       } else if (classInfo.isArrayClass) {
         var elementKlass = getKlass(classInfo.elementClass);
         // Have we already created one? We need to maintain pointer identity.
@@ -620,7 +628,6 @@ module J2ME {
         (1, eval)(source);
         // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
         // consoleWriter.writeLn(source);
-        var mangledName = mangleClass(classInfo);
         klass = jsGlobal[mangledName];
         assert(klass, mangledName);
         klass.toString = function () {
@@ -1041,3 +1048,13 @@ var $AK = J2ME.getArrayKlass;
 var $NA = J2ME.newArray;
 var $S = J2ME.newString;
 var $CDZ = J2ME.checkDivideByZero;
+
+var $ME = function monitorEnter(object: J2ME.java.lang.Object) {
+  console.info("ENTER " + J2ME.toDebugString(object));
+  $.ctx.monitorEnter(object);
+};
+
+var $MX = function monitorExit(object: J2ME.java.lang.Object) {
+  console.info("EXIT " + J2ME.toDebugString(object));
+  $.ctx.monitorExit(object);
+};

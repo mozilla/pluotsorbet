@@ -80,6 +80,7 @@ module J2ME {
   var verboseOption: Options.Option;
   var classpathOption: Options.Option;
   var callGraphOption: Options.Option;
+  var jarFileFilterOption: Options.Option;
   var classFileFilterOption: Options.Option;
   var classFilterOption: Options.Option;
   var methodFilterOption: Options.Option;
@@ -98,6 +99,7 @@ module J2ME {
     callGraphOption = shellOptions.register(new Options.Option("cg", "callGraph", "string []", [], "Call Grpah Files"));
 
 
+    jarFileFilterOption = shellOptions.register(new Options.Option("jf", "jarFileFilter", "string", "", "Compile Jar File Filter"));
     classFileFilterOption = shellOptions.register(new Options.Option("cff", "classFileFilter", "string", "", "Compile Class File Filter"));
     classFilterOption = shellOptions.register(new Options.Option("cf", "classFilter", "string", ".*", "Compile Class Filter"));
     methodFilterOption = shellOptions.register(new Options.Option("mf", "methodFilter", "string", "", "Compile Method Filter"));
@@ -195,6 +197,12 @@ module J2ME {
         classNameList = file.split("\n");
       }
     }
+    function jarFilter(file): boolean {
+      if (jarFileFilterOption.value) {
+        return file === jarFileFilterOption.value;
+      }
+      return true;
+    }
     function classFilter(classInfo: ClassInfo): boolean {
       if (classNameList) {
         return classNameList.indexOf(classInfo.className) >= 0;
@@ -209,7 +217,7 @@ module J2ME {
       }
       return methodInfo.implKey === methodFilterOption.value;
     }
-    compile(jvm, classFilter, methodFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    compile(jvm, jarFilter, classFilter, methodFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
     if (verboseOption.value) {
       printResults();
     }

@@ -431,9 +431,6 @@ module J2ME {
     if (!methodInfo.code) {
       throw new Error("Method: " + methodInfo.implKey + " has no code.");
     }
-    if (methodInfo.isSynchronized) {
-      throw new Error("Method: " + methodInfo.implKey + " is synchronized.");
-    }
     if (methodInfo.exception_table.length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }

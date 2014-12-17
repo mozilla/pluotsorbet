@@ -35,8 +35,10 @@ build/jsc.js: jsc.ts build/j2me.js
 j2me: build/j2me.js build/jsc.js
 
 lib: java j2me
-	js build/jsc.js -cp java/classes.jar -d > build/classes.jar.js
+	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar > build/classes.jar.js
+	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar > build/tests.jar.js
 	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
+	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/tests.jar.js > build/tests.jar.cc.js
 
 tests:
 	make -C tests

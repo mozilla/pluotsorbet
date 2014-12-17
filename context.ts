@@ -385,7 +385,7 @@ module J2ME {
       this.block(obj, "ready", 1);
     }
 
-    monitorExit(obj) {
+    monitorExit(obj: java.lang.Object) {
       var lock = obj._lock;
       if (lock.thread !== this.thread)
         throw this.createException("java/lang/IllegalMonitorStateException");

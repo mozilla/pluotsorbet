@@ -1,7 +1,5 @@
 module J2ME {
 
-  declare var release;
-
   export class Emitter {
     constructor(
       public writer: IndentingWriter,
@@ -279,7 +277,32 @@ module J2ME {
           writer.writeLn("// " + e.toString());
         }
         if (compiledMethod && compiledMethod.body) {
-          writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
+          var compiledMethodName = mangledClassAndMethodName;
+          if (method.isSynchronized) {
+            compiledMethodName = "_" + mangledClassAndMethodName + "_";
+            // Emit Synchronization Wrapper
+            var lockObject = method.isStatic ? "$." + mangleClass(method.classInfo) : "this";
+            var me = "$ME(" + lockObject + "); if (U) return;"; // We may need to unwind after a monitorEnter.
+            var mx = "$MX(" + lockObject + ");";
+            writer.writeLn("// Synchronization Wrapper");
+            writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
+            writer.enter("try {");
+            writer.writeLn(me);
+            if (method.isStatic) {
+              writer.writeLn("var r = " + compiledMethodName + "(" + compiledMethod.args.join(",") + ");");
+            } else {
+              if (compiledMethod.args.length > 0) {
+                writer.writeLn("var r = " + compiledMethodName + ".call(this, " + compiledMethod.args.join(",") + ");");
+              } else {
+                writer.writeLn("var r = " + compiledMethodName + ".call(this);");
+              }
+            }
+            writer.writeLn(mx);
+            writer.writeLn("return r;");
+            writer.leave("} catch (e) { " + mx + " throw e; }");
+            writer.leave("}");
+          }
+          writer.enter("function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
           writer.leave("}");
           if (method.name === "<clinit>") {
@@ -315,11 +338,12 @@ module J2ME {
   }
 
   export function compile(jvm: any,
+                          jarFilter: (jarFile: string) => boolean,
                           classFilter: (classInfo: ClassInfo) => boolean,
                           methodFilter: (methodInfo: MethodInfo) => boolean,
                           fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
-    var classFiles = CLASSES.classFiles;
+    var jarFiles = CLASSES.classFiles;
     var ctx = new Context(runtime);
     var code = "";
     var writer = new J2ME.IndentingWriter(false, function (s) {
@@ -330,11 +354,11 @@ module J2ME {
 
     var compiledMethods: CompiledMethodInfo [] = [];
     var classInfoList: ClassInfo [] = [];
-    Object.keys(classFiles).every(function (path) {
-      if (path.substr(-4) !== ".jar") {
+    Object.keys(jarFiles).every(function (path) {
+      if (path.substr(-4) !== ".jar" || !jarFilter(path)) {
         return true;
       }
-      var zipFile = classFiles[path];
+      var zipFile = jarFiles[path];
       Object.keys(zipFile.directory).every(function (fileName) {
         if (fileName.substr(-6) !== '.class') {
           return true;
