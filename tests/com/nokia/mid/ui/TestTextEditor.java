@@ -278,6 +278,25 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getContent(), getSurrogatePairs(checkCodeFormat("1f1ee")));
         th.check(textEditor.getCaretPosition(), 1);
         th.check(textEditor.size(), 1);
+        textEditor.setContent(getSurrogatePairs(checkCodeFormat("1f1ee1f1f9")));
+        textEditor.delete(0, 1);
+        th.check(textEditor.getContent(), getSurrogatePairs(checkCodeFormat("1f1f9")));
+        th.check(textEditor.getCaretPosition(), 0);
+        th.check(textEditor.size(), 1);
+
+        textEditor.setContent(getSurrogatePairs(checkCodeFormat("2320e3")));
+        th.check(textEditor.getCaretPosition(), 2);
+        th.check(textEditor.size(), 2);
+        textEditor.delete(1, 1);
+        th.check(textEditor.getContent(), "#");
+        th.check(textEditor.getCaretPosition(), 1);
+        th.check(textEditor.size(), 1);
+        textEditor.setContent(getSurrogatePairs(checkCodeFormat("2320e3")));
+        textEditor.delete(0, 1);
+        th.check(textEditor.getContent(), getSurrogatePairs(checkCodeFormat("20e3")));
+        th.check(textEditor.getCaretPosition(), 0);
+        th.check(textEditor.size(), 1);
+
     }
 
     private native boolean isTextEditorReallyFocused();
