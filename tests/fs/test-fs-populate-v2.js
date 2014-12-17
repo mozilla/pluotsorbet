@@ -30,8 +30,6 @@ for (var i = 0; i < 100; i++) {
   initialFilesByDir["/Persistent"].push(filename);
 }
 
-initialFilesByDir["/Persistent"].sort();
-
 initFS.then(function() {
   // We changed the name between versions, so use whichever is available.
   (fs.syncStore || fs.storeSync)(testInit);

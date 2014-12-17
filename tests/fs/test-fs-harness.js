@@ -98,12 +98,14 @@ function testInit() {
     var checkNextDir = function() {
       if (++i < dirs.length) {
         var dir = dirs[i];
+        var initialFiles = initialFilesByDir[dir].slice(0);
         fs.list(dir, function(files) {
+          initialFiles.sort();
           files.sort();
           ok(files instanceof Array, "directory list is an array");
-          is(files.length, initialFilesByDir[dir].length, "directory contains expected number of files");
-          for (var j = 0; j < initialFilesByDir[dir].length; j++) {
-            is(files[j], initialFilesByDir[dir][j], "file in position " + j + " is expected");
+          is(files.length, initialFiles.length, "directory contains expected number of files");
+          for (var j = 0; j < initialFiles.length; j++) {
+            is(files[j], initialFiles[j], "file in position " + j + " is expected");
           }
           checkNextDir();
         });
