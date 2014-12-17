@@ -23,7 +23,6 @@ module J2ME {
       for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? J2ME.newString(args[n]) : null;
 
-      ctx.frames.push();
       ctx.executeNewFrameSet([
         new Frame(CLASSES.getMethod(isolateClassInfo, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
                   [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ], 0)
