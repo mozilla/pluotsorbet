@@ -53,13 +53,32 @@ function next() {
   }
 }
 
-function checkPaths() {
+// The complete list of initial paths we expect to find in the filesystem.
+// We check that they all exist.
+var initialPaths = [
+  "/",
+  "/Persistent",
+  "/_main.ks",
+];
+
+// The initial files we expect to find in the filesystem, indexed by parent dir.
+// We check that the directories have the files we expect to find in them.
+var initialFilesByDir = {
+  "/": [
+    "Persistent",
+    "_main.ks",
+  ],
+
+  "/Persistent": [],
+};
+
+function testInit() {
   tests.push(function() {
     var i = -1;
 
     var checkNextPath = function() {
-      if (++i < paths.length) {
-        var path = paths[i];
+      if (++i < initialPaths.length) {
+        var path = initialPaths[i];
         fs.exists(path, function(exists) {
           is(exists, true, path + " exists");
           checkNextPath();
@@ -71,11 +90,9 @@ function checkPaths() {
 
     checkNextPath();
   });
-}
 
-function checkFilesByDir() {
   tests.push(function() {
-    var dirs = Object.keys(filesByDir);
+    var dirs = Object.keys(initialFilesByDir);
     var i = -1;
 
     var checkNextDir = function() {
@@ -83,9 +100,9 @@ function checkFilesByDir() {
         var dir = dirs[i];
         fs.list(dir, function(files) {
           ok(files instanceof Array, "directory list is an array");
-          is(files.length, filesByDir[dir].length, "directory contains expected number of files");
-          for (var j = 0; j < filesByDir[dir].length; j++) {
-            is(files[j], filesByDir[dir][j], "file in position " + j + " is expected");
+          is(files.length, initialFilesByDir[dir].length, "directory contains expected number of files");
+          for (var j = 0; j < initialFilesByDir[dir].length; j++) {
+            is(files[j], initialFilesByDir[dir][j], "file in position " + j + " is expected");
           }
           checkNextDir();
         });
@@ -96,29 +113,6 @@ function checkFilesByDir() {
 
     checkNextDir();
   });
-}
 
-// The complete list of paths we expect to find in the filesystem.
-// We check that they all exist.
-var paths = [
-  "/",
-  "/Persistent",
-  "/_main.ks",
-];
-
-// The files we expect to find in the filesystem, indexed by parent dir.
-// We check that the directories have the files we expect to find in them.
-var filesByDir = {
-  "/": [
-    "Persistent",
-    "_main.ks",
-  ],
-
-  "/Persistent": [],
-};
-
-function testInit() {
-  checkPaths();
-  checkFilesByDir();
   next();
 }
