@@ -116,6 +116,10 @@ module J2ME {
       IndentingWriter.RED,
       IndentingWriter.BOLD_RED
     ];
+    private static writer: IndentingWriter = new IndentingWriter(false, function (s) {
+      console.log(s);
+    });
+
     id: number
     frames: any [];
     frameSets: any [];
@@ -147,6 +151,12 @@ module J2ME {
         return Context.color($.id) + ":" + Context.color($.ctx.id);
       }
       return "";
+    }
+
+    static setWriters(writer: IndentingWriter) {
+      traceWriter = null; // writer;
+      linkWriter = null; // writer;
+      initWriter = null; // writer;
     }
 
     kill() {
@@ -257,15 +267,18 @@ module J2ME {
       return exception;
     }
 
-    setCurrent() {
+    setAsCurrentContext() {
       $ = this.runtime;
       if ($.ctx === this) {
         return;
       }
       $.ctx = this;
-      traceWriter = null; // this.writer;
-      linkWriter = null; // this.writer;
-      initWriter = null; // this.writer;
+      Context.setWriters(this.writer);
+    }
+
+    clearCurrentContext() {
+      $ = null;
+      Context.setWriters(Context.writer);
     }
 
     start(frame: Frame) {
@@ -275,7 +288,7 @@ module J2ME {
 
     private execute() {
       Instrument.callResumeHooks(this.current());
-      this.setCurrent();
+      this.setAsCurrentContext();
       do {
         VM.execute(this);
         if (U) {
@@ -290,6 +303,7 @@ module J2ME {
               break;
           }
           U = VMState.Running;
+          this.clearCurrentContext();
           return;
         }
       } while (this.frames.length !== 0);

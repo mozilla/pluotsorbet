@@ -12,7 +12,7 @@ module J2ME {
     startIsolate0(className: string, args: string []) {
       var runtime = new Runtime(this);
       var ctx = new Context(runtime);
-      ctx.setCurrent();
+      ctx.setAsCurrentContext();
 
       var isolateClassInfo = CLASSES.getClass("com/sun/cldc/isolate/Isolate");
       var isolate: Isolate = <Isolate>newObject(isolateClassInfo.klass);
@@ -55,10 +55,10 @@ module J2ME {
       ctx.thread.alive = true;
 
       var oldCtx = $.ctx;
-      ctx.setCurrent();
+      ctx.setAsCurrentContext();
       ctx.executeNewFrameSet([new Frame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
                               [ runtime.mainThread, J2ME.newString("main") ], 0)])
-      oldCtx.setCurrent();
+      oldCtx.setAsCurrentContext();
 
       var args = J2ME.newStringArray(mainArgs.length);
       for (var n = 0; n < mainArgs.length; ++n) {
