@@ -26,4 +26,8 @@ var filesByDir = {
 
 checkPaths();
 checkFilesByDir();
-initFS.then(next);
+
+initFS.then(function() {
+  // We changed the name between versions, so use whichever is available.
+  (fs.syncStore || fs.storeSync)(next);
+});
