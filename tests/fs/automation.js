@@ -15,7 +15,7 @@ casper.options.onWaitTimeout = function() {
     this.test.fail("Timeout");
 };
 
-casper.test.begin("fs tests", 6, function(test) {
+casper.test.begin("fs tests", 7, function(test) {
     // The main test automation script already initializes the fs database
     // to its latest version and runs the fs tests against it.  So this script
     // focuses on running tests against a database that is initialized
@@ -78,8 +78,10 @@ casper.test.begin("fs tests", 6, function(test) {
     .waitForText("DONE");
 
     casper
-    .thenOpen("http://localhost:8000/tests/fs/populate-fs-v2.html")
-    .waitForText("DONE");
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-populate-v2.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 214 PASS, 0 FAIL", "test fs populate v2");
+    });
 
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-population.html")

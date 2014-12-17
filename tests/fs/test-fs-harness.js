@@ -99,6 +99,7 @@ function testInit() {
       if (++i < dirs.length) {
         var dir = dirs[i];
         fs.list(dir, function(files) {
+          files.sort();
           ok(files instanceof Array, "directory list is an array");
           is(files.length, initialFilesByDir[dir].length, "directory contains expected number of files");
           for (var j = 0; j < initialFilesByDir[dir].length; j++) {
