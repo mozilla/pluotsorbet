@@ -167,15 +167,16 @@ var TextEditorProvider = (function() {
         this.setStyle('-moz-appearance', 'textfield-multiline');
 
         this.textEditorElem.onkeydown = function(e) {
-            // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-            if (((e.keyCode > 47 && e.keyCode < 58)  || // number keys
-                e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
-                (e.keyCode > 64 && e.keyCode < 91)   || // letter keys
-                (e.keyCode > 95 && e.keyCode < 112)  || // numpad keys
-                (e.keyCode > 185 && e.keyCode < 193) || // ;=,-./` (in order)
-                (e.keyCode > 218 && e.keyCode < 223)) && // [\]' (in order)
-                this.getSize() >= this.getAttribute("maxlength")) {
-                return false;
+            if (this.getSize() >= this.getAttribute("maxlength")) {
+                // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
+                if ((e.keyCode > 47 && e.keyCode < 58)  || // number keys
+                    e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
+                    (e.keyCode > 64 && e.keyCode < 91)   || // letter keys
+                    (e.keyCode > 95 && e.keyCode < 112)  || // numpad keys
+                    (e.keyCode > 185 && e.keyCode < 193) || // ;=,-./` (in order)
+                    (e.keyCode > 218 && e.keyCode < 223)) { // [\]' (in order)
+                    return false;
+                }
             }
 
             if (e.keyCode == 8) {
@@ -436,7 +437,9 @@ var TextEditorProvider = (function() {
 
         this.textEditorElem.oninput = function() {
             this.content = this.textEditorElem.value;
-            this.oninputCallback && this.oninputCallback();
+            if (this.oninputCallback) {
+                this.oninputCallback();
+            }
         }.bind(this);
     }
 
@@ -447,11 +450,10 @@ var TextEditorProvider = (function() {
 
         setContent: function(content) {
             this.content = content;
-            if (!this.textEditorElem) {
-                return;
-            }
 
-            this.textEditorElem.value = content;
+            if (this.textEditorElem) {
+                this.textEditorElem.value = content;
+            }
         },
 
         getSelectionStart: function() {
@@ -480,15 +482,7 @@ var TextEditorProvider = (function() {
 
         getContentHeight: function() {
             var lineHeight = this.font.class.getField("I.height.I").get(this.font);
-
-            var count = 1;
-            for (var i = 0; i < this.content.length; i++) {
-                if (this.content[i] == "\n") {
-                    count++;
-                }
-            }
-
-            return count * lineHeight;
+            return ((this.content.match(/\n/g) || []).length + 1) * lineHeight;
         },
     }, CommonEditorPrototype);
 

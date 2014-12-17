@@ -143,6 +143,8 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 2);
         textEditor.setContent("A\nB\nC");
         th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight() * 3);
+        textEditor.setContent("");
+        th.check(textEditor.getContentHeight(), Font.getDefaultFont().getHeight()); // Check the value on the Nokia Asha
 
         th.check(textEditor.getPositionX(), 0);
         th.check(textEditor.getPositionY(), 0);
@@ -198,6 +200,7 @@ public class TestTextEditor extends Canvas implements Testlet {
 
         th.check(textEditor.getCaretPosition(), 14);
 
+        //code = getSurrogatePairs(checkCodeFormat("1f1ee1f1f9")); // Check on the real Nokia Asha
         textEditor.insert(code, textEditor.getCaretPosition());
 
         th.check(textEditor.getCaretPosition(), 15);
