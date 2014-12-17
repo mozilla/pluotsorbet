@@ -191,7 +191,7 @@ module J2ME {
           traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + frameDetails);
         }
         var returnValue = VM.execute(this);
-        if ($.Y) {
+        if (U) {
           flattenFrameSet();
           return;
         }
@@ -287,16 +287,16 @@ module J2ME {
       this.setCurrent();
       do {
         VM.execute(this);
-        if ($.Y) {
+        if (U) {
           Array.prototype.push.apply(this.frames, this.bailoutFrames);
           this.bailoutFrames = [];
         }
-        if ($.Y === VmState.Yielding) {
+        if (U === VMState.Yielding) {
           // Ignore the yield and continue executing instructions on this thread.
-          $.Y = VmState.Running;
+          U = VMState.Running;
           continue;
-        } else if ($.Y === VmState.Pausing) {
-          $.Y = VmState.Running;
+        } else if (U === VMState.Pausing) {
+          U = VMState.Running;
           Instrument.callPauseHooks(this.current());
           return;
         }
@@ -308,16 +308,16 @@ module J2ME {
       this.setCurrent();
       Instrument.callResumeHooks(ctx.current());
       VM.execute(ctx);
-      if ($.Y) {
+      if (U) {
         Array.prototype.push.apply(this.frames, this.bailoutFrames);
         this.bailoutFrames = [];
       }
-      if ($.Y === VmState.Pausing) {
-        $.Y = VmState.Running;
+      if (U === VMState.Pausing) {
+        U = VMState.Running;
         Instrument.callPauseHooks(this.current());
         return;
       }
-      $.Y = VmState.Running;
+      U = VMState.Running;
       Instrument.callPauseHooks(ctx.current());
 
       if (ctx.frames.length === 0) {
@@ -364,7 +364,7 @@ module J2ME {
       } else {
         while (this.lockLevel-- > 0) {
           this.monitorEnter(obj);
-          if ($.Y === VmState.Pausing) {
+          if (U === VMState.Pausing) {
             return;
           }
         }

@@ -21,10 +21,10 @@ module J2ME {
 
       var array = newStringArray(args.length);
       for (var n = 0; n < args.length; ++n)
-        array[n] = args[n] ? util.newString(args[n]) : null;
+        array[n] = args[n] ? J2ME.newString(args[n]) : null;
 
       ctx.frames.push(new Frame(CLASSES.getMethod(isolateClassInfo, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
-        [ isolate, util.newString(className.replace(/\./g, "/")), array ], 0));
+        [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ], 0));
       ctx.execute();
 
       ctx.frames.push(new Frame(CLASSES.getMethod(isolateClassInfo, "I.start.()V"), [ isolate ], 0));
@@ -55,7 +55,7 @@ module J2ME {
       ctx.thread.alive = true;
 
       ctx.frames.push(new Frame(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
-        [ runtime.mainThread, util.newString("main") ], 0));
+        [ runtime.mainThread, J2ME.newString("main") ], 0));
       var oldCtx = $.ctx;
       ctx.execute();
       oldCtx.setCurrent();

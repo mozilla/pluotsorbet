@@ -271,7 +271,7 @@ module J2ME {
       if (internedStrings.has(s)) {
         return internedStrings.get(s);
       }
-      var obj = util.newString(s);
+      var obj = J2ME.newString(s);
       internedStrings.set(s, obj);
       return obj;
     }
@@ -285,7 +285,7 @@ module J2ME {
     }
   }
 
-  export enum VmState {
+  export enum VMState {
     Running = 0,
     Yielding = 1,
     Pausing = 2
@@ -296,11 +296,6 @@ module J2ME {
     id: number;
 
     /**
-     * Are we currently unwinding the stack because of a Yield?
-     */
-    Y: VmState = VmState.Running;
-
-    /**
      * Bailout callback whenever a JIT frame is unwound.
      */
     B(bci: number, local: any [], stack: any []) {
@@ -308,11 +303,11 @@ module J2ME {
     }
 
     yield() {
-      this.Y = VmState.Yielding;
+      U = VMState.Yielding;
     }
 
     pause() {
-      this.Y = VmState.Pausing;
+      U = VMState.Pausing;
     }
 
     constructor(jvm: JVM) {
@@ -504,7 +499,7 @@ module J2ME {
         });
         initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
-        assert(!$.Y);
+        assert(!U);
         //// TODO: monitorEnter
         //if (klass.staticInitializer) {
         //  klass.staticInitializer.call(runtimeKlass);
@@ -742,7 +737,7 @@ module J2ME {
             : frame.getLocal(0);
         }
         $.ctx.monitorEnter(frame.lockObject);
-        if ($.Y === VmState.Pausing) {
+        if (U === VMState.Pausing) {
           $.ctx.frames.push(frame);
           return;
         }
@@ -1025,6 +1020,13 @@ module J2ME {
 
 var Runtime = J2ME.Runtime;
 
+
+/**
+ * Are we currently unwinding the stack because of a Yield? This technically
+ * belonges to a context but we store it in the global object because it is
+ * read very often.
+ */
+var U: J2ME.VMState = J2ME.VMState.Running;
 
 /**
  * Runtime exports for compiled code.

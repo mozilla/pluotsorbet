@@ -520,11 +520,11 @@ module J2ME.C4.Backend {
       var to = id(this.variable.name);
       cx.useVariable(this.variable);
       block.body.push(new AST.ExpressionStatement(assignment(to, result)));
-      var ifYield = new AST.IfStatement(property(id("$"), "Y"), new AST.BlockStatement([
+      var ifUnwind = new AST.IfStatement(id("U"), new AST.BlockStatement([
         new AST.ExpressionStatement(call(property(id("$"), "B"), compileState(this.state, cx))),
         new AST.ReturnStatement(undefined)
       ]));
-      block.body.push(ifYield);
+      block.body.push(ifUnwind);
       return block;
     }
     return result;

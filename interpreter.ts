@@ -155,7 +155,7 @@ module J2ME {
         return;
       ctx.pushClassInitFrame(classInfo);
 
-      if ($.Y) {
+      if (U) {
         frame.bci = ip;
         return;
       }
@@ -923,7 +923,7 @@ module J2ME {
             if (field.tag)
               field = resolve(idx, true);
             classInitCheck(field.classInfo, frame.bci - 3);
-            if ($.Y) {
+            if (U) {
               return;
             }
             var value = field.getStatic();
@@ -938,7 +938,7 @@ module J2ME {
             if (field.tag)
               field = resolve(idx, true);
             classInitCheck(field.classInfo, frame.bci - 3);
-            if ($.Y) {
+            if (U) {
               return;
             }
             field.setStatic(stack.popType(field.signature));
@@ -949,7 +949,7 @@ module J2ME {
             if (classInfo.tag)
               classInfo = resolve(idx);
             classInitCheck(classInfo, frame.bci - 3);
-            if ($.Y) {
+            if (U) {
               return;
             }
             stack.push(util.newObject(classInfo));
@@ -988,7 +988,7 @@ module J2ME {
               throw ctx.createException("java/lang/NullPointerException");
             }
             ctx.monitorEnter(obj);
-            if ($.Y === VmState.Pausing) {
+            if (U === VMState.Pausing) {
               return;
             }
             break;
@@ -1048,7 +1048,7 @@ module J2ME {
               methodInfo = resolve(idx, isStatic);
               if (isStatic) {
                 classInitCheck(methodInfo.classInfo, startip);
-                if ($.Y) {
+                if (U) {
                   return;
                 }
               }
@@ -1079,7 +1079,7 @@ module J2ME {
             }
 
             var returnValue = fn.apply(obj, args);
-            if ($.Y) {
+            if (U) {
               return;
             }
 
