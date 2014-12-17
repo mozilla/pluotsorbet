@@ -50,13 +50,9 @@ casper.test.begin("fs tests", 5, function(test) {
     .waitForText("DONE");
 
     casper
-    .thenOpen("http://localhost:8000/tests/fs/init-fs-v2.html")
-    .waitForText("DONE");
-
-    casper
-    .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-init-v2.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 10 PASS, 0 FAIL", "test fs init");
+        test.assertTextExists("DONE: 10 PASS, 0 FAIL", "test fs init v2");
     });
 
     casper
