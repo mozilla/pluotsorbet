@@ -36,6 +36,8 @@ module J2ME {
             type = "Int32Array";
             break;
           case Kind.Char:
+            type = "Uint16Array";
+            break;
           case Kind.Short:
             type = "Int16Array";
             break;
