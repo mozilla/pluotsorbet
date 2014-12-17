@@ -9,8 +9,8 @@ var paths = [
   "/",
   "/Persistent",
   "/_main.ks",
-  "/tests.jar",
   "/classes.jar",
+  "/tests.jar",
 ];
 
 // The files we expect to find in the filesystem, indexed by parent dir.
@@ -19,15 +19,15 @@ var filesByDir = {
   "/": [
     "Persistent",
     "_main.ks",
-    "tests.jar",
     "classes.jar",
+    "tests.jar",
   ],
 
   "/Persistent": [],
 };
 
-// Push a ton of files onto the list so we test a large population.
-for (var i = 0; i < 1000; i++) {
+// Push some files onto the list so we test a larger population.
+for (var i = 0; i < 100; i++) {
   var filename = "file-" + i + ".png";
   paths.push("/Persistent/" + filename);
   filesByDir["/Persistent"].push(filename);
@@ -61,6 +61,7 @@ tests.push(function() {
     if (++i < dirs.length) {
       var dir = dirs[i];
       fs.list(dir, function(files) {
+        files.sort();
         ok(files instanceof Array, "directory list is an array");
         is(files.length, filesByDir[dir].length, "directory contains expected number of files");
         for (var j = 0; j < filesByDir[dir].length; j++) {

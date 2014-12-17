@@ -5,13 +5,13 @@
 
 var APP_BASE_DIR = "../../";
 
-initialFiles.concat([
-  { sourcePath: "tests/tests.jar", targetPath: "/tests.jar" },
+initialFiles = initialFiles.concat([
   { sourcePath: "java/classes.jar", targetPath: "/classes.jar" },
+  { sourcePath: "tests/tests.jar", targetPath: "/tests.jar" },
 ]);
 
-// Push a ton of files onto the list so we test a large population.
-for (var i = 0; i < 1000; i++) {
+// Push some files onto the list so we test a larger population.
+for (var i = 0; i < 100; i++) {
   initialFiles.push({ sourcePath: "tests/gfx/AlertTest.png", targetPath: "/Persistent/file-" + i + ".png" });
 }
 

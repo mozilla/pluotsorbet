@@ -78,7 +78,7 @@ casper.test.begin("fs tests", 5, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-population.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 12 PASS, 0 FAIL", "test fs population");
+        test.assertTextExists("DONE: 214 PASS, 0 FAIL", "test fs population");
     });
 
     casper
