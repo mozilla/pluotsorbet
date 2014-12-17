@@ -126,7 +126,7 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         textEditor.setFocus(true);
         textEditor.setPosition(0, 0);
 
-        emojiCodeEditor = TextEditor.createTextEditor("1f609", 50, TextField.ANY, 70, 70);
+        emojiCodeEditor = TextEditor.createTextEditor("1f1ee1f1f9", 50, TextField.ANY, 70, 70);
         emojiCodeEditor.setTextEditorListener(this);
         emojiCodeEditor.setParent(canvas);
         emojiCodeEditor.setMultiline(true);
@@ -144,7 +144,7 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
         pwdEditor.setForegroundColor(0xFF000000);
         pwdEditor.setVisible(true);
         pwdEditor.setFocus(false);
-        pwdEditor.setPosition(0, 200);
+        pwdEditor.setPosition(100, 100);
     }
 
     public void commandAction(Command c, Displayable s) {
