@@ -894,19 +894,19 @@ module J2ME {
 
   export function checkCast(object: java.lang.Object, klass: Klass) {
     if (object !== null && !isAssignableTo(object.klass, klass)) {
-      throw new TypeError();
+      throw $.ctx.createException("java/lang/ClassCastException");
     }
   }
 
   export function checkCastKlass(object: java.lang.Object, klass: Klass) {
     if (object !== null && object.klass.display[klass.depth] !== klass) {
-      throw new TypeError();
+      throw $.ctx.createException("java/lang/ClassCastException");
     }
   }
 
   export function checkCastInterface(object: java.lang.Object, klass: Klass) {
     if (object !== null && object.klass.interfaces.indexOf(klass) < 0) {
-      throw new TypeError();
+      throw $.ctx.createException("java/lang/ClassCastException");
     }
   }
 
