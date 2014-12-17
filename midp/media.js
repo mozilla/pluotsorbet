@@ -350,7 +350,9 @@ function ImagePlayer(playerContainer) {
 }
 
 ImagePlayer.prototype.realize = function() {
-    return new Promise((function(resolve, reject) {
+    var objectUrl;
+
+    var p = new Promise((function(resolve, reject) {
         this.image.onload = resolve.bind(null, true);
         this.image.onerror = function() {
             reject(new JavaException("javax/microedition/media/MediaException", "Failed to load image"));
@@ -360,11 +362,23 @@ ImagePlayer.prototype.realize = function() {
                 var imgData = fs.read(fd);
                 fs.close(fd);
                 this.image.src = URL.createObjectURL(new Blob([ imgData ]));
+                objectUrl = this.image.src;
             }).bind(this));
         } else {
             this.image.src = this.url;
         }
     }).bind(this));
+
+    var clean = function() {
+        if (!objectUrl) {
+            return;
+        }
+        URL.revokeObjectURL(objectUrl);
+    };
+
+    p.then(clean, clean);
+
+    return p;
 }
 
 ImagePlayer.prototype.start = function() {
