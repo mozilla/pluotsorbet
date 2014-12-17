@@ -6,7 +6,6 @@
 var APP_BASE_DIR = "../../";
 
 initFS.then(function() {
-  fs.storeSync(function() {
-    document.body.appendChild(document.createTextNode("DONE"));
-  });
+  // We changed the name between versions, so use whichever is available.
+  (fs.syncStore || fs.storeSync)(testInit);
 });
