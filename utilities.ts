@@ -27,7 +27,7 @@ declare var printErr;
 // declare var document;
 // declare var getComputedStyle;
 
-/** @const */ var release: boolean = false;
+/** @const */ var release: boolean = true;
 /** @const */ var profile: boolean = false;
 
 declare var dateNow: () => number;

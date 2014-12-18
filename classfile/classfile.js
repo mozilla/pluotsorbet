@@ -60,13 +60,15 @@ var getClassImage = function(classBytes) {
 
                     case ATTRIBUTE_TYPES.LineNumberTable:
                         attribute.type = ATTRIBUTE_TYPES.LineNumberTable;
-                        var line_number_table_length = reader.read16();
-                        attribute.line_number_table = [];
-                        for (var i=0; i<line_number_table_length; i++) {
-                            attribute.line_number_table.push({
-                                start_pc: reader.read16(),
-                                line_number: reader.read16()
-                            });
+                        if (!release) {
+                            var line_number_table_length = reader.read16();
+                            attribute.line_number_table = [];
+                            for (var i = 0; i < line_number_table_length; i++) {
+                                attribute.line_number_table.push({
+                                    start_pc:    reader.read16(),
+                                    line_number: reader.read16()
+                                });
+                            }
                         }
                         return attribute;
 

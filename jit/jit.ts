@@ -1,5 +1,3 @@
-var release = false;
-
 function countTimeline(message: string, object?: Object) {
 
 }
