@@ -573,7 +573,7 @@ MIDP.Context2D = (function() {
         }, MIDP.foregroundIsolateId);
     }
 
-    function sendGestureEvent(pt, distancePt, whichType) {
+    function sendGestureEvent(pt, distancePt, whichType, aFloatParam1, aIntParam7, aIntParam8, aIntParam9) {
         MIDP.sendNativeEvent({
             type: MIDP.GESTURE_EVENT,
             intParam1: whichType,
@@ -582,10 +582,10 @@ MIDP.Context2D = (function() {
             intParam4: MIDP.displayId,
             intParam5: pt.x,
             intParam6: pt.y,
-            floatParam1: 0.0,
-            intParam7: 0,
-            intParam8: 0,
-            intParam9: 0,
+            floatParam1: aFloatParam1 || 0.0,
+            intParam7: aIntParam7 || 0,
+            intParam8: aIntParam8 || 0,
+            intParam9: aIntParam9 || 0,
             intParam10: 0,
             intParam11: 0,
             intParam12: 0,
@@ -670,7 +670,55 @@ MIDP.Context2D = (function() {
                 sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
             }
         }
+
+        // Just store the dragging event info here, then calc the speed and
+        // determine whether the gesture is GESTURE_DROP or GESTURE_FLICK in
+        // the mouseup event listener.
+        if (!mouseDownInfo.draggingPts) {
+            mouseDownInfo.draggingPts = [];
+        }
+
+        // Only store the latest two drag events.
+        if (mouseDownInfo.draggingPts.length > 1) {
+            mouseDownInfo.draggingPts.shift();
+        }
+
+        mouseDownInfo.draggingPts.push({
+            pt: getEventPoint(event),
+            time: new Date().getTime()
+        });
     });
+
+    function calcFlickSpeed() {
+        var currentDragPT = mouseDownInfo.draggingPts[1];
+        var lastDragPT = mouseDownInfo.draggingPts[0];
+
+        var deltaX = currentDragPT.pt.x - lastDragPT.pt.x;
+        var deltaY = currentDragPT.pt.y - lastDragPT.pt.y;
+        var deltaTimeInMs = currentDragPT.time - lastDragPT.time;
+
+        var speedX = Math.round(deltaX * 1000 / deltaTimeInMs);
+        var speedY = Math.round(deltaY * 1000 / deltaTimeInMs);
+        var speed  = Math.round(Math.sqrt(speedX * speedX + speedY * speedY));
+
+        var direction = 0;
+        if (deltaX >= 0 && deltaY >=0) {
+            direction = Math.atan(deltaY / deltaX);
+        } else if (deltaX < 0 && deltaY >= 0) {
+            direction = Math.PI + Math.atan(deltaY / deltaX);
+        } else if (deltaX < 0 && deltaY < 0) {
+            direction = Math.atan(deltaY / deltaX) - Math.PI;
+        } else if (deltaX >= 0 && deltaY < 0) {
+            direction = Math.atan(deltaY / deltaX);
+        }
+
+        return {
+            direction: direction,
+            speed: speed,
+            speedX: speedX,
+            speedY: speedY
+        };
+    }
 
     // The end listener goes on `document` so that we properly detect touchend/mouseup anywhere.
     document.addEventListener(supportsTouch ? "touchend" : "mouseup", function(event) {
@@ -688,7 +736,31 @@ MIDP.Context2D = (function() {
         sendPenEvent(pt, MIDP.RELEASED);
 
         if (!longPressDetected) {
-            sendGestureEvent(pt, null, mouseDownInfo.isDragging ? MIDP.GESTURE_DROP : MIDP.GESTURE_TAP);
+            if (mouseDownInfo.isDragging) {
+                if (mouseDownInfo.draggingPts && mouseDownInfo.draggingPts.length == 2) {
+                    var deltaTime = new Date().getTime() - mouseDownInfo.draggingPts[1].time;
+                    var flickSpeed = calcFlickSpeed();
+                    // On the real Nokia device, if user touch on the screen and
+                    // move the finger, then stop moving for a while and lift
+                    // the finger, it will trigger a normal GESTURE_DROP instead
+                    // of GESTURE_FLICK event, so let's check if the time gap
+                    // between touchend event and the last touchmove event is
+                    // larger than a threshold.
+                    if (deltaTime > 300 || flickSpeed.speed == 0) {
+                        sendGestureEvent(pt, null, MIDP.GESTURE_DROP);
+                    } else {
+                        sendGestureEvent(pt, null, MIDP.GESTURE_FLICK,
+                            flickSpeed.direction,
+                            flickSpeed.speed,
+                            flickSpeed.speedX,
+                            flickSpeed.speedY);
+                    }
+                } else {
+                    sendGestureEvent(pt, null, MIDP.GESTURE_DROP);
+                }
+            } else {
+                sendGestureEvent(pt, null, MIDP.GESTURE_TAP);
+            }
         }
 
         mouseDownInfo = null; // Clear the way for the next gesture.
