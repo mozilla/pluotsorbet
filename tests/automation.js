@@ -8,6 +8,8 @@ casper.on('remote.message', function(message) {
 });
 
 casper.options.waitTimeout = 45000;
+casper.options.verbose = true;
+casper.options.logLevel = "debug";
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
