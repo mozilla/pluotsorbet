@@ -13,7 +13,7 @@ casper.options.logLevel = "debug";
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
-    this.echo(this.captureBase64('png'));
+    this.echo("data:image/png;base64," + this.captureBase64('png'));
     this.test.fail("Timeout");
 };
 
