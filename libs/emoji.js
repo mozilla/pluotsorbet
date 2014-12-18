@@ -6,7 +6,7 @@
 var emojiRegEx = (function() {
   // http://www.unicode.org/Public/UNIDATA/EmojiSources.txt
   // http://developer.nokia.com/resources/library/Java/developers-guides/data-handling/emoji.html
-  var ranges = [
+  var regexString = [
     '\ud83c[\udf00-\udfff]', // U+1F300 to U+1F3FF
     '\ud83d[\udc00-\ude4f]', // U+1F400 to U+1F64F
     '\ud83d[\ude80-\udeff]', // U+1F680 to U+1F6FF
@@ -185,8 +185,10 @@ var emojiRegEx = (function() {
     '\ud83c\udE3A', // U+1F23A
     '\ud83c\udE50', // U+1F250
     '\ud83c\udE51', // U+1F251
-  ];
+  ].join("|");
 
-  return new RegExp(ranges.join("|"), 'g');
+  return function() {
+      return new RegExp(regexString, 'g');
+  };
 })();
 

@@ -255,7 +255,7 @@ var TextEditorProvider = (function() {
                        'pt" width="' + this.font.size + 'pt" alt="' + str + '">';
             }.bind(this);
 
-            this.textEditorElem.innerHTML = content.replace(emojiRegEx, toImg) + "\n";
+            this.textEditorElem.innerHTML = content.replace(emojiRegEx(), toImg) + "\n";
         },
 
         getSelectionEnd: function() {
