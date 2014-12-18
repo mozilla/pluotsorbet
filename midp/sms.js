@@ -67,7 +67,7 @@ function promptForMessageText() {
         console.log('SMS prompt filled out:', input.value);
         // We don't have easy access to our own phone number; use a
         // dummy unknown value instead.
-        receiveSms(input.value, 'unknown');
+        receiveSms(MIDlet.SMSDialogReceiveFilter(input.value), 'unknown');
     });
 
     function toTimeText(ms) {
