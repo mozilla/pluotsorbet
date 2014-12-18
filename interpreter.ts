@@ -2,6 +2,7 @@ module J2ME {
   declare var util;
   declare var Long;
   declare var Instrument;
+  declare var Promise;
 
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
@@ -1074,6 +1075,18 @@ module J2ME {
             }
 
             var returnValue = fn.apply(obj, args);
+            if (returnValue instanceof Promise) {
+              console.error("You forgot to call asyncImpl():", methodInfo.implKey);
+            } else if (methodInfo.getReturnKind() === Kind.Void && returnValue) {
+              console.error("You returned something in a void method:", methodInfo.implKey);
+            } else if (methodInfo.getReturnKind() !== Kind.Void && (returnValue === undefined) &&
+                      U !== J2ME.VMState.Pausing) {
+              console.error("You returned undefined in a non-void method:", methodInfo.implKey);
+            } else if (typeof returnValue === "string") {
+              console.error("You returned a non-wrapped string:", methodInfo.implKey);
+            } else if (returnValue === true || returnValue === false) {
+              console.error("You returned a JS boolean:", methodInfo.implKey);
+            }
             if (U) {
               return;
             }

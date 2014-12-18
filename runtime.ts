@@ -1112,6 +1112,9 @@ module J2ME {
   }
 
   export function newString(str: string): java.lang.String {
+    if (str === null || str === undefined) {
+      return null;
+    }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
     object.str = str;
     return object;
