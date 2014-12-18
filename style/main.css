@@ -63,7 +63,7 @@ button {
 #console {
   position: fixed;
   top: 0;
-  bottom: 250px;
+  bottom: 350px;
   left: 0;
   right: 240px;
   margin: 0;
@@ -193,7 +193,7 @@ button {
   right: 0;
   left: 0;
   width: auto;
-  height: 250px;
+  height: 350px;
   overflow: hidden;
   background-color: #000;
   color: #ffffff;

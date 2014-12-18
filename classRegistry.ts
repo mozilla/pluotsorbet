@@ -135,7 +135,9 @@ module J2ME {
     }
 
     loadClassBytes(bytes: ArrayBuffer): ClassInfo {
+      enterTimeline("loadClassBytes");
       var classInfo = new ClassInfo(bytes);
+      leaveTimeline("loadClassBytes", {className: classInfo.className});
       this.classes[classInfo.className] = classInfo;
       return classInfo;
     }

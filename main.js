@@ -394,4 +394,4 @@ var profiler = (function() {
 
 })();
 
-profiler.start(5000, false);
+profiler.start(3000, false);
