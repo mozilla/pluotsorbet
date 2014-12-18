@@ -121,7 +121,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader&jars=tests/tests.jar")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&jars=tests/tests.jar&logConsole=web,page")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
