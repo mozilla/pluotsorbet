@@ -31,86 +31,15 @@ var fs = (function() {
   };
 
   Store.DBNAME = "asyncStorage";
-  Store.DBVERSION = 3;
-  Store.OLDDBSTORENAME = "keyvaluepairs";
+  Store.DBVERSION = 2;
   Store.DBSTORENAME = "fs";
-
-  Store.prototype.upgrade = {
-    "1to2": function(db, transaction, next) {
-      // Create new object store.
-      var newObjectStore = db.createObjectStore(Store.DBSTORENAME);
-
-      // Iterate the keys in the old object store and copy their values
-      // to the new one, converting them from old- to new-style records.
-      var oldObjectStore = transaction.objectStore(Store.OLDDBSTORENAME);
-      var oldRecords = {};
-      oldObjectStore.openCursor().onsuccess = function(event) {
-        var cursor = event.target.result;
-
-        if (cursor) {
-          oldRecords[cursor.key] = cursor.value;
-          cursor.continue();
-          return;
-        }
-
-        // Convert the old records to new ones.
-        for (var key in oldRecords) {
-          // Records that start with an exclamation mark are stats,
-          // which we don't iterate (but do use below when processing
-          // their equivalent data records).
-          if (key[0] == "!") {
-            continue;
-          }
-
-          var oldRecord = oldRecords[key];
-          var oldStat = oldRecords["!" + key];
-          var newRecord = oldStat;
-          if (newRecord.isDir) {
-            newRecord.files = oldRecord;
-          } else {
-            newRecord.data = oldRecord;
-          }
-          newObjectStore.put(newRecord, key);
-        }
-
-        db.deleteObjectStore(Store.OLDDBSTORENAME);
-        next();
-      };
-    },
-
-    "2to3": function(db, transaction, next) {
-      var objectStore = transaction.objectStore(Store.DBSTORENAME);
-      objectStore.createIndex("parentDir", "parentDir", { unique: false });
-
-      // Convert records to the new format:
-      // 1. Delete the obsolete "files" property from directory records.
-      // 2. Add the new "parentDir" property to all records.
-      objectStore.openCursor().onsuccess = function(event) {
-        var cursor = event.target.result;
-        if (cursor) {
-          var newRecord = cursor.value;
-          if (newRecord.isDir) {
-            delete newRecord.files;
-          }
-          var path = cursor.key;
-          newRecord.parentDir = (path === "/" ? null : dirname(path));
-          cursor.update(newRecord);
-          cursor.continue();
-        } else {
-          next();
-        }
-      };
-    },
-  };
 
   Store.prototype.init = function(cb) {
     var openreq = indexedDB.open(Store.DBNAME, Store.DBVERSION);
-
     openreq.onerror = function() {
       console.error("error opening database: " + openreq.error.name);
     };
-
-    openreq.onupgradeneeded = (function(event) {
+    openreq.onupgradeneeded = function(event) {
       if (DEBUG_FS) { console.log("upgrade needed from " + event.oldVersion + " to " + event.newVersion); }
 
       var db = event.target.result;
@@ -119,20 +48,49 @@ var fs = (function() {
       if (event.oldVersion == 0) {
         // If the database doesn't exist yet, then all we have to do
         // is create the object store for the latest version of the database.
-        var objectStore = openreq.result.createObjectStore(Store.DBSTORENAME);
-        objectStore.createIndex("parentDir", "parentDir", { unique: false });
-      } else {
-        var version = event.oldVersion;
-        var next = (function() {
-          if (version < event.newVersion) {
-            if (DEBUG_FS) { console.log("upgrading from " + version + " to " + (version + 1)); }
-            this.upgrade[version + "to" + ++version].bind(this)(db, transaction, next);
-          }
-        }).bind(this);
-        next();
-      }
-    }).bind(this);
+        openreq.result.createObjectStore(Store.DBSTORENAME);
+      } else if (event.oldVersion == 1) {
+        // Create new object store.
+        var newObjectStore = openreq.result.createObjectStore(Store.DBSTORENAME);
 
+        // Iterate the keys in the old object store and copy their values
+        // to the new one, converting them from old- to new-style records.
+        var oldObjectStore = transaction.objectStore("keyvaluepairs");
+        var oldRecords = {};
+        oldObjectStore.openCursor().onsuccess = function(event) {
+          var cursor = event.target.result;
+
+          if (cursor) {
+            oldRecords[cursor.key] = cursor.value;
+            cursor.continue();
+            return;
+          }
+
+          // Convert the old records to new ones.
+          for (var key in oldRecords) {
+            // Records that start with an exclamation mark are stats,
+            // which we don't iterate (but do use below when processing
+            // their equivalent data records).
+            if (key[0] == "!") {
+              continue;
+            }
+
+            var oldRecord = oldRecords[key];
+            var oldStat = oldRecords["!" + key];
+            var newRecord = oldStat;
+            if (newRecord.isDir) {
+              newRecord.files = oldRecord;
+            } else {
+              newRecord.data = oldRecord;
+            }
+
+            newObjectStore.put(newRecord, key);
+          }
+
+          db.deleteObjectStore("keyvaluepairs");
+        };
+      }
+    };
     openreq.onsuccess = (function() {
       this.db = openreq.result;
       cb();
@@ -248,50 +206,6 @@ var fs = (function() {
     };
   }
 
-  Store.prototype.getKeysByParentDir = function(parentDir, cb) {
-    this.sync((function() {
-      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
-      if (DEBUG_FS) { console.log("getKeysByParentDir initiated"); }
-      var objectStore = transaction.objectStore(Store.DBSTORENAME);
-      var index = objectStore.index("parentDir");
-      var keys = [];
-      index.openKeyCursor(IDBKeyRange.only(parentDir)).onsuccess = function(event) {
-        var cursor = event.target.result;
-        if (cursor) {
-          // cursor.key is the value in the parentDir index, f.e. /tmp;
-          // cursor.primaryKey is the unique identifier for the record with
-          // that parentDir value, f.e. /tmp/test.txt.
-          keys.push(cursor.primaryKey);
-          cursor.continue();
-        }
-      };
-      transaction.oncomplete = function() {
-        if (DEBUG_FS) { console.log("getKeysByParentDir completed"); }
-        cb(keys);
-      };
-    }).bind(this));
-  }
-
-  Store.prototype.isEmpty = function(dir, cb) {
-    this.sync((function() {
-      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
-      if (DEBUG_FS) { console.log("isEmpty initiated"); }
-      var objectStore = transaction.objectStore(Store.DBSTORENAME);
-      var index = objectStore.index("parentDir");
-      index.count(IDBKeyRange.only(dir)).onsuccess = function(event) {
-        var count = event.target.result;
-        if (count > 0) {
-          cb(false);
-        } else {
-          cb(true);
-        }
-      };
-      transaction.oncomplete = function() {
-        if (DEBUG_FS) { console.log("isEmpty completed"); }
-      };
-    }).bind(this));
-  }
-
   Store.prototype.addTransientPath = function(path) {
     this.transientPaths.set(path, true);
   }
@@ -380,7 +294,7 @@ var fs = (function() {
         store.setItem("/", {
           isDir: true,
           mtime: Date.now(),
-          parentDir: null,
+          files: [],
         });
         cb();
       }
@@ -541,18 +455,16 @@ var fs = (function() {
       if (record == null || !record.isDir) {
         cb(null);
       } else {
-        store.getKeysByParentDir(path, function(keys) {
-          cb(keys.map(function(v) { return basename(v) }).sort());
-        });
+        cb(record.files);
       }
     });
   }
 
   function exists(path, cb) {
     path = normalizePath(path);
+    if (DEBUG_FS) { console.log("fs exists " + path); }
 
     store.getItem(path, function(record) {
-      if (DEBUG_FS) { console.log("fs exists " + path + ": " + !!record); }
       cb(record ? true : false);
     });
   }
@@ -596,23 +508,29 @@ var fs = (function() {
     }
 
     store.getItem(path, function(record) {
-      if (!record) {
-        cb(true);
-      } else if (record.isDir) {
-        // If the directory isn't empty, then we can't remove it.
-        store.isEmpty(path, function(empty) {
-          if (!empty) {
-            cb(false);
-            return;
-          }
+      // If it's a directory that isn't empty, then we can't remove it.
+      if (record && record.isDir && record.files.length > 0) {
+        cb(false);
+        return;
+      }
 
-          store.removeItem(path);
-          cb(true);
-        });
-      } else {
+      var name = basename(path);
+      var dir = dirname(path);
+
+      store.getItem(dir, function(parentRecord) {
+        var index = -1;
+
+        // If it isn't in the parent directory, then we can't remove it.
+        if (parentRecord == null || (index = parentRecord.files.indexOf(name)) < 0) {
+          cb(false);
+          return;
+        }
+
+        parentRecord.files.splice(index, 1);
+        store.setItem(dir, parentRecord);
         store.removeItem(path);
         cb(true);
-      }
+      });
     });
   }
 
@@ -624,23 +542,20 @@ var fs = (function() {
       // If the parent directory doesn't exist or isn't a directory,
       // then we can't create the file.
       if (parentRecord == null || !parentRecord.isDir) {
-        console.error("parent directory of file '" + path + "' doesn't exist or isn't a directory");
         cb(false);
         return;
       }
 
-      store.getItem(path, function(existingRecord) {
-        // If the file already exists, then we can't create it.
-        if (existingRecord) {
-          if (DEBUG_FS) { console.error("file '" + path + "' already exists"); }
-          cb(false);
-          return;
-        }
+      // If the file already exists, we can't create it.
+      if (parentRecord.files.indexOf(name) >= 0) {
+        cb(false);
+        return;
+      }
 
-        // Create the file.
-        store.setItem(path, record);
-        cb(true);
-      });
+      parentRecord.files.push(name);
+      store.setItem(dir, parentRecord);
+      store.setItem(path, record);
+      cb(true);
     });
   }
 
@@ -653,7 +568,6 @@ var fs = (function() {
       mtime: Date.now(),
       data: blob,
       size: blob.size,
-      parentDir: dirname(path),
     };
 
     createInternal(path, record, cb);
@@ -666,7 +580,7 @@ var fs = (function() {
     var record = {
       isDir: true,
       mtime: Date.now(),
-      parentDir: dirname(path),
+      files: [],
     };
 
     createInternal(path, record, cb);
@@ -748,7 +662,14 @@ var fs = (function() {
         return;
       }
 
-      var recreatePath = remove.bind(null, oldPath, function(removed) {
+      // If the old path is a dir with files in it, we don't move it.
+      // XXX Shouldn't we move it along with its files?
+      if (oldRecord.isDir && oldRecord.files.length > 0) {
+        cb(false);
+        return;
+      }
+
+      remove(oldPath, function(removed) {
         if (!removed) {
           cb(false);
           return;
@@ -760,22 +681,6 @@ var fs = (function() {
           create(newPath, oldRecord.data, cb);
         }
       });
-
-      if (oldRecord.isDir) {
-        store.isEmpty(oldPath, function(empty) {
-          if (empty) {
-            recreatePath();
-          } else {
-            // If the old path is a dir with files in it, we don't move it.
-            // We should move it along with its files
-            console.error("rename directory containing files not implemented: " + oldPath + " to " + newPath);
-            cb(false);
-            return;
-          }
-        });
-      } else {
-        recreatePath();
-      }
     });
   }
 

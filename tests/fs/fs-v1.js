@@ -5,6 +5,18 @@ var DEBUG_FS = false;
 var fs = (function() {
   var Store = function() {
     this.map = new Map();
+
+    // Pending changes to the persistent datastore, indexed by record key.
+    //
+    // Changes can represent puts or deletes and comprise a type and (for puts)
+    // the value to write:
+    //   key: { type: "delete" } or key: { type: "put", value: <value> }
+    //
+    // We index by key, storing only the most recent change for a given key,
+    // to coalesce multiple changes, so that we always sync only the most recent
+    // change for a given record.
+    this.changesToSync = new Map();
+
     this.db = null;
   };
 
@@ -52,36 +64,17 @@ var fs = (function() {
 
   Store.prototype.setItem = function(key, value) {
     this.map.set(key, value);
-
-    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
-    if (DEBUG_FS) { console.log("put " + key + " initiated"); }
-    var objectStore = transaction.objectStore(Store.DBSTORENAME);
-    var req = objectStore.put(value, key);
-    req.onerror = function() {
-      console.error("Error putting " + key + ": " + req.error.name);
-    };
-    transaction.oncomplete = function() {
-      if (DEBUG_FS) { console.log("put " + key + " completed"); }
-    };
+    this.changesToSync.set(key, { type: "put", value: value });
   };
 
   Store.prototype.removeItem = function(key) {
-    this.map.delete(key);
-
-    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
-    if (DEBUG_FS) { console.log("delete " + key + " initiated"); }
-    var objectStore = transaction.objectStore(Store.DBSTORENAME);
-    var req = objectStore.delete(key);
-    req.onerror = function() {
-      console.error("Error deleting " + key + ": " + req.error.name);
-    };
-    transaction.oncomplete = function() {
-      if (DEBUG_FS) { console.log("delete " + key + " completed"); }
-    };
+    this.map.set(key, null);
+    this.changesToSync.set(key, { type: "delete" });
   };
 
   Store.prototype.clear = function() {
     this.map.clear();
+    this.changesToSync.clear();
 
     var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
     if (DEBUG_FS) { console.log("clear initiated"); }
@@ -96,16 +89,43 @@ var fs = (function() {
   }
 
   Store.prototype.sync = function(cb) {
-    // Process a readwrite transaction to ensure previous writes have completed,
-    // so we leave the datastore in a consistent state.  This is a bit hacky;
-    // we should instead monitor ongoing transactions and call our callback
-    // once they've all completed.
+    cb = cb || function() {};
+
+    // If there are no changes to sync, merely call the callback
+    // (in a timeout so the callback always gets called asynchronously).
+    if (this.changesToSync.size == 0) {
+      setZeroTimeout(cb);
+      return;
+    }
+
     var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
-    if (DEBUG_FS) { console.log("get \"\" initiated"); }
+    if (DEBUG_FS) { console.log("sync initiated"); }
     var objectStore = transaction.objectStore(Store.DBSTORENAME);
-    objectStore.get("");
+
+    this.changesToSync.forEach((function(change, key) {
+      var req;
+      switch(change.type) {
+        case "put":
+          req = objectStore.put(change.value, key);
+          if (DEBUG_FS) { console.log("put " + key); }
+          req.onerror = function() {
+            console.error("Error putting " + key + ": " + req.error.name);
+          };
+          break;
+        case "delete":
+          req = objectStore.delete(key);
+          if (DEBUG_FS) { console.log("delete " + key); }
+          req.onerror = function() {
+            console.error("Error deleting " + key + ": " + req.error.name);
+          };
+          break;
+      }
+    }).bind(this));
+
+    this.changesToSync.clear();
+
     transaction.oncomplete = function() {
-      if (DEBUG_FS) { console.log("get \"\" completed"); }
+      if (DEBUG_FS) { console.log("sync completed"); }
       cb();
     };
   }
@@ -327,6 +347,13 @@ var fs = (function() {
       }
       flush(fd);
     }
+
+    // After flushing to the in-memory datastore, sync it to the persistent one.
+    // We might want to decouple this from the flushAll calls, so we can do them
+    // at different interval (f.e. flushing to memory every five seconds
+    // but only syncing to the persistent datastore every minute or so), though
+    // we should continue to do both immediately on pagehide.
+    storeSync();
   }
 
   // Due to bug #227, we don't support Object::finalize(). But the Java

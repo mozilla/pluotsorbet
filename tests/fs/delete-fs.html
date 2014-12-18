@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+</head>
+
+<body style="white-space: pre-wrap">
+
+<script type="text/javascript">
+  var request = indexedDB.deleteDatabase("asyncStorage");
+
+  request.onerror = function(event) {
+    document.body.appendChild(document.createTextNode("FAIL " + request.errorCode));
+  };
+
+  request.onsuccess = function(event) {
+    document.body.appendChild(document.createTextNode("DONE"));
+  };
+</script>
+
+</body>
+
+</html>
