@@ -1,8 +1,9 @@
 .PHONY: all test tests j2me java certs app clean
 BASIC_SRCS=$(shell find . -maxdepth 1 -name "*.ts")
 JIT_SRCS=$(shell find jit -name "*.ts")
+SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 
-all: java tests j2me
+all: java tests j2me shumway
 
 test: all
 	rm -f test.log
@@ -39,6 +40,9 @@ lib: java j2me
 	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar > build/tests.jar.js
 	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
 	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/tests.jar.js > build/tests.jar.cc.js
+
+shumway: $(SHUMWAY_SRCS)
+	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
 
 tests:
 	make -C tests

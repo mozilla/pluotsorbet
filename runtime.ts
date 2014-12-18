@@ -26,6 +26,22 @@ module J2ME {
   export var linkWriter = null;
   export var initWriter = null;
 
+  declare var Shumway;
+
+  export var timeline;
+
+  if (typeof Shumway !== "undefined") {
+    timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
+  }
+
+  export function enterTimeline(name: string, data?: any) {
+    timeline && timeline.enter(name, data);
+  }
+
+  export function leaveTimeline(name?: string, data?: any) {
+    timeline && timeline.leave(name, data);
+  }
+
   export var Klasses = {
     java: {
       lang: {
@@ -664,6 +680,7 @@ module J2ME {
   }
 
   export function linkKlass(classInfo: ClassInfo) {
+    enterTimeline("linkKlass", {classInfo: classInfo});
     var mangledName = mangleClass(classInfo);
     var klass;
     classInfo.klass = klass = getKlass(classInfo);
@@ -692,6 +709,7 @@ module J2ME {
 
     linkKlassMethods(classInfo.klass);
     linkKlassFields(classInfo.klass);
+    leaveTimeline("linkKlass");
   }
 
   function findNativeMethodBinding(methodInfo: MethodInfo) {
@@ -747,7 +765,6 @@ module J2ME {
       }
       var caller = $.ctx.current();
       var callee = frame;
-      Instrument.callEnterHooks(methodInfo, caller, callee);
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
@@ -827,7 +844,13 @@ module J2ME {
         }
       }
 
+      // Save method info on the function object so that we can figure out where we are
+      // bailing out from.
       fn.methodInfo = methodInfo;
+
+      if (timeline) {
+        fn = profilingWrapper(fn, methodInfo, methodType);
+      }
 
       if (traceWriter && methodType !== MethodType.Interpreted) {
         fn = tracingWrapper(fn, methodInfo, methodType);
@@ -841,6 +864,22 @@ module J2ME {
     }
 
     linkWriter && linkWriter.outdent();
+
+    function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
+      return function () {
+        var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
+        var s = ops;
+        try {
+          enterTimeline(key);
+          var r = fn.apply(this, arguments);
+          leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);
+        } catch (e) {
+          leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);
+          throw e;
+        }
+        return r;
+      };
+    }
 
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {

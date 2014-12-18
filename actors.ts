@@ -196,7 +196,9 @@ module J2ME {
 
     sourceFile: string;
     constructor(classBytes) {
+      enterTimeline("getClassImage");
       var classImage = getClassImage(classBytes, this);
+      leaveTimeline("getClassImage");
       var cp = classImage.constant_pool;
       this.className = cp[cp[classImage.this_class].name_index].bytes;
       this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
@@ -227,6 +229,7 @@ module J2ME {
         self.fields.push(field);
       });
 
+      enterTimeline("methods");
       this.methods = [];
       classImage.methods.forEach(function (m) {
         self.methods.push(new MethodInfo({
@@ -240,6 +243,7 @@ module J2ME {
           isSynchronized: ACCESS_FLAGS.isSynchronized(m.access_flags)
         }));
       });
+      leaveTimeline("methods");
 
       var classes = this.classes = [];
       classImage.attributes.forEach(function (a) {
@@ -256,7 +260,9 @@ module J2ME {
     }
 
     public complete() {
+      enterTimeline("mangleFields");
       this._mangleFields();
+      leaveTimeline("mangleFields");
     }
 
     /**

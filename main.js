@@ -287,3 +287,111 @@ window.onload = function() {
 if (urlParams.profile && !/no|0/.test(urlParams.profile)) {
   Instrument.startProfile();
 }
+
+function requestTimelineBuffers(fn) {
+  if (J2ME.timeline) {
+    fn([J2ME.timeline]);
+    return;
+  }
+  return fn([]);
+}
+
+var profiler = (function() {
+
+  var elProfilerContainer = document.getElementById("profilerContainer");
+  var elProfilerToolbar = document.getElementById("profilerToolbar");
+  var elProfilerMessage = document.getElementById("profilerMessage");
+  var elProfilerPanel = document.getElementById("profilePanel");
+  var elBtnMinimize = document.getElementById("profilerMinimizeButton");
+  var elBtnStartStop = document.getElementById("profilerStartStop");
+
+  var controller;
+  var startTime;
+  var timerHandle;
+  var timeoutHandle;
+
+  var Profiler = function() {
+    controller = new Shumway.Tools.Profiler.Controller(elProfilerPanel);
+    elBtnStartStop.addEventListener("click", this._onStartStopClick.bind(this));
+
+    var self = this;
+    window.addEventListener("keypress", function (event) {
+      if (event.altKey && event.keyCode === 114) { // Alt + R
+        self._onStartStopClick();
+      }
+    }, false);
+  }
+
+  Profiler.prototype.start = function(maxTime, resetTimelines) {
+    window.profile = true;
+    requestTimelineBuffers(function (buffers) {
+      for (var i = 0; i < buffers.length; i++) {
+        buffers[i].reset();
+      }
+    });
+    controller.deactivateProfile();
+    maxTime = maxTime || 0;
+    elProfilerToolbar.classList.add("withEmphasis");
+    elBtnStartStop.textContent = "Stop";
+    startTime = Date.now();
+    timerHandle = setInterval(showTimeMessage, 1000);
+    if (maxTime) {
+      timeoutHandle = setTimeout(this.createProfile.bind(this), 5000);
+    }
+    showTimeMessage();
+  }
+
+  Profiler.prototype.createProfile = function() {
+    requestTimelineBuffers(function (buffers) {
+      controller.createProfile(buffers);
+      elProfilerToolbar.classList.remove("withEmphasis");
+      elBtnStartStop.textContent = "Start";
+      clearInterval(timerHandle);
+      clearTimeout(timeoutHandle);
+      timerHandle = 0;
+      timeoutHandle = 0;
+      window.profile = false;
+      showTimeMessage(false);
+    });
+  }
+
+  Profiler.prototype.openPanel = function() {
+    elProfilerContainer.classList.remove("collapsed");
+  }
+
+  Profiler.prototype.closePanel = function() {
+    elProfilerContainer.classList.add("collapsed");
+  }
+
+  Profiler.prototype.resize = function() {
+    controller.resize();
+  }
+
+  Profiler.prototype._onMinimizeClick = function(e) {
+    if (elProfilerContainer.classList.contains("collapsed")) {
+      this.openPanel();
+    } else {
+      this.closePanel();
+    }
+  }
+
+  Profiler.prototype._onStartStopClick = function(e) {
+    if (timerHandle) {
+      this.createProfile();
+      this.openPanel();
+    } else {
+      this.start(0, true);
+    }
+  }
+
+  function showTimeMessage(show) {
+    show = typeof show === "undefined" ? true : show;
+    var time = Math.round((Date.now() - startTime) / 1000);
+    elProfilerMessage.textContent = show ? "Running: " + time + " Seconds" : "";
+  }
+
+  return new Profiler();
+
+})();
+
+profiler.start(3000, false);

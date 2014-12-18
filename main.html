@@ -14,6 +14,7 @@
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
+  <script type="text/javascript" src="build/shumway.js" defer></script>
   <script type="text/javascript" src="build/j2me.js" defer></script>
   <script type="text/javascript" src="classfile/reader.js" defer></script>
   <script type="text/javascript" src="classfile/accessflags.js" defer></script>
@@ -61,7 +62,27 @@
 </head>
 
 <body>
-  <pre id="console"></pre>
+  <div>
+    <div>
+      <pre id="console"></pre>
+    </div>
+    <div>
+      <div id="profilerContainer" class="collapsed">
+        <div id="profilerToolbar" class="toolbarBox">
+          <div class="toolbarLabel">Profiler <span id="profilerMessage" class="toolbarMessage">6 Seconds</span></div>
+          <div id="profilerButtons">
+            <div id="profilerStartStop">Start</div>
+          </div>
+        </div>
+        <div id="profiler">
+          <div id="profileList">
+          </div>
+          <div id="profilePanel">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- The raw console is used for unit tests, so it's not visible by default: -->
   <pre id="raw-console" style="display: none"></pre>
