@@ -244,18 +244,11 @@ var TextEditorProvider = (function() {
             }
 
             var toImg = function(str) {
-                var firstCodePoint = str.codePointAt(0);
-                var img = firstCodePoint.toString(16);
-                var len = String.fromCodePoint(firstCodePoint).length;
-                if (str.length > len) {
-                    img += "-" + str.substr(len).codePointAt(0).toString(16);
-                }
-
-                return '<img src="style/emoji/' + img + '.png" height="' + this.font.size +
+                return '<img src="' + emoji.strToImg(str) + '" height="' + this.font.size +
                        'pt" width="' + this.font.size + 'pt" alt="' + str + '">';
             }.bind(this);
 
-            this.textEditorElem.innerHTML = content.replace(emojiRegEx(), toImg) + "\n";
+            this.textEditorElem.innerHTML = content.replace(emoji.regex(), toImg) + "\n";
         },
 
         getSelectionEnd: function() {

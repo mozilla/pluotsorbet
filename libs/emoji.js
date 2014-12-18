@@ -3,7 +3,7 @@
 
 'use strict';
 
-var emojiRegEx = (function() {
+var emoji = (function() {
   // http://www.unicode.org/Public/UNIDATA/EmojiSources.txt
   // http://developer.nokia.com/resources/library/Java/developers-guides/data-handling/emoji.html
   var regexString = [
@@ -187,8 +187,22 @@ var emojiRegEx = (function() {
     '\ud83c\udE51', // U+1F251
   ].join("|");
 
-  return function() {
+  return {
+    regex: function() {
       return new RegExp(regexString, 'g');
+    },
+    strToImg: function(str) {
+      var firstCodePoint = str.codePointAt(0);
+
+      var imgSrc = "style/emoji/" + firstCodePoint.toString(16);
+
+      var len = String.fromCodePoint(firstCodePoint).length;
+      if (str.length > len) {
+        imgSrc += "-" + str.substr(len).codePointAt(0).toString(16);
+      }
+
+      return imgSrc + ".png";
+    },
   };
 })();
 
