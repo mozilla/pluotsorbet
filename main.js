@@ -129,7 +129,7 @@ if (urlParams.downloadJAD) {
         if (exists) {
           fs.open("/app.jar", function(fd) {
             var data = fs.read(fd);
-            fs.close();
+            fs.close(fd);
             jvm.addPath("app.jar", data.buffer);
             resolve();
           });
