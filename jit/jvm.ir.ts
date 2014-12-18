@@ -303,7 +303,13 @@ module J2ME.C4.Backend {
 
   IR.JVMCheckArithmetic.prototype.compile = function (cx: Context): AST.Node {
     var value = compileValue(this.value, cx);
-    return new AST.CallExpression(new AST.Identifier("$CDZ"), [value]);
+    var check;
+    if (this.value.kind === Kind.Long) {
+      check = "$CDZL";
+    } else {
+      check = "$CDZ";
+    }
+    return new AST.CallExpression(new AST.Identifier(check), [value]);
   };
 
   IR.JVMNewArray.prototype.compile = function (cx: Context): AST.Node {

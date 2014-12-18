@@ -3,6 +3,16 @@ var $: J2ME.Runtime; // The currently-executing runtime.
 interface Math {
   fround(value: number): number;
 }
+interface Long {
+  isZero(): boolean;
+}
+declare var Long: {
+  new (low: number, high: number): Long;
+  ZERO: Long;
+  fromBits(lowBits: number, highBits: number): Long;
+  fromInt(value: number);
+  fromNumber(value: number);
+}
 
 declare var throwHelper;
 declare var throwPause;
@@ -11,7 +21,6 @@ declare var throwYield;
 module J2ME {
   declare var Native, Override;
   declare var VM;
-  declare var Long;
   declare var Instrument;
   export var traceWriter = null;
   export var linkWriter = null;
@@ -1021,7 +1030,15 @@ module J2ME {
   }
 
   export function checkDivideByZero(value: number) {
-    // ...
+    if (value === 0) {
+      throw $.ctx.createException("java/lang/ArithmeticException", "/ by zero");
+    }
+  }
+
+  export function checkDivideByZeroLong(value: Long) {
+    if (value.isZero()) {
+      throw $.ctx.createException("java/lang/ArithmeticException", "/ by zero");
+    }
   }
 }
 
@@ -1050,6 +1067,7 @@ var $S = function(str: string) {
   return $.newStringConstant(str);
 };
 var $CDZ = J2ME.checkDivideByZero;
+var $CDZL = J2ME.checkDivideByZeroLong;
 
 var $ME = function monitorEnter(object: J2ME.java.lang.Object) {
   console.info("ENTER " + J2ME.toDebugString(object));

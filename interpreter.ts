@@ -1,6 +1,5 @@
 module J2ME {
   declare var util;
-  declare var Long;
   declare var JavaException;
   declare var Instrument;
 
