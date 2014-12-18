@@ -109,7 +109,8 @@ module J2ME {
 
   export var phase = ExecutionPhase.Runtime;
 
-  declare var internedStrings: Map<string, java.lang.String>;
+  export var internedStrings: Map<string, java.lang.String> = new Map<string, java.lang.String>();
+
   declare var util;
 
   import assert = J2ME.Debug.assert;
@@ -276,7 +277,7 @@ module J2ME {
       }
     }
 
-    newStringConstant(s): java.lang.String {
+    newStringConstant(s: string): java.lang.String {
       if (internedStrings.has(s)) {
         return internedStrings.get(s);
       }
@@ -690,6 +691,7 @@ module J2ME {
     linkWriter && linkWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
 
     linkKlassMethods(classInfo.klass);
+    linkKlassFields(classInfo.klass);
   }
 
   function findNativeMethodBinding(methodInfo: MethodInfo) {
@@ -771,6 +773,30 @@ module J2ME {
     //  }
     //  return null;
     //}
+  }
+
+  /**
+   * Creates convenience getters / setters on Java objects.
+   */
+  function linkKlassFields(klass: Klass) {
+    var classInfo = klass.classInfo;
+    var fields = classInfo.fields;
+    var classBindings = Bindings[klass.classInfo.className];
+    if (classBindings && classBindings.fields) {
+      for (var i = 0; i < fields.length; i++) {
+        var field = fields[i];
+        var key = field.name + "." + field.signature;
+        var symbols = field.isStatic ? classBindings.fields.staticSymbols :
+                                       classBindings.fields.instanceSymbols;
+        if (symbols && symbols[key]) {
+          assert(!field.isStatic, "Static fields are not supported yet.");
+          var symbolName = symbols[key];
+          var object = field.isStatic ? klass : klass.prototype;
+          assert (!object.hasOwnProperty(symbolName), "Should not overwrite existing properties.");
+          ObjectUtilities.defineNonEnumerableForwardingProperty(object, symbolName, field.mangledName);
+        }
+      }
+    }
   }
 
   function linkKlassMethods(klass: Klass) {

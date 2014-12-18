@@ -74,17 +74,17 @@ public class Field extends Canvas implements Runnable {
     /**
      * Time spent moving objects and computing collisions.
      */
-    //public static long computeavg;
+    public static long computeavg;
 
     /**
      * Time spent painting screens.
      */
-    //public static long paintavg;
+    public static long paintavg;
 
     /**
      * Number of game frames since beginning.
      */
-    //public static long frames;
+    public static long frames;
 
     private byte _state;         // The current game state
     private Slideshow _nextSlide;   // A TimeTask used to trigger the transition to the next state.
@@ -109,9 +109,9 @@ public class Field extends Canvas implements Runnable {
     private boolean _isRepeatedKey; // True if _lastKeyPressed was obtained through keyRepeated().
 
     public Field() {
-        //computeavg = 0;
-        //paintavg = 0;
-        //frames = 0;
+        computeavg = 0;
+        paintavg = 0;
+        frames = 0;
 
         // Determine the dimensions of the Canvas.
         // The game has been developed using the j2mewtk's
@@ -377,7 +377,7 @@ public class Field extends Canvas implements Runnable {
         try {
             while (!_paused) {
                 long time1 = System.currentTimeMillis();
-                //long time2;
+                long time2;
                 long time3;
                 long ellapsed = 0;
                 if (!_frozen) {
@@ -440,8 +440,8 @@ public class Field extends Canvas implements Runnable {
                    }
 
                     // Determine the time spent to compute the frame.
-                    //time2 = System.currentTimeMillis();
-                    //computeavg += (time2 - time1);
+                    time2 = System.currentTimeMillis();
+                    computeavg += (time2 - time1);
 
                     // Force a screen refresh.
                     repaint();
@@ -449,17 +449,22 @@ public class Field extends Canvas implements Runnable {
 
                     // Determine the time spent to draw the frame.
                     time3 = System.currentTimeMillis();
-                    //paintavg += (time3 - time2);
-                    //frames++;
+                    paintavg += (time3 - time2);
+                    frames++;
 
                     // Determine the total time for the frame.
                     ellapsed = time3 - time1;
                 }
                 // Sleep for a while (at least 20ms)
-                try {
-                  Thread.currentThread().sleep(Math.max(50 - ellapsed, 20));
-                } catch(java.lang.InterruptedException e) {
-                }
+                // try {
+                  // Thread.currentThread().sleep(Math.max(50 - ellapsed, 20));
+                  Thread.yield();
+                // } catch(java.lang.InterruptedException e) {
+                // }
+              if (frames % 60 == 0) {
+                System.out.println("computeavg = " + (Field.computeavg / Field.frames));
+                System.out.println("paintavg = " + (Field.paintavg / Field.frames));
+              }
             }
         } catch (Exception e) {
             e.printStackTrace();

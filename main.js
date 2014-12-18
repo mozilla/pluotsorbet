@@ -252,8 +252,25 @@ window.onload = function() {
    J2ME.interpreterCounter.clear();
  };
  document.getElementById("dumpCounters").onclick = function() {
-   J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+   if (J2ME.interpreterCounter) {
+     J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+   }
+   if (nativeCounter) {
+     nativeCounter.traceSorted(new J2ME.IndentingWriter());
+   }
  };
+  document.getElementById("dumpCountersTime").onclick = function() {
+    J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
+    nativeCounter && nativeCounter.clear();
+    setTimeout(function () {
+      if (J2ME.interpreterCounter) {
+        J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+      }
+      if (nativeCounter) {
+        nativeCounter.traceSorted(new J2ME.IndentingWriter());
+      }
+    }, 1000);
+  };
  document.getElementById("profile").onclick = function() {
    if (getIsOff(this)) {
      Instrument.startProfile();
