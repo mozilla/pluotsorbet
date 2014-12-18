@@ -303,6 +303,11 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getCaretPosition(), 0);
         th.check(textEditor.size(), 1);
 
+        // Test setting maxSize with emoji
+        textEditor.setContent(code + code + code);
+        textEditor.setMaxSize(2);
+        th.check(textEditor.size(), 2);
+        th.check(textEditor.getCaretPosition(), 2);
     }
 
     private native boolean isTextEditorReallyFocused();
