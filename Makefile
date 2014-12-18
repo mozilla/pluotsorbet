@@ -10,7 +10,7 @@ test: all
 	cd tests && python httpsServer.py &
 	cd tests && python sslEchoServer.py &
 	cd tests && python waitServers.py
-	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
+	casperjs --engine=slimerjs test `pwd`/tests/automation.js | tee test.log
 	mkdir test-profile-fs-v1
 	casperjs --engine=slimerjs -profile `pwd`/test-profile-fs-v1 `pwd`/tests/fs/make-fs-v1.js >> test.log
 	casperjs --engine=slimerjs test -profile `pwd`/test-profile-fs-v1 `pwd`/tests/automation.js >> test.log
