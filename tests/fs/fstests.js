@@ -132,6 +132,20 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  fs.create("/non-existent-dir/tmp", new Blob(), function(created) {
+    is(created, false, "can't create a file in a non-existent directory");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.exists("/non-existent-dir", function(exists) {
+    is(exists, false, "non-existent directory still doesn't exist");
+    next();
+  });
+});
+
+tests.push(function() {
   fs.mkdir("/tmp", function(created) {
     is(created, false, "can't create a directory with the same path of an already existing directory");
     next();
@@ -141,6 +155,13 @@ tests.push(function() {
 tests.push(function() {
   fs.create("/tmp/tmp.txt", new Blob(), function(created) {
     is(created, true, "created a file");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.create("/tmp/tmp.txt", new Blob(), function(created) {
+    is(created, false, "can't create a file that already exists");
     next();
   });
 });
@@ -183,7 +204,7 @@ tests.push(function() {
 tests.push(function() {
   fs.list("/", function(files) {
     ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files is an array with 1 element");
+    is(files.length, 1, "files is an array with 1 element: " + files);
     is(files[0], "tmp", "tmp is in files");
     next();
   })
@@ -253,8 +274,8 @@ tests.push(function() {
   fs.list("/tmp/ciao", function(files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files has 2 entries");
-    is(files[0], "tmp.txt", "tmp.txt is in files");
-    is(files[1], "tmp", "tmp is in files");
+    is(files[0], "tmp", "tmp is in files");
+    is(files[1], "tmp.txt", "tmp.txt is in files");
     next();
   })
 });

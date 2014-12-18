@@ -3,34 +3,15 @@
 
 'use strict';
 
-function load(file, responseType) {
-  return new Promise(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", file, true);
-    xhr.responseType = responseType;
-    xhr.onload = function () {
-      resolve(xhr.response);
-    };
-    xhr.onerror = function() {
-      reject();
-    };
-    xhr.send(null);
-  });
-}
-
-function loadScript(path) {
-  return new Promise(function(resolve, reject) {
-    var element = document.createElement('script');
-    element.setAttribute("type", "text/javascript");
-    element.setAttribute("src", path);
-    document.getElementsByTagName("head")[0].appendChild(element);
-    element.onload = resolve;
-  });
-}
-
 // To launch the unit tests: ?main=RunTests
 // To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
+
+// The base directory of the app, relative to the current page.  Normally this
+// is the directory from which the page was loaded, but some test pages load
+// from a subdirectory, like tests/fs/, and they set this accordingly such that
+// code loads files, like libs/fs-init.js, can load them from the right place.
+var APP_BASE_DIR = "./";
 
 var jvm = new JVM();
 
@@ -59,50 +40,6 @@ if (urlParams.pushConn && urlParams.pushMidlet) {
     suiteId: "1"
   });
 }
-
-var initFS = new Promise(function(resolve, reject) {
-  fs.init(resolve);
-}).then(function() {
-  var fsPromises = [
-    new Promise(function(resolve, reject) {
-      fs.mkdir("/Persistent", resolve);
-    }),
-
-    new Promise(function(resolve, reject) {
-      fs.exists("/_main.ks", function(exists) {
-        if (exists) {
-          resolve();
-        } else {
-          load("certs/_main.ks", "blob").then(function(data) {
-            fs.create("/_main.ks", data, function() {
-              resolve();
-            });
-          });
-        }
-      });
-    }),
-  ];
-
-  if (MIDP.midletClassName == "RunTests") {
-    fsPromises.push(
-      new Promise(function(resolve, reject) {
-        fs.exists("/_test.ks", function(exists) {
-          if (exists) {
-            resolve();
-          } else {
-            load("certs/_test.ks", "blob").then(function(data) {
-              fs.create("/_test.ks", data, function() {
-                resolve();
-              });
-            });
-          }
-        });
-      })
-    );
-  }
-
-  return Promise.all(fsPromises);
-});
 
 // Mobile info gets accessed a lot, so we cache it on startup.
 var mobileInfo;
@@ -192,7 +129,7 @@ if (urlParams.downloadJAD) {
         if (exists) {
           fs.open("/app.jar", function(fd) {
             var data = fs.read(fd);
-            fs.close();
+            fs.close(fd);
             jvm.addPath("app.jar", data.buffer);
             resolve();
           });
