@@ -122,8 +122,10 @@ module J2ME {
           return true;
         var zip = classFiles[name];
         if (fileName in zip.directory) {
+          enterTimeline("ZIP", {file: fileName});
           var bytes = zip.read(fileName);
           data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+          leaveTimeline("ZIP");
         }
         return !data;
       });

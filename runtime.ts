@@ -13,9 +13,26 @@ module J2ME {
   declare var VM;
   declare var Long;
   declare var Instrument;
+
   export var traceWriter = null;
   export var linkWriter = null;
   export var initWriter = null;
+
+  declare var Shumway;
+
+  export var timeline;
+
+  if (typeof Shumway !== "undefined") {
+    timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
+  }
+
+  export function enterTimeline(name: string, data?: any) {
+    timeline && timeline.enter(name, data);
+  }
+
+  export function leaveTimeline(name?: string, data?: any) {
+    timeline && timeline.leave(name, data);
+  }
 
   export var Klasses = {
     java: {
