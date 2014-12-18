@@ -160,7 +160,7 @@
     push: function(item) {
       if (item.matchesCurrentFilters()) {
         this.flush(); // Preserve order w/r/t console.print().
-        windowConsole[item.levelName].apply(windowConsole, item.rawArguments);
+        windowConsole[item.levelName].apply(windowConsole, item.args);
       }
     },
 
