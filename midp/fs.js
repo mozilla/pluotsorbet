@@ -203,7 +203,7 @@ Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)
 });
 
 Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V", function() {
-    var lookupId = this.class.getField("I.lookupId.I").get(this);
+    var lookupId = this.klass.classInfo.getField("I.lookupId.I").get(this);
     if (MIDP.RecordStoreCache[lookupId] &&
         --MIDP.RecordStoreCache[lookupId].refCount <= 0) {
         // Set to null instead of removing from array to maintain
@@ -318,7 +318,7 @@ function(jPath, filterArray, includeHidden) {
 
             files = files.filter(regexp.test.bind(regexp));
 
-            var filesArray = util.newArray("[[B", files.length);
+            var filesArray = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, files.length);
 
             var added = 0;
 
@@ -426,7 +426,7 @@ Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", funct
     });
 }, true);
 
-Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(path, newLength, _) {
+Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(path, newLength) {
     return new Promise(function(resolve, reject) {
         fs.open(util.decodeUtf8(path), function(fd) {
           if (fd == -1) {
@@ -451,7 +451,7 @@ Native.create("com/ibm/oti/connection/file/FCInputStream.availableImpl.(I)I", fu
     return fs.getsize(fd) - fs.getpos(fd);
 });
 
-Native.create("com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J", function(count, _, fd) {
+Native.create("com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J", function(count, fd) {
     var curpos = fs.getpos(fd);
     var size = fs.getsize(fd);
     if (curpos + count.toNumber() > size) {
@@ -523,7 +523,7 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", funct
     });
 }, true);
 
-Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I", function(jPath, offset, _) {
+Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I", function(jPath, offset) {
     var path = util.decodeUtf8(jPath);
 
     return new Promise(function(resolve, reject) {
@@ -642,7 +642,7 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", func
 });
 
 Native.create("javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;", function() {
-    var array = util.newArray("[Ljava/lang/String;", 1);
-    array[0] = util.newString("");
+    var array = J2ME.newStringArray(1);
+    array[0] = J2ME.newString("");
     return array;
 });

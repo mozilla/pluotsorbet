@@ -117,6 +117,7 @@ public class TestInterIsolateMutex implements Testlet {
                         th.check(true, "Mutex is locked by different Isolate");
                         break;
                     }
+                    Thread.yield();
                 }
             }
 

@@ -357,6 +357,7 @@ ImagePlayer.prototype.realize = function() {
         this.image.onerror = function() {
             reject(new JavaException("javax/microedition/media/MediaException", "Failed to load image"));
         };
+
         if (this.url.startsWith("file")) {
             fs.open(this.url.substring(7), (function(fd) {
                 var imgData = fs.read(fd);
@@ -969,7 +970,7 @@ Native.create("com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z", fun
     return true;
 });
 
-Native.create("com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V", function(handle, contentSize, _) {
+Native.create("com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V", function(handle, contentSize) {
     var player = Media.PlayerCache[handle];
     player.wholeContentSize = contentSize.toNumber();
 });

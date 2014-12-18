@@ -1,6 +1,8 @@
-.PHONY: all test tests java certs app clean
+.PHONY: all test tests j2me java certs app clean
+BASIC_SRCS=$(shell find . -maxdepth 1 -name "*.ts")
+JIT_SRCS=$(shell find jit -name "*.ts")
 
-all: java tests
+all: java tests j2me
 
 test: all
 	rm -f test.log
@@ -21,6 +23,22 @@ test: all
 	then false; \
 	else true; \
 	fi
+
+build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
+	@echo "Building J2ME"
+	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js
+
+build/jsc.js: jsc.ts build/j2me.js
+	@echo "Building J2ME JSC CLI"
+	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out build/jsc.js
+
+j2me: build/j2me.js build/jsc.js
+
+lib: java j2me
+	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar > build/classes.jar.js
+	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar > build/tests.jar.js
+	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
+	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/tests.jar.js > build/tests.jar.cc.js
 
 tests:
 	make -C tests

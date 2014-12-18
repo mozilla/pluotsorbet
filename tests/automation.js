@@ -89,14 +89,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
                 }
             }
         });
-    }
-    casper
-    .start("http://localhost:8000/index.html")
-    .withFrame(0, basicUnitTests);
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?numCalled=1000")
-    .withFrame(0, basicUnitTests);
+    });
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=page,raw")

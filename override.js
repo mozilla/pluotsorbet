@@ -11,39 +11,49 @@ function JavaException(className, message) {
 }
 JavaException.prototype = Object.create(Error.prototype);
 
-function boolReturnType(stack, ret) {
+function boolReturnType(ret) {
+  var value;
   if (ret) {
-    stack.push(1);
+    value = 1;
   } else {
-    stack.push(0);
+    value = 0;
   }
+  return value;
 }
+boolReturnType.slotSize = 1;
 
-function doubleReturnType(stack, ret) {
-  // double types require two stack frames
-  stack.push2(ret);
+function doubleReturnType(ret) {
+  return ret;
 }
+doubleReturnType.slotSize = 2;
 
-function voidReturnType(stack, ret) {
+function voidReturnType(ret) {
   // no-op
 }
+voidReturnType.slotSize = 0;
 
-function stringReturnType(stack, ret) {
+function stringReturnType(ret) {
+  var value;
   if (typeof ret === "string") {
-    stack.push(util.newString(ret));
+    value = J2ME.newString(ret);
   } else {
     // already a native string or null
-    stack.push(ret);
+    value = ret;
   }
+  return value;
 }
+stringReturnType.slotSize = 1;
 
-function defaultReturnType(stack, ret) {
-    stack.push(ret);
+function defaultReturnType(ret) {
+    return ret;
 }
+defaultReturnType.slotSize = 1;
 
-function intReturnType(stack, ret) {
-    stack.push(ret | 0);
+function intReturnType(ret) {
+    var value = ret | 0;
+    return value;
 }
+intReturnType.slotSize = 1;
 
 function getReturnFunction(sig) {
   var retType = sig.substring(sig.lastIndexOf(")") + 1);
@@ -61,26 +71,61 @@ function getReturnFunction(sig) {
   return fxn;
 }
 
-function executePromise(stack, ret, doReturn, ctx, key) {
-  if (ret && ret.then) { // ret.constructor.name == "Promise"
-    ret.then(function(res) {
-      if (Instrument.profiling) {
-        Instrument.exitAsyncNative(key, ret);
-      }
-
-      doReturn(stack, res);
-    }, function(e) {
-      ctx.raiseException(e.javaClassName, e.message);
-    }).then(ctx.start.bind(ctx));
-
+function executePromise(ret, doReturn, ctx, key) {
+  ret.then(function(res) {
     if (Instrument.profiling) {
-      Instrument.enterAsyncNative(key, ret);
+      Instrument.exitAsyncNative(key, ret);
     }
+    var stack = ctx.current().stack;
+    var convertedValue = doReturn(res);
+    switch (doReturn.slotSize) {
+      case 0:
+        break;
+      case 1:
+        stack.push(convertedValue);
+        break;
+      case 2:
+        stack.push2(convertedValue);
+        break;
+    }
+  }, function(e) {
+    var syntheticMethod = new MethodInfo({
+      name: "RaiseExceptionSynthetic",
+      signature: "()V",
+      isStatic: true,
+      classInfo: {
+        className: e.javaClassName,
+        vmc: {},
+        vfc: {},
+        constant_pool: [
+          null,
+          {tag: TAGS.CONSTANT_Class, name_index: 2},
+          {bytes: e.javaClassName},
+          {tag: TAGS.CONSTANT_String, string_index: 4},
+          {bytes: e.message},
+          {tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 6},
+          {name_index: 7, signature_index: 8},
+          {bytes: "<init>"},
+          {bytes: "(Ljava/lang/String;)V"},
+        ],
+      },
+      code: new Uint8Array([
+        0xbb, 0x00, 0x01, // new <idx=1>
+        0x59,             // dup
+        0x12, 0x03,       // ldc <idx=2>
+        0xb7, 0x00, 0x05, // invokespecial <idx=5>
+        0xbf              // athrow
+      ])
+    });
+    var callee = new Frame(syntheticMethod, [], 0);
+    ctx.frames.push(callee);
+  }).then(ctx.resume.bind(ctx));
 
-    throw VM.Pause;
-  } else {
-    doReturn(stack, ret);
+  if (Instrument.profiling) {
+    Instrument.enterAsyncNative(key, ret);
   }
+
+  $.pause();
 }
 
 /**
@@ -111,33 +156,25 @@ function createAlternateImpl(object, key, fn, usesPromise) {
   var doReturn = getReturnFunction(key);
   var postExec = usesPromise ? executePromise : doReturn;
 
-  object[key] = function(ctx, stack, isStatic) {
-    var args = new Array(numArgs);
-
-    args[numArgs - 1] = ctx;
-
-    // NOTE: If your function accepts a Long/Double, you must specify
-    // two arguments (since they take up two stack positions); we
-    // could sugar this someday.
-    for (var i = numArgs - 2; i >= 0; i--) {
-      args[i] = stack.pop();
-    }
-
+  object[key] = function() {
+    var ctx = $.ctx;
     try {
-      var self = isStatic ? null : stack.pop();
-      var ret = fn.apply(self, args);
-      postExec(stack, ret, doReturn, ctx, key);
+      var args = Array.prototype.slice.apply(arguments);
+      args.push(ctx);
+      var ret = fn.apply(this, args);
+      return postExec(ret, doReturn, ctx, key);
     } catch(e) {
-      if (e === VM.Pause || e === VM.Yield) {
-        throw e;
-      } else if (e.name === "TypeError") {
+      if (e.name === "TypeError") {
         // JavaScript's TypeError is analogous to a NullPointerException.
-        ctx.raiseExceptionAndYield("java/lang/NullPointerException", e);
+        console.log(e.stack);
+        throw ctx.createException("java/lang/NullPointerException", e);
       } else if (e.javaClassName) {
-        ctx.raiseExceptionAndYield(e.javaClassName, e.message);
+        throw ctx.createException(e.javaClassName, e.message);
+      } else if (e.klass) {
+        throw e;
       } else {
         console.error(e, e.stack);
-        ctx.raiseExceptionAndYield("java/lang/RuntimeException", e);
+        throw ctx.createException("java/lang/RuntimeException", e);
       }
     }
   };
@@ -167,35 +204,35 @@ Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, 
     return;
   }
 
-  var count = this.class.getField("I.count.I").get(this);
-  var buf = this.class.getField("I.buf.[B").get(this);
+  var count = this.klass.classInfo.getField("I.count.I").get(this);
+  var buf = this.klass.classInfo.getField("I.buf.[B").get(this);
 
   var newcount = count + len;
   if (newcount > buf.length) {
-    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
-    this.class.getField("I.buf.[B").set(this, buf);
+    this.klass.classInfo.getField("I.buf.[B").set(this, buf);
   }
 
   buf.set(b.subarray(off, off + len), count);
-  this.class.getField("I.count.I").set(this, newcount);
+  this.klass.classInfo.getField("I.count.I").set(this, newcount);
 });
 
 Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(value) {
-  var count = this.class.getField("I.count.I").get(this);
-  var buf = this.class.getField("I.buf.[B").get(this);
+  var count = this.klass.classInfo.getField("I.count.I").get(this);
+  var buf = this.klass.classInfo.getField("I.buf.[B").get(this);
 
   var newcount = count + 1;
   if (newcount > buf.length) {
-    var newbuf = util.newPrimitiveArray("B", Math.max(buf.length << 1, newcount));
+    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
-    this.class.getField("I.buf.[B").set(this, buf);
+    this.klass.classInfo.getField("I.buf.[B").set(this, buf);
   }
 
   buf[count] = value;
-  this.class.getField("I.count.I").set(this, newcount);
+  this.klass.classInfo.getField("I.count.I").set(this, newcount);
 });
 
 Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(buf) {
@@ -248,7 +285,7 @@ Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(b, off, le
   return len;
 });
 
-Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(long, _) {
+Override.create("java/io/ByteArrayInputStream.skip.(J)J", function(long) {
   var n = long.toNumber();
 
   if (this.pos + n > this.count) {
@@ -286,14 +323,14 @@ Override.create("com/sun/midp/security/Permissions.forDomain.(Ljava/lang/String;
   var NUMBER_OF_PERMISSIONS = 61;
   var ALLOW = 1;
 
-  var maximums = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
-  var defaults = util.newPrimitiveArray("B", NUMBER_OF_PERMISSIONS);
+  var maximums = J2ME.newByteArray(NUMBER_OF_PERMISSIONS);
+  var defaults = J2ME.newByteArray(NUMBER_OF_PERMISSIONS);
 
   for (var i = 0; i < NUMBER_OF_PERMISSIONS; i++) {
     maximums[i] = defaults[i] = ALLOW;
   }
 
-  var permissions = util.newArray("[[B", 2);
+  var permissions = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, 2);
   permissions[0] = maximums;
   permissions[1] = defaults;
 

@@ -47,7 +47,8 @@ var getClassImage = function(classBytes) {
                         for(var i=0; i<attributes_count; i++) {
                             var attribute_name_index = reader.read16();
                             var attribute_length = reader.read32();
-                            var info = reader.readBytes(attribute_length);
+                            // var info = reader.readBytes(attribute_length);
+                            var info = getAttributes(attribute_name_index, reader.readBytes(attribute_length));
                             attribute.attributes.push({ attribute_name_index: attribute_name_index, info: info });
                         }
                         return attribute;
@@ -55,6 +56,18 @@ var getClassImage = function(classBytes) {
                     case ATTRIBUTE_TYPES.SourceFile:
                         attribute.type = ATTRIBUTE_TYPES.SourceFile;
                         attribute.sourcefile_index = reader.read16();
+                        return attribute;
+
+                    case ATTRIBUTE_TYPES.LineNumberTable:
+                        attribute.type = ATTRIBUTE_TYPES.LineNumberTable;
+                        var line_number_table_length = reader.read16();
+                        attribute.line_number_table = [];
+                        for (var i=0; i<line_number_table_length; i++) {
+                            attribute.line_number_table.push({
+                                start_pc: reader.read16(),
+                                line_number: reader.read16()
+                            });
+                        }
                         return attribute;
 
                     case ATTRIBUTE_TYPES.Exceptions:
@@ -87,6 +100,10 @@ var getClassImage = function(classBytes) {
                     case ATTRIBUTE_TYPES.Deprecated:
                         attribute.type = ATTRIBUTE_TYPES.Deprecated;
                         return attribute;
+
+                  case ATTRIBUTE_TYPES.StackMap:
+                    attribute.type = ATTRIBUTE_TYPES.StackMap;
+                    return attribute;
 
                     default:
                         throw new Error("This attribute type is not supported yet. [" + JSON.stringify(item) + "]");

@@ -11,27 +11,22 @@
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
+  <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
+  <script type="text/javascript" src="build/j2me.js" defer></script>
   <script type="text/javascript" src="classfile/reader.js" defer></script>
   <script type="text/javascript" src="classfile/accessflags.js" defer></script>
   <script type="text/javascript" src="classfile/attributetypes.js" defer></script>
   <script type="text/javascript" src="classfile/classfile.js" defer></script>
   <script type="text/javascript" src="classfile/tags.js" defer></script>
-  <script type="text/javascript" src="classinfo.js" defer></script>
-  <script type="text/javascript" src="arrays.js" defer></script>
   <script type="text/javascript" src="signature.js" defer></script>
   <script type="text/javascript" src="opcodes.js" defer></script>
-  <script type="text/javascript" src="classes.js" defer></script>
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="string.js" defer></script>
   <script type="text/javascript" src="frame.js" defer></script>
-  <script type="text/javascript" src="vm.js" defer></script>
-  <script type="text/javascript" src="runtime.js" defer></script>
   <script type="text/javascript" src="instrument.js" defer></script>
-  <script type="text/javascript" src="context.js" defer></script>
-  <script type="text/javascript" src="jvm.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
   <script type="text/javascript" src="libs/long.js" defer></script>
   <script type="text/javascript" src="libs/encoding.js" defer></script>
@@ -60,6 +55,7 @@
   <script type="text/javascript" src="midp/device_control.js" defer></script>
   <script type="text/javascript" src="game-ui.js" defer></script>
   <script type="text/javascript" src="desktop-ui.js" defer></script>
+  <script type="text/javascript" src="compatibility.js" defer></script>
   <script type="text/javascript" src="main.js" defer></script>
   <script type="text/javascript" src="midlet.js" defer></script>
 </head>
@@ -92,6 +88,9 @@
       <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
       <button id="profile">Profile: OFF</button>
+      <button id="clearCounters">Clear Counters</button>
+      <button id="dumpCounters">Dump Counters</button>
+      <button id="dumpCountersTime">Dump Counters Time</button>
     </section>
   </div>
   <div id="display"><canvas id="canvas"></canvas></div>

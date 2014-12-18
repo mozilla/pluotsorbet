@@ -41,7 +41,7 @@ if ("gamepad" in urlParams && !/no|0/.test(urlParams.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
 
-var jars = ["java/classes.jar"];
+var jars = ["java/classes.jar", "bench/scimark2.jar"];
 
 if (MIDP.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
@@ -117,7 +117,7 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 var loadingPromises = [initFS, getMobileInfo];
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
-    jvm.addPath(jar, data);
+    CLASSES.addPath(jar, data);
   }));
 });
 
@@ -224,8 +224,8 @@ if (MIDP.midletClassName == "RunTests") {
 }
 
 Promise.all(loadingPromises).then(function() {
-  jvm.initializeBuiltinClasses();
-  jvm.startIsolate0(main, urlParams.args);
+  CLASSES.initializeBuiltinClasses();
+  jvm.startIsolate0(main, []);
 });
 
 function getIsOff(button) {
@@ -248,6 +248,29 @@ window.onload = function() {
    VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
    toggle(this);
  };
+ document.getElementById("clearCounters").onclick = function() {
+   J2ME.interpreterCounter.clear();
+ };
+ document.getElementById("dumpCounters").onclick = function() {
+   if (J2ME.interpreterCounter) {
+     J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+   }
+   if (nativeCounter) {
+     nativeCounter.traceSorted(new J2ME.IndentingWriter());
+   }
+ };
+  document.getElementById("dumpCountersTime").onclick = function() {
+    J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
+    nativeCounter && nativeCounter.clear();
+    setTimeout(function () {
+      if (J2ME.interpreterCounter) {
+        J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+      }
+      if (nativeCounter) {
+        nativeCounter.traceSorted(new J2ME.IndentingWriter());
+      }
+    }, 1000);
+  };
  document.getElementById("profile").onclick = function() {
    if (getIsOff(this)) {
      Instrument.startProfile();

@@ -3,6 +3,10 @@
 
 'use strict';
 
+function check() {
+
+}
+
 if (scriptArgs.length !== 1) {
   print("error: One main class name must be specified.");
   print("usage: jsshell <main class name>");
@@ -44,7 +48,12 @@ var document = {
       },
       getContext: function() {
       },
+      getBoundingClientRect: function() {
+        return { top: 0, left: 0, width: 0, height: 0 };
+      }
     };
+  },
+  addEventListener: function() {
   },
 };
 
@@ -53,27 +62,41 @@ var urlParams = {
   args: "",
 };
 
-load("jvm.js", "classes.js", "libs/zipfile.js", "classinfo.js", "classfile/classfile.js",
-     "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js", "runtime.js",
-     "context.js", "libs/encoding.js", "util.js", "frame.js", "arrays.js",
-     "classfile/accessflags.js", "instrument.js", "vm.js", "signature.js", "opcodes.js",
-     "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
-     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
+try {
+  load("libs/zipfile.js", "blackBox.js", "build/j2me.js", "classfile/classfile.js",
+       "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js",
+       "libs/encoding.js", "util.js", "frame.js",
+       "classfile/accessflags.js", "instrument.js", "signature.js", "opcodes.js",
+       "override.js", "native.js", "tests/override.js", 
+       "string.js", "libs/console.js", "midp/midp.js",
+       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "build/compiled.js");
 
-var dump = print;
-var console = window.console;
+  var dump = putstr;
+  var console = window.console;
 
-var start = dateNow();
+  CLASSES.addSourceDirectory("java/cldc1.1.1");
+  CLASSES.addSourceDirectory("java/midp");
+  CLASSES.addSourceDirectory("bench/scimark2src");
 
-var jvm = new JVM();
-jvm.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-jvm.addPath("java/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-jvm.initializeBuiltinClasses();
+  CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
+  CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  CLASSES.addPath("bench/scimark2.jar", snarf("bench/scimark2.jar", "binary").buffer);
 
-print("INITIALIZATION TIME: " + (dateNow() - start));
+  CLASSES.initializeBuiltinClasses();
 
-start = dateNow();
+  var start = dateNow();
+  var jvm = new JVM();
 
-jvm.startIsolate0(scriptArgs[0], urlParams.args);
+  print("INITIALIZATION TIME: " + (dateNow() - start));
 
-print("RUNNING TIME: " + (dateNow() - start));
+  start = dateNow();
+  var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
+
+  print("RUNNING TIME: " + (dateNow() - start));
+
+  // J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
+
+} catch (x) {
+  print(x);
+  print(x.stack);
+}
