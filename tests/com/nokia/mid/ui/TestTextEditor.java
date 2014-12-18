@@ -266,11 +266,17 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getCaretPosition(), 0);
 
         // An emoji with 2 codepoints turns into another emoji with 1 codepoint if
-        // you press backspace (or call delete on the second codepoint).
-        // This looks weird to me, but this is how the Nokia implementation works.
+        // you press backspace (or call delete on one of the codepoints).
+        // This looks weird to me, but it's how the Nokia implementation works.
         // Also, the size() and the getCaretPosition() methods return a number
         // related to the number of codepoints present, not the number of emoji.
         // So, in theory, you could set the caret position in the middle of an emoji.
+        // Even if we don't want to do this when the user presses backspace (and indeed
+        // we aren't doing it), we still want to keep the behavior of the API compatible
+        // to the Nokia one. So we allow setting the caret position in the middle of an
+        // emoji, we allow removing one of the two codepoints with the |delete| method and
+        // we consider one emoji with two codepoints as taking two spaces in the TextEditor.
+        // Hence, we're testing this behavior here.
         textEditor.setContent(getSurrogatePairs(checkCodeFormat("1f1ee1f1f9")));
         th.check(textEditor.getCaretPosition(), 2);
         th.check(textEditor.size(), 2);

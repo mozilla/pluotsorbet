@@ -960,7 +960,7 @@ var currentlyFocusedTextEditor;
 
         this.getCaretPosition = function() {
             if (this.textEditor.getParent()) {
-                return this.textEditor.getSelectionStart();
+                return this.textEditor.getSelectionStart().index;
             }
             if (this.caretPosition !== null) {
                 return this.caretPosition;
@@ -1002,7 +1002,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.detachNativeImpl.()V", function() {
-        this.caretPosition = this.textEditor.getSelectionStart();
+        this.caretPosition = this.textEditor.getSelectionStart().index;
         this.textEditor.setParent(null);
     });
 

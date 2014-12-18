@@ -147,16 +147,6 @@ var TextEditorProvider = (function() {
         },
     }
 
-    function countNewlines(str) {
-        var count = 0;
-        for (var i = 0; i < str.length; i++) {
-            if (str.charCodeAt(i) == 10) {
-                count++;
-            }
-        }
-        return count;
-    }
-
     function TextAreaEditor() {
         this.textEditorElem = document.createElement('div');
         this.textEditorElem.contentEditable = true;
@@ -182,16 +172,26 @@ var TextEditorProvider = (function() {
             if (e.keyCode == 8) {
                 var range = this.getSelectionRange();
 
-                if (range[0] != range[1]) {
+                if (range[0].index != range[1].index) {
                     // If some text has been selected, remove it and set the new caret position
                     // to the first character before the selection.
-                    this.setContent(this.getSlice(0, range[0]) + this.getSlice(range[1]));
-                    this.setSelectionRange(range[0], range[0]);
+                    this.setContent(this.getSlice(0, range[0].index) + this.getSlice(range[1].index));
+                    this.setSelectionRange(range[0].index, range[0].index);
                 } else {
+                    var toRemove = 1;
+
+                    // If the node that is currently selected is an image and its codepoint length
+                    // is 2, we remove both the codepoints.
+                    // On the Nokia Asha, only the second codepoint is removed, so another emoji is
+                    // shown instead of the first one (the emoji associated with the first codepoint).
+                    if (range[0].node.nodeType === 1 && util.toCodePointArray(range[0].node.alt).length === 2) {
+                        toRemove = 2;
+                    }
+
                     // If there's no text currently selected, remove the first character before
                     // the current caret position and reduce the caret position by 1.
-                    this.setContent(this.getSlice(0, range[0] - 1) + this.getSlice(range[0]));
-                    this.setSelectionRange(range[0] - 1, range[0] - 1);
+                    this.setContent(this.getSlice(0, range[0].index - toRemove) + this.getSlice(range[0].index));
+                    this.setSelectionRange(range[0].index - toRemove, range[0].index - toRemove);
                 }
 
                 if (this.oninputCallback) {
@@ -223,12 +223,12 @@ var TextEditorProvider = (function() {
             // Add the new content, replacing the current selection.
             // If the selection is collapsed, just add the content
             // at the selected position.
-            this.setContent(this.getSlice(0, range[0]) +
+            this.setContent(this.getSlice(0, range[0].index) +
                             newContent +
-                            this.getSlice(range[1]));
+                            this.getSlice(range[1].index));
 
             // Set the current selection after the new added character.
-            this.setSelectionRange(range[0] + 1, range[0] + 1);
+            this.setSelectionRange(range[0].index + 1, range[0].index + 1);
 
             // Notify TextEditor listeners.
             if (this.oninputCallback) {
@@ -268,9 +268,11 @@ var TextEditorProvider = (function() {
                     return 0;
                 }
 
+                var selectedNode = null;
                 var count = 0;
 
                 if (sel.focusNode.nodeType === 3) {
+                    selectedNode = sel.focusOffset;
                     count = sel.focusOffset;
                     var prev = sel.focusNode.previousSibling;
                     while (prev) {
@@ -283,6 +285,7 @@ var TextEditorProvider = (function() {
                         var cur = children[i];
                         count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
                     }
+                    selectedNode = children[sel.focusOffset - 1];
                 }
 
                 // If the position returned is higher than the size of the content,
@@ -293,10 +296,10 @@ var TextEditorProvider = (function() {
                     count = count - 1;
                 }
 
-                return count;
+                return { index: count, node: selectedNode };
             }
 
-            return 0;
+            return { index: 0, node: null };
         },
 
         getSelectionStart: function() {
@@ -306,12 +309,14 @@ var TextEditorProvider = (function() {
                 if (sel.anchorNode !== this.textEditorElem &&
                     sel.anchorNode.parentNode !== this.textEditorElem) {
                     console.error("getSelectionStart called while the editor is unfocused");
-                    return 0;
+                    return { index: 0, node: null };
                 }
 
+                var selectedNode = null;
                 var count = 0;
 
                 if (sel.anchorNode.nodeType === 3) {
+                    selectedNode = sel.anchorNode;
                     count = sel.anchorOffset;
                     var prev = sel.anchorNode.previousSibling;
                     while (prev) {
@@ -324,6 +329,7 @@ var TextEditorProvider = (function() {
                         var cur = children[i];
                         count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
                     }
+                    selectedNode = children[sel.anchorOffset - 1];
                 }
 
                 // If the position returned is higher than the size of the content,
@@ -334,23 +340,21 @@ var TextEditorProvider = (function() {
                     count = count - 1;
                 }
 
-                return count;
+                return { index: count, node: selectedNode };
             }
 
-            return 0;
+            return { index: 0, node: null };
         },
 
         getSelectionRange: function() {
-            var indexStart = this.getSelectionStart();
-            var indexEnd = this.getSelectionEnd();
+            var start = this.getSelectionStart();
+            var end = this.getSelectionEnd();
 
-            if (indexStart > indexEnd) {
-                var tmp = indexStart;
-                indexStart = indexEnd;
-                indexEnd = tmp;
+            if (start.index > end.index) {
+                return [ end, start ];
             }
 
-            return [ indexStart, indexEnd ];
+            return [ start, end ];
         },
 
         setSelectionRange: function(from, to) {
@@ -460,10 +464,10 @@ var TextEditorProvider = (function() {
 
         getSelectionStart: function() {
             if (this.textEditorElem) {
-                return this.textEditorElem.selectionStart;
+                return { index: this.textEditorElem.selectionStart, node: this.textEditorElem };
             }
 
-            return 0;
+            return { index: 0, node: null };
         },
 
         setSelectionRange: function(from, to) {
