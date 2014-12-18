@@ -54,7 +54,7 @@ Socket.prototype.close = function() {
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBytes, port) {
     // console.log("Protocol.open0: " + this.host + ":" + port);
-
+    var ctx = $.ctx;
     return new Promise((function(resolve, reject) {
         this.socket = new Socket(this.host, port);
 
@@ -74,8 +74,9 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBy
         }
 
         this.socket.onerror = function(message) {
+            ctx.setAsCurrentContext();
             // console.log("this.socket.onerror: " + message.error);
-            reject(new JavaException("java/io/IOException", message.error));
+            reject($.newIOException(message.error));
         }
 
         this.socket.onclose = function() {
@@ -138,17 +139,20 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(dat
 }, true);
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(data, offset, length) {
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
+        ctx.setAsCurrentContext();
         if (this.socket.isClosed) {
-          reject(new JavaException("java/io/IOException", "socket is closed"));
+          reject($.newIOException("socket is closed"));
           return;
         }
 
         this.socket.onsend = function(message) {
+            ctx.setAsCurrentContext();
             this.socket.onsend = null;
             if ("error" in message) {
                 console.error(message.error);
-                reject(new JavaException("java/io/IOException", "error writing to socket"));
+                reject($.newIOException("error writing to socket"));
             } else if (message.result) {
                 resolve(length);
             } else {
@@ -165,7 +169,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(da
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(option, value) {
     if (!(option in this.options)) {
-        throw new JavaException("java/lang/IllegalArgumentException", "Unsupported socket option");
+        throw $.newIllegalArgumentException("Unsupported socket option");
     }
 
     this.options[option] = value;
@@ -173,7 +177,7 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function
 
 Native.create("com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I", function(option) {
     if (!(option in this.options)) {
-        throw new JavaException("java/lang/IllegalArgumentException", "Unsupported socket option");
+        throw new $.newIllegalArgumentException("Unsupported socket option");
     }
 
     return this.options[option];

@@ -25,21 +25,21 @@ Override.create("java/lang/String.<init>.()V", function() {
 
 Override.create("java/lang/String.<init>.(Ljava/lang/String;)V", function(jStr) {
   if (!jStr) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   this.str = jStr.str;
 });
 
 Override.create("java/lang/String.<init>.([C)V", function(chars) {
   if (!chars) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   this.str = util.fromJavaChars(chars);
 });
 
 Override.create("java/lang/String.<init>.([CII)V", function(value, offset, count) {
   if (offset < 0 || count < 0 || offset > value.length - count) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+    throw $.newIndexOutOfBoundsException();
   }
   this.str = util.fromJavaChars(value, offset, count);
 });
@@ -51,7 +51,7 @@ function constructFromByteArray(bytes, off, len, enc) {
   try {
     this.str = new TextDecoder(enc).decode(bytes);
   } catch(e) {
-    throw new JavaException("java/io/UnsupportedEncodingException");
+    throw $.newUnsupportedEncodingException();
   }
 }
 
@@ -100,7 +100,7 @@ Override.create("java/lang/String.length.()I", function() {
 
 Override.create("java/lang/String.charAt.(I)C", function(index) {
   if (index < 0 || index >= this.str.length) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+    throw $.newIndexOutOfBoundsException();
   }
   return this.str.charCodeAt(index);
 });
@@ -108,7 +108,7 @@ Override.create("java/lang/String.charAt.(I)C", function(index) {
 Override.create("java/lang/String.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
   if (srcBegin < 0 || srcEnd > this.str.length || srcBegin > srcEnd ||
       dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+    throw $.newIndexOutOfBoundsException();
   }
   dst.set(util.stringToCharArray(this.str.substring(srcBegin, srcEnd)), dstBegin);
 });
@@ -128,7 +128,7 @@ Override.create("java/lang/String.getBytes.(Ljava/lang/String;)[B", function(jEn
     var encoding = normalizeEncoding(jEnc.str);
     return new Int8Array(new TextEncoder(encoding).encode(this.str));
   } catch (e) {
-    throw new JavaException("java/io/UnsupportedEncodingException");
+    throw $.newUnsupportedEncodingException();
   }
 });
 
@@ -216,14 +216,14 @@ Override.create("java/lang/String.indexOf.(Ljava/lang/String;I)I", function(s, f
 
 Override.create("java/lang/String.substring.(I)Ljava/lang/String;", function(beginIndex) {
   if (beginIndex < 0 || beginIndex > this.str.length) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+    throw $.newIndexOutOfBoundsException();
   }
   return this.str.substring(beginIndex);
 });
 
 Override.create("java/lang/String.substring.(II)Ljava/lang/String;", function(beginIndex, endIndex) {
   if (beginIndex < 0 || endIndex > this.str.length || beginIndex > endIndex) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+    throw $.newIndexOutOfBoundsException();
   }
   return this.str.substring(beginIndex, endIndex);
 });
@@ -283,14 +283,14 @@ Override.create("java/lang/String.toCharArray.()[C", function() {
 
 Override.create("java/lang/String.valueOf.([C)Ljava/lang/String;", function(chars) {
   if (!chars) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   return util.fromJavaChars(chars);
 });
 
 Override.create("java/lang/String.valueOf.([CII)Ljava/lang/String;", function(chars, offset, count) {
   if (!chars) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   return util.fromJavaChars(chars, offset, count);
 });
@@ -346,7 +346,7 @@ Override.create("java/lang/StringBuffer.<init>.()V", function() {
 
 Override.create("java/lang/StringBuffer.<init>.(I)V", function(length) {
   if (length < 0) {
-    throw new JavaException("java/lang/NegativeArraySizeException");
+    throw $.newNegativeArraySizeException();
   }
   this.buf = new Uint16Array(length);
   this.count = 0;
@@ -398,7 +398,7 @@ Override.create("java/lang/StringBuffer.ensureCapacity.(I)V", function(minCapaci
 
 Override.create("java/lang/StringBuffer.setLength.(I)V", function(newLength) {
   if (newLength < 0) {
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw $.newStringIndexOutOfBoundsException();
   }
 
   if (newLength > this.buf.length) {
@@ -413,24 +413,24 @@ Override.create("java/lang/StringBuffer.setLength.(I)V", function(newLength) {
 
 Override.create("java/lang/StringBuffer.charAt.(I)C", function(index) {
   if (index < 0 || index >= this.count) {
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw $.newStringIndexOutOfBoundsException();
   }
   return this.buf[index];
 });
 
 Override.create("java/lang/StringBuffer.getChars.(II[CI)V", function(srcBegin, srcEnd, dst, dstBegin) {
   if (srcBegin < 0 || srcEnd < 0 || srcEnd > this.count || srcBegin > srcEnd) {
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw $.newStringIndexOutOfBoundsException();
   }
   if (dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
-    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
+    throw $.newArrayIndexOutOfBoundsException();
   }
   dst.set(this.buf.subarray(srcBegin, srcEnd), dstBegin);
 });
 
 Override.create("java/lang/StringBuffer.setCharAt.(IC)V", function(index, ch) {
   if (index < 0 || index >= this.count) {
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw $.newStringIndexOutOfBoundsException();
   }
   this.buf[index] = ch;
 });
@@ -446,7 +446,7 @@ Override.create("java/lang/StringBuffer.setCharAt.(IC)V", function(index, ch) {
  */
 function stringBufferAppend(data) {
   if (data == null) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   if (!(data instanceof Uint16Array)) {
     data = util.stringToCharArray(data);
@@ -467,17 +467,17 @@ Override.create("java/lang/StringBuffer.append.(Ljava/lang/String;)Ljava/lang/St
 
 Override.create("java/lang/StringBuffer.append.([C)Ljava/lang/StringBuffer;", function(chars) {
   if (chars == null) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   return stringBufferAppend.call(this, chars);
 });
 
 Override.create("java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;", function(chars, offset, length) {
   if (chars == null) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   if (offset < 0 || offset + length > chars.length) {
-    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
+    throw $.newArrayIndexOutOfBoundsException();
   }
   return stringBufferAppend.call(this, chars.subarray(offset, offset + length));
 });
@@ -516,13 +516,13 @@ Override.create("java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;", fun
  */
 function stringBufferDelete(start, end) {
   if (start < 0) {
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw $.newStringIndexOutOfBoundsException();
   }
   if (end > this.count) {
     end = this.count;
   }
   if (start > end) {
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw $.newStringIndexOutOfBoundsException();
   }
 
   var len = end - start;
@@ -540,7 +540,7 @@ Override.create("java/lang/StringBuffer.delete.(II)Ljava/lang/StringBuffer;",
 Override.create("java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;", function(index) {
   if (index >= this.count) {
     // stringBufferDelete handles the other boundary checks; this check is specific to deleteCharAt.
-    throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+    throw $.newStringIndexOutOfBoundsException();
   }
   return stringBufferDelete.call(this, index, index + 1);
 });
@@ -555,10 +555,10 @@ Override.create("java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;
  */
 function stringBufferInsert(offset, data) {
   if (data == null) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
   if (offset < 0 || offset > this.count) {
-    throw new JavaException("java/lang/ArrayIndexOutOfBoundsException");
+    throw $.newArrayIndexOutOfBoundsException();
   }
   if (!(data instanceof Uint16Array)) {
     data = util.stringToCharArray(data);

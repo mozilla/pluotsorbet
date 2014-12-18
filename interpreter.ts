@@ -1,7 +1,6 @@
 module J2ME {
   declare var util;
   declare var Long;
-  declare var JavaException;
   declare var Instrument;
 
   import Bytecodes = Bytecode.Bytecodes;
@@ -165,11 +164,7 @@ module J2ME {
       try {
         return ctx.resolve(cp, idx, isStatic);
       } catch (e) {
-        if (e instanceof JavaException) {
-          throw ctx.createException(e.javaClassName, e.message);
-        } else {
-          throwHelper(e);
-        }
+        throwHelper(e);
       }
     }
 

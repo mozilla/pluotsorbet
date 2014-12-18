@@ -18,12 +18,12 @@ Native.create("gnu/testlet/vm/NativeTest.getIntReturnLong.(I)J", function(val) {
 });
 
 Native.create("gnu/testlet/vm/NativeTest.throwException.()V", function() {
-  throw new JavaException("java/lang/NullPointerException", "An exception");
+  throw $.newNullPointerException("An exception");
 });
 
 Native.create("gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V", function() {
   return new Promise(function(resolve, reject) {
-    setTimeout(reject.bind(null, new JavaException("java/lang/NullPointerException", "An exception")), 100);
+    setTimeout(reject.bind(null, $.newNullPointerException("An exception")), 100);
   });
 }, true);
 

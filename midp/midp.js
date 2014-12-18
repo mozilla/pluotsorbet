@@ -11,7 +11,7 @@ MIDP.manifest = {};
 Native.create("com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B", function(jar, entryName) {
     var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes)
-        throw new JavaException("java/io/IOException");
+        throw $.newIOException();
     var length = bytes.byteLength;
     var data = new Uint8Array(bytes);
     var array = util.newPrimitiveArray("B", length);
@@ -439,14 +439,14 @@ Native.create("com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)
 Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V", function(fileName) {
     var data = CLASSES.loadFile(util.fromJavaString(fileName));
     if (!data)
-        throw new JavaException("java/io/IOException");
+        throw $.newIOException();
     MIDP.skinFileData = new DataView(data);
     MIDP.skinFilePos = 0;
 });
 
 Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B", function(len) {
     if (!MIDP.skinFileData || (MIDP.skinFilePos + len) > MIDP.skinFileData.byteLength)
-        throw new JavaException("java/lang/IllegalStateException");
+        throw $.newIllegalStateException();
     var bytes = util.newPrimitiveArray("B", len);
     for (var n = 0; n < len; ++n) {
         bytes[n] = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
@@ -456,13 +456,13 @@ Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArr
 
 Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I", function() {
     if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        throw new JavaException("java/lang/IllegalStateException");
+        throw $.newIllegalStateException();
     var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
     MIDP.skinFilePos += 4;
     var ints = util.newPrimitiveArray("I", len);
     for (var n = 0; n < len; ++n) {
         if ((MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-            throw new JavaException("java/lang/IllegalStateException");
+            throw $.newIllegalStateException();
         ints[n] = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
         MIDP.skinFilePos += 4;
     }
@@ -474,17 +474,17 @@ MIDP.STRING_ENCODING_UTF8 = 1;
 
 Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()[Ljava/lang/String;", function() {
     if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        throw new JavaException("java/lang/IllegalStateException");
+        throw $.newIllegalStateException();
     var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
     MIDP.skinFilePos += 4;
     var strings = J2ME.newStringArray(len);
     for (var n = 0; n < len; ++n) {
         if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
-            throw new JavaException("java/lang/IllegalStateException");
+            throw $.newIllegalStateException();
         var strLen = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
         var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
         if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
-            throw new JavaException("java/lang/IllegalStateException");
+            throw $.newIllegalStateException();
         var bytes = new Uint8Array(MIDP.skinFileData.buffer).subarray(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
         MIDP.skinFilePos += strLen;
         var str;
@@ -495,7 +495,7 @@ Native.create("com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringA
         } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
             str = util.decodeUtf8(bytes);
         } else {
-            throw new JavaException("java/lang/IllegalStateException");
+            throw $.newIllegalStateException();
         }
         strings[n] = J2ME.newString(str);
     }
@@ -536,7 +536,7 @@ Native.create("com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lan
     var data = CLASSES.loadFile(fileName);
     if (!data) {
         console.error("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
-        throw new JavaException("java/io/IOException");
+        throw $.newIOException();
     }
     var len = data.byteLength;
     var bytes = util.newPrimitiveArray("B", len);
@@ -786,7 +786,9 @@ Native.create("com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/St
 });
 
 Native.create("com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V", function(id, ctx) {
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
+        ctx.setAsCurrentContext();
         var mutex;
         for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
             if (MIDP.InterIsolateMutexes[i].id == id) {
@@ -796,7 +798,7 @@ Native.create("com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V", function
         }
 
         if (!mutex) {
-            reject(new JavaException("java/lang/IllegalStateException", "Invalid mutex ID"));
+            reject($.newIllegalStateException("Invalid mutex ID"));
             return;
         }
 
@@ -808,7 +810,7 @@ Native.create("com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V", function
         }
 
         if (mutex.holder == ctx.runtime.isolate.id) {
-            reject(new JavaException("java/lang/RuntimeException", "Attempting to lock mutex twice within the same Isolate"));
+            reject($.newRuntimeException("Attempting to lock mutex twice within the same Isolate"));
             return;
         }
 
@@ -830,15 +832,15 @@ Native.create("com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V", functi
     }
 
     if (!mutex) {
-        throw new JavaException("java/lang/IllegalStateException", "Invalid mutex ID");
+        throw $.newIllegalStateException("Invalid mutex ID");
     }
 
     if (!mutex.locked) {
-        throw new JavaException("java/lang/RuntimeException", "Mutex is not locked");
+        throw $.newRuntimeException("Mutex is not locked");
     }
 
     if (mutex.holder !== ctx.runtime.isolate.id) {
-        throw new JavaException("java/lang/RuntimeException", "Mutex is locked by different Isolate");
+        throw $.newRuntimeException("Mutex is locked by different Isolate");
     }
 
     mutex.locked = false;
@@ -984,7 +986,7 @@ Native.create("com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/S
 
         var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
         if (!data)
-            throw new JavaException("java/io/IOException");
+            throw $.newIOException();
 
         var text = util.decodeUtf8(data);
         var xml = new window.DOMParser().parseFromString(text, "text/xml");
@@ -1001,7 +1003,7 @@ Native.create("com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/S
     var value = MIDP.localizedStrings.get(id);
 
     if (!value) {
-        throw new JavaException("java/lang/IllegalStateException");
+        throw $.newIllegalStateException();
     }
 
     return value;

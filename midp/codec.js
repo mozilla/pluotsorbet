@@ -182,20 +182,20 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.init.([BII)V", function(data,
 
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V", function(tag) {
   if (!this.decoder.getStart(tag)) {
-    throw new JavaException("java/io/IOException", "no start found " + tag);
+    throw $.newIOException("no start found " + tag);
   }
 });
 
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V", function(tag) {
   if (!this.decoder.getEnd(tag)) {
-    throw new JavaException("java/io/IOException", "no end found " + tag);
+    throw $.newIOException("no end found " + tag);
   }
 });
 
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;", function(tag) {
   var str = this.decoder.getValue(tag);
   if (str === undefined) {
-    throw new JavaException("java/io/IOException", "tag (" + tag + ") invalid");
+    throw $.newIOException("tag (" + tag + ") invalid");
   }
   return str;
 });
@@ -203,7 +203,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/Strin
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J", function(tag) {
   var num = this.decoder.getValue(tag);
   if (num === undefined) {
-    throw new JavaException("java/io/IOException", "tag (" + tag + ") invalid");
+    throw $.newIOException("tag (" + tag + ") invalid");
   }
   return Long.fromNumber(num);
 });
@@ -211,7 +211,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J", function(ta
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z", function() {
   var val = this.decoder.getNextValue();
   if (val === undefined) {
-    throw new JavaException("java/io/IOException");
+    throw $.newIOException();
   }
   return val === 1;
 });
@@ -219,7 +219,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z", function() {
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;", function() {
   var name = this.decoder.getName();
   if (name === undefined) {
-    throw new JavaException("java/io/IOException");
+    throw $.newIOException();
   }
   return name;
 });
@@ -227,7 +227,7 @@ Native.create("com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"
 Native.create("com/nokia/mid/s40/codec/DataDecoder.getType.()I", function() {
   var tag = this.decoder.getTag();
   if (tag === undefined) {
-    throw new JavaException("java/io/IOException");
+    throw $.newIOException();
   }
   return tag;
 });

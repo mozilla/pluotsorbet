@@ -174,6 +174,7 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V",
     function(imageData, bytes, offset, length) {
+        var ctx = $.ctx;
         return new Promise(function(resolve, reject) {
             var blob = new Blob([bytes.subarray(offset, offset + length)], { type: "image/png" });
             var img = new Image();
@@ -190,7 +191,8 @@ var currentlyFocusedTextEditor;
             img.onerror = function(e) {
                 URL.revokeObjectURL(img.src);
                 img.src = '';
-                reject(new JavaException("java/lang/IllegalArgumentException", "error decoding image"));
+                ctx.setAsCurrentContext();
+                reject($.newIllegalArgumentException("error decoding image"));
             }
         });
     }, true);
@@ -420,7 +422,7 @@ var currentlyFocusedTextEditor;
             } else if (anchor & BASELINE) {
                 c.textBaseline = "alphabetic";
             } else if (anchor & VCENTER) {
-                throw new JavaException("java/lang/IllegalArgumentException", "VCENTER not allowed with text");
+                throw $.newIllegalArgumentException("VCENTER not allowed with text");
             }
 
             cb(x, y, w);
@@ -618,7 +620,7 @@ var currentlyFocusedTextEditor;
     Native.create("com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V",
     function(pixels, offset, scanlength, x, y, width, height, format) {
         if (pixels == null) {
-            throw new JavaException("java/lang/NullPointerException", "Pixels array is null");
+            throw $.newNullPointerException("Pixels array is null");
         }
 
         var converterFunc = null;
@@ -627,13 +629,13 @@ var currentlyFocusedTextEditor;
         } else if (format == TYPE_USHORT_565_RGB) {
             converterFunc = ABGRToRGB565;
         } else {
-            throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
+            throw $.newIllegalArgumentException("Format unsupported");
         }
 
         var graphics = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
         var image = graphics.klass.classInfo.getField("I.img.Ljavax/microedition/lcdui/Image;").get(graphics);
         if (!image) {
-            throw new JavaException("java/lang/IllegalArgumentException", "getPixels with no image not yet supported");
+            throw $.newIllegalArgumentException("getPixels with no image not yet supported");
         }
         var imageData = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
@@ -645,14 +647,14 @@ var currentlyFocusedTextEditor;
     Native.create("com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V",
     function(pixels, transparency, offset, scanlength, x, y, width, height, manipulation, format) {
         if (pixels == null) {
-            throw new JavaException("java/lang/NullPointerException", "Pixels array is null");
+            throw $.newNullPointerException("Pixels array is null");
         }
 
         var converterFunc = null;
         if (format == TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
             converterFunc = ARGB4444ToABGR;
         } else {
-            throw new JavaException("java/lang/IllegalArgumentException", "Format unsupported");
+            throw $.newIllegalArgumentException("Format unsupported");
         }
 
         var graphics = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
@@ -860,7 +862,7 @@ var currentlyFocusedTextEditor;
     Override.create("javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V",
     function(image, sx, sy, sw, sh, transform, x, y, anchor) {
         if (!image) {
-            throw new JavaException("java/lang/NullPointerException", "src image is null");
+            throw $.newNullPointerException("src image is null");
         }
 
         var imgData = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
@@ -1124,7 +1126,7 @@ var currentlyFocusedTextEditor;
         var old = this.textEditor.getContent();
 
         if (offset < 0 || offset > old.length || length < 0 || offset + length > old.length) {
-            throw new JavaException("java.lang.StringIndexOutOfBoundsException", "offset/length invalid");
+            throw $.newStringIndexOutOfBoundsException("offset/length invalid");
         }
 
         this.textEditor.setContent(old.slice(0, offset) + old.slice(offset + length));

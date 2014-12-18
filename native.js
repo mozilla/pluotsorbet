@@ -9,28 +9,27 @@ Native.create = createAlternateImpl.bind(null, Native);
 
 Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst)
-        throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+        throw $.newNullPointerException("Cannot copy to/from a null array.");
     var srcKlass = src.klass;
     var dstKlass = dst.klass;
 
     if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass)
-        throw new JavaException("java/lang/ArrayStoreException", "Can only copy to/from array types.");
+        throw $.newArrayStoreException("Can only copy to/from array types.");
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
-        throw new JavaException("java/lang/ArrayIndexOutOfBoundsException", "Invalid index.");
+        throw $.newArrayIndexOutOfBoundsException("Invalid index.");
     var srcIsPrimitive = !(src instanceof Array);
     var dstIsPrimitive = !(dst instanceof Array);
     if ((srcIsPrimitive && dstIsPrimitive && srcKlass !== dstKlass) ||
         (srcIsPrimitive && !dstIsPrimitive) ||
         (!srcIsPrimitive && dstIsPrimitive)) {
-        throw new JavaException("java/lang/ArrayStoreException",
-                                "Incompatible component types: " + srcKlass + " -> " + dstKlass);
+        throw $.newArrayStoreException("Incompatible component types: " + srcKlass + " -> " + dstKlass);
     }
     if (!dstIsPrimitive) {
         if (srcKlass != dstKlass && !J2ME.isAssignableTo(srcKlass.elementKlass, dstKlass.elementKlass)) {
             var copy = function(to, from) {
                 var obj = src[from];
                 if (obj && !J2ME.isAssignableTo(obj.klass, dstKlass.elementKlass)) {
-                    throw new JavaException("java/lang/ArrayStoreException", "Incompatible component types.");
+                    throw $.newArrayStoreException("Incompatible component types.");
                 }
                 dst[to] = obj;
             };
@@ -310,17 +309,11 @@ Native.create("java/lang/Class.getName.()Ljava/lang/String;", function() {
 });
 
 Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", function(name, ctx) {
-    try {
-        if (!name)
-            throw new J2ME.ClassNotFoundException();
-        var className = util.fromJavaString(name).replace(/\./g, "/");
-        var classInfo = null;
-        classInfo = CLASSES.getClass(className);
-    } catch (e) {
-        if (e instanceof (J2ME.ClassNotFoundException))
-            throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
-        throw e;
-    }
+    if (!name)
+        throw $.newClassNotFoundException();
+    var className = util.fromJavaString(name).replace(/\./g, "/");
+    var classInfo = null;
+    classInfo = CLASSES.getClass(className);
     return classInfo.getClassObject(ctx);
 });
 
@@ -364,7 +357,7 @@ Native.create("java/lang/Class.isArray.()Z", function() {
 
 Native.create("java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z", function(fromClass) {
     if (!fromClass)
-        throw new JavaException("java/lang/NullPointerException");
+        throw $.newNullPointerException();
     return J2ME.isAssignableTo(fromClass.runtimeKlass.templateKlass, this.runtimeKlass.templateKlass);
 });
 
@@ -510,7 +503,7 @@ Native.create("java/lang/Thread.start0.()V", function(ctx) {
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
     if (this === ctx.runtime.mainThread || this.alive)
-        throw new JavaException("java/lang/IllegalThreadStateException");
+        throw $.newIllegalThreadStateException();
     this.alive = true;
     this.pid = util.id();
     var run = CLASSES.getMethod(this.klass.classInfo, "I.run.()V");
@@ -601,7 +594,7 @@ Override.create("com/sun/cldc/io/ResourceInputStream.available.()I", function() 
     var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
     if (!handle) {
-        throw new JavaException("java/io/IOException");
+        throw $.newIOException();
     }
 
     return handle.data.length - handle.pos;
@@ -611,7 +604,7 @@ Override.create("com/sun/cldc/io/ResourceInputStream.read.()I", function() {
     var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
 
     if (!handle) {
-        throw new JavaException("java/io/IOException");
+        throw $.newIOException();
     }
 
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
@@ -774,7 +767,7 @@ Native.create("java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;", funct
         try {
             return util.javaUTF8Decode(array);
         } catch (e) {
-            throw new JavaException("java/io/UTFDataFormatException");
+            throw $.newUTFDataFormatException();
         }
     }
 });
@@ -796,7 +789,7 @@ Native.create("java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B", func
     }
 
     if (utflen > 65535) {
-        throw new JavaException("java/io/UTFDataFormatException");
+        throw $.newUTFDataFormatException();
     }
 
     var count = 0;
@@ -954,9 +947,10 @@ Native.create("com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/St
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#Supported_image_formats
     if (["jpg", "jpeg", "gif", "apng", "png", "bmp", "ico"].indexOf(ext) == -1) {
         console.error("File not supported: " + fileName);
-        throw new JavaException("java/lang/Exception", "File not supported: " + fileName);
+        throw $.newException("File not supported: " + fileName);
     }
 
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
         // `fileName` is supposed to be a full path, but we don't support
         // partition, e.g. `C:` or `E:` etc, so the `fileName` we got here
@@ -964,9 +958,10 @@ Native.create("com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/St
         // the root dir to make sure it's valid.
         fileName = "/" + fileName;
         fs.open(fileName, function(fd) {
+            ctx.setAsCurrentContext();
             if (fd == -1) {
                 console.error("File not found: " + fileName);
-                reject(new JavaException("java/lang/Exception", "File not found: " + fileName));
+                reject($.newException("File not found: " + fileName));
                 return;
             }
 

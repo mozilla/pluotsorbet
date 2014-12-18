@@ -132,6 +132,7 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I", fu
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I",
 function(handle, type, host, destPort, sourcePort, message) {
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
         var activity = new MozActivity({
             name: "new",
@@ -147,7 +148,8 @@ function(handle, type, host, destPort, sourcePort, message) {
         };
 
         activity.onerror = function() {
-          reject(new JavaException("java/io/IOException", "Error while sending SMS message"));
+          ctx.setAsCurrentContext();
+          reject($.newIOException("Error while sending SMS message"));
         };
     });
 }, true);

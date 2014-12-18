@@ -39,15 +39,15 @@ Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.init.()V", function(
 
 Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z", function(x, y, maxFps, maxPps, listener) {
   if (this.nativeObject.isRegistered()) {
-    throw new JavaException("java/lang/IllegalStateException", "FrameAnimator already registered");
+    throw $.newIllegalStateException("FrameAnimator already registered");
   }
 
   if (!listener) {
-    throw new JavaException("java/lang/NullPointerException", "listener is null");
+    throw $.newNullPointerException("listener is null");
   }
 
   if (x < -65535 || x > 65535 || y < -65535 || y > 65535) {
-    throw new JavaException("java/lang/IllegalArgumentException", "coordinate out of bounds");
+    throw $.newIllegalArgumentException("coordinate out of bounds");
   }
 
   // XXX return false if FrameAnimator.numRegistered >= FRAME_ANIMATOR_MAX_CONCURRENT
@@ -58,7 +58,7 @@ Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/n
 
 Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.unregister.()V", function() {
   if (!this.nativeObject.isRegistered()) {
-    throw new JavaException("java/lang/IllegalStateException", "FrameAnimator not registered");
+    throw $.newIllegalStateException("FrameAnimator not registered");
   }
 
   this.nativeObject.unregister();

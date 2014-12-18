@@ -352,10 +352,13 @@ function ImagePlayer(playerContainer) {
 ImagePlayer.prototype.realize = function() {
     var objectUrl;
 
+    var ctx = $.ctx;
+
     var p = new Promise((function(resolve, reject) {
         this.image.onload = resolve.bind(null, true);
         this.image.onerror = function() {
-            reject(new JavaException("javax/microedition/media/MediaException", "Failed to load image"));
+            ctx.setAsCurrentContext();
+            reject($.newMediaException("Failed to load image"));
         };
 
         if (this.url.startsWith("file")) {
@@ -432,6 +435,7 @@ function ImageRecorder(playerContainer) {
     this.realizeResolver = null;
 
     this.snapshotData = null;
+    this.ctx = $.ctx;
 }
 
 ImageRecorder.prototype.realize = function() {
@@ -443,12 +447,13 @@ ImageRecorder.prototype.realize = function() {
 }
 
 ImageRecorder.prototype.recipient = function(message) {
+    this.ctx.setAsCurrentContext();
     switch (message.type) {
         case "initerror":
             if (message.name == "PermissionDeniedError") {
-                this.realizeRejector(new JavaException("java/lang/SecurityException", "Not permitted to init camera"));
+                this.realizeRejector($.newSecurityException("Not permitted to init camera"));
             } else {
-                this.realizeRejector(new JavaException("javax/microedition/media/MediaException", "Failed to init camera, no camera?"));
+                this.realizeRejector($.newMediaException("Failed to init camera, no camera?"));
             }
             this.realizeResolver = null;
             this.realizeRejector = null;
@@ -1135,7 +1140,7 @@ Native.create("com/sun/mmedia/DirectRecord.nClose.(I)I", function(handle) {
         // We need to check if |audioRecorder| is still available, because |nClose|
         // might be called twice in DirectRecord.java, and only IOException is
         // handled in DirectRecord.java, let use IOException instead of IllegalStateException.
-        throw new JavaException("java/io/IOException");
+        throw $.newIOException();
     }
 
     return player.audioRecorder.close().then(function(result) {

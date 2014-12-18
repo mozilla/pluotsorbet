@@ -5,12 +5,6 @@
 
 var Override = {};
 
-function JavaException(className, message) {
-  this.javaClassName = className;
-  this.message = message;
-}
-JavaException.prototype = Object.create(Error.prototype);
-
 function boolReturnType(ret) {
   var value;
   if (ret) {
@@ -140,9 +134,6 @@ function executePromise(ret, doReturn, ctx, key) {
  *
  * - The object reference ("this") is automatically bound to `fn`.
  *
- * - JavaException instances are caught and propagated as Java
-     exceptions; JS TypeError propagates as a NullPointerException.
- *
  * @param {object} object
  *   Native or Override.
  * @param {string} key
@@ -197,7 +188,7 @@ Override.create("java/lang/Math.min.(II)I", function(a, b) {
 Override.create("java/io/ByteArrayOutputStream.write.([BII)V", function(b, off, len) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+    throw $.newIndexOutOfBoundsException();
   }
 
   if (len == 0) {
@@ -237,7 +228,7 @@ Override.create("java/io/ByteArrayOutputStream.write.(I)V", function(value) {
 
 Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(buf) {
   if (!buf) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
 
   this.buf = buf;
@@ -247,7 +238,7 @@ Override.create("java/io/ByteArrayInputStream.<init>.([B)V", function(buf) {
 
 Override.create("java/io/ByteArrayInputStream.<init>.([BII)V", function(buf, offset, length) {
   if (!buf) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
 
   this.buf = buf;
@@ -261,12 +252,12 @@ Override.create("java/io/ByteArrayInputStream.read.()I", function() {
 
 Override.create("java/io/ByteArrayInputStream.read.([BII)I", function(b, off, len) {
   if (!b) {
-    throw new JavaException("java/lang/NullPointerException");
+    throw $.newNullPointerException();
   }
 
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
-    throw new JavaException("java/lang/IndexOutOfBoundsException");
+    throw $.newIndexOutOfBoundsException();
   }
 
   if (this.pos >= this.count) {

@@ -48,12 +48,14 @@ Native.create("com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjav
 
 Native.create("com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I",
 function(filenameBase, name, ext) {
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
         var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
         function openCallback(fd) {
+            ctx.setAsCurrentContext();
             if (fd == -1) {
-                reject(new JavaException("java/io/IOException", "openRecordStoreFile: open failed"));
+                reject($.newIOException("openRecordStoreFile: open failed"));
             } else {
                 resolve(fd); // handle
             }
@@ -68,15 +70,17 @@ function(filenameBase, name, ext) {
                 fs.mkdirp(dirname, function(created) {
                     if (created) {
                         fs.create(path, new Blob(), function(created) {
+                            ctx.setAsCurrentContext();
                             if (created) {
                                 fs.open(path, openCallback);
                             }
                             else {
-                                reject(new JavaException("java/io/IOException", "openRecordStoreFile: create failed"));
+                                reject($.newIOException("openRecordStoreFile: create failed"));
                             }
                         });
                     } else {
-                        reject(new JavaException("java/io/IOException", "openRecordStoreFile: mkdirp failed"));
+                        ctx.setAsCurrentContext();
+                        reject($.newIOException("openRecordStoreFile: mkdirp failed"));
                     }
                 });
             }
@@ -94,7 +98,7 @@ Native.create("com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I", function(ha
     var readBytes = fs.read(handle, from, to);
 
     if (readBytes.byteLength <= 0) {
-        throw new JavaException("java/io/IOException", "handle invalid or segment indices out of bounds");
+        throw $.newIOException("handle invalid or segment indices out of bounds");
     }
 
     var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
@@ -150,11 +154,11 @@ function(suiteId, jStoreName, headerDataSize) {
 Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I", function(lookupId, headerData, headerDataSize) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        throw new JavaException("java/lang/IllegalStateException", "invalid header lookup ID");
+        throw $.newIllegalStateException("invalid header lookup ID");
     }
 
     if (!headerData) {
-        throw new JavaException("java/lang/IllegalArgumentException", "header data is null");
+        throw $.newIllegalArgumentException("header data is null");
     }
 
     var size = headerDataSize;
@@ -171,11 +175,11 @@ Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[B
 function(lookupId, headerData, headerDataSize, headerVersion) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        throw new JavaException("java/lang/IllegalStateException", "invalid header lookup ID");
+        throw $.newIllegalStateException("invalid header lookup ID");
     }
 
     if (!headerData) {
-        throw new JavaException("java/lang/IllegalArgumentException", "header data is null");
+        throw $.newIllegalArgumentException("header data is null");
     }
 
     if (sharedHeader.headerVersion > headerVersion && sharedHeader.headerData) {
@@ -196,7 +200,7 @@ function(lookupId, headerData, headerDataSize, headerVersion) {
 Native.create("com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I", function(lookupId) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
-        throw new JavaException("java/lang/IllegalStateException", "invalid header lookup ID");
+        throw $.newIllegalStateException("invalid header lookup ID");
     }
 
     return sharedHeader.refCount;
@@ -414,10 +418,12 @@ Native.create("com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J", f
 }, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", function(oldPath, newPath) {
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
         fs.rename(util.decodeUtf8(oldPath), util.decodeUtf8(newPath), function(renamed) {
+            ctx.setAsCurrentContext();
             if (!renamed) {
-                reject(new JavaException("java/io/IOException", "Rename failed"));
+                reject($.newIOException("Rename failed"));
                 return;
             }
 
@@ -427,10 +433,12 @@ Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", funct
 }, true);
 
 Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(path, newLength) {
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
         fs.open(util.decodeUtf8(path), function(fd) {
+          ctx.setAsCurrentContext();
           if (fd == -1) {
-            reject(new JavaException("java/io/IOException", "truncate failed"));
+            reject($.newIOException("truncate failed"));
             return;
           }
 
@@ -465,7 +473,7 @@ Native.create("com/ibm/oti/connection/file/FCInputStream.skipImpl.(JI)J", functi
 
 Native.create("com/ibm/oti/connection/file/FCInputStream.readImpl.([BIII)I", function(buffer, offset, count, fd) {
     if (offset < 0 || count < 0 || offset > buffer.byteLength || (buffer.byteLength - offset) < count) {
-        throw new JavaException("java/lang/IndexOutOfBoundsException");
+        throw $.newIndexOutOfBoundsException();
     }
 
     if (buffer.byteLength == 0 || count == 0) {
@@ -568,12 +576,13 @@ function(byteArray, offset, count, fd) {
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I", function(fileName, mode) {
     var path = "/" + util.fromJavaString(fileName);
 
+    var ctx = $.ctx;
     return new Promise(function(resolve, reject) {
         function open() {
             fs.open(path, function(fd) {
+                ctx.setAsCurrentContext();
                 if (fd == -1) {
-                    reject(new JavaException("java/io/IOException",
-                                             "RandomAccessStream::open(" + path + ") failed opening the file"));
+                    reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
                 } else {
                     resolve(fd);
                 }
@@ -585,11 +594,11 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/
                 open();
             } else {
                 fs.create(path, new Blob(), function(created) {
+                    ctx.setAsCurrentContext();
                     if (created) {
                         open();
                     } else {
-                        reject(new JavaException("java/io/IOException",
-                                                 "RandomAccessStream::open(" + path + ") failed creating the file"));
+                        reject($.newIOException("RandomAccessStream::open(" + path + ") failed creating the file"));
                     }
                 });
             }
@@ -631,7 +640,7 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I", fun
     var size = fs.getsize(handle);
 
     if (size == -1) {
-        throw new JavaException("java/io/IOException", "RandomAccessStream::sizeOf(" + handle + ") failed");
+        throw $.newIOException("RandomAccessStream::sizeOf(" + handle + ") failed");
     }
 
     return size;
