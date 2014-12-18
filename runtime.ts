@@ -839,7 +839,7 @@ module J2ME {
       // bailing out from.
       fn.methodInfo = methodInfo;
 
-      if (timeline) {
+      if (false && timeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
       }
 

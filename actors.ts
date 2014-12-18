@@ -1,5 +1,4 @@
 module J2ME {
-  declare var ACCESS_FLAGS;
   declare var Native, Override;
   declare var ATTRIBUTE_TYPES;
   declare var missingNativeImpl;
@@ -36,7 +35,7 @@ module J2ME {
 
     constructor(public classInfo: ClassInfo, public access_flags: number, public name: string, public signature: string) {
       this.id = FieldInfo._nextiId++;
-      this.isStatic = ACCESS_FLAGS.isStatic(access_flags);
+      this.isStatic = AccessFlags.isStatic(access_flags);
       this.mangledName = undefined;
     }
 
@@ -237,10 +236,10 @@ module J2ME {
           signature: cp[m.signature_index].bytes,
           classInfo: self,
           attributes: m.attributes,
-          isNative: ACCESS_FLAGS.isNative(m.access_flags),
-          isPublic: ACCESS_FLAGS.isPublic(m.access_flags),
-          isStatic: ACCESS_FLAGS.isStatic(m.access_flags),
-          isSynchronized: ACCESS_FLAGS.isSynchronized(m.access_flags)
+          isNative: AccessFlags.isNative(m.access_flags),
+          isPublic: AccessFlags.isPublic(m.access_flags),
+          isStatic: AccessFlags.isStatic(m.access_flags),
+          isSynchronized: AccessFlags.isSynchronized(m.access_flags)
         }));
       });
       leaveTimeline("methods");
@@ -314,7 +313,7 @@ module J2ME {
     }
 
     get isInterface() : boolean {
-      return ACCESS_FLAGS.isInterface(this.access_flags);
+      return AccessFlags.isInterface(this.access_flags);
     }
 
     implementsInterface(iface) : boolean {
@@ -333,7 +332,7 @@ module J2ME {
     isAssignableTo(toClass: ClassInfo) : boolean {
       if (this === toClass || toClass === CLASSES.java_lang_Object)
         return true;
-      if (ACCESS_FLAGS.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
+      if (AccessFlags.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
         return true;
       if (this.elementClass && toClass.elementClass)
         return this.elementClass.isAssignableTo(toClass.elementClass);

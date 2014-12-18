@@ -355,7 +355,7 @@ Native.create("java/lang/Class.newInstance.()Ljava/lang/Object;", function(ctx) 
 });
 
 Native.create("java/lang/Class.isInterface.()Z", function() {
-    return ACCESS_FLAGS.isInterface(this.runtimeKlass.templateKlass.classInfo.access_flags);
+    return J2ME.AccessFlags.isInterface(this.runtimeKlass.templateKlass.classInfo.access_flags);
 });
 
 Native.create("java/lang/Class.isArray.()Z", function() {

@@ -10,7 +10,6 @@
 //}
 module J2ME {
   declare var ZipFile;
-  declare var ACCESS_FLAGS;
   declare var snarf;
 
   export class ClassRegistry {
@@ -223,7 +222,7 @@ module J2ME {
         for (var i=0; i<fields.length; ++i) {
           var field = fields[i];
           if (!field.key) {
-            field.key = (ACCESS_FLAGS.isStatic(field.access_flags) ? "S" : "I") + "." + field.name + "." + field.signature;
+            field.key = (AccessFlags.isStatic(field.access_flags) ? "S" : "I") + "." + field.name + "." + field.signature;
           }
           if (field.key === fieldKey) {
             return classInfo.vfc[fieldKey] = field;
@@ -256,7 +255,7 @@ module J2ME {
         c = c.superClass;
       } while (c);
   
-      if (ACCESS_FLAGS.isInterface(classInfo.access_flags)) {
+      if (AccessFlags.isInterface(classInfo.access_flags)) {
         for (var n = 0; n < classInfo.interfaces.length; ++n) {
           var method = this.getMethod(classInfo.interfaces[n], methodKey);
           if (method) {

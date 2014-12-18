@@ -70,6 +70,15 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V", function(hardwareId, displayId, x1, y1, x2, y2) {
+        console.log("------------------------------------------------------------------------------------------------------------------");
+        console.log("------------------------------------------------------------------------------------------------------------------");
+        var goal = (5000 / 20);
+        var time = performance.now();
+        console.log(performance.now() + " " + (time > (5000 / 20) ? " Goal is to" + goal + ", make it " + (time / goal).toFixed(2) + " Faster": "Done"));
+        console.log("------------------------------------------------------------------------------------------------------------------");
+        console.log("------------------------------------------------------------------------------------------------------------------");
+
+
         console.warn("DisplayDevice.refresh0.(IIIIII)V not implemented (" +
                      hardwareId + ", " + displayId + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ")");
     });
