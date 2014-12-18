@@ -41,7 +41,7 @@ if ("gamepad" in urlParams && !/no|0/.test(urlParams.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
 
-var jars = ["java/classes.jar", "bench/scimark2.jar"];
+var jars = ["java/classes.jar"];
 
 if (MIDP.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
