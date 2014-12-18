@@ -17,6 +17,16 @@ var fs = (function() {
     // change for a given record.
     this.changesToSync = new Map();
 
+    // Transient paths are those that we store only in memory, so they vanish
+    // on shutdown.  By default, we sync paths to the disk store, so they
+    // survive shutdown and persist across restart.  Add paths to this map
+    // to save disk space and processing power for temporary files, log files,
+    // and other files that store transient data.
+    //
+    // To add paths to this map, call fs.addTransientPath().
+    //
+    this.transientPaths = new Map();
+
     this.db = null;
   };
 
@@ -91,6 +101,10 @@ var fs = (function() {
     if (this.map.has(key)) {
       var value = this.map.get(key);
       window.setZeroTimeout(function() { cb(value) });
+    } else if (this.transientPaths.has(key)) {
+      var value = null;
+      this.map.set(key, value);
+      window.setZeroTimeout(function() { cb(value) });
     } else {
       var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
       if (DEBUG_FS) { console.log("get " + key + " initiated"); }
@@ -113,12 +127,16 @@ var fs = (function() {
 
   Store.prototype.setItem = function(key, value) {
     this.map.set(key, value);
-    this.changesToSync.set(key, { type: "put", value: value });
+    if (!this.transientPaths.has(key)) {
+      this.changesToSync.set(key, { type: "put", value: value });
+    }
   };
 
   Store.prototype.removeItem = function(key) {
     this.map.set(key, null);
-    this.changesToSync.set(key, { type: "delete" });
+    if (!this.transientPaths.has(key)) {
+      this.changesToSync.set(key, { type: "delete" });
+    }
   };
 
   Store.prototype.clear = function() {
@@ -186,6 +204,10 @@ var fs = (function() {
       if (DEBUG_FS) { console.log("sync completed"); }
       cb();
     };
+  }
+
+  Store.prototype.addTransientPath = function(path) {
+    this.transientPaths.set(path, true);
   }
 
   var store = new Store();
@@ -752,6 +774,10 @@ var fs = (function() {
     tryFile(completeName);
   }
 
+  function addTransientPath(path) {
+    return store.addTransientPath(path);
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -778,5 +804,6 @@ var fs = (function() {
     syncStore: syncStore,
     purgeStore: purgeStore,
     createUniqueFile: createUniqueFile,
+    addTransientPath: addTransientPath,
   };
 })();

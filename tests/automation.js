@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 38000;
+casper.options.waitTimeout = 45000;
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
@@ -16,7 +16,6 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferent: 1621 },
   { name: "gfx/CanvasTest", maxDifferent: 271 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
@@ -58,13 +57,13 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71194 },
+  { name: "pass", number: 71250 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
 ];
 
-casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
@@ -111,7 +110,7 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 129 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 130 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
@@ -240,6 +239,31 @@ casper.test.begin("unit tests", 7 + gfxTests.length, function(test) {
                     });
                 });
             });
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.pass();
+        });
+    });
+
+    // Run the test a second time to ensure loading the JAR stored in the FS works correctly.
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.pass();
         });
     });
 

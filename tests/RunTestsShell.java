@@ -144,6 +144,7 @@ static String[] list = {
         private int unknownPass = 0;
 
         public Harness(String note) {
+            super(null);
             this.testName = note;
         }
 

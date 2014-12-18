@@ -129,9 +129,90 @@ if (urlParams.jad) {
     .split("\n")
     .forEach(function(entry) {
       if (entry) {
-        var keyval = entry.split(':');
-        MIDP.manifest[keyval[0]] = keyval[1].trim();
+        var keyEnd = entry.indexOf(":");
+        var key = entry.substring(0, keyEnd);
+        var val = entry.substring(keyEnd + 1).trim();
+        MIDP.manifest[key] = val;
       }
+    });
+  }));
+}
+
+function performDownload(dialog, callback) {
+  var dialogText = dialog.querySelector('h1.download-dialog-text');
+  dialogText.textContent = "Downloading " + MIDlet.name + "…";
+
+  var progressBar = dialog.querySelector('progress.pack-activity');
+
+  var sender = DumbPipe.open("JARDownloader", {}, function(message) {
+    switch (message.type) {
+      case "done":
+        DumbPipe.close(sender);
+
+        callback(message.data);
+
+        break;
+
+      case "progress":
+        progressBar.value = message.progress;
+        break;
+
+      case "fail":
+        DumbPipe.close(sender);
+
+        progressBar.value = 0;
+        progressBar.style.display = "none";
+
+        var dialogText = dialog.querySelector('h1.download-dialog-text');
+        dialogText.textContent = "Download failure";
+
+        var btnRetry = dialog.querySelector('button.recommend');
+        btnRetry.style.display = '';
+
+        btnRetry.addEventListener('click', function onclick(e) {
+          e.preventDefault();
+          btnRetry.removeEventListener('click', onclick);
+
+          btnRetry.style.display = "none";
+
+          progressBar.style.display = '';
+
+          performDownload(dialog, callback);
+        });
+
+        break;
+    }
+  });
+}
+
+if (urlParams.downloadJAD) {
+  loadingPromises.push(new Promise(function(resolve, reject) {
+    initFS.then(function() {
+      fs.exists("/app.jar", function(exists) {
+        if (exists) {
+          fs.open("/app.jar", function(fd) {
+            var data = fs.read(fd);
+            fs.close();
+            jvm.addPath("app.jar", data.buffer);
+            resolve();
+          });
+        } else {
+          var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+          dialog.style.display = 'block';
+          dialog.classList.add('visible');
+          document.body.appendChild(dialog);
+
+          performDownload(dialog, function(data) {
+            dialog.parentElement.removeChild(dialog);
+
+            jvm.addPath("app.jar", data);
+
+            fs.create("/app.jar", new Blob([ data ]), function() {});
+
+            resolve();
+          });
+        }
+      });
     });
   }));
 }

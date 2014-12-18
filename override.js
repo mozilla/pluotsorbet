@@ -119,7 +119,7 @@ function executePromise(ret, doReturn, ctx, key) {
     });
     var callee = new Frame(syntheticMethod, [], 0);
     ctx.frames.push(callee);
-  }).then(ctx.start.bind(ctx));
+  }).then(ctx.resume.bind(ctx));
 
   if (Instrument.profiling) {
     Instrument.enterAsyncNative(key, ret);

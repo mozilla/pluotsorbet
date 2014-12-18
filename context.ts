@@ -116,6 +116,10 @@ module J2ME {
       IndentingWriter.RED,
       IndentingWriter.BOLD_RED
     ];
+    private static writer: IndentingWriter = new IndentingWriter(false, function (s) {
+      console.log(s);
+    });
+
     id: number
     frames: any [];
     frameSets: any [];
@@ -149,6 +153,12 @@ module J2ME {
       return "";
     }
 
+    static setWriters(writer: IndentingWriter) {
+      traceWriter = null; // writer;
+      linkWriter = null; // writer;
+      initWriter = null; // writer;
+    }
+
     kill() {
       if (this.thread) {
         this.thread.alive = false;
@@ -161,27 +171,7 @@ module J2ME {
       return frames[frames.length - 1];
     }
 
-    popFrame() {
-      var callee = this.frames.pop();
-      if (this.frames.length === 0) {
-        return null;
-      }
-      var caller = this.current();
-      Instrument.callExitHooks(callee.methodInfo, caller, callee);
-      return caller;
-    }
-
     executeNewFrameSet(frames: Frame []) {
-      var self = this;
-      function flattenFrameSet() {
-        // Append all the current frames to the parent frame set, so a single frame stack
-        // exists when the bailout finishes.
-        var currentFrames = self.frames;
-        self.frames = self.frameSets.pop();
-        for (var i = currentFrames.length - 1; i >= 0; i--) {
-          self.bailoutFrames.unshift(currentFrames[i]);
-        }
-      }
       this.frameSets.push(this.frames);
       this.frames = frames;
       try {
@@ -192,7 +182,13 @@ module J2ME {
         }
         var returnValue = VM.execute(this);
         if (U) {
-          flattenFrameSet();
+          // Append all the current frames to the parent frame set, so a single frame stack
+          // exists when the bailout finishes.
+          var currentFrames = this.frames;
+          this.frames = this.frameSets.pop();
+          for (var i = currentFrames.length - 1; i >= 0; i--) {
+            this.bailoutFrames.unshift(currentFrames[i]);
+          }
           return;
         }
         if (traceWriter) {
@@ -266,70 +262,56 @@ module J2ME {
 
       var exception = new classInfo.klass();
       var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
-      jsGlobal[methodInfo.mangledClassAndMethodName].call(exception, message ? $S(message) : null);
+      jsGlobal[methodInfo.mangledClassAndMethodName].call(exception, message ? newString(message) : null);
 
       return exception;
     }
 
-    setCurrent() {
+    setAsCurrentContext() {
       $ = this.runtime;
       if ($.ctx === this) {
         return;
       }
       $.ctx = this;
-      traceWriter = null; // this.writer;
-      linkWriter = null; // this.writer;
-      initWriter = null; // this.writer;
+      Context.setWriters(this.writer);
     }
 
-    execute() {
+    clearCurrentContext() {
+      $ = null;
+      Context.setWriters(Context.writer);
+    }
+
+    start(frame: Frame) {
+      this.frames = [frame];
+      this.resume();
+    }
+
+    private execute() {
       Instrument.callResumeHooks(this.current());
-      this.setCurrent();
+      this.setAsCurrentContext();
       do {
         VM.execute(this);
         if (U) {
           Array.prototype.push.apply(this.frames, this.bailoutFrames);
           this.bailoutFrames = [];
-        }
-        if (U === VMState.Yielding) {
-          // Ignore the yield and continue executing instructions on this thread.
+          switch (U) {
+            case VMState.Yielding:
+              this.resume();
+              break;
+            case VMState.Pausing:
+              Instrument.callPauseHooks(this.current());
+              break;
+          }
           U = VMState.Running;
-          continue;
-        } else if (U === VMState.Pausing) {
-          U = VMState.Running;
-          Instrument.callPauseHooks(this.current());
+          this.clearCurrentContext();
           return;
         }
       } while (this.frames.length !== 0);
-    }
-
-    start() {
-      var ctx = this;
-      this.setCurrent();
-      Instrument.callResumeHooks(ctx.current());
-      VM.execute(ctx);
-      if (U) {
-        Array.prototype.push.apply(this.frames, this.bailoutFrames);
-        this.bailoutFrames = [];
-      }
-      if (U === VMState.Pausing) {
-        U = VMState.Running;
-        Instrument.callPauseHooks(this.current());
-        return;
-      }
-      U = VMState.Running;
-      Instrument.callPauseHooks(ctx.current());
-
-      if (ctx.frames.length === 0) {
-        ctx.kill();
-        return;
-      }
-
-      ctx.resume();
+      this.kill();
     }
 
     resume() {
-      (<any>window).setZeroTimeout(this.start.bind(this));
+      (<any>window).setZeroTimeout(this.execute.bind(this));
     }
 
     block(obj, queue, lockLevel) {
