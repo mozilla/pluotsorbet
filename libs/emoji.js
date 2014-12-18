@@ -3,7 +3,7 @@
 
 'use strict';
 
-var emojiRegEx = (function() {
+var emoji = (function() {
   // http://www.unicode.org/Public/UNIDATA/EmojiSources.txt
   // http://developer.nokia.com/resources/library/Java/developers-guides/data-handling/emoji.html
   var regexString = [
@@ -187,8 +187,8 @@ var emojiRegEx = (function() {
     '\ud83c\udE51', // U+1F251
   ].join("|");
 
-  return function() {
-      return new RegExp(regexString, 'g');
+  return {
+      regEx: new RegExp(regexString, 'g'),
   };
 })();
 

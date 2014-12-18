@@ -159,12 +159,12 @@ var TextEditorProvider = (function() {
         this.textEditorElem.onkeydown = function(e) {
             if (this.getSize() >= this.getAttribute("maxlength")) {
                 // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-                if ((e.keyCode > 47 && e.keyCode < 58)  || // number keys
+                if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
                     e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
-                    (e.keyCode > 64 && e.keyCode < 91)   || // letter keys
-                    (e.keyCode > 95 && e.keyCode < 112)  || // numpad keys
-                    (e.keyCode > 185 && e.keyCode < 193) || // ;=,-./` (in order)
-                    (e.keyCode > 218 && e.keyCode < 223)) { // [\]' (in order)
+                    (e.keyCode >= 65 && e.keyCode <= 90)   || // letter keys
+                    (e.keyCode >= 96 && e.keyCode <= 111)  || // numpad keys
+                    (e.keyCode >= 186 && e.keyCode <= 192) || // ;=,-./` (in order)
+                    (e.keyCode >= 219 && e.keyCode <= 222)) { // [\]' (in order)
                     return false;
                 }
             }
@@ -255,7 +255,7 @@ var TextEditorProvider = (function() {
                        'pt" width="' + this.font.size + 'pt" alt="' + str + '">';
             }.bind(this);
 
-            this.textEditorElem.innerHTML = content.replace(emojiRegEx(), toImg) + "\n";
+            this.textEditorElem.innerHTML = content.replace(emoji.regEx, toImg) + "\n";
         },
 
         getSelectionEnd: function() {
