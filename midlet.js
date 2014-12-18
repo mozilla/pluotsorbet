@@ -2,5 +2,6 @@
 
 var MIDlet = {
   name: "aMIDlet",
-  SMSDialogTimeout: 5000,
+  SMSDialogTimeout: 300000, // Five minutes
+  SMSDialogTimeoutText: "left",
 };
