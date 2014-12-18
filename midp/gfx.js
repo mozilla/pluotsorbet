@@ -685,11 +685,28 @@ var currentlyFocusedTextEditor;
         var str = util.fromJavaString(jStr);
         var g = this;
         withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
+            withClip(g, c, x, y, function(x, y) {
+                var w = 0;
+                var match;
+                console.log("STR: " + str + ", " + str.length);
+                while (match = emojiRegEx.exec(str)) {
+                    var text = str.substr(0, match.index);
+                    console.log("DRAW: " + text + ", " + text.length);
+                    console.log("EMOJI: " + match[0]+ ", " + match[0].length);
+                    str = str.substr(match.index + match[0].length);
+                    console.log("REMAINING: " + str + ", " + str.length);
+                }
+
+                console.log("LAST TEXT: " + str + ", " + str.length);
+                console.log("match: " + match);
+            });
+
+
+            /*withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
                 withOpaquePixel(g, c, function() {
                     c.fillText(str, x, y);
                 });
-            });
+            });*/
         });
     });
 
