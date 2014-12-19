@@ -74,7 +74,7 @@ var currentlyFocusedTextEditor;
         console.log("------------------------------------------------------------------------------------------------------------------");
         var goal = (5000 / 20);
         var time = performance.now();
-        console.log(performance.now() + " " + (time > (5000 / 20) ? " Goal is to" + goal + ", make it " + (time / goal).toFixed(2) + " Faster": "Done"));
+        console.log(performance.now() + " " + (time > (5000 / 20) ? " Goal is " + goal + ", make it " + (time / goal).toFixed(2) + " X faster.": "Done"));
         console.log("------------------------------------------------------------------------------------------------------------------");
         console.log("------------------------------------------------------------------------------------------------------------------");
 

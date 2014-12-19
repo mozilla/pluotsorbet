@@ -255,19 +255,19 @@ window.onload = function() {
    if (J2ME.interpreterCounter) {
      J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
    }
-   if (nativeCounter) {
-     nativeCounter.traceSorted(new J2ME.IndentingWriter());
+   if (J2ME.nativeCounter) {
+     J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
    }
  };
   document.getElementById("dumpCountersTime").onclick = function() {
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
-    nativeCounter && nativeCounter.clear();
+    J2ME.nativeCounter && J2ME.nativeCounter.clear();
     setTimeout(function () {
       if (J2ME.interpreterCounter) {
         J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
       }
-      if (nativeCounter) {
-        nativeCounter.traceSorted(new J2ME.IndentingWriter());
+      if (J2ME.nativeCounter) {
+        J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
       }
     }, 1000);
   };

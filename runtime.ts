@@ -20,6 +20,7 @@ module J2ME {
   declare var Shumway;
 
   export var timeline;
+  export var nativeCounter = new Metrics.Counter(true);
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
@@ -160,8 +161,20 @@ module J2ME {
     return result;
   }
 
+  var stringHashes = Object.create(null);
+  var stringHasheCount = 0;
+
   export function hashStringToString(s: string) {
-    return StringUtilities.variableLengthEncodeInt32(hashString(s));
+    if (stringHasheCount > 1024) {
+      return StringUtilities.variableLengthEncodeInt32(hashString(s));
+    }
+    var c = stringHashes[s];
+    if (c) {
+      return c;
+    }
+    c = stringHashes[s] = StringUtilities.variableLengthEncodeInt32(hashString(s));
+    stringHasheCount ++;
+    return c;
   }
 
   export function mangleClassAndMethod(methodInfo: MethodInfo) {

@@ -64,7 +64,7 @@ var urlParams = {
 
 try {
   load("libs/zipfile.js", "blackBox.js", "build/j2me.js", "classfile/classfile.js",
-       "classfile/reader.js", "classfile/tags.js", "classfile/attributetypes.js",
+       "classfile/tags.js", "classfile/attributetypes.js",
        "libs/encoding.js", "util.js", "frame.js",
        "instrument.js", "signature.js", "opcodes.js",
        "override.js", "native.js", "tests/override.js", 

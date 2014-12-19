@@ -7,7 +7,7 @@ var getClassImage = function(classBytes) {
     var classImage = {};
 
     var getAttributes = function(attribute_name_index, bytes) {
-        var reader = new Reader(bytes);
+        var reader = new J2ME.Reader(bytes);
         var attribute = { attribute_name_index: attribute_name_index };
 
         var item = classImage.constant_pool[attribute_name_index];
@@ -116,7 +116,7 @@ var getClassImage = function(classBytes) {
         }
     };
 
-    var reader = Reader(classBytes);
+    var reader = new J2ME.Reader(classBytes);
     classImage.magic = reader.read32().toString(16);
 
     classImage.version = {
