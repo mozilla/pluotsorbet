@@ -4,7 +4,6 @@ module J2ME {
   declare var Instrument;
   declare var setZeroTimeout;
   declare var Long;
-  declare var JavaException;
 
   export class Frame {
     methodInfo: MethodInfo;
@@ -447,7 +446,7 @@ module J2ME {
           var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
           if (!constant) {
-            throw new JavaException("java/lang/RuntimeException",
+            throw $.newRuntimeException(
               classInfo.className + "." + fieldName + "." + signature + " not found");
           }
           break;
@@ -458,7 +457,7 @@ module J2ME {
           var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
           if (!constant) {
-            throw new JavaException("java/lang/RuntimeException",
+            throw $.newRuntimeException(
               classInfo.className + "." + methodName + "." + signature + " not found");
           }
           break;

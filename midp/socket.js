@@ -11,18 +11,18 @@ var SOCKET_OPT = {
   SNDBUF: 4,
 };
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I", function(host, ipBytes) {
+Native["com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I"] = function(host, ipBytes) {
     // We'd need to modify ipBytes, that is an array with length 0
     // But we don't really need to do that, because getIpNumber0 is called only
     // before open0. So we just need to store the host and pass it to
     // mozTCPSocket::open.
     this.host = util.fromJavaString(host);
     return 0;
-});
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;", function(local) {
+Native["com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;"] = function(local) {
     return local ? "127.0.0.1" : this.socket.host;
-});
+};
 
 function Socket(host, port) {
     this.sender = DumbPipe.open("socket", { host: host, port: port }, this.recipient.bind(this));
@@ -52,10 +52,10 @@ Socket.prototype.close = function() {
     this.sender({ type: "close" });
 }
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBytes, port) {
+Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ipBytes, port) {
     // console.log("Protocol.open0: " + this.host + ":" + port);
-
-    return new Promise((function(resolve, reject) {
+    var ctx = $.ctx;
+    asyncImpl("V", new Promise((function(resolve, reject) {
         this.socket = new Socket(this.host, port);
 
         this.options = {};
@@ -74,8 +74,9 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBy
         }
 
         this.socket.onerror = function(message) {
+            ctx.setAsCurrentContext();
             // console.log("this.socket.onerror: " + message.error);
-            reject(new JavaException("java/io/IOException", message.error));
+            reject($.newIOException(message.error));
         }
 
         this.socket.onclose = function() {
@@ -95,18 +96,18 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V", function(ipBy
                 this.waitingData();
             }
         }).bind(this);
-    }).bind(this));
-}, true);
+    }).bind(this)));
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.available0.()I", function() {
+Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function() {
     // console.log("Protocol.available0: " + this.data.byteLength);
     return this.data.byteLength;
-});
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(data, offset, length) {
+Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(data, offset, length) {
     // console.log("Protocol.read0: " + this.socket.isClosed);
 
-    return new Promise((function(resolve, reject) {
+    asyncImpl("I", new Promise((function(resolve, reject) {
         // There might be data left in the buffer when the socket is closed, so we
         // should allow buffer reading even the socket has been closed.
         if (this.socket.isClosed && this.data.length == 0) {
@@ -134,21 +135,24 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I", function(dat
         }
 
         copyData();
-    }).bind(this));
-}, true);
+    }).bind(this)));
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(data, offset, length) {
-    return new Promise(function(resolve, reject) {
+Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(data, offset, length) {
+    var ctx = $.ctx;
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        ctx.setAsCurrentContext();
         if (this.socket.isClosed) {
-          reject(new JavaException("java/io/IOException", "socket is closed"));
+          reject($.newIOException("socket is closed"));
           return;
         }
 
         this.socket.onsend = function(message) {
+            ctx.setAsCurrentContext();
             this.socket.onsend = null;
             if ("error" in message) {
                 console.error(message.error);
-                reject(new JavaException("java/io/IOException", "error writing to socket"));
+                reject($.newIOException("error writing to socket"));
             } else if (message.result) {
                 resolve(length);
             } else {
@@ -160,29 +164,29 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I", function(da
         }.bind(this);
 
         this.socket.send(data, offset, length);
-    }.bind(this));
-}, true);
+    }.bind(this)));
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V", function(option, value) {
+Native["com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V"] = function(option, value) {
     if (!(option in this.options)) {
-        throw new JavaException("java/lang/IllegalArgumentException", "Unsupported socket option");
+        throw $.newIllegalArgumentException("Unsupported socket option");
     }
 
     this.options[option] = value;
-});
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I", function(option) {
+Native["com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I"] = function(option) {
     if (!(option in this.options)) {
-        throw new JavaException("java/lang/IllegalArgumentException", "Unsupported socket option");
+        throw new $.newIllegalArgumentException("Unsupported socket option");
     }
 
     return this.options[option];
-});
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function() {
+Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function() {
     // console.log("Protocol.close0: " + this.socket.isClosed);
 
-    return new Promise((function(resolve, reject) {
+    asyncImpl("V", new Promise((function(resolve, reject) {
         if (this.socket.isClosed) {
             resolve();
             return;
@@ -195,26 +199,26 @@ Native.create("com/sun/midp/io/j2me/socket/Protocol.close0.()V", function() {
         }).bind(this);
 
         this.socket.close();
-    }).bind(this));
-}, true);
+    }).bind(this)));
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V", function() {
+Native["com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V"] = function() {
     // We don't have the ability to close the output stream independently
     // of the connection as a whole.  But we don't seem to have to do anything
     // here, since this has just two call sites: one in Protocol.disconnect,
     // right before closing the socket; the other in Protocol.closeOutputStream,
     // which says it will be "called once by the child output stream," although
     // I can't find an actual caller.
-});
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V", function() {
+Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V"] = function() {
     if (this.waitingData) {
         console.warn("Protocol.notifyClosedInput0.()V unimplemented while thread is blocked on read0");
     }
-});
+};
 
-Native.create("com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V", function() {
+Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V"] = function() {
     if (this.socket.ondrain) {
         console.warn("Protocol.notifyClosedOutput0.()V unimplemented while thread is blocked on write0");
     }
-});
+};
