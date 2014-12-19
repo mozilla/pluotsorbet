@@ -177,6 +177,9 @@ window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    fs.clear();
  };
+ document.getElementById("exportstorage").onclick = function() {
+   fs.export();
+ };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);

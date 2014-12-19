@@ -248,6 +248,48 @@ var fs = (function() {
     };
   }
 
+  Store.prototype.export = function() {
+    var records = {};
+    var output = {};
+    var promises = [];
+
+    this.sync((function() {
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      if (DEBUG_FS) { console.log("export initiated"); }
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+
+      objectStore.openCursor().onsuccess = function(event) {
+        var cursor = event.target.result;
+        if (cursor) {
+          records[cursor.key] = cursor.value;
+          cursor.continue();
+        } else {
+          Object.keys(records).forEach(function(key) {
+            var record = records[key];
+            if (record.isDir) {
+              output[key] = record;
+            } else {
+              promises.push(new Promise(function(resolve, reject) {
+                var reader = new FileReader();
+                reader.addEventListener("loadend", function() {
+                  record.data = Array.prototype.slice.call(new Int8Array(reader.result));
+                  output[key] = record;
+                  resolve();
+                });
+                reader.readAsArrayBuffer(record.data);
+              }));
+            }
+          });
+
+          Promise.all(promises).then(function() {
+            saveAs(new Blob([JSON.stringify(output)]), "fs.json");
+            if (DEBUG_FS) { console.log("export completed"); }
+          });
+        }
+      };
+    }).bind(this));
+  }
+
   Store.prototype.getKeysByParentDir = function(parentDir, cb) {
     this.sync((function() {
       var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
@@ -900,5 +942,6 @@ var fs = (function() {
     purgeStore: purgeStore,
     createUniqueFile: createUniqueFile,
     addTransientPath: addTransientPath,
+    export: function() { store.export() },
   };
 })();
