@@ -998,14 +998,7 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    // if (methodInfo.isStatic) {
-      return jsGlobal[methodInfo.mangledClassAndMethodName];
-    //} else {
-    //  if (klass.prototype.hasOwnProperty(methodInfo.mangledName)) {
-    //    return klass.prototype[methodInfo.mangledName];
-    //  }
-    //  return null;
-    //}
+    return jsGlobal[methodInfo.mangledClassAndMethodName];
   }
 
   /**
@@ -1041,6 +1034,7 @@ module J2ME {
       var methodType;
       var nativeMethod = findNativeMethodImplementation(methods[i]);
       var methodDescription = methods[i].name + methods[i].signature;
+      var updateGlobalObject = true;
       if (nativeMethod) {
         linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
         fn = nativeMethod;
@@ -1053,6 +1047,7 @@ module J2ME {
           if (!traceWriter) {
             linkWriter && linkWriter.outdent();
           }
+          updateGlobalObject = false;
         } else {
           linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
@@ -1066,14 +1061,18 @@ module J2ME {
 
       if (false && timeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
+        updateGlobalObject = true;
       }
 
       if (traceWriter && methodType !== MethodType.Interpreted) {
         fn = tracingWrapper(fn, methodInfo, methodType);
+        updateGlobalObject = true;
       }
 
       // Link even non-static methods globally so they can be invoked statically via invokespecial.
-      jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
+      if (updateGlobalObject) {
+        jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
+      }
       if (!methodInfo.isStatic) {
         klass.prototype[methodInfo.mangledName] = fn;
       }

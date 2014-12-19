@@ -37,7 +37,7 @@ j2me: build/j2me.js build/jsc.js
 
 aot: java j2me
 	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -cff classes.txt > build/classes.jar.js
-	js build/jsc.js -cp java/classes.jar program.jar -d -jf java/classes.jar -cff classes.txt > build/program.jar.js
+	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js
 
 	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
 	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/program.jar.js > build/program.jar.cc.js
