@@ -75,7 +75,7 @@ public class TestTextEditor extends Canvas implements Testlet {
         return sb.toString();
     }
 
-    public void testConstraints(TestHarness th, int constraints) {
+    public void testConstraints(TestHarness th, int constraints, int tolerance) {
         TextEditor textEditor = new TextEditor("Hello, world!", 20, 0, 100, 24);
 
         th.check(textEditor.getContent(), "Hello, world!");
@@ -134,17 +134,17 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getForegroundColor(), 0x33333333);
 
         th.check(textEditor.getLineMarginHeight(), 0);
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= 2, "One");
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= tolerance, "One");
         textEditor.setMultiline(true);
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= 2, "Two");
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= tolerance, "Two");
         textEditor.setContent("A\nB");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= 4, "Three");
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= tolerance * 2, "Three");
         textEditor.setContent("A\r\nB");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= 4, "Four");
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= tolerance * 2, "Four");
         textEditor.setContent("A\nB\nC");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 3) <= 5, "Five");
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 3) <= tolerance * 3, "Five");
         textEditor.setContent("");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= 2, "Six");
+        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= tolerance, "Six");
 
         th.check(textEditor.getPositionX(), 0);
         th.check(textEditor.getPositionY(), 0);
@@ -313,8 +313,8 @@ public class TestTextEditor extends Canvas implements Testlet {
     private native boolean isTextEditorReallyFocused();
 
     public void test(TestHarness th) {
-        testConstraints(th, TextField.ANY);
-        testConstraints(th, TextField.PASSWORD);
+        testConstraints(th, TextField.ANY, 3);
+        testConstraints(th, TextField.PASSWORD, 0);
         testEmoji(th);
     }
 
