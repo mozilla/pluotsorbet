@@ -21,6 +21,7 @@ module J2ME {
 
   export var timeline;
   export var nativeCounter = new Metrics.Counter(true);
+  export var runtimeCounter = new Metrics.Counter(true);
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
@@ -821,6 +822,7 @@ module J2ME {
           return "[Primitive Klass " + classInfo.className + "]";
         };
       } else {
+        enterTimeline("emitKlass");
         // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
         // creating a closure, which will probably be slower at runtime.
         var source = "";
@@ -828,6 +830,7 @@ module J2ME {
         var emitter = new Emitter(writer, false, true, true);
         J2ME.emitKlass(emitter, classInfo);
         (1, eval)(source);
+        leaveTimeline("emitKlass");
         // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
         // consoleWriter.writeLn(source);
         klass = jsGlobal[mangledName];
@@ -845,8 +848,13 @@ module J2ME {
 
     var superKlass = getKlass(classInfo.superClass);
 
+    enterTimeline("extendKlass");
     extendKlass(klass, superKlass);
+    leaveTimeline("extendKlass");
+
+    enterTimeline("registerKlass");
     registerKlass(klass, classInfo);
+    leaveTimeline("registerKlass");
 
     if (!classInfo.isInterface) {
       initializeInterfaces(klass, classInfo);
@@ -900,8 +908,14 @@ module J2ME {
     }
     linkWriter && linkWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
 
+    enterTimeline("linkKlassMethods");
     linkKlassMethods(classInfo.klass);
+    leaveTimeline("linkKlassMethods");
+
+    enterTimeline("linkKlassFields");
     linkKlassFields(classInfo.klass);
+    leaveTimeline("linkKlassFields");
+
     leaveTimeline("linkKlass");
   }
 
@@ -1059,12 +1073,37 @@ module J2ME {
     linkWriter && linkWriter.outdent();
 
     function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
-      return function () {
-        var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
+      return function (a, b, c, d) {
+        var key = MethodType[methodType];
+        if (methodType === MethodType.Interpreted) {
+          nativeCounter.count(MethodType[MethodType.Interpreted]);
+          key += methodInfo.isSynchronized ? " Synchronized" : "";
+          key += methodInfo.exception_table.length ? " Has Exceptions" : "";
+          // key += " " + methodInfo.implKey;
+        }
+        // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
+        // var key = MethodType[methodType] + " " + methodInfo.implKey;
+        nativeCounter.count(key);
         var s = ops;
         try {
           enterTimeline(key);
-          var r = fn.apply(this, arguments);
+          var r;
+          switch (arguments.length) {
+            case 0:
+              r = fn.call(this);
+              break;
+            case 1:
+              r = fn.call(this, a);
+              break;
+            case 2:
+              r = fn.call(this, a, b);
+              break;
+            case 3:
+              r = fn.call(this, a, b, c);
+              break;
+            default:
+              r = fn.apply(this, arguments);
+          }
           leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);
         } catch (e) {
           leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);

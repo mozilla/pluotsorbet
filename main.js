@@ -258,6 +258,9 @@ window.onload = function() {
    if (J2ME.nativeCounter) {
      J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
    }
+   if (J2ME.runtimeCounter) {
+     J2ME.runtimeCounter.traceSorted(new J2ME.IndentingWriter());
+   }
  };
   document.getElementById("dumpCountersTime").onclick = function() {
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();

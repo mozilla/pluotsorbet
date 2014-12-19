@@ -250,12 +250,12 @@ module J2ME {
       this.executeNewFrameSet([classInitFrame]);
     }
 
-    createException(className, message?) {
+    createException(className: string, message?: string) {
       if (!message)
         message = "";
       message = "" + message;
       var classInfo = CLASSES.getClass(className);
-
+      runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
       jsGlobal[methodInfo.mangledClassAndMethodName].call(exception, message ? newString(message) : null);

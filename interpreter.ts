@@ -32,8 +32,6 @@ module J2ME {
     var stack = frame.stack;
     var returnValue = null;
 
-    interpreterCounter && interpreterCounter.count("Method " + frame.methodInfo.implKey);
-
     function popFrame(consumes) {
       if (frame.lockObject)
         ctx.monitorExit(frame.lockObject);
@@ -196,7 +194,16 @@ module J2ME {
         }
       }
 
-      interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
+      if (interpreterCounter) {
+        var key: any = "";
+        key += frame.methodInfo.isSynchronized ? " Synchronized" : "";
+        key += frame.methodInfo.exception_table.length ? " Has Exceptions" : "";
+        key += " " + frame.methodInfo.implKey;
+        interpreterCounter.count("OP " + key);
+      }
+
+
+      // interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
 
 
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.bci - 1) + " " + OPCODES[op] + " " + stack.join(","));
