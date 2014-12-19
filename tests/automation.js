@@ -77,9 +77,7 @@ var expectedUnitTestResults = [
  * when the page is unloaded.
  */
 function syncFS() {
-    casper.waitForText("SYNC FILESYSTEM", function() {
-        console.log("SYNC FILESYSTEM");
-    });
+    casper.waitForText("SYNC FILESYSTEM");
     casper.evaluate(function() {
         fs.syncStore(function() {
             console.log("SYNC FILESYSTEM");
