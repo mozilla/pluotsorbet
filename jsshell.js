@@ -29,6 +29,10 @@ var navigator = {
   language: "en-US",
 };
 
+function Promise() {
+  // ...
+}
+
 var document = {
   documentElement: {
     classList: {
@@ -69,7 +73,10 @@ try {
        "instrument.js", "signature.js", "opcodes.js",
        "override.js", "native.js", "tests/override.js", 
        "string.js", "libs/console.js", "midp/midp.js",
-       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js", "build/compiled.js");
+       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
+
+  // load("build/classes.jar.cc.js");
+  // load("build/program.jar.cc.js");
 
   var dump = putstr;
   var console = window.console;
@@ -80,12 +87,22 @@ try {
 
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-  CLASSES.addPath("bench/scimark2.jar", snarf("bench/scimark2.jar", "binary").buffer);
+  CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
 
   var start = dateNow();
   var jvm = new JVM();
+
+  var s = dateNow();
+  snarf("classes.txt").split("\n").forEach(function (x) {
+    try {
+      CLASSES.getClass(x);
+    } catch (e) {
+      print(e);
+    }
+  });
+  print("TOOK: " + (dateNow() - s));
 
   print("INITIALIZATION TIME: " + (dateNow() - start));
 
