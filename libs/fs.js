@@ -258,13 +258,18 @@ var fs = (function() {
       if (DEBUG_FS) { console.log("export initiated"); }
       var objectStore = transaction.objectStore(Store.DBSTORENAME);
 
-      objectStore.openCursor().onsuccess = function(event) {
+      var req = objectStore.openCursor();
+      req.onerror = function() {
+        console.error("export error " + req.error);
+      };
+      req.onsuccess = function(event) {
         var cursor = event.target.result;
         if (cursor) {
           records[cursor.key] = cursor.value;
           cursor.continue();
         } else {
           Object.keys(records).forEach(function(key) {
+            if (DEBUG_FS) { console.log("exporting " + key); }
             var record = records[key];
             if (record.isDir) {
               output[key] = record;
@@ -282,7 +287,7 @@ var fs = (function() {
           });
 
           Promise.all(promises).then(function() {
-            saveAs(new Blob([JSON.stringify(output)]), "fs.json");
+            saveAs(new Blob([JSON.stringify(output)]), "fs-" + Date.now() + ".json");
             if (DEBUG_FS) { console.log("export completed"); }
           });
         }
