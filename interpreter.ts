@@ -1,7 +1,7 @@
 module J2ME {
   declare var util;
-  declare var JavaException;
   declare var Instrument;
+  declare var Promise;
 
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
@@ -30,8 +30,6 @@ module J2ME {
     var cp = frame.cp;
     var stack = frame.stack;
     var returnValue = null;
-
-    interpreterCounter && interpreterCounter.count("Method " + frame.methodInfo.implKey);
 
     function popFrame(consumes) {
       if (frame.lockObject)
@@ -169,11 +167,7 @@ module J2ME {
       try {
         return ctx.resolve(cp, idx, isStatic);
       } catch (e) {
-        if (e instanceof JavaException) {
-          throw ctx.createException(e.javaClassName, e.message);
-        } else {
-          throwHelper(e);
-        }
+        throwHelper(e);
       }
     }
 
@@ -199,7 +193,16 @@ module J2ME {
         }
       }
 
-      interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
+      if (interpreterCounter) {
+        var key: any = "";
+        key += frame.methodInfo.isSynchronized ? " Synchronized" : "";
+        key += frame.methodInfo.exception_table.length ? " Has Exceptions" : "";
+        key += " " + frame.methodInfo.implKey;
+        interpreterCounter.count("OP " + key);
+      }
+
+
+      // interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
 
 
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.bci - 1) + " " + OPCODES[op] + " " + stack.join(","));
@@ -1084,6 +1087,18 @@ module J2ME {
             }
 
             var returnValue = fn.apply(obj, args);
+            if (returnValue instanceof Promise) {
+              console.error("You forgot to call asyncImpl():", methodInfo.implKey);
+            } else if (methodInfo.getReturnKind() === Kind.Void && returnValue) {
+              console.error("You returned something in a void method:", methodInfo.implKey);
+            } else if (methodInfo.getReturnKind() !== Kind.Void && (returnValue === undefined) &&
+                      U !== J2ME.VMState.Pausing) {
+              console.error("You returned undefined in a non-void method:", methodInfo.implKey);
+            } else if (typeof returnValue === "string") {
+              console.error("You returned a non-wrapped string:", methodInfo.implKey);
+            } else if (returnValue === true || returnValue === false) {
+              console.error("You returned a JS boolean:", methodInfo.implKey);
+            }
             if (U) {
               return;
             }

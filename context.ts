@@ -3,7 +3,6 @@ module J2ME {
   declare var VM;
   declare var Instrument;
   declare var setZeroTimeout;
-  declare var JavaException;
 
   export class Frame {
     methodInfo: MethodInfo;
@@ -45,22 +44,19 @@ module J2ME {
     }
 
     read32(): number {
-      return this.read16() << 16 | this.read16();
+      return this.read32signed() >>> 0;
     }
 
     read8signed(): number {
-      var x = this.read8();
-      return (x > 0x7f) ? (x - 0x100) : x;
+      return this.read8() << 24 >> 24;
     }
 
     read16signed(): number {
-      var x = this.read16();
-      return (x > 0x7fff) ? (x - 0x10000) : x;
+      return this.read16() << 16 >> 16;
     }
 
     read32signed(): number {
-      var x = this.read32();
-      return (x > 0x7fffffff) ? (x - 0x100000000) : x;
+      return this.read16() << 16 | this.read16();
     }
 
     /**
@@ -253,12 +249,12 @@ module J2ME {
       this.executeNewFrameSet([classInitFrame]);
     }
 
-    createException(className, message?) {
+    createException(className: string, message?: string) {
       if (!message)
         message = "";
       message = "" + message;
       var classInfo = CLASSES.getClass(className);
-
+      runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
       jsGlobal[methodInfo.mangledClassAndMethodName].call(exception, message ? newString(message) : null);
@@ -449,7 +445,7 @@ module J2ME {
           var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
           if (!constant) {
-            throw new JavaException("java/lang/RuntimeException",
+            throw $.newRuntimeException(
               classInfo.className + "." + fieldName + "." + signature + " not found");
           }
           break;
@@ -460,7 +456,7 @@ module J2ME {
           var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
           if (!constant) {
-            throw new JavaException("java/lang/RuntimeException",
+            throw $.newRuntimeException(
               classInfo.className + "." + methodName + "." + signature + " not found");
           }
           break;

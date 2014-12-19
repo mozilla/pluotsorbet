@@ -29,6 +29,8 @@ module J2ME {
   declare var Shumway;
 
   export var timeline;
+  export var nativeCounter = new Metrics.Counter(true);
+  export var runtimeCounter = new Metrics.Counter(true);
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
@@ -48,7 +50,32 @@ module J2ME {
         Object: null,
         Class: null,
         String: null,
-        Thread: null
+        Thread: null,
+        IllegalArgumentException: null,
+        IllegalStateException: null,
+        NullPointerException: null,
+        RuntimeException: null,
+        IndexOutOfBoundsException: null,
+        ArrayIndexOutOfBoundsException: null,
+        StringIndexOutOfBoundsException: null,
+        ArrayStoreException: null,
+        ClassNotFoundException: null,
+        SecurityException: null,
+        IllegalThreadStateException: null,
+        NegativeArraySizeException: null,
+        Exception: null
+      },
+      io: {
+        IOException: null,
+        UTFDataFormatException: null,
+        UnsupportedEncodingException: null
+      }
+    },
+    javax: {
+      microedition: {
+        media: {
+          MediaException: null
+        }
       }
     },
     boolean: null,
@@ -169,8 +196,20 @@ module J2ME {
     return result;
   }
 
+  var stringHashes = Object.create(null);
+  var stringHasheCount = 0;
+
   export function hashStringToString(s: string) {
-    return StringUtilities.variableLengthEncodeInt32(hashString(s));
+    if (stringHasheCount > 1024) {
+      return StringUtilities.variableLengthEncodeInt32(hashString(s));
+    }
+    var c = stringHashes[s];
+    if (c) {
+      return c;
+    }
+    c = stringHashes[s] = StringUtilities.variableLengthEncodeInt32(hashString(s));
+    stringHasheCount ++;
+    return c;
   }
 
   export function mangleClassAndMethod(methodInfo: MethodInfo) {
@@ -309,6 +348,92 @@ module J2ME {
     getStatic(field) {
       return this.staticFields[field.id];
     }
+
+    newIOException(str: string): java.io.IOException {
+      return <java.io.IOException>$.ctx.createException(
+        "java/io/IOException", str);
+    }
+
+    newUnsupportedEncodingException(str: string): java.io.UnsupportedEncodingException {
+      return <java.io.UnsupportedEncodingException>$.ctx.createException(
+        "java/io/UnsupportedEncodingException", str);
+    }
+
+    newUTFDataFormatException(str: string): java.io.UTFDataFormatException {
+      return <java.io.UTFDataFormatException>$.ctx.createException(
+        "java/io/UTFDataFormatException", str);
+    }
+
+    newSecurityException(str: string): java.lang.SecurityException {
+      return <java.lang.SecurityException>$.ctx.createException(
+        "java/lang/SecurityException", str);
+    }
+
+    newIllegalThreadStateException(str: string): java.lang.IllegalThreadStateException {
+      return <java.lang.IllegalThreadStateException>$.ctx.createException(
+        "java/lang/IllegalThreadStateException", str);
+    }
+
+    newRuntimeException(str: string): java.lang.RuntimeException {
+      return <java.lang.RuntimeException>$.ctx.createException(
+        "java/lang/RuntimeException", str);
+    }
+
+    newIndexOutOfBoundsException(str: string): java.lang.IndexOutOfBoundsException {
+      return <java.lang.IndexOutOfBoundsException>$.ctx.createException(
+        "java/lang/IndexOutOfBoundsException", str);
+    }
+
+    newArrayIndexOutOfBoundsException(str: string): java.lang.ArrayIndexOutOfBoundsException {
+      return <java.lang.ArrayIndexOutOfBoundsException>$.ctx.createException(
+        "java/lang/ArrayIndexOutOfBoundsException", str);
+    }
+
+    newStringIndexOutOfBoundsException(str: string): java.lang.StringIndexOutOfBoundsException {
+      return <java.lang.StringIndexOutOfBoundsException>$.ctx.createException(
+        "java/lang/StringIndexOutOfBoundsException", str);
+    }
+
+    newArrayStoreException(str: string): java.lang.ArrayStoreException {
+      return <java.lang.ArrayStoreException>$.ctx.createException(
+        "java/lang/ArrayStoreException", str);
+    }
+
+    newClassNotFoundException(str: string): java.lang.ClassNotFoundException {
+      return <java.lang.ClassNotFoundException>$.ctx.createException(
+        "java/lang/ClassNotFoundException", str);
+    }
+
+    newIllegalArgumentException(str: string): java.lang.IllegalArgumentException {
+      return <java.lang.IllegalArgumentException>$.ctx.createException(
+        "java/lang/IllegalArgumentException", str);
+    }
+
+    newIllegalStateException(str: string): java.lang.IllegalStateException {
+      return <java.lang.IllegalStateException>$.ctx.createException(
+        "java/lang/IllegalStateException", str);
+    }
+
+    newNegativeArraySizeException(str: string): java.lang.NegativeArraySizeException {
+      return <java.lang.NegativeArraySizeException>$.ctx.createException(
+        "java/lang/NegativeArraySizeException", str);
+    }
+
+    newNullPointerException(str: string): java.lang.NullPointerException {
+      return <java.lang.NullPointerException>$.ctx.createException(
+        "java/lang/NullPointerException", str);
+    }
+
+    newMediaException(str: string): javax.microedition.media.MediaException {
+      return <javax.microedition.media.MediaException>$.ctx.createException(
+        "javax/microedition/media/MediaException", str);
+    }
+
+    newException(str: string): java.lang.Exception {
+      return <java.lang.Exception>$.ctx.createException(
+        "java/lang/Exception", str);
+    }
+
   }
 
   export enum VMState {
@@ -471,6 +596,67 @@ module J2ME {
       pid: number;
       alive: boolean;
     }
+
+    export interface Exception extends java.lang.Object {
+      message: string;
+    }
+
+    export interface IllegalArgumentException extends java.lang.Exception {
+    }
+
+    export interface IllegalStateException extends java.lang.Exception {
+    }
+
+    export interface NullPointerException extends java.lang.Exception {
+    }
+
+    export interface RuntimeException extends java.lang.Exception {
+    }
+
+    export interface IndexOutOfBoundsException extends java.lang.Exception {
+    }
+
+    export interface ArrayIndexOutOfBoundsException extends java.lang.Exception {
+    }
+
+    export interface StringIndexOutOfBoundsException extends java.lang.Exception {
+    }
+
+    export interface ArrayStoreException extends java.lang.Exception {
+    }
+
+    export interface ClassNotFoundException extends java.lang.Exception {
+    }
+
+    export interface SecurityException extends java.lang.Exception {
+    }
+
+    export interface IllegalThreadStateException extends java.lang.Exception {
+    }
+
+    export interface NegativeArraySizeException extends java.lang.Exception {
+    }
+
+  }
+
+  export module java.io {
+
+    export interface IOException extends java.lang.Exception {
+    }
+
+    export interface UTFDataFormatException extends java.lang.Exception {
+    }
+
+    export interface UnsupportedEncodingException extends java.lang.Exception {
+    }
+
+  }
+
+  export module javax.microedition.media {
+
+    export interface MediaException extends java.lang.Exception {
+    }
+
   }
 
   export module com.sun.cldc.isolate {
@@ -645,6 +831,7 @@ module J2ME {
           return "[Primitive Klass " + classInfo.className + "]";
         };
       } else {
+        enterTimeline("emitKlass");
         // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
         // creating a closure, which will probably be slower at runtime.
         var source = "";
@@ -652,6 +839,7 @@ module J2ME {
         var emitter = new Emitter(writer, false, true, true);
         J2ME.emitKlass(emitter, classInfo);
         (1, eval)(source);
+        leaveTimeline("emitKlass");
         // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
         // consoleWriter.writeLn(source);
         klass = jsGlobal[mangledName];
@@ -669,8 +857,13 @@ module J2ME {
 
     var superKlass = getKlass(classInfo.superClass);
 
+    enterTimeline("extendKlass");
     extendKlass(klass, superKlass);
+    leaveTimeline("extendKlass");
+
+    enterTimeline("registerKlass");
     registerKlass(klass, classInfo);
+    leaveTimeline("registerKlass");
 
     if (!classInfo.isInterface) {
       initializeInterfaces(klass, classInfo);
@@ -703,12 +896,35 @@ module J2ME {
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
         case "java/lang/String": Klasses.java.lang.String = klass; break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
+        case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
+        case "java/lang/IllegalArgumentException": Klasses.java.lang.IllegalArgumentException = klass; break;
+        case "java/lang/NegativeArraySizeException": Klasses.java.lang.NegativeArraySizeException = klass; break;
+        case "java/lang/IllegalStateException": Klasses.java.lang.IllegalStateException = klass; break;
+        case "java/lang/NullPointerException": Klasses.java.lang.NullPointerException = klass; break;
+        case "java/lang/RuntimeException": Klasses.java.lang.RuntimeException = klass; break;
+        case "java/lang/IndexOutOfBoundsException": Klasses.java.lang.IndexOutOfBoundsException = klass; break;
+        case "java/lang/ArrayIndexOutOfBoundsException": Klasses.java.lang.ArrayIndexOutOfBoundsException = klass; break;
+        case "java/lang/StringIndexOutOfBoundsException": Klasses.java.lang.StringIndexOutOfBoundsException = klass; break;
+        case "java/lang/ArrayStoreException": Klasses.java.lang.ArrayStoreException = klass; break;
+        case "java/lang/ClassNotFoundException": Klasses.java.lang.ClassNotFoundException = klass; break;
+        case "javax/microedition/media/MediaException": Klasses.javax.microedition.media.MediaException = klass; break;
+        case "java/lang/SecurityException": Klasses.java.lang.SecurityException = klass; break;
+        case "java/lang/IllegalThreadStateException": Klasses.java.lang.IllegalThreadStateException = klass; break;
+        case "java/io/IOException": Klasses.java.io.IOException = klass; break;
+        case "java/io/UnsupportedEncodingException": Klasses.java.io.UnsupportedEncodingException = klass; break;
+        case "java/io/UTFDataFormatException": Klasses.java.io.UTFDataFormatException = klass; break;
       }
     }
     linkWriter && linkWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
 
+    enterTimeline("linkKlassMethods");
     linkKlassMethods(classInfo.klass);
+    leaveTimeline("linkKlassMethods");
+
+    enterTimeline("linkKlassFields");
     linkKlassFields(classInfo.klass);
+    leaveTimeline("linkKlassFields");
+
     leaveTimeline("linkKlass");
   }
 
@@ -848,7 +1064,7 @@ module J2ME {
       // bailing out from.
       fn.methodInfo = methodInfo;
 
-      if (timeline) {
+      if (false && timeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
       }
 
@@ -866,12 +1082,37 @@ module J2ME {
     linkWriter && linkWriter.outdent();
 
     function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
-      return function () {
-        var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
+      return function (a, b, c, d) {
+        var key = MethodType[methodType];
+        if (methodType === MethodType.Interpreted) {
+          nativeCounter.count(MethodType[MethodType.Interpreted]);
+          key += methodInfo.isSynchronized ? " Synchronized" : "";
+          key += methodInfo.exception_table.length ? " Has Exceptions" : "";
+          // key += " " + methodInfo.implKey;
+        }
+        // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
+        // var key = MethodType[methodType] + " " + methodInfo.implKey;
+        nativeCounter.count(key);
         var s = ops;
         try {
           enterTimeline(key);
-          var r = fn.apply(this, arguments);
+          var r;
+          switch (arguments.length) {
+            case 0:
+              r = fn.call(this);
+              break;
+            case 1:
+              r = fn.call(this, a);
+              break;
+            case 2:
+              r = fn.call(this, a, b);
+              break;
+            case 3:
+              r = fn.call(this, a, b, c);
+              break;
+            default:
+              r = fn.apply(this, arguments);
+          }
           leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);
         } catch (e) {
           leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);
@@ -997,6 +1238,9 @@ module J2ME {
   }
 
   export function newString(str: string): java.lang.String {
+    if (str === null || str === undefined) {
+      return null;
+    }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
     object.str = str;
     return object;

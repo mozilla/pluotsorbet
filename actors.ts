@@ -1,5 +1,4 @@
 module J2ME {
-  declare var ACCESS_FLAGS;
   declare var Native, Override;
   declare var ATTRIBUTE_TYPES;
   declare var missingNativeImpl;
@@ -36,7 +35,7 @@ module J2ME {
 
     constructor(public classInfo: ClassInfo, public access_flags: number, public name: string, public signature: string) {
       this.id = FieldInfo._nextiId++;
-      this.isStatic = ACCESS_FLAGS.isStatic(access_flags);
+      this.isStatic = AccessFlags.isStatic(access_flags);
       this.mangledName = undefined;
     }
 
@@ -213,40 +212,45 @@ module J2ME {
       var self = this;
 
       this.interfaces = [];
-      classImage.interfaces.forEach(function (i) {
-        var int = CLASSES.loadClass(cp[cp[i].name_index].bytes);
+      for (var i = 0; i < classImage.interfaces.length; i++) {
+        var j = classImage.interfaces[i];
+        var int = CLASSES.loadClass(cp[cp[j].name_index].bytes);
         self.interfaces.push(int);
         self.interfaces = self.interfaces.concat(int.interfaces);
-      });
+      }
 
       this.fields = [];
-      classImage.fields.forEach(function (f) {
+      for (var i = 0; i < classImage.fields.length; i++) {
+        var f = classImage.fields[i];
         var field = new FieldInfo(self, f.access_flags, cp[f.name_index].bytes, cp[f.descriptor_index].bytes);
         f.attributes.forEach(function (attribute) {
           if (cp[attribute.attribute_name_index].bytes === "ConstantValue")
             field.constantValue = new DataView(attribute.info).getUint16(0, false);
         });
         self.fields.push(field);
-      });
+      }
 
       enterTimeline("methods");
       this.methods = [];
-      classImage.methods.forEach(function (m) {
-        self.methods.push(new MethodInfo({
+
+      for (var i = 0; i < classImage.methods.length; i++) {
+        var m = classImage.methods[i];
+        this.methods.push(new MethodInfo({
           name: cp[m.name_index].bytes,
           signature: cp[m.signature_index].bytes,
           classInfo: self,
           attributes: m.attributes,
-          isNative: ACCESS_FLAGS.isNative(m.access_flags),
-          isPublic: ACCESS_FLAGS.isPublic(m.access_flags),
-          isStatic: ACCESS_FLAGS.isStatic(m.access_flags),
-          isSynchronized: ACCESS_FLAGS.isSynchronized(m.access_flags)
+          isNative: AccessFlags.isNative(m.access_flags),
+          isPublic: AccessFlags.isPublic(m.access_flags),
+          isStatic: AccessFlags.isStatic(m.access_flags),
+          isSynchronized: AccessFlags.isSynchronized(m.access_flags)
         }));
-      });
+      }
       leaveTimeline("methods");
 
       var classes = this.classes = [];
-      classImage.attributes.forEach(function (a) {
+      for (var i = 0; i < classImage.attributes.length; i++) {
+        var a = classImage.attributes[i];
         if (a.info.type === ATTRIBUTE_TYPES.InnerClasses) {
           a.info.classes.forEach(function (c) {
             classes.push(cp[cp[c.inner_class_info_index].name_index].bytes);
@@ -256,7 +260,7 @@ module J2ME {
         } else if (a.info.type === ATTRIBUTE_TYPES.SourceFile) {
           self.sourceFile = cp[a.info.sourcefile_index].bytes;
         }
-      });
+      }
     }
 
     public complete() {
@@ -314,7 +318,7 @@ module J2ME {
     }
 
     get isInterface() : boolean {
-      return ACCESS_FLAGS.isInterface(this.access_flags);
+      return AccessFlags.isInterface(this.access_flags);
     }
 
     implementsInterface(iface) : boolean {
@@ -333,7 +337,7 @@ module J2ME {
     isAssignableTo(toClass: ClassInfo) : boolean {
       if (this === toClass || toClass === CLASSES.java_lang_Object)
         return true;
-      if (ACCESS_FLAGS.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
+      if (AccessFlags.isInterface(toClass.access_flags) && this.implementsInterface(toClass))
         return true;
       if (this.elementClass && toClass.elementClass)
         return this.elementClass.isAssignableTo(toClass.elementClass);

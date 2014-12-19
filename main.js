@@ -41,7 +41,7 @@ if ("gamepad" in urlParams && !/no|0/.test(urlParams.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
 
-var jars = ["java/classes.jar", "bench/scimark2.jar"];
+var jars = ["java/classes.jar"];
 
 if (MIDP.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
@@ -255,19 +255,22 @@ window.onload = function() {
    if (J2ME.interpreterCounter) {
      J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
    }
-   if (nativeCounter) {
-     nativeCounter.traceSorted(new J2ME.IndentingWriter());
+   if (J2ME.nativeCounter) {
+     J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
+   }
+   if (J2ME.runtimeCounter) {
+     J2ME.runtimeCounter.traceSorted(new J2ME.IndentingWriter());
    }
  };
   document.getElementById("dumpCountersTime").onclick = function() {
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
-    nativeCounter && nativeCounter.clear();
+    J2ME.nativeCounter && J2ME.nativeCounter.clear();
     setTimeout(function () {
       if (J2ME.interpreterCounter) {
         J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
       }
-      if (nativeCounter) {
-        nativeCounter.traceSorted(new J2ME.IndentingWriter());
+      if (J2ME.nativeCounter) {
+        J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
       }
     }, 1000);
   };

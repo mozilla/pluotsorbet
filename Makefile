@@ -1,5 +1,5 @@
 .PHONY: all test tests j2me java certs app clean
-BASIC_SRCS=$(shell find . -maxdepth 1 -name "*.ts")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts")
 JIT_SRCS=$(shell find jit -name "*.ts")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 

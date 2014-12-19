@@ -197,11 +197,9 @@ e.g.:
    Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(...) {...});
 
 
-If raising a Java `Exception`, throw new instance of Java `Exception` class
+If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in runtime.ts, e.g.:
 
-e.g.:
-
-    throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+    throw $.newNullPointerException("Cannot copy to/from a null array.");
 
 Remember:
 

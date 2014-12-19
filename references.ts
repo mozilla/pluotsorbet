@@ -1,4 +1,8 @@
+
 // Basics
+
+///<reference path='classfile/accessflags.ts' />
+///<reference path='classfile/reader.ts' />
 
 ///<reference path='utilities.ts' />
 ///<reference path='options.ts' />

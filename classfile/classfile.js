@@ -7,7 +7,7 @@ var getClassImage = function(classBytes) {
     var classImage = {};
 
     var getAttributes = function(attribute_name_index, bytes) {
-        var reader = new Reader(bytes);
+        var reader = new J2ME.Reader(bytes);
         var attribute = { attribute_name_index: attribute_name_index };
 
         var item = classImage.constant_pool[attribute_name_index];
@@ -60,13 +60,15 @@ var getClassImage = function(classBytes) {
 
                     case ATTRIBUTE_TYPES.LineNumberTable:
                         attribute.type = ATTRIBUTE_TYPES.LineNumberTable;
-                        var line_number_table_length = reader.read16();
-                        attribute.line_number_table = [];
-                        for (var i=0; i<line_number_table_length; i++) {
-                            attribute.line_number_table.push({
-                                start_pc: reader.read16(),
-                                line_number: reader.read16()
-                            });
+                        if (!release) {
+                            var line_number_table_length = reader.read16();
+                            attribute.line_number_table = [];
+                            for (var i = 0; i < line_number_table_length; i++) {
+                                attribute.line_number_table.push({
+                                    start_pc:    reader.read16(),
+                                    line_number: reader.read16()
+                                });
+                            }
                         }
                         return attribute;
 
@@ -114,7 +116,7 @@ var getClassImage = function(classBytes) {
         }
     };
 
-    var reader = Reader(classBytes);
+    var reader = new J2ME.Reader(classBytes);
     classImage.magic = reader.read32().toString(16);
 
     classImage.version = {
