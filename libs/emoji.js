@@ -188,9 +188,7 @@ var emoji = (function() {
   ].join("|");
 
   return {
-    regex: function() {
-      return new RegExp(regexString, 'g');
-    },
+    regEx: new RegExp(regexString, 'g'),
     strToImg: function(str) {
       var firstCodePoint = str.codePointAt(0);
 

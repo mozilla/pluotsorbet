@@ -690,8 +690,8 @@ var currentlyFocusedTextEditor;
 
         var match;
         var lastIndex = 0;
-        var regex = emoji.regex();
-        while (match = regex.exec(str)) {
+        emoji.regEx.lastIndex = 0;
+        while (match = emoji.regEx.exec(str)) {
             parts.push({ text: str.substring(lastIndex, match.index), emoji: match[0] });
             lastIndex = match.index + match[0].length;
         }

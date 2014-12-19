@@ -54,7 +54,7 @@ var gfxTests = [
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
   { name: "gfx/RectAfterText", maxDifferent: 637 },
-  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 23 },
+  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 749 },
 ];
 
 var expectedUnitTestResults = [
