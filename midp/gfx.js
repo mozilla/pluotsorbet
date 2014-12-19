@@ -701,11 +701,8 @@ var currentlyFocusedTextEditor;
         return parts;
     }
 
-    Native.create("javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V", function(jStr, x, y, anchor) {
-        return new Promise((function(resolve, reject) {
-            var str = util.fromJavaString(jStr);
-            var g = this;
-
+    function drawString(g, str, x, y, anchor, isOpaque) {
+        return new Promise(function(resolve, reject) {
             var font = g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
 
             var parts = parseEmojiString(str);
@@ -722,7 +719,8 @@ var currentlyFocusedTextEditor;
 
                         if (part.text) {
                             withTextAnchorNoClip(g, c, anchor, curX, y, part.text, function(x, y, w) {
-                                withOpaquePixel(g, c, function() {
+                                var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                                withPixelFunc(g, c, function() {
                                     c.fillText(part.text, x, y);
                                     curX += w;
                                 });
@@ -743,33 +741,21 @@ var currentlyFocusedTextEditor;
                     })();
                 });
             });
-        }).bind(this));
+        });
+    }
+
+    Native.create("javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V", function(str, x, y, anchor) {
+        return drawString(this, util.fromJavaString(str), x, y, anchor, true);
     }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V",
-    function(jStr, offset, len, x, y, anchor) {
-        var str = util.fromJavaString(jStr).substr(offset, len);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(str, x, y);
-                });
-            });
-        });
-    });
+    function(str, offset, len, x, y, anchor) {
+        return drawString(this, util.fromJavaString(str).substr(offset, len), x, y, anchor, false);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V", function(data, offset, len, x, y, anchor) {
-        var str = util.fromJavaChars(data, offset, len);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(str, x, y);
-                });
-            });
-        });
-    });
+        return drawString(this, util.fromJavaChars(data, offset, len), x, y, anchor, false);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawChar.(CIII)V", function(jChr, x, y, anchor) {
         var chr = String.fromCharCode(jChr);
