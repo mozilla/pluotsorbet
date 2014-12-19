@@ -406,7 +406,7 @@ var currentlyFocusedTextEditor;
         return c.measureText(str).width | 0;
     }
 
-    function withTextAnchorNoClip(g, c, anchor, x, y, str, cb) {
+    function withTextAnchor(g, c, anchor, x, y, str, cb) {
         var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
         c.textAlign = "left";
         c.textBaseline = "top";
@@ -426,12 +426,6 @@ var currentlyFocusedTextEditor;
         }
 
         cb(x, y, w);
-    }
-
-    function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        withClip(g, c, x, y, function(x, y) {
-            withTextAnchorNoClip(g, c, anchor, x, y, str, cb);
-        });
     }
 
     function abgrIntToCSS(pixel) {
@@ -718,7 +712,7 @@ var currentlyFocusedTextEditor;
                         var part = parts.shift();
 
                         if (part.text) {
-                            withTextAnchorNoClip(g, c, anchor, curX, y, part.text, function(x, y, w) {
+                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
                                 var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
                                 withPixelFunc(g, c, function() {
                                     c.fillText(part.text, x, y);
@@ -761,9 +755,11 @@ var currentlyFocusedTextEditor;
         var chr = String.fromCharCode(jChr);
         var g = this;
         withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(chr, x, y);
+            withClip(g, c, x, y, function(x, y) {
+                withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
+                    withPixel(g, c, function() {
+                        c.fillText(chr, x, y);
+                    });
                 });
             });
         });
