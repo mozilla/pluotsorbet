@@ -18,6 +18,37 @@ function load(file, responseType) {
   });
 }
 
+function loadWithProgress(file, responseType, successCb, failureCb, progressCb, length) {
+  var xhr = new XMLHttpRequest({ mozSystem: true });
+  xhr.open("GET", file, true);
+  xhr.responseType = responseType;
+
+  if (progressCb) {
+    xhr.onprogress = function(e) {
+
+      if (e.lengthComputable) {
+        progressCb(e.loaded / e.total * 100);
+      } else if (length) {
+        progressCb(e.loaded / length * 100);
+      }
+    }
+  }
+
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      successCb(xhr.response);
+    } else {
+      failureCb();
+    }
+  };
+
+  xhr.onerror = function(event) {
+    failureCb();
+  };
+
+  xhr.send(null);
+}
+
 function loadScript(path) {
   return new Promise(function(resolve, reject) {
     var element = document.createElement('script');
