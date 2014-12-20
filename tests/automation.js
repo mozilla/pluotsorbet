@@ -54,9 +54,9 @@ var gfxTests = [
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
   { name: "gfx/RectAfterText", maxDifferent: 637 },
-  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 749 },
-  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 749 },
-  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 749 },
+  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 936 },
+  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
+  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
 ];
 
 var expectedUnitTestResults = [
