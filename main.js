@@ -180,6 +180,9 @@ window.onload = function() {
  document.getElementById("exportstorage").onclick = function() {
    fs.export();
  };
+ document.getElementById("importstorage").addEventListener("change", function(event) {
+   fs.import(event.target.files[0]);
+ }, false);
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);

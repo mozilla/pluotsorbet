@@ -3,6 +3,10 @@
 var DEBUG_FS = false;
 
 var fs = (function() {
+  var reportRequestError = function(type, request) {
+    console.error(type + " error " + request.error);
+  }
+
   var Store = function() {
     this.map = new Map();
 
@@ -293,6 +297,33 @@ var fs = (function() {
         }
       };
     }).bind(this));
+  }
+
+  Store.prototype.import = function(file) {
+    console.log("file: " + file);
+    var reader = new FileReader();
+    reader.onload = (function() {
+      var input = JSON.parse(reader.result);
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+      console.log("import initiated");
+      this.map.clear();
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var req = objectStore.clear();
+      req.onerror = reportRequestError.bind(null, "import", req);
+      Object.keys(input).forEach(function(key) {
+        console.log("importing " + key);
+        var record = input[key];
+        if (!record.isDir) {
+          record.data = new Blob([new Int8Array(record.data)]);
+        }
+        var req = objectStore.put(record, key);
+        req.onerror = reportRequestError.bind(null, "import", req);
+      });
+      transaction.oncomplete = function() {
+        console.log("import completed");
+      };
+    }).bind(this);
+    reader.readAsText(file);
   }
 
   Store.prototype.getKeysByParentDir = function(parentDir, cb) {
@@ -948,5 +979,6 @@ var fs = (function() {
     createUniqueFile: createUniqueFile,
     addTransientPath: addTransientPath,
     export: function() { store.export() },
+    import: store.import.bind(store),
   };
 })();
