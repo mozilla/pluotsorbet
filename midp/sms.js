@@ -44,6 +44,8 @@ function promptForMessageText() {
     el.style.display = 'block';
     el.classList.add('visible');
 
+    el.querySelector('p.verificationText').textContent = MIDlet.SMSDialogVerificationText;
+
     var input = el.querySelector('input');
     var btnCancel = el.querySelector('button.cancel');
     var btnDone = el.querySelector('button.recommend');
