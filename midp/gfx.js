@@ -318,7 +318,10 @@ var currentlyFocusedTextEditor;
         // with some spaces removed.
         // We need this css string to have the same format as that of the
         // MIDP.Context2D.font to do comparison in withFont() function.
-        this.css = style  + size + "pt " + face;
+        this.css = style + size + "pt " + face;
+        this.size = size;
+        this.style = style;
+        this.face = face;
     });
 
     Native.create("javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I", function(str) {
@@ -957,7 +960,7 @@ var currentlyFocusedTextEditor;
 
         this.getCaretPosition = function() {
             if (this.textEditor.getParent()) {
-                return this.textEditor.getSelectionStart();
+                return this.textEditor.getSelectionStart().index;
             }
             if (this.caretPosition !== null) {
                 return this.caretPosition;
@@ -973,14 +976,17 @@ var currentlyFocusedTextEditor;
             }
         };
 
-        this.textEditor.setContent(util.fromJavaString(text));
-        this.setCaretPosition(this.textEditor.getContent().length);
-
         this.textEditor.setAttribute("maxlength", maxSize);
         this.textEditor.setStyle("width", width + "px");
         this.textEditor.setStyle("height", height + "px");
         this.textEditor.setStyle("position", "absolute");
         this.textEditor.setVisible(false);
+        var font = this.class.getField("I.font.Ljavax/microedition/lcdui/Font;").get(this);
+        this.textEditor.setFont(font);
+
+        this.textEditor.setContent(util.fromJavaString(text));
+        this.setCaretPosition(this.textEditor.getSize());
+
         this.textEditor.oninput(function(e) {
             wakeTextEditorThread(this.textEditorId);
         }.bind(this));
@@ -996,7 +1002,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.detachNativeImpl.()V", function() {
-        this.caretPosition = this.textEditor.getSelectionStart();
+        this.caretPosition = this.textEditor.getSelectionStart().index;
         this.textEditor.setParent(null);
     });
 
@@ -1025,11 +1031,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.setVisible.(Z)V", function(visible) {
-        if (visible && !this.visible) {
-            this.textEditor.setVisible(true);
-        } else if (!visible && this.visible) {
-            this.textEditor.setVisible(false);
-        }
+        this.textEditor.setVisible(visible ? true : false);
         this.visible = visible;
     });
 
@@ -1082,6 +1084,10 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.setCaret.(I)V", function(index) {
+        if (index < 0 || index > this.textEditor.getSize()) {
+            throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+        }
+
         this.setCaretPosition(index);
     });
 
@@ -1111,24 +1117,34 @@ var currentlyFocusedTextEditor;
     Native.create("com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V", function(jStr) {
         var str = util.fromJavaString(jStr);
         this.textEditor.setContent(str);
-        this.setCaretPosition(str.length);
+        this.setCaretPosition(this.textEditor.getSize());
+    });
+
+    Native.create("com/nokia/mid/ui/TextEditor.getContentHeight.()I", function() {
+        return this.textEditor.getContentHeight();
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(jStr, pos) {
-        var old = this.textEditor.getContent();
         var str = util.fromJavaString(jStr);
-        this.textEditor.setContent(old.slice(0, pos) + str + old.slice(pos));
-        this.setCaretPosition(pos + str.length);
+        var len = util.toCodePointArray(str).length;
+
+        if (this.textEditor.getSize() + len > this.textEditor.getAttribute("maxlength")) {
+            throw new JavaException("java/lang/IllegalArgumentException");
+        }
+
+        this.textEditor.setContent(this.textEditor.getSlice(0, pos) + str + this.textEditor.getSlice(pos));
+        this.setCaretPosition(pos + len);
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.delete.(II)V", function(offset, length) {
         var old = this.textEditor.getContent();
 
-        if (offset < 0 || offset > old.length || length < 0 || offset + length > old.length) {
+        var size = this.textEditor.getSize();
+        if (offset < 0 || offset > size || length < 0 || offset + length > size) {
             throw new JavaException("java.lang.StringIndexOutOfBoundsException", "offset/length invalid");
         }
 
-        this.textEditor.setContent(old.slice(0, offset) + old.slice(offset + length));
+        this.textEditor.setContent(this.textEditor.getSlice(0, offset) + this.textEditor.getSlice(offset + length));
         this.setCaretPosition(offset);
     });
 
@@ -1137,9 +1153,12 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.setMaxSize.(I)I", function(maxSize) {
-        if (this.textEditor.getContent().length > maxSize) {
-            this.textEditor.setContent(this.textEditor.getContent().substring(0, maxSize));
-            if (this.getCaretPosition() > maxSize) {
+        if (this.textEditor.getSize() > maxSize) {
+            var oldCaretPosition = this.getCaretPosition();
+
+            this.textEditor.setContent(this.textEditor.getSlice(0, maxSize));
+
+            if (oldCaretPosition > maxSize) {
                 this.setCaretPosition(maxSize);
             }
         }
@@ -1153,7 +1172,12 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.size.()I", function() {
-        return this.textEditor.getContent().length;
+        return this.textEditor.getSize();
+    });
+
+    Native.create("com/nokia/mid/ui/TextEditor.setFont.(Ljavax/microedition/lcdui/Font;)V", function(font) {
+        this.class.getField("I.font.Ljavax/microedition/lcdui/Font;").set(this, font);
+        this.textEditor.setFont(font);
     });
 
     Native.create("com/nokia/mid/ui/TextEditorThread.sleep.()V", function() {
