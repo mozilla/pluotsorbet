@@ -197,10 +197,9 @@ AudioPlayer.prototype.play = function() {
         MIDP.sendNativeEvent({
             type: MIDP.MMAPI_EVENT,
             intParam1: this.playerContainer.pId,
-            intParam2: 0,
+            intParam2: Math.ceil(this.getDuration()),
             intParam3: 0,
-            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA,
-            intParam5: Math.ceil(this.duration * 1000),
+            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
         }, MIDP.foregroundIsolateId);
 
         this.close();
@@ -267,10 +266,6 @@ AudioPlayer.prototype.close = function() {
 }
 
 AudioPlayer.prototype.getMediaTime = function() {
-    if (!this.audioContext) {
-        return -1;
-    }
-
     var time = 0;
 
     if (this.isPlaying) {
@@ -281,6 +276,22 @@ AudioPlayer.prototype.getMediaTime = function() {
 
     return Math.round(time * 1000);
 }
+
+// The range of ms has already been checked, we don't need to check it again.
+AudioPlayer.prototype.setMediaTime = function(ms) {
+    var offset = ms / 1000;
+
+    if (this.isPlaying) {
+        this.pause();
+        this.stopTime = this.startTime + offset;
+        this.resume();
+    } else {
+        this.startTime = 0;
+        this.stopTime = this.startTime + offset;
+    }
+
+    return ms;
+};
 
 AudioPlayer.prototype.cloneBuffer = function() {
     var buffer = this.audioBuffer;
@@ -298,7 +309,8 @@ AudioPlayer.prototype.cloneBuffer = function() {
 };
 
 AudioPlayer.prototype.decode = function(encoded, callback) {
-    this.audioContext.decodeAudioData(encoded.buffer, callback);
+    // Clone a copy before decoding to keep the original buffer unchanged.
+    this.audioContext.decodeAudioData(encoded.buffer.slice(), callback);
 };
 
 AudioPlayer.prototype.getVolume = function() {
@@ -541,7 +553,8 @@ function PlayerContainer(url, pId) {
     this.url = url;
     // `pId` is the player id used in PlayerImpl.java, don't confuse with the id we used
     // here in Javascript. The reason we need to hold this `pId` is we need to send it
-    // back when dispatch Media.EVENT_MEDIA_SNAPSHOT_FINISHED.
+    // back when dispatch events, such as Media.EVENT_MEDIA_SNAPSHOT_FINISHED and
+    // Media.EVENT_MEDIA_END_OF_MEDIA.
     this.pId = pId;
 
     this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
@@ -1050,6 +1063,11 @@ Native.create("com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z", function(handle) {
 Native.create("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I", function(handle) {
     var player = Media.PlayerCache[handle];
     return player.getMediaTime();
+});
+
+Native.create("com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I", function(handle, ms) {
+    var container = Media.PlayerCache[handle];
+    return container.player.setMediaTime(ms);
 });
 
 Native.create("com/sun/mmedia/DirectPlayer.nStart.(I)Z", function(handle) {
