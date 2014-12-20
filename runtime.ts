@@ -31,6 +31,7 @@ module J2ME {
   export var timeline;
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
+  export var jitMethodInfos = {};
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
@@ -450,7 +451,9 @@ module J2ME {
      * Bailout callback whenever a JIT frame is unwound.
      */
     B(bci: number, local: any [], stack: any []) {
-      $.ctx.bailout((<any>arguments.callee.caller).methodInfo, bci, local, stack);
+      var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
+      release || assert(methodInfo !== undefined);
+      $.ctx.bailout(methodInfo, bci, local, stack);
     }
 
     yield() {
@@ -1047,6 +1050,9 @@ module J2ME {
           if (!traceWriter) {
             linkWriter && linkWriter.outdent();
           }
+          // Save method info so that we can figure out where we are bailing
+          // out from.
+          jitMethodInfos[fn.name] = methodInfo;
           updateGlobalObject = false;
         } else {
           linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
@@ -1054,10 +1060,6 @@ module J2ME {
           fn = prepareInterpretedMethod(methodInfo);
         }
       }
-
-      // Save method info on the function object so that we can figure out where we are
-      // bailing out from.
-      fn.methodInfo = methodInfo;
 
       if (false && timeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
