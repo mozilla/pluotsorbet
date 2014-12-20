@@ -197,10 +197,9 @@ AudioPlayer.prototype.play = function() {
         MIDP.sendNativeEvent({
             type: MIDP.MMAPI_EVENT,
             intParam1: this.playerContainer.pId,
-            intParam2: 0,
+            intParam2: Math.ceil(this.getDuration()),
             intParam3: 0,
-            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA,
-            intParam5: Math.ceil(this.duration * 1000),
+            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
         }, MIDP.foregroundIsolateId);
 
         this.close();
@@ -541,7 +540,8 @@ function PlayerContainer(url, pId) {
     this.url = url;
     // `pId` is the player id used in PlayerImpl.java, don't confuse with the id we used
     // here in Javascript. The reason we need to hold this `pId` is we need to send it
-    // back when dispatch Media.EVENT_MEDIA_SNAPSHOT_FINISHED.
+    // back when dispatch events, such as Media.EVENT_MEDIA_SNAPSHOT_FINISHED and
+    // Media.EVENT_MEDIA_END_OF_MEDIA.
     this.pId = pId;
 
     this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
