@@ -141,6 +141,19 @@ var util = (function () {
     return obj;
   }
 
+  var internedStrings = new Map();
+
+  function newInternedString(s) {
+    var internedString = internedStrings.get(s);
+
+    if (!internedString) {
+        internedString = newString(s);
+        internedStrings.set(s, internedString);
+    }
+
+    return internedString;
+  }
+
   /**
    * Returns an ArrayBufferView of the underlying code points
    * represented by the given Java string.
@@ -228,6 +241,7 @@ var util = (function () {
     newMultiArray: newMultiArray,
     newObject: newObject,
     newString: newString,
+    newInternedString: newInternedString,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,

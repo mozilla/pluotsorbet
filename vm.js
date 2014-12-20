@@ -39,7 +39,7 @@ function resolve(ctx, cp, idx, isStatic) {
         constant = constant.float;
         break;
     case 8: // TAGS.CONSTANT_String
-        constant = util.newString(cp[constant.string_index].bytes);
+        constant = util.newInternedString(cp[constant.string_index].bytes);
         break;
     case 5: // TAGS.CONSTANT_Long
         constant = Long.fromBits(constant.lowBits, constant.highBits);
@@ -1252,7 +1252,7 @@ VM.compile = function(methodInfo, ctx, debugStmtEnabled) {
           constant = constant.float;
           break;
         case 8: // TAGS.CONSTANT_String
-          constant = util.newString(cp[constant.string_index].bytes);
+          constant = util.newInternedString(cp[constant.string_index].bytes);
           break;
         case 5: // TAGS.CONSTANT_Long
           constant = Long.fromBits(constant.lowBits, constant.highBits);
