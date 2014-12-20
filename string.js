@@ -319,19 +319,10 @@ Override.create("java/lang/String.valueOf.(J)Ljava/lang/String;", function(n, _)
 // Additionally, their tests check for coverage of nuanced things like
 // positive zero vs. negative zero, which we don't currently support.
 
-var internedStrings = new Map();
-
 Native.create("java/lang/String.intern.()Ljava/lang/String;", function() {
     var string = util.fromJavaString(this);
 
-    var internedString = internedStrings.get(string);
-
-    if (internedString) {
-        return internedString;
-    } else {
-        internedStrings.set(string, this);
-        return this;
-    }
+    return util.newInternedString(string);
 });
 
 
