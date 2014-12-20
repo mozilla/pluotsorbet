@@ -50,24 +50,61 @@ function promptForMessageText() {
 
     btnDone.disabled = true; // Wait for input before enabling.
     input.addEventListener('input', function() {
-       btnDone.disabled = (input.value.length === 0);
+        btnDone.disabled = (input.value.length === 0);
     });
 
     btnCancel.addEventListener('click', function() {
-       console.warn('SMS prompt canceled.');
-       el.parentElement.removeChild(el);
+        console.warn('SMS prompt canceled.');
+        clearInterval(intervalID);
+        clearTimeout(timeoutID);
+        el.parentElement.removeChild(el);
     });
 
     btnDone.addEventListener('click', function() {
-       el.parentElement.removeChild(el);
-       console.log('SMS prompt filled out:', input.value);
-       // We don't have easy access to our own phone number; use a
-       // dummy unknown value instead.
-       receiveSms(input.value, 'unknown');
+        clearInterval(intervalID);
+        clearTimeout(timeoutID);
+        el.parentElement.removeChild(el);
+        console.log('SMS prompt filled out:', input.value);
+        // We don't have easy access to our own phone number; use a
+        // dummy unknown value instead.
+        receiveSms(input.value, 'unknown');
     });
+
+    function toTimeText(ms) {
+      var seconds = ms / 1000;
+      var minutes = Math.floor(seconds / 60);
+      seconds -= minutes * 60;
+
+      var text = minutes + ":";
+
+      if (seconds > 10) {
+        text += seconds;
+      } else {
+        text += "0" + seconds;
+      }
+
+      return text;
+    }
+
+    el.querySelector('p.timeLeft').textContent = toTimeText(MIDlet.SMSDialogTimeout) +
+                                                 " " + MIDlet.SMSDialogTimeoutText;
 
     document.body.appendChild(el);
     input.focus();
+
+    var elapsedMS = 0;
+    var intervalID = setInterval(function() {
+      elapsedMS += 1000;
+      el.querySelector('p.timeLeft').textContent = toTimeText(MIDlet.SMSDialogTimeout - elapsedMS) +
+                                                   " " + MIDlet.SMSDialogTimeoutText;
+      el.querySelector('progress.timeLeftBar').value = elapsedMS / MIDlet.SMSDialogTimeout * 100;
+    }, 1000);
+
+    // Remove the dialog after a timeout
+    var timeoutID = setTimeout(function() {
+        clearInterval(intervalID);
+        el.parentElement.removeChild(el);
+    }, MIDlet.SMSDialogTimeout);
 }
 
 Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I", function(host, msid, port) {
