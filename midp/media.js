@@ -80,6 +80,7 @@ Media.contentTypeToFormat = new Map([
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
 
+Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
 
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
@@ -193,6 +194,15 @@ AudioPlayer.prototype.play = function() {
     this.isPlaying = true;
     this.startTime = this.audioContext.currentTime - offset;
     this.source.onended = function() {
+        MIDP.sendNativeEvent({
+            type: MIDP.MMAPI_EVENT,
+            intParam1: this.playerContainer.pId,
+            intParam2: 0,
+            intParam3: 0,
+            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA,
+            intParam5: Math.ceil(this.duration * 1000),
+        }, MIDP.foregroundIsolateId);
+
         this.close();
     }.bind(this);
 }
