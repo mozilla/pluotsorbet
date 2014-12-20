@@ -1285,3 +1285,22 @@ Native.create("com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V
 Native.create("com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B", function(handle) {
     return Media.PlayerCache[handle].getSnapshotData();
 });
+
+Native.create("com/sun/amms/GlobalMgrImpl.nCreatePeer.()I", function() {
+    console.warn("com/sun/amms/GlobalMgrImpl.nCreatePeer.()I not implemented.");
+    return 1;
+});
+
+Native.create("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I", function(typeName) {
+    console.warn("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I not implemented.");
+    return 2;
+});
+
+Native.create("com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V", function(mute) {
+    console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V not implemented.");
+});
+
+Native.create("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I", function() {
+    console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I not implemented.");
+    return 100;
+});
