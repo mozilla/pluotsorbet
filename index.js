@@ -466,39 +466,8 @@ DumbPipe.registerOpener("notification", function(message, sender) {
   }
 });
 
-function load(file, responseType, successCb, failureCb, progressCb, length) {
-  var xhr = new XMLHttpRequest({ mozSystem: true });
-  xhr.open("GET", file, true);
-  xhr.responseType = responseType;
-
-  if (progressCb) {
-    xhr.onprogress = function(e) {
-
-      if (e.lengthComputable) {
-        progressCb(e.loaded / e.total * 100);
-      } else if (length) {
-        progressCb(e.loaded / length * 100);
-      }
-    }
-  }
-
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      successCb(xhr.response);
-    } else {
-      failureCb();
-    }
-  };
-
-  xhr.onerror = function() {
-    failureCb();
-  };
-
-  xhr.send(null);
-}
-
 DumbPipe.registerOpener("JARDownloader", function(message, sender) {
-  load(urlParams.downloadJAD, "text", function(data) {
+  loadWithProgress(urlParams.downloadJAD, "text", function(data) {
     try {
       var manifest = {};
 
@@ -522,7 +491,7 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
         jarURL = urlParams.downloadJAD.substring(0, urlParams.downloadJAD.lastIndexOf("/") + 1) + jarName;
       }
 
-      load(jarURL, "arraybuffer", function(data) {
+      loadWithProgress(jarURL, "arraybuffer", function(data) {
         sender({ type: "done", data: data });
       }, function() {
         sender({ type: "fail" });

@@ -60,11 +60,33 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71315 },
+  { name: "pass", number: 71317 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
 ];
+
+/**
+ * Add a step that syncs the virtual filesystem to the persistent datastore,
+ * to ensure all changes are synced before we move to the next step.
+ *
+ * We need to do this because the virtual filesystem caches changes,
+ * while the tests often unload pages right after writing to the filesystem,
+ * so sometimes those changes won't yet be synced on unload, though a subsequent
+ * step depends on them.
+ *
+ * And we can't block unload while forcing a sync from within the app
+ * because IndexedDB doesn't block unloads, it simply drops transactions
+ * when the page is unloaded.
+ */
+function syncFS() {
+    casper.waitForText("SYNC FILESYSTEM");
+    casper.evaluate(function() {
+        fs.syncStore(function() {
+            console.log("SYNC FILESYSTEM");
+        });
+    });
+}
 
 casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
@@ -72,7 +94,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     casper
     .start("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar")
     .withFrame(0, function() {
-        casper.waitForText("DONE");
+        casper.waitForText("DONE", syncFS);
     });
 
     casper
@@ -105,6 +127,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                     test.fail(msg);
                 }
             }
+            syncFS();
         });
     }
     casper
@@ -135,6 +158,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
         test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
+        syncFS();
     });
 
     casper
@@ -271,6 +295,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.pass();
+            syncFS();
         });
     });
 
@@ -280,6 +305,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.pass();
+            syncFS();
         });
     });
 
@@ -288,6 +314,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.pass();
+            syncFS();
         });
     });
 
