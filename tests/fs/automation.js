@@ -45,7 +45,7 @@ casper.test.begin("fs tests", 9, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 134 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
@@ -70,7 +70,7 @@ casper.test.begin("fs tests", 9, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 134 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper
@@ -95,7 +95,7 @@ casper.test.begin("fs tests", 9, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 134 PASS, 0 FAIL", "run fs.js unit tests");
     });
 
     casper

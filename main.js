@@ -178,10 +178,12 @@ window.onload = function() {
    fs.clear();
  };
  document.getElementById("exportstorage").onclick = function() {
-   fs.export();
+   fs.exportStore(function(blob) {
+     saveAs(blob, "fs-" + Date.now() + ".json");
+   });
  };
  document.getElementById("importstorage").addEventListener("change", function(event) {
-   fs.import(event.target.files[0]);
+   fs.importStore(event.target.files[0]);
  }, false);
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;

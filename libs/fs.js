@@ -252,7 +252,7 @@ var fs = (function() {
     };
   }
 
-  Store.prototype.export = function() {
+  Store.prototype.export = function(cb) {
     var records = {};
     var output = {};
     var promises = [];
@@ -291,15 +291,16 @@ var fs = (function() {
           });
 
           Promise.all(promises).then(function() {
-            saveAs(new Blob([JSON.stringify(output)]), "fs-" + Date.now() + ".json");
+            var blob = new Blob([JSON.stringify(output)]);
             if (DEBUG_FS) { console.log("export completed"); }
+            cb(blob);
           });
         }
       };
     }).bind(this));
   }
 
-  Store.prototype.import = function(file) {
+  Store.prototype.import = function(file, cb) {
     console.log("file: " + file);
     var reader = new FileReader();
     reader.onload = (function() {
@@ -321,6 +322,7 @@ var fs = (function() {
       });
       transaction.oncomplete = function() {
         console.log("import completed");
+        cb();
       };
     }).bind(this);
     reader.readAsText(file);
@@ -951,6 +953,14 @@ var fs = (function() {
     return store.addTransientPath(path);
   }
 
+  function exportStore(cb) {
+    return store.export(cb);
+  }
+
+  function importStore(blob, cb) {
+    return store.import(blob, cb);
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -976,9 +986,9 @@ var fs = (function() {
     clear: clear,
     syncStore: syncStore,
     purgeStore: purgeStore,
+    exportStore: exportStore,
+    importStore: importStore,
     createUniqueFile: createUniqueFile,
     addTransientPath: addTransientPath,
-    export: function() { store.export() },
-    import: store.import.bind(store),
   };
 })();
