@@ -321,6 +321,10 @@ module J2ME {
       return AccessFlags.isInterface(this.access_flags);
     }
 
+    get isFinal() : boolean {
+      return AccessFlags.isFinal(this.access_flags);
+    }
+
     implementsInterface(iface) : boolean {
       var classInfo = this;
       do {

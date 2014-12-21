@@ -7,8 +7,10 @@ module J2ME {
   export var counter = new J2ME.Metrics.Counter(true);
 
   export function printResults() {
-    counter.trace(stderrWriter);
-    consoleWriter.writeLn(JSON.stringify(staticCallGraph, null, 2));
+    counter.traceSorted(stderrWriter);
+    for (var k in yieldMap) {
+      stderrWriter.writeLn(YieldReason[yieldMap[k]].padRight(" ", 20) + " " + k);
+    }
   }
 
   import Block = Bytecode.Block;
@@ -42,6 +44,143 @@ module J2ME {
   }
 
   var staticCallGraph = Object.create(null);
+
+  var yieldWriter = null; // stderrWriter;
+
+  function isStaticallyBound(op: Bytecodes, methodInfo: MethodInfo): boolean {
+    // INVOKESPECIAL and INVOKESTATIC are always statically bound.
+    if (op === Bytecodes.INVOKESPECIAL || op === Bytecodes.INVOKESTATIC) {
+      return true;
+    }
+    // INVOKEVIRTUAL is only statically bound if its class is final.
+    if (op === Bytecodes.INVOKEVIRTUAL && methodInfo.classInfo.isFinal) {
+      return true;
+    }
+    return false;
+  }
+
+  export enum YieldReason {
+    None = 0,
+    Root = 1,
+    Synchronized = 2,
+    MonitorEnterExit = 3,
+    Virtual = 4,
+    Cycle = 5
+  }
+
+  /**
+   * Root set of methods that can yield. Keep this up to date or else the compiler will not generate yield code
+   * at the right spots.
+   */
+  export var yieldMap = {
+    "java/lang/Thread.sleep.(J)V": YieldReason.Root,
+    "com/sun/cldc/isolate/Isolate.waitStatus.(I)V": YieldReason.Root,
+    "com/sun/midp/links/LinkPortal.getLinkCount0.()I": YieldReason.Root,
+    "com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V": YieldReason.Root,
+    "com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V": YieldReason.Root,
+    "com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V": YieldReason.Root,
+    "com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I": YieldReason.Root,
+    "com/sun/midp/main/CommandState.exitInternal.(I)V": YieldReason.Root,
+    "com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I": YieldReason.Root,
+    "com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z": YieldReason.Root,
+    "com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V": YieldReason.Root,
+    "com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.existsImpl.([B)Z": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.newFileImpl.([B)I": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V": YieldReason.Root,
+    "com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V": YieldReason.Root,
+    "com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I": YieldReason.Root,
+    "com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I": YieldReason.Root,
+    "com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I": YieldReason.Root,
+    "com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I": YieldReason.Root,
+    "javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V": YieldReason.Root,
+    "com/nokia/mid/ui/TextEditorThread.sleep.()V": YieldReason.Root,
+    "com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z": YieldReason.Root,
+    "org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V": YieldReason.Root,
+    "org/mozilla/io/LocalMsgConnection.receiveData.([B)I": YieldReason.Root,
+    "com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z": YieldReason.Root,
+    "com/sun/mmedia/DirectRecord.nPause.(I)I": YieldReason.Root,
+    "com/sun/mmedia/DirectRecord.nStop.(I)I": YieldReason.Root,
+    "com/sun/mmedia/DirectRecord.nClose.(I)I": YieldReason.Root,
+    "com/sun/mmedia/DirectRecord.nStart.(I)I": YieldReason.Root,
+    "com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V": YieldReason.Root,
+    "com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I": YieldReason.Root,
+    "com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I": YieldReason.Root,
+    "com/sun/midp/io/j2me/socket/Protocol.close0.()V": YieldReason.Root,
+    "com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I": YieldReason.Root,
+    "com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I": YieldReason.Root,
+    "com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z": YieldReason.Root,
+    "java/lang/Object.wait.(J)V": YieldReason.Root,
+    "java/lang/Class.invoke_clinit.()V": YieldReason.Root,
+    "java/lang/Class.newInstance.()Ljava/lang/Object;": YieldReason.Root,
+    "java/lang/Thread.yield.()V": YieldReason.Root
+  };
+
+  // Used to prevent cycles.
+  var checkingForCanYield = Object.create(null);
+
+  function canYield(ctx: Context, methodInfo: MethodInfo): YieldReason {
+    if (yieldMap[methodInfo.implKey] !== undefined) {
+      return yieldMap[methodInfo.implKey];
+    }
+    if (methodInfo.isSynchronized) {
+      return yieldMap[methodInfo.implKey] = YieldReason.Synchronized;
+    }
+    if (checkingForCanYield[methodInfo.implKey]) {
+      return YieldReason.Cycle;
+    }
+    if (!methodInfo.code) {
+      assert (methodInfo.isNative);
+      return yieldMap[methodInfo.implKey] = YieldReason.None;
+    }
+    yieldWriter && yieldWriter.enter(methodInfo.implKey);
+    checkingForCanYield[methodInfo.implKey] = true;
+    try {
+      var result = YieldReason.None;
+      var stream = new BytecodeStream(methodInfo.code);
+      stream.setBCI(0);
+      while (stream.currentBCI < methodInfo.code.length) {
+        var op: Bytecodes = stream.currentBC();
+        switch (op) {
+          case Bytecodes.MONITORENTER:
+          case Bytecodes.MONITOREXIT:
+            result = YieldReason.MonitorEnterExit;
+            break;
+          case Bytecodes.INVOKEINTERFACE:
+            result = YieldReason.Virtual;
+            break;
+          case Bytecodes.INVOKEVIRTUAL:
+          case Bytecodes.INVOKESPECIAL:
+          case Bytecodes.INVOKESTATIC:
+            var cpi = stream.readCPI()
+            var callee = ctx.resolve(methodInfo.classInfo.constant_pool, cpi, op === Bytecodes.INVOKESTATIC);
+            if (!isStaticallyBound(op, callee)) {
+              result = YieldReason.Virtual;
+              break;
+            }
+            result = canYield(ctx, callee);
+            break;
+        }
+        if (result) {
+          break;
+        }
+        stream.next();
+      }
+    } catch (e) {
+      stderrWriter.writeLn("ERROR: " + methodInfo.implKey + " Cycle");
+      stderrWriter.writeLn(e);
+      stderrWriter.writeLns(e.stack);
+    }
+    checkingForCanYield[methodInfo.implKey] = false;
+    yieldWriter && yieldWriter.leave(methodInfo.implKey + " " + YieldReason[result]);
+    return yieldMap[methodInfo.implKey] = result;
+  }
 
   declare var Long: any;
   declare var VM: any;
@@ -553,9 +692,6 @@ module J2ME {
       var blockMap = this.blockMap = new BlockMap(methodInfo);
       blockMap.build();
 
-      // consoleWriter.writeLn("Compiling Method: " + methodInfo.name + " " + methodInfo.signature + " {");
-      // blockMap.trace(consoleWriter, false);
-
       var start = this.buildStart();
       var dfg = this.buildGraph(start, start.entryState.clone());
 
@@ -596,7 +732,6 @@ module J2ME {
 
       writer && writer.leave("}");
       IR.Node.stopNumbering();
-
       return result;
     }
 
@@ -1115,12 +1250,10 @@ module J2ME {
     }
 
     genInvoke(methodInfo: MethodInfo, opcode: Bytecodes, nextBCI: number) {
-      var callees = staticCallGraph[this.methodInfo.implKey];
-      if (!callees) {
-        callees = staticCallGraph[this.methodInfo.implKey] = [];
+      var calleeCanYield = YieldReason.Virtual;
+      if (isStaticallyBound(opcode, methodInfo)) {
+        calleeCanYield = canYield(this.ctx, methodInfo);
       }
-      ArrayUtilities.pushUnique(callees, methodInfo.implKey);
-
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       var types = signature.typeDescriptors;
       var args: Value [] = [];
@@ -1131,7 +1264,21 @@ module J2ME {
       if (opcode !== Bytecodes.INVOKESTATIC) {
         object = this.state.pop(Kind.Reference);
       }
-      var call = new IR.JVMInvoke(this.region, this.state.store, this.state.clone(nextBCI), opcode, object, methodInfo, args);
+
+      //switch (methodInfo.implKey) {
+      //  // There's no reason to call the object initializer.
+      //  case "java/lang/Object.<init>.()V":
+      //    return;
+      //}
+
+      var state;
+      if (calleeCanYield) {
+        // Only save the state if the callee can yield.
+        state = this.state.clone(nextBCI);
+      }
+      counter && counter.count("Yield Code: " + YieldReason[calleeCanYield] + " " + methodInfo.implKey);
+      counter && counter.count("Yield Code: " + YieldReason[calleeCanYield]);
+      var call = new IR.JVMInvoke(this.region, this.state.store, state, opcode, object, methodInfo, args);
       this.recordStore(call);
       if (types[0].kind !== Kind.Void) {
         this.state.push(types[0].kind, call);

@@ -1074,11 +1074,11 @@ module J2ME {
                   fn = obj[methodInfo.mangledName];
                   break;
                 case Bytecodes.INVOKESPECIAL:
-                  fn = jsGlobal[methodInfo.mangledClassAndMethodName];
+                  fn = methodInfo.fn;
                   break;
               }
             } else {
-              fn = jsGlobal[methodInfo.mangledClassAndMethodName];
+              fn = methodInfo.fn;
             }
 
             var args = frame.popArguments(methodInfo.signatureDescriptor);

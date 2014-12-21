@@ -1071,6 +1071,8 @@ module J2ME {
         updateGlobalObject = true;
       }
 
+      methodInfo.fn = fn;
+
       // Link even non-static methods globally so they can be invoked statically via invokespecial.
       if (updateGlobalObject) {
         jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
