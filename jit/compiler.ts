@@ -368,7 +368,8 @@ module J2ME {
           return true;
         }
         try {
-          var classInfo = CLASSES.loadClassFile(fileName);
+          var className = fileName.substring(0, fileName.length - 6);
+          var classInfo = CLASSES.getClass(className);
           if (classInfo.sourceFile && !classInfo.sourceFile.match(fileFilter)) {
             return true;
           }

@@ -344,7 +344,7 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMNewObjectArray.prototype.compile = function (cx: Context): AST.Node {
-    var emitClassInitializationCheck = true;
+    var emitClassInitializationCheck = !CLASSES.isPreInitializedClass(this.classInfo);
     var callee: AST.Node = call(id("$NA"), [id(mangleClass(this.classInfo)), compileValue(this.length, cx)]);
     if (emitClassInitializationCheck) {
       callee = new AST.SequenceExpression([getRuntimeClass(this.classInfo), callee]);
@@ -516,7 +516,7 @@ module J2ME.C4.Backend {
     } else {
       release || assert (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESTATIC);
       callee = id(mangleClassAndMethod(this.methodInfo));
-      var emitClassInitializationCheck = true;
+      var emitClassInitializationCheck = !CLASSES.isPreInitializedClass(this.methodInfo.classInfo);
       if (emitClassInitializationCheck) {
         callee = new AST.SequenceExpression([getRuntimeClass(this.methodInfo.classInfo), callee]);
       }
@@ -566,7 +566,7 @@ module J2ME.C4.Backend {
 
   IR.JVMNew.prototype.compile = function (cx: Context): AST.Node {
     var callee: AST.Node = id(mangleClass(this.classInfo));
-    var emitClassInitializationCheck = true;
+    var emitClassInitializationCheck = !CLASSES.isPreInitializedClass(this.classInfo);
     if (emitClassInitializationCheck) {
       callee = new AST.SequenceExpression([getRuntimeClass(this.classInfo), callee]);
     }

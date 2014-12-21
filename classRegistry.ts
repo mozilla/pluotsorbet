@@ -1,13 +1,3 @@
-//
-//var Classes = function() {
-//  if (this instanceof Classes) {
-//    this.classFiles = [];
-//    this.mainclass = [];
-//    this.classes = {};
-//  } else  {
-//    return new Classes();
-//  }
-//}
 module J2ME {
   declare var ZipFile;
   declare var snarf;
@@ -29,8 +19,11 @@ module J2ME {
      */
     missingSourceFiles: Map<string, string []>;
 
+    jarFiles: Map<string, any>;
     classFiles: Map<string, any>;
     classes: Map<string, ClassInfo>;
+
+    preInitializedClasses: ClassInfo [];
 
     java_lang_Object: ClassInfo;
     java_lang_Class: ClassInfo;
@@ -42,16 +35,40 @@ module J2ME {
       this.sourceFiles = Object.create(null);
       this.missingSourceFiles = Object.create(null);
 
+      this.jarFiles = Object.create(null);
       this.classFiles = Object.create(null);
       this.classes = Object.create(null);
+      this.preInitializedClasses = [];
     }
 
     initializeBuiltinClasses() {
       // These classes are guaranteed to not have a static initializer.
+
       this.java_lang_Object = this.loadClass("java/lang/Object");
       this.java_lang_Class = this.loadClass("java/lang/Class");
       this.java_lang_String = this.loadClass("java/lang/String");
       this.java_lang_Thread = this.loadClass("java/lang/Thread");
+
+      this.preInitializedClasses.push(this.java_lang_Object);
+      this.preInitializedClasses.push(this.java_lang_Class);
+      this.preInitializedClasses.push(this.java_lang_String);
+      this.preInitializedClasses.push(this.java_lang_Thread);
+
+      /**
+       * We force these additinoal frequently used classes to be initialized so that
+       * we can generate more optimal AOT code that skips the class initialization
+       * check.
+       */
+      var classNames = [
+        "java/lang/Integer",
+        "java/lang/Character",
+        "java/lang/Math",
+        "java/util/HashtableEntry"
+      ];
+
+      for (var i = 0; i < classNames.length; i++) {
+        this.preInitializedClasses.push(this.loadClass(classNames[i]));
+      }
 
       // Link primitive values and primitive arrays.
       for (var i = 0; i < "ZCFDBSIJ".length; i++) {
@@ -61,9 +78,13 @@ module J2ME {
       }
     }
 
+    isPreInitializedClass(classInfo: ClassInfo) {
+      return this.preInitializedClasses.indexOf(classInfo) >= 0;
+    }
+
     addPath(name: string, buffer: ArrayBuffer) {
       if (name.substr(-4) === ".jar") {
-        this.classFiles[name] = new ZipFile(buffer);
+        this.jarFiles[name] = new ZipFile(buffer);
       } else {
         this.classFiles[name] = buffer;  
       }
@@ -101,8 +122,7 @@ module J2ME {
     }
 
     loadFileFromJar(jarName: string, fileName: string): ArrayBuffer {
-      var classFiles = this.classFiles;
-      var zip = classFiles[jarName];
+      var zip = this.jarFiles[jarName];
       if (!zip)
         return null;
       if (!(fileName in zip.directory))
@@ -114,22 +134,23 @@ module J2ME {
     loadFile(fileName: string): ArrayBuffer {
       var classFiles = this.classFiles;
       var data = classFiles[fileName];
-      if (data)
+      if (data) {
         return data;
-      Object.keys(classFiles).every(function (name) {
-        if (name.substr(-4) !== ".jar")
-          return true;
-        var zip = classFiles[name];
+      }
+      var jarFiles = this.jarFiles;
+      for (var k in jarFiles) {
+        var zip = jarFiles[k];
         if (fileName in zip.directory) {
           enterTimeline("ZIP", {file: fileName});
           var bytes = zip.read(fileName);
           data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
           leaveTimeline("ZIP");
+          break;
         }
-        return !data;
-      });
-      if (data)
+      }
+      if (data) {
         classFiles[fileName] = data;
+      }
       return data;
     }
 
