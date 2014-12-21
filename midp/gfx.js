@@ -324,8 +324,18 @@ var currentlyFocusedTextEditor;
         this.face = face;
     });
 
+    function calcStringWidth(font, str) {
+        var emojiLen = 0;
+        var len = withFont(font, MIDP.Context2D, str.replace(emoji.regEx, function() {
+            emojiLen += font.size;
+            return "";
+        }));
+
+        return len + emojiLen;
+    }
+
     Native.create("javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I", function(str) {
-        return withFont(this, MIDP.Context2D, util.fromJavaString(str));
+        return calcStringWidth(this, util.fromJavaString(str));
     });
 
     Native.create("javax/microedition/lcdui/Font.charWidth.(C)I", function(char) {
@@ -333,11 +343,11 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("javax/microedition/lcdui/Font.charsWidth.([CII)I", function(str, offset, len) {
-        return withFont(this, MIDP.Context2D, util.fromJavaChars(str).slice(offset, offset + len));
+        return calcStringWidth(this, util.fromJavaChars(str).slice(offset, offset + len));
     });
 
     Native.create("javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I", function(str, offset, len) {
-        return withFont(this, MIDP.Context2D, util.fromJavaString(str).slice(offset, offset + len));
+        return calcStringWidth(this, util.fromJavaString(str).slice(offset, offset + len));
     });
 
     var HCENTER = 1;

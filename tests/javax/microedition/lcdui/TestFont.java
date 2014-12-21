@@ -69,20 +69,19 @@ public class TestFont implements Testlet {
         return sb.toString();
     }
 
-    void testEmojiLength(TestHarness th, String code, int expectedLower, int expectedUpper) {
+    void testEmojiLength(TestHarness th, String code, int expectedUpper) {
         String emoji = getSurrogatePairs(checkCodeFormat(code));
-        th.check(Font.getDefaultFont().stringWidth(emoji) >= expectedLower);
+        System.out.println(expectedUpper);
+        System.out.println(Font.getDefaultFont().stringWidth(emoji));
         th.check(Font.getDefaultFont().stringWidth(emoji) <= expectedUpper);
-        th.check(Font.getDefaultFont().substringWidth(emoji, 0, emoji.length()) >= expectedLower);
         th.check(Font.getDefaultFont().substringWidth(emoji, 0, emoji.length()) <= expectedUpper);
-        th.check(Font.getDefaultFont().charsWidth(emoji.toCharArray(), 0, emoji.toCharArray().length) >= expectedLower);
         th.check(Font.getDefaultFont().charsWidth(emoji.toCharArray(), 0, emoji.toCharArray().length) <= expectedUpper);
     }
 
     public void test(TestHarness th) {
-        // Test that an emoji represented with two codepoints is considered as 4 characters long.
-        testEmojiLength(th, "1f1ee1f1f9", Font.getDefaultFont().stringWidth("mmm"), Font.getDefaultFont().stringWidth("mmmmm"));
-        // Test that an emoji represented with one codepoint is considered as 2 characters long.
-        testEmojiLength(th, "1f355", Font.getDefaultFont().stringWidth("m"), Font.getDefaultFont().stringWidth("mmm"));
+        // Test that an emoji represented with two codepoints is considered as 1 character long.
+        testEmojiLength(th, "1f1ee1f1f9", Font.getDefaultFont().stringWidth("mm"));
+        // Test that an emoji represented with one codepoint is considered as 1 character long.
+        testEmojiLength(th, "1f355", Font.getDefaultFont().stringWidth("mm"));
     }
 }
