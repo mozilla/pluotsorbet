@@ -90,7 +90,7 @@ module J2ME {
     private static canonicalTypeDescriptors: TypeDescriptor [] = [];
 
     constructor(public value: string, public kind: Kind) {
-      assert (!TypeDescriptor.canonicalTypeDescriptors[value]);
+      release || assert (!TypeDescriptor.canonicalTypeDescriptors[value]);
       TypeDescriptor.canonicalTypeDescriptors[value] = this;
     }
 
@@ -108,7 +108,7 @@ module J2ME {
     }
 
     public static getArrayDescriptorForDescriptor(descriptor: TypeDescriptor, dimensions: number): TypeDescriptor {
-      assert (dimensions > 0);
+      release || assert (dimensions > 0);
       var componentString = descriptor.toString();
       if (TypeDescriptor.getArrayDimensions(descriptor) + dimensions > 255) {
         throw "Array type with more than 255 dimensions";
@@ -215,7 +215,7 @@ module J2ME {
     private _argumentSlotCount: number = -1;
 
     constructor(public value: string) {
-      assert (!SignatureDescriptor.canonicalSignatureDescriptors[value]);
+      release || assert (!SignatureDescriptor.canonicalSignatureDescriptors[value]);
       SignatureDescriptor.canonicalSignatureDescriptors[value] = this;
       this.typeDescriptors = SignatureDescriptor.parse(value, 0);
     }

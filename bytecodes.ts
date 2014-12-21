@@ -423,7 +423,7 @@ module J2ME.Bytecode {
     var instructionLength = format.length;
     length[opcode] = instructionLength;
     flags[opcode] = flags_;
-    assert (!isConditionalBranch(opcode) || isBranch(opcode), "a conditional branch must also be a branch");
+    release || assert (!isConditionalBranch(opcode) || isBranch(opcode), "a conditional branch must also be a branch");
   }
 
   define(Bytecodes.NOP                 , "nop"             , "b"    );
