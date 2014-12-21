@@ -32,11 +32,14 @@ module J2ME {
     isStatic: boolean ;
     constantValue: any;
     mangledName: string;
+    key: string;
 
     constructor(public classInfo: ClassInfo, public access_flags: number, public name: string, public signature: string) {
       this.id = FieldInfo._nextiId++;
       this.isStatic = AccessFlags.isStatic(access_flags);
+      this.constantValue = undefined;
       this.mangledName = undefined;
+      this.key = undefined;
     }
 
     get(object: java.lang.Object) {
