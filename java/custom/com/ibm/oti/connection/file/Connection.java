@@ -370,9 +370,10 @@ public InputStream openInputStream() throws IOException {
 	}
 	
 	public boolean isHidden() {
-		if (!isOpen()) throw new ConnectionClosedException();
-		checkRead();
-		return existsInternal() && isHiddenImpl(properPath);
+		// Per the FileConnection interface: "If hidden files are not
+		// supported on the referenced file system, this method always
+		// returns false."
+		return false;
 	}
 
 	public boolean isDirectory() {
@@ -412,11 +413,8 @@ public InputStream openInputStream() throws IOException {
 	}
 
 	public void setHidden(boolean hidden) throws IOException {
-		if (!isOpen()) throw new ConnectionClosedException();
-		checkWrite();
-		if (!existsInternal()) throw new IOException("File does not exist: " + getURL());
-		
-		setHiddenImpl(properPath, hidden);
+		// Per the FileConnection interface: "If the file system doesn't
+		// support a hidden attribute, this method is ignored."
 	}
 
 	public Enumeration list() throws IOException {
@@ -808,8 +806,6 @@ public static String decode(String s) {
 
 private native boolean isAbsoluteImpl(byte[] path);
 
-private native boolean isHiddenImpl(byte[] path);
-
 private native boolean isReadOnlyImpl(byte[] path);
 
 private native boolean isWriteOnlyImpl(byte[] path);
@@ -817,8 +813,6 @@ private native boolean isWriteOnlyImpl(byte[] path);
 private native void setReadOnlyImpl(byte[] path, boolean value);
 
 private native void setWriteOnlyImpl(byte[] path, boolean value);
-
-private native void setHiddenImpl(byte[] path, boolean value);
 
 private native boolean isValidFilenameImpl(byte[] filename);
 

@@ -264,10 +264,6 @@ Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", 
     return Long.fromNumber(1024 * 1024 * 1024);
 });
 
-Native.create("com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V", function(path, value) {
-    console.warn("Connection.setHiddenImpl.([BZ)V not implemented (" + util.decodeUtf8(path) + ")");
-});
-
 Native.create("com/ibm/oti/connection/file/Connection.existsImpl.([B)Z", function(path) {
     return new Promise(function(resolve, reject) {
       fs.exists(util.decodeUtf8(path), resolve);
