@@ -182,6 +182,7 @@ module J2ME {
       }
     }
     CLASSES.initializeBuiltinClasses();
+    Bytecode.defineBytecodes();
     if (verboseOption.value) {
       writer.writeLn("Compiling Pattern: " + classFilterOption.value + " " + classFileFilterOption.value);
     }

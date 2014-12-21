@@ -24,6 +24,11 @@ module J2ME {
    */
   export var ops = 0;
 
+  /**
+   * Temporarily used for fn.apply.
+   */
+  var argArray = [];
+
   export function interpret(ctx: Context) {
     var frame = ctx.current();
 
@@ -1081,12 +1086,35 @@ module J2ME {
               fn = methodInfo.fn;
             }
 
-            var args = frame.popArguments(methodInfo.signatureDescriptor);
-            if (!isStatic) {
-              stack.pop();
+            var returnValue;
+            switch (methodInfo.argumentSlots) {
+              case 0:
+                returnValue = fn.call(obj);
+                break;
+              case 1:
+                var a = stack.pop();
+                returnValue = fn.call(obj, a);
+                break;
+              case 2:
+                var b = stack.pop();
+                var a = stack.pop();
+                returnValue = fn.call(obj, a, b);
+                break;
+              case 3:
+                var c = stack.pop();
+                var b = stack.pop();
+                var a = stack.pop();
+                returnValue = fn.call(obj, a, b, c);
+                break;
+              default:
+                if (methodInfo.argumentSlots > 0) {
+                  popManyInto(stack, methodInfo.argumentSlots, argArray);
+                } else {
+                  frame.popArgumentsInto(methodInfo.signatureDescriptor, argArray);
+                }
+                var returnValue = fn.apply(obj, argArray);
             }
-
-            var returnValue = fn.apply(obj, args);
+            if (!isStatic) stack.pop();
 
             if (!release) {
               if (returnValue instanceof Promise) {
