@@ -715,8 +715,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("mi"));
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "write updates mtime");
-        lastTime = stat.mtime;
+        ok(stat.mtime, lastTime, "write without flush doesn't update mtime");
         next();
       });
     }, 1);
@@ -760,8 +759,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 5);
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "ftruncate to larger size updates mtime");
-        lastTime = stat.mtime;
+        is(stat.mtime, lastTime, "ftruncate to larger size doesn't update mtime");
         next();
       });
     }, 1);
@@ -771,8 +769,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 3);
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "ftruncate to smaller size updates mtime");
-        lastTime = stat.mtime;
+        is(stat.mtime, lastTime, "ftruncate to smaller size doesn't update mtime");
         next();
       });
     }, 1);
@@ -780,10 +777,10 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd);
       fs.close(fd);
       fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "close doesn't update mtime");
+        ok(stat.mtime > lastTime, "close after changes updates mtime");
+        lastTime = stat.mtime;
         next();
       });
     }, 1);

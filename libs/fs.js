@@ -409,6 +409,8 @@ var fs = (function() {
             dirty: false,
             path: path,
             buffer: new FileBuffer(new Uint8Array(reader.result)),
+            mtime: record.mtime,
+            size: record.size,
             position: 0,
             record: record,
           }) - 1;
@@ -472,8 +474,8 @@ var fs = (function() {
 
     var file = openedFiles[fd];
     file.position = from + data.byteLength;
-    file.record.mtime = Date.now();
-    file.record.size = buffer.contentSize;
+    file.mtime = Date.now();
+    file.size = buffer.contentSize;
     file.dirty = true;
   }
 
@@ -504,6 +506,8 @@ var fs = (function() {
     }
 
     openedFile.record.data = new Blob([openedFile.buffer.getContent()]);
+    openedFile.record.mtime = openedFile.mtime;
+    openedFile.record.size = openedFile.size;
     store.setItem(openedFile.path, openedFile.record);
     openedFile.dirty = false;
   }
@@ -581,8 +585,8 @@ var fs = (function() {
     if (size != file.buffer.contentSize) {
       file.buffer.setSize(size);
       file.dirty = true;
-      file.record.mtime = Date.now();
-      file.record.size = size;
+      file.mtime = Date.now();
+      file.size = size;
     }
   }
 
@@ -724,7 +728,7 @@ var fs = (function() {
       if (record == null || record.isDir) {
         cb(-1);
       } else {
-        cb(record.data.size);
+        cb(record.size);
       }
     });
   }
