@@ -71,8 +71,6 @@ public class TestFont implements Testlet {
 
     void testEmojiLength(TestHarness th, String code, int expectedUpper) {
         String emoji = getSurrogatePairs(checkCodeFormat(code));
-        System.out.println(expectedUpper);
-        System.out.println(Font.getDefaultFont().stringWidth(emoji));
         th.check(Font.getDefaultFont().stringWidth(emoji) <= expectedUpper);
         th.check(Font.getDefaultFont().substringWidth(emoji, 0, emoji.length()) <= expectedUpper);
         th.check(Font.getDefaultFont().charsWidth(emoji.toCharArray(), 0, emoji.toCharArray().length) <= expectedUpper);
