@@ -4,8 +4,8 @@ module J2ME {
     view: DataView;
     // DataView is not optimized, use Uint8Array for the fast paths.
     u8: Uint8Array;
-    static strings: string [][] = [[],[]];
-    constructor(buffer: ArrayBuffer, public offset: number) {
+    offset: number;
+    constructor(buffer: ArrayBuffer, offset: number) {
       this.view = new DataView(buffer);
       this.u8 = new Uint8Array(buffer);
       this.offset = offset || 0;
@@ -50,26 +50,14 @@ module J2ME {
     }
 
     readString(length) {
-      var u8 = this.u8;
-      var o = this.offset;
-      var strings = Reader.strings;
-      var s, i, l = strings[length - 1];
-      switch (length) {
-        case 1:
-          i = u8[o];
-          break;
-        case 2:
-          i = u8[o] << 8 | u8[o + 1];
-          break;
-        default:
-          return this.readStringSlow(length);
+      if (length === 1) {
+        var c = this.u8[this.offset];
+        if (c <= 0x7f) {
+          this.offset ++;
+          return String.fromCharCode(c);
+        }
       }
-      s = l[i];
-      if (l[i] === undefined) {
-        return s = l[i] = this.readStringSlow(length);
-      }
-      this.offset += length;
-      return s;
+      return this.readStringSlow(length);
     }
 
     readStringSlow(length) {
@@ -89,7 +77,7 @@ module J2ME {
     }
 
     readBytes(length) {
-      var data = this.view.buffer.slice(this.offset, this.offset + length);
+      var data = this.u8.buffer.slice(this.offset, this.offset + length);
       this.offset += length;
       return data;
     }
