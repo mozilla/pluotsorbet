@@ -92,13 +92,10 @@ CUP = src/java_cup/Main.java \
       src/java_cup/parse_action_table.java \
       src/java_cup/parse_reduce_row.java \
       src/java_cup/parse_reduce_table.java \
-      src/java_cup/parser.cup \
-      src/java_cup/parser.java \
       src/java_cup/production.java \
       src/java_cup/production_part.java \
       src/java_cup/reduce_action.java \
       src/java_cup/shift_action.java \
-      src/java_cup/sym.java \
       src/java_cup/symbol.java \
       src/java_cup/symbol_part.java \
       src/java_cup/symbol_set.java \
@@ -112,15 +109,13 @@ CUP = src/java_cup/Main.java \
       src/java_cup/runtime/virtual_parse_stack.java \
       src/java_cup.mf
 
+all: jasmin.jar java_cup.jar
+
 jasmin.jar : $(SRC)
 	mkdir out
 	javac -extdirs "" -source 1.2 -target 1.1 -d out -cp src src/Jasmin.java
 	jar cfm jasmin.jar src/jasmin.mf -C out .
 	rm -rf out
-
-src/jasmin/parser.java:
-src/jasmin/sym.java: src/jasmin/parser.cup java_cup.jar
-	java -jar java_cup.jar -out src/jasmin -nosummary <src/jasmin/parser.cup
 
 java_cup.jar : $(CUP)
 	mkdir out_cup
@@ -128,9 +123,9 @@ java_cup.jar : $(CUP)
 	jar cfm java_cup.jar src/java_cup.mf -C out_cup .
 	rm -rf out_cup
 
-src/java_cup/parser.java:
-src/java_cup/sym.java: src/java_cup/parser.cup
-	java -jar java_cup.jar -out src/java_cup -nosummary <src/java_cup/parser.cup
+src/jasmin/parser.java:
+src/jasmin/sym.java: src/jasmin/parser.cup java_cup.jar
+	java -jar java_cup.jar -out src/jasmin -nosummary <src/jasmin/parser.cup
 
 clean:
-	rm jasmin.jar java_cup.jar src/java_cup/parser.java src/java_cup/sym.java
+	rm jasmin.jar java_cup.jar src/jasmin/parser.java src/jasmin/sym.java
