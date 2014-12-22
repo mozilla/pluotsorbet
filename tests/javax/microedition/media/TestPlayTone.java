@@ -14,11 +14,11 @@ public class TestPlayTone implements Testlet {
         try {
           TonePlayer tonePlayer = config.getTonePlayer();
           tonePlayer.playTone(ToneControl.C4, 500, 100);
-          Thread.sleep(1000);
+          Thread.sleep(200);
           tonePlayer.playTone(ToneControl.C4, 500, 100);
-          Thread.sleep(400);
+          Thread.sleep(100);
           tonePlayer.playTone(ToneControl.C4 + 2, 500, 100);
-          Thread.sleep(400);
+          Thread.sleep(100);
           tonePlayer.stopTone();
           th.check(true);
         } catch (Exception e) {
