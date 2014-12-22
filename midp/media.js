@@ -153,212 +153,109 @@ Media.PlayerCache = {
 function AudioPlayer(playerContainer) {
     this.playerContainer = playerContainer;
 
-    this.isMuted = false;
-
-    /* @type {AudioBuffer} */
-    this.audioBuffer = null;
-
-    this.audioContext = new AudioContext();
-
-    /* @type {AudioBufferSourceNode} */
-    this.source = null;
-
-    /*
-     * Audio gain node used to control volume.
-     */
-    this.gainNode = this.audioContext.createGain();
-
-    this.volume = Math.round(this.gainNode.gain.value * 100);
-
-    this.gainNode.connect(this.audioContext.destination);
-
-    this.isPlaying = false;
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.duration = 0;
+    /* @type HTMLAudioElement */
+    this.audio = new Audio();
 
     this.isVideoControlSupported = false;
     this.isVolumeControlSupported = true;
 }
 
 AudioPlayer.prototype.realize = function() {
-    return new Promise(function(resolve, reject) { resolve(true); });
-}
+    return Promise.resolve(true);
+};
 
 AudioPlayer.prototype.play = function() {
-    var offset = this.stopTime - this.startTime;
-    this.source = this.audioContext.createBufferSource();
-    this.source.buffer = this.cloneBuffer();
-    this.source.connect(this.gainNode || this.audioContext.destination);
-    this.source.start(0, offset);
-    this.isPlaying = true;
-    this.startTime = this.audioContext.currentTime - offset;
-    this.source.onended = function() {
+    this.audio.play();
+    this.audio.onended = function() {
         MIDP.sendNativeEvent({
             type: MIDP.MMAPI_EVENT,
             intParam1: this.playerContainer.pId,
-            intParam2: Math.ceil(this.getDuration()),
+            intParam2: this.getDuration(),
             intParam3: 0,
             intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
         }, MIDP.foregroundIsolateId);
-
-        this.close();
     }.bind(this);
-}
+};
 
 AudioPlayer.prototype.start = function() {
-    if (this.playerContainer.contentSize > 0) {
-        this.decode(this.playerContainer.data.subarray(0, this.playerContainer.contentSize), function(decoded) {
-            // Save a copy of the audio buffer for resuming or replaying.
-            this.audioBuffer = decoded;
-            this.duration = decoded.duration;
-            this.play();
-        }.bind(this));
-
+    if (this.playerContainer.contentSize == 0) {
+        console.warn("Cannot start playing.");
         return;
     }
 
-    console.warn("Cannot start playing.");
-}
+    if (this.audio.src) {
+        this.play();
+        return;
+    }
+
+    new Promise(function(resolve, reject) {
+        var blob = new Blob([ this.playerContainer.data.subarray(0, this.playerContainer.contentSize) ]);
+        this.audio.src = URL.createObjectURL(blob);
+        this.audio.onloadedmetadata = function() {
+            resolve();
+            this.play();
+        }.bind(this);
+        this.audio.onerror = reject;
+    }.bind(this)).done(function() {
+        URL.revokeObjectURL(this.audio.src);
+    }.bind(this));
+};
 
 AudioPlayer.prototype.pause = function() {
-    if (!this.isPlaying) {
+    if (this.audio.paused) {
         return;
     }
-
-    this.isPlaying = false;
-    this.source.onended = null;
-    this.stopTime = this.audioContext.currentTime;
-    this.source.stop();
-    this.source.disconnect();
-    this.source = null;
-}
+    this.audio.onended = null;
+    this.audio.pause();
+};
 
 AudioPlayer.prototype.resume = function() {
-    if (this.isPlaying) {
+    if (!this.audio.paused) {
         return;
     }
-
-    if (this.stopTime - this.startTime >= this.duration) {
-        return;
-    }
-
     this.play();
-}
+};
 
 AudioPlayer.prototype.close = function() {
-    if (this.source) {
-        this.source.stop();
-        this.source.disconnect();
-        this.source = null;
-    }
-
-    if (this.gainNode) {
-        this.gainNode.disconnect();
-        this.gainNode = null;
-    }
-
-    this.audioBuffer = null;
-
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.isPlaying = false;
-}
+    this.audio.pause();
+    this.audio.src = "";
+};
 
 AudioPlayer.prototype.getMediaTime = function() {
-    var time = 0;
-
-    if (this.isPlaying) {
-        time = this.audioContext.currentTime - this.startTime;
-    } else {
-        time = Math.min(this.duration, this.stopTime - this.startTime);
-    }
-
-    return Math.round(time * 1000);
-}
+    return Math.round(this.audio.currentTime * 1000);
+};
 
 // The range of ms has already been checked, we don't need to check it again.
 AudioPlayer.prototype.setMediaTime = function(ms) {
-    var offset = ms / 1000;
-
-    if (this.isPlaying) {
-        this.pause();
-        this.stopTime = this.startTime + offset;
-        this.resume();
-    } else {
-        this.startTime = 0;
-        this.stopTime = this.startTime + offset;
-    }
-
+    this.audio.currentTime = ms / 1000;
     return ms;
 };
 
-AudioPlayer.prototype.cloneBuffer = function() {
-    var buffer = this.audioBuffer;
-    var cloned = this.audioContext.createBuffer(
-                    buffer.numberOfChannels,
-                    buffer.length,
-                    buffer.sampleRate
-                 );
-
-    for (var i = 0; i < buffer.numberOfChannels; ++i) {
-        var channel = buffer.getChannelData(i);
-        cloned.getChannelData(i).set(new Float32Array(channel));
-    }
-    return cloned;
-};
-
-AudioPlayer.prototype.decode = function(encoded, callback) {
-    // Clone a copy before decoding to keep the original buffer unchanged.
-    this.audioContext.decodeAudioData(encoded.buffer.slice(), callback);
-};
-
 AudioPlayer.prototype.getVolume = function() {
-    return this.volume;
+    return Math.floor(this.audio.volume * 100);
 };
 
 AudioPlayer.prototype.setVolume = function(level) {
-    if (!this.gainNode) {
-        return -1;
-    }
     if (level < 0) {
         level = 0;
     } else if (level > 100) {
         level = 100;
     }
-    this.volume = level;
-    if (!this.isMuted) {
-        this.gainNode.gain.value = level / 100;
-    }
+    this.audio.volume = level / 100;
     return level;
-}
+};
 
 AudioPlayer.prototype.getMute = function() {
-    return this.isMuted;
-}
+    return this.audio.muted;
+};
 
 AudioPlayer.prototype.setMute = function(mute) {
-    if (this.isMuted === mute) {
-        return;
-    }
-    this.isMuted = mute;
-    if (!this.gainNode) {
-        return;
-    }
-    if (mute) {
-        this.gainNode.gain.value = 0;
-    } else {
-        this.gainNode.gain.value = this.volume / 100;
-    }
-}
+    this.audio.muted = mute;
+};
 
 AudioPlayer.prototype.getDuration = function() {
-    if (!this.audioBuffer) {
-        return -1; // Player.TIME_UNKNOWN
-    }
-
-    return this.duration * 1000;
-}
+    return Math.round(this.audio.duration * 1000);
+};
 
 function ImagePlayer(playerContainer) {
     this.url = playerContainer.url;
@@ -391,14 +288,12 @@ ImagePlayer.prototype.realize = function() {
         }
     }).bind(this));
 
-    var clean = function() {
+    p.done(function() {
         if (!objectUrl) {
             return;
         }
         URL.revokeObjectURL(objectUrl);
-    };
-
-    p.then(clean, clean);
+    });
 
     return p;
 }
