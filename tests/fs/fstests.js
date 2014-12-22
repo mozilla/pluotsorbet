@@ -794,6 +794,21 @@ tests.push(function() {
   });
 
   tests.push(function() {
+    fs.open("/tmp/stat.txt", function(fd) {
+      fs.stat("/tmp/stat.txt", function(stat) {
+        var mtime = stat.mtime;
+        window.setTimeout(function() {
+          fs.close(fd);
+          fs.stat("/tmp/stat.txt", function(stat) {
+            is(stat.mtime, mtime, "close without changes doesn't update mtime");
+            next();
+          });
+        }, 1);
+      });
+    });
+  });
+
+  tests.push(function() {
     window.setTimeout(function() {
       fs.truncate("/tmp/stat.txt", function() {
         fs.stat("/tmp/stat.txt", function(stat) {
