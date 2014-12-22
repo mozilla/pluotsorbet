@@ -16,6 +16,11 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
      */
     public void playerUpdate(Player player, String event, Object eventData) {
         System.out.println("playerUpdate event: " + event + " " + eventData);
+        if (event.equals(PlayerListener.END_OF_MEDIA)) {
+            synchronized (this) {
+                this.notify();
+            }
+        }
     }
 
     public void test(TestHarness th) {
@@ -114,6 +119,21 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
 
         // Check duration
         th.check(player.getDuration(), 500000);
+
+        // Wait for media ends.
+        synchronized (this) {
+            // When the media reaches ends, the state should be changed from
+            // STARTED to PREFETCHED.
+            while (player.getState() != Player.PREFETCHED) {
+                this.wait();
+            }
+        }
+        th.check(player.getState(), Player.PREFETCHED);
+
+        // Replay the audio
+        player.start();
+        Thread.sleep(50);
+        th.check(player.getMediaTime() > 0);
 
         player.close();
     }

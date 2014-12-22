@@ -80,6 +80,7 @@ Media.contentTypeToFormat = new Map([
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
 
+Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
 
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
@@ -193,6 +194,14 @@ AudioPlayer.prototype.play = function() {
     this.isPlaying = true;
     this.startTime = this.audioContext.currentTime - offset;
     this.source.onended = function() {
+        MIDP.sendNativeEvent({
+            type: MIDP.MMAPI_EVENT,
+            intParam1: this.playerContainer.pId,
+            intParam2: Math.ceil(this.getDuration()),
+            intParam3: 0,
+            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
+        }, MIDP.foregroundIsolateId);
+
         this.close();
     }.bind(this);
 }
@@ -257,10 +266,6 @@ AudioPlayer.prototype.close = function() {
 }
 
 AudioPlayer.prototype.getMediaTime = function() {
-    if (!this.audioContext) {
-        return -1;
-    }
-
     var time = 0;
 
     if (this.isPlaying) {
@@ -271,6 +276,22 @@ AudioPlayer.prototype.getMediaTime = function() {
 
     return Math.round(time * 1000);
 }
+
+// The range of ms has already been checked, we don't need to check it again.
+AudioPlayer.prototype.setMediaTime = function(ms) {
+    var offset = ms / 1000;
+
+    if (this.isPlaying) {
+        this.pause();
+        this.stopTime = this.startTime + offset;
+        this.resume();
+    } else {
+        this.startTime = 0;
+        this.stopTime = this.startTime + offset;
+    }
+
+    return ms;
+};
 
 AudioPlayer.prototype.cloneBuffer = function() {
     var buffer = this.audioBuffer;
@@ -288,7 +309,8 @@ AudioPlayer.prototype.cloneBuffer = function() {
 };
 
 AudioPlayer.prototype.decode = function(encoded, callback) {
-    this.audioContext.decodeAudioData(encoded.buffer, callback);
+    // Clone a copy before decoding to keep the original buffer unchanged.
+    this.audioContext.decodeAudioData(encoded.buffer.slice(), callback);
 };
 
 AudioPlayer.prototype.getVolume = function() {
@@ -531,7 +553,8 @@ function PlayerContainer(url, pId) {
     this.url = url;
     // `pId` is the player id used in PlayerImpl.java, don't confuse with the id we used
     // here in Javascript. The reason we need to hold this `pId` is we need to send it
-    // back when dispatch Media.EVENT_MEDIA_SNAPSHOT_FINISHED.
+    // back when dispatch events, such as Media.EVENT_MEDIA_SNAPSHOT_FINISHED and
+    // Media.EVENT_MEDIA_END_OF_MEDIA.
     this.pId = pId;
 
     this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
@@ -1042,6 +1065,11 @@ Native.create("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I", function(handle)
     return player.getMediaTime();
 });
 
+Native.create("com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I", function(handle, ms) {
+    var container = Media.PlayerCache[handle];
+    return container.player.setMediaTime(ms);
+});
+
 Native.create("com/sun/mmedia/DirectPlayer.nStart.(I)Z", function(handle) {
     var player = Media.PlayerCache[handle];
     player.start();
@@ -1284,4 +1312,23 @@ Native.create("com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V
 
 Native.create("com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B", function(handle) {
     return Media.PlayerCache[handle].getSnapshotData();
+});
+
+Native.create("com/sun/amms/GlobalMgrImpl.nCreatePeer.()I", function() {
+    console.warn("com/sun/amms/GlobalMgrImpl.nCreatePeer.()I not implemented.");
+    return 1;
+});
+
+Native.create("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I", function(typeName) {
+    console.warn("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I not implemented.");
+    return 2;
+});
+
+Native.create("com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V", function(mute) {
+    console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V not implemented.");
+});
+
+Native.create("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I", function() {
+    console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I not implemented.");
+    return 100;
 });
