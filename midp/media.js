@@ -713,10 +713,6 @@ PlayerContainer.prototype.writeBuffer = function(buffer) {
     this.contentSize += buffer.length;
 };
 
-PlayerContainer.prototype.play = function() {
-    this.player.play();
-};
-
 PlayerContainer.prototype.start = function() {
     this.player.start();
 };
