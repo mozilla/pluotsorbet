@@ -1,5 +1,3 @@
-JDK = E:/JDK/BIN/
-
 SRC = src/Jasmin.java \
       src/jasmin/ClassFile.java \
       src/jasmin/InsnInfo.java \
@@ -115,24 +113,25 @@ CUP = src/java_cup/Main.java \
 ##########################################################################
 
 jasmin.jar : $(SRC)
-    @if not exist out\nul mkdir out
-    @$(JDK)javac -extdirs "" -source 1.2 -target 1.1 -d out -cp src src/Jasmin.java
-    @$(JDK)jar cfm jasmin.jar src/jasmin.mf -C out .
+	mkdir out
+	javac -extdirs "" -source 1.2 -target 1.1 -d out -cp src src/Jasmin.java
+	jar cfm jasmin.jar src/jasmin.mf -C out .
+	rm -rf out
 
 src/jasmin/parser.java:
 src/jasmin/sym.java: src/jasmin/parser.cup java_cup.jar
-    @$(JDK)java -jar java_cup.jar -out src/jasmin -nosummary <src/jasmin/parser.cup
+	java -jar java_cup.jar -out src/jasmin -nosummary <src/jasmin/parser.cup
 
 
 ######################
 java_cup.jar : $(CUP)
-    @if not exist out_cup\nul mkdir out_cup
-    @if exist java_cup.jar copy java_cup.jar out_cup >nul
-    @$(JDK)javac -extdirs "" -source 1.2 -target 1.1 -d out_cup -cp src src/java_cup/Main.java
-    @$(JDK)jar cfm java_cup.jar src/java_cup.mf -C out_cup .
+	mkdir out_cup
+	javac -extdirs "" -source 1.2 -target 1.1 -d out_cup -cp src src/java_cup/Main.java
+	jar cfm java_cup.jar src/java_cup.mf -C out_cup .
+	rm -rf out_cup
 
 src/java_cup/parser.java:
 src/java_cup/sym.java: src/java_cup/parser.cup
-    @$(JDK)java -jar java_cup.jar -out src/java_cup -nosummary <src/java_cup/parser.cup
+	java -jar java_cup.jar -out src/java_cup -nosummary <src/java_cup/parser.cup
 
 #########EOF######
