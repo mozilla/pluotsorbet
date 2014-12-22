@@ -542,13 +542,17 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs list " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || !record.isDir) {
-        cb(null);
-      } else {
-        store.getKeysByParentDir(path, function(keys) {
-          cb(keys.map(function(v) { return basename(v) }).sort());
-        });
+      if (record == null) {
+        return cb(new Error("Path does not exist"));
       }
+
+      if (!record.isDir) {
+        return cb(new Error("Path is not a directory"));
+      }
+
+      store.getKeysByParentDir(path, function(keys) {
+        cb(null, keys.map(function(v) { return basename(v) }).sort());
+      });
     });
   }
 

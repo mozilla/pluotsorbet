@@ -53,11 +53,18 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/", function(files) {
+  fs.list("/", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
     next();
   })
+});
+
+tests.push(function() {
+  fs.list("/tmp", function(error, files) {
+    is(error.message, "Path does not exist", "can't list a path that does not exist");
+    next();
+  });
 });
 
 tests.push(function() {
@@ -202,7 +209,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/", function(files) {
+  fs.list("/", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 1, "files is an array with 1 element: " + files);
     is(files[0], "tmp", "tmp is in files");
@@ -211,7 +218,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(files) {
+  fs.list("/tmp", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files is an empty array");
     is(files[0], "ciao", "ciao is in files");
@@ -221,7 +228,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
     next();
@@ -250,8 +257,8 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/tmp.txt", function(files) {
-    is(files, null, "can't list the children of a file");
+  fs.list("/tmp/tmp.txt", function(error, files) {
+    is(error.message, "Path is not a directory", "can't list the children of a file");
     next();
   });
 });
@@ -271,7 +278,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files has 2 entries");
     is(files[0], "tmp", "tmp is in files");
@@ -295,7 +302,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 1, "files has 1 entry");
     is(files[0], "tmp", "ciao is in files");
@@ -325,7 +332,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is empty");
     next();
@@ -340,7 +347,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(files) {
+  fs.list("/tmp", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 1, "files is empty");
     is(files[0], "tmp.txt", "tmp.txt is in files");

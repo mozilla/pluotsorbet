@@ -309,7 +309,17 @@ function(jPath, filterArray, includeHidden) {
             filter += "$";
         }
 
-        fs.list(path, function(files) {
+        fs.list(path, function(error, files) {
+            // For these exceptions, we append a URL representation of the path
+            // in Connection.listInternal, so we don't have to implement getURL
+            // in native code.
+            if (error && error.message == "Path does not exist") {
+                return reject(new JavaException("java/io/IOException", "Directory does not exist: "));
+            }
+            if (error && error.message == "Path is not a directory") {
+                return reject(new JavaException("java/io/IOException", "Connection is open on a file: "));
+            }
+
             var regexp = new RegExp(filter);
 
             files = files.filter(regexp.test.bind(regexp));

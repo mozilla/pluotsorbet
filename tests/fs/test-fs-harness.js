@@ -99,7 +99,7 @@ function testInit() {
       if (++i < dirs.length) {
         var dir = dirs[i];
         var initialFiles = initialFilesByDir[dir].slice(0);
-        fs.list(dir, function(files) {
+        fs.list(dir, function(error, files) {
           initialFiles.sort();
           files.sort();
           ok(files instanceof Array, "directory list is an array");

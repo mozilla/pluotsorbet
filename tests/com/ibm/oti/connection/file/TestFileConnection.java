@@ -214,11 +214,25 @@ public class TestFileConnection implements Testlet {
             th.check(!file.exists(), "File doesn't exist");
             th.check(!file.isDirectory(), "File isn't a directory");
 
+            try {
+                file.list();
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Directory does not exist: file:////provaDir/prova");
+            }
+
             file.create();
 
             th.check(file.exists(), "File created");
-            th.check(!file.isDirectory(), "Check is directory");
+            th.check(!file.isDirectory(), "File isn't a directory");
             th.check(file.fileSize(), 0, "Check file size");
+
+            try {
+                file.list();
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Connection is open on a file: file:////provaDir/prova");
+            }
 
             OutputStream out = file.openOutputStream();
             out.write(new byte[]{ 5, 4, 3, 2, 1 });
