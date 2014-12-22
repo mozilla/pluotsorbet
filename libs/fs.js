@@ -248,26 +248,23 @@ var fs = (function() {
     };
   }
 
-  Store.prototype.getKeysByParentDir = function(parentDir, cb) {
+  Store.prototype.getRecordsByParentDir = function(parentDir, cb) {
     this.sync((function() {
       var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
-      if (DEBUG_FS) { console.log("getKeysByParentDir initiated"); }
+      if (DEBUG_FS) { console.log("getRecordsByParentDir initiated"); }
       var objectStore = transaction.objectStore(Store.DBSTORENAME);
       var index = objectStore.index("parentDir");
-      var keys = [];
-      index.openKeyCursor(IDBKeyRange.only(parentDir)).onsuccess = function(event) {
+      var records = {};
+      index.openCursor(IDBKeyRange.only(parentDir)).onsuccess = function(event) {
         var cursor = event.target.result;
         if (cursor) {
-          // cursor.key is the value in the parentDir index, f.e. /tmp;
-          // cursor.primaryKey is the unique identifier for the record with
-          // that parentDir value, f.e. /tmp/test.txt.
-          keys.push(cursor.primaryKey);
+          records[cursor.primaryKey] = cursor.value;
           cursor.continue();
         }
       };
       transaction.oncomplete = function() {
-        if (DEBUG_FS) { console.log("getKeysByParentDir completed"); }
-        cb(keys);
+        if (DEBUG_FS) { console.log("getRecordsByParentDir completed"); }
+        cb(records);
       };
     }).bind(this));
   }
@@ -550,8 +547,8 @@ var fs = (function() {
         return cb(new Error("Path is not a directory"));
       }
 
-      store.getKeysByParentDir(path, function(keys) {
-        cb(null, keys.map(function(v) { return basename(v) }).sort());
+      store.getRecordsByParentDir(path, function(records) {
+        cb(null, Object.keys(records).map(function(v) { return basename(v) + (records[v].isDir ? "/" : "") }).sort());
       });
     });
   }

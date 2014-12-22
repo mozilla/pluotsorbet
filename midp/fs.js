@@ -321,43 +321,18 @@ function(jPath, filterArray, includeHidden) {
             }
 
             var regexp = new RegExp(filter);
-
             files = files.filter(regexp.test.bind(regexp));
-
             var filesArray = util.newArray("[[B", files.length);
+            var encoder = new TextEncoder("utf-8");
 
-            var added = 0;
-
-            function checkDone() {
-                if (added === files.length) {
-                    resolve(filesArray);
-
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (checkDone()) {
-                return;
-            }
-
-            files.forEach(function(file) {
-              fs.stat(path + "/" + file, function(stat) {
-                  if (stat.isDir) {
-                      file += "/";
-                  }
-
-                  var bytesFile = new TextEncoder("utf-8").encode(file);
-
-                  var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
-                  fileArray.set(bytesFile);
-
-                  filesArray[added++] = fileArray;
-
-                  checkDone();
-              });
+            files.forEach(function(file, i) {
+                var bytesFile = encoder.encode(file);
+                var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
+                fileArray.set(bytesFile);
+                filesArray[i] = fileArray;
             });
+
+            resolve(filesArray);
         });
     });
 }, true);

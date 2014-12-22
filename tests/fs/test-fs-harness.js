@@ -65,7 +65,7 @@ var initialPaths = [
 // We check that the directories have the files we expect to find in them.
 var initialFilesByDir = {
   "/": [
-    "Persistent",
+    "Persistent/",
     "_main.ks",
   ],
 
