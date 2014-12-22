@@ -128,4 +128,4 @@ src/jasmin/sym.java: src/jasmin/parser.cup java_cup.jar
 	java -jar java_cup.jar -out src/jasmin -nosummary <src/jasmin/parser.cup
 
 clean:
-	rm jasmin.jar java_cup.jar src/jasmin/parser.java src/jasmin/sym.java
+	rm -f jasmin.jar java_cup.jar src/jasmin/parser.java src/jasmin/sym.java
