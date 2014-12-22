@@ -324,8 +324,18 @@ var currentlyFocusedTextEditor;
         this.face = face;
     });
 
+    function calcStringWidth(font, str) {
+        var emojiLen = 0;
+        var len = withFont(font, MIDP.Context2D, str.replace(emoji.regEx, function() {
+            emojiLen += font.size;
+            return "";
+        }));
+
+        return len + emojiLen;
+    }
+
     Native.create("javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I", function(str) {
-        return withFont(this, MIDP.Context2D, util.fromJavaString(str));
+        return calcStringWidth(this, util.fromJavaString(str));
     });
 
     Native.create("javax/microedition/lcdui/Font.charWidth.(C)I", function(char) {
@@ -333,11 +343,11 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("javax/microedition/lcdui/Font.charsWidth.([CII)I", function(str, offset, len) {
-        return withFont(this, MIDP.Context2D, util.fromJavaChars(str).slice(offset, offset + len));
+        return calcStringWidth(this, util.fromJavaChars(str).slice(offset, offset + len));
     });
 
     Native.create("javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I", function(str, offset, len) {
-        return withFont(this, MIDP.Context2D, util.fromJavaString(str).slice(offset, offset + len));
+        return calcStringWidth(this, util.fromJavaString(str).slice(offset, offset + len));
     });
 
     var HCENTER = 1;
@@ -407,27 +417,25 @@ var currentlyFocusedTextEditor;
     }
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        withClip(g, c, x, y, function(x, y) {
-            var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
-            c.textAlign = "left";
-            c.textBaseline = "top";
+        var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+        c.textAlign = "left";
+        c.textBaseline = "top";
 
-            if (anchor & RIGHT) {
-                x -= w;
-            } else if (anchor & HCENTER) {
-                x -= (w >>> 1) | 0;
-            }
+        if (anchor & RIGHT) {
+            x -= w;
+        } else if (anchor & HCENTER) {
+            x -= (w >>> 1) | 0;
+        }
 
-            if (anchor & BOTTOM) {
-                c.textBaseline = "bottom";
-            } else if (anchor & BASELINE) {
-                c.textBaseline = "alphabetic";
-            } else if (anchor & VCENTER) {
-                throw new JavaException("java/lang/IllegalArgumentException", "VCENTER not allowed with text");
-            }
+        if (anchor & BOTTOM) {
+            c.textBaseline = "bottom";
+        } else if (anchor & BASELINE) {
+            c.textBaseline = "alphabetic";
+        } else if (anchor & VCENTER) {
+            throw new JavaException("java/lang/IllegalArgumentException", "VCENTER not allowed with text");
+        }
 
-            cb(x, y, w);
-        });
+        cb(x, y, w);
     }
 
     function abgrIntToCSS(pixel) {
@@ -681,50 +689,87 @@ var currentlyFocusedTextEditor;
         return true;
     });
 
-    Native.create("javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V", function(jStr, x, y, anchor) {
-        var str = util.fromJavaString(jStr);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withOpaquePixel(g, c, function() {
-                    c.fillText(str, x, y);
+    function parseEmojiString(str) {
+        var parts = [];
+
+        var match;
+        var lastIndex = 0;
+        emoji.regEx.lastIndex = 0;
+        while (match = emoji.regEx.exec(str)) {
+            parts.push({ text: str.substring(lastIndex, match.index), emoji: match[0] });
+            lastIndex = match.index + match[0].length;
+        }
+
+        parts.push({ text: str.substring(lastIndex), emoji: null });
+
+        return parts;
+    }
+
+    function drawString(g, str, x, y, anchor, isOpaque) {
+        return new Promise(function(resolve, reject) {
+            var font = g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
+
+            var parts = parseEmojiString(str);
+
+            withGraphics(g, function(c) {
+                withClip(g, c, x, y, function(curX, y) {
+                    (function drawNext() {
+                        if (parts.length === 0) {
+                            resolve();
+                            return;
+                        }
+
+                        var part = parts.shift();
+
+                        if (part.text) {
+                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
+                                var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                                withPixelFunc(g, c, function() {
+                                    c.fillText(part.text, x, y);
+                                    curX += w;
+                                });
+                            });
+                        }
+
+                        if (part.emoji) {
+                            var img = new Image();
+                            img.src = emoji.strToImg(part.emoji);
+                            img.onload = function() {
+                                c.drawImage(img, curX, y, font.size, font.size);
+                                curX += font.size;
+                                drawNext();
+                            }
+                        } else {
+                            drawNext();
+                        }
+                    })();
                 });
             });
         });
-    });
+    }
+
+    Native.create("javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V", function(str, x, y, anchor) {
+        return drawString(this, util.fromJavaString(str), x, y, anchor, true);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V",
-    function(jStr, offset, len, x, y, anchor) {
-        var str = util.fromJavaString(jStr).substr(offset, len);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(str, x, y);
-                });
-            });
-        });
-    });
+    function(str, offset, len, x, y, anchor) {
+        return drawString(this, util.fromJavaString(str).substr(offset, len), x, y, anchor, false);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V", function(data, offset, len, x, y, anchor) {
-        var str = util.fromJavaChars(data, offset, len);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(str, x, y);
-                });
-            });
-        });
-    });
+        return drawString(this, util.fromJavaChars(data, offset, len), x, y, anchor, false);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawChar.(CIII)V", function(jChr, x, y, anchor) {
         var chr = String.fromCharCode(jChr);
         var g = this;
         withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(chr, x, y);
+            withClip(g, c, x, y, function(x, y) {
+                withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
+                    withPixel(g, c, function() {
+                        c.fillText(chr, x, y);
+                    });
                 });
             });
         });
