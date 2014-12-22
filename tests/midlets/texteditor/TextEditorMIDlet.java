@@ -83,8 +83,14 @@ public class TextEditorMIDlet extends MIDlet implements TextEditorListener, Comm
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
-            g.setColor(0x00FFFFFF);;
+            g.setColor(0x00FFFFFF);
             g.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
+            g.setColor(0xFF000000);
+            g.drawString(textEditor.getContent(), 0, 250, Graphics.TOP | Graphics.LEFT);
+        }
+
+        protected void pointerPressed(int x, int y) {
+            repaint();
         }
     }
 

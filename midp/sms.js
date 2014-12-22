@@ -44,6 +44,8 @@ function promptForMessageText() {
     el.style.display = 'block';
     el.classList.add('visible');
 
+    el.querySelector('p.verificationText').textContent = MIDlet.SMSDialogVerificationText;
+
     var input = el.querySelector('input');
     var btnCancel = el.querySelector('button.cancel');
     var btnDone = el.querySelector('button.recommend');
@@ -67,7 +69,7 @@ function promptForMessageText() {
         console.log('SMS prompt filled out:', input.value);
         // We don't have easy access to our own phone number; use a
         // dummy unknown value instead.
-        receiveSms(input.value, 'unknown');
+        receiveSms(MIDlet.SMSDialogReceiveFilter(input.value), 'unknown');
     });
 
     function toTimeText(ms) {
