@@ -16,6 +16,7 @@ PACKAGE_FILES = \
   midlets/MediaSampler/res/* \
   com/sun/cldc/io/utf8.txt \
   org/mozilla/io/test.jpg \
+  javax/microedition/media/hello.wav \
   $(NULL)
 
 all: tests.jar
