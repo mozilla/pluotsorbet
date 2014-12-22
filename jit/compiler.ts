@@ -347,7 +347,7 @@ module J2ME {
                           methodFilter: (methodInfo: MethodInfo) => boolean,
                           fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
-    var jarFiles = CLASSES.classFiles;
+    var jarFiles = CLASSES.jarFiles;
     var ctx = new Context(runtime);
     var code = "";
     var writer = new J2ME.IndentingWriter(false, function (s) {
