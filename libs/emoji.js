@@ -188,7 +188,19 @@ var emoji = (function() {
   ].join("|");
 
   return {
-      regEx: new RegExp(regexString, 'g'),
+    regEx: new RegExp(regexString, 'g'),
+    strToImg: function(str) {
+      var firstCodePoint = str.codePointAt(0);
+
+      var imgSrc = "style/emoji/" + firstCodePoint.toString(16);
+
+      var len = String.fromCodePoint(firstCodePoint).length;
+      if (str.length > len) {
+        imgSrc += "-" + str.substr(len).codePointAt(0).toString(16);
+      }
+
+      return imgSrc + ".png";
+    },
   };
 })();
 
