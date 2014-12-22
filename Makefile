@@ -1,6 +1,6 @@
-.PHONY: all test tests java certs app clean
+.PHONY: all test tests java certs app clean jasmin
 
-all: java tests
+all: java jasmin tests
 
 test: all
 	rm -f test.log
@@ -19,6 +19,9 @@ test: all
 	else true; \
 	fi
 
+jasmin:
+	make -C tools/jasmin-2.4
+
 tests:
 	make -C tests
 
@@ -34,5 +37,6 @@ app: java certs
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
+	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean

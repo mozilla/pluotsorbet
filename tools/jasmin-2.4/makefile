@@ -1,3 +1,5 @@
+.PHONY: clean
+
 SRC = src/Jasmin.java \
       src/jasmin/ClassFile.java \
       src/jasmin/InsnInfo.java \
@@ -110,8 +112,6 @@ CUP = src/java_cup/Main.java \
       src/java_cup/runtime/virtual_parse_stack.java \
       src/java_cup.mf
 
-##########################################################################
-
 jasmin.jar : $(SRC)
 	mkdir out
 	javac -extdirs "" -source 1.2 -target 1.1 -d out -cp src src/Jasmin.java
@@ -122,8 +122,6 @@ src/jasmin/parser.java:
 src/jasmin/sym.java: src/jasmin/parser.cup java_cup.jar
 	java -jar java_cup.jar -out src/jasmin -nosummary <src/jasmin/parser.cup
 
-
-######################
 java_cup.jar : $(CUP)
 	mkdir out_cup
 	javac -extdirs "" -source 1.2 -target 1.1 -d out_cup -cp src src/java_cup/Main.java
@@ -134,4 +132,5 @@ src/java_cup/parser.java:
 src/java_cup/sym.java: src/java_cup/parser.cup
 	java -jar java_cup.jar -out src/java_cup -nosummary <src/java_cup/parser.cup
 
-#########EOF######
+clean:
+	rm jasmin.jar java_cup.jar src/java_cup/parser.java src/java_cup/sym.java
