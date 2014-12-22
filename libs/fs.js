@@ -1,6 +1,6 @@
 'use strict';
 
-var DEBUG_FS = false;
+var DEBUG_FS = true;
 
 var fs = (function() {
   var Store = function() {
@@ -135,7 +135,23 @@ var fs = (function() {
 
     openreq.onsuccess = (function() {
       this.db = openreq.result;
-      cb();
+
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      if (DEBUG_FS) { console.log("getAll initiated"); }
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var then = performance.now();
+      var req = objectStore.openCursor();
+      req.onsuccess = (function(event) {
+        var cursor = event.target.result;
+        if (cursor) {
+          this.map.set(cursor.key, cursor.value);
+          cursor.continue();
+        }
+      }).bind(this);
+      transaction.oncomplete = function() {
+        if (DEBUG_FS) { console.log("getAll completed in " + (performance.now() - then) + "ms"); }
+        cb();
+      };
     }).bind(this);
   };
 
