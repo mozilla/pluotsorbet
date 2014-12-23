@@ -177,6 +177,14 @@ window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    fs.clear();
  };
+ document.getElementById("exportstorage").onclick = function() {
+   fs.exportStore(function(blob) {
+     saveAs(blob, "fs-" + Date.now() + ".json");
+   });
+ };
+ document.getElementById("importstorage").addEventListener("change", function(event) {
+   fs.importStore(event.target.files[0]);
+ }, false);
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);
