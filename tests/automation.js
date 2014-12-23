@@ -24,7 +24,7 @@ var gfxTests = [
   { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
   { name: "gfx/DrawStringTest", maxDifferent: 345 },
   { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
-  { name: "gfx/TextBoxTest", maxDifferent: 4677 },
+  { name: "gfx/TextBoxTest", maxDifferent: 4722 },
   { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
@@ -60,7 +60,7 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71315 },
+  { name: "pass", number: 71317 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }

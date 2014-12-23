@@ -1,0 +1,100 @@
+#!/bin/csh
+#
+# JavaCup install and test script
+# Scott Hudson 8/31/95
+#  
+# Last revision 1/7/96 (for v0.9d)
+#
+echo 
+echo "===================================="
+echo "Installing and testing JavaCup v0.9d"
+echo "===================================="
+echo
+
+# check for this directory in CLASSPATH 
+#
+set cwd = `pwd`
+if ($CLASSPATH !~ "*$cwd*") then
+  echo " "
+  echo "WARNING:"
+  echo "WARNING: The current directory does not appear in your CLASSPATH"
+  echo "WARNING: it will be added for this install/test only"
+  echo "WARNING:"
+  echo " "
+  set CLASSPATH = $CLASSPATH':'$cwd
+  echo "CLASSPATH now set to " 
+  echo $CLASSPATH
+endif
+  
+# change to the demo directory
+#
+echo " "
+echo "changing to simple_calc subdirectory..."
+echo "cd simple_calc"
+cd simple_calc 
+
+# remove old copies of parser.java and sym.java
+#
+echo " "
+echo "removing any old copies of parser.java and sym.java..."
+echo "rm -f parser.java sym.java"
+rm -f parser.java sym.java
+
+# compile java_cup and run it against the demo program
+#   the -cs (for "checksource") option here will force the 
+#   java_cup and java_cup.runtime source to be compiled prior 
+#   to running it.
+#
+echo " "
+echo "compiling java_cup then generating demo program..."
+echo "java -cs java_cup.Main < parser.cup"
+java -cs java_cup.Main < parser.cup 
+
+# make sure parser.java and sym.java now exist
+#
+if ( ! -e parser.java) then
+  echo " "
+  echo "ERROR: for some reason parser.java was not created"
+  echo "ERROR: install was not successful"
+  exit 1
+endif
+if ( ! -e sym.java) then
+  echo " "
+  echo "ERROR: for some reason sym.java was not created"
+  echo "ERROR: install was not successful"
+  exit 1
+endif
+
+# run the demo
+#  again, the -cs option will cause compilation of all the parts 
+#  of the demo program (including parser.java and sym.java that 
+#  should have been generated in the previous step).
+#
+echo "removing old test results..."
+echo "rm -f test_results"
+rm -f test_results
+echo " "
+echo "executing the demo program..."
+echo "echo '2+2;' | java -cs Main >& test_results"
+echo '2+2;' | java -cs Main >& test_results
+
+# compare with standard results 
+#
+set res = `tail -1 test_results`
+if ("$res" !~ "= 4") then
+  echo "ERROR: test program produced the wrong results"
+  echo "ERROR: output was:"
+  cat test_results
+  echo "ERROR: install was not successful"
+  rm -f test_results
+  exit 2
+endif
+  
+# all is well
+#
+rm -f test_results
+echo " "
+echo "=============================="
+echo "Install and test was successful"
+echo "=============================="
+exit 0
