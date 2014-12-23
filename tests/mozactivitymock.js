@@ -5,11 +5,11 @@ var lastSMSNumber = null;
 var lastSMSBody = null;
 
 Native["javax/wireless/messaging/SendSMSTest.getNumber.()Ljava/lang/String;"] = function() {
-  return $S(lastSMSNumber);
+  return J2ME.newString(lastSMSNumber);
 };
 
 Native["javax/wireless/messaging/SendSMSTest.getBody.()Ljava/lang/String;"] = function() {
-  return $S(lastSMSBody);
+  return J2ME.newString(lastSMSBody);
 };
 
 function MozActivity(obj) {

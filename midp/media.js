@@ -113,7 +113,7 @@ Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesNext.(I)Ljava/lang/
         return null;
     }
     var s = cached.shift();
-    return s ? $S(s) : null;
+    return s ? J2ME.newString(s) : null;
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesClose.(I)V"] = function(hdlr) {
@@ -141,7 +141,7 @@ Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsNext.(I)Ljava/lang/Str
         return null;
     }
     var s = cached.shift();
-    return s ? $S(s) : null;
+    return s ? J2ME.newString(s) : null;
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsClose.(I)V"] = function(hdlr) {
@@ -930,11 +930,11 @@ Native["com/sun/mmedia/PlayerImpl.nTerm.(I)I"] = function(handle) {
 Native["com/sun/mmedia/PlayerImpl.nGetMediaFormat.(I)Ljava/lang/String;"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.mediaFormat = player.getMediaFormat();
-    return $S(player.mediaFormat);
+    return J2ME.newString(player.mediaFormat);
 };
 
 Native["com/sun/mmedia/DirectPlayer.nGetContentType.(I)Ljava/lang/String;"] = function(handle) {
-    return $S(Media.PlayerCache[handle].getContentType());
+    return J2ME.newString(Media.PlayerCache[handle].getContentType());
 };
 
 Native["com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z"] = function(handle) {

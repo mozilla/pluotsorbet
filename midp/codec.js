@@ -197,7 +197,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = 
   if (str === undefined) {
     throw $.newIOException("tag (" + tag + ") invalid");
   }
-  return $S(str);
+  return J2ME.newString(str);
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(tag) {
@@ -221,7 +221,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = fun
   if (name === undefined) {
     throw $.newIOException();
   }
-  return $S(name);
+  return J2ME.newString(name);
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function() {

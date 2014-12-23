@@ -6,11 +6,11 @@
 var RECORD_STORE_BASE = "/RecordStore";
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(storageId) {
-    return $S("assets/" + storageId + "/");
+    return J2ME.newString("assets/" + storageId + "/");
 };
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(id) {
-    return $S("");
+    return J2ME.newString("");
 };
 
 Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] =

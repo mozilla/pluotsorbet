@@ -212,18 +212,18 @@ Override["java/lang/String.substring.(I)Ljava/lang/String;"] = function(beginInd
   if (beginIndex < 0 || beginIndex > this.str.length) {
     throw $.newIndexOutOfBoundsException();
   }
-  return $S(this.str.substring(beginIndex));
+  return J2ME.newString(this.str.substring(beginIndex));
 };
 
 Override["java/lang/String.substring.(II)Ljava/lang/String;"] = function(beginIndex, endIndex) {
   if (beginIndex < 0 || endIndex > this.str.length || beginIndex > endIndex) {
     throw $.newIndexOutOfBoundsException();
   }
-  return $S(this.str.substring(beginIndex, endIndex));
+  return J2ME.newString(this.str.substring(beginIndex, endIndex));
 };
 
 Override["java/lang/String.concat.(Ljava/lang/String;)Ljava/lang/String;"] = function(s) {
-  return $S(this.str + s.str);
+  return J2ME.newString(this.str + s.str);
 };
 
 // via MDN:
@@ -233,17 +233,17 @@ function escapeRegExp(str) {
 
 Override["java/lang/String.replace.(CC)Ljava/lang/String;"] = function(oldChar, newChar) {
   // Using a RegExp here to replace all matches of oldChar, rather than just the first.
-  return $S(this.str.replace(
+  return J2ME.newString(this.str.replace(
     new RegExp(escapeRegExp(String.fromCharCode(oldChar)), "g"),
     String.fromCharCode(newChar)));
 };
 
 Override["java/lang/String.toLowerCase.()Ljava/lang/String;"] = function() {
-  return $S(this.str.toLowerCase());
+  return J2ME.newString(this.str.toLowerCase());
 };
 
 Override["java/lang/String.toUpperCase.()Ljava/lang/String;"] = function() {
-  return $S(this.str.toUpperCase());
+  return J2ME.newString(this.str.toUpperCase());
 };
 
 Override["java/lang/String.trim.()Ljava/lang/String;"] = function() {
@@ -258,7 +258,7 @@ Override["java/lang/String.trim.()Ljava/lang/String;"] = function() {
     end--;
   }
 
-  return $S(this.str.substring(start, end));
+  return J2ME.newString(this.str.substring(start, end));
 };
 
 Override["java/lang/String.toString.()Ljava/lang/String;"] = function() {
@@ -279,30 +279,30 @@ Override["java/lang/String.valueOf.([C)Ljava/lang/String;"] = function(chars) {
   if (!chars) {
     throw $.newNullPointerException();
   }
-  return $S(util.fromJavaChars(chars));
+  return J2ME.newString(util.fromJavaChars(chars));
 };
 
 Override["java/lang/String.valueOf.([CII)Ljava/lang/String;"] = function(chars, offset, count) {
   if (!chars) {
     throw $.newNullPointerException();
   }
-  return $S(util.fromJavaChars(chars, offset, count));
+  return J2ME.newString(util.fromJavaChars(chars, offset, count));
 };
 
 Override["java/lang/String.valueOf.(Z)Ljava/lang/String;"] = function(bool) {
-  return $S(bool ? "true" : "false");
+  return J2ME.newString(bool ? "true" : "false");
 };
 
 Override["java/lang/String.valueOf.(C)Ljava/lang/String;"] = function(ch) {
-  return $S(String.fromCharCode(ch));
+  return J2ME.newString(String.fromCharCode(ch));
 };
 
 Override["java/lang/String.valueOf.(I)Ljava/lang/String;"] = function(n) {
-  return $S(n.toString());
+  return J2ME.newString(n.toString());
 };
 
 Override["java/lang/String.valueOf.(J)Ljava/lang/String;"] = function(n) {
-  return $S(n.toString());
+  return J2ME.newString(n.toString());
 };
 
 
@@ -605,7 +605,7 @@ Override["java/lang/StringBuffer.reverse.()Ljava/lang/StringBuffer;"] = function
 };
 
 Override["java/lang/StringBuffer.toString.()Ljava/lang/String;"] = function() {
-  return $S(util.fromJavaChars(this.buf, 0, this.count));
+  return J2ME.newString(util.fromJavaChars(this.buf, 0, this.count));
 };
 
 Override["java/lang/StringBuffer.setShared.()V"] = function() {

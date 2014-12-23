@@ -706,7 +706,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = functio
 };
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(id) {
-    return $S(id.toString());
+    return J2ME.newString(id.toString());
 };
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(suiteId) {
@@ -715,7 +715,7 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I
 };
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteJarPath.(I)Ljava/lang/String;"] = function(id) {
-    return $S("");
+    return J2ME.newString("");
 };
 
 Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(id, lock) {
@@ -1008,7 +1008,7 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
         throw $.newIllegalStateException();
     }
 
-    return $S(value);
+    return J2ME.newString(value);
 };
 
 Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(displayId, drawTrusted) {
@@ -1091,7 +1091,7 @@ MIDP.keyNames = {
 };
 
 Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(keyCode) {
-    return $S((keyCode in MIDP.keyNames) ? MIDP.keyNames[keyCode] : String.fromCharCode(keyCode));
+    return J2ME.newString((keyCode in MIDP.keyNames) ? MIDP.keyNames[keyCode] : String.fromCharCode(keyCode));
 };
 
 MIDP.gameKeys = {
@@ -1305,7 +1305,7 @@ Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function() {
 
 Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
     console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
-    return $S("");
+    return J2ME.newString("");
 };
 
 Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
