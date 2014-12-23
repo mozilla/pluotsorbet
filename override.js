@@ -145,14 +145,6 @@ function createAlternateImpl(object, key, fn, usesPromise) {
 
 Override.create = createAlternateImpl.bind(null, Override);
 
-Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
-  return decodeURIComponent(string.str);
-});
-
-Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
-  return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
-});
-
 Override.create("java/lang/Math.min.(II)I", function(a, b) {
   return Math.min(a, b);
 });
