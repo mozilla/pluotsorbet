@@ -60,10 +60,13 @@ module J2ME {
         ArrayIndexOutOfBoundsException: null,
         StringIndexOutOfBoundsException: null,
         ArrayStoreException: null,
+        IllegalMonitorStateException: null,
+        ClassCastException: null,
+        NegativeArraySizeException: null,
+        ArithmeticException: null,
         ClassNotFoundException: null,
         SecurityException: null,
         IllegalThreadStateException: null,
-        NegativeArraySizeException: null,
         Exception: null
       },
       io: {
@@ -350,87 +353,102 @@ module J2ME {
       return this.staticFields[field.id];
     }
 
-    newIOException(str: string): java.io.IOException {
+    newIOException(str?: string): java.io.IOException {
       return <java.io.IOException>$.ctx.createException(
         "java/io/IOException", str);
     }
 
-    newUnsupportedEncodingException(str: string): java.io.UnsupportedEncodingException {
+    newUnsupportedEncodingException(str?: string): java.io.UnsupportedEncodingException {
       return <java.io.UnsupportedEncodingException>$.ctx.createException(
         "java/io/UnsupportedEncodingException", str);
     }
 
-    newUTFDataFormatException(str: string): java.io.UTFDataFormatException {
+    newUTFDataFormatException(str?: string): java.io.UTFDataFormatException {
       return <java.io.UTFDataFormatException>$.ctx.createException(
         "java/io/UTFDataFormatException", str);
     }
 
-    newSecurityException(str: string): java.lang.SecurityException {
+    newSecurityException(str?: string): java.lang.SecurityException {
       return <java.lang.SecurityException>$.ctx.createException(
         "java/lang/SecurityException", str);
     }
 
-    newIllegalThreadStateException(str: string): java.lang.IllegalThreadStateException {
+    newIllegalThreadStateException(str?: string): java.lang.IllegalThreadStateException {
       return <java.lang.IllegalThreadStateException>$.ctx.createException(
         "java/lang/IllegalThreadStateException", str);
     }
 
-    newRuntimeException(str: string): java.lang.RuntimeException {
+    newRuntimeException(str?: string): java.lang.RuntimeException {
       return <java.lang.RuntimeException>$.ctx.createException(
         "java/lang/RuntimeException", str);
     }
 
-    newIndexOutOfBoundsException(str: string): java.lang.IndexOutOfBoundsException {
+    newIndexOutOfBoundsException(str?: string): java.lang.IndexOutOfBoundsException {
       return <java.lang.IndexOutOfBoundsException>$.ctx.createException(
         "java/lang/IndexOutOfBoundsException", str);
     }
 
-    newArrayIndexOutOfBoundsException(str: string): java.lang.ArrayIndexOutOfBoundsException {
+    newArrayIndexOutOfBoundsException(str?: string): java.lang.ArrayIndexOutOfBoundsException {
       return <java.lang.ArrayIndexOutOfBoundsException>$.ctx.createException(
         "java/lang/ArrayIndexOutOfBoundsException", str);
     }
 
-    newStringIndexOutOfBoundsException(str: string): java.lang.StringIndexOutOfBoundsException {
+    newStringIndexOutOfBoundsException(str?: string): java.lang.StringIndexOutOfBoundsException {
       return <java.lang.StringIndexOutOfBoundsException>$.ctx.createException(
         "java/lang/StringIndexOutOfBoundsException", str);
     }
 
-    newArrayStoreException(str: string): java.lang.ArrayStoreException {
+    newArrayStoreException(str?: string): java.lang.ArrayStoreException {
       return <java.lang.ArrayStoreException>$.ctx.createException(
         "java/lang/ArrayStoreException", str);
     }
 
-    newClassNotFoundException(str: string): java.lang.ClassNotFoundException {
+    newIllegalMonitorStateException(str?: string): java.lang.IllegalMonitorStateException {
+      return <java.lang.IllegalMonitorStateException>$.ctx.createException(
+        "java/lang/IllegalMonitorStateException", str);
+    }
+
+    newClassCastException(str?: string): java.lang.ClassCastException {
+      return <java.lang.ClassCastException>$.ctx.createException(
+        "java/lang/ClassCastException", str);
+    }
+
+    newArithmeticException(str?: string): java.lang.ArithmeticException {
+      return <java.lang.ArithmeticException>$.ctx.createException(
+        "java/lang/ArithmeticException", str);
+    }
+
+    newClassNotFoundException(str?: string): java.lang.ClassNotFoundException {
       return <java.lang.ClassNotFoundException>$.ctx.createException(
         "java/lang/ClassNotFoundException", str);
     }
 
-    newIllegalArgumentException(str: string): java.lang.IllegalArgumentException {
+    newIllegalArgumentException(str?: string): java.lang.IllegalArgumentException {
       return <java.lang.IllegalArgumentException>$.ctx.createException(
         "java/lang/IllegalArgumentException", str);
     }
 
-    newIllegalStateException(str: string): java.lang.IllegalStateException {
+    newIllegalStateException(str?: string): java.lang.IllegalStateException {
       return <java.lang.IllegalStateException>$.ctx.createException(
         "java/lang/IllegalStateException", str);
     }
 
-    newNegativeArraySizeException(str: string): java.lang.NegativeArraySizeException {
+    newNegativeArraySizeException(str?: string): java.lang.NegativeArraySizeException {
       return <java.lang.NegativeArraySizeException>$.ctx.createException(
         "java/lang/NegativeArraySizeException", str);
     }
 
-    newNullPointerException(str: string): java.lang.NullPointerException {
+    newNullPointerException(str?: string): java.lang.NullPointerException {
       return <java.lang.NullPointerException>$.ctx.createException(
         "java/lang/NullPointerException", str);
     }
 
-    newMediaException(str: string): javax.microedition.media.MediaException {
+    newMediaException(str?: string): javax.microedition.media.MediaException {
       return <javax.microedition.media.MediaException>$.ctx.createException(
         "javax/microedition/media/MediaException", str);
     }
 
-    newException(str: string): java.lang.Exception {
+    newException(str?: string): java.lang.Exception {
       return <java.lang.Exception>$.ctx.createException(
         "java/lang/Exception", str);
     }
@@ -628,6 +646,18 @@ module J2ME {
     export interface ArrayStoreException extends java.lang.Exception {
     }
 
+    export interface IllegalMonitorStateException extends java.lang.Exception {
+    }
+
+    export interface ClassCastException extends java.lang.Exception {
+    }
+
+    export interface NegativeArraySizeException extends java.lang.Exception {
+    }
+
+    export interface ArithmeticException extends java.lang.Exception {
+    }
+
     export interface ClassNotFoundException extends java.lang.Exception {
     }
 
@@ -635,9 +665,6 @@ module J2ME {
     }
 
     export interface IllegalThreadStateException extends java.lang.Exception {
-    }
-
-    export interface NegativeArraySizeException extends java.lang.Exception {
     }
 
   }
@@ -909,6 +936,10 @@ module J2ME {
         case "java/lang/ArrayIndexOutOfBoundsException": Klasses.java.lang.ArrayIndexOutOfBoundsException = klass; break;
         case "java/lang/StringIndexOutOfBoundsException": Klasses.java.lang.StringIndexOutOfBoundsException = klass; break;
         case "java/lang/ArrayStoreException": Klasses.java.lang.ArrayStoreException = klass; break;
+        case "java/lang/IllegalMonitorStateException": Klasses.java.lang.IllegalMonitorStateException = klass; break;
+        case "java/lang/ClassCastException": Klasses.java.lang.ClassCastException = klass; break;
+        case "java/lang/ArithmeticException": Klasses.java.lang.ArithmeticException = klass; break;
+        case "java/lang/NegativeArraySizeException": Klasses.java.lang.NegativeArraySizeException = klass; break;
         case "java/lang/ClassNotFoundException": Klasses.java.lang.ClassNotFoundException = klass; break;
         case "javax/microedition/media/MediaException": Klasses.javax.microedition.media.MediaException = klass; break;
         case "java/lang/SecurityException": Klasses.java.lang.SecurityException = klass; break;
@@ -1212,19 +1243,19 @@ module J2ME {
 
   export function checkCast(object: java.lang.Object, klass: Klass) {
     if (object !== null && !isAssignableTo(object.klass, klass)) {
-      throw $.ctx.createException("java/lang/ClassCastException");
+      throw $.newClassCastException();
     }
   }
 
   export function checkCastKlass(object: java.lang.Object, klass: Klass) {
     if (object !== null && object.klass.display[klass.depth] !== klass) {
-      throw $.ctx.createException("java/lang/ClassCastException");
+      throw $.newClassCastException();
     }
   }
 
   export function checkCastInterface(object: java.lang.Object, klass: Klass) {
     if (object !== null && object.klass.interfaces.indexOf(klass) < 0) {
-      throw $.ctx.createException("java/lang/ClassCastException");
+      throw $.newClassCastException();
     }
   }
 
@@ -1343,13 +1374,13 @@ module J2ME {
 
   export function checkDivideByZero(value: number) {
     if (value === 0) {
-      throw $.ctx.createException("java/lang/ArithmeticException", "/ by zero");
+      throw $.newArithmeticException("/ by zero");
     }
   }
 
   export function checkDivideByZeroLong(value: Long) {
     if (value.isZero()) {
-      throw $.ctx.createException("java/lang/ArithmeticException", "/ by zero");
+      throw $.newArithmeticException("/ by zero");
     }
   }
 }
