@@ -365,7 +365,7 @@ module J2ME {
     monitorExit(obj: java.lang.Object) {
       var lock = obj._lock;
       if (lock.thread !== this.thread)
-        throw this.createException("java/lang/IllegalMonitorStateException");
+        throw $.newIllegalMonitorStateException();
       if (--lock.level > 0) {
         return;
       }
@@ -378,9 +378,9 @@ module J2ME {
     wait(obj, timeout) {
       var lock = obj._lock;
       if (timeout < 0)
-        throw this.createException("java/lang/IllegalArgumentException");
+        throw $.newIllegalArgumentException();
       if (!lock || lock.thread !== this.thread)
-        throw this.createException("java/lang/IllegalMonitorStateException");
+        throw $.newIllegalMonitorStateException();
       var lockLevel = lock.level;
       while (lock.level > 0)
         this.monitorExit(obj);
@@ -402,7 +402,7 @@ module J2ME {
 
     notify(obj, notifyAll) {
       if (!obj._lock || obj._lock.thread !== this.thread)
-        throw this.createException("java/lang/IllegalMonitorStateException");
+        throw $.newIllegalMonitorStateException();
 
       this.unblock(obj, "waiting", notifyAll, function (ctx) {
         ctx.wakeup(obj);

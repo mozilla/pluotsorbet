@@ -151,10 +151,10 @@ module J2ME {
 
     function checkArrayAccessAndContinue(refArray, idx) {
       if (!refArray) {
-        throw ctx.createException("java/lang/NullPointerException");
+        throw $.newNullPointerException();
       }
       if (idx < 0 || idx >= refArray.length) {
-        throw ctx.createException("java/lang/ArrayIndexOutOfBoundsException", idx);
+        throw $.newArrayIndexOutOfBoundsException(idx);
       }
     }
 
@@ -423,7 +423,7 @@ module J2ME {
               continue;
             }
             if (val && !isAssignableTo(val.klass, refArray.klass.elementKlass)) {
-              throw ctx.createException("java/lang/ArrayStoreException");
+              throw $.newArrayStoreException();
             }
             refArray[idx] = val;
             traceArrayAccess && traceWriter && traceArrayStore(idx, refArray, val);
@@ -536,7 +536,7 @@ module J2ME {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-              throw ctx.createException("java/lang/ArithmeticException", "/ by zero");
+              throw $.newArithmeticException("/ by zero");
             }
             stack.push((a === util.INT_MIN && b === -1) ? a : ((a / b) | 0));
             break;
@@ -544,7 +544,7 @@ module J2ME {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-              throw ctx.createException("java/lang/ArithmeticException", "/ by zero");
+              throw $.newArithmeticException("/ by zero");
             }
             stack.push2(a.div(b));
             break;
@@ -562,7 +562,7 @@ module J2ME {
             var b = stack.pop();
             var a = stack.pop();
             if (!b) {
-              throw ctx.createException("java/lang/ArithmeticException", "/ by zero");
+              throw $.newArithmeticException("/ by zero");
             }
             stack.push(a % b);
             break;
@@ -570,7 +570,7 @@ module J2ME {
             var b = stack.pop2();
             var a = stack.pop2();
             if (b.isZero()) {
-              throw ctx.createException("java/lang/ArithmeticException", "/ by zero");
+              throw $.newArithmeticException("/ by zero");
             }
             stack.push2(a.modulo(b));
             break;
@@ -875,7 +875,7 @@ module J2ME {
             var type = frame.read8();
             var size = stack.pop();
             if (size < 0) {
-              throw ctx.createException("java/lang/NegativeArraySizeException", size);
+              throw $.newNegativeArraySizeException();
             }
             stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
             break;
@@ -886,7 +886,7 @@ module J2ME {
               classInfo = resolve(idx);
             var size = stack.pop();
             if (size < 0) {
-              throw ctx.createException("java/lang/NegativeArraySizeException", size);
+              throw $.newNegativeArraySizeException();
             }
             stack.push(util.newArray(classInfo, size));
             break;
@@ -904,7 +904,7 @@ module J2ME {
           case Bytecodes.ARRAYLENGTH:
             var obj = stack.pop();
             if (!obj) {
-              throw ctx.createException("java/lang/NullPointerException");
+              throw $.newNullPointerException();
             }
             stack.push(obj.length);
             break;
@@ -915,7 +915,7 @@ module J2ME {
               field = resolve(idx, false);
             var obj = stack.pop();
             if (!obj) {
-              throw ctx.createException("java/lang/NullPointerException");
+              throw $.newNullPointerException();
             }
             stack.pushType(field.signature, field.get(obj));
             break;
@@ -927,7 +927,7 @@ module J2ME {
             var val = stack.popType(field.signature);
             var obj = stack.pop();
             if (!obj) {
-              throw ctx.createException("java/lang/NullPointerException");
+              throw $.newNullPointerException();
             }
             field.set(obj, val);
             break;
@@ -975,7 +975,7 @@ module J2ME {
               classInfo = resolve(idx);
             var obj = stack[stack.length - 1];
             if (obj && !isAssignableTo(obj.klass, classInfo.klass)) {
-              throw ctx.createException("java/lang/ClassCastException",
+              throw $.newClassCastException(
                   obj.klass.classInfo.className + " is not assignable to " +
                   classInfo.className);
             }
@@ -992,14 +992,14 @@ module J2ME {
           case Bytecodes.ATHROW:
             var obj = stack.pop();
             if (!obj) {
-              throw ctx.createException("java/lang/NullPointerException");
+              throw $.newNullPointerException();
             }
             throw obj;
             break;
           case Bytecodes.MONITORENTER:
             var obj = stack.pop();
             if (!obj) {
-              throw ctx.createException("java/lang/NullPointerException");
+              throw $.newNullPointerException();
             }
             ctx.monitorEnter(obj);
             if (U === VMState.Pausing) {
@@ -1009,7 +1009,7 @@ module J2ME {
           case Bytecodes.MONITOREXIT:
             var obj = stack.pop();
             if (!obj) {
-              throw ctx.createException("java/lang/NullPointerException");
+              throw $.newNullPointerException();
             }
             ctx.monitorExit(obj);
             break;
@@ -1072,7 +1072,7 @@ module J2ME {
             if (!isStatic) {
               obj = frame.peekInvokeObject(methodInfo);
               if (!obj) {
-                throw ctx.createException("java/lang/NullPointerException");
+                throw $.newNullPointerException();
               }
               switch (op) {
                 case Bytecodes.INVOKEVIRTUAL:
@@ -1176,7 +1176,7 @@ module J2ME {
         // compiled/native functions.
         if (e.name === "TypeError") {
           // JavaScript's TypeError is analogous to a NullPointerException.
-          e = ctx.createException("java/lang/NullPointerException", e.message);
+          e = $.newNullPointerException(e.message);
         }
 
         throw_(e, ctx);

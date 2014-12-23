@@ -1114,7 +1114,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function() {
-        return $S(this.textEditor.getContent());
+        return J2ME.newString(this.textEditor.getContent());
     };
 
     Native["com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V"] = function(jStr) {

@@ -303,7 +303,7 @@ Native["java/lang/Class.init9.()V"] = function() {
 };
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function() {
-    return $S(this.runtimeKlass.templateKlass.classInfo.className.replace(/\//g, "."));
+    return J2ME.newString(this.runtimeKlass.templateKlass.classInfo.className.replace(/\//g, "."));
 };
 
 Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
@@ -768,10 +768,10 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I"] = function(cbuf
 Native["java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;"] = function(bytearr) {
     var array = new Uint8Array(bytearr.buffer);
     try {
-        return $S(util.decodeUtf8Array(array));
+        return J2ME.newString(util.decodeUtf8Array(array));
     } catch(e) {
         try {
-            return $S(util.javaUTF8Decode(array));
+            return J2ME.newString(util.javaUTF8Decode(array));
         } catch (e) {
             throw $.newUTFDataFormatException();
         }
