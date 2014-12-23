@@ -52,27 +52,24 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 });
 
 var loadingPromises = [initFS, getMobileInfo];
-jars.forEach(function(jar) {
-  loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
-    jvm.addPath(jar, data);
-  }));
-});
+
+function processJAD(data) {
+  data
+  .replace(/\r\n|\r/g, "\n")
+  .replace(/\n /g, "")
+  .split("\n")
+  .forEach(function(entry) {
+    if (entry) {
+      var keyEnd = entry.indexOf(":");
+      var key = entry.substring(0, keyEnd);
+      var val = entry.substring(keyEnd + 1).trim();
+      MIDP.manifest[key] = val;
+    }
+  });
+}
 
 if (urlParams.jad) {
-  loadingPromises.push(load(urlParams.jad, "text").then(function(data) {
-    data
-    .replace(/\r\n|\r/g, "\n")
-    .replace(/\n /g, "")
-    .split("\n")
-    .forEach(function(entry) {
-      if (entry) {
-        var keyEnd = entry.indexOf(":");
-        var key = entry.substring(0, keyEnd);
-        var val = entry.substring(keyEnd + 1).trim();
-        MIDP.manifest[key] = val;
-      }
-    });
-  }));
+  loadingPromises.push(load(urlParams.jad, "text").then(processJAD));
 }
 
 function performDownload(dialog, callback) {
@@ -122,36 +119,62 @@ function performDownload(dialog, callback) {
   });
 }
 
-if (urlParams.downloadJAD) {
-  loadingPromises.push(new Promise(function(resolve, reject) {
-    initFS.then(function() {
-      fs.exists("/app.jar", function(exists) {
-        if (exists) {
-          fs.open("/app.jar", function(fd) {
-            var data = fs.read(fd);
-            fs.close(fd);
-            jvm.addPath("app.jar", data.buffer);
-            resolve();
-          });
-        } else {
-          var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-          dialog.style.display = 'block';
-          dialog.classList.add('visible');
-          document.body.appendChild(dialog);
-
-          performDownload(dialog, function(data) {
-            dialog.parentElement.removeChild(dialog);
-
-            jvm.addPath("app.jar", data);
-
-            fs.create("/app.jar", new Blob([ data ]), function() {});
-
-            resolve();
-          });
-        }
+function loadPackageJARs() {
+  return jars.reduce(function(current, next) {
+    return current.then(function() {
+      return new Promise(function(resolve, reject) {
+        load(next, "arraybuffer").then(function(data) {
+          jvm.addPath(next, data);
+          resolve();
+        });
       });
     });
-  }));
+  }, Promise.resolve());
+}
+
+function loadDownloadJAR() {
+  if (!urlParams.downloadJAD) {
+    return Promise.resolve();
+  }
+
+  return new Promise(function(resolve, reject) {
+    fs.exists("/midlet.jar", function(exists) {
+      if (exists) {
+        fs.open("/midlet.jar", function(fd) {
+          var data = fs.read(fd);
+          fs.close(fd);
+          jvm.addPath("midlet.jar", data.buffer.slice(0));
+          resolve();
+        });
+      } else {
+        var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+        dialog.style.display = 'block';
+        dialog.classList.add('visible');
+        document.body.appendChild(dialog);
+
+        performDownload(dialog, function(data) {
+          dialog.parentElement.removeChild(dialog);
+
+          jvm.addPath("midlet.jar", data.jarData);
+
+          fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
+            fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
+              resolve();
+            });
+          });
+        });
+      }
+    });
+  }).then(function() {
+    return new Promise(function(resolve, reject) {
+      fs.open("/midlet.jad", function(fd) {
+        var data = fs.read(fd);
+        fs.close(fd);
+        processJAD(util.decodeUtf8(data));
+        resolve();
+      });
+    });
+  });
 }
 
 if (MIDP.midletClassName == "RunTests") {
@@ -160,10 +183,14 @@ if (MIDP.midletClassName == "RunTests") {
                        loadScript("tests/mozactivitymock.js"));
 }
 
-Promise.all(loadingPromises).then(function() {
-  jvm.initializeBuiltinClasses();
-  jvm.startIsolate0(main, urlParams.args);
-});
+initFS
+  .then(loadPackageJARs)
+  .then(loadDownloadJAR)
+  .then(Promise.all(loadingPromises))
+  .then(function() {
+    jvm.initializeBuiltinClasses();
+    jvm.startIsolate0(main, urlParams.args);
+  });
 
 function getIsOff(button) {
   return button.textContent.contains("OFF");
