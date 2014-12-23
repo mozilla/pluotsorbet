@@ -85,11 +85,6 @@ var DumbPipe = {
   },
 
   sendMessage: function(pipeID, message) {
-    // Sadly, we have no way to send a message to the other side directly.
-    // Instead, we change the hash part of the other side's URL, which triggers
-    // a hashchange event on the other side.  A listener on the other side
-    // then sends us a "get" prompt, and we set its return value to the message.
-    // Oh my shod, that's some funky git!
     var envelope = { pipeID: pipeID, message: message };
     //console.log("outer send: " + JSON.stringify(envelope));
 
@@ -123,6 +118,10 @@ var DumbPipe = {
 document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalprompt",
                                                        DumbPipe.handleEvent.bind(DumbPipe),
                                                        true);
+
+DumbPipe.registerOpener("alert", function(message, sender) {
+  alert(message);
+});
 
 DumbPipe.registerOpener("mobileInfo", function(message, sender) {
   // Initialize the object with the URL params and fallback placeholders

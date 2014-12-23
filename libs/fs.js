@@ -301,7 +301,6 @@ var fs = (function() {
   }
 
   Store.prototype.import = function(file, cb) {
-    console.log("file: " + file);
     var reader = new FileReader();
     reader.onload = (function() {
       var input = JSON.parse(reader.result);
