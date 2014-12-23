@@ -60,9 +60,9 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71317 },
+  { name: "pass", number: 71321 },
   { name: "fail", number: 0 },
-  { name: "known fail", number: 180 },
+  { name: "known fail", number: 179 },
   { name: "unknown pass", number: 0 }
 ];
 
@@ -157,7 +157,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 133 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 135 PASS, 0 FAIL", "run fs.js unit tests");
         syncFS();
     });
 

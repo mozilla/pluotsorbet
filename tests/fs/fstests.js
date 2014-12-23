@@ -53,11 +53,18 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/", function(files) {
+  fs.list("/", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
     next();
   })
+});
+
+tests.push(function() {
+  fs.list("/tmp", function(error, files) {
+    is(error.message, "Path does not exist", "can't list a path that does not exist");
+    next();
+  });
 });
 
 tests.push(function() {
@@ -202,26 +209,26 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/", function(files) {
+  fs.list("/", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 1, "files is an array with 1 element: " + files);
-    is(files[0], "tmp", "tmp is in files");
+    is(files[0], "tmp/", "tmp is in files");
     next();
   })
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(files) {
+  fs.list("/tmp", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files is an empty array");
-    is(files[0], "ciao", "ciao is in files");
+    is(files[0], "ciao/", "ciao is in files");
     is(files[1], "tmp.txt", "tmp.txt is in files");
     next();
   })
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
     next();
@@ -250,8 +257,8 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/tmp.txt", function(files) {
-    is(files, null, "can't list the children of a file");
+  fs.list("/tmp/tmp.txt", function(error, files) {
+    is(error.message, "Path is not a directory", "can't list the children of a file");
     next();
   });
 });
@@ -271,11 +278,11 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files has 2 entries");
-    is(files[0], "tmp", "tmp is in files");
-    is(files[1], "tmp.txt", "tmp.txt is in files");
+    is(files[0], "tmp.txt", "tmp.txt is in files");
+    is(files[1], "tmp/", "tmp is in files");
     next();
   })
 });
@@ -295,10 +302,10 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 1, "files has 1 entry");
-    is(files[0], "tmp", "ciao is in files");
+    is(files[0], "tmp/", "tmp is in files");
     next();
   })
 });
@@ -325,7 +332,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is empty");
     next();
@@ -340,9 +347,9 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(files) {
+  fs.list("/tmp", function(error, files) {
     ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files is empty");
+    is(files.length, 1, "files has one entry");
     is(files[0], "tmp.txt", "tmp.txt is in files");
     next();
   })
@@ -715,8 +722,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("mi"));
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "write updates mtime");
-        lastTime = stat.mtime;
+        ok(stat.mtime, lastTime, "write without flush doesn't update mtime");
         next();
       });
     }, 1);
@@ -760,8 +766,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 5);
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "ftruncate to larger size updates mtime");
-        lastTime = stat.mtime;
+        is(stat.mtime, lastTime, "ftruncate to larger size doesn't update mtime");
         next();
       });
     }, 1);
@@ -771,8 +776,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 3);
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "ftruncate to smaller size updates mtime");
-        lastTime = stat.mtime;
+        is(stat.mtime, lastTime, "ftruncate to smaller size doesn't update mtime");
         next();
       });
     }, 1);
@@ -780,13 +784,28 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd);
       fs.close(fd);
       fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "close doesn't update mtime");
+        ok(stat.mtime > lastTime, "close after changes updates mtime");
+        lastTime = stat.mtime;
         next();
       });
     }, 1);
+  });
+
+  tests.push(function() {
+    fs.open("/tmp/stat.txt", function(fd) {
+      fs.stat("/tmp/stat.txt", function(stat) {
+        var mtime = stat.mtime;
+        window.setTimeout(function() {
+          fs.close(fd);
+          fs.stat("/tmp/stat.txt", function(stat) {
+            is(stat.mtime, mtime, "close without changes doesn't update mtime");
+            next();
+          });
+        }, 1);
+      });
+    });
   });
 
   tests.push(function() {
