@@ -18,15 +18,9 @@ var initialFiles = [
 var initFS = new Promise(function(resolve, reject) {
   fs.init(resolve);
 }).then(function() {
-  var dirPromises = [];
-
   initialDirs.forEach(function(dir) {
-    dirPromises.push(new Promise(function(resolve, reject) {
-      fs.mkdir(dir, resolve);
-    }));
+    fs.mkdir(dir);
   });
-
-  return Promise.all(dirPromises);
 }).then(function() {
   var filePromises = [];
 
@@ -36,15 +30,14 @@ var initFS = new Promise(function(resolve, reject) {
 
   initialFiles.forEach(function(file) {
     filePromises.push(new Promise(function(resolve, reject) {
-        fs.exists(file.targetPath, function(exists) {
-          if (exists) {
-            resolve();
-          } else {
-            load(APP_BASE_DIR + file.sourcePath, "blob").then(function(data) {
-              fs.create(file.targetPath, data, resolve);
-            });
-          }
-      });
+      if (fs.exists(file.targetPath)) {
+        resolve();
+      } else {
+        load(APP_BASE_DIR + file.sourcePath, "blob").then(function(data) {
+          fs.create(file.targetPath, data);
+          resolve();
+        });
+      }
     }));
   });
 

@@ -663,31 +663,30 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           return;
         }
 
-        fs.createUniqueFile("/nokiafileui", selectedFile.name, selectedFile, (function(fileName) {
-          var encoder = new DataEncoder();
+        var fileName = fs.createUniqueFile("/nokiafileui", selectedFile.name, selectedFile);
+        var encoder = new DataEncoder();
 
-          encoder.putStart(DataType.STRUCT, "event");
-          encoder.put(DataType.METHOD, "name", "FileSelect");
-          encoder.put(DataType.USHORT, "trans_id", trans_id);
-          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
-          encoder.putStart(DataType.ARRAY, "unknown_array"); // Name unknown
-          encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
-          encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
-          encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
-          encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + fileName); // Name unknown
-          encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
-          encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
-          encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
-          encoder.putEnd(DataType.ARRAY, "unknown_array"); // Name unknown
-          encoder.putEnd(DataType.STRUCT, "event");
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.METHOD, "name", "FileSelect");
+        encoder.put(DataType.USHORT, "trans_id", trans_id);
+        encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+        encoder.putStart(DataType.ARRAY, "unknown_array"); // Name unknown
+        encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
+        encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
+        encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
+        encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + fileName); // Name unknown
+        encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
+        encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
+        encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
+        encoder.putEnd(DataType.ARRAY, "unknown_array"); // Name unknown
+        encoder.putEnd(DataType.STRUCT, "event");
 
-          var data = new TextEncoder().encode(encoder.getData());
-          this.sendMessageToClient({
-            data: data,
-            length: data.length,
-            offset: 0,
-          });
-        }).bind(this));
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+        });
       }).bind(this));
 
       document.body.appendChild(el);
@@ -785,23 +784,22 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         var _sendBackScaledImage = function(blob) {
           _cleanupImg();
 
-          fs.createUniqueFile("/nokiaimageprocessing", "image", blob, (function(fileName) {
-            var encoder = new DataEncoder();
+          var fileName = fs.createUniqueFile("/nokiaimageprocessing", "image", blob);
+          var encoder = new DataEncoder();
 
-            encoder.putStart(DataType.STRUCT, "event");
-            encoder.put(DataType.METHOD, "name", "Scale");
-            encoder.put(DataType.BYTE, "trans_id", trans_id);
-            encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
-            encoder.put(DataType.WSTRING, "filename", "nokiaimageprocessing/" + fileName); // Name unknown
-            encoder.putEnd(DataType.STRUCT, "event");
+          encoder.putStart(DataType.STRUCT, "event");
+          encoder.put(DataType.METHOD, "name", "Scale");
+          encoder.put(DataType.BYTE, "trans_id", trans_id);
+          encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
+          encoder.put(DataType.WSTRING, "filename", "nokiaimageprocessing/" + fileName); // Name unknown
+          encoder.putEnd(DataType.STRUCT, "event");
 
-            var data = new TextEncoder().encode(encoder.getData());
-            this.sendMessageToClient({
-              data: data,
-              length: data.length,
-              offset: 0,
-            });
-          }).bind(this));
+          var data = new TextEncoder().encode(encoder.getData());
+          this.sendMessageToClient({
+            data: data,
+            length: data.length,
+            offset: 0,
+          });
         }.bind(this);
 
         var imgData = fs.read(fd);
