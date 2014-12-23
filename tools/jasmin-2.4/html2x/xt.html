@@ -1,0 +1,414 @@
+<html>
+<head>
+<title>Jasmin User Guide</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table>
+<tr><td width=550>
+<center>
+<p><img src=jasmin_icon.jpg></p>
+<p>
+<div class="h1">JasminXT Syntax</div>
+Daniel Reynaud, Mart 2006
+</p>
+</center>
+
+<h1>About This Document</h1>
+
+This guide describes the rules and syntax used in JasminXT, the extension of
+the Jasmin language in version 2.0. If you are new to Jasmin, you should
+refer to the Jasmin user guide. Note that this document doesn't
+explain the Java Virtual Machine itself, or give syntax notes for
+every instruction known to Jasmin. See the Java Virtual Machine specification
+for more information on the JVM.<p>
+
+
+<h1>Why a new Jasmin language ?</h1>
+
+<p>
+Jasmin is the de-facto standard Java assembly language. It is useful to explore
+the possibilities of bytecode, but it does not offer a real low level control
+over the produced output. Therefore it is not suitable to generate test cases
+for virtual machines or bytecode verifier. This new version of the Jasmin
+language, called JasminXT, provides optional directives and other syntax
+updates to have more control over the output and to stick with the latest
+changes of the Java language.</p>
+
+<p>JasminXT has been defined for the tinapoc project. The purpose of the tinapoc
+project is to create a reliable Java reverse engineering toolkit. See the tinapoc
+homepage for more information : <a href="http://tinapoc.sourceforge.net/">http://tinapoc.sourceforge.net/</a></p>
+
+<h1>Summary of the new features</h1>
+<p>
+<b>Since 2.4 :</b><br>
+<li> accept 'd'-suffix in float constant (no attempt cast to float)
+<li> redesign to dynamic compiler class creation
+<li> some cosmetic bugfixes
+<br><br>
+<b>Since 2.3 :</b><br>
+<li> added 'wide'-aliases to two-face instructions
+<br><br>
+<b>Since 2.2 :</b><br>
+<li> some bug fixes in the diagnostic
+<li> added support for attribute StackMapTable (directive .stack) described in JDK1.6
+<li> added keyword 'use' to directive .stack
+<li> added support for \uXXXX escape sequence in the names (just as in the Java)
+<li> instruction ldc_w always generates wide index
+<li> changed syntaxes of the non-standard identifiers (or overloaded keywords), now it hasto be signgle quoted  and can't be empty
+<br><br>
+<b>Since 2.1 :</b><br>
+<li> some bug fixes with string and number parsing
+<li> added support for \uXXXX escape sequences
+<li> added support for access flags ACC_STRICT (fpstrict) and ACC_SYNTHETIC (synthetic)
+<li> added signatures for local variables support
+<li> several .debug directives are permitted
+<li> added the invokedynamic instruction
+<li> improved the syntax of the StackMap attribute (.stack directive)
+<li> new command-line option -e to support different encodings
+<li> added support for non-standard identifiers in double-quotes
+<li> fields can now be defined on multiple lines
+<li> new directives have been included : .inner, .attribute, .deprecated, .annotation
+<br><br>
+<b>Since 2.0 :</b><br><br>
+<li>use of offsets for branch targets, local variable visibility and exception handlers. The offsets can either be absolute or relative :<br>
+<pre>
+goto  12  ; absolute offset : go to bytecode at offset 12
+goto +5   ; relative offset : go 12 bytes forward
+goto -8   ; relative offset : go 8 bytes backwards
+</pre>
+
+<li>the following access flags are now supported : ACC_ENUM, ACC_ANNOTATION, ACC_BRIDGE and ACC_VARARGS<br>
+
+<li>the .bytecode directive has been added, to set the bytecode version in the class file.<br>
+Example : <pre>.bytecode 49.0</pre><br>
+
+<li>it is now possible to add a SourceDebugExtension attribute to the class with the following directive :<br>
+<pre>.debug "some string here"</pre><br>
+
+<li>same thing for the EnclosingMethod attribute :<br>
+<pre>.enclosing method "some/package/Foo/someMethod(I)V"</pre><br>
+
+<li>support for the Signature attribute (in the classes, methods and fields) :<br>
+<pre>.signature "<my::own>Signature()"
+.field myField Ljava/lang/String; signature "<my::own>Signature()"</pre><br>
+
+<li>support for the StackMap attribute, using the .stack directive in a method definition<br>
+
+<li>it is now possible to give the offset of an instruction before the instruction itself, like in the following code snippet :<br>
+  <pre>
+       0: aload_0
+       1: invokespecial java/lang/Object/<init>()V
+       4: aload_0
+       5: ldc2_w 3.14159
+  </pre>
+</p>
+
+
+
+
+<h1>JasminXT File Format</h1>
+<p>
+This new version is an extension of the existing Jasmin language, therefore old
+Jasmin files should still compile correctly with newer versions of Jasmin.
+JasminXT is supported by Jasmin 2.0 or higher. <b>Changes in Jasmin 2.4 are in bold.</b></p>
+
+<p>
+In the rest of this document, words between '[' and ']' are optional. The
+syntax of a JasminXT file is the following :</p>
+
+<pre>
+&lt;jas_file&gt; {
+    &lt;jasmin_header&gt;
+    [&lt;field&gt;]*
+    [&lt;method&gt;]*
+}
+</pre>
+
+<h1>JasminXT Header</h1>
+<pre>
+&lt;jasmin_header&gt; {
+    [.bytecode &lt;x.y&gt;]
+    [.source &lt;sourcefile&gt;]
+    &lt;class_spec&gt;
+    &lt;super_spec&gt;
+    &lt;implements&gt;
+    [.signature "&lt;signature&gt;"]
+    [.enclosing method &lt;method_name&gt;]
+    [.debug "&lt;debug_source_extension&gt;"]*
+    [.inner class [&lt;access&gt;] [&lt;name&gt;] [inner &lt;classname&gt;] [outer &lt;name&gt;]]*
+    [.inner interface [&lt;access&gt;] [&lt;name&gt;] [inner &lt;classname&gt;] [outer &lt;name&gt;]]*
+}
+
+example :
+.bytecode 49.0
+.source hello.j
+.class hello
+.super java/lang/Object
+.signature "&lt;my::own&gt;Signature()"
+.enclosing method foo/bar/Whatever/someMethod()</pre>
+.debug "this string will be included in the SourceDebugExtension attribute"
+.debug "this string too"
+
+<p>The .bytecode directive sets the version of the bytecode in the class file.</p>
+
+<p>The .signature directive, when used in the header of the Jasmin file, sets the
+Signature attribute for the class (the argument is a string between double
+quotes)</p>
+
+<p>The .enclosing directive sets the EnclosingMethod attribute for the class. The
+argument is a supposed to be a method name, but it can be any string between
+double quotes.</p>
+
+<p>The .debug directive sets the SourceDebugExtension attribute for the class (the
+argument is also a string between double quotes)</p>
+
+
+
+<h1>JasminXT Class, Super Class and Interfaces Definition</h1>
+<pre>
+&lt;class_spec&gt; {
+    .class &lt;access_spec&gt; &lt;class_name&gt;
+}
+</pre>
+
+<p>where &lt;access_spec&gt; is any number of words taken from this list : public,
+private, protected, static, final, synchronized, native, final, super,
+interface, abstract, annotation, enum, bridge/volatile, transient/varargs</p>
+
+<p>and &lt;class_name&gt; is the fully qualified internal form of the class, such as
+my/package/MyClass</p><br>
+
+
+<pre>
+&lt;super_spec&gt; {
+    .super &lt;class_name&gt;
+}
+</pre>
+
+<pre>
+&lt;implements&gt; {
+    .implements &lt;class_name&gt;*
+}
+</pre>
+<p>
+The .super and .implements directives have not been modified in JasminXT<br>
+The .implements directive can be repeated in order to implement multiple interfaces</p><br>
+
+
+
+<h1>JasminXT Field Definition</h1>
+<pre>
+&lt;field&gt; {
+    .field &lt;access_spec&gt; &lt;field_name&gt; &lt;descriptor&gt; [signature &lt;signature&gt;]
+           [ = &lt;value&gt; ]
+    |
+    .field &lt;access_spec&gt; &lt;field_name&gt; &lt;descriptor&gt; [signature &lt;signature&gt;]
+           [ = &lt;value&gt; ]
+        [&lt;field_attribute&gt;]*
+    .end field
+   (...)
+}
+</pre>
+<p>
+If present, the Signature attribute will be set in the class file for this field with the given
+quoted string as an argument.</p>
+
+
+<pre>
+&lt;field_attribute&gt; {
+    .deprecated
+  | .attribute &lt;name&gt; &lt;file_name&gt;
+  | .signature &lt;signature&gt;
+  | .annotation (...)
+}
+</pre>
+
+(see below for the definition of the annotation and the attribute directives)
+
+
+
+<p>examples :
+<pre>.field enum myField Ljava/lang/String; signature "&lt;my::own&gt;Signature()" = "val"</pre>
+<pre>.field static hello_string Ljava/lang/String;
+    .signature "mySignature"
+    .deprecated
+.end field</pre>
+</p>
+
+
+<h1>JasminXT Method Definition</h1>
+The general format of a method definition has not changed in JasminXT.
+
+<pre>
+&lt;method&gt; {
+    .method &lt;access_spec&gt; &lt;method_name&gt; &lt;descriptor&gt;
+        &lt;statement&gt;*
+    .end method
+}
+</pre>
+
+
+<h1>JasminXT Method Statements</h1>
+<pre>
+&lt;statement&gt; {
+   .limit stack &lt;integer&gt;
+   | .limit locals &lt;integer&gt;
+   | .line &lt;integer&gt;
+   | .var &lt;var_number&gt; is &lt;var_name&gt; &lt;descriptor&gt; [signature &lt;sign&gt;] from &lt;label1&gt; to &lt;label2&gt;
+   | .var &lt;var_number&gt; is &lt;var_name&gt; &lt;descriptor&gt; [signature &lt;sign&gt;] from &lt;offset1&gt; to &lt;offset2&gt;
+   | .throws &lt;classname&gt;
+   | .catch &lt;classname&gt; from &lt;label1&gt; to &lt;label2&gt; using &lt;label3&gt;
+   | .catch &lt;classname&gt; from &lt;offset1&gt; to &lt;offset2&gt; using &lt;offset3&gt;
+   | .signature "&lt;signature&gt;"
+   | .stack
+         [offset {&lt;pc&gt; | &lt;label&gt;}]
+         [locals &lt;verification_type&gt; [&lt;verification_arg&gt;]]
+         (...)
+         [stack  &lt;verification_type&gt; [&lt;verification_arg&gt;]]
+         (...)
+     .end stack
+   | .stack use [n] locals
+         (...)
+     .end stack
+   | &lt;instruction&gt; [&lt;instruction_args&gt;]
+   | &lt;Label&gt;:
+   | .deprecated
+   | &lt;generic&gt; ; see below for the use of generic attributes
+}
+</pre>
+<p>
+In Jasmin XT you can now use offsets instead of labels for the local variable
+definitions and for the exception handlers definitions.</p>
+
+<p>The .signature sets the Signature attribute for this method with the given
+quoted string.<p>
+
+<p>You can now also define StackMap (or StackMapTable) attributes using
+the .stack directive. &lt;pc&gt; is an offset in the local bytecode array.
+&lt;verification_type&gt; is one of the following keywords : Top, Integer,
+Float, Long, Double, Null, UninitializedThis, Object or Uninitialized. Object
+takes a &lt;classname&gt; as a parameter. Uninitialized takes an integer or a
+label as a parameter. Also, jasmin  allows to use "short" notation. The
+'.stack use [n] locals' directive results in copy first &lt;n&gt; values from
+previous .stack directive. If &lt;n&gt; is omitted, all values are copied.</p>
+
+<p>NOTE: If bytecode version is 50 or above jasmin generates StackMapTable
+attribute in accordance with specification of the new 'ClassFile  Format'
+edition. If bytecode version is 49 or below jasmin generate StakMap attribute
+in accordance with CLDC specification.<p>
+
+examples :
+<pre>
+.stack
+    offset 16
+    locals Null
+    locals Top
+    locals Object allo
+    stack Uninitialized 12
+.end stack
+
+.stack
+    ; offset is not specified, the offset of the current opcode will be used
+    locals Null
+    locals Top
+    locals Object allo
+    stack Uninitialized Label0
+.end stack
+</pre>
+<p>
+This statement defines a single stack map frame. All the stack map frames
+defined in a method are then aggregated and form the StackMap attribute for the
+method. The last example my be wrote at the short notation as:</p>
+
+<pre>
+.stack use locals
+    stack Uninitialized Label0
+.end stack
+</pre>
+<p>
+
+
+
+<h1>JasminXT Instructions</h1>
+<pre>
+&lt;instruction&gt; {
+    [&lt;pc&gt;:] &lt;opcode&gt; [&lt;instruction_args&gt;]
+}
+</pre>
+
+<p>
+The main change in JasminXT is that it is now possible to put the offset of the
+instruction before the opcode (the &lt;pc&gt;: statement). The pc is processed as a
+label, therefore you can virtually put any number as the pc but it won't change
+the actual pc of the bytecode.</p>
+
+<p>
+Another update is that it is now possible to use offsets (both relative and
+absolute) as branch targets instead of labels. The offset is considered to be
+relative if it begins with '$+' or '$-'.</p>
+
+example :
+<pre>
+goto  n  ; absolute offset : go to the bytecode labelled n
+goto $+n  ; relative offset : go n bytes forward (from the offset of this goto)
+goto $-n  ; relative offset : go n bytes backwards
+</pre>
+
+<p>
+If something hasn't been documented here, it means that it hasn't changed, so
+you can still refer to the Jasmin <a href="guide.html">user guide</a></p>
+
+<p>
+<b>Added '_w' aliase to [adfli]-load/store, iinc and ret instructions (e.g. aload - aload_w).
+Using '_w' postfix guarantees wide-form of byte-code generation</b></p>
+
+<h1>Generic Attributes</h1>
+Generic attributes are supported in class/field/method definitions as follows :
+<pre>&lt;generic&gt; = {
+    .attribute &lt;name&gt; &lt;file_name&gt;
+}</pre>
+
+&lt;name&gt; is the name of the attribute and &lt;file_name&gt; is the name of the file containing the data of the attribute (between double quotes). If the generic attribute is in the body of the method, the following logic is used : if it is the first statement in the method, the attribute will be added as a method attribute, otherwise it will be added as a Code attribute.
+
+<h1>Annotations</h1>
+Thanks to Iouri Kharon for implementing this. Here are his explanations :<br>
+
+<p>Added a new directive .annotation to create the AnnotationDefault,
+   RuntimeVisibleAnnotation, RuntimeInvisibleAnnotation,
+   RuntimeVisibeParameterAnnotation, RuntimeInvisibleParameterAnnotation
+   attributes. The directive arguments are verified to have valid values
+   and correct signatures.<br>
+   Complex (nested) annotations are supported as well as arrays of them.<br>
+   The generic format is:
+<pre>
+&lt;annotation&gt; = {
+    .annotation visible &lt;classname&gt;
+  | .annotation invisible &lt;classname>&gt;
+  | .annotation visibleparam &lt;paramnum&gt; &lt;classname&gt;
+  | .annotation invisibleparam &lt;paramnum&gt; &lt;classname&gt;
+  | .annotation default
+         ........
+    .end annotation
+
+Field format (except AnnotationDefault):
+
+    &lt;name&gt; &lt;signchar&gt; = &lt;value&gt;*
+  | &lt;name&gt; @ = .annotation
+            ........
+    .end annotation
+}
+</pre>
+
+   AnnotationDefault supports only one field and the <name> tag is not used.
+   Nested annotations must be with the <name> tag and can have any number
+   of fields. Besides, 'empty annotation' is forbidden for AnnotationDefault.
+   Lastly, AnnotationDefault can be used only once for each method.
+   Other annotation types can be used many times and will accumulate information.</p>
+
+<hr><address>Copyright (c) Daniel Reynaud, Mart 2006</address>
+<hr>
+<a href="http://jasmin.sourceforge.net">Jasmin Home</a>
+</td></tr></table>
+</body>
+</html>

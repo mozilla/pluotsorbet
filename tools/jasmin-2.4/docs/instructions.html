@@ -1,0 +1,505 @@
+<html>
+<head>
+<title>Jasmin Instructions</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table ID="Table1">
+<tr><td width=550>
+<center>
+<p><img src=jasmin_icon.jpg></p>
+<p>
+<div class="h1">JASMIN INSTRUCTIONS</div>
+Jonathan Meyer, July 1996
+</p>
+</center>
+
+<h1>Introduction</h1>
+
+This document shows the syntax and the types of parameters required by
+each Java VM instruction in Jasmin. It also shows brief illustrative
+examples.<p>
+
+See <a href="guide.html">The Jasmin User Guide</a> for a description
+of other aspects of the Jasmin syntax.<p>
+
+<h1>Local variable instructions</h1>
+
+The following instructions use local variables:<p>
+
+<pre>
+    ret &lt;var-num&gt;
+    aload &lt;var-num&gt;
+    astore &lt;var-num&gt;
+    dload &lt;var-num&gt;
+    dstore &lt;var-num&gt;
+    fload &lt;var-num&gt;
+    fstore &lt;var-num&gt;
+    iload &lt;var-num&gt;
+    istore &lt;var-num&gt;
+    lload &lt;var-num&gt;
+    lstore &lt;var-num&gt;
+</pre>
+
+for example:<p>
+
+<pre>
+    aload 1    ; push local variable 1 onto the stack
+    ret 2      ; return to the address held in local variable 2
+</pre>
+
+<h1>The bipush, sipush and iinc instructions</h1>
+
+The bipush and sipush instructions take an integer as a
+parameter:<p>
+
+<pre>
+    bipush &lt;int&gt;
+    sipush &lt;int&gt;
+</pre>
+
+for example:<p>
+
+<pre>
+    bipush 100    ; push 100 onto the stack
+</pre>
+
+The iinc instruction takes two integer parameters:<p>
+
+<pre>
+    iinc  &lt;var-num&gt; &lt;amount&gt;
+</pre>
+
+for example:<p>
+
+<pre>
+    iinc 3 -10    ; subtract 10 from local variable 3
+</pre>
+
+<h1>Branch instructions</h1>
+
+The following instructions take a label as a parameter:
+
+<pre>
+    goto  &lt;label&gt;
+    goto_w  &lt;label&gt;
+    if_acmpeq  &lt;label&gt;
+    if_acmpne  &lt;label&gt;
+    if_icmpeq  &lt;label&gt;
+    if_icmpge  &lt;label&gt;
+    if_icmpgt  &lt;label&gt;
+    if_icmple  &lt;label&gt;
+    if_icmplt  &lt;label&gt;
+    if_icmpne  &lt;label&gt;
+    ifeq  &lt;label&gt;
+    ifge  &lt;label&gt;
+    ifgt  &lt;label&gt;
+    ifle  &lt;label&gt;
+    iflt  &lt;label&gt;
+    ifne  &lt;label&gt;
+    ifnonnull  &lt;label&gt;
+    ifnull  &lt;label&gt;
+    jsr  &lt;label&gt;
+    jsr_w  &lt;label&gt;
+</pre>
+
+For example:<p>
+
+<pre>
+
+    Label1:
+       goto Label1    ; jump to the code at Label1
+                      ; (an infinite loop!)
+
+</pre>
+
+<h1>Class and object operations</h1>
+
+The following instructions take a class name
+as a parameter:
+
+<pre>
+    anewarray  &lt;class&gt;
+    checkcast  &lt;class&gt;
+    instanceof &lt;class&gt;
+    new        &lt;class&gt;
+</pre>
+
+For example:<p>
+
+<pre>
+    new java/lang/String   ; create a new String object
+</pre>
+
+<h1>Method invokation</h1>
+
+The following instructions are used to invoke methods:<p>
+
+<pre>
+    invokenonvirtual  &lt;method-spec&gt;
+    invokestatic      &lt;method-spec&gt;
+    invokevirtual     &lt;method-spec&gt;
+</pre>
+
+for example:<p>
+
+<pre>
+
+    ; invokes java.io.PrintStream.println(String);
+
+    invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
+
+</pre>
+
+A method specification is formed of three parts: the characters before the
+last '/' form the class name. The characters between the last '/' and '(' are
+the method name. The rest of the string is the descriptor.<p>
+
+<pre>
+     foo/baz/Myclass/myMethod(Ljava/lang/String;)V
+     ---------------         ---------------------
+           |         --------         |
+           |            |             |
+         class        method       descriptor
+</pre>
+
+
+A special case is invokeinterface, which takes a &lt;method-spec&gt; and
+an integer indicating how many arguments the method takes:<p>
+
+<pre>
+     invokeinterface &lt;method-spec&gt; &lt;num-args&gt;
+</pre>
+
+for example:<p>
+
+<pre>
+     invokeinterface foo/Baz/myMethod(I)V 1
+</pre>
+
+<h1>Field manipulation instructions</h1>
+
+The four instructions getfield, getstatic, putfield and
+putstatic have the form:<p>
+
+<pre>
+    getfield  &lt;field-spec&gt; &lt;descriptor&gt;
+    getstatic  &lt;field-spec&gt; &lt;descriptor&gt;
+    putfield  &lt;field-spec&gt; &lt;descriptor&gt;
+    putstatic  &lt;field-spec&gt; &lt;descriptor&gt;
+</pre>
+
+for example:
+
+<pre>
+    ; get java.lang.System.out, which is a PrintStream
+    getstatic java/lang/System/out Ljava/io/PrintStream;
+</pre>
+
+&lt;field-spec&gt; is composed of two parts, a classname and a fieldname. The
+classname is all of the characters in the &lt;field-spec&gt; up to the last
+'/' character, and the fieldname is the rest of the characters after the last
+'/'. For example: <p>
+
+<pre>
+      foo/baz/AnotherClass/anotherFunField
+      -- class name ------ --field name --
+</pre>
+
+&lt;descriptor&gt; is the Java type descriptor of the field.
+For example:<p>
+
+<pre>
+    Ljava/io/PrintStream;
+</pre>
+
+
+<h1>The newarray instruction</h1>
+
+The newarray instruction is followed by the type of the array,<p>
+
+<pre>
+    newarray  &lt;array-type&gt;
+</pre>
+
+for example:<p>
+
+<pre>
+    newarray int
+    newarray short
+    newarray float
+    etc.
+</pre>
+
+<h1>The multianewarray instruction</h1>
+
+The multianewarray instruction takes two parameters,
+the type descriptor for the array and the number of
+dimensions to allocate:<p>
+
+<pre>
+     multianewarray  &lt;array-descriptor&gt; &lt;num-dimensions&gt;
+</pre>
+
+for example:<p>
+
+<pre>
+     multianewarray [[[I 2
+</pre>
+
+<h1>The ldc and ldc_w instructions</h1>
+
+The ldc and ldc_w instructions are followed by a constant:<p>
+
+<pre>
+     ldc  &lt;constant&gt;
+     ldc_w  &lt;constant&gt;
+</pre>
+
+&lt;constant&gt; is either an integer, a floating point number, or a
+quoted string. For example:<p>
+
+<pre>
+     ldc 1.2              ; push a float
+     ldc 10               ; push an int
+     ldc "Hello World"    ; push a String
+     ldc_w 3.141592654    ; push PI as a double
+</pre>
+
+<h1>The lookupswitch instruction</h1>
+
+The lookupswitch instruction has the syntax:<p>
+
+<pre>
+    &lt;lookupswitch&gt; ::=
+        lookupswitch
+            &lt;int1&gt; : &lt;label1&gt;
+            &lt;int2&gt; : &lt;label2&gt;
+            ...
+            default : &lt;default-label&gt;
+</pre>
+
+For example:<p>
+
+<pre>
+    ; If the int on the stack is 3, jump to Label1.
+    ; If it is 5, jump to Label2.
+    ; Otherwise jump to DefaultLabel.
+
+    lookupswitch
+            3 : Label1
+            5 : Label2
+      default : DefaultLabel
+
+    Label1:
+       ... got 3
+
+    Label2:
+       ... got 5
+
+    DefaultLabel:
+       ... got something else
+</pre>
+
+<h1>The tableswitch instruction</h1>
+
+The tableswitch instruction has the syntax:<p>
+
+<pre>
+    &lt;tableswitch&gt; ::=
+        tableswitch &lt;low&gt;
+            &lt;label1&gt;
+            &lt;label2&gt;
+            ...
+            default : &lt;default-label&gt;
+</pre>
+
+For example:<p>
+
+<pre>
+  ; If the int on the stack is 0, jump to Label1.
+  ; If it is 1, jump to Label2.
+  ; Otherwise jump to DefaultLabel.
+
+  tableswitch 0
+        Label1
+        Label2
+     default : DefaultLabel
+
+  Label1:
+     ... got 0
+
+  Label2:
+     ... got 1
+
+  DefaultLabel:
+     ... got something else
+</pre>
+
+<h1>No parameter</h1>
+
+The following instructions (the majority) take no parameters:<p>
+
+<dl><dd>
+    aaload
+    aastore
+    aconst_null
+    aload_0
+    aload_1
+    aload_2
+    aload_3
+    areturn
+    arraylength
+    astore_0
+    astore_1
+    astore_2
+    astore_3
+    athrow
+    baload
+    bastore
+    breakpoint
+    caload
+    castore
+    d2f
+    d2i
+    d2l
+    dadd
+    daload
+    dastore
+    dcmpg
+    dcmpl
+    dconst_0
+    dconst_1
+    ddiv
+    dload_0
+    dload_1
+    dload_2
+    dload_3
+    dmul
+    dneg
+    drem
+    dreturn
+    dstore_0
+    dstore_1
+    dstore_2
+    dstore_3
+    dsub
+    dup
+    dup2
+    dup2_x1
+    dup2_x2
+    dup_x1
+    dup_x2
+    f2d
+    f2i
+    f2l
+    fadd
+    faload
+    fastore
+    fcmpg
+    fcmpl
+    fconst_0
+    fconst_1
+    fconst_2
+    fdiv
+    fload_0
+    fload_1
+    fload_2
+    fload_3
+    fmul
+    fneg
+    frem
+    freturn
+    fstore_0
+    fstore_1
+    fstore_2
+    fstore_3
+    fsub
+    i2d
+    i2f
+    i2l
+    iadd
+    iaload
+    iand
+    iastore
+    iconst_0
+    iconst_1
+    iconst_2
+    iconst_3
+    iconst_4
+    iconst_5
+    iconst_m1
+    idiv
+    iload_0
+    iload_1
+    iload_2
+    iload_3
+    imul
+    ineg
+    int2byte
+    int2char
+    int2short
+    ior
+    irem
+    ireturn
+    ishl
+    ishr
+    istore_0
+    istore_1
+    istore_2
+    istore_3
+    isub
+    iushr
+    ixor
+    l2d
+    l2f
+    l2i
+    ladd
+    laload
+    land
+    lastore
+    lcmp
+    lconst_0
+    lconst_1
+    ldiv
+    lload_0
+    lload_1
+    lload_2
+    lload_3
+    lmul
+    lneg
+    lor
+    lrem
+    lreturn
+    lshl
+    lshr
+    lstore_0
+    lstore_1
+    lstore_2
+    lstore_3
+    lsub
+    lushr
+    lxor
+    monitorenter
+    monitorexit
+    nop
+    pop
+    pop2
+    return
+    saload
+    sastore
+    swap
+</dl>
+
+for example:
+
+<pre>
+    pop         ; remove the top item from the stack
+    iconst_1    ; push 1 onto the stack
+    swap        ; swap the top two items on the stack
+</pre>
+
+<hr><address>Copyright (c) Jonathan Meyer, July 1996</address>
+<hr>
+<a href="http://mrl.nyu.edu/meyer/jvm/jasmin.html">Jasmin Home</a> |
+<a href="http://mrl.nyu.edu/meyer/">Jon Meyer's Home</a>
