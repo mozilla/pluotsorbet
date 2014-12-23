@@ -260,11 +260,11 @@ Native.create("com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"
 });
 
 Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
-  return decodeURIComponent(string.str);
+    return decodeURIComponent(util.fromJavaString(string));
 });
 
 Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
-  return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
+    return util.fromJavaString(string).replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
 });
 
 Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", function(path) {
