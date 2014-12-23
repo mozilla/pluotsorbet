@@ -264,10 +264,6 @@ Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", 
     return Long.fromNumber(1024 * 1024 * 1024);
 });
 
-Native.create("com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V", function(path, value) {
-    console.warn("Connection.setHiddenImpl.([BZ)V not implemented (" + util.decodeUtf8(path) + ")");
-});
-
 Native.create("com/ibm/oti/connection/file/Connection.existsImpl.([B)Z", function(path) {
     return new Promise(function(resolve, reject) {
       fs.exists(util.decodeUtf8(path), resolve);
@@ -313,45 +309,30 @@ function(jPath, filterArray, includeHidden) {
             filter += "$";
         }
 
-        fs.list(path, function(files) {
+        fs.list(path, function(error, files) {
+            // For these exceptions, we append a URL representation of the path
+            // in Connection.listInternal, so we don't have to implement getURL
+            // in native code.
+            if (error && error.message == "Path does not exist") {
+                return reject(new JavaException("java/io/IOException", "Directory does not exist: "));
+            }
+            if (error && error.message == "Path is not a directory") {
+                return reject(new JavaException("java/io/IOException", "Connection is open on a file: "));
+            }
+
             var regexp = new RegExp(filter);
-
             files = files.filter(regexp.test.bind(regexp));
-
             var filesArray = util.newArray("[[B", files.length);
+            var encoder = new TextEncoder("utf-8");
 
-            var added = 0;
-
-            function checkDone() {
-                if (added === files.length) {
-                    resolve(filesArray);
-
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (checkDone()) {
-                return;
-            }
-
-            files.forEach(function(file) {
-              fs.stat(path + "/" + file, function(stat) {
-                  if (stat.isDir) {
-                      file += "/";
-                  }
-
-                  var bytesFile = new TextEncoder("utf-8").encode(file);
-
-                  var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
-                  fileArray.set(bytesFile);
-
-                  filesArray[added++] = fileArray;
-
-                  checkDone();
-              });
+            files.forEach(function(file, i) {
+                var bytesFile = encoder.encode(file);
+                var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
+                fileArray.set(bytesFile);
+                filesArray[i] = fileArray;
             });
+
+            resolve(filesArray);
         });
     });
 }, true);
@@ -503,12 +484,11 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", funct
     return new Promise(function(resolve, reject) {
         fs.exists(path, function(exists) {
             if (exists) {
-                fs.truncate(path, function(truncated) {
-                    if (truncated) {
-                        fs.open(path, resolve);
-                    } else {
-                        resolve(-1);
+                fs.open(path, function(fd) {
+                    if (fd != -1) {
+                        fs.ftruncate(fd, 0);
                     }
+                    resolve(fd);
                 });
             } else {
                 fs.create(path, new Blob(), function(created) {

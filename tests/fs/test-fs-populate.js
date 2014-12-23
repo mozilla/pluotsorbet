@@ -11,7 +11,7 @@ initialPaths.push("/tests.jar");
 initialFilesByDir["/"].push("classes.jar");
 initialFilesByDir["/"].push("tests.jar");
 
-// Push some files onto the list so we test a larger population.
+// Include the larger population of files that we added to the filesystem.
 for (var i = 0; i < 100; i++) {
   var filename = "file-" + i + ".png";
   initialPaths.push("/Persistent/" + filename);

@@ -328,26 +328,23 @@ var fs = (function() {
     reader.readAsText(file);
   }
 
-  Store.prototype.getKeysByParentDir = function(parentDir, cb) {
+  Store.prototype.getRecordsByParentDir = function(parentDir, cb) {
     this.sync((function() {
       var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
-      if (DEBUG_FS) { console.log("getKeysByParentDir initiated"); }
+      if (DEBUG_FS) { console.log("getRecordsByParentDir initiated"); }
       var objectStore = transaction.objectStore(Store.DBSTORENAME);
       var index = objectStore.index("parentDir");
-      var keys = [];
-      index.openKeyCursor(IDBKeyRange.only(parentDir)).onsuccess = function(event) {
+      var records = {};
+      index.openCursor(IDBKeyRange.only(parentDir)).onsuccess = function(event) {
         var cursor = event.target.result;
         if (cursor) {
-          // cursor.key is the value in the parentDir index, f.e. /tmp;
-          // cursor.primaryKey is the unique identifier for the record with
-          // that parentDir value, f.e. /tmp/test.txt.
-          keys.push(cursor.primaryKey);
+          records[cursor.primaryKey] = cursor.value;
           cursor.continue();
         }
       };
       transaction.oncomplete = function() {
-        if (DEBUG_FS) { console.log("getKeysByParentDir completed"); }
-        cb(keys);
+        if (DEBUG_FS) { console.log("getRecordsByParentDir completed"); }
+        cb(records);
       };
     }).bind(this));
   }
@@ -489,6 +486,8 @@ var fs = (function() {
             dirty: false,
             path: path,
             buffer: new FileBuffer(new Uint8Array(reader.result)),
+            mtime: record.mtime,
+            size: record.size,
             position: 0,
             record: record,
           }) - 1;
@@ -552,8 +551,8 @@ var fs = (function() {
 
     var file = openedFiles[fd];
     file.position = from + data.byteLength;
-    file.record.mtime = Date.now();
-    file.record.size = buffer.contentSize;
+    file.mtime = Date.now();
+    file.size = buffer.contentSize;
     file.dirty = true;
   }
 
@@ -584,6 +583,8 @@ var fs = (function() {
     }
 
     openedFile.record.data = new Blob([openedFile.buffer.getContent()]);
+    openedFile.record.mtime = openedFile.mtime;
+    openedFile.record.size = openedFile.size;
     store.setItem(openedFile.path, openedFile.record);
     openedFile.dirty = false;
   }
@@ -618,13 +619,17 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs list " + path); }
 
     store.getItem(path, function(record) {
-      if (record == null || !record.isDir) {
-        cb(null);
-      } else {
-        store.getKeysByParentDir(path, function(keys) {
-          cb(keys.map(function(v) { return basename(v) }).sort());
-        });
+      if (record == null) {
+        return cb(new Error("Path does not exist"));
       }
+
+      if (!record.isDir) {
+        return cb(new Error("Path is not a directory"));
+      }
+
+      store.getRecordsByParentDir(path, function(records) {
+        cb(null, Object.keys(records).map(function(v) { return basename(v) + (records[v].isDir ? "/" : "") }).sort());
+      });
     });
   }
 
@@ -661,8 +666,8 @@ var fs = (function() {
     if (size != file.buffer.contentSize) {
       file.buffer.setSize(size);
       file.dirty = true;
-      file.record.mtime = Date.now();
-      file.record.size = size;
+      file.mtime = Date.now();
+      file.size = size;
     }
   }
 
@@ -804,7 +809,7 @@ var fs = (function() {
       if (record == null || record.isDir) {
         cb(-1);
       } else {
-        cb(record.data.size);
+        cb(record.size);
       }
     });
   }
@@ -862,17 +867,6 @@ var fs = (function() {
   function stat(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs stat " + path); }
-
-    var file = openedFiles.find(function (file) { return file && file.path === path });
-    if (file) {
-      var stat = {
-        isDir: file.record.isDir,
-        mtime: file.record.mtime,
-        size: file.record.size,
-      };
-      setZeroTimeout(function() { cb(stat); });
-      return;
-    }
 
     store.getItem(path, function(record) {
       if (record == null) {
