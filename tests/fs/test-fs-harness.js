@@ -65,7 +65,7 @@ var initialPaths = [
 // We check that the directories have the files we expect to find in them.
 var initialFilesByDir = {
   "/": [
-    "Persistent",
+    "Persistent/",
     "_main.ks",
   ],
 
@@ -99,7 +99,7 @@ function testInit() {
       if (++i < dirs.length) {
         var dir = dirs[i];
         var initialFiles = initialFilesByDir[dir].slice(0);
-        fs.list(dir, function(files) {
+        fs.list(dir, function(error, files) {
           initialFiles.sort();
           files.sort();
           ok(files instanceof Array, "directory list is an array");

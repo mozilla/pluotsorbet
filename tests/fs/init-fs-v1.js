@@ -6,6 +6,7 @@
 var APP_BASE_DIR = "../../";
 
 initFS.then(function() {
-  // We changed the name between versions, so use whichever is available.
-  (fs.syncStore || fs.storeSync)(testInit);
+  fs.storeSync(function() {
+    document.body.appendChild(document.createTextNode("DONE"));
+  });
 });
