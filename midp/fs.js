@@ -15,20 +15,15 @@ Native.create("com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase
 
 Native.create("com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z",
 function(filenameBase, name, ext) {
-    return new Promise(function(resolve, reject) {
-        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
-        fs.exists(path, resolve);
-    });
-}, true);
+    var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
+    return fs.exists(path);
+});
 
 Native.create("com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V",
 function(filenameBase, name, ext) {
-    return new Promise(function(resolve, reject) {
-        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
-
-        fs.remove(path, resolve);
-    });
-}, true);
+    var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
+    fs.remove(path);
+});
 
 Native.create("com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I", function(filenameBase, storageId) {
     // Pretend there is 50MiB available.  Our implementation is backed
@@ -59,28 +54,22 @@ function(filenameBase, name, ext) {
             }
         }
 
-        fs.exists(path, function(exists) {
-            if (exists) {
-                fs.open(path, openCallback);
+
+        if (fs.exists(path)) {
+            fs.open(path, openCallback);
+        } else {
+            // Per the reference impl, create the file if it doesn't exist.
+            var dirname = fs.dirname(path);
+            if (fs.mkdirp(dirname)) {
+                if (fs.create(path, new Blob())) {
+                    fs.open(path, openCallback);
+                } else {
+                    reject(new JavaException("java/io/IOException", "openRecordStoreFile: create failed"));
+                }
             } else {
-                // Per the reference impl, create the file if it doesn't exist.
-                var dirname = fs.dirname(path);
-                fs.mkdirp(dirname, function(created) {
-                    if (created) {
-                        fs.create(path, new Blob(), function(created) {
-                            if (created) {
-                                fs.open(path, openCallback);
-                            }
-                            else {
-                                reject(new JavaException("java/io/IOException", "openRecordStoreFile: create failed"));
-                            }
-                        });
-                    } else {
-                        reject(new JavaException("java/io/IOException", "openRecordStoreFile: mkdirp failed"));
-                    }
-                });
+                reject(new JavaException("java/io/IOException", "openRecordStoreFile: mkdirp failed"));
             }
-        });
+        }
     });
 }, true);
 
@@ -265,113 +254,92 @@ Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", 
 });
 
 Native.create("com/ibm/oti/connection/file/Connection.existsImpl.([B)Z", function(path) {
-    return new Promise(function(resolve, reject) {
-      fs.exists(util.decodeUtf8(path), resolve);
-    });
-}, true);
+    return fs.exists(util.decodeUtf8(path));
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J", function(path) {
-    return new Promise(function(resolve, reject) {
-        fs.size(util.decodeUtf8(path), function(size) {
-            resolve(Long.fromNumber(size));
-        });
-    });
-}, true);
+    return Long.fromNumber(fs.size(util.decodeUtf8(path)));
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z", function(path) {
-    return new Promise(function(resolve, reject) {
-        fs.stat(util.decodeUtf8(path), function(stat) {
-            resolve(!!stat && stat.isDir);
-        });
-    });
-}, true);
+    var stat = fs.stat(util.decodeUtf8(path));
+    return (stat && stat.isDir);
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B",
 function(jPath, filterArray, includeHidden) {
     var path = util.decodeUtf8(jPath);
-    return new Promise(function(resolve, reject) {
-        var filter = "";
-        if (filterArray) {
-            filter = util.decodeUtf8(filterArray);
-            if (filter.contains("?")) {
-                console.warn("Our implementation of Connection::listImpl assumes the filter doesn't contain the ? wildcard character");
-            }
-
-            // Translate the filter to a regular expression
-
-            // Escape regular expression (everything but * and ?)
-            // Source of the regexp: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
-            filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
-
-            // Transform * to .+
-            filter = filter.replace(/\*/g, ".+");
-
-            filter += "$";
+    var filter = "";
+    if (filterArray) {
+        filter = util.decodeUtf8(filterArray);
+        if (filter.contains("?")) {
+            console.warn("Our implementation of Connection::listImpl assumes the filter doesn't contain the ? wildcard character");
         }
 
-        fs.list(path, function(error, files) {
-            // For these exceptions, we append a URL representation of the path
-            // in Connection.listInternal, so we don't have to implement getURL
-            // in native code.
-            if (error && error.message == "Path does not exist") {
-                return reject(new JavaException("java/io/IOException", "Directory does not exist: "));
-            }
-            if (error && error.message == "Path is not a directory") {
-                return reject(new JavaException("java/io/IOException", "Connection is open on a file: "));
-            }
+        // Translate the filter to a regular expression
 
-            var regexp = new RegExp(filter);
-            files = files.filter(regexp.test.bind(regexp));
-            var filesArray = util.newArray("[[B", files.length);
-            var encoder = new TextEncoder("utf-8");
+        // Escape regular expression (everything but * and ?)
+        // Source of the regexp: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+        filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
 
-            files.forEach(function(file, i) {
-                var bytesFile = encoder.encode(file);
-                var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
-                fileArray.set(bytesFile);
-                filesArray[i] = fileArray;
-            });
+        // Transform * to .+
+        filter = filter.replace(/\*/g, ".+");
 
-            resolve(filesArray);
-        });
+        filter += "$";
+    }
+
+    var files;
+
+    try {
+        files = fs.list(path);
+    } catch (ex) {
+        // For these exceptions, we append a URL representation of the path
+        // in Connection.listInternal, so we don't have to implement getURL
+        // in native code.
+        if (ex.message == "Path does not exist") {
+            throw new JavaException("java/io/IOException", "Directory does not exist: ");
+        }
+        if (ex.message == "Path is not a directory") {
+            throw new JavaException("java/io/IOException", "Connection is open on a file: ");
+        }
+    }
+
+    var regexp = new RegExp(filter);
+    files = files.filter(regexp.test.bind(regexp));
+    var filesArray = util.newArray("[[B", files.length);
+    var encoder = new TextEncoder("utf-8");
+
+    files.forEach(function(file, i) {
+        var bytesFile = encoder.encode(file);
+        var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
+        fileArray.set(bytesFile);
+        filesArray[i] = fileArray;
     });
-}, true);
+
+    return filesArray;
+});
 
 
 Native.create("com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I", function(path) {
-    return new Promise(function(resolve, reject) {
-        fs.mkdir(util.decodeUtf8(path), function(created) {
-            // IBM's implementation returns different error numbers, we don't care
-            resolve(created ? 0 : 42);
-        });
-    });
-}, true);
+    // IBM's implementation returns different error numbers, we don't care
+    return fs.mkdir(util.decodeUtf8(path)) ? 0 : 42;
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.newFileImpl.([B)I", function(jPath) {
     var path = util.decodeUtf8(jPath);
 
-    return new Promise(function(resolve, reject) {
-        // IBM's implementation returns different error numbers, we don't care
+    // IBM's implementation returns different error numbers, we don't care
 
-        fs.exists(path, function(exists) {
-            if (exists) {
-                fs.truncate(path, function(truncated) {
-                    resolve(truncated ? 0 : 42);
-                });
-            } else {
-                fs.create(path, new Blob(), function(created) {
-                    resolve(created ? 0 : 42);
-                });
-            }
-        });
-    });
-}, true);
+    if (fs.exists(path)) {
+        return fs.truncate(path) ? 0 : 42;
+    }
+
+    return fs.create(path, new Blob()) ? 0 : 42;
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z", function(path) {
-    return new Promise(function(resolve, reject) {
-        fs.remove(util.decodeUtf8(path), resolve);
-    });
-}, true);
+    return fs.remove(util.decodeUtf8(path));
+});
 
 Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] =
   Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"]
@@ -387,25 +355,15 @@ Native.create("com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z", fu
 });
 
 Native.create("com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J", function(path) {
-    return new Promise(function(resolve, reject) {
-        fs.stat(util.decodeUtf8(path), function(stat) {
-            resolve(Long.fromNumber(stat != null ? stat.mtime : 0));
-        });
-    });
-}, true);
+    var stat = fs.stat(util.decodeUtf8(path));
+    return Long.fromNumber(stat != null ? stat.mtime : 0);
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V", function(oldPath, newPath) {
-    return new Promise(function(resolve, reject) {
-        fs.rename(util.decodeUtf8(oldPath), util.decodeUtf8(newPath), function(renamed) {
-            if (!renamed) {
-                reject(new JavaException("java/io/IOException", "Rename failed"));
-                return;
-            }
-
-            resolve();
-        });
-    });
-}, true);
+    if (!fs.rename(util.decodeUtf8(oldPath), util.decodeUtf8(newPath))) {
+        throw new JavaException("java/io/IOException", "Rename failed");
+    }
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V", function(path, newLength, _) {
     return new Promise(function(resolve, reject) {
@@ -482,24 +440,18 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", funct
     var path = util.decodeUtf8(jPath);
 
     return new Promise(function(resolve, reject) {
-        fs.exists(path, function(exists) {
-            if (exists) {
-                fs.open(path, function(fd) {
-                    if (fd != -1) {
-                        fs.ftruncate(fd, 0);
-                    }
-                    resolve(fd);
-                });
-            } else {
-                fs.create(path, new Blob(), function(created) {
-                    if (created) {
-                        fs.open(path, resolve);
-                    } else {
-                        resolve(-1);
-                    }
-                });
-            }
-        });
+        if (fs.exists(path)) {
+            fs.open(path, function(fd) {
+                if (fd != -1) {
+                    fs.ftruncate(fd, 0);
+                }
+                resolve(fd);
+            });
+        } else if (fs.create(path, new Blob())) {
+            fs.open(path, resolve);
+        } else {
+            resolve(-1);
+        }
     });
 }, true);
 
@@ -514,19 +466,13 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"
             });
         }
 
-        fs.exists(path, function(exists) {
-            if (exists) {
-                open();
-            } else {
-                fs.create(path, new Blob(), function(created) {
-                    if (created) {
-                        open();
-                    } else {
-                        resolve(-1);
-                    }
-                });
-            }
-        });
+        if (fs.exists(path)) {
+            open();
+        } else if (fs.create(path, new Blob())) {
+            open();
+        } else {
+            resolve(-1);
+        }
     });
 }, true);
 
@@ -560,20 +506,14 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/
             });
         }
 
-        fs.exists(path, function(exists) {
-            if (exists) {
-                open();
-            } else {
-                fs.create(path, new Blob(), function(created) {
-                    if (created) {
-                        open();
-                    } else {
-                        reject(new JavaException("java/io/IOException",
-                                                 "RandomAccessStream::open(" + path + ") failed creating the file"));
-                    }
-                });
-            }
-        });
+        if (fs.exists(path)) {
+            open();
+        } else if (fs.create(path, new Blob())) {
+            open();
+        } else {
+            reject(new JavaException("java/io/IOException",
+                   "RandomAccessStream::open(" + path + ") failed creating the file"));
+        }
     });
 }, true);
 
@@ -618,7 +558,7 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I", fun
 });
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", function(handle) {
-        fs.close(handle);
+    fs.close(handle);
 });
 
 Native.create("javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;", function() {

@@ -125,31 +125,29 @@ function performDownload(dialog, callback) {
 if (urlParams.downloadJAD) {
   loadingPromises.push(new Promise(function(resolve, reject) {
     initFS.then(function() {
-      fs.exists("/app.jar", function(exists) {
-        if (exists) {
-          fs.open("/app.jar", function(fd) {
-            var data = fs.read(fd);
-            fs.close(fd);
-            jvm.addPath("app.jar", data.buffer);
-            resolve();
-          });
-        } else {
-          var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-          dialog.style.display = 'block';
-          dialog.classList.add('visible');
-          document.body.appendChild(dialog);
+      if (fs.exists("/app.jar")) {
+        fs.open("/app.jar", function(fd) {
+          var data = fs.read(fd);
+          fs.close(fd);
+          jvm.addPath("app.jar", data.buffer);
+          resolve();
+        });
+      } else {
+        var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+        dialog.style.display = 'block';
+        dialog.classList.add('visible');
+        document.body.appendChild(dialog);
 
-          performDownload(dialog, function(data) {
-            dialog.parentElement.removeChild(dialog);
+        performDownload(dialog, function(data) {
+          dialog.parentElement.removeChild(dialog);
 
-            jvm.addPath("app.jar", data);
+          jvm.addPath("app.jar", data);
 
-            fs.create("/app.jar", new Blob([ data ]), function() {});
+          fs.create("/app.jar", new Blob([ data ]));
 
-            resolve();
-          });
-        }
-      });
+          resolve();
+        });
+      }
     });
   }));
 }
