@@ -23,6 +23,101 @@ function ok(a, msg) {
   }
 }
 
+/**
+ * Convert a callback-based fs function to a Promise-based one.
+ * Requires the original function to take a callback as its last argument
+ * and callers to pass all previous arguments.
+ */
+var promisify = function(fn) {
+  return function() {
+    var args = Array.prototype.slice.call(arguments);
+    return new Promise(function(resolve, reject) {
+      args.push(resolve);
+      try {
+        fs[fn].apply(fs, args);
+      } catch(ex) {
+        reject(ex);
+      }
+    });
+  };
+};
+
+// A promise-based fs API.  Wraps callback-based functions in promise-based ones
+// using promisify.  
+var promiseFS = {};
+[
+  "stat",
+  "open",
+  "exportStore",
+  "importStore",
+].forEach(function(fn) { promiseFS[fn] = promisify(fn) });
+
+/**
+ * Given the path to a directory, return the stat objects of its children,
+ * each of which also contains a *name* property and either a *children*
+ * or a *data* property (depending on whether it's a directory or a file)
+ * containing the dir/file's children or data.
+ *
+ * For example, getBranch("/") might return:
+ *
+ * [
+ *   {
+ *     "isDir": true,
+ *     "mtime": 1419059838990,
+ *     "name": "tmp",
+ *     "children": [
+ *       {
+ *         "isDir": false,
+ *         "mtime": 1419059839096,
+ *         "size": 0,
+ *         "name": "tmp2.txt",
+ *         "data": []
+ *       }
+ *     ]
+ *   },
+ *   {
+ *     "isDir": false,
+ *     "mtime": 1419059839115,
+ *     "size": 4,
+ *     "name": "file2",
+ *     "data": [49, 50, 51, 52]
+ *   }
+ * ]
+ *
+ * The purpose of this function is to generate a representation of the fs,
+ * including file data, by recursively retrieving each directory and its files.
+ * This is useful for comparing the state of the fs before and after changes
+ * that shouldn't affect it (f.e. exporting the store and then reimporting it).
+ *
+ * We convert file data into arrays to make it easier to compare them.
+ */
+var getBranch = function(dir) {
+  return new Promise(function(resolve, reject) {
+    fs.list(dir, function(error, files) {
+      Promise.all(files.map(function(file) {
+        return new Promise(function(resolve, reject) {
+          var path = dir + file;
+          promiseFS.stat(path).then(function(stat) {
+            stat.name = file;
+            if (stat.isDir) {
+              getBranch(path).then(function(children) {
+                stat.children = children;
+                resolve(stat);
+              });
+            } else {
+              promiseFS.open(path).then(function(fd) {
+                stat.data = Array.prototype.slice.call(fs.read(fd));
+                fs.close(fd);
+                resolve(stat);
+              });
+            }
+          });
+        });
+      })).then(resolve);
+    });
+  });
+};
+
 var tests = [];
 
 var fd;
@@ -891,6 +986,23 @@ tests.push(function() {
         });
       });
     });
+  });
+});
+
+// Export the fs store, import it again, and verify that the state of the fs
+// is equivalent.
+tests.push(function() {
+  var before;
+  getBranch("/").then(function(branch) {
+    before = branch;
+    return promiseFS.exportStore();
+  }).then(function(blob) {
+    return promiseFS.importStore(blob);
+  }).then(function() {
+    return getBranch("/");
+  }).then(function(after) {
+    ok(QUnit.equiv(before, after), "files are equivalent after export/import");
+    next();
   });
 });
 

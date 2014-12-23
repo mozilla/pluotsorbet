@@ -48,6 +48,7 @@
   <script type="text/javascript" src="libs/pipe.js" defer></script>
   <script type="text/javascript" src="libs/contact2vcard.js" defer></script>
   <script type="text/javascript" src="libs/emoji.js" defer></script>
+  <script type="text/javascript" src="libs/FileSaver.js" defer></script>
   <script type="text/javascript" src="midp/midp.js" defer></script>
   <script type="text/javascript" src="midp/frameanimator.js" defer></script>
   <script type="text/javascript" src="midp/fs.js" defer></script>
@@ -92,6 +93,9 @@
     </section>
     <section>
       <button id="clearstorage">Clear storage</button>
+      <button id="exportstorage">Export storage</button>
+      <div>Import storage:</div>
+      <input type="file" id="importstorage">
       <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
       <button id="profile">Profile: OFF</button>

@@ -3,6 +3,10 @@
 var DEBUG_FS = true;
 
 var fs = (function() {
+  var reportRequestError = function(type, request) {
+    console.error(type + " error " + request.error);
+  }
+
   var Store = function() {
     this.map = new Map();
 
@@ -262,6 +266,82 @@ var fs = (function() {
       if (DEBUG_FS) { console.log("sync completed"); }
       cb();
     };
+  }
+
+  Store.prototype.export = function(cb) {
+    var records = {};
+    var output = {};
+    var promises = [];
+
+    this.sync((function() {
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      if (DEBUG_FS) { console.log("export initiated"); }
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+
+      var req = objectStore.openCursor();
+      req.onerror = function() {
+        console.error("export error " + req.error);
+      };
+      req.onsuccess = function(event) {
+        var cursor = event.target.result;
+        if (cursor) {
+          records[cursor.key] = cursor.value;
+          cursor.continue();
+        } else {
+          Object.keys(records).forEach(function(key) {
+            if (DEBUG_FS) { console.log("exporting " + key); }
+            var record = records[key];
+            if (record.isDir) {
+              output[key] = record;
+            } else {
+              promises.push(new Promise(function(resolve, reject) {
+                var reader = new FileReader();
+                reader.addEventListener("loadend", function() {
+                  record.data = Array.prototype.slice.call(new Int8Array(reader.result));
+                  output[key] = record;
+                  resolve();
+                });
+                reader.readAsArrayBuffer(record.data);
+              }));
+            }
+          });
+
+          Promise.all(promises).then(function() {
+            var blob = new Blob([JSON.stringify(output)]);
+            if (DEBUG_FS) { console.log("export completed"); }
+            cb(blob);
+          });
+        }
+      };
+    }).bind(this));
+  }
+
+  Store.prototype.import = function(file, cb) {
+    console.log("file: " + file);
+    var reader = new FileReader();
+    reader.onload = (function() {
+      var input = JSON.parse(reader.result);
+      var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+      if (DEBUG_FS) { console.log("import initiated"); }
+      this.map.clear();
+      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var req = objectStore.clear();
+      req.onerror = reportRequestError.bind(null, "import", req);
+      Object.keys(input).forEach(function(key) {
+        if (DEBUG_FS) { console.log("importing " + key); }
+        var record = input[key];
+        if (!record.isDir) {
+          record.data = new Blob([new Int8Array(record.data)]);
+        }
+        var req = objectStore.put(record, key);
+        req.onerror = reportRequestError.bind(null, "import", req);
+      });
+      transaction.oncomplete = function() {
+        if (DEBUG_FS) { console.log("import completed"); }
+        cb();
+      };
+    }).bind(this);
+    reader.readAsText(file);
   }
 
   Store.prototype.getRecordsByParentDir = function(parentDir, cb) {
@@ -883,6 +963,14 @@ var fs = (function() {
     return store.addTransientPath(path);
   }
 
+  function exportStore(cb) {
+    return store.export(cb);
+  }
+
+  function importStore(blob, cb) {
+    return store.import(blob, cb);
+  }
+
   return {
     dirname: dirname,
     init: init,
@@ -908,6 +996,8 @@ var fs = (function() {
     clear: clear,
     syncStore: syncStore,
     purgeStore: purgeStore,
+    exportStore: exportStore,
+    importStore: importStore,
     createUniqueFile: createUniqueFile,
     addTransientPath: addTransientPath,
   };
