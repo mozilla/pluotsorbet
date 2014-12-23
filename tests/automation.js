@@ -24,7 +24,7 @@ var gfxTests = [
   { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
   { name: "gfx/DrawStringTest", maxDifferent: 345 },
   { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
-  { name: "gfx/TextBoxTest", maxDifferent: 4677 },
+  { name: "gfx/TextBoxTest", maxDifferent: 4722 },
   { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
