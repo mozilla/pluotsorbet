@@ -484,12 +484,11 @@ Native.create("com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I", funct
     return new Promise(function(resolve, reject) {
         fs.exists(path, function(exists) {
             if (exists) {
-                fs.truncate(path, function(truncated) {
-                    if (truncated) {
-                        fs.open(path, resolve);
-                    } else {
-                        resolve(-1);
+                fs.open(path, function(fd) {
+                    if (fd != -1) {
+                        fs.ftruncate(fd, 0);
                     }
+                    resolve(fd);
                 });
             } else {
                 fs.create(path, new Blob(), function(created) {

@@ -788,17 +788,6 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs stat " + path); }
 
-    var file = openedFiles.find(function (file) { return file && file.path === path });
-    if (file) {
-      var stat = {
-        isDir: file.record.isDir,
-        mtime: file.record.mtime,
-        size: file.record.size,
-      };
-      setZeroTimeout(function() { cb(stat); });
-      return;
-    }
-
     store.getItem(path, function(record) {
       if (record == null) {
         cb(null);

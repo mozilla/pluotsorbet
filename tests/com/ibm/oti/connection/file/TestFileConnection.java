@@ -101,21 +101,20 @@ public class TestFileConnection implements Testlet {
         th.check(modifiedTime > lastTime, "create updates mtime");
         lastTime = modifiedTime;
 
-        // Merely opening the output stream shouldn't update the mtime, but our
-        // implementation of FCOutputStream.openImpl eagerly truncates the file,
-        // which updates the mtime, so this test is a TODO pending resolution
-        // of that issue.
         try { Thread.sleep(1); } catch (Exception e) {}
         OutputStream out = file.openOutputStream();
         modifiedTime = file.lastModified();
-        th.todo(modifiedTime, lastTime, "open output stream doesn't update mtime");
+        th.check(modifiedTime, lastTime, "open output stream doesn't update mtime");
         lastTime = modifiedTime;
 
-        try { Thread.sleep(1); } catch (Exception e) {}
         out.write(new byte[]{ 4, 3, 2, 1 });
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, lastTime, "write to output stream doesn't update mtime");
+        lastTime = modifiedTime;
+
         out.close();
         modifiedTime = file.lastModified();
-        th.check(modifiedTime > lastTime, "write updates mtime");
+        th.check(modifiedTime > lastTime, "close output stream updates mtime");
         lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
