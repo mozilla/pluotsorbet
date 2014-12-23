@@ -74,8 +74,8 @@ var currentlyFocusedTextEditor;
         console.log("------------------------------------------------------------------------------------------------------------------");
         console.log("------------------------------------------------------------------------------------------------------------------");
         var goal = (5000 / 20);
-        var time = performance.now();
-        console.log(performance.now() + " " + (time > (5000 / 20) ? " Goal is " + goal + ", make it " + (time / goal).toFixed(2) + " X faster.": "Done"));
+        var time = performance.now() - bigBang;
+        console.log(time.toFixed(2) + " (" + (performance.now().toFixed(2)) + ") " + (time > (5000 / 20) ? " Goal is " + goal + ", make it " + (time / goal).toFixed(2) + " X faster.": "Done"));
         console.log("------------------------------------------------------------------------------------------------------------------");
         console.log("------------------------------------------------------------------------------------------------------------------");
         console.warn("DisplayDevice.refresh0.(IIIIII)V not implemented (" +
@@ -196,12 +196,12 @@ var currentlyFocusedTextEditor;
                 img.src = '';
                 resolve();
             }
-            img.onerror = function(e) {
-                URL.revokeObjectURL(img.src);
-                img.src = '';
-                ctx.setAsCurrentContext();
-                reject($.newIllegalArgumentException("error decoding image"));
-            }
+            //img.onerror = function(e) {
+            //    URL.revokeObjectURL(img.src);
+            //    img.src = '';
+            //    ctx.setAsCurrentContext();
+            //    reject($.newIllegalArgumentException("error decoding image"));
+            //}
         }));
     };
 

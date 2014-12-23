@@ -29,12 +29,14 @@ module J2ME {
   declare var Shumway;
 
   export var timeline;
+  export var methodTimeline;
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
+    methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
   }
 
   export function enterTimeline(name: string, data?: any) {
@@ -1061,7 +1063,7 @@ module J2ME {
         }
       }
 
-      if (false && timeline) {
+      if (false && methodTimeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
         updateGlobalObject = true;
       }
@@ -1098,7 +1100,7 @@ module J2ME {
         nativeCounter.count(key);
         var s = ops;
         try {
-          enterTimeline(key);
+          methodTimeline.enter(key);
           var r;
           switch (arguments.length) {
             case 0:
@@ -1116,9 +1118,9 @@ module J2ME {
             default:
               r = fn.apply(this, arguments);
           }
-          leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
         } catch (e) {
-          leaveTimeline(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
           throw e;
         }
         return r;

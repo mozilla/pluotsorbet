@@ -236,6 +236,22 @@ function toggle(button) {
   button.textContent = button.textContent.replace(isOff ? "OFF" : "ON", isOff ? "ON" : "OFF");
 }
 
+function start() {
+  profiler.start(2000, false);
+  bigBang = performance.now();
+  jvm.startIsolate0(main, []);
+}
+
+var bigBang = 0;
+
+setTimeout(function () {
+  start();
+}, 500);
+
+document.getElementById("start").onclick = function() {
+  start();
+};
+
 window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    fs.clear();
@@ -293,7 +309,10 @@ if (urlParams.profile && !/no|0/.test(urlParams.profile)) {
 
 function requestTimelineBuffers(fn) {
   if (J2ME.timeline) {
-    fn([J2ME.timeline]);
+    fn([
+      J2ME.timeline,
+      J2ME.methodTimeline
+    ]);
     return;
   }
   return fn([]);
@@ -396,5 +415,3 @@ var profiler = (function() {
   return new Profiler();
 
 })();
-
-profiler.start(3000, false);
