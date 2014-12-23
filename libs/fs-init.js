@@ -6,6 +6,7 @@
 // Directories in the filesystem.
 var initialDirs = [
   "/Persistent",
+  "/Photos",
 ];
 
 // Files in the filesystem.  We load the data from the source path on the real

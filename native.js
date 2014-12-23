@@ -99,9 +99,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "file:///";
         break;
     case "fileconn.dir.photos":
-        // We need to create the dir in the FS init process if it's
-        // not the root dir.
-        value = "file:///";
+        value = "file:///Photos/";
         break;
     case "fileconn.dir.roots.names":
         // The names here should be localized.
