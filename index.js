@@ -432,6 +432,9 @@ DumbPipe.registerOpener("notification", function(message, sender) {
     var ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, width, height);
 
+    URL.revokeObjectURL(img.src);
+    img.src = '';
+
     message.options.icon = canvas.toDataURL();
 
     function permissionGranted() {
@@ -450,6 +453,10 @@ DumbPipe.registerOpener("notification", function(message, sender) {
         }
       });
     }
+  }
+
+  img.onerror = function() {
+    URL.revokeObjectURL(img.src);
   }
 
   return function(message) {
