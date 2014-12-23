@@ -127,15 +127,15 @@ Native["com/sun/j2me/pim/PIMProxy.listClose0.(I)Z"] = function(listHandle, descr
 
 Native["com/sun/j2me/pim/PIMProxy.getDefaultListName.(I)Ljava/lang/String;"] = function(listType) {
   if (listType === PIM.CONTACT_LIST) {
-    return $S("ContactList");
+    return J2ME.newString("ContactList");
   }
 
   if (listType === PIM.EVENT_LIST) {
-    return $S("EventList");
+    return J2ME.newString("EventList");
   }
 
   if (listType === PIM.TODO_LIST) {
-    return $S("TodoList");
+    return J2ME.newString("TodoList");
   }
 
   return null;

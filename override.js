@@ -53,11 +53,11 @@ function asyncImpl(returnKind, promise) {
 }
 
 Override["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;"] = function(string) {
-  return $S(decodeURIComponent(string.str));
+  return J2ME.newString(decodeURIComponent(string.str));
 };
 
 Override["com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;"] = function(string) {
-  return $S(string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent));
+  return J2ME.newString(string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent));
 };
 
 Override["java/lang/Math.min.(II)I"] = function(a, b) {
@@ -221,5 +221,5 @@ Override["com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I"] = func
 // The Java code that uses this method doesn't actually use the return value, but
 // passes it to Permissions.getId. So we can return anything.
 Override["com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;"] = function(id) {
-  return $S("com.sun.midp");
+  return J2ME.newString("com.sun.midp");
 };
