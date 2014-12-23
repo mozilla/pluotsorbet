@@ -500,7 +500,7 @@ public class TestFileConnection implements Testlet {
 
             // Check that the fileconn.dir.photos property value is longer than 8 characters.
             String photoDir = System.getProperty("fileconn.dir.photos");
-            th.check(photoDir.substring(8, photoDir.length() - 1).length() > 0);
+            th.check(photoDir.length() > 8);
             // Check that the photos directory exists and is a directory.
             dir = (FileConnection)Connector.open(photoDir);
             th.check(dir.exists(), "fileconn.dir.photos exists");
