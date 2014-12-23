@@ -497,6 +497,15 @@ public class TestFileConnection implements Testlet {
             } catch (IllegalArgumentException e) {
                 th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///prov>");
             }
+
+            // Check that the fileconn.dir.photos property value is longer than 8 characters.
+            String photoDir = System.getProperty("fileconn.dir.photos");
+            th.check(photoDir.substring(8, photoDir.length() - 1).length() > 0);
+            // Check that the photos directory exists and is a directory.
+            dir = (FileConnection)Connector.open(photoDir);
+            th.check(dir.exists(), "fileconn.dir.photos exists");
+            th.check(dir.isDirectory(), "fileconn.dir.photos is a directory");
+            dir.close();
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
