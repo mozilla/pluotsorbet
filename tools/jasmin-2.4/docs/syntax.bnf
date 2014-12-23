@@ -1,0 +1,88 @@
+Jasmin Syntax                               Jonathan Meyer, April 1996
+
+This file contains a simplified BNF version of the Jasmin syntax.
+
+    jasmin_file ::=
+        '.class' [ <access> ] <name> <break>
+        '.super' <name> <break>
+        [ <fields> ]
+        [ <methods> ]
+
+
+    <fields> ::= <field> [ <field> ... ] 
+
+    <field> ::=
+        '.field' <access> <name> <signature> [ = <default> ] <break>
+
+    <default> ::=  <int> | <quoted_string> | <float> 
+
+
+    <methods> ::= <method> [ <method> ... ] 
+
+    <method> ::=
+        '.method' <access> <name> <break>
+            [ <statements> ]
+        '.end' 'method' <break>
+
+    <statements> ::= <statement> [ <statement> ... ] 
+
+    <statement> ::=
+        <directive> <break>
+        |
+        <instruction> <break>
+        |
+        <label> ':' <break>
+
+    <directive> ::=
+        '.limit' 'stack' <val>
+        |
+        '.limit' 'locals' <val>
+        |
+        '.throws' <classname>
+        |
+        '.catch' <classname> 'from' <label1> 'to' <label2> 'using' <label3>
+
+    <instruction> ::= <simple_instruction> | <complex_instruction> 
+
+    <simple_instruction> ::=
+        <insn>
+        |
+        <insn> <int> <int>
+        |
+        <insn> <int>
+        |
+        <insn> <num>
+        |
+        <insn> <word>
+        |
+        <insn> <word> <int>
+        |
+        <insn> <word> <word>
+        |
+        <insn> <quoted_string>
+
+    <complex_instruction> ::=
+        <lookupswitch>
+        |
+        <tableswitch>
+
+    <lookupswitch> ::=
+        lookupswitch <nl>
+            <int> : <label> <nl>
+            <int> : <label> <nl>
+            ...
+            default : <label>
+
+    <tableswitch> ::=
+        tableswitch <low>  <nl>
+            <label> <nl>
+            <label> <nl>
+            ...
+            default : <label>
+
+    <access> ::= <access_item> [ <access_item> ... ] 
+
+    <access_item> ::=
+        'public' | 'private' | 'protected' | 'static' | 'final' |
+        'synchronized' | 'volatile' | 'transient' | 'native' |
+        'interface' | 'abstract' 

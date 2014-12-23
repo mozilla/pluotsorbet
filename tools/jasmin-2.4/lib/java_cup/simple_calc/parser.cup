@@ -1,0 +1,58 @@
+// JavaCup specification for a simple expression evaluator (w/ actions)
+
+import java_cup.runtime.*;
+
+/* Preliminaries to set up and use the scanner.  */
+init with {: scanner.init();              :};
+scan with {: return scanner.next_token(); :};
+
+/* Terminals (tokens returned by the scanner). */
+terminal token     SEMI, PLUS, MINUS, TIMES, DIVIDE, MOD,  LPAREN, RPAREN;
+terminal int_token NUMBER;
+
+/* Non terminals */
+non terminal symbol     expr_list, expr_part;
+non terminal int_token  expr, term, factor;
+
+/* The grammar */
+expr_list ::= expr_list expr_part 
+	      | 
+              expr_part;
+
+expr_part ::= expr:e 
+	      {: System.out.println("= " + e.int_val); :} 
+              SEMI              
+	      ;
+
+expr      ::= expr:e1 PLUS term:e2    
+	      {: RESULT.int_val = e1.int_val + e2.int_val; :} 
+	      | 
+              expr:e1 MINUS term:e2    
+              {: RESULT.int_val = e1.int_val - e2.int_val; :} 
+	      | 
+              term:e1                  
+	      {: RESULT.int_val = e1.int_val; :} 
+	      ;
+
+term      ::= term:e1 TIMES factor:e2 
+	      {: RESULT.int_val = e1.int_val * e2.int_val; :} 
+	      | 
+              term:e1 DIVIDE factor:e2 
+	      {: RESULT.int_val = e1.int_val / e2.int_val; :} 
+	      | 
+              term:e1 MOD factor:e2 
+	      {: RESULT.int_val = e1.int_val % e2.int_val; :} 
+	      | 
+              factor:e                 
+	      {: RESULT.int_val = e.int_val; :} 
+	      ;
+
+factor    ::= NUMBER:n                 
+	      {: RESULT.int_val = n.int_val;  :} 
+	      | 
+              MINUS factor:e             
+	      {: RESULT.int_val = -e.int_val; :} 
+	      | 
+              LPAREN expr:e RPAREN     
+	      {: RESULT.int_val = e.int_val;  :} 
+	      ;

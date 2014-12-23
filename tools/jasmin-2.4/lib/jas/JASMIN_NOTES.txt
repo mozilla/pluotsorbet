@@ -1,0 +1,13 @@
+10 October 2004, Jon Meyer
+
+* Moved the jas src code into ../src/jas.
+
+
+1 March 1997, Jon Meyer
+
+* Modified JAS to use self-contained RuntimeConstants interface.
+
+* Moved JAS classes into the Jasmin classes directory.
+
+* Fixed bug in CatchEntry.
+           
