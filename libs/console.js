@@ -72,7 +72,7 @@
         var div = document.createElement("div");
         div.classList.add("log-item");
         div.classList.add("log-item-" + this.levelName);
-        div.textContent = this.message;
+        div.textContent = this.message + "\n";
         this._cachedElement = div;
       }
       return this._cachedElement;
