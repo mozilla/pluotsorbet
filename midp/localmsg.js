@@ -663,7 +663,13 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           return;
         }
 
-        fs.createUniqueFile("/nokiafileui", selectedFile.name, selectedFile, (function(fileName) {
+        var ext = "";
+        var extIndex = selectedFile.name.lastIndexOf(".");
+        if (extIndex != -1) {
+          ext = selectedFile.name.substr(extIndex);
+        }
+
+        fs.createUniqueFile("/nokiafileui", "file" + ext, selectedFile, (function(fileName) {
           var encoder = new DataEncoder();
 
           encoder.putStart(DataType.STRUCT, "event");
