@@ -864,6 +864,59 @@ module J2ME {
     });
   }
 
+  function emitKlass(classInfo: ClassInfo, mangledName: string): Klass {
+    var klass: Klass;
+    enterTimeline("emitKlass");
+    // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
+    // creating a closure, which will probably be slower at runtime.
+    var source = "";
+    var writer = new IndentingWriter(false, x => source += x + "\n");
+    var emitter = new Emitter(writer, false, true, true);
+    J2ME.emitKlass(emitter, classInfo);
+    (1, eval)(source);
+    leaveTimeline("emitKlass");
+    // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
+    // consoleWriter.writeLn(source);
+    klass = <Klass>jsGlobal[mangledName];
+    release || assert(klass, mangledName);
+    klass.toString = function () {
+      return "[Synthesized Klass " + classInfo.className + "]";
+    };
+    return klass;
+  }
+
+  function makeKlass(classInfo: ClassInfo): Klass {
+    var klass: Klass;
+    var mangledName = mangleClass(classInfo);
+    if (classInfo.isInterface) {
+      klass = <Klass><any>function () {
+        Debug.unexpected("Should never be instantiated.")
+      };
+      klass.isInterfaceKlass = true;
+      klass.toString = function () {
+        return "[Interface Klass " + classInfo.className + "]";
+      };
+      setKlassSymbol(mangledName, klass);
+    } else if (classInfo.isArrayClass) {
+      var elementKlass = getKlass(classInfo.elementClass);
+      // Have we already created one? We need to maintain pointer identity.
+      if (elementKlass.arrayKlass) {
+        return elementKlass.arrayKlass;
+      }
+      klass = getArrayKlass(elementKlass);
+    } else if (classInfo instanceof PrimitiveClassInfo) {
+      klass = <Klass><any>function () {
+        Debug.unexpected("Should never be instantiated.")
+      };
+      klass.toString = function () {
+        return "[Primitive Klass " + classInfo.className + "]";
+      };
+    } else {
+      klass = emitKlass(classInfo, mangledName);
+    }
+    return klass;
+  }
+
   export function getKlass(classInfo: ClassInfo): Klass {
     if (!classInfo) {
       return null;
@@ -884,48 +937,7 @@ module J2ME {
         registerKlassSymbols(klass.classSymbols);
       }
     } else {
-      var mangledName = mangleClass(classInfo);
-      if (classInfo.isInterface) {
-        klass = function () {
-          Debug.unexpected("Should never be instantiated.")
-        };
-        klass.isInterfaceKlass = true;
-        klass.toString = function () {
-          return "[Interface Klass " + classInfo.className + "]";
-        };
-        setKlassSymbol(mangledName, klass);
-      } else if (classInfo.isArrayClass) {
-        var elementKlass = getKlass(classInfo.elementClass);
-        // Have we already created one? We need to maintain pointer identity.
-        if (elementKlass.arrayKlass) {
-          return elementKlass.arrayKlass;
-        }
-        klass = getArrayKlass(elementKlass);
-      } else if (classInfo instanceof PrimitiveClassInfo) {
-        klass = function () {
-          Debug.unexpected("Should never be instantiated.")
-        };
-        klass.toString = function () {
-          return "[Primitive Klass " + classInfo.className + "]";
-        };
-      } else {
-        enterTimeline("emitKlass");
-        // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
-        // creating a closure, which will probably be slower at runtime.
-        var source = "";
-        var writer = new IndentingWriter(false, x => source += x + "\n");
-        var emitter = new Emitter(writer, false, true, true);
-        J2ME.emitKlass(emitter, classInfo);
-        (1, eval)(source);
-        leaveTimeline("emitKlass");
-        // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
-        // consoleWriter.writeLn(source);
-        klass = jsGlobal[mangledName];
-        release || assert(klass, mangledName);
-        klass.toString = function () {
-          return "[Synthesized Klass " + classInfo.className + "]";
-        };
-      }
+      klass = makeKlass(classInfo);
     }
 
     if (classInfo.superClass && !classInfo.superClass.klass &&
