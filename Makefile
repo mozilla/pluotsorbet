@@ -10,8 +10,8 @@ test: all
 	cd tests && python httpsServer.py &
 	cd tests && python sslEchoServer.py &
 	cd tests && python waitServers.py
-	casperjs --engine=slimerjs test `pwd`/tests/automation.js | tee test.log
-	casperjs --engine=slimerjs test `pwd`/tests/fs/automation.js | tee -a test.log
+	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
+	casperjs --engine=slimerjs test `pwd`/tests/fs/automation.js >> test.log
 	killall python Python || true
 	python dumplog.py
 	if grep -q FAIL test.log; \
