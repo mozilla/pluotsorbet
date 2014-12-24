@@ -177,12 +177,16 @@ module J2ME {
     Compiled
   }
 
+  var hashArray = new Int32Array(1024);
   function hashString(s: string) {
-    var data = new Int32Array(s.length);
+    if (hashArray.length < s.length) {
+      hashArray = new Int32Array((hashArray.length * 2 / 3) | 0);
+    }
+    var data = hashArray;
     for (var i = 0; i < s.length; i++) {
       data[i] = s.charCodeAt(i);
     }
-    return HashUtilities.hashBytesTo32BitsMD5(data, 0, s.length);
+    return HashUtilities.hashBytesTo32BitsAdler(data, 0, s.length);
   }
 
   var friendlyMangledNames = true;
