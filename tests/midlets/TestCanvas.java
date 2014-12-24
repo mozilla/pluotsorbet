@@ -6,7 +6,6 @@ import java.io.*;
 
 class Game extends Canvas {
         public void paint(Graphics g) {
-		System.out.println("FUCK!");
                 try {
                         Image img = Image.createImage("test.png");
                         g.drawImage(img, 10, 10, 0);
