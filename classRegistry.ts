@@ -43,7 +43,7 @@ module J2ME {
 
     initializeBuiltinClasses() {
       // These classes are guaranteed to not have a static initializer.
-
+      enterTimeline("initializeBuiltinClasses");
       this.java_lang_Object = this.loadClass("java/lang/Object");
       this.java_lang_Class = this.loadClass("java/lang/Class");
       this.java_lang_String = this.loadClass("java/lang/String");
@@ -76,6 +76,7 @@ module J2ME {
         linkKlass(PrimitiveClassInfo[typeName]);
         this.getClass("[" + typeName);
       }
+      leaveTimeline("initializeBuiltinClasses");
     }
 
     isPreInitializedClass(classInfo: ClassInfo) {
@@ -181,7 +182,19 @@ module J2ME {
       return classInfo;
     }
 
-    loadClass (className: string): ClassInfo {
+    loadAllClassFiles() {
+      var jarFiles = this.jarFiles;
+      for (var k in jarFiles) {
+        var zip = jarFiles[k];
+        for (var fileName in zip.directory) {
+          if (fileName.substr(-6) === ".class") {
+            this.loadClassFile(fileName);
+          }
+        }
+      }
+    }
+
+    loadClass(className: string): ClassInfo {
       var classInfo = this.classes[className];
       if (classInfo)
         return classInfo;

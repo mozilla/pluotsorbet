@@ -187,19 +187,65 @@ module J2ME {
 
   var friendlyMangledNames = true;
 
-  export function escapeString(s: string) {
-    var invalidChars = "[];/<>()";
-    var replaceChars = "abc_defg";
-    var result = "";
-    for (var i = 0; i < s.length; i++) {
-      if ((i === 0 && isIdentifierStart(s[i])) || (i > 0 && isIdentifierPart(s[i]))) {
-        result += s[i];
-      } else {
-        release || assert (invalidChars.indexOf(s[i]) >= 0, s[i] + " " + s);
-        result += replaceChars[invalidChars.indexOf(s[i])];
+
+  function isIdentifierChar(c: number): boolean {
+    return (c >= 97   && c <= 122)   || // a .. z
+           (c >= 65   && c <=  90)   || // A .. Z
+           (c === 36) || (c === 95);    // $ && _
+  }
+
+  function isDigit(c: number): boolean {
+    return c >= 48 && c <= 57;
+  }
+
+  var invalidChars = "[];/<>()";
+  var replaceChars = "abc_defg";
+
+  function needsEscaping(s: string): boolean {
+    var l = s.length;
+    for (var i = 0; i < l; i++) {
+      var c = s.charCodeAt(i);
+      if (!isIdentifierChar(c)) {
+        return true;
       }
     }
-    return result;
+    return false;
+  }
+
+  // Fast lookup table.
+  var map = new Array(128);
+  for (var i = 0; i < 128; i++) {
+    map[i] = String.fromCharCode(i);
+  }
+
+  // Patch up some entries.
+  var invalidChars = "[];/<>()";
+  var replaceChars = "abc_defg";
+  for (var i = 0; i < invalidChars.length; i++) {
+    map[invalidChars.charCodeAt(i)] = replaceChars[i];
+  }
+
+  // Reuse array.
+  var T = new Array(1024);
+
+  export function escapeString(s: string): string {
+    if (!needsEscaping(s)) {
+      return s;
+    }
+    var l = s.length;
+    var r = T;
+    r.length = l;
+    for (var i = 0; i < l; i++) {
+      var c = s.charCodeAt(i);
+      if (i === 0 && isDigit(c)) {
+        r[i] = String.fromCharCode(c - 48 + 97); // Map 0 .. 9 to a .. j
+      } else if (c < 128) {
+        r[i] = map[c]
+      } else {
+        r[i] = s[i];
+      }
+    }
+    return r.join("");
   }
 
   var stringHashes = Object.create(null);

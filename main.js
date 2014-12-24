@@ -223,11 +223,6 @@ if (MIDP.midletClassName == "RunTests") {
                        loadScript("tests/mozactivitymock.js"));
 }
 
-Promise.all(loadingPromises).then(function() {
-  CLASSES.initializeBuiltinClasses();
-  jvm.startIsolate0(main, []);
-});
-
 function getIsOff(button) {
   return button.textContent.contains("OFF");
 }
@@ -236,20 +231,36 @@ function toggle(button) {
   button.textContent = button.textContent.replace(isOff ? "OFF" : "ON", isOff ? "ON" : "OFF");
 }
 
+var bigBang = 0;
+
 function start() {
+  CLASSES.initializeBuiltinClasses();
   profiler.start(2000, false);
   bigBang = performance.now();
   jvm.startIsolate0(main, []);
 }
 
-var bigBang = 0;
-
-setTimeout(function () {
-  start();
-}, 500);
+Promise.all(loadingPromises).then(function() {
+  setTimeout(function () {
+    start();
+  }, 500);
+});
 
 document.getElementById("start").onclick = function() {
   start();
+};
+
+function stress() {
+  profiler.start(5000, false);
+  for (var i = 0; i < 5; i++) {
+    var s = performance.now();
+    CLASSES.loadAllClassFiles();
+    console.info("Stressing for: " + (performance.now() - s));
+  }
+}
+
+document.getElementById("stress").onclick = function() {
+  stress();
 };
 
 window.onload = function() {
@@ -358,7 +369,7 @@ var profiler = (function() {
     startTime = Date.now();
     timerHandle = setInterval(showTimeMessage, 1000);
     if (maxTime) {
-      timeoutHandle = setTimeout(this.createProfile.bind(this), 5000);
+      timeoutHandle = setTimeout(this.createProfile.bind(this), maxTime);
     }
     showTimeMessage();
   }

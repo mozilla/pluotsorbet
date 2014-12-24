@@ -5,6 +5,7 @@ module J2ME {
     // DataView is not optimized, use Uint8Array for the fast paths.
     u8: Uint8Array;
     offset: number;
+    static T: string [] = new Array(124);
     constructor(buffer: ArrayBuffer, offset: number) {
       this.view = new DataView(buffer);
       this.u8 = new Uint8Array(buffer);
@@ -49,6 +50,39 @@ module J2ME {
       return data;
     }
 
+    readStringFast(length: number): string {
+      var r = Reader.T;
+      r.length = length;
+      var i = 0, j = 0;
+      var o = this.offset;
+      var e = o + length;
+      var u8 = this.u8;
+      while (o < e) {
+        var x = u8[o++];
+        if (x <= 0x7f) {
+          // Code points in the range '\u0001' to '\u007F' are represented by a
+          // single byte.
+          // The 7 bits of data in the byte give the value of the code point
+          // represented.
+          r[j++] = String.fromCharCode(x);
+        } else if (x <= 0xdf) {
+          // The null code point ('\u0000') and code points in the range '\u0080'
+          // to '\u07FF' are represented by a pair of bytes x and y.
+          var y = u8[o++]
+          r[j++] = String.fromCharCode(((x & 0x1f) << 6) + (y & 0x3f));
+        } else {
+          // Code points in the range '\u0800' to '\uFFFF' are represented by 3
+          // bytes x, y, and z.
+          var y = u8[o++];
+          var z = u8[o++];
+          r[j++] = String.fromCharCode(((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f));
+        }
+      }
+      this.offset = o;
+      r.length = j;
+      return r.join("");
+    }
+
     readString(length) {
       if (length === 1) {
         var c = this.u8[this.offset];
@@ -56,6 +90,8 @@ module J2ME {
           this.offset ++;
           return String.fromCharCode(c);
         }
+      } else if (length < 1024) {
+        return this.readStringFast(length);
       }
       return this.readStringSlow(length);
     }
