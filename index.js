@@ -3,16 +3,6 @@
 
 'use strict';
 
-function loadScript(path) {
-  return new Promise(function(resolve, reject) {
-    var element = document.createElement('script');
-    element.setAttribute("type", "text/javascript");
-    element.setAttribute("src", path);
-    document.getElementsByTagName("head")[0].appendChild(element);
-    element.onload = resolve;
-  });
-}
-
 /**
  * Pre-load dependencies and then load the main page.
  */
@@ -95,11 +85,6 @@ var DumbPipe = {
   },
 
   sendMessage: function(pipeID, message) {
-    // Sadly, we have no way to send a message to the other side directly.
-    // Instead, we change the hash part of the other side's URL, which triggers
-    // a hashchange event on the other side.  A listener on the other side
-    // then sends us a "get" prompt, and we set its return value to the message.
-    // Oh my shod, that's some funky git!
     var envelope = { pipeID: pipeID, message: message };
     //console.log("outer send: " + JSON.stringify(envelope));
 
@@ -133,6 +118,10 @@ var DumbPipe = {
 document.getElementById("mozbrowser").addEventListener("mozbrowsershowmodalprompt",
                                                        DumbPipe.handleEvent.bind(DumbPipe),
                                                        true);
+
+DumbPipe.registerOpener("alert", function(message, sender) {
+  alert(message);
+});
 
 DumbPipe.registerOpener("mobileInfo", function(message, sender) {
   // Initialize the object with the URL params and fallback placeholders
@@ -442,6 +431,9 @@ DumbPipe.registerOpener("notification", function(message, sender) {
     var ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, width, height);
 
+    URL.revokeObjectURL(img.src);
+    img.src = '';
+
     message.options.icon = canvas.toDataURL();
 
     function permissionGranted() {
@@ -462,6 +454,10 @@ DumbPipe.registerOpener("notification", function(message, sender) {
     }
   }
 
+  img.onerror = function() {
+    URL.revokeObjectURL(img.src);
+  }
+
   return function(message) {
     switch(message.type) {
       case "close":
@@ -476,39 +472,8 @@ DumbPipe.registerOpener("notification", function(message, sender) {
   }
 });
 
-function load(file, responseType, successCb, failureCb, progressCb, length) {
-  var xhr = new XMLHttpRequest({ mozSystem: true });
-  xhr.open("GET", file, true);
-  xhr.responseType = responseType;
-
-  if (progressCb) {
-    xhr.onprogress = function(e) {
-
-      if (e.lengthComputable) {
-        progressCb(e.loaded / e.total * 100);
-      } else if (length) {
-        progressCb(e.loaded / length * 100);
-      }
-    }
-  }
-
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      successCb(xhr.response);
-    } else {
-      failureCb();
-    }
-  };
-
-  xhr.onerror = function() {
-    failureCb();
-  };
-
-  xhr.send(null);
-}
-
 DumbPipe.registerOpener("JARDownloader", function(message, sender) {
-  load(urlParams.downloadJAD, "text", function(data) {
+  loadWithProgress(urlParams.downloadJAD, "text", function(data) {
     try {
       var manifest = {};
 
@@ -532,7 +497,7 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
         jarURL = urlParams.downloadJAD.substring(0, urlParams.downloadJAD.lastIndexOf("/") + 1) + jarName;
       }
 
-      load(jarURL, "arraybuffer", function(data) {
+      loadWithProgress(jarURL, "arraybuffer", function(data) {
         sender({ type: "done", data: data });
       }, function() {
         sender({ type: "fail" });

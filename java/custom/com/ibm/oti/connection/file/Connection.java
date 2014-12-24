@@ -370,9 +370,10 @@ public InputStream openInputStream() throws IOException {
 	}
 	
 	public boolean isHidden() {
-		if (!isOpen()) throw new ConnectionClosedException();
-		checkRead();
-		return existsInternal() && isHiddenImpl(properPath);
+		// Per the FileConnection interface: "If hidden files are not
+		// supported on the referenced file system, this method always
+		// returns false."
+		return false;
 	}
 
 	public boolean isDirectory() {
@@ -412,11 +413,8 @@ public InputStream openInputStream() throws IOException {
 	}
 
 	public void setHidden(boolean hidden) throws IOException {
-		if (!isOpen()) throw new ConnectionClosedException();
-		checkWrite();
-		if (!existsInternal()) throw new IOException("File does not exist: " + getURL());
-		
-		setHiddenImpl(properPath, hidden);
+		// Per the FileConnection interface: "If the file system doesn't
+		// support a hidden attribute, this method is ignored."
 	}
 
 	public Enumeration list() throws IOException {
@@ -441,11 +439,14 @@ public InputStream openInputStream() throws IOException {
 		// make the necessary checks
 		if (!isOpen()) throw new ConnectionClosedException();
 		checkRead();
-		if (!existsInternal()) throw new IOException("Directory does not exist: " + getURL());
-		if (!isDirectoryInternal()) throw new IOException("Connection is open on a file: " + getURL());
 
 		// find the list of files and directories matching the filter
-		byte[][] implList = listImpl(properPath, filter, includeHidden );
+		byte[][] implList;
+		try {
+			implList = listImpl(properPath, filter, includeHidden);
+		} catch(IOException e) {
+			throw new IOException(e.getMessage() + getURL());
+		}
 
 		// create an enumaration that will contain the list of files and directories in String form
 		int resultCount = implList==null ? 0 : implList.length;
@@ -471,7 +472,7 @@ public InputStream openInputStream() throws IOException {
 	 * 					used ("*")
 	 * @param includeHidden
 	 */
-	private synchronized static native byte[][] listImpl(byte[] path, byte[] filter, boolean includeHidden);
+	private synchronized static native byte[][] listImpl(byte[] path, byte[] filter, boolean includeHidden) throws IOException;
 
 	public void create() throws IOException {
 		if (!isOpen()) throw new ConnectionClosedException();
@@ -808,8 +809,6 @@ public static String decode(String s) {
 
 private native boolean isAbsoluteImpl(byte[] path);
 
-private native boolean isHiddenImpl(byte[] path);
-
 private native boolean isReadOnlyImpl(byte[] path);
 
 private native boolean isWriteOnlyImpl(byte[] path);
@@ -817,8 +816,6 @@ private native boolean isWriteOnlyImpl(byte[] path);
 private native void setReadOnlyImpl(byte[] path, boolean value);
 
 private native void setWriteOnlyImpl(byte[] path, boolean value);
-
-private native void setHiddenImpl(byte[] path, boolean value);
 
 private native boolean isValidFilenameImpl(byte[] filename);
 

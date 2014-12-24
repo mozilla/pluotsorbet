@@ -16,15 +16,19 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
      */
     public void playerUpdate(Player player, String event, Object eventData) {
         System.out.println("playerUpdate event: " + event + " " + eventData);
+        if (event.equals(PlayerListener.END_OF_MEDIA)) {
+            synchronized (this) {
+                this.notify();
+            }
+        }
     }
 
     public void test(TestHarness th) {
         this.th = th;
 
-        InputStream is = getClass().getResourceAsStream("/midlets/MediaSampler/res/laser.wav");
-
         // Test player with input stream.
         try {
+            InputStream is = getClass().getResourceAsStream("/midlets/MediaSampler/res/laser.wav");
             Player player = Manager.createPlayer(is, "audio/x-wav");
             testPlay(player);
         } catch (Exception e) {
@@ -40,6 +44,7 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
                 file.create();
             }
             OutputStream os = file.openDataOutputStream();
+            InputStream is = getClass().getResourceAsStream("/midlets/MediaSampler/res/laser.wav");
             os.write(read(is));
             os.close();
 
@@ -72,55 +77,65 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         return buffer;
     }
 
-    private void testPlay(Player player) {
-        try {
-            player.addPlayerListener(this);
+    private void testPlay(Player player) throws Exception {
+        player.addPlayerListener(this);
 
-            // Check duration
-            th.check(player.getDuration(), Player.TIME_UNKNOWN);
+        // Check duration
+        th.check(player.getDuration(), Player.TIME_UNKNOWN);
 
-            // Start playing.
-            player.realize();
-            player.prefetch();
-            player.start();
+        // Start playing.
+        player.realize();
+        player.prefetch();
+        player.start();
 
-            // Check content type.
-            th.check(player.getContentType(), "audio/x-wav");
+        // Check content type.
+        th.check(player.getContentType(), "audio/x-wav");
 
-            // Sleep 100 milliseconds and check if the change in media time
-            // is around the time interval slept. We calculate the actual time
-            // slept because it could be much different from the amount we
-            // intend to sleep (if another thread hogs the CPU in the meantime).
-            long currentTimeBeforeSleep = System.currentTimeMillis();
-            long mediaTimeBeforeSleep = player.getMediaTime() / 1000;
-            Thread.sleep(100);
-            long actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
-            long mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
-            th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
+        // Sleep 100 milliseconds and check if the change in media time
+        // is around the time interval slept. We calculate the actual time
+        // slept because it could be much different from the amount we
+        // intend to sleep (if another thread hogs the CPU in the meantime).
+        long currentTimeBeforeSleep = System.currentTimeMillis();
+        long mediaTimeBeforeSleep = player.getMediaTime() / 1000;
+        Thread.sleep(100);
+        long actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
+        long mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
+        th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
 
-            // Pause
-            player.stop();
-            mediaTime = player.getMediaTime() / 1000;
-            Thread.sleep(200);
-            th.check(player.getMediaTime() / 1000, mediaTime);
+        // Pause
+        player.stop();
+        mediaTime = player.getMediaTime() / 1000;
+        Thread.sleep(200);
+        th.check(player.getMediaTime() / 1000, mediaTime);
 
-            // Resume
-            player.start();
-            currentTimeBeforeSleep = System.currentTimeMillis();
-            mediaTimeBeforeSleep = player.getMediaTime() / 1000;
-            Thread.sleep(100);
-            actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
-            mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
-            th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
+        // Resume
+        player.start();
+        currentTimeBeforeSleep = System.currentTimeMillis();
+        mediaTimeBeforeSleep = player.getMediaTime() / 1000;
+        Thread.sleep(100);
+        actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
+        mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
+        th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
 
-            // Check duration
-            th.check(player.getDuration(), 500000);
+        // Check duration
+        th.check(player.getDuration(), 500000);
 
-            player.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            th.fail("Unexpected exception: " + e);
+        // Wait for media ends.
+        synchronized (this) {
+            // When the media reaches ends, the state should be changed from
+            // STARTED to PREFETCHED.
+            while (player.getState() != Player.PREFETCHED) {
+                this.wait();
+            }
         }
+        th.check(player.getState(), Player.PREFETCHED);
+
+        // Replay the audio
+        player.start();
+        Thread.sleep(50);
+        th.check(player.getMediaTime() > 0);
+
+        player.close();
     }
 }
 

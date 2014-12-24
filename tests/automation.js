@@ -7,7 +7,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 45000;
+casper.options.waitTimeout = 70000;
 casper.options.verbose = true;
 casper.options.logLevel = "debug";
 
@@ -26,7 +26,7 @@ var gfxTests = [
   { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
   { name: "gfx/DrawStringTest", maxDifferent: 345 },
   { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
-  { name: "gfx/TextBoxTest", maxDifferent: 4677 },
+  { name: "gfx/TextBoxTest", maxDifferent: 4722 },
   { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
@@ -39,7 +39,7 @@ var gfxTests = [
   { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
-  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1329 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1500 },
   { name: "gfx/DirectUtilsClipAfter", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferent: 0, todo: true },
   { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferent: 0 },
@@ -56,16 +56,55 @@ var gfxTests = [
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
   { name: "gfx/RectAfterText", maxDifferent: 637 },
+  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 936 },
+  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
+  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71250 },
+  { name: "pass", number: 71324 },
   { name: "fail", number: 0 },
-  { name: "known fail", number: 180 },
+  { name: "known fail", number: 179 },
   { name: "unknown pass", number: 0 }
 ];
 
-casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
+/**
+ * Add a step that syncs the virtual filesystem to the persistent datastore,
+ * to ensure all changes are synced before we move to the next step.
+ *
+ * We need to do this because the virtual filesystem caches changes,
+ * while the tests often unload pages right after writing to the filesystem,
+ * so sometimes those changes won't yet be synced on unload, though a subsequent
+ * step depends on them.
+ *
+ * And we can't block unload while forcing a sync from within the app
+ * because IndexedDB doesn't block unloads, it simply drops transactions
+ * when the page is unloaded.
+ */
+function syncFS() {
+    casper.waitForText("SYNC FILESYSTEM");
+    casper.evaluate(function() {
+        fs.syncStore(function() {
+            console.log("SYNC FILESYSTEM");
+        });
+    });
+}
+
+casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
+    // Run the Init midlet, which does nothing by itself but ensures that any
+    // initialization code gets run before we start a test that depends on it.
+    casper
+    .start("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", syncFS);
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 14 PASS, 0 FAIL", "test fs init");
+    });
+
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
@@ -90,10 +129,11 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
                     test.fail(msg);
                 }
             }
+            syncFS();
         });
     }
     casper
-    .start("http://localhost:8000/index.html")
+    .thenOpen("http://localhost:8000/index.html")
     .withFrame(0, basicUnitTests);
 
     casper
@@ -119,7 +159,8 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 130 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 136 PASS, 0 FAIL", "run fs.js unit tests");
+        syncFS();
     });
 
     casper
@@ -256,6 +297,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.pass();
+            syncFS();
         });
     });
 
@@ -265,6 +307,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.pass();
+            syncFS();
         });
     });
 
@@ -273,6 +316,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.pass();
+            syncFS();
         });
     });
 

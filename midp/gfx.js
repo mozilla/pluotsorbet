@@ -230,7 +230,7 @@ var currentlyFocusedTextEditor;
     function(imageData, rgbData, width, height, processAlpha) {
         var context = createContext2d(width, height);
         var ctxImageData = context.createImageData(width, height);
-        var abgrData = new Uint32Array(ctxImageData.data.buffer);
+        var abgrData = new Int32Array(ctxImageData.data.buffer);
 
         var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
         converterFunc(rgbData, abgrData, width, height, 0, width);
@@ -242,7 +242,7 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V", function(rgbData, offset, scanlength, x, y, width, height) {
         var context = this.nativeImageData;
-        var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     });
 
@@ -260,7 +260,7 @@ var currentlyFocusedTextEditor;
         setImageData(imageData, width, height, ctx);
 
         var ctxImageData = ctx.createImageData(width, height);
-        var pixels = new Uint32Array(ctxImageData.data.buffer);
+        var pixels = new Int32Array(ctxImageData.data.buffer);
 
         var color = swapRB(argb);
 
@@ -318,11 +318,24 @@ var currentlyFocusedTextEditor;
         // with some spaces removed.
         // We need this css string to have the same format as that of the
         // MIDP.Context2D.font to do comparison in withFont() function.
-        this.css = style  + size + "pt " + face;
+        this.css = style + size + "pt " + face;
+        this.size = size;
+        this.style = style;
+        this.face = face;
     });
 
+    function calcStringWidth(font, str) {
+        var emojiLen = 0;
+        var len = withFont(font, MIDP.Context2D, str.replace(emoji.regEx, function() {
+            emojiLen += font.size;
+            return "";
+        }));
+
+        return len + emojiLen;
+    }
+
     Native.create("javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I", function(str) {
-        return withFont(this, MIDP.Context2D, util.fromJavaString(str));
+        return calcStringWidth(this, util.fromJavaString(str));
     });
 
     Native.create("javax/microedition/lcdui/Font.charWidth.(C)I", function(char) {
@@ -330,11 +343,11 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("javax/microedition/lcdui/Font.charsWidth.([CII)I", function(str, offset, len) {
-        return withFont(this, MIDP.Context2D, util.fromJavaChars(str).slice(offset, offset + len));
+        return calcStringWidth(this, util.fromJavaChars(str).slice(offset, offset + len));
     });
 
     Native.create("javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I", function(str, offset, len) {
-        return withFont(this, MIDP.Context2D, util.fromJavaString(str).slice(offset, offset + len));
+        return calcStringWidth(this, util.fromJavaString(str).slice(offset, offset + len));
     });
 
     var HCENTER = 1;
@@ -404,27 +417,25 @@ var currentlyFocusedTextEditor;
     }
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        withClip(g, c, x, y, function(x, y) {
-            var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
-            c.textAlign = "left";
-            c.textBaseline = "top";
+        var w = withFont(g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+        c.textAlign = "left";
+        c.textBaseline = "top";
 
-            if (anchor & RIGHT) {
-                x -= w;
-            } else if (anchor & HCENTER) {
-                x -= (w >>> 1) | 0;
-            }
+        if (anchor & RIGHT) {
+            x -= w;
+        } else if (anchor & HCENTER) {
+            x -= (w >>> 1) | 0;
+        }
 
-            if (anchor & BOTTOM) {
-                c.textBaseline = "bottom";
-            } else if (anchor & BASELINE) {
-                c.textBaseline = "alphabetic";
-            } else if (anchor & VCENTER) {
-                throw new JavaException("java/lang/IllegalArgumentException", "VCENTER not allowed with text");
-            }
+        if (anchor & BOTTOM) {
+            c.textBaseline = "bottom";
+        } else if (anchor & BASELINE) {
+            c.textBaseline = "alphabetic";
+        } else if (anchor & VCENTER) {
+            throw new JavaException("java/lang/IllegalArgumentException", "VCENTER not allowed with text");
+        }
 
-            cb(x, y, w);
-        });
+        cb(x, y, w);
     }
 
     function abgrIntToCSS(pixel) {
@@ -639,7 +650,7 @@ var currentlyFocusedTextEditor;
         var imageData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
 
         var context = imageData.nativeImageData;
-        var abgrData = new Uint32Array(context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     });
 
@@ -660,7 +671,7 @@ var currentlyFocusedTextEditor;
 
         var context = createContext2d(width, height);
         var imageData = context.createImageData(width, height);
-        var abgrData = new Uint32Array(imageData.data.buffer);
+        var abgrData = new Int32Array(imageData.data.buffer);
 
         converterFunc(pixels, abgrData, width, height, offset, scanlength);
 
@@ -678,50 +689,87 @@ var currentlyFocusedTextEditor;
         return true;
     });
 
-    Native.create("javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V", function(jStr, x, y, anchor) {
-        var str = util.fromJavaString(jStr);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withOpaquePixel(g, c, function() {
-                    c.fillText(str, x, y);
+    function parseEmojiString(str) {
+        var parts = [];
+
+        var match;
+        var lastIndex = 0;
+        emoji.regEx.lastIndex = 0;
+        while (match = emoji.regEx.exec(str)) {
+            parts.push({ text: str.substring(lastIndex, match.index), emoji: match[0] });
+            lastIndex = match.index + match[0].length;
+        }
+
+        parts.push({ text: str.substring(lastIndex), emoji: null });
+
+        return parts;
+    }
+
+    function drawString(g, str, x, y, anchor, isOpaque) {
+        return new Promise(function(resolve, reject) {
+            var font = g.class.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
+
+            var parts = parseEmojiString(str);
+
+            withGraphics(g, function(c) {
+                withClip(g, c, x, y, function(curX, y) {
+                    (function drawNext() {
+                        if (parts.length === 0) {
+                            resolve();
+                            return;
+                        }
+
+                        var part = parts.shift();
+
+                        if (part.text) {
+                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
+                                var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                                withPixelFunc(g, c, function() {
+                                    c.fillText(part.text, x, y);
+                                    curX += w;
+                                });
+                            });
+                        }
+
+                        if (part.emoji) {
+                            var img = new Image();
+                            img.src = emoji.strToImg(part.emoji);
+                            img.onload = function() {
+                                c.drawImage(img, curX, y, font.size, font.size);
+                                curX += font.size;
+                                drawNext();
+                            }
+                        } else {
+                            drawNext();
+                        }
+                    })();
                 });
             });
         });
-    });
+    }
+
+    Native.create("javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V", function(str, x, y, anchor) {
+        return drawString(this, util.fromJavaString(str), x, y, anchor, true);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V",
-    function(jStr, offset, len, x, y, anchor) {
-        var str = util.fromJavaString(jStr).substr(offset, len);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(str, x, y);
-                });
-            });
-        });
-    });
+    function(str, offset, len, x, y, anchor) {
+        return drawString(this, util.fromJavaString(str).substr(offset, len), x, y, anchor, false);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V", function(data, offset, len, x, y, anchor) {
-        var str = util.fromJavaChars(data, offset, len);
-        var g = this;
-        withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, str, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(str, x, y);
-                });
-            });
-        });
-    });
+        return drawString(this, util.fromJavaChars(data, offset, len), x, y, anchor, false);
+    }, true);
 
     Native.create("javax/microedition/lcdui/Graphics.drawChar.(CIII)V", function(jChr, x, y, anchor) {
         var chr = String.fromCharCode(jChr);
         var g = this;
         withGraphics(g, function(c) {
-            withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(chr, x, y);
+            withClip(g, c, x, y, function(x, y) {
+                withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
+                    withPixel(g, c, function() {
+                        c.fillText(chr, x, y);
+                    });
                 });
             });
         });
@@ -912,7 +960,7 @@ var currentlyFocusedTextEditor;
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         var context = createContext2d(width, height);
         var imageData = context.createImageData(width, height);
-        var abgrData = new Uint32Array(imageData.data.buffer);
+        var abgrData = new Int32Array(imageData.data.buffer);
 
         var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
         converterFunc(rgbData, abgrData, width, height, offset, scanlength);
@@ -957,7 +1005,7 @@ var currentlyFocusedTextEditor;
 
         this.getCaretPosition = function() {
             if (this.textEditor.getParent()) {
-                return this.textEditor.getSelectionStart();
+                return this.textEditor.getSelectionStart().index;
             }
             if (this.caretPosition !== null) {
                 return this.caretPosition;
@@ -973,14 +1021,17 @@ var currentlyFocusedTextEditor;
             }
         };
 
-        this.textEditor.setContent(util.fromJavaString(text));
-        this.setCaretPosition(this.textEditor.getContent().length);
-
         this.textEditor.setAttribute("maxlength", maxSize);
         this.textEditor.setStyle("width", width + "px");
         this.textEditor.setStyle("height", height + "px");
         this.textEditor.setStyle("position", "absolute");
         this.textEditor.setVisible(false);
+        var font = this.class.getField("I.font.Ljavax/microedition/lcdui/Font;").get(this);
+        this.textEditor.setFont(font);
+
+        this.textEditor.setContent(util.fromJavaString(text));
+        this.setCaretPosition(this.textEditor.getSize());
+
         this.textEditor.oninput(function(e) {
             wakeTextEditorThread(this.textEditorId);
         }.bind(this));
@@ -996,7 +1047,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.detachNativeImpl.()V", function() {
-        this.caretPosition = this.textEditor.getSelectionStart();
+        this.caretPosition = this.textEditor.getSelectionStart().index;
         this.textEditor.setParent(null);
     });
 
@@ -1025,11 +1076,7 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.setVisible.(Z)V", function(visible) {
-        if (visible && !this.visible) {
-            this.textEditor.setVisible(true);
-        } else if (!visible && this.visible) {
-            this.textEditor.setVisible(false);
-        }
+        this.textEditor.setVisible(visible ? true : false);
         this.visible = visible;
     });
 
@@ -1082,6 +1129,10 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.setCaret.(I)V", function(index) {
+        if (index < 0 || index > this.textEditor.getSize()) {
+            throw new JavaException("java/lang/StringIndexOutOfBoundsException");
+        }
+
         this.setCaretPosition(index);
     });
 
@@ -1111,24 +1162,34 @@ var currentlyFocusedTextEditor;
     Native.create("com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V", function(jStr) {
         var str = util.fromJavaString(jStr);
         this.textEditor.setContent(str);
-        this.setCaretPosition(str.length);
+        this.setCaretPosition(this.textEditor.getSize());
+    });
+
+    Native.create("com/nokia/mid/ui/TextEditor.getContentHeight.()I", function() {
+        return this.textEditor.getContentHeight();
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V", function(jStr, pos) {
-        var old = this.textEditor.getContent();
         var str = util.fromJavaString(jStr);
-        this.textEditor.setContent(old.slice(0, pos) + str + old.slice(pos));
-        this.setCaretPosition(pos + str.length);
+        var len = util.toCodePointArray(str).length;
+
+        if (this.textEditor.getSize() + len > this.textEditor.getAttribute("maxlength")) {
+            throw new JavaException("java/lang/IllegalArgumentException");
+        }
+
+        this.textEditor.setContent(this.textEditor.getSlice(0, pos) + str + this.textEditor.getSlice(pos));
+        this.setCaretPosition(pos + len);
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.delete.(II)V", function(offset, length) {
         var old = this.textEditor.getContent();
 
-        if (offset < 0 || offset > old.length || length < 0 || offset + length > old.length) {
+        var size = this.textEditor.getSize();
+        if (offset < 0 || offset > size || length < 0 || offset + length > size) {
             throw new JavaException("java.lang.StringIndexOutOfBoundsException", "offset/length invalid");
         }
 
-        this.textEditor.setContent(old.slice(0, offset) + old.slice(offset + length));
+        this.textEditor.setContent(this.textEditor.getSlice(0, offset) + this.textEditor.getSlice(offset + length));
         this.setCaretPosition(offset);
     });
 
@@ -1137,9 +1198,12 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.setMaxSize.(I)I", function(maxSize) {
-        if (this.textEditor.getContent().length > maxSize) {
-            this.textEditor.setContent(this.textEditor.getContent().substring(0, maxSize));
-            if (this.getCaretPosition() > maxSize) {
+        if (this.textEditor.getSize() > maxSize) {
+            var oldCaretPosition = this.getCaretPosition();
+
+            this.textEditor.setContent(this.textEditor.getSlice(0, maxSize));
+
+            if (oldCaretPosition > maxSize) {
                 this.setCaretPosition(maxSize);
             }
         }
@@ -1153,7 +1217,12 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/TextEditor.size.()I", function() {
-        return this.textEditor.getContent().length;
+        return this.textEditor.getSize();
+    });
+
+    Native.create("com/nokia/mid/ui/TextEditor.setFont.(Ljavax/microedition/lcdui/Font;)V", function(font) {
+        this.class.getField("I.font.Ljavax/microedition/lcdui/Font;").set(this, font);
+        this.textEditor.setFont(font);
     });
 
     Native.create("com/nokia/mid/ui/TextEditorThread.sleep.()V", function() {
