@@ -791,7 +791,13 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         var _sendBackScaledImage = function(blob) {
           _cleanupImg();
 
-          fs.createUniqueFile("/nokiaimageprocessing", "image", blob, (function(fileName) {
+          var ext = "";
+          var extIndex = fileName.lastIndexOf(".");
+          if (extIndex != -1) {
+            ext = fileName.substr(extIndex);
+          }
+
+          fs.createUniqueFile("/nokiaimageprocessing", "image" + ext, blob, (function(fileName) {
             var encoder = new DataEncoder();
 
             encoder.putStart(DataType.STRUCT, "event");
