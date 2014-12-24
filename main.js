@@ -52,6 +52,11 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 });
 
 var loadingPromises = [initFS, getMobileInfo];
+jars.forEach(function(jar) {
+  loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
+    jvm.addPath(jar, data);
+  }));
+});
 
 function processJAD(data) {
   data
@@ -119,19 +124,6 @@ function performDownload(dialog, callback) {
   });
 }
 
-function loadPackageJARs() {
-  return jars.reduce(function(current, next) {
-    return current.then(function() {
-      return new Promise(function(resolve, reject) {
-        load(next, "arraybuffer").then(function(data) {
-          jvm.addPath(next, data);
-          resolve();
-        });
-      });
-    });
-  }, Promise.resolve());
-}
-
 function loadDownloadJAR() {
   if (!urlParams.downloadJAD) {
     return Promise.resolve();
@@ -184,7 +176,6 @@ if (MIDP.midletClassName == "RunTests") {
 }
 
 initFS
-  .then(loadPackageJARs)
   .then(loadDownloadJAR)
   .then(Promise.all(loadingPromises))
   .then(function() {
