@@ -259,6 +259,14 @@ Native.create("com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"
     return true;
 });
 
+Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
+    return decodeURIComponent(util.fromJavaString(string));
+});
+
+Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
+    return util.fromJavaString(string).replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
+});
+
 Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", function(path) {
     // Pretend there is 1 GB available
     return Long.fromNumber(1024 * 1024 * 1024);

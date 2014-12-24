@@ -23,6 +23,14 @@ public class ImmutableImageFromByteArrayTest extends MIDlet {
     
         display.setCurrent(fmMain);
 
+        try {
+            do {
+                Thread.sleep(100);
+            } while (!fmMain.isShown());
+        } catch (InterruptedException e) {
+            System.out.println("FAIL");
+        }
+
         System.out.println("PAINTED");
     }
 
