@@ -1061,6 +1061,22 @@ module J2ME {
   }
 
   function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
+    // Adapter for the most common case.
+    if (!methodInfo.isSynchronized && methodInfo.argumentSlots >= 0) {
+      return function fastInterpreterFrameAdapter() {
+        var frame = new Frame(methodInfo, [], 0);
+        var j = 0;
+        if (!methodInfo.isStatic) {
+          frame.setLocal(j++, this);
+        }
+        var slots = methodInfo.argumentSlots;
+        for (var i = 0; i < slots; i++) {
+          frame.setLocal(j++, arguments[i]);
+        }
+        return $.ctx.executeNewFrameSet([frame]);
+      }
+    }
+
     return function interpreterFrameAdapter() {
       var frame = new Frame(methodInfo, [], 0);
       var j = 0;
