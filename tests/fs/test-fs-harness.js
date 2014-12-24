@@ -58,6 +58,7 @@ function next() {
 var initialPaths = [
   "/",
   "/Persistent",
+  "/Photos",
   "/_main.ks",
 ];
 
@@ -66,10 +67,13 @@ var initialPaths = [
 var initialFilesByDir = {
   "/": [
     "Persistent/",
+    "Photos/",
     "_main.ks",
   ],
 
   "/Persistent": [],
+
+  "/Photos": [],
 };
 
 function testInit() {

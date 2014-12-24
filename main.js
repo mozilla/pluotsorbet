@@ -181,7 +181,9 @@ window.onload = function() {
    });
  };
  document.getElementById("importstorage").addEventListener("change", function(event) {
-   fs.importStore(event.target.files[0]);
+   fs.importStore(event.target.files[0], function() {
+     DumbPipe.close(DumbPipe.open("alert", "Import completed."));
+   });
  }, false);
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
