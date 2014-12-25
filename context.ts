@@ -47,7 +47,7 @@ module J2ME {
     local: any [];
     stack: any [];
     code: Uint8Array;
-    bci: number;
+    pc: number;
     cp: any;
     localBase: number;
     lockObject: java.lang.Object;
@@ -56,7 +56,7 @@ module J2ME {
       this.methodInfo = methodInfo;
       this.cp = methodInfo.classInfo.constant_pool;
       this.code = methodInfo.code;
-      this.bci = 0;
+      this.pc = 0;
       this.stack = [];
       this.local = local;
       this.localBase = localBase;
@@ -72,12 +72,12 @@ module J2ME {
     }
 
     read8(): number {
-      return this.code[this.bci++];
+      return this.code[this.pc++];
     }
 
     read16(): number {
       var code = this.code
-      return code[this.bci++] << 8 | code[this.bci++];
+      return code[this.pc++] << 8 | code[this.pc++];
     }
 
     read32(): number {
@@ -85,19 +85,60 @@ module J2ME {
     }
 
     read8Signed(): number {
-      return this.code[this.bci++] << 24 >> 24;
+      return this.code[this.pc++] << 24 >> 24;
     }
 
     read16Signed(): number {
       return this.read16() << 16 >> 16;
     }
 
-    readTarget(): number {
-      return this.bci - 1 + this.read16Signed();
+    readTargetPC(): number {
+      return this.pc - 1 + this.read16Signed();
     }
 
     read32Signed(): number {
       return this.read16() << 16 | this.read16();
+    }
+
+    tableSwitch(): number {
+      var start = this.pc;
+      while ((this.pc & 3) != 0) {
+        this.pc++;
+      }
+      var def = this.read32Signed();
+      var low = this.read32Signed();
+      var high = this.read32Signed();
+      var value = this.stack.pop();
+      var pc;
+      if (value < low || value > high) {
+        pc = def;
+      } else {
+        this.pc += (value - low) << 2;
+        pc = this.read32Signed();
+      }
+      return start - 1 + pc;
+    }
+
+    lookupSwitch(): number {
+      var start = this.pc;
+      while ((this.pc & 3) != 0) {
+        this.pc++;
+      }
+      var pc = this.read32Signed();
+      var size = this.read32();
+      var value = this.stack.pop();
+      lookup:
+      for (var i = 0; i < size; i++) {
+        var key = this.read32Signed();
+        var offset = this.read32Signed();
+        if (key === value) {
+          pc = offset;
+        }
+        if (key >= value) {
+          break lookup;
+        }
+      }
+      return start - 1 + pc;
     }
 
     /**
@@ -139,7 +180,7 @@ module J2ME {
         return toDebugString(x);
       }).join(", ");
 
-      writer.writeLn(this.bci + " " + localStr + " | " + stackStr);
+      writer.writeLn(this.pc + " " + localStr + " | " + stackStr);
     }
   }
 
@@ -202,7 +243,7 @@ module J2ME {
       this.runtime.removeContext(this);
     }
 
-    current() {
+    current(): Frame {
       var frames = this.frames;
       return frames[frames.length - 1];
     }
@@ -450,10 +491,10 @@ module J2ME {
       });
     }
 
-    bailout(methodInfo: MethodInfo, bci: number, local: any [], stack: any []) {
+    bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any []) {
       var frame = new Frame(methodInfo, local, 0);
       frame.stack = stack;
-      frame.bci = bci;
+      frame.pc = pc;
       this.bailoutFrames.unshift(frame);
     }
 

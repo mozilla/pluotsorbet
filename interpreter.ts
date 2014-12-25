@@ -78,7 +78,7 @@ module J2ME {
       var className = ex.klass.classInfo.className;
       var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
       return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
-        return " - " + entry.className + "." + entry.methodName + "(), bci=" + entry.offset;
+        return " - " + entry.className + "." + entry.methodName + "(), pc=" + entry.offset;
       }).join("\n") + "\n\n";
     }
 
@@ -94,7 +94,7 @@ module J2ME {
         var exception_table = frame.methodInfo.exception_table;
         var handler_pc = null;
         for (var i=0; exception_table && i<exception_table.length; i++) {
-          if (frame.bci >= exception_table[i].start_pc && frame.bci <= exception_table[i].end_pc) {
+          if (frame.pc >= exception_table[i].start_pc && frame.pc <= exception_table[i].end_pc) {
             if (exception_table[i].catch_type === 0) {
               handler_pc = exception_table[i].handler_pc;
               break;
@@ -113,14 +113,14 @@ module J2ME {
           stackTrace.push({
             className: classInfo.className,
             methodName: frame.methodInfo.name,
-            offset: frame.bci
+            offset: frame.pc
           });
         }
 
         if (handler_pc != null) {
           stack.length = 0;
           stack.push(ex);
-          frame.bci = handler_pc;
+          frame.pc = handler_pc;
 
           if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
             console.error(buildExceptionLog(ex, stackTrace));
@@ -159,7 +159,7 @@ module J2ME {
       ctx.pushClassInitFrame(classInfo);
 
       if (U) {
-        frame.bci = ip;
+        frame.pc = ip;
         return;
       }
     }
@@ -178,7 +178,7 @@ module J2ME {
 
     var index: any, value: any, array: any;
     var a: any, b: any, c: any;
-    var jmp: any;
+    var pc: number, startPc: number;
     var type;
     var size;
     var classInfo;
@@ -189,7 +189,7 @@ module J2ME {
       if (traceBytecodes) {
         if (traceSourceLocation) {
           if (frame.methodInfo) {
-            var sourceLocation = frame.methodInfo.getSourceLocationForBci(frame.bci - 1);
+            var sourceLocation = frame.methodInfo.getSourceLocationForPC(frame.pc - 1);
             if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
               traceWriter && traceWriter.greenLn(sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
               lastSourceLocation = sourceLocation;
@@ -664,87 +664,119 @@ module J2ME {
             }
             break;
           case Bytecodes.IFEQ:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() === 0 ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() === 0) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IFNE:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() !== 0 ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() !== 0) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IFLT:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() < 0 ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() < 0) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IFGE:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() >= 0 ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() >= 0) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IFGT:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() > 0 ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() > 0) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IFLE:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() <= 0 ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() <= 0) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ICMPEQ:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() === stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() === stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ICMPNE:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() !== stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() !== stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ICMPLT:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() > stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() > stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ICMPGE:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() <= stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() <= stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ICMPGT:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() < stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() < stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ICMPLE:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() >= stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() >= stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ACMPEQ:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() === stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() === stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IF_ACMPNE:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() !== stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop() !== stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IFNULL:
-            jmp = frame.readTarget();
-            frame.bci = !stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (!stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.IFNONNULL:
-            jmp = frame.readTarget();
-            frame.bci = stack.pop() ? jmp : frame.bci;
+            pc = frame.readTargetPC();
+            if (stack.pop()) {
+              frame.pc = pc;
+            }
             break;
           case Bytecodes.GOTO:
-            frame.bci += frame.read16Signed() - 1;
+            frame.pc = frame.readTargetPC();
             break;
           case Bytecodes.GOTO_W:
-            frame.bci += frame.read32Signed() - 1;
+            frame.pc = frame.read32Signed() - 1;
             break;
           case Bytecodes.JSR:
-            jmp = frame.read16();
-            stack.push(frame.bci);
-            frame.bci = jmp;
+            pc = frame.read16();
+            stack.push(frame.pc);
+            frame.pc = pc;
             break;
           case Bytecodes.JSR_W:
-            jmp = frame.read32();
-            stack.push(frame.bci);
-            frame.bci = jmp;
+            pc = frame.read32();
+            stack.push(frame.pc);
+            frame.pc = pc;
             break;
           case Bytecodes.RET:
-            frame.bci = frame.getLocal(frame.read8());
+            frame.pc = frame.getLocal(frame.read8());
             break;
           case Bytecodes.I2L:
             stack.push2(Long.fromInt(stack.pop()));
@@ -791,40 +823,10 @@ module J2ME {
             stack.push((stack.pop() << 16) >> 16);
             break;
           case Bytecodes.TABLESWITCH:
-            var startip:number = frame.bci;
-            while ((frame.bci & 3) != 0)
-              frame.bci++;
-            var def = frame.read32Signed();
-            var low = frame.read32Signed();
-            var high = frame.read32Signed();
-            value = stack.pop();
-            if (value < low || value > high) {
-              jmp = def;
-            } else {
-              frame.bci += (value - low) << 2;
-              jmp = frame.read32Signed();
-            }
-            frame.bci = startip - 1 + jmp;
+            frame.pc = frame.tableSwitch();
             break;
           case Bytecodes.LOOKUPSWITCH:
-            var startip:number = frame.bci;
-            while ((frame.bci & 3) != 0)
-              frame.bci++;
-            jmp = frame.read32Signed();
-            size = frame.read32();
-            value = frame.stack.pop();
-            lookup:
-              for (var i = 0; i < size; i++) {
-                var key = frame.read32Signed();
-                var offset = frame.read32Signed();
-                if (key === value) {
-                  jmp = offset;
-                }
-                if (key >= value) {
-                  break lookup;
-                }
-              }
-            frame.bci = startip - 1 + jmp;
+            frame.pc = frame.lookupSwitch();
             break;
           case Bytecodes.NEWARRAY:
             type = frame.read8();
@@ -891,7 +893,7 @@ module J2ME {
             var field = cp[index];
             if (field.tag)
               field = resolve(index, true);
-            classInitCheck(field.classInfo, frame.bci - 3);
+            classInitCheck(field.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -906,7 +908,7 @@ module J2ME {
             var field = cp[index];
             if (field.tag)
               field = resolve(index, true);
-            classInitCheck(field.classInfo, frame.bci - 3);
+            classInitCheck(field.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -917,7 +919,7 @@ module J2ME {
             classInfo = cp[index];
             if (classInfo.tag)
               classInfo = resolve(index);
-            classInitCheck(classInfo, frame.bci - 3);
+            classInitCheck(classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -994,7 +996,7 @@ module J2ME {
                 frame.setLocal(index, frame.getLocal(index) + value);
                 break;
               case Bytecodes.RET:
-                frame.bci = frame.getLocal(frame.read16());
+                frame.pc = frame.getLocal(frame.read16());
                 break;
               default:
                 var opName = Bytecodes[op];
@@ -1005,7 +1007,7 @@ module J2ME {
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
-            var startip:number = frame.bci - 1;
+            var startip:number = frame.pc - 1;
             index = frame.read16();
             if (op === 0xb9) {
               var argsNumber = frame.read8();

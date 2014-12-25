@@ -161,7 +161,7 @@ module J2ME {
       return this.signatureDescriptor.typeDescriptors[0].kind;
     }
 
-    getSourceLocationForBci(bci: number): SourceLocation {
+    getSourceLocationForPC(pc: number): SourceLocation {
       var sourceFile = this.classInfo.sourceFile || null;
       if (!sourceFile) {
         return null;
@@ -170,9 +170,9 @@ module J2ME {
       if (this.line_number_table && this.line_number_table.length) {
         var table = this.line_number_table;
         for (var i = 0; i < table.length; i++) {
-          if (bci >= table[i].start_pc) {
+          if (pc >= table[i].start_pc) {
             lineNumber = table[i].line_number;
-          } else if (bci < table[i].start_pc) {
+          } else if (pc < table[i].start_pc) {
             break;
           }
         }
