@@ -54,6 +54,10 @@ module J2ME {
       return this.read16() << 16 >> 16;
     }
 
+    readTarget(): number {
+      return this.bci - 1 + this.read16Signed();
+    }
+
     read32Signed(): number {
       return this.read16() << 16 | this.read16();
     }

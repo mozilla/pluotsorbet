@@ -3,7 +3,10 @@ module J2ME {
   declare var Instrument;
   declare var Promise;
 
-  import checkBounds = J2ME.checkBounds;
+  import checkArrayBounds = J2ME.checkArrayBounds;
+  import checkDivideByZero = J2ME.checkDivideByZero;
+  import checkDivideByZeroLong = J2ME.checkDivideByZeroLong;
+
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
   import popManyInto = ArrayUtilities.popManyInto;
@@ -301,14 +304,14 @@ module J2ME {
           case Bytecodes.SALOAD:
             var index = stack.pop();
             var array = stack.pop();
-            checkBounds(array, index);
+            checkArrayBounds(array, index);
             stack.push(array[index]);
             break;
           case Bytecodes.LALOAD:
           case Bytecodes.DALOAD:
             var index = stack.pop();
             var array = stack.pop();
-            checkBounds(array, index);
+            checkArrayBounds(array, index);
             stack.push2(array[index]);
             break;
           case Bytecodes.ISTORE:
@@ -364,7 +367,7 @@ module J2ME {
             var value = stack.pop();
             var index = stack.pop();
             var array = stack.pop();
-            checkBounds(array, index);
+            checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.LASTORE:
@@ -372,17 +375,15 @@ module J2ME {
             var value = stack.pop2();
             var index = stack.pop();
             var array = stack.pop();
-            checkBounds(array, index);
+            checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.AASTORE:
             var value = stack.pop();
             var index = stack.pop();
             var array = stack.pop();
-            checkBounds(array, index);
-            if (value && !isAssignableTo(value.klass, array.klass.elementKlass)) {
-              throw $.newArrayStoreException();
-            }
+            checkArrayBounds(array, index);
+            checkArrayStore(array, value);
             array[index] = value;
             break;
           case Bytecodes.POP:
@@ -492,17 +493,13 @@ module J2ME {
           case Bytecodes.IDIV:
             var b = stack.pop();
             var a = stack.pop();
-            if (!b) {
-              throw $.newArithmeticException("/ by zero");
-            }
-            stack.push((a === util.INT_MIN && b === -1) ? a : ((a / b) | 0));
+            checkDivideByZero(b);
+            stack.push((a === Constants.INT_MIN && b === -1) ? a : ((a / b) | 0));
             break;
           case Bytecodes.LDIV:
             var b = stack.pop2();
             var a = stack.pop2();
-            if (b.isZero()) {
-              throw $.newArithmeticException("/ by zero");
-            }
+            checkDivideByZeroLong(b);
             stack.push2(a.div(b));
             break;
           case Bytecodes.FDIV:
@@ -518,17 +515,13 @@ module J2ME {
           case Bytecodes.IREM:
             var b = stack.pop();
             var a = stack.pop();
-            if (!b) {
-              throw $.newArithmeticException("/ by zero");
-            }
+            checkDivideByZero(b);
             stack.push(a % b);
             break;
           case Bytecodes.LREM:
             var b = stack.pop2();
             var a = stack.pop2();
-            if (b.isZero()) {
-              throw $.newArithmeticException("/ by zero");
-            }
+            checkDivideByZeroLong(b);
             stack.push2(a.modulo(b));
             break;
           case Bytecodes.FREM:
@@ -665,67 +658,67 @@ module J2ME {
             }
             break;
           case Bytecodes.IFEQ:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() === 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFNE:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() !== 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFLT:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() < 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFGE:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() >= 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFGT:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() > 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFLE:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() <= 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPEQ:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() === stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPNE:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() !== stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPLT:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() > stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPGE:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() <= stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPGT:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() < stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPLE:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() >= stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ACMPEQ:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() === stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ACMPNE:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() !== stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IFNULL:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = !stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IFNONNULL:
-            var jmp = frame.bci - 1 + frame.read16Signed();
+            var jmp = frame.readTarget();
             frame.bci = stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.GOTO:

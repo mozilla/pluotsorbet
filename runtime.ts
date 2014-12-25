@@ -1463,6 +1463,24 @@ module J2ME {
       throw $.newArithmeticException("/ by zero");
     }
   }
+
+  export function checkArrayBounds(array: any [], index: number) {
+    if (index < 0 || index >= array.length) {
+      throw $.newArrayIndexOutOfBoundsException(String(index));
+    }
+  }
+
+  export function checkArrayStore(array: java.lang.Object, value: any) {
+    var arrayKlass = <ArrayKlass>array.klass;
+    if (value && !isAssignableTo(value.klass, arrayKlass.elementKlass)) {
+      throw $.newArrayStoreException();
+    }
+  }
+
+  export enum Constants {
+    INT_MAX =  2147483647,
+    INT_MIN = -2147483648
+  }
 }
 
 var Runtime = J2ME.Runtime;
