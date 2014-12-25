@@ -8,9 +8,11 @@ interface Array {
 
 module J2ME {
   import assert = Debug.assert;
+  import Bytecodes = Bytecode.Bytecodes;
   declare var VM;
   declare var Instrument;
   declare var setZeroTimeout;
+
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -139,6 +141,42 @@ module J2ME {
         }
       }
       return start - 1 + pc;
+    }
+
+    wide() {
+      var stack = this.stack;
+      var op = this.read8();
+      switch (op) {
+        case Bytecodes.ILOAD:
+        case Bytecodes.FLOAD:
+        case Bytecodes.ALOAD:
+          stack.push(this.getLocal(this.read16()));
+          break;
+        case Bytecodes.LLOAD:
+        case Bytecodes.DLOAD:
+          stack.push2(this.getLocal(this.read16()));
+          break;
+        case Bytecodes.ISTORE:
+        case Bytecodes.FSTORE:
+        case Bytecodes.ASTORE:
+          this.setLocal(this.read16(), stack.pop());
+          break;
+        case Bytecodes.LSTORE:
+        case Bytecodes.DSTORE:
+          this.setLocal(this.read16(), stack.pop2());
+          break;
+        case Bytecodes.IINC:
+          var index = this.read16();
+          var value = this.read16Signed();
+          this.setLocal(index, this.getLocal(index) + value);
+          break;
+        case Bytecodes.RET:
+          this.pc = this.getLocal(this.read16());
+          break;
+        default:
+          var opName = Bytecodes[op];
+          throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
+      }
     }
 
     /**

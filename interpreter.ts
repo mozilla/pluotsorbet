@@ -922,7 +922,7 @@ module J2ME {
             if (U) {
               return;
             }
-            stack.push(util.newobject(classInfo));
+            stack.push(util.newObject(classInfo));
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
@@ -970,37 +970,7 @@ module J2ME {
             ctx.monitorExit(object);
             break;
           case Bytecodes.WIDE:
-            switch (op = frame.read8()) {
-              case Bytecodes.ILOAD:
-              case Bytecodes.FLOAD:
-              case Bytecodes.ALOAD:
-                stack.push(frame.getLocal(frame.read16()));
-                break;
-              case Bytecodes.LLOAD:
-              case Bytecodes.DLOAD:
-                stack.push2(frame.getLocal(frame.read16()));
-                break;
-              case Bytecodes.ISTORE:
-              case Bytecodes.FSTORE:
-              case Bytecodes.ASTORE:
-                frame.setLocal(frame.read16(), stack.pop());
-                break;
-              case Bytecodes.LSTORE:
-              case Bytecodes.DSTORE:
-                frame.setLocal(frame.read16(), stack.pop2());
-                break;
-              case Bytecodes.IINC:
-                index = frame.read16();
-                value = frame.read16Signed();
-                frame.setLocal(index, frame.getLocal(index) + value);
-                break;
-              case Bytecodes.RET:
-                frame.pc = frame.getLocal(frame.read16());
-                break;
-              default:
-                var opName = Bytecodes[op];
-                throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
-            }
+            frame.wide();
             break;
           case Bytecodes.INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
