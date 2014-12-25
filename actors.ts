@@ -24,8 +24,6 @@ module J2ME {
     }
   }
 
-  var traceFieldAccess = false;
-
   export class FieldInfo {
     private static _nextiId = 0;
     id: number;
@@ -43,15 +41,11 @@ module J2ME {
     }
 
     get(object: java.lang.Object) {
-      traceFieldAccess && traceWriter && traceWriter.writeLn("get " + J2ME.toDebugString(object) + "." + this.mangledName);
       var value = object[this.mangledName];
-      release || J2ME.Debug.assert(value !== undefined, this.name + " - " + object[this.id]);
       return value;
     }
 
     set(object: java.lang.Object, value: any) {
-      traceFieldAccess && traceWriter && traceWriter.writeLn("set " + J2ME.toDebugString(object) + "." + this.mangledName + " = " + value);
-      release || J2ME.Debug.assert(value !== undefined);
       object[this.mangledName] = value
     }
 

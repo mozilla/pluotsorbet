@@ -176,12 +176,14 @@ module J2ME {
     var traceSourceLocation = true;
     var lastSourceLocation;
 
-    var index: any, value: any, array: any;
+    var index: any, value: any;
     var a: any, b: any, c: any;
     var pc: number, startPc: number;
     var type;
     var size;
     var classInfo;
+    var array: any;
+    var object: java.lang.Object;
     
     while (true) {
       ops ++
@@ -859,22 +861,19 @@ module J2ME {
             stack.push(util.newMultiArray(classInfo, lengths.reverse()));
             break;
           case Bytecodes.ARRAYLENGTH:
-            var obj = stack.pop();
-            if (!obj) {
-              throw $.newNullPointerException();
-            }
-            stack.push(obj.length);
+            array = stack.pop();
+            stack.push(array.length);
             break;
           case Bytecodes.GETFIELD:
             index = frame.read16();
             var field = cp[index];
             if (field.tag)
               field = resolve(index, false);
-            var obj = stack.pop();
-            if (!obj) {
+            object = stack.pop();
+            if (!object) {
               throw $.newNullPointerException();
             }
-            stack.pushType(field.signature, field.get(obj));
+            stack.pushType(field.signature, field.get(object));
             break;
           case Bytecodes.PUTFIELD:
             index = frame.read16();
@@ -882,11 +881,11 @@ module J2ME {
             if (field.tag)
               field = resolve(index, false);
             value = stack.popType(field.signature);
-            var obj = stack.pop();
-            if (!obj) {
+            object = stack.pop();
+            if (!object) {
               throw $.newNullPointerException();
             }
-            field.set(obj, value);
+            field.set(object, value);
             break;
           case Bytecodes.GETSTATIC:
             index = frame.read16();
@@ -923,17 +922,17 @@ module J2ME {
             if (U) {
               return;
             }
-            stack.push(util.newObject(classInfo));
+            stack.push(util.newobject(classInfo));
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
             classInfo = cp[index];
             if (classInfo.tag)
               classInfo = resolve(index);
-            var obj = stack[stack.length - 1];
-            if (obj && !isAssignableTo(obj.klass, classInfo.klass)) {
+            object = stack[stack.length - 1];
+            if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException(
-                  obj.klass.classInfo.className + " is not assignable to " +
+                  object.klass.classInfo.className + " is not assignable to " +
                   classInfo.className);
             }
             break;
@@ -942,33 +941,33 @@ module J2ME {
             classInfo = cp[index];
             if (classInfo.tag)
               classInfo = resolve(index);
-            var obj = stack.pop();
-            var result = !obj ? false : isAssignableTo(obj.klass, classInfo.klass);
+            object = stack.pop();
+            var result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
             stack.push(result ? 1 : 0);
             break;
           case Bytecodes.ATHROW:
-            var obj = stack.pop();
-            if (!obj) {
+            object = stack.pop();
+            if (!object) {
               throw $.newNullPointerException();
             }
-            throw obj;
+            throw object;
             break;
           case Bytecodes.MONITORENTER:
-            var obj = stack.pop();
-            if (!obj) {
+            object = stack.pop();
+            if (!object) {
               throw $.newNullPointerException();
             }
-            ctx.monitorEnter(obj);
+            ctx.monitorEnter(object);
             if (U === VMState.Pausing) {
               return;
             }
             break;
           case Bytecodes.MONITOREXIT:
-            var obj = stack.pop();
-            if (!obj) {
+            object = stack.pop();
+            if (!object) {
               throw $.newNullPointerException();
             }
-            ctx.monitorExit(obj);
+            ctx.monitorExit(object);
             break;
           case Bytecodes.WIDE:
             switch (op = frame.read8()) {
@@ -1024,17 +1023,17 @@ module J2ME {
                 }
               }
             }
-            var obj = null;
+            object = null;
             var fn;
             if (!isStatic) {
-              obj = frame.peekInvokeObject(methodInfo);
-              if (!obj) {
+              object = frame.peekInvokeObject(methodInfo);
+              if (!object) {
                 throw $.newNullPointerException();
               }
               switch (op) {
                 case Bytecodes.INVOKEVIRTUAL:
                 case Bytecodes.INVOKEINTERFACE:
-                  fn = obj[methodInfo.mangledName];
+                  fn = object[methodInfo.mangledName];
                   break;
                 case Bytecodes.INVOKESPECIAL:
                   fn = methodInfo.fn;
@@ -1047,22 +1046,22 @@ module J2ME {
             var returnValue;
             switch (methodInfo.argumentSlots) {
               case 0:
-                returnValue = fn.call(obj);
+                returnValue = fn.call(object);
                 break;
               case 1:
                 a = stack.pop();
-                returnValue = fn.call(obj, a);
+                returnValue = fn.call(object, a);
                 break;
               case 2:
                 b = stack.pop();
                 a = stack.pop();
-                returnValue = fn.call(obj, a, b);
+                returnValue = fn.call(object, a, b);
                 break;
               case 3:
                 c = stack.pop();
                 b = stack.pop();
                 a = stack.pop();
-                returnValue = fn.call(obj, a, b, c);
+                returnValue = fn.call(object, a, b, c);
                 break;
               default:
                 if (methodInfo.argumentSlots > 0) {
@@ -1070,7 +1069,7 @@ module J2ME {
                 } else {
                   frame.popArgumentsInto(methodInfo.signatureDescriptor, argArray);
                 }
-                var returnValue = fn.apply(obj, argArray);
+                var returnValue = fn.apply(object, argArray);
             }
             if (!isStatic) stack.pop();
 
