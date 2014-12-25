@@ -6,33 +6,31 @@ module J2ME {
 
   export class Frame {
     methodInfo: MethodInfo;
-    locals: any [];
+    local: any [];
     stack: any [];
     code: Uint8Array;
     bci: number;
     cp: any;
-    localsBase: number;
+    localBase: number;
     lockObject: java.lang.Object;
-    profileData: any;
 
-    constructor(methodInfo: MethodInfo, locals: any [], localsBase: number) {
+    constructor(methodInfo: MethodInfo, local: any [], localBase: number) {
       this.methodInfo = methodInfo;
       this.cp = methodInfo.classInfo.constant_pool;
       this.code = methodInfo.code;
       this.bci = 0;
       this.stack = [];
-      this.locals = locals;
-      this.localsBase = localsBase;
+      this.local = local;
+      this.localBase = localBase;
       this.lockObject = null;
-      this.profileData = null;
     }
 
     getLocal(i: number): any {
-      return this.locals[this.localsBase + i];
+      return this.local[this.localBase + i];
     }
 
     setLocal(i: number, value: any) {
-      this.locals[this.localsBase + i] = value;
+      this.local[this.localBase + i] = value;
     }
 
     read8(): number {
@@ -40,22 +38,23 @@ module J2ME {
     }
 
     read16(): number {
-      return this.read8() << 8 | this.read8();
+      var code = this.code
+      return code[this.bci++] << 8 | code[this.bci++];
     }
 
     read32(): number {
-      return this.read32signed() >>> 0;
+      return this.read32Signed() >>> 0;
     }
 
-    read8signed(): number {
-      return this.read8() << 24 >> 24;
+    read8Signed(): number {
+      return this.code[this.bci++] << 24 >> 24;
     }
 
-    read16signed(): number {
+    read16Signed(): number {
       return this.read16() << 16 >> 16;
     }
 
-    read32signed(): number {
+    read32Signed(): number {
       return this.read16() << 16 | this.read16();
     }
 
@@ -90,7 +89,7 @@ module J2ME {
     }
 
     trace(writer: IndentingWriter) {
-      var localsStr = this.locals.map(function (x) {
+      var localStr = this.local.map(function (x) {
         return toDebugString(x);
       }).join(", ");
 
@@ -98,7 +97,7 @@ module J2ME {
         return toDebugString(x);
       }).join(", ");
 
-      writer.writeLn(this.bci + " " + localsStr + " | " + stackStr);
+      writer.writeLn(this.bci + " " + localStr + " | " + stackStr);
     }
   }
 

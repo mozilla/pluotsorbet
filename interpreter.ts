@@ -3,21 +3,22 @@ module J2ME {
   declare var Instrument;
   declare var Promise;
 
+  import checkBounds = J2ME.checkBounds;
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
   import popManyInto = ArrayUtilities.popManyInto;
 
-  export var interpreterCounter = null; // new Metrics.Counter(true);
+  export var interpreterCounter = new Metrics.Counter(true);
 
   var traceArrayAccess = false;
 
-  function traceArrayStore(idx: number, array: any [], value: any) {
-    traceWriter.writeLn(toDebugString(array) + "[" + idx + "] = " + toDebugString(value));
+  function traceArrayStore(index: number, array: any [], value: any) {
+    traceWriter.writeLn(toDebugString(array) + "[" + index + "] = " + toDebugString(value));
   }
 
-  function traceArrayLoad(idx: number, array: any []) {
-    assert(array[idx] !== undefined);
-    traceWriter.writeLn(toDebugString(array) + "[" + idx + "] (" + toDebugString(array[idx]) + ")");
+  function traceArrayLoad(index: number, array: any []) {
+    assert(array[index] !== undefined);
+    traceWriter.writeLn(toDebugString(array) + "[" + index + "] (" + toDebugString(array[index]) + ")");
   }
 
   /**
@@ -149,15 +150,6 @@ module J2ME {
       }
     }
 
-    function checkArrayAccessAndContinue(refArray, idx) {
-      if (!refArray) {
-        throw $.newNullPointerException();
-      }
-      if (idx < 0 || idx >= refArray.length) {
-        throw $.newArrayIndexOutOfBoundsException(idx);
-      }
-    }
-
     function classInitCheck(classInfo, ip) {
       if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
         return;
@@ -169,9 +161,9 @@ module J2ME {
       }
     }
 
-    function resolve(idx: number, isStatic?: boolean) {
+    function resolve(index: number, isStatic?: boolean) {
       try {
-        return ctx.resolve(cp, idx, isStatic);
+        return ctx.resolve(cp, index, isStatic);
       } catch (e) {
         throwHelper(e);
       }
@@ -199,17 +191,17 @@ module J2ME {
         }
       }
 
-      if (interpreterCounter) {
-        var key: any = "";
-        key += frame.methodInfo.isSynchronized ? " Synchronized" : "";
-        key += frame.methodInfo.exception_table.length ? " Has Exceptions" : "";
-        key += " " + frame.methodInfo.implKey;
-        interpreterCounter.count("OP " + key);
-      }
+      //if (interpreterCounter) {
+      //  var key: any = "";
+      //  key += frame.methodInfo.isSynchronized ? " Synchronized" : "";
+      //  key += frame.methodInfo.exception_table.length ? " Has Exceptions" : "";
+      //  key += " " + frame.methodInfo.implKey;
+      //  interpreterCounter.count("OP " + key);
+      //}
 
 
       // interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
-
+      interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op] + " " + stack.length);
 
       // console.trace(ctx.thread.pid, frame.methodInfo.classInfo.className + " " + frame.methodInfo.name + " " + (frame.bci - 1) + " " + OPCODES[op] + " " + stack.join(","));
       try {
@@ -220,60 +212,46 @@ module J2ME {
             stack.push(null);
             break;
           case Bytecodes.ICONST_M1:
-            stack.push(-1);
-            break;
           case Bytecodes.ICONST_0:
+          case Bytecodes.ICONST_1:
+          case Bytecodes.ICONST_2:
+          case Bytecodes.ICONST_3:
+          case Bytecodes.ICONST_4:
+          case Bytecodes.ICONST_5:
+            stack.push(op - Bytecodes.ICONST_0);
+            break;
           case Bytecodes.FCONST_0:
-            stack.push(0);
+          case Bytecodes.FCONST_1:
+          case Bytecodes.FCONST_2:
+            stack.push(op - Bytecodes.FCONST_0);
             break;
           case Bytecodes.DCONST_0:
-            stack.push2(0);
-            break;
-          case Bytecodes.ICONST_1:
-          case Bytecodes.FCONST_1:
-            stack.push(1);
-            break;
           case Bytecodes.DCONST_1:
-            stack.push2(1);
-            break;
-          case Bytecodes.ICONST_2:
-          case Bytecodes.FCONST_2:
-            stack.push(2);
-            break;
-          case Bytecodes.ICONST_3:
-            stack.push(3);
-            break;
-          case Bytecodes.ICONST_4:
-            stack.push(4);
-            break;
-          case Bytecodes.ICONST_5:
-            stack.push(5);
+            stack.push2(op - Bytecodes.DCONST_0);
             break;
           case Bytecodes.LCONST_0:
-            stack.push2(Long.fromInt(0));
-            break;
           case Bytecodes.LCONST_1:
-            stack.push2(Long.fromInt(1));
+            stack.push2(Long.fromInt(op - Bytecodes.LCONST_0));
             break;
           case Bytecodes.BIPUSH:
-            stack.push(frame.read8signed());
+            stack.push(frame.read8Signed());
             break;
           case Bytecodes.SIPUSH:
-            stack.push(frame.read16signed());
+            stack.push(frame.read16Signed());
             break;
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
-            var idx = (op === 0x12) ? frame.read8() : frame.read16();
-            var constant = cp[idx];
+            var index = (op === Bytecodes.LDC) ? frame.read8() : frame.read16();
+            var constant = cp[index];
             if (constant.tag)
-              constant = resolve(idx);
+              constant = resolve(index);
             stack.push(constant);
             break;
           case Bytecodes.LDC2_W:
-            var idx = frame.read16();
-            var constant = cp[idx];
+            var index = frame.read16();
+            var constant = cp[index];
             if (constant.tag)
-              constant = resolve(idx);
+              constant = resolve(index);
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:
@@ -286,40 +264,34 @@ module J2ME {
             stack.push2(frame.getLocal(frame.read8()));
             break;
           case Bytecodes.ILOAD_0:
-          case Bytecodes.FLOAD_0:
-          case Bytecodes.ALOAD_0:
-            stack.push(frame.getLocal(0));
-            break;
           case Bytecodes.ILOAD_1:
-          case Bytecodes.FLOAD_1:
-          case Bytecodes.ALOAD_1:
-            stack.push(frame.getLocal(1));
-            break;
           case Bytecodes.ILOAD_2:
-          case Bytecodes.FLOAD_2:
-          case Bytecodes.ALOAD_2:
-            stack.push(frame.getLocal(2));
-            break;
           case Bytecodes.ILOAD_3:
+            stack.push(frame.getLocal(op - Bytecodes.ILOAD_0));
+            break;
+          case Bytecodes.FLOAD_0:
+          case Bytecodes.FLOAD_1:
+          case Bytecodes.FLOAD_2:
           case Bytecodes.FLOAD_3:
+            stack.push(frame.getLocal(op - Bytecodes.FLOAD_0));
+            break;
+          case Bytecodes.ALOAD_0:
+          case Bytecodes.ALOAD_1:
+          case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
-            stack.push(frame.getLocal(3));
+            stack.push(frame.getLocal(op - Bytecodes.ALOAD_0));
             break;
           case Bytecodes.LLOAD_0:
-          case Bytecodes.DLOAD_0:
-            stack.push2(frame.getLocal(0));
-            break;
           case Bytecodes.LLOAD_1:
-          case Bytecodes.DLOAD_1:
-            stack.push2(frame.getLocal(1));
-            break;
           case Bytecodes.LLOAD_2:
-          case Bytecodes.DLOAD_2:
-            stack.push2(frame.getLocal(2));
-            break;
           case Bytecodes.LLOAD_3:
+            stack.push2(frame.getLocal(op - Bytecodes.LLOAD_0));
+            break;
+          case Bytecodes.DLOAD_0:
+          case Bytecodes.DLOAD_1:
+          case Bytecodes.DLOAD_2:
           case Bytecodes.DLOAD_3:
-            stack.push2(frame.getLocal(3));
+            stack.push2(frame.getLocal(op - Bytecodes.DLOAD_0));
             break;
           case Bytecodes.IALOAD:
           case Bytecodes.FALOAD:
@@ -327,23 +299,17 @@ module J2ME {
           case Bytecodes.BALOAD:
           case Bytecodes.CALOAD:
           case Bytecodes.SALOAD:
-            var idx = stack.pop();
-            var refArray = stack.pop();
-            if (checkArrayAccessAndContinue(refArray, idx)) {
-              continue;
-            }
-            stack.push(refArray[idx]);
-            traceArrayAccess && traceWriter && traceArrayLoad(idx, refArray);
+            var index = stack.pop();
+            var array = stack.pop();
+            checkBounds(array, index);
+            stack.push(array[index]);
             break;
           case Bytecodes.LALOAD:
           case Bytecodes.DALOAD:
-            var idx = stack.pop();
-            var refArray = stack.pop();
-            if (checkArrayAccessAndContinue(refArray, idx)) {
-              continue;
-            }
-            stack.push2(refArray[idx]);
-            traceArrayAccess && traceWriter && traceArrayLoad(idx, refArray);
+            var index = stack.pop();
+            var array = stack.pop();
+            checkBounds(array, index);
+            stack.push2(array[index]);
             break;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
@@ -395,38 +361,29 @@ module J2ME {
           case Bytecodes.BASTORE:
           case Bytecodes.CASTORE:
           case Bytecodes.SASTORE:
-            var val = stack.pop();
-            var idx = stack.pop();
-            var refArray = stack.pop();
-            if (checkArrayAccessAndContinue(refArray, idx)) {
-              continue;
-            }
-            refArray[idx] = val;
+            var value = stack.pop();
+            var index = stack.pop();
+            var array = stack.pop();
+            checkBounds(array, index);
+            array[index] = value;
             break;
           case Bytecodes.LASTORE:
           case Bytecodes.DASTORE:
-            var val = stack.pop2();
-            var idx = stack.pop();
-            var refArray = stack.pop();
-            if (checkArrayAccessAndContinue(refArray, idx)) {
-              continue;
-            }
-            refArray[idx] = val;
-            traceArrayAccess && traceWriter && traceArrayStore(idx, refArray, val);
+            var value = stack.pop2();
+            var index = stack.pop();
+            var array = stack.pop();
+            checkBounds(array, index);
+            array[index] = value;
             break;
           case Bytecodes.AASTORE:
-            var val = stack.pop();
-            var idx = stack.pop();
-            var refArray = stack.pop();
-
-            if (checkArrayAccessAndContinue(refArray, idx)) {
-              continue;
-            }
-            if (val && !isAssignableTo(val.klass, refArray.klass.elementKlass)) {
+            var value = stack.pop();
+            var index = stack.pop();
+            var array = stack.pop();
+            checkBounds(array, index);
+            if (value && !isAssignableTo(value.klass, array.klass.elementKlass)) {
               throw $.newArrayStoreException();
             }
-            refArray[idx] = val;
-            traceArrayAccess && traceWriter && traceArrayStore(idx, refArray, val);
+            array[index] = value;
             break;
           case Bytecodes.POP:
             stack.pop();
@@ -435,9 +392,9 @@ module J2ME {
             stack.pop2();
             break;
           case Bytecodes.DUP:
-            var val = stack.pop();
-            stack.push(val);
-            stack.push(val);
+            var value = stack.pop();
+            stack.push(value);
+            stack.push(value);
             break;
           case Bytecodes.DUP_X1:
             var a = stack.pop();
@@ -492,9 +449,9 @@ module J2ME {
             stack.push(b);
             break;
           case Bytecodes.IINC:
-            var idx = frame.read8();
-            var val = frame.read8signed();
-            frame.setLocal(idx, frame.getLocal(idx) + val);
+            var index = frame.read8();
+            var value = frame.read8Signed();
+            frame.setLocal(index, frame.getLocal(index) + value);
             break;
           case Bytecodes.IADD:
             stack.push((stack.pop() + stack.pop()) | 0);
@@ -708,74 +665,74 @@ module J2ME {
             }
             break;
           case Bytecodes.IFEQ:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() === 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFNE:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() !== 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFLT:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() < 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFGE:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() >= 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFGT:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() > 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IFLE:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() <= 0 ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPEQ:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() === stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPNE:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() !== stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPLT:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() > stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPGE:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() <= stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPGT:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() < stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ICMPLE:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() >= stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ACMPEQ:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() === stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IF_ACMPNE:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() !== stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IFNULL:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = !stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.IFNONNULL:
-            var jmp = frame.bci - 1 + frame.read16signed();
+            var jmp = frame.bci - 1 + frame.read16Signed();
             frame.bci = stack.pop() ? jmp : frame.bci;
             break;
           case Bytecodes.GOTO:
-            frame.bci += frame.read16signed() - 1;
+            frame.bci += frame.read16Signed() - 1;
             break;
           case Bytecodes.GOTO_W:
-            frame.bci += frame.read32signed() - 1;
+            frame.bci += frame.read32Signed() - 1;
             break;
           case Bytecodes.JSR:
             var jmp = frame.read16();
@@ -838,16 +795,16 @@ module J2ME {
             var startip:number = frame.bci;
             while ((frame.bci & 3) != 0)
               frame.bci++;
-            var def = frame.read32signed();
-            var low = frame.read32signed();
-            var high = frame.read32signed();
-            var val = stack.pop();
+            var def = frame.read32Signed();
+            var low = frame.read32Signed();
+            var high = frame.read32Signed();
+            var value = stack.pop();
             var jmp;
-            if (val < low || val > high) {
+            if (value < low || value > high) {
               jmp = def;
             } else {
-              frame.bci += (val - low) << 2;
-              jmp = frame.read32signed();
+              frame.bci += (value - low) << 2;
+              jmp = frame.read32Signed();
             }
             frame.bci = startip - 1 + jmp;
             break;
@@ -855,17 +812,17 @@ module J2ME {
             var startip:number = frame.bci;
             while ((frame.bci & 3) != 0)
               frame.bci++;
-            var jmp = frame.read32signed();
+            var jmp = frame.read32Signed();
             var size = frame.read32();
-            var val = frame.stack.pop();
+            var value = frame.stack.pop();
             lookup:
               for (var i = 0; i < size; i++) {
-                var key = frame.read32signed();
-                var offset = frame.read32signed();
-                if (key === val) {
+                var key = frame.read32Signed();
+                var offset = frame.read32Signed();
+                if (key === value) {
                   jmp = offset;
                 }
-                if (key >= val) {
+                if (key >= value) {
                   break lookup;
                 }
               }
@@ -880,10 +837,10 @@ module J2ME {
             stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
             break;
           case Bytecodes.ANEWARRAY:
-            var idx = frame.read16();
-            var classInfo = cp[idx];
+            var index = frame.read16();
+            var classInfo = cp[index];
             if (classInfo.tag)
-              classInfo = resolve(idx);
+              classInfo = resolve(index);
             var size = stack.pop();
             if (size < 0) {
               throw $.newNegativeArraySizeException();
@@ -891,10 +848,10 @@ module J2ME {
             stack.push(util.newArray(classInfo, size));
             break;
           case Bytecodes.MULTIANEWARRAY:
-            var idx = frame.read16();
-            var classInfo = cp[idx];
+            var index = frame.read16();
+            var classInfo = cp[index];
             if (classInfo.tag)
-              classInfo = resolve(idx);
+              classInfo = resolve(index);
             var dimensions = frame.read8();
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++)
@@ -909,10 +866,10 @@ module J2ME {
             stack.push(obj.length);
             break;
           case Bytecodes.GETFIELD:
-            var idx = frame.read16();
-            var field = cp[idx];
+            var index = frame.read16();
+            var field = cp[index];
             if (field.tag)
-              field = resolve(idx, false);
+              field = resolve(index, false);
             var obj = stack.pop();
             if (!obj) {
               throw $.newNullPointerException();
@@ -920,22 +877,22 @@ module J2ME {
             stack.pushType(field.signature, field.get(obj));
             break;
           case Bytecodes.PUTFIELD:
-            var idx = frame.read16();
-            var field = cp[idx];
+            var index = frame.read16();
+            var field = cp[index];
             if (field.tag)
-              field = resolve(idx, false);
-            var val = stack.popType(field.signature);
+              field = resolve(index, false);
+            var value = stack.popType(field.signature);
             var obj = stack.pop();
             if (!obj) {
               throw $.newNullPointerException();
             }
-            field.set(obj, val);
+            field.set(obj, value);
             break;
           case Bytecodes.GETSTATIC:
-            var idx = frame.read16();
-            var field = cp[idx];
+            var index = frame.read16();
+            var field = cp[index];
             if (field.tag)
-              field = resolve(idx, true);
+              field = resolve(index, true);
             classInitCheck(field.classInfo, frame.bci - 3);
             if (U) {
               return;
@@ -947,10 +904,10 @@ module J2ME {
             stack.pushType(field.signature, value);
             break;
           case Bytecodes.PUTSTATIC:
-            var idx = frame.read16();
-            var field = cp[idx];
+            var index = frame.read16();
+            var field = cp[index];
             if (field.tag)
-              field = resolve(idx, true);
+              field = resolve(index, true);
             classInitCheck(field.classInfo, frame.bci - 3);
             if (U) {
               return;
@@ -958,10 +915,10 @@ module J2ME {
             field.setStatic(stack.popType(field.signature));
             break;
           case Bytecodes.NEW:
-            var idx = frame.read16();
-            var classInfo = cp[idx];
+            var index = frame.read16();
+            var classInfo = cp[index];
             if (classInfo.tag)
-              classInfo = resolve(idx);
+              classInfo = resolve(index);
             classInitCheck(classInfo, frame.bci - 3);
             if (U) {
               return;
@@ -969,10 +926,10 @@ module J2ME {
             stack.push(util.newObject(classInfo));
             break;
           case Bytecodes.CHECKCAST:
-            var idx = frame.read16();
-            var classInfo = cp[idx];
+            var index = frame.read16();
+            var classInfo = cp[index];
             if (classInfo.tag)
-              classInfo = resolve(idx);
+              classInfo = resolve(index);
             var obj = stack[stack.length - 1];
             if (obj && !isAssignableTo(obj.klass, classInfo.klass)) {
               throw $.newClassCastException(
@@ -981,10 +938,10 @@ module J2ME {
             }
             break;
           case Bytecodes.INSTANCEOF:
-            var idx = frame.read16();
-            var classInfo = cp[idx];
+            var index = frame.read16();
+            var classInfo = cp[index];
             if (classInfo.tag)
-              classInfo = resolve(idx);
+              classInfo = resolve(index);
             var obj = stack.pop();
             var result = !obj ? false : isAssignableTo(obj.klass, classInfo.klass);
             stack.push(result ? 1 : 0);
@@ -1034,9 +991,9 @@ module J2ME {
                 frame.setLocal(frame.read16(), stack.pop2());
                 break;
               case Bytecodes.IINC:
-                var idx = frame.read16();
-                var val = frame.read16signed();
-                frame.setLocal(idx, frame.getLocal(idx) + val);
+                var index = frame.read16();
+                var value = frame.read16Signed();
+                frame.setLocal(index, frame.getLocal(index) + value);
                 break;
               case Bytecodes.RET:
                 frame.bci = frame.getLocal(frame.read16());
@@ -1051,15 +1008,15 @@ module J2ME {
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
             var startip:number = frame.bci - 1;
-            var idx = frame.read16();
+            var index = frame.read16();
             if (op === 0xb9) {
               var argsNumber = frame.read8();
               var zero = frame.read8();
             }
             var isStatic = (op === 0xb8);
-            var methodInfo = cp[idx];
+            var methodInfo = cp[index];
             if (methodInfo.tag) {
-              methodInfo = resolve(idx, isStatic);
+              methodInfo = resolve(index, isStatic);
               if (isStatic) {
                 classInitCheck(methodInfo.classInfo, startip);
                 if (U) {
