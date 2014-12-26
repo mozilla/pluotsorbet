@@ -124,38 +124,36 @@ function performDownload(dialog, callback) {
   });
 }
 
-function loadDownloadJAR() {
-  if (!urlParams.downloadJAD) {
-    return Promise.resolve();
-  }
+if (urlParams.downloadJAD) {
+  loadingPromises.push(initFS.then(function() {
+    return new Promise(function(resolve, reject) {
+      fs.exists("/midlet.jar", function(exists) {
+        if (exists) {
+          fs.open("/midlet.jar", function(fd) {
+            var data = fs.read(fd);
+            fs.close(fd);
+            jvm.addPath("midlet.jar", data.buffer.slice(0));
+            resolve();
+          });
+        } else {
+          var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+          dialog.style.display = 'block';
+          dialog.classList.add('visible');
+          document.body.appendChild(dialog);
 
-  return new Promise(function(resolve, reject) {
-    fs.exists("/midlet.jar", function(exists) {
-      if (exists) {
-        fs.open("/midlet.jar", function(fd) {
-          var data = fs.read(fd);
-          fs.close(fd);
-          jvm.addPath("midlet.jar", data.buffer.slice(0));
-          resolve();
-        });
-      } else {
-        var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-        dialog.style.display = 'block';
-        dialog.classList.add('visible');
-        document.body.appendChild(dialog);
+          performDownload(dialog, function(data) {
+            dialog.parentElement.removeChild(dialog);
 
-        performDownload(dialog, function(data) {
-          dialog.parentElement.removeChild(dialog);
+            jvm.addPath("midlet.jar", data.jarData);
 
-          jvm.addPath("midlet.jar", data.jarData);
-
-          fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
-            fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
-              resolve();
+            fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
+              fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
+                resolve();
+              });
             });
           });
-        });
-      }
+        }
+      });
     });
   }).then(function() {
     return new Promise(function(resolve, reject) {
@@ -166,7 +164,7 @@ function loadDownloadJAR() {
         resolve();
       });
     });
-  });
+  }));
 }
 
 if (MIDP.midletClassName == "RunTests") {
@@ -175,13 +173,10 @@ if (MIDP.midletClassName == "RunTests") {
                        loadScript("tests/mozactivitymock.js"));
 }
 
-initFS
-  .then(loadDownloadJAR)
-  .then(Promise.all(loadingPromises))
-  .then(function() {
-    jvm.initializeBuiltinClasses();
-    jvm.startIsolate0(main, urlParams.args);
-  });
+Promise.all(loadingPromises).then(function() {
+  jvm.initializeBuiltinClasses();
+  jvm.startIsolate0(main, urlParams.args);
+});
 
 function getIsOff(button) {
   return button.textContent.contains("OFF");
