@@ -204,7 +204,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         });
     });
 
-    // // Graphics tests
+    // Graphics tests
 
     gfxTests.forEach(function(testCase) {
         casper
