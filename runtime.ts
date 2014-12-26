@@ -1477,6 +1477,12 @@ module J2ME {
     }
   }
 
+  export function checkNull(object: java.lang.Object) {
+    if (!object) {
+      throw $.newNullPointerException();
+    }
+  }
+
   export enum Constants {
     INT_MAX =  2147483647,
     INT_MIN = -2147483648

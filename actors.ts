@@ -31,6 +31,7 @@ module J2ME {
     constantValue: any;
     mangledName: string;
     key: string;
+    kind: Kind;
 
     constructor(public classInfo: ClassInfo, public access_flags: number, public name: string, public signature: string) {
       this.id = FieldInfo._nextiId++;
@@ -38,11 +39,11 @@ module J2ME {
       this.constantValue = undefined;
       this.mangledName = undefined;
       this.key = undefined;
+      this.kind = getSignatureKind(signature);
     }
 
     get(object: java.lang.Object) {
-      var value = object[this.mangledName];
-      return value;
+      return object[this.mangledName];
     }
 
     set(object: java.lang.Object, value: any) {
@@ -100,6 +101,16 @@ module J2ME {
 
     line_number_table: {start_pc: number; line_number: number} [];
 
+    /**
+     * Approximate number of bytecodes executed in this method.
+     */
+    opCount: number;
+
+    /**
+     * Whether this method's bytecode has been optimized for quicker interpretation.
+     */
+    isOptimized: boolean;
+
     constructor(opts) {
       this.name = opts.name;
       this.signature = opts.signature;
@@ -149,6 +160,8 @@ module J2ME {
       } else {
         this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
       }
+      this.opCount = 0;
+      this.isOptimized = false;
     }
 
     public getReturnKind(): Kind {

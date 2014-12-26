@@ -1,9 +1,9 @@
-interface Array {
-  push2(value);
-  pop2();
-  pushType(signature, value);
-  popType(signature);
-  read(i);
+interface Array<T> {
+  push2: (value) => void;
+  pop2: () => any;
+  pushKind: (kind: J2ME.Kind, value) => void;
+  popKind: (kind: J2ME.Kind) => any;
+  read: (i) => any;
 }
 
 module J2ME {
@@ -25,16 +25,19 @@ module J2ME {
     return this.pop();
   }
 
-  Array.prototype.pushType = function(signature, value) {
-    if (signature === "J" || signature === "D") {
+  Array.prototype.pushKind = function(kind: Kind, value) {
+    if (isTwoSlot(kind)) {
       this.push2(value);
       return;
     }
     this.push(value);
   }
 
-  Array.prototype.popType = function(signature) {
-    return (signature === "J" || signature === "D") ? this.pop2() : this.pop();
+  Array.prototype.popKind = function(kind: Kind) {
+    if (isTwoSlot(kind)) {
+      return this.pop2();
+    }
+    return this.pop();
   }
 
   // A convenience function for retrieving values in reverse order
@@ -77,6 +80,10 @@ module J2ME {
       return this.code[this.pc++];
     }
 
+    peek8(): number {
+      return this.code[this.pc];
+    }
+
     read16(): number {
       var code = this.code
       return code[this.pc++] << 8 | code[this.pc++];
@@ -91,11 +98,18 @@ module J2ME {
     }
 
     read16Signed(): number {
-      return this.read16() << 16 >> 16;
+      var pc = this.pc;
+      var code = this.code;
+      this.pc = pc + 2
+      return (code[pc] << 8 | code[pc + 1]) << 16 >> 16;
     }
 
     readTargetPC(): number {
-      return this.pc - 1 + this.read16Signed();
+      var pc = this.pc;
+      var code = this.code;
+      this.pc = pc + 2
+      var offset = (code[pc] << 8 | code[pc + 1]) << 16 >> 16;
+      return pc - 1 + offset;
     }
 
     read32Signed(): number {
@@ -218,7 +232,7 @@ module J2ME {
         return toDebugString(x);
       }).join(", ");
 
-      writer.writeLn(this.pc + " " + localStr + " | " + stackStr);
+      writer.writeLn(("" + this.pc).padLeft(" ", 4) + " " + localStr + " | " + stackStr);
     }
   }
 
@@ -469,29 +483,29 @@ module J2ME {
       }
     }
 
-    monitorEnter(obj: java.lang.Object) {
-      var lock = obj._lock;
+    monitorEnter(object: java.lang.Object) {
+      var lock = object._lock;
       if (!lock) {
-        obj._lock = new Lock(this.thread, 1);
+        object._lock = new Lock(this.thread, 1);
         return;
       }
       if (lock.thread === this.thread) {
         ++lock.level;
         return;
       }
-      this.block(obj, "ready", 1);
+      this.block(object, "ready", 1);
     }
 
-    monitorExit(obj: java.lang.Object) {
-      var lock = obj._lock;
+    monitorExit(object: java.lang.Object) {
+      var lock = object._lock;
       if (lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       if (--lock.level > 0) {
         return;
       }
-      obj._lock = null;
-      this.unblock(obj, "ready", false, function (ctx) {
-        ctx.wakeup(obj);
+      object._lock = null;
+      this.unblock(object, "ready", false, function (ctx) {
+        ctx.wakeup(object);
       });
     }
 
@@ -583,7 +597,7 @@ module J2ME {
         default:
           throw new Error("not support constant type");
       }
-      return constant;
+      return cp[idx] = constant;
     }
   }
 }

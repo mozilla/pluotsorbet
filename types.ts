@@ -85,6 +85,32 @@ module J2ME {
     }
   }
 
+  export function getSignatureKind(signature: string): Kind {
+    switch (signature[0]) {
+      case 'Z':
+        return Kind.Boolean;
+      case 'B':
+        return Kind.Byte;
+      case 'S':
+        return Kind.Short;
+      case 'C':
+        return Kind.Char;
+      case 'I':
+        return Kind.Int;
+      case 'F':
+        return Kind.Float;
+      case 'J':
+        return Kind.Long;
+      case 'D':
+        return Kind.Double;
+      case '[':
+      case 'L':
+        return Kind.Reference;
+      case 'V':
+        return Kind.Void;
+    }
+  }
+
   export class TypeDescriptor {
 
     private static canonicalTypeDescriptors: TypeDescriptor [] = [];

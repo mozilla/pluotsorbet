@@ -3,6 +3,7 @@ module J2ME {
   declare var Instrument;
   declare var Promise;
 
+  import BytecodeStream = Bytecode.BytecodeStream;
   import checkArrayBounds = J2ME.checkArrayBounds;
   import checkDivideByZero = J2ME.checkDivideByZero;
   import checkDivideByZeroLong = J2ME.checkDivideByZeroLong;
@@ -22,6 +23,35 @@ module J2ME {
   function traceArrayLoad(index: number, array: any []) {
     assert(array[index] !== undefined);
     traceWriter.writeLn(toDebugString(array) + "[" + index + "] (" + toDebugString(array[index]) + ")");
+  }
+
+  /**
+   * Optimize method bytecode.
+   */
+  function optimizeMethodBytecode(methodInfo: MethodInfo) {
+    interpreterCounter.count("optimize: " + methodInfo.implKey);
+    var stream = new BytecodeStream(methodInfo.code);
+    while (stream.currentBC() !== Bytecodes.END) {
+      switch (stream.currentBC()) {
+        case Bytecodes.ALOAD:
+          if (stream.nextBC() === Bytecodes.ILOAD) {
+            stream.writeCurrentBC(Bytecodes.ALOAD_ILOAD);
+          }
+          break;
+        case Bytecodes.IINC:
+          if (stream.nextBC() === Bytecodes.GOTO) {
+           stream.writeCurrentBC(Bytecodes.IINC_GOTO);
+          }
+          break;
+        case Bytecodes.ARRAYLENGTH:
+          if (stream.nextBC() === Bytecodes.IF_ICMPGE) {
+            stream.writeCurrentBC(Bytecodes.ARRAYLENGTH_IF_ICMPGE);
+          }
+          break;
+      }
+      stream.next();
+    }
+    methodInfo.isOptimized = true;
   }
 
   /**
@@ -184,9 +214,15 @@ module J2ME {
     var classInfo;
     var array: any;
     var object: java.lang.Object;
-    
+
+    if (!frame.methodInfo.isOptimized && frame.methodInfo.opCount > 100) {
+      optimizeMethodBytecode(frame.methodInfo);
+    }
+
     while (true) {
-      ops ++
+      ops ++;
+      frame.methodInfo.opCount ++;
+
       var op: Bytecodes = frame.read8();
       if (traceBytecodes) {
         if (traceSourceLocation) {
@@ -266,8 +302,17 @@ module J2ME {
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:
+            stack.push(frame.getLocal(frame.read8()));
+            break;
           case Bytecodes.FLOAD:
+            stack.push(frame.getLocal(frame.read8()));
+            break;
           case Bytecodes.ALOAD:
+            stack.push(frame.getLocal(frame.read8()));
+            break;
+          case Bytecodes.ALOAD_ILOAD:
+            stack.push(frame.getLocal(frame.read8()));
+            frame.pc ++;
             stack.push(frame.getLocal(frame.read8()));
             break;
           case Bytecodes.LLOAD:
@@ -401,9 +446,7 @@ module J2ME {
             stack.pop2();
             break;
           case Bytecodes.DUP:
-            value = stack.pop();
-            stack.push(value);
-            stack.push(value);
+            stack.push(stack[stack.length - 1]);
             break;
           case Bytecodes.DUP_X1:
             a = stack.pop();
@@ -461,6 +504,13 @@ module J2ME {
             index = frame.read8();
             value = frame.read8Signed();
             frame.setLocal(index, frame.getLocal(index) + value);
+            break;
+          case Bytecodes.IINC_GOTO:
+            index = frame.read8();
+            value = frame.read8Signed();
+            frame.setLocal(index, frame.getLocal(index) + value);
+            frame.pc ++;
+            frame.pc = frame.readTargetPC();
             break;
           case Bytecodes.IADD:
             stack.push((stack.pop() + stack.pop()) | 0);
@@ -864,27 +914,30 @@ module J2ME {
             array = stack.pop();
             stack.push(array.length);
             break;
+          case Bytecodes.ARRAYLENGTH_IF_ICMPGE:
+            array = stack.pop();
+            stack.push(array.length);
+            frame.pc ++;
+            pc = frame.readTargetPC();
+            if (stack.pop() <= stack.pop()) {
+              frame.pc = pc;
+            }
+            break;
           case Bytecodes.GETFIELD:
             index = frame.read16();
             var field = cp[index];
             if (field.tag)
               field = resolve(index, false);
             object = stack.pop();
-            if (!object) {
-              throw $.newNullPointerException();
-            }
-            stack.pushType(field.signature, field.get(object));
+            stack.pushKind(field.kind, field.get(object));
             break;
           case Bytecodes.PUTFIELD:
             index = frame.read16();
             var field = cp[index];
             if (field.tag)
               field = resolve(index, false);
-            value = stack.popType(field.signature);
+            value = stack.popKind(field.kind);
             object = stack.pop();
-            if (!object) {
-              throw $.newNullPointerException();
-            }
             field.set(object, value);
             break;
           case Bytecodes.GETSTATIC:
@@ -900,7 +953,7 @@ module J2ME {
             if (typeof value === "undefined") {
               value = util.defaultValue(field.signature);
             }
-            stack.pushType(field.signature, value);
+            stack.pushKind(field.kind, value);
             break;
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
@@ -911,7 +964,7 @@ module J2ME {
             if (U) {
               return;
             }
-            field.setStatic(stack.popType(field.signature));
+            field.setStatic(stack.popKind(field.kind));
             break;
           case Bytecodes.NEW:
             index = frame.read16();
@@ -954,9 +1007,6 @@ module J2ME {
             break;
           case Bytecodes.MONITORENTER:
             object = stack.pop();
-            if (!object) {
-              throw $.newNullPointerException();
-            }
             ctx.monitorEnter(object);
             if (U === VMState.Pausing) {
               return;
@@ -964,9 +1014,6 @@ module J2ME {
             break;
           case Bytecodes.MONITOREXIT:
             object = stack.pop();
-            if (!object) {
-              throw $.newNullPointerException();
-            }
             ctx.monitorExit(object);
             break;
           case Bytecodes.WIDE:
@@ -997,15 +1044,13 @@ module J2ME {
             var fn;
             if (!isStatic) {
               object = frame.peekInvokeObject(methodInfo);
-              if (!object) {
-                throw $.newNullPointerException();
-              }
               switch (op) {
                 case Bytecodes.INVOKEVIRTUAL:
                 case Bytecodes.INVOKEINTERFACE:
                   fn = object[methodInfo.mangledName];
                   break;
                 case Bytecodes.INVOKESPECIAL:
+                  checkNull(object);
                   fn = methodInfo.fn;
                   break;
               }
