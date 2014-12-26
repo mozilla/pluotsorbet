@@ -294,7 +294,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.pass();
+            test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
             syncFS();
         });
     });
@@ -304,7 +304,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.pass();
+            test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
             syncFS();
         });
     });
@@ -313,7 +313,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.pass();
+            test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
             syncFS();
         });
     });
