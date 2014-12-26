@@ -83,6 +83,40 @@ Media.supportedImageFormats = ["JPEG", "PNG"];
 Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
 
+Media.convert3gpToAmr = function(inBuffer) {
+    // The buffer to store the converted amr file.
+    var outBuffer = new Uint8Array(inBuffer.length);
+
+    // Add AMR header.
+    var AMR_HEADER = "#!AMR\n";
+    outBuffer.set(new TextEncoder("utf-8").encode(AMR_HEADER));
+    var outOffset = AMR_HEADER.length;
+
+    var textDecoder = new TextDecoder("utf-8");
+    var inOffset = 0;
+    while (inOffset + 8 < inBuffer.length) {
+        // Get the box size
+        var size = 0;
+        for (var i = 0; i < 4; i++) {
+            size = inBuffer[inOffset + i] + (size << 8);
+        }
+        // Search the box of type mdat.
+        var type = textDecoder.decode(inBuffer.subarray(inOffset + 4, inOffset + 8));
+        if (type === "mdat" && inOffset + size <= inBuffer.length) {
+            // Extract raw AMR data from the box and append to the out buffer.
+            var data = inBuffer.subarray(inOffset + 8, inOffset + size);
+            outBuffer.set(data, outOffset);
+            outOffset += data.length;
+        }
+        inOffset += size;
+    }
+
+    if (outOffset === AMR_HEADER.length) {
+        console.warn("Failed to extract AMR from 3GP file.");
+    }
+    return outBuffer.subarray(0, outOffset);
+};
+
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
     var types = [];
@@ -189,7 +223,8 @@ AudioPlayer.prototype.start = function() {
     }
 
     new Promise(function(resolve, reject) {
-        var blob = new Blob([ this.playerContainer.data.subarray(0, this.playerContainer.contentSize) ]);
+        var blob = new Blob([ this.playerContainer.data.subarray(0, this.playerContainer.contentSize) ],
+                            { type: this.playerContainer.contentType });
         this.audio.src = URL.createObjectURL(blob);
         this.audio.onloadedmetadata = function() {
             resolve();
@@ -675,7 +710,7 @@ PlayerContainer.prototype.getDuration = function() {
 }
 
 var AudioRecorder = function(aMimeType) {
-    this.mimeType = aMimeType || "audio/ogg";
+    this.mimeType = aMimeType || "audio/3gpp";
     this.eventListeners = {};
     this.data = new Uint8Array();
     this.sender = DumbPipe.open("audiorecorder", {
@@ -753,7 +788,7 @@ AudioRecorder.prototype.stop = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            this.data = new Uint8Array(message.data);
+            this.data = Media.convert3gpToAmr(new Uint8Array(message.data));
             resolve(1);
         }.bind(this);
 
