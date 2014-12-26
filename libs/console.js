@@ -72,7 +72,7 @@
         var div = document.createElement("div");
         div.classList.add("log-item");
         div.classList.add("log-item-" + this.levelName);
-        div.textContent = this.message;
+        div.textContent = this.message + "\n";
         this._cachedElement = div;
       }
       return this._cachedElement;
@@ -160,7 +160,7 @@
     push: function(item) {
       if (item.matchesCurrentFilters()) {
         this.flush(); // Preserve order w/r/t console.print().
-        windowConsole[item.levelName].apply(windowConsole, item.rawArguments);
+        windowConsole[item.levelName].apply(windowConsole, item.args);
       }
     },
 

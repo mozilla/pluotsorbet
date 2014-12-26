@@ -8,10 +8,12 @@ casper.on('remote.message', function(message) {
 });
 
 casper.options.waitTimeout = 70000;
+casper.options.verbose = true;
+casper.options.logLevel = "debug";
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
-    this.echo(this.captureBase64('png'));
+    this.echo("data:image/png;base64," + this.captureBase64('png'));
     this.test.fail("Timeout");
 };
 
@@ -92,7 +94,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
-    .start("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar")
+    .start("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar&logConsole=web,page")
     .withFrame(0, function() {
         casper.waitForText("DONE", syncFS);
     });
@@ -131,15 +133,15 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         });
     }
     casper
-    .thenOpen("http://localhost:8000/index.html")
+    .thenOpen("http://localhost:8000/index.html?logConsole=web,page")
     .withFrame(0, basicUnitTests);
 
     casper
-    .thenOpen("http://localhost:8000/index.html?numCalled=1000")
+    .thenOpen("http://localhost:8000/index.html?numCalled=1000&logConsole=web,page")
     .withFrame(0, basicUnitTests);
 
     casper
-    .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=page,raw")
+    .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("I m\nI a ma\nI 2\nI ma\nI 2\nI 1 isolate\nI Isolate ID correct\nI 4\nI 5\nI 1 isolate\nI ma\nI ma\nI 3 isolates\nI 1 m1\nI 2 m2\nI 4\nI 5\nI ma\nI 1 isolate\nI Isolates terminated\nI r mar\nI 2\nI mar\nI c marc\nI 2\nI marc\nI Main isolate still running");
@@ -147,7 +149,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar&logConsole=web,page")
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
@@ -162,7 +164,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&main=com/sun/midp/main/MIDletSuiteLoader&jars=tests/tests.jar")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&jars=tests/tests.jar&logConsole=web,page")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
@@ -179,7 +181,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&jars=tests/tests.jar")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&jars=tests/tests.jar&logConsole=web,page")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.waitUntilVisible(".nokia-fileui-prompt", function() {
@@ -206,7 +208,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?fontSize=10&main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=" + testCase.name + "&jars=tests/tests.jar")
+        .thenOpen("http://localhost:8000/index.html?fontSize=10&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {
@@ -291,7 +293,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
@@ -301,7 +303,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
 
     // Run the test a second time to ensure loading the JAR stored in the FS works correctly.
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
@@ -310,7 +312,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader");

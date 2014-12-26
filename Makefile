@@ -3,21 +3,7 @@
 all: java jasmin tests
 
 test: all
-	rm -f test.log
-	killall python Python || true
-	python tests/httpServer.py &
-	python tests/echoServer.py &
-	cd tests && python httpsServer.py &
-	cd tests && python sslEchoServer.py &
-	cd tests && python waitServers.py
-	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
-	casperjs --engine=slimerjs test `pwd`/tests/fs/automation.js >> test.log
-	killall python Python || true
-	python dumplog.py
-	if grep -q FAIL test.log; \
-	then false; \
-	else true; \
-	fi
+	tests/runtests.py
 
 jasmin:
 	make -C tools/jasmin-2.4
