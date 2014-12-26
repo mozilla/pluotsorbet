@@ -1089,10 +1089,10 @@ module J2ME {
                 returnValue = fn.call(object, a, b, c);
                 break;
               default:
-                if (methodInfo.argumentSlots > 0) {
-                  popManyInto(stack, methodInfo.argumentSlots, argArray);
-                } else {
+                if (methodInfo.hasTwoSlotArguments) {
                   frame.popArgumentsInto(methodInfo.signatureDescriptor, argArray);
+                } else {
+                  popManyInto(stack, methodInfo.argumentSlots, argArray);
                 }
                 var returnValue = fn.apply(object, argArray);
             }

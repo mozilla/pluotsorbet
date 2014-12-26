@@ -1061,8 +1061,9 @@ module J2ME {
   }
 
   function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
+
     // Adapter for the most common case.
-    if (!methodInfo.isSynchronized && methodInfo.argumentSlots >= 0) {
+    if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
       return function fastInterpreterFrameAdapter() {
         var frame = new Frame(methodInfo, [], 0);
         var j = 0;

@@ -199,8 +199,7 @@ module J2ME {
      */
     peekInvokeObject(methodInfo: MethodInfo): java.lang.Object {
       release || assert(!methodInfo.isStatic);
-      var argumentSlotCount = methodInfo.signatureDescriptor.getArgumentSlotCount();
-      var i = this.stack.length - argumentSlotCount - 1;
+      var i = this.stack.length - methodInfo.argumentSlots - 1;
       release || assert (i >= 0);
       release || assert (this.stack[i] !== undefined);
       return this.stack[i];
