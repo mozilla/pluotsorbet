@@ -54,6 +54,26 @@ module J2ME {
     methodInfo.isOptimized = true;
   }
 
+  function resolve(index: number, cp: ConstantPoolEntry [], isStatic: boolean = false): any {
+    var entry = cp[index];
+    if (entry.tag) {
+      entry = $.ctx.resolve(cp, index, isStatic);
+    }
+    return entry;
+  }
+
+  function resolveField(index: number, cp: ConstantPoolEntry [], isStatic: boolean): FieldInfo {
+    return <FieldInfo><any>resolve(index, cp, isStatic);
+  }
+
+  function resolveClass(index: number, cp: ConstantPoolEntry [], isStatic: boolean): ClassInfo {
+    return <ClassInfo><any>resolve(index, cp, isStatic);
+  }
+
+  function resolveMethod(index: number, cp: ConstantPoolEntry [], isStatic: boolean): MethodInfo {
+    return <MethodInfo><any>resolve(index, cp, isStatic);
+  }
+
   /**
    * The number of opcodes executed thus far.
    */
@@ -120,6 +140,8 @@ module J2ME {
 
       var stackTrace = ex.stackTrace;
 
+      var classInfo;
+
       do {
         var exception_table = frame.methodInfo.exception_table;
         var handler_pc = null;
@@ -129,7 +151,7 @@ module J2ME {
               handler_pc = exception_table[i].handler_pc;
               break;
             } else {
-              classInfo = resolve(exception_table[i].catch_type);
+              classInfo = resolve(exception_table[i].catch_type, cp, false);
               if (isAssignableTo(ex.klass, classInfo.klass)) {
                 handler_pc = exception_table[i].handler_pc;
                 break;
@@ -158,11 +180,6 @@ module J2ME {
 
           return;
         }
-
-        // if (ctx.frames.length == 1) {
-        //   break;
-        // }
-
         popFrame(0);
       } while (frame);
 
@@ -194,26 +211,20 @@ module J2ME {
       }
     }
 
-    function resolve(index: number, isStatic?: boolean) {
-      try {
-        return ctx.resolve(cp, index, isStatic);
-      } catch (e) {
-        throwHelper(e);
-      }
-    }
-
     var traceBytecodes = false;
     var traceSourceLocation = true;
     var lastSourceLocation;
 
-    var index: any, value: any;
+    var index: any, value: any, constant: any;
     var a: any, b: any, c: any;
     var pc: number, startPc: number;
     var type;
     var size;
-    var classInfo;
+
     var array: any;
     var object: java.lang.Object;
+    var fieldInfo: FieldInfo;
+    var classInfo: ClassInfo;
 
     if (!frame.methodInfo.isOptimized && frame.methodInfo.opCount > 100) {
       optimizeMethodBytecode(frame.methodInfo);
@@ -223,6 +234,7 @@ module J2ME {
       ops ++;
       frame.methodInfo.opCount ++;
 
+      var n = frame.pc + Bytecode.lengthAt(frame.code, frame.pc);
       var op: Bytecodes = frame.read8();
       if (traceBytecodes) {
         if (traceSourceLocation) {
@@ -239,6 +251,8 @@ module J2ME {
         }
       }
 
+      // frame.trace(new IndentingWriter());
+
       //if (interpreterCounter) {
       //  var key: any = "";
       //  key += frame.methodInfo.isSynchronized ? " Synchronized" : "";
@@ -249,7 +263,10 @@ module J2ME {
 
 
       // interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
-      interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op] + " " + stack.length);
+
+      // interpreterCounter.count(frame.methodInfo.implKey);
+      // interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op]);
+      //interpreterCounter && interpreterCounter.count("DI " + Bytecodes[op] + " " + Bytecodes[frame.code[n]]);
 
       try {
         switch (op) {
@@ -289,16 +306,12 @@ module J2ME {
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
             index = (op === Bytecodes.LDC) ? frame.read8() : frame.read16();
-            var constant = cp[index];
-            if (constant.tag)
-              constant = resolve(index);
+            constant = resolve(index, cp, false);
             stack.push(constant);
             break;
           case Bytecodes.LDC2_W:
             index = frame.read16();
-            var constant = cp[index];
-            if (constant.tag)
-              constant = resolve(index);
+            constant = resolve(index, cp, false);
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:
@@ -890,9 +903,7 @@ module J2ME {
             break;
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
-            classInfo = cp[index];
-            if (classInfo.tag)
-              classInfo = resolve(index);
+            classInfo = resolveClass(index, cp, false);
             size = stack.pop();
             if (size < 0) {
               throw $.newNegativeArraySizeException();
@@ -901,9 +912,7 @@ module J2ME {
             break;
           case Bytecodes.MULTIANEWARRAY:
             index = frame.read16();
-            classInfo = cp[index];
-            if (classInfo.tag)
-              classInfo = resolve(index);
+            classInfo = resolveClass(index, cp, false);
             var dimensions = frame.read8();
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++)
@@ -925,52 +934,39 @@ module J2ME {
             break;
           case Bytecodes.GETFIELD:
             index = frame.read16();
-            var field = cp[index];
-            if (field.tag)
-              field = resolve(index, false);
+            fieldInfo = resolveField(index, cp, false);
             object = stack.pop();
-            stack.pushKind(field.kind, field.get(object));
+            stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
             break;
           case Bytecodes.PUTFIELD:
             index = frame.read16();
-            var field = cp[index];
-            if (field.tag)
-              field = resolve(index, false);
-            value = stack.popKind(field.kind);
+            fieldInfo = resolveField(index, cp, false);
+            value = stack.popKind(fieldInfo.kind);
             object = stack.pop();
-            field.set(object, value);
+            fieldInfo.set(object, value);
             break;
           case Bytecodes.GETSTATIC:
             index = frame.read16();
-            var field = cp[index];
-            if (field.tag)
-              field = resolve(index, true);
-            classInitCheck(field.classInfo, frame.pc - 3);
+            fieldInfo = resolveField(index, cp, true);
+            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
-            value = field.getStatic();
-            if (typeof value === "undefined") {
-              value = util.defaultValue(field.signature);
-            }
-            stack.pushKind(field.kind, value);
+            value = fieldInfo.getStatic();
+            stack.pushKind(fieldInfo.kind, value);
             break;
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
-            var field = cp[index];
-            if (field.tag)
-              field = resolve(index, true);
-            classInitCheck(field.classInfo, frame.pc - 3);
+            fieldInfo = resolveField(index, cp, true);
+            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
-            field.setStatic(stack.popKind(field.kind));
+            fieldInfo.setStatic(stack.popKind(fieldInfo.kind));
             break;
           case Bytecodes.NEW:
             index = frame.read16();
-            classInfo = cp[index];
-            if (classInfo.tag)
-              classInfo = resolve(index);
+            classInfo = resolveClass(index, cp, false);
             classInitCheck(classInfo, frame.pc - 3);
             if (U) {
               return;
@@ -979,9 +975,7 @@ module J2ME {
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
-            classInfo = cp[index];
-            if (classInfo.tag)
-              classInfo = resolve(index);
+            classInfo = resolveClass(index, cp, false);
             object = stack[stack.length - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException(
@@ -991,9 +985,7 @@ module J2ME {
             break;
           case Bytecodes.INSTANCEOF:
             index = frame.read16();
-            classInfo = cp[index];
-            if (classInfo.tag)
-              classInfo = resolve(index);
+            classInfo = resolveClass(index, cp, false);
             object = stack.pop();
             var result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
             stack.push(result ? 1 : 0);
@@ -1032,7 +1024,7 @@ module J2ME {
             var isStatic = (op === 0xb8);
             var methodInfo = cp[index];
             if (methodInfo.tag) {
-              methodInfo = resolve(index, isStatic);
+              methodInfo = resolve(index, cp, isStatic);
               if (isStatic) {
                 classInitCheck(methodInfo.classInfo, startip);
                 if (U) {
@@ -1139,7 +1131,6 @@ module J2ME {
             break;
           default:
             var opName = Bytecodes[op];
-            debugger;
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
       } catch (e) {
