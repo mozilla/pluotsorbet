@@ -75,6 +75,24 @@ module J2ME {
   }
 
   /**
+   * Debugging helper to make sure native methods were implemented correctly.
+   */
+  function checkReturnValue(methodInfo: MethodInfo, returnValue: any) {
+    if (returnValue instanceof Promise) {
+      console.error("You forgot to call asyncImpl():", methodInfo.implKey);
+    } else if (methodInfo.getReturnKind() === Kind.Void && returnValue) {
+      console.error("You returned something in a void method:", methodInfo.implKey);
+    } else if (methodInfo.getReturnKind() !== Kind.Void && (returnValue === undefined) &&
+      U !== J2ME.VMState.Pausing) {
+      console.error("You returned undefined in a non-void method:", methodInfo.implKey);
+    } else if (typeof returnValue === "string") {
+      console.error("You returned a non-wrapped string:", methodInfo.implKey);
+    } else if (returnValue === true || returnValue === false) {
+      console.error("You returned a JS boolean:", methodInfo.implKey);
+    }
+  }
+
+  /**
    * The number of opcodes executed thus far.
    */
   export var ops = 0;
@@ -265,7 +283,7 @@ module J2ME {
       // interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
 
       // interpreterCounter.count(frame.methodInfo.implKey);
-      // interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op]);
+      interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op]);
       //interpreterCounter && interpreterCounter.count("DI " + Bytecodes[op] + " " + Bytecodes[frame.code[n]]);
 
       try {
@@ -1015,18 +1033,18 @@ module J2ME {
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
-            var startip:number = frame.pc - 1;
+            var startPc = frame.pc - 1;
             index = frame.read16();
-            if (op === 0xb9) {
+            if (op === Bytecodes.INVOKEINTERFACE) {
               var argsNumber = frame.read8();
               var zero = frame.read8();
             }
-            var isStatic = (op === 0xb8);
+            var isStatic = (op === Bytecodes.INVOKESTATIC);
             var methodInfo = cp[index];
             if (methodInfo.tag) {
               methodInfo = resolve(index, cp, isStatic);
               if (isStatic) {
-                classInitCheck(methodInfo.classInfo, startip);
+                classInitCheck(methodInfo.classInfo, startPc);
                 if (U) {
                   return;
                 }
@@ -1081,18 +1099,7 @@ module J2ME {
             if (!isStatic) stack.pop();
 
             if (!release) {
-              if (returnValue instanceof Promise) {
-                console.error("You forgot to call asyncImpl():", methodInfo.implKey);
-              } else if (methodInfo.getReturnKind() === Kind.Void && returnValue) {
-                console.error("You returned something in a void method:", methodInfo.implKey);
-              } else if (methodInfo.getReturnKind() !== Kind.Void && (returnValue === undefined) &&
-                U !== J2ME.VMState.Pausing) {
-                console.error("You returned undefined in a non-void method:", methodInfo.implKey);
-              } else if (typeof returnValue === "string") {
-                console.error("You returned a non-wrapped string:", methodInfo.implKey);
-              } else if (returnValue === true || returnValue === false) {
-                console.error("You returned a JS boolean:", methodInfo.implKey);
-              }
+              checkReturnValue(methodInfo, returnValue);
             }
 
             if (U) {
