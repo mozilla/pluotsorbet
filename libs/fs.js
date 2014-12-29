@@ -833,33 +833,26 @@ var fs = (function() {
         return;
       }
 
-      var recreatePath = remove.bind(null, oldPath, function(removed) {
-        if (!removed) {
-          cb(false);
-          return;
-        }
-
-        if (oldRecord.isDir) {
-          mkdir(newPath, cb);
-        } else {
-          create(newPath, oldRecord.data, cb);
-        }
-      });
+      var moveItem = function() {
+        store.removeItem(oldPath);
+        oldRecord.parentDir = dirname(newPath);
+        store.setItem(newPath, oldRecord);
+        cb(true);
+      };
 
       if (oldRecord.isDir) {
         store.isEmpty(oldPath, function(empty) {
           if (empty) {
-            recreatePath();
+            moveItem();
           } else {
             // If the old path is a dir with files in it, we don't move it.
             // We should move it along with its files
             console.error("rename directory containing files not implemented: " + oldPath + " to " + newPath);
             cb(false);
-            return;
           }
         });
       } else {
-        recreatePath();
+        moveItem();
       }
     });
   }

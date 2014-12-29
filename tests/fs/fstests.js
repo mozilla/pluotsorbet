@@ -916,6 +916,21 @@ tests.push(function() {
   });
 
   tests.push(function() {
+    window.setTimeout(function() {
+      fs.rename("/tmp/stat.txt", "/tmp/stat2.txt", function() {
+        fs.stat("/tmp/stat2.txt", function(stat) {
+          is(stat.mtime, lastTime, "rename doesn't update mtime");
+          // Rename it back to its original name so the next test
+          // doesn't have to know about the name change.
+          fs.rename("/tmp/stat2.txt", "/tmp/stat.txt", function() {
+            next();
+          });
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
     fs.remove("/tmp/stat.txt", function() {
       fs.stat("/tmp/stat.txt", function(stat) {
         is(stat, null, "removed file no longer has stat");
@@ -924,6 +939,22 @@ tests.push(function() {
     });
   });
 })();
+
+tests.push(function() {
+  fs.mkdir("/tmp/stat", function() {
+    fs.stat("/tmp/stat", function(stat) {
+      var mtime = stat.mtime;
+      window.setTimeout(function() {
+        fs.rename("/tmp/stat", "/tmp/stat2", function() {
+          fs.stat("/tmp/stat2", function(stat) {
+            is(stat.mtime, mtime, "rename directory doesn't update mtime");
+            next();
+          });
+        });
+      }, 1);
+    });
+  });
+});
 
 tests.push(function() {
   fs.mkdir("/statDir", function() {
