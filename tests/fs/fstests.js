@@ -916,6 +916,21 @@ tests.push(function() {
   });
 
   tests.push(function() {
+    window.setTimeout(function() {
+      fs.rename("/tmp/stat.txt", "/tmp/stat2.txt", function() {
+        fs.stat("/tmp/stat2.txt", function(stat) {
+          is(stat.mtime, lastTime, "rename doesn't update mtime");
+          // Rename it back to its original name so the next test
+          // doesn't have to know about the name change.
+          fs.rename("/tmp/stat2.txt", "/tmp/stat.txt", function() {
+            next();
+          });
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
     fs.remove("/tmp/stat.txt", function() {
       fs.stat("/tmp/stat.txt", function(stat) {
         is(stat, null, "removed file no longer has stat");

@@ -858,7 +858,10 @@ var fs = (function() {
           }
         });
       } else {
-        recreatePath();
+        store.removeItem(oldPath);
+        oldRecord.parentDir = dirname(newPath);
+        store.setItem(newPath, oldRecord);
+        cb(true);
       }
     });
   }
