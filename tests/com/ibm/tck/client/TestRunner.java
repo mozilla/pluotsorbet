@@ -232,6 +232,7 @@ public final class TestRunner {
 			results.append("All Tests Passed");
 		else
 			results.append("There were test failures");
+		System.out.println(results);
 	}
 	
 	private boolean loadTestResources() {
