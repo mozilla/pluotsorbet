@@ -267,7 +267,18 @@ Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/Strin
     return util.fromJavaString(string).replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
 });
 
-Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", function(path) {
+Native.create("com/ibm/oti/connection/file/Connection.totalSizeImpl.([B)J", function(root) {
+    console.warn("Connection.totalSizeImpl.([B)J not implemented (" + util.decodeUtf8(root) + ")");
+    return Long.fromNumber(-1);
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.usedSizeImpl.([B)J", function(root) {
+    console.warn("Connection.usedSizeImpl.([B)J not implemented (" + util.decodeUtf8(root) + ")");
+    return Long.fromNumber(-1);
+});
+
+Native.create("com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J", function(root) {
+    console.warn("Connection.availableSizeImpl.([B)J not implemented (" + util.decodeUtf8(root) + ")");
     // Pretend there is 1 GB available
     return Long.fromNumber(1024 * 1024 * 1024);
 });
@@ -277,6 +288,11 @@ Native.create("com/ibm/oti/connection/file/Connection.existsImpl.([B)Z", functio
       fs.exists(util.decodeUtf8(path), resolve);
     });
 }, true);
+
+Native.create("com/ibm/oti/connection/file/Connection.directorySizeImpl.([BZ)J", function(path, includeSubDirs) {
+    console.warn("Connection.directorySizeImpl.([BZ)J not implemented (" + util.decodeUtf8(path) + ", " + includeSubDirs + ")");
+    return Long.fromNumber(0);
+});
 
 Native.create("com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J", function(path) {
     return new Promise(function(resolve, reject) {
@@ -627,6 +643,10 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I", fun
 
 Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V", function(handle) {
         fs.close(handle);
+});
+
+Native.create("javax/microedition/io/file/FileSystemRegistry.initImpl.()V", function() {
+    console.warn("javax/microedition/io/file/FileSystemRegistry.initImpl.()V not implemented");
 });
 
 Native.create("javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;", function() {
