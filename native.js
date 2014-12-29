@@ -93,16 +93,16 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "file:///MemoryCard/";
         break;
     case "fileconn.dir.private":
-        value = "file:///";
+        value = "file:////";
         break;
     case "fileconn.dir.applications.bookmarks":
-        value = "file:///";
+        value = "file:////";
         break;
     case "fileconn.dir.received":
-        value = "file:///";
+        value = "file:////";
         break;
     case "fileconn.dir.photos":
-        value = "file:///Photos/";
+        value = "file:////Photos/";
         break;
     case "fileconn.dir.roots.names":
         value = MIDP.fsRootNames.join(";");

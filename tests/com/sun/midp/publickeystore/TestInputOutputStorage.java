@@ -32,7 +32,7 @@ public class TestInputOutputStorage implements Testlet {
 
     public void test(TestHarness th) {
         try {
-            FileConnection file = (FileConnection)Connector.open("file:///prova");
+            FileConnection file = (FileConnection)Connector.open("file:////prova");
             th.check(!file.exists());
             file.create();
 

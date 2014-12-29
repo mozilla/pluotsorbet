@@ -91,7 +91,7 @@ public class TestRecordStoreFileNatives implements Testlet, SuiteContainer {
                 th.fail("record store file could not be deleted: " + ex);
             }
             try {
-                final String RECORD_STORE_BASE_URL = "file:///RecordStore";
+                final String RECORD_STORE_BASE_URL = "file:////RecordStore";
 
                 FileConnection dir = (FileConnection)Connector.open(RECORD_STORE_BASE_URL + "/" + filenameBase);
                 dir.delete();

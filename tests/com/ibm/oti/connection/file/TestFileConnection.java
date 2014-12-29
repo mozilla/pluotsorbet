@@ -218,7 +218,7 @@ public class TestFileConnection implements Testlet {
                 file.list();
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "Directory does not exist: file:///provaDir/prova");
+                th.check(e.getMessage(), "Directory does not exist: file:////provaDir/prova");
             }
 
             file.create();
@@ -231,7 +231,7 @@ public class TestFileConnection implements Testlet {
                 file.list();
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "Connection is open on a file: file:///provaDir/prova");
+                th.check(e.getMessage(), "Connection is open on a file: file:////provaDir/prova");
             }
 
             OutputStream out = file.openOutputStream();
@@ -378,7 +378,7 @@ public class TestFileConnection implements Testlet {
 
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova%2B");
             th.check(file.getName(), "prova+");
-            th.check(file.getURL(), "file:///provaDir/prova%2B");
+            th.check(file.getURL(), "file:////provaDir/prova%2B");
             file.create();
             file.close();
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova+");
@@ -493,10 +493,10 @@ public class TestFileConnection implements Testlet {
             dir.close();
 
             try {
-                file = (FileConnection)Connector.open(dirPath + "provaDir/prov>");
+                file = (FileConnection)Connector.open(dirPath + "prov>");
                 th.fail("Exception expected");
             } catch (IllegalArgumentException e) {
-                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///provaDir/prov>");
+                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ////prov>");
             }
 
             // Check that the fileconn.dir.photos property value is longer than 8 characters.
