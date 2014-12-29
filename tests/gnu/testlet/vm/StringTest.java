@@ -204,7 +204,7 @@ public class StringTest implements Testlet {
 			th.check(String.valueOf((Object)null).equals("null"));
 			th.check(String.valueOf(s.toCharArray()).equals(s));
 			try {
-				String.valueOf((Object)null);
+				String.valueOf(null);
 				th.check(false);
 			} catch (NullPointerException e) {
 				th.check(true);

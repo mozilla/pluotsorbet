@@ -1224,19 +1224,6 @@ class String {
     }
 
     /**
-     * Returns the string representation of the <code>String</code> argument.
-     *
-     * @param   str   an <code>String</code>.
-     * @return  if the argument is <code>null</code>, then a string equal to
-     *          <code>"null"</code>; otherwise, the value of
-     *          <code>str</code> is returned.
-     * @see     Object#toString()
-     */
-    public static String valueOf(String str) {
-        return (str == null) ? "null" : str;
-    }
-
-    /**
      * Returns the string representation of the <code>Object</code> argument.
      *
      * @param   obj   an <code>Object</code>.
