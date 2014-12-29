@@ -1323,4 +1323,23 @@ var currentlyFocusedTextEditor;
             }
         });
     }, true);
+
+    Native.create("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V", function() {
+        console.warn("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V not implemented");
+    });
+
+    Native.create("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I", function(title, ticker) {
+        console.warn("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
+        return 1;
+    });
+
+    Native.create("javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I", function(title, ticker, type) {
+        console.warn("javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
+        return 1;
+    });
+
+    Native.create("javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V",
+    function(itemCommands, numItemCommands, commands, numCommands) {
+        console.warn("javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V");
+    });
 })(Native);
