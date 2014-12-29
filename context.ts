@@ -308,7 +308,7 @@ module J2ME {
           var frameDetails = firstFrame.methodInfo.classInfo.className + "/" + firstFrame.methodInfo.name + signatureToDefinition(firstFrame.methodInfo.signature, true, true);
           traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + frameDetails);
         }
-        var returnValue = VM.execute(this);
+        var returnValue = VM.execute();
         if (U) {
           // Append all the current frames to the parent frame set, so a single frame stack
           // exists when the bailout finishes.
@@ -418,7 +418,7 @@ module J2ME {
       Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {
-        VM.execute(this);
+        VM.execute();
         if (U) {
           Array.prototype.push.apply(this.frames, this.bailoutFrames);
           this.bailoutFrames = [];

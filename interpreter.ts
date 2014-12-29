@@ -102,132 +102,149 @@ module J2ME {
    */
   var argArray = [];
 
-  export function interpret(ctx: Context) {
+  var CONTINUE_AFTER_POPFRAME = {}; // Sentinel object.
+
+  function popFrame(consumes) {
+    var ctx = $.ctx;
+    var frame = ctx.current();
+    var cp = frame.cp;
+    var stack = frame.stack;
+
+    if (frame.lockObject)
+      ctx.monitorExit(frame.lockObject);
+    var callee = frame;
+    ctx.frames.pop();
+    var caller = frame = ctx.frames.length === 0 ? null : ctx.current();
+    Instrument.callExitHooks(callee.methodInfo, caller, callee);
+    if (frame === null) {
+      var returnValue = null;
+      switch (consumes) {
+        case 2:
+          returnValue = callee.stack.pop2();
+          break;
+        case 1:
+          returnValue = callee.stack.pop();
+          break;
+      }
+      return returnValue;
+    }
+    stack = frame.stack;
+    cp = frame.cp;
+    switch (consumes) {
+      case 2:
+        stack.push2(callee.stack.pop2());
+        break;
+      case 1:
+        stack.push(callee.stack.pop());
+        break;
+    }
+    return CONTINUE_AFTER_POPFRAME;
+  }
+
+  function buildExceptionLog(ex, stackTrace) {
+    var className = ex.klass.classInfo.className;
+    var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
+    return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
+      return " - " + entry.className + "." + entry.methodName + "(), pc=" + entry.offset;
+    }).join("\n") + "\n\n";
+  }
+
+  function throw_(ex) {
+    var ctx = $.ctx;
+    var frame = ctx.current();
+    var cp = frame.cp;
+    var stack = frame.stack;
+
+    var exClass = ex.class;
+    if (!ex.stackTrace) {
+      ex.stackTrace = [];
+    }
+
+    var stackTrace = ex.stackTrace;
+
+    var classInfo;
+
+    do {
+      var exception_table = frame.methodInfo.exception_table;
+      var handler_pc = null;
+      for (var i=0; exception_table && i<exception_table.length; i++) {
+        if (frame.pc >= exception_table[i].start_pc && frame.pc <= exception_table[i].end_pc) {
+          if (exception_table[i].catch_type === 0) {
+            handler_pc = exception_table[i].handler_pc;
+            break;
+          } else {
+            classInfo = resolve(exception_table[i].catch_type, cp, false);
+            if (isAssignableTo(ex.klass, classInfo.klass)) {
+              handler_pc = exception_table[i].handler_pc;
+              break;
+            }
+          }
+        }
+      }
+
+      classInfo = frame.methodInfo.classInfo;
+      if (classInfo && classInfo.className) {
+        stackTrace.push({
+          className: classInfo.className,
+          methodName: frame.methodInfo.name,
+          offset: frame.pc
+        });
+      }
+
+      if (handler_pc != null) {
+        stack.length = 0;
+        stack.push(ex);
+        frame.pc = handler_pc;
+
+        if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
+          console.error(buildExceptionLog(ex, stackTrace));
+        }
+
+        return;
+      }
+      popFrame(0);
+      frame = ctx.current();
+      cp = frame && frame.cp || null;
+      stack = frame && frame.stack || null;
+    } while (frame);
+
+    if (ctx.frameSets.length === 0) {
+      ctx.kill();
+
+      if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
+        console.error(buildExceptionLog(ex, stackTrace));
+
+        ctx.thread.waiting.forEach(function(waitingCtx, n) {
+          ctx.thread.waiting[n] = null;
+          waitingCtx.wakeup(ctx.thread);
+        });
+      }
+      throw new Error(buildExceptionLog(ex, stackTrace));
+    } else {
+      throw ex;
+    }
+  }
+
+  function classInitCheck(classInfo, ip) {
+    var ctx = $.ctx;
+    if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
+      return;
+    ctx.pushClassInitFrame(classInfo);
+
+    if (U) {
+      ctx.current().pc = ip;
+      return;
+    }
+  }
+
+  export function interpret() {
+    var ctx = $.ctx;
     var frame = ctx.current();
 
     var cp = frame.cp;
     var stack = frame.stack;
     var returnValue = null;
 
-    function popFrame(consumes) {
-      if (frame.lockObject)
-        ctx.monitorExit(frame.lockObject);
-      var callee = frame;
-      ctx.frames.pop();
-      var caller = frame = ctx.frames.length === 0 ? null : ctx.current();
-      Instrument.callExitHooks(callee.methodInfo, caller, callee);
-      if (frame === null) {
-        returnValue = null;
-        switch (consumes) {
-          case 2:
-            returnValue = callee.stack.pop2();
-            break;
-          case 1:
-            returnValue = callee.stack.pop();
-            break;
-        }
-        return true;
-      }
-      stack = frame.stack;
-      cp = frame.cp;
-      switch (consumes) {
-        case 2:
-          stack.push2(callee.stack.pop2());
-          break;
-        case 1:
-          stack.push(callee.stack.pop());
-          break;
-      }
-      return false;
-    }
-
-
-    function buildExceptionLog(ex, stackTrace) {
-      var className = ex.klass.classInfo.className;
-      var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
-      return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
-        return " - " + entry.className + "." + entry.methodName + "(), pc=" + entry.offset;
-      }).join("\n") + "\n\n";
-    }
-
-    function throw_(ex, ctx) {
-      var exClass = ex.class;
-      if (!ex.stackTrace) {
-        ex.stackTrace = [];
-      }
-
-      var stackTrace = ex.stackTrace;
-
-      var classInfo;
-
-      do {
-        var exception_table = frame.methodInfo.exception_table;
-        var handler_pc = null;
-        for (var i=0; exception_table && i<exception_table.length; i++) {
-          if (frame.pc >= exception_table[i].start_pc && frame.pc <= exception_table[i].end_pc) {
-            if (exception_table[i].catch_type === 0) {
-              handler_pc = exception_table[i].handler_pc;
-              break;
-            } else {
-              classInfo = resolve(exception_table[i].catch_type, cp, false);
-              if (isAssignableTo(ex.klass, classInfo.klass)) {
-                handler_pc = exception_table[i].handler_pc;
-                break;
-              }
-            }
-          }
-        }
-
-        classInfo = frame.methodInfo.classInfo;
-        if (classInfo && classInfo.className) {
-          stackTrace.push({
-            className: classInfo.className,
-            methodName: frame.methodInfo.name,
-            offset: frame.pc
-          });
-        }
-
-        if (handler_pc != null) {
-          stack.length = 0;
-          stack.push(ex);
-          frame.pc = handler_pc;
-
-          if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
-            console.error(buildExceptionLog(ex, stackTrace));
-          }
-
-          return;
-        }
-        popFrame(0);
-      } while (frame);
-
-      if (ctx.frameSets.length === 0) {
-        ctx.kill();
-
-        if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
-          console.error(buildExceptionLog(ex, stackTrace));
-
-          ctx.thread.waiting.forEach(function(waitingCtx, n) {
-            ctx.thread.waiting[n] = null;
-            waitingCtx.wakeup(ctx.thread);
-          });
-        }
-        throw new Error(buildExceptionLog(ex, stackTrace));
-      } else {
-        throw ex;
-      }
-    }
-
-    function classInitCheck(classInfo, ip) {
-      if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
-        return;
-      ctx.pushClassInitFrame(classInfo);
-
-      if (U) {
-        frame.pc = ip;
-        return;
-      }
-    }
 
     var traceBytecodes = false;
     var traceSourceLocation = true;
@@ -1115,24 +1132,36 @@ module J2ME {
             }
             break;
           case Bytecodes.RETURN:
-            var shouldReturn = popFrame(0);
-            if (shouldReturn) {
+            var returnValue = popFrame(0);
+            if (returnValue !== CONTINUE_AFTER_POPFRAME) {
               return returnValue;
+            } else {
+              frame = ctx.current();
+              cp = frame && frame.cp || null;
+              stack = frame && frame.stack || null;
             }
             break;
           case Bytecodes.IRETURN:
           case Bytecodes.FRETURN:
           case Bytecodes.ARETURN:
-            var shouldReturn = popFrame(1);
-            if (shouldReturn) {
+            var returnValue = popFrame(1);
+            if (returnValue !== CONTINUE_AFTER_POPFRAME) {
               return returnValue;
+            } else {
+              frame = ctx.current();
+              cp = frame && frame.cp || null;
+              stack = frame && frame.stack || null;
             }
             break;
           case Bytecodes.LRETURN:
           case Bytecodes.DRETURN:
-            var shouldReturn = popFrame(2);
-            if (shouldReturn) {
+            var returnValue = popFrame(2);
+            if (returnValue !== CONTINUE_AFTER_POPFRAME) {
               return returnValue;
+            } else {
+              frame = ctx.current();
+              cp = frame && frame.cp || null;
+              stack = frame && frame.stack || null;
             }
             break;
           default:
@@ -1147,7 +1176,10 @@ module J2ME {
           e = $.newNullPointerException(e.message);
         }
 
-        throw_(e, ctx);
+        throw_(e);
+        frame = ctx.current();
+        cp = frame && frame.cp || null;
+        stack = frame && frame.stack || null;
         continue;
       }
     }
