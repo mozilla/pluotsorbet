@@ -330,7 +330,8 @@ function(jPath, filterArray, includeHidden) {
             // Transform * to .+
             filter = filter.replace(/\*/g, ".*");
 
-            filter += "$";
+            // Require filter to match from the beginning to the end.
+            filter = "^" + filter + "$";
         }
 
         fs.list(path, function(error, files) {
