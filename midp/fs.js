@@ -328,7 +328,7 @@ function(jPath, filterArray, includeHidden) {
             filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
 
             // Transform * to .+
-            filter = filter.replace(/\*/g, ".+");
+            filter = filter.replace(/\*/g, ".*");
 
             filter += "$";
         }
