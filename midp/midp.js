@@ -532,11 +532,11 @@ Native.create("com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAl
 });
 
 Native.create("com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B", function(file) {
-    var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png");
+    var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".png");
     var data = CLASSES.loadFile(fileName);
     if (!data) {
-        console.error("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
-        throw new JavaException("java/io/IOException");
+        console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
+        return null;
     }
     var len = data.byteLength;
     var bytes = util.newPrimitiveArray("B", len);

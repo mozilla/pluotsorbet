@@ -9,6 +9,10 @@ Native.create("com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/St
     return "assets/" + storageId + "/";
 });
 
+Native.create("com/sun/midp/io/j2me/storage/File.initStorageRoot.(I)Ljava/lang/String;", function(storageId) {
+    return "assets/" + storageId + "/";
+});
+
 Native.create("com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;", function(id) {
     return "";
 });
