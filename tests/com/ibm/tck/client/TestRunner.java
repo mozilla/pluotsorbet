@@ -236,44 +236,48 @@ public final class TestRunner {
 	}
 	
 	private boolean loadTestResources() {
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.ConnectionClosedException.Init");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.AvailableSize");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanRead");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanWrite");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Create");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Delete");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.DirectorySize");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Exists");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.FileSize");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.GetName");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.GetPath");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.GetURL");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsDirectory");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsHidden");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.LastModified");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.List");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Mkdir");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Open");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenDataInputStream");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenDataOutputStream");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenInputStream");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenOutputStream");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenOutputStream_Long");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.PackageDiscovery");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Rename");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetFileConnection");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetReadable");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetWritable");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.TotalSize");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Truncate");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.UsedSize");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemListener.RootChanged");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.AddFileSystemListener");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.ListRoots");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.RemoveFileSystemListener");
-		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.IllegalModeException.Init");
-		options.put("FilesystemTestPath", "///");
+		InputStream res = this.getClass().getResourceAsStream("/testres");
+		if (res == null) {
+			System.out.println("Could not find TestRunner resource file, exiting...");
+			return false;
+		}
+		// Any exceptions result in test failure
+		try {
+			DataInputStream dis = new DataInputStream(res);
+			// Get the Client Class to use as a connection
+			clientClass = dis.readUTF();
+			// Get the server URL to write results to
+			serverURL = dis.readUTF();
+			// Get the server URL for interactive tests
+			interactiveURL = dis.readUTF();
+			// Get the number of tests classes
+			int testClassCount = dis.readInt();
+			// Load all the testClass names
+			while (testClassCount-- > 0) {
+				testClasses.addElement(dis.readUTF());
+			}
+			int excludeCount = dis.readInt();
+			// Load all the testClass names
+			while (excludeCount-- > 0) {
+				excludes.addElement(dis.readUTF());
+			}
+			// Load the number of options
+			int optionCount = dis.readInt();
+			while (optionCount-- > 0) {
+				String key = dis.readUTF();
+				String value = dis.readUTF();
+				options.put(key, value);
+			}
+			//Load the test filters
+			int filterCount = dis.readInt();
+			while(filterCount-- > 0) {
+				filters.addElement(dis.readUTF());	
+			}
+			res.close();
+		} catch (IOException e) {
+			System.out.println("Resource file contains errors, exiting...");
+			return false;
+		}
 		return true;
 	}
 
