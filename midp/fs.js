@@ -376,13 +376,9 @@ Native.create("com/ibm/oti/connection/file/Connection.newFileImpl.([B)I", functi
     var path = util.decodeUtf8(jPath);
 
     return new Promise(function(resolve, reject) {
-        // IBM's implementation returns different error numbers, we don't care
-
-        fs.exists(path, function(exists) {
-            if (exists) {
-                fs.truncate(path, function(truncated) {
-                    resolve(truncated ? 0 : 42);
-                });
+        fs.stat(path, function(stat) {
+            if (stat !== null) {
+                resolve(stat.isDir ? 3 : 1);
             } else {
                 fs.create(path, new Blob(), function(created) {
                     resolve(created ? 0 : 42);
