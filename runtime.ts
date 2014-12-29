@@ -34,7 +34,7 @@ module J2ME {
   export var runtimeCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
-  if (typeof Shumway !== "undefined") {
+  if (false && typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
     methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
   }
@@ -1094,8 +1094,6 @@ module J2ME {
           frame.setLocal(j++, null);
         }
       }
-      var caller = $.ctx.current();
-      var callee = frame;
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic

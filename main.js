@@ -235,7 +235,7 @@ var bigBang = 0;
 
 function start() {
   CLASSES.initializeBuiltinClasses();
-  profiler.start(2000, false);
+  profiler && profiler.start(2000, false);
   bigBang = performance.now();
   jvm.startIsolate0(main, []);
 }
@@ -243,24 +243,24 @@ function start() {
 Promise.all(loadingPromises).then(function() {
   setTimeout(function () {
     start();
-  }, 500);
+  }, 1000);
 });
 
 document.getElementById("start").onclick = function() {
   start();
 };
 
-function stress() {
+function loadAllClasses() {
   profiler.start(5000, false);
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 1; i++) {
     var s = performance.now();
     CLASSES.loadAllClassFiles();
-    console.info("Stressing for: " + (performance.now() - s));
+    console.info("Loaded all classes in: " + (performance.now() - s));
   }
 }
 
-document.getElementById("stress").onclick = function() {
-  stress();
+document.getElementById("loadAllClasses").onclick = function() {
+  loadAllClasses();
 };
 
 window.onload = function() {
@@ -329,7 +329,7 @@ function requestTimelineBuffers(fn) {
   return fn([]);
 }
 
-var profiler = (function() {
+var profiler = typeof Shumway !== "undefined" ? (function() {
 
   var elProfilerContainer = document.getElementById("profilerContainer");
   var elProfilerToolbar = document.getElementById("profilerToolbar");
@@ -425,4 +425,4 @@ var profiler = (function() {
 
   return new Profiler();
 
-})();
+})() : undefined;

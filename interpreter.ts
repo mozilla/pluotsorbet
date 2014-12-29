@@ -252,7 +252,6 @@ module J2ME {
       ops ++;
       frame.methodInfo.opCount ++;
 
-      var n = frame.pc + Bytecode.lengthAt(frame.code, frame.pc);
       var op: Bytecodes = frame.read8();
       if (traceBytecodes) {
         if (traceSourceLocation) {
@@ -283,7 +282,7 @@ module J2ME {
       // interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
 
       // interpreterCounter.count(frame.methodInfo.implKey);
-      interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op]);
+      // interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op]);
       //interpreterCounter && interpreterCounter.count("DI " + Bytecodes[op] + " " + Bytecodes[frame.code[n]]);
 
       try {
