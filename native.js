@@ -62,6 +62,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         // UTF_8_Writer and optimize the ISO8859_1 alternatives.
         value = "UTF-8";
         break;
+    case "microedition.io.file.FileConnection.version":
+        value = "1.0";
+        break;
     case "microedition.locale":
         value = navigator.language;
         break;
