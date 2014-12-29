@@ -941,6 +941,22 @@ tests.push(function() {
 })();
 
 tests.push(function() {
+  fs.mkdir("/tmp/stat", function() {
+    fs.stat("/tmp/stat", function(stat) {
+      var mtime = stat.mtime;
+      window.setTimeout(function() {
+        fs.rename("/tmp/stat", "/tmp/stat2", function() {
+          fs.stat("/tmp/stat2", function(stat) {
+            is(stat.mtime, mtime, "rename directory doesn't update mtime");
+            next();
+          });
+        });
+      }, 1);
+    });
+  });
+});
+
+tests.push(function() {
   fs.mkdir("/statDir", function() {
     fs.stat("/statDir", function(stat) {
       ok(stat.isDir, "/statDir is a directory");
