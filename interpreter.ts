@@ -104,7 +104,8 @@ module J2ME {
 
   var CONTINUE_AFTER_POPFRAME = {}; // Sentinel object.
 
-  function popFrame(ctx, consumes) {
+  function popFrame(consumes) {
+    var ctx = $.ctx;
     var frame = ctx.current();
     var cp = frame.cp;
     var stack = frame.stack;
@@ -148,7 +149,8 @@ module J2ME {
     }).join("\n") + "\n\n";
   }
 
-  function throw_(ctx, ex) {
+  function throw_(ex) {
+    var ctx = $.ctx;
     var frame = ctx.current();
     var cp = frame.cp;
     var stack = frame.stack;
@@ -200,7 +202,7 @@ module J2ME {
 
         return;
       }
-      popFrame(ctx, 0);
+      popFrame(0);
       frame = ctx.current();
       cp = frame && frame.cp || null;
       stack = frame && frame.stack || null;
@@ -223,7 +225,8 @@ module J2ME {
     }
   }
 
-  function classInitCheck(ctx, classInfo, ip) {
+  function classInitCheck(classInfo, ip) {
+    var ctx = $.ctx;
     if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
       return;
     ctx.pushClassInitFrame(classInfo);
@@ -234,7 +237,8 @@ module J2ME {
     }
   }
 
-  export function interpret(ctx: Context) {
+  export function interpret() {
+    var ctx = $.ctx;
     var frame = ctx.current();
 
     var cp = frame.cp;
@@ -978,7 +982,7 @@ module J2ME {
           case Bytecodes.GETSTATIC:
             index = frame.read16();
             fieldInfo = resolveField(index, cp, true);
-            classInitCheck(ctx, fieldInfo.classInfo, frame.pc - 3);
+            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -988,7 +992,7 @@ module J2ME {
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
             fieldInfo = resolveField(index, cp, true);
-            classInitCheck(ctx, fieldInfo.classInfo, frame.pc - 3);
+            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -997,7 +1001,7 @@ module J2ME {
           case Bytecodes.NEW:
             index = frame.read16();
             classInfo = resolveClass(index, cp, false);
-            classInitCheck(ctx, classInfo, frame.pc - 3);
+            classInitCheck(classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -1056,7 +1060,7 @@ module J2ME {
             if (methodInfo.tag) {
               methodInfo = resolve(index, cp, isStatic);
               if (isStatic) {
-                classInitCheck(ctx, methodInfo.classInfo, startPc);
+                classInitCheck(methodInfo.classInfo, startPc);
                 if (U) {
                   return;
                 }
@@ -1128,7 +1132,7 @@ module J2ME {
             }
             break;
           case Bytecodes.RETURN:
-            var returnValue = popFrame(ctx, 0);
+            var returnValue = popFrame(0);
             if (returnValue !== CONTINUE_AFTER_POPFRAME) {
               return returnValue;
             } else {
@@ -1140,7 +1144,7 @@ module J2ME {
           case Bytecodes.IRETURN:
           case Bytecodes.FRETURN:
           case Bytecodes.ARETURN:
-            var returnValue = popFrame(ctx, 1);
+            var returnValue = popFrame(1);
             if (returnValue !== CONTINUE_AFTER_POPFRAME) {
               return returnValue;
             } else {
@@ -1151,7 +1155,7 @@ module J2ME {
             break;
           case Bytecodes.LRETURN:
           case Bytecodes.DRETURN:
-            var returnValue = popFrame(ctx, 2);
+            var returnValue = popFrame(2);
             if (returnValue !== CONTINUE_AFTER_POPFRAME) {
               return returnValue;
             } else {
@@ -1172,7 +1176,7 @@ module J2ME {
           e = $.newNullPointerException(e.message);
         }
 
-        throw_(ctx, e);
+        throw_(e);
         frame = ctx.current();
         cp = frame && frame.cp || null;
         stack = frame && frame.stack || null;
