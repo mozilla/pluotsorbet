@@ -90,7 +90,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = null;
         break;
     case "fileconn.dir.memorycard":
-        value = "file:///";
+        value = "file:///MemoryCard/";
         break;
     case "fileconn.dir.private":
         value = "file:///";
@@ -105,11 +105,10 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = "file:///Photos/";
         break;
     case "fileconn.dir.roots.names":
-        // The names here should be localized.
-        value = "Memory card;Phone memory;Private"
+        value = MIDP.fsRootNames.join(";");
         break;
     case "fileconn.dir.roots.external":
-        value = "file:///MemoryCard;file:///;file:///";
+        value = MIDP.fsRoots.map(function(v) { return "file:///" + v }).join(";");
         break;
     case "fileconn.dir.photos.name":
         value = "Photos";
