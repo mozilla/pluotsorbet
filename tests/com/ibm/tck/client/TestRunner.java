@@ -192,7 +192,8 @@ public final class TestRunner {
 	}
 
 	private void run() {
-		if (!loadTestResources()) return;
+		// if (!loadTestResources()) return;
+		loadHardcodedTestResources();
 		if (!noserver) {
 			try {
 				Class clazz = Class.forName(clientClass);
@@ -273,6 +274,47 @@ public final class TestRunner {
 		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.IllegalModeException.Init");
 		options.put("FilesystemTestPath", "///");
 		return true;
+	}
+
+	private void loadHardcodedTestResources() {
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.ConnectionClosedException.Init");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.AvailableSize");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanRead");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanWrite");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Create");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Delete");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.DirectorySize");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Exists");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.FileSize");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.GetName");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.GetPath");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.GetURL");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsDirectory");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsHidden");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.LastModified");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.List");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Mkdir");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Open");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenDataInputStream");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenDataOutputStream");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenInputStream");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenOutputStream");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.OpenOutputStream_Long");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.PackageDiscovery");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Rename");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetFileConnection");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetReadable");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetWritable");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.TotalSize");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.Truncate");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.UsedSize");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemListener.RootChanged");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.AddFileSystemListener");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.ListRoots");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.RemoveFileSystemListener");
+		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.IllegalModeException.Init");
+		options.put("FilesystemTestPath", "///");
 	}
 
 }
