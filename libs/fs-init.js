@@ -21,6 +21,10 @@ var initFS = new Promise(function(resolve, reject) {
 }).then(function() {
   var dirPromises = [];
 
+  if (typeof MIDP !== "undefined" && MIDP.midletClassName == "RunTests") {
+    initialDirs.push("/tcktestdir");
+  }
+
   initialDirs.forEach(function(dir) {
     dirPromises.push(new Promise(function(resolve, reject) {
       fs.mkdir(dir, resolve);

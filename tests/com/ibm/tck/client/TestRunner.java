@@ -319,7 +319,7 @@ public final class TestRunner {
 		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.ListRoots");
 		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.RemoveFileSystemListener");
 		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.IllegalModeException.Init");
-		options.put("FilesystemTestPath", "///");
+		options.put("FilesystemTestPath", "//tcktestdir/");
 	}
 
 }
