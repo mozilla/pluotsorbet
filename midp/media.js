@@ -80,6 +80,7 @@ Media.contentTypeToFormat = new Map([
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
 
+Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
 
 Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I"] = function(jProtocol) {
@@ -154,191 +155,109 @@ Media.PlayerCache = {
 function AudioPlayer(playerContainer) {
     this.playerContainer = playerContainer;
 
-    this.isMuted = false;
-
-    /* @type {AudioBuffer} */
-    this.audioBuffer = null;
-
-    this.audioContext = new AudioContext();
-
-    /* @type {AudioBufferSourceNode} */
-    this.source = null;
-
-    /*
-     * Audio gain node used to control volume.
-     */
-    this.gainNode = this.audioContext.createGain();
-
-    this.volume = Math.round(this.gainNode.gain.value * 100);
-
-    this.gainNode.connect(this.audioContext.destination);
-
-    this.isPlaying = false;
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.duration = 0;
+    /* @type HTMLAudioElement */
+    this.audio = new Audio();
 
     this.isVideoControlSupported = false;
     this.isVolumeControlSupported = true;
 }
 
 AudioPlayer.prototype.realize = function() {
-    return new Promise(function(resolve, reject) { resolve(1); });
-}
-
-AudioPlayer.prototype.play = function() {
-    var offset = this.stopTime - this.startTime;
-    this.source = this.audioContext.createBufferSource();
-    this.source.buffer = this.cloneBuffer();
-    this.source.connect(this.gainNode || this.audioContext.destination);
-    this.source.start(0, offset);
-    this.isPlaying = true;
-    this.startTime = this.audioContext.currentTime - offset;
-    this.source.onended = function() {
-        this.close();
-    }.bind(this);
-}
-
-AudioPlayer.prototype.start = function() {
-    if (this.playerContainer.contentSize > 0) {
-        this.decode(this.playerContainer.data.subarray(0, this.playerContainer.contentSize), function(decoded) {
-            // Save a copy of the audio buffer for resuming or replaying.
-            this.audioBuffer = decoded;
-            this.duration = decoded.duration;
-            this.play();
-        }.bind(this));
-
-        return;
-    }
-
-    console.warn("Cannot start playing.");
-}
-
-AudioPlayer.prototype.pause = function() {
-    if (!this.isPlaying) {
-        return;
-    }
-
-    this.isPlaying = false;
-    this.source.onended = null;
-    this.stopTime = this.audioContext.currentTime;
-    this.source.stop();
-    this.source.disconnect();
-    this.source = null;
-}
-
-AudioPlayer.prototype.resume = function() {
-    if (this.isPlaying) {
-        return;
-    }
-
-    if (this.stopTime - this.startTime >= this.duration) {
-        return;
-    }
-
-    this.play();
-}
-
-AudioPlayer.prototype.close = function() {
-    if (this.source) {
-        this.source.stop();
-        this.source.disconnect();
-        this.source = null;
-    }
-
-    if (this.gainNode) {
-        this.gainNode.disconnect();
-        this.gainNode = null;
-    }
-
-    this.audioBuffer = null;
-
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.isPlaying = false;
-}
-
-AudioPlayer.prototype.getMediaTime = function() {
-    if (!this.audioContext) {
-        return -1;
-    }
-
-    var time = 0;
-
-    if (this.isPlaying) {
-        time = this.audioContext.currentTime - this.startTime;
-    } else {
-        time = Math.min(this.duration, this.stopTime - this.startTime);
-    }
-
-    return Math.round(time * 1000);
-}
-
-AudioPlayer.prototype.cloneBuffer = function() {
-    var buffer = this.audioBuffer;
-    var cloned = this.audioContext.createBuffer(
-                    buffer.numberOfChannels,
-                    buffer.length,
-                    buffer.sampleRate
-                 );
-
-    for (var i = 0; i < buffer.numberOfChannels; ++i) {
-        var channel = buffer.getChannelData(i);
-        cloned.getChannelData(i).set(new Float32Array(channel));
-    }
-    return cloned;
+    return Promise.resolve(1);
 };
 
-AudioPlayer.prototype.decode = function(encoded, callback) {
-    this.audioContext.decodeAudioData(encoded.buffer, callback);
+AudioPlayer.prototype.play = function() {
+    this.audio.play();
+    this.audio.onended = function() {
+        MIDP.sendNativeEvent({
+            type: MIDP.MMAPI_EVENT,
+            intParam1: this.playerContainer.pId,
+            intParam2: this.getDuration(),
+            intParam3: 0,
+            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
+        }, MIDP.foregroundIsolateId);
+    }.bind(this);
+};
+
+AudioPlayer.prototype.start = function() {
+    if (this.playerContainer.contentSize == 0) {
+        console.warn("Cannot start playing.");
+        return;
+    }
+
+    if (this.audio.src) {
+        this.play();
+        return;
+    }
+
+    new Promise(function(resolve, reject) {
+        var blob = new Blob([ this.playerContainer.data.subarray(0, this.playerContainer.contentSize) ]);
+        this.audio.src = URL.createObjectURL(blob);
+        this.audio.onloadedmetadata = function() {
+            resolve();
+            this.play();
+        }.bind(this);
+        this.audio.onerror = reject;
+    }.bind(this)).done(function() {
+        URL.revokeObjectURL(this.audio.src);
+    }.bind(this));
+};
+
+AudioPlayer.prototype.pause = function() {
+    if (this.audio.paused) {
+        return;
+    }
+    this.audio.onended = null;
+    this.audio.pause();
+};
+
+AudioPlayer.prototype.resume = function() {
+    if (!this.audio.paused) {
+        return;
+    }
+    this.play();
+};
+
+AudioPlayer.prototype.close = function() {
+    this.audio.pause();
+    this.audio.src = "";
+};
+
+AudioPlayer.prototype.getMediaTime = function() {
+    return Math.round(this.audio.currentTime * 1000);
+};
+
+// The range of ms has already been checked, we don't need to check it again.
+AudioPlayer.prototype.setMediaTime = function(ms) {
+    this.audio.currentTime = ms / 1000;
+    return ms;
 };
 
 AudioPlayer.prototype.getVolume = function() {
-    return this.volume;
+    return Math.floor(this.audio.volume * 100);
 };
 
 AudioPlayer.prototype.setVolume = function(level) {
-    if (!this.gainNode) {
-        return -1;
-    }
     if (level < 0) {
         level = 0;
     } else if (level > 100) {
         level = 100;
     }
-    this.volume = level;
-    if (!this.isMuted) {
-        this.gainNode.gain.value = level / 100;
-    }
+    this.audio.volume = level / 100;
     return level;
-}
+};
 
 AudioPlayer.prototype.getMute = function() {
-    return this.isMuted;
-}
+    return this.audio.muted;
+};
 
 AudioPlayer.prototype.setMute = function(mute) {
-    if (this.isMuted === mute) {
-        return;
-    }
-    this.isMuted = mute;
-    if (!this.gainNode) {
-        return;
-    }
-    if (mute) {
-        this.gainNode.gain.value = 0;
-    } else {
-        this.gainNode.gain.value = this.volume / 100;
-    }
-}
+    this.audio.muted = mute;
+};
 
 AudioPlayer.prototype.getDuration = function() {
-    if (!this.audioBuffer) {
-        return -1; // Player.TIME_UNKNOWN
-    }
-
-    return this.duration * 1000;
-}
+    return Math.round(this.audio.duration * 1000);
+};
 
 function ImagePlayer(playerContainer) {
     this.url = playerContainer.url;
@@ -375,14 +294,12 @@ ImagePlayer.prototype.realize = function() {
         }
     }).bind(this));
 
-    var clean = function() {
+    p.done(function() {
         if (!objectUrl) {
             return;
         }
         URL.revokeObjectURL(objectUrl);
-    };
-
-    p.then(clean, clean);
+    });
 
     return p;
 }
@@ -539,7 +456,8 @@ function PlayerContainer(url, pId) {
     this.url = url;
     // `pId` is the player id used in PlayerImpl.java, don't confuse with the id we used
     // here in Javascript. The reason we need to hold this `pId` is we need to send it
-    // back when dispatch Media.EVENT_MEDIA_SNAPSHOT_FINISHED.
+    // back when dispatch events, such as Media.EVENT_MEDIA_SNAPSHOT_FINISHED and
+    // Media.EVENT_MEDIA_END_OF_MEDIA.
     this.pId = pId;
 
     this.mediaFormat = url ? this.guessFormatFromURL(url) : "UNKNOWN";
@@ -696,10 +614,6 @@ PlayerContainer.prototype.writeBuffer = function(buffer) {
 
     this.data.set(buffer, this.contentSize);
     this.contentSize += buffer.length;
-};
-
-PlayerContainer.prototype.play = function() {
-    this.player.play();
 };
 
 PlayerContainer.prototype.start = function() {
@@ -1050,6 +964,11 @@ Native["com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I"] = function(handle) {
     return player.getMediaTime();
 };
 
+Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, ms) {
+    var container = Media.PlayerCache[handle];
+    return container.player.setMediaTime(ms);
+};
+
 Native["com/sun/mmedia/DirectPlayer.nStart.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.start();
@@ -1293,4 +1212,23 @@ Native["com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V"] = fu
 
 Native["com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B"] = function(handle) {
     return Media.PlayerCache[handle].getSnapshotData();
+};
+
+Native["com/sun/amms/GlobalMgrImpl.nCreatePeer.()I"] = function() {
+    console.warn("com/sun/amms/GlobalMgrImpl.nCreatePeer.()I not implemented.");
+    return 1;
+};
+
+Native["com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I"] = function(typeName) {
+    console.warn("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I not implemented.");
+    return 2;
+};
+
+Native["com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V"] = function(mute) {
+    console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V not implemented.");
+};
+
+Native["com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I"] = function() {
+    console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I not implemented.");
+    return 100;
 };

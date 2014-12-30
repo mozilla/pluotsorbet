@@ -1,0 +1,114 @@
+Jasmin Revision History                                     Jonathan Meyer
+
+15 Oct 2004 - Release 1.1
+
+   * Switched to Ant Build System
+
+   * Moved java_cup and jas sources into src directory
+
+   * Updated documentation to use style sheets
+
+   * Changed docs to reflect using jar files rather than class files
+
+   * Uploaded to SourceForge
+
+
+-----------------------------------------------------------------------------
+
+11 Apr 97 - Release 1.06.
+
+11 Apr 97
+
+   * Fixed bug which prevented the source name from being written out
+     in the class file
+
+   * Improved README file
+
+2 Mar 97 - Release 1.05.
+
+1 Mar 97
+
+   * Moved scripts into a bin directory. 
+
+   * Added support for Visual J++.
+
+     Added vjasmin.bat, for running Jasmin using Visual J++.
+
+     Converted JAS/Jasmin to use its own internal RuntimeConstants, so that
+     there is no longer any dependency on Sun's version (needed by J++).
+
+   * Tidied API:
+
+     Renamed "Jasmin" class "ClassFile" (sorry to those of you using the API
+     from 1.04). The ClassFile class is documented in the doc/api directory.
+
+   * Mods for Java 1.1:
+
+     Classes now set the ACC_SUPER bit in their access flags.
+     i2b/i2s/i2c are now synonyms for int2byte, int2short, int2char.
+     invokespecial is now a synonym for invokenonvirtual.
+
+   * Mods to pick up documentation in book:
+    
+     "wide" is now a recognized instruction in Jasmin files - although the assembler
+     just ignores it!
+ 
+     Added the optional <high> parameter to tableswitch. 
+
+   * Fixed bug in .catch all
+    
+10 Feb 96 - Release 1.04.
+
+8 Feb 97
+   * Updated to use latest version of JAS. This fixes some bugs in the
+     earlier release (including handling of _w instructions)
+
+   * Split several of the internal classes into smaller pieces.
+
+   * Restructured internal sources so that Jasmin, Scanner and parser
+     no longer rely on static data structures. Now there is a public API
+     to Jasmin, for people that want to assemble classes using their own
+     data input/output streams.
+
+30 Oct 96
+
+   * Added support for more \ escapes in quoted strings. In
+     particular, you can now use \nnn to specify a character using
+     octal.
+
+2 Oct 96 - Release 1.03.
+
+1 Oct 96
+
+   * Added better support for interfaces: added the .interface
+     directive (an alternative to the .class directive), and also a
+     .implements directive. Updates guide.html to mention these new
+     features.
+
+24 Sept 96
+
+   * Fixed several problems with guide.html - thanks to feedback from
+     Shawn Silverman (umsilve1@cc.umanitoba.ca).
+
+23 Aug 96
+
+   * Tidied up documentation and implementation for wide instructions.
+
+     Now ldc and ldc_w are used for single-word items, whereas
+     ldc2_w is used for two word items (previously, I had ldc_w as
+     a synonym for ldc2_w - oops).
+
+25 July 96
+
+   * Added documentation for .var directive.
+
+   * Fixed line numbering produced by -g flag (I hope).
+
+   * Improved error reporting slightly.
+
+24 July 96
+
+   * Added fix to scanner to handle Ctrl-M characters,
+     for DOS/NT Systems. (Thanks sbk!)
+
+18 July 96 - Release 1.0.

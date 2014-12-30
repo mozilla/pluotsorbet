@@ -3,6 +3,10 @@ package java.lang;
 import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
+class S {
+    public static String s = "abc";
+}
+
 public class TestStringIntern implements Testlet {
     public void test(TestHarness th) {
         try {
@@ -27,6 +31,10 @@ public class TestStringIntern implements Testlet {
             th.check(m3.intern() == m1, "m3.intern() == m1");
             th.check(m3.intern() == m2, "m3.intern() == m2");
             th.check(m3.intern() != m3, "m3.intern() == m3");
+
+            // Check that constant strings are interned
+            th.check("abc" == "abc");
+            th.check("abc" == S.s);
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();

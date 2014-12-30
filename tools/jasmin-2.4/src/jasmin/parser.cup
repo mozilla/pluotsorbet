@@ -1,0 +1,898 @@
+/* --- Copyright Jonathan Meyer 1996. All rights reserved. -----------------
+ > File:        jasmin/src/jasmin/parser.cup
+ > Purpose:     Parser for Jasmin
+ > Author:      Jonathan Meyer, 10 July 1996
+ */
+
+/*
+ * parser.cup - Java CUP file containing LALR(1) grammar for Jasmin,
+ * along with calls to ClassFile methods to output bytecode.
+ */
+
+
+package jasmin;
+
+import java_cup.runtime.*;
+import jas.*;
+import java.io.*;
+import java.util.Hashtable;
+
+/* Preliminaries to set up and use the scanner.  */
+
+action code {:
+    short access_val;
+	public ClassFile classFile;
+    public Scanner scanner;
+:};
+
+parser code {:
+
+	// parser code
+
+	public Scanner scanner;
+	public ClassFile classFile;
+
+	public void report_error(String message, Object info) {
+    	    classFile.report_error("Warning - " + message);
+	}
+
+	public void report_fatal_error(String message, Object info)  {
+    	    classFile.report_error("Error - " + message);
+    	    // System.exit(-1);
+	}
+
+	parser(ClassFile classFile, Scanner scanner) {
+		super();
+
+	    this.scanner = scanner;
+	    this.classFile = classFile;
+	}
+:};
+
+//debug with System.err.println;
+
+init with {:
+	action_obj.scanner = scanner;
+	action_obj.classFile = classFile;
+:};
+
+scan with {:
+    return scanner.next_token();
+:};
+
+
+
+/* Terminals (tokens returned by the scanner). */
+terminal token
+    // Directives (words beginning with a '.')
+    DCATCH, DCLASS, DEND, DFIELD, DLIMIT, DLINE, DMETHOD, DSET, DSUPER,
+    DSOURCE, DTHROWS, DVAR, DIMPLEMENTS, DINTERFACE, DBYTECODE, DDEBUG,
+    DENCLOSING, DSIGNATURE, DSTACK, DATTRIBUTE, DDEPRECATED, DINNER,
+    DANNOTATION,
+
+    // keywords for directives
+    USING, IS, FROM, METHOD, SIGNATURE, STACK, OFFSET, LOCALS, FIELD, CLASS,
+    TO, INNER, OUTER, VISIBLE, INVISIBLE, VISIBLEPARAM, INVISIBLEPARAM, USE,
+
+    // access types
+    ABSTRACT, FINAL, INTERFACE, NATIVE, PRIVATE, PROTECTED, PUBLIC, STATIC,
+    SYNCHRONIZED, TRANSIENT, VOLATILE,
+    // added these for java 1.5 compliance :
+    ANNOTATION, ENUM, BRIDGE, VARARGS, STRICT, SYNTHETIC,
+
+    // complex instructions
+    LOOKUPSWITCH, TABLESWITCH, DEFAULT,
+
+    // special symbols
+    EQ, SEP, COLON
+ ;
+
+terminal str_token Str, Word, Insn;
+terminal int_token Int;
+terminal num_token Num;
+terminal relative_num_token Relative;
+
+non terminal str_token classname, inner_name, inner_inner, inner_outer, optional_signature;
+non terminal var_token optional_default, item, any_item;
+
+/* Non terminals */
+non terminal symbol
+       access_item, access_items, access_list, catch_expr, class_spec,
+       complex_instruction, defmethod, directive, endmethod, field_list,
+       field_spec, fields, instruction, implements, implements_list, implements_spec,
+       jas_file, label, limit_expr, lookup,
+       lookup_args, lookup_default, lookup_entry, lookup_list, method_list,
+       method_spec, methods, set_expr, simple_instruction, source_spec,
+       statement, statements, stmnt, super_spec, table, table_args, line_expr,
+       table_default, table_entry, table_list, throws_expr, var_expr, bytecode_spec,
+       debug_extension, enclosing_spec, signature_spec, signature_expr, jasmin_header,
+       debug_list, debug_spec, deprecated_spec, deprecated_expr,
+       generic_attributes, generic_list, generic_spec, generic_expr,
+       field_start, endfield, field_exts, field_ext_list, field_ext_expr,
+       inners, inner_list, inner_spec,
+
+   // used for Annotation attributes :
+       annotations, ann_cls_list, ann_cls_spec, endannotation, ann_cls_expr,
+       ann_clf_expr, ann_met_expr, ann_arglist, ann_arg_list, ann_arg_spec,
+       ann_def_spec, ann_def_val, ann_value_items, ann_value, ann_def_expr,
+       ann_arg_expr, ann_nest, endannotationsep, ann_ann_value, ann_ann_list,
+       ann_value_list,
+
+   // used for StackMap attributes :
+       defstack, stack_map_frame_desc, endstack, stack_offset_def, stack_items,
+       stack_item, stack_item_expr, stackmap, defstack_same, defstack_same_expr
+
+;
+
+non terminal int_token access;
+
+/* The grammar */
+
+jas_file ::=
+        jasmin_header
+        inners
+        fields
+        methods
+;
+
+jasmin_header ::=
+    bytecode_spec
+    source_spec
+    class_spec
+    super_spec
+    implements
+    signature_spec
+    enclosing_spec
+    deprecated_spec
+    annotations
+    generic_attributes
+    debug_extension
+  {: classFile.endHeader(); :}
+;
+
+// ---- Signature specification
+
+signature_spec ::=
+    DSIGNATURE signature_expr SEP
+    |
+    /* nothing */
+;
+
+signature_expr ::= Str:sig
+        {: classFile.setSignature(sig.str_val); :}
+;
+
+
+// ---- Deprecated attribute
+
+deprecated_spec ::=
+    DDEPRECATED deprecated_expr SEP
+    |
+    /* nothing */
+;
+
+deprecated_expr ::=
+    {: classFile.setDeprecated(); :}
+;
+
+// ---- Bytecode version specification
+
+bytecode_spec ::=
+    DBYTECODE Num:n SEP
+        {: classFile.setVersion(n.num_val); :}
+    |
+    /* nothing */
+;
+
+
+// ---- Source specification
+
+source_spec ::=
+    DSOURCE Str:s SEP
+        {: classFile.setSource(s.str_val); :}
+    |
+    DSOURCE Word:w SEP
+        {: classFile.setSource(w.str_val); :}
+    |
+    /* nothing */
+;
+
+// ---- Class specification
+
+class_spec ::=
+    DCLASS access:a classname:name SEP
+        {: classFile.setClass(name.str_val,
+                (short)(a.int_val | RuntimeConstants.ACC_SUPER)); :}
+    |
+    DINTERFACE access:a classname:name SEP
+        {: classFile.setClass(name.str_val,
+                (short)(a.int_val |
+                        RuntimeConstants.ACC_SUPER |
+                        RuntimeConstants.ACC_INTERFACE)); :}
+;
+
+classname ::= Word:w
+        {: RESULT.str_val = ScannerUtils.convertDots(w.str_val); :}
+;
+
+access ::=
+    {: access_val = 0; :}
+        access_list
+    {: RESULT.int_val = access_val; :}
+;
+
+
+access_list ::= access_items | ;
+access_items ::= access_items access_item | access_item ;
+
+access_item ::=
+    PUBLIC       {: access_val |= RuntimeConstants.ACC_PUBLIC; :}
+    |
+    PRIVATE      {: access_val |= RuntimeConstants.ACC_PRIVATE; :}
+    |
+    PROTECTED    {: access_val |= RuntimeConstants.ACC_PROTECTED; :}
+    |
+    STATIC       {: access_val |= RuntimeConstants.ACC_STATIC; :}
+    |
+    FINAL        {: access_val |= RuntimeConstants.ACC_FINAL; :}
+    |
+    SYNCHRONIZED {: access_val |= RuntimeConstants.ACC_SYNCHRONIZED; :}
+    |
+    VOLATILE     {: access_val |= RuntimeConstants.ACC_VOLATILE; :}
+    |
+    TRANSIENT    {: access_val |= RuntimeConstants.ACC_TRANSIENT; :}
+    |
+    NATIVE       {: access_val |= RuntimeConstants.ACC_NATIVE; :}
+    |
+    INTERFACE    {: access_val |= RuntimeConstants.ACC_INTERFACE; :}
+    |
+    ABSTRACT     {: access_val |= RuntimeConstants.ACC_ABSTRACT; :}
+    |
+    ANNOTATION   {: access_val |= RuntimeConstants.ACC_ANNOTATION; :}
+    |
+    ENUM         {: access_val |= RuntimeConstants.ACC_ENUM; :}
+    |
+    BRIDGE       {: access_val |= RuntimeConstants.ACC_BRIDGE; :}
+    |
+    VARARGS      {: access_val |= RuntimeConstants.ACC_VARARGS; :}
+    |
+    STRICT       {: access_val |= RuntimeConstants.ACC_STRICT; :}
+    |
+    SYNTHETIC    {: access_val |= RuntimeConstants.ACC_SYNTHETIC; :}
+;
+
+// ---- Superclass specification
+
+super_spec ::=
+    DSUPER classname:name SEP
+        {: classFile.setSuperClass(name.str_val); :}
+;
+
+// ---- Implements specification
+
+implements ::= implements_list | /* empty */ ;
+
+implements_list ::= implements_list implements_spec | implements_spec ;
+
+implements_spec ::= DIMPLEMENTS classname:name SEP
+	{: classFile.addInterface(name.str_val); :}
+;
+
+// ---- Annotation specification
+
+annotations ::= ann_cls_list | /* empty */ ;
+
+ann_cls_list ::= ann_cls_list ann_cls_spec | ann_cls_spec ;
+
+ann_cls_spec ::= ann_cls_expr ann_arglist endannotationsep ;
+
+endannotationsep ::= endannotation SEP ;
+
+endannotation ::= DEND ANNOTATION
+	{: classFile.endAnnotation(); :}
+;
+
+ann_cls_expr ::= DANNOTATION ann_clf_expr ;
+
+ann_clf_expr ::=
+    VISIBLE classname:name SEP
+        {: classFile.addAnnotation(true, name.str_val); :}
+    |
+    INVISIBLE classname:name SEP
+        {: classFile.addAnnotation(false, name.str_val); :}
+;
+ann_met_expr ::=
+    VISIBLE classname:name SEP
+        {: classFile.addAnnotation(true, name.str_val); :}
+    |
+    INVISIBLE classname:name SEP
+        {: classFile.addAnnotation(false, name.str_val); :}
+    |
+    VISIBLEPARAM Int:n classname:name SEP
+        {: classFile.addAnnotation(true, name.str_val, n.int_val); :}
+    |
+    INVISIBLEPARAM Int:n classname:name SEP
+        {: classFile.addAnnotation(false, name.str_val, n.int_val); :}
+;
+
+ann_arglist ::= ann_arg_list | /* empty */ ;
+
+ann_arg_list ::= ann_arg_list ann_arg_spec | ann_arg_spec ;
+
+ann_arg_spec ::= ann_arg_expr EQ ann_value_list ;
+
+ann_arg_expr ::=
+    Word:n Word:dsc
+	{: classFile.addAnnotationField(n.str_val, dsc.str_val, null); :}
+    |
+    Word:n Word:dsc Word:sub
+	{: classFile.addAnnotationField(n.str_val, dsc.str_val, sub.str_val); :}
+;
+
+ann_def_spec ::= DEFAULT SEP
+	{: classFile.addAnnotation(); :}
+;
+
+ann_value_list ::= ann_value_items SEP | ann_ann_list ;
+
+ann_value_items ::= ann_value_items ann_value | ann_value ;
+
+ann_value ::= any_item:v
+	{: classFile.addAnnotationValue(v.var_val); :}
+;
+ann_ann_list ::= ann_ann_list ann_ann_value | ann_ann_value ;
+
+ann_ann_value ::= DANNOTATION ann_nest ann_arglist endannotationsep ;
+
+ann_nest ::= SEP
+	{: classFile.nestAnnotation(); :}
+;
+
+ann_def_val ::= ann_def_expr EQ ann_value_list ;
+
+ann_def_expr ::=
+    Word:dsc
+	{: classFile.addAnnotationField(null, dsc.str_val, null); :}
+    |
+    Word:dsc Word:sub
+	{: classFile.addAnnotationField(null, dsc.str_val, sub.str_val); :}
+;
+
+// ---- SourceDebugExtension attribute specification
+
+debug_extension ::= debug_list | /* empty */ ;
+
+debug_list ::= debug_list debug_spec | debug_spec ;
+
+debug_spec ::= DDEBUG Str:s SEP
+        {: classFile.setSourceDebugExtension(s.str_val); :}
+;
+
+
+// ---- EnclosingMethod attribute specification
+
+enclosing_spec ::=
+    DENCLOSING METHOD Word:w SEP
+        {: classFile.setEnclosingMethod(w.str_val); :}
+    |
+    /* nothing */
+;
+
+
+// ---- Generic attributes specification
+
+generic_attributes ::= generic_list | /* empty */ ;
+
+generic_list ::= generic_list generic_spec | generic_spec ;
+
+generic_spec ::= DATTRIBUTE generic_expr SEP ;
+
+generic_expr ::= Word:name Str:file
+        {: classFile.addGenericAttr(name.str_val, file.str_val); :}
+;
+
+
+// ---- Fields
+
+fields ::= field_list | /* empty */ ;
+
+field_list ::= field_list field_spec | field_spec ;
+
+field_spec ::=
+    DFIELD access:a Word:name Word:desc SIGNATURE Str:sig optional_default:v SEP
+        {: classFile.addField((short)a.int_val, name.str_val, desc.str_val,
+                              sig.str_val, v.var_val); :}
+    |
+    DFIELD access:a Word:name Word:desc optional_default:v SEP
+        {: classFile.addField((short)a.int_val, name.str_val, desc.str_val,
+                               null, v.var_val); :}
+    |
+    DFIELD field_start field_exts endfield
+;
+
+// default value for a field
+optional_default ::=
+     EQ item:v
+        {: RESULT.var_val = v.var_val; :}
+     |
+     /* empty */
+        {: RESULT.var_val = null; :}
+;
+
+// multiline form of field description
+field_start ::= access:a Word:name Word:desc optional_default:v SEP
+      {: classFile.beginField((short)a.int_val, name.str_val,
+                              desc.str_val, v.var_val); :}
+;
+
+endfield ::= DEND FIELD SEP
+      {: classFile.endField(); :}
+;
+
+field_exts ::= field_ext_list | /* empty */ ;
+
+field_ext_list ::= field_ext_list field_ext_expr | field_ext_expr ;
+
+field_ext_expr ::=
+   DSIGNATURE signature_expr SEP
+   |
+   DATTRIBUTE generic_expr SEP
+   |
+   DDEPRECATED deprecated_expr SEP
+   |
+   DANNOTATION ann_clf_expr ann_arglist endannotationsep
+;
+
+
+// an item is an integer, a float/double/long, or a quoted string
+item ::=
+    Int:i       {: RESULT.var_val = new Integer(i.int_val); :}
+    |
+    Num:n       {: RESULT.var_val = n.num_val; :}
+    |
+    Str:s       {: RESULT.var_val = s.str_val; :}
+;
+// an item is any possible type
+any_item ::=
+    Word:w      {: RESULT.var_val = w.str_val; :}       // for enum
+    |
+    item:v      {: RESULT.var_val = v.var_val; :}
+;
+
+// ---- Inner classes
+
+inners ::= inner_list | /* empty */ ;
+
+inner_list ::= inner_list inner_spec | inner_spec ;
+
+inner_spec ::=
+    DINNER CLASS access:a inner_name:n inner_inner:i inner_outer:o SEP
+        {: classFile.addInner((short)a.int_val,
+                              n.str_val, i.str_val, o.str_val); :}
+    |
+    DINNER INTERFACE access:a inner_name:n inner_inner:i inner_outer:o SEP
+        {: classFile.addInner((short)(a.int_val |
+                              RuntimeConstants.ACC_INTERFACE),
+                                n.str_val, i.str_val, o.str_val); :}
+;
+
+inner_name ::=
+    Word:w
+        {: RESULT.str_val = w.str_val; :}
+    |
+    /* empty */
+        {: RESULT.str_val = null; :}
+;
+
+inner_inner ::=
+    INNER classname:w
+        {: RESULT.str_val = w.str_val; :}
+    |
+    /* empty */
+        {: RESULT.str_val = null; :}
+;
+
+inner_outer ::=
+    OUTER classname:w
+        {: RESULT.str_val = w.str_val; :}
+    |
+    /* empty */
+        {: RESULT.str_val = null; :}
+;
+
+
+// ---- Methods
+
+methods ::= method_list | /* empty */;
+
+method_list ::= method_list method_spec | method_spec ;
+
+method_spec ::=
+    defmethod
+    statements
+    endmethod
+    |
+    defmethod endmethod
+ ;
+
+defmethod ::=
+    DMETHOD access:i Word:name SEP
+        {: String split[] = ScannerUtils.splitMethodSignature(name.str_val);
+           classFile.newMethod(split[0], split[1], i.int_val); :}
+;
+
+endmethod ::=
+    DEND METHOD SEP
+        {: classFile.endMethod(); :}
+;
+
+
+// ---- Statements in a method
+
+statements ::= statements statement | statement ;
+
+statement ::=
+        {: classFile.setLine(scanner.token_line_num); :}
+    stmnt SEP
+;
+
+stmnt ::=
+    instruction
+    |
+    directive
+    |
+    error
+    |
+    label
+    |
+    /* empty */
+;
+
+
+// label:
+label ::=
+    Word:label COLON
+        {: classFile.plantLabel(label.str_val); :}
+    |
+    Int:label COLON instruction
+        {: classFile.plantLabel(String.valueOf(label.int_val)); :}
+;
+
+// Directives (.catch, .set, .limit, etc.)
+
+directive ::=
+    DVAR var_expr
+    |
+    DLIMIT limit_expr
+    |
+    DLINE line_expr
+    |
+    DTHROWS throws_expr
+    |
+    DCATCH catch_expr
+    |
+    DSET set_expr
+    |
+    DSIGNATURE signature_expr
+    |
+    DATTRIBUTE generic_expr
+    |
+    DDEPRECATED deprecated_expr
+    |
+    DANNOTATION ann_met_expr ann_arglist endannotation
+    |
+    DANNOTATION ann_def_spec ann_def_val endannotation
+    |
+    DSTACK stackmap
+;
+
+//
+// .stack
+//
+stackmap ::=
+   defstack stack_map_frame_desc endstack
+   |
+   USE defstack_same stack_map_frame_desc endstack
+;
+
+defstack_same ::= defstack_same_expr LOCALS SEP ;
+
+defstack_same_expr ::=
+   Int:n
+        {: classFile.beginStack(n.int_val); :}
+   |
+   /* empty */
+        {: classFile.beginStack(true); :}
+;
+
+defstack ::= SEP
+        {: classFile.beginStack(false); :}
+;
+
+stack_map_frame_desc ::=
+    stack_offset_def
+    stack_items
+;
+
+stack_offset_def ::=
+    OFFSET Int:n SEP
+        {: classFile.plantStackOffset(n.int_val); :}
+    |
+    OFFSET Word:w SEP
+        {: classFile.plantStackOffset(w.str_val); :}
+    |
+    /* nothing */
+;
+
+stack_items ::= stack_items stack_item | /* nothing */ ;
+
+stack_item ::= stack_item_expr SEP ;
+
+stack_item_expr ::=
+    LOCALS Word:w
+        {: classFile.plantStackLocals(w.str_val, null); :}
+    |
+    LOCALS Word:w Word:val
+        {: classFile.plantStackLocals(w.str_val, val.str_val); :}
+    |
+    LOCALS Word:w Int:n
+        {: classFile.plantStackLocals(w.str_val, String.valueOf(n.int_val)); :}
+    |
+    STACK Word:w
+        {: classFile.plantStackStack(w.str_val, null); :}
+    |
+    STACK Word:w Word:val
+        {: classFile.plantStackStack(w.str_val, val.str_val); :}
+    |
+    STACK Word:w Int:n
+        {: classFile.plantStackStack(w.str_val, String.valueOf(n.int_val)); :}
+;
+
+endstack ::= DEND STACK
+    {: classFile.endStack(); :}
+;
+
+//
+// .var <num> is <name> <desc> from StartLab to EndLab
+// .var <num> is <name> <desc> signature <sign> from StartLab to EndLab
+//
+var_expr ::=
+    Int:reg IS Word:name Word:desc optional_signature:sign FROM Word:slab TO Word:elab
+        {: classFile.addVar(slab.str_val, elab.str_val, name.str_val,
+                            desc.str_val, sign.str_val, reg.int_val); :}
+    |
+    Int:reg IS Word:name Word:desc optional_signature:sign
+        {: classFile.addVar(null, null, name.str_val, desc.str_val,
+                            sign.str_val,  reg.int_val); :}
+    |
+    Int:reg IS Word:name Word:desc optional_signature:sign FROM Int:soff TO Int:eoff
+        {: classFile.addVar(soff.int_val, eoff.int_val, name.str_val,
+                            desc.str_val, sign.str_val, reg.int_val); :}
+;
+
+// optional signature specification for a .var
+optional_signature ::=
+     SIGNATURE Str:s
+        {: RESULT.str_val = s.str_val; :}
+     |
+     /* empty */
+        {: RESULT.str_val = null; :}
+;
+
+
+// .limit stack <val>
+// .limit locals <val>
+
+limit_expr ::=
+    LOCALS Int:v        // .limit locals
+      {: classFile.setVarSize(v.int_val); :}
+   |
+   STACK Int:v          // .limit stack
+      {: classFile.setStackSize(v.int_val); :}
+   |
+   Word:w Int:v
+      {: classFile.report_error(".limit expected \"stack\" or \"locals\", but got "
+                                + w.str_val); :}
+;
+
+// .line <num>
+line_expr ::= Int:v
+      {: classFile.addLine(v.int_val); :}
+;
+
+// .throws <class>
+throws_expr ::= classname:s
+      {: classFile.addThrow(s.str_val); :}
+;
+
+// .catch <class> from <label1> to <label2> using <branchlab>
+catch_expr ::=
+    classname:aclass FROM Word:fromlab TO Word:tolab USING Word:branchlab
+        {: classFile.addCatch(aclass.str_val,
+                              fromlab.str_val,
+                              tolab.str_val,
+                              branchlab.str_val); :}
+    |
+    classname:aclass FROM Int:fromoff TO Int:tooff USING Int:branchoff
+        {: classFile.addCatch(aclass.str_val,
+                              fromoff.int_val,
+                              tooff.int_val,
+                              branchoff.int_val); :}
+;
+
+// .set <var> = <val>
+set_expr ::=
+    Word:name any_item:v
+        {: scanner.dict.put(name.str_val, v); :}
+;
+
+instruction ::=
+    simple_instruction
+    |
+    complex_instruction
+;
+
+// Various patterns of instruction:
+//      instruction [<pattern>]
+simple_instruction ::=
+    Insn:i
+        {: classFile.plant(i.str_val); :}
+    |
+    Insn:i Int:n1 Int:n2
+        {: classFile.plant(i.str_val, n1.int_val, n2.int_val); :}
+    |
+    Insn:i Int:n
+       {: classFile.plant(i.str_val, n.int_val); :}
+    |
+    Insn:i Num:n
+        {: classFile.plant(i.str_val, n.num_val); :}
+    |
+    Insn:i Word:n
+        {: classFile.plant(i.str_val, n.str_val); :}
+    |
+    Insn:i Word:n Int:n2
+        {: classFile.plant(i.str_val, n.str_val, n2.int_val); :}
+    |
+    Insn:i Word:n1 Word:n2
+        {: classFile.plant(i.str_val, n1.str_val, n2.str_val); :}
+    |
+    Insn:i Str:n
+        {: classFile.plantString(i.str_val, n.str_val); :}
+    |
+    Insn:i Relative:n
+        {: classFile.plantRelativeGoto(i.str_val, n.int_val); :}
+  ;
+
+// complex (i.e. multiline) instructions
+//      lookupswitch <lookup>
+//      tableswitch  <table>
+
+complex_instruction ::=
+    LOOKUPSWITCH lookup
+    |
+    TABLESWITCH table
+;
+
+// lookupswitch
+//     <value> : <label>
+//     <value> : <label>
+//     ...
+//     default : <label>
+
+lookup ::=
+    lookup_args
+    lookup_list
+    lookup_default
+;
+
+lookup_args ::= SEP     // no arguments to lookupswitch
+        {: classFile.newLookupswitch(); :}
+;
+
+lookup_list ::= lookup_list lookup_entry | lookup_entry ;
+
+lookup_entry ::=
+    Int:i COLON Word:w SEP
+        {: classFile.addLookupswitch(i.int_val, w.str_val); :}
+    |
+    Int:i COLON Int:off SEP
+        {: classFile.addLookupswitch(i.int_val, off.int_val); :}
+;
+
+lookup_default ::=
+    DEFAULT COLON Word:w
+        {: classFile.endLookupswitch(w.str_val); :}
+    |
+    DEFAULT COLON Int:off
+        {: classFile.endLookupswitch(off.int_val); :}
+;
+
+
+// tableswitch <low> [<high>]
+//     <label>
+//     <label>
+//     ...
+//     default : <label>
+
+table ::=
+    table_args
+    table_list
+    table_default
+;
+
+table_args ::=
+    Int:low SEP     /* one argument : the <low> parameter */
+        {: classFile.newTableswitch(low.int_val); :}
+    |
+    Int:low Int:high SEP     /* two arguments : <low> and <high> parameters */
+        {: classFile.newTableswitch(low.int_val, high.int_val); :}
+;
+
+table_list ::= table_list table_entry | table_entry ;
+
+table_entry ::=
+    Word:w SEP
+        {: classFile.addTableswitch(w.str_val); :}
+    |
+    Int:off SEP
+        {: classFile.addTableswitch(off.int_val); :}
+;
+
+table_default ::=
+    DEFAULT COLON Word:w
+        {: classFile.endTableswitch(w.str_val); :}
+    |
+    DEFAULT COLON Int:off
+        {: classFile.endTableswitch(off.int_val); :}
+;
+
+
+/* --- Revision History ---------------------------------------------------
+--- Iouri Kharon, Mar 13 2006
+    Remove 'uname' token (see Scanner.java)
+
+--- Iouri Kharon, Feb 17 2006
+    Added extended syntax for .stack (use ... locals)
+
+--- Iouri Kharon, Dec 29 2005
+    Added .deprecated, .atribute, .inner and .annotation directives
+
+    Added .field <> .end field block
+
+--- Iouri Kharon, Dec 20 2005
+    Added multiple instance of .debug
+
+    Added the signature option in .var declaration
+
+    Added STRICT and SYNTHETIC access flags
+
+    Added 'uname' token - all names/descriptor can be enclosed in quotes
+    for use keywords/instruction as variable names
+
+--- Daniel Reynaud, Oct 22 2005
+    Added .enclosing, .debug and .signature directives and the signature
+    option in fields declaration
+
+--- Daniel Reynaud, Oct 21 2005
+    Added ANNOTATION, ENUM, BRIDGE and VARARGS access flags
+
+--- Daniel Reynaud, Oct 20 2005
+    Added support for offsets instead of labels
+
+--- Daniel Reynaud, Oct 19 2005
+    Added .bytecode directive
+
+--- Jonathan Meyer, Mar 1 1997
+    Added ACC_SUPER flag - needed by 1.1.
+
+--- Jonathan Meyer, Oct 1 1996
+    Added support for .interface and .implements.
+
+--- Jonathan Meyer, July 25 1996
+    Slightly modified syntax of .var directive.
+
+    Added call to setLine to fix problem with line numbering.
+
+    Added definitions for report_error and report_fatal_error, and
+    also added 'error' token to statements list.
+*/

@@ -3,34 +3,15 @@
 
 'use strict';
 
-function load(file, responseType) {
-  return new Promise(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", file, true);
-    xhr.responseType = responseType;
-    xhr.onload = function () {
-      resolve(xhr.response);
-    };
-    xhr.onerror = function() {
-      reject();
-    };
-    xhr.send(null);
-  });
-}
-
-function loadScript(path) {
-  return new Promise(function(resolve, reject) {
-    var element = document.createElement('script');
-    element.setAttribute("type", "text/javascript");
-    element.setAttribute("src", path);
-    document.getElementsByTagName("head")[0].appendChild(element);
-    element.onload = resolve;
-  });
-}
-
 // To launch the unit tests: ?main=RunTests
 // To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
+
+// The base directory of the app, relative to the current page.  Normally this
+// is the directory from which the page was loaded, but some test pages load
+// from a subdirectory, like tests/fs/, and they set this accordingly such that
+// code loads files, like libs/fs-init.js, can load them from the right place.
+var APP_BASE_DIR = "./";
 
 var jvm = new JVM();
 
@@ -60,50 +41,6 @@ if (urlParams.pushConn && urlParams.pushMidlet) {
   });
 }
 
-var initFS = new Promise(function(resolve, reject) {
-  fs.init(resolve);
-}).then(function() {
-  var fsPromises = [
-    new Promise(function(resolve, reject) {
-      fs.mkdir("/Persistent", resolve);
-    }),
-
-    new Promise(function(resolve, reject) {
-      fs.exists("/_main.ks", function(exists) {
-        if (exists) {
-          resolve();
-        } else {
-          load("certs/_main.ks", "blob").then(function(data) {
-            fs.create("/_main.ks", data, function() {
-              resolve();
-            });
-          });
-        }
-      });
-    }),
-  ];
-
-  if (MIDP.midletClassName == "RunTests") {
-    fsPromises.push(
-      new Promise(function(resolve, reject) {
-        fs.exists("/_test.ks", function(exists) {
-          if (exists) {
-            resolve();
-          } else {
-            load("certs/_test.ks", "blob").then(function(data) {
-              fs.create("/_test.ks", data, function() {
-                resolve();
-              });
-            });
-          }
-        });
-      })
-    );
-  }
-
-  return Promise.all(fsPromises);
-});
-
 // Mobile info gets accessed a lot, so we cache it on startup.
 var mobileInfo;
 var getMobileInfo = new Promise(function(resolve, reject) {
@@ -121,21 +58,23 @@ jars.forEach(function(jar) {
   }));
 });
 
+function processJAD(data) {
+  data
+  .replace(/\r\n|\r/g, "\n")
+  .replace(/\n /g, "")
+  .split("\n")
+  .forEach(function(entry) {
+    if (entry) {
+      var keyEnd = entry.indexOf(":");
+      var key = entry.substring(0, keyEnd);
+      var val = entry.substring(keyEnd + 1).trim();
+      MIDP.manifest[key] = val;
+    }
+  });
+}
+
 if (urlParams.jad) {
-  loadingPromises.push(load(urlParams.jad, "text").then(function(data) {
-    data
-    .replace(/\r\n|\r/g, "\n")
-    .replace(/\n /g, "")
-    .split("\n")
-    .forEach(function(entry) {
-      if (entry) {
-        var keyEnd = entry.indexOf(":");
-        var key = entry.substring(0, keyEnd);
-        var val = entry.substring(keyEnd + 1).trim();
-        MIDP.manifest[key] = val;
-      }
-    });
-  }));
+  loadingPromises.push(load(urlParams.jad, "text").then(processJAD));
 }
 
 function performDownload(dialog, callback) {
@@ -186,14 +125,14 @@ function performDownload(dialog, callback) {
 }
 
 if (urlParams.downloadJAD) {
-  loadingPromises.push(new Promise(function(resolve, reject) {
-    initFS.then(function() {
-      fs.exists("/app.jar", function(exists) {
+  loadingPromises.push(initFS.then(function() {
+    return new Promise(function(resolve, reject) {
+      fs.exists("/midlet.jar", function(exists) {
         if (exists) {
-          fs.open("/app.jar", function(fd) {
+          fs.open("/midlet.jar", function(fd) {
             var data = fs.read(fd);
-            fs.close();
-            jvm.addPath("app.jar", data.buffer);
+            fs.close(fd);
+            jvm.addPath("midlet.jar", data.buffer.slice(0));
             resolve();
           });
         } else {
@@ -205,13 +144,24 @@ if (urlParams.downloadJAD) {
           performDownload(dialog, function(data) {
             dialog.parentElement.removeChild(dialog);
 
-            jvm.addPath("app.jar", data);
+            jvm.addPath("midlet.jar", data.jarData);
 
-            fs.create("/app.jar", new Blob([ data ]), function() {});
-
-            resolve();
+            fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
+              fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
+                resolve();
+              });
+            });
           });
         }
+      });
+    });
+  }).then(function() {
+    return new Promise(function(resolve, reject) {
+      fs.open("/midlet.jad", function(fd) {
+        var data = fs.read(fd);
+        fs.close(fd);
+        processJAD(util.decodeUtf8(data));
+        resolve();
       });
     });
   }));
@@ -267,6 +217,16 @@ window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    fs.clear();
  };
+ document.getElementById("exportstorage").onclick = function() {
+   fs.exportStore(function(blob) {
+     saveAs(blob, "fs-" + Date.now() + ".json");
+   });
+ };
+ document.getElementById("importstorage").addEventListener("change", function(event) {
+   fs.importStore(event.target.files[0], function() {
+     DumbPipe.close(DumbPipe.open("alert", "Import completed."));
+   });
+ }, false);
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);
