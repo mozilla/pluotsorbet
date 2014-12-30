@@ -983,25 +983,6 @@ var currentlyFocusedTextEditor;
         this.textEditor.setParent(null);
     });
 
-    Native.create("javax/microedition/lcdui/Display.unfocusTextEditorForScreenChange.()V", function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-            currentlyFocusedTextEditor = null;
-        }
-    });
-
-    Native.create("javax/microedition/lcdui/Display.unfocusTextEditorForAlert.()V", function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-        }
-    });
-
-    Native.create("javax/microedition/lcdui/Display.refocusTextEditorAfterAlert.()V", function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.focus();
-        }
-    });
-
     Native.create("com/nokia/mid/ui/CanvasItem.setSize.(II)V", function(width, height) {
         this.textEditor.setStyle("width", width + "px");
         this.textEditor.setStyle("height", height + "px");
@@ -1348,6 +1329,11 @@ var currentlyFocusedTextEditor;
     Native.create("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V", function(pos) {
         console.warn("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V not implemented");
     });
+
+    Native.create("javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I", function() {
+        console.warn("javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I not implemented");
+        return 0;
+    })
 
     Native.create("javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I",
     function(nativeId) {
