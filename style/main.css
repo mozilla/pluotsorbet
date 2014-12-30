@@ -148,6 +148,15 @@ button {
   padding: 0.5rem;
 }
 
+.lcdui-alert section {
+  text-align: center;
+}
+
+.lcdui-alert menu,
+.download-progress-dialog menu {
+  text-align: center;
+}
+
 /**
  * STYLE OVERRIDES FOR DEBUG MODE:
  *
