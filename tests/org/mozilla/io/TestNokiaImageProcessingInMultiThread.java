@@ -43,7 +43,7 @@ public class TestNokiaImageProcessingInMultiThread implements Testlet {
         public void run() {
             try {
                 LocalMessageProtocolConnection client = (LocalMessageProtocolConnection)Connector.open("localmsg://" + PROTO_NAME);
-                FileConnection originalImage = (FileConnection)Connector.open("file:///" + this.name, Connector.READ_WRITE);
+                FileConnection originalImage = (FileConnection)Connector.open("file:////" + this.name, Connector.READ_WRITE);
                 if (!originalImage.exists()) {
                     originalImage.create();
                 }
@@ -76,7 +76,7 @@ public class TestNokiaImageProcessingInMultiThread implements Testlet {
                 th.check(dataDecoder.getString(13), "Scale");
                 th.check(dataDecoder.getInteger(2), 42);
                 th.check(dataDecoder.getString(10), "Complete");
-                String path = "file:///" + dataDecoder.getString(11);
+                String path = "file:////" + dataDecoder.getString(11);
 
                 FileConnection file = (FileConnection)Connector.open(path);
                 th.check(file.exists(), "File exists");

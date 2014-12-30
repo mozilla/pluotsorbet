@@ -199,6 +199,37 @@ The SOFTWARE this license applies to is the Java Specification Request (JSR) 075
 
 ---
 
+JSR -075 Technology Compatibility Kit License Agreement
+
+BY DOWNLOADING OR USING THE SOFTWARE AND/OR DOCUMENTATION DESCRIBED IN EXHIBIT A HERETO (COLLECTIVELY THE SOFTWARE), YOU AGREE TO THE FOLLOWING TERMS AND CONDITIONS (AGREEMENT). IF YOU DO NOT AGREE TO THE TERMS AND CONDITIONS OF THIS AGREEMENT, YOU MAY NOT DOWNLOAD OR USE THE SOFTWARE.
+
+License Grant.  You are hereby granted a personal, non-transferable and non-sublicenseable, nonexclusive, world-wide, royalty free license to use the JSR-075 Technology Compatibility Kit (including software and documentation) (the TCK) solely for the purpose of testing compliance with the relevant portions of specifications or standards to which it applies (the Specification).  You may not modify or create derivative works of any of the TCK except as is necessary to fulfill the purpose described above.  You may not distribute copies of the TCK to other parties for any purpose, including for the purpose of allowing such other party to use the TCK.  Nor may you modify or incorporate the TCK into any other software.
+
+No Warranties.  The TCK contained herein is provided on an "AS IS" basis and to the maximum extent permitted by applicable law, this material is provided AS IS AND WITH ALL FAULTS, and the developers of this material hereby disclaim all other warranties and conditions, either express, implied or statutory, including, but not limited to, any (if any) implied warranties, duties or conditions of merchantability, of fitness for a particular purpose, of accuracy or completeness of responses, of results, of workmanlike effort, of lack of viruses, and of lack of negligence. ALSO, THERE IS NO WARRANTY OR CONDITION OF TITLE, QUIET ENJOYMENT, QUIET POSSESSION, CORRESPONDENCE TO DESCRIPTION OR NON-INFRINGEMENT WITH REGARD TO THIS MATERIAL.
+
+Limitation of Liability.  IN NO EVENT WILL ANY AUTHOR, DEVELOPER, LICENSOR, OR DISTRIBUTOR OF THIS MATERIAL BE LIABLE TO ANY OTHER PARTY FOR THE COST OF PROCURING SUBSTITUTE GOODS OR SERVICES, LOST PROFITS, LOSS OF USE, LOSS OF DATA, OR ANY INCIDENTAL, CONSEQUENTIAL, DIRECT, INDIRECT, PUNITIVE, OR SPECIAL DAMAGES WHETHER UNDER CONTRACT, TORT, WARRANTY, OR OTHERWISE, ARISING IN ANY WAY OUT OF THIS OR ANY OTHER AGREEMENT RELATING TO THIS MATERIAL, WHETHER OR NOT SUCH PARTY HAD ADVANCE NOTICE OF THE POSSIBILITY OF SUCH DAMAGES.
+
+Covenant Not to Assert.  As a material condition to this license you hereby agree, to the extent that you have any patents which cover the use of the TCK in any manner permitted under this License, not to assert any such patents against the developers or distributors of the TCK or any other parties who have entered into a license substantially similar to this License for the licensed use of the TCK.
+
+Reciprocity.  You may have, or may have in the future, the ability to license test suites developed or distributed pursuant to the Java Community Process ("Java Materials").  You acknowledge that under this license you are receiving the TCK under reasonable royalty-free terms. While you are not obligated to make Java Materials available, if you do so, you agree to license them under reasonable royalty-free terms. For the purpose of this paragraph, terms are not reasonable terms if they are more restrictive than this license or if they discriminate against any individual or group of JCP members or against implementers of independent implementations or open source implementations.  If you do make Java Materials available in the future and do not license such Java Materials under reasonable royalty-free terms, as consideration for licensing this TCK to you, you agree to pay IBM royalties as follows: (a) Thirty Thousand Dollars ($30,000) payable within thirty (30) days of your distribution of such Java Materials and (b) an additional Ten Thousand Dollars ($10,000) per year for each year you use this TCK or use and/or distribute a product that has been tested for compliance with this TCK. In no event shall royalties in the aggregate exceed Sixty Thousand Dollars ($60,000.)  IBM will notify you in writing how to make such royalty payments
+
+Compatibility Claims.  You may not claim that any version or release of software passes the TCK, and therefore is compatible with the Specification, unless it is capable of passing the most current version of the TCK available 120 days prior to the date of its first shipment to customers.  You will make available information regarding the version of the TCK passed, upon request.  You agree that any claims regarding compliance with the Specification will be factually accurate and will not be misleading.
+
+General.
+No other rights are granted by implication, estoppel or otherwise.
+
+If any provision of this Agreement is invalid or unenforceable under applicable law, it shall not affect the validity or enforceability of the remainder of the terms of this Agreement, and without further action by the parties hereto, such provision shall be reformed to the minimum extent necessary to make such provision valid and enforceable.
+
+Your rights under this Agreement shall terminate if you fail to comply with any of the material terms or conditions of this Agreement and do not cure such failure in a reasonable period of time after becoming aware of such noncompliance.  If your rights under this Agreement terminate, you agree to cease use of the TCK immediately and cease making any claims of compatibility regarding the Specification based on the use of the TCK.
+
+This Agreement is governed by the laws of the State of New York and the intellectual property laws of the United States of America.  No party to this Agreement will bring a legal action under this Agreement more than one year after the cause of action arose.  Each party waives its rights to a jury trial in any resulting litigation.
+
+EXHIBIT A
+
+The SOFTWARE this license applies to is the Java Specification Request (JSR) 075 for the Personal Information Manager and the File Connection optional package Technology Compatibility Kits (TCK).
+
+---
+
 libs/rusha.js: The MIT License (MIT)
 
 Copyright (c) 2013-2014 Sam Rijs

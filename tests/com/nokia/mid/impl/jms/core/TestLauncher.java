@@ -28,7 +28,7 @@ public class TestLauncher implements Testlet {
 
     public void test(TestHarness th) {
         try {
-            FileConnection file = (FileConnection)Connector.open("file:///test.jpg", Connector.READ_WRITE);
+            FileConnection file = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
             if (!file.exists()) {
                 file.create();
             }
