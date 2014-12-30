@@ -1270,12 +1270,21 @@ var currentlyFocusedTextEditor;
         });
     }, true);
 
+    var nextMidpDisplayableId = 0;
+
     Native.create("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V", function() {
         console.warn("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V not implemented");
     });
 
     Native.create("javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V", function(nativeId) {
         console.warn("javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V not implemented");
+        var el = document.getElementById("displayable-" + nativeId);
+        if (el) {
+            el.parentElement.removeChild(el);
+            if (currentlyFocusedTextEditor) {
+                currentlyFocusedTextEditor.focus();
+            }
+        }
     });
 
     Native.create("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I", function(title, ticker) {
@@ -1285,18 +1294,35 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I", function(title, ticker, type) {
         console.warn("javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
-        return 2;
+
+        var nativeId = nextMidpDisplayableId++;
+        var el = document.getElementById("lcdui-alert").cloneNode(true);
+        el.id = "displayable-" + nativeId;
+        el.querySelector('h1.title').textContent = util.fromJavaString(title);
+        document.body.appendChild(el);
+
+        return nativeId;
     });
 
     Native.create("javax/microedition/lcdui/AlertLFImpl.setNativeContents0.(ILjavax/microedition/lcdui/ImageData;[ILjava/lang/String;)Z",
     function(nativeId, imgId, indicatorBounds, text) {
         console.warn("javax/microedition/lcdui/AlertLFImpl.setNativeContents0.(ILjavax/microedition/lcdui/ImageData;[ILjava/lang/String;)Z not implemented");
         console.log("TEXT: " + util.fromJavaString(text));
+
+        var el = document.getElementById("displayable-" + nativeId);
+        el.querySelector('p.text').textContent = util.fromJavaString(text);
+
         return false;
     });
 
     Native.create("javax/microedition/lcdui/AlertLFImpl.showNativeResource0.(I)V", function(nativeId) {
         console.warn("javax/microedition/lcdui/AlertLFImpl.showNativeResource0.(I)V not implemented");
+        var el = document.getElementById("displayable-" + nativeId);
+        el.style.display = 'block';
+        el.classList.add('visible');
+        if (currentlyFocusedTextEditor) {
+            currentlyFocusedTextEditor.blur();
+        }
     });
 
     Native.create("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V", function(pos) {
