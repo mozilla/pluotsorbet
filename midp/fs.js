@@ -304,7 +304,7 @@ Native["com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V"] = function
 
 Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(path) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
-      fs.exists(getAbsolutePath(path), resolve);
+        fs.exists(getAbsolutePath(path), function(exists) { resolve(exists ? 1 : 0); } );
     }));
 };
 
@@ -410,9 +410,9 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(jP
 };
 
 Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] = function(path) {
-    return new Promise(function(resolve, reject) {
+    asyncImpl("Z", new Promise(function(resolve, reject) {
         fs.remove(getAbsolutePath(path), function(x) { resolve(x ? 1 : 0); });
-    });
+    }));
 };
 
 Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] =
