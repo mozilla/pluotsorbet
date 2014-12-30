@@ -56,7 +56,7 @@ public class TestRandomAccessStream implements Testlet {
     }
 
     void cleanup() throws IOException {
-        FileConnection file = (FileConnection)Connector.open("file:///afile");
+        FileConnection file = (FileConnection)Connector.open("file:////afile");
         file.delete();
         file.close();
     }

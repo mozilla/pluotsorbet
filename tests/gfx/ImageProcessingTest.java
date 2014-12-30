@@ -58,7 +58,7 @@ public class ImageProcessingTest extends MIDlet {
         client.receive(msg);
         byte[] clientData = msg.getData();
 
-        FileConnection originalImage = (FileConnection)Connector.open("file:///test.jpg", Connector.READ_WRITE);
+        FileConnection originalImage = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
         if (!originalImage.exists()) {
             originalImage.create();
         }
@@ -91,7 +91,7 @@ public class ImageProcessingTest extends MIDlet {
         dataDecoder.getString(13);
         dataDecoder.getInteger(2);
         dataDecoder.getString(10);
-        String path = "file:///" + dataDecoder.getString(11);
+        String path = "file:////" + dataDecoder.getString(11);
 
         if (!originalImage.exists()) {
             System.out.println("FAIL - Original image has been deleted");

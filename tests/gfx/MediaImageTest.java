@@ -42,7 +42,7 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
             display = Display.getDisplay(this);
             form = new Form("Test");
 
-            FileConnection file = (FileConnection)Connector.open("file:///test.jpg", Connector.READ_WRITE);
+            FileConnection file = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
             if (!file.exists()) {
                 file.create();
             }
@@ -51,7 +51,7 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
             os.write(read(is));
             os.close();
 
-            player = Manager.createPlayer("file:///test.jpg");
+            player = Manager.createPlayer("file:////test.jpg");
 
             player.addPlayerListener(this);
 

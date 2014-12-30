@@ -27,16 +27,20 @@ casper.test.begin("fs tests", 6, function(test) {
     // by deleting and recreating the database between test runs.  We may also
     // want to move over the other tests that touch the fs.
 
+    casper
+    .start("http://localhost:8000/tests/fs/delete-fs.html")
+    .waitForText("DONE");
+
     // Initialize a v1 database.
     casper
-    .start("http://localhost:8000/tests/fs/init-fs-v1.html")
+    .thenOpen("http://localhost:8000/tests/fs/init-fs-v1.html")
     .waitForText("DONE");
 
     // Upgrade the database to the latest version and test its initial state.
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 14 PASS, 0 FAIL", "test fs v1 upgrade/init");
+        test.assertTextExists("DONE: 30 pass, 0 fail", "test fs v1 upgrade/init");
     });
 
     // Run the unit tests against the upgraded database.
@@ -59,7 +63,7 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 14 PASS, 0 FAIL", "test fs v2 upgrade/init");
+        test.assertTextExists("DONE: 30 pass, 0 fail", "test fs v2 upgrade/init");
     });
 
     // Run the unit tests against the upgraded database.
@@ -82,7 +86,7 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-populate.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 218 PASS, 0 FAIL", "test fs v2 upgrade/populate");
+        test.assertTextExists("DONE: 234 pass, 0 fail", "test fs v2 upgrade/populate");
     });
 
     // Run the unit tests.
