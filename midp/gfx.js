@@ -1257,6 +1257,7 @@ var currentlyFocusedTextEditor;
     }, true);
 
     var nextMidpDisplayableId = 1;
+    var PLAIN = 0;
 
     Native.create("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V", function() {
         console.warn("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V not implemented");
@@ -1311,9 +1312,36 @@ var currentlyFocusedTextEditor;
         }
     });
 
+    var INDEFINITE = -1;
+    var CONTINUOUS_RUNNING = 2;
+
     Native.create("javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I",
     function(ownerId, label, layout, interactive, maxValue, initialValue) {
         console.warn("javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I not implemented");
+
+        if (label != null) {
+            console.error("Expected null label");
+        }
+
+        if (layout != PLAIN) {
+            console.error("Expected PLAIN layout");
+        }
+
+        if (interactive) {
+            console.error("Expected not interactive gauge");
+        }
+
+        if (maxValue != INDEFINITE) {
+            console.error("Expected INDEFINITE maxValue");
+        }
+
+        if (initialValue != CONTINUOUS_RUNNING) {
+            console.error("Expected CONTINUOUS_RUNNING initialValue")
+        }
+
+        var el = document.getElementById("displayable-" + ownerId);
+        el.querySelector("progress").style.display = "inline";
+
         return nextMidpDisplayableId++;
     })
 
