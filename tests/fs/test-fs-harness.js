@@ -60,7 +60,6 @@ var initialPaths = [
   "/Phone/_my_pictures",
   "/Phone/_my_videos",
   "/Phone/_my_recordings",
-  "/Photos",
   "/Private",
   "/_main.ks",
 ];
@@ -74,7 +73,6 @@ var initialFilesByDir = {
     "MemoryCard/",
     "Persistent/",
     "Phone/",
-    "Photos/",
     "Private/",
     "_main.ks",
   ],
@@ -86,7 +84,6 @@ var initialFilesByDir = {
     "_my_videos/",
     "_my_recordings/",
   ],
-  "/Photos": [],
   "/Private": [],
 };
 

@@ -102,7 +102,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 34 pass, 0 fail", "test fs init");
+        test.assertTextExists("DONE: 30 pass, 0 fail", "test fs init");
     });
 
     function basicUnitTests() {

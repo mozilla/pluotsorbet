@@ -12,7 +12,6 @@ var initialDirs = [
   "/Phone/_my_pictures",
   "/Phone/_my_videos",
   "/Phone/_my_recordings",
-  "/Photos",
   "/Private",
 ];
 

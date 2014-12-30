@@ -40,7 +40,7 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 34 pass, 0 fail", "test fs v1 upgrade/init");
+        test.assertTextExists("DONE: 30 pass, 0 fail", "test fs v1 upgrade/init");
     });
 
     // Run the unit tests against the upgraded database.
@@ -63,7 +63,7 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 34 pass, 0 fail", "test fs v2 upgrade/init");
+        test.assertTextExists("DONE: 30 pass, 0 fail", "test fs v2 upgrade/init");
     });
 
     // Run the unit tests against the upgraded database.
@@ -86,7 +86,7 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-populate.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 238 pass, 0 fail", "test fs v2 upgrade/populate");
+        test.assertTextExists("DONE: 234 pass, 0 fail", "test fs v2 upgrade/populate");
     });
 
     // Run the unit tests.
