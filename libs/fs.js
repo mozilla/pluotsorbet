@@ -681,7 +681,8 @@ var fs = (function() {
 
     store.getItem(path, function(record) {
       if (!record) {
-        cb(true);
+        // If the path doesn't exist, then we can't remove it.
+        cb(false);
       } else if (record.isDir) {
         // If the directory isn't empty, then we can't remove it.
         store.isEmpty(path, function(empty) {

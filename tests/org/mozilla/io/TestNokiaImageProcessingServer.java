@@ -63,7 +63,7 @@ public class TestNokiaImageProcessingServer implements Testlet {
 
     public void testScaleImage(TestHarness th, int maxKb, int maxHres, int maxVres) throws IOException {
         // Store an image in the fs
-        FileConnection originalImage = (FileConnection)Connector.open("file:///test.jpg", Connector.READ_WRITE);
+        FileConnection originalImage = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
         if (!originalImage.exists()) {
             originalImage.create();
         }
@@ -106,7 +106,7 @@ public class TestNokiaImageProcessingServer implements Testlet {
         th.check(dataDecoder.getString(13), "Scale");
         th.check(dataDecoder.getInteger(2), 42);
         th.check(dataDecoder.getString(10), "Complete");
-        String path = "file:///" + dataDecoder.getString(11);
+        String path = "file:////" + dataDecoder.getString(11);
 
         FileConnection file = (FileConnection)Connector.open(path);
         th.check(file.exists(), "File exists");

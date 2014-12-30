@@ -38,7 +38,7 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
 
         // Test player with file URL.
         try {
-            String url = "file:///hello.wav";
+            String url = "file:////hello.wav";
             FileConnection file = (FileConnection)Connector.open(url, Connector.READ_WRITE);
             if (!file.exists()) {
                 file.create();
