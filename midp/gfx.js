@@ -1256,7 +1256,7 @@ var currentlyFocusedTextEditor;
         });
     }, true);
 
-    var nextMidpDisplayableId = 0;
+    var nextMidpDisplayableId = 1;
 
     Native.create("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V", function() {
         console.warn("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V not implemented");
@@ -1275,7 +1275,7 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I", function(title, ticker) {
         console.warn("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
-        return 1;
+        return nextMidpDisplayableId++;
     });
 
     Native.create("javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I", function(title, ticker, type) {
@@ -1311,6 +1311,12 @@ var currentlyFocusedTextEditor;
         }
     });
 
+    Native.create("javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I",
+    function(ownerId, label, layout, interactive, maxValue, initialValue) {
+        console.warn("javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I not implemented");
+        return nextMidpDisplayableId++;
+    })
+
     Native.create("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V", function(pos) {
         console.warn("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V not implemented");
     });
@@ -1318,7 +1324,7 @@ var currentlyFocusedTextEditor;
     Native.create("javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I",
     function(nativeId) {
         console.warn("javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
-        return 3;
+        return nextMidpDisplayableId++;
     });
 
     Native.create("javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V", function(nativeId, modelVersion, w, h) {
@@ -1333,7 +1339,19 @@ var currentlyFocusedTextEditor;
     Native.create("javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I",
     function(ownerId, label, layout, text, appearanceMode, font) {
         console.warn("javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I not implemented");
-        return 4;
+        return nextMidpDisplayableId++;
+    });
+
+    Native.create("javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V", function(nativeId, w, h) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V not implemented");
+    });
+
+    Native.create("javax/microedition/lcdui/ItemLFImpl.setLocation0.(III)V", function(nativeId, x, y) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.setLocation0.(III)V not implemented");
+    });
+
+    Native.create("javax/microedition/lcdui/ItemLFImpl.show0.(I)V", function(nativeId) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.show0.(I)V not implemented");
     });
 
     Native.create("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I", function(nativeId) {
