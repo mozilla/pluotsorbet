@@ -9,11 +9,15 @@ var RECORD_STORE_BASE = "/RecordStore";
 // and System.getProperty to provide inquiring midlets with the list.  Each root
 // must have a trailing slash.  See FileSystemRegistry.listRoots for more info.
 MIDP.fsRoots = [
-    "/",
+    "MemoryCard/",
+    "Phone/",
+    "Private/",
 ];
 // The names here should be localized.
 MIDP.fsRootNames = [
     "Memory card",
+    "Phone memory",
+    "Private",
 ];
 
 function getAbsolutePath(jPath) {

@@ -90,34 +90,50 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = null;
         break;
     case "fileconn.dir.memorycard":
-        value = "file:////";
+        value = "file:///MemoryCard/";
+        break;
+    // The names here should be localized.
+    case "fileconn.dir.memorycard.name":
+        value = "Memory card";
         break;
     case "fileconn.dir.private":
-        value = "file:////";
+        value = "file:///Private/";
+        break;
+    case "fileconn.dir.private.name":
+        value = "Private";
         break;
     case "fileconn.dir.applications.bookmarks":
-        value = "file:////";
+        value = null;
         break;
     case "fileconn.dir.received":
-        value = "file:////";
+        value = "file:///Phone/_my_downloads/";
+        break;
+    case "fileconn.dir.received.name":
+        value = "Downloads";
         break;
     case "fileconn.dir.photos":
-        value = "file:////Photos/";
+        value = "file:///Phone/_my_pictures/";
+        break;
+    case "fileconn.dir.photos.name":
+        value = "Photos";
+        break;
+    case "fileconn.dir.videos":
+        value = "file:///Phone/_my_videos/";
+        break;
+    case "fileconn.dir.videos.name":
+        value = "Videos";
+        break;
+    case "fileconn.dir.recordings":
+        value = "file:///Phone/_my_recordings/";
+        break;
+    case "fileconn.dir.recordings.name":
+        value = "Recordings";
         break;
     case "fileconn.dir.roots.names":
         value = MIDP.fsRootNames.join(";");
         break;
     case "fileconn.dir.roots.external":
-        value = MIDP.fsRoots.map(function(v) { return "file:///" + v }).join(";");
-        break;
-    case "fileconn.dir.photos.name":
-        value = "Photos";
-        break;
-    case "fileconn.dir.videos.name":
-        value = "Videos";
-        break;
-    case "fileconn.dir.recordings.name":
-        value = "Recordings";
+        value = MIDP.fsRoots.map(function(v) { return "file:///" + v }).join("\n");
         break;
     case "file.separator":
         value = "/";

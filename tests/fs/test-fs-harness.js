@@ -11,9 +11,7 @@ var log = function() {
   document.body.textContent += s + "\n";
 
   // Log it via console.log so it gets written to the test automation log.
-  // XXX Commented out because `make test` currently fails if the test log
-  // contains the text "FAIL", and this causes that text to appear in it.
-  // console.log(s);
+  console.log(s);
 }
 
 var passed = 0, failed = 0, then = performance.now();
@@ -21,22 +19,20 @@ var passed = 0, failed = 0, then = performance.now();
 function is(a, b, msg) {
   if (a == b) {
     ++passed;
-    log("PASS " + msg);
+    log("pass " + msg);
   } else {
     ++failed;
-    log("FAIL " + msg);
-    log("GOT: " + JSON.stringify(a));
-    log("EXPECTED: " + JSON.stringify(b));
+    log("fail " + msg + "; expected " + JSON.stringify(b) + ", got " + JSON.stringify(a));
   }
 }
 
 function ok(a, msg) {
   if (!!a) {
     ++passed;
-    log("PASS " + msg);
+    log("pass " + msg);
   } else {
     ++failed;
-    log("FAIL " + msg);
+    log("fail " + msg);
   }
 }
 
@@ -45,8 +41,8 @@ var tests = [];
 function next() {
   if (tests.length == 0) {
     ok(true, "TESTS COMPLETED");
-    log("DONE: " + passed + " PASS, " + failed + " FAIL, " +
-                (Math.round(performance.now() - then)) + " TIME");
+    log("DONE: " + passed + " pass, " + failed + " fail, " +
+                (Math.round(performance.now() - then)) + " time");
   } else {
     var test = tests.shift();
     test();
@@ -57,23 +53,41 @@ function next() {
 // We check that they all exist.
 var initialPaths = [
   "/",
+  "/MemoryCard",
   "/Persistent",
+  "/Phone",
+  "/Phone/_my_downloads",
+  "/Phone/_my_pictures",
+  "/Phone/_my_videos",
+  "/Phone/_my_recordings",
   "/Photos",
+  "/Private",
   "/_main.ks",
 ];
 
 // The initial files we expect to find in the filesystem, indexed by parent dir.
 // We check that the directories have the files we expect to find in them.
+// The keys are directory paths, while the values are filenames (with a slash
+// appended to the names of directories).
 var initialFilesByDir = {
   "/": [
+    "MemoryCard/",
     "Persistent/",
+    "Phone/",
     "Photos/",
+    "Private/",
     "_main.ks",
   ],
-
+  "/MemoryCard": [],
   "/Persistent": [],
-
+  "/Phone": [
+    "_my_downloads/",
+    "_my_pictures/",
+    "_my_videos/",
+    "_my_recordings/",
+  ],
   "/Photos": [],
+  "/Private": [],
 };
 
 function testInit() {
