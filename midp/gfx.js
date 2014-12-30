@@ -526,16 +526,8 @@ var currentlyFocusedTextEditor;
     }
 
     function renderImage(graphics, image, x, y, anchor) {
-        var texture = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image).nativeImageData;
-
-        if (!texture) {
-            console.warn("Graphics.render: image missing native data");
-            return;
-        }
-
-        if (texture instanceof CanvasRenderingContext2D) {
-            texture = texture.canvas; // Render the canvas, not the context.
-        }
+        var texture = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image)
+                                 .nativeImageData.canvas;
 
         withGraphics(graphics, function(c) {
             withAnchor(graphics, c, anchor, x, y, texture.width, texture.height, function(x, y) {
@@ -913,11 +905,7 @@ var currentlyFocusedTextEditor;
         }
 
         var imgData = image.class.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
-            texture = imgData.nativeImageData;
-
-        if (texture instanceof CanvasRenderingContext2D) {
-            texture = texture.canvas; // Render the canvas, not the context.
-        }
+            texture = imgData.nativeImageData.canvas;
 
         var g = this;
         withGraphics(g, function(c) {
