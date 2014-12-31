@@ -10,6 +10,7 @@ casper.on('remote.message', function(message) {
 casper.options.waitTimeout = 70000;
 casper.options.verbose = true;
 casper.options.logLevel = "debug";
+casper.options.viewportSize = { width: 240, height: 320 };
 
 casper.options.onWaitTimeout = function() {
     this.debugPage();
@@ -211,33 +212,51 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         .thenOpen("http://localhost:8000/index.html?fontSize=10&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
+                var gotURL = "data:image/png;base64," + casper.captureBase64('png');
+
                 this.waitForSelector("#canvas", function() {
-                    var got = this.evaluate(function(testCase) {
-                        var gotCanvas = document.getElementById("canvas");
-                        var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
+                    this.evaluate(function(testCase, gotURL) {
+                        var expectedURL = "tests/" + testCase.name + ".png";
 
-                        var img = new Image();
-                        img.src = "tests/" + testCase.name + ".png";
+                        var getImageData = function(url) {
+                            return new Promise(function(resolve, reject) {
+                                var img = new Image();
+                                img.src = url;
+                                img.onload = function() {
+                                    var canvas = document.createElement('canvas');
+                                    canvas.width = img.width;
+                                    canvas.height = img.height;
+                                    canvas.getContext("2d").drawImage(img, 0, 0);
+                                    var pixels = new Uint32Array(canvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
+                                    resolve({
+                                        width: canvas.width,
+                                        height: canvas.height,
+                                        pixels: pixels,
+                                    });
+                                };
+                                img.onerror = function() {
+                                    console.log("Error while loading test image " + url);
+                                    console.log("FAIL");
+                                    reject();
+                                };
+                            });
+                        };
 
-                        img.onload = function() {
-                            var expectedCanvas = document.createElement('canvas');
-                            expectedCanvas.width = img.width;
-                            expectedCanvas.height = img.height;
-                            expectedCanvas.getContext("2d").drawImage(img, 0, 0);
+                        Promise.all([getImageData(gotURL), getImageData(expectedURL)]).then(function(results) {
+                            var got = results[0];
+                            var expected = results[1];
 
-                            var expectedPixels = new Uint32Array(expectedCanvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
-
-                            if (expectedCanvas.width !== gotCanvas.width || expectedCanvas.height !== gotCanvas.height) {
-                                console.log("Canvas dimensions are wrong");
+                            if (expected.width !== got.width || expected.height !== got.height) {
+                                console.log(" dimensions are wrong");
                                 console.log("FAIL");
                                 return;
                             }
 
                             var different = 0;
                             var i = 0;
-                            for (var x = 0; x < gotCanvas.width; x++) {
-                                for (var y = 0; y < gotCanvas.height; y++) {
-                                    if (expectedPixels[i] !== gotPixels[i]) {
+                            for (var x = 0; x < got.width; x++) {
+                                for (var y = 0; y < got.height; y++) {
+                                    if (expected.pixels[i] !== got.pixels[i]) {
                                         different++;
                                     }
 
@@ -246,7 +265,6 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                             }
 
                             if (different > testCase.maxDifferent) {
-                                console.log(gotCanvas.toDataURL());
                                 if (!testCase.todo) {
                                   console.log("FAIL - " + different);
                                 } else {
@@ -261,13 +279,8 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                             }
 
                             console.log("DONE");
-                        };
-
-                        img.onerror = function() {
-                            console.log("Error while loading test image");
-                            console.log("FAIL");
-                        };
-                    }, testCase);
+                        });
+                    }, testCase, gotURL);
 
                     this.waitForText("DONE", function() {
                         var content = this.getPageContent();
@@ -276,10 +289,9 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                         var unexpected = content.contains("UNEXPECTED");
 
                         if (fail) {
-                            this.echo(content);
+                            console.log(gotURL);
                             test.fail(testCase.name + " - Failure");
                         } else if (unexpected) {
-                            this.echo(content);
                             test.fail(testCase.name + " - Unexpected pass");
                         } else if (todo) {
                             test.skip(1, testCase.name + " - Todo");
