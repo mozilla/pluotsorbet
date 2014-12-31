@@ -5,7 +5,6 @@ import javax.microedition.midlet.*;
 import com.nokia.mid.ui.*;
 
 public class CreateImmutableCopyTest extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
@@ -32,6 +31,7 @@ public class CreateImmutableCopyTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 
