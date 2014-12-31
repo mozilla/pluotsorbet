@@ -1524,6 +1524,9 @@ var $S = function(str: string) {
 var $CDZ = J2ME.checkDivideByZero;
 var $CDZL = J2ME.checkDivideByZeroLong;
 
+var $CAB = J2ME.checkArrayBounds;
+var $CAS = J2ME.checkArrayStore;
+
 var $ME = function monitorEnter(object: J2ME.java.lang.Object) {
   console.info("ENTER " + J2ME.toDebugString(object));
   $.ctx.monitorEnter(object);

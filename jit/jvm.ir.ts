@@ -352,17 +352,25 @@ module J2ME.C4.Backend {
     return callee;
   };
 
+  function checkArrayBounds(array, index) {
+    return new AST.CallExpression(new AST.Identifier("$CAB"), [array, index]);
+  }
+
+  function checkArrayStore(array, value) {
+    return new AST.CallExpression(new AST.Identifier("$CAS"), [array, value]);
+  }
+
   IR.JVMStoreIndexed.prototype.compile = function (cx: Context): AST.Node {
     var array = compileValue(this.array, cx);
     var index = compileValue(this.index, cx);
     var value = compileValue(this.value, cx);
-    return assignment(new AST.MemberExpression(array, index, true), value);
+    return new AST.SequenceExpression([checkArrayBounds(array, index), assignment(new AST.MemberExpression(array, index, true), value)]);
   };
 
   IR.JVMLoadIndexed.prototype.compile = function (cx: Context): AST.Node {
     var array = compileValue(this.array, cx);
     var index = compileValue(this.index, cx);
-    return new AST.MemberExpression(array, index, true);
+    return new AST.SequenceExpression([checkArrayBounds(array, index), new AST.MemberExpression(array, index, true)]);
   };
 
   IR.JVMFloatCompare.prototype.compile = function (cx: Context): AST.Node {
