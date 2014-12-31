@@ -37,6 +37,7 @@ public class TextEditor extends CanvasItem {
     private boolean multiline = false;
     private int myId;
     private static TextEditorThread textEditorThread;
+    private Font font = Font.getDefaultFont();
 
     protected TextEditor(String text, int maxSize, int constraints, int width, int height) {
         myId = init(text, maxSize, constraints, width, height);
@@ -97,26 +98,7 @@ public class TextEditor extends CanvasItem {
         return 0;
     }
 
-    // Gets the whole content height in this TextEditor in pixels. We calculate
-    // this from the height of the font, which includes leading (margin below
-    // the text), although this will be inaccurate if the native implementation
-    // uses a different font.
-    public int getContentHeight() {
-        System.out.println("TextEditor::getContentHeight needs a more correct implementation");
-        int lineHeight = getFont().getHeight();
-        int numLines = 1;
-
-        if (isMultiline()) {
-            String content = getContent();
-            for (int i = 0; i < content.length(); i++) {
-                if (content.charAt(i) == '\n') {
-                    numLines++;
-                }
-            }
-        }
-
-        return lineHeight * numLines;
-    }
+    native public int getContentHeight();
 
     // Sets the index of the caret.
     native public void setCaret(int index);
@@ -132,14 +114,11 @@ public class TextEditor extends CanvasItem {
 
     // Gets the font being used in rendering the text content in this TextEditor.
     public Font getFont() {
-        System.out.println("TextEditor::getFont(Font) not implemented");
-        return Font.getDefaultFont();
+        return this.font;
     }
 
     // Sets the application preferred font for rendering the text content in this TextEditor.
-    public void setFont(Font font) {
-        System.out.println("TextEditor::setFont(Font) not implemented");
-    }
+    native public void setFont(Font font);
 
     // Gets the background color and alpha of this TextEditor.
     native public int getBackgroundColor();

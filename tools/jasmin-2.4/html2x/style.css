@@ -1,0 +1,16 @@
+
+td { font-family: Verdana,Arial,Helvetica,sans-serif; color: #000000; font-size: 12px; line-height: 16px; }
+td h1 { font-family: Tahoma; padding: 1px; padding-left: 4px; color: white; background-color: #303030; font-size: 20px; line-height: 24px; font-weight: bold; }
+td h2{ font-family: Tahoma; color: #000000; font-size: 14px; line-height: 16px; font-weight: bold; }
+td h3 { font-family: Tahoma; color: #000000; font-size: 12px; line-height: 16px; font-weight: bold; }
+
+.h1 { font-family: Times; color: #000000; font-size: 18px; line-height: 20px; font-weight: bold; }
+
+/* main text hyperlinks */
+a { color: #b11; TEXT-DECORATION: underline; }
+a:visited {color: #b11}
+a:hover {color: #f88}
+
+pre.code{ font-family: courier new; color: #202060; font-size: 12px; line-height: 14px;}
+font.code{ font-family: courier new; color: #202060; font-size: 12px; line-height: 14px;}
+

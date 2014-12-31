@@ -23,6 +23,101 @@ function ok(a, msg) {
   }
 }
 
+/**
+ * Convert a callback-based fs function to a Promise-based one.
+ * Requires the original function to take a callback as its last argument
+ * and callers to pass all previous arguments.
+ */
+var promisify = function(fn) {
+  return function() {
+    var args = Array.prototype.slice.call(arguments);
+    return new Promise(function(resolve, reject) {
+      args.push(resolve);
+      try {
+        fs[fn].apply(fs, args);
+      } catch(ex) {
+        reject(ex);
+      }
+    });
+  };
+};
+
+// A promise-based fs API.  Wraps callback-based functions in promise-based ones
+// using promisify.  
+var promiseFS = {};
+[
+  "stat",
+  "open",
+  "exportStore",
+  "importStore",
+].forEach(function(fn) { promiseFS[fn] = promisify(fn) });
+
+/**
+ * Given the path to a directory, return the stat objects of its children,
+ * each of which also contains a *name* property and either a *children*
+ * or a *data* property (depending on whether it's a directory or a file)
+ * containing the dir/file's children or data.
+ *
+ * For example, getBranch("/") might return:
+ *
+ * [
+ *   {
+ *     "isDir": true,
+ *     "mtime": 1419059838990,
+ *     "name": "tmp",
+ *     "children": [
+ *       {
+ *         "isDir": false,
+ *         "mtime": 1419059839096,
+ *         "size": 0,
+ *         "name": "tmp2.txt",
+ *         "data": []
+ *       }
+ *     ]
+ *   },
+ *   {
+ *     "isDir": false,
+ *     "mtime": 1419059839115,
+ *     "size": 4,
+ *     "name": "file2",
+ *     "data": [49, 50, 51, 52]
+ *   }
+ * ]
+ *
+ * The purpose of this function is to generate a representation of the fs,
+ * including file data, by recursively retrieving each directory and its files.
+ * This is useful for comparing the state of the fs before and after changes
+ * that shouldn't affect it (f.e. exporting the store and then reimporting it).
+ *
+ * We convert file data into arrays to make it easier to compare them.
+ */
+var getBranch = function(dir) {
+  return new Promise(function(resolve, reject) {
+    fs.list(dir, function(error, files) {
+      Promise.all(files.map(function(file) {
+        return new Promise(function(resolve, reject) {
+          var path = dir + file;
+          promiseFS.stat(path).then(function(stat) {
+            stat.name = file;
+            if (stat.isDir) {
+              getBranch(path).then(function(children) {
+                stat.children = children;
+                resolve(stat);
+              });
+            } else {
+              promiseFS.open(path).then(function(fd) {
+                stat.data = Array.prototype.slice.call(fs.read(fd));
+                fs.close(fd);
+                resolve(stat);
+              });
+            }
+          });
+        });
+      })).then(resolve);
+    });
+  });
+};
+
 var tests = [];
 
 var fd;
@@ -53,11 +148,18 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/", function(files) {
+  fs.list("/", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
     next();
   })
+});
+
+tests.push(function() {
+  fs.list("/tmp", function(error, files) {
+    is(error.message, "Path does not exist", "can't list a path that does not exist");
+    next();
+  });
 });
 
 tests.push(function() {
@@ -132,6 +234,20 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  fs.create("/non-existent-dir/tmp", new Blob(), function(created) {
+    is(created, false, "can't create a file in a non-existent directory");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.exists("/non-existent-dir", function(exists) {
+    is(exists, false, "non-existent directory still doesn't exist");
+    next();
+  });
+});
+
+tests.push(function() {
   fs.mkdir("/tmp", function(created) {
     is(created, false, "can't create a directory with the same path of an already existing directory");
     next();
@@ -141,6 +257,13 @@ tests.push(function() {
 tests.push(function() {
   fs.create("/tmp/tmp.txt", new Blob(), function(created) {
     is(created, true, "created a file");
+    next();
+  });
+});
+
+tests.push(function() {
+  fs.create("/tmp/tmp.txt", new Blob(), function(created) {
+    is(created, false, "can't create a file that already exists");
     next();
   });
 });
@@ -181,26 +304,26 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/", function(files) {
+  fs.list("/", function(error, files) {
     ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files is an array with 1 element");
-    is(files[0], "tmp", "tmp is in files");
+    is(files.length, 1, "files is an array with 1 element: " + files);
+    is(files[0], "tmp/", "tmp is in files");
     next();
   })
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(files) {
+  fs.list("/tmp", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files is an empty array");
-    is(files[0], "ciao", "ciao is in files");
+    is(files[0], "ciao/", "ciao is in files");
     is(files[1], "tmp.txt", "tmp.txt is in files");
     next();
   })
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is an empty array");
     next();
@@ -229,8 +352,8 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/tmp.txt", function(files) {
-    is(files, null, "can't list the children of a file");
+  fs.list("/tmp/tmp.txt", function(error, files) {
+    is(error.message, "Path is not a directory", "can't list the children of a file");
     next();
   });
 });
@@ -250,11 +373,11 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 2, "files has 2 entries");
     is(files[0], "tmp.txt", "tmp.txt is in files");
-    is(files[1], "tmp", "tmp is in files");
+    is(files[1], "tmp/", "tmp is in files");
     next();
   })
 });
@@ -274,10 +397,10 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 1, "files has 1 entry");
-    is(files[0], "tmp", "ciao is in files");
+    is(files[0], "tmp/", "tmp is in files");
     next();
   })
 });
@@ -304,7 +427,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(files) {
+  fs.list("/tmp/ciao", function(error, files) {
     ok(files instanceof Array, "files is an array");
     is(files.length, 0, "files is empty");
     next();
@@ -319,9 +442,9 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(files) {
+  fs.list("/tmp", function(error, files) {
     ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files is empty");
+    is(files.length, 1, "files has one entry");
     is(files[0], "tmp.txt", "tmp.txt is in files");
     next();
   })
@@ -694,8 +817,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("mi"));
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "write updates mtime");
-        lastTime = stat.mtime;
+        ok(stat.mtime, lastTime, "write without flush doesn't update mtime");
         next();
       });
     }, 1);
@@ -739,8 +861,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 5);
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "ftruncate to larger size updates mtime");
-        lastTime = stat.mtime;
+        is(stat.mtime, lastTime, "ftruncate to larger size doesn't update mtime");
         next();
       });
     }, 1);
@@ -750,8 +871,7 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 3);
       fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "ftruncate to smaller size updates mtime");
-        lastTime = stat.mtime;
+        is(stat.mtime, lastTime, "ftruncate to smaller size doesn't update mtime");
         next();
       });
     }, 1);
@@ -759,13 +879,28 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.flush(fd);
       fs.close(fd);
       fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "close doesn't update mtime");
+        ok(stat.mtime > lastTime, "close after changes updates mtime");
+        lastTime = stat.mtime;
         next();
       });
     }, 1);
+  });
+
+  tests.push(function() {
+    fs.open("/tmp/stat.txt", function(fd) {
+      fs.stat("/tmp/stat.txt", function(stat) {
+        var mtime = stat.mtime;
+        window.setTimeout(function() {
+          fs.close(fd);
+          fs.stat("/tmp/stat.txt", function(stat) {
+            is(stat.mtime, mtime, "close without changes doesn't update mtime");
+            next();
+          });
+        }, 1);
+      });
+    });
   });
 
   tests.push(function() {
@@ -781,6 +916,21 @@ tests.push(function() {
   });
 
   tests.push(function() {
+    window.setTimeout(function() {
+      fs.rename("/tmp/stat.txt", "/tmp/stat2.txt", function() {
+        fs.stat("/tmp/stat2.txt", function(stat) {
+          is(stat.mtime, lastTime, "rename doesn't update mtime");
+          // Rename it back to its original name so the next test
+          // doesn't have to know about the name change.
+          fs.rename("/tmp/stat2.txt", "/tmp/stat.txt", function() {
+            next();
+          });
+        });
+      });
+    }, 1);
+  });
+
+  tests.push(function() {
     fs.remove("/tmp/stat.txt", function() {
       fs.stat("/tmp/stat.txt", function(stat) {
         is(stat, null, "removed file no longer has stat");
@@ -789,6 +939,22 @@ tests.push(function() {
     });
   });
 })();
+
+tests.push(function() {
+  fs.mkdir("/tmp/stat", function() {
+    fs.stat("/tmp/stat", function(stat) {
+      var mtime = stat.mtime;
+      window.setTimeout(function() {
+        fs.rename("/tmp/stat", "/tmp/stat2", function() {
+          fs.stat("/tmp/stat2", function(stat) {
+            is(stat.mtime, mtime, "rename directory doesn't update mtime");
+            next();
+          });
+        });
+      }, 1);
+    });
+  });
+});
 
 tests.push(function() {
   fs.mkdir("/statDir", function() {
@@ -851,6 +1017,23 @@ tests.push(function() {
         });
       });
     });
+  });
+});
+
+// Export the fs store, import it again, and verify that the state of the fs
+// is equivalent.
+tests.push(function() {
+  var before;
+  getBranch("/").then(function(branch) {
+    before = branch;
+    return promiseFS.exportStore();
+  }).then(function(blob) {
+    return promiseFS.importStore(blob);
+  }).then(function() {
+    return getBranch("/");
+  }).then(function(after) {
+    ok(QUnit.equiv(before, after), "files are equivalent after export/import");
+    next();
   });
 });
 

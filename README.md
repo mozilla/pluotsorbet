@@ -107,7 +107,7 @@ gfx/rendering tests will print a number next to the error message. That number i
 
 The test output will include base64 encoded images; copy this into your browser's URL bar as a data URL to see what the actual test output looked like.
 
-When running `make test`, a file called `test.log` gets generated. Check that for additional info on the failures that occurred.
+When running `make test`, verbose test output will be printed to your terminal. Check that for additional info on the failures that occurred.
 
 ## Logging
 

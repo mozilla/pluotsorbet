@@ -36,7 +36,7 @@ public class TestMediaImage implements Testlet, PlayerListener {
         try {
             Form form = new Form("Test");
 
-            FileConnection file = (FileConnection)Connector.open("file:///test.jpg", Connector.READ_WRITE);
+            FileConnection file = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
             if (!file.exists()) {
                 file.create();
             }
@@ -45,7 +45,7 @@ public class TestMediaImage implements Testlet, PlayerListener {
             os.write(read(is));
             os.close();
 
-            Player player = Manager.createPlayer("file:///test.jpg");
+            Player player = Manager.createPlayer("file:////test.jpg");
 
             player.addPlayerListener(this);
 

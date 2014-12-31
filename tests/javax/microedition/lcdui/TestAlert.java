@@ -25,6 +25,11 @@ public class TestAlert extends Canvas implements Testlet {
         th.check(isTextEditorReallyFocused(), "TextEditor really gained focus");
 
         th.setScreenAndWait(alert);
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            th.fail("Unexpected exception: " + e);
+        }
         int threshold = 1750;
         th.compareScreenToReferenceImage("gfx/AlertTest.png", threshold, "First alert");
         th.check(textEditor.hasFocus(), "TextEditor kept focus");

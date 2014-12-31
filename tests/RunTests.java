@@ -2,6 +2,7 @@
 
 import gnu.testlet.*;
 
+import com.sun.cldchi.jvm.JVM;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.*;
@@ -109,6 +110,8 @@ public class RunTests extends MIDlet {
     public void startApp() {
         String arg = getAppProperty("arg-0");
 
+        long then = JVM.monotonicTimeMillis();
+
         if (arg != null && arg.length() > 0) {
             Vector v = new Vector();
             for (int n = 0; n < Testlets.list.length; ++n) {
@@ -133,7 +136,8 @@ public class RunTests extends MIDlet {
                 runTest(name);
             }
         }
-        System.out.println("DONE: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " + unknownPass + " unknown pass");
+        System.out.println("DONE: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " +
+                           unknownPass + " unknown pass, " + (JVM.monotonicTimeMillis() - then) + "ms");
     }
 
     public void pauseApp() {

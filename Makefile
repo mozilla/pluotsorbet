@@ -1,29 +1,15 @@
-.PHONY: all test tests j2me java certs app clean
+.PHONY: all test tests j2me java certs app clean jasmin
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts")
 JIT_SRCS=$(shell find jit -name "*.ts")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 
-all: java tests j2me shumway
+all: java jasmin tests j2me shumway
 
 test: all
-	rm -f test.log
-	killall python Python || true
-	python tests/httpServer.py &
-	python tests/echoServer.py &
-	cd tests && python httpsServer.py &
-	cd tests && python sslEchoServer.py &
-	cd tests && python waitServers.py
-	casperjs --engine=slimerjs test `pwd`/tests/automation.js > test.log
-	mkdir test-profile-fs-v1
-	casperjs --engine=slimerjs -profile `pwd`/test-profile-fs-v1 `pwd`/tests/fs/make-fs-v1.js >> test.log
-	casperjs --engine=slimerjs test -profile `pwd`/test-profile-fs-v1 `pwd`/tests/automation.js >> test.log
-	rm -rf test-profile-fs-v1
-	killall python Python || true
-	python dumplog.py
-	if grep -q FAIL test.log; \
-	then false; \
-	else true; \
-	fi
+	tests/runtests.py
+
+jasmin:
+	make -C tools/jasmin-2.4
 
 build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
@@ -60,5 +46,6 @@ app: java certs
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
+	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean

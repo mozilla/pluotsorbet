@@ -26,7 +26,7 @@ import com.sun.midp.log.*;
 public class Connection implements FileConnection, CreateConnection { 
 	
 	/* The url string that was sent to Connector.open(),
-	 * without the preceeding "://" and host name. 
+	 * without the preceeding "://", host name, and leading "/".
 	 * file separator is "/".
 	 */
 	private String fullPath;
@@ -42,6 +42,12 @@ public class Connection implements FileConnection, CreateConnection {
 	private byte[] properPath;
 	
 	private String host;
+
+	// The name of the "filesystem root".
+	// WARNING!  This is not what you would expect if you have a Unix
+	// background.  It isn't "/", the "root directory" in a filesystem.
+	// Rather, it's the "first directory in the file URI", as described
+	// by FileSystemRegistry.java.  For example, "SDCard/".
 	private String root;
 	
 	/* The directory containing this file or dir. 
@@ -370,9 +376,10 @@ public InputStream openInputStream() throws IOException {
 	}
 	
 	public boolean isHidden() {
-		if (!isOpen()) throw new ConnectionClosedException();
-		checkRead();
-		return existsInternal() && isHiddenImpl(properPath);
+		// Per the FileConnection interface: "If hidden files are not
+		// supported on the referenced file system, this method always
+		// returns false."
+		return false;
 	}
 
 	public boolean isDirectory() {
@@ -412,11 +419,8 @@ public InputStream openInputStream() throws IOException {
 	}
 
 	public void setHidden(boolean hidden) throws IOException {
-		if (!isOpen()) throw new ConnectionClosedException();
-		checkWrite();
-		if (!existsInternal()) throw new IOException("File does not exist: " + getURL());
-		
-		setHiddenImpl(properPath, hidden);
+		// Per the FileConnection interface: "If the file system doesn't
+		// support a hidden attribute, this method is ignored."
 	}
 
 	public Enumeration list() throws IOException {
@@ -441,11 +445,14 @@ public InputStream openInputStream() throws IOException {
 		// make the necessary checks
 		if (!isOpen()) throw new ConnectionClosedException();
 		checkRead();
-		if (!existsInternal()) throw new IOException("Directory does not exist: " + getURL());
-		if (!isDirectoryInternal()) throw new IOException("Connection is open on a file: " + getURL());
 
 		// find the list of files and directories matching the filter
-		byte[][] implList = listImpl(properPath, filter, includeHidden );
+		byte[][] implList;
+		try {
+			implList = listImpl(properPath, filter, includeHidden);
+		} catch(IOException e) {
+			throw new IOException(e.getMessage() + getURL());
+		}
 
 		// create an enumaration that will contain the list of files and directories in String form
 		int resultCount = implList==null ? 0 : implList.length;
@@ -471,7 +478,7 @@ public InputStream openInputStream() throws IOException {
 	 * 					used ("*")
 	 * @param includeHidden
 	 */
-	private synchronized static native byte[][] listImpl(byte[] path, byte[] filter, boolean includeHidden);
+	private synchronized static native byte[][] listImpl(byte[] path, byte[] filter, boolean includeHidden) throws IOException;
 
 	public void create() throws IOException {
 		if (!isOpen()) throw new ConnectionClosedException();
@@ -808,8 +815,6 @@ public static String decode(String s) {
 
 private native boolean isAbsoluteImpl(byte[] path);
 
-private native boolean isHiddenImpl(byte[] path);
-
 private native boolean isReadOnlyImpl(byte[] path);
 
 private native boolean isWriteOnlyImpl(byte[] path);
@@ -817,8 +822,6 @@ private native boolean isWriteOnlyImpl(byte[] path);
 private native void setReadOnlyImpl(byte[] path, boolean value);
 
 private native void setWriteOnlyImpl(byte[] path, boolean value);
-
-private native void setHiddenImpl(byte[] path, boolean value);
 
 private native boolean isValidFilenameImpl(byte[] filename);
 
@@ -846,7 +849,7 @@ private String validateSpec(String spec) {
 	if (idx==0) {
 		// no host is specified, since the URL started as "file:///"
 		host="";		
-		fullPath=spec.substring(0,spec.length()) ;
+		fullPath=spec.substring(1,spec.length()) ;
 	} else {
 		// There is a host specified
 		// make sure it is a valid specification.
@@ -856,7 +859,7 @@ private String validateSpec(String spec) {
 		if ((idx2!=-1 && idx2<idx ) ||  (idx3!=-1 && idx3<idx ))
 			throw new  IllegalArgumentException(spec);
 	
-		fullPath = spec.substring(idx,spec.length());
+		fullPath = spec.substring(idx+1,spec.length());
 		host = spec.substring(0,idx);	
 	}
 	

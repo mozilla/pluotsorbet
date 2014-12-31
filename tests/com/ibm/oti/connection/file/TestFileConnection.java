@@ -35,6 +35,7 @@ public class TestFileConnection implements Testlet {
 
         Enumeration files = dir.list("*.doc", false);
         th.check(files.hasMoreElements(), "Elements found");
+        expected.put(".doc", "");
         expected.put("prova1.doc", "");
         expected.put("prova2.doc", "");
         expected.put("prova3.doc", "");
@@ -101,21 +102,20 @@ public class TestFileConnection implements Testlet {
         th.check(modifiedTime > lastTime, "create updates mtime");
         lastTime = modifiedTime;
 
-        // Merely opening the output stream shouldn't update the mtime, but our
-        // implementation of FCOutputStream.openImpl eagerly truncates the file,
-        // which updates the mtime, so this test is a TODO pending resolution
-        // of that issue.
         try { Thread.sleep(1); } catch (Exception e) {}
         OutputStream out = file.openOutputStream();
         modifiedTime = file.lastModified();
-        th.todo(modifiedTime, lastTime, "open output stream doesn't update mtime");
+        th.check(modifiedTime, lastTime, "open output stream doesn't update mtime");
         lastTime = modifiedTime;
 
-        try { Thread.sleep(1); } catch (Exception e) {}
         out.write(new byte[]{ 4, 3, 2, 1 });
+        modifiedTime = file.lastModified();
+        th.check(modifiedTime, lastTime, "write to output stream doesn't update mtime");
+        lastTime = modifiedTime;
+
         out.close();
         modifiedTime = file.lastModified();
-        th.check(modifiedTime > lastTime, "write updates mtime");
+        th.check(modifiedTime > lastTime, "close output stream updates mtime");
         lastTime = modifiedTime;
 
         try { Thread.sleep(1); } catch (Exception e) {}
@@ -214,11 +214,25 @@ public class TestFileConnection implements Testlet {
             th.check(!file.exists(), "File doesn't exist");
             th.check(!file.isDirectory(), "File isn't a directory");
 
+            try {
+                file.list();
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Directory does not exist: file:///Private/provaDir/prova");
+            }
+
             file.create();
 
             th.check(file.exists(), "File created");
-            th.check(!file.isDirectory(), "Check is directory");
+            th.check(!file.isDirectory(), "File isn't a directory");
             th.check(file.fileSize(), 0, "Check file size");
+
+            try {
+                file.list();
+                th.fail("Exception expected");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Connection is open on a file: file:///Private/provaDir/prova");
+            }
 
             OutputStream out = file.openOutputStream();
             out.write(new byte[]{ 5, 4, 3, 2, 1 });
@@ -364,7 +378,7 @@ public class TestFileConnection implements Testlet {
 
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova%2B");
             th.check(file.getName(), "prova+");
-            th.check(file.getURL(), "file:////provaDir/prova%2B");
+            th.check(file.getURL(), "file:///Private/provaDir/prova%2B");
             file.create();
             file.close();
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova+");
@@ -482,8 +496,17 @@ public class TestFileConnection implements Testlet {
                 file = (FileConnection)Connector.open(dirPath + "prov>");
                 th.fail("Exception expected");
             } catch (IllegalArgumentException e) {
-                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///prov>");
+                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///Private/prov>");
             }
+
+            // Check that the fileconn.dir.photos property value is longer than 8 characters.
+            String photoDir = System.getProperty("fileconn.dir.photos");
+            th.check(photoDir.length() > 8);
+            // Check that the photos directory exists and is a directory.
+            dir = (FileConnection)Connector.open(photoDir);
+            th.check(dir.exists(), "fileconn.dir.photos exists");
+            th.check(dir.isDirectory(), "fileconn.dir.photos is a directory");
+            dir.close();
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();

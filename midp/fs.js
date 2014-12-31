@@ -5,6 +5,25 @@
 
 var RECORD_STORE_BASE = "/RecordStore";
 
+// The filesystem roots, which are used by both FileSystemRegistry.getRootsImpl
+// and System.getProperty to provide inquiring midlets with the list.  Each root
+// must have a trailing slash.  See FileSystemRegistry.listRoots for more info.
+MIDP.fsRoots = [
+    "MemoryCard/",
+    "Phone/",
+    "Private/",
+];
+// The names here should be localized.
+MIDP.fsRootNames = [
+    "Memory card",
+    "Phone memory",
+    "Private",
+];
+
+function getAbsolutePath(jPath) {
+    return "/" + util.decodeUtf8(jPath);
+}
+
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(storageId) {
     return J2ME.newString("assets/" + storageId + "/");
 };
@@ -263,7 +282,18 @@ Native["com/ibm/oti/connection/file/Connection.isValidFilenameImpl.([B)Z"] = fun
     return 1;
 };
 
+Native["com/ibm/oti/connection/file/Connection.totalSizeImpl.([B)J"] = function(root) {
+    console.warn("Connection.totalSizeImpl.([B)J not implemented (" + util.decodeUtf8(root) + ")");
+    return Long.fromNumber(-1);
+};
+
+Native["com/ibm/oti/connection/file/Connection.usedSizeImpl.([B)J"] = function(root) {
+    console.warn("Connection.usedSizeImpl.([B)J not implemented (" + util.decodeUtf8(root) + ")");
+    return Long.fromNumber(-1);
+};
+
 Native["com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J"] = function(path) {
+    console.warn("Connection.availableSizeImpl.([B)J not implemented (" + util.decodeUtf8(root) + ")");
     // Pretend there is 1 GB available
     return Long.fromNumber(1024 * 1024 * 1024);
 };
@@ -274,13 +304,18 @@ Native["com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V"] = function
 
 Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(path) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
-        fs.exists(util.decodeUtf8(path), function(exists) { resolve(exists ? 1 : 0); });
+        fs.exists(getAbsolutePath(path), function(exists) { resolve(exists ? 1 : 0); } );
     }));
+};
+
+Native["com/ibm/oti/connection/file/Connection.directorySizeImpl.([BZ)J"] = function(path, includeSubDirs) {
+    console.warn("Connection.directorySizeImpl.([BZ)J not implemented (" + getAbsolutePath(path) + ", " + includeSubDirs + ")");
+    return Long.fromNumber(0);
 };
 
 Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(path) {
     asyncImpl("J", new Promise(function(resolve, reject) {
-        fs.size(util.decodeUtf8(path), function(size) {
+        fs.size(getAbsolutePath(path), function(size) {
             resolve(Long.fromNumber(size));
         });
     }));
@@ -288,7 +323,7 @@ Native["com/ibm/oti/connection/file/Connection.fileSizeImpl.([B)J"] = function(p
 
 Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = function(path) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
-        fs.stat(util.decodeUtf8(path), function(stat) {
+        fs.stat(getAbsolutePath(path), function(stat) {
             resolve(!!stat && stat.isDir ? 1 : 0);
         });
     }));
@@ -296,7 +331,8 @@ Native["com/ibm/oti/connection/file/Connection.isDirectoryImpl.([B)Z"] = functio
 
 Native["com/ibm/oti/connection/file/Connection.listImpl.([B[BZ)[[B"] =
 function(jPath, filterArray, includeHidden) {
-    var path = util.decodeUtf8(jPath);
+    var path = getAbsolutePath(jPath);
+    var ctx = $.ctx;
     asyncImpl("[[B", new Promise(function(resolve, reject) {
         var filter = "";
         if (filterArray) {
@@ -312,58 +348,45 @@ function(jPath, filterArray, includeHidden) {
             filter = filter.replace(/([.+^${}()|\[\]\/\\])/g, "\\$1");
 
             // Transform * to .+
-            filter = filter.replace(/\*/g, ".+");
+            filter = filter.replace(/\*/g, ".*");
 
-            filter += "$";
+            // Require filter to match from the beginning to the end.
+            filter = "^" + filter + "$";
         }
 
-        fs.list(path, function(files) {
+        fs.list(path, function(error, files) {
+            // For these exceptions, we append a URL representation of the path
+            // in Connection.listInternal, so we don't have to implement getURL
+            // in native code.
+            if (error && error.message == "Path does not exist") {
+                ctx.setAsCurrentContext();
+                return reject($.newIOException("Directory does not exist: "));
+            }
+            if (error && error.message == "Path is not a directory") {
+                ctx.setAsCurrentContext();
+                return reject($.newIOException("Connection is open on a file: "));
+            }
+
             var regexp = new RegExp(filter);
-
             files = files.filter(regexp.test.bind(regexp));
-
             var filesArray = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, files.length);
+            var encoder = new TextEncoder("utf-8");
 
-            var added = 0;
-
-            function checkDone() {
-                if (added === files.length) {
-                    resolve(filesArray);
-
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (checkDone()) {
-                return;
-            }
-
-            files.forEach(function(file) {
-              fs.stat(path + "/" + file, function(stat) {
-                  if (stat.isDir) {
-                      file += "/";
-                  }
-
-                  var bytesFile = new TextEncoder("utf-8").encode(file);
-
-                  var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
-                  fileArray.set(bytesFile);
-
-                  filesArray[added++] = fileArray;
-
-                  checkDone();
-              });
+            files.forEach(function(file, i) {
+                var bytesFile = encoder.encode(file);
+                var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
+                fileArray.set(bytesFile);
+                filesArray[i] = fileArray;
             });
+
+            resolve(filesArray);
         });
     }));
 };
 
-
 Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(path) {
     asyncImpl("I", new Promise(function(resolve, reject) {
-        fs.mkdir(util.decodeUtf8(path), function(created) {
+        fs.mkdir(getAbsolutePath(path), function(created) {
             // IBM's implementation returns different error numbers, we don't care
             resolve(created ? 0 : 42);
         });
@@ -371,16 +394,12 @@ Native["com/ibm/oti/connection/file/Connection.mkdirImpl.([B)I"] = function(path
 };
 
 Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(jPath) {
-    var path = util.decodeUtf8(jPath);
+    var path = getAbsolutePath(jPath);
 
     asyncImpl("I", new Promise(function(resolve, reject) {
-        // IBM's implementation returns different error numbers, we don't care
-
-        fs.exists(path, function(exists) {
-            if (exists) {
-                fs.truncate(path, function(truncated) {
-                    resolve(truncated ? 0 : 42);
-                });
+        fs.stat(path, function(stat) {
+            if (stat !== null) {
+                resolve(stat.isDir ? 3 : 1);
             } else {
                 fs.create(path, new Blob(), function(created) {
                     resolve(created ? 0 : 42);
@@ -392,7 +411,7 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(jP
 
 Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] = function(path) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
-        fs.remove(util.decodeUtf8(path), function(x) { resolve(x ? 1 : 0); });
+        fs.remove(getAbsolutePath(path), function(x) { resolve(x ? 1 : 0); });
     }));
 };
 
@@ -400,18 +419,18 @@ Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] =
   Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"]
 
 Native["com/ibm/oti/connection/file/Connection.isReadOnlyImpl.([B)Z"] = function(path) {
-    console.warn("Connection.isReadOnlyImpl.([B)Z not implemented (" + util.decodeUtf8(path) + ")");
+    console.warn("Connection.isReadOnlyImpl.([B)Z not implemented (" + getAbsolutePath(path) + ")");
     return 0;
 };
 
 Native["com/ibm/oti/connection/file/Connection.isWriteOnlyImpl.([B)Z"] = function(path) {
-    console.warn("Connection.isWriteOnlyImpl.([B)Z not implemented (" + util.decodeUtf8(path) + ")");
+    console.warn("Connection.isWriteOnlyImpl.([B)Z not implemented (" + getAbsolutePath(path) + ")");
     return 0;
 };
 
 Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = function(path) {
     asyncImpl("J", new Promise(function(resolve, reject) {
-        fs.stat(util.decodeUtf8(path), function(stat) {
+        fs.stat(getAbsolutePath(path), function(stat) {
             resolve(Long.fromNumber(stat != null ? stat.mtime : 0));
         });
     }));
@@ -420,7 +439,7 @@ Native["com/ibm/oti/connection/file/Connection.lastModifiedImpl.([B)J"] = functi
 Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(oldPath, newPath) {
     var ctx = $.ctx;
     asyncImpl("V", new Promise(function(resolve, reject) {
-        fs.rename(util.decodeUtf8(oldPath), util.decodeUtf8(newPath), function(renamed) {
+        fs.rename(getAbsolutePath(oldPath), getAbsolutePath(newPath), function(renamed) {
             ctx.setAsCurrentContext();
             if (!renamed) {
                 reject($.newIOException("Rename failed"));
@@ -435,7 +454,7 @@ Native["com/ibm/oti/connection/file/Connection.renameImpl.([B[B)V"] = function(o
 Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(path, newLength) {
     var ctx = $.ctx;
     asyncImpl("V", new Promise(function(resolve, reject) {
-        fs.open(util.decodeUtf8(path), function(fd) {
+        fs.open(getAbsolutePath(path), function(fd) {
           ctx.setAsCurrentContext();
           if (fd == -1) {
             reject($.newIOException("truncate failed"));
@@ -451,7 +470,7 @@ Native["com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V"] = function(
 
 Native["com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I"] = function(path) {
     asyncImpl("I", new Promise(function(resolve, reject) {
-      fs.open(util.decodeUtf8(path), resolve);
+      fs.open(getAbsolutePath(path), resolve);
     }));
 };
 
@@ -506,17 +525,16 @@ Native["com/ibm/oti/connection/file/FCOutputStream.closeImpl.(I)V"] = function(f
 };
 
 Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(jPath) {
-    var path = util.decodeUtf8(jPath);
+    var path = getAbsolutePath(jPath);
 
     asyncImpl("I", new Promise(function(resolve, reject) {
         fs.exists(path, function(exists) {
             if (exists) {
-                fs.truncate(path, function(truncated) {
-                    if (truncated) {
-                        fs.open(path, resolve);
-                    } else {
-                        resolve(-1);
+                fs.open(path, function(fd) {
+                    if (fd != -1) {
+                        fs.ftruncate(fd, 0);
                     }
+                    resolve(fd);
                 });
             } else {
                 fs.create(path, new Blob(), function(created) {
@@ -532,7 +550,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I"] = function(j
 };
 
 Native["com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I"] = function(jPath, offset) {
-    var path = util.decodeUtf8(jPath);
+    var path = getAbsolutePath(jPath);
 
     asyncImpl("I", new Promise(function(resolve, reject) {
         function open() {
@@ -650,8 +668,16 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(
         fs.close(handle);
 };
 
+Native["javax/microedition/io/file/FileSystemRegistry.initImpl.()V"] = function() {
+    console.warn("javax/microedition/io/file/FileSystemRegistry.initImpl.()V not implemented");
+};
+
 Native["javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;"] = function() {
-    var array = J2ME.newStringArray(1);
-    array[0] = J2ME.newString("");
+    var array = J2ME.newStringArray(MIDP.fsRoots.length);
+
+    for (var i = 0; i < MIDP.fsRoots.length; i++) {
+        array[i] = J2ME.newString(MIDP.fsRoots[i]);
+    }
+
     return array;
 };
