@@ -217,6 +217,9 @@ window.onload = function() {
  document.getElementById("clearstorage").onclick = function() {
    fs.clear();
  };
+ document.getElementById("deleteDatabase").onclick = function() {
+   indexedDB.deleteDatabase("asyncStorage");
+ };
  document.getElementById("exportstorage").onclick = function() {
    fs.exportStore(function(blob) {
      saveAs(blob, "fs-" + Date.now() + ".json");
