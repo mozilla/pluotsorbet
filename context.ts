@@ -508,29 +508,29 @@ module J2ME {
       });
     }
 
-    wait(obj, timeout) {
-      var lock = obj._lock;
+    wait(object: java.lang.Object, timeout) {
+      var lock = object._lock;
       if (timeout < 0)
         throw $.newIllegalArgumentException();
       if (!lock || lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       var lockLevel = lock.level;
       while (lock.level > 0)
-        this.monitorExit(obj);
+        this.monitorExit(object);
       if (timeout) {
         var self = this;
         this.lockTimeout = window.setTimeout(function () {
-          obj.waiting.forEach(function (ctx, n) {
+          object.waiting.forEach(function (ctx, n) {
             if (ctx === self) {
-              obj.waiting[n] = null;
-              ctx.wakeup(obj);
+              object.waiting[n] = null;
+              ctx.wakeup(object);
             }
           });
         }, timeout);
       } else {
         this.lockTimeout = null;
       }
-      this.block(obj, "waiting", lockLevel);
+      this.block(object, "waiting", lockLevel);
     }
 
     notify(obj, notifyAll) {
