@@ -607,6 +607,8 @@ Native.create("com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/
         fs.exists(path, function(exists) {
             if (exists) {
                 open();
+            } else if (mode == 1) {
+                reject(new JavaException("java/io/IOException", "RandomAccessStream::open(" + path + ") file doesn't exist"));
             } else {
                 fs.create(path, new Blob(), function(created) {
                     if (created) {
