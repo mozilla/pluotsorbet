@@ -93,7 +93,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
@@ -157,13 +157,6 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
         });
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/tests/fs/fstests.html")
-    .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 138 PASS, 0 FAIL", "run fs.js unit tests");
-        syncFS();
     });
 
     casper
