@@ -290,7 +290,6 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                         var unexpected = content.contains("UNEXPECTED");
 
                         if (fail) {
-                            console.log(gotURL);
                             test.fail(testCase.name + " - Failure");
                         } else if (unexpected) {
                             test.fail(testCase.name + " - Unexpected pass");
