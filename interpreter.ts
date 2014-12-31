@@ -1083,9 +1083,9 @@ module J2ME {
             } else {
               fn = methodInfo.fn;
             }
-
             var returnValue;
-            switch (methodInfo.argumentSlots) {
+            var argumentSlots = methodInfo.hasTwoSlotArguments ? -1 : methodInfo.argumentSlots;
+            switch (argumentSlots) {
               case 0:
                 returnValue = fn.call(object);
                 break;
