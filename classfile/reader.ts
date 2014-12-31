@@ -20,10 +20,10 @@ module J2ME {
       return Reader.arrays[length];
     }
 
-    constructor(buffer: ArrayBuffer, offset: number) {
+    constructor(buffer: ArrayBuffer, offset: number = 0) {
       this.view = new DataView(buffer);
       this.u8 = new Uint8Array(buffer);
-      this.offset = offset || 0;
+      this.offset = offset;
     }
 
     read8() {

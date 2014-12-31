@@ -1397,6 +1397,10 @@ module J2ME {
     return object;
   }
 
+  export function newStringConstant(str: string): java.lang.String {
+    return $.newStringConstant(str);
+  };
+
   export function newArray(klass: Klass, size: number) {
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
@@ -1502,6 +1506,14 @@ module J2ME {
     INT_MAX =  2147483647,
     INT_MIN = -2147483648
   }
+
+  export function monitorEnter(object: J2ME.java.lang.Object) {
+    $.ctx.monitorEnter(object);
+  }
+
+  export function monitorExit(object: J2ME.java.lang.Object) {
+    $.ctx.monitorExit(object);
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1525,21 +1537,13 @@ var $CCI = J2ME.checkCastInterface;
 
 var $AK = J2ME.getArrayKlass;
 var $NA = J2ME.newArray;
-var $S = function(str: string) {
-  return $.newStringConstant(str);
-};
+var $S = J2ME.newStringConstant;
+
 var $CDZ = J2ME.checkDivideByZero;
 var $CDZL = J2ME.checkDivideByZeroLong;
 
 var $CAB = J2ME.checkArrayBounds;
 var $CAS = J2ME.checkArrayStore;
 
-var $ME = function monitorEnter(object: J2ME.java.lang.Object) {
-  console.info("ENTER " + J2ME.toDebugString(object));
-  $.ctx.monitorEnter(object);
-};
-
-var $MX = function monitorExit(object: J2ME.java.lang.Object) {
-  console.info("EXIT " + J2ME.toDebugString(object));
-  $.ctx.monitorExit(object);
-};
+var $ME = J2ME.monitorEnter;
+var $MX = J2ME.monitorExit;

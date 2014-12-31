@@ -1,10 +1,8 @@
 module J2ME {
   declare var Native, Override;
-  declare var ATTRIBUTE_TYPES;
   declare var missingNativeImpl;
   declare var CC;
   declare var Signature;
-  declare var getClassImage;
   declare var classObjects;
   declare var util;
 
@@ -208,7 +206,7 @@ module J2ME {
     sourceFile: string;
     constructor(classBytes) {
       enterTimeline("getClassImage");
-      var classImage = getClassImage(classBytes, this);
+      var classImage = getClassImage(classBytes);
       leaveTimeline("getClassImage");
       var cp = classImage.constant_pool;
       this.className = cp[cp[classImage.this_class].name_index].bytes;

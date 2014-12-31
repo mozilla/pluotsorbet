@@ -1,10 +1,10 @@
 
 // Basics
+///<reference path='utilities.ts' />
 
-///<reference path='classfile/accessflags.ts' />
+///<reference path='classfile/classfile.ts' />
 ///<reference path='classfile/reader.ts' />
 
-///<reference path='utilities.ts' />
 ///<reference path='options.ts' />
 ///<reference path='metrics.ts' />
 ///<reference path='bytecodes.ts' />
