@@ -29,6 +29,8 @@
   //================================================================
 
 
+  var startTime = performance.now();
+
   /**
    * Every log entry serializes itself into a LogItem, so that it can
    * subsequently be piped to various consoles.
@@ -42,15 +44,24 @@
     }
 
     this.levelName = levelName;
+    this.ctx = $ ? $.ctx : null;
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
+    this.time = performance.now() - startTime;
   }
 
   LogItem.prototype = {
+    get messagePrefix() {
+      var s = J2ME.Context.currentContextPrefix();
+      if (false) {
+        s = this.time.toFixed(2) + " " + s;
+      }
+      return s.toString().padRight(" ", 4) + " | ";
+    },
 
     get message() {
       if (this._message === undefined) {
-        this._message = this.args.join(" ");
+        this._message = this.messagePrefix + this.args.join(" ") + " ";
       }
       return this._message;
     },
@@ -183,7 +194,7 @@
   NativeConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        dump(item.message);
+        dumpLine(item.message);
       }
     }
   };

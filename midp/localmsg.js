@@ -1061,13 +1061,13 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
   }
 }
 
-Native.create("com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V", function(active) {
+Native["com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V"] = function(active) {
   NokiaActiveStandbyLocalMsgConnection.indicatorActive = active;
 
   if (!active && NokiaActiveStandbyLocalMsgConnection.pipeSender) {
     NokiaActiveStandbyLocalMsgConnection.pipeSender({ type: "close" });
   }
-});
+};
 
 MIDP.LocalMsgConnections = {};
 
@@ -1089,12 +1089,12 @@ MIDP.LocalMsgConnections["nokia.sa.service-registry"] = NokiaSASrvRegLocalMsgCon
 MIDP.LocalMsgConnections["nokia.active-standby"] = NokiaActiveStandbyLocalMsgConnection;
 MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnection;
 
-Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", function(jName) {
+Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(jName) {
     var name = util.fromJavaString(jName);
 
     this.server = (name[2] == ":");
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
-    return new Promise((function(resolve, reject) {
+    asyncImpl("V", new Promise((function(resolve, reject) {
         if (this.server) {
             // It seems that one server only serves on client at a time, let's
             // store an object instead of the constructor.
@@ -1121,14 +1121,14 @@ Native.create("org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V", fu
         }
 
         resolve();
-    }).bind(this));
-}, true);
+    }).bind(this)));
+};
 
-Native.create("org/mozilla/io/LocalMsgConnection.waitConnection.()V", function() {
-    return this.connection.waitConnection();
-});
+Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
+    asyncImpl("V", this.connection.waitConnection());
+};
 
-Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(data, offset, length) {
+Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, offset, length) {
     var message = {
       data: data,
       offset: offset,
@@ -1144,23 +1144,24 @@ Native.create("org/mozilla/io/LocalMsgConnection.sendData.([BII)V", function(dat
 
         this.connection.sendMessageToServer(message);
     }
-});
+};
 
-Native.create("org/mozilla/io/LocalMsgConnection.receiveData.([B)I", function(data) {
+Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
     if (this.server) {
-        return this.connection.serverReceiveMessage(data);
+        asyncImpl("I", this.connection.serverReceiveMessage(data));
+        return;
     }
 
     if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
         console.warn("receiveData from an unimplemented localmsg server (" + this.protocolName + ")");
     }
 
-    return this.connection.clientReceiveMessage(data);
-}, true);
+    asyncImpl("I", this.connection.clientReceiveMessage(data));
+};
 
-Native.create("org/mozilla/io/LocalMsgConnection.closeConnection.()V", function() {
+Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function() {
     if (this.server) {
         delete MIDP.LocalMsgConnections[this.protocolName];
     }
     delete this.connection;
-});
+};
