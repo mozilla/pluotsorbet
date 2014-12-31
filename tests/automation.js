@@ -2,6 +2,7 @@
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
 var system = require('system');
+var fs = require('fs');
 
 casper.on('remote.message', function(message) {
     this.echo(message);
@@ -299,6 +300,8 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                         } else {
                             test.pass(testCase.name + " - Pass");
                         }
+
+                        fs.remove("test.png");
                     });
                 });
             });
