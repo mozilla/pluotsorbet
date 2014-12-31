@@ -1472,8 +1472,15 @@ module J2ME {
     }
   }
 
+  /**
+   * Do bounds check using only one branch. The math works out because array.length
+   * can't be larger than 2^31 - 1. So |index| >>> 0 will be larger than
+   * array.length if it is less than zero. We need to make the right side unsigned
+   * as well because otherwise the SM optimization that converts this to an
+   * unsinged branch doesn't kick in.
+   */
   export function checkArrayBounds(array: any [], index: number) {
-    if (index < 0 || index >= array.length) {
+    if ((index >>> 0) >= (array.length >>> 0)) {
       throw $.newArrayIndexOutOfBoundsException(String(index));
     }
   }
