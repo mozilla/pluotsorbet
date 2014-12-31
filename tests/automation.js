@@ -212,10 +212,11 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         .thenOpen("http://localhost:8000/index.html?fontSize=10&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
-                var gotURL = "data:image/png;base64," + casper.captureBase64('png');
-
                 this.waitForSelector("#canvas", function() {
-                    this.evaluate(function(testCase, gotURL) {
+                    this.capture("test.png");
+
+                    this.evaluate(function(testCase) {
+                        var gotURL = "test.png";
                         var expectedURL = "tests/" + testCase.name + ".png";
 
                         var getImageData = function(url) {
@@ -229,8 +230,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                                     canvas.getContext("2d").drawImage(img, 0, 0);
                                     var pixels = new Uint32Array(canvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
                                     resolve({
-                                        width: canvas.width,
-                                        height: canvas.height,
+                                        canvas: canvas,
                                         pixels: pixels,
                                     });
                                 };
@@ -246,7 +246,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                             var got = results[0];
                             var expected = results[1];
 
-                            if (expected.width !== got.width || expected.height !== got.height) {
+                            if (expected.canvas.width !== got.canvas.width || expected.canvas.height !== got.canvas.height) {
                                 console.log(" dimensions are wrong");
                                 console.log("FAIL");
                                 return;
@@ -254,8 +254,8 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
 
                             var different = 0;
                             var i = 0;
-                            for (var x = 0; x < got.width; x++) {
-                                for (var y = 0; y < got.height; y++) {
+                            for (var x = 0; x < got.canvas.width; x++) {
+                                for (var y = 0; y < got.canvas.height; y++) {
                                     if (expected.pixels[i] !== got.pixels[i]) {
                                         different++;
                                     }
@@ -265,6 +265,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                             }
 
                             if (different > testCase.maxDifferent) {
+                                console.log(got.canvas.toDataURL());
                                 if (!testCase.todo) {
                                   console.log("FAIL - " + different);
                                 } else {
@@ -280,7 +281,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
 
                             console.log("DONE");
                         });
-                    }, testCase, gotURL);
+                    }, testCase);
 
                     this.waitForText("DONE", function() {
                         var content = this.getPageContent();
