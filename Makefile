@@ -1,4 +1,4 @@
-.PHONY: all test tests j2me java certs app clean jasmin
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts")
 JIT_SRCS=$(shell find jit -name "*.ts")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
@@ -46,6 +46,7 @@ app: java certs
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
+	rm -rf build
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
