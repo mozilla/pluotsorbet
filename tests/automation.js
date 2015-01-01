@@ -20,6 +20,7 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
+  { name: "gfx/AlertTest", maxDifferent: 0 },
   { name: "gfx/CanvasTest", maxDifferent: 271 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
@@ -65,7 +66,7 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71540 },
+  { name: "pass", number: 71568 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
