@@ -20,7 +20,7 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferent: 0 },
+  { name: "gfx/AlertTest", maxDifferent: 3111 },
   { name: "gfx/CanvasTest", maxDifferent: 271 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
