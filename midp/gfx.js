@@ -1333,7 +1333,19 @@ var currentlyFocusedTextEditor;
         el.querySelector("progress").style.display = "inline";
 
         return nextMidpDisplayableId++;
-    })
+    });
+
+    Native.create("javax/microedition/lcdui/TextFieldLFImpl.createNativeResource0.(ILjava/lang/String;ILcom/sun/midp/lcdui/DynamicCharacterArray;ILjava/lang/String;)I",
+    function(ownerId, label, layout, buffer, constraints, initialInputMode) {
+        console.warn("javax/microedition/lcdui/TextFieldLFImpl.createNativeResource0.(ILjava/lang/String;ILcom/sun/midp/lcdui/DynamicCharacterArray;ILjava/lang/String;)I not implemented");
+        return nextMidpDisplayableId++;
+    });
+
+    Native.create("javax/microedition/lcdui/ImageItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjavax/microedition/lcdui/ImageData;Ljava/lang/String;I)I",
+    function(ownerId, label, layout, imageData, altText, appearanceMode) {
+        console.warn("javax/microedition/lcdui/ImageItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjavax/microedition/lcdui/ImageData;Ljava/lang/String;I)I not implemented");
+        return nextMidpDisplayableId++;
+    });
 
     Native.create("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V", function(pos) {
         console.warn("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V not implemented");
