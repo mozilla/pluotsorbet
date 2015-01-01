@@ -11,12 +11,6 @@ casper.options.waitTimeout = 15000;
 casper.options.verbose = true;
 casper.options.logLevel = "debug";
 
-casper.options.onWaitTimeout = function() {
-    this.debugPage();
-    this.echo(this.captureBase64('png'));
-    this.test.fail("Timeout");
-};
-
 casper.test.begin("fs tests", 7, function(test) {
     // The main test automation script already initializes the fs database
     // to its latest version and runs the fs tests against it.  So this script

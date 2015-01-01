@@ -14,7 +14,6 @@ casper.options.logLevel = "debug";
 casper.options.viewportSize = { width: 240, height: 320 };
 
 casper.options.onWaitTimeout = function() {
-    this.debugPage();
     this.echo("data:image/png;base64," + this.captureBase64('png'));
     this.test.fail("Timeout");
 };
@@ -114,8 +113,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
             var regex = /DONE: (\d+) pass, (\d+) fail, (\d+) known fail, (\d+) unknown pass/;
             var match = content.match(regex);
             if (!match || !match.length || match.length < 5) {
-                this.debugPage();
-                this.echo(this.captureBase64('png'));
+                this.echo("data:image/png;base64," + this.captureBase64('png'));
                 test.fail('failed to parse status line of main unit tests');
             } else {
                 var msg = "";
@@ -127,8 +125,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
                 if (!msg) {
                     test.pass('main unit tests');
                 } else {
-                    this.debugPage();
-                    this.echo(this.captureBase64('png'));
+                    this.echo("data:image/png;base64," + this.captureBase64('png'));
                     test.fail(msg);
                 }
             }
@@ -189,8 +186,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
                 this.waitForText("DONE", function() {
                     var content = this.getPageContent();
                     if (content.contains("FAIL")) {
-                        this.debugPage();
-                        this.echo(this.captureBase64('png'));
+                        this.echo("data:image/png;base64," + this.captureBase64('png'));
                         test.fail('file-ui test');
                     } else {
                         test.pass("file-ui test");
@@ -242,7 +238,7 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
                             var expected = results[1];
 
                             if (expected.canvas.width !== got.canvas.width || expected.canvas.height !== got.canvas.height) {
-                                console.log(" dimensions are wrong");
+                                console.log("Dimensions are wrong");
                                 console.log("FAIL");
                                 return;
                             }
