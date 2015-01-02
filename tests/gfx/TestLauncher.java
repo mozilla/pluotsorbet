@@ -31,7 +31,7 @@ public class TestLauncher extends MIDlet {
                 file.create();
             }
             OutputStream os = file.openDataOutputStream();
-            InputStream is = getClass().getResourceAsStream("/gfx/images/FirefoxLogo.png");
+            InputStream is = getClass().getResourceAsStream("/gfx/images/red.png");
             os.write(read(is));
             os.close();
 
