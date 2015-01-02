@@ -210,7 +210,7 @@
   RawConsoleForTests.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        this.el.textContent += item.levelName[0].toUpperCase() + ' ' + item.message + '\n';
+        this.el.textContent += item.levelName[0].toUpperCase() + ' ' + item.args.join(" ") + '\n';
       }
     }
   };
