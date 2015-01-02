@@ -2,6 +2,7 @@
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
 var system = require('system');
+var fs = require('fs');
 
 casper.on('remote.message', function(message) {
     this.echo(message);
@@ -13,7 +14,6 @@ casper.options.logLevel = "debug";
 casper.options.viewportSize = { width: 240, height: 320 };
 
 casper.options.onWaitTimeout = function() {
-    this.debugPage();
     this.echo("data:image/png;base64," + this.captureBase64('png'));
     this.test.fail("Timeout");
 };
@@ -64,7 +64,7 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71540 },
+  { name: "pass", number: 71568 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
@@ -92,7 +92,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
@@ -113,8 +113,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
             var regex = /DONE: (\d+) pass, (\d+) fail, (\d+) known fail, (\d+) unknown pass/;
             var match = content.match(regex);
             if (!match || !match.length || match.length < 5) {
-                this.debugPage();
-                this.echo(this.captureBase64('png'));
+                this.echo("data:image/png;base64," + this.captureBase64('png'));
                 test.fail('failed to parse status line of main unit tests');
             } else {
                 var msg = "";
@@ -126,8 +125,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                 if (!msg) {
                     test.pass('main unit tests');
                 } else {
-                    this.debugPage();
-                    this.echo(this.captureBase64('png'));
+                    this.echo("data:image/png;base64," + this.captureBase64('png'));
                     test.fail(msg);
                 }
             }
@@ -156,13 +154,6 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
         });
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/tests/fs/fstests.html")
-    .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 138 PASS, 0 FAIL", "run fs.js unit tests");
-        syncFS();
     });
 
     casper
@@ -195,8 +186,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                 this.waitForText("DONE", function() {
                     var content = this.getPageContent();
                     if (content.contains("FAIL")) {
-                        this.debugPage();
-                        this.echo(this.captureBase64('png'));
+                        this.echo("data:image/png;base64," + this.captureBase64('png'));
                         test.fail('file-ui test');
                     } else {
                         test.pass("file-ui test");
@@ -248,7 +238,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                             var expected = results[1];
 
                             if (expected.canvas.width !== got.canvas.width || expected.canvas.height !== got.canvas.height) {
-                                console.log(" dimensions are wrong");
+                                console.log("Dimensions are wrong");
                                 console.log("FAIL");
                                 return;
                             }
@@ -299,6 +289,8 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                         } else {
                             test.pass(testCase.name + " - Pass");
                         }
+
+                        fs.remove("test.png");
                     });
                 });
             });
