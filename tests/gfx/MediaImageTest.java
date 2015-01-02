@@ -9,12 +9,7 @@ import javax.microedition.media.*;
 import javax.microedition.media.control.*;
 
 public class MediaImageTest extends MIDlet implements PlayerListener {
-    private Display display;
-    private Image image;
-    private Player player;
     private VideoControl videoControl;
-    private Form form;
-    private Item videoItem;
 
     byte[] read(InputStream is) throws IOException {
         int l = is.available();
@@ -33,15 +28,24 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
         return buffer;
     }
 
-    public MediaImageTest() throws IOException {
-        
+    class TestCanvas extends Canvas {
+        protected void paint(Graphics g) {
+            videoControl.initDisplayMode(VideoControl.USE_DIRECT_VIDEO, this);
+            try {
+                videoControl.setDisplayLocation(20, 20);
+                videoControl.setDisplaySize(getWidth() / 2, getHeight() / 2);
+            } catch (MediaException me) {
+                System.out.println("FAIL");
+            }
+
+            videoControl.setVisible(true);
+
+            System.out.println("PAINTED");
+        }
     }
 
     public void startApp() {
         try {
-            display = Display.getDisplay(this);
-            form = new Form("Test");
-
             FileConnection file = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
             if (!file.exists()) {
                 file.create();
@@ -51,7 +55,7 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
             os.write(read(is));
             os.close();
 
-            player = Manager.createPlayer("file:////test.jpg");
+            Player player = Manager.createPlayer("file:////test.jpg");
 
             player.addPlayerListener(this);
 
@@ -59,12 +63,11 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
 
             videoControl = (VideoControl)player.getControl("VideoControl");
 
-            videoItem = (Item)videoControl.initDisplayMode(VideoControl.USE_GUI_PRIMITIVE, null);
-            form.append(videoItem);
+            TestCanvas test = new TestCanvas();
+            test.setFullScreenMode(true);
+            Display.getDisplay(this).setCurrent(test);
 
             player.start();
-
-            display.setCurrent(form);
 
             file.delete();
             file.close();
@@ -75,15 +78,12 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
     }
 
     public void playerUpdate(Player player, String event, Object eventData) {
-        System.out.println("playerUpdate: " + event);
     }
 
     public void pauseApp() {
-        System.out.println("App paused");
     }
 
     public void destroyApp(boolean unconditional) {
-        System.out.println("Goodbye, world");
     }
 }
 
