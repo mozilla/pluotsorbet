@@ -43,6 +43,7 @@ public class DirectUtilsClipAfterWithNormalImage extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

@@ -2,6 +2,7 @@
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
 var system = require('system');
+var fs = require('fs');
 
 casper.on('remote.message', function(message) {
     this.echo(message);
@@ -10,9 +11,9 @@ casper.on('remote.message', function(message) {
 casper.options.waitTimeout = 70000;
 casper.options.verbose = true;
 casper.options.logLevel = "debug";
+casper.options.viewportSize = { width: 240, height: 320 };
 
 casper.options.onWaitTimeout = function() {
-    this.debugPage();
     this.echo("data:image/png;base64," + this.captureBase64('png'));
     this.test.fail("Timeout");
 };
@@ -59,10 +60,11 @@ var gfxTests = [
   { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
+  { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71538 },
+  { name: "pass", number: 71568 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
@@ -90,7 +92,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
@@ -111,8 +113,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
             var regex = /DONE: (\d+) pass, (\d+) fail, (\d+) known fail, (\d+) unknown pass/;
             var match = content.match(regex);
             if (!match || !match.length || match.length < 5) {
-                this.debugPage();
-                this.echo(this.captureBase64('png'));
+                this.echo("data:image/png;base64," + this.captureBase64('png'));
                 test.fail('failed to parse status line of main unit tests');
             } else {
                 var msg = "";
@@ -124,8 +125,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                 if (!msg) {
                     test.pass('main unit tests');
                 } else {
-                    this.debugPage();
-                    this.echo(this.captureBase64('png'));
+                    this.echo("data:image/png;base64," + this.captureBase64('png'));
                     test.fail(msg);
                 }
             }
@@ -154,13 +154,6 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
         });
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/tests/fs/fstests.html")
-    .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 138 PASS, 0 FAIL", "run fs.js unit tests");
-        syncFS();
     });
 
     casper
@@ -193,8 +186,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                 this.waitForText("DONE", function() {
                     var content = this.getPageContent();
                     if (content.contains("FAIL")) {
-                        this.debugPage();
-                        this.echo(this.captureBase64('png'));
+                        this.echo("data:image/png;base64," + this.captureBase64('png'));
                         test.fail('file-ui test');
                     } else {
                         test.pass("file-ui test");
@@ -212,32 +204,50 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {
-                    var got = this.evaluate(function(testCase) {
-                        var gotCanvas = document.getElementById("canvas");
-                        var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
+                    this.capture("test.png");
 
-                        var img = new Image();
-                        img.src = "tests/" + testCase.name + ".png";
+                    this.evaluate(function(testCase) {
+                        var gotURL = "test.png";
+                        var expectedURL = "tests/" + testCase.name + ".png";
 
-                        img.onload = function() {
-                            var expectedCanvas = document.createElement('canvas');
-                            expectedCanvas.width = img.width;
-                            expectedCanvas.height = img.height;
-                            expectedCanvas.getContext("2d").drawImage(img, 0, 0);
+                        var getImageData = function(url) {
+                            return new Promise(function(resolve, reject) {
+                                var img = new Image();
+                                img.src = url;
+                                img.onload = function() {
+                                    var canvas = document.createElement('canvas');
+                                    canvas.width = img.width;
+                                    canvas.height = img.height;
+                                    canvas.getContext("2d").drawImage(img, 0, 0);
+                                    var pixels = new Uint32Array(canvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
+                                    resolve({
+                                        canvas: canvas,
+                                        pixels: pixels,
+                                    });
+                                };
+                                img.onerror = function() {
+                                    console.log("Error while loading test image " + url);
+                                    console.log("FAIL");
+                                    reject();
+                                };
+                            });
+                        };
 
-                            var expectedPixels = new Uint32Array(expectedCanvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
+                        Promise.all([getImageData(gotURL), getImageData(expectedURL)]).then(function(results) {
+                            var got = results[0];
+                            var expected = results[1];
 
-                            if (expectedCanvas.width !== gotCanvas.width || expectedCanvas.height !== gotCanvas.height) {
-                                console.log("Canvas dimensions are wrong");
+                            if (expected.canvas.width !== got.canvas.width || expected.canvas.height !== got.canvas.height) {
+                                console.log("Dimensions are wrong");
                                 console.log("FAIL");
                                 return;
                             }
 
                             var different = 0;
                             var i = 0;
-                            for (var x = 0; x < gotCanvas.width; x++) {
-                                for (var y = 0; y < gotCanvas.height; y++) {
-                                    if (expectedPixels[i] !== gotPixels[i]) {
+                            for (var x = 0; x < got.canvas.width; x++) {
+                                for (var y = 0; y < got.canvas.height; y++) {
+                                    if (expected.pixels[i] !== got.pixels[i]) {
                                         different++;
                                     }
 
@@ -246,7 +256,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                             }
 
                             if (different > testCase.maxDifferent) {
-                                console.log(gotCanvas.toDataURL());
+                                console.log(got.canvas.toDataURL());
                                 if (!testCase.todo) {
                                   console.log("FAIL - " + different);
                                 } else {
@@ -261,12 +271,7 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                             }
 
                             console.log("DONE");
-                        };
-
-                        img.onerror = function() {
-                            console.log("Error while loading test image");
-                            console.log("FAIL");
-                        };
+                        });
                     }, testCase);
 
                     this.waitForText("DONE", function() {
@@ -276,16 +281,16 @@ casper.test.begin("unit tests", 11 + gfxTests.length, function(test) {
                         var unexpected = content.contains("UNEXPECTED");
 
                         if (fail) {
-                            this.echo(content);
                             test.fail(testCase.name + " - Failure");
                         } else if (unexpected) {
-                            this.echo(content);
                             test.fail(testCase.name + " - Unexpected pass");
                         } else if (todo) {
                             test.skip(1, testCase.name + " - Todo");
                         } else {
                             test.pass(testCase.name + " - Pass");
                         }
+
+                        fs.remove("test.png");
                     });
                 });
             });

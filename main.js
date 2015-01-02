@@ -132,7 +132,7 @@ if (urlParams.downloadJAD) {
           fs.open("/midlet.jar", function(fd) {
             var data = fs.read(fd);
             fs.close(fd);
-            jvm.addPath("midlet.jar", data.buffer.slice(0));
+            CLASSES.addPath("midlet.jar", data.buffer.slice(0));
             resolve();
           });
         } else {
@@ -144,7 +144,7 @@ if (urlParams.downloadJAD) {
           performDownload(dialog, function(data) {
             dialog.parentElement.removeChild(dialog);
 
-            jvm.addPath("midlet.jar", data.jarData);
+            CLASSES.addPath("midlet.jar", data.jarData);
 
             fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
               fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {

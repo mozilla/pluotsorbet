@@ -181,7 +181,7 @@ var currentlyFocusedTextEditor;
             var img = new Image();
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
-                var context = createContext2d(img.width, img.height);
+                var context = createContext2d(img.naturalWidth, img.naturalHeight);
                 context.drawImage(img, 0, 0);
                 setImageData(imageData, img.naturalWidth, img.naturalHeight, context);
 
@@ -219,6 +219,15 @@ var currentlyFocusedTextEditor;
 
         setImageData(dataDest, width, height, context);
         dataDest.klass.classInfo.getField("I.isMutable.Z").set(dataDest, isMutable);
+    };
+
+    Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
+    function(dest, source) {
+        var srcCanvas = source.context.canvas;
+
+        var context = createContext2d(srcCanvas.width, srcCanvas.height);
+        context.drawImage(srcCanvas, 0, 0);
+        setImageData(dest, srcCanvas.width, srcCanvas.height, context);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] =

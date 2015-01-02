@@ -4,12 +4,12 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 import com.nokia.mid.ui.*;
 
-public class GetPixelsDrawPixelsTest extends MIDlet {
+public class CreateImmutableCopyTest extends MIDlet {
     private Display display;
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics screenG) {
-            Image image = DirectUtils.createImage(getWidth(), getHeight(), 0);
+            Image image = Image.createImage(getWidth(), getHeight());
             Graphics g = image.getGraphics();
 
             g.setColor(255, 0, 0);
@@ -17,23 +17,15 @@ public class GetPixelsDrawPixelsTest extends MIDlet {
             g.setColor(0, 0, 255);
             g.fillRect(20, 30, 200, 80);
 
-            DirectGraphics d = DirectUtils.getDirectGraphics(g);
+            Image immutableCopy = Image.createImage(image);
 
-            short[] pixels = new short[getWidth() * getHeight()];
-            d.getPixels(pixels, 0, getWidth(), 0, 0, getWidth(), getHeight(), DirectGraphics.TYPE_USHORT_4444_ARGB);
-
-            g.setColor(0, 0, 0);
-            g.fillRect(0, 0, getWidth(), getHeight());
-
-            d.drawPixels(pixels, true, 0, getWidth(), 0, 0, getWidth(), getHeight(), 0, DirectGraphics.TYPE_USHORT_4444_ARGB);
-
-            screenG.drawImage(image, 0, 0, Graphics.TOP | Graphics.LEFT);
+            screenG.drawImage(immutableCopy, 0, 0, Graphics.TOP | Graphics.LEFT);
 
             System.out.println("PAINTED");
         }
     }
 
-    public GetPixelsDrawPixelsTest() {
+    public CreateImmutableCopyTest() {
         display = Display.getDisplay(this);
     }
 

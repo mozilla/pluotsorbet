@@ -3,8 +3,7 @@ package gfx;
 import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 
-public class CanvasTest extends MIDlet implements CommandListener {
-    private Command quitCommand;
+public class CanvasTest extends MIDlet {
     private Display display;
 
     class TestCanvas extends Canvas {
@@ -17,29 +16,18 @@ public class CanvasTest extends MIDlet implements CommandListener {
 
     public CanvasTest() {
         display = Display.getDisplay(this);
-        quitCommand = new Command("Quit", Command.EXIT, 2);
     }
 
     public void startApp() {
-	TestCanvas test = new TestCanvas();
-        test.addCommand(quitCommand);
-        test.setCommandListener(this);
+	    TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 
     public void pauseApp() {
-        System.out.println("App paused");
     }
 
     public void destroyApp(boolean unconditional) {
-        System.out.println("Goodbye, world");
-    }
-
-    public void commandAction(Command c, Displayable s) {
-        if (c == quitCommand) {
-            destroyApp(false);
-            notifyDestroyed();
-        }
     }
 }
 
