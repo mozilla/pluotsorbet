@@ -61,6 +61,7 @@ var gfxTests = [
   { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
+  { name: "gfx/MediaImageTest", maxDifferent: 0 },
 ];
 
 var expectedUnitTestResults = [
