@@ -4,7 +4,6 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 
 public class RectAfterText extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
@@ -34,6 +33,7 @@ public class RectAfterText extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

@@ -458,6 +458,38 @@ NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, conta
     });
 };
 
+NokiaContactsLocalMsgConnection.prototype.getFirstOrNext = function(trans_id, method) {
+  var gotContact = (function(contact) {
+    if (contact && !contact.tel) {
+      contacts.getNext(gotContact);
+      return;
+    }
+
+    var encoder = new DataEncoder();
+    encoder.putStart(DataType.STRUCT, "event");
+    encoder.put(DataType.METHOD, "name", method);
+    encoder.put(DataType.ULONG, "trans_id", trans_id);
+    if (contact) {
+      encoder.put(DataType.STRING, "result", "OK"); // Name unknown
+      encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
+      this.encodeContact(encoder, contact);
+      encoder.putEnd(DataType.ARRAY, "contacts"); // Name unknown
+    } else {
+      encoder.put(DataType.STRING, "result", "Entry not found"); // Name unknown
+    }
+    encoder.putEnd(DataType.STRUCT, "event");
+
+    var data = new TextEncoder().encode(encoder.getData());
+    this.sendMessageToClient({
+      data: data,
+      length: data.length,
+      offset: 0,
+    });
+  }).bind(this);
+
+  contacts.getNext(gotContact);
+};
+
 NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message) {
   var decoder = new DataDecoder(message.data, message.offset, message.length);
 
@@ -497,35 +529,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       }
 
-      var gotContact = (function(contact) {
-        if (contact && !contact.tel) {
-          contacts.getNext(gotContact);
-          return;
-        }
-
-        var encoder = new DataEncoder();
-        encoder.putStart(DataType.STRUCT, "event");
-        encoder.put(DataType.METHOD, "name", "getFirst");
-        encoder.put(DataType.ULONG, "trans_id", trans_id);
-        if (contact) {
-          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
-          encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
-          this.encodeContact(encoder, contact);
-          encoder.putEnd(DataType.ARRAY, "contacts"); // Name unknown
-        } else {
-          encoder.put(DataType.STRING, "result", "Entry not found"); // Name unknown
-        }
-        encoder.putEnd(DataType.STRUCT, "event");
-
-        var data = new TextEncoder().encode(encoder.getData());
-        this.sendMessageToClient({
-            data: data,
-            length: data.length,
-            offset: 0,
-        });
-      }).bind(this);
-
-      contacts.getNext(gotContact);
+      this.getFirstOrNext(trans_id, "getFirst");
     break;
 
     case "getNext":
@@ -546,28 +550,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
                       util.decodeUtf8(new Uint8Array(message.data.buffer, message.offset, message.length)));
       }
 
-      contacts.getNext((function(contact) {
-        var encoder = new DataEncoder();
-        encoder.putStart(DataType.STRUCT, "event");
-        encoder.put(DataType.METHOD, "name", "getNext");
-        encoder.put(DataType.ULONG, "trans_id", trans_id);
-        if (contact) {
-          encoder.put(DataType.STRING, "result", "OK"); // Name unknown
-          encoder.putStart(DataType.ARRAY, "contacts"); // Name unknown
-          this.encodeContact(encoder, contact);
-          encoder.putEnd(DataType.ARRAY, "contacts"); // Name unknown
-        } else {
-          encoder.put(DataType.STRING, "result", "Entry not found"); // Name unknown
-        }
-        encoder.putEnd(DataType.STRUCT, "event");
-
-        var data = new TextEncoder().encode(encoder.getData());
-        this.sendMessageToClient({
-            data: data,
-            length: data.length,
-            offset: 0,
-        });
-      }).bind(this));
+      this.getFirstOrNext(trans_id, "getNext");
     break;
 
     default:

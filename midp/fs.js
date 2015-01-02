@@ -292,7 +292,7 @@ Native["com/ibm/oti/connection/file/Connection.usedSizeImpl.([B)J"] = function(r
     return Long.fromNumber(-1);
 };
 
-Native["com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J"] = function(path) {
+Native["com/ibm/oti/connection/file/Connection.availableSizeImpl.([B)J"] = function(root) {
     console.warn("Connection.availableSizeImpl.([B)J not implemented (" + util.decodeUtf8(root) + ")");
     // Pretend there is 1 GB available
     return Long.fromNumber(1024 * 1024 * 1024);
@@ -608,8 +608,11 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
         }
 
         fs.exists(path, function(exists) {
+            ctx.setAsCurrentContext();
             if (exists) {
                 open();
+            } else if (mode == 1) {
+                reject($.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist"));
             } else {
                 fs.create(path, new Blob(), function(created) {
                     ctx.setAsCurrentContext();

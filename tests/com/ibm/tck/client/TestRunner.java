@@ -319,6 +319,55 @@ public final class TestRunner {
 		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.ListRoots");
 		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.RemoveFileSystemListener");
 		testClasses.addElement("com.ibm.tck.javax.microedition.io.file.IllegalModeException.Init");
+
+		// Exclude these methods because they rely on functionality
+		// that we haven't yet implemented.  We should implement it!
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.AvailableSize#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.AvailableSize#test0006");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.AvailableSize#test0007");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanRead#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanRead#test0004");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanWrite#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.CanWrite#test0004");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.DirectorySize#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.DirectorySize#test0003");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.DirectorySize#test0004");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsHidden#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsHidden#test0003");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsHidden#test0007");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.IsHidden#test0008");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.LastModified#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.LastModified#test0004");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.List#test0003");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.List#test0003");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.List#test0006");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.List#test0006");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0005");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0006");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0008");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0009");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0010");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0011");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0012");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetHidden#test0013");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetReadable#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetReadable#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetWritable#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.SetWritable#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.TotalSize#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.TotalSize#test0003");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileConnection.UsedSize#test0001");
+
+		// Exclude these methods because they rely on the server-based
+		// interactive mode of the test runner, which we don't support.
+		// We should figure out how to make them non-interactive!
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.AddFileSystemListener#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.ListRoots#test0001");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.ListRoots#test0002");
+		excludes.addElement("com.ibm.tck.javax.microedition.io.file.FileSystemRegistry.RemoveFileSystemListener#test0001");
+
 		options.put("FilesystemTestPath", "//tcktestdir/");
 	}
 

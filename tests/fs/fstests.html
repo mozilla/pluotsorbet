@@ -8,20 +8,11 @@
   <script type="text/javascript" src="../../timer.js" defer></script>
   <script type="text/javascript" src="../qunit/core.js" defer></script>
   <script type="text/javascript" src="../qunit/equiv.js" defer></script>
-  <script type="text/javascript">
-  console.log = function() {
-    var s = Array.prototype.join.call(arguments, ",") +"\n";
-    document.getElementById("log").textContent += s;
-  }
-  </script>
+  <script type="text/javascript" src="test-fs-harness.js" defer></script>
   <script type="text/javascript" src="fstests.js" defer></script>
 </head>
 
-<body>
-  <div>
-    Log:
-    <pre id="log"></pre>
-  </div>
+<body style="white-space: pre-wrap">
 </body>
 
 </html>
