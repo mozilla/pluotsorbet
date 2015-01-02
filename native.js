@@ -334,7 +334,9 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
             throw $.newClassNotFoundException("'" + className + "' not found.");
         throw e;
     }
-    return classInfo.getClassObject($.ctx);
+    var classObject = classInfo.getClassObject($.ctx);
+    J2ME.Debug.assert(!U, "Unwinding isn't currently supported here.");
+    return classObject;
 };
 
 Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
