@@ -4,7 +4,6 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 
 public class ClippingTest extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
@@ -29,6 +28,7 @@ public class ClippingTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

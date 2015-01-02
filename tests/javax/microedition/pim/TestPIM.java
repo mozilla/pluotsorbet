@@ -51,10 +51,22 @@ public class TestPIM implements Testlet {
             Enumeration contacts = contactList.items();
             th.check(contacts.hasMoreElements());
             Contact foundContact = (Contact)contacts.nextElement();
+            th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "0");
+            th.check(contacts.hasMoreElements());
+            foundContact = (Contact)contacts.nextElement();
             th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "1");
             th.check(contacts.hasMoreElements());
             foundContact = (Contact)contacts.nextElement();
             th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "2");
+            th.check(contacts.hasMoreElements());
+            foundContact = (Contact)contacts.nextElement();
+            th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "3");
+            th.check(contacts.hasMoreElements());
+            foundContact = (Contact)contacts.nextElement();
+            th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "4");
+            th.check(contacts.hasMoreElements());
+            foundContact = (Contact)contacts.nextElement();
+            th.check(foundContact.getString(Contact.UID, Contact.ATTR_NONE), "5");
             th.check(!contacts.hasMoreElements());
 
             // Test filtering contacts

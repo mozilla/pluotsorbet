@@ -1,28 +1,5 @@
 'use strict';
 
-var passed = 0, failed = 0, then = performance.now();
-function is(a, b, msg) {
-  if (a == b) {
-    ++passed;
-    console.log("PASS " + msg);
-  } else {
-    ++failed;
-    console.log("FAIL " + msg);
-    console.log("GOT: " + JSON.stringify(a));
-    console.log("EXPECTED: " + JSON.stringify(b));
-  }
-}
-
-function ok(a, msg) {
-  if (!!a) {
-    ++passed;
-    console.log("PASS " + msg);
-  } else {
-    ++failed;
-    console.log("FAIL " + msg);
-  }
-}
-
 /**
  * Convert a callback-based fs function to a Promise-based one.
  * Requires the original function to take a callback as its last argument
@@ -118,20 +95,7 @@ var getBranch = function(dir) {
   });
 };
 
-var tests = [];
-
 var fd;
-
-function next() {
-  if (tests.length == 0) {
-    ok(true, "TESTS COMPLETED");
-    console.log("DONE: " + passed + " PASS, " + failed + " FAIL, " +
-                (Math.round(performance.now() - then)) + " TIME");
-  } else {
-    var test = tests.shift();
-    test();
-  }
-}
 
 tests.push(function() {
   fs.exists("/", function(exists) {

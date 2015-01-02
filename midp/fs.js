@@ -608,8 +608,11 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
         }
 
         fs.exists(path, function(exists) {
+            ctx.setAsCurrentContext();
             if (exists) {
                 open();
+            } else if (mode == 1) {
+                reject($.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist"));
             } else {
                 fs.create(path, new Blob(), function(created) {
                     ctx.setAsCurrentContext();

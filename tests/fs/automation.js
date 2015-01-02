@@ -8,14 +8,10 @@ casper.on('remote.message', function(message) {
 });
 
 casper.options.waitTimeout = 15000;
+casper.options.verbose = true;
+casper.options.logLevel = "debug";
 
-casper.options.onWaitTimeout = function() {
-    this.debugPage();
-    this.echo(this.captureBase64('png'));
-    this.test.fail("Timeout");
-};
-
-casper.test.begin("fs tests", 6, function(test) {
+casper.test.begin("fs tests", 7, function(test) {
     // The main test automation script already initializes the fs database
     // to its latest version and runs the fs tests against it.  So this script
     // focuses on running tests against databases that are initialized
@@ -47,7 +43,7 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 138 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 138 pass, 0 fail", "run fs.js unit tests");
     });
 
     casper
@@ -70,7 +66,7 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 138 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 138 pass, 0 fail", "run fs.js unit tests");
     });
 
     casper
@@ -93,7 +89,16 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 138 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 138 pass, 0 fail", "run fs.js unit tests");
+    });
+
+    // Run the FileConnection TCK unit tests.
+    casper
+    .thenOpen("http://localhost:8000/index.html?main=com.ibm.tck.client.TestRunner&args=-noserver&jars=tests/tests.jar&logConsole=web,page")
+    .withFrame(0, function() {
+        casper.waitForText("All Tests Passed", function() {
+            test.assertTextExists("357 tests, 318 passed, 39 excluded, 0 failed", "run FC TCK unit tests");
+        });
     });
 
     casper

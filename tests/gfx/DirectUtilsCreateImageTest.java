@@ -5,7 +5,6 @@ import javax.microedition.midlet.*;
 import com.nokia.mid.ui.*;
 
 public class DirectUtilsCreateImageTest extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
@@ -30,6 +29,7 @@ public class DirectUtilsCreateImageTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

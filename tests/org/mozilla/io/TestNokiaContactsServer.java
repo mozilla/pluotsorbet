@@ -177,6 +177,8 @@ public class TestNokiaContactsServer implements Testlet {
 
         msg = client.newMessage(null);
         client.receive(msg);
+        msg = client.newMessage(null);
+        client.receive(msg);
     }
 
     public void testGetFirst(TestHarness th) throws IOException {
@@ -322,7 +324,9 @@ public class TestNokiaContactsServer implements Testlet {
         dataDecoder.getEnd(16);
     }
 
-    public void testGetNext(TestHarness th) throws IOException {
+    public void testGetNext(TestHarness th, int prevContactID,
+                            String displayName, String number1,
+                            String number2) throws IOException {
         DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
         dataEncoder.putStart(14, "event");
         dataEncoder.put(13, "name", "getNext");
@@ -332,7 +336,7 @@ public class TestNokiaContactsServer implements Testlet {
         dataEncoder.put(7, "source", 2L);
         dataEncoder.putEnd(16, "sources");
         dataEncoder.putStart(15, "startEntry");
-        dataEncoder.put(11, "contactID", 1);
+        dataEncoder.put(11, "contactID", prevContactID);
         dataEncoder.putEnd(15, "startEntry");
         dataEncoder.putStart(15, "filter");
         dataEncoder.putEnd(15, "filter");
@@ -379,7 +383,7 @@ public class TestNokiaContactsServer implements Testlet {
 
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "DisplayName"); // mozContact.name [array]
-        th.check(dataDecoder.getString(11), "Test Contact 2");
+        th.check(dataDecoder.getString(11), displayName);
 
         //th.check(dataDecoder.listHasMoreItems());
         //th.check(dataDecoder.getName(), "Title"); // mozContact.jobTitle [array]
@@ -401,13 +405,13 @@ public class TestNokiaContactsServer implements Testlet {
         dataDecoder.getStart(15);
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "Number");
-        th.check(dataDecoder.getString(11), "+16505550102");
+        th.check(dataDecoder.getString(11), number1);
         th.check(!dataDecoder.listHasMoreItems());
         dataDecoder.getEnd(15);
         dataDecoder.getStart(15);
         th.check(dataDecoder.listHasMoreItems());
         th.check(dataDecoder.getName(), "Number");
-        th.check(dataDecoder.getString(11), "+16505550103");
+        th.check(dataDecoder.getString(11), number2);
         th.check(!dataDecoder.listHasMoreItems());
         dataDecoder.getEnd(15);
         try {
@@ -508,7 +512,8 @@ public class TestNokiaContactsServer implements Testlet {
             testProtocolVersion(th);
             testNotifySubscribe(th);
             testGetFirst(th);
-            testGetNext(th);
+            testGetNext(th, 1, "Test Contact 2", "+16505550102", "+16505550103");
+            testGetNext(th, 2, "Test Contact 5", "+16505550104", "+16505550105");
             testGetNextNoEntry(th);
 
             client.close();
