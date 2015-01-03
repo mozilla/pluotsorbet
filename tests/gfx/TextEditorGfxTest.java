@@ -88,7 +88,7 @@ public class TextEditorGfxTest extends MIDlet {
         String emoji2 = getSurrogatePairs(checkCodeFormat("1f609"));
         String emoji3 = getSurrogatePairs(checkCodeFormat("2320e3"));
 
-        TextEditor textEditor = TextEditor.createTextEditor("A stri" + emoji1 + "ng wit" + emoji2 + "h emoj" + emoji3 + "i", 50, TextField.ANY, 70, 70);
+        TextEditor textEditor = TextEditor.createTextEditor("A stri" + emoji1 + "ng wit" + emoji2 + "h emoj" + emoji3 + "i", 50, TextField.ANY, 150, 70);
         textEditor.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE));
         textEditor.setParent(canvas);
         textEditor.setMultiline(true);
@@ -96,7 +96,7 @@ public class TextEditorGfxTest extends MIDlet {
         textEditor.setForegroundColor(0xFF000000);
         textEditor.setVisible(true);
         textEditor.setFocus(false);
-        textEditor.setPosition(20, 20);
+        textEditor.setPosition(50, 50);
     }
 
     public void pauseApp() {
