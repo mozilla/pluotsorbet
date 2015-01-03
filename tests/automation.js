@@ -258,18 +258,19 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
                                 }
                             }
 
+                            var message = different + " <= " + testCase.maxDifferent;
                             if (different > testCase.maxDifferent) {
                                 console.log(got.canvas.toDataURL());
                                 if (!testCase.todo) {
-                                  console.log("FAIL - " + different);
+                                  console.log("FAIL - " + message);
                                 } else {
-                                  console.log("TODO - " + different);
+                                  console.log("TODO - " + message);
                                 }
                             } else {
                                 if (!testCase.todo) {
-                                    console.log("PASS - " + different);
+                                    console.log("PASS - " + message);
                                 } else {
-                                    console.log("UNEXPECTED PASS - " + different);
+                                    console.log("UNEXPECTED PASS - " + message);
                                 }
                             }
 
