@@ -63,7 +63,7 @@ var gfxTests = [
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
   { name: "gfx/TestLauncher", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferent: 592 },
+  { name: "gfx/TextEditorGfxTest", maxDifferent: 701 },
 ];
 
 var expectedUnitTestResults = [
