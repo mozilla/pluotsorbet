@@ -1174,6 +1174,9 @@ module J2ME {
         if (e.name === "TypeError") {
           // JavaScript's TypeError is analogous to a NullPointerException.
           e = $.newNullPointerException(e.message);
+        } else if (!e.klass) {
+          // A non-java exception was thrown. Rethrow so it is not handled by throw_.
+          throw e;
         }
 
         throw_(e);
