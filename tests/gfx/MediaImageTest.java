@@ -46,16 +46,16 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
 
     public void startApp() {
         try {
-            FileConnection file = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
+            FileConnection file = (FileConnection)Connector.open("file:////test.png", Connector.READ_WRITE);
             if (!file.exists()) {
                 file.create();
             }
             OutputStream os = file.openDataOutputStream();
-            InputStream is = getClass().getResourceAsStream("/org/mozilla/io/test.jpg");
+            InputStream is = getClass().getResourceAsStream("/gfx/images/red.png");
             os.write(read(is));
             os.close();
 
-            Player player = Manager.createPlayer("file:////test.jpg");
+            Player player = Manager.createPlayer("file:////test.png");
 
             player.addPlayerListener(this);
 
