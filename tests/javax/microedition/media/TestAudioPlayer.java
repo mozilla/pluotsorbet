@@ -2,6 +2,7 @@ package javax.microedition.media;
 
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
+import gnu.testlet.TestUtils;
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.io.*;
@@ -45,7 +46,7 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             }
             OutputStream os = file.openDataOutputStream();
             InputStream is = getClass().getResourceAsStream("/javax/microedition/media/hello.wav");
-            os.write(read(is));
+            os.write(TestUtils.read(is));
             os.close();
 
             Player player = Manager.createPlayer(url);
@@ -58,23 +59,6 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             // Bug #651
             th.todo(false, "Unexpected exception: " + e);
         }
-    }
-
-    private byte[] read(InputStream is) throws IOException {
-        int l = is.available();
-        byte[] buffer = new byte[l+1];
-        int length = 0;
-
-        while ((l = is.read(buffer, length, buffer.length - length)) != -1) {
-            length += l;
-            if (length == buffer.length) {
-                byte[] b = new byte[buffer.length + 4096];
-                System.arraycopy(buffer, 0, b, 0, length);
-                buffer = b;
-            }
-        }
-
-        return buffer;
     }
 
     private void testPlay(Player player) throws Exception {
