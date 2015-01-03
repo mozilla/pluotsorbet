@@ -22,8 +22,20 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var Instrument;
+
+  /**
+   * Traces method execution.
+   */
   export var traceWriter = null;
+
+  /**
+   * Traces linking and class loading.
+   */
   export var linkWriter = null;
+
+  /**
+   * Traces class initialization.
+   */
   export var initWriter = null;
 
   declare var Shumway;

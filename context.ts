@@ -281,6 +281,9 @@ module J2ME {
       return "";
     }
 
+    /**
+     * Sets global writers. Uncomment these if you want to see trace output.
+     */
     static setWriters(writer: IndentingWriter) {
       traceWriter = null; // writer;
       linkWriter = null; // writer;
