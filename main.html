@@ -8,13 +8,13 @@
   <link rel="stylesheet" type="text/css" href="style/progress_activity.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+  <script type="text/javascript" src="build/shumway.js" defer></script>
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
-  <script type="text/javascript" src="build/shumway.js" defer></script>
   <script type="text/javascript" src="build/j2me.js" defer></script>
   <!--<script type="text/javascript" src="build/j2me.cc.js" defer></script>-->
   <script type="text/javascript" src="override.js" defer></script>
@@ -68,8 +68,9 @@
 
 <body>
   <div>
-    <div>
+    <div id="traceTerminalContainer">
       <pre id="console"></pre>
+      <canvas id="traceTerminal" tabindex='2'></canvas>
     </div>
     <div>
       <div id="profilerContainer" class="collapsed">

@@ -97,7 +97,7 @@ module Shumway.Tools.Terminal {
       this.columnIndex = 0;
       this.selection = null;
       this.lineHeight = 15;
-      this.hasFocus = false;
+      this.hasFocus = true;
 
       window.addEventListener('resize', this._resizeHandler.bind(this), false);
       this._resizeHandler();
@@ -245,7 +245,7 @@ module Shumway.Tools.Terminal {
         this.canvas.width = cw;
         this.canvas.height = ch;
       }
-      this.pageLineCount = Math.floor(this.canvas.height / this.lineHeight);
+      this.pageLineCount = Math.floor(ch / this.lineHeight);
     }
 
     gotoLine(index) {

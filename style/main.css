@@ -60,18 +60,6 @@ button {
   font-size: 12px;
 }
 
-#console {
-  position: fixed;
-  top: 0;
-  bottom: 350px;
-  left: 0;
-  right: 240px;
-  margin: 0;
-  padding: 0.5rem;
-  overflow: auto;
-}
-
-
 .log-item-log {
   color: #555;
 }
@@ -187,13 +175,29 @@ button {
   line-height: 1.2;
 }
 
+#console {
+  position: fixed;
+  overflow: auto;
+}
+
+#traceTerminalContainer {
+  position: fixed;
+  top: 0;
+  bottom: 250px;
+  left: 0;
+  right: 240px;
+  margin: 0;
+  padding: 0;
+  /*background-color: rgba(0, 0, 0, 0.8);*/
+}
+
 #profilerContainer {
   position: absolute;
   bottom: 0;
   right: 0;
   left: 0;
-  width: auto;
-  height: 350px;
+  width: 240;
+  height: 250px;
   overflow: hidden;
   background-color: #000;
   color: #ffffff;
