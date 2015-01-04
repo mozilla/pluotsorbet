@@ -551,7 +551,7 @@ PlayerContainer.prototype.realize = function(contentType) {
         if (Media.supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
             this.player = new AudioPlayer(this);
             if (this.isAudioCapture()) {
-                this.audioRecorder = new AudioRecorder();
+                this.audioRecorder = new AudioRecorder(contentType);
             }
             this.player.realize().then(resolve);
         } else if (Media.supportedImageFormats.indexOf(this.mediaFormat) !== -1) {
@@ -788,7 +788,11 @@ AudioRecorder.prototype.stop = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            this.data = Media.convert3gpToAmr(new Uint8Array(message.data));
+            var data = new Uint8Array(message.data);
+            if (this.mimeType === "audio/amr") {
+                data = Media.convert3gpToAmr(data);
+            }
+            this.data = data;
             resolve(1);
         }.bind(this);
 
