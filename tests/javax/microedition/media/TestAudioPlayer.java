@@ -74,6 +74,12 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             }
         }
 
+        if (length < buffer.length) {
+            byte[] b = new byte[length];
+            System.arraycopy(buffer, 0, b, 0, length);
+            buffer = b;
+        }
+
         return buffer;
     }
 
