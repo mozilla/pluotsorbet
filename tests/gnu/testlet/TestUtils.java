@@ -26,7 +26,7 @@ public class TestUtils {
         return buffer;
     }
 
-    public static String checkCodeFormat(String code) {
+    static String checkCodeFormat(String code) {
         if (code == null) {
             return code;
         }
@@ -43,9 +43,9 @@ public class TestUtils {
         }
     }
 
-    private final static int LEAD_OFFSET = 0xD800 - (0x10000 >> 10);
+    final static int LEAD_OFFSET = 0xD800 - (0x10000 >> 10);
 
-    public static String getSurrogatePairs(String inputString) {
+    static String getSurrogatePairs(String inputString) {
         int character;
         char low, high;
         int start = 0, end = 0;

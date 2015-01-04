@@ -42,8 +42,8 @@ public class TestAudioRecorder implements Testlet {
 
     private void test3gpToAmr() {
         try {
-            byte[] actual = convert3gpToAmr(TestUtils.read("/javax/microedition/media/audio.3gp"));
-            byte[] expected = TestUtils.read("/javax/microedition/media/audio.amr");
+            byte[] actual = convert3gpToAmr(TestUtils.read(getClass().getResourceAsStream("/javax/microedition/media/audio.3gp")));
+            byte[] expected = TestUtils.read(getClass().getResourceAsStream("/javax/microedition/media/audio.amr"));
             th.check(isArrayEqual(actual, expected));
         } catch (Exception e) {
             e.printStackTrace();
