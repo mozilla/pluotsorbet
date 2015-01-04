@@ -15,6 +15,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     http: [
@@ -22,6 +23,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     https: [
@@ -29,6 +31,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     rtp: [],
