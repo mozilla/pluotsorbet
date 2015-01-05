@@ -1135,7 +1135,7 @@ module J2ME {
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getStaticObject($.ctx)
+            ? methodInfo.classInfo.getClassObject($.ctx)
             : frame.getLocal(0);
         }
         $.ctx.monitorEnter(frame.lockObject);
