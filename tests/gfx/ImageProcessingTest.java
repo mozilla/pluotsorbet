@@ -9,6 +9,7 @@ import com.nokia.mid.s40.io.LocalMessageProtocolMessage;
 import com.nokia.mid.s40.io.LocalMessageProtocolConnection;
 import com.nokia.mid.s40.codec.DataEncoder;
 import com.nokia.mid.s40.codec.DataDecoder;
+import gnu.testlet.TestUtils;
 
 public class ImageProcessingTest extends MIDlet {
     private Display display;
@@ -16,28 +17,14 @@ public class ImageProcessingTest extends MIDlet {
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
             if (image != null) {
                 g.drawImage(image, 0, 0, Graphics.TOP | Graphics.LEFT);
             }
             System.out.println("PAINTED");
         }
-    }
-
-    byte[] read(InputStream is) throws IOException {
-        int l = is.available();
-        byte[] buffer = new byte[l+1];
-        int length = 0;
-
-        while ((l = is.read(buffer, length, buffer.length - length)) != -1) {
-            length += l;
-            if (length == buffer.length) {
-                byte[] b = new byte[buffer.length + 4096];
-                System.arraycopy(buffer, 0, b, 0, length);
-                buffer = b;
-            }
-        }
-
-        return buffer;
     }
 
     public ImageProcessingTest() throws IOException {
@@ -64,7 +51,7 @@ public class ImageProcessingTest extends MIDlet {
         }
         OutputStream os = originalImage.openDataOutputStream();
         InputStream is = getClass().getResourceAsStream("/org/mozilla/io/test.jpg");
-        os.write(read(is));
+        os.write(TestUtils.read(is));
         os.close();
 
         dataEncoder = new DataEncoder("Conv-BEB");
@@ -109,7 +96,7 @@ public class ImageProcessingTest extends MIDlet {
 
         display = Display.getDisplay(this);
 
-        byte[] imageData = read(is);
+        byte[] imageData = TestUtils.read(is);
         image = Image.createImage(imageData, 0, imageData.length);
 
         is.close();

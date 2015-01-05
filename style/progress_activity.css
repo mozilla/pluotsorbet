@@ -11,6 +11,7 @@ progress:not([value]) {
   border: none;
   display: inline-block;
   vertical-align: middle;
+  position: absolute;
 }
 
 progress:not([value]).light {
