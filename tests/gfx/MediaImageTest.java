@@ -7,26 +7,10 @@ import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import javax.microedition.media.*;
 import javax.microedition.media.control.*;
+import gnu.testlet.TestUtils;
 
 public class MediaImageTest extends MIDlet implements PlayerListener {
     private VideoControl videoControl;
-
-    byte[] read(InputStream is) throws IOException {
-        int l = is.available();
-        byte[] buffer = new byte[l+1];
-        int length = 0;
-
-        while ((l = is.read(buffer, length, buffer.length - length)) != -1) {
-            length += l;
-            if (length == buffer.length) {
-                byte[] b = new byte[buffer.length + 4096];
-                System.arraycopy(buffer, 0, b, 0, length);
-                buffer = b;
-            }
-        }
-
-        return buffer;
-    }
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
@@ -52,7 +36,7 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
             }
             OutputStream os = file.openDataOutputStream();
             InputStream is = getClass().getResourceAsStream("/gfx/images/red.png");
-            os.write(read(is));
+            os.write(TestUtils.read(is));
             os.close();
 
             Player player = Manager.createPlayer("file:////test.png");

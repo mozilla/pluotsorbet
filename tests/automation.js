@@ -50,7 +50,7 @@ var gfxTests = [
   { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
   { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
-  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 0, todo: true },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 0 },
   { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
   { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
   { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
@@ -67,7 +67,7 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71530 },
+  { name: "pass", number: 71531 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 216 },
   { name: "unknown pass", number: 0 }
