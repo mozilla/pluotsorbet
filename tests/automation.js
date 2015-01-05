@@ -49,7 +49,7 @@ var gfxTests = [
   { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
   { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
-  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 0 },
   { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
   { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
   { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
@@ -61,10 +61,12 @@ var gfxTests = [
   { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
+  { name: "gfx/TestLauncher", maxDifferent: 0 },
+  { name: "gfx/MediaImageTest", maxDifferent: 0 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71568 },
+  { name: "pass", number: 71569 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
