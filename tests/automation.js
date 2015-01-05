@@ -49,7 +49,7 @@ var gfxTests = [
   { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
   { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
-  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 0 },
   { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
   { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
   { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
