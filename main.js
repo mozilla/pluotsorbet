@@ -187,7 +187,7 @@ function start() {
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
-  jvm.startIsolate0(main, []);
+  jvm.startIsolate0(main, urlParams.args);
 }
 
 Promise.all(loadingPromises).then(function() {
