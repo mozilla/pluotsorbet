@@ -329,6 +329,10 @@ module J2ME.Bytecode {
     JSR_W                = 201, // 0xC9
     BREAKPOINT           = 202, // 0xCA
 
+    ALOAD_ILOAD            = 210,
+    IINC_GOTO              = 211,
+    ARRAYLENGTH_IF_ICMPGE  = 212,
+
     ILLEGAL              = 255,
     END                  = 256,
 
@@ -633,7 +637,14 @@ module J2ME.Bytecode {
     define(Bytecodes.GOTO_W              , "goto_w"          , "boooo", Flags.STOP | Flags.BRANCH);
     define(Bytecodes.JSR_W               , "jsr_w"           , "boooo", Flags.STOP | Flags.BRANCH);
     define(Bytecodes.BREAKPOINT          , "breakpoint"      , "b"    , Flags.TRAP);
+
+
+    define(Bytecodes.ALOAD_ILOAD                   , "aload_iload"               , "bi"   , Flags.LOAD);
+    define(Bytecodes.IINC_GOTO                     , "iinc_goto"                 , "bic"  , Flags.LOAD | Flags.STORE | Flags.STOP | Flags.BRANCH);
+    define(Bytecodes.ARRAYLENGTH_IF_ICMPGE         , "arraylength_IF_ICMPGE"     , "b"    , Flags.COMMUTATIVE | Flags.FALL_THROUGH | Flags.BRANCH | Flags.TRAP);
   }
+
+  defineBytecodes();
 
   /**
    * Gets the length of an instruction denoted by a given opcode.
@@ -1007,6 +1018,22 @@ module J2ME.Bytecode {
       } else {
         return this._opcode;
       }
+    }
+
+    /**
+     * Sets the current opcode.
+     */
+    public writeCurrentBC(bc: Bytecodes) {
+      assert(lengthOf(this.currentBC()) === lengthOf(bc));
+      this._code[this._currentBCI] = bc;
+    }
+
+    /**
+     * Gets the next opcode.
+     * @return the next opcode; {@link Bytecodes#END} if at or beyond the end of the code
+     */
+    public nextBC(): Bytecodes {
+      return Bytes.beU1(this._code, this._nextBCI);
     }
 
     /**

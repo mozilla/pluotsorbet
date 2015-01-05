@@ -1,62 +1,196 @@
+interface Array<T> {
+  push2: (value) => void;
+  pop2: () => any;
+  pushKind: (kind: J2ME.Kind, value) => void;
+  popKind: (kind: J2ME.Kind) => any;
+  read: (i) => any;
+}
+
 module J2ME {
   import assert = Debug.assert;
+  import Bytecodes = Bytecode.Bytecodes;
   declare var VM;
   declare var Instrument;
   declare var setZeroTimeout;
 
+
+  Array.prototype.push2 = function(value) {
+    this.push(value);
+    this.push(null);
+    return value;
+  }
+
+  Array.prototype.pop2 = function() {
+    this.pop();
+    return this.pop();
+  }
+
+  Array.prototype.pushKind = function(kind: Kind, value) {
+    if (isTwoSlot(kind)) {
+      this.push2(value);
+      return;
+    }
+    this.push(value);
+  }
+
+  Array.prototype.popKind = function(kind: Kind) {
+    if (isTwoSlot(kind)) {
+      return this.pop2();
+    }
+    return this.pop();
+  }
+
+  // A convenience function for retrieving values in reverse order
+  // from the end of the stack.  stack.read(1) returns the topmost item
+  // on the stack, while stack.read(2) returns the one underneath it.
+  Array.prototype.read = function(i) {
+    return this[this.length - i];
+  };
+
   export class Frame {
     methodInfo: MethodInfo;
-    locals: any [];
+    local: any [];
     stack: any [];
     code: Uint8Array;
-    bci: number;
+    pc: number;
     cp: any;
-    localsBase: number;
+    localBase: number;
     lockObject: java.lang.Object;
-    profileData: any;
 
-    constructor(methodInfo: MethodInfo, locals: any [], localsBase: number) {
+    constructor(methodInfo: MethodInfo, local: any [], localBase: number) {
       this.methodInfo = methodInfo;
       this.cp = methodInfo.classInfo.constant_pool;
       this.code = methodInfo.code;
-      this.bci = 0;
+      this.pc = 0;
       this.stack = [];
-      this.locals = locals;
-      this.localsBase = localsBase;
+      this.local = local;
+      this.localBase = localBase;
       this.lockObject = null;
-      this.profileData = null;
     }
 
     getLocal(i: number): any {
-      return this.locals[this.localsBase + i];
+      return this.local[this.localBase + i];
     }
 
     setLocal(i: number, value: any) {
-      this.locals[this.localsBase + i] = value;
+      this.local[this.localBase + i] = value;
     }
 
     read8(): number {
-      return this.code[this.bci++];
+      return this.code[this.pc++];
+    }
+
+    peek8(): number {
+      return this.code[this.pc];
     }
 
     read16(): number {
-      return this.read8() << 8 | this.read8();
+      var code = this.code
+      return code[this.pc++] << 8 | code[this.pc++];
     }
 
     read32(): number {
-      return this.read32signed() >>> 0;
+      return this.read32Signed() >>> 0;
     }
 
-    read8signed(): number {
-      return this.read8() << 24 >> 24;
+    read8Signed(): number {
+      return this.code[this.pc++] << 24 >> 24;
     }
 
-    read16signed(): number {
-      return this.read16() << 16 >> 16;
+    read16Signed(): number {
+      var pc = this.pc;
+      var code = this.code;
+      this.pc = pc + 2
+      return (code[pc] << 8 | code[pc + 1]) << 16 >> 16;
     }
 
-    read32signed(): number {
+    readTargetPC(): number {
+      var pc = this.pc;
+      var code = this.code;
+      this.pc = pc + 2
+      var offset = (code[pc] << 8 | code[pc + 1]) << 16 >> 16;
+      return pc - 1 + offset;
+    }
+
+    read32Signed(): number {
       return this.read16() << 16 | this.read16();
+    }
+
+    tableSwitch(): number {
+      var start = this.pc;
+      while ((this.pc & 3) != 0) {
+        this.pc++;
+      }
+      var def = this.read32Signed();
+      var low = this.read32Signed();
+      var high = this.read32Signed();
+      var value = this.stack.pop();
+      var pc;
+      if (value < low || value > high) {
+        pc = def;
+      } else {
+        this.pc += (value - low) << 2;
+        pc = this.read32Signed();
+      }
+      return start - 1 + pc;
+    }
+
+    lookupSwitch(): number {
+      var start = this.pc;
+      while ((this.pc & 3) != 0) {
+        this.pc++;
+      }
+      var pc = this.read32Signed();
+      var size = this.read32();
+      var value = this.stack.pop();
+      lookup:
+      for (var i = 0; i < size; i++) {
+        var key = this.read32Signed();
+        var offset = this.read32Signed();
+        if (key === value) {
+          pc = offset;
+        }
+        if (key >= value) {
+          break lookup;
+        }
+      }
+      return start - 1 + pc;
+    }
+
+    wide() {
+      var stack = this.stack;
+      var op = this.read8();
+      switch (op) {
+        case Bytecodes.ILOAD:
+        case Bytecodes.FLOAD:
+        case Bytecodes.ALOAD:
+          stack.push(this.getLocal(this.read16()));
+          break;
+        case Bytecodes.LLOAD:
+        case Bytecodes.DLOAD:
+          stack.push2(this.getLocal(this.read16()));
+          break;
+        case Bytecodes.ISTORE:
+        case Bytecodes.FSTORE:
+        case Bytecodes.ASTORE:
+          this.setLocal(this.read16(), stack.pop());
+          break;
+        case Bytecodes.LSTORE:
+        case Bytecodes.DSTORE:
+          this.setLocal(this.read16(), stack.pop2());
+          break;
+        case Bytecodes.IINC:
+          var index = this.read16();
+          var value = this.read16Signed();
+          this.setLocal(index, this.getLocal(index) + value);
+          break;
+        case Bytecodes.RET:
+          this.pc = this.getLocal(this.read16());
+          break;
+        default:
+          var opName = Bytecodes[op];
+          throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
+      }
     }
 
     /**
@@ -65,8 +199,7 @@ module J2ME {
      */
     peekInvokeObject(methodInfo: MethodInfo): java.lang.Object {
       release || assert(!methodInfo.isStatic);
-      var argumentSlotCount = methodInfo.signatureDescriptor.getArgumentSlotCount();
-      var i = this.stack.length - argumentSlotCount - 1;
+      var i = this.stack.length - methodInfo.argumentSlots - 1;
       release || assert (i >= 0);
       release || assert (this.stack[i] !== undefined);
       return this.stack[i];
@@ -90,7 +223,7 @@ module J2ME {
     }
 
     trace(writer: IndentingWriter) {
-      var localsStr = this.locals.map(function (x) {
+      var localStr = this.local.map(function (x) {
         return toDebugString(x);
       }).join(", ");
 
@@ -98,7 +231,7 @@ module J2ME {
         return toDebugString(x);
       }).join(", ");
 
-      writer.writeLn(this.bci + " " + localsStr + " | " + stackStr);
+      writer.writeLn(("" + this.pc).padLeft(" ", 4) + " " + localStr + " | " + stackStr);
     }
   }
 
@@ -116,8 +249,8 @@ module J2ME {
     });
 
     id: number
-    frames: any [];
-    frameSets: any [];
+    frames: Frame [];
+    frameSets: Frame [][];
     bailoutFrames: any [];
     lockTimeout: number;
     lockLevel: number;
@@ -161,7 +294,7 @@ module J2ME {
       this.runtime.removeContext(this);
     }
 
-    current() {
+    current(): Frame {
       var frames = this.frames;
       return frames[frames.length - 1];
     }
@@ -175,7 +308,7 @@ module J2ME {
           var frameDetails = firstFrame.methodInfo.classInfo.className + "/" + firstFrame.methodInfo.name + signatureToDefinition(firstFrame.methodInfo.signature, true, true);
           traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + frameDetails);
         }
-        var returnValue = VM.execute(this);
+        var returnValue = VM.execute();
         if (U) {
           // Append all the current frames to the parent frame set, so a single frame stack
           // exists when the bailout finishes.
@@ -285,7 +418,7 @@ module J2ME {
       Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {
-        VM.execute(this);
+        VM.execute();
         if (U) {
           Array.prototype.push.apply(this.frames, this.bailoutFrames);
           this.bailoutFrames = [];
@@ -349,55 +482,55 @@ module J2ME {
       }
     }
 
-    monitorEnter(obj: java.lang.Object) {
-      var lock = obj._lock;
+    monitorEnter(object: java.lang.Object) {
+      var lock = object._lock;
       if (!lock) {
-        obj._lock = new Lock(this.thread, 1);
+        object._lock = new Lock(this.thread, 1);
         return;
       }
       if (lock.thread === this.thread) {
         ++lock.level;
         return;
       }
-      this.block(obj, "ready", 1);
+      this.block(object, "ready", 1);
     }
 
-    monitorExit(obj: java.lang.Object) {
-      var lock = obj._lock;
+    monitorExit(object: java.lang.Object) {
+      var lock = object._lock;
       if (lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       if (--lock.level > 0) {
         return;
       }
-      obj._lock = null;
-      this.unblock(obj, "ready", false, function (ctx) {
-        ctx.wakeup(obj);
+      object._lock = null;
+      this.unblock(object, "ready", false, function (ctx) {
+        ctx.wakeup(object);
       });
     }
 
-    wait(obj, timeout) {
-      var lock = obj._lock;
+    wait(object: java.lang.Object, timeout) {
+      var lock = object._lock;
       if (timeout < 0)
         throw $.newIllegalArgumentException();
       if (!lock || lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       var lockLevel = lock.level;
       while (lock.level > 0)
-        this.monitorExit(obj);
+        this.monitorExit(object);
       if (timeout) {
         var self = this;
         this.lockTimeout = window.setTimeout(function () {
-          obj.waiting.forEach(function (ctx, n) {
+          object.waiting.forEach(function (ctx, n) {
             if (ctx === self) {
-              obj.waiting[n] = null;
-              ctx.wakeup(obj);
+              object.waiting[n] = null;
+              ctx.wakeup(object);
             }
           });
         }, timeout);
       } else {
         this.lockTimeout = null;
       }
-      this.block(obj, "waiting", lockLevel);
+      this.block(object, "waiting", lockLevel);
     }
 
     notify(obj, notifyAll) {
@@ -409,10 +542,10 @@ module J2ME {
       });
     }
 
-    bailout(methodInfo: MethodInfo, bci: number, local: any [], stack: any []) {
+    bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any []) {
       var frame = new Frame(methodInfo, local, 0);
       frame.stack = stack;
-      frame.bci = bci;
+      frame.pc = pc;
       this.bailoutFrames.unshift(frame);
     }
 
@@ -463,7 +596,7 @@ module J2ME {
         default:
           throw new Error("not support constant type");
       }
-      return constant;
+      return cp[idx] = constant;
     }
   }
 }

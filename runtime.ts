@@ -34,7 +34,7 @@ module J2ME {
   export var runtimeCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
-  if (typeof Shumway !== "undefined") {
+  if (false && typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
     methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
   }
@@ -177,12 +177,16 @@ module J2ME {
     Compiled
   }
 
+  var hashArray = new Int32Array(1024);
   function hashString(s: string) {
-    var data = new Int32Array(s.length);
+    if (hashArray.length < s.length) {
+      hashArray = new Int32Array((hashArray.length * 2 / 3) | 0);
+    }
+    var data = hashArray;
     for (var i = 0; i < s.length; i++) {
       data[i] = s.charCodeAt(i);
     }
-    return HashUtilities.hashBytesTo32BitsMD5(data, 0, s.length);
+    return HashUtilities.hashBytesTo32BitsAdler(data, 0, s.length);
   }
 
   var friendlyMangledNames = true;
@@ -551,7 +555,7 @@ module J2ME {
     /**
      * Array klass of this klass, constructed via \arrayKlass\.
      */
-    arrayKlass: ArrayKlass;
+    arrayKlass: Klass;
 
     superKlass: Klass;
 
@@ -588,6 +592,10 @@ module J2ME {
      * Whether this class is an interface class.
      */
     isInterfaceKlass: boolean;
+
+    isArrayKlass: boolean;
+
+    elementKlass: Klass;
   }
 
   export class RuntimeKlass {
@@ -607,11 +615,6 @@ module J2ME {
     constructor(templateKlass: Klass) {
       this.templateKlass = templateKlass;
     }
-  }
-
-  export interface ArrayKlass extends Klass {
-    elementKlass: Klass;
-    isArrayKlass: boolean;
   }
 
   export class Lock {
@@ -636,6 +639,8 @@ module J2ME {
        * Some objects may have a lock.
        */
       _lock: Lock;
+
+      waiting: Context [];
 
       clone(): java.lang.Object;
       equals(obj: java.lang.Object): boolean;
@@ -864,6 +869,27 @@ module J2ME {
     });
   }
 
+  function emitKlassConstructor(classInfo: ClassInfo, mangledName: string): Klass {
+    var klass: Klass;
+    enterTimeline("emitKlassConstructor");
+    // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
+    // creating a closure, which will probably be slower at runtime.
+    var source = "";
+    var writer = new IndentingWriter(false, x => source += x + "\n");
+    var emitter = new Emitter(writer, false, true, true);
+    J2ME.emitKlass(emitter, classInfo);
+    (1, eval)(source);
+    leaveTimeline("emitKlassConstructor");
+    // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
+    // consoleWriter.writeLn(source);
+    klass = <Klass>jsGlobal[mangledName];
+    release || assert(klass, mangledName);
+    klass.toString = function () {
+      return "[Synthesized Klass " + classInfo.className + "]";
+    };
+    return klass;
+  }
+
   export function getKlass(classInfo: ClassInfo): Klass {
     if (!classInfo) {
       return null;
@@ -871,6 +897,10 @@ module J2ME {
     if (classInfo.klass) {
       return classInfo.klass;
     }
+    return makeKlass(classInfo);
+  }
+
+  function makeKlass(classInfo: ClassInfo): Klass {
     var klass = findKlass(classInfo);
     if (klass) {
       release || assert (!classInfo.isInterface, "Interfaces should not be compiled.");
@@ -884,52 +914,11 @@ module J2ME {
         registerKlassSymbols(klass.classSymbols);
       }
     } else {
-      var mangledName = mangleClass(classInfo);
-      if (classInfo.isInterface) {
-        klass = function () {
-          Debug.unexpected("Should never be instantiated.")
-        };
-        klass.isInterfaceKlass = true;
-        klass.toString = function () {
-          return "[Interface Klass " + classInfo.className + "]";
-        };
-        setKlassSymbol(mangledName, klass);
-      } else if (classInfo.isArrayClass) {
-        var elementKlass = getKlass(classInfo.elementClass);
-        // Have we already created one? We need to maintain pointer identity.
-        if (elementKlass.arrayKlass) {
-          return elementKlass.arrayKlass;
-        }
-        klass = getArrayKlass(elementKlass);
-      } else if (classInfo instanceof PrimitiveClassInfo) {
-        klass = function () {
-          Debug.unexpected("Should never be instantiated.")
-        };
-        klass.toString = function () {
-          return "[Primitive Klass " + classInfo.className + "]";
-        };
-      } else {
-        enterTimeline("emitKlass");
-        // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
-        // creating a closure, which will probably be slower at runtime.
-        var source = "";
-        var writer = new IndentingWriter(false, x => source += x + "\n");
-        var emitter = new Emitter(writer, false, true, true);
-        J2ME.emitKlass(emitter, classInfo);
-        (1, eval)(source);
-        leaveTimeline("emitKlass");
-        // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.className);
-        // consoleWriter.writeLn(source);
-        klass = jsGlobal[mangledName];
-        release || assert(klass, mangledName);
-        klass.toString = function () {
-          return "[Synthesized Klass " + classInfo.className + "]";
-        };
-      }
+      klass = makeKlassConstructor(classInfo);
     }
 
     if (classInfo.superClass && !classInfo.superClass.klass &&
-        J2ME.phase === J2ME.ExecutionPhase.Runtime) {
+      J2ME.phase === J2ME.ExecutionPhase.Runtime) {
       J2ME.linkKlass(classInfo.superClass);
     }
 
@@ -943,10 +932,72 @@ module J2ME {
     registerKlass(klass, classInfo);
     leaveTimeline("registerKlass");
 
+    if (classInfo.isArrayClass) {
+      klass.isArrayKlass = true;
+      var elementKlass = getKlass(classInfo.elementClass);
+      elementKlass.arrayKlass = klass;
+      klass.elementKlass = elementKlass;
+    }
+
+    klass.classInfo = classInfo;
+
     if (!classInfo.isInterface) {
       initializeInterfaces(klass, classInfo);
     }
 
+    return klass;
+  }
+
+  function makeKlassConstructor(classInfo: ClassInfo): Klass {
+    var klass: Klass;
+    var mangledName = mangleClass(classInfo);
+    if (classInfo.isInterface) {
+      klass = <Klass><any>function () {
+        Debug.unexpected("Should never be instantiated.")
+      };
+      klass.isInterfaceKlass = true;
+      klass.toString = function () {
+        return "[Interface Klass " + classInfo.className + "]";
+      };
+      setKlassSymbol(mangledName, klass);
+    } else if (classInfo.isArrayClass) {
+      var elementKlass = getKlass(classInfo.elementClass);
+      // Have we already created one? We need to maintain pointer identity.
+      if (elementKlass.arrayKlass) {
+        return elementKlass.arrayKlass;
+      }
+      klass = makeArrayKlassConstructor(elementKlass);
+    } else if (classInfo instanceof PrimitiveClassInfo) {
+      klass = <Klass><any>function () {
+        Debug.unexpected("Should never be instantiated.")
+      };
+      klass.toString = function () {
+        return "[Primitive Klass " + classInfo.className + "]";
+      };
+    } else {
+      klass = emitKlassConstructor(classInfo, mangledName);
+    }
+    return klass;
+  }
+
+  export function makeArrayKlassConstructor(elementKlass: Klass): Klass {
+    var klass = <Klass><any> getArrayConstructor(elementKlass.classInfo.className);
+    if (!klass) {
+      klass = <Klass><any> function (size: number) {
+        var array = createEmptyObjectArray(size);
+        (<any>array).klass = klass;
+        return array;
+      };
+      klass.toString = function () {
+        return "[Array of " + elementKlass + "]";
+      };
+    } else {
+      release || assert(!klass.prototype.hasOwnProperty("klass"));
+      klass.prototype.klass = klass;
+      klass.toString = function () {
+        return "[Array of " + elementKlass + "]";
+      };
+    }
     return klass;
   }
 
@@ -1006,8 +1057,11 @@ module J2ME {
     enterTimeline("linkKlassFields");
     linkKlassFields(classInfo.klass);
     leaveTimeline("linkKlassFields");
-
     leaveTimeline("linkKlass");
+
+    if (klass === Klasses.java.lang.Object) {
+      extendKlass(<Klass><any>Array, Klasses.java.lang.Object);
+    }
   }
 
   function findNativeMethodBinding(methodInfo: MethodInfo) {
@@ -1045,6 +1099,23 @@ module J2ME {
   }
 
   function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
+
+    // Adapter for the most common case.
+    if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
+      return function fastInterpreterFrameAdapter() {
+        var frame = new Frame(methodInfo, [], 0);
+        var j = 0;
+        if (!methodInfo.isStatic) {
+          frame.setLocal(j++, this);
+        }
+        var slots = methodInfo.argumentSlots;
+        for (var i = 0; i < slots; i++) {
+          frame.setLocal(j++, arguments[i]);
+        }
+        return $.ctx.executeNewFrameSet([frame]);
+      }
+    }
+
     return function interpreterFrameAdapter() {
       var frame = new Frame(methodInfo, [], 0);
       var j = 0;
@@ -1061,8 +1132,6 @@ module J2ME {
           frame.setLocal(j++, null);
         }
       }
-      var caller = $.ctx.current();
-      var callee = frame;
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
@@ -1233,6 +1302,7 @@ module J2ME {
    */
   function initializeKlassTables(klass: Klass) {
     klass.depth = klass.superKlass ? klass.superKlass.depth + 1 : 0;
+    assert (klass.display === undefined, "Display should only be defined once.")
     var display = klass.display = new Array(32);
 
 
@@ -1276,33 +1346,32 @@ module J2ME {
   export function isAssignableTo(from: Klass, to: Klass): boolean {
     if (to.isInterfaceKlass) {
       return from.interfaces.indexOf(to) >= 0;
+    } else if (to.isArrayKlass) {
+      if (!from.isArrayKlass) {
+        return false;
+      }
+      return isAssignableTo(from.elementKlass, to.elementKlass);
     }
     return from.display[to.depth] === to;
   }
 
   export function instanceOfKlass(object: java.lang.Object, klass: Klass): boolean {
-    return object !== null && object.klass.display[klass.depth] === klass;
+    return object !== null && isAssignableTo(object.klass, klass);
   }
 
   export function instanceOfInterface(object: java.lang.Object, klass: Klass): boolean {
     release || assert(klass.isInterfaceKlass);
-    return object !== null && object.klass.interfaces.indexOf(klass) >= 0;
+    return object !== null && isAssignableTo(object.klass, klass);
   }
 
-  export function checkCast(object: java.lang.Object, klass: Klass) {
+  export function checkCastKlass(object: java.lang.Object, klass: Klass) {
     if (object !== null && !isAssignableTo(object.klass, klass)) {
       throw $.newClassCastException();
     }
   }
 
-  export function checkCastKlass(object: java.lang.Object, klass: Klass) {
-    if (object !== null && object.klass.display[klass.depth] !== klass) {
-      throw $.newClassCastException();
-    }
-  }
-
   export function checkCastInterface(object: java.lang.Object, klass: Klass) {
-    if (object !== null && object.klass.interfaces.indexOf(klass) < 0) {
+    if (object !== null && !isAssignableTo(object.klass, klass)) {
       throw $.newClassCastException();
     }
   }
@@ -1328,6 +1397,10 @@ module J2ME {
     return object;
   }
 
+  export function newStringConstant(str: string): java.lang.String {
+    return $.newStringConstant(str);
+  };
+
   export function newArray(klass: Klass, size: number) {
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
@@ -1350,41 +1423,12 @@ module J2ME {
     if (elementKlass.arrayKlass) {
       return elementKlass.arrayKlass;
     }
-    var klass = <ArrayKlass><any> getArrayConstructor(elementKlass.classInfo.className);
-    if (!klass) {
-      klass = <ArrayKlass><any> function (size:number) {
-        var array = createEmptyObjectArray(size);
-        (<any>array).klass = klass;
-        return array;
-      };
-      klass.toString = function () {
-        return "[Array of " + elementKlass + "]";
-      };
-      if (elementKlass === Klasses.java.lang.Object) {
-        extendKlass(klass, Klasses.java.lang.Object);
-        extendKlass(<ArrayKlass><any>Array, Klasses.java.lang.Object);
-      } else {
-        extendKlass(klass, getArrayKlass(Klasses.java.lang.Object));
-      }
-    } else {
-      release || assert(!klass.prototype.hasOwnProperty("klass"));
-      klass.prototype.klass = klass;
-      extendKlass(klass, Klasses.java.lang.Object);
-      klass.toString = function () {
-        return "[Array of " + elementKlass + "]";
-      };
-    }
-    klass.isArrayKlass = true;
-    elementKlass.arrayKlass = klass;
-    klass.elementKlass = elementKlass;
     var className = elementKlass.classInfo.className;
-    if (!(elementKlass.classInfo instanceof PrimitiveClassInfo) && className[0] !== "[")
+    if (!(elementKlass.classInfo instanceof PrimitiveClassInfo) && className[0] !== "[") {
       className = "L" + className + ";";
+    }
     className = "[" + className;
-    klass.classInfo = CLASSES.getClass(className);
-
-    registerKlass(klass, klass.classInfo);
-    return klass;
+    return getKlass(CLASSES.getClass(className));
   }
 
   export function toDebugString(value: any): string {
@@ -1431,6 +1475,45 @@ module J2ME {
       throw $.newArithmeticException("/ by zero");
     }
   }
+
+  /**
+   * Do bounds check using only one branch. The math works out because array.length
+   * can't be larger than 2^31 - 1. So |index| >>> 0 will be larger than
+   * array.length if it is less than zero. We need to make the right side unsigned
+   * as well because otherwise the SM optimization that converts this to an
+   * unsinged branch doesn't kick in.
+   */
+  export function checkArrayBounds(array: any [], index: number) {
+    if ((index >>> 0) >= (array.length >>> 0)) {
+      throw $.newArrayIndexOutOfBoundsException(String(index));
+    }
+  }
+
+  export function checkArrayStore(array: java.lang.Object, value: any) {
+    var arrayKlass = array.klass;
+    if (value && !isAssignableTo(value.klass, arrayKlass.elementKlass)) {
+      throw $.newArrayStoreException();
+    }
+  }
+
+  export function checkNull(object: java.lang.Object) {
+    if (!object) {
+      throw $.newNullPointerException();
+    }
+  }
+
+  export enum Constants {
+    INT_MAX =  2147483647,
+    INT_MIN = -2147483648
+  }
+
+  export function monitorEnter(object: J2ME.java.lang.Object) {
+    $.ctx.monitorEnter(object);
+  }
+
+  export function monitorExit(object: J2ME.java.lang.Object) {
+    $.ctx.monitorExit(object);
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1454,18 +1537,13 @@ var $CCI = J2ME.checkCastInterface;
 
 var $AK = J2ME.getArrayKlass;
 var $NA = J2ME.newArray;
-var $S = function(str: string) {
-  return $.newStringConstant(str);
-};
+var $S = J2ME.newStringConstant;
+
 var $CDZ = J2ME.checkDivideByZero;
 var $CDZL = J2ME.checkDivideByZeroLong;
 
-var $ME = function monitorEnter(object: J2ME.java.lang.Object) {
-  console.info("ENTER " + J2ME.toDebugString(object));
-  $.ctx.monitorEnter(object);
-};
+var $CAB = J2ME.checkArrayBounds;
+var $CAS = J2ME.checkArrayStore;
 
-var $MX = function monitorExit(object: J2ME.java.lang.Object) {
-  console.info("EXIT " + J2ME.toDebugString(object));
-  $.ctx.monitorExit(object);
-};
+var $ME = J2ME.monitorEnter;
+var $MX = J2ME.monitorExit;

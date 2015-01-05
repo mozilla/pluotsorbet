@@ -8,23 +8,18 @@
   <link rel="stylesheet" type="text/css" href="style/progress_activity.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+  <script type="text/javascript" src="build/shumway.js" defer></script>
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
-  <script type="text/javascript" src="build/shumway.js" defer></script>
   <script type="text/javascript" src="build/j2me.js" defer></script>
-  <script type="text/javascript" src="classfile/attributetypes.js" defer></script>
-  <script type="text/javascript" src="classfile/classfile.js" defer></script>
-  <script type="text/javascript" src="classfile/tags.js" defer></script>
-  <script type="text/javascript" src="signature.js" defer></script>
-  <script type="text/javascript" src="opcodes.js" defer></script>
+  <!--<script type="text/javascript" src="build/j2me.cc.js" defer></script>-->
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="string.js" defer></script>
-  <script type="text/javascript" src="frame.js" defer></script>
   <script type="text/javascript" src="instrument.js" defer></script>
   <script type="text/javascript" src="libs/load.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
@@ -73,8 +68,9 @@
 
 <body>
   <div>
-    <div>
+    <div id="traceTerminalContainer">
       <pre id="console"></pre>
+      <canvas id="traceTerminal" tabindex='2'></canvas>
     </div>
     <div>
       <div id="profilerContainer" class="collapsed">
@@ -116,6 +112,7 @@
     </section>
     <section>
       <button id="clearstorage">Clear storage</button>
+      <button id="deleteDatabase">Delete Database</button>
       <button id="exportstorage">Export storage</button>
       <div>Import storage:</div>
       <input type="file" id="importstorage">
@@ -126,7 +123,7 @@
       <button id="dumpCounters">Dump Counters</button>
       <button id="dumpCountersTime">Dump Counters Time</button>
       <button id="start">Start</button>
-      <button id="stress">Stress</button>
+      <button id="loadAllClasses">Load All Classes</button>
     </section>
   </div>
   <div id="display"><canvas id="canvas"></canvas></div>

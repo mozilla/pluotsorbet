@@ -6,6 +6,7 @@ import com.sun.cldchi.jvm.JVM;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.*;
+import java.lang.Exception;
 import java.util.Vector;
 
 public class RunTests extends MIDlet {
@@ -98,7 +99,12 @@ public class RunTests extends MIDlet {
             harness.fail("Can't instantiate test");
         }
         Testlet t = (Testlet) obj;
-        t.test(harness);
+        try {
+            t.test(harness);
+        } catch (Exception e) {
+            System.err.println(e);
+            harness.fail("Test threw an unexpected exception");
+        }
         if (harness.failed() > 0)
             harness.report();
         pass += harness.passed();

@@ -74,10 +74,6 @@ interface Function {
   boundTo: boolean;
 }
 
-interface Array<T> {
-  runtimeId: number;
-}
-
 interface Math {
   imul(a: number, b: number): number;
   /**

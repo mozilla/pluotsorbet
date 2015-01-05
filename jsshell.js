@@ -67,10 +67,9 @@ var urlParams = {
 };
 
 try {
-  load("libs/zipfile.js", "blackBox.js", "build/j2me.js", "classfile/classfile.js",
-       "classfile/tags.js", "classfile/attributetypes.js",
-       "libs/encoding.js", "util.js", "frame.js",
-       "instrument.js", "signature.js", "opcodes.js",
+  load("libs/zipfile.js", "blackBox.js", "build/j2me.js",
+       "libs/encoding.js", "util.js",
+       "instrument.js",
        "override.js", "native.js", "tests/override.js", 
        "string.js", "libs/console.js", "midp/midp.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");

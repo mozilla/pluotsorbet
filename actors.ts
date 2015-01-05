@@ -1,10 +1,8 @@
 module J2ME {
   declare var Native, Override;
-  declare var ATTRIBUTE_TYPES;
   declare var missingNativeImpl;
   declare var CC;
   declare var Signature;
-  declare var getClassImage;
   declare var classObjects;
   declare var util;
 
@@ -24,8 +22,6 @@ module J2ME {
     }
   }
 
-  var traceFieldAccess = false;
-
   export class FieldInfo {
     private static _nextiId = 0;
     id: number;
@@ -33,6 +29,7 @@ module J2ME {
     constantValue: any;
     mangledName: string;
     key: string;
+    kind: Kind;
 
     constructor(public classInfo: ClassInfo, public access_flags: number, public name: string, public signature: string) {
       this.id = FieldInfo._nextiId++;
@@ -40,18 +37,14 @@ module J2ME {
       this.constantValue = undefined;
       this.mangledName = undefined;
       this.key = undefined;
+      this.kind = getSignatureKind(signature);
     }
 
     get(object: java.lang.Object) {
-      traceFieldAccess && traceWriter && traceWriter.writeLn("get " + J2ME.toDebugString(object) + "." + this.mangledName);
-      var value = object[this.mangledName];
-      release || J2ME.Debug.assert(value !== undefined, this.name + " - " + object[this.id]);
-      return value;
+      return object[this.mangledName];
     }
 
     set(object: java.lang.Object, value: any) {
-      traceFieldAccess && traceWriter && traceWriter.writeLn("set " + J2ME.toDebugString(object) + "." + this.mangledName + " = " + value);
-      release || J2ME.Debug.assert(value !== undefined);
       object[this.mangledName] = value
     }
 
@@ -91,9 +84,10 @@ module J2ME {
     max_locals: number;
     max_stack: number;
     /**
-     * If greater than -1, then the number of arguments to pop of the stack when calling this function.
+     * The number of arguments to pop of the stack when calling this function.
      */
     argumentSlots: number;
+    hasTwoSlotArguments: boolean;
     signatureDescriptor: SignatureDescriptor;
     signature: string;
     implKey: string;
@@ -105,6 +99,16 @@ module J2ME {
     mangledClassAndMethodName: string;
 
     line_number_table: {start_pc: number; line_number: number} [];
+
+    /**
+     * Approximate number of bytecodes executed in this method.
+     */
+    opCount: number;
+
+    /**
+     * Whether this method's bytecode has been optimized for quicker interpretation.
+     */
+    isOptimized: boolean;
 
     constructor(opts) {
       this.name = opts.name;
@@ -150,18 +154,17 @@ module J2ME {
       this.mangledClassAndMethodName = mangleClassAndMethod(this);
 
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
-      if (this.signatureDescriptor.hasTwoSlotArguments()) {
-        this.argumentSlots = -1;
-      } else {
-        this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
-      }
+      this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
+      this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
+      this.opCount = 0;
+      this.isOptimized = false;
     }
 
     public getReturnKind(): Kind {
       return this.signatureDescriptor.typeDescriptors[0].kind;
     }
 
-    getSourceLocationForBci(bci: number): SourceLocation {
+    getSourceLocationForPC(pc: number): SourceLocation {
       var sourceFile = this.classInfo.sourceFile || null;
       if (!sourceFile) {
         return null;
@@ -170,9 +173,9 @@ module J2ME {
       if (this.line_number_table && this.line_number_table.length) {
         var table = this.line_number_table;
         for (var i = 0; i < table.length; i++) {
-          if (bci >= table[i].start_pc) {
+          if (pc >= table[i].start_pc) {
             lineNumber = table[i].line_number;
-          } else if (bci < table[i].start_pc) {
+          } else if (pc < table[i].start_pc) {
             break;
           }
         }
@@ -203,7 +206,7 @@ module J2ME {
     sourceFile: string;
     constructor(classBytes) {
       enterTimeline("getClassImage");
-      var classImage = getClassImage(classBytes, this);
+      var classImage = getClassImage(classBytes);
       leaveTimeline("getClassImage");
       var cp = classImage.constant_pool;
       this.className = cp[cp[classImage.this_class].name_index].bytes;

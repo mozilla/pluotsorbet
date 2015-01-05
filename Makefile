@@ -25,8 +25,10 @@ aot: java j2me
 	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -cff classes.txt > build/classes.jar.js
 	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js
 
-	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
-	java -jar tools/closure.jar --formatting PRETTY_PRINT -O SIMPLE build/program.jar.js > build/program.jar.cc.js
+closure:
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/program.jar.js > build/program.jar.cc.js
 
 shumway: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js

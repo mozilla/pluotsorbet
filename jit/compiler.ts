@@ -272,7 +272,7 @@ module J2ME {
       try {
         var mangledClassAndMethodName = mangleClassAndMethod(method);
         if (emitter.debugInfo) {
-          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForBci(0));
+          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForPC(0));
         }
         var compiledMethod = undefined;
         try {
