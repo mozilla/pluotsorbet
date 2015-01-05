@@ -139,3 +139,10 @@ Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOnlineEvent.()V"] = fu
 Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = function() {
   window.dispatchEvent(new CustomEvent("offline"));
 };
+
+Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(data) {
+  var converted = Media.convert3gpToAmr(new Uint8Array(data));
+  var result = util.newPrimitiveArray("B", converted.length);
+  result.set(converted);
+  return result;
+};
