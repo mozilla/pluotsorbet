@@ -13,6 +13,9 @@
   "default_locale": "en",
   "orientation": ["portrait-primary"],
   "permissions": {
+    "geolocation": {
+       "description": "Required by location API."
+    },
     "tcp-socket": {
       "description": "Required to connect to internet"
     },
