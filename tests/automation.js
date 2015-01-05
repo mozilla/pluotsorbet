@@ -49,7 +49,7 @@ var gfxTests = [
   { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
   { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
   { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
-  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 2 },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 0 },
   { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
   { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
   { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
@@ -61,10 +61,13 @@ var gfxTests = [
   { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
+  { name: "gfx/TestLauncher", maxDifferent: 0 },
+  { name: "gfx/MediaImageTest", maxDifferent: 0 },
+  { name: "gfx/TextEditorGfxTest", maxDifferent: 949 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71568 },
+  { name: "pass", number: 71569 },
   { name: "fail", number: 0 },
   { name: "known fail", number: 180 },
   { name: "unknown pass", number: 0 }
@@ -144,7 +147,33 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.assertTextExists("I m\nI a ma\nI 2\nI ma\nI 2\nI 1 isolate\nI Isolate ID correct\nI 4\nI 5\nI 1 isolate\nI ma\nI ma\nI 3 isolates\nI 1 m1\nI 2 m2\nI 4\nI 5\nI ma\nI 1 isolate\nI Isolates terminated\nI r mar\nI 2\nI mar\nI c marc\nI 2\nI marc\nI Main isolate still running");
+            test.assertTextExists("I m\n" +
+                                  "I a ma\n" +
+                                  "I 2\n" +
+                                  "I ma\n" +
+                                  "I 2\n" +
+                                  "I 1 isolate\n" +
+                                  "I Isolate ID correct\n" +
+                                  "I 4\n" +
+                                  "I 5\n" +
+                                  "I 1 isolate\n" +
+                                  "I ma\n" +
+                                  "I ma\n" +
+                                  "I 3 isolates\n" +
+                                  "I 1 m1\n" +
+                                  "I 4\n" +
+                                  "I 2 m2\n" +
+                                  "I 5\n" +
+                                  "I ma\n" +
+                                  "I 1 isolate\n" +
+                                  "I Isolates terminated\n" +
+                                  "I r mar\n" +
+                                  "I 2\n" +
+                                  "I mar\n" +
+                                  "I c marc\n" +
+                                  "I 2\n" +
+                                  "I marc\n" +
+                                  "I Main isolate still running");
         });
     });
 
