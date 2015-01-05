@@ -9,6 +9,7 @@ import com.nokia.mid.s40.codec.DataEncoder;
 import com.nokia.mid.s40.codec.DataDecoder;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
+import gnu.testlet.TestUtils;
 
 public class TestNokiaImageProcessingServer implements Testlet {
     LocalMessageProtocolConnection client;
@@ -44,23 +45,6 @@ public class TestNokiaImageProcessingServer implements Testlet {
         th.check(string.substring(string.indexOf(58) + 1).length() > 0);
     }
 
-    byte[] read(InputStream is) throws IOException {
-        int l = is.available();
-        byte[] buffer = new byte[l+1];
-        int length = 0;
-
-        while ((l = is.read(buffer, length, buffer.length - length)) != -1) {
-            length += l;
-            if (length == buffer.length) {
-                byte[] b = new byte[buffer.length + 4096];
-                System.arraycopy(buffer, 0, b, 0, length);
-                buffer = b;
-            }
-        }
-
-        return buffer;
-    }
-
     public void testScaleImage(TestHarness th, int maxKb, int maxHres, int maxVres) throws IOException {
         // Store an image in the fs
         FileConnection originalImage = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
@@ -70,7 +54,7 @@ public class TestNokiaImageProcessingServer implements Testlet {
 
         OutputStream os = originalImage.openDataOutputStream();
         InputStream is = getClass().getResourceAsStream("test.jpg");
-        os.write(read(is));
+        os.write(TestUtils.read(is));
         os.close();
 
         long origFileSize = originalImage.fileSize();

@@ -12,10 +12,18 @@ import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 
 public class ImmutableImageFromByteArrayTest extends MIDlet {
-    private Display display;
-    private Form fmMain;
+    class TestCanvas extends Canvas {
+        protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
 
-    public ImmutableImageFromByteArrayTest() {
+            g.drawImage(imColor, 10, 10, Graphics.TOP | Graphics.LEFT);
+
+            System.out.println("PAINTED");
+        }
+    }
+
+    public void startApp() {
         imColor = Image.createImage(new byte[] {
           (byte)0x89, (byte)0x50, (byte)0x4E, (byte)0x47, (byte)0x0D, (byte)0x0A, (byte)0x1A, (byte)0x0A,
           (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x0D, (byte)0x49, (byte)0x48, (byte)0x44, (byte)0x52,
@@ -242,25 +250,9 @@ public class ImmutableImageFromByteArrayTest extends MIDlet {
           (byte)0x42, (byte)0x60, (byte)0x82 },
           (int)0, (int)1779);
 
-        display = Display.getDisplay(this);
-
-        fmMain = new Form("");
-        fmMain.append(new ImageItem(null, imColor, ImageItem.LAYOUT_NEWLINE_BEFORE | ImageItem.LAYOUT_CENTER, null));      
-    
-        display.setCurrent(fmMain);
-
-        try {
-            do {
-                Thread.sleep(100);
-            } while (!fmMain.isShown());
-        } catch (InterruptedException e) {
-            System.out.println("FAIL");
-        }
-
-        System.out.println("PAINTED");
-    }
-
-    public void startApp() {
+        TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
+        Display.getDisplay(this).setCurrent(test);
     }
   
     public void pauseApp() {
