@@ -19,7 +19,7 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferent: 3111 },
+  { name: "gfx/AlertTest", maxDifferent: 3279 },
   { name: "gfx/CanvasTest", maxDifferent: 0 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
@@ -38,7 +38,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferent: 0 },
-  { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
+  { name: "gfx/ImageProcessingTest", maxDifferent: 6466 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
   { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1500 },
