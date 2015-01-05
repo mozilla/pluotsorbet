@@ -83,7 +83,7 @@ module J2ME {
     } else if (methodInfo.getReturnKind() === Kind.Void && returnValue) {
       console.error("You returned something in a void method:", methodInfo.implKey);
     } else if (methodInfo.getReturnKind() !== Kind.Void && (returnValue === undefined) &&
-      U !== J2ME.VMState.Pausing) {
+      !U) {
       console.error("You returned undefined in a non-void method:", methodInfo.implKey);
     } else if (typeof returnValue === "string") {
       console.error("You returned a non-wrapped string:", methodInfo.implKey);
