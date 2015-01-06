@@ -138,3 +138,24 @@ Native.create("com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/j
     }
     model.class.getField("I.mrangeArray.[J").set(model, array);
 });
+
+Native.create("com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z", function(number) {
+    // Only support the acceleration sensor with number = 0.
+    return number === 0;
+});
+
+Native.create("com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z", function(number) {
+    if (number !== 0) {
+        return false;
+    }
+    console.warn("NativeSensor.doInitSensor not implemented");
+    return true;
+});
+
+Native.create("com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z", function(number) {
+    if (number !== 0) {
+        return false;
+    }
+    console.warn("NativeSensor.doInitSensor not implemented");
+    return true;
+});
