@@ -148,6 +148,71 @@ button {
   padding: 0.5rem;
 }
 
+.splash-screen {
+  z-index: 2;
+  background: #2d2d2d;
+  overflow: hidden;
+  color: #fff;
+  text-align: center;
+  display: flex;
+  flex-flow: column wrap;
+}
+
+.autosize .splash-screen {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.debug-mode .splash-screen {
+  position: fixed;
+  width: 240px;
+  height: 320px;
+  top: 0px;
+  right: 0px;
+  left: auto;
+  bottom: auto;
+  box-sizing: border-box;
+}
+
+.splash-screen > .title {
+  flex: none;
+  margin-bottom: 0;
+}
+
+.splash-screen > .text {
+  flex: none;
+}
+
+.splash-screen > .vertical-flex-container {
+  flex: 1 1 auto;
+}
+
+.splash-screen > .splash-progress-container > div {
+  flex: 0 0 auto;
+}
+
+.splash-screen > .vertical-flex-container > div > progress {
+  position: static;
+}
+
+.horizontal-flex-container {
+  display: flex;
+  flex-flow: row nowrap;
+}
+
+.vertical-flex-container {
+  display: flex;
+  flex-flow: column nowrap;
+}
+
+.flex-buffer {
+  flex: 1 1 auto;
+}
+
 /**
  * STYLE OVERRIDES FOR DEBUG MODE:
  *
