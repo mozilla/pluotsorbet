@@ -13,7 +13,13 @@ var SensorModel = {
         maxBufferSize: 256,
         availabilityPush: false,
         conditionPush: false,
-        channelCount: 3
+        channelCount: 3,
+        properties: [
+            "vendor", "FirefoxOS",
+            "version", "1.0",
+            "maxSamplingRate", "20.0",
+            "location", "NoLoc"
+        ]
     }
 };
 
@@ -47,5 +53,11 @@ Native.create("com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/s
                .set(model, m.channelCount);
     model.class.getField("I.errorCodes.[I").set(model, util.newArray("[I", 0));
     model.class.getField("I.errorMsgs.[Ljava/lang/String;").set(model, util.newArray("[Ljava/lang/String;", 0));
-    model.class.getField("I.properties.[Ljava/lang/String;").set(model, util.newArray("[Ljava/lang/String;", 0));
+
+    var n = m.properties.length;
+    var p = util.newArray("[Ljava/lang/String;", n);
+    for (var i = 0; i < n; i++) {
+        p[i] = util.newString(m.properties[i]);
+    }
+    model.class.getField("I.properties.[Ljava/lang/String;").set(model, p);
 });
