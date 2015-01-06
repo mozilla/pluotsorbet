@@ -19,7 +19,8 @@ AccelerometerSensor.model = {
         "vendor", "FirefoxOS",
         "version", "1.0",
         "maxSamplingRate", "20.0",
-        "location", "NoLoc"
+        "location", "NoLoc",
+        "security", "private"
     ]
 };
 
