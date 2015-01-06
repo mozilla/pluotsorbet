@@ -87,21 +87,27 @@ public class RunTests extends MIDlet {
 
         Class c = null;
         try {
+            System.out.println("Class.forName: " + name );
             c = Class.forName(name);
+            System.out.println("Done Class.forName: " + name );
         } catch (Exception e) {
             System.err.println(e);
             harness.fail("Can't load test");
         }
         Object obj = null;
         try {
+            System.out.println("Creating test instance.");
             obj = c.newInstance();
+            System.out.println("Done Creating test instance.");
         } catch (Exception e) {
             System.err.println(e);
             harness.fail("Can't instantiate test");
         }
         Testlet t = (Testlet) obj;
         try {
+            System.out.println("Running test method.");
             t.test(harness);
+            System.out.println("Done Running test method.");
         } catch (Exception e) {
             System.err.println(e);
             harness.fail("Test threw an unexpected exception");
@@ -112,6 +118,7 @@ public class RunTests extends MIDlet {
         fail += harness.failed();
         knownFail += harness.knownFailed();
         unknownPass += harness.unknownPassed();
+        System.out.println("Returning from runTest");
     }
 
     public void startApp() {
@@ -140,6 +147,7 @@ public class RunTests extends MIDlet {
                 String name = Testlets.list[n];
                 if (name == null)
                     break;
+                System.out.println("----Calling runtest: " + name);
                 runTest(name);
             }
         }
