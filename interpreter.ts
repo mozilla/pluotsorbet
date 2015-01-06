@@ -168,7 +168,7 @@ module J2ME {
       var exception_table = frame.methodInfo.exception_table;
       var handler_pc = null;
       for (var i=0; exception_table && i<exception_table.length; i++) {
-        if (frame.pc >= exception_table[i].start_pc && frame.pc <= exception_table[i].end_pc) {
+        if (frame.opPc >= exception_table[i].start_pc && frame.opPc < exception_table[i].end_pc) {
           if (exception_table[i].catch_type === 0) {
             handler_pc = exception_table[i].handler_pc;
             break;
@@ -268,7 +268,7 @@ module J2ME {
     while (true) {
       ops ++;
       frame.methodInfo.opCount ++;
-
+      frame.opPc = frame.pc;
       var op: Bytecodes = frame.read8();
       if (traceBytecodes) {
         if (traceSourceLocation) {
