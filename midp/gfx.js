@@ -1414,6 +1414,7 @@ var currentlyFocusedTextEditor;
         console.warn("javax/microedition/lcdui/ItemLFImpl.delete0.(I)V not implemented");
     });
 
+    var BACK = 2;
     var CANCEL = 3;
     var OK = 4;
 
@@ -1430,19 +1431,18 @@ var currentlyFocusedTextEditor;
         var el = document.getElementById("displayable-" + curDisplayableId);
         if (el) {
             commands.forEach(function(command, i) {
-                var button = el.querySelector("#button" + i);
+                var button = el.querySelector(".button" + i);
                 button.style.display = 'inline';
                 button.textContent = util.fromJavaString(command.class.getField("I.shortLabel.Ljava/lang/String;").get(command));
 
                 var commandType = command.class.getField("I.commandType.I").get(command);
                 if (numCommands == 1 || commandType == OK) {
                     button.classList.add('recommend');
-                } else if (commandType == CANCEL) {
+                } else if (commandType == CANCEL || commandType == BACK) {
                     button.classList.add('cancel');
                 }
 
-                button.addEventListener("click", function onClick(e) {
-                    button.removeEventListener("click", onClick);
+                button.addEventListener("click", function(e) {
                     e.preventDefault();
 
                     MIDP.sendNativeEvent({

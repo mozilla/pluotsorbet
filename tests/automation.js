@@ -96,7 +96,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 12 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
@@ -327,6 +327,22 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
             syncFS();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.TestAlertWithGauge&jars=tests/tests.jar&logConsole=web,page")
+    .withFrame(0, function() {
+        this.waitUntilVisible(".lcdui-alert.visible .button1", function() {
+            this.click(".lcdui-alert.visible .button0");
+            this.waitForText("You pressed 'Yes'", function() {
+                test.assertTextDoesntExist("FAIL");
+
+                this.click(".lcdui-alert.visible .button1");
+                this.waitForText("You pressed 'No'", function() {
+                    test.assertTextDoesntExist("FAIL");
+                });
+            });
         });
     });
 

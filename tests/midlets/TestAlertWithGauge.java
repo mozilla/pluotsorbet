@@ -31,6 +31,8 @@ public class TestAlertWithGauge extends MIDlet implements CommandListener {
             System.out.println("You pressed 'Yes'");
         } else if (command == cmdNo) {
             System.out.println("You pressed 'No'");
+        } else {
+            System.out.println("FAIL");
         }
     }
 
