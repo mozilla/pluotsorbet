@@ -3,10 +3,15 @@
 
 'use strict';
 
+var Location = {};
+
 // We only support one single location provider via the geolocation API.
 Location.PROVIDER_NAME = "browser";
 
 Location.Providers = {};
+
+// Provider ID should be greater or equanl to 1.
+Location.Providers.nextId = 1;
 
 var LocationProvider = function() {
     this.watchId = -1;
@@ -76,7 +81,8 @@ Native.create("com/sun/j2me/location/PlatformLocationProvider.open.(Ljava/lang/S
     return new Promise(function(resolve, reject) {
         var provider = new LocationProvider();
         provider.start().then(function(watchId){
-            var id = watchId + 1;
+            var id = Location.Providers.nextId;
+            Location.Providers.nextId = Location.Providers.nextId % 0xff + 1;
             Location.Providers[id] = provider;
             resolve(id);
         }, function() {
