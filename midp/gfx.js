@@ -1389,6 +1389,10 @@ var currentlyFocusedTextEditor;
         console.warn("javax/microedition/lcdui/ItemLFImpl.show0.(I)V not implemented");
     });
 
+    Native.create("javax/microedition/lcdui/ItemLFImpl.hide0.(I)V", function(nativeId) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.hide0.(I)V not implemented");
+    });
+
     Native.create("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I", function(nativeId) {
         console.warn("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I not implemented");
         return 10;
