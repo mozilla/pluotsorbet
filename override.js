@@ -9,6 +9,7 @@ function asyncImpl(returnKind, promise) {
   var ctx = $.ctx;
 
   promise.then(function(res) {
+    console.log("promise resolved");
     ctx.setAsCurrentContext();
 
     if (returnKind === "J" || returnKind === "D") {
@@ -22,6 +23,7 @@ function asyncImpl(returnKind, promise) {
     //   Instrument.exitAsyncNative(key, promise);
     // }
   }, function(exception) {
+    console.log("promise rejected" + exception);
     ctx.setAsCurrentContext();
     var syntheticMethod = new MethodInfo({
       name: "RaiseExceptionSynthetic",
