@@ -6,6 +6,7 @@ import com.sun.cldchi.jvm.JVM;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.*;
+import java.lang.Exception;
 import java.util.Vector;
 
 public class RunTests extends MIDlet {
@@ -34,6 +35,7 @@ public class RunTests extends MIDlet {
         public void check(boolean ok) {
             if (ok) {
                 ++pass;
+                // debug("pass");
             }
             else {
                 ++fail;
@@ -85,26 +87,38 @@ public class RunTests extends MIDlet {
 
         Class c = null;
         try {
+            System.out.println("Class.forName: " + name );
             c = Class.forName(name);
+            System.out.println("Done Class.forName: " + name );
         } catch (Exception e) {
             System.err.println(e);
             harness.fail("Can't load test");
         }
         Object obj = null;
         try {
+            System.out.println("Creating test instance.");
             obj = c.newInstance();
+            System.out.println("Done Creating test instance.");
         } catch (Exception e) {
             System.err.println(e);
             harness.fail("Can't instantiate test");
         }
         Testlet t = (Testlet) obj;
-        t.test(harness);
+        try {
+            System.out.println("Running test method.");
+            t.test(harness);
+            System.out.println("Done Running test method.");
+        } catch (Exception e) {
+            System.err.println(e);
+            harness.fail("Test threw an unexpected exception");
+        }
         if (harness.failed() > 0)
             harness.report();
         pass += harness.passed();
         fail += harness.failed();
         knownFail += harness.knownFailed();
         unknownPass += harness.unknownPassed();
+        System.out.println("Returning from runTest");
     }
 
     public void startApp() {
@@ -133,6 +147,7 @@ public class RunTests extends MIDlet {
                 String name = Testlets.list[n];
                 if (name == null)
                     break;
+                System.out.println("----Calling runtest: " + name);
                 runTest(name);
             }
         }

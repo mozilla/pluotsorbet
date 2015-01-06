@@ -140,10 +140,14 @@ public abstract class TestHarness {
     }
 
     public void setScreenAndWait(Displayable s) {
+        System.out.println("<display.setCurrent(s);");
         display.setCurrent(s);
+        System.out.println(">display.setCurrent(s);");
         while (!(s.isShown() && (display.getCurrent() == s))) {
             try {
+                System.out.println("<Thread.sleep(100);");
                 Thread.sleep(100);
+                System.out.println(">Thread.sleep(100);");
             } catch (InterruptedException e) {
                 fail("INTERRUPTED");
                 break;
