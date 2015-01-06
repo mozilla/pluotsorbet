@@ -1246,6 +1246,7 @@ var currentlyFocusedTextEditor;
         });
     }, true);
 
+    var curDisplayableId = 0;
     var nextMidpDisplayableId = 1;
     var PLAIN = 0;
 
@@ -1255,6 +1256,7 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V", function(nativeId) {
         console.warn("javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V not implemented");
+
         var el = document.getElementById("displayable-" + nativeId);
         if (el) {
             el.parentElement.removeChild(el);
@@ -1266,12 +1268,11 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I", function(title, ticker) {
         console.warn("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
-        return nextMidpDisplayableId++;
+        curDisplayableId = nextMidpDisplayableId++;
+        return curDisplayableId;
     });
 
     Native.create("javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I", function(title, ticker, type) {
-        console.warn("javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
-
         var nativeId = nextMidpDisplayableId++;
         var el = document.getElementById("lcdui-alert").cloneNode(true);
         el.id = "displayable-" + nativeId;
@@ -1283,9 +1284,6 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/AlertLFImpl.setNativeContents0.(ILjavax/microedition/lcdui/ImageData;[ILjava/lang/String;)Z",
     function(nativeId, imgId, indicatorBounds, text) {
-        console.warn("javax/microedition/lcdui/AlertLFImpl.setNativeContents0.(ILjavax/microedition/lcdui/ImageData;[ILjava/lang/String;)Z not implemented");
-        console.log("TEXT: " + util.fromJavaString(text));
-
         var el = document.getElementById("displayable-" + nativeId);
         el.querySelector('p.text').textContent = util.fromJavaString(text);
 
@@ -1293,13 +1291,14 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("javax/microedition/lcdui/AlertLFImpl.showNativeResource0.(I)V", function(nativeId) {
-        console.warn("javax/microedition/lcdui/AlertLFImpl.showNativeResource0.(I)V not implemented");
         var el = document.getElementById("displayable-" + nativeId);
         el.style.display = 'block';
         el.classList.add('visible');
         if (currentlyFocusedTextEditor) {
             currentlyFocusedTextEditor.blur();
         }
+
+        curDisplayableId = nativeId;
     });
 
     var INDEFINITE = -1;
@@ -1307,8 +1306,6 @@ var currentlyFocusedTextEditor;
 
     Native.create("javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I",
     function(ownerId, label, layout, interactive, maxValue, initialValue) {
-        console.warn("javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I not implemented");
-
         if (label != null) {
             console.error("Expected null label");
         }
@@ -1417,8 +1414,44 @@ var currentlyFocusedTextEditor;
         console.warn("javax/microedition/lcdui/ItemLFImpl.delete0.(I)V not implemented");
     });
 
+    var CANCEL = 3;
+    var OK = 4;
+
     Native.create("javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V",
     function(itemCommands, numItemCommands, commands, numCommands) {
-        console.warn("javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V");
+        if (numItemCommands != 0) {
+            console.error("NativeMenu.updateCommands: item commands not yet supported");
+        }
+
+        if (numCommands > 2) {
+            console.error("NativeMenu.updateCommands: max two commands supported");
+        }
+
+        var el = document.getElementById("displayable-" + curDisplayableId);
+        if (el) {
+            commands.forEach(function(command, i) {
+                var button = el.querySelector("#button" + i);
+                button.style.display = 'inline';
+                button.textContent = util.fromJavaString(command.class.getField("I.shortLabel.Ljava/lang/String;").get(command));
+
+                var commandType = command.class.getField("I.commandType.I").get(command);
+                if (numCommands == 1 || commandType == OK) {
+                    button.classList.add('recommend');
+                } else if (commandType == CANCEL) {
+                    button.classList.add('cancel');
+                }
+
+                button.addEventListener("click", function onClick(e) {
+                    button.removeEventListener("click", onClick);
+                    e.preventDefault();
+
+                    MIDP.sendNativeEvent({
+                        type: MIDP.COMMAND_EVENT,
+                        intParam1: command.class.getField("I.id.I").get(command),
+                        intParam4: MIDP.displayId,
+                    }, MIDP.foregroundIsolateId);
+                });
+            });
+        }
     });
 })(Native);
