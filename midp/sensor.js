@@ -3,25 +3,70 @@
 
 'use strict';
 
-var SensorModel = {
-    acceleration: {
-        description: "Acceleration sensor measures acceleration in SI units for x, y and z - axis.",
-        model: "FirefoxOS",
-        quantity: "acceleration",
-        contextType: "user",
-        connectionType: 1, // ChannelType.TYPE_DOUBLE = 1
-        maxBufferSize: 256,
-        availabilityPush: false,
-        conditionPush: false,
-        channelCount: 3,
-        properties: [
-            "vendor", "FirefoxOS",
-            "version", "1.0",
-            "maxSamplingRate", "20.0",
-            "location", "NoLoc"
+var AccelerometerSensor = {};
+
+AccelerometerSensor.model = {
+    description: "Acceleration sensor measures acceleration in SI units for x, y and z - axis.",
+    model: "FirefoxOS",
+    quantity: "acceleration",
+    contextType: "user",
+    connectionType: 1, // ChannelType.TYPE_DOUBLE = 1
+    maxBufferSize: 256,
+    availabilityPush: false,
+    conditionPush: false,
+    channelCount: 3,
+    properties: [
+        "vendor", "FirefoxOS",
+        "version", "1.0",
+        "maxSamplingRate", "20.0",
+        "location", "NoLoc"
+    ]
+};
+
+var doubleToLongBits = (function() {
+    var da = new Float64Array(1);
+    var ia = new Int32Array(da.buffer);
+    return function(val) {
+        da[0] = val;
+        return Long.fromBits(ia[0], ia[1]);
+    }
+})();
+
+AccelerometerSensor.channels = [ {
+        scale: 0,
+        name: "axis_x",
+        unit: "m/s^2",
+        dataType: 1, // 1 == Double type
+        accuracy: 1,
+        mrangeArray: [
+            doubleToLongBits(-19.6), // smallest value
+            doubleToLongBits(19.6),  // largest value
+            doubleToLongBits(0.153)  // resolution
+        ]
+    }, {
+        scale: 0,
+        name: "axis_y",
+        unit: "m/s^2",
+        dataType: 1, // 1 == Double type
+        accuracy: 1,
+        mrangeArray: [
+            doubleToLongBits(-19.6), // smallest value
+            doubleToLongBits(19.6),  // largest value
+            doubleToLongBits(0.153)  // resolution
+        ]
+    }, {
+        scale: 0,
+        name: "axis_z",
+        unit: "m/s^2",
+        dataType: 1, // 1 == Double type
+        accuracy: 1,
+        mrangeArray: [
+            doubleToLongBits(-19.6), // smallest value
+            doubleToLongBits(19.6),  // largest value
+            doubleToLongBits(0.153)  // resolution
         ]
     }
-};
+];
 
 Native.create("com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I", function() {
     // Only support the acceleration sensor.
@@ -29,10 +74,11 @@ Native.create("com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I", f
 });
 
 Native.create("com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V", function(number, model) {
-    if (number != 0) {
+    if (number !== 0) {
+        console.error("Invalid sensor number: " + number);
         return;
     }
-    var m = SensorModel.acceleration;
+    var m = AccelerometerSensor.model;
     model.class.getField("I.description.Ljava/lang/String;")
                .set(model, util.newString(m.description));
     model.class.getField("I.model.Ljava/lang/String;")
@@ -60,4 +106,35 @@ Native.create("com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/s
         p[i] = util.newString(m.properties[i]);
     }
     model.class.getField("I.properties.[Ljava/lang/String;").set(model, p);
+});
+
+Native.create("com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V", function(sensorsNumber, number, model) {
+    if (sensorsNumber !== 0) {
+        console.error("Invalid sensor number: " + sensorsNumber);
+        return;
+    }
+    if (number < 0 || number >= AccelerometerSensor.channels.length) {
+        console.error("Invalid channel number: " + number);
+        return;
+    }
+    var c = AccelerometerSensor.channels[number];
+    model.class.getField("I.scale.I")
+               .set(model, c.scale);
+    model.class.getField("I.name.Ljava/lang/String;")
+               .set(model, util.newString(c.name));
+    model.class.getField("I.unit.Ljava/lang/String;")
+               .set(model, util.newString(c.unit));
+    model.class.getField("I.dataType.I")
+               .set(model, c.dataType);
+    model.class.getField("I.accuracy.I")
+               .set(model, c.accuracy);
+    model.class.getField("I.mrangeCount.I")
+               .set(model, c.mrangeArray.length);
+
+    var n = c.mrangeArray.length;
+    var array = util.newArray("[J", n);
+    for (var i = 0; i < n; i++) {
+        array[i] = c.mrangeArray[i];
+    }
+    model.class.getField("I.mrangeArray.[J").set(model, array);
 });
