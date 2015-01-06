@@ -577,7 +577,12 @@ Native["java/lang/Thread.isAlive.()Z"] = function() {
 
 Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
     asyncImpl("V", new Promise(function(resolve, reject) {
-        window.setTimeout(resolve, delay.toNumber());
+        try {
+           window.setTimeout(resolve, delay.toNumber());
+        } catch (ex) {
+            console.log("error calling window.setTimeout: " + ex);
+            reject(ex);
+        }
     }));
 };
 
