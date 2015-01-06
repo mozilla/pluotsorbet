@@ -436,6 +436,95 @@ DumbPipe.registerOpener("camera", function(message, sender) {
   };
 });
 
+var LocationProvider = {};
+LocationProvider.AVAILABLE = 1;
+LocationProvider.TEMPORARILY_UNAVAILABLE = 1;
+LocationProvider.OUT_OF_SERVICE = 1;
+LocationProvider.state = LocationProvider.OUT_OF_SERVICE;
+LocationProvider.position = {
+  timestamp: 0,
+  latitude: 0,
+  longitude: 0,
+  altitude: NaN,
+  horizontalAccuracy: NaN,
+  verticalAccuracy: NaN,
+  speed: NaN,
+  heading: NaN
+};
+
+DumbPipe.registerOpener("locationprovider", function(message, sender) {
+  var id = -1;
+  var waitForData = false;
+
+  function watchPosition() {
+    if (id !== -1) {
+      return;
+    }
+    LocationProvider.state = LocationProvider.TEMPORARILY_UNAVAILABLE;
+    id = navigator.geolocation.watchPosition(function(pos) {
+        LocationProvider.state = LocationProvider.AVAILABLE;
+        LocationProvider.position.timestamp = pos.timestamp;
+
+        var c = pos.coords;
+        LocationProvider.position.latitude = c.latitude;
+        LocationProvider.position.longitude = c.longitude;
+        LocationProvider.position.altitude =
+          c.altitude !== null ? c.altitude : NaN;
+        LocationProvider.position.horizontalAccuracy =
+          c.accuracy !== null ? c.accuracy : NaN;
+        LocationProvider.position.verticalAccuracy =
+          c.altitudeAccuracy !== null ? c.altitudeAccuracy : NaN;
+        LocationProvider.position.speed = c.speed !== null ? c.speed : NaN;
+        LocationProvider.position.course = c.heading !== null ? c.heading : NaN;
+        sendData();
+    }, function(err) {
+        console.log("locationprovider error: " + err);
+        LocationProvider.state = LocationProvider.OUT_OF_SERVICE;
+        clearWatch();
+        sendData();
+    }, {
+        enableHighAccuracy: true,
+        timeout: 2000,
+        maximumAge: 0
+    });
+  }
+
+  function clearWatch() {
+    if (id === -1) {
+      return;
+    }
+    navigator.geolocation.clearWatch(id);
+    id = -1;
+  }
+
+  function sendData() {
+    if (!waitForData) {
+      return;
+    }
+    sender({
+      type: "data",
+      position: LocationProvider.position,
+      state: LocationProvider.state
+    });
+    waitForData = false;
+  }
+
+  watchPosition();
+
+  return function(message) {
+    switch (message.type) {
+      case "close":
+        clearWatch();
+        break;
+
+      case "requestData":
+        waitForData = true;
+        watchPosition();
+        break;
+    }
+  };
+});
+
 var notification = null;
 DumbPipe.registerOpener("notification", function(message, sender) {
   if (notification) {
