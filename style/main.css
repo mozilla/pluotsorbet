@@ -148,8 +148,9 @@ button {
   padding: 0.5rem;
 }
 
-.lcdui-alert section {
+form[role="dialog"][data-type="confirm"].lcdui-alert section {
   text-align: center;
+  overflow: auto;
 }
 
 .lcdui-alert menu,
@@ -186,7 +187,6 @@ button {
 }
 
 /* Hide the unnecessary scroll bar in the SMS verification dialog. */
-.debug-mode form[role="dialog"][data-type="confirm"].lcdui-alert,
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt section,
 .debug-mode form[role="dialog"][data-type="confirm"].nokia-fileui-prompt section,
 .debug-mode form[role="dialog"][data-type="confirm"].download-progress-dialog section {
