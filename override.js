@@ -45,7 +45,7 @@ function asyncImpl(returnKind, promise) {
     var callee = new Frame(syntheticMethod, [exception], 0);
     ctx.frames.push(callee);
   }).then(ctx.resume.bind(ctx), function(e) {
-    console.log("ERRRRROROROROROR " + e.toString());
+    console.log("ERRRRROROROROROR ");
   });
 
   // if (Instrument.profiling) {
