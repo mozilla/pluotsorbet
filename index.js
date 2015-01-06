@@ -456,7 +456,13 @@ DumbPipe.registerOpener("locationprovider", function(message, sender) {
   var id = -1;
   var waitForData = false;
 
+  // Used to stop watching geolocation if it hasn't been accessed for a given
+  // time period.
+  var clearWatchInterval = -1;
+  var lastVisited = 0;
+
   function watchPosition() {
+    lastVisited = Date.now();
     if (id !== -1) {
       return;
     }
@@ -487,12 +493,20 @@ DumbPipe.registerOpener("locationprovider", function(message, sender) {
         timeout: 2000,
         maximumAge: 0
     });
+    clearWatchInterval = setInterval(function() {
+      // Stop watching after being inactive for 30s to save power.
+      if (Date.now() - lastVisited > 30 * 1000) {
+        clearWatch();
+      }
+    }, 10000);
   }
 
   function clearWatch() {
     if (id === -1) {
       return;
     }
+    clearInterval(clearWatchInterval);
+    clearWatchInterval = -1;
     navigator.geolocation.clearWatch(id);
     id = -1;
   }
