@@ -989,7 +989,9 @@ public class Display {
      * @see #setCurrent
      */
     public Displayable getCurrent() {
+        System.out.println("<synchronized (LCDUILock) {");
         synchronized (LCDUILock) {
+        System.out.println(">synchronized (LCDUILock) {");
             if (current == null) {
                 if (transitionCurrent == null) {
                     return null;
