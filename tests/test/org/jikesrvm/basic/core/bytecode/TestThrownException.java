@@ -24,6 +24,12 @@ class TestThrownException implements Testlet {
     int k = i / j;
   }
 
+  private static void testHardwareExceptionLong() {
+    long i = 1;
+    long j = 0;
+    long k = i / j;
+  }
+
   private static void testSoftwareException() {
     Float f = Float.valueOf("abc");
   }
@@ -63,10 +69,11 @@ class TestThrownException implements Testlet {
     if (choice == 4) testRethrownException();
     if (choice == 5) testNullException();
     if (choice == 6) testReThrownThruSynchronizedSection();
+    if (choice == 7) testHardwareExceptionLong();
   }
 
   public void test(TestHarness th) {
-    for (int i = 1; i <= 6; ++i) {
+    for (int i = 1; i <= 7; ++i) {
       try {
         trouble(i);
         th.fail("Exception expected");
