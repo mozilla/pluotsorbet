@@ -13,6 +13,7 @@ public class AlertTest extends MIDlet {
 
     public void startApp() {
         alert = new Alert("Hello World", "Some text", null, AlertType.INFO);
+        alert.setTimeout(Alert.FOREVER);
         display.setCurrent(alert);
 
         try {
