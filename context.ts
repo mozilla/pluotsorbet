@@ -415,6 +415,7 @@ module J2ME {
     }
 
     private execute() {
+      console.log("resuming: " + this.id);
       Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {

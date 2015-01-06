@@ -9,8 +9,8 @@ function asyncImpl(returnKind, promise) {
   var ctx = $.ctx;
 
   promise.then(function(res) {
-    console.log("promise resolved");
     ctx.setAsCurrentContext();
+    console.log("promise resolved schedule resume " + ctx.id);
 
     if (returnKind === "J" || returnKind === "D") {
       ctx.current().stack.push2(res);
