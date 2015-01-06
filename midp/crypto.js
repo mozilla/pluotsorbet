@@ -3,10 +3,10 @@
 
 'use strict';
 
-Native.create("com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z", function(b, nbytes) {
+Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(b, nbytes) {
     window.crypto.getRandomValues(b.subarray(0, nbytes));
-    return true;
-});
+    return 1;
+};
 
 MIDP.hashers = new Map();
 
@@ -84,11 +84,11 @@ MIDP.bin2String = function(array) {
   return result;
 };
 
-Native.create("com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V", function(inBuf, inOff, inLen, state, num, count, data) {
+Native["com/sun/midp/crypto/SHA.nativeUpdate.([BII[I[I[I[I)V"] = function(inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getSHA1Hasher(data).update(inBuf.subarray(inOff, inOff + inLen));
-});
+};
 
-Native.create("com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V", function(inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
+Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getSHA1Hasher(data);
 
     if (inBuf) {
@@ -105,9 +105,9 @@ Native.create("com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V", function
     data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
-});
+};
 
-Native.create("com/sun/midp/crypto/SHA.nativeClone.([I)V", function(data) {
+Native["com/sun/midp/crypto/SHA.nativeClone.([I)V"] = function(data) {
     for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
             var value = MIDP.hashers.get(key);
@@ -117,13 +117,13 @@ Native.create("com/sun/midp/crypto/SHA.nativeClone.([I)V", function(data) {
             break;
         }
     }
-});
+};
 
-Native.create("com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V", function(inBuf, inOff, inLen, state, num, count, data) {
+Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Uint8Array(inBuf.subarray(inOff, inOff + inLen))));
-});
+};
 
-Native.create("com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V", function(inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
+Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getMD5Hasher(data);
 
     if (inBuf) {
@@ -143,9 +143,9 @@ Native.create("com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V", function
     data.set(MIDP.emptyDataArray);
 
     MIDP.hashers.delete(data);
-});
+};
 
-Native.create("com/sun/midp/crypto/MD5.nativeClone.([I)V", function(data) {
+Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(data) {
     for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
             var value = MIDP.hashers.get(key);
@@ -155,7 +155,7 @@ Native.create("com/sun/midp/crypto/MD5.nativeClone.([I)V", function(data) {
             break;
         }
     }
-});
+};
 
 var hexEncodeArray = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', ];
 
@@ -187,7 +187,7 @@ function hexStringToBytes(hex) {
     return bytes;
 }
 
-Native.create("com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I", function(data, exponent, modulus, result) {
+Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(data, exponent, modulus, result) {
     // The jsbn library doesn't work well with typed arrays, so we're using this
     // hack of translating the numbers to hexadecimal strings before handing
     // them to jsbn (and we're getting the result back in a hex string).
@@ -200,9 +200,9 @@ Native.create("com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I", function(data, expon
 
     result.set(remainder);
     return remainder.length;
-});
+};
 
-Native.create("com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V", function(S, X, Y, inbuf, inoff, inlen, outbuf, outoff) {
+Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] = function(S, X, Y, inbuf, inoff, inlen, outbuf, outoff) {
     var x = X[0];
     var y = Y[0];
 
@@ -221,4 +221,4 @@ Native.create("com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V", function(S, 
 
     X[0] = x;
     Y[0] = y;
-});
+};
