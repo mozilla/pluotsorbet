@@ -107,7 +107,7 @@ Native.create("com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava
     criteria.class.getField("I.canReportSpeedCource.Z")
                   .set(criteria, true);
     criteria.class.getField("I.averageResponseTime.I")
-                  .set(criteria, 60000);
+                  .set(criteria, 10000);
     return true;
 });
 
@@ -157,5 +157,5 @@ Native.create("com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation
 
 Native.create("com/sun/j2me/location/PlatformLocationProvider.receiveNewLocationImpl.(IJ)Z", function(providerId, timestamp) {
     var provider = Location.Providers[providerId];
-    return timestamp.toNumber() <= provider.position.timestamp;
+    return Math.abs(timestamp.toNumber() - provider.position.timestamp) < 10000;
 });
