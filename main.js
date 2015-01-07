@@ -293,14 +293,14 @@ function requestTimelineBuffers(fn) {
   return fn([]);
 }
 
-var traceWriterCheckbox = document.querySelector('#traceWriter');
+var perfWriterCheckbox = document.querySelector('#perfWriter');
 
-traceWriterCheckbox.checked = !!(J2ME.writers & J2ME.WriterFlags.Trace);
-traceWriterCheckbox.addEventListener('change', function() {
-  if (traceWriterCheckbox.checked) {
-    J2ME.writers |= J2ME.WriterFlags.Trace;
+perfWriterCheckbox.checked = !!(J2ME.writers & J2ME.WriterFlags.Perf);
+perfWriterCheckbox.addEventListener('change', function() {
+  if (perfWriterCheckbox.checked) {
+    J2ME.writers |= J2ME.WriterFlags.Perf;
   } else {
-    J2ME.writers &= !J2ME.WriterFlags.Trace;
+    J2ME.writers &= !J2ME.WriterFlags.Perf;
   }
 });
 

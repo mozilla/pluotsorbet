@@ -90,9 +90,11 @@ var Terminal;
     Terminal.Cursor = Cursor;
     var Buffer = (function () {
         function Buffer() {
+            this.color = 0xFFFF;
             this.clear();
             this.starts = new Uint32Array(32);
             this.buffer = new Uint8Array(1024 * 1024);
+            this.colors = new Uint16Array(1024 * 1024);
         }
         Object.defineProperty(Buffer.prototype, "w", {
             /**
@@ -115,8 +117,13 @@ var Terminal;
                 var buffer = new Uint8Array(this.buffer.length * 2);
                 buffer.set(this.buffer, 0);
                 this.buffer = buffer;
+                var colors = new Uint16Array(this.colors.length * 2);
+                colors.set(this.colors, 0);
+                this.colors = colors;
             }
-            this.buffer[this.i++] = x;
+            this.colors[this.i] = this.color;
+            this.buffer[this.i] = x;
+            this.i++;
             this.version++;
         };
         Buffer.prototype.writeString = function (s) {
@@ -298,21 +305,23 @@ var Terminal;
             var context = this.spriteCanvas.getContext("2d");
             this.spriteCanvas.width = 1024;
             this.spriteCanvas.height = 256;
-            context.fillStyle = "#333333";
+            context.fillStyle = "#000000";
             context.fillRect(0, 0, this.spriteCanvas.width, this.spriteCanvas.height);
+            context.clearRect(0, 0, this.spriteCanvas.width, this.spriteCanvas.height);
             context.fillStyle = "white";
-            context.font = fontSize + 'px Consolas, "Liberation Mono", Courier, monospace';
+            context.font = fontSize + 'px Input Mono Condensed, Consolas, Courier, monospace';
             context.textBaseline = "bottom";
             var metrics = context.measureText("A");
             var tileW = this.tileW = Math.ceil(metrics.width);
-            var tileH = this.tileH = fontSize + 3;
+            var hPadding = 4 * this.ratio;
+            var tileH = this.tileH = fontSize + hPadding;
             var tileColumns = this.tileColumns = this.spriteCanvas.width / tileW | 0;
             var j = 0;
             for (var i = 0; i < 256; i++) {
                 var x = (j % tileColumns) | 0;
                 var y = (j / tileColumns) | 0;
                 var c = String.fromCharCode(i);
-                context.fillText(c, x * tileW, fontSize + 3 + y * tileH);
+                context.fillText(c, x * tileW, fontSize + hPadding + y * tileH);
                 j++;
             }
             var gl = this.gl;
@@ -345,7 +354,10 @@ var Terminal;
             }
             gl.uniform1f(program.uniforms.uTime.location, performance.now() / 1000);
             gl.clearColor(0x33 / 256, 0x33 / 256, 0x33 / 256, 1.0);
-            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.disable(gl.DEPTH_TEST);
+            gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+            gl.enable(gl.BLEND);
             gl.drawArrays(gl.TRIANGLES, 0, 6);
         };
         Screen.prototype.enterRenderLoop = function () {
@@ -436,7 +448,7 @@ var Terminal;
             var y = (c / this.tileColumns) | 0;
             buffer[i++] = x;
             buffer[i++] = y;
-            buffer[i++] = this.color & 0xFF;
+            buffer[i++] = this.color;
             buffer[i++] = this.color >> 8;
             this.next();
         };
@@ -445,13 +457,13 @@ var Terminal;
                 this.writeCharCode(s.charCodeAt(i));
             }
         };
-        Screen.prototype.putChar = function (c, x, y) {
+        Screen.prototype.putChar = function (c, x, y, color) {
             var i = (y * this.w + x) * 4;
             var buffer = this.screenBuffer;
             buffer[i++] = (c % this.tileColumns) | 0;
             buffer[i++] = (c / this.tileColumns) | 0;
-            buffer[i++] = 0xFF;
-            buffer[i++] = 0xFF;
+            buffer[i++] = color;
+            buffer[i++] = color >> 8;
         };
         Screen.prototype.writeBuffer = function (buffer, x, y) {
             var h = this.h, w = this.w;
@@ -463,18 +475,19 @@ var Terminal;
                 var e = buffer.starts[y + j + 1];
                 var l = e - s - x;
                 for (var i = 0; i < l; i++) {
-                    var c = buffer.buffer[s + x + i];
-                    this.putChar(c, i, j);
+                    var p = s + x + i;
+                    var c = buffer.buffer[p];
+                    var color = buffer.colors[p];
+                    this.putChar(c, i, j, color);
                 }
             }
             this.invalidate();
         };
         Screen.vertexShader = "uniform mat4 uTransformMatrix3D;                         " + "attribute vec4 aPosition;                                " + "attribute vec2 aCoordinate;                              " + "varying vec2 vCoordinate;                                " + "varying vec2 vCoordinate2;                               " + "void main() {                                            " + "  gl_Position = uTransformMatrix3D * aPosition;          " + "  vCoordinate = aCoordinate;                             " + "  vCoordinate2 = aCoordinate;                            " + "}";
-        Screen.fragmentShader = "precision mediump float;                                 " + "uniform sampler2D uTileSampler;                          " + "uniform sampler2D uTileMapSampler;                       " + "uniform sampler2D uColorPaletteSampler;                  " + "varying vec2 vCoordinate;                                " + "varying vec2 vCoordinate2;                               " + "uniform float uTime;                                     " + "uniform vec2 uTileSize;                                  " + "uniform vec2 uScaledTileSize;                            " + "void main() {                                            " + "  float time = uTime;                                    " + "  vec4 tile = texture2D(uTileMapSampler, vCoordinate);   " + "  if (tile.x == 0.0 && tile.y == 0.0) { discard; }       " + "  vec2 tileOffset = floor(tile.xy * 256.0) * uTileSize;  " + "  vec2 tileCoordinate = tileOffset + mod(vCoordinate, uScaledTileSize) * (uTileSize / uScaledTileSize);" + "  gl_FragColor = texture2D(uTileSampler, tileCoordinate) * texture2D(uColorPaletteSampler, tile.zw);   " + "}";
+        Screen.fragmentShader = "precision mediump float;                                 " + "uniform sampler2D uTileSampler;                          " + "uniform sampler2D uTileMapSampler;                       " + "uniform sampler2D uColorPaletteSampler;                  " + "varying vec2 vCoordinate;                                " + "varying vec2 vCoordinate2;                               " + "uniform float uTime;                                     " + "uniform vec2 uTileSize;                                  " + "uniform vec2 uScaledTileSize;                            " + "void main() {                                            " + "  float time = uTime;                                    " + "  vec4 tile = texture2D(uTileMapSampler, vCoordinate);   " + "  if (tile.x == 0.0 && tile.y == 0.0) { discard; }       " + "  vec2 tileOffset = floor(tile.xy * 256.0) * uTileSize;  " + "  vec2 tileCoordinate = tileOffset + mod(vCoordinate, uScaledTileSize) * (uTileSize / uScaledTileSize);" + "  vec4 color = texture2D(uTileSampler, tileCoordinate) * texture2D(uColorPaletteSampler, tile.zw);   " + "  color.rgb *= color.a;" + "  gl_FragColor = color;" + "}";
         return Screen;
     })();
     Terminal.Screen = Screen;
-    // var pos = getTargetMousePos(event, <HTMLElement>(event.target));
     function getTargetMousePos(event, target) {
         var rect = target.getBoundingClientRect();
         return {
@@ -506,7 +519,6 @@ var Terminal;
                     deltaX *= 10;
                     deltaY *= 10;
                 }
-                // console.info(deltaY);
                 var x = clamp(deltaX, -1, 1);
                 var y = clamp(deltaY, -1, 1);
                 if (event.metaKey) {

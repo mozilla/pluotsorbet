@@ -18,13 +18,14 @@ module J2ME {
     Trace = 1,
     Link  = 2,
     Init  = 4,
-    All   = Trace | Link | Init
+    Perf  = 8,
+    All   = Trace | Link | Init | Perf
   }
 
   /**
    * Toggle VM tracing here.
    */
-  export var writers = WriterFlags.None;
+  export var writers = WriterFlags.Perf;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -298,6 +299,7 @@ module J2ME {
      */
     static setWriters(writer: IndentingWriter) {
       traceWriter = writers & WriterFlags.Trace ? writer : null;
+      perfWriter = writers & WriterFlags.Perf ? writer : null;
       linkWriter = writers & WriterFlags.Link ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
     }
@@ -318,11 +320,6 @@ module J2ME {
       this.frameSets.push(this.frames);
       this.frames = frames;
       try {
-        if (traceWriter) {
-          var firstFrame = frames[0];
-          var frameDetails = firstFrame.methodInfo.classInfo.className + "/" + firstFrame.methodInfo.name + signatureToDefinition(firstFrame.methodInfo.signature, true, true);
-          traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + frameDetails);
-        }
         var returnValue = VM.execute();
         if (U) {
           // Append all the current frames to the parent frame set, so a single frame stack
@@ -334,13 +331,7 @@ module J2ME {
           }
           return;
         }
-        if (traceWriter) {
-          traceWriter.leave("<");
-        }
       } catch (e) {
-        if (traceWriter) {
-          traceWriter.leave("< " + e);
-        }
         assert(this.frames.length === 0);
         this.frames = this.frameSets.pop();
         throwHelper(e);

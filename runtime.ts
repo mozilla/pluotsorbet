@@ -29,6 +29,11 @@ module J2ME {
   export var traceWriter = null;
 
   /**
+   * Traces performance problems.
+   */
+  export var perfWriter = null;
+
+  /**
    * Traces linking and class loading.
    */
   export var linkWriter = null;
@@ -829,13 +834,12 @@ module J2ME {
   }
 
   export function registerKlassSymbol(className: string) {
-    linkWriter && linkWriter.writeLn("Registering Klass: " + className);
     // TODO: This needs to be kept in sync to how mangleClass works.
     var mangledName = "$" + escapeString(className);
     if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       return;
     }
-
+    linkWriter && linkWriter.writeLn("Registering Klass Symbol: " + className);
     if (!RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       Object.defineProperty(RuntimeTemplate.prototype, mangledName, {
         configurable: true,
@@ -1226,7 +1230,7 @@ module J2ME {
         updateGlobalObject = true;
       }
 
-      if (traceWriter && methodType !== MethodType.Interpreted) {
+      if (traceWriter) {
         fn = tracingWrapper(fn, methodInfo, methodType);
         updateGlobalObject = true;
       }
@@ -1288,6 +1292,7 @@ module J2ME {
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
         var args = Array.prototype.slice.apply(arguments);
+        /*
         var printArgs = args.map(function (x) {
           return toDebugString(x);
         }).join(", ");
@@ -1296,14 +1301,11 @@ module J2ME {
           printObj = " <" + toDebugString(this) + "> ";
         }
         traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + printArgs);
+        */
+        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
-        var elapsedStr = " " + (performance.now() - s).toFixed(4);
-        if (methodInfo.getReturnKind() !== Kind.Void) {
-          traceWriter.leave("< " + toDebugString(value) + elapsedStr);
-        } else {
-          traceWriter.leave("<" + elapsedStr);
-        }
+        traceWriter.leave("<");
         return value;
       };
     }

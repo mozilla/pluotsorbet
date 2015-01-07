@@ -261,13 +261,30 @@ module J2ME {
     var fieldInfo: FieldInfo;
     var classInfo: ClassInfo;
 
-    if (!frame.methodInfo.isOptimized && frame.methodInfo.opCount > 100) {
+    if (!frame.methodInfo.isOptimized && frame.methodInfo.bytecodeCount > 100) {
       optimizeMethodBytecode(frame.methodInfo);
     }
 
+    if (perfWriter) {
+      var methodInfo: any = frame.methodInfo;
+      if (methodInfo.bytecodeCount > 100000 || methodInfo.interpreterCallCount > 10000) {
+        var bytecodeCountRatio = methodInfo.bytecodeCount / methodInfo.interpreterCallCount;
+        var details = "";
+        details += methodInfo.isSynchronized ? "S" : "";
+        details += methodInfo.exception_table.length ? "X" : "";
+        perfWriter.writeLn("Hot Method: " + methodInfo.implKey + " ops: " + methodInfo.bytecodeCount + ", calls: " + methodInfo.interpreterCallCount + ", ratio: " + bytecodeCountRatio.toFixed(2) + ", reset: " + methodInfo.resetCount + ". " + details);
+
+        methodInfo.resetCount ++;
+        methodInfo.bytecodeCount = 0;
+        methodInfo.interpreterCallCount = 0;
+      }
+    }
+
+    frame.methodInfo.interpreterCallCount ++;
+
     while (true) {
       ops ++;
-      frame.methodInfo.opCount ++;
+      frame.methodInfo.bytecodeCount ++;
 
       var op: Bytecodes = frame.read8();
       if (traceBytecodes) {
@@ -284,6 +301,7 @@ module J2ME {
           frame.trace(traceWriter);
         }
       }
+
 
       // frame.trace(new IndentingWriter());
 

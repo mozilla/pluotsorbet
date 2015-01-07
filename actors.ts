@@ -103,7 +103,22 @@ module J2ME {
     /**
      * Approximate number of bytecodes executed in this method.
      */
-    opCount: number;
+    bytecodeCount: number;
+
+    /**
+     * Approximate number of times this method was called.
+     */
+    callCount: number;
+
+    /**
+     * Approximate number of times this method was called.
+     */
+    interpreterCallCount: number;
+
+    /**
+     * Number of times this method's counters were reset.
+     */
+    resetCount: number;
 
     /**
      * Whether this method's bytecode has been optimized for quicker interpretation.
@@ -156,7 +171,13 @@ module J2ME {
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
       this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
-      this.opCount = 0;
+
+
+      this.callCount = 0;
+      this.resetCount = 0;
+      this.interpreterCallCount = 0;
+      this.bytecodeCount = 0;
+
       this.isOptimized = false;
     }
 

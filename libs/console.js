@@ -172,12 +172,34 @@
   }
 
   var contextColors = ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666"];
-  var colors = [0xAAFFFF, 0xFF0000, 0x00FFFF, 0xFFFF00, 0xFF0000, 0x0000FF];
 
+
+  function toRGB565(r, g, b) {
+    return ((r / 256 * 32) & 0x1F) << 11 |
+           ((g / 256 * 64) & 0x3F) <<  5 |
+           ((b / 256 * 32) & 0x1F) <<  0;
+  }
+
+    //trace: 0,
+    //log: 1,
+    //info: 2,
+    //warn: 3,
+    //error: 4,
+    //silent: 5,
+
+  var colors = [
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0),
+    toRGB565(0xFF, 0, 0),
+    toRGB565(0, 0, 0),
+  ];
   TerminalConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        this.buffer.writeString(item.message);
+        this.buffer.color = colors[item.logLevel];
+        this.buffer.writeString(item.logLevel + " " + item.message);
         this.buffer.writeLine();
         this.view.scrollToBottom();
       }
