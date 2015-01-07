@@ -113,7 +113,7 @@ public class new_Long implements Testlet
 	{
 	  ok = true;
 	}
-      harness.todo (ok);
+      harness.check (ok);
 
       ok = false;
       try
