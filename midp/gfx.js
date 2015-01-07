@@ -189,12 +189,12 @@ var currentlyFocusedTextEditor;
                 img.src = '';
                 resolve();
             }
-            //img.onerror = function(e) {
-            //    URL.revokeObjectURL(img.src);
-            //    img.src = '';
-            //    ctx.setAsCurrentContext();
-            //    reject($.newIllegalArgumentException("error decoding image"));
-            //}
+            img.onerror = function(e) {
+               URL.revokeObjectURL(img.src);
+               img.src = '';
+               ctx.setAsCurrentContext();
+               reject($.newIllegalArgumentException("error decoding image"));
+            }
         }));
     };
 
