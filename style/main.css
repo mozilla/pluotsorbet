@@ -177,6 +177,7 @@ button {
 
 #console {
   overflow: auto;
+  margin: 0;
 }
 
 #traceTerminalContainer {
