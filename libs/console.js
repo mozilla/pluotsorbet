@@ -20,11 +20,10 @@
    * The console(s) to which messages should be output.  A comma-separated list
    * of one or more of these consoles:
    *    web: the browser's Web Console (default)
-   *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
    *    terminal: a faster canvas based console if Shumway.js is included.
    */
-  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "page").split(",");
+  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "terminal").split(",");
   var minLogLevel = LOG_LEVELS[urlParams.logLevel || "log"];
 
 
@@ -92,66 +91,13 @@
     },
 
     matchesCurrentFilters: function() {
-      return (this.logLevel >= minLogLevel &&
-              (CONSOLES.page.currentFilterText === "" ||
-               this.searchPredicate.indexOf(CONSOLES.page.currentFilterText) !== -1));
+      return this.logLevel >= minLogLevel;
     }
   };
 
 
   //================================================================
   // Console Implementations
-
-
-  /**
-   * In-page console, providing dynamic filtering and colored output.
-   * Renders to the document's "console" element.
-   */
-  function PageConsole(selector) {
-    this.el = document.querySelector(selector);
-    this.items = [];
-    this.shouldAutoScroll = true;
-    this.currentFilterText = "";
-    window.addEventListener(
-      'console-filters-changed', this.onFiltersChanged.bind(this));
-    window.addEventListener(
-      'console-clear', this.onClear.bind(this));
-  }
-
-  PageConsole.prototype = {
-    push: function(item) {
-      this.items.push(item);
-      if (item.matchesCurrentFilters(item)) {
-        var wasAtBottom = this.isScrolledToBottom();
-        this.el.appendChild(item.toHtmlElement());
-        if (this.shouldAutoScroll && wasAtBottom) {
-          this.el.scrollTop = this.el.scrollHeight;
-        }
-      }
-    },
-
-    isScrolledToBottom: function() {
-      var fudgeFactor = 10; // Match the intent, not the pixel-perfect value
-      return this.el.scrollTop + this.el.clientHeight > this.el.scrollHeight - fudgeFactor;
-    },
-    
-    onFiltersChanged: function() {
-      var fragment = document.createDocumentFragment();
-      this.items.forEach(function(item) {
-        if (item.matchesCurrentFilters()) {
-          fragment.appendChild(item.toHtmlElement());
-        }
-      }, this);
-      this.el.innerHTML = "";
-      this.el.appendChild(fragment);
-    },
-
-    onClear: function() {
-      this.items = [];
-      this.el.innerHTML = "";
-    }
-
-  };
 
 
   /**
@@ -217,50 +163,48 @@
     }
   };
 
-
-  function TerminalConsole(name) {
-    // If we don't have shumway included fall back on the page console.
-    if (typeof Shumway === "undefined") {
-      return new PageConsole("#console");
-    }
-    var traceTerminal = new Shumway.Tools.Terminal.Terminal(document.getElementById(name));
-    traceTerminal.refreshEvery(100);
-
-    this.appendToTraceTerminal = function appendToTraceTerminal(str, color) {
-      var scroll = traceTerminal.isScrolledToBottom();
-      traceTerminal.buffer.append(str, color);
-      if (scroll) {
-        traceTerminal.gotoLine(traceTerminal.buffer.length - 1);
-        traceTerminal.scrollIntoView();
-      }
-    }
+  function TerminalConsole(selector) {
+    this.buffer = new Terminal.Buffer();
+    this.view = new Terminal.View(new Terminal.Screen(document.querySelector(selector), 10), this.buffer);
+    this.count = 0;
+    window.addEventListener(
+      'console-clear', this.onClear.bind(this));
   }
 
   var contextColors = ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666"];
-  var colors = [undefined, undefined, undefined, "darkorange", "red", "blue"];
+  var colors = [0xAAFFFF, 0xFF0000, 0x00FFFF, 0xFFFF00, 0xFF0000, 0x0000FF];
 
   TerminalConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        var color;
-
-        if (item.logLevel < 3) {
-          var id = item.ctx.runtime.id + item.ctx.id;
-          color = contextColors[id % contextColors.length];
-        } else {
-          color = colors[item.logLevel]
-        }
-        this.appendToTraceTerminal(item.message, color);
+        //var color;
+        //if (item.logLevel < 3) {
+        //  var id = item.ctx.runtime.id + item.ctx.id;
+        //  color = contextColors[id % contextColors.length];
+        //} else {
+        //  color = colors[item.logLevel]
+        //}
+        //this.appendToTraceTerminal(item.message, color);
+        var color = colors[item.logLevel];
+        // this.screen.setColor(color >> 16, color >> 8, color >> 0);
+        // this.screen.writeText((this.count ++) + " " + item.message);
+        // this.screen.nextLine();
+        this.buffer.writeString((this.count ++) + " " + item.message);
+        this.buffer.writeLine();
+        this.view.scrollToBottom();
       }
+    },
+    onClear: function() {
+      this.buffer.clear();
+      this.view.scrollToBottom();
     }
   }
 
   var CONSOLES = {
-    page: new PageConsole("#console"),
     web: new WebConsole(),
     native: new NativeConsole(),
     raw: new RawConsoleForTests("#raw-console"),
-    terminal: new TerminalConsole("traceTerminal")
+    terminal: new TerminalConsole("#consoleContainer")
   };
 
   var print = CONSOLES.web.print.bind(CONSOLES.web);
@@ -276,30 +220,18 @@
   //================================================================
   // Filtering & Runtime Page Console Options
 
-  var logLevelSelect = document.querySelector('#loglevel');
-  var consoleFilterTextInput = document.querySelector('#console-filter-input');
-  var autoScrollCheckbox = document.querySelector('#auto-scroll');
-
   document.querySelector('#console-clear').addEventListener('click', function() {
     window.dispatchEvent(new CustomEvent('console-clear'));
   });
 
+  var logLevelSelect = document.querySelector('#loglevel');
   function updateFilters() {
     minLogLevel = logLevelSelect.value;
-    CONSOLES.page.currentFilterText = consoleFilterTextInput.value.toLowerCase();
     window.dispatchEvent(new CustomEvent('console-filters-changed'));
   }
 
   logLevelSelect.value = minLogLevel;
   logLevelSelect.addEventListener('change', updateFilters);
-
-  consoleFilterTextInput.value = "";
-  consoleFilterTextInput.addEventListener('input', updateFilters);
-
-  autoScrollCheckbox.checked = CONSOLES.page.shouldAutoScroll;
-  autoScrollCheckbox.addEventListener('change', function() {
-    CONSOLES.page.shouldAutoScroll = autoScrollCheckbox.checked;
-  });
 
 
   //----------------------------------------------------------------

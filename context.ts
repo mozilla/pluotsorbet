@@ -13,6 +13,18 @@ module J2ME {
   declare var Instrument;
   declare var setZeroTimeout;
 
+  export enum WriterFlags {
+    None  = 0,
+    Trace = 1,
+    Link  = 2,
+    Init  = 4,
+    All   = Trace | Link | Init
+  }
+
+  /**
+   * Toggle VM tracing here.
+   */
+  export var writers = WriterFlags.None;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -285,9 +297,9 @@ module J2ME {
      * Sets global writers. Uncomment these if you want to see trace output.
      */
     static setWriters(writer: IndentingWriter) {
-      traceWriter = null; // writer;
-      linkWriter = null; // writer;
-      initWriter = null; // writer;
+      traceWriter = writers & WriterFlags.Trace ? writer : null;
+      linkWriter = writers & WriterFlags.Link ? writer : null;
+      initWriter = writers & WriterFlags.Init ? writer : null;
     }
 
     kill() {

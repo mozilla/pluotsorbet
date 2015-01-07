@@ -175,30 +175,25 @@ button {
   line-height: 1.2;
 }
 
-#console {
-  overflow: auto;
-}
-
-#traceTerminalContainer {
+#consoleContainer {
   position: fixed;
   top: 0;
-  bottom: 250px;
+  bottom: 0px;
   left: 0;
   right: 240px;
   margin: 0;
   padding: 0;
-  overflow: auto;
-  /*background-color: rgba(0, 0, 0, 0.8);*/
+  overflow: hidden;
 }
 
 #profilerContainer {
   position: absolute;
   bottom: 0;
-  right: 250px;
+  right: 240px;
   left: 0;
   height: 250px;
   overflow: hidden;
-  background-color: #000;
+  background-color: #333333;
   color: #ffffff;
 }
 

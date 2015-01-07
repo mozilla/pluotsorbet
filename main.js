@@ -218,6 +218,7 @@ window.onload = function() {
    fs.clear();
  };
  document.getElementById("deleteDatabase").onclick = function() {
+   debugger;
    indexedDB.deleteDatabase("asyncStorage");
  };
  document.getElementById("exportstorage").onclick = function() {
@@ -292,9 +293,26 @@ function requestTimelineBuffers(fn) {
   return fn([]);
 }
 
+var traceWriterCheckbox = document.querySelector('#traceWriter');
+
+traceWriterCheckbox.checked = !!(J2ME.writers & J2ME.WriterFlags.Trace);
+traceWriterCheckbox.addEventListener('change', function() {
+  if (traceWriterCheckbox.checked) {
+    J2ME.writers |= J2ME.WriterFlags.Trace;
+  } else {
+    J2ME.writers &= !J2ME.WriterFlags.Trace;
+  }
+});
+
+
 var profiler = typeof Shumway !== "undefined" ? (function() {
 
+  var elConsoleContainer = document.getElementById("consoleContainer");
+  elConsoleContainer.style.bottom = "240px";
+
   var elProfilerContainer = document.getElementById("profilerContainer");
+  elProfilerContainer.style.display = "block";
+
   var elProfilerToolbar = document.getElementById("profilerToolbar");
   var elProfilerMessage = document.getElementById("profilerMessage");
   var elProfilerPanel = document.getElementById("profilePanel");
