@@ -1069,8 +1069,8 @@ Native["com/sun/mmedia/DirectPlayer.nGetDuration.(I)I"] = function(handle) {
 };
 
 Native["com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I"] = function(handle, locator) {
-    console.warn("com/sun/mmedia/DirectRecord.nSetLocator.(I)I not implemented.");
-    return -1;
+    // Let the DirectRecord class handle writing to files / uploading via HTTP
+    return 0;
 };
 
 Native["com/sun/mmedia/DirectRecord.nGetRecordedSize.(I)I"] = function(handle) {

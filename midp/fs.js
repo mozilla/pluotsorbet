@@ -302,6 +302,14 @@ Native["com/ibm/oti/connection/file/Connection.setHiddenImpl.([BZ)V"] = function
     console.warn("Connection.setHiddenImpl.([BZ)V not implemented (" + util.decodeUtf8(path) + ")");
 };
 
+Native["com/ibm/oti/connection/file/Connection.setReadOnlyImpl.([BZ)V"] = function(path, value) {
+    console.warn("Connection.setReadOnlyImpl.([BZ)V not implemented (" + util.decodeUtf8(path) + ")");
+};
+
+Native["com/ibm/oti/connection/file/Connection.setWriteOnlyImpl.([BZ)V"] = function(path, value) {
+    console.warn("Connection.setWriteOnlyImpl.([BZ)V not implemented (" + util.decodeUtf8(path) + ")");
+};
+
 Native["com/ibm/oti/connection/file/Connection.existsImpl.([B)Z"] = function(path) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
         fs.exists(getAbsolutePath(path), function(exists) { resolve(exists ? 1 : 0); } );
