@@ -32,6 +32,10 @@ module J2ME {
     interpreterCounter.count("optimize: " + methodInfo.implKey);
     var stream = new BytecodeStream(methodInfo.code);
     while (stream.currentBC() !== Bytecodes.END) {
+      if (stream.rawCurrentBC() === Bytecodes.WIDE) {
+        stream.next();
+        continue;
+      }
       switch (stream.currentBC()) {
         case Bytecodes.ALOAD:
           if (stream.nextBC() === Bytecodes.ILOAD) {
