@@ -53,6 +53,7 @@ module J2ME {
     stack: any [];
     code: Uint8Array;
     pc: number;
+    opPc: number;
     cp: any;
     localBase: number;
     lockObject: java.lang.Object;
@@ -62,6 +63,7 @@ module J2ME {
       this.cp = methodInfo.classInfo.constant_pool;
       this.code = methodInfo.code;
       this.pc = 0;
+      this.opPc = 0;
       this.stack = [];
       this.local = local;
       this.localBase = localBase;
