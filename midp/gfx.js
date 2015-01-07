@@ -1428,9 +1428,17 @@ var currentlyFocusedTextEditor;
             console.error("NativeMenu.updateCommands: max two commands supported");
         }
 
+        if (!commands) {
+            return;
+        }
+
         var el = document.getElementById("displayable-" + curDisplayableId);
         if (el) {
             commands.forEach(function(command, i) {
+                if (i > 1 || !command) {
+                    return;
+                }
+
                 var button = el.querySelector(".button" + i);
                 button.style.display = 'inline';
                 button.textContent = util.fromJavaString(command.class.getField("I.shortLabel.Ljava/lang/String;").get(command));
