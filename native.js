@@ -318,7 +318,7 @@ Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", f
         classInfo = CLASSES.getClass(className);
     } catch (e) {
         if (e instanceof (Classes.ClassNotFoundException))
-            throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+            throw new JavaException("java/lang/ClassNotFoundException", "'" + e.message + "' not found.");
         throw e;
     }
     return classInfo.getClassObject(ctx);
