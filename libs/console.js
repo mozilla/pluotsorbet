@@ -177,19 +177,7 @@
   TerminalConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        //var color;
-        //if (item.logLevel < 3) {
-        //  var id = item.ctx.runtime.id + item.ctx.id;
-        //  color = contextColors[id % contextColors.length];
-        //} else {
-        //  color = colors[item.logLevel]
-        //}
-        //this.appendToTraceTerminal(item.message, color);
-        var color = colors[item.logLevel];
-        // this.screen.setColor(color >> 16, color >> 8, color >> 0);
-        // this.screen.writeText((this.count ++) + " " + item.message);
-        // this.screen.nextLine();
-        this.buffer.writeString((this.count ++) + " " + item.message);
+        this.buffer.writeString(item.message);
         this.buffer.writeLine();
         this.view.scrollToBottom();
       }
@@ -204,7 +192,7 @@
     web: new WebConsole(),
     native: new NativeConsole(),
     raw: new RawConsoleForTests("#raw-console"),
-    terminal: new TerminalConsole("#consoleContainer")
+    terminal: typeof Terminal === "undefined" ? new WebConsole() : new TerminalConsole("#consoleContainer")
   };
 
   var print = CONSOLES.web.print.bind(CONSOLES.web);
