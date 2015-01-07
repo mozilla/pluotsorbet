@@ -5,6 +5,8 @@
 
 var AccelerometerSensor = {};
 
+AccelerometerSensor.IS_MOBILE = navigator.userAgent.search("Mobile") !== -1;
+
 AccelerometerSensor.model = {
     description: "Acceleration sensor measures acceleration in SI units for x, y and z - axis.",
     model: "FirefoxOS",
@@ -69,12 +71,65 @@ AccelerometerSensor.channels = [ {
     }
 ];
 
+// Simulate acceleration data by moving mouse.
+AccelerometerSensor.simulator = {
+    _intervalId: -1,
+
+    start: function() {
+        var currentMouseX = -1;
+        var currentMouseY = -1;
+        var c = document.getElementById("canvas");
+        c.onmousemove = function(ev) {
+            currentMouseX =ev.layerX;
+            currentMouseY =ev.layerY;
+        };
+
+        var time = 0;
+        var mouseX = -1;
+        var mouseY = -1;
+        var velocityX = -1;
+        var velocityY = -1;
+        this._intervalId = setInterval(function() {
+            var previousTime = time;
+            var previousMouseX = mouseX;
+            var previousMouseY = mouseY;
+            var previousVelocityX = velocityX;
+            var previousVelocityY = velocityY;
+
+            time = Date.now();
+            var dt = (time - previousTime) / 1000;
+            mouseX = currentMouseX * c.width / c.offsetWidth / 5000;
+            mouseY = currentMouseY * c.height / c.offsetHeight / 5000;
+            velocityX = (mouseX - previousMouseX) / dt;
+            velocityY = (mouseY - previousMouseY) / dt;
+            var ax = (velocityX - previousVelocityX) / dt;
+            var ay = ax;
+            var az = (velocityY - previousVelocityY) / dt;
+
+            AccelerometerSensor.handleEvent({
+                acceleration: { x: ax, y: ay, z: az }
+            });
+        }, 50);
+    },
+
+    stop: function() {
+        document.getElementById("canvas").onmousemove = null;
+        clearInterval(this._interalId);
+    }
+};
+
 AccelerometerSensor.open = function() {
     window.addEventListener('devicemotion', this);
+    if (!this.IS_MOBILE) {
+        this.simulator.start();
+    }
 };
 
 AccelerometerSensor.close = function() {
     window.removeEventListener('devicemotion', this);
+    if (!this.IS_MOBILE) {
+        this.simulator.stop();
+    }
 };
 
 AccelerometerSensor.readBuffer = (function() {
