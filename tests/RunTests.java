@@ -44,8 +44,10 @@ public class RunTests extends MIDlet {
         }
 
         public void todo(boolean ok) {
-            if (ok)
+            if (ok) {
                 ++unknownPass;
+                debug("unknown pass");
+            }
             else
                 ++knownFail;
             ++testNumber;
@@ -53,7 +55,7 @@ public class RunTests extends MIDlet {
         }
 
         public void report() {
-            System.out.println(testName + ": " + pass + " pass, " + fail + " fail");
+            System.out.println(testName + ": " + pass + " pass, " + fail + " fail, " + unknownPass + " unknown pass");
         }
 
         public int passed() {

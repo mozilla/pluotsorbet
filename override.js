@@ -308,3 +308,11 @@ Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I",
 Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(id) {
   return "com.sun.midp";
 });
+
+Override.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(char) {
+    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
+});
+
+Override.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(char) {
+    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
+});
