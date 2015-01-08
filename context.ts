@@ -25,7 +25,7 @@ module J2ME {
   /**
    * Toggle VM tracing here.
    */
-  export var writers = WriterFlags.Perf;
+  export var writers = WriterFlags.None;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -66,6 +66,7 @@ module J2ME {
     stack: any [];
     code: Uint8Array;
     pc: number;
+    opPc: number;
     cp: any;
     localBase: number;
     lockObject: java.lang.Object;
@@ -75,6 +76,7 @@ module J2ME {
       this.cp = methodInfo.classInfo.constant_pool;
       this.code = methodInfo.code;
       this.pc = 0;
+      this.opPc = 0;
       this.stack = [];
       this.local = local;
       this.localBase = localBase;
@@ -250,6 +252,8 @@ module J2ME {
 
   export class Context {
     private static _nextId: number = 0;
+    static _startTime: number = 0;
+    static _totalTime: number = 0;
     private static _colors = [
       IndentingWriter.PURPLE,
       IndentingWriter.YELLOW,
@@ -421,6 +425,10 @@ module J2ME {
     }
 
     private execute() {
+      if (Context._startTime === 0) {
+        Context._startTime = performance.now();
+      }
+      var start = performance.now();
       Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {
@@ -437,6 +445,8 @@ module J2ME {
               break;
           }
           U = VMState.Running;
+          var end = performance.now() - start;
+          Context._totalTime += end;
           this.clearCurrentContext();
           return;
         }
@@ -453,7 +463,7 @@ module J2ME {
         obj[queue] = [];
       obj[queue].push(this);
       this.lockLevel = lockLevel;
-      $.pause();
+      $.pause("block");
     }
 
     unblock(obj, queue, notifyAll, callback) {
@@ -549,6 +559,7 @@ module J2ME {
     }
 
     bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any []) {
+      // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
       var frame = new Frame(methodInfo, local, 0);
       frame.stack = stack;
       frame.pc = pc;

@@ -1020,6 +1020,10 @@ module J2ME.Bytecode {
       }
     }
 
+    public rawCurrentBC(): Bytecodes {
+      return this._opcode;
+    }
+
     /**
      * Sets the current opcode.
      */

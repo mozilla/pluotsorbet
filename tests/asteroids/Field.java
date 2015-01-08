@@ -456,11 +456,11 @@ public class Field extends Canvas implements Runnable {
                     ellapsed = time3 - time1;
                 }
                 // Sleep for a while (at least 20ms)
-                // try {
-                  // Thread.currentThread().sleep(Math.max(50 - ellapsed, 20));
-                  Thread.yield();
-                // } catch(java.lang.InterruptedException e) {
-                // }
+                try {
+                  Thread.currentThread().sleep(Math.max(50 - ellapsed, 20));
+                  // Thread.yield();
+                } catch(java.lang.InterruptedException e) {
+                }
               if (frames % 60 == 0) {
                 System.out.println("computeavg = " + (Field.computeavg / Field.frames));
                 System.out.println("paintavg = " + (Field.paintavg / Field.frames));

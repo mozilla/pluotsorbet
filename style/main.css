@@ -175,26 +175,30 @@ button {
   line-height: 1.2;
 }
 
+#pageContainer {
+  background-color: #333333;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 240px;
+  bottom: 0px;
+}
+
 #consoleContainer {
   position: fixed;
-  top: 0;
-  bottom: 0px;
-  left: 0;
+  left: 0px;
+  top: 0px;
+  bottom: 230px;
   right: 240px;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+
 }
 
 #profilerContainer {
-  position: absolute;
-  bottom: 0;
+  position: fixed;
+  left: 0px;
+  bottom: 0px;
   right: 240px;
-  left: 0;
-  height: 250px;
-  overflow: hidden;
-  background-color: #333333;
-  color: #ffffff;
+  height: 230px;
 }
 
 #profilerToolbar {

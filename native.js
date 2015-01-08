@@ -346,7 +346,7 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
         classInfo = CLASSES.getClass(className);
     } catch (e) {
         if (e instanceof (J2ME.ClassNotFoundException))
-            throw $.newClassNotFoundException("'" + className + "' not found.");
+            throw $.newClassNotFoundException("'" + e.message + "' not found.");
         throw e;
     }
     var classObject = classInfo.getClassObject($.ctx);
