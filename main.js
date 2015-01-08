@@ -129,12 +129,22 @@ if (urlParams.downloadJAD) {
     return new Promise(function(resolve, reject) {
       fs.exists("/midlet.jar", function(exists) {
         if (exists) {
-          fs.open("/midlet.jar", function(fd) {
-            var data = fs.read(fd);
-            fs.close(fd);
-            jvm.addPath("midlet.jar", data.buffer.slice(0));
-            resolve();
-          });
+          Promise.all([
+            new Promise(function(resolve, reject) {
+              fs.open("/midlet.jar", function(fd) {
+                jvm.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
+                fs.close(fd);
+                resolve();
+              });
+            }),
+            new Promise(function(resolve, reject) {
+              fs.open("/midlet.jad", function(fd) {
+                processJAD(util.decodeUtf8(fs.read(fd)));
+                fs.close(fd);
+                resolve();
+              });
+            }),
+          ]).then(resolve);
         } else {
           var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
           dialog.style.display = 'block';
@@ -145,23 +155,22 @@ if (urlParams.downloadJAD) {
             dialog.parentElement.removeChild(dialog);
 
             jvm.addPath("midlet.jar", data.jarData);
+            processJAD(data.jadData);
 
-            fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
-              fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
-                resolve();
-              });
-            });
+            Promise.all([
+              new Promise(function(resolve, reject) {
+                fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
+                  resolve();
+                });
+              }),
+              new Promise(function(resolve, reject) {
+                fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
+                  resolve();
+                });
+              }),
+            ]).then(resolve);
           });
         }
-      });
-    });
-  }).then(function() {
-    return new Promise(function(resolve, reject) {
-      fs.open("/midlet.jad", function(fd) {
-        var data = fs.read(fd);
-        fs.close(fd);
-        processJAD(util.decodeUtf8(data));
-        resolve();
       });
     });
   }));
