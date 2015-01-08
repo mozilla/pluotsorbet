@@ -75,11 +75,6 @@ AccelerometerSensor.open = function() {
 
 AccelerometerSensor.close = function() {
     window.removeEventListener('devicemotion', this);
-    this._buffer = [
-        new Float64Array(0),
-        new Float64Array(0),
-        new Float64Array(0)
-    ];
 };
 
 AccelerometerSensor.readBuffer = (function() {
@@ -113,48 +108,32 @@ AccelerometerSensor.readBuffer = (function() {
       offset += 8;
     };
 
+    var DATA_LENGTH = 1;
+    var result = new Int8Array(5 + DATA_LENGTH * 13);
+
     return function(channelNumber) {
         offset = 0;
-        var result = new Int8Array(5 + this._dataLength * 13);
         result[offset++] = this.channels[channelNumber].dataType;
-        write_int32(result, this._dataLength);
-        for (var i = 0; i < this._dataLength; i++) {
-            // Set validity
-            write_boolean(result, true);
-            // Set uncertainty
-            write_float32(result, 0);
-            // Set sensor data.
-            write_double64(result, this._buffer[channelNumber][i]);
-        }
-        this._dataLength = 0;
+        // Set data length
+        write_int32(result, DATA_LENGTH);
+        // Set validity
+        write_boolean(result, true);
+        // Set uncertainty
+        write_float32(result, 0);
+        // Set sensor data.
+        write_double64(result, this.acceleration[channelNumber]);
         return result;
     };
 })();
 
-// Internal buffer to cache the sensor data.
-AccelerometerSensor._buffer = [
-    new Float64Array(0),
-    new Float64Array(0),
-    new Float64Array(0)
-];
-
-AccelerometerSensor._dataLength = 0;
+AccelerometerSensor.acceleration = [0, 0, 0];
 
 // Event handler to handle devicemotion event.
 AccelerometerSensor.handleEvent = function(evt) {
-    // Increase the buffer size if needed.
-    if (this._dataLength >= this._buffer.length) {
-        for (var i = 0; i < 3; i++) {
-            var newBuffer = new Float64Array(this._dataLength + 100);
-            newBuffer.set(this._buffer[i]);
-            this._buffer[i] = newBuffer;
-        }
-    }
     var a = evt.acceleration;
-    this._buffer[0][this._dataLength] = a.x;
-    this._buffer[1][this._dataLength] = a.y;
-    this._buffer[2][this._dataLength] = a.z;
-    this._dataLength++;
+    this.acceleration[0] = a.x;
+    this.acceleration[1] = a.y;
+    this.acceleration[2] = a.z;
 };
 
 Native.create("com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I", function() {
