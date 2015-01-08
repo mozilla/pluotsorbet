@@ -92,7 +92,7 @@ function promptForMessageText() {
                                                  " " + MIDlet.SMSDialogTimeoutText;
 
     document.body.appendChild(el);
-    input.focus();
+    currentlyFocusedTextEditor = null;
 
     var elapsedMS = 0;
     var intervalID = setInterval(function() {
