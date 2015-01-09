@@ -135,57 +135,37 @@ public class TestHttpUrl implements Testlet {
         th.check("machine", url.machine);
         th.check("subdomain.domain", url.domain);
 
-        try {
-            url = new HttpUrl("scheme://123.domain");
-            th.check("123.domain", url.authority);
-            th.check("123.domain", url.host);
-            th.check("123", url.machine);
-            th.check("domain", url.domain);
-        } catch (IllegalArgumentException e) {
-            th.todo(false, "Unexpected exception");
-        }
+        url = new HttpUrl("scheme://123.domain");
+        th.check("123.domain", url.authority);
+        th.check("123.domain", url.host);
+        th.check("123", url.machine);
+        th.check("domain", url.domain);
 
-        try {
-            url = new HttpUrl("scheme://1234.5678.901.2345");
-            th.check("1234.5678.901.2345", url.authority);
-            th.check("1234.5678.901.2345", url.host);
-            th.check(url.machine == null);
-            th.check(url.domain == null);
-        } catch (IllegalArgumentException e) {
-            th.todo(false, "Unexpected exception");
-        }
+        url = new HttpUrl("scheme://1234.5678.901.2345");
+        th.check("1234.5678.901.2345", url.authority);
+        th.check("1234.5678.901.2345", url.host);
+        th.check(url.machine == null);
+        th.check(url.domain == null);
 
-        try {
-            url = new HttpUrl("scheme://1234");
-            th.check("1234", url.authority);
-            th.check("1234", url.host);
-            th.check("1234", url.machine);
-            th.check(url.domain == null);
-        } catch (IllegalArgumentException e) {
-            th.todo(false, "Unexpected exception");
-        }
+        url = new HttpUrl("scheme://1234");
+        th.check("1234", url.authority);
+        th.check("1234", url.host);
+        th.check("1234", url.machine);
+        th.check(url.domain == null);
 
         // IP v4 address
-        try {
-            url = new HttpUrl("scheme://123.123");
-            th.check("123.123", url.authority);
-            th.check("123.123", url.host);
-            th.check(url.machine == null);
-            th.check(url.domain == null);
-        } catch (IllegalArgumentException e) {
-            th.todo(false, "Unexpected exception");
-        }
+        url = new HttpUrl("scheme://123.123");
+        th.check("123.123", url.authority);
+        th.check("123.123", url.host);
+        th.check(url.machine == null);
+        th.check(url.domain == null);
 
         // IP v6 address
-        try {
-            url = new HttpUrl("scheme://[123]");
-            th.check("[123]", url.authority);
-            th.check("[123]", url.host);
-            th.check(url.machine == null);
-            th.check(url.domain == null);
-        } catch (IllegalArgumentException e) {
-            th.todo(false, "Unexpected exception");
-        }
+        url = new HttpUrl("scheme://[123]");
+        th.check("[123]", url.authority);
+        th.check("[123]", url.host);
+        th.check(url.machine == null);
+        th.check(url.domain == null);
 
         url = new HttpUrl("scheme://authority/");
         th.check("/", url.path);
