@@ -146,6 +146,16 @@ var Terminal;
             this.starts[++this.h] = this.i;
             this.version++;
         };
+        Buffer.prototype.getLine = function (l) {
+            l = clamp(l, 0, this.h - 1);
+            var s = this.starts[l];
+            var e = i === this.h - 1 ? this.i : this.starts[l + 1];
+            var c = [];
+            for (var i = s; i < e; i++) {
+                c.push(String.fromCharCode(this.buffer[i]));
+            }
+            return c.join("");
+        };
         return Buffer;
     })();
     Terminal.Buffer = Buffer;

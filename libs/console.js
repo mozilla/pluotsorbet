@@ -169,6 +169,8 @@
     this.count = 0;
     window.addEventListener(
       'console-clear', this.onClear.bind(this));
+    window.addEventListener(
+      'console-save', this.onSave.bind(this));
   }
 
   var contextColors = ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666"];
@@ -195,11 +197,17 @@
     toRGB565(0xFF, 0, 0),
     toRGB565(0, 0, 0),
   ];
+
+  var lastTime = 0;
   TerminalConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
         this.buffer.color = colors[item.logLevel];
-        this.buffer.writeString(item.logLevel + " " + item.message);
+        var thisTime = performance.now();
+        var prefix = (thisTime - lastTime).toFixed(2) + " : ";
+        prefix = "";
+        lastTime = thisTime;
+        this.buffer.writeString(prefix.padLeft(" ", 4) + item.logLevel + " " + item.message);
         this.buffer.writeLine();
         this.view.scrollToBottom();
       }
@@ -207,6 +215,16 @@
     onClear: function() {
       this.buffer.clear();
       this.view.scrollToBottom();
+    },
+    onSave: function() {
+      var string = this.buffer.toString();
+      var b = this.buffer;
+      var l = [];
+      for (var i = 0; i < b.h; i++) {
+        l.push(b.getLine(i));
+      }
+      window.open(URL.createObjectURL(new Blob([l.join("\n")], {type:'text/plain'})));
+
     }
   }
 
@@ -232,6 +250,10 @@
 
   document.querySelector('#console-clear').addEventListener('click', function() {
     window.dispatchEvent(new CustomEvent('console-clear'));
+  });
+
+  document.querySelector('#console-save').addEventListener('click', function() {
+    window.dispatchEvent(new CustomEvent('console-save'));
   });
 
   var logLevelSelect = document.querySelector('#loglevel');

@@ -240,30 +240,59 @@ window.onload = function() {
    toggle(this);
  };
  document.getElementById("clearCounters").onclick = function() {
-   J2ME.interpreterCounter.clear();
+   J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
+   J2ME.nativeCounter && J2ME.nativeCounter.clear();
+   J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
  };
- document.getElementById("dumpCounters").onclick = function() {
-   if (J2ME.interpreterCounter) {
-     J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
-   }
-   if (J2ME.nativeCounter) {
-     J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
-   }
-   if (J2ME.runtimeCounter) {
-     J2ME.runtimeCounter.traceSorted(new J2ME.IndentingWriter());
-   }
- };
-  document.getElementById("dumpCountersTime").onclick = function() {
+  function dumpCounters() {
+    var writer = new J2ME.IndentingWriter();
+    if (J2ME.interpreterCounter) {
+      writer.enter("interpreterCounter");
+      J2ME.interpreterCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.nativeCounter) {
+      writer.enter("nativeCounter");
+      J2ME.nativeCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.runtimeCounter) {
+      writer.enter("runtimeCounter");
+      J2ME.runtimeCounter.traceSorted(writer);
+      writer.outdent();
+    }
+  }
+  function clearCounters() {
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
     J2ME.nativeCounter && J2ME.nativeCounter.clear();
+    J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
+  }
+
+  document.getElementById("dumpCounters").onclick = function() {
+    dumpCounters();
+  };
+  document.getElementById("sampleCounters1").onclick = function() {
+    clearCounters();
+    dumpCounters();
     setTimeout(function () {
-      if (J2ME.interpreterCounter) {
-        J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
-      }
-      if (J2ME.nativeCounter) {
-        J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
-      }
+      dumpCounters();
     }, 1000);
+  };
+  document.getElementById("sampleCounters2").onclick = function() {
+    clearCounters();
+    function sample() {
+      var c = 1;
+      function tick() {
+        if (c-- > 0) {
+          dumpCounters();
+          clearCounters();
+          setTimeout(tick, 16);
+        }
+      }
+
+      setTimeout(tick, 100);
+    }
+    setTimeout(sample, 2000); // Wait 2s before starting.
   };
  document.getElementById("profile").onclick = function() {
    if (getIsOff(this)) {
