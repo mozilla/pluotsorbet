@@ -276,7 +276,7 @@ module J2ME {
         }
         var compiledMethod = undefined;
         try {
-          compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
+          compiledMethod = compileMethod(method, ctx, CompilationTarget.Static);
         } catch (e) {
           writer.writeLn("// " + e.toString());
         }
@@ -339,6 +339,22 @@ module J2ME {
     }
 
     return compiledMethods;
+  }
+
+  export class CompiledMethodInfo {
+    constructor(public args: string [], public body: string, public referencedClasses: ClassInfo []) {
+      // ...
+    }
+  }
+
+  export function compileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
+    var method;
+    try {
+      method = optimizerCompileMethod(methodInfo, ctx, target);
+    } catch (x) {
+      method = baselineCompileMethod(methodInfo, ctx, target);
+    }
+    return method;
   }
 
   export function compile(jvm: any,

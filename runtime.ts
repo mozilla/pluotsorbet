@@ -547,7 +547,7 @@ module J2ME {
       U = VMState.Yielding;
     }
 
-    pause() {
+    pause(reason: string) {
       U = VMState.Pausing;
     }
 

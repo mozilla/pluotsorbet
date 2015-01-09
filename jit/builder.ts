@@ -248,12 +248,6 @@ module J2ME {
     catch_type: number;
   }
 
-  export class CompiledMethodInfo {
-    constructor(public args: string [], public body: string, public referencedClasses: ClassInfo []) {
-      // ...
-    }
-  }
-
   function assertKind(kind: Kind, x: Node): Node {
     assert(stackKind(x.kind) === stackKind(kind), "Got " + kindCharacter(stackKind(x.kind)) + " expected " + kindCharacter(stackKind(kind)));
     return x;
@@ -564,25 +558,6 @@ module J2ME {
 
   export function quote(s) {
     return "\"" + s + "\"";
-  }
-
-  export function compileMethodInfo(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
-    if (!methodInfo.code) {
-      throw new Error("Method: " + methodInfo.implKey + " has no code.");
-    }
-    if (methodInfo.exception_table.length) {
-      throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
-    }
-    var builder = new Builder(methodInfo, ctx, target);
-    var fn;
-    var compilation = builder.build();
-    var args = [];
-    for (var i = 0; i < builder.parameters.length; i++) {
-      var parameter = builder.parameters[i];
-      args.push(parameter.name);
-    }
-    var body = compilation.body;
-    return new CompiledMethodInfo(args, body, builder.referencedClasses);
   }
 
   interface WorklistItem {
@@ -1557,6 +1532,25 @@ module J2ME {
       writer && writer.leave("State  After: " + Bytecodes[opcode].padRight(" ", 12) + " " + state.toString());
       writer && writer.writeLn("");
     }
+  }
+
+  export function optimizerCompileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
+    if (!methodInfo.code) {
+      throw new Error("Method: " + methodInfo.implKey + " has no code.");
+    }
+    if (methodInfo.exception_table.length) {
+      throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
+    }
+    var builder = new Builder(methodInfo, ctx, target);
+    var fn;
+    var compilation = builder.build();
+    var args = [];
+    for (var i = 0; i < builder.parameters.length; i++) {
+      var parameter = builder.parameters[i];
+      args.push(parameter.name);
+    }
+    var body = compilation.body;
+    return new CompiledMethodInfo(args, body, builder.referencedClasses);
   }
 }
 
