@@ -658,14 +658,6 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     return (len > 0) ? len : -1;
 };
 
-Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(char) {
-    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
-};
-
-Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(char) {
-    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
-};
-
 Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(target) {
     this.target = target;
 };
