@@ -348,6 +348,7 @@ module J2ME {
   }
 
   export function compileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
+    return method = baselineCompileMethod(methodInfo, ctx, target);
     var method;
     try {
       method = optimizerCompileMethod(methodInfo, ctx, target);
@@ -448,6 +449,8 @@ module J2ME {
     }
 
     stdoutWriter.writeLn(code);
+
+    // stdoutWriter.writeLn("Compiled " + baselineCompiled + " of " + baselineTotal);
   }
 }
 

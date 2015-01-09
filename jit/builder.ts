@@ -47,7 +47,7 @@ module J2ME {
 
   var yieldWriter = null; // stderrWriter;
 
-  function isStaticallyBound(op: Bytecodes, methodInfo: MethodInfo): boolean {
+  export function isStaticallyBound(op: Bytecodes, methodInfo: MethodInfo): boolean {
     // INVOKESPECIAL and INVOKESTATIC are always statically bound.
     if (op === Bytecodes.INVOKESPECIAL || op === Bytecodes.INVOKESTATIC) {
       return true;
@@ -125,7 +125,7 @@ module J2ME {
   // Used to prevent cycles.
   var checkingForCanYield = Object.create(null);
 
-  function canYield(ctx: Context, methodInfo: MethodInfo): YieldReason {
+  export function canYield(ctx: Context, methodInfo: MethodInfo): YieldReason {
     if (yieldMap[methodInfo.implKey] !== undefined) {
       return yieldMap[methodInfo.implKey];
     }
