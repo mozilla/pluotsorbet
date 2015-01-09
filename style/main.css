@@ -154,12 +154,9 @@ button {
   overflow: hidden;
   color: #fff;
   text-align: center;
-  display: flex;
-  flex-flow: column wrap;
 }
 
 .autosize .splash-screen {
-  display: flex;
   position: absolute;
   top: 0;
   left: 0;
@@ -167,50 +164,14 @@ button {
   bottom: 0;
 }
 
-.debug-mode .splash-screen {
-  position: fixed;
-  width: 240px;
-  height: 320px;
-  top: 0px;
-  right: 0px;
-  left: auto;
-  bottom: auto;
-  box-sizing: border-box;
-}
-
 .splash-screen > .title {
-  flex: none;
   margin-bottom: 0;
 }
 
-.splash-screen > .text {
-  flex: none;
-}
-
-.splash-screen > .vertical-flex-container {
-  flex: 1 1 auto;
-}
-
-.splash-screen > .splash-progress-container > div {
-  flex: 0 0 auto;
-}
-
-.splash-screen > .vertical-flex-container > div > progress {
-  position: static;
-}
-
-.horizontal-flex-container {
-  display: flex;
-  flex-flow: row nowrap;
-}
-
-.vertical-flex-container {
-  display: flex;
-  flex-flow: column nowrap;
-}
-
-.flex-buffer {
-  flex: 1 1 auto;
+.splash-progress-container {
+  position: absolute;
+  top: calc(50% - 17px);
+  left: calc(50% - 17px);
 }
 
 /**
@@ -250,4 +211,15 @@ button {
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt p {
   font-size: 12px;
   line-height: 1.2;
+}
+
+.debug-mode .splash-screen {
+  position: fixed;
+  width: 240px;
+  height: 320px;
+  top: 0px;
+  right: 0px;
+  left: auto;
+  bottom: auto;
+  box-sizing: border-box;
 }
