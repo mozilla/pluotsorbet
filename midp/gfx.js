@@ -1251,12 +1251,9 @@ var currentlyFocusedTextEditor;
     var PLAIN = 0;
 
     Native.create("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V", function() {
-        console.warn("javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V not implemented");
     });
 
     Native.create("javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V", function(nativeId) {
-        console.warn("javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V not implemented");
-
         var el = document.getElementById("displayable-" + nativeId);
         if (el) {
             el.parentElement.removeChild(el);
@@ -1424,21 +1421,21 @@ var currentlyFocusedTextEditor;
             console.error("NativeMenu.updateCommands: item commands not yet supported");
         }
 
-        if (numCommands > 2) {
-            console.error("NativeMenu.updateCommands: max two commands supported");
-        }
-
         if (!commands) {
             return;
         }
 
+        var validCommands = commands.filter(function(command) {
+            return !!command;
+        });
+
+        if (numCommands > 2 && validCommands.length > 2) {
+            console.error("NativeMenu.updateCommands: max two commands supported");
+        }
+
         var el = document.getElementById("displayable-" + curDisplayableId);
         if (el) {
-            commands.forEach(function(command, i) {
-                if (i > 1 || !command) {
-                    return;
-                }
-
+            validCommands.forEach(function(command, i) {
                 var button = el.querySelector(".button" + i);
                 button.style.display = 'inline';
                 button.textContent = util.fromJavaString(command.class.getField("I.shortLabel.Ljava/lang/String;").get(command));
