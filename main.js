@@ -159,14 +159,10 @@ if (urlParams.downloadJAD) {
 
             Promise.all([
               new Promise(function(resolve, reject) {
-                fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
-                  resolve();
-                });
+                fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
               }),
               new Promise(function(resolve, reject) {
-                fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
-                  resolve();
-                });
+                fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
               }),
             ]).then(resolve);
           });
