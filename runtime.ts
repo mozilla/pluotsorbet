@@ -1305,7 +1305,7 @@ module J2ME {
         traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
-        traceWriter.leave("<");
+        traceWriter.outdent();
         return value;
       };
     }

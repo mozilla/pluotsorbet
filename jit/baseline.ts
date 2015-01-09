@@ -15,6 +15,11 @@ module J2ME {
   export var baselineCompiled = 0;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
+
+    if (methodInfo.exception_table.length) {
+      throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
+    }
+
     baselineTotal ++;
     try {
       var result = new BaselineCompiler(methodInfo, ctx, target).compile();
@@ -118,14 +123,21 @@ module J2ME {
     private hasHandlers: boolean;
     private blockStackHeightMap: number [];
     private referencedClasses: ClassInfo [];
-    private locals: string [];
-    static localNames = "abcdefghijklmnopqrstuvwxyz";
-    static stackNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private local: string [];
+    private stack: string [];
+
+    static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
+
+    /**
+     * Make sure that none of these shadow gloal names, like "U".
+     */
+    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
     constructor(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
       this.ctx = ctx;
       this.methodInfo = methodInfo;
-      this.locals = [];
+      this.local = [];
+      this.stack = [];
       this.parameters = [];
       this.referencedClasses = [];
       this.hasHandlers = !!methodInfo.exception_table.length;
@@ -208,16 +220,14 @@ module J2ME {
         stream.next();
       }
       if (!Bytecode.isBlockEnd(stream.currentBC())) {
-        if (nextBlock.startBci !== stream.nextBCI) {
-          this.emitter.writeLn("pc = " + stream.nextBCI + "; break;");
-        }
+        this.emitter.writeLn("pc = " + stream.nextBCI + "; break;");
       }
       // this.emitter.writeLn("break;");
       this.emitter.outdent();
     }
 
     private emitPrologue() {
-      var locals = this.locals;
+      var locals = this.local;
       var localIndex = 0;
 
       var typeDescriptors = SignatureDescriptor.makeSignatureDescriptor(this.methodInfo.signature).typeDescriptors;
@@ -232,6 +242,7 @@ module J2ME {
         localIndex += isTwoSlot(kind) ? 2 : 1;
       }
 
+
       for (var i = 0; i < this.methodInfo.max_locals; i++) {
         locals.push(this.getLocalName(i));
       }
@@ -244,7 +255,7 @@ module J2ME {
         locals.unshift("this");
       }
 
-      var stack = [];
+      var stack = this.stack;
       for (var i = 0; i < this.methodInfo.max_stack; i++) {
         stack.push(this.getStack(i));
       }
@@ -252,6 +263,7 @@ module J2ME {
         this.emitter.writeLn("var " + stack.join(", ") + ";");
       }
       this.emitter.writeLn("var pc = 0;");
+      this.emitter.writeLn("var re;");
 
       if (this.hasHandlers) {
         this.emitter.writeLn("var ex;");
@@ -291,7 +303,7 @@ module J2ME {
     }
 
     getLocal(i: number): string {
-      return this.locals[i];
+      return this.local[i];
     }
 
     emitLoadLocal(kind: Kind, i: number) {
@@ -392,7 +404,7 @@ module J2ME {
       }
     }
 
-    emitInvoke(methodInfo: MethodInfo, opcode: Bytecodes, nextBCI: number) {
+    emitInvoke(methodInfo: MethodInfo, opcode: Bytecodes, nextPC: number) {
       var calleeCanYield = YieldReason.Virtual;
       if (isStaticallyBound(opcode, methodInfo)) {
         calleeCanYield = canYield(this.ctx, methodInfo);
@@ -416,10 +428,12 @@ module J2ME {
         this.emitClassInitializationCheck(methodInfo.classInfo);
         call = mangleClassAndMethod(methodInfo) + "(" + args.join(", ") + ")";
       }
+      this.emitter.writeLn("re = " + call);
+      if (calleeCanYield) {
+        this.emitUnwind(nextPC);
+      }
       if (types[0].kind !== Kind.Void) {
-        this.emitPush(types[0].kind, call);
-      } else {
-        this.emitter.writeLn(call + ";");
+        this.emitPush(types[0].kind, "re");
       }
     }
 
@@ -519,17 +533,16 @@ module J2ME {
       this.emitPush(Kind.Reference, "$NA(" + mangleClass(classInfo) + "," + length + ")");
     }
 
-    emitUnwind() {
-      this.emitter.enter("if (U) {");
-      // TODO: Bailout.
-      this.emitter.writeLn("return;");
-      this.emitter.leave("}");
+    emitUnwind(pc: number) {
+      var local = this.local.join(", ");
+      var stack = this.stack.slice(0, this.sp).join(", ");
+      this.emitter.writeLn("if (U) { $.B(" + pc + ", [" + local + "], [" + stack + "]); return; }");
     }
 
-    emitMonitorEnter() {
+    emitMonitorEnter(nextPC: number) {
       var object = this.pop(Kind.Reference);
       this.emitter.writeLn("$ME(" + object + ")");
-      this.emitUnwind();
+      this.emitUnwind(nextPC);
     }
 
     emitMonitorExit() {
@@ -734,13 +747,26 @@ module J2ME {
     emitCompareOp(kind: Kind, isLessThan: boolean) {
       var y = this.pop(kind);
       var x = this.pop(kind);
-      //if (kind === Kind.Long) {
-      //  compare = new IR.JVMLongCompare(this.region, a, b);
-      //} else {
-      //  compare = new IR.JVMFloatCompare(this.region, a, b, isLessThan);
-      //}
-      // TODO, this is wrong...
-      this.emitPush(Kind.Int, "WRONG");
+      var s = this.getStack(this.sp++);
+      if (kind === Kind.Long) {
+        this.emitter.enter("if (" + x + ".greaterThan(" + y + ")) {");
+        this.emitter.writeLn(s + " = 1");
+        this.emitter.leaveAndEnter("} else if (" + x + ".lessThan(" + y + ")) {");
+        this.emitter.writeLn(s + " = -1");
+        this.emitter.leaveAndEnter("} else {");
+        this.emitter.writeLn(s + " = 0");
+        this.emitter.leave("}");
+      } else {
+        this.emitter.enter("if (isNaN(" + x + ") || isNaN(" + y + ")) {");
+        this.emitter.writeLn(s + " = " + (isLessThan ? "-1" : "1"));
+        this.emitter.leaveAndEnter("} else if (" + x + " > " + y + ") {");
+        this.emitter.writeLn(s + " = 1");
+        this.emitter.leaveAndEnter("} else if (" + x + " < " + y + ") {");
+        this.emitter.writeLn(s + " = -1");
+        this.emitter.leaveAndEnter("} else {");
+        this.emitter.writeLn(s + " = 0");
+        this.emitter.leave("}");
+      }
     }
 
     emitTableSwitch(stream: BytecodeStream) {
@@ -970,7 +996,7 @@ module J2ME {
         case Bytecodes.CHECKCAST      : this.emitCheckCast(stream.readCPI()); break;
         case Bytecodes.INSTANCEOF     : this.emitInstanceOf(stream.readCPI()); break;
         ///*
-        case Bytecodes.MONITORENTER   : this.emitMonitorEnter(); break;
+        case Bytecodes.MONITORENTER   : this.emitMonitorEnter(stream.nextBCI); break;
         case Bytecodes.MONITOREXIT    : this.emitMonitorExit(); break;
         //case Bytecodes.MULTIANEWARRAY : genNewMultiArray(stream.readCPI()); break;
         //*/
