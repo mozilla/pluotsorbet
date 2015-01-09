@@ -318,7 +318,7 @@ Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", f
         classInfo = CLASSES.getClass(className);
     } catch (e) {
         if (e instanceof (Classes.ClassNotFoundException))
-            throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+            throw new JavaException("java/lang/ClassNotFoundException", "'" + e.message + "' not found.");
         throw e;
     }
     return classInfo.getClassObject(ctx);
@@ -627,14 +627,6 @@ Native.create("com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;
         b[off+n] = data[handle.pos+n];
     handle.pos += len;
     return (len > 0) ? len : -1;
-});
-
-Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(char) {
-    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
-});
-
-Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(char) {
-    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
 });
 
 Native.create("java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V", function(target) {

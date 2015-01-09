@@ -721,6 +721,14 @@ var AudioRecorder = function(aMimeType) {
     }, this.recipient.bind(this));
 };
 
+AudioRecorder.prototype.getContentType = function() {
+    if (this.mimeType == "audio/3gpp") {
+        return "audio/amr";
+    }
+
+    return this.mimeType;
+};
+
 AudioRecorder.prototype.recipient = function(message) {
     var callback = this["on" + message.type];
     if (typeof callback === "function") {
@@ -792,7 +800,7 @@ AudioRecorder.prototype.stop = function() {
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
             var data = new Uint8Array(message.data);
-            if (this.mimeType === "audio/amr") {
+            if (this.getContentType() === "audio/amr") {
                 data = Media.convert3gpToAmr(data);
             }
             this.data = data;
@@ -1061,8 +1069,8 @@ Native.create("com/sun/mmedia/DirectPlayer.nGetDuration.(I)I", function(handle) 
 })
 
 Native.create("com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I", function(handle, locator) {
-    console.warn("com/sun/mmedia/DirectRecord.nSetLocator.(I)I not implemented.");
-    return -1;
+    // Let the DirectRecord class handle writing to files / uploading via HTTP
+    return 0;
 });
 
 Native.create("com/sun/mmedia/DirectRecord.nGetRecordedSize.(I)I", function(handle) {
@@ -1109,6 +1117,10 @@ Native.create("com/sun/mmedia/DirectRecord.nStart.(I)I", function(handle) {
     // Let's handle this on the other side of the DumbPipe.
     return Media.PlayerCache[handle].audioRecorder.start();
 }, true);
+
+Native.create("com/sun/mmedia/DirectRecord.nGetRecordedType.(I)Ljava/lang/String;", function(handle) {
+    return Media.PlayerCache[handle].audioRecorder.getContentType();
+});
 
 /**
  * @return the volume level between 0 and 100 if succeeded. Otherwise -1.
