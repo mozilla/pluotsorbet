@@ -266,17 +266,17 @@ module J2ME.Bytecode {
             }
             break;
           }
-          case Bytecodes.INVOKEINTERFACE:
-          case Bytecodes.INVOKESPECIAL:
-          case Bytecodes.INVOKESTATIC:
-          case Bytecodes.INVOKEVIRTUAL: {
-            current = null;
-            var target = bci + lengthAt(code, bci);
-            var b1 = this.makeBlock(target);
-            this.setSuccessors(bci, [b1]);
-            this.canTrap.set(bci);
-            break;
-          }
+          //case Bytecodes.INVOKEINTERFACE:
+          //case Bytecodes.INVOKESPECIAL:
+          //case Bytecodes.INVOKESTATIC:
+          //case Bytecodes.INVOKEVIRTUAL: {
+          //  current = null;
+          //  var target = bci + lengthAt(code, bci);
+          //  var b1 = this.makeBlock(target);
+          //  this.setSuccessors(bci, [b1]);
+          //  this.canTrap.set(bci);
+          //  break;
+          //}
           default: {
             if (this.canTrapAt(opcode, bci)) {
               this.canTrap.set(bci);

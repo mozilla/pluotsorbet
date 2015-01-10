@@ -22,7 +22,8 @@ build/jsc.js: jsc.ts build/j2me.js
 j2me: build/j2me.js build/jsc.js
 
 aot: java j2me
-	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -cff classes.txt > build/classes.jar.js
+	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar > build/classes.jar.js
+	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar > build/tests.jar.js
 	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js
 
 closure:

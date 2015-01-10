@@ -19,7 +19,7 @@ module J2ME {
     if (methodInfo.exception_table.length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
-
+    writer && writer.writeLn("Compile: " + methodInfo.implKey);
     baselineTotal ++;
     try {
       var result = new BaselineCompiler(methodInfo, ctx, target).compile();
@@ -101,6 +101,14 @@ module J2ME {
       default:
         Debug.unexpected(Condition[condition]);
     }
+  }
+
+  function doubleConstant(v): string {
+    // Check for -0 floats.
+    if ((1 / v) < 0) {
+      return "-" + Math.abs(v);
+    }
+    return String(v);
   }
 
   function longConstant(v): string {
@@ -203,9 +211,10 @@ module J2ME {
       assert(this.sp !== undefined, "Bad stack height");
       stream.setBCI(block.startBci);
       var lastSourceLocation = null;
+      var lastBC: Bytecodes;
       while (stream.currentBCI <= block.endBci) {
         this.pc = stream.currentBCI;
-
+        lastBC = stream.currentBC();
         //var sourceLocation = this.methodInfo.getSourceLocationForPC(this.pc);
         //if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
         //  this.emitter.writeLn("// " + sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
@@ -213,16 +222,15 @@ module J2ME {
         //}
 
         this.emitBytecode(stream);
-        if (stream.currentBCI === block.endBci && !Bytecode.isStop(stream.currentBC())) {
-          this.setBlockStackHeight(stream.nextBCI, this.sp);
-          break;
-        }
         stream.next();
       }
-      if (!Bytecode.isBlockEnd(stream.currentBC())) {
-        this.emitter.writeLn("pc = " + stream.nextBCI + "; break;");
+      var successors = block.successors;
+      for (var i = 0; i < successors.length; i++) {
+        this.setBlockStackHeight(successors[i].startBci, this.sp);
       }
-      // this.emitter.writeLn("break;");
+      if (!Bytecode.isBlockEnd(lastBC)) {
+        this.emitter.writeLn("pc = " + stream.currentBCI + "; break;");
+      }
       this.emitter.outdent();
     }
 
@@ -264,6 +272,7 @@ module J2ME {
       }
       this.emitter.writeLn("var pc = 0;");
       this.emitter.writeLn("var re;");
+      this.emitter.writeLn("var t0, t1, t2, t3;");
 
       if (this.hasHandlers) {
         this.emitter.writeLn("var ex;");
@@ -314,13 +323,24 @@ module J2ME {
       this.emitter.writeLn(this.getLocal(i) + " = " + this.pop(kind) + ";");
     }
 
+    peekAny(): string {
+      return this.peek(Kind.Void);
+    }
+
     peek(kind: Kind): string {
-      assert (kind === Kind.Reference);
       return this.getStack(this.sp - 1);
     }
 
     popAny(): string {
       return this.pop(Kind.Void);
+    }
+
+    emitPopTemporary(i: number) {
+      this.emitter.writeLn("t" + i + " = " + this.pop(Kind.Void) + ";");
+    }
+
+    emitPushTemporary(i: number) {
+      this.emitPush(Kind.Void, "t" + i);
     }
 
     pop(kind: Kind): string {
@@ -344,7 +364,7 @@ module J2ME {
 
     emitReturn(kind: Kind) {
       if (kind === Kind.Void) {
-        this.emitter.writeLn("return");
+        this.emitter.writeLn("return;");
         return
       }
       this.emitter.writeLn("return " + this.pop(kind) + ";");
@@ -364,7 +384,7 @@ module J2ME {
     }
 
     setBlockStackHeight(pc: number, height: number) {
-      writer && writer.writeLn("Setting " + pc + " " + height);
+      writer && writer.writeLn("Setting Block Height " + pc + " " + height);
       if (this.blockStackHeightMap[pc] !== undefined) {
         assert(this.blockStackHeightMap[pc] === height, pc + " " + this.blockStackHeightMap[pc] + " " + height);
       }
@@ -429,7 +449,7 @@ module J2ME {
         this.emitClassInitializationCheck(methodInfo.classInfo);
         call = mangleClassAndMethod(methodInfo) + "(" + args.join(", ") + ")";
       }
-      this.emitter.writeLn("re = " + call);
+      this.emitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
         this.emitUnwind(nextPC);
       }
@@ -469,10 +489,10 @@ module J2ME {
           this.emitPush(Kind.Int, entry.integer);
           return;
         case TAGS.CONSTANT_Float:
-          this.emitPush(Kind.Float, entry.float);
+          this.emitPush(Kind.Float, doubleConstant(entry.float));
           return;
         case TAGS.CONSTANT_Double:
-          this.emitPush(Kind.Double, entry.double);
+          this.emitPush(Kind.Double, doubleConstant(entry.double));
           return;
         case 5: // TAGS.CONSTANT_Long
           this.emitPush(Kind.Long, "Long.fromBits(" + entry.lowBits + ", " + entry.highBits + ")");
@@ -510,7 +530,7 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "$CCI";
       }
-      this.emitter.writeLn(call + "(" + object + ", " + mangleClass(classInfo) + ")");
+      this.emitter.writeLn(call + "(" + object + ", " + mangleClass(classInfo) + ");");
     }
 
     emitInstanceOf(cpi: number) {
@@ -542,13 +562,13 @@ module J2ME {
 
     emitMonitorEnter(nextPC: number) {
       var object = this.pop(Kind.Reference);
-      this.emitter.writeLn("$ME(" + object + ")");
+      this.emitter.writeLn("$ME(" + object + ");");
       this.emitUnwind(nextPC);
     }
 
     emitMonitorExit() {
       var object = this.pop(Kind.Reference);
-      this.emitter.writeLn("$MX(" + object + ")");
+      this.emitter.writeLn("$MX(" + object + ");");
     }
 
     emitStackOp(opcode: Bytecodes) {
@@ -563,67 +583,65 @@ module J2ME {
           break;
         }
         case Bytecodes.DUP: {
-          var w = this.popAny();
-          this.emitPushAny(w);
-          this.emitPushAny(w);
+          this.emitPushAny(this.peekAny());
           break;
         }
         case Bytecodes.DUP_X1: {
-          var w1 = this.popAny();
-          var w2 = this.popAny();
-          this.emitPushAny(w1);
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
+          this.emitPopTemporary(0);
+          this.emitPopTemporary(1);
+          this.emitPushTemporary(0);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
           break;
         }
         case Bytecodes.DUP_X2: {
-          var w1 = this.popAny();
-          var w2 = this.popAny();
-          var w3 = this.popAny();
-          this.emitPushAny(w1);
-          this.emitPushAny(w3);
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
+          this.emitPopTemporary(0);
+          this.emitPopTemporary(1);
+          this.emitPopTemporary(2);
+          this.emitPushTemporary(0);
+          this.emitPushTemporary(2);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
           break;
         }
         case Bytecodes.DUP2: {
-          var w1 = this.popAny();
-          var w2 = this.popAny();
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
+          this.emitPopTemporary(0);
+          this.emitPopTemporary(1);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
           break;
         }
         case Bytecodes.DUP2_X1: {
-          var w1 = this.popAny();
-          var w2 = this.popAny();
-          var w3 = this.popAny();
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
-          this.emitPushAny(w3);
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
+          this.emitPopTemporary(0);
+          this.emitPopTemporary(1);
+          this.emitPopTemporary(2);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
+          this.emitPushTemporary(2);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
           break;
         }
         case Bytecodes.DUP2_X2: {
-          var w1 = this.popAny();
-          var w2 = this.popAny();
-          var w3 = this.popAny();
-          var w4 = this.popAny();
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
-          this.emitPushAny(w4);
-          this.emitPushAny(w3);
-          this.emitPushAny(w2);
-          this.emitPushAny(w1);
+          this.emitPopTemporary(0);
+          this.emitPopTemporary(1);
+          this.emitPopTemporary(2);
+          this.emitPopTemporary(3);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
+          this.emitPushTemporary(3);
+          this.emitPushTemporary(2);
+          this.emitPushTemporary(1);
+          this.emitPushTemporary(0);
           break;
         }
         case Bytecodes.SWAP: {
-          var w1 = this.popAny();
-          var w2 = this.popAny();
-          this.emitPushAny(w1);
-          this.emitPushAny(w2);
+          this.emitPopTemporary(0);
+          this.emitPopTemporary(1);
+          this.emitPushTemporary(0);
+          this.emitPushTemporary(1);
           break;
         }
         default:
@@ -635,7 +653,8 @@ module J2ME {
       var y = this.pop(result);
       var x = this.pop(result);
       if (canTrap) {
-        this.emitter.writeLn("pc = " + this.pc + "; $CDZ(" + y + ");");
+        var checkName = result === Kind.Long ? "$CDZL" : "$CDZ";
+        this.emitter.writeLn("pc = " + this.pc + "; " + checkName + "(" + y + ");");
       }
       var v;
       switch(opcode) {
@@ -771,14 +790,14 @@ module J2ME {
     }
 
     emitTableSwitch(stream: BytecodeStream) {
-      var tableSwitch = stream.readTableSwitch();
-      var value = this.pop(Kind.Int);
-      this.emitter.enter("switch(" + value + ") {");
-      for (var i = 0; i < tableSwitch.numberOfCases(); i++) {
-        this.emitter.writeLn("case " + tableSwitch.keyAt(i) + ": pc = " + tableSwitch.offsetAt(i) + "; break;");
-      }
-      this.emitter.writeLn("default: pc = " + tableSwitch.defaultOffset() + "; break;");
-      this.emitter.leave("}");
+      //var tableSwitch = stream.readTableSwitch();
+      //var value = this.pop(Kind.Int);
+      //this.emitter.enter("switch(" + value + ") {");
+      //for (var i = 0; i < tableSwitch.numberOfCases(); i++) {
+      //  this.emitter.writeLn("case " + tableSwitch.keyAt(i) + ": pc = " + tableSwitch.offsetAt(i) + "; break;");
+      //}
+      //this.emitter.writeLn("default: pc = " + tableSwitch.defaultOffset() + "; break;");
+      //this.emitter.leave("}");
     }
 
     emitLookupSwitch(stream: BytecodeStream) {
@@ -809,7 +828,7 @@ module J2ME {
         case Bytecodes.FCONST_1       :
         case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, opcode - Bytecodes.FCONST_0); break;
         case Bytecodes.DCONST_0       :
-        case Bytecodes.DCONST_1       : this.emitPush(Kind.Float, opcode - Bytecodes.DCONST_0); break;
+        case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0); break;
         case Bytecodes.LCONST_0       :
         case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0)); break;
         case Bytecodes.BIPUSH         : this.emitPush(Kind.Int, stream.readByte()); break;
@@ -972,8 +991,8 @@ module J2ME {
         ///*
         //case Bytecodes.JSR            : genJsr(stream.readBranchDest()); break;
         //case Bytecodes.RET            : genRet(stream.readLocalIndex()); break;
-        case Bytecodes.TABLESWITCH    : this.emitTableSwitch(stream); break;
-        case Bytecodes.LOOKUPSWITCH   : this.emitLookupSwitch(stream); break;
+        // case Bytecodes.TABLESWITCH    : this.emitTableSwitch(stream); break;
+        // case Bytecodes.LOOKUPSWITCH   : this.emitLookupSwitch(stream); break;
         //*/
         case Bytecodes.IRETURN        : this.emitReturn(Kind.Int); break;
         case Bytecodes.LRETURN        : this.emitReturn(Kind.Long); break;
