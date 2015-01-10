@@ -148,6 +148,33 @@ button {
   padding: 0.5rem;
 }
 
+.splash-screen {
+  z-index: 2;
+  background: #2d2d2d;
+  overflow: hidden;
+  color: #fff;
+  text-align: center;
+}
+
+.autosize .splash-screen {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.splash-screen > .title {
+  margin-bottom: 0;
+}
+
+.splash-progress-container {
+  position: absolute;
+  top: calc(50% - 17px);
+  left: calc(50% - 17px);
+}
+
 /**
  * STYLE OVERRIDES FOR DEBUG MODE:
  *
@@ -185,4 +212,15 @@ button {
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt p {
   font-size: 12px;
   line-height: 1.2;
+}
+
+.debug-mode .splash-screen {
+  position: fixed;
+  width: 240px;
+  height: 320px;
+  top: 0px;
+  right: 0px;
+  left: auto;
+  bottom: auto;
+  box-sizing: border-box;
 }

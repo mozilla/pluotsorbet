@@ -69,6 +69,11 @@ function processJAD(data) {
       var key = entry.substring(0, keyEnd);
       var val = entry.substring(keyEnd + 1).trim();
       MIDP.manifest[key] = val;
+
+      if (key == "MIDlet-Name") {
+        var title = document.getElementById("splash-screen").querySelector(".title");
+        title.textContent = "Loading " + val;
+      }
     }
   });
 }

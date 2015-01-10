@@ -59,6 +59,7 @@ var currentlyFocusedTextEditor;
 
     Native.create("com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V", function(hardwareId, displayId) {
         console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
+        document.getElementById("splash-screen").style.display = "none";
     });
 
     Native.create("com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z", function(displayId, on) {
