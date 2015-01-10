@@ -23,8 +23,15 @@ casper.test.begin("fs tests", 7, function(test) {
     // by deleting and recreating the database between test runs.  We may also
     // want to move over the other tests that touch the fs.
 
+    casper.start("data:text/plain,start");
+
+    casper.page.onLongRunningScript = function(message) {
+        casper.echo("FAIL unresponsive " + message, "ERROR");
+        casper.page.stopJavaScript();
+    };
+
     casper
-    .start("http://localhost:8000/tests/fs/delete-fs.html")
+    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
     .waitForText("DONE");
 
     // Initialize a v1 database.

@@ -10,7 +10,7 @@ import java.io.*;
 public class TestAudioPlayer implements Testlet, PlayerListener {
     TestHarness th;
 
-    private static final long TIME_TOLERANCE = 100;
+    private static final long TIME_TOLERANCE = 100000;
 
      /**
      * PlayerListener interface's method.
@@ -76,20 +76,22 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         th.check(player.getContentType(), "audio/x-wav");
 
         // Play the audio for a short time.
-        while (player.getMediaTime() <= 0) {
-            Thread.sleep(10);
-        }
+        //while (player.getMediaTime() <= 0) {
+          //  Thread.sleep(10);
+        //}
 
         // Sleep 500 milliseconds and check if the change in media time
         // is around the time interval slept. We calculate the actual time
         // slept because it could be much different from the amount we
         // intend to sleep (if another thread hogs the CPU in the meantime).
         long currentTimeBeforeSleep = System.currentTimeMillis();
-        long mediaTimeBeforeSleep = player.getMediaTime() / 1000;
+        long mediaTimeBeforeSleep = player.getMediaTime();
         Thread.sleep(500);
-        long actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
-        long mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
-        th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE);
+        long actualTimeSlept = 1000 * (System.currentTimeMillis() - currentTimeBeforeSleep);
+        long mediaTime = (player.getMediaTime()) - mediaTimeBeforeSleep;
+        System.out.println("mediaTimeBeforeSleep: " + mediaTimeBeforeSleep);
+        th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE,
+                 "Math.abs(" + mediaTime + " - " + actualTimeSlept + ") < " + TIME_TOLERANCE);
 
         // Pause
         player.stop();
