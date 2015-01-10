@@ -316,7 +316,7 @@ module J2ME {
 
     peek(kind: Kind): string {
       assert (kind === Kind.Reference);
-      return this.getStack(this.sp);
+      return this.getStack(this.sp - 1);
     }
 
     popAny(): string {
@@ -520,7 +520,7 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "$IOI";
       }
-      this.emitter.writeLn(call + "(" + object + ", " + mangleClass(classInfo) + ") | 0");
+      this.emitPush(Kind.Int, call + "(" + object + ", " + mangleClass(classInfo) + ") | 0");
     }
 
     emitArrayLength() {
