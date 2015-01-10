@@ -8,7 +8,7 @@ import javax.microedition.io.*;
 public class TestHttpConnection implements Testlet {
     public void test(TestHarness th) {
         try {
-            HttpConnection hc = (HttpConnection)Connector.open("http://localhost:8000/");
+            HttpConnection hc = (HttpConnection)Connector.open("http://localhost:8000/tests/test.html");
 
             long len = hc.getLength();
             th.todo(len > 0, "length is > 0");
