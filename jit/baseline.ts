@@ -63,6 +63,9 @@ module J2ME {
     outdent() {
       this._indent --;
     }
+    prependLn(s: string) {
+      this.buffer.unshift(s);
+    }
     toString(): string {
       return this.buffer.join("\n");
     }
@@ -133,6 +136,7 @@ module J2ME {
     private referencedClasses: ClassInfo [];
     private local: string [];
     private stack: string [];
+    private variables: string [];
 
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
@@ -145,6 +149,7 @@ module J2ME {
       this.ctx = ctx;
       this.methodInfo = methodInfo;
       this.local = [];
+      this.variables = [];
       this.stack = [];
       this.parameters = [];
       this.referencedClasses = [];
@@ -156,23 +161,52 @@ module J2ME {
     compile(): CompiledMethodInfo {
       this.emitPrologue();
       this.emitBody();
+      if (this.variables.length) {
+        this.emitter.prependLn("var " + this.variables.join(", ") + ";");
+      }
       return new CompiledMethodInfo(this.parameters, this.emitter.toString(), this.referencedClasses);
     }
-
+    needsVariable(name: string) {
+      if (this.variables.indexOf(name) < 0) {
+        this.variables.push(name);
+      }
+    }
     emitBody() {
       var blockMap = new BlockMap(this.methodInfo);
       blockMap.build();
+      var blocks = blockMap.blocks;
+      var stream = new BytecodeStream(this.methodInfo.code);
+
+      if (blocks.length === 1 && !this.hasHandlers && !blocks[0].isLoopHeader) {
+        this.emitBlockBody(stream, blocks[0]);
+        return;
+      }
 
       this.emitter.enter("while (true) {");
       this.hasHandlers && this.emitter.enter("try {");
       this.emitter.enter("switch (pc) {");
-      var blocks = blockMap.blocks;
+
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
         if (block instanceof ExceptionBlock) {
           continue
         }
-        this.emitBlock(block, i < blocks.length - 1 ? blocks[i + 1] : null);
+        var lastBC = this.emitBlock(stream, block);
+        var successors = block.successors;
+        for (var j = 0; j < successors.length; j++) {
+          this.setBlockStackHeight(successors[j].startBci, this.sp);
+        }
+        var needsFallthroughPC = !Bytecode.isBlockEnd(lastBC);
+        // Check to see if we can get away without going through the switch again.
+        if (i < blocks.length - 1 &&
+            block.successors.length === 1 &&
+            blocks[i + 1].startBci === stream.currentBCI) {
+          needsFallthroughPC = false;
+        }
+        if (needsFallthroughPC) {
+          this.emitter.writeLn("pc = " + stream.currentBCI + "; break;");
+        }
+        this.emitter.outdent();
       }
       this.emitter.leave("}");
       if (this.hasHandlers) {
@@ -180,7 +214,7 @@ module J2ME {
         for (var i = 0; i < blockMap.blocks.length; i++) {
           var block = blockMap.blocks[i];
           if (block instanceof ExceptionBlock) {
-            this.emitBlock(block, null);
+            this.emitBlock(stream, block);
           }
         }
         this.emitter.writeLn("throw ex;");
@@ -189,9 +223,8 @@ module J2ME {
       this.emitter.leave("}");
     }
 
-    emitBlock(block: Block, nextBlock: Block) {
+    emitBlock(stream: BytecodeStream, block: Block): Bytecodes {
       writer && writer.writeLn("emitBlock: " + block.startBci);
-      var stream = new BytecodeStream(this.methodInfo.code);
       if (block instanceof ExceptionBlock) {
         var exceptionBlock: ExceptionBlock = <ExceptionBlock>block;
         var handler = exceptionBlock.handler;
@@ -207,6 +240,10 @@ module J2ME {
           this.sp = 1;
         }
       }
+      return this.emitBlockBody(stream, block);
+    }
+
+    emitBlockBody(stream: BytecodeStream, block: Block): Bytecodes {
       this.sp = this.blockStackHeightMap[block.startBci];
       assert(this.sp !== undefined, "Bad stack height");
       stream.setBCI(block.startBci);
@@ -215,27 +252,14 @@ module J2ME {
       while (stream.currentBCI <= block.endBci) {
         this.pc = stream.currentBCI;
         lastBC = stream.currentBC();
-        //var sourceLocation = this.methodInfo.getSourceLocationForPC(this.pc);
-        //if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
-        //  this.emitter.writeLn("// " + sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
-        //  lastSourceLocation = sourceLocation;
-        //}
-
         this.emitBytecode(stream);
         stream.next();
       }
-      var successors = block.successors;
-      for (var i = 0; i < successors.length; i++) {
-        this.setBlockStackHeight(successors[i].startBci, this.sp);
-      }
-      if (!Bytecode.isBlockEnd(lastBC)) {
-        this.emitter.writeLn("pc = " + stream.currentBCI + "; break;");
-      }
-      this.emitter.outdent();
+      return lastBC;
     }
 
     private emitPrologue() {
-      var locals = this.local;
+      var local = this.local;
       var localIndex = 0;
 
       var typeDescriptors = SignatureDescriptor.makeSignatureDescriptor(this.methodInfo.signature).typeDescriptors;
@@ -250,17 +274,15 @@ module J2ME {
         localIndex += isTwoSlot(kind) ? 2 : 1;
       }
 
-
-      for (var i = 0; i < this.methodInfo.max_locals; i++) {
-        locals.push(this.getLocalName(i));
+      var extraLocal = this.methodInfo.max_locals - (this.methodInfo.isStatic ? 0 : 1);
+      for (var i = 0; i < extraLocal; i++) {
+        local.push(this.getLocalName(i));
       }
-
-      if (locals.length) {
-        this.emitter.writeLn("var " + locals.join(", ") + ";");
+      if (local.length) {
+        this.emitter.writeLn("var " + local.join(", ") + ";");
       }
-
       if (!this.methodInfo.isStatic) {
-        locals.unshift("this");
+        local.unshift("this");
       }
 
       var stack = this.stack;
@@ -271,9 +293,6 @@ module J2ME {
         this.emitter.writeLn("var " + stack.join(", ") + ";");
       }
       this.emitter.writeLn("var pc = 0;");
-      this.emitter.writeLn("var re;");
-      this.emitter.writeLn("var t0, t1, t2, t3;");
-
       if (this.hasHandlers) {
         this.emitter.writeLn("var ex;");
       }
@@ -335,12 +354,16 @@ module J2ME {
       return this.pop(Kind.Void);
     }
 
-    emitPopTemporary(i: number) {
-      this.emitter.writeLn("t" + i + " = " + this.pop(Kind.Void) + ";");
+    emitPopTemporaries(n: number) {
+      for (var i = 0; i < n; i++) {
+        this.emitter.writeLn("var t" + i + " = " + this.pop(Kind.Void) + ";");
+      }
     }
 
-    emitPushTemporary(i: number) {
-      this.emitPush(Kind.Void, "t" + i);
+    emitPushTemporary(...indices: number []) {
+      for (var i = 0; i < indices.length; i++) {
+       this.emitPush(Kind.Void, "t" + indices[i]);
+      }
     }
 
     pop(kind: Kind): string {
@@ -449,6 +472,7 @@ module J2ME {
         this.emitClassInitializationCheck(methodInfo.classInfo);
         call = mangleClassAndMethod(methodInfo) + "(" + args.join(", ") + ")";
       }
+      this.needsVariable("re");
       this.emitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
         this.emitUnwind(nextPC);
@@ -508,7 +532,7 @@ module J2ME {
 
     emitThrow(pc: number) {
       var object = this.peek(Kind.Reference);
-      this.emitter.writeLn("throw " + object);
+      this.emitter.writeLn("throw " + object + ";");
     }
 
     emitNewInstance(cpi: number) {
@@ -587,61 +611,33 @@ module J2ME {
           break;
         }
         case Bytecodes.DUP_X1: {
-          this.emitPopTemporary(0);
-          this.emitPopTemporary(1);
-          this.emitPushTemporary(0);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
+          this.emitPopTemporaries(2);
+          this.emitPushTemporary(0, 1, 0);
           break;
         }
         case Bytecodes.DUP_X2: {
-          this.emitPopTemporary(0);
-          this.emitPopTemporary(1);
-          this.emitPopTemporary(2);
-          this.emitPushTemporary(0);
-          this.emitPushTemporary(2);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
+          this.emitPopTemporaries(3);
+          this.emitPushTemporary(0, 2, 1, 0);
           break;
         }
         case Bytecodes.DUP2: {
-          this.emitPopTemporary(0);
-          this.emitPopTemporary(1);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
+          this.emitPopTemporaries(2);
+          this.emitPushTemporary(1, 0, 1, 0);
           break;
         }
         case Bytecodes.DUP2_X1: {
-          this.emitPopTemporary(0);
-          this.emitPopTemporary(1);
-          this.emitPopTemporary(2);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
-          this.emitPushTemporary(2);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
+          this.emitPopTemporaries(2);
+          this.emitPushTemporary(1, 0, 2, 1, 0);
           break;
         }
         case Bytecodes.DUP2_X2: {
-          this.emitPopTemporary(0);
-          this.emitPopTemporary(1);
-          this.emitPopTemporary(2);
-          this.emitPopTemporary(3);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
-          this.emitPushTemporary(3);
-          this.emitPushTemporary(2);
-          this.emitPushTemporary(1);
-          this.emitPushTemporary(0);
+          this.emitPopTemporaries(4);
+          this.emitPushTemporary(1, 0, 3, 2, 1, 0);
           break;
         }
         case Bytecodes.SWAP: {
-          this.emitPopTemporary(0);
-          this.emitPopTemporary(1);
-          this.emitPushTemporary(0);
-          this.emitPushTemporary(1);
+          this.emitPopTemporaries(2);
+          this.emitPushTemporary(0, 1);
           break;
         }
         default:
@@ -813,7 +809,7 @@ module J2ME {
       var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
       writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecodes[opcode]);
-      this.emitter.writeLn("// " + stream.currentBCI + " " + Bytecodes[opcode] + ", sp: " + this.sp);
+      false && this.emitter.writeLn("// " + stream.currentBCI + " " + Bytecodes[opcode] + ", sp: " + this.sp);
       switch (opcode) {
         case Bytecodes.NOP            : break;
         case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null"); break;
