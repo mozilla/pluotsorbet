@@ -1147,7 +1147,7 @@ module J2ME.Bytecode {
     }
 
     public readLookupSwitch(): BytecodeLookupSwitch {
-      return new BytecodeTableSwitch(this._code, this._currentBCI);
+      return new BytecodeLookupSwitch(this._code, this._currentBCI);
     }
   }
 }

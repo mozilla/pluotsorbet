@@ -518,7 +518,7 @@ module J2ME {
         case TAGS.CONSTANT_Double:
           this.emitPush(Kind.Double, doubleConstant(entry.double));
           return;
-        case 5: // TAGS.CONSTANT_Long
+        case TAGS.CONSTANT_Long:
           this.emitPush(Kind.Long, "Long.fromBits(" + entry.lowBits + ", " + entry.highBits + ")");
           return;
         case TAGS.CONSTANT_String:
@@ -786,23 +786,25 @@ module J2ME {
     }
 
     emitTableSwitch(stream: BytecodeStream) {
-      //var tableSwitch = stream.readTableSwitch();
-      //var value = this.pop(Kind.Int);
-      //this.emitter.enter("switch(" + value + ") {");
-      //for (var i = 0; i < tableSwitch.numberOfCases(); i++) {
-      //  this.emitter.writeLn("case " + tableSwitch.keyAt(i) + ": pc = " + tableSwitch.offsetAt(i) + "; break;");
-      //}
-      //this.emitter.writeLn("default: pc = " + tableSwitch.defaultOffset() + "; break;");
-      //this.emitter.leave("}");
+      var tableSwitch = stream.readTableSwitch();
+      var value = this.pop(Kind.Int);
+      this.emitter.enter("switch(" + value + ") {");
+      for (var i = 0; i < tableSwitch.numberOfCases(); i++) {
+        this.emitter.writeLn("case " + tableSwitch.keyAt(i) + ": pc = " + (stream.currentBCI + tableSwitch.offsetAt(i)) + "; break;");
+      }
+      this.emitter.writeLn("default: pc = " + (stream.currentBCI + tableSwitch.defaultOffset()) + "; break;");
+      this.emitter.leave("} break;");
     }
 
     emitLookupSwitch(stream: BytecodeStream) {
-      //this.emitter.enter("switch(" + this.pop(Kind.Int) + ") {");
-      //for (var i = 0; i < tableSwitch.numberOfCases(); i++) {
-      //  this.emitter.writeLn("case " + tableSwitch.keyAt(i) + ": pc = " + tableSwitch.offsetAt(i) + "; break;");
-      //}
-      //this.emitter.writeLn("default: pc = " + tableSwitch.defaultOffset() + "; break;");
-
+      var lookupSwitch = stream.readLookupSwitch();
+      var value = this.pop(Kind.Int);
+      this.emitter.enter("switch(" + value + ") {");
+      for (var i = 0; i < lookupSwitch.numberOfCases(); i++) {
+        this.emitter.writeLn("case " + lookupSwitch.keyAt(i) + ": pc = " + (stream.currentBCI + lookupSwitch.offsetAt(i)) + "; break;");
+      }
+      this.emitter.writeLn("default: pc = " + (stream.currentBCI + lookupSwitch.defaultOffset()) + "; break;");
+      this.emitter.leave("} break;");
     }
 
     emitBytecode(stream: BytecodeStream) {
@@ -987,8 +989,8 @@ module J2ME {
         ///*
         //case Bytecodes.JSR            : genJsr(stream.readBranchDest()); break;
         //case Bytecodes.RET            : genRet(stream.readLocalIndex()); break;
-        // case Bytecodes.TABLESWITCH    : this.emitTableSwitch(stream); break;
-        // case Bytecodes.LOOKUPSWITCH   : this.emitLookupSwitch(stream); break;
+        case Bytecodes.TABLESWITCH    : this.emitTableSwitch(stream); break;
+        case Bytecodes.LOOKUPSWITCH   : this.emitLookupSwitch(stream); break;
         //*/
         case Bytecodes.IRETURN        : this.emitReturn(Kind.Int); break;
         case Bytecodes.LRETURN        : this.emitReturn(Kind.Long); break;
