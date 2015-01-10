@@ -89,6 +89,7 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         Thread.sleep(500);
         long actualTimeSlept = 1000 * (System.currentTimeMillis() - currentTimeBeforeSleep);
         long mediaTime = (player.getMediaTime()) - mediaTimeBeforeSleep;
+        System.out.println("mediaTimeBeforeSleep: " + mediaTimeBeforeSleep);
         th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE,
                  "Math.abs(" + mediaTime + " - " + actualTimeSlept + ") < " + TIME_TOLERANCE);
 
