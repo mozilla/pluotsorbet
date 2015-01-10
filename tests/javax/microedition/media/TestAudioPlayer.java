@@ -76,9 +76,9 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         th.check(player.getContentType(), "audio/x-wav");
 
         // Play the audio for a short time.
-        while (player.getMediaTime() <= 0) {
-            Thread.sleep(10);
-        }
+        //while (player.getMediaTime() <= 0) {
+          //  Thread.sleep(10);
+        //}
 
         // Sleep 500 milliseconds and check if the change in media time
         // is around the time interval slept. We calculate the actual time
