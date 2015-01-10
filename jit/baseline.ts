@@ -314,7 +314,8 @@ module J2ME {
       this.emitter.writeLn(this.getLocal(i) + " = " + this.pop(kind) + ";");
     }
 
-    peek(): string {
+    peek(kind: Kind): string {
+      assert (kind === Kind.Reference);
       return this.getStack(this.sp);
     }
 
@@ -323,11 +324,11 @@ module J2ME {
     }
 
     pop(kind: Kind): string {
-      writer && writer.writeLn(" pop: sp: " + this.sp + " " + Kind[kind]);
+      writer && writer.writeLn(" popping: sp: " + this.sp + " " + Kind[kind]);
       assert (this.sp, "SP below zero.");
       this.sp -= isTwoSlot(kind) ? 2 : 1;
       var v = this.getStack(this.sp);
-      writer && writer.writeLn(" pop: sp: " + this.sp + " " + Kind[kind] + " " + v);
+      writer && writer.writeLn("  popped: sp: " + this.sp + " " + Kind[kind] + " " + v);
       return v;
     }
 
@@ -486,7 +487,7 @@ module J2ME {
     }
 
     emitThrow(pc: number) {
-      var object = this.peek();
+      var object = this.peek(Kind.Reference);
       this.emitter.writeLn("throw " + object);
     }
 
@@ -503,7 +504,7 @@ module J2ME {
     }
 
     emitCheckCast(cpi: number) {
-      var object = this.pop(Kind.Reference);
+      var object = this.peek(Kind.Reference);
       var classInfo = this.lookupClass(cpi);
       var call = "$CCK";
       if (classInfo.isInterface) {
