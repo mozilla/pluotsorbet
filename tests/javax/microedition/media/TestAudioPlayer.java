@@ -10,7 +10,7 @@ import java.io.*;
 public class TestAudioPlayer implements Testlet, PlayerListener {
     TestHarness th;
 
-    private static final long TIME_TOLERANCE = 100;
+    private static final long TIME_TOLERANCE = 100000;
 
      /**
      * PlayerListener interface's method.
@@ -85,10 +85,10 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         // slept because it could be much different from the amount we
         // intend to sleep (if another thread hogs the CPU in the meantime).
         long currentTimeBeforeSleep = System.currentTimeMillis();
-        long mediaTimeBeforeSleep = player.getMediaTime() / 1000;
+        long mediaTimeBeforeSleep = player.getMediaTime();
         Thread.sleep(500);
-        long actualTimeSlept = System.currentTimeMillis() - currentTimeBeforeSleep;
-        long mediaTime = (player.getMediaTime() / 1000) - mediaTimeBeforeSleep;
+        long actualTimeSlept = 1000 * (System.currentTimeMillis() - currentTimeBeforeSleep);
+        long mediaTime = (player.getMediaTime()) - mediaTimeBeforeSleep;
         th.check(Math.abs(mediaTime - actualTimeSlept) < TIME_TOLERANCE,
                  "Math.abs(" + mediaTime + " - " + actualTimeSlept + ") < " + TIME_TOLERANCE);
 
