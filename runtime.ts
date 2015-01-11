@@ -1208,7 +1208,7 @@ module J2ME {
         methodType = MethodType.Native;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
-        if (fn && !methodInfo.isSynchronized) {
+        if (fn) {
           linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
           methodType = MethodType.Compiled;
           if (!traceWriter) {
@@ -1528,6 +1528,14 @@ module J2ME {
   export function monitorExit(object: J2ME.java.lang.Object) {
     $.ctx.monitorExit(object);
   }
+
+  export function translateException(e) {
+    if (e.name === "TypeError") {
+      // JavaScript's TypeError is analogous to a NullPointerException.
+      return $.newNullPointerException(e.message);
+    }
+    return e;
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1561,3 +1569,5 @@ var $CAS = J2ME.checkArrayStore;
 
 var $ME = J2ME.monitorEnter;
 var $MX = J2ME.monitorExit;
+
+var $TE = J2ME.translateException;
