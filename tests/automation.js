@@ -95,7 +95,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 12 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
@@ -304,7 +304,7 @@ casper.test.begin("unit tests", 12 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
+            test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Download");
             syncFS();
         });
     });
@@ -314,7 +314,36 @@ casper.test.begin("unit tests", 12 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
+            test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Load");
+            syncFS();
+        });
+    });
+
+
+    // Run the test that updates the MIDlet
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDletUpdater&logConsole=web,page")
+    .withFrame(0, function() {
+        var alertText = null;
+        casper.on('remote.alert', function onAlert(message) {
+            casper.removeListener('remote.alert', onAlert);
+            alertText = message;
+        });
+
+        casper.waitFor(function() {
+            return !!alertText;
+        }, function() {
+            test.assertEquals(alertText, "Update completed!");
+            syncFS();
+        });
+    });
+
+    // Verify that the update has been applied
+    casper
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=3")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Load after update");
             syncFS();
         });
     });
@@ -328,7 +357,7 @@ casper.test.begin("unit tests", 12 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=2")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
+            test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Download with absolute URL");
             syncFS();
         });
     });
