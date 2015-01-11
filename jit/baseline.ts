@@ -462,6 +462,9 @@ module J2ME {
         classInfo = classInfo.elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
+        if (classInfo.staticInitializer && canYield(this.ctx, classInfo.staticInitializer)) {
+          // TODO: this.emitUnwind();
+        }
         this.emitter.writeLn(this.runtimeClass(classInfo) + ";");
       }
     }

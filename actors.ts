@@ -213,6 +213,7 @@ module J2ME {
     interfaces: ClassInfo [];
     fields: FieldInfo [];
     methods: MethodInfo [];
+    staticInitializer: MethodInfo;
     classes: any [];
     constant_pool: ConstantPoolEntry [];
     isArrayClass: boolean;
@@ -266,7 +267,7 @@ module J2ME {
 
       for (var i = 0; i < classImage.methods.length; i++) {
         var m = classImage.methods[i];
-        this.methods.push(new MethodInfo({
+        var methodInfo = new MethodInfo({
           name: cp[m.name_index].bytes,
           signature: cp[m.signature_index].bytes,
           classInfo: self,
@@ -275,7 +276,11 @@ module J2ME {
           isPublic: AccessFlags.isPublic(m.access_flags),
           isStatic: AccessFlags.isStatic(m.access_flags),
           isSynchronized: AccessFlags.isSynchronized(m.access_flags)
-        }));
+        });
+        this.methods.push(methodInfo);
+        if (methodInfo.name === "<clinit>") {
+          this.staticInitializer = methodInfo;
+        }
       }
       leaveTimeline("methods");
 
