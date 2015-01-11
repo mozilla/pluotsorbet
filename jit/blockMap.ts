@@ -10,6 +10,7 @@ module J2ME.Bytecode {
     public isExceptionEntry: boolean;
     public isLoopHeader: boolean;
     public isLoopEnd: boolean;
+    public hasHandlers: boolean;
     public blockID: number;
 
     public region: C4.IR.Region;
@@ -35,6 +36,8 @@ module J2ME.Bytecode {
       block.endBci = this.endBci;
       block.isExceptionEntry = this.isExceptionEntry;
       block.isLoopHeader = this.isLoopHeader;
+      block.isLoopEnd = this.isLoopEnd;
+      block.hasHandlers = this.hasHandlers;
       block.loops = this.loops;
       block.loopID = this.loopID;
       block.blockID = this.blockID;
@@ -366,6 +369,7 @@ module J2ME.Bytecode {
         if (handlers) {
           var dispatch = this.makeExceptionDispatch(handlers, 0, bci);
           block.successors.push(dispatch);
+          block.hasHandlers = true;
         }
       }
     }
@@ -490,6 +494,7 @@ module J2ME.Bytecode {
           (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") +
           (block.isLoopHeader ? " isLoopHeader" : "") +
           (block.isLoopEnd ? " isLoopEnd" : "") +
+          (block.isExceptionEntry ? " isExceptionEntry" : "") +
           ", loops: " + block.loops.toString(2) +
           ", exits: " + block.exits.toString(2) +
           ", loopID: " + block.loopID);

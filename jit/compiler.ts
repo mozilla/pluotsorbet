@@ -258,6 +258,9 @@ module J2ME {
       if (method.isNative) {
         continue;
       }
+      if (!method.code) {
+        continue;
+      }
       if (!methodFilter(method)) {
         continue;
       }

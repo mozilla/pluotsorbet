@@ -16,7 +16,8 @@ module J2ME {
 
   export function baselineCompileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
 
-    if (methodInfo.exception_table.length) {
+    var compileExceptions = true;
+    if (!compileExceptions && methodInfo.exception_table && methodInfo.exception_table.length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
     writer && writer.writeLn("Compile: " + methodInfo.implKey);
@@ -174,6 +175,7 @@ module J2ME {
     emitBody() {
       var blockMap = new BlockMap(this.methodInfo);
       blockMap.build();
+      writer && blockMap.trace(writer);
       var blocks = blockMap.blocks;
       var stream = new BytecodeStream(this.methodInfo.code);
 
@@ -191,9 +193,18 @@ module J2ME {
         if (block instanceof ExceptionBlock) {
           continue
         }
+        if (block.isExceptionEntry) {
+          writer && writer.writeLn("block.isExceptionEntry");
+          this.setBlockStackHeight(block.startBci, 1);
+        }
         var lastBC = this.emitBlock(stream, block);
         var successors = block.successors;
         for (var j = 0; j < successors.length; j++) {
+          var successor = successors[j];
+          if (successor instanceof ExceptionBlock ||
+              successor.isExceptionEntry) {
+            continue;
+          }
           this.setBlockStackHeight(successors[j].startBci, this.sp);
         }
         var needsFallthroughPC = !Bytecode.isBlockEnd(lastBC);
@@ -211,40 +222,46 @@ module J2ME {
       this.emitter.leave("}");
       if (this.hasHandlers) {
         this.emitter.leaveAndEnter("} catch (ex) {");
+        this.emitPush(Kind.Reference, "$TE(ex)");
         for (var i = 0; i < blockMap.blocks.length; i++) {
           var block = blockMap.blocks[i];
           if (block instanceof ExceptionBlock) {
-            this.emitBlock(stream, block);
+            this.emitExceptionBlock(block);
           }
         }
-        this.emitter.writeLn("throw ex;");
+        this.emitter.writeLn("throw " + this.peek(Kind.Reference) + ";");
         this.emitter.leave("}");
       }
       this.emitter.leave("}");
     }
 
-    emitBlock(stream: BytecodeStream, block: Block): Bytecodes {
-      writer && writer.writeLn("emitBlock: " + block.startBci);
-      if (block instanceof ExceptionBlock) {
-        var exceptionBlock: ExceptionBlock = <ExceptionBlock>block;
-        var handler = exceptionBlock.handler;
-        this.sp = 0;
-        this.emitPush(Kind.Reference, "ex");
-        this.emitter.enter("if (bci >= " + handler.start_pc + " && bci < " + handler.end_pc + ") {");
-        this.emitter.writeLn("pc = " + handler.handler_pc + ";");
-        this.emitter.leave("}");
-        return;
-      } else {
-        this.emitter.enter("case " + block.startBci + ":");
-        if (block.isExceptionEntry) {
-          this.sp = 1;
+    emitExceptionBlock(exceptionBlock: ExceptionBlock) {
+      var handler = exceptionBlock.handler;
+      writer && writer.writeLn("emitExceptionBlock: " + exceptionBlock.startBci + " " + this.sp);
+      var check = "";
+      if (handler.catch_type > 0) {
+        var classInfo = this.lookupClass(handler.catch_type);
+        check = "$IOK";
+        if (classInfo.isInterface) {
+          check = "$IOI";
         }
+        check += "(" + this.peek(Kind.Reference) + ", " +  mangleClass(classInfo) + ")";
+        check = " && " + check;
       }
+      this.emitter.enter("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") {");
+      this.emitter.writeLn("pc = " + handler.handler_pc + "; continue;");
+      this.emitter.leave("}");
+      return;
+    }
+
+    emitBlock(stream: BytecodeStream, block: Block): Bytecodes {
+      this.emitter.enter("case " + block.startBci + ":");
       return this.emitBlockBody(stream, block);
     }
 
     emitBlockBody(stream: BytecodeStream, block: Block): Bytecodes {
       this.sp = this.blockStackHeightMap[block.startBci];
+      writer && writer.writeLn("emitBlock: " + block.startBci + " " + this.sp + " " + block.isExceptionEntry);
       assert(this.sp !== undefined, "Bad stack height");
       stream.setBCI(block.startBci);
       var lastSourceLocation = null;
@@ -252,7 +269,7 @@ module J2ME {
       while (stream.currentBCI <= block.endBci) {
         this.pc = stream.currentBCI;
         lastBC = stream.currentBC();
-        this.emitBytecode(stream);
+        this.emitBytecode(stream, block);
         stream.next();
       }
       return lastBC;
@@ -411,14 +428,12 @@ module J2ME {
       if (this.blockStackHeightMap[pc] !== undefined) {
         assert(this.blockStackHeightMap[pc] === height, pc + " " + this.blockStackHeightMap[pc] + " " + height);
       }
-      this.blockStackHeightMap[pc] = this.sp;
+      this.blockStackHeightMap[pc] = height;
     }
 
     emitIf(stream: BytecodeStream, predicate: string) {
       var target = stream.readBranchDest();
       var next = stream.nextBCI;
-      this.setBlockStackHeight(target, this.sp);
-      this.setBlockStackHeight(next, this.sp);
       this.emitter.writeLn("pc = " + predicate + " ? " + target + " : " + next + "; break;");
     }
 
@@ -443,6 +458,9 @@ module J2ME {
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
+      while (classInfo.isArrayClass) {
+        classInfo = classInfo.elementClass;
+      }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
         this.emitter.writeLn(this.runtimeClass(classInfo) + ";");
       }
@@ -501,7 +519,6 @@ module J2ME {
 
     emitGoto(stream: BytecodeStream) {
       var target = stream.readBranchDest();
-      this.setBlockStackHeight(target, this.sp);
       this.emitter.writeLn("pc = " + target + "; break;");
     }
 
@@ -626,7 +643,7 @@ module J2ME {
           break;
         }
         case Bytecodes.DUP2_X1: {
-          this.emitPopTemporaries(2);
+          this.emitPopTemporaries(3);
           this.emitPushTemporary(1, 0, 2, 1, 0);
           break;
         }
@@ -650,7 +667,7 @@ module J2ME {
       var x = this.pop(result);
       if (canTrap) {
         var checkName = result === Kind.Long ? "$CDZL" : "$CDZ";
-        this.emitter.writeLn("pc = " + this.pc + "; " + checkName + "(" + y + ");");
+        this.emitter.writeLn(checkName + "(" + y + ");");
       }
       var v;
       switch(opcode) {
@@ -807,11 +824,16 @@ module J2ME {
       this.emitter.leave("} break;");
     }
 
-    emitBytecode(stream: BytecodeStream) {
+    emitBytecode(stream: BytecodeStream, block: Block) {
       var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
       writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecodes[opcode]);
-      false && this.emitter.writeLn("// " + stream.currentBCI + " " + Bytecodes[opcode] + ", sp: " + this.sp);
+      // this.emitter.writeLn("// " + stream.currentBCI + " " + Bytecodes[opcode] + ", sp: " + this.sp);
+
+      if (block.hasHandlers && Bytecode.canTrap(opcode)) {
+        this.emitter.writeLn("pc = " + this.pc + ";");
+      }
+
       switch (opcode) {
         case Bytecodes.NOP            : break;
         case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null"); break;
