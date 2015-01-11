@@ -319,6 +319,11 @@ casper.test.begin("unit tests", 12 + gfxTests.length, function(test) {
         });
     });
 
+    // Clear the FS before downloading another JAD
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
+    .waitForText("DONE");
+
     casper
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=2")
     .withFrame(0, function() {
