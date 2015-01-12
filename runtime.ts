@@ -1416,6 +1416,9 @@ module J2ME {
   };
 
   export function newArray(klass: Klass, size: number) {
+    if (size < 0) {
+      throw $.newNegativeArraySizeException();
+    }
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
   }
