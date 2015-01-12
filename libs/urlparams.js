@@ -40,7 +40,7 @@ var urlParams = (function() {
     params[param[0]] = param[1];
   });
 
-  params.args = (params.args || "").replace(".", "/", "g").split(",");
+  params.args = (params.args || "").split(",");
 
   return params;
 })();
