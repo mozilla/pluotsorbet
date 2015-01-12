@@ -228,6 +228,9 @@ Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Lj
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
         if (request.endsWith(".jad")) {
+            // TODO: The download should start after the MIDlet has terminated its execution.
+            // Currently we're just updating right away because of #744.
+
             var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
             dialog.style.display = 'block';
             dialog.classList.add('visible');
