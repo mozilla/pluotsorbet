@@ -2,10 +2,15 @@ language: node_js
 node_js:
   - "0.10"
 env:
-  - DISPLAY=:99.0 PATH=${PATH}:$TRAVIS_BUILD_DIR/node_modules/slimerjs/lib/slimer
+  - DISPLAY=:99.0
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
-  - npm install slimerjs
+  - wget https://ftp.mozilla.org/pub/mozilla.org/labs/j2me.js/slimerjs-0.10.0pre-2014-12-17.zip
+  - unzip -d /tmp slimerjs-0.10.0pre-2014-12-17.zip
+  - export PATH=$PATH:/tmp/slimerjs-0.10.0pre
+  - wget https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/31.0/runtimes/xulrunner-31.0.en-US.linux-x86_64.tar.bz2
+  - tar x -C /tmp -f xulrunner-31.0.en-US.linux-x86_64.tar.bz2
+  - export SLIMERJSLAUNCHER=/tmp/xulrunner/xulrunner
 script:
   - make test

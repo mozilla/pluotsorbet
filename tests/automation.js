@@ -19,7 +19,7 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferent: 1266 },
+  { name: "gfx/AlertTest", maxDifferent: 1942 },
   { name: "gfx/CanvasTest", maxDifferent: 0 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
@@ -97,10 +97,17 @@ function syncFS() {
 }
 
 casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
+    casper.start("data:text/plain,start");
+
+    casper.page.onLongRunningScript = function(message) {
+        casper.echo("FAIL unresponsive " + message, "ERROR");
+        casper.page.stopJavaScript();
+    };
+
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
-    .start("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar&logConsole=web,page")
     .withFrame(0, function() {
         casper.waitForText("DONE", syncFS);
     });
