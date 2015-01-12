@@ -250,6 +250,7 @@ Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Lj
                 }),
               ]).then(function() {
                 DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+                DumbPipe.close(DumbPipe.open("reload", {}));
               });
             });
 

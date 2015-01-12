@@ -515,3 +515,7 @@ DumbPipe.registerOpener("JARDownloader", function(url, sender) {
 DumbPipe.registerOpener("windowOpen", function(message, sender) {
   window.open(message);
 });
+
+DumbPipe.registerOpener("reload", function(message, sender) {
+  window.location.reload();
+});
