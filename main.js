@@ -205,11 +205,22 @@ window.onload = function() {
      saveAs(blob, "fs-" + Date.now() + ".json");
    });
  };
- document.getElementById("importstorage").addEventListener("change", function(event) {
-   fs.importStore(event.target.files[0], function() {
-     DumbPipe.close(DumbPipe.open("alert", "Import completed."));
-   });
- }, false);
+ document.getElementById("importstorage").onclick = function() {
+   function performImport(file) {
+     fs.importStore(file, function() {
+       DumbPipe.close(DumbPipe.open("alert", "Import completed."));
+     });
+   }
+
+   var file = document.getElementById("importstoragefile").files[0];
+   if (file) {
+     performImport(file);
+   } else {
+     load(document.getElementById("importstorageurl").value, "blob").then(function(blob) {
+       performImport(blob);
+     });
+   }
+ };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);
