@@ -856,7 +856,7 @@ module J2ME {
       writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecodes[opcode]);
       // this.emitter.writeLn("// " + stream.currentBCI + " " + Bytecodes[opcode] + ", sp: " + this.sp);
 
-      if (block.hasHandlers && Bytecode.canTrap(opcode)) {
+      if ((block.isExceptionEntry || block.hasHandlers) && Bytecode.canTrap(opcode)) {
         this.emitter.writeLn("pc = " + this.pc + ";");
       }
 
