@@ -242,7 +242,6 @@ Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Lj
               Promise.all([
                 new Promise(function(resolve, reject) {
                   fs.remove("/midlet.jad", function() {
-                    console.log(data.jadData);
                     fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
                   });
                 }),
