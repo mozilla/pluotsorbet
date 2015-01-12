@@ -227,7 +227,7 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
-        window.open(request);
+        DumbPipe.close(DumbPipe.open("windowOpen", request));
     } else if (request.startsWith("x-contacts:add?number=")) {
         new MozActivity({
             name: "new",

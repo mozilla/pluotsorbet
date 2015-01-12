@@ -61,7 +61,7 @@ var gfxTests = [
   { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
-  { name: "gfx/TestLauncher", maxDifferent: 0 },
+  { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
   { name: "gfx/TextEditorGfxTest", maxDifferent: 949 },
 ];
@@ -95,7 +95,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 12 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
@@ -352,6 +352,13 @@ casper.test.begin("unit tests", 10 + gfxTests.length, function(test) {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader");
             syncFS();
         });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=com.sun.midp.midlet.TestMIDletPeer&jars=tests/tests.jar&logConsole=web,page")
+    .waitForPopup("test.html", function() {
+        test.assertEquals(this.popups.length, 1);
+        test.assertTextDoesntExist("FAIL");
     });
 
     casper

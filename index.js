@@ -511,3 +511,7 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
     sender({ type: "fail" });
   });
 });
+
+DumbPipe.registerOpener("windowOpen", function(message, sender) {
+  window.open(message);
+});
