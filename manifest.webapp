@@ -35,6 +35,9 @@
     },
     "systemXHR": {
        "description": "Required to download MIDlets"
+    },
+    "storage": {
+       "description": "Required to store files without limitations"
     }
   },
   "type": "privileged"
