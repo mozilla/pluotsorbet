@@ -285,7 +285,7 @@ module J2ME {
         }
         if (compiledMethod && compiledMethod.body) {
           var compiledMethodName = mangledClassAndMethodName;
-          if (method.isSynchronized) {
+          if (false && method.isSynchronized) {
             compiledMethodName = "_" + mangledClassAndMethodName + "_";
             // Emit Synchronization Wrapper
             var lockObject = method.isStatic ? "$." + mangleClass(method.classInfo) : "this";

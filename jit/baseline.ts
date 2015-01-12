@@ -138,7 +138,7 @@ module J2ME {
     private local: string [];
     private stack: string [];
     private variables: string [];
-
+    private lockObject: string;
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
@@ -157,6 +157,7 @@ module J2ME {
       this.hasHandlers = !!methodInfo.exception_table.length;
       this.blockStackHeightMap = [0];
       this.emitter = new Emitter();
+      this.lockObject = this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this";
     }
 
     compile(): CompiledMethodInfo {
@@ -179,13 +180,14 @@ module J2ME {
       var blocks = blockMap.blocks;
       var stream = new BytecodeStream(this.methodInfo.code);
 
-      if (blocks.length === 1 && !this.hasHandlers && !blocks[0].isLoopHeader) {
+      var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
+
+      if (blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
         this.emitBlockBody(stream, blocks[0]);
         return;
       }
-
       this.emitter.enter("while (true) {");
-      this.hasHandlers && this.emitter.enter("try {");
+      needsTry && this.emitter.enter("try {");
       this.emitter.enter("switch (pc) {");
 
       for (var i = 0; i < blocks.length; i++) {
@@ -220,14 +222,19 @@ module J2ME {
         this.emitter.outdent();
       }
       this.emitter.leave("}");
-      if (this.hasHandlers) {
+      if (needsTry) {
         this.emitter.leaveAndEnter("} catch (ex) {");
         this.emitPush(Kind.Reference, "$TE(ex)");
-        for (var i = 0; i < blockMap.blocks.length; i++) {
-          var block = blockMap.blocks[i];
-          if (block instanceof ExceptionBlock) {
-            this.emitExceptionBlock(block);
+        if (this.hasHandlers) {
+          for (var i = 0; i < blockMap.blocks.length; i++) {
+            var block = blockMap.blocks[i];
+            if (block instanceof ExceptionBlock) {
+              this.emitExceptionBlock(block);
+            }
           }
+        }
+        if (this.methodInfo.isSynchronized) {
+          this.emitMonitorExit(this.lockObject);
         }
         this.emitter.writeLn("throw " + this.peek(Kind.Reference) + ";");
         this.emitter.leave("}");
@@ -312,6 +319,10 @@ module J2ME {
       this.emitter.writeLn("var pc = 0;");
       if (this.hasHandlers) {
         this.emitter.writeLn("var ex;");
+      }
+
+      if (this.methodInfo.isSynchronized) {
+        this.emitMonitorEnter(0, this.lockObject);
       }
     }
 
@@ -403,6 +414,9 @@ module J2ME {
     }
 
     emitReturn(kind: Kind) {
+      if (this.methodInfo.isSynchronized) {
+        this.emitMonitorExit(this.lockObject);
+      }
       if (kind === Kind.Void) {
         this.emitter.writeLn("return;");
         return
@@ -457,15 +471,19 @@ module J2ME {
       return "$." + mangleClass(classInfo);
     }
 
+    runtimeClassObject(classInfo: ClassInfo) {
+      return "$." + mangleClass(classInfo) + ".classObject";
+    }
+
     emitClassInitializationCheck(classInfo: ClassInfo) {
       while (classInfo.isArrayClass) {
         classInfo = classInfo.elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
-        if (classInfo.staticInitializer && canYield(this.ctx, classInfo.staticInitializer)) {
-          // TODO: this.emitUnwind();
-        }
         this.emitter.writeLn(this.runtimeClass(classInfo) + ";");
+        if (classInfo.staticInitializer && canYield(this.ctx, classInfo.staticInitializer)) {
+          this.emitUnwind(this.pc);
+        }
       }
     }
 
@@ -473,6 +491,9 @@ module J2ME {
       var calleeCanYield = YieldReason.Virtual;
       if (isStaticallyBound(opcode, methodInfo)) {
         calleeCanYield = canYield(this.ctx, methodInfo);
+      }
+      if (opcode === Bytecodes.INVOKESTATIC) {
+        this.emitClassInitializationCheck(methodInfo.classInfo);
       }
       var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
       var types = signature.typeDescriptors;
@@ -490,7 +511,6 @@ module J2ME {
           call = object + "." + mangleMethod(methodInfo) + "(" + args.join(", ") + ")";
         }
       } else {
-        this.emitClassInitializationCheck(methodInfo.classInfo);
         call = mangleClassAndMethod(methodInfo) + "(" + args.join(", ") + ")";
       }
       this.needsVariable("re");
@@ -507,12 +527,17 @@ module J2ME {
       var value = this.pop(stackKind(kind));
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
+      this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
+      if (kind === Kind.Reference) {
+        this.emitter.writeLn("$CAS(" + array + ", " + value + ");");
+      }
       this.emitter.writeLn(array + "[" + index + "] = " + value + ";");
     }
 
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
+      this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
       this.emitPush(kind, array + "[" + index + "]");
     }
 
@@ -604,14 +629,12 @@ module J2ME {
       this.emitter.writeLn("if (U) { $.B(" + pc + ", [" + local + "], [" + stack + "]); return; }");
     }
 
-    emitMonitorEnter(nextPC: number) {
-      var object = this.pop(Kind.Reference);
+    emitMonitorEnter(nextPC: number, object: string) {
       this.emitter.writeLn("$ME(" + object + ");");
       this.emitUnwind(nextPC);
     }
 
-    emitMonitorExit() {
-      var object = this.pop(Kind.Reference);
+    emitMonitorExit(object: string) {
       this.emitter.writeLn("$MX(" + object + ");");
     }
 
@@ -1039,8 +1062,8 @@ module J2ME {
         case Bytecodes.CHECKCAST      : this.emitCheckCast(stream.readCPI()); break;
         case Bytecodes.INSTANCEOF     : this.emitInstanceOf(stream.readCPI()); break;
         ///*
-        case Bytecodes.MONITORENTER   : this.emitMonitorEnter(stream.nextBCI); break;
-        case Bytecodes.MONITOREXIT    : this.emitMonitorExit(); break;
+        case Bytecodes.MONITORENTER   : this.emitMonitorEnter(stream.nextBCI, this.pop(Kind.Reference)); break;
+        case Bytecodes.MONITOREXIT    : this.emitMonitorExit(this.pop(Kind.Reference)); break;
         //case Bytecodes.MULTIANEWARRAY : genNewMultiArray(stream.readCPI()); break;
         //*/
         case Bytecodes.IFNULL         : this.emitIfNull(stream, Condition.EQ); break;
