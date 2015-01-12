@@ -10,15 +10,18 @@ module J2ME {
 
   var writer = null; // new IndentingWriter();
 
-
   export var baselineTotal = 0;
   export var baselineCompiled = 0;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
-
     var compileExceptions = true;
+    var compileSynchronized = true;
+
     if (!compileExceptions && methodInfo.exception_table && methodInfo.exception_table.length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
+    }
+    if (!compileSynchronized && methodInfo.isSynchronized) {
+      throw new Error("Method: " + methodInfo.implKey + " is synchronized.");
     }
     writer && writer.writeLn("Compile: " + methodInfo.implKey);
     baselineTotal ++;
@@ -151,6 +154,7 @@ module J2ME {
       this.methodInfo = methodInfo;
       this.local = [];
       this.variables = [];
+      this.sp = 0;
       this.stack = [];
       this.parameters = [];
       this.referencedClasses = [];
@@ -226,11 +230,9 @@ module J2ME {
         this.emitter.leaveAndEnter("} catch (ex) {");
         this.emitPush(Kind.Reference, "$TE(ex)");
         if (this.hasHandlers) {
-          for (var i = 0; i < blockMap.blocks.length; i++) {
-            var block = blockMap.blocks[i];
-            if (block instanceof ExceptionBlock) {
-              this.emitExceptionBlock(block);
-            }
+          var handlers = this.methodInfo.exception_table;
+          for (var i = 0; i < handlers.length; i++) {
+            this.emitExceptionHandler(handlers[i]);
           }
         }
         if (this.methodInfo.isSynchronized) {
@@ -242,9 +244,7 @@ module J2ME {
       this.emitter.leave("}");
     }
 
-    emitExceptionBlock(exceptionBlock: ExceptionBlock) {
-      var handler = exceptionBlock.handler;
-      writer && writer.writeLn("emitExceptionBlock: " + exceptionBlock.startBci + " " + this.sp);
+    emitExceptionHandler(handler: ExceptionHandler) {
       var check = "";
       if (handler.catch_type > 0) {
         var classInfo = this.lookupClass(handler.catch_type);

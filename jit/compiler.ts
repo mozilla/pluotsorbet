@@ -281,7 +281,7 @@ module J2ME {
         try {
           compiledMethod = compileMethod(method, ctx, CompilationTarget.Static);
         } catch (e) {
-          writer.writeLn("// " + e.toString());
+          writer.writeLn("// Compiler Exception: " + e.toString());
         }
         if (compiledMethod && compiledMethod.body) {
           var compiledMethodName = mangledClassAndMethodName;
@@ -351,7 +351,7 @@ module J2ME {
   }
 
   export function compileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
-    return method = baselineCompileMethod(methodInfo, ctx, target);
+    return baselineCompileMethod(methodInfo, ctx, target);
     var method;
     try {
       method = optimizerCompileMethod(methodInfo, ctx, target);

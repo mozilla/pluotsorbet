@@ -153,33 +153,34 @@ module J2ME.Bytecode {
     }
 
     public canTrapAt(opcode: Bytecodes, bci: number): boolean {
-      switch (opcode) {
-        case Bytecodes.INVOKESTATIC:
-        case Bytecodes.INVOKESPECIAL:
-        case Bytecodes.INVOKEVIRTUAL:
-        case Bytecodes.INVOKEINTERFACE:
-          return true;
-        case Bytecodes.IASTORE:
-        case Bytecodes.LASTORE:
-        case Bytecodes.FASTORE:
-        case Bytecodes.DASTORE:
-        case Bytecodes.AASTORE:
-        case Bytecodes.BASTORE:
-        case Bytecodes.CASTORE:
-        case Bytecodes.SASTORE:
-        case Bytecodes.IALOAD:
-        case Bytecodes.LALOAD:
-        case Bytecodes.FALOAD:
-        case Bytecodes.DALOAD:
-        case Bytecodes.AALOAD:
-        case Bytecodes.BALOAD:
-        case Bytecodes.CALOAD:
-        case Bytecodes.SALOAD:
-        case Bytecodes.PUTFIELD:
-        case Bytecodes.GETFIELD:
-          return false; // ???
-      }
-      return false;
+      return Bytecode.canTrap(opcode);
+      //switch (opcode) {
+      //  case Bytecodes.INVOKESTATIC:
+      //  case Bytecodes.INVOKESPECIAL:
+      //  case Bytecodes.INVOKEVIRTUAL:
+      //  case Bytecodes.INVOKEINTERFACE:
+      //    return true;
+      //  case Bytecodes.IASTORE:
+      //  case Bytecodes.LASTORE:
+      //  case Bytecodes.FASTORE:
+      //  case Bytecodes.DASTORE:
+      //  case Bytecodes.AASTORE:
+      //  case Bytecodes.BASTORE:
+      //  case Bytecodes.CASTORE:
+      //  case Bytecodes.SASTORE:
+      //  case Bytecodes.IALOAD:
+      //  case Bytecodes.LALOAD:
+      //  case Bytecodes.FALOAD:
+      //  case Bytecodes.DALOAD:
+      //  case Bytecodes.AALOAD:
+      //  case Bytecodes.BALOAD:
+      //  case Bytecodes.CALOAD:
+      //  case Bytecodes.SALOAD:
+      //  case Bytecodes.PUTFIELD:
+      //  case Bytecodes.GETFIELD:
+      //    return false; // ???
+      //}
+      //return false;
     }
 
     private iterateOverBytecodes() {
@@ -269,17 +270,6 @@ module J2ME.Bytecode {
             }
             break;
           }
-          //case Bytecodes.INVOKEINTERFACE:
-          //case Bytecodes.INVOKESPECIAL:
-          //case Bytecodes.INVOKESTATIC:
-          //case Bytecodes.INVOKEVIRTUAL: {
-          //  current = null;
-          //  var target = bci + lengthAt(code, bci);
-          //  var b1 = this.makeBlock(target);
-          //  this.setSuccessors(bci, [b1]);
-          //  this.canTrap.set(bci);
-          //  break;
-          //}
           default: {
             if (this.canTrapAt(opcode, bci)) {
               this.canTrap.set(bci);
@@ -305,7 +295,7 @@ module J2ME.Bytecode {
         if (block.isExceptionEntry) {
           // Loops that are implicitly formed by an exception handler lead to all sorts of corner cases.
           // Don't compile such methods for now, until we see a concrete case that allows checking for correctness.
-          throw new CompilerBailout("Loop formed by an exception handler");
+          // throw new CompilerBailout("Loop formed by an exception handler");
         }
         if (this._nextLoop >= 32) {
           // This restriction can be removed by using a fall-back to a BitSet in case we have more than 32 loops
@@ -495,6 +485,7 @@ module J2ME.Bytecode {
           (block.isLoopHeader ? " isLoopHeader" : "") +
           (block.isLoopEnd ? " isLoopEnd" : "") +
           (block.isExceptionEntry ? " isExceptionEntry" : "") +
+          (block.hasHandlers ? " hasHandlers" : "") +
           ", loops: " + block.loops.toString(2) +
           ", exits: " + block.exits.toString(2) +
           ", loopID: " + block.loopID);
