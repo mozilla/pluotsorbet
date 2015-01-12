@@ -6,10 +6,10 @@ env:
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
-  - wget http://download.slimerjs.org/nightlies/latest-slimerjs-master/slimerjs-0.10.0pre.zip
+  - wget https://ftp.mozilla.org/pub/mozilla.org/labs/j2me.js/slimerjs-0.10.0pre-2014-12-17.zip
   - unzip -d /tmp slimerjs-0.10.0pre.zip
   - export PATH=$PATH:/tmp/slimerjs-0.10.0pre
-  - wget http://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/31.0/runtimes/xulrunner-31.0.en-US.linux-x86_64.tar.bz2
+  - wget https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/31.0/runtimes/xulrunner-31.0.en-US.linux-x86_64.tar.bz2
   - tar x -C /tmp -f xulrunner-31.0.en-US.linux-x86_64.tar.bz2
   - export SLIMERJSLAUNCHER=/tmp/xulrunner/xulrunner
 script:
