@@ -14,3 +14,4 @@ before_script:
   - export SLIMERJSLAUNCHER=/tmp/xulrunner/xulrunner
 script:
   - make test
+sudo: false
