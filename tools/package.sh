@@ -40,3 +40,6 @@ mkdir $PACKAGE_DIR/tests
 cp tests/tests.jar $PACKAGE_DIR/tests/.
 cp tests/*.js $PACKAGE_DIR/tests/.
 
+# copy icons
+mkdir $PACKAGE_DIR/img
+cp img/*.png $PACKAGE_DIR/img/.
