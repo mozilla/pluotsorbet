@@ -537,10 +537,10 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(bci: number, local: any [], stack: any []) {
+    B(bci: number, nextBCI: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, bci, local, stack);
+      $.ctx.bailout(methodInfo, bci, nextBCI, local, stack, lockObject);
     }
 
     yield() {
