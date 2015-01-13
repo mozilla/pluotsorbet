@@ -228,6 +228,7 @@ module J2ME {
       this.emitter.leave("}");
       if (needsTry) {
         this.emitter.leaveAndEnter("} catch (ex) {");
+        this.sp = 0;
         this.emitPush(Kind.Reference, "$TE(ex)");
         if (this.hasHandlers) {
           var handlers = this.methodInfo.exception_table;
