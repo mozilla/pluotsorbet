@@ -52,9 +52,21 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 });
 
 var loadingPromises = [initFS, getMobileInfo];
+
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
     CLASSES.addPath(jar, data);
+  }));
+});
+
+var packs = [
+  // "build/classes.jar.js.pack",
+  // "build/tests.jar.js.pack"
+];
+
+packs.forEach(function(pack) {
+  loadingPromises.push(load(pack, "arraybuffer").then(function(data) {
+    CLASSES.addPath(pack, data);
   }));
 });
 

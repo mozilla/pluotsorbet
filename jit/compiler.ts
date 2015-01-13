@@ -441,6 +441,9 @@ module J2ME {
 
     for (var i = 0; i < orderedClassInfoList.length; i++) {
       var classInfo = orderedClassInfoList[i];
+
+      writer.writeLn("//// " + classInfo.className);
+
       if (emitter.debugInfo) {
         writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
       }

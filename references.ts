@@ -9,6 +9,7 @@
 ///<reference path='metrics.ts' />
 ///<reference path='bytecodes.ts' />
 ///<reference path='types.ts' />
+///<reference path='packFile.ts' />
 ///<reference path='classRegistry.ts' />
 ///<reference path='jvm.ts' />
 ///<reference path='actors.ts' />

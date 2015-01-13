@@ -26,6 +26,10 @@ aot: java j2me
 	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar > build/tests.jar.js
 	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js
 
+	node tools/pack.js build/classes.jar.js > build/classes.jar.js.pack
+	node tools/pack.js build/tests.jar.js > build/tests.jar.js.pack
+	node tools/pack.js build/program.jar.js > build/program.jar.js.pack
+
 closure:
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
