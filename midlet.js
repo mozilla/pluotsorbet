@@ -10,3 +10,6 @@ var MIDlet = {
     return message;
   },
 };
+
+var config = {
+};

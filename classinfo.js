@@ -95,7 +95,7 @@ function MethodInfo(opts) {
       this.consumes++;
     }
 
-    this.numCalled = urlParams.numCalled || 0;
+    this.numCalled = config.numCalled || 0;
     this.compiled = null;
     this.dontCompile = false;
 }
