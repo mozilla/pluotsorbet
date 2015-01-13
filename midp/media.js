@@ -15,6 +15,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     http: [
@@ -22,6 +23,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     https: [
@@ -29,6 +31,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     rtp: [],
@@ -82,6 +85,40 @@ Media.supportedImageFormats = ["JPEG", "PNG"];
 
 Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
+
+Media.convert3gpToAmr = function(inBuffer) {
+    // The buffer to store the converted amr file.
+    var outBuffer = new Uint8Array(inBuffer.length);
+
+    // Add AMR header.
+    var AMR_HEADER = "#!AMR\n";
+    outBuffer.set(new TextEncoder("utf-8").encode(AMR_HEADER));
+    var outOffset = AMR_HEADER.length;
+
+    var textDecoder = new TextDecoder("utf-8");
+    var inOffset = 0;
+    while (inOffset + 8 < inBuffer.length) {
+        // Get the box size
+        var size = 0;
+        for (var i = 0; i < 4; i++) {
+            size = inBuffer[inOffset + i] + (size << 8);
+        }
+        // Search the box of type mdat.
+        var type = textDecoder.decode(inBuffer.subarray(inOffset + 4, inOffset + 8));
+        if (type === "mdat" && inOffset + size <= inBuffer.length) {
+            // Extract raw AMR data from the box and append to the out buffer.
+            var data = inBuffer.subarray(inOffset + 8, inOffset + size);
+            outBuffer.set(data, outOffset);
+            outOffset += data.length;
+        }
+        inOffset += size;
+    }
+
+    if (outOffset === AMR_HEADER.length) {
+        console.warn("Failed to extract AMR from 3GP file.");
+    }
+    return outBuffer.subarray(0, outOffset);
+};
 
 Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
@@ -153,212 +190,110 @@ Media.PlayerCache = {
 function AudioPlayer(playerContainer) {
     this.playerContainer = playerContainer;
 
-    this.isMuted = false;
-
-    /* @type {AudioBuffer} */
-    this.audioBuffer = null;
-
-    this.audioContext = new AudioContext();
-
-    /* @type {AudioBufferSourceNode} */
-    this.source = null;
-
-    /*
-     * Audio gain node used to control volume.
-     */
-    this.gainNode = this.audioContext.createGain();
-
-    this.volume = Math.round(this.gainNode.gain.value * 100);
-
-    this.gainNode.connect(this.audioContext.destination);
-
-    this.isPlaying = false;
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.duration = 0;
+    /* @type HTMLAudioElement */
+    this.audio = new Audio();
 
     this.isVideoControlSupported = false;
     this.isVolumeControlSupported = true;
 }
 
 AudioPlayer.prototype.realize = function() {
-    return new Promise(function(resolve, reject) { resolve(true); });
-}
+    return Promise.resolve(true);
+};
 
 AudioPlayer.prototype.play = function() {
-    var offset = this.stopTime - this.startTime;
-    this.source = this.audioContext.createBufferSource();
-    this.source.buffer = this.cloneBuffer();
-    this.source.connect(this.gainNode || this.audioContext.destination);
-    this.source.start(0, offset);
-    this.isPlaying = true;
-    this.startTime = this.audioContext.currentTime - offset;
-    this.source.onended = function() {
+    this.audio.play();
+    this.audio.onended = function() {
         MIDP.sendNativeEvent({
             type: MIDP.MMAPI_EVENT,
             intParam1: this.playerContainer.pId,
-            intParam2: Math.ceil(this.getDuration()),
+            intParam2: this.getDuration(),
             intParam3: 0,
             intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
         }, MIDP.foregroundIsolateId);
-
-        this.close();
     }.bind(this);
-}
+};
 
 AudioPlayer.prototype.start = function() {
-    if (this.playerContainer.contentSize > 0) {
-        this.decode(this.playerContainer.data.subarray(0, this.playerContainer.contentSize), function(decoded) {
-            // Save a copy of the audio buffer for resuming or replaying.
-            this.audioBuffer = decoded;
-            this.duration = decoded.duration;
-            this.play();
-        }.bind(this));
-
+    if (this.playerContainer.contentSize == 0) {
+        console.warn("Cannot start playing.");
         return;
     }
 
-    console.warn("Cannot start playing.");
-}
+    if (this.audio.src) {
+        this.play();
+        return;
+    }
+
+    new Promise(function(resolve, reject) {
+        var blob = new Blob([ this.playerContainer.data.subarray(0, this.playerContainer.contentSize) ],
+                            { type: this.playerContainer.contentType });
+        this.audio.src = URL.createObjectURL(blob);
+        this.audio.onloadedmetadata = function() {
+            resolve();
+            this.play();
+        }.bind(this);
+        this.audio.onerror = reject;
+    }.bind(this)).done(function() {
+        URL.revokeObjectURL(this.audio.src);
+    }.bind(this));
+};
 
 AudioPlayer.prototype.pause = function() {
-    if (!this.isPlaying) {
+    if (this.audio.paused) {
         return;
     }
-
-    this.isPlaying = false;
-    this.source.onended = null;
-    this.stopTime = this.audioContext.currentTime;
-    this.source.stop();
-    this.source.disconnect();
-    this.source = null;
-}
+    this.audio.onended = null;
+    this.audio.pause();
+};
 
 AudioPlayer.prototype.resume = function() {
-    if (this.isPlaying) {
+    if (!this.audio.paused) {
         return;
     }
-
-    if (this.stopTime - this.startTime >= this.duration) {
-        return;
-    }
-
     this.play();
-}
+};
 
 AudioPlayer.prototype.close = function() {
-    if (this.source) {
-        this.source.stop();
-        this.source.disconnect();
-        this.source = null;
-    }
-
-    if (this.gainNode) {
-        this.gainNode.disconnect();
-        this.gainNode = null;
-    }
-
-    this.audioBuffer = null;
-
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.isPlaying = false;
-}
+    this.audio.pause();
+    this.audio.src = "";
+};
 
 AudioPlayer.prototype.getMediaTime = function() {
-    var time = 0;
-
-    if (this.isPlaying) {
-        time = this.audioContext.currentTime - this.startTime;
-    } else {
-        time = Math.min(this.duration, this.stopTime - this.startTime);
-    }
-
-    return Math.round(time * 1000);
-}
+    return Math.round(this.audio.currentTime * 1000);
+};
 
 // The range of ms has already been checked, we don't need to check it again.
 AudioPlayer.prototype.setMediaTime = function(ms) {
-    var offset = ms / 1000;
-
-    if (this.isPlaying) {
-        this.pause();
-        this.stopTime = this.startTime + offset;
-        this.resume();
-    } else {
-        this.startTime = 0;
-        this.stopTime = this.startTime + offset;
-    }
-
+    this.audio.currentTime = ms / 1000;
     return ms;
 };
 
-AudioPlayer.prototype.cloneBuffer = function() {
-    var buffer = this.audioBuffer;
-    var cloned = this.audioContext.createBuffer(
-                    buffer.numberOfChannels,
-                    buffer.length,
-                    buffer.sampleRate
-                 );
-
-    for (var i = 0; i < buffer.numberOfChannels; ++i) {
-        var channel = buffer.getChannelData(i);
-        cloned.getChannelData(i).set(new Float32Array(channel));
-    }
-    return cloned;
-};
-
-AudioPlayer.prototype.decode = function(encoded, callback) {
-    // Clone a copy before decoding to keep the original buffer unchanged.
-    this.audioContext.decodeAudioData(encoded.buffer.slice(), callback);
-};
-
 AudioPlayer.prototype.getVolume = function() {
-    return this.volume;
+    return Math.floor(this.audio.volume * 100);
 };
 
 AudioPlayer.prototype.setVolume = function(level) {
-    if (!this.gainNode) {
-        return -1;
-    }
     if (level < 0) {
         level = 0;
     } else if (level > 100) {
         level = 100;
     }
-    this.volume = level;
-    if (!this.isMuted) {
-        this.gainNode.gain.value = level / 100;
-    }
+    this.audio.volume = level / 100;
     return level;
-}
+};
 
 AudioPlayer.prototype.getMute = function() {
-    return this.isMuted;
-}
+    return this.audio.muted;
+};
 
 AudioPlayer.prototype.setMute = function(mute) {
-    if (this.isMuted === mute) {
-        return;
-    }
-    this.isMuted = mute;
-    if (!this.gainNode) {
-        return;
-    }
-    if (mute) {
-        this.gainNode.gain.value = 0;
-    } else {
-        this.gainNode.gain.value = this.volume / 100;
-    }
-}
+    this.audio.muted = mute;
+};
 
 AudioPlayer.prototype.getDuration = function() {
-    if (!this.audioBuffer) {
-        return -1; // Player.TIME_UNKNOWN
-    }
-
-    return this.duration * 1000;
-}
+    return Math.round(this.audio.duration * 1000);
+};
 
 function ImagePlayer(playerContainer) {
     this.url = playerContainer.url;
@@ -391,14 +326,12 @@ ImagePlayer.prototype.realize = function() {
         }
     }).bind(this));
 
-    var clean = function() {
+    p.done(function() {
         if (!objectUrl) {
             return;
         }
         URL.revokeObjectURL(objectUrl);
-    };
-
-    p.then(clean, clean);
+    });
 
     return p;
 }
@@ -621,7 +554,7 @@ PlayerContainer.prototype.realize = function(contentType) {
         if (Media.supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
             this.player = new AudioPlayer(this);
             if (this.isAudioCapture()) {
-                this.audioRecorder = new AudioRecorder();
+                this.audioRecorder = new AudioRecorder(contentType);
             }
             this.player.realize().then(resolve);
         } else if (Media.supportedImageFormats.indexOf(this.mediaFormat) !== -1) {
@@ -713,10 +646,6 @@ PlayerContainer.prototype.writeBuffer = function(buffer) {
     this.contentSize += buffer.length;
 };
 
-PlayerContainer.prototype.play = function() {
-    this.player.play();
-};
-
 PlayerContainer.prototype.start = function() {
     this.player.start();
 };
@@ -784,12 +713,20 @@ PlayerContainer.prototype.getDuration = function() {
 }
 
 var AudioRecorder = function(aMimeType) {
-    this.mimeType = aMimeType || "audio/ogg";
+    this.mimeType = aMimeType || "audio/3gpp";
     this.eventListeners = {};
     this.data = new Uint8Array();
     this.sender = DumbPipe.open("audiorecorder", {
         mimeType: this.mimeType
     }, this.recipient.bind(this));
+};
+
+AudioRecorder.prototype.getContentType = function() {
+    if (this.mimeType == "audio/3gpp") {
+        return "audio/amr";
+    }
+
+    return this.mimeType;
 };
 
 AudioRecorder.prototype.recipient = function(message) {
@@ -862,7 +799,11 @@ AudioRecorder.prototype.stop = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            this.data = new Uint8Array(message.data);
+            var data = new Uint8Array(message.data);
+            if (this.getContentType() === "audio/amr") {
+                data = Media.convert3gpToAmr(data);
+            }
+            this.data = data;
             resolve(1);
         }.bind(this);
 
@@ -1128,8 +1069,8 @@ Native.create("com/sun/mmedia/DirectPlayer.nGetDuration.(I)I", function(handle) 
 })
 
 Native.create("com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I", function(handle, locator) {
-    console.warn("com/sun/mmedia/DirectRecord.nSetLocator.(I)I not implemented.");
-    return -1;
+    // Let the DirectRecord class handle writing to files / uploading via HTTP
+    return 0;
 });
 
 Native.create("com/sun/mmedia/DirectRecord.nGetRecordedSize.(I)I", function(handle) {
@@ -1176,6 +1117,10 @@ Native.create("com/sun/mmedia/DirectRecord.nStart.(I)I", function(handle) {
     // Let's handle this on the other side of the DumbPipe.
     return Media.PlayerCache[handle].audioRecorder.start();
 }, true);
+
+Native.create("com/sun/mmedia/DirectRecord.nGetRecordedType.(I)Ljava/lang/String;", function(handle) {
+    return Media.PlayerCache[handle].audioRecorder.getContentType();
+});
 
 /**
  * @return the volume level between 0 and 100 if succeeded. Otherwise -1.

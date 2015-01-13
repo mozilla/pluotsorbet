@@ -89,7 +89,10 @@ Native.create("gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;
     var img = new Image();
     img.src = "tests/" + path;
 
-    img.onerror = reject;
+    img.onerror = function() {
+      console.error("Error while loading image: " + img.src);
+      reject(new JavaException("java/lang/Exception", "Error while loading image: " + img.src));
+    }
     img.onload = function() {
       var expectedCanvas = document.createElement('canvas');
       expectedCanvas.width = img.width;
@@ -99,7 +102,10 @@ Native.create("gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;
       var expectedPixels = new Uint32Array(expectedCanvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
 
       if (expectedCanvas.width !== gotCanvas.width || expectedCanvas.height !== gotCanvas.height) {
-        reject();
+        var message = "Width (got: " + gotCanvas.width + ", expected: " + expectedCanvas.width + "), " +
+                      "height (got: " + gotCanvas.height + ", expected: " + expectedCanvas.width + ")";
+        console.error(message);
+        reject(new JavaException("java/lang/Exception", message));
         return;
       }
 
@@ -130,4 +136,11 @@ Native.create("org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOnlineEvent.()V
 
 Native.create("org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V", function() {
   window.dispatchEvent(new CustomEvent("offline"));
+});
+
+Native.create("javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B", function(data) {
+  var converted = Media.convert3gpToAmr(new Uint8Array(data));
+  var result = util.newPrimitiveArray("B", converted.length);
+  result.set(converted);
+  return result;
 });

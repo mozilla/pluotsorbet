@@ -5,7 +5,6 @@ import javax.microedition.midlet.*;
 import javax.microedition.lcdui.game.Sprite;
 
 public class DrawRegionTest extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
@@ -29,6 +28,7 @@ public class DrawRegionTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

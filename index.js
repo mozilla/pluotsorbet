@@ -473,11 +473,11 @@ DumbPipe.registerOpener("notification", function(message, sender) {
 });
 
 DumbPipe.registerOpener("JARDownloader", function(message, sender) {
-  loadWithProgress(urlParams.downloadJAD, "text", function(data) {
+  loadWithProgress(urlParams.downloadJAD, "text", function(jadData) {
     try {
       var manifest = {};
 
-      data
+      jadData
       .replace(/\r\n|\r/g, "\n")
       .replace(/\n /g, "")
       .split("\n")
@@ -497,8 +497,8 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
         jarURL = urlParams.downloadJAD.substring(0, urlParams.downloadJAD.lastIndexOf("/") + 1) + jarName;
       }
 
-      loadWithProgress(jarURL, "arraybuffer", function(data) {
-        sender({ type: "done", data: data });
+      loadWithProgress(jarURL, "arraybuffer", function(jarData) {
+        sender({ type: "done", data: { jadData: jadData, jarData: jarData } });
       }, function() {
         sender({ type: "fail" });
       }, function(progress) {
@@ -510,4 +510,8 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
   }, function() {
     sender({ type: "fail" });
   });
+});
+
+DumbPipe.registerOpener("windowOpen", function(message, sender) {
+  window.open(message);
 });

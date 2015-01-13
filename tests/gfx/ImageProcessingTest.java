@@ -9,6 +9,7 @@ import com.nokia.mid.s40.io.LocalMessageProtocolMessage;
 import com.nokia.mid.s40.io.LocalMessageProtocolConnection;
 import com.nokia.mid.s40.codec.DataEncoder;
 import com.nokia.mid.s40.codec.DataDecoder;
+import gnu.testlet.TestUtils;
 
 public class ImageProcessingTest extends MIDlet {
     private Display display;
@@ -21,23 +22,6 @@ public class ImageProcessingTest extends MIDlet {
             }
             System.out.println("PAINTED");
         }
-    }
-
-    byte[] read(InputStream is) throws IOException {
-        int l = is.available();
-        byte[] buffer = new byte[l+1];
-        int length = 0;
-
-        while ((l = is.read(buffer, length, buffer.length - length)) != -1) {
-            length += l;
-            if (length == buffer.length) {
-                byte[] b = new byte[buffer.length + 4096];
-                System.arraycopy(buffer, 0, b, 0, length);
-                buffer = b;
-            }
-        }
-
-        return buffer;
     }
 
     public ImageProcessingTest() throws IOException {
@@ -58,13 +42,13 @@ public class ImageProcessingTest extends MIDlet {
         client.receive(msg);
         byte[] clientData = msg.getData();
 
-        FileConnection originalImage = (FileConnection)Connector.open("file:///test.jpg", Connector.READ_WRITE);
+        FileConnection originalImage = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
         if (!originalImage.exists()) {
             originalImage.create();
         }
         OutputStream os = originalImage.openDataOutputStream();
         InputStream is = getClass().getResourceAsStream("/org/mozilla/io/test.jpg");
-        os.write(read(is));
+        os.write(TestUtils.read(is));
         os.close();
 
         dataEncoder = new DataEncoder("Conv-BEB");
@@ -91,7 +75,7 @@ public class ImageProcessingTest extends MIDlet {
         dataDecoder.getString(13);
         dataDecoder.getInteger(2);
         dataDecoder.getString(10);
-        String path = "file:///" + dataDecoder.getString(11);
+        String path = "file:////" + dataDecoder.getString(11);
 
         if (!originalImage.exists()) {
             System.out.println("FAIL - Original image has been deleted");
@@ -109,7 +93,7 @@ public class ImageProcessingTest extends MIDlet {
 
         display = Display.getDisplay(this);
 
-        byte[] imageData = read(is);
+        byte[] imageData = TestUtils.read(is);
         image = Image.createImage(imageData, 0, imageData.length);
 
         is.close();
@@ -119,6 +103,7 @@ public class ImageProcessingTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

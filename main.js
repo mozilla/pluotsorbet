@@ -58,21 +58,28 @@ jars.forEach(function(jar) {
   }));
 });
 
-if (urlParams.jad) {
-  loadingPromises.push(load(urlParams.jad, "text").then(function(data) {
-    data
-    .replace(/\r\n|\r/g, "\n")
-    .replace(/\n /g, "")
-    .split("\n")
-    .forEach(function(entry) {
-      if (entry) {
-        var keyEnd = entry.indexOf(":");
-        var key = entry.substring(0, keyEnd);
-        var val = entry.substring(keyEnd + 1).trim();
-        MIDP.manifest[key] = val;
+function processJAD(data) {
+  data
+  .replace(/\r\n|\r/g, "\n")
+  .replace(/\n /g, "")
+  .split("\n")
+  .forEach(function(entry) {
+    if (entry) {
+      var keyEnd = entry.indexOf(":");
+      var key = entry.substring(0, keyEnd);
+      var val = entry.substring(keyEnd + 1).trim();
+      MIDP.manifest[key] = val;
+
+      if (key == "MIDlet-Name") {
+        var title = document.getElementById("splash-screen").querySelector(".title");
+        title.textContent = "Loading " + val;
       }
-    });
-  }));
+    }
+  });
+}
+
+if (urlParams.jad) {
+  loadingPromises.push(load(urlParams.jad, "text").then(processJAD));
 }
 
 function performDownload(dialog, callback) {
@@ -123,16 +130,26 @@ function performDownload(dialog, callback) {
 }
 
 if (urlParams.downloadJAD) {
-  loadingPromises.push(new Promise(function(resolve, reject) {
-    initFS.then(function() {
-      fs.exists("/app.jar", function(exists) {
+  loadingPromises.push(initFS.then(function() {
+    return new Promise(function(resolve, reject) {
+      fs.exists("/midlet.jar", function(exists) {
         if (exists) {
-          fs.open("/app.jar", function(fd) {
-            var data = fs.read(fd);
-            fs.close(fd);
-            jvm.addPath("app.jar", data.buffer);
-            resolve();
-          });
+          Promise.all([
+            new Promise(function(resolve, reject) {
+              fs.open("/midlet.jar", function(fd) {
+                jvm.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
+                fs.close(fd);
+                resolve();
+              });
+            }),
+            new Promise(function(resolve, reject) {
+              fs.open("/midlet.jad", function(fd) {
+                processJAD(util.decodeUtf8(fs.read(fd)));
+                fs.close(fd);
+                resolve();
+              });
+            }),
+          ]).then(resolve);
         } else {
           var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
           dialog.style.display = 'block';
@@ -142,11 +159,17 @@ if (urlParams.downloadJAD) {
           performDownload(dialog, function(data) {
             dialog.parentElement.removeChild(dialog);
 
-            jvm.addPath("app.jar", data);
+            jvm.addPath("midlet.jar", data.jarData);
+            processJAD(data.jadData);
 
-            fs.create("/app.jar", new Blob([ data ]), function() {});
-
-            resolve();
+            Promise.all([
+              new Promise(function(resolve, reject) {
+                fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
+              }),
+              new Promise(function(resolve, reject) {
+                fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
+              }),
+            ]).then(resolve);
           });
         }
       });

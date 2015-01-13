@@ -21,9 +21,11 @@
       "access": "readonly"
     },
     "mobilenetwork": {
-      "description:": "Required to verify your phone number"
+      "description": "Required to verify your phone number"
     },
-    "browser": {},
+    "browser": {
+      "description": "Required to improve performance"
+    },
     "audio-capture": {
        "description": "Required to capture audio via getUserMedia"
     },

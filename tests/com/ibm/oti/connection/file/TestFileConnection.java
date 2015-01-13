@@ -35,6 +35,7 @@ public class TestFileConnection implements Testlet {
 
         Enumeration files = dir.list("*.doc", false);
         th.check(files.hasMoreElements(), "Elements found");
+        expected.put(".doc", "");
         expected.put("prova1.doc", "");
         expected.put("prova2.doc", "");
         expected.put("prova3.doc", "");
@@ -217,7 +218,7 @@ public class TestFileConnection implements Testlet {
                 file.list();
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "Directory does not exist: file:////provaDir/prova");
+                th.check(e.getMessage(), "Directory does not exist: file:///Private/provaDir/prova");
             }
 
             file.create();
@@ -230,7 +231,7 @@ public class TestFileConnection implements Testlet {
                 file.list();
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "Connection is open on a file: file:////provaDir/prova");
+                th.check(e.getMessage(), "Connection is open on a file: file:///Private/provaDir/prova");
             }
 
             OutputStream out = file.openOutputStream();
@@ -377,7 +378,7 @@ public class TestFileConnection implements Testlet {
 
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova%2B");
             th.check(file.getName(), "prova+");
-            th.check(file.getURL(), "file:////provaDir/prova%2B");
+            th.check(file.getURL(), "file:///Private/provaDir/prova%2B");
             file.create();
             file.close();
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova+");
@@ -495,8 +496,17 @@ public class TestFileConnection implements Testlet {
                 file = (FileConnection)Connector.open(dirPath + "prov>");
                 th.fail("Exception expected");
             } catch (IllegalArgumentException e) {
-                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///prov>");
+                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///Private/prov>");
             }
+
+            // Check that the fileconn.dir.photos property value is longer than 8 characters.
+            String photoDir = System.getProperty("fileconn.dir.photos");
+            th.check(photoDir.length() > 8);
+            // Check that the photos directory exists and is a directory.
+            dir = (FileConnection)Connector.open(photoDir);
+            th.check(dir.exists(), "fileconn.dir.photos exists");
+            th.check(dir.isDirectory(), "fileconn.dir.photos is a directory");
+            dir.close();
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();

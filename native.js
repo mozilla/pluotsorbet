@@ -62,6 +62,9 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         // UTF_8_Writer and optimize the ISO8859_1 alternatives.
         value = "UTF-8";
         break;
+    case "microedition.io.file.FileConnection.version":
+        value = "1.0";
+        break;
     case "microedition.locale":
         value = navigator.language;
         break;
@@ -87,37 +90,50 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
         value = null;
         break;
     case "fileconn.dir.memorycard":
-        value = "file:///";
+        value = "file:///MemoryCard/";
+        break;
+    // The names here should be localized.
+    case "fileconn.dir.memorycard.name":
+        value = "Memory card";
         break;
     case "fileconn.dir.private":
-        value = "file:///";
+        value = "file:///Private/";
+        break;
+    case "fileconn.dir.private.name":
+        value = "Private";
         break;
     case "fileconn.dir.applications.bookmarks":
-        value = "file:///";
+        value = null;
         break;
     case "fileconn.dir.received":
-        value = "file:///";
+        value = "file:///Phone/_my_downloads/";
+        break;
+    case "fileconn.dir.received.name":
+        value = "Downloads";
         break;
     case "fileconn.dir.photos":
-        // We need to create the dir in the FS init process if it's
-        // not the root dir.
-        value = "file:///";
-        break;
-    case "fileconn.dir.roots.names":
-        // The names here should be localized.
-        value = "Memory card;Phone memory;Private"
-        break;
-    case "fileconn.dir.roots.external":
-        value = "file:///MemoryCard;file:///;file:///";
+        value = "file:///Phone/_my_pictures/";
         break;
     case "fileconn.dir.photos.name":
         value = "Photos";
         break;
+    case "fileconn.dir.videos":
+        value = "file:///Phone/_my_videos/";
+        break;
     case "fileconn.dir.videos.name":
         value = "Videos";
         break;
+    case "fileconn.dir.recordings":
+        value = "file:///Phone/_my_recordings/";
+        break;
     case "fileconn.dir.recordings.name":
         value = "Recordings";
+        break;
+    case "fileconn.dir.roots.names":
+        value = MIDP.fsRootNames.join(";");
+        break;
+    case "fileconn.dir.roots.external":
+        value = MIDP.fsRoots.map(function(v) { return "file:///" + v }).join("\n");
         break;
     case "file.separator":
         value = "/";
@@ -193,7 +209,7 @@ Native.create("java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/Stri
     case "audio.encodings":
         // The value of this property is different than the value on a real Nokia Asha 503 phone.
         // On a real phone, it is: encoding=audio/amr
-        value = "audio/ogg";
+        value = "encoding=audio/amr";
         break;
     case "video.snapshot.encodings":
         // FIXME Some MIDlets pass a string that contains lots of constraints
@@ -302,7 +318,7 @@ Native.create("java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;", f
         classInfo = CLASSES.getClass(className);
     } catch (e) {
         if (e instanceof (Classes.ClassNotFoundException))
-            throw new JavaException("java/lang/ClassNotFoundException", "'" + className + "' not found.");
+            throw new JavaException("java/lang/ClassNotFoundException", "'" + e.message + "' not found.");
         throw e;
     }
     return classInfo.getClassObject(ctx);
@@ -611,14 +627,6 @@ Native.create("com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;
         b[off+n] = data[handle.pos+n];
     handle.pos += len;
     return (len > 0) ? len : -1;
-});
-
-Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(char) {
-    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
-});
-
-Native.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(char) {
-    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
 });
 
 Native.create("java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V", function(target) {

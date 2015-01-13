@@ -7,15 +7,11 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 15000;
+casper.options.waitTimeout = 30000;
+casper.options.verbose = true;
+casper.options.logLevel = "debug";
 
-casper.options.onWaitTimeout = function() {
-    this.debugPage();
-    this.echo(this.captureBase64('png'));
-    this.test.fail("Timeout");
-};
-
-casper.test.begin("fs tests", 6, function(test) {
+casper.test.begin("fs tests", 7, function(test) {
     // The main test automation script already initializes the fs database
     // to its latest version and runs the fs tests against it.  So this script
     // focuses on running tests against databases that are initialized
@@ -27,23 +23,34 @@ casper.test.begin("fs tests", 6, function(test) {
     // by deleting and recreating the database between test runs.  We may also
     // want to move over the other tests that touch the fs.
 
+    casper.start("data:text/plain,start");
+
+    casper.page.onLongRunningScript = function(message) {
+        casper.echo("FAIL unresponsive " + message, "ERROR");
+        casper.page.stopJavaScript();
+    };
+
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
+    .waitForText("DONE");
+
     // Initialize a v1 database.
     casper
-    .start("http://localhost:8000/tests/fs/init-fs-v1.html")
+    .thenOpen("http://localhost:8000/tests/fs/init-fs-v1.html")
     .waitForText("DONE");
 
     // Upgrade the database to the latest version and test its initial state.
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 10 PASS, 0 FAIL", "test fs v1 upgrade/init");
+        test.assertTextExists("DONE: 30 pass, 0 fail", "test fs v1 upgrade/init");
     });
 
     // Run the unit tests against the upgraded database.
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 136 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 138 pass, 0 fail", "run fs.js unit tests");
     });
 
     casper
@@ -59,14 +66,14 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-init.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 10 PASS, 0 FAIL", "test fs v2 upgrade/init");
+        test.assertTextExists("DONE: 30 pass, 0 fail", "test fs v2 upgrade/init");
     });
 
     // Run the unit tests against the upgraded database.
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 136 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 138 pass, 0 fail", "run fs.js unit tests");
     });
 
     casper
@@ -82,14 +89,23 @@ casper.test.begin("fs tests", 6, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/test-fs-populate.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 214 PASS, 0 FAIL", "test fs v2 upgrade/populate");
+        test.assertTextExists("DONE: 234 pass, 0 fail", "test fs v2 upgrade/populate");
     });
 
     // Run the unit tests.
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 136 PASS, 0 FAIL", "run fs.js unit tests");
+        test.assertTextExists("DONE: 138 pass, 0 fail", "run fs.js unit tests");
+    });
+
+    // Run the FileConnection TCK unit tests.
+    casper
+    .thenOpen("http://localhost:8000/index.html?main=com.ibm.tck.client.TestRunner&args=-noserver&jars=tests/tests.jar&logConsole=web,page")
+    .withFrame(0, function() {
+        casper.waitForText("All Tests Passed", function() {
+            test.assertTextExists("357 tests, 318 passed, 39 excluded, 0 failed", "run FC TCK unit tests");
+        });
     });
 
     casper

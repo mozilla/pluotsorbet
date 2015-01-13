@@ -12,21 +12,21 @@ import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 
 public class ImmutableImageFromByteArrayTest extends MIDlet {
-    private Display display;
-    private Form fmMain;
+    class TestCanvas extends Canvas {
+        protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
 
-    public ImmutableImageFromByteArrayTest() {
-        display = Display.getDisplay(this);
+            g.drawImage(imColor, 10, 10, Graphics.TOP | Graphics.LEFT);
 
-        fmMain = new Form("");
-        fmMain.append(new ImageItem(null, imColor, ImageItem.LAYOUT_NEWLINE_BEFORE | ImageItem.LAYOUT_CENTER, null));      
-    
-        display.setCurrent(fmMain);
-
-        System.out.println("PAINTED");
+            System.out.println("PAINTED");
+        }
     }
 
     public void startApp() {
+        TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
+        Display.getDisplay(this).setCurrent(test);
     }
   
     public void pauseApp() {

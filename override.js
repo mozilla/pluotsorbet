@@ -145,14 +145,6 @@ function createAlternateImpl(object, key, fn, usesPromise) {
 
 Override.create = createAlternateImpl.bind(null, Override);
 
-Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
-  return decodeURIComponent(string.str);
-});
-
-Override.create("com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;", function(string) {
-  return string.str.replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent);
-});
-
 Override.create("java/lang/Math.min.(II)I", function(a, b) {
   return Math.min(a, b);
 });
@@ -315,4 +307,12 @@ Override.create("com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I",
 // passes it to Permissions.getId. So we can return anything.
 Override.create("com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;", function(id) {
   return "com.sun.midp";
+});
+
+Override.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C", function(char) {
+    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
+});
+
+Override.create("com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C", function(char) {
+    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
 });
