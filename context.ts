@@ -563,6 +563,7 @@ module J2ME {
       var frame = new Frame(methodInfo, local, 0);
       frame.stack = stack;
       frame.pc = pc;
+      frame.opPc = pc;
       this.bailoutFrames.unshift(frame);
     }
 
