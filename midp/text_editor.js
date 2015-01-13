@@ -309,17 +309,6 @@ var TextEditorProvider = (function() {
                     console.error("setSelectionRange not supported when from != to");
                 }
 
-                // If we're trying to set the selection to the last character and
-                // the last character is a "\n", we need to add 1 to the position
-                // because of the additional "<br>" we have in the div innerHTML.
-                var size = this.getSize();
-                if (from === size && this.content[this.content.length-1] == "\n") {
-                    var range = window.getSelection().getRangeAt(0);
-                    range.setStartAfter(this.textEditorElem.lastChild);
-                    range.collapse(true);
-                    return;
-                }
-
                 var children = this.textEditorElem.childNodes;
                 for (var i = 0; i < children.length; i++) {
                     var cur = children[i];
