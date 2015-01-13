@@ -119,7 +119,11 @@ module J2ME {
     "java/lang/Object.wait.(J)V": YieldReason.Root,
     "java/lang/Class.invoke_clinit.()V": YieldReason.Root,
     "java/lang/Class.newInstance.()Ljava/lang/Object;": YieldReason.Root,
-    "java/lang/Thread.yield.()V": YieldReason.Root
+    "java/lang/Thread.yield.()V": YieldReason.Root,
+    "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
+    "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
+    "gnu/testlet/vm/NativeTest.dumbPipe.()Z": YieldReason.Root,
+    "gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I": YieldReason.Root,
   };
 
   // Used to prevent cycles.

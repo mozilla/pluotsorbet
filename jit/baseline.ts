@@ -154,6 +154,7 @@ module J2ME {
       this.methodInfo = methodInfo;
       this.local = [];
       this.variables = [];
+      this.pc = 0;
       this.sp = 0;
       this.stack = [];
       this.parameters = [];
@@ -161,7 +162,9 @@ module J2ME {
       this.hasHandlers = !!methodInfo.exception_table.length;
       this.blockStackHeightMap = [0];
       this.emitter = new Emitter();
-      this.lockObject = this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this";
+      this.lockObject = this.methodInfo.isSynchronized ? 
+                          this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this"
+                          : "null";
     }
 
     compile(): CompiledMethodInfo {
@@ -228,6 +231,7 @@ module J2ME {
       this.emitter.leave("}");
       if (needsTry) {
         this.emitter.leaveAndEnter("} catch (ex) {");
+        this.sp = 0;
         this.emitPush(Kind.Reference, "$TE(ex)");
         if (this.hasHandlers) {
           var handlers = this.methodInfo.exception_table;
@@ -345,6 +349,9 @@ module J2ME {
     }
 
     getStack(i: number): string {
+      if (i < 0 || i >= this.methodInfo.max_stack) {
+        throw new Error("Out of bounds stack read.");
+      }
       if (i >= BaselineCompiler.stackNames.length) {
         return "s" + (i - BaselineCompiler.stackNames.length);
       }
@@ -359,6 +366,9 @@ module J2ME {
     }
 
     getLocal(i: number): string {
+      if (i < 0 || i >= this.local.length) {
+        throw new Error("Out of bounds local read");
+      }
       return this.local[i];
     }
 
@@ -482,7 +492,7 @@ module J2ME {
       if (!CLASSES.isPreInitializedClass(classInfo)) {
         this.emitter.writeLn(this.runtimeClass(classInfo) + ";");
         if (classInfo.staticInitializer && canYield(this.ctx, classInfo.staticInitializer)) {
-          this.emitUnwind(this.pc);
+          this.emitUnwind(this.pc, this.pc);
         }
       }
     }
@@ -516,7 +526,7 @@ module J2ME {
       this.needsVariable("re");
       this.emitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
-        this.emitUnwind(nextPC);
+        this.emitUnwind(this.pc, nextPC);
       }
       if (types[0].kind !== Kind.Void) {
         this.emitPush(types[0].kind, "re");
@@ -623,15 +633,15 @@ module J2ME {
       this.emitPush(Kind.Reference, "$NA(" + mangleClass(classInfo) + "," + length + ")");
     }
 
-    emitUnwind(pc: number) {
+    emitUnwind(pc: number, nextPC: number) {
       var local = this.local.join(", ");
       var stack = this.stack.slice(0, this.sp).join(", ");
-      this.emitter.writeLn("if (U) { $.B(" + pc + ", [" + local + "], [" + stack + "]); return; }");
+      this.emitter.writeLn("if (U) { $.B(" + pc + "," + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
     }
 
     emitMonitorEnter(nextPC: number, object: string) {
       this.emitter.writeLn("$ME(" + object + ");");
-      this.emitUnwind(nextPC);
+      this.emitUnwind(this.pc, nextPC);
     }
 
     emitMonitorExit(object: string) {
