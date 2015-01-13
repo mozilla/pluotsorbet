@@ -441,6 +441,15 @@ DumbPipe.registerOpener("notification", function(message, sender) {
       notification.onshow = function() {
         sender({ type: "opened" });
       };
+      notification.onclick = function() {
+        var request = navigator.mozApps.getSelf();
+        request.onsuccess = function() {
+          var app = request.result;
+          if (app) {
+            app.launch();
+          }
+        };
+      };
     }
 
     if (Notification.permission === "granted") {
