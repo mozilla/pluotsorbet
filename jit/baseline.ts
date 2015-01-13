@@ -154,6 +154,7 @@ module J2ME {
       this.methodInfo = methodInfo;
       this.local = [];
       this.variables = [];
+      this.pc = 0;
       this.sp = 0;
       this.stack = [];
       this.parameters = [];
@@ -161,7 +162,9 @@ module J2ME {
       this.hasHandlers = !!methodInfo.exception_table.length;
       this.blockStackHeightMap = [0];
       this.emitter = new Emitter();
-      this.lockObject = this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this";
+      this.lockObject = this.methodInfo.isSynchronized ? 
+                          this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this"
+                          : "null";
     }
 
     compile(): CompiledMethodInfo {

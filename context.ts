@@ -558,12 +558,13 @@ module J2ME {
       });
     }
 
-    bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any []) {
+    bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
       var frame = new Frame(methodInfo, local, 0);
       frame.stack = stack;
       frame.pc = nextPC;
       frame.opPc = pc;
+      frame.lockObject = lockObject;
       this.bailoutFrames.unshift(frame);
     }
 
