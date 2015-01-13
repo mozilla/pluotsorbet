@@ -227,7 +227,39 @@ Native.create("com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lan
 Native.create("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z", function(request) {
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
-        DumbPipe.close(DumbPipe.open("windowOpen", request));
+        if (request.endsWith(".jad")) {
+            // TODO: The download should start after the MIDlet has terminated its execution.
+            // Currently we're just updating right away because of #744.
+
+            var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+            dialog.style.display = 'block';
+            dialog.classList.add('visible');
+            document.body.appendChild(dialog);
+
+            performDownload(request, dialog, function(data) {
+              dialog.parentElement.removeChild(dialog);
+
+              Promise.all([
+                new Promise(function(resolve, reject) {
+                  fs.remove("/midlet.jad", function() {
+                    fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
+                  });
+                }),
+                new Promise(function(resolve, reject) {
+                  fs.remove("/midlet.jar", function() {
+                    fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
+                  });
+                }),
+              ]).then(function() {
+                DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+                DumbPipe.close(DumbPipe.open("reload", {}));
+              });
+            });
+
+            return true;
+        } else {
+            DumbPipe.close(DumbPipe.open("windowOpen", request));
+        }
     } else if (request.startsWith("x-contacts:add?number=")) {
         new MozActivity({
             name: "new",

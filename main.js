@@ -82,13 +82,13 @@ if (urlParams.jad) {
   loadingPromises.push(load(urlParams.jad, "text").then(processJAD));
 }
 
-function performDownload(dialog, callback) {
+function performDownload(url, dialog, callback) {
   var dialogText = dialog.querySelector('h1.download-dialog-text');
   dialogText.textContent = "Downloading " + MIDlet.name + "…";
 
   var progressBar = dialog.querySelector('progress.pack-activity');
 
-  var sender = DumbPipe.open("JARDownloader", {}, function(message) {
+  var sender = DumbPipe.open("JARDownloader", url, function(message) {
     switch (message.type) {
       case "done":
         DumbPipe.close(sender);
@@ -121,7 +121,7 @@ function performDownload(dialog, callback) {
 
           progressBar.style.display = '';
 
-          performDownload(dialog, callback);
+          performDownload(url, dialog, callback);
         });
 
         break;
@@ -156,7 +156,7 @@ if (urlParams.downloadJAD) {
           dialog.classList.add('visible');
           document.body.appendChild(dialog);
 
-          performDownload(dialog, function(data) {
+          performDownload(urlParams.downloadJAD, dialog, function(data) {
             dialog.parentElement.removeChild(dialog);
 
             jvm.addPath("midlet.jar", data.jarData);

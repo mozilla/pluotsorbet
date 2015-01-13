@@ -472,8 +472,8 @@ DumbPipe.registerOpener("notification", function(message, sender) {
   }
 });
 
-DumbPipe.registerOpener("JARDownloader", function(message, sender) {
-  loadWithProgress(urlParams.downloadJAD, "text", function(jadData) {
+DumbPipe.registerOpener("JARDownloader", function(url, sender) {
+  loadWithProgress(url, "text", function(jadData) {
     try {
       var manifest = {};
 
@@ -494,7 +494,7 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
 
       if (!jarURL.startsWith("http")) {
         var jarName = jarURL.substring(jarURL.lastIndexOf("/") + 1);
-        jarURL = urlParams.downloadJAD.substring(0, urlParams.downloadJAD.lastIndexOf("/") + 1) + jarName;
+        jarURL = url.substring(0, url.lastIndexOf("/") + 1) + jarName;
       }
 
       loadWithProgress(jarURL, "arraybuffer", function(jarData) {
@@ -514,4 +514,8 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
 
 DumbPipe.registerOpener("windowOpen", function(message, sender) {
   window.open(message);
+});
+
+DumbPipe.registerOpener("reload", function(message, sender) {
+  window.location.reload();
 });
