@@ -10,6 +10,7 @@ PACKAGE_FILES = \
   gnu/testlet/vm/test.png \
   gfx/images/* \
   midlets/test.png \
+  midlets/Cottage360/res/* \
   midlets/favouriteartists/images/* \
   midlets/blogwriter/images/* \
   midlets/rlinks/images/* \
