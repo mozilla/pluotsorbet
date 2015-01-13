@@ -21,7 +21,7 @@
       "access": "readonly"
     },
     "mobilenetwork": {
-      "description:": "Required to verify your phone number"
+      "description": "Required to verify your phone number"
     },
     "browser": {},
     "audio-capture": {
