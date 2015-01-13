@@ -107,7 +107,7 @@ AccelerometerSensor.simulator = {
             var az = (velocityY - previousVelocityY) / dt;
 
             AccelerometerSensor.handleEvent({
-                acceleration: { x: ax, y: ay, z: az }
+                accelerationIncludingGravity: { x: ax, y: ay, z: az }
             });
         }, 50);
     },
@@ -185,7 +185,7 @@ AccelerometerSensor.acceleration = [0, 0, 0];
 
 // Event handler to handle devicemotion event.
 AccelerometerSensor.handleEvent = function(evt) {
-    var a = evt.acceleration;
+    var a = evt.accelerationIncludingGravity;
     this.acceleration[0] = a.x;
     this.acceleration[1] = a.y;
     this.acceleration[2] = a.z;
