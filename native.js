@@ -967,7 +967,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(cbuf, of
 };
 
 Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
-  // ???
+  console.warn("com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V not implemented");
 };
 
 Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V"] = function(content) {
