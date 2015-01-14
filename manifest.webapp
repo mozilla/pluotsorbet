@@ -1,7 +1,7 @@
 {
   "name": "j2me.js",
   "description": "j2me interpreter for firefox os",
-  "launch_path": "/index.html?autosize=1&logConsole=web",
+  "launch_path": "/index.html?main=com/sun/midp/main/MIDletSuiteLoader&jars=tests/tests.jar&midletClassName=tests.background.MIDlet1&jad=tests/midlets/background/background.jad",
   "origin": "app://j2mejs.mozilla.org",
   "icons": {
     "128": "/img/icon-128.png"
@@ -37,7 +37,13 @@
     },
     "systemXHR": {
        "description": "Required to download MIDlets"
+    },
+    "alarms": {
+      "description": "Required to perform tasks while the app isn't running"
     }
   },
+  "messages": [
+    { "alarm": "/index.html?main=com/sun/midp/main/MIDletSuiteLoader&jars=tests/tests.jar&midletClassName=tests.background.MIDlet1&jad=tests/midlets/background/background.jad" }
+  ],
   "type": "privileged"
 }

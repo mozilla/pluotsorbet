@@ -528,3 +528,26 @@ DumbPipe.registerOpener("windowOpen", function(message, sender) {
 DumbPipe.registerOpener("reload", function(message, sender) {
   window.location.reload();
 });
+
+navigator.mozAlarms.add(new Date(Date.now()+10000), 'ignoreTimezone', {});
+
+navigator.mozSetMessageHandler('alarm', function() {
+  // this is called both while the app is not running and while the app is running!!!
+  var request = navigator.mozApps.getSelf();
+  request.onsuccess = function() {
+    request.result.launch("index.html?background=1");
+  };
+  alert("woke up from alarm");
+});
+
+var request = navigator.mozAlarms.getAll();
+
+request.onsuccess = function () {
+  this.result.forEach(function (alarm) {
+    alert('Id: ' + alarm.id + ", date: " + alarm.date + ", " + alarm.data);
+  });
+};
+
+request.onerror = function () { 
+  console.log("An error occurred: " + this.error.name);
+};
