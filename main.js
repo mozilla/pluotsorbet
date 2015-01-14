@@ -200,11 +200,7 @@ function start() {
   jvm.startIsolate0(main, config.args);
 }
 
-Promise.all(loadingPromises).then(function() {
-  setTimeout(function () {
-    start();
-  }, 1000);
-});
+Promise.all(loadingPromises).then(start);
 
 document.getElementById("start").onclick = function() {
   start();
@@ -224,9 +220,6 @@ document.getElementById("loadAllClasses").onclick = function() {
 };
 
 window.onload = function() {
- document.getElementById("clearstorage").onclick = function() {
-   fs.clear();
- };
  document.getElementById("deleteDatabase").onclick = function() {
    indexedDB.deleteDatabase("asyncStorage");
  };

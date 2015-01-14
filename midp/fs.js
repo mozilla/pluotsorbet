@@ -424,7 +424,7 @@ Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] = function
 };
 
 Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] =
-  Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"]
+  Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"];
 
 Native["com/ibm/oti/connection/file/Connection.isReadOnlyImpl.([B)Z"] = function(path) {
     console.warn("Connection.isReadOnlyImpl.([B)Z not implemented (" + getAbsolutePath(path) + ")");

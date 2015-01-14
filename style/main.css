@@ -275,14 +275,3 @@ button {
   border: none;
   border-bottom: 1px solid #555;
 }
-
-.debug-mode .splash-screen {
-  position: fixed;
-  width: 240px;
-  height: 320px;
-  top: 0px;
-  right: 0px;
-  left: auto;
-  bottom: auto;
-  box-sizing: border-box;
-}
