@@ -302,7 +302,6 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     runtime.pending[className] = true;
     if (className === "com/sun/cldc/isolate/Isolate") {
         // The very first isolate is granted access to the isolate API.
-        // ctx.runtime.setStatic(CLASSES.getField(classInfo, "S._API_access_ok.I"), 1);
         var isolate = classInfo.getStaticObject($.ctx);
         CLASSES.getField(classInfo, "S._API_access_ok.I").set(isolate, 1);
     }
