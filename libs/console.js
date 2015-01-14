@@ -22,8 +22,8 @@
    *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
    */
-  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "page").split(",");
-  var minLogLevel = LOG_LEVELS[urlParams.logLevel || "log"];
+  var ENABLED_CONSOLE_TYPES = (config.logConsole || "page").split(",");
+  var minLogLevel = LOG_LEVELS[config.logLevel || "log"];
 
 
   //================================================================

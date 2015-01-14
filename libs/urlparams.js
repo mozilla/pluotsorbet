@@ -42,5 +42,9 @@ var urlParams = (function() {
 
   params.args = (params.args || "").split(",");
 
+  for (var name in params) {
+    config[name] = params[name];
+  }
+
   return params;
 })();

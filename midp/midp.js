@@ -281,7 +281,7 @@ Native.create("com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp
     var suiteId = (MIDP.midletClassName === "internal") ? -1 : 1;
     state.class.getField("I.suiteId.I").set(state, suiteId);
     state.class.getField("I.midletClassName.Ljava/lang/String;").set(state, util.newString(MIDP.midletClassName));
-    var args = urlParams.args;
+    var args = config.args;
     state.class.getField("I.arg0.Ljava/lang/String;").set(state, util.newString((args.length > 0) ? args[0] : ""));
     state.class.getField("I.arg1.Ljava/lang/String;").set(state, util.newString((args.length > 1) ? args[1] : ""));
     state.class.getField("I.arg2.Ljava/lang/String;").set(state, util.newString((args.length > 2) ? args[2] : ""));
@@ -585,7 +585,7 @@ Native.create("com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonL
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
 
-    if (urlParams.autosize && !/no|0/.test(urlParams.autosize)) {
+    if (config.autosize && !/no|0/.test(config.autosize)) {
       c.width = window.innerWidth;
       c.height = window.innerHeight;
       document.documentElement.classList.add('autosize');
