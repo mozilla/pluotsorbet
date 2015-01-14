@@ -84,7 +84,7 @@ import com.sun.cldchi.jvm.JVM;
  *
  * @version 12/17/01 (CLDC 1.1)
  * @see     java.io.ByteArrayOutputStream
- * @see     String
+ * @see     java.lang.String
  * @since   JDK1.0, CLDC 1.0
  */
  
@@ -396,8 +396,8 @@ public final class StringBuffer {
      *
      * @param   obj   an <code>Object</code>.
      * @return  a reference to this <code>StringBuffer</code> object.
-     * @see     String#valueOf(Object)
-     * @see     java.lang.StringBuffer#append(String)
+     * @see     java.lang.String#valueOf(java.lang.Object)
+     * @see     java.lang.StringBuffer#append(java.lang.String)
      */
     public StringBuffer append(Object obj) {
         return append(String.valueOf(obj));
@@ -502,8 +502,8 @@ public final class StringBuffer {
      *
      * @param   b   a <code>boolean</code>.
      * @return  a reference to this <code>StringBuffer</code>.
-     * @see     String#valueOf(boolean)
-     * @see     java.lang.StringBuffer#append(String)
+     * @see     java.lang.String#valueOf(boolean)
+     * @see     java.lang.StringBuffer#append(java.lang.String)
      */
     public StringBuffer append(boolean b) {
         return append(String.valueOf(b));
@@ -542,8 +542,8 @@ public final class StringBuffer {
      *
      * @param   i   an <code>int</code>.
      * @return  a reference to this <code>StringBuffer</code> object.
-     * @see     String#valueOf(int)
-     * @see     java.lang.StringBuffer#append(String)
+     * @see     java.lang.String#valueOf(int)
+     * @see     java.lang.StringBuffer#append(java.lang.String)
      */
     public StringBuffer append(int i) {
         return append(String.valueOf(i));
@@ -559,8 +559,8 @@ public final class StringBuffer {
      *
      * @param   l   a <code>long</code>.
      * @return  a reference to this <code>StringBuffer</code> object.
-     * @see     String#valueOf(long)
-     * @see     java.lang.StringBuffer#append(String)
+     * @see     java.lang.String#valueOf(long)
+     * @see     java.lang.StringBuffer#append(java.lang.String)
      */
     public StringBuffer append(long l) {
         return append(String.valueOf(l));
@@ -576,8 +576,8 @@ public final class StringBuffer {
      *
      * @param   f   a <code>float</code>.
      * @return  a reference to this <code>StringBuffer</code> object.
-     * @see     String#valueOf(float)
-     * @see     java.lang.StringBuffer#append(String)
+     * @see     java.lang.String#valueOf(float)
+     * @see     java.lang.StringBuffer#append(java.lang.String)
      * @since   CLDC 1.1
      */
     public StringBuffer append(float f) {
@@ -594,8 +594,8 @@ public final class StringBuffer {
      *
      * @param   d   a <code>double</code>.
      * @return  a reference to this <code>StringBuffer</code> object.
-     * @see     String#valueOf(double)
-     * @see     java.lang.StringBuffer#append(String)
+     * @see     java.lang.String#valueOf(double)
+     * @see     java.lang.StringBuffer#append(java.lang.String)
      * @since   CLDC 1.1
      */
     public StringBuffer append(double d) {
@@ -680,8 +680,8 @@ public final class StringBuffer {
      * @param      obj      an <code>Object</code>.
      * @return     a reference to this <code>StringBuffer</code> object.
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
-     * @see        String#valueOf(Object)
-     * @see        java.lang.StringBuffer#insert(int, String)
+     * @see        java.lang.String#valueOf(java.lang.Object)
+     * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      */
     public StringBuffer insert(int offset, Object obj) {
@@ -796,8 +796,8 @@ public final class StringBuffer {
      * @param      b        a <code>boolean</code>.
      * @return     a reference to this <code>StringBuffer</code> object.
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
-     * @see        String#valueOf(boolean)
-     * @see        java.lang.StringBuffer#insert(int, String)
+     * @see        java.lang.String#valueOf(boolean)
+     * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      */
     public StringBuffer insert(int offset, boolean b) {
@@ -858,8 +858,8 @@ public final class StringBuffer {
      * @param      i        an <code>int</code>.
      * @return     a reference to this <code>StringBuffer</code> object.
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
-     * @see        String#valueOf(int)
-     * @see        java.lang.StringBuffer#insert(int, String)
+     * @see        java.lang.String#valueOf(int)
+     * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      */
     public StringBuffer insert(int offset, int i) {
@@ -883,8 +883,8 @@ public final class StringBuffer {
      * @param      l        a <code>long</code>.
      * @return     a reference to this <code>StringBuffer</code> object.
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
-     * @see        String#valueOf(long)
-     * @see        java.lang.StringBuffer#insert(int, String)
+     * @see        java.lang.String#valueOf(long)
+     * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      */
     public StringBuffer insert(int offset, long l) {
@@ -908,8 +908,8 @@ public final class StringBuffer {
      * @param      f        a <code>float</code>.
      * @return     a reference to this <code>StringBuffer</code> object.
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
-     * @see        String#valueOf(float)
-     * @see        java.lang.StringBuffer#insert(int, String)
+     * @see        java.lang.String#valueOf(float)
+     * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      * @since      CLDC 1.1
      */
@@ -934,8 +934,8 @@ public final class StringBuffer {
      * @param      d        a <code>double</code>.
      * @return     a reference to this <code>StringBuffer</code> object.
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
-     * @see        String#valueOf(double)
-     * @see        java.lang.StringBuffer#insert(int, String)
+     * @see        java.lang.String#valueOf(double)
+     * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      * @since      CLDC 1.1
      */
