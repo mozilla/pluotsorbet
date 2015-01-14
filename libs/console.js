@@ -4,6 +4,7 @@
 'use strict';
 
 (function() {
+
   var windowConsole = window.console;
 
   var LOG_LEVELS = {
@@ -21,6 +22,7 @@
    *    web: the browser's Web Console (default)
    *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
+   *    terminal: a faster canvas based console if Shumway.js is included.
    */
   var ENABLED_CONSOLE_TYPES = (config.logConsole || "page").split(",");
   var minLogLevel = LOG_LEVELS[config.logLevel || "log"];
@@ -28,6 +30,8 @@
 
   //================================================================
 
+
+  var startTime = performance.now();
 
   /**
    * Every log entry serializes itself into a LogItem, so that it can
@@ -42,15 +46,24 @@
     }
 
     this.levelName = levelName;
+    this.ctx = $ ? $.ctx : null;
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
+    this.time = performance.now() - startTime;
   }
 
   LogItem.prototype = {
+    get messagePrefix() {
+      var s = J2ME.Context.currentContextPrefix();
+      if (false) {
+        s = this.time.toFixed(2) + " " + s;
+      }
+      return s.toString().padRight(" ", 4) + " | ";
+    },
 
     get message() {
       if (this._message === undefined) {
-        this._message = this.args.join(" ");
+        this._message = this.messagePrefix + this.args.join(" ") + " ";
       }
       return this._message;
     },
@@ -183,7 +196,7 @@
   NativeConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        dump(item.message);
+        dumpLine(item.message);
       }
     }
   };
@@ -199,16 +212,55 @@
   RawConsoleForTests.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        this.el.textContent += item.levelName[0].toUpperCase() + ' ' + item.message + '\n';
+        this.el.textContent += item.levelName[0].toUpperCase() + ' ' + item.args.join(" ") + '\n';
       }
     }
   };
+
+
+  function TerminalConsole(name) {
+    // If we don't have shumway included fall back on the page console.
+    if (typeof Shumway === "undefined") {
+      return new PageConsole("#console");
+    }
+    var traceTerminal = new Shumway.Tools.Terminal.Terminal(document.getElementById(name));
+    traceTerminal.refreshEvery(100);
+
+    this.appendToTraceTerminal = function appendToTraceTerminal(str, color) {
+      var scroll = traceTerminal.isScrolledToBottom();
+      traceTerminal.buffer.append(str, color);
+      if (scroll) {
+        traceTerminal.gotoLine(traceTerminal.buffer.length - 1);
+        traceTerminal.scrollIntoView();
+      }
+    }
+  }
+
+  var contextColors = ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666"];
+  var colors = [undefined, undefined, undefined, "darkorange", "red", "blue"];
+
+  TerminalConsole.prototype = {
+    push: function(item) {
+      if (item.matchesCurrentFilters()) {
+        var color;
+
+        if (item.logLevel < 3) {
+          var id = item.ctx.runtime.id + item.ctx.id;
+          color = contextColors[id % contextColors.length];
+        } else {
+          color = colors[item.logLevel]
+        }
+        this.appendToTraceTerminal(item.message, color);
+      }
+    }
+  }
 
   var CONSOLES = {
     page: new PageConsole("#console"),
     web: new WebConsole(),
     native: new NativeConsole(),
-    raw: new RawConsoleForTests("#raw-console")
+    raw: new RawConsoleForTests("#raw-console"),
+    terminal: new TerminalConsole("traceTerminal")
   };
 
   var print = CONSOLES.web.print.bind(CONSOLES.web);
