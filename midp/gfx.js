@@ -59,6 +59,7 @@ var currentlyFocusedTextEditor;
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
         console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
+        document.getElementById("splash-screen").style.display = "none";
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {
@@ -297,7 +298,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = urlParams.fontSize ? urlParams.fontSize : Math.max(10, (MIDP.Context2D.canvas.height / 35) | 0);
+        var defaultSize = config.fontSize ? config.fontSize : Math.max(10, (MIDP.Context2D.canvas.height / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)

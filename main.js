@@ -15,10 +15,10 @@ var APP_BASE_DIR = "./";
 
 var jvm = new JVM();
 
-var main = urlParams.main || "com/sun/midp/main/MIDletSuiteLoader";
-MIDP.midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
+var main = config.main || "com/sun/midp/main/MIDletSuiteLoader";
+MIDP.midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
 
-if ("gamepad" in urlParams && !/no|0/.test(urlParams.gamepad)) {
+if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
 
@@ -28,14 +28,14 @@ if (MIDP.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
 }
 
-if (urlParams.jars) {
-  jars = jars.concat(urlParams.jars.split(":"));
+if (config.jars) {
+  jars = jars.concat(config.jars.split(":"));
 }
 
-if (urlParams.pushConn && urlParams.pushMidlet) {
+if (config.pushConn && config.pushMidlet) {
   MIDP.ConnectionRegistry.addConnection({
-    connection: urlParams.pushConn,
-    midlet: urlParams.pushMidlet,
+    connection: config.pushConn,
+    midlet: config.pushMidlet,
     filter: "*",
     suiteId: "1"
   });
@@ -69,21 +69,26 @@ function processJAD(data) {
       var key = entry.substring(0, keyEnd);
       var val = entry.substring(keyEnd + 1).trim();
       MIDP.manifest[key] = val;
+
+      if (key == "MIDlet-Name") {
+        var title = document.getElementById("splash-screen").querySelector(".title");
+        title.textContent = "Loading " + val;
+      }
     }
   });
 }
 
-if (urlParams.jad) {
-  loadingPromises.push(load(urlParams.jad, "text").then(processJAD));
+if (config.jad) {
+  loadingPromises.push(load(config.jad, "text").then(processJAD));
 }
 
-function performDownload(dialog, callback) {
+function performDownload(url, dialog, callback) {
   var dialogText = dialog.querySelector('h1.download-dialog-text');
   dialogText.textContent = "Downloading " + MIDlet.name + "…";
 
   var progressBar = dialog.querySelector('progress.pack-activity');
 
-  var sender = DumbPipe.open("JARDownloader", {}, function(message) {
+  var sender = DumbPipe.open("JARDownloader", url, function(message) {
     switch (message.type) {
       case "done":
         DumbPipe.close(sender);
@@ -116,7 +121,7 @@ function performDownload(dialog, callback) {
 
           progressBar.style.display = '';
 
-          performDownload(dialog, callback);
+          performDownload(url, dialog, callback);
         });
 
         break;
@@ -124,44 +129,49 @@ function performDownload(dialog, callback) {
   });
 }
 
-if (urlParams.downloadJAD) {
+if (config.downloadJAD) {
   loadingPromises.push(initFS.then(function() {
     return new Promise(function(resolve, reject) {
       fs.exists("/midlet.jar", function(exists) {
         if (exists) {
-          fs.open("/midlet.jar", function(fd) {
-            var data = fs.read(fd);
-            fs.close(fd);
-            CLASSES.addPath("midlet.jar", data.buffer.slice(0));
-            resolve();
-          });
+          Promise.all([
+            new Promise(function(resolve, reject) {
+              fs.open("/midlet.jar", function(fd) {
+                jvm.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
+                fs.close(fd);
+                resolve();
+              });
+            }),
+            new Promise(function(resolve, reject) {
+              fs.open("/midlet.jad", function(fd) {
+                processJAD(util.decodeUtf8(fs.read(fd)));
+                fs.close(fd);
+                resolve();
+              });
+            }),
+          ]).then(resolve);
         } else {
           var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
           dialog.style.display = 'block';
           dialog.classList.add('visible');
           document.body.appendChild(dialog);
 
-          performDownload(dialog, function(data) {
+          performDownload(config.downloadJAD, dialog, function(data) {
             dialog.parentElement.removeChild(dialog);
 
-            CLASSES.addPath("midlet.jar", data.jarData);
+            jvm.addPath("midlet.jar", data.jarData);
+            processJAD(data.jadData);
 
-            fs.create("/midlet.jad", new Blob([ data.jadData ]), function() {
-              fs.create("/midlet.jar", new Blob([ data.jarData ]), function() {
-                resolve();
-              });
-            });
+            Promise.all([
+              new Promise(function(resolve, reject) {
+                fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
+              }),
+              new Promise(function(resolve, reject) {
+                fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
+              }),
+            ]).then(resolve);
           });
         }
-      });
-    });
-  }).then(function() {
-    return new Promise(function(resolve, reject) {
-      fs.open("/midlet.jad", function(fd) {
-        var data = fs.read(fd);
-        fs.close(fd);
-        processJAD(util.decodeUtf8(data));
-        resolve();
       });
     });
   }));
@@ -187,7 +197,7 @@ function start() {
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
-  jvm.startIsolate0(main, urlParams.args);
+  jvm.startIsolate0(main, config.args);
 }
 
 Promise.all(loadingPromises).then(function() {
@@ -277,7 +287,7 @@ window.onload = function() {
  }
 };
 
-if (urlParams.profile && !/no|0/.test(urlParams.profile)) {
+if (config.profile && !/no|0/.test(config.profile)) {
   Instrument.startProfile();
 }
 

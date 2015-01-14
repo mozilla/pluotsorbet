@@ -7,7 +7,7 @@
  * Pre-load dependencies and then load the main page.
  */
 (function() {
-  var midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
+  var midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
   var loadingPromises = [];
   if (midletClassName == "RunTests") {
     loadingPromises.push(loadScript("tests/contacts.js"),
@@ -128,13 +128,13 @@ DumbPipe.registerOpener("mobileInfo", function(message, sender) {
   // for testing/debugging on a desktop.
   var mobileInfo = {
     network: {
-      mcc: urlParams.network_mcc || "310", // United States
-      mnc: urlParams.network_mnc || "001",
+      mcc: config.network_mcc || "310", // United States
+      mnc: config.network_mnc || "001",
     },
     icc: {
-      mcc: urlParams.icc_mcc || "310", // United States
-      mnc: urlParams.icc_mnc || "001",
-      msisdn: urlParams.icc_msisdn || "10005551212",
+      mcc: config.icc_mcc || "310", // United States
+      mnc: config.icc_mnc || "001",
+      msisdn: config.icc_msisdn || "10005551212",
     },
   };
 
@@ -441,6 +441,15 @@ DumbPipe.registerOpener("notification", function(message, sender) {
       notification.onshow = function() {
         sender({ type: "opened" });
       };
+      notification.onclick = function() {
+        var request = navigator.mozApps.getSelf();
+        request.onsuccess = function() {
+          var app = request.result;
+          if (app) {
+            app.launch();
+          }
+        };
+      };
     }
 
     if (Notification.permission === "granted") {
@@ -472,8 +481,8 @@ DumbPipe.registerOpener("notification", function(message, sender) {
   }
 });
 
-DumbPipe.registerOpener("JARDownloader", function(message, sender) {
-  loadWithProgress(urlParams.downloadJAD, "text", function(jadData) {
+DumbPipe.registerOpener("JARDownloader", function(url, sender) {
+  loadWithProgress(url, "text", function(jadData) {
     try {
       var manifest = {};
 
@@ -494,7 +503,7 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
 
       if (!jarURL.startsWith("http")) {
         var jarName = jarURL.substring(jarURL.lastIndexOf("/") + 1);
-        jarURL = urlParams.downloadJAD.substring(0, urlParams.downloadJAD.lastIndexOf("/") + 1) + jarName;
+        jarURL = url.substring(0, url.lastIndexOf("/") + 1) + jarName;
       }
 
       loadWithProgress(jarURL, "arraybuffer", function(jarData) {
@@ -510,4 +519,12 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
   }, function() {
     sender({ type: "fail" });
   });
+});
+
+DumbPipe.registerOpener("windowOpen", function(message, sender) {
+  window.open(message);
+});
+
+DumbPipe.registerOpener("reload", function(message, sender) {
+  window.location.reload();
 });
