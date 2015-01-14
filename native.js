@@ -86,7 +86,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = navigator.language;
         break;
     case "microedition.platform":
-        value = urlParams.platform ? urlParams.platform : "Nokia503/14.0.4/java_runtime_version=Nokia_Asha_1_2";
+        value = config.platform ? config.platform : "Nokia503/14.0.4/java_runtime_version=Nokia_Asha_1_2";
         break;
     case "microedition.platformimpl":
         value = null;

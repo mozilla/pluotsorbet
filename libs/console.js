@@ -24,8 +24,8 @@
    *    native: the native console (via the *dump* function)
    *    terminal: a faster canvas based console if Shumway.js is included.
    */
-  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "page").split(",");
-  var minLogLevel = LOG_LEVELS[urlParams.logLevel || "log"];
+  var ENABLED_CONSOLE_TYPES = (config.logConsole || "page").split(",");
+  var minLogLevel = LOG_LEVELS[config.logLevel || "log"];
 
 
   //================================================================

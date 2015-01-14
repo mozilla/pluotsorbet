@@ -11,7 +11,7 @@ var Instrument = {
   profile: null,
   asyncProfile: null,
 
-  enabled: "instrument" in urlParams && !/no|0/.test(urlParams.instrument),
+  enabled: "instrument" in config && !/no|0/.test(config.instrument),
 
   callEnterHooks: function(methodInfo, caller, callee) {
     if (this.enabled) {

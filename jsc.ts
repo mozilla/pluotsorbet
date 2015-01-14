@@ -47,7 +47,7 @@ jsGlobal.document = {
   },
 };
 
-jsGlobal.urlParams = {
+jsGlobal.config = {
   logConsole: "native",
   args: "",
 };

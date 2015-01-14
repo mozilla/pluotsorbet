@@ -61,7 +61,7 @@ var document = {
   },
 };
 
-var urlParams = {
+var config = {
   logConsole: "native",
   args: "",
 };
@@ -106,7 +106,7 @@ try {
   print("INITIALIZATION TIME: " + (dateNow() - start));
 
   start = dateNow();
-  var runtime = jvm.startIsolate0(scriptArgs[0], urlParams.args);
+  var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
 
   print("RUNNING TIME: " + (dateNow() - start));
 
