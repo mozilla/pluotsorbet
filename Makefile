@@ -27,10 +27,15 @@ aot: java j2me
 		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js; \
 	fi
 
-closure:
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/program.jar.js > build/program.jar.cc.js
+closure: build/j2me.js aot
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
+		&& mv build/j2me.cc.js build/j2me.js
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js \
+		&& mv build/classes.jar.cc.js build/classes.jar.js
+	if test -f build/program.jar.js; then \
+		java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/program.jar.js > build/program.jar.cc.js \
+			&& mv build/program.jar.cc.js build/program.jar.js; \
+	fi
 
 shumway: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
