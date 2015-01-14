@@ -23,7 +23,9 @@ j2me: build/j2me.js build/jsc.js
 
 aot: java j2me
 	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -cff classes.txt > build/classes.jar.js
-	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js
+	if test -f program.jar; then \
+		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js; \
+	fi
 
 closure:
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js

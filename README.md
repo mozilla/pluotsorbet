@@ -215,6 +215,10 @@ The repository includes tools for packaging j2me.js into an Open Web App.
 It's possible to simply package the entire contents of your working directory,
 but these tools will produce a better app.
 
+### Compiling With AOT Compiler
+
+`make aot` compiles some Java code into JavaScript with an ahead-of-time (AOT) compiler.
+
 ### Compiling With Closure
 
 `make closure` compiles some JavaScript code with the Closure compiler.
