@@ -208,3 +208,19 @@ Remember:
   * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
   * Context is last param to every function registered using `Native.create` or `Override.create`
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
+
+## Packaging
+
+The repository includes tools for packaging j2me.js into an Open Web App.
+It's possible to simply package the entire contents of your working directory,
+but these tools will produce a better app.
+
+### Compiling With Closure
+
+`make closure` compiles some JavaScript code with the Closure compiler.
+
+To use it, first download Shumway's version of the compiler to tools/closure.jar:
+
+```
+wget https://github.com/mozilla/shumway/raw/master/utils/closure.jar -P tools/
+```
