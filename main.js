@@ -224,9 +224,6 @@ document.getElementById("loadAllClasses").onclick = function() {
 };
 
 window.onload = function() {
- document.getElementById("clearstorage").onclick = function() {
-   fs.clear();
- };
  document.getElementById("deleteDatabase").onclick = function() {
    indexedDB.deleteDatabase("asyncStorage");
  };
