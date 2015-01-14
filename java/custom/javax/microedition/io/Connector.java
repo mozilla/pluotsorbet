@@ -174,7 +174,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException  If some other kind of I/O error occurs.
+     * @exception IOException  If some other kind of I/O error occurs.
      * @exception SecurityException  May be thrown if access to the
      *   protocol handler is prohibited.
      */
@@ -193,7 +193,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException  If some other kind of I/O error occurs.
+     * @exception IOException  If some other kind of I/O error occurs.
      * @exception SecurityException  May be thrown if access to the
      *   protocol handler is prohibited.
      */
@@ -214,7 +214,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException  If some other kind of I/O error occurs.
+     * @exception IOException  If some other kind of I/O error occurs.
      * @exception SecurityException  May be thrown if access to the
      *   protocol handler is prohibited.
      */
@@ -232,25 +232,32 @@ public class Connector {
         );
     }
 
+    /**
+     * This code has been factored out of the openPrim method so that the
+     * optimizing compiler can compile it. openPrim() cannot be be compiled due
+     * to the try/catch block.
+     *
+     * @param protocol
+     */
     private static void checkProtocolName(String protocol) {
-      /* sanity check the protocol name */
-      char[] chars = protocol.toCharArray();
-      for (int i = 0; i < chars.length; ++i) {
-        char c = chars[i];
-                /* only allow characters that are valid in RFC 2396
-                   alpha *( alpha | digit | "+" | "-" | "." )
-                */
-        if ( ('A' <= c && c <= 'Z') ||
-                ('a' <= c && c <= 'z') ||
-                ( (i > 0) && (
-                        ('0' <= c && c <= '9') ||
-                                c == '+' ||
-                                c == '-' ||
-                                c == '.'))) {
-          continue;
+        /* sanity check the protocol name */
+        char[] chars = protocol.toCharArray();
+        for (int i = 0; i < chars.length; ++i) {
+            char c = chars[i];
+            /* only allow characters that are valid in RFC 2396
+               alpha *( alpha | digit | "+" | "-" | "." )
+            */
+            if ( ('A' <= c && c <= 'Z') ||
+                 ('a' <= c && c <= 'z') ||
+                 ( (i > 0) && (
+                     ('0' <= c && c <= '9') ||
+                     c == '+' ||
+                     c == '-' ||
+                     c == '.'))) {
+                continue;
+            }
+            throw new IllegalArgumentException("Invalid protocol name");
         }
-        throw new IllegalArgumentException("Invalid protocol name");
-      }
     }
 
     /**
@@ -267,7 +274,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException If some other kind of I/O error occurs.
+     * @exception IOException If some other kind of I/O error occurs.
      * @exception IllegalArgumentException If a parameter is invalid.
      */
     private static Connection openPrim(String name, int mode,
@@ -380,7 +387,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException  If some other kind of I/O error occurs.
+     * @exception IOException  If some other kind of I/O error occurs.
      * @exception SecurityException  May be thrown if access to the
      *   protocol handler is prohibited.
      */
@@ -415,7 +422,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException  If some other kind of I/O error occurs.
+     * @exception IOException  If some other kind of I/O error occurs.
      * @exception SecurityException  May be thrown if access to the
      *   protocol handler is prohibited.
      */
@@ -450,7 +457,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException  If some other kind of I/O error occurs.
+     * @exception IOException  If some other kind of I/O error occurs.
      * @exception SecurityException  May be thrown if access to the
      *   protocol handler is prohibited.
      */
@@ -470,7 +477,7 @@ public class Connector {
      * @exception ConnectionNotFoundException If the target of the
      *   name cannot be found, or if the requested protocol type
      *   is not supported.
-     * @exception java.io.IOException  If some other kind of I/O error occurs.
+     * @exception IOException  If some other kind of I/O error occurs.
      * @exception SecurityException  May be thrown if access to the
      *   protocol handler is prohibited.
      */
