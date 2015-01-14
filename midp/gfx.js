@@ -1440,6 +1440,8 @@ var currentlyFocusedTextEditor;
 
         var validCommands = commands.filter(function(command) {
             return !!command;
+        }).sort(function(a, b) {
+            return a.class.getField("I.priority.I").get(a) - b.class.getField("I.priority.I").get(b);
         });
 
         function sendEvent(command) {

@@ -986,7 +986,7 @@ Native.create("com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/St
                     mask.parentNode.removeChild(mask);
                 };
 
-                document.getElementById("display").appendChild(mask);
+                document.getElementById("main").appendChild(mask);
             }
 
             mask.style.backgroundImage = "url(" +
