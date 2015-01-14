@@ -6,6 +6,8 @@
   <link rel="stylesheet" type="text/css" href="style/main.css">
   <link rel="stylesheet" type="text/css" href="style/confirm.css">
   <link rel="stylesheet" type="text/css" href="style/progress_activity.css">
+  <link rel="stylesheet" type="text/css" href="style/headers.css">
+  <link rel="stylesheet" type="text/css" href="style/drawer.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
@@ -101,7 +103,27 @@
       <button id="profile">Profile: OFF</button>
     </section>
   </div>
-  <div id="display"><canvas id="canvas"></canvas></div>
+  <div id="display">
+    <section id="sidebar" data-type="sidebar" style="display:none">
+      <header>
+        <h1>Menu</h1>
+      </header>
+      <nav>
+        <ul>
+        </ul>
+      </nav>
+    </section>
+    <section id="drawer" role="region">
+      <header style="display:none">
+        <a href="#"><span class="icon icon-menu">hide sidebar</span></a>
+        <a href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <h1 id="display_title"></h1>
+      </header>
+      <div role="main">
+        <canvas id="canvas"></canvas>
+      </div>
+    </section>
+  </div>
   <div id="gamepad">
     <button id="up">up</button>
     <button id="down">down</button>

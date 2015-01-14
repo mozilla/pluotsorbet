@@ -60,6 +60,7 @@ var currentlyFocusedTextEditor;
     Native.create("com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V", function(hardwareId, displayId) {
         console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
         document.getElementById("splash-screen").style.display = "none";
+        document.getElementById("display_title").textContent = MIDlet.name;
     });
 
     Native.create("com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z", function(displayId, on) {
@@ -1012,8 +1013,9 @@ var currentlyFocusedTextEditor;
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.setPosition0.(II)V", function(x, y) {
+        var headerHeight = (!urlParams.nativeMenu) ? 0 : document.getElementById("drawer").querySelector("header").offsetHeight;
         this.textEditor.setStyle("left", x + "px");
-        this.textEditor.setStyle("top", y + "px");
+        this.textEditor.setStyle("top", (headerHeight + y) + "px");
     });
 
     Native.create("com/nokia/mid/ui/CanvasItem.getPositionX.()I", function() {
@@ -1264,6 +1266,10 @@ var currentlyFocusedTextEditor;
         }
     });
 
+    Native.create("javax/microedition/lcdui/DisplayableLFImpl.setTitle0.(ILjava/lang/String;)V", function(nativeId, title) {
+        document.getElementById("display_title").textContent = util.fromJavaString(title);
+    });
+
     Native.create("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I", function(title, ticker) {
         console.warn("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
         curDisplayableId = nextMidpDisplayableId++;
@@ -1422,6 +1428,12 @@ var currentlyFocusedTextEditor;
             console.error("NativeMenu.updateCommands: item commands not yet supported");
         }
 
+        var el = document.getElementById("displayable-" + curDisplayableId);
+
+        if (!el) {
+            document.getElementById("sidebar").querySelector("nav ul").innerHTML = "";
+        }
+
         if (!commands) {
             return;
         }
@@ -1430,13 +1442,20 @@ var currentlyFocusedTextEditor;
             return !!command;
         });
 
-        if (numCommands > 2 && validCommands.length > 2) {
-            console.error("NativeMenu.updateCommands: max two commands supported");
+        function sendEvent(command) {
+            MIDP.sendNativeEvent({
+                type: MIDP.COMMAND_EVENT,
+                intParam1: command.class.getField("I.id.I").get(command),
+                intParam4: MIDP.displayId,
+            }, MIDP.foregroundIsolateId);
         }
 
-        var el = document.getElementById("displayable-" + curDisplayableId);
         if (el) {
-            validCommands.forEach(function(command, i) {
+            if (numCommands > 2 && validCommands.length > 2) {
+                console.error("NativeMenu.updateCommands: max two commands supported");
+            }
+
+            validCommands.slice(0, 2).forEach(function(command, i) {
                 var button = el.querySelector(".button" + i);
                 button.style.display = 'inline';
                 button.textContent = util.fromJavaString(command.class.getField("I.shortLabel.Ljava/lang/String;").get(command));
@@ -1448,15 +1467,27 @@ var currentlyFocusedTextEditor;
                     button.classList.add('cancel');
                 }
 
-                button.addEventListener("click", function(e) {
+                button.onclick = function(e) {
+                    e.preventDefault();
+                    sendEvent(command);
+                };
+            });
+        } else {
+            var menu = document.getElementById("sidebar").querySelector("nav ul");
+
+            validCommands.forEach(function(command) {
+                var li = document.createElement("li");
+                li.textContent = util.fromJavaString(command.class.getField("I.shortLabel.Ljava/lang/String;").get(command));
+
+                li.onclick = function(e) {
                     e.preventDefault();
 
-                    MIDP.sendNativeEvent({
-                        type: MIDP.COMMAND_EVENT,
-                        intParam1: command.class.getField("I.id.I").get(command),
-                        intParam4: MIDP.displayId,
-                    }, MIDP.foregroundIsolateId);
-                });
+                    window.location.hash = "";
+
+                    sendEvent(command);
+                };
+
+                menu.appendChild(li);
             });
         }
     });

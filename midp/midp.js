@@ -563,6 +563,14 @@ MIDP.Context2D = (function() {
       c.height = 320;
     }
 
+    if (urlParams.nativeMenu) {
+      document.getElementById("sidebar").style.display = "block";
+      document.getElementById("drawer").querySelector("header").style.display = "block";
+
+      var headerHeight = document.getElementById("drawer").querySelector("header").offsetHeight;
+      c.height = c.height - headerHeight;
+    }
+
     function sendPenEvent(pt, whichType) {
         MIDP.sendNativeEvent({
             type: MIDP.PEN_EVENT,

@@ -26,6 +26,7 @@
  *    pushMidlet
  *    autosize
  *    fontSize
+ *    nativeMenu
  *
  * Keep this list up-to-date!
  */
