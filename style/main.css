@@ -202,6 +202,20 @@ button {
   line-height: 1.2;
 }
 
+<<<<<<< HEAD
+=======
+.debug-mode .splash-screen {
+  position: fixed;
+  width: 240px;
+  height: 320px;
+  top: 0px;
+  right: 0px;
+  left: auto;
+  bottom: auto;
+  box-sizing: border-box;
+}
+
+>>>>>>> ca8a2567974266a75f868535ded6b3b3e5456a1f
 #console {
   overflow: auto;
   margin: 0;

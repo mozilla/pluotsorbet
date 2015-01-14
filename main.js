@@ -137,7 +137,7 @@ if (config.downloadJAD) {
           Promise.all([
             new Promise(function(resolve, reject) {
               fs.open("/midlet.jar", function(fd) {
-                jvm.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
+                CLASSES.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
                 fs.close(fd);
                 resolve();
               });
@@ -159,7 +159,7 @@ if (config.downloadJAD) {
           performDownload(config.downloadJAD, dialog, function(data) {
             dialog.parentElement.removeChild(dialog);
 
-            jvm.addPath("midlet.jar", data.jarData);
+            CLASSES.addPath("midlet.jar", data.jarData);
             processJAD(data.jadData);
 
             Promise.all([
