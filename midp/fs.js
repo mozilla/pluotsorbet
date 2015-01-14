@@ -419,7 +419,7 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(jP
 
 Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] = function(path) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
-        fs.remove(getAbsolutePath(path), function(x) { resolve(x ? 1 : 0); });
+        fs.remove(getAbsolutePath(path), function(removed) { resolve(removed ? 1 : 0); });
     }));
 };
 
