@@ -219,6 +219,9 @@ but these tools will produce a better app.
 
 `make aot` compiles some Java code into JavaScript with an ahead-of-time (AOT) compiler.
 
+To use it, first install a recent version of the
+[JavaScript shell](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Introduction_to_the_JavaScript_shell).
+
 ### Compiling With Closure
 
 `make closure` compiles some JavaScript code with the Closure compiler.
