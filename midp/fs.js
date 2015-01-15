@@ -419,12 +419,12 @@ Native["com/ibm/oti/connection/file/Connection.newFileImpl.([B)I"] = function(jP
 
 Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"] = function(path) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
-        fs.remove(getAbsolutePath(path), function(x) { resolve(x ? 1 : 0); });
+        fs.remove(getAbsolutePath(path), function(removed) { resolve(removed ? 1 : 0); });
     }));
 };
 
 Native["com/ibm/oti/connection/file/Connection.deleteDirImpl.([B)Z"] =
-  Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"]
+  Native["com/ibm/oti/connection/file/Connection.deleteFileImpl.([B)Z"];
 
 Native["com/ibm/oti/connection/file/Connection.isReadOnlyImpl.([B)Z"] = function(path) {
     console.warn("Connection.isReadOnlyImpl.([B)Z not implemented (" + getAbsolutePath(path) + ")");

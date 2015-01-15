@@ -729,6 +729,14 @@ var AudioRecorder = function(aMimeType) {
     }, this.recipient.bind(this));
 };
 
+AudioRecorder.prototype.getContentType = function() {
+    if (this.mimeType == "audio/3gpp") {
+        return "audio/amr";
+    }
+
+    return this.mimeType;
+};
+
 AudioRecorder.prototype.recipient = function(message) {
     var callback = this["on" + message.type];
     if (typeof callback === "function") {
@@ -800,7 +808,7 @@ AudioRecorder.prototype.stop = function() {
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
             var data = new Uint8Array(message.data);
-            if (this.mimeType === "audio/amr") {
+            if (this.getContentType() === "audio/amr") {
                 data = Media.convert3gpToAmr(data);
             }
             this.data = data;
@@ -1116,6 +1124,10 @@ Native["com/sun/mmedia/DirectRecord.nStart.(I)I"] = function(handle) {
     // In DirectRecord.java, nStart plays two roles: real start and resume.
     // Let's handle this on the other side of the DumbPipe.
     asyncImpl("I", Media.PlayerCache[handle].audioRecorder.start());
+};
+
+Native["com/sun/mmedia/DirectRecord.nGetRecordedType.(I)Ljava/lang/String;"] = function(handle) {
+    return J2ME.newString(Media.PlayerCache[handle].audioRecorder.getContentType());
 };
 
 /**

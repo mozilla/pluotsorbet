@@ -86,7 +86,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = navigator.language;
         break;
     case "microedition.platform":
-        value = urlParams.platform ? urlParams.platform : "Nokia503/14.0.4/java_runtime_version=Nokia_Asha_1_2";
+        value = config.platform ? config.platform : "Nokia503/14.0.4/java_runtime_version=Nokia_Asha_1_2";
         break;
     case "microedition.platformimpl":
         value = null;
@@ -302,7 +302,6 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     runtime.pending[className] = true;
     if (className === "com/sun/cldc/isolate/Isolate") {
         // The very first isolate is granted access to the isolate API.
-        // ctx.runtime.setStatic(CLASSES.getField(classInfo, "S._API_access_ok.I"), 1);
         var isolate = classInfo.getStaticObject($.ctx);
         CLASSES.getField(classInfo, "S._API_access_ok.I").set(isolate, 1);
     }
@@ -659,14 +658,6 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     return (len > 0) ? len : -1;
 };
 
-Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(char) {
-    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
-};
-
-Native["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(char) {
-    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
-};
-
 Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(target) {
     this.target = target;
 };
@@ -977,7 +968,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(cbuf, of
 };
 
 Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
-  // ???
+  console.warn("com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V not implemented");
 };
 
 Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V"] = function(content) {

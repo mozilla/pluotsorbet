@@ -227,7 +227,39 @@ Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/Strin
 Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
-        window.open(request);
+        if (request.endsWith(".jad")) {
+            // TODO: The download should start after the MIDlet has terminated its execution.
+            // Currently we're just updating right away because of #744.
+
+            var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+            dialog.style.display = 'block';
+            dialog.classList.add('visible');
+            document.body.appendChild(dialog);
+
+            performDownload(request, dialog, function(data) {
+              dialog.parentElement.removeChild(dialog);
+
+              Promise.all([
+                new Promise(function(resolve, reject) {
+                  fs.remove("/midlet.jad", function() {
+                    fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
+                  });
+                }),
+                new Promise(function(resolve, reject) {
+                  fs.remove("/midlet.jar", function() {
+                    fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
+                  });
+                }),
+              ]).then(function() {
+                DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+                DumbPipe.close(DumbPipe.open("reload", {}));
+              });
+            });
+
+            return true;
+        } else {
+            DumbPipe.close(DumbPipe.open("windowOpen", request));
+        }
     } else if (request.startsWith("x-contacts:add?number=")) {
         new MozActivity({
             name: "new",
@@ -249,7 +281,7 @@ Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/C
     var suiteId = (MIDP.midletClassName === "internal") ? -1 : 1;
     state.klass.classInfo.getField("I.suiteId.I").set(state, suiteId);
     state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, J2ME.newString(MIDP.midletClassName));
-    var args = urlParams.args;
+    var args = config.args;
     state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, J2ME.newString((args.length > 0) ? args[0] : ""));
     state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, J2ME.newString((args.length > 1) ? args[1] : ""));
     state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, J2ME.newString((args.length > 2) ? args[2] : ""));
@@ -553,7 +585,7 @@ Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSup
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
 
-    if (urlParams.autosize && !/no|0/.test(urlParams.autosize)) {
+    if (config.autosize && !/no|0/.test(config.autosize)) {
       c.width = window.innerWidth;
       c.height = window.innerHeight;
       document.documentElement.classList.add('autosize');

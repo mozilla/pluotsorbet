@@ -45,8 +45,10 @@ public class RunTests extends MIDlet {
         }
 
         public void todo(boolean ok) {
-            if (ok)
+            if (ok) {
                 ++unknownPass;
+                debug("unknown pass");
+            }
             else
                 ++knownFail;
             ++testNumber;
@@ -54,7 +56,7 @@ public class RunTests extends MIDlet {
         }
 
         public void report() {
-            System.out.println(testName + ": " + pass + " pass, " + fail + " fail");
+            System.out.println(testName + ": " + pass + " pass, " + fail + " fail, " + unknownPass + " unknown pass");
         }
 
         public int passed() {
@@ -114,7 +116,7 @@ public class RunTests extends MIDlet {
     }
 
     public void startApp() {
-        String arg = getAppProperty("arg-0");
+        String arg = getAppProperty("arg-0").replace('.', '/');
 
         long then = JVM.monotonicTimeMillis();
 
@@ -132,7 +134,7 @@ public class RunTests extends MIDlet {
                     System.err.println("can't find test " + arg);
                 }
 
-                arg = getAppProperty("arg-" + ++i);
+                arg = getAppProperty("arg-" + ++i).replace('.', '/');
             }
         } else {
             for (int n = 0; n < Testlets.list.length; ++n) {

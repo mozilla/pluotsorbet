@@ -778,11 +778,6 @@ module J2ME.Bytecode {
   }
   
   export class BytecodeSwitch {
-//    /**
-//     * The {@link BytecodeStream} containing bytecode array or {@code null} if {@link #code} is not {@code null}.
-//     */
-//    private final BytecodeStream stream;
-//
     /**
      * The bytecode array or {@code null} if {@link #stream} is not {@code null}.
      */
@@ -840,7 +835,7 @@ module J2ME.Bytecode {
      * @return the key at {@code i}'th switch target index
      */
     public keyAt(i: number): number {
-      throw Debug.abstractMethod("defaultOffset");
+      throw Debug.abstractMethod("keyAt");
     }
 
     /**
@@ -849,7 +844,7 @@ module J2ME.Bytecode {
      * @return the offset to the {@code i}'th switch target
      */
     public offsetAt(i: number): number {
-      throw Debug.abstractMethod("defaultOffset");
+      throw Debug.abstractMethod("offsetAt");
     }
 
     /**
@@ -857,7 +852,7 @@ module J2ME.Bytecode {
      * @return the number of switch targets
      */
     public numberOfCases(): number {
-      throw Debug.abstractMethod("defaultOffset");
+      throw Debug.abstractMethod("numberOfCases");
     }
 
     /**
@@ -865,7 +860,7 @@ module J2ME.Bytecode {
      * @return the total size in bytes of the switch instruction
      */
     public size(): number {
-      throw Debug.abstractMethod("defaultOffset");
+      throw Debug.abstractMethod("size");
     }
 
     /**

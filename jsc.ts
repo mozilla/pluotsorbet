@@ -47,7 +47,7 @@ jsGlobal.document = {
   },
 };
 
-jsGlobal.urlParams = {
+jsGlobal.config = {
   logConsole: "native",
   args: "",
 };
@@ -69,7 +69,7 @@ module J2ME {
   loadFiles("libs/zipfile.js", "blackBox.js", "build/j2me.js",
     "libs/encoding.js", "util.js",
     "instrument.js",
-    "override.js", "native.js", "string.js", "libs/console.js", "midp/midp.js",
+    "override.js", "native.js", "string.js", "midp/midp.js",
     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
 
   phase = ExecutionPhase.Compiler;

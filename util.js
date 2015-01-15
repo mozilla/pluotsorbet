@@ -107,8 +107,8 @@ var util = (function () {
     return J2ME.fromJavaString(jStr);
   }
 
+  // Remove and switch to newArray
   function newPrimitiveArray(type, size) {
-    // !!! ask mbx should this be using newArray instead?
     var constructor = J2ME.getArrayConstructor(type);
     return new constructor(size);
   }

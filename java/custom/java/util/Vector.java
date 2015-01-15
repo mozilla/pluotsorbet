@@ -162,7 +162,7 @@ class Vector {
     }
 
     /**
-     * This implements the unsemantics of ensureCapacity.
+     * This implements the unsynchronized semantics of ensureCapacity.
      * Synchronized methods in this class can internally call this
      * method for ensuring capacity without incurring the cost of an
      * extra synchronization.
@@ -237,7 +237,7 @@ class Vector {
      * Returns an enumeration of the components of this vector.
      *
      * @return  an enumeration of the components of this vector.
-     * @see     Enumeration
+     * @see     java.util.Enumeration
      * @since   JDK1.0
      */
     public Enumeration elements() {
@@ -263,7 +263,7 @@ class Vector {
      * @param   elem   an object.
      * @return  the index of the first occurrence of the argument in this
      *          vector; returns <code>-1</code> if the object is not found.
-     * @see     Object#equals(Object)
+     * @see     java.lang.Object#equals(java.lang.Object)
      * @since   JDK1.0
      */
     public int indexOf(Object elem) {
@@ -280,7 +280,7 @@ class Vector {
      * @return  the index of the first occurrence of the object argument in
      *          this vector at position <code>index</code> or later in the
      *          vector; returns <code>-1</code> if the object is not found.
-     * @see     Object#equals(Object)
+     * @see     java.lang.Object#equals(java.lang.Object)
      * @since   JDK1.0
      */
     public int indexOf(Object elem, int index) {
@@ -367,7 +367,7 @@ class Vector {
      * Returns the first component of this vector.
      *
      * @return     the first component of this vector.
-     * @exception  java.util.NoSuchElementException  if this vector has no components.
+     * @exception  NoSuchElementException  if this vector has no components.
      * @since      JDK1.0
      */
     public Object firstElement() {
@@ -382,7 +382,7 @@ class Vector {
      *
      * @return  the last component of the vector, i.e., the component at index
      *          <code>size()&nbsp;-&nbsp;1</code>.
-     * @exception  java.util.NoSuchElementException  if this vector is empty.
+     * @exception  NoSuchElementException  if this vector is empty.
      * @since   JDK1.0
      */
     public Object lastElement() {

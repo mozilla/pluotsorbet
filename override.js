@@ -211,3 +211,11 @@ Override["com/sun/midp/security/Permissions.getId.(Ljava/lang/String;)I"] = func
 Override["com/sun/midp/security/Permissions.getName.(I)Ljava/lang/String;"] = function(id) {
   return J2ME.newString("com.sun.midp");
 };
+
+Override["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toLowerCase.(C)C"] = function(char) {
+    return String.fromCharCode(char).toLowerCase().charCodeAt(0);
+};
+
+Override["com/sun/cldc/i18n/uclc/DefaultCaseConverter.toUpperCase.(C)C"] = function(char) {
+    return String.fromCharCode(char).toUpperCase().charCodeAt(0);
+};

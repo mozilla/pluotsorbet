@@ -73,16 +73,16 @@ import com.sun.cldchi.jvm.JVM;
  * <i>The Java Language Specification</i>.
  *
  * @version 12/17/01 (CLDC 1.1)
- * @see     Object#toString()
- * @see     StringBuffer
- * @see     StringBuffer#append(boolean)
- * @see     StringBuffer#append(char)
- * @see     StringBuffer#append(char[])
- * @see     StringBuffer#append(char[], int, int)
- * @see     StringBuffer#append(int)
- * @see     StringBuffer#append(long)
- * @see     StringBuffer#append(Object)
- * @see     StringBuffer#append(java.lang.String)
+ * @see     java.lang.Object#toString()
+ * @see     java.lang.StringBuffer
+ * @see     java.lang.StringBuffer#append(boolean)
+ * @see     java.lang.StringBuffer#append(char)
+ * @see     java.lang.StringBuffer#append(char[])
+ * @see     java.lang.StringBuffer#append(char[], int, int)
+ * @see     java.lang.StringBuffer#append(int)
+ * @see     java.lang.StringBuffer#append(long)
+ * @see     java.lang.StringBuffer#append(java.lang.Object)
+ * @see     java.lang.StringBuffer#append(java.lang.String)
  * @since   JDK1.0, CLDC 1.0
  */
 public final
@@ -192,7 +192,7 @@ class String {
      * @param  len     Number of bytes to convert
      * @param  enc     The name of a character encoding
      *
-     * @exception  java.io.UnsupportedEncodingException
+     * @exception  UnsupportedEncodingException
      *             If the named encoding is not supported
      * @since      JDK1.1
      */
@@ -211,7 +211,7 @@ class String {
      * @param  bytes   The bytes to be converted into characters
      * @param  enc     The name of a supported character encoding
      *
-     * @exception  java.io.UnsupportedEncodingException
+     * @exception  UnsupportedEncodingException
      *             If the named encoding is not supported
      * @since      JDK1.1
      */
@@ -374,7 +374,7 @@ class String {
      * @param  enc  A character-encoding name
      * @return      The resultant byte array
      *
-     * @exception  java.io.UnsupportedEncodingException
+     * @exception  UnsupportedEncodingException
      *             If the named encoding is not supported
      * @since      JDK1.1
      */
@@ -439,9 +439,9 @@ class String {
      * the same, ignoring case if at least one of the following is true:
      * <ul><li>The two characters are the same (as compared by the
      * <code>==</code> operator).
-     * <li>Applying the method {@link Character#toUpperCase(char)}
+     * <li>Applying the method {@link java.lang.Character#toUpperCase(char)}
      * to each character produces the same result.
-     * <li>Applying the method {@link Character#toLowerCase(char)}
+     * <li>Applying the method {@link java.lang.Character#toLowerCase(char)}
      * to each character produces the same result.</ul>
      *
      * @param   anotherString   the <code>String</code> to compare this
@@ -450,8 +450,8 @@ class String {
      *          and the <code>String</code>s are equal,
      *          ignoring case; <code>false</code> otherwise.
      * @see     #equals(Object)
-     * @see     Character#toLowerCase(char)
-     * @see     Character#toUpperCase(char)
+     * @see     java.lang.Character#toLowerCase(char)
+     * @see     java.lang.Character#toUpperCase(char)
      */
     public boolean equalsIgnoreCase(String anotherString) {
         return (anotherString != null) && (anotherString.count == count) &&
@@ -498,7 +498,7 @@ class String {
      *          is lexicographically less than the string argument; and a
      *          value greater than <code>0</code> if this string is
      *          lexicographically greater than the string argument.
-     * @exception NullPointerException if <code>anotherString</code>
+     * @exception java.lang.NullPointerException if <code>anotherString</code>
      *          is <code>null</code>.
      */
     public int compareTo(String anotherString) {
@@ -639,7 +639,7 @@ class String {
      *          <pre>
      *          this.subString(toffset).startsWith(prefix)
      *          </pre>
-     * @exception NullPointerException if <code>prefix</code> is
+     * @exception java.lang.NullPointerException if <code>prefix</code> is
      *          <code>null</code>.
      */
     public boolean startsWith(String prefix, int toffset) {
@@ -672,7 +672,7 @@ class String {
      *          argument is an empty string or is equal to this
      *          <code>String</code> object as determined by the
      *          {@link #equals(Object)} method.
-     * @exception NullPointerException if <code>prefix</code> is
+     * @exception java.lang.NullPointerException if <code>prefix</code> is
      *          <code>null</code>.
      * @since   JDK1.0
      */
@@ -690,7 +690,7 @@ class String {
      *          result will be <code>true</code> if the argument is the
      *          empty string or is equal to this <code>String</code> object
      *          as determined by the {@link #equals(Object)} method.
-     * @exception NullPointerException if <code>suffix</code> is
+     * @exception java.lang.NullPointerException if <code>suffix</code> is
      *          <code>null</code>.
      */
     public boolean endsWith(String suffix) {
@@ -857,7 +857,7 @@ class String {
      *          object, then the index of the first character of the first
      *          such substring is returned; if it does not occur as a
      *          substring, <code>-1</code> is returned.
-     * @exception NullPointerException if <code>str</code> is
+     * @exception java.lang.NullPointerException if <code>str</code> is
      *          <code>null</code>.
      */
     public int indexOf(String str) {
@@ -887,7 +887,7 @@ class String {
      *          of the first such substring is returned. If it does not occur
      *          as a substring starting at <code>fromIndex</code> or beyond,
      *          <code>-1</code> is returned.
-     * @exception NullPointerException if <code>str</code> is
+     * @exception java.lang.NullPointerException if <code>str</code> is
      *          <code>null</code>
      */
     public int indexOf(String str, int fromIndex) {
@@ -1027,7 +1027,7 @@ class String {
      *                of this <code>String</code>.
      * @return  a string that represents the concatenation of this object's
      *          characters followed by the string argument's characters.
-     * @exception NullPointerException if <code>str</code> is
+     * @exception java.lang.NullPointerException if <code>str</code> is
      *          <code>null</code>.
      */
     public String concat(String str) {
@@ -1230,7 +1230,7 @@ class String {
      * @return  if the argument is <code>null</code>, then a string equal to
      *          <code>"null"</code>; otherwise, the value of
      *          <code>obj.toString()</code> is returned.
-     * @see     Object#toString()
+     * @see     java.lang.Object#toString()
      */
     public static String valueOf(Object obj) {
         return (obj == null) ? "null" : obj.toString();
@@ -1312,7 +1312,7 @@ class String {
      * @param   i   an <code>int</code>.
      * @return  a newly allocated string containing a string representation of
      *          the <code>int</code> argument.
-     * @see     Integer#toString(int, int)
+     * @see     java.lang.Integer#toString(int, int)
      */
     public static String valueOf(int i) {
         return Integer.toString(i, 10);
@@ -1327,7 +1327,7 @@ class String {
      * @param   l   a <code>long</code>.
      * @return  a newly allocated string containing a string representation of
      *          the <code>long</code> argument.
-     * @see     Long#toString(long)
+     * @see     java.lang.Long#toString(long)
      */
     public static String valueOf(long l) {
         return Long.toString(l, 10);
@@ -1342,7 +1342,7 @@ class String {
      * @param   f   a <code>float</code>.
      * @return  a newly allocated string containing a string representation of
      *          the <code>float</code> argument.
-     * @see     Float#toString(float)
+     * @see     java.lang.Float#toString(float)
      * @since   CLDC 1.1
      */
     public static String valueOf(float f) {
@@ -1358,7 +1358,7 @@ class String {
      * @param   d   a <code>double</code>.
      * @return  a newly allocated string containing a string representation of
      *          the <code>double</code> argument.
-     * @see     Double#toString(double)
+     * @see     java.lang.Double#toString(double)
      * @since   CLDC 1.1
      */
     public static String valueOf(double d) {

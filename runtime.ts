@@ -1634,5 +1634,4 @@ var $CAS = J2ME.checkArrayStore;
 
 var $ME = J2ME.monitorEnter;
 var $MX = J2ME.monitorExit;
-
 var $TE = J2ME.translateException;
