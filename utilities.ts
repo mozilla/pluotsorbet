@@ -15,7 +15,7 @@
  */
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
-var inBrowser = typeof console != "undefined";
+var inBrowser = typeof jsGlobal.module == "undefined" && typeof jsGlobal.pc2line == "undefined";
 
 declare var putstr;
 declare var printErr;

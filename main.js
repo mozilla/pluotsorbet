@@ -58,6 +58,12 @@ jars.forEach(function(jar) {
   }));
 });
 
+if (config.jsFiles) {
+  config.jsFiles.forEach(function(jsFile) {
+    loadingPromises.push(loadScript(jsFile));
+  });
+}
+
 function processJAD(data) {
   data
   .replace(/\r\n|\r/g, "\n")
@@ -200,7 +206,9 @@ function start() {
   jvm.startIsolate0(main, config.args);
 }
 
-Promise.all(loadingPromises).then(start);
+Promise.all(loadingPromises).then(start, function (reason) {
+  console.error("Loading failed: \"" + reason + "\"");
+});
 
 document.getElementById("start").onclick = function() {
   start();

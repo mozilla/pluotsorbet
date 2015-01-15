@@ -56,5 +56,8 @@ function loadScript(path) {
     element.setAttribute("src", path);
     document.getElementsByTagName("head")[0].appendChild(element);
     element.onload = resolve;
+    element.onerror = function() {
+      reject("Failed to load script: " + path);
+    };
   });
 }
