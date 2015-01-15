@@ -191,47 +191,47 @@ AccelerometerSensor.handleEvent = function(evt) {
     this.acceleration[2] = a.z;
 };
 
-Native.create("com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I", function() {
+Native["com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I"] = function() {
     // Only support the acceleration sensor.
     return 1;
-});
+};
 
-Native.create("com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V", function(number, model) {
+Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V"] = function(number, model) {
     if (number !== 0) {
         console.error("Invalid sensor number: " + number);
         return;
     }
     var m = AccelerometerSensor.model;
-    model.class.getField("I.description.Ljava/lang/String;")
+    model.klass.classInfo.getField("I.description.Ljava/lang/String;")
                .set(model, util.newString(m.description));
-    model.class.getField("I.model.Ljava/lang/String;")
+    model.klass.classInfo.getField("I.model.Ljava/lang/String;")
                .set(model, util.newString(m.model));
-    model.class.getField("I.quantity.Ljava/lang/String;")
+    model.klass.classInfo.getField("I.quantity.Ljava/lang/String;")
                .set(model, util.newString(m.quantity));
-    model.class.getField("I.contextType.Ljava/lang/String;")
+    model.klass.classInfo.getField("I.contextType.Ljava/lang/String;")
                .set(model, util.newString(m.contextType));
-    model.class.getField("I.connectionType.I")
+    model.klass.classInfo.getField("I.connectionType.I")
                .set(model, m.connectionType);
-    model.class.getField("I.maxBufferSize.I")
+    model.klass.classInfo.getField("I.maxBufferSize.I")
                .set(model, m.maxBufferSize);
-    model.class.getField("I.availabilityPush.Z")
+    model.klass.classInfo.getField("I.availabilityPush.Z")
                .set(model, m.availabilityPush);
-    model.class.getField("I.conditionPush.Z")
+    model.klass.classInfo.getField("I.conditionPush.Z")
                .set(model, m.conditionPush);
-    model.class.getField("I.channelCount.I")
+    model.klass.classInfo.getField("I.channelCount.I")
                .set(model, m.channelCount);
-    model.class.getField("I.errorCodes.[I").set(model, util.newArray("[I", 0));
-    model.class.getField("I.errorMsgs.[Ljava/lang/String;").set(model, util.newArray("[Ljava/lang/String;", 0));
+    model.klass.classInfo.getField("I.errorCodes.[I").set(model, util.newPrimitiveArray("I", 0));
+    model.klass.classInfo.getField("I.errorMsgs.[Ljava/lang/String;").set(model, J2ME.newStringArray(0));
 
     var n = m.properties.length;
-    var p = util.newArray("[Ljava/lang/String;", n);
+    var p = J2ME.newStringArray(n);
     for (var i = 0; i < n; i++) {
         p[i] = util.newString(m.properties[i]);
     }
-    model.class.getField("I.properties.[Ljava/lang/String;").set(model, p);
-});
+    model.klass.classInfo.getField("I.properties.[Ljava/lang/String;").set(model, p);
+};
 
-Native.create("com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V", function(sensorsNumber, number, model) {
+Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] = function(sensorsNumber, number, model) {
     if (sensorsNumber !== 0) {
         console.error("Invalid sensor number: " + sensorsNumber);
         return;
@@ -241,49 +241,49 @@ Native.create("com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/j
         return;
     }
     var c = AccelerometerSensor.channels[number];
-    model.class.getField("I.scale.I")
+    model.klass.classInfo.getField("I.scale.I")
                .set(model, c.scale);
-    model.class.getField("I.name.Ljava/lang/String;")
+    model.klass.classInfo.getField("I.name.Ljava/lang/String;")
                .set(model, util.newString(c.name));
-    model.class.getField("I.unit.Ljava/lang/String;")
+    model.klass.classInfo.getField("I.unit.Ljava/lang/String;")
                .set(model, util.newString(c.unit));
-    model.class.getField("I.dataType.I")
+    model.klass.classInfo.getField("I.dataType.I")
                .set(model, c.dataType);
-    model.class.getField("I.accuracy.I")
+    model.klass.classInfo.getField("I.accuracy.I")
                .set(model, c.accuracy);
-    model.class.getField("I.mrangeCount.I")
+    model.klass.classInfo.getField("I.mrangeCount.I")
                .set(model, c.mrangeArray.length);
 
     var n = c.mrangeArray.length;
-    var array = util.newArray("[J", n);
+    var array = util.newPrimitiveArray("J", n);
     for (var i = 0; i < n; i++) {
         array[i] = c.mrangeArray[i];
     }
-    model.class.getField("I.mrangeArray.[J").set(model, array);
-});
+    model.klass.classInfo.getField("I.mrageArray.[J").set(model, array);
+};
 
-Native.create("com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z", function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(number) {
     // Only support the acceleration sensor with number = 0.
     return number === 0;
-});
+};
 
-Native.create("com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z", function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(number) {
     if (number !== 0) {
         return false;
     }
     AccelerometerSensor.open();
     return true;
-});
+};
 
-Native.create("com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z", function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(number) {
     if (number !== 0) {
         return false;
     }
     AccelerometerSensor.close();
     return true;
-});
+};
 
-Native.create("com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B", function(sensorNumber, channelNumber) {
+Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(sensorNumber, channelNumber) {
     if (sensorNumber !== 0 || channelNumber < 0 || channelNumber >= 3) {
         if (sensorNumber !== 0) {
             console.error("Invalid sensor number: " + sensorsNumber);
@@ -294,4 +294,4 @@ Native.create("com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B", functi
     }
 
     return AccelerometerSensor.readBuffer(channelNumber);
-});
+};
