@@ -6,6 +6,8 @@
   <link rel="stylesheet" type="text/css" href="style/main.css">
   <link rel="stylesheet" type="text/css" href="style/confirm.css">
   <link rel="stylesheet" type="text/css" href="style/progress_activity.css">
+  <link rel="stylesheet" type="text/css" href="style/headers.css">
+  <link rel="stylesheet" type="text/css" href="style/drawer.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
   <!-- Uncomment the line below to enable the profiler. -->
@@ -120,7 +122,27 @@
       <button id="loadAllClasses">Load All Classes</button>
     </section>
   </div>
-  <div id="display"><canvas id="canvas"></canvas></div>
+  <div id="display">
+    <section id="sidebar" data-type="sidebar" style="display:none">
+      <header>
+        <h1>Menu</h1>
+      </header>
+      <nav>
+        <ul>
+        </ul>
+      </nav>
+    </section>
+    <section id="drawer" role="region">
+      <header style="display:none">
+        <a href="#"><span class="icon icon-menu">hide sidebar</span></a>
+        <a href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <h1 id="display_title"></h1>
+      </header>
+      <div id="main" role="main">
+        <canvas id="canvas"></canvas>
+      </div>
+    </section>
+  </div>
   <div id="gamepad">
     <button id="up">up</button>
     <button id="down">down</button>
@@ -135,6 +157,20 @@
       <progress></progress>
     </div>
   </div>
+
+  <form role="dialog" data-type="confirm"
+        class="lcdui-alert"
+        id="lcdui-alert" style="display: none">
+    <section>
+      <h1 class="title"></h1>
+      <p class="text"></p>
+      <p style="border-top: 0"><progress style="display: none"></progress></p>
+    </section>
+    <menu>
+      <button class="button0" style="display: none"></button>
+      <button class="button1" style="display: none"></button>
+    </menu>
+  </form>
 
   <form role="dialog" data-type="confirm"
         class="sms-listener-prompt"
@@ -172,7 +208,7 @@
       <h1 class="download-dialog-text"></h1>
       <progress class="pack-activity" value="0" max="100"></progress>
     </section>
-    <menu style="text-align: center">
+    <menu>
       <button class="recommend" style="display: none">Retry</button>
     </menu>
   </form>

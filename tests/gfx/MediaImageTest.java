@@ -14,6 +14,9 @@ public class MediaImageTest extends MIDlet implements PlayerListener {
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
             videoControl.initDisplayMode(VideoControl.USE_DIRECT_VIDEO, this);
             try {
                 videoControl.setDisplayLocation(20, 20);

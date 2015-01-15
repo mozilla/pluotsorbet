@@ -1010,8 +1010,8 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
                 mask.style.position = "absolute";
                 mask.style.top = 0;
                 mask.style.left = 0;
-                mask.style.height = "100%";
-                mask.style.width = "100%";
+                mask.style.height = MIDP.Context2D.canvas.height + "px";
+                mask.style.width = MIDP.Context2D.canvas.width + "px";
                 mask.style.backgroundColor = "#000";
                 mask.style.backgroundPosition = "center center";
                 mask.style.backgroundRepeat = "no-repeat";
@@ -1022,7 +1022,7 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
                     mask.parentNode.removeChild(mask);
                 };
 
-                document.getElementById("display").appendChild(mask);
+                document.getElementById("main").appendChild(mask);
             }
 
             mask.style.backgroundImage = "url(" +

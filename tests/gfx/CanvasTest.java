@@ -7,11 +7,11 @@ public class CanvasTest extends MIDlet {
     private Display display;
 
     class TestCanvas extends Canvas {
-	protected void paint(Graphics g) {
-	    g.setColor(0x00FFFFFF);;
-	    g.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
-	    System.out.println("PAINTED");
-	}
+        protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            System.out.println("PAINTED");
+        }
     }
 
     public CanvasTest() {
