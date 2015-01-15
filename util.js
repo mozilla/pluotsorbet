@@ -104,41 +104,39 @@ var util = (function () {
   }
 
   function fromJavaString(jStr) {
-    if (!jStr)
-      return null;
-    return jStr.str;
+    return J2ME.fromJavaString(jStr);
   }
 
+  // Remove and switch to newArray
   function newPrimitiveArray(type, size) {
-    var constructor = ARRAYS[type];
-    if (!constructor.prototype.class)
-      CLASSES.initPrimitiveArrayType(type, constructor);
+    var constructor = J2ME.getArrayConstructor(type);
     return new constructor(size);
   }
 
-  function newArray(typeName, size) {
-    return new (CLASSES.getClass(typeName).constructor)(size);
+
+  // Remove
+  function newArray(classInfo, size) {
+    return J2ME.newArray(classInfo.klass, size);
   }
 
-  function newMultiArray(typeName, lengths) {
+  function newMultiArray(classInfo, lengths) {
     var length = lengths[0];
-    var array = newArray(typeName, length);
+    var array = newArray(classInfo.elementClass, length);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i=0; i<length; i++)
-        array[i] = newMultiArray(typeName.substr(1), lengths);
+        array[i] = newMultiArray(classInfo.elementClass, lengths);
     }
     return array;
   }
 
+  // Remove
   function newObject(classInfo) {
-      return new (classInfo.constructor)();
+      return J2ME.newObject(classInfo.klass);
   }
 
   function newString(s) {
-    var obj = newObject(CLASSES.java_lang_String);
-    obj.str = s;
-    return obj;
+    return J2ME.newString(s);
   }
 
   /**
@@ -216,7 +214,7 @@ var util = (function () {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
-    decodeUt8Array: decodeUtf8Array,
+    decodeUtf8Array: decodeUtf8Array,
     javaUTF8Decode: javaUTF8Decode,
     defaultValue: defaultValue,
     double2int: double2int,

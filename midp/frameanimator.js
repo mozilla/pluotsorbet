@@ -33,59 +33,59 @@ FrameAnimator.prototype.isRegistered = function() {
   return this._isRegistered;
 };
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.init.()V", function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.init.()V"] = function() {
   this.nativeObject = new FrameAnimator();
-});
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z", function(x, y, maxFps, maxPps, listener) {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z"] = function(x, y, maxFps, maxPps, listener) {
   if (this.nativeObject.isRegistered()) {
-    throw new JavaException("java/lang/IllegalStateException", "FrameAnimator already registered");
+    throw $.newIllegalStateException("FrameAnimator already registered");
   }
 
   if (!listener) {
-    throw new JavaException("java/lang/NullPointerException", "listener is null");
+    throw $.newNullPointerException("listener is null");
   }
 
   if (x < -65535 || x > 65535 || y < -65535 || y > 65535) {
-    throw new JavaException("java/lang/IllegalArgumentException", "coordinate out of bounds");
+    throw $.newIllegalArgumentException("coordinate out of bounds");
   }
 
   // XXX return false if FrameAnimator.numRegistered >= FRAME_ANIMATOR_MAX_CONCURRENT
 
   this.nativeObject.register(x, y, maxFps, maxPps, listener);
-  return true;
-});
+  return 1;
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.unregister.()V", function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.unregister.()V"] = function() {
   if (!this.nativeObject.isRegistered()) {
-    throw new JavaException("java/lang/IllegalStateException", "FrameAnimator not registered");
+    throw $.newIllegalStateException("FrameAnimator not registered");
   }
 
   this.nativeObject.unregister();
-});
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V", function(x, y) {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V"] = function(x, y) {
   console.warn("FrameAnimator.drag(II)V not implemented (" + x + ", " + y + ")");
-});
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V", function(speed, direction, friction, angle) {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V"] = function(speed, direction, friction, angle) {
   console.warn("FrameAnimator.kineticScroll(IIIF)V not implemented (" +
                speed + ", " + direction + ", " + friction + ", " + angle + ")");
-});
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V", function(speed, direction, friction, angle, limitUp, limitDown) {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V"] = function(speed, direction, friction, angle, limitUp, limitDown) {
   console.warn("FrameAnimator.limitedKineticScroll(IIIFII)V not implemented (" +
                speed + ", " + direction + ", " + friction + ", " + angle + ", " + limitUp + ", " + limitDown + ")");
-});
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V", function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V"] = function() {
   console.warn("FrameAnimator.stop()V not implemented");
-});
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.isRegistered.()Z", function() {
-  return this.nativeObject.isRegistered();
-});
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.isRegistered.()Z"] = function() {
+  return this.nativeObject.isRegistered() ? 1 : 0;
+};
 
-Native.create("com/nokia/mid/ui/frameanimator/FrameAnimator.getNumRegisteredFrameAnimators.()I", function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.getNumRegisteredFrameAnimators.()I"] = function() {
   return FrameAnimator.numRegistered;
-});
+};

@@ -60,18 +60,6 @@ button {
   font-size: 12px;
 }
 
-#console {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 240px;
-  margin: 0;
-  padding: 0.5rem;
-  overflow: auto;
-}
-
-
 .log-item-log {
   color: #555;
 }
@@ -235,4 +223,67 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   left: auto;
   bottom: auto;
   box-sizing: border-box;
+}
+
+#console {
+  overflow: auto;
+  margin: 0;
+}
+
+#traceTerminalContainer {
+  position: fixed;
+  top: 0;
+  bottom: 250px;
+  left: 0;
+  right: 240px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  /*background-color: rgba(0, 0, 0, 0.8);*/
+}
+
+#profilerContainer {
+  position: absolute;
+  bottom: 0;
+  right: 250px;
+  left: 0;
+  height: 250px;
+  overflow: hidden;
+  background-color: #000;
+  color: #ffffff;
+}
+
+#profilerToolbar {
+  padding: 2px;
+}
+
+#profilerStartStop {
+  display: block;
+  color: red;
+  cursor: hand;
+}
+
+.profiler-tooltip {
+  position: absolute;
+  font-family: sans-serif;
+  color: #ddd;
+}
+.profiler-tooltip {
+  background-color: #111;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  padding: 5px;
+}
+.profiler-tooltip > div > h1 {
+  font-size: 11px;
+  margin: 1px 0 2px 0;
+}
+.profiler-tooltip > div > p {
+  font-size: 10px;
+  margin: 0 0 1px 0;
+}
+.profiler-tooltip > div > hr {
+  margin: 2px auto 4px auto;
+  border: none;
+  border-bottom: 1px solid #555;
 }
