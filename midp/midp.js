@@ -567,8 +567,8 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = CLASSES.loadFile(fileName);
     if (!data) {
-        console.error("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
-        throw $.newIOException();
+        console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
+        return null;
     }
     var len = data.byteLength;
     var bytes = util.newPrimitiveArray("B", len);
