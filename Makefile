@@ -32,7 +32,7 @@ aot: java j2me
 	node tools/pack.js build/classes.jar.js > build/classes.jar.js.pack
 	node tools/pack.js build/tests.jar.js > build/tests.jar.js.pack
 	if test -f program.jar; then \
-		node tools/pack.js build/program.jar.js > build/program.jar.js.pack \
+		node tools/pack.js build/program.jar.js > build/program.jar.js.pack; \
 	fi
 	@echo "Done"
 
