@@ -1052,6 +1052,10 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() 
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
 function(obj, isolateId) {
+    if (!MIDP.nativeEventQueues[isolateId]) {
+      MIDP.nativeEventQueues[isolateId] = [];
+    }
+
     MIDP.sendEvent(obj, isolateId);
 };
 
