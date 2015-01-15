@@ -196,6 +196,7 @@ function toggle(button) {
 var bigBang = 0;
 
 function start() {
+  J2ME.Context.setWriters(new J2ME.IndentingWriter());
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
@@ -255,12 +256,18 @@ window.onload = function() {
    J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
    J2ME.nativeCounter && J2ME.nativeCounter.clear();
    J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
+   J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
  };
   function dumpCounters() {
     var writer = new J2ME.IndentingWriter();
     if (J2ME.interpreterCounter) {
       writer.enter("interpreterCounter");
       J2ME.interpreterCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.interpreterMethodCounter) {
+      writer.enter("interpreterMethodCounter");
+      J2ME.interpreterMethodCounter.traceSorted(writer);
       writer.outdent();
     }
     if (J2ME.nativeCounter) {
@@ -276,6 +283,7 @@ window.onload = function() {
   }
   function clearCounters() {
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
+    J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
     J2ME.nativeCounter && J2ME.nativeCounter.clear();
     J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
   }

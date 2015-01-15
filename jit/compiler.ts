@@ -285,30 +285,6 @@ module J2ME {
         }
         if (compiledMethod && compiledMethod.body) {
           var compiledMethodName = mangledClassAndMethodName;
-          if (false && method.isSynchronized) {
-            compiledMethodName = "_" + mangledClassAndMethodName + "_";
-            // Emit Synchronization Wrapper
-            var lockObject = method.isStatic ? "$." + mangleClass(method.classInfo) : "this";
-            var me = "$ME(" + lockObject + "); if (U) return;"; // We may need to unwind after a monitorEnter.
-            var mx = "$MX(" + lockObject + ");";
-            writer.writeLn("// Synchronization Wrapper");
-            writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
-            writer.enter("try {");
-            writer.writeLn(me);
-            if (method.isStatic) {
-              writer.writeLn("var r = " + compiledMethodName + "(" + compiledMethod.args.join(",") + ");");
-            } else {
-              if (compiledMethod.args.length > 0) {
-                writer.writeLn("var r = " + compiledMethodName + ".call(this, " + compiledMethod.args.join(",") + ");");
-              } else {
-                writer.writeLn("var r = " + compiledMethodName + ".call(this);");
-              }
-            }
-            writer.writeLn(mx);
-            writer.writeLn("return r;");
-            writer.leave("} catch (e) { " + mx + " throw e; }");
-            writer.leave("}");
-          }
           writer.enter("function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
           writer.leave("}");
@@ -351,12 +327,12 @@ module J2ME {
   }
 
   export function compileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
-    return baselineCompileMethod(methodInfo, ctx, target);
+    return baselineCompileMethod(methodInfo, target);
     var method;
     try {
       method = optimizerCompileMethod(methodInfo, ctx, target);
     } catch (x) {
-      method = baselineCompileMethod(methodInfo, ctx, target);
+      method = baselineCompileMethod(methodInfo, target);
     }
     return method;
   }

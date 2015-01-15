@@ -39,6 +39,11 @@ module J2ME {
   export var linkWriter = null;
 
   /**
+   * Traces class loading.
+   */
+  export var loadWriter = null;
+
+  /**
    * Traces class initialization.
    */
   export var initWriter = null;
@@ -355,7 +360,7 @@ module J2ME {
       this.status = RuntimeStatus.New;
       this.waiting = [];
       this.threadCount = 0;
-      this.initialized = {};
+      this.initialized = Object.create(null);
       this.pending = {};
       this.staticFields = {};
       this.classObjects = {};
@@ -853,9 +858,6 @@ module J2ME {
     if (klass) {
       return klass;
     }
-    if (loadCode(classInfo.className)) {
-      return jsGlobal[classInfo.mangledName];
-    }
     return null;
   }
 
@@ -957,6 +959,8 @@ module J2ME {
       }
     } else {
       klass = makeKlassConstructor(classInfo);
+      release || assert(!classInfo.klass);
+      classInfo.klass = klass;
     }
 
     if (classInfo.superClass && !classInfo.superClass.klass &&
@@ -1043,7 +1047,14 @@ module J2ME {
     return klass;
   }
 
+  /**
+   * TODO: Find out if we need to also run class initialization here, or if the
+   * callers should be calling that instead of this.
+   */
   export function linkKlass(classInfo: ClassInfo) {
+    if (classInfo.klass) {
+      return;
+    }
     enterTimeline("linkKlass", {classInfo: classInfo});
     var mangledName = mangleClass(classInfo);
     var klass;
@@ -1177,7 +1188,7 @@ module J2ME {
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject($.ctx)
+            ? methodInfo.classInfo.getClassObject()
             : frame.getLocal(0);
         }
         $.ctx.monitorEnter(frame.lockObject);
@@ -1191,7 +1202,18 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    return jsGlobal[methodInfo.mangledClassAndMethodName];
+    var name = methodInfo.mangledClassAndMethodName;
+    var method = jsGlobal[name];
+    return method;
+    if (!method) {
+      var compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+      var code =
+      "function " + name + "(" + compiledMethod.args.join(",") + ") {" +
+        compiledMethod.body +
+      "}";
+      (1, eval)(code);
+      return jsGlobal[name];
+    }
   }
 
   /**
@@ -1223,6 +1245,9 @@ module J2ME {
     var methods = klass.classInfo.methods;
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
+      if (methodInfo.isAbstract) {
+        continue;
+      }
       var fn;
       var methodType;
       var nativeMethod = findNativeMethodImplementation(methods[i]);
@@ -1237,9 +1262,6 @@ module J2ME {
         if (fn) {
           linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
           methodType = MethodType.Compiled;
-          if (!traceWriter) {
-            linkWriter && linkWriter.outdent();
-          }
           // Save method info so that we can figure out where we are bailing
           // out from.
           jitMethodInfos[fn.name] = methodInfo;
@@ -1341,10 +1363,10 @@ module J2ME {
    * Creates lookup tables used to efficiently implement type checks.
    */
   function initializeKlassTables(klass: Klass) {
+    linkWriter && linkWriter.writeLn("initializeKlassTables: " + klass);
     klass.depth = klass.superKlass ? klass.superKlass.depth + 1 : 0;
     assert (klass.display === undefined, "Display should only be defined once.")
     var display = klass.display = new Array(32);
-
 
     var i = klass.depth;
     while (klass) {
@@ -1564,6 +1586,17 @@ module J2ME {
       return $.newNullPointerException(e.message);
     }
     return e;
+  }
+
+  export function classInitCheck(classInfo: ClassInfo, pc: number) {
+    if (classInfo.isArrayClass || $.initialized[classInfo.className]) {
+      return;
+    }
+    $.ctx.pushClassInitFrame(classInfo);
+    if (U) {
+      $.ctx.current().pc = pc;
+      return;
+    }
   }
 }
 

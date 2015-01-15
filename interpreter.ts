@@ -13,6 +13,7 @@ module J2ME {
   import popManyInto = ArrayUtilities.popManyInto;
 
   export var interpreterCounter = new Metrics.Counter(true);
+  export var interpreterMethodCounter = new Metrics.Counter(true);
 
   var traceArrayAccess = false;
 
@@ -58,24 +59,22 @@ module J2ME {
     methodInfo.isOptimized = true;
   }
 
-  function resolve(index: number, cp: ConstantPoolEntry [], isStatic: boolean = false): any {
-    var entry = cp[index];
-    if (entry.tag) {
-      entry = $.ctx.resolve(cp, index, isStatic);
-    }
-    return entry;
+  function resolve(index: number, classInfo: ClassInfo, isStatic: boolean = false): any {
+    return classInfo.resolve(index, isStatic);
   }
 
-  function resolveField(index: number, cp: ConstantPoolEntry [], isStatic: boolean): FieldInfo {
-    return <FieldInfo><any>resolve(index, cp, isStatic);
+  function resolveField(index: number, classInfo: ClassInfo, isStatic: boolean): FieldInfo {
+    return <FieldInfo><any>resolve(index, classInfo, isStatic);
   }
 
-  function resolveClass(index: number, cp: ConstantPoolEntry [], isStatic: boolean): ClassInfo {
-    return <ClassInfo><any>resolve(index, cp, isStatic);
+  function resolveClass(index: number, classInfo: ClassInfo, isStatic: boolean): ClassInfo {
+    var classInfo: ClassInfo = <any>resolve(index, classInfo, isStatic);
+    linkKlass(classInfo);
+    return classInfo;
   }
 
-  function resolveMethod(index: number, cp: ConstantPoolEntry [], isStatic: boolean): MethodInfo {
-    return <MethodInfo><any>resolve(index, cp, isStatic);
+  function resolveMethod(index: number, classInfo: ClassInfo, isStatic: boolean): MethodInfo {
+    return <MethodInfo><any>resolve(index, classInfo, isStatic);
   }
 
   /**
@@ -111,7 +110,7 @@ module J2ME {
   function popFrame(consumes) {
     var ctx = $.ctx;
     var frame = ctx.current();
-    var cp = frame.cp;
+    var classInfo = frame.methodInfo.classInfo;
     var stack = frame.stack;
 
     if (frame.lockObject)
@@ -133,7 +132,6 @@ module J2ME {
       return returnValue;
     }
     stack = frame.stack;
-    cp = frame.cp;
     switch (consumes) {
       case 2:
         stack.push2(callee.stack.pop2());
@@ -156,7 +154,6 @@ module J2ME {
   function throw_(ex) {
     var ctx = $.ctx;
     var frame = ctx.current();
-    var cp = frame.cp;
     var stack = frame.stack;
 
     var exClass = ex.class;
@@ -165,8 +162,6 @@ module J2ME {
     }
 
     var stackTrace = ex.stackTrace;
-
-    var classInfo;
 
     do {
       var exception_table = frame.methodInfo.exception_table;
@@ -177,7 +172,7 @@ module J2ME {
             handler_pc = exception_table[i].handler_pc;
             break;
           } else {
-            classInfo = resolve(exception_table[i].catch_type, cp, false);
+            classInfo = resolveClass(exception_table[i].catch_type, frame.methodInfo.classInfo, false);
             if (isAssignableTo(ex.klass, classInfo.klass)) {
               handler_pc = exception_table[i].handler_pc;
               break;
@@ -186,7 +181,7 @@ module J2ME {
         }
       }
 
-      classInfo = frame.methodInfo.classInfo;
+      var classInfo = frame.methodInfo.classInfo;
       if (classInfo && classInfo.className) {
         stackTrace.push({
           className: classInfo.className,
@@ -208,7 +203,6 @@ module J2ME {
       }
       popFrame(0);
       frame = ctx.current();
-      cp = frame && frame.cp || null;
       stack = frame && frame.stack || null;
     } while (frame);
 
@@ -229,23 +223,11 @@ module J2ME {
     }
   }
 
-  function classInitCheck(classInfo, ip) {
-    var ctx = $.ctx;
-    if (classInfo.isArrayClass || ctx.runtime.initialized[classInfo.className])
-      return;
-    ctx.pushClassInitFrame(classInfo);
-
-    if (U) {
-      ctx.current().pc = ip;
-      return;
-    }
-  }
-
   export function interpret() {
     var ctx = $.ctx;
     var frame = ctx.current();
 
-    var cp = frame.cp;
+    var mi = frame.methodInfo;
     var stack = frame.stack;
     var returnValue = null;
 
@@ -287,6 +269,7 @@ module J2ME {
     frame.methodInfo.interpreterCallCount ++;
 
     while (true) {
+      interpreterMethodCounter && interpreterMethodCounter.count(frame.methodInfo.implKey);
       ops ++;
       frame.methodInfo.bytecodeCount ++;
       frame.opPc = frame.pc;
@@ -362,12 +345,12 @@ module J2ME {
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
             index = (op === Bytecodes.LDC) ? frame.read8() : frame.read16();
-            constant = resolve(index, cp, false);
+            constant = resolve(index, mi.classInfo, false);
             stack.push(constant);
             break;
           case Bytecodes.LDC2_W:
             index = frame.read16();
-            constant = resolve(index, cp, false);
+            constant = resolve(index, mi.classInfo, false);
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:
@@ -959,7 +942,8 @@ module J2ME {
             break;
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
-            classInfo = resolveClass(index, cp, false);
+            classInfo = resolveClass(index, mi.classInfo, false);
+            classInitCheck(classInfo, frame.pc - 3);
             size = stack.pop();
             if (size < 0) {
               throw $.newNegativeArraySizeException();
@@ -968,7 +952,7 @@ module J2ME {
             break;
           case Bytecodes.MULTIANEWARRAY:
             index = frame.read16();
-            classInfo = resolveClass(index, cp, false);
+            classInfo = resolveClass(index, mi.classInfo, false);
             var dimensions = frame.read8();
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++)
@@ -990,20 +974,20 @@ module J2ME {
             break;
           case Bytecodes.GETFIELD:
             index = frame.read16();
-            fieldInfo = resolveField(index, cp, false);
+            fieldInfo = resolveField(index, mi.classInfo, false);
             object = stack.pop();
             stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
             break;
           case Bytecodes.PUTFIELD:
             index = frame.read16();
-            fieldInfo = resolveField(index, cp, false);
+            fieldInfo = resolveField(index, mi.classInfo, false);
             value = stack.popKind(fieldInfo.kind);
             object = stack.pop();
             fieldInfo.set(object, value);
             break;
           case Bytecodes.GETSTATIC:
             index = frame.read16();
-            fieldInfo = resolveField(index, cp, true);
+            fieldInfo = resolveField(index, mi.classInfo, true);
             classInitCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
@@ -1013,7 +997,10 @@ module J2ME {
             break;
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
-            fieldInfo = resolveField(index, cp, true);
+            fieldInfo = resolveField(index, mi.classInfo, true);
+            if (fieldInfo.classInfo.className === "gnu/testlet/vm/InterfaceTest$A") {
+              debugger;
+            }
             classInitCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
@@ -1022,7 +1009,7 @@ module J2ME {
             break;
           case Bytecodes.NEW:
             index = frame.read16();
-            classInfo = resolveClass(index, cp, false);
+            classInfo = resolveClass(index, mi.classInfo, false);
             classInitCheck(classInfo, frame.pc - 3);
             if (U) {
               return;
@@ -1031,7 +1018,7 @@ module J2ME {
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
-            classInfo = resolveClass(index, cp, false);
+            classInfo = resolveClass(index, mi.classInfo, false);
             object = stack[stack.length - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException(
@@ -1041,7 +1028,7 @@ module J2ME {
             break;
           case Bytecodes.INSTANCEOF:
             index = frame.read16();
-            classInfo = resolveClass(index, cp, false);
+            classInfo = resolveClass(index, mi.classInfo, false);
             object = stack.pop();
             var result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
             stack.push(result ? 1 : 0);
@@ -1078,9 +1065,9 @@ module J2ME {
               var zero = frame.read8();
             }
             var isStatic = (op === Bytecodes.INVOKESTATIC);
-            var methodInfo = cp[index];
+            var methodInfo: any = mi.classInfo.constant_pool[index];
             if (methodInfo.tag) {
-              methodInfo = resolve(index, cp, isStatic);
+              methodInfo = resolve(index, mi.classInfo, isStatic);
               if (isStatic) {
                 classInitCheck(methodInfo.classInfo, startPc);
                 if (U) {
@@ -1160,7 +1147,7 @@ module J2ME {
               return returnValue;
             } else {
               frame = ctx.current();
-              cp = frame && frame.cp || null;
+              mi = frame && frame.methodInfo || null;
               stack = frame && frame.stack || null;
             }
             break;
@@ -1172,7 +1159,7 @@ module J2ME {
               return returnValue;
             } else {
               frame = ctx.current();
-              cp = frame && frame.cp || null;
+              mi = frame && frame.methodInfo || null;
               stack = frame && frame.stack || null;
             }
             break;
@@ -1183,7 +1170,7 @@ module J2ME {
               return returnValue;
             } else {
               frame = ctx.current();
-              cp = frame && frame.cp || null;
+              mi = frame && frame.methodInfo || null;
               stack = frame && frame.stack || null;
             }
             break;
@@ -1204,7 +1191,7 @@ module J2ME {
 
         throw_(e);
         frame = ctx.current();
-        cp = frame && frame.cp || null;
+        mi = frame && frame.methodInfo || null;
         stack = frame && frame.stack || null;
         continue;
       }

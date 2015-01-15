@@ -13,7 +13,7 @@ module J2ME {
   export var baselineTotal = 0;
   export var baselineCompiled = 0;
 
-  export function baselineCompileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
+  export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
     var compileSynchronized = true;
 
@@ -26,7 +26,7 @@ module J2ME {
     writer && writer.writeLn("Compile: " + methodInfo.implKey);
     baselineTotal ++;
     try {
-      var result = new BaselineCompiler(methodInfo, ctx, target).compile();
+      var result = new BaselineCompiler(methodInfo, target).compile();
       baselineCompiled ++;
       return result;
     } catch (e) {
@@ -99,8 +99,8 @@ module J2ME {
 
   function conditionToOperator(condition: Condition): string {
     switch (condition) {
-      case Condition.EQ: return "==";
-      case Condition.NE: return "!=";
+      case Condition.EQ: return "===";
+      case Condition.NE: return "!==";
       case Condition.LT: return "<";
       case Condition.LE: return "<=";
       case Condition.GT: return ">";
@@ -131,7 +131,6 @@ module J2ME {
     sp: number;
     pc: number;
 
-    private ctx: Context;
     private emitter: Emitter;
     private methodInfo: MethodInfo;
     private parameters: string [];
@@ -149,8 +148,7 @@ module J2ME {
      */
     static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
-    constructor(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget) {
-      this.ctx = ctx;
+    constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
       this.local = [];
       this.variables = [];
@@ -331,27 +329,24 @@ module J2ME {
     }
 
     lookupClass(cpi: number): ClassInfo {
-      var classInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, false);
+      var classInfo = this.methodInfo.classInfo.resolve(cpi, false);
       ArrayUtilities.pushUnique(this.referencedClasses, classInfo);
       return classInfo;
     }
 
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
-      var methodInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+      var methodInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, methodInfo.classInfo);
       return methodInfo;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
-      var fieldInfo = this.ctx.resolve(this.methodInfo.classInfo.constant_pool, cpi, isStatic);
+      var fieldInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, fieldInfo.classInfo);
       return fieldInfo;
     }
 
     getStack(i: number): string {
-      if (i < 0 || i >= this.methodInfo.max_stack) {
-        throw new Error("Out of bounds stack read.");
-      }
       if (i >= BaselineCompiler.stackNames.length) {
         return "s" + (i - BaselineCompiler.stackNames.length);
       }
@@ -491,7 +486,7 @@ module J2ME {
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
         this.emitter.writeLn(this.runtimeClass(classInfo) + ";");
-        if (classInfo.staticInitializer && canYield(this.ctx, classInfo.staticInitializer)) {
+        if (classInfo.staticInitializer && canYield(classInfo.staticInitializer)) {
           this.emitUnwind(this.pc, this.pc);
         }
       }
@@ -500,7 +495,7 @@ module J2ME {
     emitInvoke(methodInfo: MethodInfo, opcode: Bytecodes, nextPC: number) {
       var calleeCanYield = YieldReason.Virtual;
       if (isStaticallyBound(opcode, methodInfo)) {
-        calleeCanYield = canYield(this.ctx, methodInfo);
+        calleeCanYield = canYield(methodInfo);
       }
       if (opcode === Bytecodes.INVOKESTATIC) {
         this.emitClassInitializationCheck(methodInfo.classInfo);

@@ -425,7 +425,7 @@ public final class StringBuffer {
      */
       public StringBuffer append(String str) {
           if (str == null) {
-              str = String.valueOf(str);
+              str = "null";
           }
   
           int len = str.length();

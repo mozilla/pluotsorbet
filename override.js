@@ -21,14 +21,14 @@ function asyncImpl(returnKind, promise) {
       name: "RaiseExceptionSynthetic",
       signature: "()V",
       isStatic: true,
-      classInfo: {
-        className: "java/lang/Object",
-        vmc: {},
-        vfc: {},
-        constant_pool: [
+      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+        className: {value: "java/lang/Object"},
+        vmc: {value: {}},
+        vfc: {value: {}},
+        constant_pool: {value: [
           null
-        ]
-      },
+        ]}
+      }),
       code: new Uint8Array([
         0x2a,             // aload_0
         0xbf              // athrow
