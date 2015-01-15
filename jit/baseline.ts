@@ -132,6 +132,7 @@ module J2ME {
     pc: number;
 
     private emitter: Emitter;
+    private blockMap: BlockMap;
     private methodInfo: MethodInfo;
     private parameters: string [];
     private hasHandlers: boolean;
@@ -179,7 +180,7 @@ module J2ME {
       }
     }
     emitBody() {
-      var blockMap = new BlockMap(this.methodInfo);
+      var blockMap = this.blockMap = new BlockMap(this.methodInfo);
       blockMap.build();
       writer && blockMap.trace(writer);
       var blocks = blockMap.blocks;
@@ -193,7 +194,7 @@ module J2ME {
       }
       this.emitter.enter("while (true) {");
       needsTry && this.emitter.enter("try {");
-      this.emitter.enter("switch (pc) {");
+      this.emitter.enter("switch (bi) {");
 
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
@@ -222,9 +223,12 @@ module J2ME {
           needsFallthroughPC = false;
         }
         if (needsFallthroughPC) {
-          this.emitter.writeLn("pc = " + stream.currentBCI + "; break;");
+          this.emitter.writeLn("bi = " + this.blockIndex(stream.currentBCI) + "; break;");
         }
         this.emitter.outdent();
+      }
+      if (true) {
+        this.emitter.writeLn("default: debugger;");
       }
       this.emitter.leave("}");
       if (needsTry) {
@@ -258,13 +262,13 @@ module J2ME {
         check = " && " + check;
       }
       this.emitter.enter("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") {");
-      this.emitter.writeLn("pc = " + handler.handler_pc + "; continue;");
+      this.emitter.writeLn("bi = " + this.blockIndex(handler.handler_pc) + "; continue;");
       this.emitter.leave("}");
       return;
     }
 
     emitBlock(stream: BytecodeStream, block: Block): Bytecodes {
-      this.emitter.enter("case " + block.startBci + ":");
+      this.emitter.enter("case " + this.blockIndex(block.startBci) + ":");
       return this.emitBlockBody(stream, block);
     }
 
@@ -318,7 +322,7 @@ module J2ME {
       if (stack.length) {
         this.emitter.writeLn("var " + stack.join(", ") + ";");
       }
-      this.emitter.writeLn("var pc = 0;");
+      this.emitter.writeLn("var pc = 0, bi = 0;");
       if (this.hasHandlers) {
         this.emitter.writeLn("var ex;");
       }
@@ -451,9 +455,9 @@ module J2ME {
     }
 
     emitIf(stream: BytecodeStream, predicate: string) {
-      var target = stream.readBranchDest();
-      var next = stream.nextBCI;
-      this.emitter.writeLn("pc = " + predicate + " ? " + target + " : " + next + "; break;");
+      var target = this.blockIndex(stream.readBranchDest());
+      var next = this.blockIndex(stream.nextBCI);
+      this.emitter.writeLn("bi = " + predicate + " ? " + target + " : " + next + "; break;");
     }
 
     emitIfNull(stream: BytecodeStream, condition: Condition) {
@@ -551,8 +555,8 @@ module J2ME {
     }
 
     emitGoto(stream: BytecodeStream) {
-      var target = stream.readBranchDest();
-      this.emitter.writeLn("pc = " + target + "; break;");
+      var target = this.blockIndex(stream.readBranchDest());
+      this.emitter.writeLn("bi = " + target + "; break;");
     }
 
     emitLoadConstant(cpi: number) {
@@ -625,13 +629,13 @@ module J2ME {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
-      this.emitPush(Kind.Reference, "$NA(" + mangleClass(classInfo) + "," + length + ")");
+      this.emitPush(Kind.Reference, "$NA(" + mangleClass(classInfo) + ", " + length + ")");
     }
 
     emitUnwind(pc: number, nextPC: number) {
       var local = this.local.join(", ");
       var stack = this.stack.slice(0, this.sp).join(", ");
-      this.emitter.writeLn("if (U) { $.B(" + pc + "," + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
+      this.emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
     }
 
     emitMonitorEnter(nextPC: number, object: string) {
@@ -833,14 +837,18 @@ module J2ME {
       }
     }
 
+    blockIndex(pc: number): number {
+      return this.blockMap.getBlock(pc).blockID;
+    }
+
     emitTableSwitch(stream: BytecodeStream) {
       var tableSwitch = stream.readTableSwitch();
       var value = this.pop(Kind.Int);
       this.emitter.enter("switch(" + value + ") {");
       for (var i = 0; i < tableSwitch.numberOfCases(); i++) {
-        this.emitter.writeLn("case " + tableSwitch.keyAt(i) + ": pc = " + (stream.currentBCI + tableSwitch.offsetAt(i)) + "; break;");
+        this.emitter.writeLn("case " + tableSwitch.keyAt(i) + ": bi = " + this.blockIndex(stream.currentBCI + tableSwitch.offsetAt(i)) + "; break;");
       }
-      this.emitter.writeLn("default: pc = " + (stream.currentBCI + tableSwitch.defaultOffset()) + "; break;");
+      this.emitter.writeLn("default: bi = " + this.blockIndex(stream.currentBCI + tableSwitch.defaultOffset()) + "; break;");
       this.emitter.leave("} break;");
     }
 
@@ -849,9 +857,9 @@ module J2ME {
       var value = this.pop(Kind.Int);
       this.emitter.enter("switch(" + value + ") {");
       for (var i = 0; i < lookupSwitch.numberOfCases(); i++) {
-        this.emitter.writeLn("case " + lookupSwitch.keyAt(i) + ": pc = " + (stream.currentBCI + lookupSwitch.offsetAt(i)) + "; break;");
+        this.emitter.writeLn("case " + lookupSwitch.keyAt(i) + ": bi = " + this.blockIndex(stream.currentBCI + lookupSwitch.offsetAt(i)) + "; break;");
       }
-      this.emitter.writeLn("default: pc = " + (stream.currentBCI + lookupSwitch.defaultOffset()) + "; break;");
+      this.emitter.writeLn("default: bi = " + this.blockIndex(stream.currentBCI + lookupSwitch.defaultOffset()) + "; break;");
       this.emitter.leave("} break;");
     }
 
@@ -862,6 +870,7 @@ module J2ME {
       // this.emitter.writeLn("// " + stream.currentBCI + " " + Bytecodes[opcode] + ", sp: " + this.sp);
 
       if ((block.isExceptionEntry || block.hasHandlers) && Bytecode.canTrap(opcode)) {
+        // This needs to update the PC not the BI.
         this.emitter.writeLn("pc = " + this.pc + ";");
       }
 
