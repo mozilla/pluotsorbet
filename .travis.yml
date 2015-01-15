@@ -12,6 +12,9 @@ before_script:
   - wget -P /tmp/j2me.js -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/31.0/runtimes/xulrunner-31.0.en-US.linux-x86_64.tar.bz2
   - tar x -C /tmp -f /tmp/j2me.js/xulrunner-31.0.en-US.linux-x86_64.tar.bz2
   - export SLIMERJSLAUNCHER=/tmp/xulrunner/xulrunner
+  - wget -P /tmp/j2me.js -N http://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/36.0b1-candidates/build1/jsshell-linux-x86_64.zip
+  - unzip -d /tmp/js /tmp/j2me.js/jsshell-linux-x86_64.zip
+  - export PATH=$PATH:/tmp/js
 script:
   - make test
 sudo: false

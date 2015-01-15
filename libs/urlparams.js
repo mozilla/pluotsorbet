@@ -26,6 +26,7 @@
  *    pushMidlet
  *    autosize
  *    fontSize
+ *    jsFiles
  *
  * Keep this list up-to-date!
  */
@@ -41,6 +42,7 @@ var urlParams = (function() {
   });
 
   params.args = (params.args || "").split(",");
+  params.jsFiles = (params.jsFiles || "").split(",");
 
   for (var name in params) {
     config[name] = params[name];

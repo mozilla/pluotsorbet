@@ -47,6 +47,10 @@ module J2ME {
     timeline && timeline.leave(name, data);
   }
 
+  export class MozillaRuntime {
+    static linkedCompiledMethodCount = 0
+  }
+
   export var Klasses = {
     java: {
       lang: {
@@ -1194,6 +1198,7 @@ module J2ME {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn && !methodInfo.isSynchronized) {
           linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
+          MozillaRuntime.linkedCompiledMethodCount++;
           methodType = MethodType.Compiled;
           if (!traceWriter) {
             linkWriter && linkWriter.outdent();

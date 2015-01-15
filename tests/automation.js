@@ -95,7 +95,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 15 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -117,8 +117,8 @@ casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
         test.assertTextExists("DONE: 30 pass, 0 fail", "test fs init");
     });
 
-    function basicUnitTests() {
-        casper.waitForText("DONE", function() {
+    function basicUnitTests(mode) {
+        return casper.waitForText("DONE", function() {
             var content = this.getPageContent();
             var regex = /DONE: (\d+) pass, (\d+) fail, (\d+) known fail, (\d+) unknown pass/;
             var match = content.match(regex);
@@ -133,7 +133,7 @@ casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
                     }
                 }
                 if (!msg) {
-                    test.pass('main unit tests');
+                    test.pass(mode + ' main unit tests');
                 } else {
                     this.echo("data:image/png;base64," + this.captureBase64('png'));
                     test.fail(msg);
@@ -142,13 +142,24 @@ casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
             syncFS();
         });
     }
+    // Unit tests with interpreter only.
     casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page")
-    .withFrame(0, basicUnitTests);
+    .withFrame(0, function () {
+        basicUnitTests("interpreter");
+    });
 
+    // Unit tests with optimized code.
     casper
-    .thenOpen("http://localhost:8000/index.html?numCalled=1000&logConsole=web,page")
-    .withFrame(0, basicUnitTests);
+    .thenOpen("http://localhost:8000/index.html?jsFiles=build/classes.jar.js,build/tests.jar.js&logConsole=web,page")
+    .withFrame(0, function() {
+        basicUnitTests("optimized").then(function() {
+            var linkedCompiledMethodCount = this.evaluate(function() {
+                return J2ME.MozillaRuntime.linkedCompiledMethodCount;
+            });
+            test.assert(linkedCompiledMethodCount > 0);
+        });
+    });
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
