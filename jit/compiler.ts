@@ -327,10 +327,11 @@ module J2ME {
   }
 
   export function compileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
-    return baselineCompileMethod(methodInfo, target);
     var method;
+    method = baselineCompileMethod(methodInfo, target);
+    return method;
     try {
-      method = optimizerCompileMethod(methodInfo, ctx, target);
+      method = optimizerCompileMethod(methodInfo, target);
     } catch (x) {
       method = baselineCompileMethod(methodInfo, target);
     }

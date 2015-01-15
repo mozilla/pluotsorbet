@@ -120,6 +120,7 @@ module J2ME {
     private static _nextID = 0;
     id: number;
     bci: number;
+    nextBCI: number;
     local: Value [];
     stack: Value [];
     store: Value;
@@ -127,15 +128,17 @@ module J2ME {
     constructor(bci: number = 0) {
       this.id = State._nextID += 1;
       this.bci = bci;
+      this.nextBCI = -1;
       this.local = [];
       this.stack = [];
       this.store = Undefined;
       this.loads = [];
     }
 
-    clone(bci: number) {
+    clone(bci: number, nextBCI: number = -1) {
       var s = new State();
       s.bci = bci !== undefined ? bci : this.bci;
+      s.nextBCI = nextBCI;
       s.local = this.local.slice(0);
       s.stack = this.stack.slice(0);
       s.loads = this.loads.slice(0);
@@ -511,7 +514,7 @@ module J2ME {
 
     referencedClasses: ClassInfo [];
 
-    constructor(public methodInfo: MethodInfo, public ctx: Context, public target: CompilationTarget) {
+    constructor(public methodInfo: MethodInfo, public target: CompilationTarget) {
       // ...
       this.peepholeOptimizer = new PeepholeOptimizer();
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
@@ -1087,7 +1090,7 @@ module J2ME {
       ));
     }
 
-    genInvoke(methodInfo: MethodInfo, opcode: Bytecodes, nextBCI: number) {
+    genInvoke(methodInfo: MethodInfo, opcode: Bytecodes, currentBCI: number, nextBCI: number) {
       var calleeCanYield = YieldReason.Virtual;
       if (isStaticallyBound(opcode, methodInfo)) {
         calleeCanYield = canYield(methodInfo);
@@ -1112,7 +1115,7 @@ module J2ME {
       var state;
       if (calleeCanYield) {
         // Only save the state if the callee can yield.
-        state = this.state.clone(nextBCI);
+        state = this.state.clone(currentBCI, nextBCI);
       }
       counter && counter.count("Yield Code: " + YieldReason[calleeCanYield] + " " + methodInfo.implKey);
       counter && counter.count("Yield Code: " + YieldReason[calleeCanYield]);
@@ -1362,10 +1365,10 @@ module J2ME {
         case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); this.genPutField(this.lookupField(cpi, opcode, true), true); break;
         case Bytecodes.GETFIELD       : cpi = stream.readCPI(); this.genGetField(this.lookupField(cpi, opcode, false), false); break;
         case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); this.genPutField(this.lookupField(cpi, opcode, false), false); break;
-        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
-        case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
-        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, true), opcode, stream.nextBCI); break;
-        case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
+        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.currentBCI, stream.nextBCI); break;
+        case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.currentBCI, stream.nextBCI); break;
+        case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, true), opcode, stream.currentBCI, stream.nextBCI); break;
+        case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.genInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.currentBCI, stream.nextBCI); break;
         case Bytecodes.NEW            : this.genNewInstance(stream.readCPI()); break;
         case Bytecodes.NEWARRAY       : this.genNewTypeArray(stream.readLocalIndex()); break;
         case Bytecodes.ANEWARRAY      : this.genNewObjectArray(stream.readCPI()); break;
@@ -1397,14 +1400,14 @@ module J2ME {
     }
   }
 
-  export function optimizerCompileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
+  export function optimizerCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     if (!methodInfo.code) {
       throw new Error("Method: " + methodInfo.implKey + " has no code.");
     }
     if (methodInfo.exception_table.length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
-    var builder = new Builder(methodInfo, ctx, target);
+    var builder = new Builder(methodInfo, target);
     var fn;
     var compilation = builder.build();
     var args = [];
