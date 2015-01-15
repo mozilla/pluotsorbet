@@ -220,6 +220,7 @@ module J2ME {
     methods: MethodInfo [];
     staticInitializer: MethodInfo;
     classes: any [];
+    subClasses: ClassInfo [];
     constant_pool: ConstantPoolEntry [];
     isArrayClass: boolean;
     elementClass: ClassInfo;
@@ -240,6 +241,7 @@ module J2ME {
       this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
       this.access_flags = classImage.access_flags;
       this.constant_pool = cp;
+      this.subClasses = [];
       // Cache for virtual methods and fields
       this.vmc = {};
       this.vfc = {};

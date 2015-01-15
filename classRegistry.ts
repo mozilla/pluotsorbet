@@ -57,15 +57,19 @@ module J2ME {
       this.preInitializedClasses.push(this.java_lang_Thread);
 
       /**
-       * We force these additinoal frequently used classes to be initialized so that
-       * we can generate more optimal AOT code that skips the class initialization
-       * check.
+       * Force these frequently used classes to be initialized eagerly. We can
+       * skip the class initialization check for them. This is only possible
+       * because they don't have any static state.
        */
       var classNames = [
         "java/lang/Integer",
         "java/lang/Character",
         "java/lang/Math",
-        "java/util/HashtableEntry"
+        "java/util/HashtableEntry",
+        "java/lang/StringBuffer",
+        "java/util/Vector",
+        "java/io/IOException",
+        "java/lang/IllegalArgumentException"
       ];
 
       for (var i = 0; i < classNames.length; i++) {
@@ -178,6 +182,7 @@ module J2ME {
       var classInfo = this.loadClassBytes(bytes);
       if (classInfo.superClassName) {
         classInfo.superClass = this.loadClass(classInfo.superClassName);
+        classInfo.superClass.subClasses.push(classInfo);
       }
       var classes = classInfo.classes;
       classes.forEach(function (c, n) {

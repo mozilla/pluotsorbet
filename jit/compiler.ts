@@ -433,6 +433,12 @@ module J2ME {
 
     stdoutWriter.writeLn(code);
 
+    stdoutWriter.enter("/*");
+    baselineCounter && baselineCounter.traceSorted(stdoutWriter);
+    yieldCounter && yieldCounter.traceSorted(stdoutWriter);
+    stdoutWriter.enter("*/");
+    // yieldCounter.traceSorted(stdoutWriter);
+
     // stdoutWriter.writeLn("Compiled " + baselineCompiled + " of " + baselineTotal);
   }
 }

@@ -19,6 +19,7 @@ module J2ME.Bytecode {
 
     public successors: Block [];
     public normalSuccessors: number;
+    public numberOfPredecessors: number = 0;
 
     visited: boolean;
     active: boolean;
@@ -42,6 +43,7 @@ module J2ME.Bytecode {
       block.loopID = this.loopID;
       block.blockID = this.blockID;
       block.successors = this.successors.slice(0);
+      block.numberOfPredecessors = this.numberOfPredecessors;
       return block;
     }
   }
@@ -453,6 +455,7 @@ module J2ME.Bytecode {
 
       for (var i = 0; i < block.successors.length; i++) {
         var successor = block.successors[i];
+        successor.numberOfPredecessors ++;
         // Recursively process successors.
         loops |= this.computeBlockOrderFrom(block.successors[i]);
         if (successor.active) {
@@ -472,23 +475,27 @@ module J2ME.Bytecode {
       return loops;
     }
 
+    public blockToString(block: Block): string {
+      return "blockID: " + String(block.blockID +
+      ", ").padRight(" ", 5) +
+      "bci: [" + block.startBci + ", " + block.endBci + "]" +
+      (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") +
+      (block.isLoopHeader ? " isLoopHeader" : "") +
+      (block.isLoopEnd ? " isLoopEnd" : "") +
+      (block.isExceptionEntry ? " isExceptionEntry" : "") +
+      (block.hasHandlers ? " hasHandlers" : "") +
+      ", loops: " + block.loops.toString(2) +
+      ", exits: " + block.exits.toString(2) +
+      ", loopID: " + block.loopID;
+    }
+
     public trace(writer: IndentingWriter, traceBytecode: boolean = false) {
       var code = this.method.code;
       var stream = new BytecodeStream(code);
 
       writer.enter("Block Map: " + this.blocks.map(b => b.blockID).join(", "));
       this.blocks.forEach(block => {
-        writer.enter("blockID: " + String(block.blockID +
-          ", ").padRight(" ", 5) +
-          "bci: [" + block.startBci + ", " + block.endBci + "]" +
-          (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") +
-          (block.isLoopHeader ? " isLoopHeader" : "") +
-          (block.isLoopEnd ? " isLoopEnd" : "") +
-          (block.isExceptionEntry ? " isExceptionEntry" : "") +
-          (block.hasHandlers ? " hasHandlers" : "") +
-          ", loops: " + block.loops.toString(2) +
-          ", exits: " + block.exits.toString(2) +
-          ", loopID: " + block.loopID);
+        writer.enter(this.blockToString(block));
         if (traceBytecode) {
           var bci = block.startBci;
           stream.setBCI(bci);

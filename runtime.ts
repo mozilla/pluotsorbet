@@ -549,10 +549,12 @@ module J2ME {
     }
 
     yield() {
+      runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
+      runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
     }
 
@@ -816,7 +818,8 @@ module J2ME {
         });
         initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
-        release || assert(!U);
+        // release || assert(!U);
+
         //// TODO: monitorEnter
         //if (klass.staticInitializer) {
         //  klass.staticInitializer.call(runtimeKlass);
@@ -872,8 +875,8 @@ module J2ME {
       Object.defineProperty(RuntimeTemplate.prototype, mangledName, {
         configurable: true,
         get: function lazyKlass() {
-          linkWriter && linkWriter.writeLn("Initializing Klass: " + className);
-          CLASSES.getClass(className);
+          linkWriter && linkWriter.writeLn("Load Klass: " + className);
+          CLASSES.loadAndLinkClass(className);
           return this[mangledName]; // This should not be recursive at this point.
         }
       });
@@ -884,8 +887,8 @@ module J2ME {
       Object.defineProperty(jsGlobal, mangledName, {
         configurable: true,
         get: function () {
-          linkWriter && linkWriter.writeLn("Initializing Klass: " + className);
-          CLASSES.getClass(className);
+          linkWriter && linkWriter.writeLn("Load Klass: " + className);
+          CLASSES.loadAndLinkClass(className);
           return this[mangledName]; // This should not be recursive at this point.
         }
       });
