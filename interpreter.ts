@@ -12,8 +12,8 @@ module J2ME {
   import assert = Debug.assert;
   import popManyInto = ArrayUtilities.popManyInto;
 
-  export var interpreterCounter = new Metrics.Counter(true);
-  export var interpreterMethodCounter = new Metrics.Counter(true);
+  export var interpreterCounter = null; // new Metrics.Counter(true);
+  export var interpreterMethodCounter = null; // new Metrics.Counter(true);
 
   var traceArrayAccess = false;
 
@@ -30,7 +30,7 @@ module J2ME {
    * Optimize method bytecode.
    */
   function optimizeMethodBytecode(methodInfo: MethodInfo) {
-    interpreterCounter.count("optimize: " + methodInfo.implKey);
+    interpreterCounter && interpreterCounter.count("optimize: " + methodInfo.implKey);
     var stream = new BytecodeStream(methodInfo.code);
     while (stream.currentBC() !== Bytecodes.END) {
       if (stream.rawCurrentBC() === Bytecodes.WIDE) {
@@ -288,24 +288,6 @@ module J2ME {
           frame.trace(traceWriter);
         }
       }
-
-
-      // frame.trace(new IndentingWriter());
-
-      //if (interpreterCounter) {
-      //  var key: any = "";
-      //  key += frame.methodInfo.isSynchronized ? " Synchronized" : "";
-      //  key += frame.methodInfo.exception_table.length ? " Has Exceptions" : "";
-      //  key += " " + frame.methodInfo.implKey;
-      //  interpreterCounter.count("OP " + key);
-      //}
-
-
-      // interpreterCounter && interpreterCounter.count("OP " + frame.methodInfo.implKey + " ");
-
-      // interpreterCounter.count(frame.methodInfo.implKey);
-      // interpreterCounter && interpreterCounter.count("OP " + Bytecodes[op]);
-      //interpreterCounter && interpreterCounter.count("DI " + Bytecodes[op] + " " + Bytecodes[frame.code[n]]);
 
       try {
         switch (op) {
