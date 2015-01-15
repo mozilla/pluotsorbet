@@ -223,8 +223,9 @@
       for (var i = 0; i < b.h; i++) {
         l.push(b.getLine(i));
       }
-      window.open(URL.createObjectURL(new Blob([l.join("\n")], {type:'text/plain'})));
-
+      var blob = new Blob([l.join("\n")], {type:'text/plain'});
+      saveAs(blob, "console-" + Date.now() + ".txt");
+      // window.open(URL.createObjectURL(blob));
     }
   }
 
