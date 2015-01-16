@@ -10,6 +10,9 @@ public class CreateImageWithRegionTest extends MIDlet {
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics screenG) {
+            screenG.setColor(0x00FFFFFF);
+            screenG.fillRect(0, 0, getWidth(), getHeight());
+
             Image image;
             try {
                 image = Image.createImage("/gfx/images/FirefoxLogo.png");

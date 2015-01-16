@@ -6,6 +6,7 @@ import com.sun.cldchi.jvm.JVM;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.*;
+import java.lang.Exception;
 import java.util.Vector;
 
 public class RunTests extends MIDlet {
@@ -100,7 +101,12 @@ public class RunTests extends MIDlet {
             harness.fail("Can't instantiate test");
         }
         Testlet t = (Testlet) obj;
-        t.test(harness);
+        try {
+            t.test(harness);
+        } catch (Exception e) {
+            System.err.println(e);
+            harness.fail("Test threw an unexpected exception");
+        }
         if (harness.failed() > 0)
             harness.report();
         pass += harness.passed();
@@ -110,7 +116,7 @@ public class RunTests extends MIDlet {
     }
 
     public void startApp() {
-        String arg = getAppProperty("arg-0");
+        String arg = getAppProperty("arg-0").replace('.', '/');
 
         long then = JVM.monotonicTimeMillis();
 
@@ -128,7 +134,7 @@ public class RunTests extends MIDlet {
                     System.err.println("can't find test " + arg);
                 }
 
-                arg = getAppProperty("arg-" + ++i);
+                arg = getAppProperty("arg-" + ++i).replace('.', '/');
             }
         } else {
             for (int n = 0; n < Testlets.list.length; ++n) {

@@ -1,5 +1,5 @@
 /*
- *  
+ *
  *
  * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
@@ -26,183 +26,218 @@
 
 package javax.microedition.lcdui;
 
-/* import  javax.microedition.lcdui.KeyConverter; */
-
 import com.sun.midp.i18n.Resource;
 import com.sun.midp.i18n.ResourceConstants;
-import com.sun.midp.lcdui.Text;
+import com.sun.midp.util.ResourceHandler;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import com.sun.midp.log.Logging;
-import com.sun.midp.log.LogChannels;
-import com.sun.midp.chameleon.skins.AlertSkin;
-import com.sun.midp.chameleon.skins.ScreenSkin;
-import com.sun.midp.chameleon.skins.resources.AlertResources;
+
+import com.sun.midp.security.SecurityToken;
+import com.sun.midp.security.SecurityInitializer;
+import com.sun.midp.security.ImplicitlyTrustedClass;
 
 /**
- * This is the look &amp; feel implementation for Alert.
- * See DisplayableLF for naming convention.
+ * Look &amp; Feel implementation of <code>Alert</code> based on
+ * platform widget.
  */
-class AlertLFImpl extends ScreenLFImpl implements AlertLF {
+class AlertLFImpl extends DisplayableLFImpl implements AlertLF {
 
     /**
-     * Creates an AlertLF for the passed in Alert instance.
-     * @param a The Alert associated with this look &amp; feel
+     * Creates an <code>AlertLF</code> for the passed in <code>Alert</code>
+     * instance.
+     * @param a The <code>Alert</code> associated with this look &amp; feel
      */
     AlertLFImpl(Alert a) {
         super(a);
-
         alert = a;
-        
-        AlertResources.load();
-        
-        // SYNC NOTE: Hold the lock to prevent changes to indicator
-        // internal state
-        synchronized (Display.LCDUILock) {
-            layout();
-        }
-
-        // The viewport is equal to the height of the alert
-        viewport[HEIGHT] = AlertSkin.HEIGHT - AlertSkin.PAD_VERT;        
-    }
-
-    /**
-     * Returns the actual needed height for the Alert instead of
-     * the maximum possible height.
-     * @return height of the area available to the application
-     */
-    public int lGetHeight() {        
-        // This should return the height available for content
-        // within the Alert dialog. It can be used by applications
-        // to choose appropriately sized content.
-        return AlertSkin.HEIGHT - AlertSkin.TITLE_HEIGHT;
     }
 
     // ************************************************************
-    //  public methods - FormLF interface implementation
+    //  public methods - AlertLF interface implementation
     // ************************************************************
 
     /**
-     * Determines if alert associated with this view is modal.
+     * Determines if <code>Alert</code> associated with this view is modal.
      *
-     * @return true if this AlertLF should be displayed as modal
-     */    
+     * @return true if this <code>AlertLF</code> should be displayed as modal
+     */
     public boolean lIsModal() {
         if (alert.numCommands > 1) {
             return true;
         }
 
-        if (!isLayoutValid) {
+        if (isContentScroll < 0) {
             layout();
         }
-        return (maxScroll > 0);
+
+        return (isContentScroll == 1);
     }
 
     /**
-     * Gets default timeout for the alert associated with this view
+     * Gets default timeout for the <code>Alert</code> associated with
+     * this view.
+     *
      * @return the default timeout
      */
     public int lGetDefaultTimeout() {
-        return AlertSkin.TIMEOUT;
+        return DEFAULT_TIMEOUT;
     }
 
     /**
-     * Get command that Alert.DISMISS_COMMAND is mapped to.
-     * 
-     * @return command that Alert.DISMISS_COMMAND is mapped to
+     * Return the command that should be mapped to
+     * <code>Alert.DISMISS_COMMAND</code>.
+     *
+     * @return command that maps to <code>Alert.DISMISS_COMMAND</code>
      */
     public Command lGetDismissCommand() {
-        return OK;
+        return DISMISS_COMMAND;
     }
 
     /**
-     * Notifies look&feel object of a timeout change.
-     * 
-     * @param timeout - the new timeout set in the corresponding Alert.
+     * Notifies timeout change.
+     * Changing timeout on an already visible <code>Alert</code> will
+     * restart the timer, but has no effect on current layout.
+     *
+     * @param timeout the new timeout set in the corresponding
+     *                <code>Alert</code>.
      */
     public void lSetTimeout(int timeout) {
-        try {
-            if (timerTask != null) {
+        if (timerTask != null) {
+            try {
                 timerTask.cancel();
-            } 
-            
-            if (timeout == Alert.FOREVER) {
-                timerTask = null;
-            } else {
-                timerTask = new TimeoutTask();
-                if (timeoutTimer == null) {
-                    timeoutTimer = new Timer();
+                if (timeout == Alert.FOREVER) {
+                    timerTask = null;
+                } else {
+                    timerTask = new TimeoutTask();
+                    timeoutTimer.schedule(timerTask, timeout);
                 }
-                timeoutTimer.schedule(timerTask, timeout);
-            }                       
-        } catch (Throwable t) {
-            if (Logging.REPORT_LEVEL <= Logging.WARNING) {
-                Logging.report(Logging.WARNING, LogChannels.LC_HIGHUI,
-                              "Throwable while lSetTimeout");
-            }
-        } 
+            } catch (Throwable t) { }
+        }
     }
 
     /**
-     * Notifies look&feel object of a Alert type change.
-     * 
-     * @param type - the new AlertType set in the corresponding Alert.
+     * Notifies <code>Alert</code> type change.
+     * Changing type on an already visible <code>Alert</code> will only
+     * update the default icon. No sound will be played.
+     *
+     * @param type the new <code>AlertType</code> set in the
+     *             corresponding <code>Alert</code>.
      */
     public void lSetType(AlertType type) {
         lRequestInvalidate();
     }
 
-
     /**
-     * Notifies look&feel object of a string change.
-     * 
-     * @param oldString - the old string set in the corresponding Alert.
-     * @param newString - the new string set in the corresponding Alert.
+     * Notifies string change.
+     *
+     * @param oldString the old string set in the corresponding
+     *                  <code>Alert</code>.
+     * @param newString the new string set in the corresponding
+     *                  <code>Alert</code>.
      */
     public void lSetString(String oldString, String newString) {
         lRequestInvalidate();
     }
 
     /**
-     * Notifies look&feel object of an image change.
-     * 
-     * @param oldImg - the old image set in the corresponding Alert.
-     * @param newImg - the new image set in the corresponding Alert.
+     * Notifies image change.
+     *
+     * @param oldImg the old image set in the corresponding
+     *               <code>Alert</code>.
+     * @param newImg the new image set in the corresponding
+     *               <code>Alert</code>.
      */
     public void lSetImage(Image oldImg, Image newImg) {
         lRequestInvalidate();
     }
 
     /**
-     * Notifies look&feel object of an indicator change.
-     * 
-     * @param oldIndicator - the old indicator set in the corresponding Alert
-     * @param newIndicator - the new indicator set in the corresponding Alert
+     * Notifies indicator change.
+     *
+     * @param oldIndicator the old indicator set in the corresponding
+     *                     <code>Alert</code>.
+     * @param newIndicator the new indicator set in the corresponding
+     *                     <code>Alert</code>.
      */
     public void lSetIndicator(Gauge oldIndicator, Gauge newIndicator) {
         lRequestInvalidate();
     }
 
     /**
-     * This method is responsible for:
-     * (1) Re-layout the contents
-     * (2) setup the viewable/scroll position
-     * (3) repaint contents
+     * Notify this <code>Alert</code> that it is being displayed.
+     * Override the version in <code>DisplayableLFImpl</code>.
+     */
+    void lCallShow() {
+
+        // Create native resource with title and ticker
+        super.lCallShow();
+
+        // Play sound
+        if (alert.type != null) {
+            currentDisplay.playAlertSound(alert.type);
+        }
+
+        // Setup contained items and show them
+        showContents();
+
+        // Show the Alert dialog window
+        showNativeResource0(nativeId);
+
+        // Start Java timer
+        // If native dialog will cause VM to freeze, this timer
+        // needs to be moved to native.
+        if (alert.time != Alert.FOREVER
+            && alert.numCommands == 1
+            && isContentScroll == 0) {
+
+            if (timeoutTimer == null) {
+                timeoutTimer = new Timer();
+            }
+            timerTask = new TimeoutTask();
+            timeoutTimer.schedule(timerTask, alert.time);
+        }
+    }
+
+    /**
+     * Notify this <code>Alert</code> that it will no longer be displayed.
+     * Override the version in <code>DisplayableLFImpl</code>.
+     */
+    void lCallHide() {
+
+        // Stop the timer
+        if (timerTask != null) {
+            try {
+                timerTask.cancel();
+                timerTask = null;
+            } catch (Throwable t) { }
+        }
+
+        // Hide and delete gauge resource
+        if (alert.indicator != null) {
+            GaugeLFImpl gaugeLF = (GaugeLFImpl)alert.indicator.gaugeLF;
+
+            gaugeLF.lHideNativeResource();
+
+            gaugeLF.deleteNativeResource();
+
+            if (gaugeLF.visibleInViewport) {
+                gaugeLF.lCallHideNotify();
+            }
+        }
+
+        // Hide and delete alert dialog window including title and ticker
+        super.lCallHide();
+    }
+
+    /**
+     * Called by the event handler to perform a re-layout
+     * on this <code>AlertLF</code>.
      */
     public void uCallInvalidate() {
-        boolean wasModal = maxScroll > 0 || alert.numCommands > 1;
-
-        super.uCallInvalidate();
-        
         synchronized (Display.LCDUILock) {
-            if (wasModal != lIsModal()) {
-                lSetTimeout(alert.getTimeout());
-            }
-            lRequestPaint();
+            showContents();
         }
-        
-        setVerticalScroll();
     }
 
     /**
@@ -216,629 +251,344 @@ class AlertLFImpl extends ScreenLFImpl implements AlertLF {
         }
     }
 
-    /**
-     * Notifies look &amp; feel object of a command addition 
-     * to the <code>Displayable</code>.
-     * 
-     * SYNC NOTE: The caller of this method handles synchronization.
-     *
-     * @param cmd the command that was added
-     * @param i the index of the added command in Displayable.commands[] 
-     *        array
-     */
-    public void lAddCommand(Command cmd, int i) {
-        super.lAddCommand(cmd, i);
-        // make alert Modal
-        if (alert.numCommands == 2) {
-            lSetTimeout(alert.getTimeout());
-        }
-    }
-
-    /**
-     * Notifies look &amp; feel object of a command removal 
-     * from the <code>Displayable</code>.
-     *
-     * SYNC NOTE: The caller of this method handles synchronization.
-     * 
-     * @param cmd the command that was removed
-     * @param i the index of the removed command in Displayable.commands[] 
-     *        array
-     */
-    public void lRemoveCommand(Command cmd, int i) {
-        super.lRemoveCommand(cmd, i);
-        // remove modality if it was forced by command presence
-        if (alert.numCommands == 1) {
-            lSetTimeout(alert.getTimeout());
-        }
-    }
-
-    /**
-     * Paint the contents of this Alert given the graphics context.
-     *
-     * @param g The Graphics object to paint this Alert to
-     * @param target the target Object of this repaint
-     */
-    public void uCallPaint(Graphics g, Object target) {
-        if (Logging.REPORT_LEVEL <= Logging.INFORMATION) {
-            Logging.report(Logging.INFORMATION, 
-                           LogChannels.LC_HIGHUI_FORM_LAYOUT,
-                           " # in AlertLFImpl: uCallPaint "+
-                           viewable[X]+","+
-                           viewable[Y]+","+
-                           viewable[WIDTH]+","+
-                           viewable[HEIGHT]);
-        }
-        clipx = g.getClipX();
-        clipy = g.getClipY();
-        clipw = g.getClipWidth();
-        cliph = g.getClipHeight();
-        
-        synchronized (Display.LCDUILock) {
-            // titleHeight will be AlertSkin.TITLE_HEIGHT
-            lPaintTitleBar(g);   
-            // Restore the clip            
-            g.setClip(clipx, AlertSkin.TITLE_HEIGHT, 
-                      clipw, cliph - AlertSkin.TITLE_HEIGHT);            
-            // translate the viewport to offset for the titlebar
-            g.translate(0, AlertSkin.TITLE_HEIGHT);           
-            // translate to accommodate any scrolling we've done
-            g.translate(0, -viewable[Y]);            
-            // paint the indicator            
-            int indHeight = lPaintIndicator(g);
-            // translate to offset for the indicator            
-            g.translate(0, indHeight);
-            // paint the image
-            int imgHeight = lPaintImage(g);         
-            // translate to offset for the image
-            g.translate(0, imgHeight);          
-            // paint the body text
-            lPaintContent(g);      
-            // restore the translate
-            g.translate(-g.getTranslateX(), -g.getTranslateY());
-        } // synchronized
-        setVerticalScroll();
-    }
-    
     // *****************************************************
     //  Package private methods
     // *****************************************************
 
     /**
-     * Paint the title bar area for this alert.
-     *
-     * @param g the Graphics to draw too
-     */
-    void lPaintTitleBar(Graphics g) {
-        if (alert.type == null && alert.title == null) {
-            return;
-        }
-        
-        icon = (alert.type == null) ? null : getIcon(alert.type);
-        
-        title = getTitle(alert.type);
-        
-        titlew = AlertSkin.FONT_TITLE.stringWidth(title);        
-        if (icon != null) {
-            iconw = icon.getWidth();
-            titlew += (AlertSkin.PAD_HORIZ + iconw);
-            iconh = icon.getHeight();
-            // We vertically center the icon
-            icony = 0;
-            if (iconh < AlertSkin.TITLE_HEIGHT) {
-                icony = (AlertSkin.TITLE_HEIGHT - iconh) / 2;
-            }
-        } else {
-            iconw = 0;
-        }
-        
-        if (titlew > AlertSkin.WIDTH - (2 * AlertSkin.TITLE_MARGIN)) {
-            titlew = AlertSkin.WIDTH - (2 * AlertSkin.TITLE_MARGIN);
-        }
-        
-        // We vertically center the title text
-        titley = 
-            (AlertSkin.TITLE_HEIGHT - AlertSkin.FONT_TITLE.getHeight()) / 2;
-
-        switch (AlertSkin.TITLE_ALIGN) {
-            case Graphics.RIGHT:
-                titlex = AlertSkin.WIDTH - AlertSkin.TITLE_MARGIN;
-                break;
-            case Graphics.HCENTER:
-                titlex = (AlertSkin.WIDTH - titlew) / 2;
-                break;
-            case Graphics.LEFT:
-            default:
-                titlex = AlertSkin.TITLE_MARGIN;
-                break;
-        }
-        
-        // We'll clip down the "box" for the title just in case
-        // its a really long string
-        // g.clipRect(titlex, 0, titlew, AlertSkin.TITLE_HEIGHT);
-        
-        if (icon != null) {
-            g.drawImage(icon, titlex, icony,
-                        ScreenSkin.TEXT_ORIENT | Graphics.TOP);
-            titlex += (AlertSkin.PAD_HORIZ + iconw);
-            titlew -= (AlertSkin.PAD_HORIZ + iconw);
-        }
-
-        g.translate(titlex, titley);
-        Text.drawTruncString(g, title,
-                AlertSkin.FONT_TITLE, AlertSkin.COLOR_TITLE, titlew);
-        g.translate(-titlex, -titley);
-    }
-    
-    /**
-     * Paint the gauge indicator for this alert, if there is one.
-     *
-     * @param g the Graphics to draw to
-     * @return the height occupied by the indicator
-     */
-    int lPaintIndicator(Graphics g) {
-        if (alert.indicator == null) {
-            return 0;
-        }
-        
-        GaugeLFImpl indicatorLF = (GaugeLFImpl)alert.indicator.gaugeLF;
-
-        // We center the gauge
-        int offsetx = (int)
-            ((AlertSkin.WIDTH - indicatorLF.bounds[WIDTH]) / 2);
-            
-        g.translate(offsetx, 0);                
-        // SYNC NOTE: paint in gauge does not involve app code.
-        // So it's OK to call it from LCDUILock block.
-        indicatorLF.lCallPaint(g, indicatorLF.bounds[WIDTH], 
-                               indicatorLF.bounds[HEIGHT]);
-
-        g.translate(-offsetx, 0);
-        return indicatorLF.bounds[HEIGHT];
-    }
-    
-    /**
-     * Paint the application-supplied image for this alert, if there is one.
-     *
-     * @param g the Graphics to draw to
-     * @return the height occupied by the image
-     */
-    int lPaintImage(Graphics g) {
-        if (alert.image == null) {
-            return 0;
-        }
-        
-        // We center the image
-        int offsetx = (int)
-            ((AlertSkin.WIDTH - alert.image.getWidth()) / 2);
-            
-        g.drawImage(alert.image, offsetx, 0, Graphics.TOP | Graphics.LEFT);
-        return alert.image.getHeight();
-    }
-    
-    /**
-     * Paint the text content of this alert, if there is any
-     *
-     * @param g the Graphics to draw to
-     */
-    void lPaintContent(Graphics g) {        
-        if (alert.text != null) {
-            g.translate(AlertSkin.MARGIN_H, 0);
-            Text.paint(g, alert.text, AlertSkin.FONT_TEXT,
-                       AlertSkin.COLOR_FG, 0,
-                       viewable[WIDTH], viewable[HEIGHT],
-                       0, Text.NORMAL, null);
-            g.translate(-AlertSkin.MARGIN_H, 0);
-        }
-    }
-   
-    /**
-     * Handle a key press
-     *
-     * @param keyCode the key which was pressed
-     */
-    void uCallKeyPressed(int keyCode) {
-        int gameAction = KeyConverter.getGameAction(keyCode);
-
-        synchronized (Display.LCDUILock) {
-            switch (gameAction) {
-            case Canvas.UP:
-                if (viewable[Y] > 0) {
-                    viewable[Y] -= AlertSkin.SCROLL_AMOUNT;
-                    if (viewable[Y] < 0) {
-                        viewable[Y] = 0;
-                    }
-                    lRequestPaint();
-                }
-                break;
-
-            case Canvas.DOWN:
-                if (viewable[Y] < maxScroll) {
-                    viewable[Y] += AlertSkin.SCROLL_AMOUNT;
-                    if (viewable[Y] > maxScroll) {
-                        viewable[Y] = maxScroll;
-                    }
-                    lRequestPaint();
-                }
-                break;
-            }
-        }
-        setVerticalScroll();
-    }
-    
-    /**
-     * Handle a key repeat
-     *
-     * @param keyCode the key which was repeated
-     */
-    void uCallKeyRepeated(int keyCode) {
-        uCallKeyPressed(keyCode);
-    }
-    
-    /**
-     * Notify this Alert that is being displayed on the
-     * given Display and whether it needs to initialize its
-     * highlight
-     */
-    void lCallShow() {
-        if (Logging.REPORT_LEVEL <= Logging.INFORMATION) {
-            Logging.report(Logging.INFORMATION, 
-                           LogChannels.LC_HIGHUI_FORM_LAYOUT,
-                           "# in AlertLFImpl: lCallShow");        
-        }
-
-        super.lCallShow();
-
-        if (alert.type != null) {
-            currentDisplay.playAlertSound(alert.type);
-        }
-
-        if (alert.indicator != null) {
-            ((GaugeLFImpl)alert.indicator.gaugeLF).lCallShowNotify();
-        }
-        
-        if (!isLayoutValid) {
-            layout();
-        }
-
-        lSetTimeout(alert.getTimeout());
-        
-        // We reset any scrolling done in a previous showing
-        viewable[Y] = 0;
-        
-        setVerticalScroll();
-    }
-
-    /**
-     * Notify this Alert that it will no longer be displayed
-     * on the given Display
-     */
-    void lCallHide() {
-        
-        super.lCallHide();
-        
-        if (alert.indicator != null) {
-            ((GaugeLFImpl)alert.indicator.gaugeLF).lCallHideNotify();
-        }
-
-        if (timerTask != null) {
-            timerTask.cancel();
-            timerTask = null;
-        }
-    }
-
-    /**
-     * Cancel the timer whenever the alert is frozen. Alert is frozen
-     * when the display does not have foreground
-     */
-    void lCallFreeze() {
-        
-        super.lCallFreeze();
-
-        if (timerTask != null) {
-            timerTask.cancel();
-            timerTask = null;
-        }
-    }
-
-    /** 
-     * Called upon content change to schedule a request for relayout and 
-     * repaint. 
+     * Called upon content change to schedule a request for relayout and
+     * repaint.
      */
     void lRequestInvalidate() {
         super.lRequestInvalidate();
-        isLayoutValid = false;
-    }
-    
-    /**
-     * Set the vertical scroll indicators for this Screen.
-     * We override this from our superclass because the viewport[] is
-     * set to the entire Alert dialog, but scrolling is confined to the
-     * "inner" viewport we've constructed beneath the title to scroll
-     * the text content. This scrolling behavior is maintained by
-     * 'maxScroll' - which represents the maximum number of pixels
-     * needed to scroll in order to reach the bottom of the scrollable
-     * content. If maxScroll is 0, no scrolling is necessary.
-     */
-    void setVerticalScroll() {
-        
-        if (maxScroll == 0) {
-            setVerticalScroll(0, 100);
-        } else {
-            setVerticalScroll((viewable[Y] * 100 / (maxScroll)),
-                              ((AlertSkin.HEIGHT - AlertSkin.TITLE_HEIGHT) 
-                                    * 100 / viewable[HEIGHT]));
-        }
+        isContentScroll = -1; // Unknown scrolling state
     }
 
+    // *****************************************************
+    //  Private methods
+    // *****************************************************
+
     /**
-     * Layout the content of this Alert given the width and
-     * height parameters
-     */
-    void layout() {
-        super.layout();
-
-        // layout() is called from DisplayableLFImpl constructor
-        // and at that time alert is not initialized
-        if (alert == null) {
-            maxScroll = 0;
-            return;
-        }
-
-        // The width of the viewable area is equal to the width of
-        // the alert minus a left and right margin
-
-        viewable[WIDTH] = getDisplayableWidth() - (2 * AlertSkin.MARGIN_H);
-
-        // height of activity indicator, if any
-        int indHeight = 0;                
-        if (alert.indicator != null) {
-            GaugeLFImpl indicatorLF = (GaugeLFImpl)alert.indicator.gaugeLF;
-
-            if (indicatorLF.bounds == null) {
-                indicatorLF.bounds = new int[4];
-            }
-            
-            int pW = indicatorLF.lGetPreferredWidth(-1);
-            if (pW > viewable[WIDTH] - (2 * AlertSkin.PAD_HORIZ)) {
-                pW = viewable[WIDTH] - (2 * AlertSkin.PAD_HORIZ);
-            }
-            indHeight = indicatorLF.lGetPreferredHeight(pW);
-
-            // We assign the item a bounds which is its pixel location,
-            // width, and height in coordinates which represent offsets
-            // of the viewport origin (that is, are in the viewport
-            // coordinate space)
-            indicatorLF.bounds[X] = 0;
-            indicatorLF.bounds[Y] = 0;
-            indicatorLF.bounds[WIDTH]  = pW;
-            indicatorLF.bounds[HEIGHT] = indHeight;
-        }
-        
-        // height of the alert's image, if any
-        int imageHeight = (alert.image == null) ? 0 : alert.image.getHeight();
-        
-        // height of the alert's text content, if any
-        int textHeight = (alert.text == null) ? 0 : 
-            Text.getHeightForWidth(alert.text, AlertSkin.FONT_TEXT,
-                                   viewable[WIDTH], 0);
-        
-        // This gives us the height of the scrollable area
-        viewable[HEIGHT] = AlertSkin.PAD_VERT;
-        if (indHeight > 0) {            
-            viewable[HEIGHT] += (indHeight + AlertSkin.PAD_VERT);
-        }
-        if (imageHeight > 0) {
-            viewable[HEIGHT] += (imageHeight + AlertSkin.PAD_VERT);
-        }
-        if (textHeight > 0) {
-            viewable[HEIGHT] += (textHeight + AlertSkin.PAD_VERT);
-        }
-        
-        maxScroll = viewable[HEIGHT] - 
-            (AlertSkin.HEIGHT - AlertSkin.TITLE_HEIGHT);
-        if (maxScroll < 0) {
-            maxScroll = 0;
-        }
-        
-        isLayoutValid = true;
-    }
-   
-    /**
-     * Returns the system image to draw in title area.
-     * If AlertType is not set, no image is drawn.
-     * @param alertType The type of the Alert
-     * @return the image to draw in title area
-     */
-    static Image getIcon(AlertType alertType) {
-        if (alertType == null) {
-            return null;
-        }
-        if (alertType.equals(AlertType.INFO)) {
-            return AlertSkin.IMAGE_ICON_INFO;
-        } else if (alertType.equals(AlertType.WARNING)) {
-            return AlertSkin.IMAGE_ICON_WARN;
-        } else if (alertType.equals(AlertType.ERROR)) {
-            return AlertSkin.IMAGE_ICON_ERRR;
-        } else if (alertType.equals(AlertType.ALARM)) {
-            return AlertSkin.IMAGE_ICON_ALRM;
-        } else { 
-            return AlertSkin.IMAGE_ICON_CNFM;
-        }
-    }
-    
-    /**
-     * Returns the system image to draw in title area.
-     * If AlertType is not set, no image is drawn.
-     * @param alertType The type of the Alert
-     * @return the image to draw in title area
-     */
-    String getTitle(AlertType alertType) {
-        if (alert.title != null) {
-            return alert.title;
-        }
-        if (alertType.equals(AlertType.INFO)) {
-            return AlertSkin.TEXT_TITLE_INFO;
-        } else if (alertType.equals(AlertType.WARNING)) {
-            return AlertSkin.TEXT_TITLE_WARN;
-        } else if (alertType.equals(AlertType.ERROR)) {
-            return AlertSkin.TEXT_TITLE_ERRR;
-        } else if (alertType.equals(AlertType.ALARM)) {
-            return AlertSkin.TEXT_TITLE_ALRM;
-        } else {
-            return AlertSkin.TEXT_TITLE_CNFM;
-        }
-    }
-    
-    /**
-     * Calculate the height a displayable would occupy if it was to
-     * be displayed.
+     * Layout the content of this <code>Alert</code>.
+     * Query native resource for two informations:
+     * - Whether the content needs scrolling, in 'isContentScroll'
+     * - Location of the gauge indicator
      *
-     * @return the height a displayable would occupy 
+     * SYNC NOTE: Caller of this function should hold LCDUILock around
+     *            this call.
      */
-    public int getDisplayableHeight() {
-        return currentDisplay != null ?
-            currentDisplay.getDisplayableHeight() :
-            AlertSkin.HEIGHT;
+    private void layout() {
+
+        boolean wasNoNative = (nativeId == INVALID_NATIVE_ID);
+
+        // If no native resource yet, create it temporarily
+        if (wasNoNative) {
+            createNativeResource();
+        }
+
+        Image img = alert.image;
+
+        // If no image is specified, default icon for that type should be used
+        if (img == null && alert.type != null) {
+            img = getAlertImage(alert.type);
+        }
+
+        // Bounds array of gauge
+        // The reason gauge bounds is passed back from native is to be
+        // consistent with Form's Java layout code.
+        int[] gaugeBounds;
+        GaugeLFImpl gaugeLF;
+
+        if (alert.indicator == null) {
+            gaugeLF = null;
+            gaugeBounds = null;
+        } else {
+            // We temporarily use bounds array in gauge
+            // The real values will be set later by setSize() and setLocation()
+            gaugeLF = (GaugeLFImpl)alert.indicator.gaugeLF;
+            gaugeBounds = new int[4];
+
+            // Pass gauge's preferred size to native layout code
+            gaugeBounds[WIDTH]  = gaugeLF.lGetPreferredWidth(-1);
+            gaugeBounds[HEIGHT] = gaugeLF.lGetPreferredHeight(-1);
+        }
+
+        ImageData imageData = null;
+
+        if (img != null) {
+            imageData = img.getImageData();
+        }
+
+        // Set content to native dialog and get layout information back
+        if (setNativeContents0(nativeId, imageData,
+                               gaugeBounds, alert.text)) {
+            isContentScroll = 1; // scrolling needed
+        } else {
+            isContentScroll = 0; // no scrolling
+        }
+
+        // Set gauge location and size based on return from native layout code
+        if (gaugeBounds != null) {
+            gaugeLF.lSetSize(gaugeBounds[WIDTH], gaugeBounds[HEIGHT]);
+            gaugeLF.lSetLocation(gaugeBounds[X], gaugeBounds[Y]);
+        }
+
+        // Native resource should only be kept alive if it's visible
+        // Free temporarily created native resource here
+        if (wasNoNative) {
+            deleteNativeResource();
+        }
     }
 
     /**
-     * Calculate the width a displayable would occupy if it was to
-     * be displayed
+     * Show or update contents on a visible <code>Alert</code>.
      *
-     * @return the width a displayable would occupy 
+     * SYNC NOTE: Caller must hold LCDUILock around this call.
      */
-    public int getDisplayableWidth() {
-        return currentDisplay != null ?
-            currentDisplay.getDisplayableWidth() :
-            AlertSkin.WIDTH;
+    private void showContents() {
+
+        // Make sure gauge has native resource ready
+        GaugeLFImpl gaugeLF = (alert.indicator == null)
+                                        ? null
+                                        : (GaugeLFImpl)alert.indicator.gaugeLF;
+
+        if (gaugeLF != null && gaugeLF.nativeId == INVALID_NATIVE_ID) {
+            gaugeLF.createNativeResource(nativeId);
+        }
+
+        // Re-populate the alert with updated contents
+        layout();
+
+        // Make sure gauge is shown
+        if (gaugeLF != null) {
+            gaugeLF.lShowNativeResource();
+
+            // SYNC NOTE: Since Gauge show and showNotify does not involve
+            // application code, we can call it while holding LCDUILock
+            gaugeLF.lCallShowNotify();
+
+            // IMPLEMENTATION NOTE: when gauge is present in the Alert
+            // its visibleInViewport will always be set to true.
+            // If dynamic update of gauge's visibleInViewport flag is
+            // required in AlertLFImpl
+            // uViewportChanged() can be moved up from FormLFImpl to
+            // DisplayableLFImpl
+        }
     }
 
     /**
-     * The maximum amount of scroll needed to see all the contents
-     * @return get the maximum scroll amount
+     * Create native resource for this <code>Alert</code>.
+     * <code>Gauge</code> resource will not be created.
      */
-    protected int getMaxScroll() {
-        return maxScroll;
-    }
-    
-    /**
-     * This is the number of pixels left from the previous "page"
-     * when a page up or down occurs. The same value is used for line by
-     * line scrolling 
-     * @return the number of pixels. 
-     */
-    protected int getScrollAmount() {
-        return AlertSkin.SCROLL_AMOUNT;
+    void createNativeResource() {
+
+        nativeId = createNativeResource0(alert.title,
+                        alert.ticker == null ? null : alert.ticker.getString(),
+                        alert.type == null ? 0 : alert.type.getType());
     }
 
-    
     /**
-     * Static default Command for "OK"
+     * Create native dialog with image and text widget for this
+     * <code>Alert</code>.
+     *
+     * @param title the title being passed to native
+     * @param tickerText text to be displayed on the <code>Ticker</code>
+     * @param type the type of <code>Alert</code>
+     * @return native resource id
      */
-    static final Command OK =
-        new Command(Resource.getString(ResourceConstants.DONE), 
-                    Command.OK, 0);
-    
+    private native int createNativeResource0(String title,
+                                             String tickerText,
+                                             int type);
+
     /**
-     * A Timer which serves all Alert objects to schedule
-     * their timeout tasks
+     * (Re)Show native dialog with image and text widget for this
+     * <code>Alert<code>.
+     *
+     * @param nativeId native resource id
      */
-    static Timer timeoutTimer;
-    
+    private native void showNativeResource0(int nativeId);
+
     /**
-     * Variables to hold the clip coordinates
+     * Set content to native dialog.
+     *
+     * @param nativeId IN this alert's resource id (MidpDisplayable *)
+     * @param imgId IN icon image native id. 0 if no image.
+     * @param indicatorBounds a 4 integer array for indicator gauge
+     *                        [0] : OUT x coordinate in alert dialog
+     *                        [1] : OUT y coordinate in alert dialog
+     *                        [2] : IN/OUT width of the gauge, in pixels
+     *                        [3] : IN/OUT height of the gauge, in pixels
+     *                        null if no indicator gauge present.
+     * @param text IN alert text string
+     * @return <code>true</code> if content requires scrolling
      */
-    int clipx, clipy, clipw, cliph;
+    private native boolean setNativeContents0(int nativeId,
+                                              ImageData imgId,
+                                              int[] indicatorBounds,
+                                              String text);
 
     /**
-     * The maximum amount of scroll needed to see all the contents
-     * of the Alert
+     * Get the corresponding image for a given alert type.
+     *
+     * @param alertType type defined in <code>AlertType</code>
+     * @return image object to be displayed. Null if type is invalid.
      */
-    int maxScroll;
-    
+    private Image getAlertImage(AlertType alertType) {
+        if (alertType != null) {
+            if (alertType.equals(AlertType.INFO)) {
+                if (ALERT_INFO == null) {
+                    ALERT_INFO = getSystemImage("alert.image_icon_info");
+                }
+                return ALERT_INFO;
+            } else if (alertType.equals(AlertType.WARNING)) {
+                if (ALERT_WARN == null) {
+                    ALERT_WARN = getSystemImage("alert.image_icon_warn");
+                }
+                return ALERT_WARN;
+            } else if (alertType.equals(AlertType.ERROR)) {
+                if (ALERT_ERR == null) {
+                    ALERT_ERR = getSystemImage("alert.image_icon_errr");
+                }
+                return ALERT_ERR;
+            } else if (alertType.equals(AlertType.ALARM)) {
+                if (ALERT_ALRM == null) {
+                    ALERT_ALRM = getSystemImage("alert.image_icon_alrm");
+                }
+                return ALERT_ALRM;
+            } else if (alertType.equals(AlertType.CONFIRMATION)) {
+                if (ALERT_CFM == null) {
+                    ALERT_CFM = getSystemImage("alert.image_icon_cnfm");
+                }
+                return ALERT_CFM;
+            }
+        }
+
+        return null;
+    }
+
     /**
-     * The total maximum height of this Alert. 
-     * This will be <= AlertSkin.MAX_HEIGHT.
+     * Obtain system image resource and create Image object from it.
+     *
+     * @param imageName image name
+     * @return icon image
      */
-    int totalHeight;
-    
+    private Image getSystemImage(String imageName) {
+        byte[] imageData = ResourceHandler.getSystemImageResource(
+                classSecurityToken, imageName);
+        if (imageData != null) {
+            return Image.createImage(imageData, 0, imageData.length);
+        } else {
+            // Use a empty immutable image as placeholder
+            return Image.createImage(Image.createImage(16, 16));
+        }
+    }
+
+    // *****************************************************
+    //  Private members
+    // *****************************************************
+
     /**
-     * Alert associated with this view
+     * Inner class to request security token from SecurityInitializer.
+     * SecurityInitializer should be able to check this inner class name.
      */
-    Alert alert;
-    
+    static private class SecurityTrusted
+        implements ImplicitlyTrustedClass {};
+
+    /** Security token to allow access to implementation APIs */
+    private static SecurityToken classSecurityToken =
+        SecurityInitializer.requestToken(new SecurityTrusted());
+
     /**
-     * The icon for the Alert
+     * Internal command used to visually represent
+     * <code>Alert.DISMISS_COMMAND</code>.
      */
-    Image icon;
+    private static final Command DISMISS_COMMAND =
+        new Command(Resource.getString(ResourceConstants.DONE),
+                    Command.CANCEL, 0);
 
     /**
-     * A TimerTask which will be set to expire this Alert after
-     * its timeout period has elapsed.
+     * The default timeout of all alerts.
      */
-    TimerTask timerTask;
+    private static final int DEFAULT_TIMEOUT = 2000;
 
     /**
-     * A flag indicates that whether the layout of the alert
-     * is known.
+     * A <code>Timer</code> which serves all <code>Alert</code> objects
+     * to schedule their timeout tasks.
      */
-    boolean isLayoutValid; // Default is false
-    
-    /** local variable for the paint method (title x location) */
-    int titlex;
-
-    /** local variable for the paint method (title y location) */
-    int titley;
-
-    /** local variable for the paint method (title width) */
-    int titlew;
-
-    /** local variable for the paint method (title height) */
-    int titleh;
-
-    /** local variable for the paint method (icon y location) */
-    int icony;
-
-    /** local variable for the paint method (icon width) */
-    int iconw;
-
-    /** local variable for the paint method (icon height) */
-    int iconh;
-
-    /** Alert's title */
-    String title;
-    
-
-// *****************************************************
-//  Internal Class
-// *****************************************************
+    private static Timer timeoutTimer;
 
     /**
-     * A TimerTask subclass which will notify the Display to
-     * make the 'returnScreen' of this Alert the new current screen.
+     * <code>Alert</code> associated with this view.
+     */
+    private Alert alert;
+
+    /**
+     * A <code>TimerTask</code> which will be set to expire this
+     * <code>Alert</code> after its timeout period has elapsed.
+     */
+    private TimerTask timerTask;
+
+    /**
+     * A flag that indicates whether the content of the alert
+     * needs scrolling.
+     * Valid values are: -1: unknown, 0: no scrolling, 1: scrolling needed.
+     */
+    private int isContentScroll = -1; // Default is unknown
+
+
+    /**
+     * An image to be drawn in <code>Alert</code> when it was
+     * created with AlertType ALARM.
+     */
+    private static Image ALERT_ALRM; // = null
+
+    /**
+     * An image to be drawn in <code>Alert</code> when it was
+     * created with AlertType CONFIRMATION..
+     */
+    private static Image ALERT_CFM; // = null
+
+    /**
+     * An image to be drawn in <code>Alert</code> when it was
+     * created with AlertType ERROR.
+     */
+    private static Image ALERT_ERR; // = null
+
+    /**
+     * An image to be drawn in <code>Alert</code> when it was
+     * created with AlertType INFO.
+     */
+    private static Image ALERT_INFO; // = null
+
+    /**
+     * An image to be drawn in <code>Alert</code> when it was
+     * created with AlertType WARNING.
+     */
+    private static Image ALERT_WARN; // = null
+
+    // *****************************************************
+    //  Inner Class for timed dismiss
+    // *****************************************************
+
+    /**
+     * A <code>TimerTask</code> subclass which will notify the
+     * <code>Display</code> to make the 'returnScreen' of this
+     * <code>Alert</code> the new current screen.
      */
     private class TimeoutTask extends TimerTask {
-        
+
         /**
-         * Create a new timeout task
+         * Create a new timeout task.
+         * This package protected constructor is just to enable creation
+         * of new TimerTask instance.
          */
         TimeoutTask() { }
-        
+
         /**
-         * Simply set the Display's current screen to be this
-         * Alert's return screen
+         * Simply set the <code>Display</code>'s current screen to be this
+         * <code>Alert</code>'s return screen.
          */
         public void run() {
-            // It could be this timeout task got scheduled and in
-            // the meantime the alert's contents were updated. There is
-            // a timing condition whereby an old timeout task could dismiss
-            // an alert which is now updated, so we stop and check to make
-            // sure the alert is not modal before we go ahead and dismiss it
-            synchronized (Display.LCDUILock) {
-                if (lIsModal() || alert.getTimeout() == Alert.FOREVER) {
-                    return;
-                }
-            }
             alert.uNotifyTimeout();
         }
     } // TimeoutTask

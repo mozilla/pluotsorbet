@@ -1,7 +1,7 @@
 {
   "name": "j2me.js",
   "description": "j2me interpreter for firefox os",
-  "launch_path": "/index.html?autosize=1&logConsole=web",
+  "launch_path": "/index.html",
   "origin": "app://j2mejs.mozilla.org",
   "icons": {
     "128": "/img/icon-128.png"
@@ -21,9 +21,11 @@
       "access": "readonly"
     },
     "mobilenetwork": {
-      "description:": "Required to verify your phone number"
+      "description": "Required to verify your phone number"
     },
-    "browser": {},
+    "browser": {
+      "description": "Required to improve performance"
+    },
     "audio-capture": {
        "description": "Required to capture audio via getUserMedia"
     },

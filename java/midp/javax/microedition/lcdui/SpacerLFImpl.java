@@ -1,5 +1,5 @@
 /*
- * 	
+ *   
  *
  * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
@@ -26,153 +26,73 @@
 package javax.microedition.lcdui;
 
 /**
-* This is the look & feel implementation for Spacer.
-*/
+ * Look and feel implementation of <code>Spacer</code>.
+ */
 class SpacerLFImpl extends ItemLFImpl implements SpacerLF {
 
-
     /**
-     * Creates Look & Feel object for Spacer.
-     * @param spacer <placeholder>
+     * Creates Look &amp; Feel object for <code>Spacer</code>.
+     *
+     * @param spacer the model object
      */
     SpacerLFImpl(Spacer spacer) {
         super(spacer);
-	this.spacer = spacer;
+	sp = spacer;
+	
+	// Initialize the cached requested size
+	lSetRequestedSizes(sp.width, sp.height, sp.width, sp.height);
     }
     /**
-     * Notifies Look & Feel of a minimum size change in the Spacer.
-     * @param minWidth - the new minimum width
-     * @param minHeight - the new minimum height
+     * Notifies look &amp; feel of a minimum size change in the 
+     * <code>Spacer</code>.
+     *
+     * @param minWidth the new minimum width
+     * @param minHeight the new minimum height
      */
     public void lSetMinimumSize(int minWidth, int minHeight) {
         lRequestInvalidate(true, true);
+	// Set requested sizes AFTER the invalidate request above
+	lSetRequestedSizes(sp.width, sp.height, sp.width, sp.height);
     }
 
     /**
-     * Get the minimum width of this Item
+     * Calculate minimum and preferred width and height of this item and 
+     * store the result in instance variables:
+     * minimumWidth, minimumHeight, preferredWidth and preferredHeight.
      *
-     * @return the minimum width
+     * Override the version in <code>ItemLFImpl</code> to do nothing.
      */
-    public int lGetMinimumWidth() {
-        return spacer.width;
+    void lGetRequestedSizes() {
+	// Since the cached sizes are always kept up to date.
+	// Nothing needs to be done here.
+
+	// ASSERT (isRequestedSizesValid() == true)
     }
 
     /**
-     * Get the preferred width of this Item
+     * Called by event delivery to notify an <code>ItemLF</code> in current 
+     * <code>FormLF</code> of a change in its peer state.
      *
-     * @param h the tentative content height in pixels, or -1 if a
-     * tentative height has not been computed
-     * @return the preferred width
-     */
-    public int lGetPreferredWidth(int h) {
-        return spacer.width;
-    }
-
-    /**
-     * Get the minimum height of this Item
+     * Do nothing and returns <code>false</code> since there is no state 
+     * to change.
+     * 
+     * @param hint not used
      *
-     * @return the minimum height
+     * @return always <code>false</code>
      */
-    public int lGetMinimumHeight() {
-        return spacer.height;
+    boolean uCallPeerStateChanged(int hint) {
+	return false; // Unexpected call
     }
 
     /**
-     * Get the preferred height of this Item
+     * Create native resource of this <code>Item</code>.
      *
-     * @param w the tentative content width in pixels, or -1 if a
-     * tentative width has not been computed
-     * @return the preferred height
+     * @param ownerId owner screen's native resource id
      */
-    public int lGetPreferredHeight(int w) {
-        return spacer.height;
-    }
+    void createNativeResource(int ownerId) { }
 
-    // ***********************************************
-    // Package private methods
-    // ***********************************************
-
-    /**
-     * Used by the Form Layout to set the size of Items.
-     * Spacer should add no padding around itself
-     *
-     * @param height the tentative content height in pixels
-     * @return the preferred width 
+    /** 
+     * <code>Spacer</code> associated with this look &amp; feel.
      */
-    int lGetAdornedPreferredWidth(int height) {
-	return lGetPreferredWidth(height);
-    }
-    
-    /**
-     * Used by the Form Layout to set the size of Items.
-     * Spacer should add no padding around itself
-     *
-     * @param width the tentative content width in pixels
-     * @return the preferred height
-     */
-    int lGetAdornedPreferredHeight(int width) {
-	return lGetPreferredHeight(width);
-    }
-
-    /**
-     * Used by the Form Layout to set the size of this Item
-     * @return the minimum width that includes cell spacing
-     */
-    int lGetAdornedMinimumWidth() {
-	return lGetMinimumWidth();
-    }
-
-    /**
-     * Used by the Form Layout to set the size of this Item
-     * @return the minimum height that includes cell spacing
-     */
-    int lGetAdornedMinimumHeight() {
-	return lGetMinimumHeight();
-    }
-
-    /**
-     * Overrides ItemLFImpl's getInnerBounds so that extra padding is not
-     * added
-     * @param dimension <placeholder>
-     * @return the inner bounds.
-     */
-    protected int getInnerBounds(int dimension) {
-	return bounds[dimension];
-    }
-
-
-    /**
-     * Returns the locked width of the Spacer, or -1 if it's not locked.
-     * Overrides Item's getLockedWidth which returns lockedWidth plus
-     * padding
-     */
-    protected int getLockedWidth() {
-	return spacer.lockedWidth; 
-    }
-    
-    /**
-     * Returns the locked height of the Spacer, or -1 if it's not locked.
-     * Overrides Item's getLockedHeight which returns lockedHeight plus
-     * padding
-     */
-    protected int getLockedHeight() {
-	return spacer.lockedHeight;
-    }
-
-    /**
-     * Paint the content of this Item
-     *
-     * @param g the Graphics object to be used for rendering the item
-     * @param w current width of the item in pixels
-     * @param h current height of the item in pixels
-     */
-    void lCallPaint(Graphics g, int w, int h) {
-        /*
-         * There's no reason to erase anything because Form will erase
-         * any dirty region for us
-         */
-    }
-
-    /** Spacer associated with this Look & Feel */
-    Spacer spacer;
+    Spacer sp;
 }

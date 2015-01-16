@@ -30,8 +30,6 @@ public class TestAlert extends Canvas implements Testlet {
         } catch (InterruptedException e) {
             th.fail("Unexpected exception: " + e);
         }
-        int threshold = 1750;
-        th.compareScreenToReferenceImage("gfx/AlertTest.png", threshold, "First alert");
         th.check(textEditor.hasFocus(), "TextEditor kept focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
 
@@ -40,7 +38,6 @@ public class TestAlert extends Canvas implements Testlet {
         th.check(isTextEditorReallyFocused(), "TextEditor really regained focus");
 
         th.setScreenAndWait(alert);
-        th.compareScreenToReferenceImage("gfx/AlertTest.png", threshold, "Second alert");
         th.check(textEditor.hasFocus(), "TextEditor still has focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
     }

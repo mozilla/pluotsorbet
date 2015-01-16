@@ -7,9 +7,11 @@ PACKAGE_DIR="output"
 
 rm -rf $PACKAGE_DIR/
 mkdir $PACKAGE_DIR
+mkdir $PACKAGE_DIR/build
 
 # setup the root
 cp *.js *.html *.webapp $PACKAGE_DIR/.
+cp build/j2me.js $PACKAGE_DIR/build/.
 
 # copy over jars/jads that are used for the webapp
 # NB: we could be smart about this and parse the manifest, patches welcome!
@@ -40,3 +42,6 @@ mkdir $PACKAGE_DIR/tests
 cp tests/tests.jar $PACKAGE_DIR/tests/.
 cp tests/*.js $PACKAGE_DIR/tests/.
 
+# copy icons
+mkdir $PACKAGE_DIR/img
+cp img/*.png $PACKAGE_DIR/img/.
