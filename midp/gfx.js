@@ -388,15 +388,16 @@ var currentlyFocusedTextEditor;
     }
 
     function withClip(g, c, x, y, cb) {
-        var clipX1 = g.klass.classInfo.getField("I.clipX1.S").get(g),
-            clipY1 = g.klass.classInfo.getField("I.clipY1.S").get(g),
-            clipX2 = g.klass.classInfo.getField("I.clipX2.S").get(g),
-            clipY2 = g.klass.classInfo.getField("I.clipY2.S").get(g),
-            clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
+        var clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
             transX = g.klass.classInfo.getField("I.transX.I").get(g),
             transY = g.klass.classInfo.getField("I.transY.I").get(g);
 
         if (clipped) {
+            var clipX1 = g.klass.classInfo.getField("I.clipX1.S").get(g),
+                clipY1 = g.klass.classInfo.getField("I.clipY1.S").get(g),
+                clipX2 = g.klass.classInfo.getField("I.clipX2.S").get(g),
+                clipY2 = g.klass.classInfo.getField("I.clipY2.S").get(g);
+
             c.beginPath();
             c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
             c.clip();
