@@ -98,7 +98,7 @@ module J2ME {
   /**
    * The number of opcodes executed thus far.
    */
-  export var ops = 0;
+  export var bytecodeCount = 0;
 
   /**
    * Temporarily used for fn.apply.
@@ -251,43 +251,14 @@ module J2ME {
       optimizeMethodBytecode(frame.methodInfo);
     }
 
-    if (perfWriter) {
-      var methodInfo: any = frame.methodInfo;
-      if (methodInfo.bytecodeCount > 100000 || methodInfo.interpreterCallCount > 10000) {
-        var bytecodeCountRatio = methodInfo.bytecodeCount / methodInfo.interpreterCallCount;
-        var details = "";
-        details += methodInfo.isSynchronized ? "S" : "";
-        details += methodInfo.exception_table.length ? "X" : "";
-        perfWriter.writeLn("Hot Method: " + methodInfo.implKey + " ops: " + methodInfo.bytecodeCount + ", calls: " + methodInfo.interpreterCallCount + ", ratio: " + bytecodeCountRatio.toFixed(2) + ", reset: " + methodInfo.resetCount + ". " + details);
-
-        methodInfo.resetCount ++;
-        methodInfo.bytecodeCount = 0;
-        methodInfo.interpreterCallCount = 0;
-      }
-    }
-
     frame.methodInfo.interpreterCallCount ++;
 
     while (true) {
       interpreterMethodCounter && interpreterMethodCounter.count(frame.methodInfo.implKey);
-      ops ++;
+      profile && bytecodeCount ++;
       frame.methodInfo.bytecodeCount ++;
       frame.opPc = frame.pc;
       var op: Bytecodes = frame.read8();
-      if (traceBytecodes) {
-        if (traceSourceLocation) {
-          if (frame.methodInfo) {
-            var sourceLocation = frame.methodInfo.getSourceLocationForPC(frame.pc - 1);
-            if (sourceLocation && !sourceLocation.equals(lastSourceLocation)) {
-              traceWriter && traceWriter.greenLn(sourceLocation.toString() + " " + CLASSES.getSourceLine(sourceLocation));
-              lastSourceLocation = sourceLocation;
-            }
-          }
-        }
-        if (traceWriter) {
-          frame.trace(traceWriter);
-        }
-      }
 
       try {
         switch (op) {
@@ -1110,7 +1081,6 @@ module J2ME {
             }
 
             if (U) {
-              // perfWriter && perfWriter.writeLn("I Unwind: " + frame.methodInfo.implKey);
               return;
             }
 

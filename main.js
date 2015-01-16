@@ -256,15 +256,15 @@ window.onload = function() {
    toggle(this);
  };
  document.getElementById("clearCounters").onclick = function() {
-   J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
-   J2ME.nativeCounter && J2ME.nativeCounter.clear();
-   J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
-   J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
-   J2ME.baselineMethodCounter && J2ME.baselineMethodCounter.clear();
-
+   clearCounters();
  };
   function dumpCounters() {
     var writer = new J2ME.IndentingWriter();
+
+    writer.writeLn("Frame Count: " + J2ME.frameCount);
+    writer.writeLn("Unwind Count: " + J2ME.unwindCount);
+    writer.writeLn("Bytecode Count: " + J2ME.bytecodeCount);
+
     if (J2ME.interpreterCounter) {
       writer.enter("interpreterCounter");
       J2ME.interpreterCounter.traceSorted(writer);
@@ -292,10 +292,15 @@ window.onload = function() {
     }
   }
   function clearCounters() {
+    J2ME.frameCount = 0;
+    J2ME.unwindCount = 0;
+    J2ME.bytecodeCount = 0;
+
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
     J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
     J2ME.nativeCounter && J2ME.nativeCounter.clear();
     J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
+    J2ME.baselineMethodCounter && J2ME.baselineMethodCounter.clear();
   }
 
   document.getElementById("dumpCounters").onclick = function() {

@@ -57,6 +57,8 @@ module J2ME {
   export var baselineMethodCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
+  export var unwindCount = 0;
+
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
     methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
@@ -550,11 +552,13 @@ module J2ME {
     }
 
     yield() {
+      unwindCount ++;
       runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
+      unwindCount ++;
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
     }
@@ -1312,7 +1316,7 @@ module J2ME {
         // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
         // var key = MethodType[methodType] + " " + methodInfo.implKey;
         nativeCounter.count(key);
-        var s = ops;
+        var s = bytecodeCount;
         try {
           methodTimeline.enter(key);
           var r;
@@ -1332,9 +1336,9 @@ module J2ME {
             default:
               r = fn.apply(this, arguments);
           }
-          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
         } catch (e) {
-          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
           throw e;
         }
         return r;
