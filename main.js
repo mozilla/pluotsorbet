@@ -260,6 +260,8 @@ window.onload = function() {
    J2ME.nativeCounter && J2ME.nativeCounter.clear();
    J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
    J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
+   J2ME.baselineMethodCounter && J2ME.baselineMethodCounter.clear();
+
  };
   function dumpCounters() {
     var writer = new J2ME.IndentingWriter();
@@ -271,6 +273,11 @@ window.onload = function() {
     if (J2ME.interpreterMethodCounter) {
       writer.enter("interpreterMethodCounter");
       J2ME.interpreterMethodCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.baselineMethodCounter) {
+      writer.enter("baselineMethodCounter");
+      J2ME.baselineMethodCounter.traceSorted(writer);
       writer.outdent();
     }
     if (J2ME.nativeCounter) {

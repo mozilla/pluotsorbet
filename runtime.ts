@@ -54,6 +54,7 @@ module J2ME {
   export var methodTimeline;
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
+  export var baselineMethodCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
   if (typeof Shumway !== "undefined") {
