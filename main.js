@@ -362,12 +362,6 @@ var profiler = typeof Shumway !== "undefined" ? (function() {
   var elPageContainer = document.getElementById("pageContainer");
   elPageContainer.classList.add("profile-mode");
 
-  var elConsoleContainer = document.getElementById("consoleContainer");
-  elConsoleContainer.style.bottom = "240px";
-
-  var elProfilerContainer = document.getElementById("profilerContainer");
-  elProfilerContainer.style.display = "block";
-
   var elProfilerToolbar = document.getElementById("profilerToolbar");
   var elProfilerMessage = document.getElementById("profilerMessage");
   var elProfilerPanel = document.getElementById("profilePanel");

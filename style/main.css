@@ -239,7 +239,7 @@ button {
   position: absolute;
   left: 0;
   top: 0;
-  bottom: 230px;
+  bottom: 256px;
 }
 
 #profilerContainer {
@@ -252,7 +252,7 @@ button {
   left: 0px;
   bottom: 0px;
   right: 0px;
-  height: 230px;
+  height: 256px;
 }
 
 #profilerToolbar {
