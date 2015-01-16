@@ -595,7 +595,7 @@ MIDP.Context2D = (function() {
       c.height = 320;
     }
 
-    if (urlParams.nativeMenu) {
+    if (config.nativeMenu) {
       document.getElementById("sidebar").style.display = "block";
       document.getElementById("drawer").querySelector("header").style.display = "block";
 
