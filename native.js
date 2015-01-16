@@ -309,7 +309,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
 
     var frames = [];
     if (clinit && clinit.classInfo.className === className) {
-        frames.push(new Frame(clinit, [], 0));
+        frames.push(Frame.create(clinit, [], 0));
     }
     if (classInfo.superClass) {
         var classInitFrame = $.ctx.getClassInitFrame(classInfo.superClass);

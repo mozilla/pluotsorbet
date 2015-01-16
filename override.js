@@ -34,7 +34,7 @@ function asyncImpl(returnKind, promise) {
         0xbf              // athrow
       ])
     });
-    var callee = new Frame(syntheticMethod, [exception], 0);
+    var callee = Frame.create(syntheticMethod, [exception], 0);
     ctx.frames.push(callee);
   }).then(ctx.resume.bind(ctx));
   $.pause("Async");

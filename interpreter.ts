@@ -113,12 +113,12 @@ module J2ME {
     var classInfo = frame.methodInfo.classInfo;
     var stack = frame.stack;
 
-    if (frame.lockObject)
+    if (frame.lockObject) {
       ctx.monitorExit(frame.lockObject);
+    }
     var callee = frame;
     ctx.frames.pop();
     var caller = frame = ctx.frames.length === 0 ? null : ctx.current();
-    Instrument.callExitHooks(callee.methodInfo, caller, callee);
     if (frame === null) {
       var returnValue = null;
       switch (consumes) {
@@ -129,6 +129,7 @@ module J2ME {
           returnValue = callee.stack.pop();
           break;
       }
+      callee.free();
       return returnValue;
     }
     stack = frame.stack;
@@ -140,6 +141,7 @@ module J2ME {
         stack.push(callee.stack.pop());
         break;
     }
+    callee.free();
     return CONTINUE_AFTER_POPFRAME;
   }
 
