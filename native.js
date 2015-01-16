@@ -318,7 +318,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
         }
     }
     if (frames.length) {
-        $.ctx.executeNewFrameSet(frames);
+        $.ctx.executeFrames(frames);
     }
 };
 
@@ -381,7 +381,7 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
         0xb0              // areturn
       ]),
     });
-    return $.ctx.executeNewFrameSet([new Frame(syntheticMethod, [], 0)]);
+    return $.ctx.executeFrames([new Frame(syntheticMethod, [], 0)]);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {

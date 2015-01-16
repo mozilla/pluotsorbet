@@ -44,6 +44,11 @@ module J2ME {
   export var loadWriter = null;
 
   /**
+   * Traces unwinding loading.
+   */
+  export var unwindWriter = null;
+
+  /**
    * Traces class initialization.
    */
   export var initWriter = null;
@@ -552,12 +557,14 @@ module J2ME {
     }
 
     yield() {
+      unwindWriter && unwindWriter.writeLn("yielding");
       unwindCount ++;
       runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
+      unwindWriter && unwindWriter.writeLn("pausing");
       unwindCount ++;
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
@@ -1173,7 +1180,7 @@ module J2ME {
         for (var i = 0; i < slots; i++) {
           frame.setLocal(j++, arguments[i]);
         }
-        return $.ctx.executeNewFrameSet([frame]);
+        return $.ctx.executeFrames([frame]);
       }
     }
 
@@ -1205,7 +1212,7 @@ module J2ME {
           return;
         }
       }
-      return $.ctx.executeNewFrameSet([frame]);
+      return $.ctx.executeFrames([frame]);
     };
   }
 

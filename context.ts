@@ -20,8 +20,9 @@ module J2ME {
     Init  = 0x04,
     Perf  = 0x08,
     Load  = 0x10,
+    Unwind  = 0x20,
 
-    All   = Trace | Link | Init | Perf | Load
+    All   = Trace | Link | Init | Perf | Load | Unwind
   }
 
   /**

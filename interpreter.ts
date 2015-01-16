@@ -105,46 +105,6 @@ module J2ME {
    */
   var argArray = [];
 
-  var CONTINUE_AFTER_POPFRAME = {}; // Sentinel object.
-
-  function popFrame(consumes) {
-    var ctx = $.ctx;
-    var frame = ctx.current();
-    var classInfo = frame.methodInfo.classInfo;
-    var stack = frame.stack;
-
-    if (frame.lockObject) {
-      ctx.monitorExit(frame.lockObject);
-    }
-    var callee = frame;
-    ctx.frames.pop();
-    var caller = frame = ctx.frames.length === 0 ? null : ctx.current();
-    if (frame === null) {
-      var returnValue = null;
-      switch (consumes) {
-        case 2:
-          returnValue = callee.stack.pop2();
-          break;
-        case 1:
-          returnValue = callee.stack.pop();
-          break;
-      }
-      callee.free();
-      return returnValue;
-    }
-    stack = frame.stack;
-    switch (consumes) {
-      case 2:
-        stack.push2(callee.stack.pop2());
-        break;
-      case 1:
-        stack.push(callee.stack.pop());
-        break;
-    }
-    callee.free();
-    return CONTINUE_AFTER_POPFRAME;
-  }
-
   function buildExceptionLog(ex, stackTrace) {
     var className = ex.klass.classInfo.className;
     var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
@@ -153,29 +113,30 @@ module J2ME {
     }).join("\n") + "\n\n";
   }
 
-  function throw_(ex) {
+  function tryCatch(e) {
     var ctx = $.ctx;
     var frame = ctx.current();
+    var frames = ctx.frames;
     var stack = frame.stack;
 
-    var exClass = ex.class;
-    if (!ex.stackTrace) {
-      ex.stackTrace = [];
+    var exClass = e.class;
+    if (!e.stackTrace) {
+      e.stackTrace = [];
     }
 
-    var stackTrace = ex.stackTrace;
+    var stackTrace = e.stackTrace;
 
     do {
       var exception_table = frame.methodInfo.exception_table;
       var handler_pc = null;
-      for (var i=0; exception_table && i<exception_table.length; i++) {
+      for (var i = 0; exception_table && i < exception_table.length; i++) {
         if (frame.opPc >= exception_table[i].start_pc && frame.opPc < exception_table[i].end_pc) {
           if (exception_table[i].catch_type === 0) {
             handler_pc = exception_table[i].handler_pc;
             break;
           } else {
             classInfo = resolveClass(exception_table[i].catch_type, frame.methodInfo.classInfo, false);
-            if (isAssignableTo(ex.klass, classInfo.klass)) {
+            if (isAssignableTo(e.klass, classInfo.klass)) {
               handler_pc = exception_table[i].handler_pc;
               break;
             }
@@ -194,40 +155,44 @@ module J2ME {
 
       if (handler_pc != null) {
         stack.length = 0;
-        stack.push(ex);
+        stack.push(e);
         frame.pc = handler_pc;
 
         if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
-          console.error(buildExceptionLog(ex, stackTrace));
+          console.error(buildExceptionLog(e, stackTrace));
         }
 
         return;
       }
-      popFrame(0);
-      frame = ctx.current();
-      stack = frame && frame.stack || null;
-    } while (frame);
+      if (Frame.isMarker(frames[frames.length - 1])) {
+        break;
+      }
+      frame = frames.pop();
+      stack = frame.stack;
+    } while (true);
 
-    if (ctx.frameSets.length === 0) {
+    if (ctx.current() === Frame.Start) {
       ctx.kill();
-
       if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
-        console.error(buildExceptionLog(ex, stackTrace));
-
+        console.error(buildExceptionLog(e, stackTrace));
         ctx.thread.waiting.forEach(function(waitingCtx, n) {
           ctx.thread.waiting[n] = null;
           waitingCtx.wakeup(ctx.thread);
         });
       }
-      throw new Error(buildExceptionLog(ex, stackTrace));
+      throw new Error(buildExceptionLog(e, stackTrace));
     } else {
-      throw ex;
+      throw e;
     }
   }
 
   export function interpret() {
     var ctx = $.ctx;
     var frame = ctx.current();
+
+    assert (!Frame.isMarker(frame));
+
+    var frames = ctx.frames;
 
     var mi = frame.methodInfo;
     var stack = frame.stack;
@@ -1095,37 +1060,34 @@ module J2ME {
               }
             }
             break;
-          case Bytecodes.RETURN:
-            var returnValue = popFrame(0);
-            if (returnValue !== CONTINUE_AFTER_POPFRAME) {
-              return returnValue;
-            } else {
-              frame = ctx.current();
-              mi = frame && frame.methodInfo || null;
-              stack = frame && frame.stack || null;
-            }
-            break;
+
+          case Bytecodes.LRETURN:
+          case Bytecodes.DRETURN:
+            returnValue = stack.pop();
           case Bytecodes.IRETURN:
           case Bytecodes.FRETURN:
           case Bytecodes.ARETURN:
-            var returnValue = popFrame(1);
-            if (returnValue !== CONTINUE_AFTER_POPFRAME) {
-              return returnValue;
-            } else {
-              frame = ctx.current();
-              mi = frame && frame.methodInfo || null;
-              stack = frame && frame.stack || null;
+            returnValue = stack.pop();
+          case Bytecodes.RETURN:
+            var callee = frames.pop();
+            if (callee.lockObject) {
+              ctx.monitorExit(callee.lockObject);
             }
-            break;
-          case Bytecodes.LRETURN:
-          case Bytecodes.DRETURN:
-            var returnValue = popFrame(2);
-            if (returnValue !== CONTINUE_AFTER_POPFRAME) {
+            frame = frames[frames.length - 1];
+            mi = frame.methodInfo;
+            stack = frame.stack;
+            if (Frame.isMarker(frame)) { // Marker or Start Frame
+              if (op === Bytecodes.RETURN) {
+                return undefined;
+              }
               return returnValue;
+            }
+            if (op === Bytecodes.RETURN) {
+              // Nop.
+            } else if (op === Bytecodes.LRETURN || op === Bytecodes.DRETURN) {
+              stack.push2(returnValue);
             } else {
-              frame = ctx.current();
-              mi = frame && frame.methodInfo || null;
-              stack = frame && frame.stack || null;
+              stack.push(returnValue);
             }
             break;
           default:
@@ -1143,8 +1105,9 @@ module J2ME {
           throw e;
         }
 
-        throw_(e);
+        tryCatch(e);
         frame = ctx.current();
+        assert (!Frame.isMarker(frame));
         mi = frame && frame.methodInfo || null;
         stack = frame && frame.stack || null;
         continue;

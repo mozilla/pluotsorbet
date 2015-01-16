@@ -25,7 +25,7 @@ module J2ME {
       for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? J2ME.newString(args[n]) : null;
 
-      ctx.executeNewFrameSet([
+      ctx.executeFrames([
         Frame.create(CLASSES.getMethod(isolateClassInfo, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
                   [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ], 0)
       ]);
@@ -58,7 +58,7 @@ module J2ME {
 
       var oldCtx = $.ctx;
       ctx.setAsCurrentContext();
-      ctx.executeNewFrameSet([Frame.create(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
+      ctx.executeFrames([Frame.create(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
                               [ runtime.mainThread, J2ME.newString("main") ], 0)])
       oldCtx.setAsCurrentContext();
 
