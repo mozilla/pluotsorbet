@@ -334,6 +334,7 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
 
 DumbPipe.registerOpener("camera", function(message, sender) {
   var mediaStream = null;
+  var url = null;
 
   var video = document.createElement("video");
   document.body.appendChild(video);
@@ -359,8 +360,13 @@ DumbPipe.registerOpener("camera", function(message, sender) {
     audio: false,
   }, function(localMediaStream) {
     mediaStream = localMediaStream;
+    url = URL.createObjectURL(localMediaStream);
 
-    video.src = URL.createObjectURL(localMediaStream);
+    video.onerror = video.onloadeddata = function() {
+      URL.revokeObjectURL(url);
+    };
+
+    video.src = url;
     video.play();
   }, function(err) {
     console.log("Error: " + err);
