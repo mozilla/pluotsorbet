@@ -23,7 +23,7 @@
    *    native: the native console (via the *dump* function)
    *    terminal: a faster canvas based console if Shumway.js is included.
    */
-  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "terminal").split(",");
+  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "page").split(",");
   var minLogLevel = LOG_LEVELS[urlParams.logLevel || "log"];
 
 
@@ -98,7 +98,55 @@
 
   //================================================================
   // Console Implementations
+  /**
+   * In-page console, providing dynamic filtering and colored output.
+   * Renders to the document's "console" element.
+   */
+  function PageConsole(selector) {
+    this.el = document.querySelector(selector);
+    this.items = [];
+    this.shouldAutoScroll = true;
+    this.currentFilterText = "";
+    window.addEventListener(
+      'console-filters-changed', this.onFiltersChanged.bind(this));
+    window.addEventListener(
+      'console-clear', this.onClear.bind(this));
+  }
 
+  PageConsole.prototype = {
+    push: function(item) {
+      this.items.push(item);
+      if (item.matchesCurrentFilters(item)) {
+        var wasAtBottom = this.isScrolledToBottom();
+        this.el.appendChild(item.toHtmlElement());
+        if (this.shouldAutoScroll && wasAtBottom) {
+          this.el.scrollTop = this.el.scrollHeight;
+        }
+      }
+    },
+
+    isScrolledToBottom: function() {
+      var fudgeFactor = 10; // Match the intent, not the pixel-perfect value
+      return this.el.scrollTop + this.el.clientHeight > this.el.scrollHeight - fudgeFactor;
+    },
+    
+    onFiltersChanged: function() {
+      var fragment = document.createDocumentFragment();
+      this.items.forEach(function(item) {
+        if (item.matchesCurrentFilters()) {
+          fragment.appendChild(item.toHtmlElement());
+        }
+      }, this);
+      this.el.innerHTML = "";
+      this.el.appendChild(fragment);
+    },
+
+    onClear: function() {
+      this.items = [];
+      this.el.innerHTML = "";
+    }
+
+  };
 
   /**
    * WebConsole: The standard console.log() and friends.
@@ -231,6 +279,7 @@
 
   var CONSOLES = {
     web: new WebConsole(),
+    page: new PageConsole('#consoleContainer'),
     native: new NativeConsole(),
     raw: new RawConsoleForTests("#raw-console"),
     terminal: typeof Terminal === "undefined" ? new WebConsole() : new TerminalConsole("#consoleContainer")

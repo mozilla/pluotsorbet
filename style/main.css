@@ -213,11 +213,6 @@ button {
   box-sizing: border-box;
 }
 
-#console {
-  overflow: auto;
-  margin: 0;
-}
-
 #pageContainer {
   position: absolute;
   background-color: #333333;
@@ -228,6 +223,9 @@ button {
 }
 
 #consoleContainer {
+  overflow: auto;
+  margin: 0;
+  background-color: #ffffff;
   position: absolute;
   top: 0;
   left: 0;
