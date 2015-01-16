@@ -64,17 +64,17 @@ module J2ME {
   }
 
   function resolveField(index: number, classInfo: ClassInfo, isStatic: boolean): FieldInfo {
-    return <FieldInfo><any>resolve(index, classInfo, isStatic);
+    return <FieldInfo><any>classInfo.resolve(index, isStatic);
   }
 
   function resolveClass(index: number, classInfo: ClassInfo, isStatic: boolean): ClassInfo {
-    var classInfo: ClassInfo = <any>resolve(index, classInfo, isStatic);
+    var classInfo: ClassInfo = <any>classInfo.resolve(index, isStatic);
     linkKlass(classInfo);
     return classInfo;
   }
 
   function resolveMethod(index: number, classInfo: ClassInfo, isStatic: boolean): MethodInfo {
-    return <MethodInfo><any>resolve(index, classInfo, isStatic);
+    return <MethodInfo><any>classInfo.resolve(index, isStatic);
   }
 
   /**
