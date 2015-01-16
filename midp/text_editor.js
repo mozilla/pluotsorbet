@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var TextEditorProvider = (function() {
     function extendsObject(targetObj, srcObj) {
@@ -148,6 +148,7 @@ var TextEditorProvider = (function() {
     }
 
     function TextAreaEditor() {
+        this.content = "";
         this.textEditorElem = document.createElement('div');
         this.textEditorElem.contentEditable = true;
         this.setStyle('word-break', 'break-all');
@@ -168,75 +169,52 @@ var TextEditorProvider = (function() {
                     return false;
                 }
             }
-
-            if (e.keyCode == 8) {
-                var range = this.getSelectionRange();
-
-                if (range[0].index != range[1].index) {
-                    // If some text has been selected, remove it and set the new caret position
-                    // to the first character before the selection.
-                    this.setContent(this.getSlice(0, range[0].index) + this.getSlice(range[1].index));
-                    this.setSelectionRange(range[0].index, range[0].index);
-                } else {
-                    var toRemove = 1;
-
-                    // If the node that is currently selected is an image and its codepoint length
-                    // is 2, we remove both the codepoints.
-                    // On the Nokia Asha, only the second codepoint is removed, so another emoji is
-                    // shown instead of the first one (the emoji associated with the first codepoint).
-                    if (range[0].node.nodeType === 1 && util.toCodePointArray(range[0].node.alt).length === 2) {
-                        toRemove = 2;
-                    }
-
-                    // If there's no text currently selected, remove the first character before
-                    // the current caret position and reduce the caret position by 1.
-                    this.setContent(this.getSlice(0, range[0].index - toRemove) + this.getSlice(range[0].index));
-                    this.setSelectionRange(range[0].index - toRemove, range[0].index - toRemove);
-                }
-
-                if (this.oninputCallback) {
-                    this.oninputCallback();
-                }
-
-                return false;
-            } else if (e.keyCode == 13) {
-                this.addToContent("\n");
-                return false;
-            }
         }.bind(this);
 
-        this.textEditorElem.onkeypress = function(e) {
-            if (e.charCode) {
-                this.addToContent(String.fromCharCode(e.charCode));
-                return false;
+        this.textEditorElem.oninput = function(e) {
+            if (e.isComposing) {
+                return;
             }
-        }.bind(this);
-    }
-    TextAreaEditor.prototype = extendsObject({
-        getContent: function() {
-            return this.content || '';
-        },
 
-        addToContent: function(newContent) {
+            // Save the current selection.
             var range = this.getSelectionRange();
 
-            // Add the new content, replacing the current selection.
-            // If the selection is collapsed, just add the content
-            // at the selected position.
-            this.setContent(this.getSlice(0, range[0].index) +
-                            newContent +
-                            this.getSlice(range[1].index));
+            // Remove the last <br> tag if any.
+            var content = this.textEditorElem.innerHTML;
+            var lastBr = content.lastIndexOf("<br>");
+            if (lastBr !== -1) {
+                content = content.substring(0, lastBr);
+            }
 
-            // Set the current selection after the new added character.
-            this.setSelectionRange(range[0].index + 1, range[0].index + 1);
+            // Replace <br> by \n
+            content = content.replace("<br>", "\n", "g");
+
+            // Convert the emoji images back to characters.
+            // The original character is stored in the alt attribute of its
+            // img tag with the format of <img ... alt='X' ..>.
+            content = content.replace(/<img[^>]*alt="(\S*)"[^>]*>/g, '$1');
+
+            this.setContent(content);
+
+            // Restore the current selection after updating emoji images.
+            this.setSelectionRange(range[0].index, range[1].index);
 
             // Notify TextEditor listeners.
             if (this.oninputCallback) {
                 this.oninputCallback();
             }
+        }.bind(this);
+    }
+
+    TextAreaEditor.prototype = extendsObject({
+        getContent: function() {
+            return this.content;
         },
 
         setContent: function(content) {
+            // Filter all the \r characters as we use \n.
+            content = content.replace("\r", "", "g");
+
             this.content = content;
 
             if (!this.textEditorElem) {
@@ -248,95 +226,68 @@ var TextEditorProvider = (function() {
                        'pt" width="' + this.font.size + 'pt" alt="' + str + '">';
             }.bind(this);
 
-            this.textEditorElem.innerHTML = content.replace(emoji.regEx, toImg) + "\n";
+            // Replace "\n" by <br>
+            var html = content.replace("\n", "<br>", "g");
+
+            html = html.replace(emoji.regEx, toImg) + "<br>";
+
+            this.textEditorElem.innerHTML = html;
+        },
+
+        _getNodeTextLength: function(node) {
+            if (node.nodeType == Node.TEXT_NODE) {
+                return node.textContent.length;
+            } else if (node instanceof HTMLBRElement) {
+                // Don't count the last <br>
+                return node.nextSibling ? 1 : 0;
+            } else {
+                // It should be an HTMLImageElement of a emoji.
+                return util.toCodePointArray(node.alt).length;
+            }
+        },
+
+        _getSelectionOffset: function(node, offset) {
+            if (!this.textEditorElem) {
+                return { index: 0, node: null };
+            }
+
+            if (node !== this.textEditorElem &&
+                node.parentNode !== this.textEditorElem) {
+                console.error("_getSelectionOffset called while the editor is unfocused");
+                return { index: 0, node: null };
+            }
+
+            var selectedNode = null;
+            var count = 0;
+
+            if (node.nodeType === Node.TEXT_NODE) {
+                selectedNode = node;
+                count = offset;
+                var prev = node.previousSibling;
+                while (prev) {
+                    count += this._getNodeTextLength(prev);
+                    prev = prev.previousSibling;
+                }
+            } else {
+                var children = node.childNodes;
+                for (var i = 0; i < offset; i++) {
+                    var cur = children[i];
+                    count += this._getNodeTextLength(cur);
+                }
+                selectedNode = children[offset - 1];
+            }
+
+            return { index: count, node: selectedNode };
         },
 
         getSelectionEnd: function() {
-            if (this.textEditorElem) {
-                var sel = window.getSelection();
-
-                if (sel.focusNode !== this.textEditorElem &&
-                    sel.focusNode.parentNode !== this.textEditorElem) {
-                    console.error("getSelectionEnd called while the editor is unfocused");
-                    return 0;
-                }
-
-                var selectedNode = null;
-                var count = 0;
-
-                if (sel.focusNode.nodeType === 3) {
-                    selectedNode = sel.focusOffset;
-                    count = sel.focusOffset;
-                    var prev = sel.focusNode.previousSibling;
-                    while (prev) {
-                        count += (prev.textContent) ? prev.textContent.length : util.toCodePointArray(prev.alt).length;
-                        prev = prev.previousSibling;
-                    }
-                } else {
-                    var children = sel.focusNode.childNodes;
-                    for (var i = 0; i < sel.focusOffset; i++) {
-                        var cur = children[i];
-                        count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
-                    }
-                    selectedNode = children[sel.focusOffset - 1];
-                }
-
-                // If the position returned is higher than the size of the content,
-                // the selected character is the additional "\n" that we have in the
-                // div innerHTML. We subtract 1 to the position to retrieve the correct
-                // value.
-                if (count > this.getSize()) {
-                    count = count - 1;
-                }
-
-                return { index: count, node: selectedNode };
-            }
-
-            return { index: 0, node: null };
+            var sel = window.getSelection();
+            return this._getSelectionOffset(sel.focusNode, sel.focusOffset);
         },
 
         getSelectionStart: function() {
-            if (this.textEditorElem) {
-                var sel = window.getSelection();
-
-                if (sel.anchorNode !== this.textEditorElem &&
-                    sel.anchorNode.parentNode !== this.textEditorElem) {
-                    console.error("getSelectionStart called while the editor is unfocused");
-                    return { index: 0, node: null };
-                }
-
-                var selectedNode = null;
-                var count = 0;
-
-                if (sel.anchorNode.nodeType === 3) {
-                    selectedNode = sel.anchorNode;
-                    count = sel.anchorOffset;
-                    var prev = sel.anchorNode.previousSibling;
-                    while (prev) {
-                        count += (prev.textContent) ? prev.textContent.length : util.toCodePointArray(prev.alt).length;
-                        prev = prev.previousSibling;
-                    }
-                } else {
-                    var children = sel.anchorNode.childNodes;
-                    for (var i = 0; i < sel.anchorOffset; i++) {
-                        var cur = children[i];
-                        count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
-                    }
-                    selectedNode = children[sel.anchorOffset - 1];
-                }
-
-                // If the position returned is higher than the size of the content,
-                // the selected character is the additional "\n" that we have in the
-                // div innerHTML. We subtract 1 to the position to retrieve the correct
-                // value.
-                if (count > this.getSize()) {
-                    count = count - 1;
-                }
-
-                return { index: count, node: selectedNode };
-            }
-
-            return { index: 0, node: null };
+            var sel = window.getSelection();
+            return this._getSelectionOffset(sel.anchorNode, sel.anchorOffset);
         },
 
         getSelectionRange: function() {
@@ -358,18 +309,10 @@ var TextEditorProvider = (function() {
                     console.error("setSelectionRange not supported when from != to");
                 }
 
-                // If we're trying to set the selection to the last character and
-                // the last character is a "\n", we need to add 1 to the position
-                // because of the additional "\n" we have in the div innerHTML.
-                var size = this.getSize();
-                if (from === size && this.content[this.content.length-1] == "\n") {
-                    from = from + 1;
-                }
-
                 var children = this.textEditorElem.childNodes;
                 for (var i = 0; i < children.length; i++) {
                     var cur = children[i];
-                    var length = (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
+                    var length = this._getNodeTextLength(cur);
 
                     if (length >= from) {
                         var range = window.getSelection().getRangeAt(0);
