@@ -16,6 +16,8 @@ module J2ME {
 
   var emitDebugInfoComments = true;
 
+  var emitCompilerAssertions = true;
+
   export var baselineTotal = 0;
   export var baselineCompiled = 0;
 
@@ -247,9 +249,9 @@ module J2ME {
         //}
         this.emitter.outdent();
       }
-      if (false) {
+      if (emitCompilerAssertions) {
         this.emitter.enter("default:");
-        this.emitter.writeLn("debugger;");
+        this.emitter.writeLn("J2ME.Debug.assert(false, 'Invalid pc.');");
         this.emitter.outdent();
       }
       this.emitter.leave("}");
@@ -566,6 +568,8 @@ module J2ME {
           this.emitter.writeLn(this.runtimeClass(classInfo) + ";");
           if (classInfo.staticInitializer && canYield(classInfo.staticInitializer)) {
             this.emitUnwind(this.pc, this.pc);
+          } else {
+            emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
         }
         this.initializedClasses[classInfo.className] = true;
@@ -602,6 +606,8 @@ module J2ME {
       this.emitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
         this.emitUnwind(this.pc, nextPC);
+      } else {
+        emitCompilerAssertions && this.emitNoUnwindAssertion();
       }
       if (types[0].kind !== Kind.Void) {
         this.emitPush(types[0].kind, "re");
@@ -713,6 +719,10 @@ module J2ME {
       var stack = this.stack.slice(0, this.sp).join(", ");
       this.emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
       baselineCounter && baselineCounter.count("emitUnwind");
+    }
+
+    emitNoUnwindAssertion() {
+      this.emitter.writeLn("if (U) { J2ME.Debug.assert(false, 'Unexpected unwind.'); }");
     }
 
     emitMonitorEnter(nextPC: number, object: string) {
