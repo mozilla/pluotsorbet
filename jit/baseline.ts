@@ -20,6 +20,8 @@ module J2ME {
 
   var emitCallMethodCounter = false;
 
+  var emitCallMethodLoopCounter = false;
+
   export var baselineTotal = 0;
   export var baselineCompiled = 0;
 
@@ -220,6 +222,9 @@ module J2ME {
         return;
       }
       this.emitter.enter("while (true) {");
+      if (emitCallMethodLoopCounter) {
+        this.emitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
+      }
       needsTry && this.emitter.enter("try {");
       this.emitter.enter("switch (bi) {");
 
