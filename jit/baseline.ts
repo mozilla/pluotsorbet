@@ -14,9 +14,11 @@ module J2ME {
 
   var optimizeControlFlow = true;
 
-  var emitDebugInfoComments = true;
+  var emitDebugInfoComments = false;
 
-  var emitCompilerAssertions = true;
+  var emitCompilerAssertions = false;
+
+  var emitCallMethodCounter = false;
 
   export var baselineTotal = 0;
   export var baselineCompiled = 0;
@@ -366,6 +368,10 @@ module J2ME {
       this.emitter.writeLn("var pc = 0, bi = 0;");
       if (this.hasHandlers) {
         this.emitter.writeLn("var ex;");
+      }
+
+      if (emitCallMethodCounter) {
+        this.emitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
 
       if (this.methodInfo.isSynchronized) {
