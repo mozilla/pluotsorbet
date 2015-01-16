@@ -429,7 +429,7 @@ module J2ME {
       this.resume();
     }
 
-    private execute() {
+    execute() {
       Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {
