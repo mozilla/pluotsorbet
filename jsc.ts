@@ -83,6 +83,7 @@ module J2ME {
   var classFileFilterOption: Options.Option;
   var classFilterOption: Options.Option;
   var methodFilterOption: Options.Option;
+  var methodFileFilterOption: Options.Option;
   var fileFilterOption: Options.Option;
   var debuggerOption: Options.Option;
   var releaseOption: Options.Option;
@@ -100,6 +101,7 @@ module J2ME {
 
     jarFileFilterOption = shellOptions.register(new Options.Option("jf", "jarFileFilter", "string", "", "Compile Jar File Filter"));
     classFileFilterOption = shellOptions.register(new Options.Option("cff", "classFileFilter", "string", "", "Compile Class File Filter"));
+    methodFileFilterOption = shellOptions.register(new Options.Option("mff", "methodFileFilter", "string", "", "Compile Metgod File Filter"));
     classFilterOption = shellOptions.register(new Options.Option("cf", "classFilter", "string", ".*", "Compile Class Filter"));
     methodFilterOption = shellOptions.register(new Options.Option("mf", "methodFilter", "string", "", "Compile Method Filter"));
 
@@ -183,7 +185,7 @@ module J2ME {
     CLASSES.initializeBuiltinClasses();
     Bytecode.defineBytecodes();
     if (verboseOption.value) {
-      writer.writeLn("Compiling Pattern: " + classFilterOption.value + " " + classFileFilterOption.value);
+      writer.writeLn("Compiling Pattern: " + classFilterOption.value + " " + classFileFilterOption.value + " " + methodFileFilterOption.value);
     }
     var classNameList;
     if (classFileFilterOption.value) {
@@ -197,6 +199,19 @@ module J2ME {
         classNameList = file.replace(/\r?\n/g, "\n").split("\n");
       }
     }
+    var methodNameList;
+    if (methodFileFilterOption.value) {
+      var file;
+      try {
+        file = snarf(methodFileFilterOption.value, "text");
+      } catch (e) {
+
+      }
+      if (file) {
+        methodNameList = file.replace(/\r?\n/g, "\n").split("\n");
+      }
+    }
+
     function jarFilter(file): boolean {
       if (jarFileFilterOption.value) {
         return file === jarFileFilterOption.value;
@@ -212,7 +227,9 @@ module J2ME {
       return false;
     }
     function methodFilter(methodInfo: MethodInfo): boolean {
-      if (!methodFilterOption.value) {
+      if (methodNameList) {
+        return methodNameList.indexOf(methodInfo.implKey) >= 0;
+      } else if (!methodFilterOption.value) {
         return true;
       }
       return methodInfo.implKey === methodFilterOption.value;
