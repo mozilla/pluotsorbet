@@ -28,7 +28,7 @@ declare var printErr;
 // declare var getComputedStyle;
 
 /** @const */ var release: boolean = true;
-/** @const */ var profile: boolean = false;
+/** @const */ var profile: boolean = true;
 
 declare var dateNow: () => number;
 
@@ -339,6 +339,14 @@ module J2ME {
 
   export module ArrayUtilities {
     import assert = Debug.assert;
+
+    export function makeArrays(length: number): any [][] {
+      var arrays = [];
+      for (var i = 0; i < length; i ++) {
+        arrays.push(new Array(i));
+      }
+      return arrays;
+    }
 
     /**
      * Pops elements from a source array into a destination array. This avoids
@@ -862,18 +870,20 @@ module J2ME {
     }
 
     var _encoding = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$_';
+    var arrays = [null, new Array(1), new Array(2), new Array(3), new Array(4), new Array(5), new Array(6)];
     export function variableLengthEncodeInt32(n) {
       var e = _encoding;
       var bitCount = (32 - Math.clz32(n));
       release || assert (bitCount <= 32, bitCount);
       var l = Math.ceil(bitCount / 6);
+      var a = arrays[l];
       // Encode length followed by six bit chunks.
-      var s = e[l];
-      for (var i = l - 1; i >= 0; i--) {
+      a[0] = e[l];
+      for (var i = l - 1, j = 1; i >= 0; i--) {
         var offset = (i * 6);
-        s += e[(n >> offset) & 0x3F];
+        a[j++] = e[(n >> offset) & 0x3F];
       }
-      release || assert (StringUtilities.variableLengthDecodeInt32(s) === n, n + " : " + s + " - " + l + " bits: " + bitCount);
+      var s = a.join("");
       return s;
     }
 

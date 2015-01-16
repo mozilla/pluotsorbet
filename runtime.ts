@@ -276,10 +276,10 @@ module J2ME {
   }
 
   var stringHashes = Object.create(null);
-  var stringHasheCount = 0;
+  var stringHashCount = 0;
 
   export function hashStringToString(s: string) {
-    if (stringHasheCount > 1024) {
+    if (stringHashCount > 1024) {
       return StringUtilities.variableLengthEncodeInt32(hashString(s));
     }
     var c = stringHashes[s];
@@ -287,7 +287,7 @@ module J2ME {
       return c;
     }
     c = stringHashes[s] = StringUtilities.variableLengthEncodeInt32(hashString(s));
-    stringHasheCount ++;
+    stringHashCount ++;
     return c;
   }
 
