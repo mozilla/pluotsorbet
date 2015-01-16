@@ -56,7 +56,7 @@ module J2ME {
   export var runtimeCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
-  if (false && typeof Shumway !== "undefined") {
+  if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
     methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
   }

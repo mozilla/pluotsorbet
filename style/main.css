@@ -202,15 +202,6 @@ button {
   line-height: 1.2;
 }
 
-<<<<<<< HEAD
-#pageContainer {
-  background-color: #333333;
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  right: 240px;
-  bottom: 0px;
-=======
 .debug-mode .splash-screen {
   position: fixed;
   width: 240px;
@@ -225,23 +216,42 @@ button {
 #console {
   overflow: auto;
   margin: 0;
->>>>>>> 53cb3f78df324162a2cb70ea77561e1cda217523
+}
+
+#pageContainer {
+  position: absolute;
+  background-color: #333333;
+  top: 0;
+  left: 0;
+  right: 240px;
+  bottom: 0;
 }
 
 #consoleContainer {
-  position: fixed;
-  left: 0px;
-  top: 0px;
-  bottom: 230px;
-  right: 240px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
 
+.profile-mode #consoleContainer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 230px;
 }
 
 #profilerContainer {
-  position: fixed;
+  display: none;
+}
+
+.profile-mode #profilerContainer {
+  display: block;
+  position: absolute;
   left: 0px;
   bottom: 0px;
-  right: 240px;
+  right: 0px;
   height: 230px;
 }
 
