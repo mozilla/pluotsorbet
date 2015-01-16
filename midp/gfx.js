@@ -431,14 +431,17 @@ var currentlyFocusedTextEditor;
     }
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
         c.textAlign = "left";
         c.textBaseline = "top";
 
-        if (anchor & RIGHT) {
-            x -= w;
-        } else if (anchor & HCENTER) {
-            x -= (w >>> 1) | 0;
+        if (anchor & RIGHT || anchor & HCENTER) {
+            var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+
+            if (anchor & RIGHT) {
+                x -= w;
+            } else if (anchor & HCENTER) {
+                x -= (w >>> 1) | 0;
+            }
         }
 
         if (anchor & BOTTOM) {
@@ -449,7 +452,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
         }
 
-        cb(x, y, w);
+        cb(x, y);
     }
 
     function abgrIntToCSS(pixel) {
@@ -672,11 +675,16 @@ var currentlyFocusedTextEditor;
                         var part = parts.shift();
 
                         if (part.text) {
-                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
+                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y) {
                                 var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
                                 withPixelFunc(g, c, function() {
                                     c.fillText(part.text, x, y);
-                                    curX += w;
+
+                                    // If there are emojis in the string that we need to draw,
+                                    // we need to calculate the string width
+                                    if (part.emoji) {
+                                        curX += withFont(font, c, part.text)
+                                    }
                                 });
                             });
                         }
