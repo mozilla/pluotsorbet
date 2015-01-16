@@ -258,6 +258,9 @@ module J2ME {
       if (method.isNative) {
         continue;
       }
+      if (!method.code) {
+        continue;
+      }
       if (!methodFilter(method)) {
         continue;
       }
@@ -276,36 +279,12 @@ module J2ME {
         }
         var compiledMethod = undefined;
         try {
-          compiledMethod = compileMethodInfo(method, ctx, CompilationTarget.Static);
+          compiledMethod = compileMethod(method, ctx, CompilationTarget.Static);
         } catch (e) {
-          writer.writeLn("// " + e.toString());
+          writer.writeLn("// Compiler Exception: " + e.toString());
         }
         if (compiledMethod && compiledMethod.body) {
           var compiledMethodName = mangledClassAndMethodName;
-          if (method.isSynchronized) {
-            compiledMethodName = "_" + mangledClassAndMethodName + "_";
-            // Emit Synchronization Wrapper
-            var lockObject = method.isStatic ? "$." + mangleClass(method.classInfo) : "this";
-            var me = "$ME(" + lockObject + "); if (U) return;"; // We may need to unwind after a monitorEnter.
-            var mx = "$MX(" + lockObject + ");";
-            writer.writeLn("// Synchronization Wrapper");
-            writer.enter("function " + mangledClassAndMethodName + "(" + compiledMethod.args.join(",") + ") {");
-            writer.enter("try {");
-            writer.writeLn(me);
-            if (method.isStatic) {
-              writer.writeLn("var r = " + compiledMethodName + "(" + compiledMethod.args.join(",") + ");");
-            } else {
-              if (compiledMethod.args.length > 0) {
-                writer.writeLn("var r = " + compiledMethodName + ".call(this, " + compiledMethod.args.join(",") + ");");
-              } else {
-                writer.writeLn("var r = " + compiledMethodName + ".call(this);");
-              }
-            }
-            writer.writeLn(mx);
-            writer.writeLn("return r;");
-            writer.leave("} catch (e) { " + mx + " throw e; }");
-            writer.leave("}");
-          }
           writer.enter("function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
           writer.leave("}");
@@ -339,6 +318,24 @@ module J2ME {
     }
 
     return compiledMethods;
+  }
+
+  export class CompiledMethodInfo {
+    constructor(public args: string [], public body: string, public referencedClasses: ClassInfo []) {
+      // ...
+    }
+  }
+
+  export function compileMethod(methodInfo: MethodInfo, ctx: Context, target: CompilationTarget): CompiledMethodInfo {
+    var method;
+    method = baselineCompileMethod(methodInfo, target);
+    return method;
+    try {
+      method = optimizerCompileMethod(methodInfo, target);
+    } catch (x) {
+      method = baselineCompileMethod(methodInfo, target);
+    }
+    return method;
   }
 
   export function compile(jvm: any,
@@ -421,6 +418,9 @@ module J2ME {
 
     for (var i = 0; i < orderedClassInfoList.length; i++) {
       var classInfo = orderedClassInfoList[i];
+
+      writer.writeLn("//// " + classInfo.className);
+
       if (emitter.debugInfo) {
         writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
       }
@@ -432,6 +432,14 @@ module J2ME {
     }
 
     stdoutWriter.writeLn(code);
+
+    stdoutWriter.enter("/*");
+    baselineCounter && baselineCounter.traceSorted(stdoutWriter);
+    yieldCounter && yieldCounter.traceSorted(stdoutWriter);
+    stdoutWriter.enter("*/");
+    // yieldCounter.traceSorted(stdoutWriter);
+
+    // stdoutWriter.writeLn("Compiled " + baselineCompiled + " of " + baselineTotal);
   }
 }
 

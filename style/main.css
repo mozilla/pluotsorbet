@@ -225,32 +225,44 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   box-sizing: border-box;
 }
 
-#console {
-  overflow: auto;
-  margin: 0;
-}
-
-#traceTerminalContainer {
-  position: fixed;
+#pageContainer {
+  position: absolute;
+  background-color: #333333;
   top: 0;
-  bottom: 250px;
   left: 0;
   right: 240px;
-  margin: 0;
-  padding: 0;
+  bottom: 0;
+}
+
+#consoleContainer {
   overflow: auto;
-  /*background-color: rgba(0, 0, 0, 0.8);*/
+  margin: 0;
+  background-color: #ffffff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.profile-mode #consoleContainer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 256px;
 }
 
 #profilerContainer {
+  display: none;
+}
+
+.profile-mode #profilerContainer {
+  display: block;
   position: absolute;
-  bottom: 0;
-  right: 250px;
-  left: 0;
-  height: 250px;
-  overflow: hidden;
-  background-color: #000;
-  color: #ffffff;
+  left: 0px;
+  bottom: 0px;
+  right: 0px;
+  height: 256px;
 }
 
 #profilerToolbar {

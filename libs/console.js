@@ -20,12 +20,11 @@
    * The console(s) to which messages should be output.  A comma-separated list
    * of one or more of these consoles:
    *    web: the browser's Web Console (default)
-   *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
    *    terminal: a faster canvas based console if Shumway.js is included.
    */
-  var ENABLED_CONSOLE_TYPES = (config.logConsole || "page").split(",");
-  var minLogLevel = LOG_LEVELS[config.logLevel || "log"];
+  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "page").split(",");
+  var minLogLevel = LOG_LEVELS[urlParams.logLevel || "log"];
 
 
   //================================================================
@@ -92,17 +91,13 @@
     },
 
     matchesCurrentFilters: function() {
-      return (this.logLevel >= minLogLevel &&
-              (CONSOLES.page.currentFilterText === "" ||
-               this.searchPredicate.indexOf(CONSOLES.page.currentFilterText) !== -1));
+      return this.logLevel >= minLogLevel;
     }
   };
 
 
   //================================================================
   // Console Implementations
-
-
   /**
    * In-page console, providing dynamic filtering and colored output.
    * Renders to the document's "console" element.
@@ -152,7 +147,6 @@
     }
 
   };
-
 
   /**
    * WebConsole: The standard console.log() and friends.
@@ -217,50 +211,78 @@
     }
   };
 
-
-  function TerminalConsole(name) {
-    // If we don't have shumway included fall back on the page console.
-    if (typeof Shumway === "undefined") {
-      return new PageConsole("#console");
-    }
-    var traceTerminal = new Shumway.Tools.Terminal.Terminal(document.getElementById(name));
-    traceTerminal.refreshEvery(100);
-
-    this.appendToTraceTerminal = function appendToTraceTerminal(str, color) {
-      var scroll = traceTerminal.isScrolledToBottom();
-      traceTerminal.buffer.append(str, color);
-      if (scroll) {
-        traceTerminal.gotoLine(traceTerminal.buffer.length - 1);
-        traceTerminal.scrollIntoView();
-      }
-    }
+  function TerminalConsole(selector) {
+    this.buffer = new Terminal.Buffer();
+    this.view = new Terminal.View(new Terminal.Screen(document.querySelector(selector), 10), this.buffer);
+    this.count = 0;
+    window.addEventListener(
+      'console-clear', this.onClear.bind(this));
+    window.addEventListener(
+      'console-save', this.onSave.bind(this));
   }
 
   var contextColors = ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666"];
-  var colors = [undefined, undefined, undefined, "darkorange", "red", "blue"];
 
+
+  function toRGB565(r, g, b) {
+    return ((r / 256 * 32) & 0x1F) << 11 |
+           ((g / 256 * 64) & 0x3F) <<  5 |
+           ((b / 256 * 32) & 0x1F) <<  0;
+  }
+
+    //trace: 0,
+    //log: 1,
+    //info: 2,
+    //warn: 3,
+    //error: 4,
+    //silent: 5,
+
+  var colors = [
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0),
+    toRGB565(0xFF, 0, 0),
+    toRGB565(0, 0, 0),
+  ];
+
+  var lastTime = 0;
   TerminalConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        var color;
-
-        if (item.logLevel < 3) {
-          var id = item.ctx.runtime.id + item.ctx.id;
-          color = contextColors[id % contextColors.length];
-        } else {
-          color = colors[item.logLevel]
-        }
-        this.appendToTraceTerminal(item.message, color);
+        this.buffer.color = colors[item.logLevel];
+        var thisTime = performance.now();
+        var prefix = (thisTime - lastTime).toFixed(2) + " : ";
+        prefix = "";
+        lastTime = thisTime;
+        this.buffer.writeString(prefix.padLeft(" ", 4) + item.logLevel + " " + item.message);
+        this.buffer.writeLine();
+        this.view.scrollToBottom();
       }
+    },
+    onClear: function() {
+      this.buffer.clear();
+      this.view.scrollToBottom();
+    },
+    onSave: function() {
+      var string = this.buffer.toString();
+      var b = this.buffer;
+      var l = [];
+      for (var i = 0; i < b.h; i++) {
+        l.push(b.getLine(i));
+      }
+      var blob = new Blob([l.join("\n")], {type:'text/plain'});
+      saveAs(blob, "console-" + Date.now() + ".txt");
+      // window.open(URL.createObjectURL(blob));
     }
   }
 
   var CONSOLES = {
-    page: new PageConsole("#console"),
     web: new WebConsole(),
+    page: new PageConsole('#consoleContainer'),
     native: new NativeConsole(),
     raw: new RawConsoleForTests("#raw-console"),
-    terminal: new TerminalConsole("traceTerminal")
+    terminal: typeof Terminal === "undefined" ? new WebConsole() : new TerminalConsole("#consoleContainer")
   };
 
   var print = CONSOLES.web.print.bind(CONSOLES.web);
@@ -276,30 +298,22 @@
   //================================================================
   // Filtering & Runtime Page Console Options
 
-  var logLevelSelect = document.querySelector('#loglevel');
-  var consoleFilterTextInput = document.querySelector('#console-filter-input');
-  var autoScrollCheckbox = document.querySelector('#auto-scroll');
-
   document.querySelector('#console-clear').addEventListener('click', function() {
     window.dispatchEvent(new CustomEvent('console-clear'));
   });
 
+  document.querySelector('#console-save').addEventListener('click', function() {
+    window.dispatchEvent(new CustomEvent('console-save'));
+  });
+
+  var logLevelSelect = document.querySelector('#loglevel');
   function updateFilters() {
     minLogLevel = logLevelSelect.value;
-    CONSOLES.page.currentFilterText = consoleFilterTextInput.value.toLowerCase();
     window.dispatchEvent(new CustomEvent('console-filters-changed'));
   }
 
   logLevelSelect.value = minLogLevel;
   logLevelSelect.addEventListener('change', updateFilters);
-
-  consoleFilterTextInput.value = "";
-  consoleFilterTextInput.addEventListener('input', updateFilters);
-
-  autoScrollCheckbox.checked = CONSOLES.page.shouldAutoScroll;
-  autoScrollCheckbox.addEventListener('change', function() {
-    CONSOLES.page.shouldAutoScroll = autoScrollCheckbox.checked;
-  });
 
 
   //----------------------------------------------------------------

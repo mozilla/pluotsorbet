@@ -22,8 +22,30 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var Instrument;
+
+  /**
+   * Traces method execution.
+   */
   export var traceWriter = null;
+
+  /**
+   * Traces performance problems.
+   */
+  export var perfWriter = null;
+
+  /**
+   * Traces linking and class loading.
+   */
   export var linkWriter = null;
+
+  /**
+   * Traces class loading.
+   */
+  export var loadWriter = null;
+
+  /**
+   * Traces class initialization.
+   */
   export var initWriter = null;
 
   declare var Shumway;
@@ -32,9 +54,10 @@ module J2ME {
   export var methodTimeline;
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
+  export var baselineMethodCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
-  if (false && typeof Shumway !== "undefined") {
+  if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
     methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
   }
@@ -338,7 +361,7 @@ module J2ME {
       this.status = RuntimeStatus.New;
       this.waiting = [];
       this.threadCount = 0;
-      this.initialized = {};
+      this.initialized = Object.create(null);
       this.pending = {};
       this.staticFields = {};
       this.classObjects = {};
@@ -520,17 +543,19 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(bci: number, local: any [], stack: any []) {
+    B(bci: number, nextBCI: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, bci, local, stack);
+      $.ctx.bailout(methodInfo, bci, nextBCI, local, stack, lockObject);
     }
 
     yield() {
+      runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
-    pause() {
+    pause(reason: string) {
+      runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
     }
 
@@ -794,7 +819,8 @@ module J2ME {
         });
         initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
-        release || assert(!U);
+        // release || assert(!U);
+
         //// TODO: monitorEnter
         //if (klass.staticInitializer) {
         //  klass.staticInitializer.call(runtimeKlass);
@@ -809,27 +835,49 @@ module J2ME {
 
   var unresolvedSymbols = Object.create(null);
 
+  var loaded = Object.create(null);
+
+  /**
+   * Loads code from pack files if any is available.
+   */
+  function loadCode(className: string): boolean {
+    if (loaded[className]) {
+      return false;
+    }
+    loaded[className] = true;
+    var code = CLASSES.getCode(className);
+    if (code) {
+      // linkWriter && linkWriter.writeLn("Loading code from pack file: " + className);
+      console.info("Loading code from pack file: " + className);
+      (1, eval)(code);
+      return true;
+    }
+  }
+
   function findKlass(classInfo: ClassInfo) {
     if (unresolvedSymbols[classInfo.mangledName]) {
       return null;
     }
-    return jsGlobal[classInfo.mangledName];
+    var klass = jsGlobal[classInfo.mangledName];
+    if (klass) {
+      return klass;
+    }
+    return null;
   }
 
   export function registerKlassSymbol(className: string) {
-    linkWriter && linkWriter.writeLn("Registering Klass: " + className);
     // TODO: This needs to be kept in sync to how mangleClass works.
     var mangledName = "$" + escapeString(className);
     if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       return;
     }
-
+    linkWriter && linkWriter.writeLn("Registering Klass Symbol: " + className);
     if (!RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       Object.defineProperty(RuntimeTemplate.prototype, mangledName, {
         configurable: true,
         get: function lazyKlass() {
-          linkWriter && linkWriter.writeLn("Initializing Klass: " + className);
-          CLASSES.getClass(className);
+          linkWriter && linkWriter.writeLn("Load Klass: " + className);
+          CLASSES.loadAndLinkClass(className);
           return this[mangledName]; // This should not be recursive at this point.
         }
       });
@@ -840,8 +888,8 @@ module J2ME {
       Object.defineProperty(jsGlobal, mangledName, {
         configurable: true,
         get: function () {
-          linkWriter && linkWriter.writeLn("Initializing Klass: " + className);
-          CLASSES.getClass(className);
+          linkWriter && linkWriter.writeLn("Load Klass: " + className);
+          CLASSES.loadAndLinkClass(className);
           return this[mangledName]; // This should not be recursive at this point.
         }
       });
@@ -915,6 +963,8 @@ module J2ME {
       }
     } else {
       klass = makeKlassConstructor(classInfo);
+      release || assert(!classInfo.klass);
+      classInfo.klass = klass;
     }
 
     if (classInfo.superClass && !classInfo.superClass.klass &&
@@ -1001,7 +1051,14 @@ module J2ME {
     return klass;
   }
 
+  /**
+   * TODO: Find out if we need to also run class initialization here, or if the
+   * callers should be calling that instead of this.
+   */
   export function linkKlass(classInfo: ClassInfo) {
+    if (classInfo.klass) {
+      return;
+    }
     enterTimeline("linkKlass", {classInfo: classInfo});
     var mangledName = mangleClass(classInfo);
     var klass;
@@ -1135,7 +1192,7 @@ module J2ME {
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject($.ctx)
+            ? methodInfo.classInfo.getClassObject()
             : frame.getLocal(0);
         }
         $.ctx.monitorEnter(frame.lockObject);
@@ -1149,7 +1206,18 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    return jsGlobal[methodInfo.mangledClassAndMethodName];
+    var name = methodInfo.mangledClassAndMethodName;
+    var method = jsGlobal[name];
+    return method;
+    if (!method) {
+      var compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+      var code =
+      "function " + name + "(" + compiledMethod.args.join(",") + ") {" +
+        compiledMethod.body +
+      "}";
+      (1, eval)(code);
+      return jsGlobal[name];
+    }
   }
 
   /**
@@ -1181,6 +1249,9 @@ module J2ME {
     var methods = klass.classInfo.methods;
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
+      if (methodInfo.isAbstract) {
+        continue;
+      }
       var fn;
       var methodType;
       var nativeMethod = findNativeMethodImplementation(methods[i]);
@@ -1192,12 +1263,9 @@ module J2ME {
         methodType = MethodType.Native;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
-        if (fn && !methodInfo.isSynchronized) {
+        if (fn) {
           linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
           methodType = MethodType.Compiled;
-          if (!traceWriter) {
-            linkWriter && linkWriter.outdent();
-          }
           // Save method info so that we can figure out where we are bailing
           // out from.
           jitMethodInfos[fn.name] = methodInfo;
@@ -1214,7 +1282,7 @@ module J2ME {
         updateGlobalObject = true;
       }
 
-      if (traceWriter && methodType !== MethodType.Interpreted) {
+      if (traceWriter) {
         fn = tracingWrapper(fn, methodInfo, methodType);
         updateGlobalObject = true;
       }
@@ -1276,6 +1344,7 @@ module J2ME {
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
         var args = Array.prototype.slice.apply(arguments);
+        /*
         var printArgs = args.map(function (x) {
           return toDebugString(x);
         }).join(", ");
@@ -1284,14 +1353,11 @@ module J2ME {
           printObj = " <" + toDebugString(this) + "> ";
         }
         traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + printArgs);
+        */
+        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
-        var elapsedStr = " " + (performance.now() - s).toFixed(4);
-        if (methodInfo.getReturnKind() !== Kind.Void) {
-          traceWriter.leave("< " + toDebugString(value) + elapsedStr);
-        } else {
-          traceWriter.leave("<" + elapsedStr);
-        }
+        traceWriter.outdent();
         return value;
       };
     }
@@ -1301,10 +1367,10 @@ module J2ME {
    * Creates lookup tables used to efficiently implement type checks.
    */
   function initializeKlassTables(klass: Klass) {
+    linkWriter && linkWriter.writeLn("initializeKlassTables: " + klass);
     klass.depth = klass.superKlass ? klass.superKlass.depth + 1 : 0;
     assert (klass.display === undefined, "Display should only be defined once.")
     var display = klass.display = new Array(32);
-
 
     var i = klass.depth;
     while (klass) {
@@ -1402,6 +1468,9 @@ module J2ME {
   };
 
   export function newArray(klass: Klass, size: number) {
+    if (size < 0) {
+      throw $.newNegativeArraySizeException();
+    }
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
   }
@@ -1514,6 +1583,25 @@ module J2ME {
   export function monitorExit(object: J2ME.java.lang.Object) {
     $.ctx.monitorExit(object);
   }
+
+  export function translateException(e) {
+    if (e.name === "TypeError") {
+      // JavaScript's TypeError is analogous to a NullPointerException.
+      return $.newNullPointerException(e.message);
+    }
+    return e;
+  }
+
+  export function classInitCheck(classInfo: ClassInfo, pc: number) {
+    if (classInfo.isArrayClass || $.initialized[classInfo.className]) {
+      return;
+    }
+    $.ctx.pushClassInitFrame(classInfo);
+    if (U) {
+      $.ctx.current().pc = pc;
+      return;
+    }
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1547,3 +1635,4 @@ var $CAS = J2ME.checkArrayStore;
 
 var $ME = J2ME.monitorEnter;
 var $MX = J2ME.monitorExit;
+var $TE = J2ME.translateException;

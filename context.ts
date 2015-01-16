@@ -13,6 +13,21 @@ module J2ME {
   declare var Instrument;
   declare var setZeroTimeout;
 
+  export enum WriterFlags {
+    None  = 0x00,
+    Trace = 0x01,
+    Link  = 0x02,
+    Init  = 0x04,
+    Perf  = 0x08,
+    Load  = 0x10,
+
+    All   = Trace | Link | Init | Perf | Load
+  }
+
+  /**
+   * Toggle VM tracing here.
+   */
+  export var writers = WriterFlags.None; // WriterFlags.Link | WriterFlags.Load;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -239,6 +254,8 @@ module J2ME {
 
   export class Context {
     private static _nextId: number = 0;
+    static _startTime: number = 0;
+    static _totalTime: number = 0;
     private static _colors = [
       IndentingWriter.PURPLE,
       IndentingWriter.YELLOW,
@@ -283,10 +300,15 @@ module J2ME {
       return "";
     }
 
+    /**
+     * Sets global writers. Uncomment these if you want to see trace output.
+     */
     static setWriters(writer: IndentingWriter) {
-      traceWriter = null; // writer;
-      linkWriter = null; // writer;
-      initWriter = null; // writer;
+      traceWriter = writers & WriterFlags.Trace ? writer : null;
+      perfWriter = writers & WriterFlags.Perf ? writer : null;
+      linkWriter = writers & WriterFlags.Link ? writer : null;
+      initWriter = writers & WriterFlags.Init ? writer : null;
+      loadWriter = writers & WriterFlags.Load ? writer : null;
     }
 
     kill() {
@@ -305,11 +327,6 @@ module J2ME {
       this.frameSets.push(this.frames);
       this.frames = frames;
       try {
-        if (traceWriter) {
-          var firstFrame = frames[0];
-          var frameDetails = firstFrame.methodInfo.classInfo.className + "/" + firstFrame.methodInfo.name + signatureToDefinition(firstFrame.methodInfo.signature, true, true);
-          traceWriter.enter("> " + MethodType[MethodType.Interpreted][0] + " " + frameDetails);
-        }
         var returnValue = VM.execute();
         if (U) {
           // Append all the current frames to the parent frame set, so a single frame stack
@@ -321,13 +338,7 @@ module J2ME {
           }
           return;
         }
-        if (traceWriter) {
-          traceWriter.leave("<");
-        }
       } catch (e) {
-        if (traceWriter) {
-          traceWriter.leave("< " + e);
-        }
         assert(this.frames.length === 0);
         this.frames = this.frameSets.pop();
         throwHelper(e);
@@ -337,18 +348,19 @@ module J2ME {
     }
 
     getClassInitFrame(classInfo: ClassInfo) {
-      if (this.runtime.initialized[classInfo.className])
+      if (this.runtime.initialized[classInfo.className]) {
         return;
+      }
       classInfo.thread = this.thread;
       var syntheticMethod = new MethodInfo({
         name: "ClassInitSynthetic",
         signature: "()V",
         isStatic: false,
-        classInfo: {
-          className: classInfo.className,
-          vmc: {},
-          vfc: {},
-          constant_pool: [
+        classInfo: Object.create(ClassInfo.prototype, {
+          className: {value: classInfo.className},
+          vmc: {value: {}},
+          vfc: {value: {}},
+          constant_pool: {value: [
             null,
             {tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4},
             {tag: TAGS.CONSTANT_Class, name_index: 3},
@@ -360,8 +372,8 @@ module J2ME {
             {name_index: 9, signature_index: 10},
             {bytes: "init9"},
             {bytes: "()V"},
-          ],
-        },
+          ]},
+        }),
         code: new Uint8Array([
           0x2a,             // aload_0
           0x59,             // dup
@@ -378,17 +390,20 @@ module J2ME {
     }
 
     pushClassInitFrame(classInfo: ClassInfo) {
-      if (this.runtime.initialized[classInfo.className])
+      if (this.runtime.initialized[classInfo.className]) {
         return;
+      }
+      linkKlass(classInfo);
       var classInitFrame = this.getClassInitFrame(classInfo);
       this.executeNewFrameSet([classInitFrame]);
     }
 
     createException(className: string, message?: string) {
-      if (!message)
+      if (!message) {
         message = "";
+      }
       message = "" + message;
-      var classInfo = CLASSES.getClass(className);
+      var classInfo = CLASSES.loadAndLinkClass(className);
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
@@ -417,6 +432,10 @@ module J2ME {
     }
 
     private execute() {
+      if (Context._startTime === 0) {
+        Context._startTime = performance.now();
+      }
+      var start = performance.now();
       Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {
@@ -433,6 +452,8 @@ module J2ME {
               break;
           }
           U = VMState.Running;
+          var end = performance.now() - start;
+          Context._totalTime += end;
           this.clearCurrentContext();
           return;
         }
@@ -449,7 +470,7 @@ module J2ME {
         obj[queue] = [];
       obj[queue].push(this);
       this.lockLevel = lockLevel;
-      $.pause();
+      $.pause("block");
     }
 
     unblock(obj, queue, notifyAll, callback) {
@@ -544,61 +565,14 @@ module J2ME {
       });
     }
 
-    bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any []) {
+    bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+      // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
       var frame = new Frame(methodInfo, local, 0);
       frame.stack = stack;
-      frame.pc = pc;
+      frame.pc = nextPC;
+      frame.opPc = pc;
+      frame.lockObject = lockObject;
       this.bailoutFrames.unshift(frame);
-    }
-
-    resolve(cp, idx: number, isStatic: boolean) {
-      var constant = cp[idx];
-      if (!constant.tag)
-        return constant;
-      switch (constant.tag) {
-        case 3: // TAGS.CONSTANT_Integer
-          constant = constant.integer;
-          break;
-        case 4: // TAGS.CONSTANT_Float
-          constant = constant.float;
-          break;
-        case 8: // TAGS.CONSTANT_String
-          constant = this.runtime.newStringConstant(cp[constant.string_index].bytes);
-          break;
-        case 5: // TAGS.CONSTANT_Long
-          constant = Long.fromBits(constant.lowBits, constant.highBits);
-          break;
-        case 6: // TAGS.CONSTANT_Double
-          constant = constant.double;
-          break;
-        case 7: // TAGS.CONSTANT_Class
-          constant = CLASSES.getClass(cp[constant.name_index].bytes);
-          break;
-        case 9: // TAGS.CONSTANT_Fieldref
-          var classInfo = this.resolve(cp, constant.class_index, isStatic);
-          var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
-          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-          constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
-          if (!constant) {
-            throw $.newRuntimeException(
-              classInfo.className + "." + fieldName + "." + signature + " not found");
-          }
-          break;
-        case 10: // TAGS.CONSTANT_Methodref
-        case 11: // TAGS.CONSTANT_InterfaceMethodref
-          var classInfo = this.resolve(cp, constant.class_index, isStatic);
-          var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
-          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
-          constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
-          if (!constant) {
-            throw $.newRuntimeException(
-              classInfo.className + "." + methodName + "." + signature + " not found");
-          }
-          break;
-        default:
-          throw new Error("not support constant type");
-      }
-      return cp[idx] = constant;
     }
   }
 }

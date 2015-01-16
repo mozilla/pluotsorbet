@@ -52,9 +52,21 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 });
 
 var loadingPromises = [initFS, getMobileInfo];
+
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
     CLASSES.addPath(jar, data);
+  }));
+});
+
+var packs = [
+  // "build/classes.jar.js.pack",
+  // "build/tests.jar.js.pack"
+];
+
+packs.forEach(function(pack) {
+  loadingPromises.push(load(pack, "arraybuffer").then(function(data) {
+    CLASSES.addPath(pack, data);
   }));
 });
 
@@ -194,6 +206,7 @@ function toggle(button) {
 var bigBang = 0;
 
 function start() {
+  J2ME.Context.setWriters(new J2ME.IndentingWriter());
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
@@ -221,6 +234,7 @@ document.getElementById("loadAllClasses").onclick = function() {
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
+   debugger;
    indexedDB.deleteDatabase("asyncStorage");
  };
  document.getElementById("exportstorage").onclick = function() {
@@ -242,30 +256,73 @@ window.onload = function() {
    toggle(this);
  };
  document.getElementById("clearCounters").onclick = function() {
-   J2ME.interpreterCounter.clear();
+   J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
+   J2ME.nativeCounter && J2ME.nativeCounter.clear();
+   J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
+   J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
+   J2ME.baselineMethodCounter && J2ME.baselineMethodCounter.clear();
+
  };
- document.getElementById("dumpCounters").onclick = function() {
-   if (J2ME.interpreterCounter) {
-     J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
-   }
-   if (J2ME.nativeCounter) {
-     J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
-   }
-   if (J2ME.runtimeCounter) {
-     J2ME.runtimeCounter.traceSorted(new J2ME.IndentingWriter());
-   }
- };
-  document.getElementById("dumpCountersTime").onclick = function() {
+  function dumpCounters() {
+    var writer = new J2ME.IndentingWriter();
+    if (J2ME.interpreterCounter) {
+      writer.enter("interpreterCounter");
+      J2ME.interpreterCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.interpreterMethodCounter) {
+      writer.enter("interpreterMethodCounter");
+      J2ME.interpreterMethodCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.baselineMethodCounter) {
+      writer.enter("baselineMethodCounter");
+      J2ME.baselineMethodCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.nativeCounter) {
+      writer.enter("nativeCounter");
+      J2ME.nativeCounter.traceSorted(writer);
+      writer.outdent();
+    }
+    if (J2ME.runtimeCounter) {
+      writer.enter("runtimeCounter");
+      J2ME.runtimeCounter.traceSorted(writer);
+      writer.outdent();
+    }
+  }
+  function clearCounters() {
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
+    J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
     J2ME.nativeCounter && J2ME.nativeCounter.clear();
+    J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
+  }
+
+  document.getElementById("dumpCounters").onclick = function() {
+    dumpCounters();
+  };
+  document.getElementById("sampleCounters1").onclick = function() {
+    clearCounters();
+    dumpCounters();
     setTimeout(function () {
-      if (J2ME.interpreterCounter) {
-        J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
-      }
-      if (J2ME.nativeCounter) {
-        J2ME.nativeCounter.traceSorted(new J2ME.IndentingWriter());
-      }
+      dumpCounters();
     }, 1000);
+  };
+  document.getElementById("sampleCounters2").onclick = function() {
+    clearCounters();
+    function sample() {
+      var c = 1;
+      function tick() {
+        if (c-- > 0) {
+          dumpCounters();
+          clearCounters();
+          setTimeout(tick, 16);
+        }
+      }
+
+      setTimeout(tick, 100);
+    }
+    setTimeout(sample, 2000); // Wait 2s before starting.
   };
  document.getElementById("profile").onclick = function() {
    if (getIsOff(this)) {
@@ -295,9 +352,23 @@ function requestTimelineBuffers(fn) {
   return fn([]);
 }
 
+var perfWriterCheckbox = document.querySelector('#perfWriter');
+
+perfWriterCheckbox.checked = !!(J2ME.writers & J2ME.WriterFlags.Perf);
+perfWriterCheckbox.addEventListener('change', function() {
+  if (perfWriterCheckbox.checked) {
+    J2ME.writers |= J2ME.WriterFlags.Perf;
+  } else {
+    J2ME.writers &= !J2ME.WriterFlags.Perf;
+  }
+});
+
+
 var profiler = typeof Shumway !== "undefined" ? (function() {
 
-  var elProfilerContainer = document.getElementById("profilerContainer");
+  var elPageContainer = document.getElementById("pageContainer");
+  elPageContainer.classList.add("profile-mode");
+
   var elProfilerToolbar = document.getElementById("profilerToolbar");
   var elProfilerMessage = document.getElementById("profilerMessage");
   var elProfilerPanel = document.getElementById("profilePanel");

@@ -22,10 +22,19 @@ build/jsc.js: jsc.ts build/j2me.js
 j2me: build/j2me.js build/jsc.js
 
 aot: java j2me
-	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -cff classes.txt > build/classes.jar.js
+	@echo "Compiling ..."
+	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar > build/classes.jar.js
+	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar > build/tests.jar.js
 	if test -f program.jar; then \
-		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -cff classes.txt > build/program.jar.js; \
+		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar > build/program.jar.js; \
 	fi
+	@echo "Packing ..."
+	node tools/pack.js build/classes.jar.js > build/classes.jar.js.pack
+	node tools/pack.js build/tests.jar.js > build/tests.jar.js.pack
+	if test -f program.jar; then \
+		node tools/pack.js build/program.jar.js > build/program.jar.js.pack; \
+	fi
+	@echo "Done"
 
 closure: build/j2me.js aot
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
