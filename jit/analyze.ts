@@ -68,6 +68,10 @@ module J2ME {
     "java/lang/Class.invoke_clinit.()V": YieldReason.Root,
     "java/lang/Class.newInstance.()Ljava/lang/Object;": YieldReason.Root,
     "java/lang/Thread.yield.()V": YieldReason.Root,
+    "javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V": YieldReason.Root,
+    "javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V": YieldReason.Root,
+    "javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V": YieldReason.Root,
+    // Test Files:
     "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.dumbPipe.()Z": YieldReason.Root,
