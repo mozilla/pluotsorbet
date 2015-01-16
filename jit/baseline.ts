@@ -251,7 +251,7 @@ module J2ME {
       }
       if (emitCompilerAssertions) {
         this.emitter.enter("default:");
-        this.emitter.writeLn("J2ME.Debug.assert(false, 'Unexpected unwind.');");
+        this.emitter.writeLn("J2ME.Debug.assert(false, 'Invalid pc.');");
         this.emitter.outdent();
       }
       this.emitter.leave("}");
