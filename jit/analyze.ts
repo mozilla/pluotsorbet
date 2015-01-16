@@ -82,10 +82,8 @@ module J2ME {
     if (classInfo.isFinal) {
       return true;
     }
-    // Only true if we've loaded all the classes.
-    if (classInfo.subClasses.length === 0) {
-      return true;
-    }
+    return false;
+    // TODO: Be more clever here.
   }
 
   export function gatherCallees(callees: MethodInfo [], classInfo: ClassInfo, methodInfo: MethodInfo) {
@@ -120,6 +118,7 @@ module J2ME {
   var checkingForCanYield = Object.create(null);
 
   export function canYield(methodInfo: MethodInfo): YieldReason {
+    yieldWriter && yieldWriter.writeLn("Calling: " + methodInfo.implKey);
     if (yieldMap[methodInfo.implKey] !== undefined) {
       return yieldMap[methodInfo.implKey];
     }
