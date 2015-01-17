@@ -66,7 +66,7 @@ module J2ME {
     }
   }
 
-  loadFiles("libs/zipfile.js", "blackBox.js", "build/j2me.js",
+  loadFiles("blackBox.js", "build/j2me.js", "libs/zipfile.js",
     "libs/encoding.js", "util.js",
     "instrument.js",
     "override.js", "native.js", "string.js", "midp/midp.js",
@@ -234,7 +234,9 @@ module J2ME {
       }
       return methodInfo.implKey === methodFilterOption.value;
     }
+    stdoutWriter.writeLn("var start = performance.now();");
     compile(jvm, jarFilter, classFilter, methodFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    stdoutWriter.writeLn("console.info(\"" + jarFileFilterOption.value + ": \" + (performance.now() - start));");
     if (verboseOption.value) {
       printResults();
     }

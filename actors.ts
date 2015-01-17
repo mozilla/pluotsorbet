@@ -81,13 +81,22 @@ module J2ME {
     isStatic: boolean;
     isSynchronized: boolean;
     isAbstract: boolean;
+
+    /**
+     * There is a compiled version of this method.?
+     */
+    isCompiled: boolean;
     exception_table: ExceptionHandler [];
     max_locals: number;
     max_stack: number;
+
+    argumentSlots: number;
+
     /**
      * The number of arguments to pop of the stack when calling this function.
      */
-    argumentSlots: number;
+    consumeArgumentSlots: number;
+
     hasTwoSlotArguments: boolean;
     signatureDescriptor: SignatureDescriptor;
     signature: string;
@@ -166,6 +175,7 @@ module J2ME {
       this.isStatic = opts.isStatic;
       this.isSynchronized = opts.isSynchronized;
       this.isAbstract = opts.isAbstract;
+      this.isCompiled = false;
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
@@ -176,7 +186,10 @@ module J2ME {
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
       this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
-
+      this.consumeArgumentSlots = this.argumentSlots;
+      if (!this.isStatic) {
+        this.consumeArgumentSlots ++;
+      }
 
       this.callCount = 0;
       this.resetCount = 0;

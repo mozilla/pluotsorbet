@@ -1170,7 +1170,7 @@ module J2ME {
 
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
-      return function fastInterpreterFrameAdapter() {
+      var method = function fastInterpreterFrameAdapter() {
         var frame = Frame.create(methodInfo, [], 0);
         var j = 0;
         if (!methodInfo.isStatic) {
@@ -1181,10 +1181,12 @@ module J2ME {
           frame.setLocal(j++, arguments[i]);
         }
         return $.ctx.executeFrames([frame]);
-      }
+      };
+      (<any>method).methodInfo = methodInfo;
+      return method;
     }
 
-    return function interpreterFrameAdapter() {
+    var method = function interpreterFrameAdapter() {
       var frame = Frame.create(methodInfo, [], 0);
       var j = 0;
       if (!methodInfo.isStatic) {
@@ -1214,6 +1216,8 @@ module J2ME {
       }
       return $.ctx.executeFrames([frame]);
     };
+    (<any>method).methodInfo = methodInfo;
+    return method;
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
@@ -1272,6 +1276,7 @@ module J2ME {
         linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
         fn = nativeMethod;
         methodType = MethodType.Native;
+        methodInfo.isCompiled = true;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
@@ -1281,13 +1286,13 @@ module J2ME {
           // out from.
           jitMethodInfos[fn.name] = methodInfo;
           updateGlobalObject = false;
+          methodInfo.isCompiled = true;
         } else {
           linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
           fn = prepareInterpretedMethod(methodInfo);
         }
       }
-
       if (false && methodTimeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
         updateGlobalObject = true;

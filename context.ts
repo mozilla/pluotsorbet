@@ -63,6 +63,8 @@ module J2ME {
     return this[this.length - i];
   };
 
+  export var frameCount = 0;
+
   export class Frame {
     methodInfo: MethodInfo;
     local: any [];
@@ -74,10 +76,31 @@ module J2ME {
     localBase: number;
     lockObject: java.lang.Object;
 
+    static dirtyStack: Frame [] = [];
+
+    /**
+     * Denotes the start of the context frame stack.
+     */
+    static Start: Frame = Frame.create(null, null, 0);
+
+    /**
+     * Marks a frame set.
+     */
+    static Marker: Frame = Frame.create(null, null, 0);
+
+    static isMarker(frame: Frame) {
+      return frame.methodInfo === null;
+    }
+
     constructor(methodInfo: MethodInfo, local: any [], localBase: number) {
+      frameCount ++;
+      this.reset(methodInfo, local, localBase);
+    }
+
+    reset(methodInfo: MethodInfo, local: any [], localBase: number) {
       this.methodInfo = methodInfo;
-      this.cp = methodInfo.classInfo.constant_pool;
-      this.code = methodInfo.code;
+      this.cp = methodInfo ? methodInfo.classInfo.constant_pool : null;
+      this.code = methodInfo ? methodInfo.code : null;
       this.pc = 0;
       this.opPc = 0;
       this.stack = [];
@@ -86,12 +109,33 @@ module J2ME {
       this.lockObject = null;
     }
 
+    static create(methodInfo: MethodInfo, local: any [], localBase: number): Frame {
+      var dirtyStack = Frame.dirtyStack;
+      if (dirtyStack.length) {
+        var frame = dirtyStack.pop();
+        frame.reset(methodInfo, local, localBase);
+        return frame;
+      } else {
+        return new Frame(methodInfo, local, localBase);
+      }
+    }
+
+    free() {
+      release || assert(!Frame.isMarker(this));
+      Frame.dirtyStack.push(this);
+    }
+
     getLocal(i: number): any {
       return this.local[this.localBase + i];
     }
 
     setLocal(i: number, value: any) {
       this.local[this.localBase + i] = value;
+    }
+
+    incLocal(i: number, value: any) {
+      var j = this.localBase + i;
+      this.local[j] = this.local[j] + value | 0
     }
 
     read8(): number {
@@ -105,6 +149,11 @@ module J2ME {
     read16(): number {
       var code = this.code
       return code[this.pc++] << 8 | code[this.pc++];
+    }
+
+    patch(offset: number, oldValue: Bytecodes, newValue: Bytecodes) {
+      release || assert(this.code[this.pc - offset] === oldValue);
+      this.code[this.pc - offset] = newValue;
     }
 
     read32(): number {
@@ -269,9 +318,29 @@ module J2ME {
     });
 
     id: number
+
+    /*
+     * Contains method frames separated by special frame instances called marker frames. These
+     * mark the position in the frame stack where the interpreter starts execution.
+     *
+     * During normal execution, a marker frame is inserted on every call to |executeFrames|, so
+     * the stack looks something like:
+     *
+     *     frame stack: [start, f0, m, f1, m, f2]
+     *                   ^          ^      ^
+     *                   |          |      |
+     *   js call stack:  I ........ I .... I ...
+     *
+     * After unwinding, the frame stack is compacted:
+     *
+     *     frame stack: [start, f0, f1, f2]
+     *                   ^       ^
+     *                   |       |
+     *   js call stack:  I ..... I .......
+     *
+     */
     frames: Frame [];
-    frameSets: Frame [][];
-    bailoutFrames: any [];
+    bailoutFrames: Frame [];
     lockTimeout: number;
     lockLevel: number;
     thread: java.lang.Thread;
@@ -279,7 +348,6 @@ module J2ME {
     constructor(public runtime: Runtime) {
       var id = this.id = Context._nextId ++;
       this.frames = [];
-      this.frameSets = [];
       this.bailoutFrames = [];
       this.runtime = runtime;
       this.runtime.addContext(this);
@@ -310,6 +378,7 @@ module J2ME {
       linkWriter = writers & WriterFlags.Link ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
+      unwindWriter = writers & WriterFlags.Unwind ? writer : null;
     }
 
     kill() {
@@ -324,27 +393,37 @@ module J2ME {
       return frames[frames.length - 1];
     }
 
-    executeNewFrameSet(frames: Frame []) {
-      this.frameSets.push(this.frames);
-      this.frames = frames;
+    private popMarkerFrame() {
+      var marker = this.frames.pop();
+      release || assert (Frame.isMarker(marker));
+    }
+
+    executeFrames(group: Frame []) {
+      var frames = this.frames;
+      frames.push(Frame.Marker);
+
+      for (var i = 0; i < group.length; i++) {
+        frames.push(group[i]);
+      }
+
       try {
         var returnValue = VM.execute();
         if (U) {
-          // Append all the current frames to the parent frame set, so a single frame stack
-          // exists when the bailout finishes.
-          var currentFrames = this.frames;
-          this.frames = this.frameSets.pop();
-          for (var i = currentFrames.length - 1; i >= 0; i--) {
-            this.bailoutFrames.unshift(currentFrames[i]);
+          // Prepend all frames up until the first marker to the bailout frames.
+          while (true) {
+            var frame = frames.pop();
+            if (Frame.isMarker(frame)) {
+              break;
+            }
+            this.bailoutFrames.unshift(frame);
           }
           return;
         }
       } catch (e) {
-        assert(this.frames.length === 0);
-        this.frames = this.frameSets.pop();
+        this.popMarkerFrame();
         throwHelper(e);
       }
-      this.frames = this.frameSets.pop();
+      this.popMarkerFrame();
       return returnValue;
     }
 
@@ -387,7 +466,7 @@ module J2ME {
           0xb1,             // return
         ])
       });
-      return new Frame(syntheticMethod, [classInfo.getClassInitLockObject(this)], 0);
+      return Frame.create(syntheticMethod, [classInfo.getClassInitLockObject(this)], 0);
     }
 
     pushClassInitFrame(classInfo: ClassInfo) {
@@ -396,7 +475,7 @@ module J2ME {
       }
       linkKlass(classInfo);
       var classInitFrame = this.getClassInitFrame(classInfo);
-      this.executeNewFrameSet([classInitFrame]);
+      this.executeFrames([classInitFrame]);
     }
 
     createException(className: string, message?: string) {
@@ -428,7 +507,7 @@ module J2ME {
     }
 
     start(frame: Frame) {
-      this.frames = [frame];
+      this.frames = [Frame.Start, frame];
       this.resume();
     }
 
@@ -437,19 +516,19 @@ module J2ME {
         Context._startTime = performance.now();
       }
       var start = performance.now();
-      Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {
         VM.execute();
         if (U) {
-          Array.prototype.push.apply(this.frames, this.bailoutFrames);
-          this.bailoutFrames = [];
+          if (this.bailoutFrames.length) {
+            Array.prototype.push.apply(this.frames, this.bailoutFrames);
+            this.bailoutFrames = [];
+          }
           switch (U) {
             case VMState.Yielding:
               this.resume();
               break;
             case VMState.Pausing:
-              Instrument.callPauseHooks(this.current());
               break;
           }
           U = VMState.Running;
@@ -458,7 +537,7 @@ module J2ME {
           this.clearCurrentContext();
           return;
         }
-      } while (this.frames.length !== 0);
+      } while (this.current() !== Frame.Start);
       this.kill();
     }
 
@@ -568,7 +647,7 @@ module J2ME {
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
-      var frame = new Frame(methodInfo, local, 0);
+      var frame = Frame.create(methodInfo, local, 0);
       frame.stack = stack;
       frame.pc = nextPC;
       frame.opPc = pc;

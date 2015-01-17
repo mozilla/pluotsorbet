@@ -164,10 +164,11 @@ module J2ME {
 
         return;
       }
-      if (Frame.isMarker(frames[frames.length - 1])) {
+      frames.pop();
+      frame = frames[frames.length - 1];
+      if (Frame.isMarker(frame)) {
         break;
       }
-      frame = frames.pop();
       stack = frame.stack;
     } while (true);
 
@@ -188,20 +189,22 @@ module J2ME {
 
   export function interpret() {
     var ctx = $.ctx;
+
+    // These must always be kept up to date with the current frame.
     var frame = ctx.current();
-
-    assert (!Frame.isMarker(frame));
-
+    release || assert (!Frame.isMarker(frame));
     var frames = ctx.frames;
-
     var mi = frame.methodInfo;
+    var ci = mi.classInfo;
+    var cp = ci.constant_pool;
     var stack = frame.stack;
+
+
     var returnValue = null;
 
 
     var traceBytecodes = false;
     var traceSourceLocation = true;
-    var lastSourceLocation;
 
     var index: any, value: any, constant: any;
     var a: any, b: any, c: any;
@@ -221,12 +224,11 @@ module J2ME {
     frame.methodInfo.interpreterCallCount ++;
 
     while (true) {
-      interpreterMethodCounter && interpreterMethodCounter.count(frame.methodInfo.implKey);
       profile && bytecodeCount ++;
-      frame.methodInfo.bytecodeCount ++;
+      // frame.methodInfo.bytecodeCount ++;
       frame.opPc = frame.pc;
       var op: Bytecodes = frame.read8();
-
+      // interpreterMethodCounter && interpreterMethodCounter.count(Bytecodes[op]);
       try {
         switch (op) {
           case Bytecodes.NOP:
@@ -265,12 +267,12 @@ module J2ME {
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
             index = (op === Bytecodes.LDC) ? frame.read8() : frame.read16();
-            constant = resolve(index, mi.classInfo, false);
+            constant = resolve(index, ci, false);
             stack.push(constant);
             break;
           case Bytecodes.LDC2_W:
             index = frame.read16();
-            constant = resolve(index, mi.classInfo, false);
+            constant = resolve(index, ci, false);
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:
@@ -475,7 +477,7 @@ module J2ME {
           case Bytecodes.IINC:
             index = frame.read8();
             value = frame.read8Signed();
-            frame.setLocal(index, frame.getLocal(index) + value);
+            frame.incLocal(index, value);
             break;
           case Bytecodes.IINC_GOTO:
             index = frame.read8();
@@ -897,10 +899,23 @@ module J2ME {
             fieldInfo = resolveField(index, mi.classInfo, false);
             object = stack.pop();
             stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
+            frame.patch(3, Bytecodes.GETFIELD, Bytecodes.RESOLVED_GETFIELD);
+            break;
+          case Bytecodes.RESOLVED_GETFIELD:
+            fieldInfo = <FieldInfo><any>cp[frame.read16()];
+            object = stack.pop();
+            stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
             break;
           case Bytecodes.PUTFIELD:
             index = frame.read16();
             fieldInfo = resolveField(index, mi.classInfo, false);
+            value = stack.popKind(fieldInfo.kind);
+            object = stack.pop();
+            fieldInfo.set(object, value);
+            frame.patch(3, Bytecodes.PUTFIELD, Bytecodes.RESOLVED_PUTFIELD);
+            break;
+          case Bytecodes.RESOLVED_PUTFIELD:
+            fieldInfo = <FieldInfo><any>cp[frame.read16()];
             value = stack.popKind(fieldInfo.kind);
             object = stack.pop();
             fieldInfo.set(object, value);
@@ -974,86 +989,181 @@ module J2ME {
           case Bytecodes.WIDE:
             frame.wide();
             break;
-          case Bytecodes.INVOKEVIRTUAL:
-          case Bytecodes.INVOKESPECIAL:
-          case Bytecodes.INVOKESTATIC:
-          case Bytecodes.INVOKEINTERFACE:
-            var startPc = frame.pc - 1;
+          case Bytecodes.RESOLVED_INVOKEVIRTUAL:
+            var startPC = frame.pc - 1;
             index = frame.read16();
-            if (op === Bytecodes.INVOKEINTERFACE) {
-              var argsNumber = frame.read8();
-              var zero = frame.read8();
+            var calleeMethodInfo = <MethodInfo><any>cp[index];
+            var object = frame.peekInvokeObject(calleeMethodInfo);
+
+            calleeMethod = object[calleeMethodInfo.mangledName];
+            var calleeTargetMethodInfo: MethodInfo = calleeMethod.methodInfo;
+
+            if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && !calleeTargetMethodInfo.isCompiled) {
+              var calleeFrame = Frame.create(calleeTargetMethodInfo, [], 0);
+              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              frames.push(calleeFrame);
+              frame = calleeFrame;
+              mi = frame.methodInfo;
+              ci = mi.classInfo;
+              cp = ci.constant_pool;
+              stack = frame.stack;
+              continue;
             }
-            var isStatic = (op === Bytecodes.INVOKESTATIC);
-            var methodInfo: any = mi.classInfo.constant_pool[index];
-            if (methodInfo.tag) {
-              methodInfo = resolve(index, mi.classInfo, isStatic);
-              if (isStatic) {
-                classInitCheck(methodInfo.classInfo, startPc);
-                if (U) {
-                  return;
-                }
-              }
-            }
-            object = null;
-            var fn;
-            if (!isStatic) {
-              object = frame.peekInvokeObject(methodInfo);
-              switch (op) {
-                case Bytecodes.INVOKEVIRTUAL:
-                case Bytecodes.INVOKEINTERFACE:
-                  fn = object[methodInfo.mangledName];
-                  break;
-                case Bytecodes.INVOKESPECIAL:
-                  checkNull(object);
-                  fn = methodInfo.fn;
-                  break;
-              }
-            } else {
-              fn = methodInfo.fn;
-            }
+
+            // Call directy.
             var returnValue;
-            var argumentSlots = methodInfo.hasTwoSlotArguments ? -1 : methodInfo.argumentSlots;
+            var argumentSlots = calleeMethodInfo.argumentSlots;
             switch (argumentSlots) {
               case 0:
-                returnValue = fn.call(object);
+                returnValue = calleeMethod.call(object);
                 break;
               case 1:
                 a = stack.pop();
-                returnValue = fn.call(object, a);
+                returnValue = calleeMethod.call(object, a);
                 break;
               case 2:
                 b = stack.pop();
                 a = stack.pop();
-                returnValue = fn.call(object, a, b);
+                returnValue = calleeMethod.call(object, a, b);
                 break;
               case 3:
                 c = stack.pop();
                 b = stack.pop();
                 a = stack.pop();
-                returnValue = fn.call(object, a, b, c);
+                returnValue = calleeMethod.call(object, a, b, c);
                 break;
               default:
-                if (methodInfo.hasTwoSlotArguments) {
-                  frame.popArgumentsInto(methodInfo.signatureDescriptor, argArray);
-                } else {
-                  popManyInto(stack, methodInfo.argumentSlots, argArray);
-                }
-                var returnValue = fn.apply(object, argArray);
+                debugger;
             }
-            if (!isStatic) stack.pop();
+            stack.pop();
+            if (!release) {
+              checkReturnValue(calleeMethodInfo, returnValue);
+            }
+            if (U) {
+              return;
+            }
+            if (calleeMethodInfo.getReturnKind() !== Kind.Void) {
+              if (isTwoSlot(calleeMethodInfo.getReturnKind())) {
+                stack.push2(returnValue);
+              } else {
+                stack.push(returnValue);
+              }
+            }
+            break;
+          case Bytecodes.INVOKEVIRTUAL:
+          case Bytecodes.INVOKESPECIAL:
+          case Bytecodes.INVOKESTATIC:
+          case Bytecodes.INVOKEINTERFACE:
+            var startPC = frame.pc - 1;
+            index = frame.read16();
+            if (op === Bytecodes.INVOKEINTERFACE) {
+              frame.read16(); // Args Number & Zero
+            }
+            var isStatic = (op === Bytecodes.INVOKESTATIC);
+
+            // Resolve method and do the class init check if necessary.
+            var calleeMethodInfo = resolveMethod(index, mi.classInfo, isStatic);
+            if (isStatic) {
+              classInitCheck(calleeMethodInfo.classInfo, startPC);
+              if (U) {
+                return;
+              }
+            }
+
+            // Figure out the target method.
+            var calleeTargetMethodInfo: MethodInfo = calleeMethodInfo;
+            object = null;
+            var calleeMethod: any;
+            if (!isStatic) {
+              object = frame.peekInvokeObject(calleeMethodInfo);
+              switch (op) {
+                case Bytecodes.INVOKEVIRTUAL:
+                  if (!calleeTargetMethodInfo.hasTwoSlotArguments &&
+                      !calleeTargetMethodInfo.isSynchronized &&
+                      calleeTargetMethodInfo.argumentSlots < 4) {
+                    frame.patch(3, Bytecodes.INVOKEVIRTUAL, Bytecodes.RESOLVED_INVOKEVIRTUAL);
+                  }
+                case Bytecodes.INVOKEINTERFACE:
+                  calleeMethod = object[calleeMethodInfo.mangledName];
+                  calleeTargetMethodInfo = calleeMethod.methodInfo;
+                  break;
+                case Bytecodes.INVOKESPECIAL:
+                  checkNull(object);
+                  calleeMethod = calleeMethodInfo.fn;
+                  break;
+              }
+            } else {
+              calleeMethod = calleeMethodInfo.fn;
+            }
+            // Call method directly in the interpreter if we can.
+            if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && !calleeTargetMethodInfo.isCompiled) {
+              var calleeFrame = Frame.create(calleeTargetMethodInfo, [], 0);
+              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              frames.push(calleeFrame);
+              frame = calleeFrame;
+              mi = frame.methodInfo;
+              ci = mi.classInfo;
+              cp = ci.constant_pool;
+              stack = frame.stack;
+              if (calleeTargetMethodInfo.isSynchronized) {
+                if (!calleeFrame.lockObject) {
+                  frame.lockObject = calleeTargetMethodInfo.isStatic
+                    ? calleeTargetMethodInfo.classInfo.getClassObject()
+                    : frame.getLocal(0);
+                }
+                ctx.monitorEnter(calleeFrame.lockObject);
+                if (U === VMState.Pausing) {
+                  return;
+                }
+              }
+              continue;
+            }
+
+            // Call directy.
+            var returnValue;
+            var argumentSlots = calleeMethodInfo.hasTwoSlotArguments ? -1 : calleeMethodInfo.argumentSlots;
+            switch (argumentSlots) {
+              case 0:
+                returnValue = calleeMethod.call(object);
+                break;
+              case 1:
+                a = stack.pop();
+                returnValue = calleeMethod.call(object, a);
+                break;
+              case 2:
+                b = stack.pop();
+                a = stack.pop();
+                returnValue = calleeMethod.call(object, a, b);
+                break;
+              case 3:
+                c = stack.pop();
+                b = stack.pop();
+                a = stack.pop();
+                returnValue = calleeMethod.call(object, a, b, c);
+                break;
+              default:
+                if (calleeMethodInfo.hasTwoSlotArguments) {
+                  frame.popArgumentsInto(calleeMethodInfo.signatureDescriptor, argArray);
+                } else {
+                  popManyInto(stack, calleeMethodInfo.argumentSlots, argArray);
+                }
+                var returnValue = calleeMethod.apply(object, argArray);
+            }
+
+            if (!isStatic) {
+              stack.pop();
+            }
 
             if (!release) {
-              checkReturnValue(methodInfo, returnValue);
+              checkReturnValue(calleeMethodInfo, returnValue);
             }
 
             if (U) {
               return;
             }
 
-            if (methodInfo.getReturnKind() !== Kind.Void) {
-              release || assert(returnValue !== undefined, methodInfo.signatureDescriptor + " " + methodInfo.returnKind + " " + Kind.Void);
-              if (isTwoSlot(methodInfo.getReturnKind())) {
+            if (calleeMethodInfo.getReturnKind() !== Kind.Void) {
+              if (isTwoSlot(calleeMethodInfo.getReturnKind())) {
                 stack.push2(returnValue);
               } else {
                 stack.push(returnValue);
@@ -1073,15 +1183,18 @@ module J2ME {
             if (callee.lockObject) {
               ctx.monitorExit(callee.lockObject);
             }
+            callee.free();
             frame = frames[frames.length - 1];
-            mi = frame.methodInfo;
-            stack = frame.stack;
             if (Frame.isMarker(frame)) { // Marker or Start Frame
               if (op === Bytecodes.RETURN) {
                 return undefined;
               }
               return returnValue;
             }
+            stack = frame.stack;
+            mi = frame.methodInfo;
+            ci = mi.classInfo;
+            cp = ci.constant_pool;
             if (op === Bytecodes.RETURN) {
               // Nop.
             } else if (op === Bytecodes.LRETURN || op === Bytecodes.DRETURN) {
@@ -1095,21 +1208,18 @@ module J2ME {
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
       } catch (e) {
-        // This could potentially hide interpreter exceptions. Maybe we should only do this for
-        // compiled/native functions.
-        if (e.name === "TypeError") {
-          // JavaScript's TypeError is analogous to a NullPointerException.
-          e = $.newNullPointerException(e.message);
-        } else if (!e.klass) {
-          // A non-java exception was thrown. Rethrow so it is not handled by throw_.
+        e = translateException(e);
+        if (!e.klass) {
+          // A non-java exception was thrown. Rethrow so it is not handled by tryCatch.
           throw e;
         }
-
         tryCatch(e);
         frame = ctx.current();
         assert (!Frame.isMarker(frame));
-        mi = frame && frame.methodInfo || null;
-        stack = frame && frame.stack || null;
+        mi = frame.methodInfo;
+        ci = mi.classInfo;
+        cp = ci.constant_pool;
+        stack = frame.stack;
         continue;
       }
     }
