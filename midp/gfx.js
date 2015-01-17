@@ -372,7 +372,7 @@ var currentlyFocusedTextEditor;
     var BASELINE = 64;
 
     function withGraphics(g, cb) {
-        var img = g.klass.classInfo.getField("I.img.Ljavax/microedition/lcdui/Image;").get(g),
+        var img = g.img,
             c = null;
 
         if (img === null) {
@@ -388,22 +388,14 @@ var currentlyFocusedTextEditor;
     }
 
     function withClip(g, c, x, y, cb) {
-        var clipX1 = g.klass.classInfo.getField("I.clipX1.S").get(g),
-            clipY1 = g.klass.classInfo.getField("I.clipY1.S").get(g),
-            clipX2 = g.klass.classInfo.getField("I.clipX2.S").get(g),
-            clipY2 = g.klass.classInfo.getField("I.clipY2.S").get(g),
-            clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
-            transX = g.klass.classInfo.getField("I.transX.I").get(g),
-            transY = g.klass.classInfo.getField("I.transY.I").get(g);
-
-        if (clipped) {
+        if (g.clipped) {
             c.beginPath();
-            c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
+            c.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
             c.clip();
         }
 
-        x += transX;
-        y += transY;
+        x += g.transX;
+        y += g.transY;
 
         cb(x, y);
     }
@@ -430,7 +422,7 @@ var currentlyFocusedTextEditor;
     }
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+        var w = withFont(g.currentFont, c, str);
         c.textAlign = "left";
         c.textBaseline = "top";
 
@@ -460,8 +452,7 @@ var currentlyFocusedTextEditor;
     };
 
     function withPixel(g, c, cb) {
-        var pixel = g.klass.classInfo.getField("I.pixel.I").get(g);
-        c.fillStyle = c.strokeStyle = abgrIntToCSS(pixel);
+        c.fillStyle = c.strokeStyle = abgrIntToCSS(g.pixel);
         cb();
     }
 
@@ -520,10 +511,9 @@ var currentlyFocusedTextEditor;
      * incorrectly, although we should actually figure out why that's happening.
      */
     function withOpaquePixel(g, c, cb) {
-        var pixel = g.klass.classInfo.getField("I.pixel.I").get(g);
-        var b = (pixel >> 16) & 0xff;
-        var g = (pixel >> 8) & 0xff;
-        var r = pixel & 0xff;
+        var b = (g.pixel >> 16) & 0xff;
+        var g = (g.pixel >> 8) & 0xff;
+        var r = g.pixel & 0xff;
         var style = "rgba(" + r + "," + g + "," + b + "," + 1 + ")";
         c.fillStyle = c.strokeStyle = style;
         cb();
@@ -546,14 +536,464 @@ var currentlyFocusedTextEditor;
                 c.drawImage(texture, x, y);
             });
         });
+
+        return true;
     }
 
-    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
-        return color;
+    function setClip(g, x, y, width, height) {
+        var translatedX1, translatedY1;
+        var translatedX2, translatedY2;
+
+        // If width or height is zero or less then zero,
+        // we do not preserve the current clipping and
+        // set all clipping values to zero.
+        if ((width <= 0) || (height <= 0)) {
+            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
+            g.clipped = true;
+            return;
+        }
+
+        // Translate the given coordinates
+        translatedX1 = x + g.transX;
+        translatedY1 = y + g.transY;
+
+        // Detect Overflow
+        if (translatedX1 < 0) {
+            translatedX1 = (x < 0 || g.transX < 0) ? 0 : g.maxWidth;
+        }
+        if (translatedY1 < 0) {
+            translatedY1 = (y < 0 || g.transY < 0) ? 0 : g.maxHeight;
+        }
+
+        g.clipX1 = (translatedX1 & 0x7fff);
+        g.clipY1 = (translatedY1 & 0x7fff);
+
+        if ((translatedX1 >= g.maxWidth) 
+            || (translatedY1 >= g.maxHeight)) {
+            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
+            g.clipped = true;
+            return;
+        }
+
+        // Check against the runtime library clip values
+        if (g.runtimeClipEnforce) {
+          if (g.clipX1 < g.systemClipX1)
+                  clipX1 = g.systemClipX1;
+          if (g.clipY1 < g.systemClipY1) {
+                  clipY1 = g.systemClipY1;
+          }
+        }
+
+        // Translate the given width, height to abs. coordinates
+        translatedX2 = x + g.transX + width;
+        translatedY2 = y + g.transY + height;
+
+        // Detect overflow
+        if (translatedX2 < 0) {
+            translatedX2 = (x < 0 || g.transX < 0) ? translatedX1 : g.maxWidth;
+        } else {
+          if (translatedX2 > g.maxWidth)
+            translatedX2 = g.maxWidth;
+        }
+        if (translatedY2 < 0) {
+            translatedY2 = (y < 0 || g.transY < 0) ? translatedY1 : g.maxHeight;
+        } else {
+          if (translatedY2 > g.maxHeight)
+            translatedY2 = g.maxHeight;
+        }
+
+        g.clipX2 = (translatedX2 & 0x7FFF);
+        g.clipY2 = (translatedY2 & 0x7FFF);
+
+        // Check against the runtime library clip values
+        if (g.runtimeClipEnforce) {
+            if (g.clipX2 > g.systemClipX2) {
+                g.clipX2 = g.systemClipX2;
+            }
+            if (g.clipY2 > g.systemClipY2) {
+                g.clipY2 = g.systemClipY2;
+            }
+        }
+
+        if ((g.clipX1 != 0) || (g.clipY1 != 0)
+                || (g.clipX2 != g.maxWidth) || (g.clipY2 != g.maxHeight)) {
+            g.clipped = true;
+        }
+    }
+
+    function grayVal(red, green, blue) {
+        /* CCIR Rec 601 luma (nonlinear rgb to nonlinear "gray") */
+        return (red*76 + green*150 + blue*29) >> 8;
+    }
+
+    Native["javax/microedition/lcdui/Graphics.nativeInit.(ILjavax/microedition/lcdui/Font;Ljavax/microedition/lcdui/Image;II)V"] = function(displayId, font, img, w, h) {
+        console.log("ENTERED nativeInit");
+        this.maxWidth = 0;
+        this.maxHeight = 0;
+        this.transX = 0;
+        this.transY = 0;
+        this.creator = null;
+        this.rgbColor = 0;
+        this.gray = 0;
+        this.pixel = 0;
+        this.aX = 0;
+        this.aY = 0;
+        this.systemClipX1 = 0;
+        this.systemClipX2 = 0;
+        this.systemClipY1 = 0;
+        this.systemClipY2 = 0;
+        this.clipX1 = 0;
+        this.clipX2 = 0;
+        this.clipY1 = 0;
+        this.clipY2 = 0;
+
+        this.displayId = displayId;
+        this.defaultFont = this.currentFont = font;
+        this.img = img;
+        setDimensions(this, w, h);
+        resetGC(this);
+    };
+
+    function isScreenGraphics(g) {
+        return g.displayId != -1;
+    }
+
+    function resetGC(g) {
+        g.currentFont = g.defaultFont;
+        g.style       = SOLID;
+        g.rgbColor    = g.gray = 0;
+        g.pixel       = getPixel(g.rgbColor, g.gray, true);
+    }
+
+    function reset(g, x1, y1, x2, y2) {
+        resetGC(g);
+        g.transX = g.transY = 0;
+        setClip(g, x1, y1, x2 - x1, y2 - y1);
+    }
+
+    function translate(g, x, y) {
+        g.transX += x;
+        g.transY += y;
+    }
+
+    function setDimensions(g, w, h) {
+      g.maxWidth = w & 0x7fff;
+      g.maxHeight = h & 0x7fff;
+      g.transX = g.transY = 0;
+      setClip(g, 0, 0, g.maxWidth, g.maxHeight);
+    }
+
+    function clipRect(g, x, y, width, height) {
+        var translatedX1, translatedY1;
+        var translatedX2, translatedY2;
+
+        if (width <= 0 || height <= 0) {
+            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
+            g.clipped = true;
+            return;
+        }
+
+        // Translate the given coordinates
+        translatedX1 = x + g.transX;
+        translatedY1 = y + g.transY;
+
+        // Detect overflow
+        if (translatedX1 < 0) {
+            translatedX1 = (x < 0 || g.transX < 0) ? 0 : g.maxWidth;
+        }
+        if (translatedY1 < 0) {
+            translatedY1 = (y < 0 || g.transY < 0) ? 0 : g.maxHeight;
+        }
+
+        // If the passed in rect is below our current clip
+        if ((g.clipX2 < translatedX1) || (g.clipY2 < translatedY1)) {
+            // we have no intersection
+            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
+            g.clipped = true;
+            return;
+        }
+
+        if (translatedX1 > g.clipX1) {
+            g.clipX1 = (translatedX1 & 0x7fff);
+            g.clipped = true;
+        }
+
+        if (translatedY1 > g.clipY1) {
+            g.clipY1 = (translatedY1 & 0x7fff);
+            g.clipped = true;
+        }
+
+        // Start handling bottom right area
+
+        translatedX2 = x + g.transX + width;
+        translatedY2 = y + g.transY + height;
+
+        // Detect Overflow
+        if (translatedX2 < 0) {
+            translatedX2 = (x < 0 || g.transX < 0) ? translatedX1 : g.maxWidth;
+        }
+        if (translatedY2 < 0) {
+            translatedY2 = (y < 0 || g.transY < 0) ? translatedY1 : g.maxHeight;
+        }
+
+        // If the passed in rect is above our current clip
+        if (translatedX2 < g.clipX1 || translatedY2 < g.clipY1) {
+            // we have no intersection
+            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
+            g.clipped = true;
+            return;
+        }
+
+        if (translatedX2 <= g.clipX2) {
+            g.clipX2 = translatedX2 & 0xffff;
+            g.clipped = true;
+        }
+
+        if (translatedY2 <= g.clipY2) {
+            g.clipY2 = translatedY2 & 0xffff;
+            g.clipped = true;
+        }
+
+        if (g.clipped == true) {
+            if (g.clipX2 < g.clipX1)
+              g.clipX2 = g.clipX1;
+            if (g.clipY2 < g.clipY1)
+              g.clipY2 = g.clipY1;
+        }
+    }
+
+    Native["javax/microedition/lcdui/Graphics.preserveMIDPRuntimeGC.(IIII)V"] = function(systemX, systemY, systemW, systemH) {
+        console.log("ENTERED preserveMIDPRuntimeGC");
+        this.runtimeClipEnforce = true;
+        clipRect(this, systemX, systemY, systemW, systemH);
+
+        // this is the first time, we setup
+        // the systemClip values.
+        this.systemClipX1 = this.clipX1;
+        this.systemClipY1 = this.clipY1;
+        this.systemClipX2 = this.clipX2;
+        this.systemClipY2 = this.clipY2;
+
+        // Preserve the translation system
+        translate(this, systemX, systemY);
+        this.aX = this.transX;
+        this.aY = this.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(rgb, gray, isGray) {
+        return getPixel(rgb, gray, isGray);
+    };
+
+    function getPixel(rgb, gray, isGray) {
         return swapRB(rgb) | 0xff000000;
+    }
+
+
+    Native["javax/microedition/lcdui/Graphics.restoreMIDPRuntimeGC.()V"] = function() {
+        console.log("ENTERED restoreMIDPRuntimeGC");
+        this.runtimeClipEnforce = false;
+        translate(this, this.aX-this.transX, this.aY-this.transY);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.resetGC.()V"] = function() {
+        console.log("ENTERED resetGC");
+        resetGC(this);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.reset.(IIII)Z"] = function(x1, y1, x2, y2) {
+        console.log("ENTERED reset");
+        reset(this, x1, y1, x2, y2);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.reset.()Z"] = function() {
+        console.log("ENTERED reset");
+        reset(this, 0, 0, this.maxWidth, this.maxHeight);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.isScreenGraphics.()Z"] = function() {
+        console.log("ENTERED isScreenGraphics");
+        return isScreenGraphics(this);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V"] = function(x_src, y_src, width, height, x_dest, y_dest, anchor) {
+        console.log("ENTERED copyArea");
+        if (isScreenGraphics(this)) {
+            throw $.newIllegalStateException();
+        }
+        console.warn("javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V not implemented");
+        console.log("ENTERED copyArea");
+    };
+
+    Native["javax/microedition/lcdui/Graphics.setDimensions.(II)V"] = function(w, h) {
+        console.log("ENTERED setDimensions");
+        setDimensions(this, w, h);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.translate.(II)V"] = function(x, y) {
+        console.log("ENTERED translate");
+        translate(this, x, y);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getTranslateX.()I"] = function() {
+        console.log("ENTERED getTranslateX");
+        return this.transX;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getTranslateY.()I"] = function() {
+        console.log("ENTERED getTranslateY");
+        return this.transY;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getMaxWidth.()I"] = function() {
+        console.log("ENTERED getMaxWidth");
+        return this.maxWidth;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getMaxHeight.()I"] = function() {
+        console.log("ENTERED getMaxHeight");
+        return this.maxHeight;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function() {
+        console.log("ENTERED getCreator");
+        return this.creator;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.setCreator.(Ljava/lang/Object;)V"] = function(creator) {
+        console.log("ENTERED setCreator");
+        if (!this.creator) {
+            this.creator = creator;
+        }
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getColor.()I"] = function() {
+        console.log("ENTERED getColor");
+        return this.rgbColor;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getRedComponent.()I"] = function() {
+        console.log("ENTERED getRedComponent");
+        return (this.rgbColor >> 16) & 0xff;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getGreenComponent.()I"] = function() {
+        console.log("ENTERED getGreenComponent");
+        return (this.rgbColor >> 8) & 0xff;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getBlueComponent.()I"] = function() {
+        console.log("ENTERED getBlueComponent");
+        return this.rgbColor & 0xff;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getGrayScale.()I"] = function() {
+        console.log("ENTERED getGrayScale");
+        return this.gray;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.setColor.(III)V"] = function(red, green, blue) {
+        console.log("ENTERED setColor");
+        if ((red < 0)   || (red > 255)
+            || (green < 0) || (green > 255)
+            || (blue < 0)  || (blue > 255)) {
+            throw $.newIllegalArgumentException("Value out of range");
+        }
+
+        this.rgbColor = (red << 16) | (green << 8) | blue;
+        this.gray = grayVal(red, green, blue);
+        this.pixel = getPixel(this.rgbColor, this.gray, false);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.setColor.(I)V"] = function(RGB) {
+        console.log("ENTERED setColor");
+        if (this.pixel == -1 || (RGB & 0x00ffffff) != this.rgbColor) {
+            var red   = (RGB >> 16) & 0xff;
+            var green = (RGB >> 8)  & 0xff;
+            var blue  = (RGB)  & 0xff;
+
+            this.rgbColor = RGB & 0x00ffffff;
+            this.gray = grayVal(red, green, blue);
+            this.pixel = getPixel(this.rgbColor, this.gray, false);
+        }
+    };
+
+    Native["javax/microedition/lcdui/Graphics.setGrayScale.(I)V"] = function(value) {
+        console.log("ENTERED setGrayScale");
+        if ((value < 0) || (value > 255)) {
+            throw $.newIllegalArgumentException("Gray value out of range");
+        }
+
+        if (this.pixel == -1 || this.gray != value) {
+            this.rgbColor = (value << 16) | (value << 8) | value;
+            this.gray = value;
+            this.pixel = getPixel(this.rgbColor, this.gray, true);
+        }
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;"] = function() {
+        console.log("ENTERED getFont");
+        return this.currentFont;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.setFont0.(Ljavax/microedition/lcdui/Font;)"] = function(font) {
+        console.log("ENTERED setFont0");
+        this.currentFont = font;
+    };
+
+    var SOLID = 0;
+    var DOTTED = 1;
+    Native["javax/microedition/lcdui/Graphics.setStrokeStyle.(I)V"] = function(style) {
+        console.log("ENTERED setStrokeStyle");
+        if ((style != SOLID) && (style != DOTTED)) {
+            throw $.newIllegalArgumentException("Gray value out of range");
+        }
+
+        this.style = style;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getStrokeStyle.()I"] = function() {
+        console.log("ENTERED getStrokeStyle");
+        return this.style;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getClipX.()I"] = function() {
+        console.log("ENTERED getClipX");
+        return this.clipX1 - this.transX;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getClipY.()I"] = function() {
+        console.log("ENTERED getClipY");
+        return this.clipY1 - this.transY;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function() {
+        console.log("ENTERED getClipWidth");
+        return this.clipX2 - this.clipX1;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getClipHeight.()I"] = function() {
+        console.log("ENTERED getClipHeight");
+        console.log("\tthis.clipY2=" + this.clipY2);
+        console.log("\tthis.clipY1=" + this.clipY1);
+        return this.clipY2 - this.clipY1;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(region) {
+        console.log("ENTERED getClip");
+        region[0] = this.clipX1 - this.transX;
+        region[1] = this.clipY1 - this.transY;
+        region[2] = this.clipX2 - this.transX;
+        region[3] = this.clipY2 - this.transY;
+    };
+
+    Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(x, y, width, height) {
+        console.log("ENTERED clipRect");
+        clipRect(this, x, y, width, height);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
+        console.log("ENTERED getDisplayColor");
+        return color;
     };
 
     // DirectGraphics constants
@@ -565,16 +1005,15 @@ var currentlyFocusedTextEditor;
         var red = (rgba >> 16) & 0xff;
         var green = (rgba >> 8) & 0xff;
         var blue = rgba & 0xff;
-        g.klass.classInfo.getField("I.pixel.I").set(g, swapRB(rgba));
-        g.klass.classInfo.getField("I.rgbColor.I").set(g, rgba & 0x00ffffff);
+        g.pixel = swapRB(rgba);
+        g.rgbColor = rgba & 0x00ffffff;
         // Conversion matches Graphics#grayVal(int, int, int).
-        g.klass.classInfo.getField("I.gray.I").set(g, (red * 76 + green * 150 + blue * 29) >> 8);
+        g.gray = (red * 76 + green * 150 + blue * 29) >> 8;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function() {
         var g = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
-        var pixel = g.klass.classInfo.getField("I.pixel.I").get(g);
-        return (pixel >> 24) & 0xff;
+        return (g.pixel >> 24) & 0xff;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] =
@@ -593,7 +1032,7 @@ var currentlyFocusedTextEditor;
         }
 
         var graphics = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
-        var image = graphics.klass.classInfo.getField("I.img.Ljavax/microedition/lcdui/Image;").get(graphics);
+        var image = graphics.img;
         if (!image) {
             throw $.newIllegalArgumentException("getPixels with no image not yet supported");
         }
@@ -633,9 +1072,38 @@ var currentlyFocusedTextEditor;
         });
     };
 
+    Native["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] = function(src, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
+        console.log("ENTERED drawRegion");
+        if (!src) {
+            throw $.newNullPointerException("src image is null");
+        }
+
+        if (!renderRegion(this, src, x_src, y_src, width, height,
+                          transform, x_dest, y_dest, anchor)) {
+            console.log("renderRegion RETURNED FALSE");
+            throw $.newIllegalArgumentException();
+        }
+    };
+
+    Native["javax/microedition/lcdui/Graphics.renderRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)Z"] = function(image, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
+        console.log("ENTERED renderRegion");
+        return renderRegion(this, image, x_src, y_src, width, height, transform, x_dest, y_dest, anchor);
+    };
+
+    Native["javax/microedition/lcdui/Graphics.drawImage.(Ljavax/microedition/lcdui/Image;III)V"] = function(image, x, y, anchor) {
+        console.log("ENTERED drawImage");
+        if (image == null) {
+            throw $.newNullPointerException("image is null");
+        }
+
+        if (!renderImage(this, image, x, y, anchor)) {
+            throw $.newIllegalArgumentException();
+        }
+    };
+
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
-        renderImage(this, image, x, y, anchor);
-        return 1;
+        console.log("ENTERED render");
+        return renderImage(this, image, x, y, anchor);
     };
 
     function parseEmojiString(str) {
@@ -656,7 +1124,7 @@ var currentlyFocusedTextEditor;
 
     function drawString(g, str, x, y, anchor, isOpaque) {
         asyncImpl("V", new Promise(function(resolve, reject) {
-            var font = g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
+            var font = g.currentFont;
 
             var parts = parseEmojiString(str);
 
@@ -698,19 +1166,23 @@ var currentlyFocusedTextEditor;
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
+        console.log("ENTERED drawString");
         drawString(this, util.fromJavaString(str), x, y, anchor, true);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V"] = 
     function(str, offset, len, x, y, anchor) {
+        console.log("ENTERED drawSubstring");
         drawString(this, util.fromJavaString(str).substr(offset, len), x, y, anchor, false);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(data, offset, len, x, y, anchor) {
+        console.log("ENTERED drawChars");
         drawString(this, util.fromJavaChars(data, offset, len), x, y, anchor, false);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(jChr, x, y, anchor) {
+        console.log("ENTERED drawChar");
         var chr = String.fromCharCode(jChr);
         var g = this;
         withGraphics(g, function(c) {
@@ -725,6 +1197,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
+        console.log("ENTERED fillTriangle");
         var g = this;
         withGraphics(g, function(c) {
             withClip(g, c, x1, y1, function(x, y) {
@@ -745,6 +1218,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(x, y, w, h) {
+        console.log("ENTERED drawRect");
         if (w < 0 || h < 0) {
             return;
         }
@@ -761,6 +1235,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
+        console.log("ENTERED drawRoundRect");
         if (w < 0 || h < 0) {
             return;
         }
@@ -779,6 +1254,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(x, y, w, h) {
+        console.log("ENTERED fillRect");
         if (w <= 0 || h <= 0) {
             return;
         }
@@ -795,6 +1271,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
+        console.log("ENTERED fillRoundRect");
         if (w <= 0 || h <= 0) {
             return;
         }
@@ -813,6 +1290,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(x, y, width, height, startAngle, arcAngle) {
+        console.log("ENTERED drawArc");
         if (width < 0 || height < 0) {
             return;
         }
@@ -829,6 +1307,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V"] = function(x, y, width, height, startAngle, arcAngle) {
+        console.log("ENTERED fillArc");
         if (width <= 0 || height <= 0) {
             return;
         }
@@ -855,16 +1334,10 @@ var currentlyFocusedTextEditor;
     var TRANS_ROT270 = 6;
     var TRANS_MIRROR_ROT90 = 7;
 
-    Override["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] =
-    function(image, sx, sy, sw, sh, transform, x, y, anchor) {
-        if (!image) {
-            throw $.newNullPointerException("src image is null");
-        }
-
+    function renderRegion(g, image, sx, sy, sw, sh, transform, x, y, anchor) {
         var imgData = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
             texture = imgData.context.canvas;
 
-        var g = this;
         withGraphics(g, function(c) {
             withAnchor(g, c, anchor, x, y, sw, sh, function(x, y) {
                 c.translate(x, y);
@@ -881,9 +1354,12 @@ var currentlyFocusedTextEditor;
                 c.drawImage(texture, sx, sy, sw, sh, 0, 0, sw, sh);
             });
         });
-    };
+
+        return true;
+    }
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
+        console.log("ENTERED drawLine");
         var dx = x2 - x1, dy = y2 - y1;
         var g = this;
         withGraphics(g, function(c) {
@@ -903,6 +1379,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
+        console.log("ENTERED drawRGB");
         var context = createContext2d(width, height);
         var imageData = context.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
