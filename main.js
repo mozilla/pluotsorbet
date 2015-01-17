@@ -45,7 +45,7 @@ var getMobileInfo = new Promise(function(resolve, reject) {
   });
 });
 
-var loadingPromises = [initFS, getMobileInfo];
+var loadingPromises = [initFS(), getMobileInfo];
 
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
@@ -136,7 +136,7 @@ function performDownload(url, dialog, callback) {
 }
 
 if (config.downloadJAD) {
-  loadingPromises.push(initFS.then(function() {
+  loadingPromises.push(initFS().then(function() {
     return new Promise(function(resolve, reject) {
       fs.exists("/midlet.jar", function(exists) {
         if (exists) {

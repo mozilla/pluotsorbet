@@ -15,7 +15,7 @@ for (var i = 0; i < 100; i++) {
   initialFiles.push({ sourcePath: "tests/gfx/AlertTest.png", targetPath: "/Persistent/file-" + i + ".png" });
 }
 
-initFS.then(function() {
+initFS().then(function() {
   fs.syncStore(function() {
     document.body.appendChild(document.createTextNode("DONE"));
   });
