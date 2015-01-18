@@ -224,11 +224,14 @@ var TextEditorProvider = (function() {
             var toImg = function(str) {
                 var emojiData = emoji.getData(str, this.font.size);
 
+                var scale = this.font.size / emoji.squareSize;
+                var backgroundSize = emoji.sheetSize * scale;
+
                 var style = 'display:inline-block;';
                 style += 'width:' + this.font.size + 'px;';
                 style += 'height:' + this.font.size + 'px;';
-                style += 'background:url(' + emojiData.img + ') -' + emojiData.x + 'px -' + emojiData.y + 'px no-repeat;';
-                style += 'background-size:' + emojiData.backgroundSize + 'px ' + emojiData.backgroundSize + 'px;';
+                style += 'background:url(' + emojiData.img.src + ') -' + (emojiData.x * scale) + 'px -' + (emojiData.y * scale) + 'px no-repeat;';
+                style += 'background-size:' + backgroundSize + 'px ' + backgroundSize + 'px;';
 
                 return '<img src="style/blank.gif" style="' + style + '" alt="' + str + '">';
             }.bind(this);

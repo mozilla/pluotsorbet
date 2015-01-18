@@ -681,13 +681,10 @@ var currentlyFocusedTextEditor;
                         }
 
                         if (part.emoji) {
-                            var img = new Image();
-                            img.src = emoji.strToImg(part.emoji);
-                            img.onload = function() {
-                                c.drawImage(img, curX, y, font.size, font.size);
-                                curX += font.size;
-                                drawNext();
-                            }
+                            var emojiData = emoji.getData(str, font.size);
+                            c.drawImage(emojiData.img, emojiData.x, emojiData.y, emoji.squareSize, emoji.squareSize, curX, y, font.size, font.size);
+                            curX += font.size;
+                            drawNext();
                         } else {
                             drawNext();
                         }

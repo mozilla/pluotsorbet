@@ -188,9 +188,16 @@ var emoji = (function() {
   ].join("|");
 
   var data;
+  var img;
+
+  var squareSize = 16;
+  var sheetSize = 448;
 
   return {
     regEx: new RegExp(regexString, 'g'),
+
+    squareSize: squareSize,
+    sheetSize: sheetSize,
 
     loadData: function() {
       return new Promise(function(resolve, reject) {
@@ -199,9 +206,9 @@ var emoji = (function() {
             return;
         }
 
-        load("libs/emoji.json", "json").then(function(obj) {
+        load("style/emoji.json", "json").then(function(obj) {
             data = obj;
-            var img = new Image();
+            img = new Image();
             img.src = 'style/emoji.png';
             img.onload = resolve;
         });
@@ -222,27 +229,11 @@ var emoji = (function() {
         return elem.unified == unified;
       });
 
-      var scale = (size / 16);
-
       return {
-        img: 'style/emoji.png',
-        x: emoji.sheet_x * 16 * scale,
-        y: emoji.sheet_y * 16 * scale,
-        backgroundSize: 448 * scale,
+        img: img,
+        x: emoji.sheet_x * squareSize,
+        y: emoji.sheet_y * squareSize,
       };
-    },
-
-    strToImg: function(str) {
-      var firstCodePoint = str.codePointAt(0);
-
-      var imgSrc = "style/emoji/" + firstCodePoint.toString(16);
-
-      var len = String.fromCodePoint(firstCodePoint).length;
-      if (str.length > len) {
-        imgSrc += "-" + str.substr(len).codePointAt(0).toString(16);
-      }
-
-      return imgSrc + ".png";
     },
   };
 })();
