@@ -222,8 +222,15 @@ var TextEditorProvider = (function() {
             }
 
             var toImg = function(str) {
-                return '<img src="' + emoji.strToImg(str) + '" height="' + this.font.size +
-                       'pt" width="' + this.font.size + 'pt" alt="' + str + '">';
+                var emojiData = emoji.getData(str, this.font.size);
+
+                var style = 'display:inline-block;';
+                style += 'width:' + this.font.size + 'px;';
+                style += 'height:' + this.font.size + 'px;';
+                style += 'background:url(' + emojiData.img + ') -' + emojiData.x + 'px -' + emojiData.y + 'px no-repeat;';
+                style += 'background-size:' + emojiData.backgroundSize + 'px ' + emojiData.backgroundSize + 'px;';
+
+                return '<img src="style/blank.gif" style="' + style + '" alt="' + str + '">';
             }.bind(this);
 
             // Replace "\n" by <br>

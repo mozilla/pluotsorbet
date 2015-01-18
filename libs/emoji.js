@@ -187,8 +187,51 @@ var emoji = (function() {
     '\ud83c\udE51', // U+1F251
   ].join("|");
 
+  var data;
+
   return {
     regEx: new RegExp(regexString, 'g'),
+
+    loadData: function() {
+      return new Promise(function(resolve, reject) {
+        if (data) {
+            resolve();
+            return;
+        }
+
+        load("libs/emoji.json", "json").then(function(obj) {
+            data = obj;
+            var img = new Image();
+            img.src = 'style/emoji.png';
+            img.onload = resolve;
+        });
+      });
+    },
+
+    getData: function(str, size) {
+      var firstCodePoint = str.codePointAt(0);
+
+      var unified = firstCodePoint.toString(16).toUpperCase();
+
+      var len = String.fromCodePoint(firstCodePoint).length;
+      if (str.length > len) {
+        unified += "-" + str.substr(len).codePointAt(0).toString(16).toUpperCase();
+      }
+
+      var emoji = data.find(function(elem) {
+        return elem.unified == unified;
+      });
+
+      var scale = (size / 16);
+
+      return {
+        img: 'style/emoji.png',
+        x: emoji.sheet_x * 16 * scale,
+        y: emoji.sheet_y * 16 * scale,
+        backgroundSize: 448 * scale,
+      };
+    },
+
     strToImg: function(str) {
       var firstCodePoint = str.codePointAt(0);
 
