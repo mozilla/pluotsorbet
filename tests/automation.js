@@ -22,7 +22,7 @@ var gfxTests = [
   { name: "gfx/AlertTest", maxDifferent: 1942 },
   { name: "gfx/CanvasTest", maxDifferent: 0 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
-  { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
+  { name: "gfx/ImageRenderingTest", maxDifferent: 0 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
   { name: "gfx/DrawAndFillRoundRectTest", maxDifferent: 2000 },
   { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
