@@ -388,15 +388,16 @@ var currentlyFocusedTextEditor;
     }
 
     function withClip(g, c, x, y, cb) {
-        var clipX1 = g.klass.classInfo.getField("I.clipX1.S").get(g),
-            clipY1 = g.klass.classInfo.getField("I.clipY1.S").get(g),
-            clipX2 = g.klass.classInfo.getField("I.clipX2.S").get(g),
-            clipY2 = g.klass.classInfo.getField("I.clipY2.S").get(g),
-            clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
+        var clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
             transX = g.klass.classInfo.getField("I.transX.I").get(g),
             transY = g.klass.classInfo.getField("I.transY.I").get(g);
 
         if (clipped) {
+            var clipX1 = g.klass.classInfo.getField("I.clipX1.S").get(g),
+                clipY1 = g.klass.classInfo.getField("I.clipY1.S").get(g),
+                clipX2 = g.klass.classInfo.getField("I.clipX2.S").get(g),
+                clipY2 = g.klass.classInfo.getField("I.clipY2.S").get(g);
+
             c.beginPath();
             c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
             c.clip();
@@ -430,14 +431,17 @@ var currentlyFocusedTextEditor;
     }
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
         c.textAlign = "left";
         c.textBaseline = "top";
 
-        if (anchor & RIGHT) {
-            x -= w;
-        } else if (anchor & HCENTER) {
-            x -= (w >>> 1) | 0;
+        if (anchor & RIGHT || anchor & HCENTER) {
+            var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+
+            if (anchor & RIGHT) {
+                x -= w;
+            } else if (anchor & HCENTER) {
+                x -= (w >>> 1) | 0;
+            }
         }
 
         if (anchor & BOTTOM) {
@@ -448,7 +452,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
         }
 
-        cb(x, y, w);
+        cb(x, y);
     }
 
     function abgrIntToCSS(pixel) {
@@ -665,7 +669,12 @@ var currentlyFocusedTextEditor;
                             var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
                             withPixelFunc(g, c, function() {
                                 c.fillText(part.text, x, y);
-                                curX += w;
+
+                                // If there are emojis in the string that we need to draw,
+                                // we need to calculate the string width
+                                if (part.emoji) {
+                                    curX += withFont(font, c, part.text)
+                                }
                             });
                         });
                     }
