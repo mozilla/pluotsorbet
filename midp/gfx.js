@@ -1519,6 +1519,7 @@ var currentlyFocusedTextEditor;
             var okCommand = null;
             var backCommand = null;
 
+            var isSidebarEmpty = true;
             validCommands.forEach(function(command) {
                 var commandType = command.klass.classInfo.getField("I.commandType.I").get(command);
                 // Skip the OK command which will shown in the header.
@@ -1543,7 +1544,11 @@ var currentlyFocusedTextEditor;
                 };
 
                 menu.appendChild(li);
+                isSidebarEmpty = false;
             });
+
+            document.getElementById("header-drawer-button").style.display =
+                isSidebarEmpty ? "none" : "block";
 
             // If existing, the OK command will be shown in the header.
             var headerBtn = document.getElementById("header-ok-button");
