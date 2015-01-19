@@ -34,8 +34,8 @@
   <script type="text/javascript" src="libs/rusha.js" defer></script>
   <script type="text/javascript" src="libs/forge/util.js" defer></script>
   <script type="text/javascript" src="libs/forge/md5.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn2.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn/jsbn.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn/jsbn2.js" defer></script>
   <script type="text/javascript" src="libs/contacts.js" defer></script>
   <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
   <script type="text/javascript" src="libs/pipe.js" defer></script>
@@ -110,7 +110,9 @@
       <button id="deleteDatabase">Delete Database</button>
       <button id="exportstorage">Export storage</button>
       <div>Import storage:</div>
-      <input type="file" id="importstorage">
+      <input type="file" id="importstoragefile">
+      <input type="text" id="importstorageurl" placeholder="URL to FS backup">
+      <button id="importstorage">Import</button>
       <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
       <button id="profile">Profile: OFF</button>
