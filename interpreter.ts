@@ -4,6 +4,7 @@ module J2ME {
   declare var Promise;
 
   import BytecodeStream = Bytecode.BytecodeStream;
+  import BlockMap = Bytecode.BlockMap;
   import checkArrayBounds = J2ME.checkArrayBounds;
   import checkDivideByZero = J2ME.checkDivideByZero;
   import checkDivideByZeroLong = J2ME.checkDivideByZeroLong;
@@ -262,6 +263,16 @@ module J2ME {
 
             // Set the global OSR frame to the current frame.
             O = frame;
+
+            var blockMap = O.methodInfo.blockMap;
+            if (!blockMap) {
+              blockMap = new BlockMap(O.methodInfo);
+              blockMap.build();
+              O.methodInfo.blockMap = blockMap;
+            }
+
+            // Convert between PC and block ID which is what the baseline JIT expects as the PC.
+            O.pc = blockMap.getBlock(O.pc).blockID;
 
             // Set the current frame before doing the OSR in case an exception is thrown.
             frame = frames[frames.length - 1];

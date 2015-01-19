@@ -6,6 +6,8 @@ module J2ME {
   declare var classObjects;
   declare var util;
 
+  import BlockMap = Bytecode.BlockMap;
+
   export class SourceLocation {
     constructor(public className: string, public sourceFile: string, public lineNumber: number) {
       // ...
@@ -81,6 +83,7 @@ module J2ME {
     isStatic: boolean;
     isSynchronized: boolean;
     isAbstract: boolean;
+    isFinal: boolean;
 
     /**
      * There is a compiled version of this method.?
@@ -107,6 +110,8 @@ module J2ME {
     attributes: any [];
     mangledName: string;
     mangledClassAndMethodName: string;
+
+    blockMap: BlockMap;
 
     line_number_table: {start_pc: number; line_number: number} [];
 
@@ -175,6 +180,7 @@ module J2ME {
       this.isStatic = opts.isStatic;
       this.isSynchronized = opts.isSynchronized;
       this.isAbstract = opts.isAbstract;
+      this.isFinal = opts.isAbstract;
       this.isCompiled = false;
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
@@ -197,6 +203,7 @@ module J2ME {
       this.bytecodeCount = 0;
 
       this.isOptimized = false;
+      this.blockMap = null;
     }
 
     public getReturnKind(): Kind {
@@ -223,6 +230,8 @@ module J2ME {
     }
   }
 
+  var classID = 0;
+
   export class ClassInfo {
     className: string;
     c: string;
@@ -234,6 +243,7 @@ module J2ME {
     staticInitializer: MethodInfo;
     classes: any [];
     subClasses: ClassInfo [];
+    allSubClasses: ClassInfo [];
     constant_pool: ConstantPoolEntry [];
     isArrayClass: boolean;
     elementClass: ClassInfo;
@@ -243,9 +253,11 @@ module J2ME {
     vfc: any;
     mangledName: string;
     thread: any;
+    id: number;
 
     sourceFile: string;
     constructor(classBytes) {
+      this.id = classID ++;
       enterTimeline("getClassImage");
       var classImage = getClassImage(classBytes);
       leaveTimeline("getClassImage");
@@ -255,6 +267,7 @@ module J2ME {
       this.access_flags = classImage.access_flags;
       this.constant_pool = cp;
       this.subClasses = [];
+      this.allSubClasses = [];
       // Cache for virtual methods and fields
       this.vmc = {};
       this.vfc = {};
@@ -296,7 +309,8 @@ module J2ME {
           isPublic: AccessFlags.isPublic(m.access_flags),
           isStatic: AccessFlags.isStatic(m.access_flags),
           isSynchronized: AccessFlags.isSynchronized(m.access_flags),
-          isAbstract: AccessFlags.isAbstract(m.access_flags)
+          isAbstract: AccessFlags.isAbstract(m.access_flags),
+          isFinal: AccessFlags.isFinal(m.access_flags)
         });
         this.methods.push(methodInfo);
         if (methodInfo.name === "<clinit>") {

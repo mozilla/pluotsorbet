@@ -21,6 +21,9 @@ module J2ME {
   var emitCallMethodCounter = false;
 
   var emitCallMethodLoopCounter = false;
+  var emitCheckArrayBounds = true;
+
+  var emitCheckArrayStore = true;
 
   export var baselineTotal = 0;
   export var baselineCompiled = 0;
@@ -213,7 +216,7 @@ module J2ME {
       var stream = new BytecodeStream(this.methodInfo.code);
 
       var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
-      var needsSwitch = false;
+      var needsSwitch = true;
 
       if (!needsSwitch && blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
         this.emitBlockBody(stream, blocks[0]);
@@ -256,7 +259,7 @@ module J2ME {
       }
       if (emitCompilerAssertions) {
         this.emitter.enter("default:");
-        this.emitter.writeLn("J2ME.Debug.assert(false, 'Invalid pc.');");
+        this.emitter.writeLn("J2ME.Debug.assert(false, 'Invalid BI.');");
         this.emitter.outdent();
       }
       this.emitter.leave("}");
@@ -649,9 +652,9 @@ module J2ME {
       var value = this.pop(stackKind(kind));
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
+      emitCheckArrayBounds && this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
       if (kind === Kind.Reference) {
-        this.emitter.writeLn("$CAS(" + array + ", " + value + ");");
+        emitCheckArrayStore && this.emitter.writeLn("$CAS(" + array + ", " + value + ");");
       }
       this.emitter.writeLn(array + "[" + index + "] = " + value + ";");
     }
@@ -659,7 +662,7 @@ module J2ME {
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
+      emitCheckArrayBounds && this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
       this.emitPush(kind, array + "[" + index + "]");
     }
 
@@ -956,8 +959,7 @@ module J2ME {
     }
 
     getBlockIndex(pc: number): number {
-      return pc;
-      // return this.getBlock(pc).blockID;
+      return this.getBlock(pc).blockID;
     }
 
     getBlock(pc: number): Block {

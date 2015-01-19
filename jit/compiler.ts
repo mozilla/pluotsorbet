@@ -355,6 +355,9 @@ module J2ME {
 
     var compiledMethods: CompiledMethodInfo [] = [];
     var classInfoList: ClassInfo [] = [];
+
+    CLASSES.loadAllClassFiles();
+
     Object.keys(jarFiles).every(function (path) {
       if (path.substr(-4) !== ".jar" || !jarFilter(path)) {
         return true;
@@ -431,11 +434,13 @@ module J2ME {
       ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, methodFilter, ctx));
     }
 
+
     stdoutWriter.writeLn(code);
 
     stdoutWriter.enter("/*");
     baselineCounter && baselineCounter.traceSorted(stdoutWriter);
     yieldCounter && yieldCounter.traceSorted(stdoutWriter);
+    yieldGraph && traceYieldGraph(stdoutWriter);
     stdoutWriter.enter("*/");
     // yieldCounter.traceSorted(stdoutWriter);
 
