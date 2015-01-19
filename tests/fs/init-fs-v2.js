@@ -5,7 +5,7 @@
 
 var APP_BASE_DIR = "../../";
 
-initFS().then(function() {
+initFS.then(function() {
   fs.syncStore(function() {
     document.body.appendChild(document.createTextNode("DONE"));
   });
