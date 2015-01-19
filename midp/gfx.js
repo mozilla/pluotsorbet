@@ -655,43 +655,29 @@ var currentlyFocusedTextEditor;
     }
 
     function drawString(g, str, x, y, anchor, isOpaque) {
-        asyncImpl("V", new Promise(function(resolve, reject) {
-            var font = g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
+        var font = g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
 
-            var parts = parseEmojiString(str);
-
-            withGraphics(g, function(c) {
-                withClip(g, c, x, y, function(curX, y) {
-                    (function drawNext() {
-                        if (parts.length === 0) {
-                            resolve();
-                            return;
-                        }
-
-                        var part = parts.shift();
-
-                        if (part.text) {
-                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
-                                var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
-                                withPixelFunc(g, c, function() {
-                                    c.fillText(part.text, x, y);
-                                    curX += w;
-                                });
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(curX, y) {
+                parseEmojiString(str).forEach(function(part) {
+                    if (part.text) {
+                        withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
+                            var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                            withPixelFunc(g, c, function() {
+                                c.fillText(part.text, x, y);
+                                curX += w;
                             });
-                        }
+                        });
+                    }
 
-                        if (part.emoji) {
-                            var emojiData = emoji.getData(str, font.size);
-                            c.drawImage(emojiData.img, emojiData.x, emojiData.y, emoji.squareSize, emoji.squareSize, curX, y, font.size, font.size);
-                            curX += font.size;
-                            drawNext();
-                        } else {
-                            drawNext();
-                        }
-                    })();
+                    if (part.emoji) {
+                        var emojiData = emoji.getData(part.emoji, font.size);
+                        c.drawImage(emojiData.img, emojiData.x, emojiData.y, emoji.squareSize, emoji.squareSize, curX, y, font.size, font.size);
+                        curX += font.size;
+                    }
                 });
             });
-        }));
+        });
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
