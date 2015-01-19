@@ -16,7 +16,6 @@ var APP_BASE_DIR = "./";
 var jvm = new JVM();
 
 var main = config.main || "com/sun/midp/main/MIDletSuiteLoader";
-MIDP.midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
