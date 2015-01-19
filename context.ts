@@ -254,8 +254,6 @@ module J2ME {
 
   export class Context {
     private static _nextId: number = 0;
-    static _startTime: number = 0;
-    static _totalTime: number = 0;
     private static _colors = [
       IndentingWriter.PURPLE,
       IndentingWriter.YELLOW,
@@ -431,11 +429,7 @@ module J2ME {
       this.resume();
     }
 
-    private execute() {
-      if (Context._startTime === 0) {
-        Context._startTime = performance.now();
-      }
-      var start = performance.now();
+    execute() {
       Instrument.callResumeHooks(this.current());
       this.setAsCurrentContext();
       do {
@@ -452,8 +446,6 @@ module J2ME {
               break;
           }
           U = VMState.Running;
-          var end = performance.now() - start;
-          Context._totalTime += end;
           this.clearCurrentContext();
           return;
         }
