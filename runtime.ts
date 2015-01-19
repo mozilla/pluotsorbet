@@ -44,9 +44,9 @@ module J2ME {
   export var loadWriter = null;
 
   /**
-   * Traces unwinding loading.
+   * Traces winding and unwinding.
    */
-  export var unwindWriter = null;
+  export var windingWriter = null;
 
   /**
    * Traces class initialization.
@@ -60,6 +60,7 @@ module J2ME {
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
   export var baselineMethodCounter = new Metrics.Counter(true);
+  export var asyncCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
   export var unwindCount = 0;
@@ -557,14 +558,15 @@ module J2ME {
     }
 
     yield() {
-      unwindWriter && unwindWriter.writeLn("yielding");
+      windingWriter && windingWriter.writeLn("yielding");
       unwindCount ++;
       runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
-      unwindWriter && unwindWriter.writeLn("pausing");
+      yieldCounter.count("pausing " + reason);
+      windingWriter && windingWriter.writeLn("pausing");
       unwindCount ++;
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
@@ -1629,6 +1631,11 @@ var Runtime = J2ME.Runtime;
  * read very often.
  */
 var U: J2ME.VMState = J2ME.VMState.Running;
+
+/**
+ * OSR Frame.
+ */
+var O: J2ME.Frame = null;
 
 /**
  * Runtime exports for compiled code.

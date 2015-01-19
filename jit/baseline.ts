@@ -159,9 +159,9 @@ module J2ME {
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
-     * Make sure that none of these shadow gloal names, like "U".
+     * Make sure that none of these shadow gloal names, like "U" and "O".
      */
-    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
+    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "_R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
@@ -177,9 +177,6 @@ module J2ME {
       this.hasHandlers = !!methodInfo.exception_table.length;
       this.blockStackHeightMap = [0];
       this.emitter = new Emitter();
-      this.lockObject = this.methodInfo.isSynchronized ? 
-                          this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this"
-                          : "null";
     }
 
     compile(): CompiledMethodInfo {
@@ -216,8 +213,9 @@ module J2ME {
       var stream = new BytecodeStream(this.methodInfo.code);
 
       var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
+      var needsSwitch = false;
 
-      if (blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
+      if (!needsSwitch && blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
         this.emitBlockBody(stream, blocks[0]);
         return;
       }
@@ -338,7 +336,7 @@ module J2ME {
 
     private emitPrologue() {
       var local = this.local;
-      var localIndex = 0;
+      var parameterLocalIndex = this.methodInfo.isStatic ? 0 : 1;
 
       var typeDescriptors = SignatureDescriptor.makeSignatureDescriptor(this.methodInfo.signature).typeDescriptors;
 
@@ -348,21 +346,20 @@ module J2ME {
         if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
           kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
         }
-        this.parameters.push(this.getLocalName(localIndex));
-        localIndex += isTwoSlot(kind) ? 2 : 1;
+        this.parameters.push(this.getLocalName(parameterLocalIndex));
+        parameterLocalIndex += isTwoSlot(kind) ? 2 : 1;
       }
 
-      var extraLocal = this.methodInfo.max_locals - (this.methodInfo.isStatic ? 0 : 1);
-      for (var i = 0; i < extraLocal; i++) {
+      var maxLocals = this.methodInfo.max_locals;
+      for (var i = 0; i < maxLocals; i++) {
         local.push(this.getLocalName(i));
       }
       if (local.length) {
         this.emitter.writeLn("var " + local.join(", ") + ";");
       }
       if (!this.methodInfo.isStatic) {
-        local.unshift("this");
+        this.emitter.writeLn(this.getLocal(0) + " = this;");
       }
-
       var stack = this.stack;
       for (var i = 0; i < this.methodInfo.max_stack; i++) {
         stack.push(this.getStack(i));
@@ -379,9 +376,30 @@ module J2ME {
         this.emitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
 
+      this.lockObject = this.methodInfo.isSynchronized ?
+        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : this.getLocal(0)
+        : "null";
+
+      this.emitOSREntryPoint();
+    }
+
+    private emitOSREntryPoint() {
+      // Are we doing an OSR?
+      this.emitter.enter("if (O) {");
+      this.emitter.writeLn("var local = O.local;");
+
+      // Restore locals.
+      for (var i = 0; i < this.methodInfo.max_locals; i++) {
+        this.emitter.writeLn(this.getLocal(i) + " = local[" + i + "];");
+      }
+      this.needsVariable("re");
+      this.emitter.writeLn("bi = O.pc;");
+      this.emitter.writeLn("O = null;");
       if (this.methodInfo.isSynchronized) {
+        this.emitter.leaveAndEnter("} else {");
         this.emitMonitorEnter(0, this.lockObject);
       }
+      this.emitter.leave("}");
     }
 
     lookupClass(cpi: number): ClassInfo {
@@ -507,12 +525,14 @@ module J2ME {
     }
 
     emitIf(block: Block, stream: BytecodeStream, predicate: string) {
-      var nextBlock = this.getBlock(stream.nextBCI);
-      var targetBlock = this.getBlock(stream.readBranchDest());
+      var nextBCI = stream.nextBCI;
+      var targetBCI = stream.readBranchDest();
 
-      var next = nextBlock.blockID;
-      var target = targetBlock.blockID;
+      var nextBlock = this.getBlock(nextBCI);
+      var targetBlock = this.getBlock(targetBCI);
 
+      var next = this.getBlockIndex(nextBCI);
+      var target = this.getBlockIndex(targetBCI);
 
       if (optimizeControlFlow &&
           block !== nextBlock &&
@@ -936,7 +956,8 @@ module J2ME {
     }
 
     getBlockIndex(pc: number): number {
-      return this.getBlock(pc).blockID;
+      return pc;
+      // return this.getBlock(pc).blockID;
     }
 
     getBlock(pc: number): Block {

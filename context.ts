@@ -20,15 +20,15 @@ module J2ME {
     Init  = 0x04,
     Perf  = 0x08,
     Load  = 0x10,
-    Unwind  = 0x20,
 
-    All   = Trace | Link | Init | Perf | Load | Unwind
+    All   = Trace | Link | Init | Perf | Load
   }
 
   /**
    * Toggle VM tracing here.
    */
-  export var writers = WriterFlags.None; // WriterFlags.Link | WriterFlags.Load;
+  // export var writers = WriterFlags.None; // WriterFlags.Link; // WriterFlags.Link | WriterFlags.Load;
+  export var writers = WriterFlags.None; // WriterFlags.Link; // WriterFlags.Link | WriterFlags.Load;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -71,7 +71,7 @@ module J2ME {
     stack: any [];
     code: Uint8Array;
     pc: number;
-    opPc: number;
+    opPC: number;
     cp: any;
     localBase: number;
     lockObject: java.lang.Object;
@@ -102,7 +102,7 @@ module J2ME {
       this.cp = methodInfo ? methodInfo.classInfo.constant_pool : null;
       this.code = methodInfo ? methodInfo.code : null;
       this.pc = 0;
-      this.opPc = 0;
+      this.opPC = 0;
       this.stack = [];
       this.local = local;
       this.localBase = localBase;
@@ -289,6 +289,10 @@ module J2ME {
       return args;
     }
 
+    toString() {
+      return this.methodInfo.implKey + " " + this.pc;
+    }
+
     trace(writer: IndentingWriter) {
       var localStr = this.local.map(function (x) {
         return toDebugString(x);
@@ -378,7 +382,6 @@ module J2ME {
       linkWriter = writers & WriterFlags.Link ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
-      unwindWriter = writers & WriterFlags.Unwind ? writer : null;
     }
 
     kill() {
@@ -524,6 +527,18 @@ module J2ME {
             Array.prototype.push.apply(this.frames, this.bailoutFrames);
             this.bailoutFrames = [];
           }
+          var frames = this.frames;
+          if (windingWriter) {
+            windingWriter.enter("Unwound");
+            frames.map(function (f) {
+              if (Frame.isMarker(f)) {
+                windingWriter.writeLn("- marker -");
+              } else {
+                windingWriter.writeLn((f.methodInfo.isCompiled ? "C" : "I") + " " + f.toString());
+              }
+            });
+            windingWriter.leave("");
+          }
           switch (U) {
             case VMState.Yielding:
               this.resume();
@@ -650,7 +665,7 @@ module J2ME {
       var frame = Frame.create(methodInfo, local, 0);
       frame.stack = stack;
       frame.pc = nextPC;
-      frame.opPc = pc;
+      frame.opPC = pc;
       frame.lockObject = lockObject;
       this.bailoutFrames.unshift(frame);
     }

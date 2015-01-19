@@ -13,7 +13,7 @@ module J2ME {
   import popManyInto = ArrayUtilities.popManyInto;
 
   export var interpreterCounter = null; // new Metrics.Counter(true);
-  export var interpreterMethodCounter = null; // new Metrics.Counter(true);
+  export var interpreterMethodCounter = new Metrics.Counter(true);
 
   var traceArrayAccess = false;
 
@@ -101,6 +101,15 @@ module J2ME {
   export var bytecodeCount = 0;
 
   /**
+   * The number of times the interpreter method was called thus far.
+   */
+  export var interpreterCount = 0;
+
+  export var onStackReplacementCount = 0;
+
+  export var onStackReplacementIsEnabled = true;
+
+  /**
    * Temporarily used for fn.apply.
    */
   var argArray = [];
@@ -130,7 +139,7 @@ module J2ME {
       var exception_table = frame.methodInfo.exception_table;
       var handler_pc = null;
       for (var i = 0; exception_table && i < exception_table.length; i++) {
-        if (frame.opPc >= exception_table[i].start_pc && frame.opPc < exception_table[i].end_pc) {
+        if (frame.opPC >= exception_table[i].start_pc && frame.opPC < exception_table[i].end_pc) {
           if (exception_table[i].catch_type === 0) {
             handler_pc = exception_table[i].handler_pc;
             break;
@@ -208,7 +217,13 @@ module J2ME {
 
     var index: any, value: any, constant: any;
     var a: any, b: any, c: any;
-    var pc: number, startPc: number;
+    var pc: number;
+
+    /**
+     * This is used to detect backwards branches for the purpose of on stack replacement.
+     */
+    var lastPC: number = -1;
+
     var type;
     var size;
 
@@ -223,13 +238,63 @@ module J2ME {
 
     frame.methodInfo.interpreterCallCount ++;
 
+    profile && interpreterCount ++;
+
     while (true) {
       profile && bytecodeCount ++;
-      // frame.methodInfo.bytecodeCount ++;
-      frame.opPc = frame.pc;
-      var op: Bytecodes = frame.read8();
+      frame.methodInfo.bytecodeCount ++;
       // interpreterMethodCounter && interpreterMethodCounter.count(Bytecodes[op]);
+
       try {
+        if (onStackReplacementIsEnabled && frame.pc < lastPC) {
+          if (frame.methodInfo.isCompiled) {
+            // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
+            // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
+            // on stack replacement.
+
+            profile && onStackReplacementCount ++;
+
+            // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
+            frames.pop();
+
+            // Remember the return kind since we'll need it later.
+            var returnKind = frame.methodInfo.getReturnKind();
+
+            // Set the global OSR frame to the current frame.
+            O = frame;
+
+            // Set the current frame before doing the OSR in case an exception is thrown.
+            frame = frames[frames.length - 1];
+
+            // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
+            returnValue = O.methodInfo.fn();
+            if (U) {
+              return;
+            }
+
+            // Usual code to return from the interpreter or push the return value.
+            if (Frame.isMarker(frame)) {
+              return returnValue;
+            }
+            mi = frame.methodInfo;
+            ci = mi.classInfo;
+            cp = ci.constant_pool;
+            stack = frame.stack;
+            lastPC = -1;
+
+            if (returnKind !== Kind.Void) {
+              if (isTwoSlot(returnKind)) {
+                stack.push2(returnValue);
+              } else {
+                stack.push(returnValue);
+              }
+            }
+          }
+        }
+
+        lastPC = frame.opPC = frame.pc;
+        var op: Bytecodes = frame.read8();
+
         switch (op) {
           case Bytecodes.NOP:
             break;
@@ -990,7 +1055,6 @@ module J2ME {
             frame.wide();
             break;
           case Bytecodes.RESOLVED_INVOKEVIRTUAL:
-            var startPC = frame.pc - 1;
             index = frame.read16();
             var calleeMethodInfo = <MethodInfo><any>cp[index];
             var object = frame.peekInvokeObject(calleeMethodInfo);
@@ -1007,6 +1071,7 @@ module J2ME {
               ci = mi.classInfo;
               cp = ci.constant_pool;
               stack = frame.stack;
+              lastPC = -1;
               continue;
             }
 
@@ -1054,7 +1119,6 @@ module J2ME {
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
-            var startPC = frame.pc - 1;
             index = frame.read16();
             if (op === Bytecodes.INVOKEINTERFACE) {
               frame.read16(); // Args Number & Zero
@@ -1064,7 +1128,7 @@ module J2ME {
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo = resolveMethod(index, mi.classInfo, isStatic);
             if (isStatic) {
-              classInitCheck(calleeMethodInfo.classInfo, startPC);
+              classInitCheck(calleeMethodInfo.classInfo, lastPC);
               if (U) {
                 return;
               }
@@ -1105,6 +1169,7 @@ module J2ME {
               ci = mi.classInfo;
               cp = ci.constant_pool;
               stack = frame.stack;
+              lastPC = -1;
               if (calleeTargetMethodInfo.isSynchronized) {
                 if (!calleeFrame.lockObject) {
                   frame.lockObject = calleeTargetMethodInfo.isStatic
@@ -1191,10 +1256,11 @@ module J2ME {
               }
               return returnValue;
             }
-            stack = frame.stack;
             mi = frame.methodInfo;
             ci = mi.classInfo;
             cp = ci.constant_pool;
+            stack = frame.stack;
+            lastPC = -1;
             if (op === Bytecodes.RETURN) {
               // Nop.
             } else if (op === Bytecodes.LRETURN || op === Bytecodes.DRETURN) {
@@ -1220,6 +1286,7 @@ module J2ME {
         ci = mi.classInfo;
         cp = ci.constant_pool;
         stack = frame.stack;
+        lastPC = -1;
         continue;
       }
     }

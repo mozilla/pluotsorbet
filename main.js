@@ -258,12 +258,32 @@ window.onload = function() {
  document.getElementById("clearCounters").onclick = function() {
    clearCounters();
  };
+
+  setInterval(function () {
+    function numberWithCommas(x) {
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    var el = document.getElementById("bytecodeCount");
+    el.textContent = numberWithCommas(J2ME.bytecodeCount);
+
+    var el = document.getElementById("interpreterCount");
+    el.textContent = numberWithCommas(J2ME.interpreterCount);
+
+    var el = document.getElementById("onStackReplacementCount");
+    el.textContent = numberWithCommas(J2ME.onStackReplacementCount);
+
+    var el = document.getElementById("unwindCount");
+    el.textContent = numberWithCommas(J2ME.unwindCount);
+  }, 500);
+
   function dumpCounters() {
     var writer = new J2ME.IndentingWriter();
 
     writer.writeLn("Frame Count: " + J2ME.frameCount);
     writer.writeLn("Unwind Count: " + J2ME.unwindCount);
     writer.writeLn("Bytecode Count: " + J2ME.bytecodeCount);
+    writer.writeLn("OSR Count: " + J2ME.onStackReplacementCount);
 
     if (J2ME.interpreterCounter) {
       writer.enter("interpreterCounter");
@@ -290,16 +310,24 @@ window.onload = function() {
       J2ME.runtimeCounter.traceSorted(writer);
       writer.outdent();
     }
+    if (J2ME.asyncCounter) {
+      writer.enter("asyncCounter");
+      J2ME.asyncCounter.traceSorted(writer);
+      writer.outdent();
+    }
   }
   function clearCounters() {
     J2ME.frameCount = 0;
     J2ME.unwindCount = 0;
     J2ME.bytecodeCount = 0;
+    J2ME.interpreterCount = 0;
+    J2ME.onStackReplacementCount = 0;
 
     J2ME.interpreterCounter && J2ME.interpreterCounter.clear();
     J2ME.interpreterMethodCounter && J2ME.interpreterMethodCounter.clear();
     J2ME.nativeCounter && J2ME.nativeCounter.clear();
     J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
+    J2ME.asyncCounter && J2ME.asyncCounter.clear();
     J2ME.baselineMethodCounter && J2ME.baselineMethodCounter.clear();
   }
 

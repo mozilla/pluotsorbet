@@ -236,7 +236,7 @@ module J2ME {
     }
     stdoutWriter.writeLn("var start = performance.now();");
     compile(jvm, jarFilter, classFilter, methodFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
-    stdoutWriter.writeLn("console.info(\"" + jarFileFilterOption.value + ": \" + (performance.now() - start));");
+    stdoutWriter.writeLn("console.log(\"" + jarFileFilterOption.value + ": \" + (performance.now() - start));");
     if (verboseOption.value) {
       printResults();
     }
