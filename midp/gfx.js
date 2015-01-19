@@ -1517,12 +1517,18 @@ var currentlyFocusedTextEditor;
             var menu = document.getElementById("sidebar").querySelector("nav ul");
 
             var okCommand = null;
+            var backCommand = null;
 
             validCommands.forEach(function(command) {
                 var commandType = command.klass.classInfo.getField("I.commandType.I").get(command);
                 // Skip the OK command which will shown in the header.
                 if (commandType == OK) {
                     okCommand = command;
+                    return;
+                }
+                // Skip the BACK command which will shown in the footer.
+                if (commandType == BACK) {
+                    backCommand = command;
                     return;
                 }
                 var li = document.createElement("li");
@@ -1546,6 +1552,15 @@ var currentlyFocusedTextEditor;
                 headerBtn.onclick = sendEvent.bind(headerBtn, okCommand);
             } else {
                 headerBtn.style.display = "none";
+            }
+
+            // If existing, the BACK command will be shown in the footer.
+            var backBtn = document.getElementById("back-button");
+            if (backCommand) {
+                backBtn.style.display = "block";
+                backBtn.onclick = sendEvent.bind(backBtn, backCommand);
+            } else {
+                backBtn.style.display = "none";
             }
         }
     };
