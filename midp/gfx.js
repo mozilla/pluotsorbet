@@ -1516,7 +1516,15 @@ var currentlyFocusedTextEditor;
         } else {
             var menu = document.getElementById("sidebar").querySelector("nav ul");
 
+            var okCommand = null;
+
             validCommands.forEach(function(command) {
+                var commandType = command.klass.classInfo.getField("I.commandType.I").get(command);
+                // Skip the OK command which will shown in the header.
+                if (commandType == OK) {
+                    okCommand = command;
+                    return;
+                }
                 var li = document.createElement("li");
                 li.textContent = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
 
@@ -1530,6 +1538,15 @@ var currentlyFocusedTextEditor;
 
                 menu.appendChild(li);
             });
+
+            // If existing, the OK command will be shown in the header.
+            var headerBtn = document.getElementById("header-ok-button");
+            if (okCommand) {
+                headerBtn.style.display = "block";
+                headerBtn.onclick = sendEvent.bind(headerBtn, okCommand);
+            } else {
+                headerBtn.style.display = "none";
+            }
         }
     };
 })(Native);
