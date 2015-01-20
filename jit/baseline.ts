@@ -242,18 +242,6 @@ module J2ME {
           this.setBlockStackHeight(block.startBci, 1);
         }
         this.emitBlock(stream, block);
-        //if (lastBC !== Bytecodes.ILLEGAL) {
-        //  var needsFallthroughPC = !Bytecode.isBlockEnd(lastBC);
-        //  // Check to see if we can get away without going through the switch again.
-        //  if (i < blocks.length - 1 &&
-        //    block.successors.length === 1 &&
-        //    blocks[i + 1].startBci === stream.currentBCI) {
-        //    needsFallthroughPC = false;
-        //  }
-        //  if (needsFallthroughPC) {
-        //    this.emitter.writeLn("bi = " + this.getBlockIndex(stream.currentBCI) + "; break;");
-        //  }
-        //}
         this.emitter.outdent();
       }
       if (emitCompilerAssertions) {
