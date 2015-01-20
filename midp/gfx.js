@@ -339,7 +339,9 @@ var currentlyFocusedTextEditor;
 
     function calcStringWidth(font, str) {
         var emojiLen = 0;
-        var len = withFont(font, MIDP.Context2D, str.replace(emoji.regEx, function() {
+
+        withFont(font, MIDP.Context2D);
+        var len = measureWidth(MIDP.Context2D, str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
         }));
@@ -352,7 +354,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        return withFont(this, MIDP.Context2D, String.fromCharCode(char));
+        withFont(this, MIDP.Context2D);
+        return measureWidth(MIDP.Context2D, String.fromCharCode(char));
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -423,19 +426,24 @@ var currentlyFocusedTextEditor;
         });
     }
 
-    function withFont(font, c, str) {
-        if (c.font != font.css) {
-          c.font = font.css;
-        }
+    function measureWidth(c, str) {
         return c.measureText(str).width | 0;
     }
 
+    function withFont(font, c) {
+        if (c.font != font.css) {
+          c.font = font.css;
+        }
+    }
+
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
+        withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c);
+
         c.textAlign = "left";
         c.textBaseline = "top";
 
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+            var w = measureWidth(c, str);
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -665,7 +673,7 @@ var currentlyFocusedTextEditor;
             withClip(g, c, x, y, function(curX, y) {
                 parseEmojiString(str).forEach(function(part) {
                     if (part.text) {
-                        withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
+                        withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y) {
                             var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
                             withPixelFunc(g, c, function() {
                                 c.fillText(part.text, x, y);
@@ -673,7 +681,7 @@ var currentlyFocusedTextEditor;
                                 // If there are emojis in the string that we need to draw,
                                 // we need to calculate the string width
                                 if (part.emoji) {
-                                    curX += withFont(font, c, part.text)
+                                    curX += measureWidth(c, part.text)
                                 }
                             });
                         });
