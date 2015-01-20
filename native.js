@@ -360,7 +360,7 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
       name: "ClassNewInstanceSynthetic",
       signature: "()Ljava/lang/Object;",
       isStatic: true,
-      classInfo: J2ME.ClassInfo.createFromObject({
+      classInfo: Object.create(J2ME.ClassInfo.prototype, {
         className: {value: className},
         vmc: {value: {}},
         vfc: {value: {}},
@@ -552,7 +552,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
     var syntheticMethod = new MethodInfo({
       name: "ThreadStart0Synthetic",
       signature: "()V",
-      classInfo: J2ME.ClassInfo.createFromObject({
+      classInfo: Object.create(J2ME.ClassInfo.prototype, {
         className: {value: this.klass.classInfo.className},
         vmc: {value: {}},
         vfc: {value: {}},
