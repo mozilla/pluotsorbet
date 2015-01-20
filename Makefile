@@ -15,7 +15,11 @@ build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
 	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js
 
-build/jsc.js: jsc.ts build/j2me.js
+build/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
+	@echo "Building J2ME JSC"
+	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out build/j2me-jsc.js
+
+build/jsc.js: jsc.ts build/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
 	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out build/jsc.js
 

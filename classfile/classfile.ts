@@ -26,6 +26,21 @@ module J2ME {
     ACC_ABSTRACT = 0x0400
   }
 
+  export enum TAGS {
+    CONSTANT_Class = 7,
+    CONSTANT_Fieldref = 9,
+    CONSTANT_Methodref = 10,
+    CONSTANT_InterfaceMethodref = 11,
+    CONSTANT_String = 8,
+    CONSTANT_Integer = 3,
+    CONSTANT_Float = 4,
+    CONSTANT_Long = 5,
+    CONSTANT_Double = 6,
+    CONSTANT_NameAndType = 12,
+    CONSTANT_Utf8 = 1,
+    CONSTANT_Unicode = 2
+  }
+
   export module AccessFlags {
     export function isPublic(flags) {
       return (flags & ACCESS_FLAGS.ACC_PUBLIC) === ACCESS_FLAGS.ACC_PUBLIC;

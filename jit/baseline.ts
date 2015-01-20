@@ -703,7 +703,7 @@ module J2ME {
           return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
-          this.emitPush(Kind.Reference, "$S(" + J2ME.C4.AST.escapeString(entry.bytes) + ")");
+          this.emitPush(Kind.Reference, "$S(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")");
           return;
         default:
           throw "Not done for: " + entry.tag;

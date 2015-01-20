@@ -565,7 +565,6 @@ module J2ME {
     }
 
     pause(reason: string) {
-      yieldCounter.count("pausing " + reason);
       windingWriter && windingWriter.writeLn("pausing");
       unwindCount ++;
       runtimeCounter && runtimeCounter.count("pausing " + reason);

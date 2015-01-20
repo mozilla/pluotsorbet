@@ -20,13 +20,6 @@ var inBrowser = typeof console.info != "undefined";
 declare var putstr;
 declare var printErr;
 
-// declare var print;
-// declare var console;
-// declare var performance;
-// declare var XMLHttpRequest;
-// declare var document;
-// declare var getComputedStyle;
-
 /** @const */ var release: boolean = true;
 /** @const */ var profile: boolean = true;
 
@@ -115,6 +108,18 @@ module J2ME {
 
   export function isIdentifierPart(c) {
     return (c === '$') || (c === '_') || (c === '\\') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || ((c >= '0') && (c <= '9'));
+  }
+
+  export function isIdentifierName(s) {
+    if (!isIdentifierStart(s[0])) {
+      return false;
+    }
+    for (var i = 1; i < s.length; i++) {
+      if (!isIdentifierPart(s[i])) {
+        return false;
+      }
+    }
+    return true;
   }
 
   export enum CharacterCodes {
@@ -641,18 +646,6 @@ module J2ME {
     export function makeForwardingSetter(target: string): (any) => void {
       return <(any) => void> new Function("value", "this[\"" + target + "\"] = value;");
     }
-
-    /**
-     * Attaches a property to the bound function so we can detect when if it
-     * ever gets rebound.
-     * TODO: find out why we need this, maybe remove it.
-     */
-    export function bindSafely(fn: Function, object: Object) {
-      release || Debug.assert (!fn.boundTo && object);
-      var f = fn.bind(object);
-      f.boundTo = object;
-      return f;
-    }
   }
 
   export module StringUtilities {
@@ -703,150 +696,6 @@ module J2ME {
       return str.join(", ");
     }
 
-    export function utf8decode(str: string): Uint8Array {
-      var bytes = new Uint8Array(str.length * 4);
-      var b = 0;
-      for (var i = 0, j = str.length; i < j; i++) {
-        var code = str.charCodeAt(i);
-        if (code <= 0x7f) {
-          bytes[b++] = code;
-          continue;
-        }
-
-        if (0xD800 <= code && code <= 0xDBFF) {
-          var codeLow = str.charCodeAt(i + 1);
-          if (0xDC00 <= codeLow && codeLow <= 0xDFFF) {
-            // convert only when both high and low surrogates are present
-            code = ((code & 0x3FF) << 10) + (codeLow & 0x3FF) + 0x10000;
-            ++i;
-          }
-        }
-
-        if ((code & 0xFFE00000) !== 0) {
-          bytes[b++] = 0xF8 | ((code >>> 24) & 0x03);
-          bytes[b++] = 0x80 | ((code >>> 18) & 0x3F);
-          bytes[b++] = 0x80 | ((code >>> 12) & 0x3F);
-          bytes[b++] = 0x80 | ((code >>> 6) & 0x3F);
-          bytes[b++] = 0x80 | (code & 0x3F);
-        } else if ((code & 0xFFFF0000) !== 0) {
-          bytes[b++] = 0xF0 | ((code >>> 18) & 0x07);
-          bytes[b++] = 0x80 | ((code >>> 12) & 0x3F);
-          bytes[b++] = 0x80 | ((code >>> 6) & 0x3F);
-          bytes[b++] = 0x80 | (code & 0x3F);
-        } else if ((code & 0xFFFFF800) !== 0) {
-          bytes[b++] = 0xE0 | ((code >>> 12) & 0x0F);
-          bytes[b++] = 0x80 | ((code >>> 6) & 0x3F);
-          bytes[b++] = 0x80 | (code & 0x3F);
-        } else {
-          bytes[b++] = 0xC0 | ((code >>> 6) & 0x1F);
-          bytes[b++] = 0x80 | (code & 0x3F);
-        }
-      }
-      return bytes.subarray(0, b);
-    }
-
-    export function utf8encode(bytes: Uint8Array): string {
-      var j = 0, str = "";
-      while (j < bytes.length) {
-        var b1 = bytes[j++] & 0xFF;
-        if (b1 <= 0x7F) {
-          str += String.fromCharCode(b1);
-        } else {
-          var currentPrefix = 0xC0;
-          var validBits = 5;
-          do {
-            var mask = (currentPrefix >> 1) | 0x80;
-            if((b1 & mask) === currentPrefix) break;
-            currentPrefix = (currentPrefix >> 1) | 0x80;
-            --validBits;
-          } while (validBits >= 0);
-
-          if (validBits <= 0) {
-            // Invalid UTF8 character -- copying as is
-            str += String.fromCharCode(b1);
-            continue;
-          }
-          var code = (b1 & ((1 << validBits) - 1));
-          var invalid = false;
-          for (var i = 5; i >= validBits; --i) {
-            var bi = bytes[j++];
-            if ((bi & 0xC0) != 0x80) {
-              // Invalid UTF8 character sequence
-              invalid = true;
-              break;
-            }
-            code = (code << 6) | (bi & 0x3F);
-          }
-          if (invalid) {
-            // Copying invalid sequence as is
-            for (var k = j - (7 - i); k < j; ++k) {
-              str += String.fromCharCode(bytes[k] & 255);
-            }
-            continue;
-          }
-          if (code >= 0x10000) {
-            str += String.fromCharCode((((code - 0x10000) >> 10) & 0x3FF) |
-              0xD800, (code & 0x3FF) | 0xDC00);
-          } else {
-            str += String.fromCharCode(code);
-          }
-        }
-      }
-      return str;
-    }
-
-    // https://gist.github.com/958841
-    export function base64ArrayBuffer(arrayBuffer: ArrayBuffer) {
-      var base64 = '';
-      var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
-      var bytes = new Uint8Array(arrayBuffer);
-      var byteLength = bytes.byteLength;
-      var byteRemainder = byteLength % 3;
-      var mainLength = byteLength - byteRemainder;
-
-      var a, b, c, d;
-      var chunk;
-
-      // Main loop deals with bytes in chunks of 3
-      for (var i = 0; i < mainLength; i = i + 3) {
-        // Combine the three bytes into a single integer
-        chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
-
-        // Use bitmasks to extract 6-bit segments from the triplet
-        a = (chunk & 16515072) >> 18; // 16515072 = (2^6 - 1) << 18
-        b = (chunk & 258048) >> 12; // 258048 = (2^6 - 1) << 12
-        c = (chunk & 4032) >> 6; // 4032 = (2^6 - 1) << 6
-        d = chunk & 63; // 63 = 2^6 - 1
-
-        // Convert the raw binary segments to the appropriate ASCII encoding
-        base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d];
-      }
-
-      // Deal with the remaining bytes and padding
-      if (byteRemainder == 1) {
-        chunk = bytes[mainLength];
-
-        a = (chunk & 252) >> 2; // 252 = (2^6 - 1) << 2
-
-        // Set the 4 least significant bits to zero
-        b = (chunk & 3) << 4; // 3 = 2^2 - 1
-
-        base64 += encodings[a] + encodings[b] + '==';
-      } else if (byteRemainder == 2) {
-        chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1];
-
-        a = (chunk & 64512) >> 10; // 64512 = (2^6 - 1) << 10
-        b = (chunk & 1008) >> 4; // 1008 = (2^6 - 1) << 4
-
-        // Set the 2 least significant bits to zero
-        c = (chunk & 15) << 2; // 15 = 2^4 - 1
-
-        base64 += encodings[a] + encodings[b] + encodings[c] + '=';
-      }
-      return base64;
-    }
-
     export function escapeString(str: string) {
       if (str !== undefined) {
         str = str.replace(/[^\w$]/gi,"$"); /* No dots, colons, dashes and /s */
@@ -855,6 +704,139 @@ module J2ME {
         }
       }
       return str;
+    }
+
+    export function quote(s: string): string {
+      return "\"" + s + "\"";
+    }
+
+    var json = false;
+    var escapeless = false;
+    var hexadecimal = false;
+    var renumber = false;
+    var quotes = "double";
+
+    function stringToArray(str) {
+      var length = str.length,
+        result = [],
+        i;
+      for (i = 0; i < length; ++i) {
+        result[i] = str.charAt(i);
+      }
+      return result;
+    }
+
+    function escapeAllowedCharacter(ch, next) {
+      var code = ch.charCodeAt(0), hex = code.toString(16), result = '\\';
+
+      switch (ch) {
+        case '\b':
+          result += 'b';
+          break;
+        case '\f':
+          result += 'f';
+          break;
+        case '\t':
+          result += 't';
+          break;
+        default:
+          if (json || code > 0xff) {
+            result += 'u' + '0000'.slice(hex.length) + hex;
+          } else if (ch === '\u0000' && '0123456789'.indexOf(next) < 0) {
+            result += '0';
+          } else if (ch === '\x0B') { // '\v'
+            result += 'x0B';
+          } else {
+            result += 'x' + '00'.slice(hex.length) + hex;
+          }
+          break;
+      }
+
+      return result;
+    }
+
+    function escapeDisallowedCharacter(ch) {
+      var result = '\\';
+      switch (ch) {
+        case '\\':
+          result += '\\';
+          break;
+        case '\n':
+          result += 'n';
+          break;
+        case '\r':
+          result += 'r';
+          break;
+        case '\u2028':
+          result += 'u2028';
+          break;
+        case '\u2029':
+          result += 'u2029';
+          break;
+        default:
+          throw new Error('Incorrectly classified character');
+      }
+
+      return result;
+    }
+
+    var escapeStringCacheCount = 0;
+    var escapeStringCache = Object.create(null);
+
+    export function escapeStringLiteral(str) {
+      var result, i, len, ch, singleQuotes = 0, doubleQuotes = 0, single, original = str;
+      result = escapeStringCache[original];
+      if (result) {
+        return result;
+      }
+      if (escapeStringCacheCount === 1024) {
+        escapeStringCache = Object.create(null);
+        escapeStringCacheCount = 0;
+      }
+      result = '';
+
+      if (typeof str[0] === 'undefined') {
+        str = stringToArray(str);
+      }
+
+      for (i = 0, len = str.length; i < len; ++i) {
+        ch = str[i];
+        if (ch === '\'') {
+          ++singleQuotes;
+        } else if (ch === '"') {
+          ++doubleQuotes;
+        } else if (ch === '/' && json) {
+          result += '\\';
+        } else if ('\\\n\r\u2028\u2029'.indexOf(ch) >= 0) {
+          result += escapeDisallowedCharacter(ch);
+          continue;
+        } else if ((json && ch < ' ') || !(json || escapeless || (ch >= ' ' && ch <= '~'))) {
+          result += escapeAllowedCharacter(ch, str[i + 1]);
+          continue;
+        }
+        result += ch;
+      }
+
+      single = !(quotes === 'double' || (quotes === 'auto' && doubleQuotes < singleQuotes));
+      str = result;
+      result = single ? '\'' : '"';
+
+      if (typeof str[0] === 'undefined') {
+        str = stringToArray(str);
+      }
+
+      for (i = 0, len = str.length; i < len; ++i) {
+        ch = str[i];
+        if ((ch === '\'' && single) || (ch === '"' && !single)) {
+          result += '\\';
+        }
+        result += ch;
+      }
+
+      result += (single ? '\'' : '"');
+      escapeStringCache[original] = result;
+      escapeStringCacheCount ++;
+      return result;
     }
 
     /**
@@ -986,139 +968,9 @@ module J2ME {
         _concat5array[4] = s4;
         return _concat5array.join('');
     }
-
-    export function concat6(s0: any, s1: any, s2: any, s3: any, s4: any,
-                            s5: any) {
-        _concat6array[0] = s0;
-        _concat6array[1] = s1;
-        _concat6array[2] = s2;
-        _concat6array[3] = s3;
-        _concat6array[4] = s4;
-        _concat6array[5] = s5;
-        return _concat6array.join('');
-    }
-
-    export function concat7(s0: any, s1: any, s2: any, s3: any, s4: any,
-                            s5: any, s6: any) {
-        _concat7array[0] = s0;
-        _concat7array[1] = s1;
-        _concat7array[2] = s2;
-        _concat7array[3] = s3;
-        _concat7array[4] = s4;
-        _concat7array[5] = s5;
-        _concat7array[6] = s6;
-        return _concat7array.join('');
-    }
-
-    export function concat8(s0: any, s1: any, s2: any, s3: any, s4: any,
-                            s5: any, s6: any, s7: any) {
-        _concat8array[0] = s0;
-        _concat8array[1] = s1;
-        _concat8array[2] = s2;
-        _concat8array[3] = s3;
-        _concat8array[4] = s4;
-        _concat8array[5] = s5;
-        _concat8array[6] = s6;
-        _concat8array[7] = s7;
-        return _concat8array.join('');
-    }
-
-    export function concat9(s0: any, s1: any, s2: any, s3: any, s4: any,
-                            s5: any, s6: any, s7: any, s8: any) {
-        _concat9array[0] = s0;
-        _concat9array[1] = s1;
-        _concat9array[2] = s2;
-        _concat9array[3] = s3;
-        _concat9array[4] = s4;
-        _concat9array[5] = s5;
-        _concat9array[6] = s6;
-        _concat9array[7] = s7;
-        _concat9array[8] = s8;
-        return _concat9array.join('');
-    }
   }
 
   export module HashUtilities {
-    var _md5R = new Uint8Array([
-      7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-      5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
-      4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-      6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21]);
-
-    var _md5K = new Int32Array([
-      -680876936, -389564586, 606105819, -1044525330, -176418897, 1200080426,
-      -1473231341, -45705983, 1770035416, -1958414417, -42063, -1990404162,
-      1804603682, -40341101, -1502002290, 1236535329, -165796510, -1069501632,
-      643717713, -373897302, -701558691, 38016083, -660478335, -405537848,
-      568446438, -1019803690, -187363961, 1163531501, -1444681467, -51403784,
-      1735328473, -1926607734, -378558, -2022574463, 1839030562, -35309556,
-      -1530992060, 1272893353, -155497632, -1094730640, 681279174, -358537222,
-      -722521979, 76029189, -640364487, -421815835, 530742520, -995338651,
-      -198630844, 1126891415, -1416354905, -57434055, 1700485571, -1894986606,
-      -1051523, -2054922799, 1873313359, -30611744, -1560198380, 1309151649,
-      -145523070, -1120210379, 718787259, -343485551]);
-
-    export function hashBytesTo32BitsMD5(data: Uint8Array, offset: number, length: number): number {
-      var r = _md5R;
-      var k = _md5K;
-      var h0 = 1732584193, h1 = -271733879, h2 = -1732584194, h3 = 271733878;
-      // pre-processing
-      var paddedLength = (length + 72) & ~63; // data + 9 extra bytes
-      var padded = new Uint8Array(paddedLength);
-      var i, j, n;
-      for (i = 0; i < length; ++i) {
-        padded[i] = data[offset++];
-      }
-      padded[i++] = 0x80;
-      n = paddedLength - 8;
-      while (i < n) {
-        padded[i++] = 0;
-      }
-      padded[i++] = (length << 3) & 0xFF;
-      padded[i++] = (length >> 5) & 0xFF;
-      padded[i++] = (length >> 13) & 0xFF;
-      padded[i++] = (length >> 21) & 0xFF;
-      padded[i++] = (length >>> 29) & 0xFF;
-      padded[i++] = 0;
-      padded[i++] = 0;
-      padded[i++] = 0;
-      // chunking
-      // TODO ArrayBuffer ?
-      var w = new Int32Array(16);
-      for (i = 0; i < paddedLength;) {
-        for (j = 0; j < 16; ++j, i += 4) {
-          w[j] = (padded[i] | (padded[i + 1] << 8) |
-            (padded[i + 2] << 16) | (padded[i + 3] << 24));
-        }
-        var a = h0, b = h1, c = h2, d = h3, f, g;
-        for (j = 0; j < 64; ++j) {
-          if (j < 16) {
-            f = (b & c) | ((~b) & d);
-            g = j;
-          } else if (j < 32) {
-            f = (d & b) | ((~d) & c);
-            g = (5 * j + 1) & 15;
-          } else if (j < 48) {
-            f = b ^ c ^ d;
-            g = (3 * j + 5) & 15;
-          } else {
-            f = c ^ (b | (~d));
-            g = (7 * j) & 15;
-          }
-          var tmp = d, rotateArg = (a + f + k[j] + w[g]) | 0, rotate = r[j];
-          d = c;
-          c = b;
-          b = (b + ((rotateArg << rotate) | (rotateArg >>> (32 - rotate)))) | 0;
-          a = tmp;
-        }
-        h0 = (h0 + a) | 0;
-        h1 = (h1 + b) | 0;
-        h2 = (h2 + c) | 0;
-        h3 = (h3 + d) | 0;
-      }
-      return h0;
-    }
-
     export function hashBytesTo32BitsAdler(data: Uint8Array, offset: number, length: number): number {
       var a = 1;
       var b = 0;
@@ -2088,86 +1940,6 @@ module J2ME {
       return function () {
         return new type(length);
       }
-    }
-  }
-
-  export class ColorStyle {
-    static TabToolbar = "#252c33";
-    static Toolbars = "#343c45";
-    static HighlightBlue = "#1d4f73";
-    static LightText = "#f5f7fa";
-    static ForegroundText = "#b6babf";
-    static Black = "#000000";
-    static VeryDark = "#14171a";
-    static Dark = "#181d20";
-    static Light = "#a9bacb";
-    static Grey = "#8fa1b2";
-    static DarkGrey = "#5f7387";
-    static Blue = "#46afe3";
-    static Purple = "#6b7abb";
-    static Pink = "#df80ff";
-    static Red = "#eb5368";
-    static Orange = "#d96629";
-    static LightOrange = "#d99b28";
-    static Green = "#70bf53";
-    static BlueGrey = "#5e88b0";
-
-    private static _randomStyleCache;
-    private static _nextStyle = 0;
-
-    static randomStyle() {
-      if (!ColorStyle._randomStyleCache) {
-        ColorStyle._randomStyleCache = [
-          "#ff5e3a",
-          "#ff9500",
-          "#ffdb4c",
-          "#87fc70",
-          "#52edc7",
-          "#1ad6fd",
-          "#c644fc",
-          "#ef4db6",
-          "#4a4a4a",
-          "#dbddde",
-          "#ff3b30",
-          "#ff9500",
-          "#ffcc00",
-          "#4cd964",
-          "#34aadc",
-          "#007aff",
-          "#5856d6",
-          "#ff2d55",
-          "#8e8e93",
-          "#c7c7cc",
-          "#5ad427",
-          "#c86edf",
-          "#d1eefc",
-          "#e0f8d8",
-          "#fb2b69",
-          "#f7f7f7",
-          "#1d77ef",
-          "#d6cec3",
-          "#55efcb",
-          "#ff4981",
-          "#ffd3e0",
-          "#f7f7f7",
-          "#ff1300",
-          "#1f1f21",
-          "#bdbec2",
-          "#ff3a2d"
-        ];
-      }
-      return ColorStyle._randomStyleCache[(ColorStyle._nextStyle ++) % ColorStyle._randomStyleCache.length];
-    }
-
-    static contrastStyle(rgb: string): string {
-      // http://www.w3.org/TR/AERT#color-contrast
-      var c = parseInt(rgb.substr(1), 16);
-      var yiq = (((c >> 16) * 299) + (((c >> 8) & 0xff) * 587) + ((c & 0xff) * 114)) / 1000;
-      return (yiq >= 128) ? '#000000' : '#ffffff';
-    }
-
-    static reset() {
-      ColorStyle._nextStyle = 0;
     }
   }
 

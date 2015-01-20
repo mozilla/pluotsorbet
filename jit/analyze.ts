@@ -206,7 +206,7 @@ module J2ME {
       return yieldMap[methodInfo.implKey];
     }
     if (methodInfo.isSynchronized) {
-      yieldCounter.count("Method: " + methodInfo.implKey + " yields because it is synchronized.");
+      yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because it is synchronized.");
       yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[YieldReason.Synchronized]);
       return yieldMap[methodInfo.implKey] = YieldReason.Synchronized;
     }
@@ -231,12 +231,12 @@ module J2ME {
           case Bytecodes.MONITORENTER:
           case Bytecodes.MONITOREXIT:
             result = YieldReason.MonitorEnterExit;
-            yieldCounter.count("Method: " + methodInfo.implKey + " yields because it has monitor enter/exit.");
+            yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because it has monitor enter/exit.");
             break;
           case Bytecodes.INVOKEINTERFACE:
             result = YieldReason.Virtual;
             if (result) {
-              yieldCounter.count("Method: " + methodInfo.implKey + " yields because it has an invoke interface.");
+              yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because it has an invoke interface.");
             }
             break;
           case Bytecodes.INVOKEVIRTUAL:
@@ -268,15 +268,15 @@ module J2ME {
                 }
               }
               if (result !== YieldReason.None) {
-                yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " is not statically bound.");
+                yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " is not statically bound.");
                 addDependency(callee, methodInfo, YieldReason.Virtual);
               }
               break;
             }
             result = canYield(callee);
             if (result) {
-              yieldCounter.count("Callee: " + callee.implKey + " yields.");
-              yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " can yield.");
+              yieldCounter && yieldCounter.count("Callee: " + callee.implKey + " yields.");
+              yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " can yield.");
               addDependency(callee, methodInfo, YieldReason.Yield);
             }
             break;

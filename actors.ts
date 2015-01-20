@@ -8,6 +8,28 @@ module J2ME {
 
   import BlockMap = Bytecode.BlockMap;
 
+  export interface ConstantPoolEntry {
+    tag: TAGS;
+    name_index: number;
+    bytes: string;
+    class_index: number;
+    name_and_type_index: number;
+    signature_index: number;
+    string_index: number;
+    integer: number;
+    float: number;
+    double: number;
+    highBits: number;
+    lowBits: number;
+  }
+
+  export interface ExceptionHandler {
+    start_pc: number;
+    end_pc: number;
+    handler_pc: number;
+    catch_type: number;
+  }
+
   export class SourceLocation {
     constructor(public className: string, public sourceFile: string, public lineNumber: number) {
       // ...

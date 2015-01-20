@@ -513,9 +513,6 @@ module J2ME {
     }
 
     private execute() {
-      if (Context._startTime === 0) {
-        Context._startTime = performance.now();
-      }
       var start = performance.now();
       this.setAsCurrentContext();
       do {
