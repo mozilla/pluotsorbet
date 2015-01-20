@@ -270,13 +270,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
----
-
-/*--------------------------------------------------
-* ImmutableImageFromByteArray.java
-*
-* Copyright John W. Muchow   http://www.CoreJ2ME.com
-* You may use/modify for any non-commercial purpose
-*-------------------------------------------------*/
-// Source: http://www.java2s.com/Code/Java/J2ME/ImmutableImageFromByteArray.htm
