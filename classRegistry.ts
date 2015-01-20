@@ -44,10 +44,10 @@ module J2ME {
     initializeBuiltinClasses() {
       // These classes are guaranteed to not have a static initializer.
       enterTimeline("initializeBuiltinClasses");
-      this.java_lang_Object = this.loadClass("java/lang/Object");
-      this.java_lang_Class = this.loadClass("java/lang/Class");
-      this.java_lang_String = this.loadClass("java/lang/String");
-      this.java_lang_Thread = this.loadClass("java/lang/Thread");
+      this.java_lang_Object = this.loadAndLinkClass("java/lang/Object");
+      this.java_lang_Class = this.loadAndLinkClass("java/lang/Class");
+      this.java_lang_String = this.loadAndLinkClass("java/lang/String");
+      this.java_lang_Thread = this.loadAndLinkClass("java/lang/Thread");
 
       this.preInitializedClasses.push(this.java_lang_Object);
       this.preInitializedClasses.push(this.java_lang_Class);
@@ -55,19 +55,23 @@ module J2ME {
       this.preInitializedClasses.push(this.java_lang_Thread);
 
       /**
-       * We force these additinoal frequently used classes to be initialized so that
-       * we can generate more optimal AOT code that skips the class initialization
-       * check.
+       * Force these frequently used classes to be initialized eagerly. We can
+       * skip the class initialization check for them. This is only possible
+       * because they don't have any static state.
        */
       var classNames = [
         "java/lang/Integer",
         "java/lang/Character",
         "java/lang/Math",
-        "java/util/HashtableEntry"
+        "java/util/HashtableEntry",
+        "java/lang/StringBuffer",
+        "java/util/Vector",
+        "java/io/IOException",
+        "java/lang/IllegalArgumentException"
       ];
 
       for (var i = 0; i < classNames.length; i++) {
-        this.preInitializedClasses.push(this.loadClass(classNames[i]));
+        this.preInitializedClasses.push(this.loadAndLinkClass(classNames[i]));
       }
 
       // Link primitive values and primitive arrays.
@@ -164,24 +168,30 @@ module J2ME {
     }
 
     loadClassFile(fileName: string): ClassInfo {
+      loadWriter && loadWriter.enter("> Loading Class File: " + fileName);
       var bytes = this.loadFile(fileName);
-      if (!bytes)
+      if (!bytes) {
+        loadWriter && loadWriter.leave("< ClassNotFoundException");
         throw new (ClassNotFoundException)(fileName);
+      }
       var self = this;
       var classInfo = this.loadClassBytes(bytes);
-      if (classInfo.superClassName)
+      if (classInfo.superClassName) {
         classInfo.superClass = this.loadClass(classInfo.superClassName);
+        classInfo.superClass.subClasses.push(classInfo);
+      }
       var classes = classInfo.classes;
       classes.forEach(function (c, n) {
         classes[n] = self.loadClass(c);
       });
       classInfo.complete();
-      if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
-        J2ME.linkKlass(classInfo);
-      }
+      loadWriter && loadWriter.leave("<");
       return classInfo;
     }
 
+    /**
+     * Used to test loading of all class files.
+     */
     loadAllClassFiles() {
       var jarFiles = this.jarFiles;
       for (var k in jarFiles) {
@@ -196,9 +206,16 @@ module J2ME {
 
     loadClass(className: string): ClassInfo {
       var classInfo = this.classes[className];
-      if (classInfo)
+      if (classInfo) {
         return classInfo;
+      }
       return this.loadClassFile(className + ".class");
+    }
+
+    loadAndLinkClass(className: string): ClassInfo {
+      var classInfo = this.loadClass(className);
+      linkKlass(classInfo);
+      return classInfo;
     }
 
     getEntryPoint(classInfo: ClassInfo): MethodInfo {
@@ -206,8 +223,8 @@ module J2ME {
       for (var i=0; i<methods.length; i++) {
         var method = methods[i];
         if (method.isPublic && method.isStatic && !method.isNative &&
-        method.name === "main" &&
-        method.signature === "([Ljava/lang/String;)V") {
+            method.name === "main" &&
+            method.signature === "([Ljava/lang/String;)V") {
           return method;
         }
       }

@@ -15,6 +15,8 @@ module J2ME {
       ctx.setAsCurrentContext();
 
       var isolateClassInfo = CLASSES.getClass("com/sun/cldc/isolate/Isolate");
+
+      linkKlass(isolateClassInfo);
       var isolate: Isolate = <Isolate>newObject(isolateClassInfo.klass);
 
       isolate.id = util.id();

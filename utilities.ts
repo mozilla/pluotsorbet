@@ -1364,7 +1364,7 @@ module J2ME {
     private _outNoNewline: (s: string) => void;
 
     constructor(suppressOutput: boolean = false, out?) {
-      this._tab = "  ";
+      this._tab = " ";
       this._padding = "";
       this._suppressOutput = suppressOutput;
       this._out = out || IndentingWriter.stdout;

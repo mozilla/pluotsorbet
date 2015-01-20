@@ -706,7 +706,7 @@ module J2ME.Bytecode {
    * Determines if a given opcode denotes an instruction that ends a basic block and does not let control flow fall
    * through to its lexical successor.
    */
-  function isStop(opcode: Bytecodes): boolean {
+  export function isStop(opcode: Bytecodes): boolean {
     return (flags[opcode & 0xff] & Flags.STOP) != 0;
   }
 
@@ -729,7 +729,7 @@ module J2ME.Bytecode {
   /**
    * Determines if a given opcode is an instruction that delimits a basic block.
    */
-  function isBlockEnd(opcode: Bytecodes): boolean {
+  export function isBlockEnd(opcode: Bytecodes): boolean {
     return (flags[opcode & 0xff] & (Flags.STOP | Flags.FALL_THROUGH)) != 0;
   }
 
@@ -1135,6 +1135,14 @@ module J2ME.Bytecode {
         this._opcode = Bytecodes.END;
         this._nextBCI = this._currentBCI;
       }
+    }
+
+    public readTableSwitch(): BytecodeTableSwitch {
+      return new BytecodeTableSwitch(this._code, this._currentBCI);
+    }
+
+    public readLookupSwitch(): BytecodeLookupSwitch {
+      return new BytecodeLookupSwitch(this._code, this._currentBCI);
     }
   }
 }

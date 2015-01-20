@@ -10,9 +10,10 @@
   <link rel="stylesheet" type="text/css" href="style/drawer.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+  <script type="text/javascript" src="midlet.js" defer></script>
   <!-- Uncomment the line below to enable the profiler. -->
   <!--<script type="text/javascript" src="build/shumway.js" defer></script>-->
-  <script type="text/javascript" src="midlet.js" defer></script>
+  <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
   <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
@@ -33,8 +34,8 @@
   <script type="text/javascript" src="libs/rusha.js" defer></script>
   <script type="text/javascript" src="libs/forge/util.js" defer></script>
   <script type="text/javascript" src="libs/forge/md5.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn2.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn/jsbn.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn/jsbn2.js" defer></script>
   <script type="text/javascript" src="libs/contacts.js" defer></script>
   <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
   <script type="text/javascript" src="libs/pipe.js" defer></script>
@@ -56,32 +57,29 @@
   <script type="text/javascript" src="midp/device_control.js" defer></script>
   <script type="text/javascript" src="game-ui.js" defer></script>
   <script type="text/javascript" src="desktop-ui.js" defer></script>
-  <script type="text/javascript" src="main.js" defer></script>
 
   <!-- run make aot to generate these -->
   <script type="text/javascript" src="build/classes.jar.js" defer></script>
-  <script type="text/javascript" src="build/program.jar.js" defer></script>
+  <!--<script type="text/javascript" src="build/program.jar.js" defer></script>-->
+  <script type="text/javascript" src="build/tests.jar.js" defer></script>
+  <script type="text/javascript" src="main.js" defer></script>
 </head>
 
 <body>
-  <div>
-    <div id="traceTerminalContainer">
-      <pre id="console"></pre>
-      <canvas id="traceTerminal" tabindex='2'></canvas>
-    </div>
-    <div>
-      <div id="profilerContainer" class="collapsed">
-        <div id="profilerToolbar" class="toolbarBox">
-          <div class="toolbarLabel">Profiler <span id="profilerMessage" class="toolbarMessage">6 Seconds</span></div>
-          <div id="profilerButtons">
-            <div id="profilerStartStop">Start</div>
-          </div>
+  <div id="pageContainer">
+    <pre id="consoleContainer">
+    </pre>
+    <div id="profilerContainer">
+      <div id="profilerToolbar">
+        <div class="toolbarLabel">Profiler <span id="profilerMessage" class="toolbarMessage">6 Seconds</span></div>
+        <div id="profilerButtons">
+          <div id="profilerStartStop">Start</div>
         </div>
-        <div id="profiler">
-          <div id="profileList">
-          </div>
-          <div id="profilePanel">
-          </div>
+      </div>
+      <div id="profiler">
+        <div id="profileList">
+        </div>
+        <div id="profilePanel">
         </div>
       </div>
     </div>
@@ -105,19 +103,23 @@
       </select>
       <input id="console-filter-input" type="text" placeholder="Filter Console Output" value="">
       <button id="console-clear">Clear console</button>
-      <label><input type="checkbox" id="auto-scroll" checked>Auto-Scroll At Bottom</label>
+      <button id="console-save">Save console</button>
+      <label><input type="checkbox" id="perfWriter">Perf</label>
     </section>
     <section>
       <button id="deleteDatabase">Delete Database</button>
       <button id="exportstorage">Export storage</button>
       <div>Import storage:</div>
-      <input type="file" id="importstorage">
+      <input type="file" id="importstoragefile">
+      <input type="text" id="importstorageurl" placeholder="URL to FS backup">
+      <button id="importstorage">Import</button>
       <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
       <button id="profile">Profile: OFF</button>
       <button id="clearCounters">Clear Counters</button>
       <button id="dumpCounters">Dump Counters</button>
-      <button id="dumpCountersTime">Dump Counters Time</button>
+      <button id="sampleCounters1">One sample for 1s</button>
+      <button id="sampleCounters2">One sample for 100ms (2s)</button>
       <button id="start">Start</button>
       <button id="loadAllClasses">Load All Classes</button>
     </section>

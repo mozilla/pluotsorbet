@@ -348,7 +348,8 @@ Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = functi
             throw $.newClassNotFoundException("'" + e.message + "' not found.");
         throw e;
     }
-    var classObject = classInfo.getClassObject($.ctx);
+    J2ME.linkKlass(classInfo);
+    var classObject = classInfo.getClassObject();
     J2ME.Debug.assert(!U, "Unwinding isn't currently supported here.");
     return classObject;
 };
@@ -359,11 +360,11 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
       name: "ClassNewInstanceSynthetic",
       signature: "()Ljava/lang/Object;",
       isStatic: true,
-      classInfo: {
-        className: className,
-        vmc: {},
-        vfc: {},
-        constant_pool: [
+      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+        className: {value: className},
+        vmc: {value: {}},
+        vfc: {value: {}},
+        constant_pool: {value: [
           null,
           { tag: TAGS.CONSTANT_Class, name_index: 2 },
           { bytes: className },
@@ -371,8 +372,8 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
           { name_index: 5, signature_index: 6 },
           { bytes: "<init>" },
           { bytes: "()V" },
-        ]
-      },
+        ]}
+      }),
       code: new Uint8Array([
         0xbb, 0x00, 0x01, // new <idx=1>
         0x59,             // dup
@@ -551,11 +552,11 @@ Native["java/lang/Thread.start0.()V"] = function() {
     var syntheticMethod = new MethodInfo({
       name: "ThreadStart0Synthetic",
       signature: "()V",
-      classInfo: {
-        className: this.klass.classInfo.className,
-        vmc: {},
-        vfc: {},
-        constant_pool: [
+      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+        className: {value: this.klass.classInfo.className},
+        vmc: {value: {}},
+        vfc: {value: {}},
+        constant_pool: {value: [
           null,
           { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
           { tag: TAGS.CONSTANT_Class, name_index: 3 },
@@ -567,8 +568,8 @@ Native["java/lang/Thread.start0.()V"] = function() {
           { name_index: 9, signature_index: 10 },
           { bytes: "internalExit" },
           { bytes: "()V" },
-        ],
-      },
+        ]},
+      }),
       code: new Uint8Array([
         0x2a,             // aload_0
         0x59,             // dup
@@ -1034,3 +1035,20 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
     }));
 };
 
+function UnimplementedNative(signature, returnValue) {
+    var doNotWarn;
+
+    if (typeof returnValue === "function") {
+      doNotWarn = returnValue;
+    } else {
+      doNotWarn = function() { return returnValue };
+    }
+
+    var warnOnce = function() {
+        console.warn(signature + " not implemented");
+        warnOnce = doNotWarn;
+        return doNotWarn();
+    };
+
+    return function() { return warnOnce() };
+}

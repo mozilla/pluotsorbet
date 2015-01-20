@@ -504,7 +504,7 @@ module J2ME.C4.Backend {
   function compileState(state: State, cx: Context): AST.Node [] {
     var local = compileStateValues(state.local, cx);
     var stack = compileStateValues(state.stack, cx);
-    return [new AST.Literal(state.bci), local, stack];
+    return [new AST.Literal(state.bci), new AST.Literal(state.nextBCI), local, stack];
   }
 
   IR.JVMInvoke.prototype.compile = function (cx: Context): AST.Node {

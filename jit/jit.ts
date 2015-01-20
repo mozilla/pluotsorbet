@@ -15,5 +15,8 @@ module J2ME {
     constructor(public message: string) {
       // ...
     }
+    toString(): string {
+      return "CompilerBailout: " + this.message;
+    }
   }
 }

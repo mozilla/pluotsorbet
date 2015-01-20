@@ -80,6 +80,7 @@ module J2ME {
     isPublic: boolean;
     isStatic: boolean;
     isSynchronized: boolean;
+    isAbstract: boolean;
     exception_table: ExceptionHandler [];
     max_locals: number;
     max_stack: number;
@@ -103,7 +104,22 @@ module J2ME {
     /**
      * Approximate number of bytecodes executed in this method.
      */
-    opCount: number;
+    bytecodeCount: number;
+
+    /**
+     * Approximate number of times this method was called.
+     */
+    callCount: number;
+
+    /**
+     * Approximate number of times this method was called.
+     */
+    interpreterCallCount: number;
+
+    /**
+     * Number of times this method's counters were reset.
+     */
+    resetCount: number;
 
     /**
      * Whether this method's bytecode has been optimized for quicker interpretation.
@@ -146,6 +162,7 @@ module J2ME {
       this.isPublic = opts.isPublic;
       this.isStatic = opts.isStatic;
       this.isSynchronized = opts.isSynchronized;
+      this.isAbstract = opts.isAbstract;
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
@@ -156,7 +173,13 @@ module J2ME {
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
       this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
-      this.opCount = 0;
+
+
+      this.callCount = 0;
+      this.resetCount = 0;
+      this.interpreterCallCount = 0;
+      this.bytecodeCount = 0;
+
       this.isOptimized = false;
     }
 
@@ -192,7 +215,9 @@ module J2ME {
     interfaces: ClassInfo [];
     fields: FieldInfo [];
     methods: MethodInfo [];
+    staticInitializer: MethodInfo;
     classes: any [];
+    subClasses: ClassInfo [];
     constant_pool: ConstantPoolEntry [];
     isArrayClass: boolean;
     elementClass: ClassInfo;
@@ -213,6 +238,7 @@ module J2ME {
       this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
       this.access_flags = classImage.access_flags;
       this.constant_pool = cp;
+      this.subClasses = [];
       // Cache for virtual methods and fields
       this.vmc = {};
       this.vfc = {};
@@ -245,7 +271,7 @@ module J2ME {
 
       for (var i = 0; i < classImage.methods.length; i++) {
         var m = classImage.methods[i];
-        this.methods.push(new MethodInfo({
+        var methodInfo = new MethodInfo({
           name: cp[m.name_index].bytes,
           signature: cp[m.signature_index].bytes,
           classInfo: self,
@@ -253,8 +279,13 @@ module J2ME {
           isNative: AccessFlags.isNative(m.access_flags),
           isPublic: AccessFlags.isPublic(m.access_flags),
           isStatic: AccessFlags.isStatic(m.access_flags),
-          isSynchronized: AccessFlags.isSynchronized(m.access_flags)
-        }));
+          isSynchronized: AccessFlags.isSynchronized(m.access_flags),
+          isAbstract: AccessFlags.isAbstract(m.access_flags)
+        });
+        this.methods.push(methodInfo);
+        if (methodInfo.name === "<clinit>") {
+          this.staticInitializer = methodInfo;
+        }
       }
       leaveTimeline("methods");
 
@@ -362,8 +393,8 @@ module J2ME {
      * java.lang.Class object for this class info. This is a not where static properties
      * are stored for this class.
      */
-    getClassObject(ctx: Context): java.lang.Class {
-      return getRuntimeKlass(ctx.runtime, this.klass).classObject;
+    getClassObject(): java.lang.Class {
+      return getRuntimeKlass($, this.klass).classObject;
     }
 
     /**
@@ -388,6 +419,61 @@ module J2ME {
 
     toString() {
       return "[class " + this.className + "]";
+    }
+
+    /**
+     * Resolves a constant pool reference.
+     */
+    resolve(index: number, isStatic: boolean) {
+      var cp = this.constant_pool;
+      var constant: any = cp[index];
+      if (!constant.tag)
+        return constant;
+      switch (constant.tag) {
+        case 3: // TAGS.CONSTANT_Integer
+          constant = constant.integer;
+          break;
+        case 4: // TAGS.CONSTANT_Float
+          constant = constant.float;
+          break;
+        case 8: // TAGS.CONSTANT_String
+          constant = $.newStringConstant(cp[constant.string_index].bytes);
+          break;
+        case 5: // TAGS.CONSTANT_Long
+          constant = Long.fromBits(constant.lowBits, constant.highBits);
+          break;
+        case 6: // TAGS.CONSTANT_Double
+          constant = constant.double;
+          break;
+        case 7: // TAGS.CONSTANT_Class
+          constant = CLASSES.getClass(cp[constant.name_index].bytes);
+          break;
+        case 9: // TAGS.CONSTANT_Fieldref
+          var classInfo = this.resolve(constant.class_index, isStatic);
+          var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
+          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+          constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
+          if (!constant) {
+            throw $.newRuntimeException(
+              classInfo.className + "." + fieldName + "." + signature + " not found");
+          }
+          break;
+        case 10: // TAGS.CONSTANT_Methodref
+        case 11: // TAGS.CONSTANT_InterfaceMethodref
+          var classInfo = this.resolve(constant.class_index, isStatic);
+          var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
+          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+          constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
+          if (!constant) {
+            constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
+            throw $.newRuntimeException(
+              classInfo.className + "." + methodName + "." + signature + " not found");
+          }
+          break;
+        default:
+          throw new Error("not support constant type");
+      }
+      return cp[index] = constant;
     }
   }
 

@@ -22,7 +22,7 @@ var gfxTests = [
   { name: "gfx/AlertTest", maxDifferent: 1942 },
   { name: "gfx/CanvasTest", maxDifferent: 0 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
-  { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
+  { name: "gfx/ImageRenderingTest", maxDifferent: 0 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
   { name: "gfx/DrawAndFillRoundRectTest", maxDifferent: 2000 },
   { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
@@ -58,13 +58,13 @@ var gfxTests = [
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
   { name: "gfx/RectAfterText", maxDifferent: 637 },
-  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 936 },
-  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
-  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
+  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 1060 },
+  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 1060 },
+  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 1060 },
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
   { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferent: 949 },
+  { name: "gfx/TextEditorGfxTest", maxDifferent: 953 },
 ];
 
 var expectedUnitTestResults = [

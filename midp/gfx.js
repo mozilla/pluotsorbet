@@ -188,12 +188,10 @@ var currentlyFocusedTextEditor;
                 setImageData(imageData, img.naturalWidth, img.naturalHeight, context);
 
                 URL.revokeObjectURL(img.src);
-                img.src = '';
                 resolve();
             }
             img.onerror = function(e) {
                URL.revokeObjectURL(img.src);
-               img.src = '';
                ctx.setAsCurrentContext();
                reject($.newIllegalArgumentException("error decoding image"));
             }
@@ -339,7 +337,9 @@ var currentlyFocusedTextEditor;
 
     function calcStringWidth(font, str) {
         var emojiLen = 0;
-        var len = withFont(font, MIDP.Context2D, str.replace(emoji.regEx, function() {
+
+        withFont(font, MIDP.Context2D);
+        var len = measureWidth(MIDP.Context2D, str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
         }));
@@ -352,7 +352,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        return withFont(this, MIDP.Context2D, String.fromCharCode(char));
+        withFont(this, MIDP.Context2D);
+        return measureWidth(MIDP.Context2D, String.fromCharCode(char));
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -414,22 +415,29 @@ var currentlyFocusedTextEditor;
         });
     }
 
-    function withFont(font, c, str) {
-        if (c.font != font.css) {
-          c.font = font.css;
-        }
+    function measureWidth(c, str) {
         return c.measureText(str).width | 0;
     }
 
+    function withFont(font, c) {
+        if (c.font != font.css) {
+          c.font = font.css;
+        }
+    }
+
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        var w = withFont(g.currentFont, c, str);
+        withFont(g.currentFont, c);
         c.textAlign = "left";
         c.textBaseline = "top";
 
-        if (anchor & RIGHT) {
-            x -= w;
-        } else if (anchor & HCENTER) {
-            x -= (w >>> 1) | 0;
+        if (anchor & RIGHT || anchor & HCENTER) {
+            var w = measureWidth(c, str);
+
+            if (anchor & RIGHT) {
+                x -= w;
+            } else if (anchor & HCENTER) {
+                x -= (w >>> 1) | 0;
+            }
         }
 
         if (anchor & BOTTOM) {
@@ -440,7 +448,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
         }
 
-        cb(x, y, w);
+        cb(x, y);
     }
 
     function abgrIntToCSS(pixel) {
@@ -1141,46 +1149,32 @@ var currentlyFocusedTextEditor;
     }
 
     function drawString(g, str, x, y, anchor, isOpaque) {
-        asyncImpl("V", new Promise(function(resolve, reject) {
-            var font = g.currentFont;
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(curX, y) {
+                parseEmojiString(str).forEach(function(part) {
+                    if (part.text) {
+                        withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y) {
+                            var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                            withPixelFunc(g, c, function() {
+                                c.fillText(part.text, x, y);
 
-            var parts = parseEmojiString(str);
-
-            withGraphics(g, function(c) {
-                withClip(g, c, x, y, function(curX, y) {
-                    (function drawNext() {
-                        if (parts.length === 0) {
-                            resolve();
-                            return;
-                        }
-
-                        var part = parts.shift();
-
-                        if (part.text) {
-                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
-                                var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
-                                withPixelFunc(g, c, function() {
-                                    c.fillText(part.text, x, y);
-                                    curX += w;
-                                });
+                                // If there are emojis in the string that we need to draw,
+                                // we need to calculate the string width
+                                if (part.emoji) {
+                                    curX += measureWidth(c, part.text)
+                                }
                             });
-                        }
+                        });
+                    }
 
-                        if (part.emoji) {
-                            var img = new Image();
-                            img.src = emoji.strToImg(part.emoji);
-                            img.onload = function() {
-                                c.drawImage(img, curX, y, font.size, font.size);
-                                curX += font.size;
-                                drawNext();
-                            }
-                        } else {
-                            drawNext();
-                        }
-                    })();
+                    if (part.emoji) {
+                        var emojiData = emoji.getData(part.emoji, g.currentFont.size);
+                        c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, curX, y, g.currentFont.size, g.currentFont.size);
+                        curX += g.currentFont.size;
+                    }
                 });
             });
-        }));
+        });
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
@@ -1863,35 +1857,29 @@ var currentlyFocusedTextEditor;
         return nextMidpDisplayableId++;
     };
 
-    Native["javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V"] = function(pos) {
-        console.warn("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V not implemented");
-    };
+    Native["javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V");
 
-    Native["javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I"] = function() {
-        console.warn("javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I not implemented");
-        return 0;
-    };
+    Native["javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I", 0);
 
     Native["javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I"] =
-    function(nativeId) {
-        console.warn("javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
-        return nextMidpDisplayableId++;
-    };
+        UnimplementedNative(
+            "javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I",
+            function() { return nextMidpDisplayableId++ }
+        );
 
-    Native["javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V"] = function(nativeId, modelVersion, w, h) {
-        console.warn("javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V not implemented");
-    };
+    Native["javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V");
 
-    Native["javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I"] = function() {
-        console.warn("javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I not implemented");
-        return 0;
-    };
+    Native["javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I", 0);
 
     Native["javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I"] =
-    function(ownerId, label, layout, text, appearanceMode, font) {
-        console.warn("javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I not implemented");
-        return nextMidpDisplayableId++;
-    };
+        UnimplementedNative(
+            "javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I",
+            function() { return nextMidpDisplayableId++ }
+        );
 
     Native["javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V"] = function(nativeId, w, h) {
         console.warn("javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V not implemented");
@@ -1909,29 +1897,20 @@ var currentlyFocusedTextEditor;
         console.warn("javax/microedition/lcdui/ItemLFImpl.hide0.(I)V not implemented");
     };
 
-    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I"] = function(nativeId) {
-        console.warn("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I not implemented");
-        return 10;
-    };
+    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I", 10);
 
-    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I"] = function(nativeId) {
-        console.warn("javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I not implemented");
-        return 10;
-    };
+    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I", 10);
 
-    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I"] = function(nativeId, h) {
-        console.warn("javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I not implemented");
-        return 10;
-    };
+    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I", 10);
 
-    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I"] = function(nativeId, w) {
-        console.warn("javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I not implemented");
-        return 10;
-    };
+    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I", 10);
 
-    Native["javax/microedition/lcdui/ItemLFImpl.delete0.(I)V"] = function(nativeId) {
-        console.warn("javax/microedition/lcdui/ItemLFImpl.delete0.(I)V not implemented");
-    };
+    Native["javax/microedition/lcdui/ItemLFImpl.delete0.(I)V"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.delete0.(I)V");
 
     var BACK = 2;
     var CANCEL = 3;
