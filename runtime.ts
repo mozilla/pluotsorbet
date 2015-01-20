@@ -1209,15 +1209,6 @@ module J2ME {
     var name = methodInfo.mangledClassAndMethodName;
     var method = jsGlobal[name];
     return method;
-    if (!method) {
-      var compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
-      var code =
-      "function " + name + "(" + compiledMethod.args.join(",") + ") {" +
-        compiledMethod.body +
-      "}";
-      (1, eval)(code);
-      return jsGlobal[name];
-    }
   }
 
   /**
