@@ -1533,7 +1533,8 @@ var currentlyFocusedTextEditor;
                     return;
                 }
                 var li = document.createElement("li");
-                li.textContent = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
+                var text = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
+                li.innerHTML = "<a>" + text + "</a>";
 
                 li.onclick = function(e) {
                     e.preventDefault();
