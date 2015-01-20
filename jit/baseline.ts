@@ -1141,12 +1141,8 @@ module J2ME {
         case Bytecodes.IF_ACMPEQ      : this.emitIfSame(block, stream, Kind.Reference, Condition.EQ); break;
         case Bytecodes.IF_ACMPNE      : this.emitIfSame(block, stream, Kind.Reference, Condition.NE); break;
         case Bytecodes.GOTO           : this.emitGoto(stream); break;
-        ///*
-        //case Bytecodes.JSR            : genJsr(stream.readBranchDest()); break;
-        //case Bytecodes.RET            : genRet(stream.readLocalIndex()); break;
         case Bytecodes.TABLESWITCH    : this.emitTableSwitch(stream); break;
         case Bytecodes.LOOKUPSWITCH   : this.emitLookupSwitch(stream); break;
-        //*/
         case Bytecodes.IRETURN        : this.emitReturn(Kind.Int); break;
         case Bytecodes.LRETURN        : this.emitReturn(Kind.Long); break;
         case Bytecodes.FRETURN        : this.emitReturn(Kind.Float); break;
@@ -1168,22 +1164,14 @@ module J2ME {
         case Bytecodes.ATHROW         : this.emitThrow(stream.currentBCI); break;
         case Bytecodes.CHECKCAST      : this.emitCheckCast(stream.readCPI()); break;
         case Bytecodes.INSTANCEOF     : this.emitInstanceOf(stream.readCPI()); break;
-        ///*
         case Bytecodes.MONITORENTER   : this.emitMonitorEnter(stream.nextBCI, this.pop(Kind.Reference)); break;
         case Bytecodes.MONITOREXIT    : this.emitMonitorExit(this.pop(Kind.Reference)); break;
-        //case Bytecodes.MULTIANEWARRAY : genNewMultiArray(stream.readCPI()); break;
-        //*/
         case Bytecodes.IFNULL         : this.emitIfNull(block, stream, Condition.EQ); break;
         case Bytecodes.IFNONNULL      : this.emitIfNull(block, stream, Condition.NE); break;
-        ///*
-        //case Bytecodes.GOTO_W         : genGoto(stream.readFarBranchDest()); break;
-        //case Bytecodes.JSR_W          : genJsr(stream.readFarBranchDest()); break;
-        //case Bytecodes.BREAKPOINT:
-        //throw new CiBailout("concurrent setting of breakpoint");
-        //default:
-        //throw new CiBailout("Unsupported opcode " + opcode + " (" + nameOf(opcode) + ") [bci=" + bci + "]");
-        //}
-        //*/
+        // The following bytecodes are not supported yet and are not frequently used.
+        // case Bytecodes.JSR            : ... break;
+        // case Bytecodes.RET            : ... break;
+        // case Bytecodes.MULTIANEWARRAY : ... break;
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
       }
