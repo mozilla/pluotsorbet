@@ -1,4 +1,4 @@
-///<reference path='build/j2me.d.ts' />
+///<reference path='build/j2me-jsc.d.ts' />
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
 

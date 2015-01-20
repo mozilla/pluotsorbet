@@ -326,7 +326,7 @@ module J2ME {
       this.sp = this.blockStackHeightMap[block.startBci];
       emitDebugInfoComments && this.emitter.writeLn("// " + this.blockMap.blockToString(block));
       writer && writer.writeLn("emitBlock: " + block.startBci + " " + this.sp + " " + block.isExceptionEntry);
-      assert(this.sp !== undefined, "Bad stack height");
+      release || assert(this.sp !== undefined, "Bad stack height");
       stream.setBCI(block.startBci);
       var lastSourceLocation = null;
       var lastBC: Bytecodes;
@@ -488,7 +488,7 @@ module J2ME {
 
     pop(kind: Kind): string {
       writer && writer.writeLn(" popping: sp: " + this.sp + " " + Kind[kind]);
-      assert (this.sp, "SP below zero.");
+      release || assert (this.sp, "SP below zero.");
       this.sp -= isTwoSlot(kind) ? 2 : 1;
       var v = this.getStack(this.sp);
       writer && writer.writeLn("  popped: sp: " + this.sp + " " + Kind[kind] + " " + v);
@@ -532,7 +532,7 @@ module J2ME {
     setBlockStackHeight(pc: number, height: number) {
       writer && writer.writeLn("Setting Block Height " + pc + " " + height);
       if (this.blockStackHeightMap[pc] !== undefined) {
-        assert(this.blockStackHeightMap[pc] === height, pc + " " + this.blockStackHeightMap[pc] + " " + height);
+        release || assert(this.blockStackHeightMap[pc] === height, pc + " " + this.blockStackHeightMap[pc] + " " + height);
       }
       this.blockStackHeightMap[pc] = height;
     }
@@ -861,7 +861,7 @@ module J2ME {
         case Bytecodes.DDIV: v = x + " / " + y; break;
         case Bytecodes.DREM: v = x + " % " + y; break;
         default:
-          assert(false, Bytecodes[opcode]);
+          release || assert(false, Bytecodes[opcode]);
       }
       this.emitPush(result, v);
     }
