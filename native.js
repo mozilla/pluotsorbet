@@ -1034,3 +1034,22 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
     }));
 };
 
+function UnimplementedNative(signature, returnValue) {
+    var doNotWarn;
+
+    if (typeof returnValue === "function") {
+      doNotWarn = function() { return returnValue() };
+    } else if (typeof returnValue !== "undefined") {
+      doNotWarn = function() { return returnValue };
+    } else {
+      doNotWarn = function() { };
+    }
+
+    var warnOnce = function() {
+        console.warn(signature + " not implemented");
+        warnOnce = doNotWarn;
+        return doNotWarn();
+    };
+
+    return function() { return warnOnce() };
+}
