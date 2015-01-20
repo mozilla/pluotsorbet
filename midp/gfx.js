@@ -91,7 +91,6 @@ var currentlyFocusedTextEditor;
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
         document.getElementById("splash-screen").style.display = "none";
-        document.getElementById("display_title").textContent = MIDlet.name;
         var d = NativeDisplays.get(displayId);
         setFullScreen(d.fullScreen);
     };
@@ -1080,6 +1079,10 @@ var currentlyFocusedTextEditor;
         if (currentlyFocusedTextEditor) {
             currentlyFocusedTextEditor.focus();
         }
+    };
+
+    Native["javax/microedition/lcdui/Display.setTitle.(Ljava/lang/String;)V"] = function(title) {
+        document.getElementById("display_title").textContent = util.fromJavaString(title);
     };
 
     Native["com/nokia/mid/ui/CanvasItem.setSize.(II)V"] = function(width, height) {
