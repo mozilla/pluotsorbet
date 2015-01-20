@@ -652,6 +652,7 @@ var currentlyFocusedTextEditor;
         this.img = img;
         setDimensions(this, w, h);
         resetGC(this);
+        console.log("LEAVING nativeInit");
     };
 
     function isScreenGraphics(g) {
@@ -778,13 +779,16 @@ var currentlyFocusedTextEditor;
         translate(this, systemX, systemY);
         this.aX = this.transX;
         this.aY = this.transY;
+        console.log("LEAVING preserveMIDPRuntimeGC");
     };
 
     Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(rgb, gray, isGray) {
+        console.log("ENTERED getPixel");
         return getPixel(rgb, gray, isGray);
     };
 
     function getPixel(rgb, gray, isGray) {
+        console.log("ENTERED getPixel");
         return swapRB(rgb) | 0xff000000;
     }
 
@@ -793,21 +797,25 @@ var currentlyFocusedTextEditor;
         console.log("ENTERED restoreMIDPRuntimeGC");
         this.runtimeClipEnforce = false;
         translate(this, this.aX-this.transX, this.aY-this.transY);
+        console.log("LEAVING restoreMIDPRuntimeGC");
     };
 
     Native["javax/microedition/lcdui/Graphics.resetGC.()V"] = function() {
         console.log("ENTERED resetGC");
         resetGC(this);
+        console.log("LEAVING resetGC");
     };
 
     Native["javax/microedition/lcdui/Graphics.reset.(IIII)Z"] = function(x1, y1, x2, y2) {
         console.log("ENTERED reset");
         reset(this, x1, y1, x2, y2);
+        console.log("LEAVING reset");
     };
 
     Native["javax/microedition/lcdui/Graphics.reset.()Z"] = function() {
         console.log("ENTERED reset");
         reset(this, 0, 0, this.maxWidth, this.maxHeight);
+        console.log("LEAVING reset");
     };
 
     Native["javax/microedition/lcdui/Graphics.isScreenGraphics.()Z"] = function() {
@@ -821,17 +829,19 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalStateException();
         }
         console.warn("javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V not implemented");
-        console.log("ENTERED copyArea");
+        console.log("LEAVING copyArea");
     };
 
     Native["javax/microedition/lcdui/Graphics.setDimensions.(II)V"] = function(w, h) {
         console.log("ENTERED setDimensions");
         setDimensions(this, w, h);
+        console.log("LEAVING setDimensions");
     };
 
     Native["javax/microedition/lcdui/Graphics.translate.(II)V"] = function(x, y) {
         console.log("ENTERED translate");
         translate(this, x, y);
+        console.log("LEAVING translate");
     };
 
     Native["javax/microedition/lcdui/Graphics.getTranslateX.()I"] = function() {
@@ -864,6 +874,7 @@ var currentlyFocusedTextEditor;
         if (!this.creator) {
             this.creator = creator;
         }
+        console.log("LEAVING setCreator");
     };
 
     Native["javax/microedition/lcdui/Graphics.getColor.()I"] = function() {
@@ -902,6 +913,7 @@ var currentlyFocusedTextEditor;
         this.rgbColor = (red << 16) | (green << 8) | blue;
         this.gray = grayVal(red, green, blue);
         this.pixel = getPixel(this.rgbColor, this.gray, false);
+        console.log("LEAVING setColor");
     };
 
     Native["javax/microedition/lcdui/Graphics.setColor.(I)V"] = function(RGB) {
@@ -915,6 +927,7 @@ var currentlyFocusedTextEditor;
             this.gray = grayVal(red, green, blue);
             this.pixel = getPixel(this.rgbColor, this.gray, false);
         }
+        console.log("LEAVING setColor");
     };
 
     Native["javax/microedition/lcdui/Graphics.setGrayScale.(I)V"] = function(value) {
@@ -928,6 +941,7 @@ var currentlyFocusedTextEditor;
             this.gray = value;
             this.pixel = getPixel(this.rgbColor, this.gray, true);
         }
+        console.log("LEAVING setGrayScale");
     };
 
     Native["javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;"] = function() {
@@ -938,6 +952,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.setFont0.(Ljavax/microedition/lcdui/Font;)"] = function(font) {
         console.log("ENTERED setFont0");
         this.currentFont = font;
+        console.log("LEAVING setFont0");
     };
 
     var SOLID = 0;
@@ -949,6 +964,7 @@ var currentlyFocusedTextEditor;
         }
 
         this.style = style;
+        console.log("LEAVING setStrokeStyle");
     };
 
     Native["javax/microedition/lcdui/Graphics.getStrokeStyle.()I"] = function() {
@@ -984,11 +1000,13 @@ var currentlyFocusedTextEditor;
         region[1] = this.clipY1 - this.transY;
         region[2] = this.clipX2 - this.transX;
         region[3] = this.clipY2 - this.transY;
+        console.log("LEAVING getClip");
     };
 
     Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(x, y, width, height) {
         console.log("ENTERED clipRect");
         clipRect(this, x, y, width, height);
+        console.log("LEAVING clipRect");
     };
 
     Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
@@ -1268,6 +1286,7 @@ var currentlyFocusedTextEditor;
                 });
             });
         });
+        console.log("LEAVING fillRect");
     };
 
     Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
