@@ -136,6 +136,16 @@ button {
   padding: 0.5rem;
 }
 
+form[role="dialog"][data-type="confirm"].lcdui-alert section {
+  text-align: center;
+  overflow: auto;
+}
+
+.lcdui-alert menu,
+.download-progress-dialog menu {
+  text-align: center;
+}
+
 .splash-screen {
   z-index: 2;
   background: #2d2d2d;
@@ -175,6 +185,7 @@ button {
  * built-in styles, which refer to all of those attributes, without
  * modifying the original dialog CSS, for future maintainability.
  */
+.debug-mode form[role="dialog"][data-type="confirm"].lcdui-alert,
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt,
 .debug-mode form[role="dialog"][data-type="confirm"].nokia-fileui-prompt,
 .debug-mode form[role="dialog"][data-type="confirm"].download-progress-dialog {
@@ -197,6 +208,7 @@ button {
   overflow: hidden;
 }
 /* Trim down fonts to fix on our 240x320 debug-mode canvas. */
+.debug-mode form[role="dialog"][data-type="confirm"].lcdui-alert p,
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt p {
   font-size: 12px;
   line-height: 1.2;

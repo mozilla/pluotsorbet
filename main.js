@@ -7,16 +7,9 @@
 // To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
 // To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
 
-// The base directory of the app, relative to the current page.  Normally this
-// is the directory from which the page was loaded, but some test pages load
-// from a subdirectory, like tests/fs/, and they set this accordingly such that
-// code loads files, like libs/fs-init.js, can load them from the right place.
-var APP_BASE_DIR = "./";
-
 var jvm = new JVM();
 
 var main = config.main || "com/sun/midp/main/MIDletSuiteLoader";
-MIDP.midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
@@ -242,11 +235,22 @@ window.onload = function() {
      saveAs(blob, "fs-" + Date.now() + ".json");
    });
  };
- document.getElementById("importstorage").addEventListener("change", function(event) {
-   fs.importStore(event.target.files[0], function() {
-     DumbPipe.close(DumbPipe.open("alert", "Import completed."));
-   });
- }, false);
+ document.getElementById("importstorage").onclick = function() {
+   function performImport(file) {
+     fs.importStore(file, function() {
+       DumbPipe.close(DumbPipe.open("alert", "Import completed."));
+     });
+   }
+
+   var file = document.getElementById("importstoragefile").files[0];
+   if (file) {
+     performImport(file);
+   } else {
+     load(document.getElementById("importstorageurl").value, "blob").then(function(blob) {
+       performImport(blob);
+     });
+   }
+ };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);

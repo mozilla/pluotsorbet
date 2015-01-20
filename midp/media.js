@@ -350,7 +350,7 @@ ImagePlayer.prototype.pause = function() {
 
 ImagePlayer.prototype.close = function() {
     if (this.image.parentNode) {
-        document.getElementById("display").removeChild(this.image);
+        this.image.parentNode.removeChild(this.image);
     }
 }
 
@@ -371,7 +371,7 @@ ImagePlayer.prototype.setLocation = function(x, y, w, h) {
     this.image.style.top = y + "px";
     this.image.style.width = w + "px";
     this.image.style.height = h + "px";
-    document.getElementById("display").appendChild(this.image);
+    document.getElementById("main").appendChild(this.image);
 }
 
 ImagePlayer.prototype.setVisible = function(visible) {
@@ -463,7 +463,7 @@ ImageRecorder.prototype.getHeight = function() {
 }
 
 ImageRecorder.prototype.setLocation = function(x, y, w, h) {
-    var displayElem = document.getElementById("display");
+    var displayElem = document.getElementById("main");
     this.sender({
         type: "setPosition",
         x: x + displayElem.offsetLeft,

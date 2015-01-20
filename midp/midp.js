@@ -8,6 +8,8 @@ var MIDP = {
 
 MIDP.manifest = {};
 
+MIDP.midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
+
 Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
     var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes)
@@ -564,11 +566,11 @@ Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAllResour
 };
 
 Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
-    var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png");
+    var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = CLASSES.loadFile(fileName);
     if (!data) {
-        console.error("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
-        throw $.newIOException();
+        console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
+        return null;
     }
     var len = data.byteLength;
     var bytes = util.newPrimitiveArray("B", len);
@@ -593,6 +595,14 @@ MIDP.Context2D = (function() {
       document.documentElement.classList.add('debug-mode');
       c.width = 240;
       c.height = 320;
+    }
+
+    if (config.nativeMenu) {
+      document.getElementById("sidebar").style.display = "block";
+      document.getElementById("drawer").querySelector("header").style.display = "block";
+
+      var headerHeight = document.getElementById("drawer").querySelector("header").offsetHeight;
+      c.height = c.height - headerHeight;
     }
 
     function sendPenEvent(pt, whichType) {
@@ -1044,6 +1054,10 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() 
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
 function(obj, isolateId) {
+    if (!MIDP.nativeEventQueues[isolateId]) {
+      MIDP.nativeEventQueues[isolateId] = [];
+    }
+
     MIDP.sendEvent(obj, isolateId);
 };
 

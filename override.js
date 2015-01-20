@@ -16,6 +16,7 @@ function asyncImpl(returnKind, promise) {
     } else {
       // void, do nothing
     }
+    ctx.execute();
   }, function(exception) {
     var syntheticMethod = new MethodInfo({
       name: "RaiseExceptionSynthetic",
@@ -36,7 +37,8 @@ function asyncImpl(returnKind, promise) {
     });
     var callee = Frame.create(syntheticMethod, [exception], 0);
     ctx.frames.push(callee);
-  }).then(ctx.resume.bind(ctx));
+    ctx.execute();
+  });
   $.pause("Async");
 }
 

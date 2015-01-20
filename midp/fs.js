@@ -28,6 +28,10 @@ Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"]
     return J2ME.newString("assets/" + storageId + "/");
 };
 
+Native["com/sun/midp/io/j2me/storage/File.initStorageRoot.(I)Ljava/lang/String;"] = function(storageId) {
+    return J2ME.newString("assets/" + storageId + "/");
+};
+
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(id) {
     return J2ME.newString("");
 };

@@ -60,6 +60,7 @@ var currentlyFocusedTextEditor;
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
         console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
         document.getElementById("splash-screen").style.display = "none";
+        document.getElementById("display_title").textContent = MIDlet.name;
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {
@@ -387,15 +388,16 @@ var currentlyFocusedTextEditor;
     }
 
     function withClip(g, c, x, y, cb) {
-        var clipX1 = g.klass.classInfo.getField("I.clipX1.S").get(g),
-            clipY1 = g.klass.classInfo.getField("I.clipY1.S").get(g),
-            clipX2 = g.klass.classInfo.getField("I.clipX2.S").get(g),
-            clipY2 = g.klass.classInfo.getField("I.clipY2.S").get(g),
-            clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
+        var clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
             transX = g.klass.classInfo.getField("I.transX.I").get(g),
             transY = g.klass.classInfo.getField("I.transY.I").get(g);
 
         if (clipped) {
+            var clipX1 = g.klass.classInfo.getField("I.clipX1.S").get(g),
+                clipY1 = g.klass.classInfo.getField("I.clipY1.S").get(g),
+                clipX2 = g.klass.classInfo.getField("I.clipX2.S").get(g),
+                clipY2 = g.klass.classInfo.getField("I.clipY2.S").get(g);
+
             c.beginPath();
             c.rect(clipX1, clipY1, clipX2 - clipX1, clipY2 - clipY1);
             c.clip();
@@ -429,14 +431,17 @@ var currentlyFocusedTextEditor;
     }
 
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
-        var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
         c.textAlign = "left";
         c.textBaseline = "top";
 
-        if (anchor & RIGHT) {
-            x -= w;
-        } else if (anchor & HCENTER) {
-            x -= (w >>> 1) | 0;
+        if (anchor & RIGHT || anchor & HCENTER) {
+            var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+
+            if (anchor & RIGHT) {
+                x -= w;
+            } else if (anchor & HCENTER) {
+                x -= (w >>> 1) | 0;
+            }
         }
 
         if (anchor & BOTTOM) {
@@ -447,7 +452,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
         }
 
-        cb(x, y, w);
+        cb(x, y);
     }
 
     function abgrIntToCSS(pixel) {
@@ -546,60 +551,6 @@ var currentlyFocusedTextEditor;
             });
         });
     }
-
-    Override["com/sun/midp/chameleon/CGraphicsUtil.draw9pcsBackground.(Ljavax/microedition/lcdui/Graphics;IIII[Ljavax/microedition/lcdui/Image;)V"] = 
-    function(g, x, y, w, h, image) {
-        if (image == null || image.length != 9) {
-            return;
-        }
-
-        var transX = g.klass.classInfo.getField("I.transX.I");
-        var transY = g.klass.classInfo.getField("I.transY.I");
-
-        transX.set(g, transX.get(g) + x);
-        transY.set(g, transY.get(g) + y);
-
-        // Top Border
-        var iW = image[1].klass.classInfo.getField("I.width.I").get(image[1]);
-        renderImage(g, image[0], 0, 0, LEFT | TOP);
-        w -= image[2].klass.classInfo.getField("I.width.I").get(image[2]);
-        for (var i = image[0].klass.classInfo.getField("I.width.I").get(image[0]); i < w; i += iW) {
-            renderImage(g, image[1], i, 0, LEFT | TOP);
-        }
-        w += image[2].klass.classInfo.getField("I.width.I").get(image[2]);
-        renderImage(g, image[2], w, 0, RIGHT | TOP);
-
-        // Tile middle rows
-        if (image[4] != null) {
-            iW = image[4].klass.classInfo.getField("I.width.I").get(image[4]);
-        }
-        var iH = image[3].klass.classInfo.getField("I.height.I").get(image[3]);
-        h -= image[6].klass.classInfo.getField("I.height.I").get(image[6]);
-        w -= image[5].klass.classInfo.getField("I.width.I").get(image[5]);
-        for (var i = image[0].klass.classInfo.getField("I.height.I").get(image[0]); i <= h; i += iH) {
-            renderImage(g, image[3], 0, i, LEFT | TOP);
-            for (var j = image[3].klass.classInfo.getField("I.width.I").get(image[3]); j <= w; j += iW) {
-                renderImage(g, image[4], j, i, LEFT | TOP);
-            }
-            renderImage(g, image[5], w + image[5].klass.classInfo.getField("I.width.I").get(image[5]), i,
-                        RIGHT | TOP);
-        }
-        w += image[5].klass.classInfo.getField("I.width.I").get(image[5]);
-        h += image[6].klass.classInfo.getField("I.height.I").get(image[6]);
-
-        // Bottom border
-        iW = image[7].klass.classInfo.getField("I.width.I").get(image[7]);
-        renderImage(g, image[6], 0, h, LEFT | BOTTOM);
-        w -= image[8].klass.classInfo.getField("I.width.I").get(image[8]);
-        for (var i = image[6].klass.classInfo.getField("I.width.I").get(image[6]); i < w; i += iW) {
-            renderImage(g, image[7], i, h, LEFT | BOTTOM);
-        }
-        w += image[8].klass.classInfo.getField("I.width.I").get(image[8]);
-        renderImage(g, image[8], w, h, RIGHT | BOTTOM);
-
-        transX.set(g, transX.get(g) - x);
-        transY.set(g, transY.get(g) - y);
-    };
 
     Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
         return color;
@@ -724,11 +675,16 @@ var currentlyFocusedTextEditor;
                         var part = parts.shift();
 
                         if (part.text) {
-                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y, w) {
+                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y) {
                                 var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
                                 withPixelFunc(g, c, function() {
                                     c.fillText(part.text, x, y);
-                                    curX += w;
+
+                                    // If there are emojis in the string that we need to draw,
+                                    // we need to calculate the string width
+                                    if (part.emoji) {
+                                        curX += withFont(font, c, part.text)
+                                    }
                                 });
                             });
                         }
@@ -1087,8 +1043,9 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.setPosition0.(II)V"] = function(x, y) {
+        var headerHeight = (!urlParams.nativeMenu) ? 0 : document.getElementById("drawer").querySelector("header").offsetHeight;
         this.textEditor.setStyle("left", x + "px");
-        this.textEditor.setStyle("top", y + "px");
+        this.textEditor.setStyle("top", (headerHeight + y) + "px");
     };
 
     Native["com/nokia/mid/ui/CanvasItem.getPositionX.()I"] = function() {
@@ -1318,5 +1275,236 @@ var currentlyFocusedTextEditor;
                 keyboardVisibilityListenerResolve = resolve;
             }
         }));
+    };
+
+    var curDisplayableId = 0;
+    var nextMidpDisplayableId = 1;
+    var PLAIN = 0;
+
+    Native["javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V"] = function() {
+    };
+
+    Native["javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V"] = function(nativeId) {
+        var el = document.getElementById("displayable-" + nativeId);
+        if (el) {
+            el.parentElement.removeChild(el);
+            if (currentlyFocusedTextEditor) {
+                currentlyFocusedTextEditor.focus();
+            }
+        }
+    };
+
+    Native["javax/microedition/lcdui/DisplayableLFImpl.setTitle0.(ILjava/lang/String;)V"] = function(nativeId, title) {
+        document.getElementById("display_title").textContent = util.fromJavaString(title);
+    };
+
+    Native["javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I"] = function(title, ticker) {
+        console.warn("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
+        curDisplayableId = nextMidpDisplayableId++;
+        return curDisplayableId;
+    };
+
+    Native["javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(title, ticker, type) {
+        var nativeId = nextMidpDisplayableId++;
+        var el = document.getElementById("lcdui-alert").cloneNode(true);
+        el.id = "displayable-" + nativeId;
+        el.querySelector('h1.title').textContent = util.fromJavaString(title);
+        document.body.appendChild(el);
+
+        return nativeId;
+    };
+
+    Native["javax/microedition/lcdui/AlertLFImpl.setNativeContents0.(ILjavax/microedition/lcdui/ImageData;[ILjava/lang/String;)Z"] =
+    function(nativeId, imgId, indicatorBounds, text) {
+        var el = document.getElementById("displayable-" + nativeId);
+        el.querySelector('p.text').textContent = util.fromJavaString(text);
+
+        return 0;
+    };
+
+    Native["javax/microedition/lcdui/AlertLFImpl.showNativeResource0.(I)V"] = function(nativeId) {
+        var el = document.getElementById("displayable-" + nativeId);
+        el.style.display = 'block';
+        el.classList.add('visible');
+        if (currentlyFocusedTextEditor) {
+            currentlyFocusedTextEditor.blur();
+        }
+
+        curDisplayableId = nativeId;
+    };
+
+    var INDEFINITE = -1;
+    var CONTINUOUS_RUNNING = 2;
+
+    Native["javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I"] =
+    function(ownerId, label, layout, interactive, maxValue, initialValue) {
+        if (label != null) {
+            console.error("Expected null label");
+        }
+
+        if (layout != PLAIN) {
+            console.error("Expected PLAIN layout");
+        }
+
+        if (interactive) {
+            console.error("Expected not interactive gauge");
+        }
+
+        if (maxValue != INDEFINITE) {
+            console.error("Expected INDEFINITE maxValue");
+        }
+
+        if (initialValue != CONTINUOUS_RUNNING) {
+            console.error("Expected CONTINUOUS_RUNNING initialValue")
+        }
+
+        var el = document.getElementById("displayable-" + ownerId);
+        el.querySelector("progress").style.display = "inline";
+
+        return nextMidpDisplayableId++;
+    };
+
+    Native["javax/microedition/lcdui/TextFieldLFImpl.createNativeResource0.(ILjava/lang/String;ILcom/sun/midp/lcdui/DynamicCharacterArray;ILjava/lang/String;)I"] =
+    function(ownerId, label, layout, buffer, constraints, initialInputMode) {
+        console.warn("javax/microedition/lcdui/TextFieldLFImpl.createNativeResource0.(ILjava/lang/String;ILcom/sun/midp/lcdui/DynamicCharacterArray;ILjava/lang/String;)I not implemented");
+        return nextMidpDisplayableId++;
+    };
+
+    Native["javax/microedition/lcdui/ImageItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjavax/microedition/lcdui/ImageData;Ljava/lang/String;I)I"] =
+    function(ownerId, label, layout, imageData, altText, appearanceMode) {
+        console.warn("javax/microedition/lcdui/ImageItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjavax/microedition/lcdui/ImageData;Ljava/lang/String;I)I not implemented");
+        return nextMidpDisplayableId++;
+    };
+
+    Native["javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V");
+
+    Native["javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I", 0);
+
+    Native["javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I"] =
+        UnimplementedNative(
+            "javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I",
+            function() { return nextMidpDisplayableId++ }
+        );
+
+    Native["javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V");
+
+    Native["javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I"] =
+        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I", 0);
+
+    Native["javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I"] =
+        UnimplementedNative(
+            "javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I",
+            function() { return nextMidpDisplayableId++ }
+        );
+
+    Native["javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V"] = function(nativeId, w, h) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V not implemented");
+    };
+
+    Native["javax/microedition/lcdui/ItemLFImpl.setLocation0.(III)V"] = function(nativeId, x, y) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.setLocation0.(III)V not implemented");
+    };
+
+    Native["javax/microedition/lcdui/ItemLFImpl.show0.(I)V"] = function(nativeId) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.show0.(I)V not implemented");
+    };
+
+    Native["javax/microedition/lcdui/ItemLFImpl.hide0.(I)V"] = function(nativeId) {
+        console.warn("javax/microedition/lcdui/ItemLFImpl.hide0.(I)V not implemented");
+    };
+
+    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I", 10);
+
+    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I", 10);
+
+    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I", 10);
+
+    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I", 10);
+
+    Native["javax/microedition/lcdui/ItemLFImpl.delete0.(I)V"] =
+        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.delete0.(I)V");
+
+    var BACK = 2;
+    var CANCEL = 3;
+    var OK = 4;
+
+    Native["javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V"] =
+    function(itemCommands, numItemCommands, commands, numCommands) {
+        if (numItemCommands != 0) {
+            console.error("NativeMenu.updateCommands: item commands not yet supported");
+        }
+
+        var el = document.getElementById("displayable-" + curDisplayableId);
+
+        if (!el) {
+            document.getElementById("sidebar").querySelector("nav ul").innerHTML = "";
+        }
+
+        if (!commands) {
+            return;
+        }
+
+        var validCommands = commands.filter(function(command) {
+            return !!command;
+        }).sort(function(a, b) {
+            return a.klass.classInfo.getField("I.priority.I").get(a) -
+                   b.klass.classInfo.getField("I.priority.I").get(b);
+        });
+
+        function sendEvent(command) {
+            MIDP.sendNativeEvent({
+                type: MIDP.COMMAND_EVENT,
+                intParam1: command.klass.classInfo.getField("I.id.I").get(command),
+                intParam4: MIDP.displayId,
+            }, MIDP.foregroundIsolateId);
+        }
+
+        if (el) {
+            if (numCommands > 2 && validCommands.length > 2) {
+                console.error("NativeMenu.updateCommands: max two commands supported");
+            }
+
+            validCommands.slice(0, 2).forEach(function(command, i) {
+                var button = el.querySelector(".button" + i);
+                button.style.display = 'inline';
+                button.textContent = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
+
+                var commandType = command.klass.classInfo.getField("I.commandType.I").get(command);
+                if (numCommands == 1 || commandType == OK) {
+                    button.classList.add('recommend');
+                } else if (commandType == CANCEL || commandType == BACK) {
+                    button.classList.add('cancel');
+                }
+
+                button.onclick = function(e) {
+                    e.preventDefault();
+                    sendEvent(command);
+                };
+            });
+        } else {
+            var menu = document.getElementById("sidebar").querySelector("nav ul");
+
+            validCommands.forEach(function(command) {
+                var li = document.createElement("li");
+                li.textContent = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
+
+                li.onclick = function(e) {
+                    e.preventDefault();
+
+                    window.location.hash = "";
+
+                    sendEvent(command);
+                };
+
+                menu.appendChild(li);
+            });
+        }
     };
 })(Native);
