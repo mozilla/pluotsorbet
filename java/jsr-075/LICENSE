@@ -1,0 +1,43 @@
+BY DOWNLOADING OR USING THE SOFTWARE AND/OR DOCUMENTATION DESCRIBED IN EXHIBIT A HERERTO (COLLECTIVELY THE SOFTWARE), YOU AGREE TO THE FOLLOWING TERMS AND CONDITIONS (AGREEMENT). IF YOU DO NOT AGREE TO THE TERMS AND CONDITIONS OF THIS AGREEMENT, YOU MAY NOT DOWNLOAD OR USE THE SOFTWARE. 
+
+License Grant.  International Business Machines Corporation or one of its subsidiaries collectively (IBM) hereby grants you (an individual or an entity) a non-exclusive, non-transferable, worldwide, royalty free license to use, reproduce, display, perform, prepare derivative works of, and distribute the Software and derivative works thereof. The above license includes the right to sublicense the above rights to third parties acting on your behalf. 
+
+To the extent IBM provides you with error corrections, upgrades, enhancements, additions, improvements, extension or other modifications to the Software such error corrections, upgrades, enhancements, additions, improvements, extension or other modifications shall be considered Software and shall be subject to the terms and conditions of this Agreement.  
+
+You agree not to remove any of the copyright statements, disclaimers or other proprietary notices contained in the Software.
+
+You agree to defend, indemnify, hold harmless IBM and its suppliers from and against any claims, lawsuits, demands, liabilities, damages, costs and expenses including, without limitation, attorney fees, in any way related to, connected with, or arising out of, your use, modification, reproduction, distribution and/or sublicensing of the Software. 
+
+Compatibility Claims.  You agree that you will distribute, or sublicense others to distribute, the Software and derivative works thereof only if you or such third party have tested the Software and derivative works thereof with the applicable JSR 75 TCK and such Software and derivative work have complied with the relevant portions of such TCK. You may not claim that the Software or derivative works thereof pass the applicable TCK, and therefore is compatible with the applicable JSR 75 specification, unless it is capable of passing the most current version of the TCK available 120 days prior to the date of shipment.  You will make available information regarding the version of the TCK passed, upon request.  You agree that any claims regarding compliance with the Specification will be factually accurate and will not be misleading.  Additional rules, if any, regarding your ability to make claims regarding your use of the TCK or any result there from can be found at http://www-106.ibm.com/developerworks/java/library/j-pda-op/.  As a condition to your license, you agree to abide by all such rules.
+
+
+Support.   Although IBM may try to answer technical support questions you may have regarding your use of the Software, IBM has no obligation to provide error corrections, upgrades, enhancements, additions, improvements, extension or other modifications to the Software or to provide any end user or technical support for the Software.  You shall be responsible for any and all maintenance, end-user support and technical support with respect to the Software.  
+No Warranties.  THE SOFTWARE AND ANY SUPPORT ARE PROVIDED AS IS WITHOUT WARRANTY OR CONDITION OF ANY KIND EITHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, ANY IMPLIED WARRANTIES OR CONDITIONS OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.  ALL WARRANTIES AND CONDITIONS, EXPRESS, IMPLIED, AND STATUTORY ARE HEREBY DISLCAIMED. THE ENTIRE RISK ARISING OUT OF THE USE OR PERFORMANCE OF THE SOFTWARE AND SUPPORT REMAINS WITH YOU.  
+
+No Liability.  TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT WILL IBM OR ITS SUPPLIERS BE LIABLE FOR ANY LOST PROFITS, LOST SAVINGS, LOST REVENUE, LOST DATA, PROCUREMENT OF SUBSTITUE GOODS, OR FOR ANY DIRECT, INDIRECT, INCIDENTAL. SPECIAL, PUNITIVE, OR CONSEQUENTIAL DAMAGES, EVEN IF IBM OR ITS SUPPLIERS HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSSES OR DAMAGES.  IN ADDITION IBM AND ITS SUPPLIERS WILL NOT BE LIABLE FOR ANY DAMAGES CLAIMED BY YOU BASED ON ANY THIRD PARTY CLAIM. 
+
+Some jurisdictions do not allow the exclusion of implied warranties, or the limitation for consequential damages, so the above may not apply to you.
+Note to U.S. Government Users - Documentation related to Restricted Rights - Use, duplication, or disclosure is subject to restrictions set forth in GSA ADP Schedule Contract with IBM Corporation. 
+
+Covenant Not to Assert.  To the extent that you have any patents which cover the use of the Software in any manner permitted under this Agreement, you hereby agree not to assert any such patents against the developers or distributors of the Software or any other parties who have entered into a license substantially similar to this Agreement for the licensed use of the Software. 
+
+Reciprocity.  You may have, or may have in the future, the ability to license reference implementations developed or distributed pursuant to the Java Community Process ("Java Materials").  You acknowledge that under this license you are receiving the Software under reasonable royalty-free terms.  While you are not obligated to make Java Materials available, if you do so, you agree to license them under reasonable royalty-free terms. For the purpose of this paragraph, terms are not reasonable terms if they are more restrictive than this license or if they discriminate against any individual or group of JCP members or against implementers of independent implementations or open source implementations. If you do make Java Materials available in the future and do not license such Java Materials under reasonable royalty-free terms, as consideration for licensing this Software to you, you agree to pay IBM royalties as follows: (a) Thirty Thousand Dollars ($30,000) payable within thirty (30) days of your distribution of such Java Materials and (b) an additional Ten Thousand Dollars ($10,000) per year for each year you use or distribute the Software or a derivative work thereof.  In no event shall royalties in the aggregate exceed Sixty Thousand Dollars ($60,000.)  IBM will notify you in writing how to make such royalty payments.
+
+
+General.
+
+You agree to comply with applicable export laws and regulations.
+
+No other rights or licenses are granted by implication, estoppel or otherwise. 
+
+If any provision of this Agreement is invalid or unenforceable under applicable law, it shall not affect the validity or enforceability of the remainder of the terms of this Agreement, and without further action by the parties hereto, such provision shall be reformed to the minimum extent necessary to make such provision valid and enforceable.
+
+Your rights under this Agreement shall terminate if you fail to comply with any of the material terms or conditions of this Agreement and do not cure such failure in a reasonable period of time after becoming aware of such noncompliance.  If all your rights under this Agreement terminate, you agree to cease use of the Software immediately. 
+
+This Agreement is governed by the laws of the State of New York and the intellectual property laws of the United States of America.  No party to this Agreement will bring a legal action under this Agreement more than one year after the cause of action arose.  Each party waives its rights to a jury trial in any resulting litigation.
+
+This Agreement is the only understanding and agreement we have with respect to the Software. It supersedes all other communications, understandings or agreements (oral or written) that we may have had with respect to the Software prior to this Agreement.  Only a written agreement signed by both of us can modify this Agreement.
+ 
+Exhibit A
+
+The SOFTWARE this license applies to is the Java Specification Request (JSR) 075 for the Personal Information Manager and  the File Connection optional package reference implementations (RI).
