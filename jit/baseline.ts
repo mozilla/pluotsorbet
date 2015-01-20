@@ -167,6 +167,7 @@ module J2ME {
     sp: number;
     pc: number;
 
+    private target: CompilationTarget;
     private emitter: Emitter;
     private blockMap: BlockMap;
     private methodInfo: MethodInfo;
@@ -201,6 +202,7 @@ module J2ME {
       this.hasHandlers = !!methodInfo.exception_table.length;
       this.blockStackHeightMap = [0];
       this.emitter = new Emitter();
+      this.target = target;
     }
 
     compile(): CompiledMethodInfo {
@@ -595,7 +597,10 @@ module J2ME {
         classInfo = classInfo.elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
-        if (this.initializedClasses[classInfo.className]) {
+        if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.className]) {
+          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", is already initialized.";
+          baselineCounter && baselineCounter.count(message);
+        } else if (this.initializedClasses[classInfo.className]) {
           var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", block redundant.";
           emitDebugInfoComments && this.emitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
