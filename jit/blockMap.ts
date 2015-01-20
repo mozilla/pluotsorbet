@@ -15,8 +15,6 @@ module J2ME.Bytecode {
 
     public region: C4.IR.Region;
 
-    // public FixedWithNextNode firstInstruction;
-
     public successors: Block [];
     public normalSuccessors: number;
     public numberOfPredecessors: number = 0;
@@ -77,9 +75,6 @@ module J2ME.Bytecode {
       this.fixLoopBits();
       this.initializeBlockIDs();
       this.computeLoopStores();
-
-      // writer.writeLn("Blocks: " + this.blocks.length);
-      // writer.writeLn(JSON.stringify(this.blocks, null, 2));
     }
 
     private makeExceptionEntries() {
@@ -155,33 +150,6 @@ module J2ME.Bytecode {
 
     public canTrapAt(opcode: Bytecodes, bci: number): boolean {
       return Bytecode.canTrap(opcode);
-      //switch (opcode) {
-      //  case Bytecodes.INVOKESTATIC:
-      //  case Bytecodes.INVOKESPECIAL:
-      //  case Bytecodes.INVOKEVIRTUAL:
-      //  case Bytecodes.INVOKEINTERFACE:
-      //    return true;
-      //  case Bytecodes.IASTORE:
-      //  case Bytecodes.LASTORE:
-      //  case Bytecodes.FASTORE:
-      //  case Bytecodes.DASTORE:
-      //  case Bytecodes.AASTORE:
-      //  case Bytecodes.BASTORE:
-      //  case Bytecodes.CASTORE:
-      //  case Bytecodes.SASTORE:
-      //  case Bytecodes.IALOAD:
-      //  case Bytecodes.LALOAD:
-      //  case Bytecodes.FALOAD:
-      //  case Bytecodes.DALOAD:
-      //  case Bytecodes.AALOAD:
-      //  case Bytecodes.BALOAD:
-      //  case Bytecodes.CALOAD:
-      //  case Bytecodes.SALOAD:
-      //  case Bytecodes.PUTFIELD:
-      //  case Bytecodes.GETFIELD:
-      //    return false; // ???
-      //}
-      //return false;
     }
 
     private iterateOverBytecodes() {
@@ -264,7 +232,6 @@ module J2ME.Bytecode {
             switch (opcode2) {
               case Bytecodes.RET: {
                 writer.writeLn("RET");
-                // current.endsWithRet = true;
                 current = null;
                 break;
               }
