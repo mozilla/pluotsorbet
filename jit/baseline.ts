@@ -12,21 +12,44 @@ module J2ME {
 
   export var baselineCounter = new Metrics.Counter(true);
 
+  /**
+   * Detects common control flow patterns and tries to emit "if" statements
+   * whenever possible.
+   */
   var optimizeControlFlow = true;
 
+  /**
+   * Emits optimization results inline as comments in the generated source.
+   */
   var emitDebugInfoComments = false;
 
+  /**
+   * Emits control flow and yielding assertions.
+   */
   var emitCompilerAssertions = false;
 
+  /**
+   * Emits profiling code that counts the number of times a method is invoked.
+   */
   var emitCallMethodCounter = false;
 
+  /**
+   * Emits profiling code that counts the number of times control flow is dispatched
+   * to a basic block.
+   */
   var emitCallMethodLoopCounter = false;
+
+  /**
+   * Emits array bounds checks. Although this is necessary for correctness, most
+   * applications work without them.
+   */
   var emitCheckArrayBounds = true;
 
+  /**
+   * Emits array store type checks. Although this is necessary for correctness,
+   * most applications work without them.
+   */
   var emitCheckArrayStore = true;
-
-  export var baselineTotal = 0;
-  export var baselineCompiled = 0;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
@@ -39,10 +62,8 @@ module J2ME {
       throw new Error("Method: " + methodInfo.implKey + " is synchronized.");
     }
     writer && writer.writeLn("Compile: " + methodInfo.implKey);
-    baselineTotal ++;
     try {
       var result = new BaselineCompiler(methodInfo, target).compile();
-      baselineCompiled ++;
       return result;
     } catch (e) {
       throw e;
@@ -190,6 +211,7 @@ module J2ME {
       }
       return new CompiledMethodInfo(this.parameters, this.emitter.toString(), this.referencedClasses);
     }
+
     needsVariable(name: string) {
       if (this.variables.indexOf(name) < 0) {
         this.variables.push(name);
@@ -243,18 +265,6 @@ module J2ME {
           this.setBlockStackHeight(block.startBci, 1);
         }
         this.emitBlock(stream, block);
-        //if (lastBC !== Bytecodes.ILLEGAL) {
-        //  var needsFallthroughPC = !Bytecode.isBlockEnd(lastBC);
-        //  // Check to see if we can get away without going through the switch again.
-        //  if (i < blocks.length - 1 &&
-        //    block.successors.length === 1 &&
-        //    blocks[i + 1].startBci === stream.currentBCI) {
-        //    needsFallthroughPC = false;
-        //  }
-        //  if (needsFallthroughPC) {
-        //    this.emitter.writeLn("bi = " + this.getBlockIndex(stream.currentBCI) + "; break;");
-        //  }
-        //}
         this.emitter.outdent();
       }
       if (emitCompilerAssertions) {
@@ -1171,12 +1181,10 @@ module J2ME {
         case Bytecodes.IF_ACMPEQ      : this.emitIfSame(block, stream, Kind.Reference, Condition.EQ); break;
         case Bytecodes.IF_ACMPNE      : this.emitIfSame(block, stream, Kind.Reference, Condition.NE); break;
         case Bytecodes.GOTO           : this.emitGoto(stream); break;
-        ///*
-        //case Bytecodes.JSR            : genJsr(stream.readBranchDest()); break;
-        //case Bytecodes.RET            : genRet(stream.readLocalIndex()); break;
+        // case Bytecodes.JSR            : ... break;
+        // case Bytecodes.RET            : ... break;
         case Bytecodes.TABLESWITCH    : this.emitTableSwitch(stream); break;
         case Bytecodes.LOOKUPSWITCH   : this.emitLookupSwitch(stream); break;
-        //*/
         case Bytecodes.IRETURN        : this.emitReturn(Kind.Int); break;
         case Bytecodes.LRETURN        : this.emitReturn(Kind.Long); break;
         case Bytecodes.FRETURN        : this.emitReturn(Kind.Float); break;
@@ -1198,22 +1206,11 @@ module J2ME {
         case Bytecodes.ATHROW         : this.emitThrow(stream.currentBCI); break;
         case Bytecodes.CHECKCAST      : this.emitCheckCast(stream.readCPI()); break;
         case Bytecodes.INSTANCEOF     : this.emitInstanceOf(stream.readCPI()); break;
-        ///*
         case Bytecodes.MONITORENTER   : this.emitMonitorEnter(stream.nextBCI, this.pop(Kind.Reference)); break;
         case Bytecodes.MONITOREXIT    : this.emitMonitorExit(this.pop(Kind.Reference)); break;
-        //case Bytecodes.MULTIANEWARRAY : genNewMultiArray(stream.readCPI()); break;
-        //*/
+        // case Bytecodes.MULTIANEWARRAY : ... break;
         case Bytecodes.IFNULL         : this.emitIfNull(block, stream, Condition.EQ); break;
         case Bytecodes.IFNONNULL      : this.emitIfNull(block, stream, Condition.NE); break;
-        ///*
-        //case Bytecodes.GOTO_W         : genGoto(stream.readFarBranchDest()); break;
-        //case Bytecodes.JSR_W          : genJsr(stream.readFarBranchDest()); break;
-        //case Bytecodes.BREAKPOINT:
-        //throw new CiBailout("concurrent setting of breakpoint");
-        //default:
-        //throw new CiBailout("Unsupported opcode " + opcode + " (" + nameOf(opcode) + ") [bci=" + bci + "]");
-        //}
-        //*/
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
       }

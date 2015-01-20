@@ -443,8 +443,6 @@ module J2ME {
     yieldGraph && traceYieldGraph(stdoutWriter);
     stdoutWriter.enter("*/");
     // yieldCounter.traceSorted(stdoutWriter);
-
-    // stdoutWriter.writeLn("Compiled " + baselineCompiled + " of " + baselineTotal);
   }
 }
 
