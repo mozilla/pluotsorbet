@@ -1,6 +1,6 @@
 .PHONY: all test tests j2me java certs app clean jasmin aot shumway
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts")
-JIT_SRCS=$(shell find jit -name "*.ts")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
+JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 
 all: java jasmin tests j2me shumway
