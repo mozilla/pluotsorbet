@@ -1196,9 +1196,12 @@ module J2ME {
         case Bytecodes.RETURN         : this.emitReturn(Kind.Void); break;
         case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); this.emitGetField(this.lookupField(cpi, opcode, true), true); break;
         case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); this.emitPutField(this.lookupField(cpi, opcode, true), true); break;
-        case Bytecodes.GETFIELD       : cpi = stream.readCPI(); this.emitGetField(this.lookupField(cpi, opcode, false), false); break;
-        case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); this.emitPutField(this.lookupField(cpi, opcode, false), false); break;
-        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
+        case Bytecodes.RESOLVED_GETFIELD      : opcode = Bytecodes.GETFIELD;
+        case Bytecodes.GETFIELD               : cpi = stream.readCPI(); this.emitGetField(this.lookupField(cpi, opcode, false), false); break;
+        case Bytecodes.RESOLVED_PUTFIELD      : opcode = Bytecodes.PUTFIELD;
+        case Bytecodes.PUTFIELD               : cpi = stream.readCPI(); this.emitPutField(this.lookupField(cpi, opcode, false), false); break;
+        case Bytecodes.RESOLVED_INVOKEVIRTUAL : opcode = Bytecodes.INVOKEVIRTUAL;
+        case Bytecodes.INVOKEVIRTUAL          : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
         case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
         case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, true), opcode, stream.nextBCI); break;
         case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
