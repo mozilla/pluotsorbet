@@ -166,9 +166,6 @@ module J2ME {
       this.name = opts.name;
       this.signature = opts.signature;
       this.classInfo = opts.classInfo;
-      if (!(this.classInfo instanceof ClassInfo)) {
-        debugger;
-      }
       this.attributes = opts.attributes || [];
 
       // Use code if provided, otherwise search for the code within attributes.
