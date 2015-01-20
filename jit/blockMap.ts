@@ -262,8 +262,8 @@ module J2ME.Bytecode {
         block.isLoopHeader = true;
         if (block.isExceptionEntry) {
           // Loops that are implicitly formed by an exception handler lead to all sorts of corner cases.
-          // Don't compile such methods for now, until we see a concrete case that allows checking for correctness.
-          // throw new CompilerBailout("Loop formed by an exception handler");
+          // However, this doesn't affect the baseline JIT, so don't bail out.
+          // TODO: Revisit for OPT JIT.
         }
         if (this._nextLoop >= 32) {
           // This restriction can be removed by using a fall-back to a BitSet in case we have more than 32 loops
