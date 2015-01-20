@@ -835,25 +835,6 @@ module J2ME {
 
   var unresolvedSymbols = Object.create(null);
 
-  var loaded = Object.create(null);
-
-  /**
-   * Loads code from pack files if any is available.
-   */
-  function loadCode(className: string): boolean {
-    if (loaded[className]) {
-      return false;
-    }
-    loaded[className] = true;
-    var code = CLASSES.getCode(className);
-    if (code) {
-      // linkWriter && linkWriter.writeLn("Loading code from pack file: " + className);
-      console.info("Loading code from pack file: " + className);
-      (1, eval)(code);
-      return true;
-    }
-  }
-
   function findKlass(classInfo: ClassInfo) {
     if (unresolvedSymbols[classInfo.mangledName]) {
       return null;
