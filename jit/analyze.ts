@@ -4,10 +4,10 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import BytecodeStream = Bytecode.BytecodeStream;
 
-  var yieldWriter = stderrWriter;
-  export var yieldCounter = new Metrics.Counter(true);
+  var yieldWriter = null; // stderrWriter;
+  export var yieldCounter = null; // new Metrics.Counter(true);
 
-  export var yieldGraph = Object.create(null);
+  export var yieldGraph = null; // Object.create(null);
 
   export enum YieldReason {
     None = 0,

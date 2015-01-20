@@ -10,7 +10,7 @@ module J2ME {
 
   var writer = null; // new IndentingWriter();
 
-  export var baselineCounter = new Metrics.Counter(true);
+  export var baselineCounter = null; // new Metrics.Counter(true);
 
   /**
    * Detects common control flow patterns and tries to emit "if" statements
