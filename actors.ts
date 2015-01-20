@@ -110,7 +110,8 @@ module J2ME {
     /**
      * There is a compiled version of this method.?
      */
-    isCompiled: boolean;
+    state: MethodState;
+
     exception_table: ExceptionHandler [];
     max_locals: number;
     max_stack: number;
@@ -151,6 +152,11 @@ module J2ME {
      * Approximate number of times this method was called.
      */
     interpreterCallCount: number;
+
+    /**
+     * Approximate number of times a backward branch was taken.
+     */
+    backwardsBranchCount: number;
 
     /**
      * Number of times this method's counters were reset.
@@ -200,7 +206,7 @@ module J2ME {
       this.isSynchronized = opts.isSynchronized;
       this.isAbstract = opts.isAbstract;
       this.isFinal = opts.isAbstract;
-      this.isCompiled = false;
+      this.state = MethodState.Cold;
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
@@ -219,6 +225,7 @@ module J2ME {
       this.callCount = 0;
       this.resetCount = 0;
       this.interpreterCallCount = 0;
+      this.backwardsBranchCount = 0;
       this.bytecodeCount = 0;
 
       this.isOptimized = false;

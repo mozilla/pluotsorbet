@@ -23,6 +23,8 @@ module J2ME {
   declare var VM;
   declare var Instrument;
 
+  export var enableRuntimeCompilation = true;
+
   /**
    * Traces method execution.
    */
@@ -39,6 +41,11 @@ module J2ME {
   export var linkWriter = null;
 
   /**
+   * Traces JIT compilation.
+   */
+  export var jitWriter = null;
+
+  /**
    * Traces class loading.
    */
   export var loadWriter = null;
@@ -53,6 +60,14 @@ module J2ME {
    */
   export var initWriter = null;
 
+
+  export enum MethodState {
+    Cold = 0,
+    Warm = 1,
+    Hot = 2,
+    Compiled = 3,
+    NotCompiled = 4
+  }
   declare var Shumway;
 
   export var timeline;
@@ -1249,7 +1264,7 @@ module J2ME {
         linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
         fn = nativeMethod;
         methodType = MethodType.Native;
-        methodInfo.isCompiled = true;
+        methodInfo.state = MethodState.Compiled;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
@@ -1259,7 +1274,7 @@ module J2ME {
           // out from.
           jitMethodInfos[fn.name] = methodInfo;
           updateGlobalObject = false;
-          methodInfo.isCompiled = true;
+          methodInfo.state = MethodState.Compiled;
         } else {
           linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
@@ -1386,6 +1401,78 @@ module J2ME {
     }
     klass.prototype.klass = klass;
     initializeKlassTables(klass);
+  }
+
+  /**
+   * Number of methods that have been compiled thus far.
+   */
+  export var compiledCount = 0;
+
+  /**
+   * Number of ms that have been spent compiled code thus far.
+   */
+  var totalJITTime = 0;
+
+  /**
+   * Compiles method and links it up at runtime.
+   */
+  export function compileAndLinkMethod(methodInfo: MethodInfo) {
+    if (methodInfo.state >= MethodState.Compiled) {
+      return;
+    }
+
+    if (methodInfo.code.length > 2000) {
+      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.code.length);
+      methodInfo.state = MethodState.NotCompiled;
+      return;
+    }
+
+    var mangledClassAndMethodName = mangleClassAndMethod(methodInfo);
+
+    compiledCount ++;
+
+    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey);
+    var s = performance.now();
+    var compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+    var compiledMethodName = mangledClassAndMethodName;
+    var source = "function " + compiledMethodName +
+                 "(" + compiledMethod.args.join(",") + ") {\n" +
+                   compiledMethod.body +
+                 "\n}";
+
+    // This overwrites the method on the global object.
+    (1, eval)(source);
+
+    // Attach the compiled method to the method info object.
+    var fn = jsGlobal[mangledClassAndMethodName];
+    methodInfo.fn = fn;
+    methodInfo.state = MethodState.Compiled;
+
+    // Link member methods on the prototype.
+    if (!methodInfo.isStatic) {
+      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
+    }
+
+    // Make JITed code available in the |jitMethodInfos| so that bailout
+    // code can figure out the caller.
+    jitMethodInfos[mangledClassAndMethodName] = methodInfo;
+
+    // Make sure all the referenced symbols are registered.
+    var referencedClasses = compiledMethod.referencedClasses;
+    for (var i = 0; i < referencedClasses.length; i++) {
+      var referencedClass = referencedClasses[i];
+      registerKlassSymbol(referencedClass.className);
+    }
+
+    var methodJITTime = (performance.now() - s);
+    totalJITTime += methodJITTime;
+    if (jitWriter) {
+      jitWriter.leave(
+        "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
+        "codeSize: " + methodInfo.code.length + ", " +
+        "sourceSize: " + compiledMethod.body.length);
+      jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
+    }
   }
 
   export function isAssignableTo(from: Klass, to: Klass): boolean {
