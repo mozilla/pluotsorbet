@@ -339,7 +339,9 @@ var currentlyFocusedTextEditor;
 
     function calcStringWidth(font, str) {
         var emojiLen = 0;
-        var len = withFont(font, MIDP.Context2D, str.replace(emoji.regEx, function() {
+
+        withFont(font, MIDP.Context2D);
+        var len = measureWidth(MIDP.Context2D, str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
         }));
@@ -352,7 +354,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        return withFont(this, MIDP.Context2D, String.fromCharCode(char));
+        withFont(this, MIDP.Context2D);
+        return measureWidth(MIDP.Context2D, String.fromCharCode(char));
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -423,19 +426,24 @@ var currentlyFocusedTextEditor;
         });
     }
 
-    function withFont(font, c, str) {
-        if (c.font != font.css) {
-          c.font = font.css;
-        }
+    function measureWidth(c, str) {
         return c.measureText(str).width | 0;
     }
 
+    function withFont(font, c) {
+        if (c.font != font.css) {
+          c.font = font.css;
+        }
+    }
+
     function withTextAnchor(g, c, anchor, x, y, str, cb) {
+        withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c);
+
         c.textAlign = "left";
         c.textBaseline = "top";
 
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c, str);
+            var w = measureWidth(c, str);
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -659,51 +667,34 @@ var currentlyFocusedTextEditor;
     }
 
     function drawString(g, str, x, y, anchor, isOpaque) {
-        asyncImpl("V", new Promise(function(resolve, reject) {
-            var font = g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
+        var font = g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
 
-            var parts = parseEmojiString(str);
+        withGraphics(g, function(c) {
+            withClip(g, c, x, y, function(curX, y) {
+                parseEmojiString(str).forEach(function(part) {
+                    if (part.text) {
+                        withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y) {
+                            var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                            withPixelFunc(g, c, function() {
+                                c.fillText(part.text, x, y);
 
-            withGraphics(g, function(c) {
-                withClip(g, c, x, y, function(curX, y) {
-                    (function drawNext() {
-                        if (parts.length === 0) {
-                            resolve();
-                            return;
-                        }
-
-                        var part = parts.shift();
-
-                        if (part.text) {
-                            withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y) {
-                                var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
-                                withPixelFunc(g, c, function() {
-                                    c.fillText(part.text, x, y);
-
-                                    // If there are emojis in the string that we need to draw,
-                                    // we need to calculate the string width
-                                    if (part.emoji) {
-                                        curX += withFont(font, c, part.text)
-                                    }
-                                });
+                                // If there are emojis in the string that we need to draw,
+                                // we need to calculate the string width
+                                if (part.emoji) {
+                                    curX += measureWidth(c, part.text)
+                                }
                             });
-                        }
+                        });
+                    }
 
-                        if (part.emoji) {
-                            var img = new Image();
-                            img.src = emoji.strToImg(part.emoji);
-                            img.onload = function() {
-                                c.drawImage(img, curX, y, font.size, font.size);
-                                curX += font.size;
-                                drawNext();
-                            }
-                        } else {
-                            drawNext();
-                        }
-                    })();
+                    if (part.emoji) {
+                        var emojiData = emoji.getData(part.emoji, font.size);
+                        c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, curX, y, font.size, font.size);
+                        curX += font.size;
+                    }
                 });
             });
-        }));
+        });
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {

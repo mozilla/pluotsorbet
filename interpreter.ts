@@ -1009,9 +1009,6 @@ module J2ME {
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
             fieldInfo = resolveField(index, mi.classInfo, true);
-            if (fieldInfo.classInfo.className === "gnu/testlet/vm/InterfaceTest$A") {
-              debugger;
-            }
             classInitCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
