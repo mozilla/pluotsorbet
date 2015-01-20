@@ -206,7 +206,7 @@ module J2ME {
     var frames = ctx.frames;
     var mi = frame.methodInfo;
     var ci = mi.classInfo;
-    var cp = ci.constant_pool;
+    var rp = ci.resolved_constant_pool;
     var stack = frame.stack;
 
 
@@ -289,7 +289,7 @@ module J2ME {
             }
             mi = frame.methodInfo;
             ci = mi.classInfo;
-            cp = ci.constant_pool;
+            rp = ci.resolved_constant_pool;
             stack = frame.stack;
             lastPC = -1;
 
@@ -978,7 +978,7 @@ module J2ME {
             frame.patch(3, Bytecodes.GETFIELD, Bytecodes.RESOLVED_GETFIELD);
             break;
           case Bytecodes.RESOLVED_GETFIELD:
-            fieldInfo = <FieldInfo><any>cp[frame.read16()];
+            fieldInfo = <FieldInfo><any>rp[frame.read16()];
             object = stack.pop();
             stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
             break;
@@ -991,7 +991,7 @@ module J2ME {
             frame.patch(3, Bytecodes.PUTFIELD, Bytecodes.RESOLVED_PUTFIELD);
             break;
           case Bytecodes.RESOLVED_PUTFIELD:
-            fieldInfo = <FieldInfo><any>cp[frame.read16()];
+            fieldInfo = <FieldInfo><any>rp[frame.read16()];
             value = stack.popKind(fieldInfo.kind);
             object = stack.pop();
             fieldInfo.set(object, value);
@@ -1067,7 +1067,7 @@ module J2ME {
             break;
           case Bytecodes.RESOLVED_INVOKEVIRTUAL:
             index = frame.read16();
-            var calleeMethodInfo = <MethodInfo><any>cp[index];
+            var calleeMethodInfo = <MethodInfo><any>rp[index];
             var object = frame.peekInvokeObject(calleeMethodInfo);
 
             calleeMethod = object[calleeMethodInfo.mangledName];
@@ -1080,7 +1080,7 @@ module J2ME {
               frame = calleeFrame;
               mi = frame.methodInfo;
               ci = mi.classInfo;
-              cp = ci.constant_pool;
+              rp = ci.resolved_constant_pool;
               stack = frame.stack;
               lastPC = -1;
               continue;
@@ -1178,7 +1178,7 @@ module J2ME {
               frame = calleeFrame;
               mi = frame.methodInfo;
               ci = mi.classInfo;
-              cp = ci.constant_pool;
+              rp = ci.resolved_constant_pool;
               stack = frame.stack;
               lastPC = -1;
               if (calleeTargetMethodInfo.isSynchronized) {
@@ -1269,7 +1269,7 @@ module J2ME {
             }
             mi = frame.methodInfo;
             ci = mi.classInfo;
-            cp = ci.constant_pool;
+            rp = ci.resolved_constant_pool;
             stack = frame.stack;
             lastPC = -1;
             if (op === Bytecodes.RETURN) {
@@ -1295,7 +1295,7 @@ module J2ME {
         assert (!Frame.isMarker(frame));
         mi = frame.methodInfo;
         ci = mi.classInfo;
-        cp = ci.constant_pool;
+        rp = ci.resolved_constant_pool;
         stack = frame.stack;
         lastPC = -1;
         continue;

@@ -267,6 +267,7 @@ module J2ME {
     subClasses: ClassInfo [];
     allSubClasses: ClassInfo [];
     constant_pool: ConstantPoolEntry [];
+    resolved_constant_pool: any [];
     isArrayClass: boolean;
     elementClass: ClassInfo;
     klass: Klass;
@@ -278,6 +279,13 @@ module J2ME {
     id: number;
 
     sourceFile: string;
+
+    static createFromObject(object) {
+      var classInfo = Object.create(ClassInfo.prototype, object);
+      classInfo.resolved_constant_pool = new Array(classInfo.constant_pool.length);
+      return classInfo;
+    }
+
     constructor(classBytes) {
       this.id = classID ++;
       enterTimeline("getClassImage");
@@ -288,6 +296,7 @@ module J2ME {
       this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
       this.access_flags = classImage.access_flags;
       this.constant_pool = cp;
+      this.resolved_constant_pool = new Array(cp.length);
       this.subClasses = [];
       this.allSubClasses = [];
       // Cache for virtual methods and fields
@@ -477,44 +486,47 @@ module J2ME {
      * Resolves a constant pool reference.
      */
     resolve(index: number, isStatic: boolean) {
-      var cp = this.constant_pool;
-      var constant: any = cp[index];
-      if (!constant.tag)
+      var rp = this.resolved_constant_pool;
+      var constant: any = rp[index];
+      if (constant !== undefined) {
         return constant;
-      switch (constant.tag) {
-        case 3: // TAGS.CONSTANT_Integer
-          constant = constant.integer;
+      }
+      var cp = this.constant_pool;
+      var entry = this.constant_pool[index];
+      switch (entry.tag) {
+        case TAGS.CONSTANT_Integer:
+          constant = entry.integer;
           break;
-        case 4: // TAGS.CONSTANT_Float
-          constant = constant.float;
+        case TAGS.CONSTANT_Float:
+          constant = entry.float;
           break;
-        case 8: // TAGS.CONSTANT_String
-          constant = $.newStringConstant(cp[constant.string_index].bytes);
+        case TAGS.CONSTANT_String:
+          constant = $.newStringConstant(cp[entry.string_index].bytes);
           break;
-        case 5: // TAGS.CONSTANT_Long
-          constant = Long.fromBits(constant.lowBits, constant.highBits);
+        case TAGS.CONSTANT_Long:
+          constant = Long.fromBits(entry.lowBits, entry.highBits);
           break;
-        case 6: // TAGS.CONSTANT_Double
-          constant = constant.double;
+        case TAGS.CONSTANT_Double:
+          constant = entry.double;
           break;
-        case 7: // TAGS.CONSTANT_Class
-          constant = CLASSES.getClass(cp[constant.name_index].bytes);
+        case TAGS.CONSTANT_Class:
+          constant = CLASSES.getClass(cp[entry.name_index].bytes);
           break;
-        case 9: // TAGS.CONSTANT_Fieldref
-          var classInfo = this.resolve(constant.class_index, isStatic);
-          var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
-          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+        case TAGS.CONSTANT_Fieldref:
+          var classInfo = this.resolve(entry.class_index, isStatic);
+          var fieldName = cp[cp[entry.name_and_type_index].name_index].bytes;
+          var signature = cp[cp[entry.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
           if (!constant) {
             throw $.newRuntimeException(
               classInfo.className + "." + fieldName + "." + signature + " not found");
           }
           break;
-        case 10: // TAGS.CONSTANT_Methodref
-        case 11: // TAGS.CONSTANT_InterfaceMethodref
-          var classInfo = this.resolve(constant.class_index, isStatic);
-          var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
-          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+        case TAGS.CONSTANT_Methodref:
+        case TAGS.CONSTANT_InterfaceMethodref:
+          var classInfo = this.resolve(entry.class_index, isStatic);
+          var methodName = cp[cp[entry.name_and_type_index].name_index].bytes;
+          var signature = cp[cp[entry.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
           if (!constant) {
             constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
@@ -525,7 +537,7 @@ module J2ME {
         default:
           throw new Error("not support constant type");
       }
-      return cp[index] = constant;
+      return rp[index] = constant;
     }
   }
 

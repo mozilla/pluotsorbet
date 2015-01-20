@@ -304,6 +304,11 @@ window.onload = function() {
       J2ME.baselineMethodCounter.traceSorted(writer);
       writer.outdent();
     }
+    if (J2ME.baselineCounter) {
+      writer.enter("baselineCounter");
+      J2ME.baselineCounter.traceSorted(writer);
+      writer.outdent();
+    }
     if (J2ME.nativeCounter) {
       writer.enter("nativeCounter");
       J2ME.nativeCounter.traceSorted(writer);
@@ -333,6 +338,7 @@ window.onload = function() {
     J2ME.runtimeCounter && J2ME.runtimeCounter.clear();
     J2ME.asyncCounter && J2ME.asyncCounter.clear();
     J2ME.baselineMethodCounter && J2ME.baselineMethodCounter.clear();
+    J2ME.baselineCounter && J2ME.baselineCounter.clear();
   }
 
   document.getElementById("dumpCounters").onclick = function() {

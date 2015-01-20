@@ -437,7 +437,7 @@ module J2ME {
         name: "ClassInitSynthetic",
         signature: "()V",
         isStatic: false,
-        classInfo: Object.create(ClassInfo.prototype, {
+        classInfo: ClassInfo.createFromObject({
           className: {value: classInfo.className},
           vmc: {value: {}},
           vfc: {value: {}},
