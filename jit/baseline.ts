@@ -143,6 +143,7 @@ module J2ME {
     sp: number;
     pc: number;
 
+    private target: CompilationTarget;
     private emitter: Emitter;
     private blockMap: BlockMap;
     private methodInfo: MethodInfo;
@@ -180,6 +181,7 @@ module J2ME {
       this.lockObject = this.methodInfo.isSynchronized ? 
                           this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this"
                           : "null";
+      this.target = target;
     }
 
     compile(): CompiledMethodInfo {
@@ -550,7 +552,10 @@ module J2ME {
         classInfo = classInfo.elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
-        if (this.initializedClasses[classInfo.className]) {
+        if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.className]) {
+          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", is already initialized.";
+          baselineCounter && baselineCounter.count(message);
+        } else if (this.initializedClasses[classInfo.className]) {
           var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", block redundant.";
           emitDebugInfoComments && this.emitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
