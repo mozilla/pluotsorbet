@@ -1114,7 +1114,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.getPositionY.()I"] = function() {
-        return parseInt(this.textEditor.getStyle("top")) || 0;
+        var base = MIDP.Context2D.canvas.offsetTop;
+        return (parseInt(this.textEditor.getStyle("top")) - base) || 0;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function() {
