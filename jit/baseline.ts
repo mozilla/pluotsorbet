@@ -1186,8 +1186,6 @@ module J2ME {
         case Bytecodes.IF_ACMPEQ      : this.emitIfSame(block, stream, Kind.Reference, Condition.EQ); break;
         case Bytecodes.IF_ACMPNE      : this.emitIfSame(block, stream, Kind.Reference, Condition.NE); break;
         case Bytecodes.GOTO           : this.emitGoto(stream); break;
-        // case Bytecodes.JSR            : ... break;
-        // case Bytecodes.RET            : ... break;
         case Bytecodes.TABLESWITCH    : this.emitTableSwitch(stream); break;
         case Bytecodes.LOOKUPSWITCH   : this.emitLookupSwitch(stream); break;
         case Bytecodes.IRETURN        : this.emitReturn(Kind.Int); break;
@@ -1213,9 +1211,12 @@ module J2ME {
         case Bytecodes.INSTANCEOF     : this.emitInstanceOf(stream.readCPI()); break;
         case Bytecodes.MONITORENTER   : this.emitMonitorEnter(stream.nextBCI, this.pop(Kind.Reference)); break;
         case Bytecodes.MONITOREXIT    : this.emitMonitorExit(this.pop(Kind.Reference)); break;
-        // case Bytecodes.MULTIANEWARRAY : ... break;
         case Bytecodes.IFNULL         : this.emitIfNull(block, stream, Condition.EQ); break;
         case Bytecodes.IFNONNULL      : this.emitIfNull(block, stream, Condition.NE); break;
+        // The following bytecodes are not supported yet and are not frequently used.
+        // case Bytecodes.JSR            : ... break;
+        // case Bytecodes.RET            : ... break;
+        // case Bytecodes.MULTIANEWARRAY : ... break;
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
       }
