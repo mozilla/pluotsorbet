@@ -28,12 +28,6 @@ aot: java j2me
 	if test -f program.jar; then \
 		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar > build/program.jar.js; \
 	fi
-	@echo "Packing ..."
-	node tools/pack.js build/classes.jar.js > build/classes.jar.js.pack
-	node tools/pack.js build/tests.jar.js > build/tests.jar.js.pack
-	if test -f program.jar; then \
-		node tools/pack.js build/program.jar.js > build/program.jar.js.pack; \
-	fi
 	@echo "Done"
 
 closure: build/j2me.js aot
