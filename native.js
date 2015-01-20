@@ -1039,11 +1039,9 @@ function UnimplementedNative(signature, returnValue) {
     var doNotWarn;
 
     if (typeof returnValue === "function") {
-      doNotWarn = function() { return returnValue() };
-    } else if (typeof returnValue !== "undefined") {
-      doNotWarn = function() { return returnValue };
+      doNotWarn = returnValue;
     } else {
-      doNotWarn = function() { };
+      doNotWarn = function() { return returnValue };
     }
 
     var warnOnce = function() {
