@@ -9,7 +9,6 @@
 ///<reference path='bytecodes.ts' />
 ///<reference path='jit/blockMap.ts' />
 ///<reference path='types.ts' />
-///<reference path='packFile.ts' />
 ///<reference path='classRegistry.ts' />
 ///<reference path='jvm.ts' />
 ///<reference path='actors.ts' />
