@@ -459,6 +459,8 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     return bytes;
 };
 
+MIDP.ScreenHeight = 0;
+
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
 
@@ -472,13 +474,7 @@ MIDP.Context2D = (function() {
       c.height = 320;
     }
 
-    if (config.nativeMenu) {
-      document.getElementById("sidebar").style.display = "block";
-      document.getElementById("drawer").querySelector("header").style.display = "block";
-
-      var headerHeight = document.getElementById("drawer").querySelector("header").offsetHeight;
-      c.height = c.height - headerHeight;
-    }
+    MIDP.ScreenHeight = c.height;
 
     function sendPenEvent(pt, whichType) {
         MIDP.sendNativeEvent({

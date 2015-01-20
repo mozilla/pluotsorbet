@@ -5,6 +5,35 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+
+    var NativeDisplay = function() {
+        this.fullScreen = 1;
+    };
+
+    var NativeDisplays = {
+        get: function(id) {
+            var d = this._map.get(id);
+            if (!d) {
+                d = new NativeDisplay();
+                this._map.set(id, d);
+            }
+            return d;
+        },
+
+        _map: new Map()
+    };
+
+    function setFullScreen(isFullScreen) {
+        var sidebar = document.getElementById("sidebar");
+        var header = document.getElementById("drawer").querySelector("header");
+        var canvas = MIDP.Context2D.canvas;
+        sidebar.style.display = header.style.display =
+            isFullScreen ? "none" : "block";
+        var headerHeight = isFullScreen ? 0 : header.offsetHeight;
+        canvas.height = MIDP.ScreenHeight - headerHeight;
+        window.dispatchEvent(new Event('resize'));
+    }
+
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = util.newPrimitiveArray("I", 1);
         ids[0] = 1;
@@ -53,14 +82,18 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
-        console.warn("DisplayDevice.setFullScreen0.(IIZ)V not implemented (" +
-                     hardwareId + ", " + displayId + ", " + mode + ")");
+        var d = NativeDisplays.get(displayId);
+        d.fullScreen = mode;
+        if (MIDP.displayId === displayId) {
+            setFullScreen(mode);
+        }
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
-        console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
         document.getElementById("splash-screen").style.display = "none";
         document.getElementById("display_title").textContent = MIDlet.name;
+        var d = NativeDisplays.get(displayId);
+        setFullScreen(d.fullScreen);
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {
@@ -1068,9 +1101,9 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.setPosition0.(II)V"] = function(x, y) {
-        var headerHeight = (!urlParams.nativeMenu) ? 0 : document.getElementById("drawer").querySelector("header").offsetHeight;
+        var top = MIDP.Context2D.canvas.offsetTop;
         this.textEditor.setStyle("left", x + "px");
-        this.textEditor.setStyle("top", (headerHeight + y) + "px");
+        this.textEditor.setStyle("top", (top + y) + "px");
     };
 
     Native["com/nokia/mid/ui/CanvasItem.getPositionX.()I"] = function() {
