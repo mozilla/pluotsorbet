@@ -234,16 +234,15 @@ var emoji = (function() {
   ].join("|");
 
   var data;
-  var img;
+  var images = [];
+  var imagesNum = 12;
 
   var squareSize = 16;
-  var sheetSize = 448;
 
   return {
     regEx: new RegExp(regexString, 'g'),
 
     squareSize: squareSize,
-    sheetSize: sheetSize,
 
     loadData: function() {
       return new Promise(function(resolve, reject) {
@@ -252,33 +251,44 @@ var emoji = (function() {
             return;
         }
 
-        load("style/emoji.json", "json").then(function(obj) {
-            data = obj;
-            img = new Image();
-            img.src = 'style/emoji.png';
-            img.onload = resolve;
-        });
+        var promises = [];
+
+        promises.push(load("style/emoji.json", "json").then(function(obj) {
+          data = obj;
+        }));
+
+        for (var i = 0; i < imagesNum; i++) {
+          images[i] = new Image();
+          images[i].src = "style/emoji/emoji" + i + ".png";
+
+          promises.push(new Promise(function(resolve, reject) {
+            images[i].onload = resolve;
+          }));
+        }
+
+        Promise.all(promises).then(resolve);
       });
     },
 
     getData: function(str, size) {
       var firstCodePoint = str.codePointAt(0);
 
-      var unified = firstCodePoint.toString(16).toUpperCase();
+      var unified = firstCodePoint.toString(16);
 
       var len = String.fromCodePoint(firstCodePoint).length;
       if (str.length > len) {
-        unified += "-" + str.substr(len).codePointAt(0).toString(16).toUpperCase();
+        if (unified.length == 2) {
+            unified = "00" + unified;
+        }
+
+        unified += "-" + str.substr(len).codePointAt(0).toString(16);
       }
 
-      var emoji = data.find(function(elem) {
-        return elem.unified == unified;
-      });
+      var emoji = data[unified];
 
       return {
-        img: img,
-        x: emoji.sheet_x * squareSize,
-        y: emoji.sheet_y * squareSize,
+        img: images[emoji.sheet],
+        x: emoji.x * squareSize,
       };
     },
   };

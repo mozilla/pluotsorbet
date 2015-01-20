@@ -681,7 +681,7 @@ var currentlyFocusedTextEditor;
 
                     if (part.emoji) {
                         var emojiData = emoji.getData(part.emoji, font.size);
-                        c.drawImage(emojiData.img, emojiData.x, emojiData.y, emoji.squareSize, emoji.squareSize, curX, y, font.size, font.size);
+                        c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, curX, y, font.size, font.size);
                         curX += font.size;
                     }
                 });
