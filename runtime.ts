@@ -1333,16 +1333,6 @@ module J2ME {
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
         var args = Array.prototype.slice.apply(arguments);
-        /*
-        var printArgs = args.map(function (x) {
-          return toDebugString(x);
-        }).join(", ");
-        var printObj = "";
-        if (!methodInfo.isStatic) {
-          printObj = " <" + toDebugString(this) + "> ";
-        }
-        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + printArgs);
-        */
         traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
