@@ -8,6 +8,8 @@ var MIDP = {
 
 MIDP.manifest = {};
 
+MIDP.midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
+
 Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
     var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes)

@@ -10,14 +10,14 @@ module J2ME.Bytecode {
     public isExceptionEntry: boolean;
     public isLoopHeader: boolean;
     public isLoopEnd: boolean;
+    public hasHandlers: boolean;
     public blockID: number;
 
     public region: C4.IR.Region;
 
-    // public FixedWithNextNode firstInstruction;
-
     public successors: Block [];
     public normalSuccessors: number;
+    public numberOfPredecessors: number = 0;
 
     visited: boolean;
     active: boolean;
@@ -35,10 +35,13 @@ module J2ME.Bytecode {
       block.endBci = this.endBci;
       block.isExceptionEntry = this.isExceptionEntry;
       block.isLoopHeader = this.isLoopHeader;
+      block.isLoopEnd = this.isLoopEnd;
+      block.hasHandlers = this.hasHandlers;
       block.loops = this.loops;
       block.loopID = this.loopID;
       block.blockID = this.blockID;
       block.successors = this.successors.slice(0);
+      block.numberOfPredecessors = this.numberOfPredecessors;
       return block;
     }
   }
@@ -54,7 +57,6 @@ module J2ME.Bytecode {
     private blockMap: Block [];
     private startBlock: Block;
     private canTrap: Uint32ArrayBitSet;
-    // handlers: ExceptionHandler [];
     exceptionHandlers: ExceptionHandler [];
 
     constructor(method: MethodInfo) {
@@ -73,9 +75,6 @@ module J2ME.Bytecode {
       this.fixLoopBits();
       this.initializeBlockIDs();
       this.computeLoopStores();
-
-      // writer.writeLn("Blocks: " + this.blocks.length);
-      // writer.writeLn(JSON.stringify(this.blocks, null, 2));
     }
 
     private makeExceptionEntries() {
@@ -150,33 +149,7 @@ module J2ME.Bytecode {
     }
 
     public canTrapAt(opcode: Bytecodes, bci: number): boolean {
-      switch (opcode) {
-        case Bytecodes.INVOKESTATIC:
-        case Bytecodes.INVOKESPECIAL:
-        case Bytecodes.INVOKEVIRTUAL:
-        case Bytecodes.INVOKEINTERFACE:
-          return true;
-        case Bytecodes.IASTORE:
-        case Bytecodes.LASTORE:
-        case Bytecodes.FASTORE:
-        case Bytecodes.DASTORE:
-        case Bytecodes.AASTORE:
-        case Bytecodes.BASTORE:
-        case Bytecodes.CASTORE:
-        case Bytecodes.SASTORE:
-        case Bytecodes.IALOAD:
-        case Bytecodes.LALOAD:
-        case Bytecodes.FALOAD:
-        case Bytecodes.DALOAD:
-        case Bytecodes.AALOAD:
-        case Bytecodes.BALOAD:
-        case Bytecodes.CALOAD:
-        case Bytecodes.SALOAD:
-        case Bytecodes.PUTFIELD:
-        case Bytecodes.GETFIELD:
-          return false; // ???
-      }
-      return false;
+      return Bytecode.canTrap(opcode);
     }
 
     private iterateOverBytecodes() {
@@ -259,22 +232,10 @@ module J2ME.Bytecode {
             switch (opcode2) {
               case Bytecodes.RET: {
                 writer.writeLn("RET");
-                // current.endsWithRet = true;
                 current = null;
                 break;
               }
             }
-            break;
-          }
-          case Bytecodes.INVOKEINTERFACE:
-          case Bytecodes.INVOKESPECIAL:
-          case Bytecodes.INVOKESTATIC:
-          case Bytecodes.INVOKEVIRTUAL: {
-            current = null;
-            var target = bci + lengthAt(code, bci);
-            var b1 = this.makeBlock(target);
-            this.setSuccessors(bci, [b1]);
-            this.canTrap.set(bci);
             break;
           }
           default: {
@@ -301,8 +262,8 @@ module J2ME.Bytecode {
         block.isLoopHeader = true;
         if (block.isExceptionEntry) {
           // Loops that are implicitly formed by an exception handler lead to all sorts of corner cases.
-          // Don't compile such methods for now, until we see a concrete case that allows checking for correctness.
-          throw new CompilerBailout("Loop formed by an exception handler");
+          // However, this doesn't affect the baseline JIT, so don't bail out.
+          // TODO: Revisit for OPT JIT.
         }
         if (this._nextLoop >= 32) {
           // This restriction can be removed by using a fall-back to a BitSet in case we have more than 32 loops
@@ -366,6 +327,7 @@ module J2ME.Bytecode {
         if (handlers) {
           var dispatch = this.makeExceptionDispatch(handlers, 0, bci);
           block.successors.push(dispatch);
+          block.hasHandlers = true;
         }
       }
     }
@@ -459,6 +421,7 @@ module J2ME.Bytecode {
 
       for (var i = 0; i < block.successors.length; i++) {
         var successor = block.successors[i];
+        successor.numberOfPredecessors ++;
         // Recursively process successors.
         loops |= this.computeBlockOrderFrom(block.successors[i]);
         if (successor.active) {
@@ -478,21 +441,27 @@ module J2ME.Bytecode {
       return loops;
     }
 
+    public blockToString(block: Block): string {
+      return "blockID: " + String(block.blockID +
+      ", ").padRight(" ", 5) +
+      "bci: [" + block.startBci + ", " + block.endBci + "]" +
+      (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") +
+      (block.isLoopHeader ? " isLoopHeader" : "") +
+      (block.isLoopEnd ? " isLoopEnd" : "") +
+      (block.isExceptionEntry ? " isExceptionEntry" : "") +
+      (block.hasHandlers ? " hasHandlers" : "") +
+      ", loops: " + block.loops.toString(2) +
+      ", exits: " + block.exits.toString(2) +
+      ", loopID: " + block.loopID;
+    }
+
     public trace(writer: IndentingWriter, traceBytecode: boolean = false) {
       var code = this.method.code;
       var stream = new BytecodeStream(code);
 
       writer.enter("Block Map: " + this.blocks.map(b => b.blockID).join(", "));
       this.blocks.forEach(block => {
-        writer.enter("blockID: " + String(block.blockID +
-          ", ").padRight(" ", 5) +
-          "bci: [" + block.startBci + ", " + block.endBci + "]" +
-          (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") +
-          (block.isLoopHeader ? " isLoopHeader" : "") +
-          (block.isLoopEnd ? " isLoopEnd" : "") +
-          ", loops: " + block.loops.toString(2) +
-          ", exits: " + block.exits.toString(2) +
-          ", loopID: " + block.loopID);
+        writer.enter(this.blockToString(block));
         if (traceBytecode) {
           var bci = block.startBci;
           stream.setBCI(bci);

@@ -16,22 +16,20 @@ function asyncImpl(returnKind, promise) {
     } else {
       // void, do nothing
     }
-    // if (Instrument.profiling) {
-    //   Instrument.exitAsyncNative(key, promise);
-    // }
+    ctx.execute();
   }, function(exception) {
     var syntheticMethod = new MethodInfo({
       name: "RaiseExceptionSynthetic",
       signature: "()V",
       isStatic: true,
-      classInfo: {
-        className: "java/lang/Object",
-        vmc: {},
-        vfc: {},
-        constant_pool: [
+      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+        className: {value: "java/lang/Object"},
+        vmc: {value: {}},
+        vfc: {value: {}},
+        constant_pool: {value: [
           null
-        ]
-      },
+        ]}
+      }),
       code: new Uint8Array([
         0x2a,             // aload_0
         0xbf              // athrow
@@ -39,14 +37,9 @@ function asyncImpl(returnKind, promise) {
     });
     var callee = new Frame(syntheticMethod, [exception], 0);
     ctx.frames.push(callee);
-  }).then(ctx.resume.bind(ctx));
-
-  // if (Instrument.profiling) {
-  //   key = ctx.current().methodInfo.implKey;
-  //   Instrument.enterAsyncNative(key, promise);
-  // }
-
-  $.pause();
+    ctx.execute();
+  });
+  $.pause("Async");
 }
 
 Override["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;"] = function(string) {
