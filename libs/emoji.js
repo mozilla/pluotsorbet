@@ -235,7 +235,7 @@ var emoji = (function() {
 
   var data;
   var images = [];
-  var imagesNum = 12;
+  var imagesNum = 13;
 
   var squareSize = 16;
 
