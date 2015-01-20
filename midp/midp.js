@@ -516,7 +516,7 @@ MIDP.Context2D = (function() {
 
     // Cache the canvas position for future computation.
     var canvasRect = c.getBoundingClientRect();
-    window.addEventListener("resize", function() {
+    c.addEventListener("canvasresize", function() {
         canvasRect = c.getBoundingClientRect();
     });
 

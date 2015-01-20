@@ -31,7 +31,7 @@ var currentlyFocusedTextEditor;
             isFullScreen ? "none" : "block";
         var headerHeight = isFullScreen ? 0 : header.offsetHeight;
         canvas.height = MIDP.ScreenHeight - headerHeight;
-        window.dispatchEvent(new Event('resize'));
+        canvas.dispatchEvent(new Event('canvasresize'));
     }
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
