@@ -218,7 +218,6 @@ document.getElementById("loadAllClasses").onclick = function() {
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
-   debugger;
    indexedDB.deleteDatabase("asyncStorage");
  };
  document.getElementById("exportstorage").onclick = function() {
