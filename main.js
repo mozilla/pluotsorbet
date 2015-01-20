@@ -52,17 +52,6 @@ jars.forEach(function(jar) {
   }));
 });
 
-var packs = [
-  // "build/classes.jar.js.pack",
-  // "build/tests.jar.js.pack"
-];
-
-packs.forEach(function(pack) {
-  loadingPromises.push(load(pack, "arraybuffer").then(function(data) {
-    CLASSES.addPath(pack, data);
-  }));
-});
-
 function processJAD(data) {
   data
   .replace(/\r\n|\r/g, "\n")

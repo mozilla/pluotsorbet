@@ -20,7 +20,6 @@ module J2ME {
     missingSourceFiles: Map<string, string []>;
 
     jarFiles: Map<string, any>;
-    packFiles: PackFile [];
     classFiles: Map<string, any>;
     classes: Map<string, ClassInfo>;
 
@@ -39,7 +38,6 @@ module J2ME {
       this.jarFiles = Object.create(null);
       this.classFiles = Object.create(null);
       this.classes = Object.create(null);
-      this.packFiles = [];
       this.preInitializedClasses = [];
     }
 
@@ -92,8 +90,6 @@ module J2ME {
     addPath(name: string, buffer: ArrayBuffer) {
       if (name.substr(-4) === ".jar") {
         this.jarFiles[name] = new ZipFile(buffer);
-      } else if (name.substr(-5) === ".pack") {
-        this.packFiles.push(new PackFile(buffer));
       } else {
         this.classFiles[name] = buffer;  
       }
@@ -257,17 +253,6 @@ module J2ME {
           return null;
       }
       return classInfo;
-    }
-
-    getCode(className: string): string {
-      var packFiles = this.packFiles;
-      for (var i = 0; i < packFiles.length; i++) {
-        var code = packFiles[i].get(className);
-        if (code) {
-          return code;
-        }
-      }
-      return null;
     }
 
     createArrayClass(typeName: string): ArrayClassInfo {

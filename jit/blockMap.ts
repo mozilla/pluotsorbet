@@ -59,7 +59,6 @@ module J2ME.Bytecode {
     private blockMap: Block [];
     private startBlock: Block;
     private canTrap: Uint32ArrayBitSet;
-    // handlers: ExceptionHandler [];
     exceptionHandlers: ExceptionHandler [];
 
     constructor(method: MethodInfo) {
