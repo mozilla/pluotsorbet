@@ -66,10 +66,12 @@ module J2ME {
   }
 
   class Emitter {
-    private buffer: string [];
+    private _buffer: string [];
     private _indent = 0;
-    constructor() {
-      this.buffer = [];
+    private _emitIndent;
+    constructor(emitIndent: boolean = true) {
+      this._buffer = [];
+      this._emitIndent = emitIndent;
     }
     enter(s: string) {
       this.writeLn(s);
@@ -85,12 +87,14 @@ module J2ME {
       this._indent ++;
     }
     writeLn(s: string) {
-      var prefix = "";
-      for (var i = 0; i < this._indent; i++) {
-        prefix += "  ";
+      if (this._emitIndent) {
+        var prefix = "";
+        for (var i = 0; i < this._indent; i++) {
+          prefix += "  ";
+        }
+        s = prefix + s;
       }
-      this.buffer.push(prefix + s);
-      writer && writer.writeLn(prefix + s);
+      this._buffer.push(s);
     }
     indent() {
       this._indent ++;
@@ -99,10 +103,10 @@ module J2ME {
       this._indent --;
     }
     prependLn(s: string) {
-      this.buffer.unshift(s);
+      this._buffer.unshift(s);
     }
     toString(): string {
-      return this.buffer.join("\n");
+      return this._buffer.join("\n");
     }
   }
 
@@ -196,7 +200,7 @@ module J2ME {
       this.initializedClasses = null;
       this.hasHandlers = !!methodInfo.exception_table.length;
       this.blockStackHeightMap = [0];
-      this.emitter = new Emitter();
+      this.emitter = new Emitter(target !== CompilationTarget.Runtime);
       this.target = target;
     }
 
