@@ -1433,7 +1433,15 @@ module J2ME {
 
     jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey);
     var s = performance.now();
-    var compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+
+    var compiledMethod;
+    try {
+      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+    } catch (e) {
+      methodInfo.state = MethodState.NotCompiled;
+      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because of " + e);
+      return;
+    }
     var compiledMethodName = mangledClassAndMethodName;
     var source = "function " + compiledMethodName +
                  "(" + compiledMethod.args.join(",") + ") {\n" +

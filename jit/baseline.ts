@@ -62,12 +62,7 @@ module J2ME {
       throw new Error("Method: " + methodInfo.implKey + " is synchronized.");
     }
     writer && writer.writeLn("Compile: " + methodInfo.implKey);
-    try {
-      var result = new BaselineCompiler(methodInfo, target).compile();
-      return result;
-    } catch (e) {
-      throw e;
-    }
+    return new BaselineCompiler(methodInfo, target).compile();
   }
 
   class Emitter {
