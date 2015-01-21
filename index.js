@@ -534,3 +534,7 @@ DumbPipe.registerOpener("windowOpen", function(message, sender) {
 DumbPipe.registerOpener("reload", function(message, sender) {
   window.location.reload();
 });
+
+DumbPipe.registerOpener("exit", function(message, sender) {
+  window.close();
+});
