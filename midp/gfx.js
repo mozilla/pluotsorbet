@@ -543,14 +543,6 @@ var currentlyFocusedTextEditor;
         createEllipticalArc(c, x + rw, y + rh, rw, rh, Math.PI, 1.5 * Math.PI, false);
     }
 
-    function withSize(dx, dy, cb) {
-        if (!dx)
-            dx = 1;
-        if (!dy)
-            dy = 1;
-        cb(dx, dy);
-    }
-
     Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
         return color;
     };
@@ -715,8 +707,11 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
+
             [x, y] = withTextAnchor(g, c, anchor, x, y, chr);
+
             withPixel(g, c);
+
             c.fillText(chr, x, y);
         });
     };
@@ -725,17 +720,20 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             var [x, y] = withClip(g, c, x1, y1);
+
             withPixel(g, c);
-            withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
-                withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
-                    c.beginPath();
-                    c.moveTo(x, y);
-                    c.lineTo(x + dx1, y + dy1);
-                    c.lineTo(x + dx2, y + dy2);
-                    c.closePath();
-                    c.fill();
-                });
-            });
+
+            var dx1 = (x2 - x1) || 1;
+            var dy1 = (y2 - y1) || 1;
+            var dx2 = (x3 - x1) || 1;
+            var dy2 = (y3 - y1) || 1;
+
+            c.beginPath();
+            c.moveTo(x, y);
+            c.lineTo(x + dx1, y + dy1);
+            c.lineTo(x + dx2, y + dy2);
+            c.closePath();
+            c.fill();
         });
     };
 
@@ -746,10 +744,13 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
+
             withPixel(g, c);
-            withSize(w, h, function(w, h) {
-                c.strokeRect(x, y, w, h);
-            });
+
+            w = w || 1;
+            h = h || 1;
+
+            c.strokeRect(x, y, w, h);
         });
     };
 
@@ -760,12 +761,15 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
+
             withPixel(g, c);
-            withSize(w, h, function(w, h) {
-                c.beginPath();
-                createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
-                c.stroke();
-            });
+
+            w = w || 1;
+            h = h || 1;
+
+            c.beginPath();
+            createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+            c.stroke();
         });
     };
 
@@ -776,10 +780,13 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
+
             withPixel(g, c);
-            withSize(w, h, function(w, h) {
-                c.fillRect(x, y, w, h);
-            });
+
+            w = w || 1;
+            h = h || 1;
+
+            c.fillRect(x, y, w, h);
         });
     };
 
@@ -790,12 +797,15 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
+
             withPixel(g, c);
-            withSize(w, h, function(w, h) {
-                c.beginPath();
-                createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
-                c.fill();
-            });
+
+            w = w || 1;
+            h = h || 1;
+
+            c.beginPath();
+            createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+            c.fill();
         });
     };
 
@@ -872,18 +882,20 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
-        var dx = x2 - x1, dy = y2 - y1;
         var g = this;
         withGraphics(g, function(c) {
             var [x, y] = withClip(g, c, x1, y1);
-            withSize(dx, dy, function(dx, dy) {
-                withPixel(g, c);
-                c.beginPath();
-                c.moveTo(x, y);
-                c.lineTo(x + dx, y + dy);
-                c.stroke();
-                c.closePath();
-            });
+
+            withPixel(g, c);
+
+            var dx = (x2 - x1) || 1;
+            var dy = (y2 - y1) || 1;
+
+            c.beginPath();
+            c.moveTo(x, y);
+            c.lineTo(x + dx, y + dy);
+            c.stroke();
+            c.closePath();
         });
     };
 
