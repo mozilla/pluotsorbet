@@ -85,6 +85,7 @@ module J2ME {
 
   export var yieldVirtualMap = {
     // These can technically yield but are worth the risk.
+    // XXX Determine the current status of this item.
     // "java/lang/Object.equals.(Ljava/lang/Object;)Z": YieldReason.None
   }
 
@@ -98,6 +99,7 @@ module J2ME {
   }
 
   export function isFinalMethod(methodInfo: MethodInfo): boolean {
+    // XXX Determine whether we can start using the code in this function.
     return false;
     var result = methodInfo.isFinal;
     if (!result) {
