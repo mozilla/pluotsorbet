@@ -715,7 +715,7 @@ var currentlyFocusedTextEditor;
 
         var pair = withClip(this, c, x, y), x = pair[0], y = pair[1];
 
-        var pair = withTextAnchor(this, c, anchor, x, y, chr), x = pair[0], y = pair[1];
+        pair = withTextAnchor(this, c, anchor, x, y, chr), x = pair[0], y = pair[1];
 
         withPixel(this, c);
 
