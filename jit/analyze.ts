@@ -241,6 +241,7 @@ module J2ME {
             }
             break;
           case Bytecodes.INVOKEVIRTUAL:
+          case Bytecodes.RESOLVED_INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
             var cpi = stream.readCPI()
