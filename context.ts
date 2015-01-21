@@ -27,7 +27,6 @@ module J2ME {
   /**
    * Toggle VM tracing here.
    */
-  // export var writers = WriterFlags.None; // WriterFlags.Link; // WriterFlags.Link | WriterFlags.Load;
   export var writers = WriterFlags.None; // WriterFlags.Link; // WriterFlags.Link | WriterFlags.Load;
 
   Array.prototype.push2 = function(value) {
@@ -135,7 +134,7 @@ module J2ME {
 
     incLocal(i: number, value: any) {
       var j = this.localBase + i;
-      this.local[j] = this.local[j] + value | 0
+      this.local[j] = this.local[j] + value | 0;
     }
 
     read8(): number {
