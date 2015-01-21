@@ -5,7 +5,9 @@ module J2ME {
   import BytecodeStream = Bytecode.BytecodeStream;
 
   var yieldWriter = null; // stderrWriter;
-  export var yieldCounter = new Metrics.Counter(true);
+  export var yieldCounter = null; // new Metrics.Counter(true);
+
+  export var yieldGraph = null; // Object.create(null);
 
   export enum YieldReason {
     None = 0,
@@ -13,7 +15,8 @@ module J2ME {
     Synchronized = 2,
     MonitorEnterExit = 3,
     Virtual = 4,
-    Cycle = 5
+    Cycle = 5,
+    Yield = 6,
   }
 
   /**
@@ -76,14 +79,46 @@ module J2ME {
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.dumbPipe.()Z": YieldReason.Root,
     "gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I": YieldReason.Root,
+
+
   };
 
-  export function isFinal(classInfo: ClassInfo): boolean {
-    if (classInfo.isFinal) {
-      return true;
+  export var yieldVirtualMap = {
+    // These can technically yield but are worth the risk.
+    // XXX Determine the current status of this item.
+    // "java/lang/Object.equals.(Ljava/lang/Object;)Z": YieldReason.None
+  }
+
+  export function isFinalClass(classInfo: ClassInfo): boolean {
+    var result = classInfo.isFinal;
+    if (!result) {
+      result = classInfo.subClasses.length === 0;
     }
+    // console.log(classInfo.className + " is final class " + result);
+    return result;
+  }
+
+  export function isFinalMethod(methodInfo: MethodInfo): boolean {
+    // XXX Determine whether we can start using the code in this function.
     return false;
-    // TODO: Be more clever here.
+    var result = methodInfo.isFinal;
+    if (!result) {
+      var classInfo = methodInfo.classInfo;
+      var allSubClasses = classInfo.allSubClasses;
+      result = true;
+      for (var i = 0; i < allSubClasses.length; i++) {
+        var subClassMethods = allSubClasses[i].methods;
+        for (var j = 0; j < subClassMethods.length; j++) {
+          var subClassMethodInfo = subClassMethods[j];
+          if (methodInfo.name === subClassMethodInfo.name &&
+              methodInfo.signature === subClassMethodInfo.signature) {
+            result = false;
+            break;
+          }
+        }
+      }
+    }
+    return result;
   }
 
   export function gatherCallees(callees: MethodInfo [], classInfo: ClassInfo, methodInfo: MethodInfo) {
@@ -108,7 +143,7 @@ module J2ME {
       return true;
     }
     // INVOKEVIRTUAL is only statically bound if its class is final.
-    if (op === Bytecodes.INVOKEVIRTUAL && isFinal(methodInfo.classInfo)) {
+    if (op === Bytecodes.INVOKEVIRTUAL && isFinalMethod(methodInfo)) {
       return true;
     }
     return false;
@@ -117,22 +152,77 @@ module J2ME {
   // Used to prevent cycles.
   var checkingForCanYield = Object.create(null);
 
+  function addDependency(callee: MethodInfo, caller: MethodInfo, reason: YieldReason) {
+    if (!yieldGraph) {
+      return;
+    }
+    if (!yieldGraph[callee.implKey]) {
+      yieldGraph[callee.implKey] = Object.create(null);
+    }
+    var node = yieldGraph[callee.implKey];
+    node[caller.implKey] = reason;
+  }
+
+  function countDescendents(root) {
+    var visited = Object.create(null);
+    var visiting = Object.create(null);
+    var w = new IndentingWriter();
+    function visit(name) {
+      if (!yieldGraph[name]) {
+        return 0;
+      }
+      if (visiting[name]) {
+        return 0;
+      }
+      var n = 0;
+      visiting[name] = true;
+      for (var k in yieldGraph[name]) {
+        n ++;
+        n += visit(k);
+      }
+      visiting[name] = false;
+      return n;
+    }
+    return visit(root);
+  }
+
+  export function traceYieldGraph(writer: IndentingWriter) {
+    writer.writeLn(JSON.stringify(yieldGraph, null, 2));
+    var pairs = [];
+    for (var k in yieldGraph) {
+      pairs.push([k, countDescendents(k)]);
+    }
+    pairs.sort(function (a, b) {
+      return b[1] - a[1];
+    });
+    for (var i = 0; i < pairs.length; i++) {
+      var p = pairs[i];
+      writer.writeLn(pairs[i][0] + ": " + pairs[i][1]);
+    }
+
+  }
+
   export function canYield(methodInfo: MethodInfo): YieldReason {
-    yieldWriter && yieldWriter.writeLn("Calling: " + methodInfo.implKey);
+    yieldWriter && yieldWriter.enter("> " + methodInfo.implKey);
     if (yieldMap[methodInfo.implKey] !== undefined) {
+      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[yieldMap[methodInfo.implKey]] + " cached.");
       return yieldMap[methodInfo.implKey];
     }
     if (methodInfo.isSynchronized) {
+      yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because it is synchronized.");
+      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[YieldReason.Synchronized]);
       return yieldMap[methodInfo.implKey] = YieldReason.Synchronized;
     }
     if (checkingForCanYield[methodInfo.implKey]) {
+      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[YieldReason.Cycle]);
       return YieldReason.Cycle;
     }
     if (!methodInfo.code) {
       assert (methodInfo.isNative || methodInfo.isAbstract);
+      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " Abstract");
       return yieldMap[methodInfo.implKey] = YieldReason.None;
     }
-    yieldWriter && yieldWriter.enter("> " + methodInfo.implKey);
+
     checkingForCanYield[methodInfo.implKey] = true;
     try {
       var result = YieldReason.None;
@@ -144,11 +234,12 @@ module J2ME {
           case Bytecodes.MONITORENTER:
           case Bytecodes.MONITOREXIT:
             result = YieldReason.MonitorEnterExit;
+            yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because it has monitor enter/exit.");
             break;
           case Bytecodes.INVOKEINTERFACE:
             result = YieldReason.Virtual;
             if (result) {
-              yieldCounter.count("Method: " + methodInfo.implKey + " yields because it has an invoke interface.");
+              yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because it has an invoke interface.");
             }
             break;
           case Bytecodes.INVOKEVIRTUAL:
@@ -156,6 +247,14 @@ module J2ME {
           case Bytecodes.INVOKESTATIC:
             var cpi = stream.readCPI()
             var callee = methodInfo.classInfo.resolve(cpi, op === Bytecodes.INVOKESTATIC);
+
+            if (op !== Bytecodes.INVOKESTATIC) {
+              if (yieldVirtualMap[methodInfo.implKey] === YieldReason.None) {
+                result = YieldReason.None;
+                break;
+              }
+            }
+
             if (!isStaticallyBound(op, callee)) {
               var callees = [];
               result = YieldReason.Virtual;
@@ -172,14 +271,16 @@ module J2ME {
                 }
               }
               if (result !== YieldReason.None) {
-                yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " is not statically bound.");
+                yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " is not statically bound.");
+                addDependency(callee, methodInfo, YieldReason.Virtual);
               }
               break;
             }
             result = canYield(callee);
             if (result) {
-              yieldCounter.count("Callee: " + callee.implKey + " yields.");
-              yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " can yield.");
+              yieldCounter && yieldCounter.count("Callee: " + callee.implKey + " yields.");
+              yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " can yield.");
+              addDependency(callee, methodInfo, YieldReason.Yield);
             }
             break;
         }
@@ -189,9 +290,10 @@ module J2ME {
         stream.next();
       }
     } catch (e) {
-      stderrWriter.writeLn("ERROR: " + methodInfo.implKey + " Cycle");
-      stderrWriter.writeLn(e);
-      stderrWriter.writeLns(e.stack);
+      result = YieldReason.Cycle;
+      // stderrWriter.writeLn("ERROR: " + methodInfo.implKey + " Cycle");
+      // stderrWriter.writeLn(e);
+      // stderrWriter.writeLns(e.stack);
     }
     checkingForCanYield[methodInfo.implKey] = false;
     yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[result]);

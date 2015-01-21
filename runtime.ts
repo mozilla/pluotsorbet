@@ -44,6 +44,11 @@ module J2ME {
   export var loadWriter = null;
 
   /**
+   * Traces winding and unwinding.
+   */
+  export var windingWriter = null;
+
+  /**
    * Traces class initialization.
    */
   export var initWriter = null;
@@ -55,7 +60,10 @@ module J2ME {
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
   export var baselineMethodCounter = new Metrics.Counter(true);
+  export var asyncCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
+
+  export var unwindCount = 0;
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
@@ -276,10 +284,10 @@ module J2ME {
   }
 
   var stringHashes = Object.create(null);
-  var stringHasheCount = 0;
+  var stringHashCount = 0;
 
   export function hashStringToString(s: string) {
-    if (stringHasheCount > 1024) {
+    if (stringHashCount > 1024) {
       return StringUtilities.variableLengthEncodeInt32(hashString(s));
     }
     var c = stringHashes[s];
@@ -287,7 +295,7 @@ module J2ME {
       return c;
     }
     c = stringHashes[s] = StringUtilities.variableLengthEncodeInt32(hashString(s));
-    stringHasheCount ++;
+    stringHashCount ++;
     return c;
   }
 
@@ -550,11 +558,15 @@ module J2ME {
     }
 
     yield() {
+      windingWriter && windingWriter.writeLn("yielding");
+      unwindCount ++;
       runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
+      windingWriter && windingWriter.writeLn("pausing");
+      unwindCount ++;
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
     }
@@ -1140,8 +1152,8 @@ module J2ME {
 
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
-      return function fastInterpreterFrameAdapter() {
-        var frame = new Frame(methodInfo, [], 0);
+      var method = function fastInterpreterFrameAdapter() {
+        var frame = Frame.create(methodInfo, [], 0);
         var j = 0;
         if (!methodInfo.isStatic) {
           frame.setLocal(j++, this);
@@ -1150,12 +1162,14 @@ module J2ME {
         for (var i = 0; i < slots; i++) {
           frame.setLocal(j++, arguments[i]);
         }
-        return $.ctx.executeNewFrameSet([frame]);
-      }
+        return $.ctx.executeFrames([frame]);
+      };
+      (<any>method).methodInfo = methodInfo;
+      return method;
     }
 
-    return function interpreterFrameAdapter() {
-      var frame = new Frame(methodInfo, [], 0);
+    var method = function interpreterFrameAdapter() {
+      var frame = Frame.create(methodInfo, [], 0);
       var j = 0;
       if (!methodInfo.isStatic) {
         frame.setLocal(j++, this);
@@ -1182,8 +1196,10 @@ module J2ME {
           return;
         }
       }
-      return $.ctx.executeNewFrameSet([frame]);
+      return $.ctx.executeFrames([frame]);
     };
+    (<any>method).methodInfo = methodInfo;
+    return method;
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
@@ -1233,6 +1249,7 @@ module J2ME {
         linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
         fn = nativeMethod;
         methodType = MethodType.Native;
+        methodInfo.isCompiled = true;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
@@ -1242,13 +1259,13 @@ module J2ME {
           // out from.
           jitMethodInfos[fn.name] = methodInfo;
           updateGlobalObject = false;
+          methodInfo.isCompiled = true;
         } else {
           linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
           fn = prepareInterpretedMethod(methodInfo);
         }
       }
-
       if (false && methodTimeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
         updateGlobalObject = true;
@@ -1284,7 +1301,7 @@ module J2ME {
         // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
         // var key = MethodType[methodType] + " " + methodInfo.implKey;
         nativeCounter.count(key);
-        var s = ops;
+        var s = bytecodeCount;
         try {
           methodTimeline.enter(key);
           var r;
@@ -1304,9 +1321,9 @@ module J2ME {
             default:
               r = fn.apply(this, arguments);
           }
-          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
         } catch (e) {
-          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
           throw e;
         }
         return r;
@@ -1585,6 +1602,11 @@ var Runtime = J2ME.Runtime;
  * read very often.
  */
 var U: J2ME.VMState = J2ME.VMState.Running;
+
+/**
+ * OSR Frame.
+ */
+var O: J2ME.Frame = null;
 
 /**
  * Runtime exports for compiled code.

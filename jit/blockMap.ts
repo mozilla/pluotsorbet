@@ -13,7 +13,7 @@ module J2ME.Bytecode {
     public hasHandlers: boolean;
     public blockID: number;
 
-    public region: C4.IR.Region;
+    public region: any;
 
     public successors: Block [];
     public normalSuccessors: number;

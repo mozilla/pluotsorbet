@@ -134,18 +134,6 @@ module J2ME.C4.Backend {
     return new Identifier(name);
   }
 
-  export function isIdentifierName(s) {
-    if (!isIdentifierStart(s[0])) {
-      return false;
-    }
-    for (var i = 1; i < s.length; i++) {
-      if (!isIdentifierPart(s[i])) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   export function property(obj, ...args) {
     for (var i = 0; i < args.length; i++) {
       var x = args[i];
