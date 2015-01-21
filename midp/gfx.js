@@ -819,9 +819,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(g, c, x, y);
+        [x, y] = withClip(this, c, x, y);
 
-        withPixel(g, c);
+        withPixel(this, c);
 
         w = w || 1;
         h = h || 1;
