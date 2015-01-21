@@ -1,6 +1,6 @@
 .PHONY: all test tests j2me java certs app clean jasmin aot shumway
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts")
-JIT_SRCS=$(shell find jit -name "*.ts")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
+JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 
 all: java jasmin tests j2me shumway
@@ -15,7 +15,11 @@ build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
 	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js
 
-build/jsc.js: jsc.ts build/j2me.js
+build/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
+	@echo "Building J2ME JSC"
+	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out build/j2me-jsc.js
+
+build/jsc.js: jsc.ts build/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
 	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out build/jsc.js
 

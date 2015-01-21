@@ -20,6 +20,10 @@ module J2ME {
     Store
   }
 
+  export function isTwoSlot(kind: Kind) {
+    return kind === Kind.Long || kind === Kind.Double;
+  }
+
   export var valueKinds = [
     Kind.Boolean,
     Kind.Char,

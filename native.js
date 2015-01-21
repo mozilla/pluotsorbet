@@ -309,7 +309,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
 
     var frames = [];
     if (clinit && clinit.classInfo.className === className) {
-        frames.push(new Frame(clinit, [], 0));
+        frames.push(Frame.create(clinit, [], 0));
     }
     if (classInfo.superClass) {
         var classInitFrame = $.ctx.getClassInitFrame(classInfo.superClass);
@@ -318,7 +318,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
         }
     }
     if (frames.length) {
-        $.ctx.executeNewFrameSet(frames);
+        $.ctx.executeFrames(frames);
     }
 };
 
@@ -360,7 +360,7 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
       name: "ClassNewInstanceSynthetic",
       signature: "()Ljava/lang/Object;",
       isStatic: true,
-      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+      classInfo: J2ME.ClassInfo.createFromObject({
         className: {value: className},
         vmc: {value: {}},
         vfc: {value: {}},
@@ -381,7 +381,7 @@ Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
         0xb0              // areturn
       ]),
     });
-    return $.ctx.executeNewFrameSet([new Frame(syntheticMethod, [], 0)]);
+    return $.ctx.executeFrames([new Frame(syntheticMethod, [], 0)]);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {
@@ -552,7 +552,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
     var syntheticMethod = new MethodInfo({
       name: "ThreadStart0Synthetic",
       signature: "()V",
-      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+      classInfo: J2ME.ClassInfo.createFromObject({
         className: {value: this.klass.classInfo.className},
         vmc: {value: {}},
         vfc: {value: {}},

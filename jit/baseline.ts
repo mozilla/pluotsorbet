@@ -10,20 +10,46 @@ module J2ME {
 
   var writer = null; // new IndentingWriter();
 
-  export var baselineCounter = new Metrics.Counter(true);
+  export var baselineCounter = null; // new Metrics.Counter(true);
 
+  /**
+   * Detects common control flow patterns and tries to emit "if" statements
+   * whenever possible.
+   */
   var optimizeControlFlow = true;
 
+  /**
+   * Emits optimization results inline as comments in the generated source.
+   */
   var emitDebugInfoComments = false;
 
+  /**
+   * Emits control flow and yielding assertions.
+   */
   var emitCompilerAssertions = false;
 
+  /**
+   * Emits profiling code that counts the number of times a method is invoked.
+   */
   var emitCallMethodCounter = false;
 
+  /**
+   * Emits profiling code that counts the number of times control flow is dispatched
+   * to a basic block.
+   */
   var emitCallMethodLoopCounter = false;
 
-  export var baselineTotal = 0;
-  export var baselineCompiled = 0;
+  /**
+   * Emits array bounds checks. Although this is necessary for correctness, most
+   * applications work without them.
+   */
+  var emitCheckArrayBounds = true;
+
+  /**
+   * Emits array store type checks. Although this is necessary for correctness,
+   * most applications work without them.
+   */
+  var emitCheckArrayStore = true;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
@@ -36,10 +62,8 @@ module J2ME {
       throw new Error("Method: " + methodInfo.implKey + " is synchronized.");
     }
     writer && writer.writeLn("Compile: " + methodInfo.implKey);
-    baselineTotal ++;
     try {
       var result = new BaselineCompiler(methodInfo, target).compile();
-      baselineCompiled ++;
       return result;
     } catch (e) {
       throw e;
@@ -160,9 +184,9 @@ module J2ME {
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
-     * Make sure that none of these shadow gloal names, like "U".
+     * Make sure that none of these shadow gloal names, like "U" and "O".
      */
-    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
+    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "_R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
@@ -178,9 +202,6 @@ module J2ME {
       this.hasHandlers = !!methodInfo.exception_table.length;
       this.blockStackHeightMap = [0];
       this.emitter = new Emitter();
-      this.lockObject = this.methodInfo.isSynchronized ? 
-                          this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "this"
-                          : "null";
       this.target = target;
     }
 
@@ -192,6 +213,7 @@ module J2ME {
       }
       return new CompiledMethodInfo(this.parameters, this.emitter.toString(), this.referencedClasses);
     }
+
     needsVariable(name: string) {
       if (this.variables.indexOf(name) < 0) {
         this.variables.push(name);
@@ -218,8 +240,9 @@ module J2ME {
       var stream = new BytecodeStream(this.methodInfo.code);
 
       var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
+      var needsSwitch = true;
 
-      if (blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
+      if (!needsSwitch && blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
         this.emitBlockBody(stream, blocks[0]);
         return;
       }
@@ -248,7 +271,7 @@ module J2ME {
       }
       if (emitCompilerAssertions) {
         this.emitter.enter("default:");
-        this.emitter.writeLn("J2ME.Debug.assert(false, 'Invalid pc.');");
+        this.emitter.writeLn("J2ME.Debug.assert(false, 'Invalid BI.');");
         this.emitter.outdent();
       }
       this.emitter.leave("}");
@@ -305,7 +328,7 @@ module J2ME {
       this.sp = this.blockStackHeightMap[block.startBci];
       emitDebugInfoComments && this.emitter.writeLn("// " + this.blockMap.blockToString(block));
       writer && writer.writeLn("emitBlock: " + block.startBci + " " + this.sp + " " + block.isExceptionEntry);
-      assert(this.sp !== undefined, "Bad stack height");
+      release || assert(this.sp !== undefined, "Bad stack height");
       stream.setBCI(block.startBci);
       var lastSourceLocation = null;
       var lastBC: Bytecodes;
@@ -328,7 +351,7 @@ module J2ME {
 
     private emitPrologue() {
       var local = this.local;
-      var localIndex = 0;
+      var parameterLocalIndex = this.methodInfo.isStatic ? 0 : 1;
 
       var typeDescriptors = SignatureDescriptor.makeSignatureDescriptor(this.methodInfo.signature).typeDescriptors;
 
@@ -338,21 +361,20 @@ module J2ME {
         if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
           kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
         }
-        this.parameters.push(this.getLocalName(localIndex));
-        localIndex += isTwoSlot(kind) ? 2 : 1;
+        this.parameters.push(this.getLocalName(parameterLocalIndex));
+        parameterLocalIndex += isTwoSlot(kind) ? 2 : 1;
       }
 
-      var extraLocal = this.methodInfo.max_locals - (this.methodInfo.isStatic ? 0 : 1);
-      for (var i = 0; i < extraLocal; i++) {
+      var maxLocals = this.methodInfo.max_locals;
+      for (var i = 0; i < maxLocals; i++) {
         local.push(this.getLocalName(i));
       }
       if (local.length) {
         this.emitter.writeLn("var " + local.join(", ") + ";");
       }
       if (!this.methodInfo.isStatic) {
-        local.unshift("this");
+        this.emitter.writeLn(this.getLocal(0) + " = this;");
       }
-
       var stack = this.stack;
       for (var i = 0; i < this.methodInfo.max_stack; i++) {
         stack.push(this.getStack(i));
@@ -369,9 +391,30 @@ module J2ME {
         this.emitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
 
+      this.lockObject = this.methodInfo.isSynchronized ?
+        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : this.getLocal(0)
+        : "null";
+
+      this.emitOSREntryPoint();
+    }
+
+    private emitOSREntryPoint() {
+      // Are we doing an OSR?
+      this.emitter.enter("if (O) {");
+      this.emitter.writeLn("var local = O.local;");
+
+      // Restore locals.
+      for (var i = 0; i < this.methodInfo.max_locals; i++) {
+        this.emitter.writeLn(this.getLocal(i) + " = local[" + i + "];");
+      }
+      this.needsVariable("re");
+      this.emitter.writeLn("bi = O.pc;");
+      this.emitter.writeLn("O = null;");
       if (this.methodInfo.isSynchronized) {
+        this.emitter.leaveAndEnter("} else {");
         this.emitMonitorEnter(0, this.lockObject);
       }
+      this.emitter.leave("}");
     }
 
     lookupClass(cpi: number): ClassInfo {
@@ -447,7 +490,7 @@ module J2ME {
 
     pop(kind: Kind): string {
       writer && writer.writeLn(" popping: sp: " + this.sp + " " + Kind[kind]);
-      assert (this.sp, "SP below zero.");
+      release || assert (this.sp, "SP below zero.");
       this.sp -= isTwoSlot(kind) ? 2 : 1;
       var v = this.getStack(this.sp);
       writer && writer.writeLn("  popped: sp: " + this.sp + " " + Kind[kind] + " " + v);
@@ -491,18 +534,20 @@ module J2ME {
     setBlockStackHeight(pc: number, height: number) {
       writer && writer.writeLn("Setting Block Height " + pc + " " + height);
       if (this.blockStackHeightMap[pc] !== undefined) {
-        assert(this.blockStackHeightMap[pc] === height, pc + " " + this.blockStackHeightMap[pc] + " " + height);
+        release || assert(this.blockStackHeightMap[pc] === height, pc + " " + this.blockStackHeightMap[pc] + " " + height);
       }
       this.blockStackHeightMap[pc] = height;
     }
 
     emitIf(block: Block, stream: BytecodeStream, predicate: string) {
-      var nextBlock = this.getBlock(stream.nextBCI);
-      var targetBlock = this.getBlock(stream.readBranchDest());
+      var nextBCI = stream.nextBCI;
+      var targetBCI = stream.readBranchDest();
 
-      var next = nextBlock.blockID;
-      var target = targetBlock.blockID;
+      var nextBlock = this.getBlock(nextBCI);
+      var targetBlock = this.getBlock(targetBCI);
 
+      var next = this.getBlockIndex(nextBCI);
+      var target = this.getBlockIndex(targetBCI);
 
       if (optimizeControlFlow &&
           block !== nextBlock &&
@@ -622,9 +667,9 @@ module J2ME {
       var value = this.pop(stackKind(kind));
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
+      emitCheckArrayBounds && this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
       if (kind === Kind.Reference) {
-        this.emitter.writeLn("$CAS(" + array + ", " + value + ");");
+        emitCheckArrayStore && this.emitter.writeLn("$CAS(" + array + ", " + value + ");");
       }
       this.emitter.writeLn(array + "[" + index + "] = " + value + ";");
     }
@@ -632,7 +677,7 @@ module J2ME {
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
+      emitCheckArrayBounds && this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
       this.emitPush(kind, array + "[" + index + "]");
     }
 
@@ -663,7 +708,7 @@ module J2ME {
           return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
-          this.emitPush(Kind.Reference, "$S(" + J2ME.C4.AST.escapeString(entry.bytes) + ")");
+          this.emitPush(Kind.Reference, "$S(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")");
           return;
         default:
           throw "Not done for: " + entry.tag;
@@ -821,7 +866,7 @@ module J2ME {
         case Bytecodes.DDIV: v = x + " / " + y; break;
         case Bytecodes.DREM: v = x + " % " + y; break;
         default:
-          assert(false, Bytecodes[opcode]);
+          release || assert(false, Bytecodes[opcode]);
       }
       this.emitPush(result, v);
     }
@@ -1151,9 +1196,12 @@ module J2ME {
         case Bytecodes.RETURN         : this.emitReturn(Kind.Void); break;
         case Bytecodes.GETSTATIC      : cpi = stream.readCPI(); this.emitGetField(this.lookupField(cpi, opcode, true), true); break;
         case Bytecodes.PUTSTATIC      : cpi = stream.readCPI(); this.emitPutField(this.lookupField(cpi, opcode, true), true); break;
-        case Bytecodes.GETFIELD       : cpi = stream.readCPI(); this.emitGetField(this.lookupField(cpi, opcode, false), false); break;
-        case Bytecodes.PUTFIELD       : cpi = stream.readCPI(); this.emitPutField(this.lookupField(cpi, opcode, false), false); break;
-        case Bytecodes.INVOKEVIRTUAL  : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
+        case Bytecodes.RESOLVED_GETFIELD      : opcode = Bytecodes.GETFIELD;
+        case Bytecodes.GETFIELD               : cpi = stream.readCPI(); this.emitGetField(this.lookupField(cpi, opcode, false), false); break;
+        case Bytecodes.RESOLVED_PUTFIELD      : opcode = Bytecodes.PUTFIELD;
+        case Bytecodes.PUTFIELD               : cpi = stream.readCPI(); this.emitPutField(this.lookupField(cpi, opcode, false), false); break;
+        case Bytecodes.RESOLVED_INVOKEVIRTUAL : opcode = Bytecodes.INVOKEVIRTUAL;
+        case Bytecodes.INVOKEVIRTUAL          : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
         case Bytecodes.INVOKESPECIAL  : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;
         case Bytecodes.INVOKESTATIC   : cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, true), opcode, stream.nextBCI); break;
         case Bytecodes.INVOKEINTERFACE: cpi = stream.readCPI(); this.emitInvoke(this.lookupMethod(cpi, opcode, false), opcode, stream.nextBCI); break;

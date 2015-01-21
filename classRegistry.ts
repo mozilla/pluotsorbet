@@ -178,7 +178,12 @@ module J2ME {
       var classInfo = this.loadClassBytes(bytes);
       if (classInfo.superClassName) {
         classInfo.superClass = this.loadClass(classInfo.superClassName);
-        classInfo.superClass.subClasses.push(classInfo);
+        var superClass = classInfo.superClass;
+        superClass.subClasses.push(classInfo);
+        while (superClass) {
+          superClass.allSubClasses.push(classInfo);
+          superClass = superClass.superClass;
+        }
       }
       var classes = classInfo.classes;
       classes.forEach(function (c, n) {
@@ -194,14 +199,20 @@ module J2ME {
      */
     loadAllClassFiles() {
       var jarFiles = this.jarFiles;
-      for (var k in jarFiles) {
-        var zip = jarFiles[k];
-        for (var fileName in zip.directory) {
-          if (fileName.substr(-6) === ".class") {
-            this.loadClassFile(fileName);
-          }
+      Object.keys(jarFiles).every(function (path) {
+        if (path.substr(-4) !== ".jar") {
+          return true;
         }
-      }
+        var zipFile = jarFiles[path];
+        Object.keys(zipFile.directory).every(function (fileName) {
+          if (fileName.substr(-6) !== '.class') {
+            return true;
+          }
+          var className = fileName.substring(0, fileName.length - 6);
+          CLASSES.getClass(className);
+          return true;
+        });
+      });
     }
 
     loadClass(className: string): ClassInfo {
