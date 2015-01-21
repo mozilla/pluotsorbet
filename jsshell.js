@@ -3,6 +3,8 @@
 
 'use strict';
 
+console.print = console.log;
+
 function check() {
 
 }
@@ -13,9 +15,10 @@ if (scriptArgs.length !== 1) {
   quit(1);
 }
 
+var callbacks = [];
 var window = {
   setZeroTimeout: function(callback) {
-    callback();
+    callbacks.push(callback);
   },
   addEventListener: function() {
   },
@@ -67,46 +70,42 @@ var config = {
 };
 
 try {
-  load("libs/zipfile.js", "blackBox.js", "build/j2me.js",
+  load("build/j2me.js","libs/zipfile.js", "blackBox.js",
        "libs/encoding.js", "util.js",
        "instrument.js",
        "override.js", "native.js", "tests/override.js", 
-       "string.js", "libs/console.js", "midp/midp.js",
+       "string.js", "midp/midp.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
 
-  // load("build/classes.jar.cc.js");
-  // load("build/program.jar.cc.js");
+  // load("build/classes.jar.js");
+  // load("build/program.jar.js");
+  load("build/tests.jar.js");
 
   var dump = putstr;
-  var console = window.console;
 
   CLASSES.addSourceDirectory("java/cldc1.1.1");
   CLASSES.addSourceDirectory("java/midp");
-  CLASSES.addSourceDirectory("bench/scimark2src");
+  // CLASSES.addSourceDirectory("bench/scimark2src");
 
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-  CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
+  //CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
 
   var start = dateNow();
   var jvm = new JVM();
 
-  var s = dateNow();
-  snarf("classes.txt").split("\n").forEach(function (x) {
-    try {
-      CLASSES.getClass(x);
-    } catch (e) {
-      print(e);
-    }
-  });
-  print("TOOK: " + (dateNow() - s));
+  J2ME.writers = J2ME.WriterFlags.All;
 
   print("INITIALIZATION TIME: " + (dateNow() - start));
 
   start = dateNow();
   var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
+
+  while (callbacks.length) {
+    (callbacks.shift())();
+  }
 
   print("RUNNING TIME: " + (dateNow() - start));
 

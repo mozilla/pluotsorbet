@@ -1,6 +1,15 @@
-///<reference path='build/j2me.d.ts' />
+///<reference path='build/j2me-jsc.d.ts' />
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
+
+if (!jsGlobal.performance) {
+  jsGlobal.performance = {};
+}
+
+if (!jsGlobal.performance.now) {
+  jsGlobal.performance.now = typeof dateNow !== 'undefined' ? dateNow : Date.now;
+}
+
 var CC = {};
 
 jsGlobal.window = {
@@ -66,7 +75,7 @@ module J2ME {
     }
   }
 
-  loadFiles("libs/zipfile.js", "blackBox.js", "build/j2me.js",
+  loadFiles("blackBox.js", "build/j2me-jsc.js", "libs/zipfile.js",
     "libs/encoding.js", "util.js",
     "instrument.js",
     "override.js", "native.js", "string.js", "midp/midp.js",
@@ -234,9 +243,11 @@ module J2ME {
       }
       return methodInfo.implKey === methodFilterOption.value;
     }
+    stdoutWriter.writeLn("var start = performance.now();");
     compile(jvm, jarFilter, classFilter, methodFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    stdoutWriter.writeLn("console.log(\"Loaded " + jarFileFilterOption.value + " in \" + (performance.now() - start).toFixed(2) + \" ms.\");");
     if (verboseOption.value) {
-      printResults();
+      // ...
     }
   }
 

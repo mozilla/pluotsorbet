@@ -333,6 +333,10 @@ module J2ME.Bytecode {
     IINC_GOTO              = 211,
     ARRAYLENGTH_IF_ICMPGE  = 212,
 
+    RESOLVED_GETFIELD      = 213,
+    RESOLVED_PUTFIELD      = 214,
+    RESOLVED_INVOKEVIRTUAL = 215,
+
     ILLEGAL              = 255,
     END                  = 256,
 
@@ -616,7 +620,10 @@ module J2ME.Bytecode {
     define(Bytecodes.PUTSTATIC           , "putstatic"       , "bjj"  , Flags.TRAP | Flags.FIELD_WRITE);
     define(Bytecodes.GETFIELD            , "getfield"        , "bjj"  , Flags.TRAP | Flags.FIELD_READ);
     define(Bytecodes.PUTFIELD            , "putfield"        , "bjj"  , Flags.TRAP | Flags.FIELD_WRITE);
-    define(Bytecodes.INVOKEVIRTUAL       , "invokevirtual"   , "bjj"  , Flags.TRAP | Flags.INVOKE);
+    define(Bytecodes.RESOLVED_GETFIELD   , "getfield"        , "bjj"  , Flags.TRAP | Flags.FIELD_READ);
+    define(Bytecodes.RESOLVED_PUTFIELD   , "putfield"        , "bjj"  , Flags.TRAP | Flags.FIELD_WRITE);
+    define(Bytecodes.INVOKEVIRTUAL                , "invokevirtual"   , "bjj"  , Flags.TRAP | Flags.INVOKE);
+    define(Bytecodes.RESOLVED_INVOKEVIRTUAL       , "invokevirtual"   , "bjj"  , Flags.TRAP | Flags.INVOKE);
     define(Bytecodes.INVOKESPECIAL       , "invokespecial"   , "bjj"  , Flags.TRAP | Flags.INVOKE);
     define(Bytecodes.INVOKESTATIC        , "invokestatic"    , "bjj"  , Flags.TRAP | Flags.INVOKE);
     define(Bytecodes.INVOKEINTERFACE     , "invokeinterface" , "bjja_", Flags.TRAP | Flags.INVOKE);

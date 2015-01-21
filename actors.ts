@@ -6,6 +6,30 @@ module J2ME {
   declare var classObjects;
   declare var util;
 
+  import BlockMap = Bytecode.BlockMap;
+
+  export interface ConstantPoolEntry {
+    tag: TAGS;
+    name_index: number;
+    bytes: string;
+    class_index: number;
+    name_and_type_index: number;
+    signature_index: number;
+    string_index: number;
+    integer: number;
+    float: number;
+    double: number;
+    highBits: number;
+    lowBits: number;
+  }
+
+  export interface ExceptionHandler {
+    start_pc: number;
+    end_pc: number;
+    handler_pc: number;
+    catch_type: number;
+  }
+
   export class SourceLocation {
     constructor(public className: string, public sourceFile: string, public lineNumber: number) {
       // ...
@@ -81,13 +105,24 @@ module J2ME {
     isStatic: boolean;
     isSynchronized: boolean;
     isAbstract: boolean;
+    isFinal: boolean;
+
+    /**
+     * There is a compiled version of this method.?
+     */
+    state: MethodState;
+
     exception_table: ExceptionHandler [];
     max_locals: number;
     max_stack: number;
+
+    argumentSlots: number;
+
     /**
      * The number of arguments to pop of the stack when calling this function.
      */
-    argumentSlots: number;
+    consumeArgumentSlots: number;
+
     hasTwoSlotArguments: boolean;
     signatureDescriptor: SignatureDescriptor;
     signature: string;
@@ -98,6 +133,8 @@ module J2ME {
     attributes: any [];
     mangledName: string;
     mangledClassAndMethodName: string;
+
+    blockMap: BlockMap;
 
     line_number_table: {start_pc: number; line_number: number} [];
 
@@ -115,6 +152,11 @@ module J2ME {
      * Approximate number of times this method was called.
      */
     interpreterCallCount: number;
+
+    /**
+     * Approximate number of times a backward branch was taken.
+     */
+    backwardsBranchCount: number;
 
     /**
      * Number of times this method's counters were reset.
@@ -163,6 +205,8 @@ module J2ME {
       this.isStatic = opts.isStatic;
       this.isSynchronized = opts.isSynchronized;
       this.isAbstract = opts.isAbstract;
+      this.isFinal = opts.isAbstract;
+      this.state = MethodState.Cold;
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
 
@@ -173,14 +217,19 @@ module J2ME {
       this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
       this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
-
+      this.consumeArgumentSlots = this.argumentSlots;
+      if (!this.isStatic) {
+        this.consumeArgumentSlots ++;
+      }
 
       this.callCount = 0;
       this.resetCount = 0;
       this.interpreterCallCount = 0;
+      this.backwardsBranchCount = 0;
       this.bytecodeCount = 0;
 
       this.isOptimized = false;
+      this.blockMap = null;
     }
 
     public getReturnKind(): Kind {
@@ -207,6 +256,8 @@ module J2ME {
     }
   }
 
+  var classID = 0;
+
   export class ClassInfo {
     className: string;
     c: string;
@@ -218,7 +269,9 @@ module J2ME {
     staticInitializer: MethodInfo;
     classes: any [];
     subClasses: ClassInfo [];
+    allSubClasses: ClassInfo [];
     constant_pool: ConstantPoolEntry [];
+    resolved_constant_pool: any [];
     isArrayClass: boolean;
     elementClass: ClassInfo;
     klass: Klass;
@@ -227,9 +280,18 @@ module J2ME {
     vfc: any;
     mangledName: string;
     thread: any;
+    id: number;
 
     sourceFile: string;
+
+    static createFromObject(object) {
+      var classInfo = Object.create(ClassInfo.prototype, object);
+      classInfo.resolved_constant_pool = new Array(classInfo.constant_pool.length);
+      return classInfo;
+    }
+
     constructor(classBytes) {
+      this.id = classID ++;
       enterTimeline("getClassImage");
       var classImage = getClassImage(classBytes);
       leaveTimeline("getClassImage");
@@ -238,7 +300,9 @@ module J2ME {
       this.superClassName = classImage.super_class ? cp[cp[classImage.super_class].name_index].bytes : null;
       this.access_flags = classImage.access_flags;
       this.constant_pool = cp;
+      this.resolved_constant_pool = new Array(cp.length);
       this.subClasses = [];
+      this.allSubClasses = [];
       // Cache for virtual methods and fields
       this.vmc = {};
       this.vfc = {};
@@ -280,7 +344,8 @@ module J2ME {
           isPublic: AccessFlags.isPublic(m.access_flags),
           isStatic: AccessFlags.isStatic(m.access_flags),
           isSynchronized: AccessFlags.isSynchronized(m.access_flags),
-          isAbstract: AccessFlags.isAbstract(m.access_flags)
+          isAbstract: AccessFlags.isAbstract(m.access_flags),
+          isFinal: AccessFlags.isFinal(m.access_flags)
         });
         this.methods.push(methodInfo);
         if (methodInfo.name === "<clinit>") {
@@ -425,44 +490,47 @@ module J2ME {
      * Resolves a constant pool reference.
      */
     resolve(index: number, isStatic: boolean) {
-      var cp = this.constant_pool;
-      var constant: any = cp[index];
-      if (!constant.tag)
+      var rp = this.resolved_constant_pool;
+      var constant: any = rp[index];
+      if (constant !== undefined) {
         return constant;
-      switch (constant.tag) {
-        case 3: // TAGS.CONSTANT_Integer
-          constant = constant.integer;
+      }
+      var cp = this.constant_pool;
+      var entry = this.constant_pool[index];
+      switch (entry.tag) {
+        case TAGS.CONSTANT_Integer:
+          constant = entry.integer;
           break;
-        case 4: // TAGS.CONSTANT_Float
-          constant = constant.float;
+        case TAGS.CONSTANT_Float:
+          constant = entry.float;
           break;
-        case 8: // TAGS.CONSTANT_String
-          constant = $.newStringConstant(cp[constant.string_index].bytes);
+        case TAGS.CONSTANT_String:
+          constant = $.newStringConstant(cp[entry.string_index].bytes);
           break;
-        case 5: // TAGS.CONSTANT_Long
-          constant = Long.fromBits(constant.lowBits, constant.highBits);
+        case TAGS.CONSTANT_Long:
+          constant = Long.fromBits(entry.lowBits, entry.highBits);
           break;
-        case 6: // TAGS.CONSTANT_Double
-          constant = constant.double;
+        case TAGS.CONSTANT_Double:
+          constant = entry.double;
           break;
-        case 7: // TAGS.CONSTANT_Class
-          constant = CLASSES.getClass(cp[constant.name_index].bytes);
+        case TAGS.CONSTANT_Class:
+          constant = CLASSES.getClass(cp[entry.name_index].bytes);
           break;
-        case 9: // TAGS.CONSTANT_Fieldref
-          var classInfo = this.resolve(constant.class_index, isStatic);
-          var fieldName = cp[cp[constant.name_and_type_index].name_index].bytes;
-          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+        case TAGS.CONSTANT_Fieldref:
+          var classInfo = this.resolve(entry.class_index, isStatic);
+          var fieldName = cp[cp[entry.name_and_type_index].name_index].bytes;
+          var signature = cp[cp[entry.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
           if (!constant) {
             throw $.newRuntimeException(
               classInfo.className + "." + fieldName + "." + signature + " not found");
           }
           break;
-        case 10: // TAGS.CONSTANT_Methodref
-        case 11: // TAGS.CONSTANT_InterfaceMethodref
-          var classInfo = this.resolve(constant.class_index, isStatic);
-          var methodName = cp[cp[constant.name_and_type_index].name_index].bytes;
-          var signature = cp[cp[constant.name_and_type_index].signature_index].bytes;
+        case TAGS.CONSTANT_Methodref:
+        case TAGS.CONSTANT_InterfaceMethodref:
+          var classInfo = this.resolve(entry.class_index, isStatic);
+          var methodName = cp[cp[entry.name_and_type_index].name_index].bytes;
+          var signature = cp[cp[entry.name_and_type_index].signature_index].bytes;
           constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
           if (!constant) {
             constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
@@ -473,7 +541,7 @@ module J2ME {
         default:
           throw new Error("not support constant type");
       }
-      return cp[index] = constant;
+      return rp[index] = constant;
     }
   }
 
