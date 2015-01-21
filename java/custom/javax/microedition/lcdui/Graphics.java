@@ -565,47 +565,47 @@ public class Graphics {
      * @see #getTranslateX()
      * @see #getTranslateY()
      */
-    public native void translate(int x, int y);
+    public native synchronized void translate(int x, int y);
 
     /**
      * Gets the X coordinate of the translated origin of this graphics context.
      * @return X of current origin
      */
-    public native int getTranslateX();
+    public native synchronized int getTranslateX();
 
     /**
      * Gets the Y coordinate of the translated origin of this graphics context.
      * @return Y of current origin
      */
-    public native int getTranslateY();
+    public native synchronized int getTranslateY();
 
     /**
      * Gets the current color.
      * @return an integer in form <code>0x00RRGGBB</code>
      * @see #setColor(int, int, int)
      */
-    public native int getColor();
+    public native synchronized int getColor();
 
     /**
      * Gets the red component of the current color.
      * @return integer value in range <code>0-255</code>
      * @see #setColor(int, int, int)
      */
-    public native int getRedComponent();
+    public native synchronized int getRedComponent();
 
     /**
      * Gets the green component of the current color.
      * @return integer value in range <code>0-255</code>
      * @see #setColor(int, int, int)
      */
-    public native int getGreenComponent();
+    public native synchronized int getGreenComponent();
 
     /**
      * Gets the blue component of the current color.
      * @return integer value in range <code>0-255</code>
      * @see #setColor(int, int, int)
      */
-    public native int getBlueComponent();
+    public native synchronized int getBlueComponent();
 
     /**
      * Gets the current grayscale value of the color being used for rendering
@@ -621,7 +621,7 @@ public class Graphics {
      * @return integer value in range <code>0-255</code>
      * @see #setGrayScale
      */
-    public native int getGrayScale();
+    public native synchronized int getGrayScale();
 
     /**
      * Sets the current color to the specified RGB values. All subsequent
@@ -636,7 +636,7 @@ public class Graphics {
      * are outside of range <code>0-255</code>
      * @see #getColor
      */
-    public native void setColor(int red, int green, int blue);
+    public native synchronized void setColor(int red, int green, int blue);
 
     /**
      * Sets the current color to the specified RGB values. All subsequent
@@ -652,7 +652,7 @@ public class Graphics {
      * @param RGB the color being set
      * @see #getColor
      */
-    public native void setColor(int RGB);
+    public native synchronized void setColor(int RGB);
 
     /**
      * Sets the current grayscale to be used for all subsequent
@@ -665,7 +665,7 @@ public class Graphics {
      * @throws IllegalArgumentException if the gray value is out of range
      * @see #getGrayScale
      */
-    public native void setGrayScale(int value);
+    public native synchronized void setGrayScale(int value);
 
     /**
      * Gets the current font.
@@ -673,7 +673,7 @@ public class Graphics {
      * @see javax.microedition.lcdui.Font
      * @see #setFont(javax.microedition.lcdui.Font)
      */
-    public native Font getFont();
+    public native synchronized Font getFont();
 
     /**
      * Sets the stroke style used for drawing lines, arcs, rectangles, and 
@@ -683,14 +683,14 @@ public class Graphics {
      * @throws IllegalArgumentException if the <code>style</code> is illegal
      * @see #getStrokeStyle
      */
-    public native void setStrokeStyle(int style);
+    public native synchronized void setStrokeStyle(int style);
 
     /**
      * Gets the stroke style used for drawing operations.
      * @return stroke style, <code>SOLID</code> or <code>DOTTED</code>
      * @see #setStrokeStyle
      */
-    public native int getStrokeStyle();
+    public native synchronized int getStrokeStyle();
 
     /**
      * Sets the font for all subsequent text rendering operations.  If font is 
@@ -703,11 +703,11 @@ public class Graphics {
      * @see #drawString(java.lang.String, int, int, int)
      * @see #drawChars(char[], int, int, int, int, int)
      */
-    public void setFont(Font font) {
+    public synchronized void setFont(Font font) {
         setFont0((font == null) ? Font.getDefaultFont() : font);
     }
 
-    private native void setFont0(Font font);
+    private native synchronized void setFont0(Font font);
   
     /**
      * Gets the X offset of the current clipping area, relative
@@ -719,7 +719,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipX();
+    public native synchronized int getClipX();
 
     /**
      * Gets the Y offset of the current clipping area, relative
@@ -731,7 +731,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipY();
+    public native synchronized int getClipY();
 
     /**
      * Gets the width of the current clipping area.
@@ -739,7 +739,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipWidth();
+    public native synchronized int getClipWidth();
 
 
     /**
@@ -748,7 +748,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipHeight();
+    public native synchronized int getClipHeight();
 
     /**
      * Internal routine to get the clip in a single call. The input
@@ -774,7 +774,7 @@ public class Graphics {
      * @param height the height of the rectangle to intersect the clip with
      * @see #setClip(int, int, int, int)
      */
-    public native void clipRect(int x, int y, int width, int height);
+    public native synchronized  void clipRect(int x, int y, int width, int height);
 
     /**
      * Sets the current clip to the rectangle specified by the
@@ -786,7 +786,7 @@ public class Graphics {
      * @param height the height of the new clip rectangle
      * @see #clipRect(int, int, int, int)
      */
-    public native void setClip(int x, int y, int width, int height);
+    public native synchronized void setClip(int x, int y, int width, int height);
 
     /**
      * Draws a line between the coordinates <code>(x1,y1)</code> and
@@ -1248,7 +1248,7 @@ public class Graphics {
      * the bounds of the source image
      *
      */
-    public native void copyArea(int x_src, int y_src,
+    public native synchronized void copyArea(int x_src, int y_src,
                                       int width, int height,
                                       int x_dest, int y_dest, int anchor);
 
@@ -1395,6 +1395,7 @@ public class Graphics {
      *                  the Image is non-null.
      */
     static Graphics getImageGraphics(Image img) {
+      System.out.println("ENTERED getImageGraphics");
         if (null == img) {
             throw new NullPointerException();
         }
@@ -1405,6 +1406,7 @@ public class Graphics {
         // construct and return a new ImageGraphics
         // object that uses the Image img as the 
         // destination.
+      System.out.println("LEAVING getImageGraphics");
         return g;
     }
 
@@ -1424,6 +1426,7 @@ public class Graphics {
      *                  the Image is non-null.
      */
     static Graphics getImageGraphics(Image img, int width, int height) {
+      System.out.println("ENTERED getImageGraphics");
         if (null == img) {
             throw new NullPointerException();
         }
@@ -1435,6 +1438,7 @@ public class Graphics {
 
         Graphics g = new Graphics();
         g.nativeInit(-1, Font.getDefaultFont(), img, w, h);
+      System.out.println("LEAVING getImageGraphics");
         return g;
     }
 
@@ -1449,8 +1453,10 @@ public class Graphics {
      * @return Graphics 
      */
     static Graphics getScreenGraphics(int displayId, int width, int height) {
+      System.out.println("ENTERED getScreenGraphics");
         Graphics g = new Graphics();
         g.nativeInit(displayId, Font.getDefaultFont(), null, width, height);
+      System.out.println("LEAVING getScreenGraphics");
         return g;
     }
 
@@ -1577,11 +1583,11 @@ public class Graphics {
      * Returns the creator of this Graphics object
      * @return Graphics creator reference
      */
-    native Object getCreator();
+    synchronized native Object getCreator();
 
     /**
      * Sets the creator of this Graphics object
      * @param creator the reference to creator of this Graphics object
      */
-    native void setCreator(Object creator);
+    synchronized native void setCreator(Object creator);
 } // class Graphics
