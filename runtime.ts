@@ -1454,21 +1454,26 @@ module J2ME {
     var s = performance.now();
 
     var compiledMethod;
+    enterTimeline("Compiling");
     try {
       compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
     } catch (e) {
       methodInfo.state = MethodState.CannotCompile;
       jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
+      leaveTimeline("Compiling");
       return;
     }
+    leaveTimeline("Compiling");
     var compiledMethodName = mangledClassAndMethodName;
     var source = "function " + compiledMethodName +
                  "(" + compiledMethod.args.join(",") + ") {\n" +
                    compiledMethod.body +
                  "\n}";
 
+    enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
     (1, eval)(source);
+    leaveTimeline("Eval Compiled Code");
 
     // Attach the compiled method to the method info object.
     var fn = jsGlobal[mangledClassAndMethodName];
