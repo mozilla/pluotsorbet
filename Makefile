@@ -1,6 +1,6 @@
 .PHONY: all test tests j2me java certs app clean jasmin aot shumway
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts")
-JIT_SRCS=$(shell find jit -name "*.ts")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
+JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 
 all: java jasmin tests j2me shumway
@@ -32,13 +32,6 @@ aot: java j2me
 	if test -f program.jar; then \
 		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar > build/program.jar.js; \
 	fi
-	@echo "Packing ..."
-	node tools/pack.js build/classes.jar.js > build/classes.jar.js.pack
-	node tools/pack.js build/tests.jar.js > build/tests.jar.js.pack
-	if test -f program.jar; then \
-		node tools/pack.js build/program.jar.js > build/program.jar.js.pack; \
-	fi
-	@echo "Done"
 
 closure: build/j2me.js aot
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
