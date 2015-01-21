@@ -77,7 +77,12 @@ module J2ME {
      * We don't want to compiled these methods, they may be too large
      * to benefit from JIT compilation.
      */
-    NotCompiled = 2
+    NotCompiled = 2,
+
+    /**
+     * Methods are not compiled because of some exception.
+     */
+    CannotCompile = 3
   }
 
   declare var Shumway;
@@ -1452,8 +1457,8 @@ module J2ME {
     try {
       compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
     } catch (e) {
-      methodInfo.state = MethodState.NotCompiled;
-      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because of " + e);
+      methodInfo.state = MethodState.CannotCompile;
+      jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
       return;
     }
     var compiledMethodName = mangledClassAndMethodName;
