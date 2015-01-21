@@ -440,7 +440,7 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    function withTextAnchor(g, c, anchor, x, y, str, cb) {
+    function withTextAnchor(g, c, anchor, x, y, str) {
         withFont(g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g), c);
 
         c.textAlign = "left";
@@ -464,7 +464,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
         }
 
-        cb(x, y);
+        return [x, y];
     }
 
     function abgrIntToCSS(pixel) {
@@ -673,17 +673,16 @@ var currentlyFocusedTextEditor;
             var [curX, curY] = withClip(g, c, x, y);
             parseEmojiString(str).forEach(function(part) {
                 if (part.text) {
-                    withTextAnchor(g, c, anchor, curX, curY, part.text, function(x, y) {
-                        var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
-                        withPixelFunc(g, c, function() {
-                            c.fillText(part.text, x, y);
+                    var [textX, textY] = withTextAnchor(g, c, anchor, curX, curY, part.text);
+                    var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                    withPixelFunc(g, c, function() {
+                        c.fillText(part.text, textX, textY);
 
-                            // If there are emojis in the string that we need to draw,
-                            // we need to calculate the string width
-                            if (part.emoji) {
-                                curX += measureWidth(c, part.text)
-                            }
-                        });
+                        // If there are emojis in the string that we need to draw,
+                        // we need to calculate the string width
+                        if (part.emoji) {
+                            curX += measureWidth(c, part.text)
+                        }
                     });
                 }
 
@@ -714,10 +713,9 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
-            withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
-                withPixel(g, c, function() {
-                    c.fillText(chr, x, y);
-                });
+            [x, y] = withTextAnchor(g, c, anchor, x, y, chr);
+            withPixel(g, c, function() {
+                c.fillText(chr, x, y);
             });
         });
     };
