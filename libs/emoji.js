@@ -274,13 +274,12 @@ var emoji = (function() {
       var firstCodePoint = str.codePointAt(0);
 
       var unified = firstCodePoint.toString(16);
+      if (unified.length == 2) {
+        unified = "00" + unified;
+      }
 
       var len = String.fromCodePoint(firstCodePoint).length;
       if (str.length > len) {
-        if (unified.length == 2) {
-            unified = "00" + unified;
-        }
-
         unified += "-" + str.substr(len).codePointAt(0).toString(16);
       }
 
