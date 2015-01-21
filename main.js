@@ -253,11 +253,11 @@ window.onload = function() {
    clearCounters();
  };
 
-  setInterval(function () {
-    function numberWithCommas(x) {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
 
+  setInterval(function () {
     var el = document.getElementById("bytecodeCount");
     el.textContent = numberWithCommas(J2ME.bytecodeCount);
 
