@@ -251,7 +251,8 @@ module J2ME {
       // for synthetic method frames which have bad max_local counts.
 
       // Inline heuristics that trigger JIT compilation here.
-      if (enableRuntimeCompilation && mi.state < MethodState.Compiled &&
+      if (enableRuntimeCompilation &&
+          mi.state < MethodState.Compiled && // Give up if we're at this state.
           mi.backwardsBranchCount + mi.interpreterCallCount > 10) {
         compileAndLinkMethod(mi);
       }

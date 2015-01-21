@@ -62,12 +62,24 @@ module J2ME {
 
 
   export enum MethodState {
+    /**
+     * All methods start in this state.
+     */
     Cold = 0,
-    Warm = 1,
-    Hot = 2,
-    Compiled = 3,
-    NotCompiled = 4
+
+    /**
+     * Methods have this state if code has been compiled for them or
+     * there is a native implementation that needs to be used.
+     */
+    Compiled = 1,
+
+    /**
+     * We don't want to compiled these methods, they may be too large
+     * to benefit from JIT compilation.
+     */
+    NotCompiled = 2
   }
+
   declare var Shumway;
 
   export var timeline;
@@ -1417,10 +1429,12 @@ module J2ME {
    * Compiles method and links it up at runtime.
    */
   export function compileAndLinkMethod(methodInfo: MethodInfo) {
+    // Don't do anything if we're past the compiled state.
     if (methodInfo.state >= MethodState.Compiled) {
       return;
     }
 
+    // Don't compile methods that are too large.
     if (methodInfo.code.length > 2000) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.code.length);
       methodInfo.state = MethodState.NotCompiled;
