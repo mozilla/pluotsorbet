@@ -3,15 +3,6 @@
 
 'use strict';
 
-// The base directory of the app, relative to the current page.  Normally this
-// is the directory from which the page was loaded, but some test pages load
-// from a subdirectory, like tests/fs/, and they set this accordingly such that
-// code loads files, like libs/fs-init.js, can load them from the right place.
-var APP_BASE_DIR = "./";
-
-var config = {
-};
-
 var MIDlet = {
   name: "aMIDlet",
 
@@ -22,3 +13,12 @@ var MIDlet = {
     return message;
   },
 };
+
+var config = {
+};
+
+// The base directory of the app, relative to the current page.  Normally this
+// is the directory from which the page was loaded, but some test pages load
+// from a subdirectory, like tests/fs/, and they set this accordingly such that
+// code loads files, like libs/fs-init.js, can load them from the right place.
+var APP_BASE_DIR = "./";
