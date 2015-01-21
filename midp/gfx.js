@@ -188,12 +188,10 @@ var currentlyFocusedTextEditor;
                 setImageData(imageData, img.naturalWidth, img.naturalHeight, context);
 
                 URL.revokeObjectURL(img.src);
-                img.src = '';
                 resolve();
             }
             img.onerror = function(e) {
                URL.revokeObjectURL(img.src);
-               img.src = '';
                ctx.setAsCurrentContext();
                reject($.newIllegalArgumentException("error decoding image"));
             }
