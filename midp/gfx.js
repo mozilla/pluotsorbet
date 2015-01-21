@@ -390,7 +390,7 @@ var currentlyFocusedTextEditor;
         c.restore();
     }
 
-    function withClip(g, c, x, y, cb) {
+    function withClip(g, c, x, y) {
         var clipped = g.klass.classInfo.getField("I.clipped.Z").get(g),
             transX = g.klass.classInfo.getField("I.transX.I").get(g),
             transY = g.klass.classInfo.getField("I.transY.I").get(g);
@@ -409,21 +409,25 @@ var currentlyFocusedTextEditor;
         x += transX;
         y += transY;
 
-        cb(x, y);
+        return [x, y];
     }
 
-    function withAnchor(g, c, anchor, x, y, w, h, cb) {
-        withClip(g, c, x, y, function(x, y) {
-            if (anchor & RIGHT)
-                x -= w;
-            if (anchor & HCENTER)
-                x -= (w/2)|0;
-            if (anchor & BOTTOM)
-                y -= h;
-            if (anchor & VCENTER)
-                y -= (h/2)|0;
-            cb(x, y);
-        });
+    function withAnchor(g, c, anchor, x, y, w, h) {
+        var [x, y] = withClip(g, c, x, y);
+
+        if (anchor & RIGHT) {
+            x -= w;
+        } else if (anchor & HCENTER) {
+            x -= (w >>> 1) | 0;
+        }
+
+        if (anchor & BOTTOM) {
+            y -= h;
+        } else if (anchor & VCENTER) {
+            y -= (h >>> 1) | 0;
+        }
+
+        return [x, y];
     }
 
     function measureWidth(c, str) {
@@ -549,17 +553,6 @@ var currentlyFocusedTextEditor;
         cb(dx, dy);
     }
 
-    function renderImage(graphics, image, x, y, anchor) {
-        var texture = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image)
-                                 .context.canvas;
-
-        withGraphics(graphics, function(c) {
-            withAnchor(graphics, c, anchor, x, y, texture.width, texture.height, function(x, y) {
-                c.drawImage(texture, x, y);
-            });
-        });
-    }
-
     Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
         return color;
     };
@@ -639,14 +632,21 @@ var currentlyFocusedTextEditor;
         context.putImageData(imageData, 0, 0);
 
         withGraphics(graphics, function(c) {
-            withClip(graphics, c, x, y, function(x, y) {
-                c.drawImage(context.canvas, x, y);
-            });
+            [x, y] = withClip(graphics, c, x, y);
+            c.drawImage(context.canvas, x, y);
         });
     };
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
-        renderImage(this, image, x, y, anchor);
+        var texture = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image)
+                                 .context.canvas;
+
+        var g = this;
+        withGraphics(g, function(c) {
+            [x, y] = withAnchor(g, c, anchor, x, y, texture.width, texture.height);
+            c.drawImage(texture, x, y);
+        });
+
         return 1;
     };
 
@@ -670,29 +670,28 @@ var currentlyFocusedTextEditor;
         var font = g.klass.classInfo.getField("I.currentFont.Ljavax/microedition/lcdui/Font;").get(g);
 
         withGraphics(g, function(c) {
-            withClip(g, c, x, y, function(curX, y) {
-                parseEmojiString(str).forEach(function(part) {
-                    if (part.text) {
-                        withTextAnchor(g, c, anchor, curX, y, part.text, function(x, y) {
-                            var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
-                            withPixelFunc(g, c, function() {
-                                c.fillText(part.text, x, y);
+            var [curX, curY] = withClip(g, c, x, y);
+            parseEmojiString(str).forEach(function(part) {
+                if (part.text) {
+                    withTextAnchor(g, c, anchor, curX, curY, part.text, function(x, y) {
+                        var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
+                        withPixelFunc(g, c, function() {
+                            c.fillText(part.text, x, y);
 
-                                // If there are emojis in the string that we need to draw,
-                                // we need to calculate the string width
-                                if (part.emoji) {
-                                    curX += measureWidth(c, part.text)
-                                }
-                            });
+                            // If there are emojis in the string that we need to draw,
+                            // we need to calculate the string width
+                            if (part.emoji) {
+                                curX += measureWidth(c, part.text)
+                            }
                         });
-                    }
+                    });
+                }
 
-                    if (part.emoji) {
-                        var emojiData = emoji.getData(part.emoji, font.size);
-                        c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, curX, y, font.size, font.size);
-                        curX += font.size;
-                    }
-                });
+                if (part.emoji) {
+                    var emojiData = emoji.getData(part.emoji, font.size);
+                    c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, curX, curY, font.size, font.size);
+                    curX += font.size;
+                }
             });
         });
     }
@@ -714,11 +713,10 @@ var currentlyFocusedTextEditor;
         var chr = String.fromCharCode(jChr);
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x, y, function(x, y) {
-                withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
-                    withPixel(g, c, function() {
-                        c.fillText(chr, x, y);
-                    });
+            [x, y] = withClip(g, c, x, y);
+            withTextAnchor(g, c, anchor, x, y, chr, function(x, y) {
+                withPixel(g, c, function() {
+                    c.fillText(chr, x, y);
                 });
             });
         });
@@ -727,17 +725,16 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x1, y1, function(x, y) {
-                withPixel(g, c, function() {
-                    withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
-                        withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
-                            c.beginPath();
-                            c.moveTo(x, y);
-                            c.lineTo(x + dx1, y + dy1);
-                            c.lineTo(x + dx2, y + dy2);
-                            c.closePath();
-                            c.fill();
-                        });
+            var [x, y] = withClip(g, c, x1, y1);
+            withPixel(g, c, function() {
+                withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
+                    withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
+                        c.beginPath();
+                        c.moveTo(x, y);
+                        c.lineTo(x + dx1, y + dy1);
+                        c.lineTo(x + dx2, y + dy2);
+                        c.closePath();
+                        c.fill();
                     });
                 });
             });
@@ -750,11 +747,10 @@ var currentlyFocusedTextEditor;
         }
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x, y, function(x, y) {
-                withPixel(g, c, function() {
-                    withSize(w, h, function(w, h) {
-                        c.strokeRect(x, y, w, h);
-                    });
+            [x, y] = withClip(g, c, x, y);
+            withPixel(g, c, function() {
+                withSize(w, h, function(w, h) {
+                    c.strokeRect(x, y, w, h);
                 });
             });
         });
@@ -766,13 +762,12 @@ var currentlyFocusedTextEditor;
         }
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x, y, function(x, y) {
-                withPixel(g, c, function() {
-                    withSize(w, h, function(w, h) {
-                        c.beginPath();
-                        createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
-                        c.stroke();
-                    });
+            [x, y] = withClip(g, c, x, y);
+            withPixel(g, c, function() {
+                withSize(w, h, function(w, h) {
+                    c.beginPath();
+                    createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+                    c.stroke();
                 });
             });
         });
@@ -784,11 +779,10 @@ var currentlyFocusedTextEditor;
         }
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x, y, function(x, y) {
-                withPixel(g, c, function() {
-                    withSize(w, h, function(w, h) {
-                        c.fillRect(x, y, w, h);
-                    });
+            [x, y] = withClip(g, c, x, y);
+            withPixel(g, c, function() {
+                withSize(w, h, function(w, h) {
+                    c.fillRect(x, y, w, h);
                 });
             });
         });
@@ -800,13 +794,12 @@ var currentlyFocusedTextEditor;
         }
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x, y, function(x, y) {
-                withPixel(g, c, function() {
-                    withSize(w, h, function(w, h) {
-                        c.beginPath();
-                        createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
-                        c.fill();
-                    });
+            [x, y] = withClip(g, c, x, y);
+            withPixel(g, c, function() {
+                withSize(w, h, function(w, h) {
+                    c.beginPath();
+                    createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+                    c.fill();
                 });
             });
         });
@@ -866,20 +859,23 @@ var currentlyFocusedTextEditor;
 
         var g = this;
         withGraphics(g, function(c) {
-            withAnchor(g, c, anchor, x, y, sw, sh, function(x, y) {
-                c.translate(x, y);
-                if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180)
-                    c.scale(-1, 1);
-                if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270)
-                    c.scale(1, -1);
-                if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90)
-                    c.rotate(Math.PI / 2);
-                if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180)
-                    c.rotate(Math.PI);
-                if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270)
-                    c.rotate(1.5 * Math.PI);
-                c.drawImage(texture, sx, sy, sw, sh, 0, 0, sw, sh);
-            });
+            [x, y] = withAnchor(g, c, anchor, x, y, sw, sh);
+
+            c.translate(x, y);
+
+            if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
+                c.scale(-1, 1);
+            } else if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270) {
+                c.scale(1, -1);
+            } else if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90) {
+                c.rotate(Math.PI / 2);
+            } else if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180) {
+                c.rotate(Math.PI);
+            } else if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270) {
+                c.rotate(1.5 * Math.PI);
+            }
+
+            c.drawImage(texture, sx, sy, sw, sh, 0, 0, sw, sh);
         });
     };
 
@@ -887,15 +883,14 @@ var currentlyFocusedTextEditor;
         var dx = x2 - x1, dy = y2 - y1;
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x1, y1, function(x, y) {
-                withSize(dx, dy, function(dx, dy) {
-                    withPixel(g, c, function() {
-                        c.beginPath();
-                        c.moveTo(x, y);
-                        c.lineTo(x + dx, y + dy);
-                        c.stroke();
-                        c.closePath();
-                    });
+            var [x, y] = withClip(g, c, x1, y1);
+            withSize(dx, dy, function(dx, dy) {
+                withPixel(g, c, function() {
+                    c.beginPath();
+                    c.moveTo(x, y);
+                    c.lineTo(x + dx, y + dy);
+                    c.stroke();
+                    c.closePath();
                 });
             });
         });
@@ -914,9 +909,8 @@ var currentlyFocusedTextEditor;
 
         var g = this;
         withGraphics(g, function(c) {
-            withClip(g, c, x, y, function(x, y) {
-                c.drawImage(context.canvas, x, y);
-            });
+            [x, y] = withClip(g, c, x, y);
+            c.drawImage(context.canvas, x, y);
         });
     };
 
