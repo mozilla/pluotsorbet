@@ -23,6 +23,8 @@ module J2ME {
   declare var VM;
   declare var Instrument;
 
+  export var enableRuntimeCompilation = true;
+
   /**
    * Traces method execution.
    */
@@ -39,6 +41,11 @@ module J2ME {
   export var linkWriter = null;
 
   /**
+   * Traces JIT compilation.
+   */
+  export var jitWriter = null;
+
+  /**
    * Traces class loading.
    */
   export var loadWriter = null;
@@ -52,6 +59,31 @@ module J2ME {
    * Traces class initialization.
    */
   export var initWriter = null;
+
+
+  export enum MethodState {
+    /**
+     * All methods start in this state.
+     */
+    Cold = 0,
+
+    /**
+     * Methods have this state if code has been compiled for them or
+     * there is a native implementation that needs to be used.
+     */
+    Compiled = 1,
+
+    /**
+     * We don't want to compiled these methods, they may be too large
+     * to benefit from JIT compilation.
+     */
+    NotCompiled = 2,
+
+    /**
+     * Methods are not compiled because of some exception.
+     */
+    CannotCompile = 3
+  }
 
   declare var Shumway;
 
@@ -1249,7 +1281,7 @@ module J2ME {
         linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
         fn = nativeMethod;
         methodType = MethodType.Native;
-        methodInfo.isCompiled = true;
+        methodInfo.state = MethodState.Compiled;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
@@ -1259,7 +1291,7 @@ module J2ME {
           // out from.
           jitMethodInfos[fn.name] = methodInfo;
           updateGlobalObject = false;
-          methodInfo.isCompiled = true;
+          methodInfo.state = MethodState.Compiled;
         } else {
           linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
@@ -1333,16 +1365,6 @@ module J2ME {
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
         var args = Array.prototype.slice.apply(arguments);
-        /*
-        var printArgs = args.map(function (x) {
-          return toDebugString(x);
-        }).join(", ");
-        var printObj = "";
-        if (!methodInfo.isStatic) {
-          printObj = " <" + toDebugString(this) + "> ";
-        }
-        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + printArgs);
-        */
         traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
@@ -1396,6 +1418,93 @@ module J2ME {
     }
     klass.prototype.klass = klass;
     initializeKlassTables(klass);
+  }
+
+  /**
+   * Number of methods that have been compiled thus far.
+   */
+  export var compiledCount = 0;
+
+  /**
+   * Number of ms that have been spent compiled code thus far.
+   */
+  var totalJITTime = 0;
+
+  /**
+   * Compiles method and links it up at runtime.
+   */
+  export function compileAndLinkMethod(methodInfo: MethodInfo) {
+    // Don't do anything if we're past the compiled state.
+    if (methodInfo.state >= MethodState.Compiled) {
+      return;
+    }
+
+    // Don't compile methods that are too large.
+    if (methodInfo.code.length > 2000) {
+      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.code.length);
+      methodInfo.state = MethodState.NotCompiled;
+      return;
+    }
+
+    var mangledClassAndMethodName = mangleClassAndMethod(methodInfo);
+
+    compiledCount ++;
+
+    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey);
+    var s = performance.now();
+
+    var compiledMethod;
+    enterTimeline("Compiling");
+    try {
+      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+    } catch (e) {
+      methodInfo.state = MethodState.CannotCompile;
+      jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
+      leaveTimeline("Compiling");
+      return;
+    }
+    leaveTimeline("Compiling");
+    var compiledMethodName = mangledClassAndMethodName;
+    var source = "function " + compiledMethodName +
+                 "(" + compiledMethod.args.join(",") + ") {\n" +
+                   compiledMethod.body +
+                 "\n}";
+
+    enterTimeline("Eval Compiled Code");
+    // This overwrites the method on the global object.
+    (1, eval)(source);
+    leaveTimeline("Eval Compiled Code");
+
+    // Attach the compiled method to the method info object.
+    var fn = jsGlobal[mangledClassAndMethodName];
+    methodInfo.fn = fn;
+    methodInfo.state = MethodState.Compiled;
+
+    // Link member methods on the prototype.
+    if (!methodInfo.isStatic) {
+      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
+    }
+
+    // Make JITed code available in the |jitMethodInfos| so that bailout
+    // code can figure out the caller.
+    jitMethodInfos[mangledClassAndMethodName] = methodInfo;
+
+    // Make sure all the referenced symbols are registered.
+    var referencedClasses = compiledMethod.referencedClasses;
+    for (var i = 0; i < referencedClasses.length; i++) {
+      var referencedClass = referencedClasses[i];
+      registerKlassSymbol(referencedClass.className);
+    }
+
+    var methodJITTime = (performance.now() - s);
+    totalJITTime += methodJITTime;
+    if (jitWriter) {
+      jitWriter.leave(
+        "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
+        "codeSize: " + methodInfo.code.length + ", " +
+        "sourceSize: " + compiledMethod.body.length);
+      jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
+    }
   }
 
   export function isAssignableTo(from: Klass, to: Klass): boolean {
