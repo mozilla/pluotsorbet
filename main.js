@@ -17,7 +17,7 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
 
 var jars = ["java/classes.jar"];
 
-if (MIDP.midletClassName == "RunTests") {
+if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
 }
 
@@ -171,7 +171,7 @@ if (config.downloadJAD) {
   }));
 }
 
-if (MIDP.midletClassName == "RunTests") {
+if (config.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"));

@@ -8,8 +8,6 @@ var MIDP = {
 
 MIDP.manifest = {};
 
-MIDP.midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
-
 Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
     var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes)
@@ -280,9 +278,9 @@ Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lan
 };
 
 Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(state) {
-    var suiteId = (MIDP.midletClassName === "internal") ? -1 : 1;
+    var suiteId = (config.midletClassName === "internal") ? -1 : 1;
     state.klass.classInfo.getField("I.suiteId.I").set(state, suiteId);
-    state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, J2ME.newString(MIDP.midletClassName));
+    state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, J2ME.newString(config.midletClassName));
     var args = config.args;
     state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, J2ME.newString((args.length > 0) ? args[0] : ""));
     state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, J2ME.newString((args.length > 1) ? args[1] : ""));
@@ -426,7 +424,7 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     var value;
     switch (util.fromJavaString(key)) {
     case "com.sun.midp.publickeystore.WebPublicKeyStore":
-        if (MIDP.midletClassName == "RunTests") {
+        if (config.midletClassName == "RunTests") {
           value = "_test.ks";
         } else {
           value = "_main.ks";

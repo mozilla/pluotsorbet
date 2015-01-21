@@ -43,6 +43,10 @@
 
   params.args = (params.args || "").split(",");
 
+  if ("midletClassName" in params) {
+    params.midletClassName = params.midletClassName.replace(/\//g, '.');
+  }
+
   for (var name in params) {
     config[name] = params[name];
   }

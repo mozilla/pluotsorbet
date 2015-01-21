@@ -15,6 +15,7 @@ var MIDlet = {
 };
 
 var config = {
+  midletClassName: "RunTests",
 };
 
 // The base directory of the app, relative to the current page.  Normally this
