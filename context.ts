@@ -135,7 +135,7 @@ module J2ME {
 
     incLocal(i: number, value: any) {
       var j = this.localBase + i;
-      this.local[j] = this.local[j] + value | 0
+      this.local[j] = this.local[j] + value | 0;
     }
 
     read8(): number {
