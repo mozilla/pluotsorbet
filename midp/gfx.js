@@ -475,10 +475,23 @@ var currentlyFocusedTextEditor;
         return "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
     };
 
-    function withPixel(g, c, cb) {
+    function withPixel(g, c) {
         var pixel = g.klass.classInfo.getField("I.pixel.I").get(g);
         c.fillStyle = c.strokeStyle = abgrIntToCSS(pixel);
-        cb();
+    }
+
+    /**
+     * Like withPixel, but ignores alpha channel, setting the alpha value to 1.
+     * Useful when you suspect that the caller is specifying the alpha channel
+     * incorrectly, although we should actually figure out why that's happening.
+     */
+    function withOpaquePixel(g, c) {
+        var pixel = g.klass.classInfo.getField("I.pixel.I").get(g);
+        var b = (pixel >> 16) & 0xff;
+        var g = (pixel >> 8) & 0xff;
+        var r = pixel & 0xff;
+        var style = "rgba(" + r + "," + g + "," + b + "," + 1 + ")";
+        c.fillStyle = c.strokeStyle = style;
     }
 
     /**
@@ -528,21 +541,6 @@ var currentlyFocusedTextEditor;
         createEllipticalArc(c, x + rw, y + height - rh, rw, rh, 0.5 * Math.PI, Math.PI, false);
         c.lineTo(x, y + rh);
         createEllipticalArc(c, x + rw, y + rh, rw, rh, Math.PI, 1.5 * Math.PI, false);
-    }
-
-    /**
-     * Like withPixel, but ignores alpha channel, setting the alpha value to 1.
-     * Useful when you suspect that the caller is specifying the alpha channel
-     * incorrectly, although we should actually figure out why that's happening.
-     */
-    function withOpaquePixel(g, c, cb) {
-        var pixel = g.klass.classInfo.getField("I.pixel.I").get(g);
-        var b = (pixel >> 16) & 0xff;
-        var g = (pixel >> 8) & 0xff;
-        var r = pixel & 0xff;
-        var style = "rgba(" + r + "," + g + "," + b + "," + 1 + ")";
-        c.fillStyle = c.strokeStyle = style;
-        cb();
     }
 
     function withSize(dx, dy, cb) {
@@ -674,16 +672,20 @@ var currentlyFocusedTextEditor;
             parseEmojiString(str).forEach(function(part) {
                 if (part.text) {
                     var [textX, textY] = withTextAnchor(g, c, anchor, curX, curY, part.text);
-                    var withPixelFunc = isOpaque ? withOpaquePixel : withPixel;
-                    withPixelFunc(g, c, function() {
-                        c.fillText(part.text, textX, textY);
 
-                        // If there are emojis in the string that we need to draw,
-                        // we need to calculate the string width
-                        if (part.emoji) {
-                            curX += measureWidth(c, part.text)
-                        }
-                    });
+                    if (isOpaque) {
+                        withOpaquePixel(g, c);
+                    } else {
+                        withPixel(g, c);
+                    }
+
+                    c.fillText(part.text, textX, textY);
+
+                    // If there are emojis in the string that we need to draw,
+                    // we need to calculate the string width
+                    if (part.emoji) {
+                        curX += measureWidth(c, part.text)
+                    }
                 }
 
                 if (part.emoji) {
@@ -714,9 +716,8 @@ var currentlyFocusedTextEditor;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
             [x, y] = withTextAnchor(g, c, anchor, x, y, chr);
-            withPixel(g, c, function() {
-                c.fillText(chr, x, y);
-            });
+            withPixel(g, c);
+            c.fillText(chr, x, y);
         });
     };
 
@@ -724,16 +725,15 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             var [x, y] = withClip(g, c, x1, y1);
-            withPixel(g, c, function() {
-                withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
-                    withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
-                        c.beginPath();
-                        c.moveTo(x, y);
-                        c.lineTo(x + dx1, y + dy1);
-                        c.lineTo(x + dx2, y + dy2);
-                        c.closePath();
-                        c.fill();
-                    });
+            withPixel(g, c);
+            withSize(x2 - x1, y2 - y1, function(dx1, dy1) {
+                withSize(x3 - x1, y3 - y1, function(dx2, dy2) {
+                    c.beginPath();
+                    c.moveTo(x, y);
+                    c.lineTo(x + dx1, y + dy1);
+                    c.lineTo(x + dx2, y + dy2);
+                    c.closePath();
+                    c.fill();
                 });
             });
         });
@@ -746,10 +746,9 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
-            withPixel(g, c, function() {
-                withSize(w, h, function(w, h) {
-                    c.strokeRect(x, y, w, h);
-                });
+            withPixel(g, c);
+            withSize(w, h, function(w, h) {
+                c.strokeRect(x, y, w, h);
             });
         });
     };
@@ -761,12 +760,11 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
-            withPixel(g, c, function() {
-                withSize(w, h, function(w, h) {
-                    c.beginPath();
-                    createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
-                    c.stroke();
-                });
+            withPixel(g, c);
+            withSize(w, h, function(w, h) {
+                c.beginPath();
+                createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+                c.stroke();
             });
         });
     };
@@ -778,10 +776,9 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
-            withPixel(g, c, function() {
-                withSize(w, h, function(w, h) {
-                    c.fillRect(x, y, w, h);
-                });
+            withPixel(g, c);
+            withSize(w, h, function(w, h) {
+                c.fillRect(x, y, w, h);
             });
         });
     };
@@ -793,12 +790,11 @@ var currentlyFocusedTextEditor;
         var g = this;
         withGraphics(g, function(c) {
             [x, y] = withClip(g, c, x, y);
-            withPixel(g, c, function() {
-                withSize(w, h, function(w, h) {
-                    c.beginPath();
-                    createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
-                    c.fill();
-                });
+            withPixel(g, c);
+            withSize(w, h, function(w, h) {
+                c.beginPath();
+                createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
+                c.fill();
             });
         });
     };
@@ -809,13 +805,12 @@ var currentlyFocusedTextEditor;
         }
         var g = this;
         withGraphics(g, function(c) {
-            withPixel(g, c, function() {
-                var endRad = -startAngle * 0.0175;
-                var startRad = endRad - arcAngle * 0.0175;
-                c.beginPath();
-                createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, false);
-                c.stroke();
-            });
+            withPixel(g, c);
+            var endRad = -startAngle * 0.0175;
+            var startRad = endRad - arcAngle * 0.0175;
+            c.beginPath();
+            createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, false);
+            c.stroke();
         });
     };
 
@@ -825,15 +820,14 @@ var currentlyFocusedTextEditor;
         }
         var g = this;
         withGraphics(g, function(c) {
-            withPixel(g, c, function() {
-                var endRad = -startAngle * 0.0175;
-                var startRad = endRad - arcAngle * 0.0175;
-                c.beginPath();
-                c.moveTo(x, y);
-                createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, true);
-                c.moveTo(x, y);
-                c.fill();
-            });
+            withPixel(g, c);
+            var endRad = -startAngle * 0.0175;
+            var startRad = endRad - arcAngle * 0.0175;
+            c.beginPath();
+            c.moveTo(x, y);
+            createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, true);
+            c.moveTo(x, y);
+            c.fill();
         });
     };
 
@@ -883,13 +877,12 @@ var currentlyFocusedTextEditor;
         withGraphics(g, function(c) {
             var [x, y] = withClip(g, c, x1, y1);
             withSize(dx, dy, function(dx, dy) {
-                withPixel(g, c, function() {
-                    c.beginPath();
-                    c.moveTo(x, y);
-                    c.lineTo(x + dx, y + dy);
-                    c.stroke();
-                    c.closePath();
-                });
+                withPixel(g, c);
+                c.beginPath();
+                c.moveTo(x, y);
+                c.lineTo(x + dx, y + dy);
+                c.stroke();
+                c.closePath();
             });
         });
     };
