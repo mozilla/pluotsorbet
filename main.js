@@ -3,10 +3,6 @@
 
 'use strict';
 
-// To launch the unit tests: ?main=RunTests
-// To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
-// To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
-
 var jvm = new JVM();
 
 var main = config.main || "com/sun/midp/main/MIDletSuiteLoader";
