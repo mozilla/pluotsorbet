@@ -1068,7 +1068,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.setPosition0.(II)V"] = function(x, y) {
-        var headerHeight = (!urlParams.nativeMenu) ? 0 : document.getElementById("drawer").querySelector("header").offsetHeight;
+        var headerHeight = (!config.nativeMenu) ? 0 : document.getElementById("drawer").querySelector("header").offsetHeight;
         this.textEditor.setStyle("left", x + "px");
         this.textEditor.setStyle("top", (headerHeight + y) + "px");
     };

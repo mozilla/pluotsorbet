@@ -31,7 +31,7 @@
  * Keep this list up-to-date!
  */
 
-var urlParams = (function() {
+(function() {
   var params = {};
 
   location.search.substring(1).split("&").forEach(function (param) {
@@ -46,6 +46,4 @@ var urlParams = (function() {
   for (var name in params) {
     config[name] = params[name];
   }
-
-  return params;
 })();
