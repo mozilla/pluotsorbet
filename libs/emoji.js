@@ -21,6 +21,52 @@ var emoji = (function() {
     '\ud83c\uddee\ud83c\uddf9', // U+1F1EE U+1F1F9 (IT)
     '\ud83c\uddf7\ud83c\uddfa', // U+1F1F7 U+1F1FA (RU)
     '\ud83c\uddec\ud83c\udde7', // U+1F1EC U+1F1E7 (GB)
+    '\ud83c\uddee\ud83c\uddf3', // U+1F1EE U+1F1F3 (IN)
+    '\ud83c\uddf2\ud83c\uddfd', // U+1F1F2 U+1F1FD (MX)
+    '\ud83c\udde7\ud83c\uddf7', // U+1F1E7 U+1F1F7 (BR)
+    '\ud83c\uddf8\ud83c\udde6', // U+1F1F8 U+1F1E6 (SA)
+    '\ud83c\uddff\ud83c\udde6', // U+1F1FF U+1F1E6 (ZA)
+    '\ud83c\udde6\ud83c\uddf7', // U+1F1E6 U+1F1F7 (AR)
+    '\ud83c\uddf3\ud83c\uddf1', // U+1F1F3 U+1F1F1 (NL)
+    '\ud83c\uddf9\ud83c\uddf7', // U+1F1F9 U+1F1F7 (TR)
+    '\ud83c\uddf2\ud83c\uddfe', // U+1F1F2 U+1F1FE (MY)
+    '\ud83c\uddfb\ud83c\uddea', // U+1F1FB U+1F1EA (VE)
+    '\ud83c\udde8\ud83c\uddf4', // U+1F1E8 U+1F1F4 (CO)
+    '\ud83c\udde8\ud83c\uddf1', // U+1F1E8 U+1F1F1 (CL)
+    '\ud83c\udded\ud83c\uddf0', // U+1F1ED U+1F1F0 (HK)
+    '\ud83c\uddf3\ud83c\uddec', // U+1F1F3 U+1F1EC (NG)
+    '\ud83c\udde8\ud83c\udded', // U+1F1E8 U+1F1ED (CH)
+    '\ud83c\uddee\ud83c\uddf1', // U+1F1EE U+1F1F1 (IL)
+    '\ud83c\uddf9\ud83c\udded', // U+1F1F9 U+1F1ED (TH)
+    '\ud83c\uddf8\ud83c\uddec', // U+1F1F8 U+1F1EC (SG)
+    '\ud83c\udde6\ud83c\uddea', // U+1F1E6 U+1F1EA (AE)
+    '\ud83c\uddf9\ud83c\uddfc', // U+1F1F9 U+1F1FC (TW)
+    '\ud83c\uddea\ud83c\uddec', // U+1F1EA U+1F1EC (EG)
+    '\ud83c\udde8\ud83c\udde6', // U+1F1E8 U+1F1E6 (CA)
+    '\ud83c\uddf2\ud83c\udde8', // U+1F1F2 U+1F1E8 (MC)
+    '\ud83c\udde6\ud83c\uddf9', // U+1F1E6 U+1F1F9 (AT)
+    '\ud83c\udde6\ud83c\uddfa', // U+1F1E6 U+1F1FA (AU)
+    '\ud83c\udde7\ud83c\udde6', // U+1F1E7 U+1F1E6 (BA)
+    '\ud83c\udde7\ud83c\uddea', // U+1F1E7 U+1F1EA (BE)
+    '\ud83c\udde8\ud83c\uddee', // U+1F1E8 U+1F1EE (CI)
+    '\ud83c\udde8\ud83c\uddf2', // U+1F1E8 U+1F1F2 (CM)
+    '\ud83c\udde8\ud83c\uddf7', // U+1F1E8 U+1F1F7 (CR)
+    '\ud83c\udde9\ud83c\uddff', // U+1F1E9 U+1F1FF (DZ)
+    '\ud83c\uddea\ud83c\udde8', // U+1F1EA U+1F1E8 (EC)
+    '\ud83c\uddec\ud83c\udded', // U+1F1EC U+1F1ED (GH)
+    '\ud83c\uddec\ud83c\uddf7', // U+1F1EC U+1F1F7 (GR)
+    '\ud83c\udded\ud83c\uddf3', // U+1F1ED U+1F1F3 (HN)
+    '\ud83c\udded\ud83c\uddf7', // U+1F1ED U+1F1F7 (HR)
+    '\ud83c\uddee\ud83c\uddf7', // U+1F1EE U+1F1F7 (IR)
+    '\ud83c\uddef\ud83c\uddf4', // U+1F1EF U+1F1F4 (JO)
+    '\ud83c\uddf0\ud83c\uddff', // U+1F1F0 U+1F1FF (KZ)
+    '\ud83c\uddf1\ud83c\udde7', // U+1F1F1 U+1F1E7 (LB)
+    '\ud83c\uddf5\ud83c\uddea', // U+1F1F5 U+1F1EA (PE)
+    '\ud83c\uddf5\ud83c\uddf9', // U+1F1F5 U+1F1F9 (PT)
+    '\ud83c\uddf8\ud83c\uddfe', // U+1F1F8 U+1F1FE (SY)
+    '\ud83c\uddfa\ud83c\udde6', // U+1F1FA U+1F1E6 (UA)
+    '\ud83c\uddfa\ud83c\uddfe', // U+1F1FA U+1F1FE (UY)
+    '\ud83c\uddfd\ud83c\uddea', // U+1F1FD U+1F1EA (XE)
     '\ud83c\uddef',
     '\ud83c\uddf0',
     '\ud83c\udde9',
@@ -187,19 +233,63 @@ var emoji = (function() {
     '\ud83c\udE51', // U+1F251
   ].join("|");
 
+  var data;
+  var images = [];
+  var imagesNum = 13;
+
+  var squareSize = 16;
+
   return {
     regEx: new RegExp(regexString, 'g'),
-    strToImg: function(str) {
+
+    squareSize: squareSize,
+
+    loadData: function() {
+      return new Promise(function(resolve, reject) {
+        if (data) {
+            resolve();
+            return;
+        }
+
+        var promises = [];
+
+        promises.push(load("style/emoji.json", "json").then(function(obj) {
+          data = obj;
+        }));
+
+        for (var i = 0; i < imagesNum; i++) {
+          images[i] = new Image();
+          images[i].src = "style/emoji/emoji" + i + ".png";
+
+          promises.push(new Promise(function(resolve, reject) {
+            images[i].onload = resolve;
+          }));
+        }
+
+        Promise.all(promises).then(resolve);
+      });
+    },
+
+    getData: function(str, size) {
       var firstCodePoint = str.codePointAt(0);
 
-      var imgSrc = "style/emoji/" + firstCodePoint.toString(16);
+      var unified = firstCodePoint.toString(16);
 
       var len = String.fromCodePoint(firstCodePoint).length;
       if (str.length > len) {
-        imgSrc += "-" + str.substr(len).codePointAt(0).toString(16);
+        if (unified.length == 2) {
+            unified = "00" + unified;
+        }
+
+        unified += "-" + str.substr(len).codePointAt(0).toString(16);
       }
 
-      return imgSrc + ".png";
+      var emoji = data[unified];
+
+      return {
+        img: images[emoji.sheet],
+        x: emoji.x * squareSize,
+      };
     },
   };
 })();

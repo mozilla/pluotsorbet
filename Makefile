@@ -32,6 +32,7 @@ aot: java j2me
 	if test -f program.jar; then \
 		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar > build/program.jar.js; \
 	fi
+	@echo "Done"
 
 closure: build/j2me.js aot
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \

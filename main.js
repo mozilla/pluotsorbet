@@ -177,6 +177,8 @@ if (MIDP.midletClassName == "RunTests") {
                        loadScript("tests/mozactivitymock.js"));
 }
 
+loadingPromises.push(emoji.loadData());
+
 function getIsOff(button) {
   return button.textContent.contains("OFF");
 }
@@ -216,7 +218,6 @@ document.getElementById("loadAllClasses").onclick = function() {
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
-   debugger;
    indexedDB.deleteDatabase("asyncStorage");
  };
  document.getElementById("exportstorage").onclick = function() {
