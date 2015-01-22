@@ -15,6 +15,7 @@ var MIDlet = {
 };
 
 var config = {
+  main: "com/sun/midp/main/MIDletSuiteLoader",
   midletClassName: "RunTests",
 };
 

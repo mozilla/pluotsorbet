@@ -5,8 +5,6 @@
 
 var jvm = new JVM();
 
-var main = config.main || "com/sun/midp/main/MIDletSuiteLoader";
-
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
@@ -190,7 +188,7 @@ function start() {
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
-  jvm.startIsolate0(main, config.args);
+  jvm.startIsolate0(config.main, config.args);
 }
 
 Promise.all(loadingPromises).then(start);
