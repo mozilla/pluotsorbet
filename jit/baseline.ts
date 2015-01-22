@@ -13,6 +13,13 @@ module J2ME {
   export var baselineCounter = null; // new Metrics.Counter(true);
 
   /**
+   * Expressions to inline for commonly invoked methods.
+   */
+  var inlineMethods = {
+    "java/lang/Object.<init>.()V": "undefined"
+  };
+
+  /**
    * Detects common control flow patterns and tries to emit "if" statements
    * whenever possible.
    */
@@ -649,6 +656,10 @@ module J2ME {
         }
       } else {
         call = mangleClassAndMethod(methodInfo) + "(" + args.join(", ") + ")";
+      }
+      if (methodInfo.implKey in inlineMethods) {
+        emitDebugInfoComments && this.emitter.writeLn("// Inlining: " + methodInfo.implKey);
+        call = inlineMethods[methodInfo.implKey];
       }
       this.needsVariable("re");
       this.emitter.writeLn("re = " + call + ";");
