@@ -230,35 +230,9 @@ Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lan
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
         if (request.endsWith(".jad")) {
-            // TODO: The download should start after the MIDlet has terminated its execution.
-            // Currently we're just updating right away because of #744.
-
-            var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-            dialog.style.display = 'block';
-            dialog.classList.add('visible');
-            document.body.appendChild(dialog);
-
-            performDownload(request, dialog, function(data) {
-              dialog.parentElement.removeChild(dialog);
-
-              Promise.all([
-                new Promise(function(resolve, reject) {
-                  fs.remove("/midlet.jad", function() {
-                    fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
-                  });
-                }),
-                new Promise(function(resolve, reject) {
-                  fs.remove("/midlet.jar", function() {
-                    fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
-                  });
-                }),
-              ]).then(function() {
-                DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-                DumbPipe.close(DumbPipe.open("reload", {}));
-              });
-            });
-
-            return true;
+            // The download will start after the MIDlet has terminated its execution.
+            MIDP.pendingMIDletUpdate = request;
+            return 1;
         } else {
             DumbPipe.close(DumbPipe.open("windowOpen", request));
         }
@@ -871,9 +845,41 @@ MIDP.exit = function(code) {
     DumbPipe.open("exit", null, function(message) {});
 };
 
+MIDP.pendingMIDletUpdate = null;
+
 Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     console.info("Isolate stops with code " + code + " and reason " + reason);
-    MIDP.exit();
+    if (!MIDP.pendingMIDletUpdate) {
+        MIDP.exit();
+        return;
+    }
+
+    // Perform updating.
+    var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+    dialog.style.display = 'block';
+    dialog.classList.add('visible');
+    document.body.appendChild(dialog);
+
+    performDownload(MIDP.pendingMIDletUpdate, dialog, function(data) {
+      dialog.parentElement.removeChild(dialog);
+
+      Promise.all([
+        new Promise(function(resolve, reject) {
+          fs.remove("/midlet.jad", function() {
+            fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
+          });
+        }),
+        new Promise(function(resolve, reject) {
+          fs.remove("/midlet.jar", function() {
+            fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
+          });
+        }),
+      ]).then(function() {
+        MIDP.pendingMIDletUpdate = null;
+        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+        DumbPipe.close(DumbPipe.open("reload", {}));
+      });
+    });
 };
 
 // The foreground isolate will get the user events (keypresses, etc.)
