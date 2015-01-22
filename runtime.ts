@@ -23,7 +23,15 @@ module J2ME {
   declare var VM;
   declare var Instrument;
 
+  /**
+   * Turns on just-in-time compilation of methods.
+   */
   export var enableRuntimeCompilation = true;
+
+  /**
+   * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
+   */
+  var hashedMangledNames = false;
 
   /**
    * Traces method execution.
@@ -263,10 +271,8 @@ module J2ME {
       hashMap[hash] = s;
     }
 
-  var friendlyMangledNames = true;
     return hash;
   }
-
 
   function isIdentifierChar(c: number): boolean {
     return (c >= 97   && c <= 122)   || // a .. z
@@ -354,7 +360,7 @@ module J2ME {
 
   export function mangleClassAndMethod(methodInfo: MethodInfo) {
     var name = concat5(methodInfo.classInfo.className, "_", methodInfo.name, "_", hashStringToString(methodInfo.signature));
-    if (friendlyMangledNames) {
+    if (!hashedMangledNames) {
       return escapeString(name);
     }
     return hashStringToString(name);
@@ -362,14 +368,14 @@ module J2ME {
 
   export function mangleMethod(methodInfo: MethodInfo) {
     var name = concat3(methodInfo.name, "_", hashStringToString(methodInfo.signature));
-    if (friendlyMangledNames) {
+    if (!hashedMangledNames) {
       return escapeString(name);
     }
     return "$" + hashStringToString(name);
   }
 
   export function mangleClassName(name: string): string {
-    if (friendlyMangledNames) {
+    if (!hashedMangledNames) {
       return "$" + escapeString(name);
     }
     return "$" + hashStringToString(name);
