@@ -523,7 +523,7 @@ public class Graphics {
      */
     public static final int DOTTED = 1;
 
-    native void nativeInit0(int displayId, Font defaultFont, Image img, int width, int height);
+    private native void nativeInit0(int displayId, Font defaultFont, Image img, int width, int height);
 
     /**
      * Create a Graphics object
@@ -566,7 +566,7 @@ public class Graphics {
      * @see #getTranslateX()
      * @see #getTranslateY()
      */
-    public native void translate0(int x, int y);
+    private native void translate0(int x, int y);
     public synchronized void translate(int x, int y) {
       translate0(x, y);
     }
@@ -575,7 +575,7 @@ public class Graphics {
      * Gets the X coordinate of the translated origin of this graphics context.
      * @return X of current origin
      */
-    public native int getTranslateX0();
+    private native int getTranslateX0();
     public synchronized int getTranslateX() {
       return getTranslateX0();
     }
@@ -584,7 +584,7 @@ public class Graphics {
      * Gets the Y coordinate of the translated origin of this graphics context.
      * @return Y of current origin
      */
-    public native int getTranslateY0();
+    private native int getTranslateY0();
     public synchronized int getTranslateY() {
       return getTranslateY0();
     }
@@ -594,7 +594,7 @@ public class Graphics {
      * @return an integer in form <code>0x00RRGGBB</code>
      * @see #setColor(int, int, int)
      */
-    public native int getColor0();
+    private native int getColor0();
     public synchronized int getColor() {
       return getColor0();
     }
@@ -604,7 +604,7 @@ public class Graphics {
      * @return integer value in range <code>0-255</code>
      * @see #setColor(int, int, int)
      */
-    public native int getRedComponent0();
+    private native int getRedComponent0();
     public synchronized int getRedComponent() {
       return getRedComponent0();
     }
@@ -614,7 +614,7 @@ public class Graphics {
      * @return integer value in range <code>0-255</code>
      * @see #setColor(int, int, int)
      */
-    public native int getGreenComponent0();
+    private native int getGreenComponent0();
     public synchronized int getGreenComponent() {
       return getGreenComponent0();
     }
@@ -624,7 +624,7 @@ public class Graphics {
      * @return integer value in range <code>0-255</code>
      * @see #setColor(int, int, int)
      */
-    public native int getBlueComponent0();
+    private native int getBlueComponent0();
     public synchronized int getBlueComponent() {
       return getBlueComponent0();
     }
@@ -643,7 +643,7 @@ public class Graphics {
      * @return integer value in range <code>0-255</code>
      * @see #setGrayScale
      */
-    public native int getGrayScale0();
+    private native int getGrayScale0();
     public synchronized int getGrayScale() {
       return getGrayScale0();
     }
@@ -661,7 +661,7 @@ public class Graphics {
      * are outside of range <code>0-255</code>
      * @see #getColor
      */
-    public native void setColor0(int red, int green, int blue);
+    private native void setColor0(int red, int green, int blue);
     public synchronized void setColor(int red, int green, int blue) {
       setColor0(red, green, blue);
     }
@@ -680,7 +680,7 @@ public class Graphics {
      * @param RGB the color being set
      * @see #getColor
      */
-    public native void setColor0(int RGB);
+    private native void setColor0(int RGB);
     public synchronized void setColor(int RGB) {
       setColor0(RGB);
     }
@@ -696,7 +696,7 @@ public class Graphics {
      * @throws IllegalArgumentException if the gray value is out of range
      * @see #getGrayScale
      */
-    public native void setGrayScale0(int value);
+    private native void setGrayScale0(int value);
     public synchronized void setGrayScale(int value) {
       setGrayScale0(value);
     }
@@ -707,7 +707,7 @@ public class Graphics {
      * @see javax.microedition.lcdui.Font
      * @see #setFont(javax.microedition.lcdui.Font)
      */
-    public native Font getFont0();
+    private native Font getFont0();
     public synchronized Font getFont() {
       return getFont0();
     }
@@ -720,7 +720,7 @@ public class Graphics {
      * @throws IllegalArgumentException if the <code>style</code> is illegal
      * @see #getStrokeStyle
      */
-    public native void setStrokeStyle0(int style);
+    private native void setStrokeStyle0(int style);
     public synchronized void setStrokeStyle(int style) {
       setStrokeStyle0(style);
     }
@@ -730,7 +730,7 @@ public class Graphics {
      * @return stroke style, <code>SOLID</code> or <code>DOTTED</code>
      * @see #setStrokeStyle
      */
-    public native int getStrokeStyle0();
+    private native int getStrokeStyle0();
     public synchronized int getStrokeStyle() {
       return getStrokeStyle0();
     }
@@ -761,7 +761,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipX0();
+    private native int getClipX0();
     public synchronized int getClipX() {
       return getClipX0();
     }
@@ -776,7 +776,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipY0();
+    private native int getClipY0();
     public synchronized int getClipY() {
       return getClipY0();
     }
@@ -787,7 +787,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipWidth0();
+    private native int getClipWidth0();
     public synchronized int getClipWidth() {
       return getClipWidth0();
     }
@@ -799,7 +799,7 @@ public class Graphics {
      * @see #clipRect(int, int, int, int)
      * @see #setClip(int, int, int, int)
      */
-    public native int getClipHeight0();
+    private native int getClipHeight0();
     public synchronized int getClipHeight() {
       return getClipHeight0();
     }
@@ -828,7 +828,7 @@ public class Graphics {
      * @param height the height of the rectangle to intersect the clip with
      * @see #setClip(int, int, int, int)
      */
-    public native void clipRect0(int x, int y, int width, int height);
+    private native void clipRect0(int x, int y, int width, int height);
     public synchronized void clipRect(int x, int y, int width, int height) {
       clipRect0(x, y, width, height);
     }
@@ -843,7 +843,7 @@ public class Graphics {
      * @param height the height of the new clip rectangle
      * @see #clipRect(int, int, int, int)
      */
-    public native void setClip0(int x, int y, int width, int height);
+    private native void setClip0(int x, int y, int width, int height);
     public synchronized void setClip(int x, int y, int width, int height) {
       setClip0(x, y, width, height);
     }
@@ -1296,7 +1296,7 @@ public class Graphics {
      * the bounds of the source image
      *
      */
-    public native void copyArea0(int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor);
+     private native void copyArea0(int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor);
     public synchronized void copyArea(int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor) {
       copyArea0(x_src, y_src, width, height, x_dest, y_dest, anchor);
     }
@@ -1513,7 +1513,7 @@ public class Graphics {
      * @param x2 The lower right x coordinate
      * @param y2 The lower right y coordinate
      */
-    native void reset0(int x1, int y1, int x2, int y2, Font font);
+    private native void reset0(int x1, int y1, int x2, int y2, Font font);
     void reset(int x1, int y1, int x2, int y2) {
       reset0(x1, y1, x2, y2, Font.getDefaultFont());
     }
@@ -1522,7 +1522,7 @@ public class Graphics {
      * Reset this Graphics context to its default dimensions
      * (same as reset(0, 0, maxWidth, maxHeight)
      */
-    native void reset0(Font font);
+    private native void reset0(Font font);
     void reset() {
       reset0(Font.getDefaultFont());
     }
@@ -1536,7 +1536,7 @@ public class Graphics {
      * Only Font, Style, and Color are reset in
      * this function.
      */
-    native void resetGC0(Font font);
+    private native void resetGC0(Font font);
     void resetGC() {
       resetGC0(Font.getDefaultFont());
     }
@@ -1623,7 +1623,7 @@ public class Graphics {
      * Returns the creator of this Graphics object
      * @return Graphics creator reference
      */
-    native Object getCreator0();
+    private native Object getCreator0();
     synchronized Object getCreator() {
       return getCreator0();
     }
@@ -1632,7 +1632,7 @@ public class Graphics {
      * Sets the creator of this Graphics object
      * @param creator the reference to creator of this Graphics object
      */
-    native void setCreator0(Object creator);
+    private native void setCreator0(Object creator);
     synchronized void setCreator(Object creator) {
       setCreator0(creator);
     }

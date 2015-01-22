@@ -692,7 +692,7 @@ var currentlyFocusedTextEditor;
         return this.currentFont;
     };
 
-    Native["javax/microedition/lcdui/Graphics.setFont0.(Ljavax/microedition/lcdui/Font;)"] = function(font) {
+    Native["javax/microedition/lcdui/Graphics.setFont0.(Ljavax/microedition/lcdui/Font;)V"] = function(font) {
         this.currentFont = font;
     };
 
