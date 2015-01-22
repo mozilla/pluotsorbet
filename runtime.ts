@@ -23,7 +23,15 @@ module J2ME {
   declare var VM;
   declare var Instrument;
 
+  /**
+   * Turns on just-in-time compilation of methods.
+   */
   export var enableRuntimeCompilation = true;
+
+  /**
+   * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
+   */
+  var hashedMangledNames = false;
 
   /**
    * Traces method execution.
@@ -226,6 +234,8 @@ module J2ME {
   declare var util;
 
   import assert = J2ME.Debug.assert;
+  import concat3 = StringUtilities.concat3;
+  import concat5 = StringUtilities.concat5;
 
   export enum RuntimeStatus {
     New       = 1,
@@ -240,7 +250,10 @@ module J2ME {
     Compiled
   }
 
+  var hashMap = Object.create(null);
+
   var hashArray = new Int32Array(1024);
+
   function hashString(s: string) {
     if (hashArray.length < s.length) {
       hashArray = new Int32Array((hashArray.length * 2 / 3) | 0);
@@ -249,11 +262,17 @@ module J2ME {
     for (var i = 0; i < s.length; i++) {
       data[i] = s.charCodeAt(i);
     }
-    return HashUtilities.hashBytesTo32BitsAdler(data, 0, s.length);
+    var hash = HashUtilities.hashBytesTo32BitsMurmur(data, 0, s.length);
+
+    if (!release) { // Check to see that no collisions have ever happened.
+      if (hashMap[hash] && hashMap[hash] !== s) {
+        assert(false, "This is very bad.")
+      }
+      hashMap[hash] = s;
+    }
+
+    return hash;
   }
-
-  var friendlyMangledNames = true;
-
 
   function isIdentifierChar(c: number): boolean {
     return (c >= 97   && c <= 122)   || // a .. z
@@ -318,58 +337,55 @@ module J2ME {
   var stringHashes = Object.create(null);
   var stringHashCount = 0;
 
+  function hashStringStrong(s): string {
+    // Hash with Murmur hash.
+    var result = StringUtilities.variableLengthEncodeInt32(hashString(s));
+    // Also use the length for some more precision.
+    result += StringUtilities.toEncoding(s.length & 0x3f);
+    return result;
+  }
+
   export function hashStringToString(s: string) {
     if (stringHashCount > 1024) {
-      return StringUtilities.variableLengthEncodeInt32(hashString(s));
+      return hashStringStrong(s);
     }
     var c = stringHashes[s];
     if (c) {
       return c;
     }
-    c = stringHashes[s] = StringUtilities.variableLengthEncodeInt32(hashString(s));
+    c = stringHashes[s] = hashStringStrong(s);
     stringHashCount ++;
     return c;
   }
 
   export function mangleClassAndMethod(methodInfo: MethodInfo) {
-    var name = methodInfo.classInfo.className + "_" + methodInfo.name + "_" + hashStringToString(methodInfo.signature);
-    if (friendlyMangledNames) {
+    var name = concat5(methodInfo.classInfo.className, "_", methodInfo.name, "_", hashStringToString(methodInfo.signature));
+    if (!hashedMangledNames) {
       return escapeString(name);
     }
-    var hash = hashString(name);
-    return StringUtilities.variableLengthEncodeInt32(hash);
+    return hashStringToString(name);
   }
 
   export function mangleMethod(methodInfo: MethodInfo) {
-    var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
-    if (friendlyMangledNames) {
+    var name = concat3(methodInfo.name, "_", hashStringToString(methodInfo.signature));
+    if (!hashedMangledNames) {
       return escapeString(name);
     }
-    var hash = hashString(name);
-    return StringUtilities.variableLengthEncodeInt32(hash);
+    return "$" + hashStringToString(name);
+  }
+
+  export function mangleClassName(name: string): string {
+    if (!hashedMangledNames) {
+      return "$" + escapeString(name);
+    }
+    return "$" + hashStringToString(name);
   }
 
   export function mangleClass(classInfo: ClassInfo) {
-    if (classInfo instanceof PrimitiveArrayClassInfo) {
-      switch (classInfo) {
-        case PrimitiveArrayClassInfo.Z: return "Uint8Array";
-        case PrimitiveArrayClassInfo.C: return "Uint16Array";
-        case PrimitiveArrayClassInfo.F: return "Float32Array";
-        case PrimitiveArrayClassInfo.D: return "Float64Array";
-        case PrimitiveArrayClassInfo.B: return "Int8Array";
-        case PrimitiveArrayClassInfo.S: return "Int16Array";
-        case PrimitiveArrayClassInfo.I: return "Int32Array";
-        case PrimitiveArrayClassInfo.J: return "Int64Array";
-      }
-    } else if (classInfo.isArrayClass) {
-      return "$AK(" + mangleClass(classInfo.elementClass) + ")";
-    } else {
-      if (friendlyMangledNames) {
-        return "$" + escapeString(classInfo.className);
-      }
-      var hash = hashString(classInfo.className);
-      return "$" + StringUtilities.variableLengthEncodeInt32(hash);
+    if (classInfo.mangledName) {
+      return classInfo.mangledName;
     }
+    return mangleClassName(classInfo.className);
   }
 
   /**
@@ -892,7 +908,7 @@ module J2ME {
 
   export function registerKlassSymbol(className: string) {
     // TODO: This needs to be kept in sync to how mangleClass works.
-    var mangledName = "$" + escapeString(className);
+    var mangledName = mangleClassName(className);
     if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       return;
     }
@@ -1025,7 +1041,7 @@ module J2ME {
 
   function makeKlassConstructor(classInfo: ClassInfo): Klass {
     var klass: Klass;
-    var mangledName = mangleClass(classInfo);
+    var mangledName = classInfo.mangledName;
     if (classInfo.isInterface) {
       klass = <Klass><any>function () {
         Debug.unexpected("Should never be instantiated.")
@@ -1085,7 +1101,7 @@ module J2ME {
       return;
     }
     enterTimeline("linkKlass", {classInfo: classInfo});
-    var mangledName = mangleClass(classInfo);
+    var mangledName = classInfo.mangledName;
     var klass;
     classInfo.klass = klass = getKlass(classInfo);
     classInfo.klass.classInfo = classInfo;
@@ -1235,9 +1251,7 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    var name = methodInfo.mangledClassAndMethodName;
-    var method = jsGlobal[name];
-    return method;
+    return jsGlobal[methodInfo.mangledClassAndMethodName];
   }
 
   /**
@@ -1446,7 +1460,7 @@ module J2ME {
       return;
     }
 
-    var mangledClassAndMethodName = mangleClassAndMethod(methodInfo);
+    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
     compiledCount ++;
 
@@ -1691,7 +1705,7 @@ module J2ME {
   }
 
   export function classInitCheck(classInfo: ClassInfo, pc: number) {
-    if (classInfo.isArrayClass || $.initialized[classInfo.className]) {
+    if (classInfo.isArrayClass) {
       return;
     }
     $.ctx.pushClassInitFrame(classInfo);
