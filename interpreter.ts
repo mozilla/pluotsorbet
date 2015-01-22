@@ -1091,6 +1091,7 @@ module J2ME {
               frames.push(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
+              mi.interpreterCallCount ++;
               ci = mi.classInfo;
               rp = ci.resolved_constant_pool;
               stack = frame.stack;
@@ -1195,6 +1196,7 @@ module J2ME {
               frames.push(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
+              mi.interpreterCallCount ++;
               ci = mi.classInfo;
               rp = ci.resolved_constant_pool;
               stack = frame.stack;
