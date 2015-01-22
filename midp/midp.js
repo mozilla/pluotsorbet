@@ -866,6 +866,15 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id
     }
 };
 
+MIDP.exit = function(code) {
+    DumbPipe.open("exit", null, function(message) {});
+};
+
+Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
+    console.info("Isolate stops with code " + code + " and reason " + reason);
+    MIDP.exit();
+};
+
 // The foreground isolate will get the user events (keypresses, etc.)
 MIDP.foregroundIsolateId;
 MIDP.nativeEventQueues = {};
@@ -1046,7 +1055,7 @@ Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/Comm
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(exit) {
     console.info("Exit: " + exit);
-    DumbPipe.open("exit", null, function(message) {});
+    MIDP.exit();
 };
 
 Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function() {
