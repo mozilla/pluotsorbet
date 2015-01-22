@@ -2,8 +2,9 @@
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
+RELEASE ?= 0
 
-all: java jasmin tests j2me shumway
+all: build java jasmin tests j2me shumway
 
 test: all
 	tests/runtests.py
@@ -47,6 +48,9 @@ closure: build/j2me.js aot
 shumway: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
 
+build:
+	echo "config.release = ${RELEASE};" > config/build.js
+
 tests:
 	make -C tests
 
@@ -57,12 +61,13 @@ certs:
 	make -C certs
 
 # Makes an output/ directory containing the packaged open web app files.
-app: java certs
+app: build java certs
 	tools/package.sh
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
 	rm -rf build
+	rm -f config/build.js
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
