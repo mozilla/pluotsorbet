@@ -1691,7 +1691,7 @@ module J2ME {
   }
 
   export function classInitCheck(classInfo: ClassInfo, pc: number) {
-    if (classInfo.isArrayClass || $.initialized[classInfo.className]) {
+    if (classInfo.isArrayClass) {
       return;
     }
     $.ctx.pushClassInitFrame(classInfo);
