@@ -169,6 +169,17 @@ module J2ME {
     return "Long.fromInt(" + v + ")";
   }
 
+  function classConstant(classInfo: ClassInfo): string {
+    if (classInfo.mangledName) {
+      return classInfo.mangledName;
+    }
+    if (classInfo.isArrayClass) {
+      return "$AK(" + classConstant(classInfo.elementClass) + ")";
+    }
+    release || assert(classInfo.mangledName);
+    return classInfo.mangledName;
+  }
+
   export class BaselineCompiler {
     sp: number;
     pc: number;
@@ -308,7 +319,7 @@ module J2ME {
         if (classInfo.isInterface) {
           check = "$IOI";
         }
-        check += "(" + this.peek(Kind.Reference) + ", " +  mangleClass(classInfo) + ")";
+        check += "(" + this.peek(Kind.Reference) + ", " + classConstant(classInfo) + ")";
         check = " && " + check;
       }
       this.emitter.enter("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") {");
@@ -591,11 +602,11 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      return "$." + mangleClass(classInfo);
+      return "$." + classConstant(classInfo);
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      return "$." + mangleClass(classInfo) + ".classObject";
+      return "$." + classConstant(classInfo) + ".classObject";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -650,12 +661,12 @@ module J2ME {
         object = this.pop(Kind.Reference);
         if (opcode === Bytecodes.INVOKESPECIAL) {
           args.unshift(object);
-          call = mangleClassAndMethod(methodInfo) + ".call(" + args.join(", ") + ")";
+          call = methodInfo.mangledClassAndMethodName + ".call(" + args.join(", ") + ")";
         } else {
-          call = object + "." + mangleMethod(methodInfo) + "(" + args.join(", ") + ")";
+          call = object + "." + methodInfo.mangledName + "(" + args.join(", ") + ")";
         }
       } else {
-        call = mangleClassAndMethod(methodInfo) + "(" + args.join(", ") + ")";
+        call = methodInfo.mangledClassAndMethodName + "(" + args.join(", ") + ")";
       }
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.emitter.writeLn("// Inlining: " + methodInfo.implKey);
@@ -733,7 +744,7 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "new " + mangleClass(classInfo)+ "()");
+      this.emitPush(Kind.Reference, "new " + classConstant(classInfo)+ "()");
     }
 
     emitNewTypeArray(typeCode: number) {
@@ -749,7 +760,7 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "$CCI";
       }
-      this.emitter.writeLn(call + "(" + object + ", " + mangleClass(classInfo) + ");");
+      this.emitter.writeLn(call + "(" + object + ", " + classConstant(classInfo) + ");");
     }
 
     emitInstanceOf(cpi: number) {
@@ -759,7 +770,7 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "$IOI";
       }
-      this.emitPush(Kind.Int, call + "(" + object + ", " + mangleClass(classInfo) + ") | 0");
+      this.emitPush(Kind.Int, call + "(" + object + ", " + classConstant(classInfo) + ") | 0");
     }
 
     emitArrayLength() {
@@ -770,7 +781,7 @@ module J2ME {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
-      this.emitPush(Kind.Reference, "$NA(" + mangleClass(classInfo) + ", " + length + ")");
+      this.emitPush(Kind.Reference, "$NA(" + classConstant(classInfo) + ", " + length + ")");
     }
 
     emitUnwind(pc: number, nextPC: number) {
