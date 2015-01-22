@@ -1440,6 +1440,8 @@ var MIDP = (function() {
     return 0;
   };
 
+  addUnimplementedNative("com/nokia/mid/ui/gestures/GestureInteractiveZone.getGestures.()I", 0);
+
   Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(suiteId, permission) {
     return 1;
   };
