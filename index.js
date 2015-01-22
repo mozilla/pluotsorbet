@@ -14,6 +14,10 @@
                          loadScript("tests/index.js"));
   }
 
+  if (navigator.userAgent.indexOf('Chrome')) {
+    loadingPromises.push(loadScript("chrome_polyfills.js"));
+  }
+
   Promise.all(loadingPromises).then(function() {
     document.getElementById("mozbrowser").src = "main.html" + location.search;
   });
