@@ -1147,6 +1147,13 @@ module J2ME {
 
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo = resolveMethod(index, mi.classInfo, isStatic);
+
+            // Fast path for some of the most common interpreter call targets.
+            if (calleeMethodInfo.implKey === "java/lang/Object.<init>.()V") {
+              stack.pop();
+              continue;
+            }
+
             if (isStatic) {
               classInitCheck(calleeMethodInfo.classInfo, lastPC);
               if (U) {
