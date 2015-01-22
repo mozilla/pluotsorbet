@@ -287,6 +287,7 @@ module J2ME {
     static createFromObject(object) {
       var classInfo = Object.create(ClassInfo.prototype, object);
       classInfo.resolved_constant_pool = new Array(classInfo.constant_pool.length);
+      classInfo.mangledName = mangleClass(classInfo);
       return classInfo;
     }
 
@@ -389,16 +390,6 @@ module J2ME {
     }
 
     private _mangleFields() {
-      if (false) {
-        // Safe mangling that includes className, fieldName and signature.
-        var fields = this.fields;
-        for (var j = 0; j < fields.length; j++) {
-          var fieldInfo = fields[j];
-          fieldInfo.mangledName = "$" + escapeString(fieldInfo.classInfo.className + "_" + fieldInfo.name + "_" + fieldInfo.signature);
-        }
-        return;
-      }
-
       // Keep track of how many times a field name was used and resolve conflicts by
       // prefixing filed names with numbers.
       var classInfo: ClassInfo;
@@ -546,11 +537,11 @@ module J2ME {
   }
 
   export class ArrayClassInfo extends ClassInfo {
-    constructor(className: string, elementClass?) {
+    constructor(className: string, elementClass: ClassInfo, mangledName?: string) {
       false && super(null);
       this.className = className;
       // TODO this may need to change for compiled code.
-      this.mangledName = className;
+      this.mangledName = mangledName;
       this.superClass = CLASSES.java_lang_Object;
       this.superClassName = "java/lang/Object";
       this.access_flags = 0;
@@ -589,22 +580,22 @@ module J2ME {
   PrimitiveClassInfo.prototype.interfaces = [];
 
   export class PrimitiveArrayClassInfo extends ArrayClassInfo {
-    constructor(className: string, elementClass?) {
-      super(className, elementClass);
+    constructor(className: string, elementClass: ClassInfo, mangledName: string) {
+      super(className, elementClass, mangledName);
     }
 
     get superClass() {
       return CLASSES.java_lang_Object;
     }
 
-    static Z = new PrimitiveArrayClassInfo("[Z", PrimitiveClassInfo.Z);
-    static C = new PrimitiveArrayClassInfo("[C", PrimitiveClassInfo.C);
-    static F = new PrimitiveArrayClassInfo("[F", PrimitiveClassInfo.F);
-    static D = new PrimitiveArrayClassInfo("[D", PrimitiveClassInfo.D);
-    static B = new PrimitiveArrayClassInfo("[B", PrimitiveClassInfo.B);
-    static S = new PrimitiveArrayClassInfo("[S", PrimitiveClassInfo.S);
-    static I = new PrimitiveArrayClassInfo("[I", PrimitiveClassInfo.I);
-    static J = new PrimitiveArrayClassInfo("[J", PrimitiveClassInfo.J);
+    static Z = new PrimitiveArrayClassInfo("[Z", PrimitiveClassInfo.Z, "Uint8Array");
+    static C = new PrimitiveArrayClassInfo("[C", PrimitiveClassInfo.C, "Uint16Array");
+    static F = new PrimitiveArrayClassInfo("[F", PrimitiveClassInfo.F, "Float32Array");
+    static D = new PrimitiveArrayClassInfo("[D", PrimitiveClassInfo.D, "Float64Array");
+    static B = new PrimitiveArrayClassInfo("[B", PrimitiveClassInfo.B, "Int8Array");
+    static S = new PrimitiveArrayClassInfo("[S", PrimitiveClassInfo.S, "Int16Array");
+    static I = new PrimitiveArrayClassInfo("[I", PrimitiveClassInfo.I, "Int32Array");
+    static J = new PrimitiveArrayClassInfo("[J", PrimitiveClassInfo.J, "Int64Array");
   }
 
   PrimitiveClassInfo.prototype.fields = [];
