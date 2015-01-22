@@ -20,14 +20,15 @@ module J2ME {
     Init  = 0x04,
     Perf  = 0x08,
     Load  = 0x10,
+    JIT   = 0x20,
 
-    All   = Trace | Link | Init | Perf | Load
+    All   = Trace | Link | Init | Perf | Load | JIT
   }
 
   /**
    * Toggle VM tracing here.
    */
-  export var writers = WriterFlags.None; // WriterFlags.Link; // WriterFlags.Link | WriterFlags.Load;
+  export var writers = WriterFlags.None;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -377,6 +378,7 @@ module J2ME {
       traceWriter = writers & WriterFlags.Trace ? writer : null;
       perfWriter = writers & WriterFlags.Perf ? writer : null;
       linkWriter = writers & WriterFlags.Link ? writer : null;
+      jitWriter = writers & WriterFlags.JIT ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
     }
@@ -528,7 +530,7 @@ module J2ME {
               if (Frame.isMarker(f)) {
                 windingWriter.writeLn("- marker -");
               } else {
-                windingWriter.writeLn((f.methodInfo.isCompiled ? "C" : "I") + " " + f.toString());
+                windingWriter.writeLn((f.methodInfo.state === MethodState.Compiled ? "C" : "I") + " " + f.toString());
               }
             });
             windingWriter.leave("");

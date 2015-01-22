@@ -233,7 +233,9 @@ module J2ME {
     var fieldInfo: FieldInfo;
     var classInfo: ClassInfo;
 
-    if (!frame.methodInfo.isOptimized && frame.methodInfo.bytecodeCount > 100) {
+    // We don't want to optimize methods for interpretation if we're going to be using the JIT until
+    // we teach the Baseline JIT about the new bytecodes.
+    if (!enableRuntimeCompilation && !frame.methodInfo.isOptimized && frame.methodInfo.bytecodeCount > 100) {
       optimizeMethodBytecode(frame.methodInfo);
     }
 
@@ -243,12 +245,22 @@ module J2ME {
 
     while (true) {
       profile && bytecodeCount ++;
-      frame.methodInfo.bytecodeCount ++;
-      // interpreterMethodCounter && interpreterMethodCounter.count(Bytecodes[op]);
+      mi.bytecodeCount ++;
+
+      // TODO: Make sure this works even if we JIT everything. At the moment it fails
+      // for synthetic method frames which have bad max_local counts.
+
+      // Inline heuristics that trigger JIT compilation here.
+      if (enableRuntimeCompilation &&
+          mi.state < MethodState.Compiled && // Give up if we're at this state.
+          mi.backwardsBranchCount + mi.interpreterCallCount > 10) {
+        compileAndLinkMethod(mi);
+      }
 
       try {
-        if (onStackReplacementIsEnabled && frame.pc < lastPC) {
-          if (frame.methodInfo.isCompiled) {
+        if (frame.pc < lastPC) {
+          mi.backwardsBranchCount ++;
+          if (onStackReplacementIsEnabled && mi.state === MethodState.Compiled) {
             // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
             // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
             // on stack replacement.
@@ -259,7 +271,7 @@ module J2ME {
             frames.pop();
 
             // Remember the return kind since we'll need it later.
-            var returnKind = frame.methodInfo.getReturnKind();
+            var returnKind = mi.getReturnKind();
 
             // Set the global OSR frame to the current frame.
             O = frame;
@@ -1070,7 +1082,7 @@ module J2ME {
             calleeMethod = object[calleeMethodInfo.mangledName];
             var calleeTargetMethodInfo: MethodInfo = calleeMethod.methodInfo;
 
-            if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && !calleeTargetMethodInfo.isCompiled) {
+            if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, [], 0);
               ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
               frames.push(calleeFrame);
@@ -1168,7 +1180,7 @@ module J2ME {
               calleeMethod = calleeMethodInfo.fn;
             }
             // Call method directly in the interpreter if we can.
-            if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && !calleeTargetMethodInfo.isCompiled) {
+            if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, [], 0);
               ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
               frames.push(calleeFrame);

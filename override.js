@@ -22,7 +22,7 @@ function asyncImpl(returnKind, promise) {
       name: "RaiseExceptionSynthetic",
       signature: "()V",
       isStatic: true,
-      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+      classInfo: J2ME.ClassInfo.createFromObject({
         className: {value: "java/lang/Object"},
         vmc: {value: {}},
         vfc: {value: {}},

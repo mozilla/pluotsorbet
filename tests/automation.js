@@ -65,6 +65,7 @@ var gfxTests = [
   { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
   { name: "gfx/TextEditorGfxTest", maxDifferent: 953 },
+  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 178 },
 ];
 
 var expectedUnitTestResults = [
