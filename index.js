@@ -14,7 +14,7 @@
                          loadScript("tests/index.js"));
   }
 
-  if (navigator.userAgent.indexOf('Chrome')) {
+  if (navigator.userAgent.indexOf('Chrome') > -1) {
     loadingPromises.push(loadScript("chrome_polyfills.js"));
   }
 

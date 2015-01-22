@@ -1,6 +1,6 @@
 'use strict';
 
-if (navigator && !navigator.mozContacts) {
+if (config.midletClassName !== "RunTests" && navigator && !navigator.mozContacts) {
   navigator.mozContacts = {
     getAll: function () {
       var req = {};
