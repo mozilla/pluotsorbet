@@ -197,11 +197,9 @@ e.g.:
    Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(...) {...});
 
 
-If raising a Java `Exception`, throw new instance of Java `Exception` class
+If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in runtime.ts, e.g.:
 
-e.g.:
-
-    throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+    throw $.newNullPointerException("Cannot copy to/from a null array.");
 
 Remember:
 
@@ -210,3 +208,26 @@ Remember:
   * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
   * Context is last param to every function registered using `Native.create` or `Override.create`
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
+
+## Packaging
+
+The repository includes tools for packaging j2me.js into an Open Web App.
+It's possible to simply package the entire contents of your working directory,
+but these tools will produce a better app.
+
+### Compiling With AOT Compiler
+
+`make aot` compiles some Java code into JavaScript with an ahead-of-time (AOT) compiler.
+
+To use it, first install a recent version of the
+[JavaScript shell](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Introduction_to_the_JavaScript_shell).
+
+### Compiling With Closure
+
+`make closure` compiles some JavaScript code with the Closure compiler.
+
+To use it, first download Shumway's version of the compiler to tools/closure.jar:
+
+```
+wget https://github.com/mozilla/shumway/raw/master/utils/closure.jar -P tools/
+```

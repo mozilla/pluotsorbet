@@ -151,6 +151,8 @@ public abstract class TestHarness {
         }
     }
 
+    // NOTE: this only works for screens that have no native elements.
+    // To compare a screen with native elements, create a tests/gfx/ test.
     public void compareScreenToReferenceImage(String referenceImagePath, int maxDifferingPixels, String message) {
         int numDifferent = getNumDifferingPixels(referenceImagePath);
         check(numDifferent <= maxDifferingPixels, message + ". " + numDifferent + " > " + maxDifferingPixels);

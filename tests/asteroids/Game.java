@@ -189,8 +189,6 @@ public class Game extends MIDlet implements CommandListener {
         licenseForm = null;
         _scoreField = null;
         _currentDisplayable = null;
-        //System.out.println("computeavg = " + (Field.computeavg / Field.frames));
-        //System.out.println("paintavg = " + (Field.paintavg / Field.frames));
     }
 
     // Implementation of the CommandListener interface

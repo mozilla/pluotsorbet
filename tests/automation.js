@@ -19,15 +19,16 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/CanvasTest", maxDifferent: 271 },
+  { name: "gfx/AlertTest", maxDifferent: 1942 },
+  { name: "gfx/CanvasTest", maxDifferent: 0 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
-  { name: "gfx/ImageRenderingTest", maxDifferent: 266 },
+  { name: "gfx/ImageRenderingTest", maxDifferent: 0 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
   { name: "gfx/DrawAndFillRoundRectTest", maxDifferent: 2000 },
   { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
   { name: "gfx/DrawStringTest", maxDifferent: 345 },
   { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
-  { name: "gfx/TextBoxTest", maxDifferent: 4722 },
+  { name: "gfx/TextBoxTest", maxDifferent: 0, todo: true },
   { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
   { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
@@ -37,7 +38,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferent: 0 },
-  { name: "gfx/ImageProcessingTest", maxDifferent: 6184 },
+  { name: "gfx/ImageProcessingTest", maxDifferent: 6466 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
   { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1500 },
@@ -57,19 +58,20 @@ var gfxTests = [
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
   { name: "gfx/RectAfterText", maxDifferent: 637 },
-  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 936 },
-  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 936 },
-  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 936 },
+  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 1060 },
+  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 1060 },
+  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 1060 },
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
   { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferent: 949 },
+  { name: "gfx/TextEditorGfxTest", maxDifferent: 953 },
+  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 178 },
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71570 },
+  { name: "pass", number: 71533 },
   { name: "fail", number: 0 },
-  { name: "known fail", number: 179 },
+  { name: "known fail", number: 215 },
   { name: "unknown pass", number: 0 }
 ];
 
@@ -95,7 +97,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -142,6 +144,7 @@ casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
             syncFS();
         });
     }
+
     casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page")
     .withFrame(0, basicUnitTests);
@@ -154,7 +157,33 @@ casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.assertTextExists("I m\nI a ma\nI 2\nI ma\nI 2\nI 1 isolate\nI Isolate ID correct\nI 4\nI 5\nI 1 isolate\nI ma\nI ma\nI 3 isolates\nI 1 m1\nI 2 m2\nI 4\nI 5\nI ma\nI 1 isolate\nI Isolates terminated\nI r mar\nI 2\nI mar\nI c marc\nI 2\nI marc\nI Main isolate still running");
+            test.assertTextExists("I m\n" +
+                                  "I a ma\n" +
+                                  "I 2\n" +
+                                  "I ma\n" +
+                                  "I 2\n" +
+                                  "I 1 isolate\n" +
+                                  "I Isolate ID correct\n" +
+                                  "I 4\n" +
+                                  "I 5\n" +
+                                  "I 1 isolate\n" +
+                                  "I ma\n" +
+                                  "I ma\n" +
+                                  "I 3 isolates\n" +
+                                  "I 1 m1\n" +
+                                  "I 4\n" +
+                                  "I 2 m2\n" +
+                                  "I 5\n" +
+                                  "I ma\n" +
+                                  "I 1 isolate\n" +
+                                  "I Isolates terminated\n" +
+                                  "I r mar\n" +
+                                  "I 2\n" +
+                                  "I mar\n" +
+                                  "I c marc\n" +
+                                  "I 2\n" +
+                                  "I marc\n" +
+                                  "I Main isolate still running");
         });
     });
 
@@ -265,18 +294,19 @@ casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
                                 }
                             }
 
+                            var message = different + " <= " + testCase.maxDifferent;
                             if (different > testCase.maxDifferent) {
                                 console.log(got.canvas.toDataURL());
                                 if (!testCase.todo) {
-                                  console.log("FAIL - " + different);
+                                  console.log("FAIL - " + message);
                                 } else {
-                                  console.log("TODO - " + different);
+                                  console.log("TODO - " + message);
                                 }
                             } else {
                                 if (!testCase.todo) {
-                                    console.log("PASS - " + different);
+                                    console.log("PASS - " + message);
                                 } else {
-                                    console.log("UNEXPECTED PASS - " + different);
+                                    console.log("UNEXPECTED PASS - " + message);
                                 }
                             }
 
@@ -374,6 +404,22 @@ casper.test.begin("unit tests", 14 + gfxTests.length, function(test) {
     .waitForPopup("test.html", function() {
         test.assertEquals(this.popups.length, 1);
         test.assertTextDoesntExist("FAIL");
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.TestAlertWithGauge&jars=tests/tests.jar&logConsole=web,page")
+    .withFrame(0, function() {
+        this.waitUntilVisible(".lcdui-alert.visible .button1", function() {
+            this.click(".lcdui-alert.visible .button0");
+            this.waitForText("You pressed 'Yes'", function() {
+                test.assertTextDoesntExist("FAIL");
+
+                this.click(".lcdui-alert.visible .button1");
+                this.waitForText("You pressed 'No'", function() {
+                    test.assertTextDoesntExist("FAIL");
+                });
+            });
+        });
     });
 
     casper

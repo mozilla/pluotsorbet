@@ -7,7 +7,7 @@
  * Pre-load dependencies and then load the main page.
  */
 (function() {
-  var midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
+  var midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
   var loadingPromises = [];
   if (midletClassName == "RunTests") {
     loadingPromises.push(loadScript("tests/contacts.js"),
@@ -128,13 +128,13 @@ DumbPipe.registerOpener("mobileInfo", function(message, sender) {
   // for testing/debugging on a desktop.
   var mobileInfo = {
     network: {
-      mcc: urlParams.network_mcc || "310", // United States
-      mnc: urlParams.network_mnc || "001",
+      mcc: config.network_mcc || "310", // United States
+      mnc: config.network_mnc || "001",
     },
     icc: {
-      mcc: urlParams.icc_mcc || "310", // United States
-      mnc: urlParams.icc_mnc || "001",
-      msisdn: urlParams.icc_msisdn || "10005551212",
+      mcc: config.icc_mcc || "310", // United States
+      mnc: config.icc_mnc || "001",
+      msisdn: config.icc_msisdn || "10005551212",
     },
   };
 
@@ -334,6 +334,7 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
 
 DumbPipe.registerOpener("camera", function(message, sender) {
   var mediaStream = null;
+  var url = null;
 
   var video = document.createElement("video");
   document.body.appendChild(video);
@@ -359,8 +360,13 @@ DumbPipe.registerOpener("camera", function(message, sender) {
     audio: false,
   }, function(localMediaStream) {
     mediaStream = localMediaStream;
+    url = URL.createObjectURL(localMediaStream);
 
-    video.src = URL.createObjectURL(localMediaStream);
+    video.onerror = video.onloadeddata = function() {
+      URL.revokeObjectURL(url);
+    };
+
+    video.src = url;
     video.play();
   }, function(err) {
     console.log("Error: " + err);
@@ -527,6 +533,10 @@ DumbPipe.registerOpener("windowOpen", function(message, sender) {
 
 DumbPipe.registerOpener("reload", function(message, sender) {
   window.location.reload();
+});
+
+DumbPipe.registerOpener("exit", function(message, sender) {
+  window.close();
 });
 
 navigator.mozAlarms.add(new Date(Date.now()+10000), 'ignoreTimezone', {});

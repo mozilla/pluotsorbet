@@ -17,6 +17,9 @@ public class ImageProcessingTest extends MIDlet {
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
             if (image != null) {
                 g.drawImage(image, 0, 0, Graphics.TOP | Graphics.LEFT);
             }
