@@ -867,6 +867,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id
 };
 
 MIDP.exit = function(code) {
+    $.pause("exit");
     DumbPipe.open("exit", null, function(message) {});
 };
 
