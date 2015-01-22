@@ -541,7 +541,7 @@ module J2ME {
       false && super(null);
       this.className = className;
       // TODO this may need to change for compiled code.
-      this.mangledName = mangledName;
+      this.mangledName = mangledName || mangleClassName(className);
       this.superClass = CLASSES.java_lang_Object;
       this.superClassName = "java/lang/Object";
       this.access_flags = 0;

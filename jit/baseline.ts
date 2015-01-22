@@ -170,11 +170,15 @@ module J2ME {
   }
 
   function classConstant(classInfo: ClassInfo): string {
-    if (classInfo.mangledName) {
+    // PrimitiveArrayClassInfo have custom mangledNames;
+    if (classInfo instanceof PrimitiveArrayClassInfo) {
       return classInfo.mangledName;
     }
     if (classInfo.isArrayClass) {
       return "$AK(" + classConstant(classInfo.elementClass) + ")";
+    }
+    if (classInfo.mangledName) {
+      return classInfo.mangledName;
     }
     release || assert(classInfo.mangledName);
     return classInfo.mangledName;
