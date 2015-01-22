@@ -324,7 +324,16 @@ var TextEditorProvider = (function() {
                     var length = this._getNodeTextLength(cur);
 
                     if (length >= from) {
-                        var range = window.getSelection().getRangeAt(0);
+                        var selection = window.getSelection();
+                        var range;
+                        if (selection.rangeCount === 0) {
+                            // XXX: This makes it so chrome does not break here, but
+                            // text boxes still do not behave correctly in chrome.
+                            range = document.createRange();
+                            selection.addRange(range);
+                        } else {
+                            range = selection.getRangeAt(0);
+                        }
                         if (cur.textContent) {
                             range.setStart(cur, from);
                         } else if (from === 0) {
