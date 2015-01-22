@@ -1171,7 +1171,7 @@ module J2ME {
         // Some Native MethodInfos are constructed but never called;
         // that's fine, unless we actually try to call them.
         return function missingImplementation() {
-          release || assert (false, "Method " + methodInfo.name + " is native but does not have an implementation.");
+          stderrWriter.errorLn("implKey " + methodInfo.name + " is native but does not have an implementation.");
         }
       }
     } else if (implKey in Override) {

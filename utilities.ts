@@ -53,7 +53,7 @@ function warn(message?: any, ...optionalParams: any[]): void {
   if (inBrowser) {
     console.warn.apply(console, arguments);
   } else {
-    jsGlobal.print(J2ME.IndentingWriter.RED + message + J2ME.IndentingWriter.ENDC);
+    jsGlobal.print(J2ME.IndentingWriter.YELLOW + message + J2ME.IndentingWriter.ENDC);
   }
 }
 
@@ -274,11 +274,6 @@ module J2ME {
     }
 
     export function error(message: string) {
-      //if (!inBrowser) {
-      //  warn(message + "\n\nStack Trace:\n" + Debug.backtrace());
-      //} else {
-      //  warn(message);
-      //}
       throw new Error(message);
     }
 
@@ -311,7 +306,6 @@ module J2ME {
     }
 
     export function notImplemented(message: string) {
-      log("release: " + release);
       release || Debug.assert(false, "Not Implemented " + message);
     }
 
