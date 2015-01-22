@@ -1303,6 +1303,12 @@ module J2ME {
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
       } catch (e) {
+        // This can happen if we OSR into a frame that is right after a marker
+        // frame. If an exception occurs in this frame, then we end up here and
+        // the current frame is a marker frame, so we'll need to rethrow.
+        if (Frame.isMarker(ctx.current())) {
+          throw e;
+        }
         e = translateException(e);
         if (!e.klass) {
           // A non-java exception was thrown. Rethrow so it is not handled by tryCatch.
