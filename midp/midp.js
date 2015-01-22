@@ -230,35 +230,9 @@ Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lan
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
         if (request.endsWith(".jad")) {
-            // TODO: The download should start after the MIDlet has terminated its execution.
-            // Currently we're just updating right away because of #744.
-
-            var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-            dialog.style.display = 'block';
-            dialog.classList.add('visible');
-            document.body.appendChild(dialog);
-
-            performDownload(request, dialog, function(data) {
-              dialog.parentElement.removeChild(dialog);
-
-              Promise.all([
-                new Promise(function(resolve, reject) {
-                  fs.remove("/midlet.jad", function() {
-                    fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
-                  });
-                }),
-                new Promise(function(resolve, reject) {
-                  fs.remove("/midlet.jar", function() {
-                    fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
-                  });
-                }),
-              ]).then(function() {
-                DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-                DumbPipe.close(DumbPipe.open("reload", {}));
-              });
-            });
-
-            return true;
+            // The download will start after the MIDlet has terminated its execution.
+            MIDP.pendingMIDletUpdate = request;
+            return 1;
         } else {
             DumbPipe.close(DumbPipe.open("windowOpen", request));
         }
@@ -470,101 +444,6 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     return J2ME.newString(value);
 };
 
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V"] = function(fileName) {
-    var data = CLASSES.loadFile(util.fromJavaString(fileName));
-    if (!data)
-        throw $.newIOException();
-    MIDP.skinFileData = new DataView(data);
-    MIDP.skinFilePos = 0;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B"] = function(len) {
-    if (!MIDP.skinFileData || (MIDP.skinFilePos + len) > MIDP.skinFileData.byteLength)
-        throw $.newIllegalStateException();
-    var bytes = util.newPrimitiveArray("B", len);
-    for (var n = 0; n < len; ++n) {
-        bytes[n] = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
-    }
-    return bytes;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I"] = function() {
-    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        throw $.newIllegalStateException();
-    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
-    MIDP.skinFilePos += 4;
-    var ints = util.newPrimitiveArray("I", len);
-    for (var n = 0; n < len; ++n) {
-        if ((MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-            throw $.newIllegalStateException();
-        ints[n] = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
-        MIDP.skinFilePos += 4;
-    }
-    return ints;
-};
-
-MIDP.STRING_ENCODING_USASCII = 0;
-MIDP.STRING_ENCODING_UTF8 = 1;
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()[Ljava/lang/String;"] = function() {
-    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        throw $.newIllegalStateException();
-    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
-    MIDP.skinFilePos += 4;
-    var strings = J2ME.newStringArray(len);
-    for (var n = 0; n < len; ++n) {
-        if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
-            throw $.newIllegalStateException();
-        var strLen = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
-        var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
-        if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
-            throw $.newIllegalStateException();
-        var bytes = new Uint8Array(MIDP.skinFileData.buffer).subarray(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
-        MIDP.skinFilePos += strLen;
-        var str;
-        if (strEnc === MIDP.STRING_ENCODING_USASCII) {
-            str = "";
-            for (var i = 0; i < strLen; ++i)
-                str += String.fromCharCode(bytes[i]);
-        } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
-            str = util.decodeUtf8(bytes);
-        } else {
-            throw $.newIllegalStateException();
-        }
-        strings[n] = J2ME.newString(str);
-    }
-    return strings;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinFile.()I"] = function() {
-    MIDP.skinFileData = null;
-    MIDP.skinFilePos = 0;
-    return 0;
-};
-
-MIDP.sharedPool = null;
-MIDP.sharedSkinData = null;
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareResourcePool.(Ljava/lang/Object;)V"] = function(pool) {
-    MIDP.sharedPool = pool;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.getSharedResourcePool.()Ljava/lang/Object;"] = function() {
-    return MIDP.sharedPool;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareSkinData.(Ljava/lang/Object;)V"] = function(skinData) {
-    MIDP.sharedSkinData = skinData;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.getSharedSkinData.()Ljava/lang/Object;"] = function() {
-    return MIDP.sharedSkinData;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAllResources0.()Z"] = function() {
-    return 0;
-};
-
 Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
     var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = CLASSES.loadFile(fileName);
@@ -580,9 +459,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     return bytes;
 };
 
-Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function() {
-    return 0;
-};
+MIDP.ScreenHeight = 0;
 
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
@@ -597,13 +474,7 @@ MIDP.Context2D = (function() {
       c.height = 320;
     }
 
-    if (config.nativeMenu) {
-      document.getElementById("sidebar").style.display = "block";
-      document.getElementById("drawer").querySelector("header").style.display = "block";
-
-      var headerHeight = document.getElementById("drawer").querySelector("header").offsetHeight;
-      c.height = c.height - headerHeight;
-    }
+    MIDP.ScreenHeight = c.height;
 
     function sendPenEvent(pt, whichType) {
         MIDP.sendNativeEvent({
@@ -645,7 +516,7 @@ MIDP.Context2D = (function() {
 
     // Cache the canvas position for future computation.
     var canvasRect = c.getBoundingClientRect();
-    window.addEventListener("resize", function() {
+    c.addEventListener("canvasresize", function() {
         canvasRect = c.getBoundingClientRect();
     });
 
@@ -965,6 +836,48 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id
     }
 };
 
+MIDP.exit = function(code) {
+    $.pause("exit");
+    DumbPipe.open("exit", null, function(message) {});
+};
+
+MIDP.pendingMIDletUpdate = null;
+
+Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
+    console.info("Isolate stops with code " + code + " and reason " + reason);
+    if (!MIDP.pendingMIDletUpdate) {
+        MIDP.exit();
+        return;
+    }
+
+    // Perform updating.
+    var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+    dialog.style.display = 'block';
+    dialog.classList.add('visible');
+    document.body.appendChild(dialog);
+
+    performDownload(MIDP.pendingMIDletUpdate, dialog, function(data) {
+      dialog.parentElement.removeChild(dialog);
+
+      Promise.all([
+        new Promise(function(resolve, reject) {
+          fs.remove("/midlet.jad", function() {
+            fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
+          });
+        }),
+        new Promise(function(resolve, reject) {
+          fs.remove("/midlet.jar", function() {
+            fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
+          });
+        }),
+      ]).then(function() {
+        MIDP.pendingMIDletUpdate = null;
+        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+        DumbPipe.close(DumbPipe.open("reload", {}));
+      });
+    });
+};
+
 // The foreground isolate will get the user events (keypresses, etc.)
 MIDP.foregroundIsolateId;
 MIDP.nativeEventQueues = {};
@@ -1145,18 +1058,12 @@ Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/Comm
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(exit) {
     console.info("Exit: " + exit);
-    asyncImpl("V", new Promise(function(){}));
+    MIDP.exit();
 };
 
 Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function() {
     console.warn("SuspendSystem$MIDPSystem.allMidletsKilled.()Z not implemented");
     return 0;
-};
-
-Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function() {
-    var ids = util.newPrimitiveArray("I", 1);
-    ids[0] = 1; // KEYBOARD_INPUT_MODE
-    return ids;
 };
 
 /* We don't care about the system keys SELECT,
@@ -1431,6 +1338,17 @@ Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     return 0;
 };
 
-Native["com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V"] = function(suiteID, className, cleanup) {
-    console.warn("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V not implemented");
-};
+Native["com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V"] =
+    UnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
+
+Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] =
+    UnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
+
+Native["com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I"] =
+    UnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
+
+Native["com/sun/j2me/content/InvocationStore.resetFlags0.(I)V"] =
+    UnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
+
+Native["com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V"] =
+    UnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");

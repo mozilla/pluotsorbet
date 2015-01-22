@@ -1082,7 +1082,10 @@ module J2ME {
             calleeMethod = object[calleeMethodInfo.mangledName];
             var calleeTargetMethodInfo: MethodInfo = calleeMethod.methodInfo;
 
-            if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
+            if (calleeTargetMethodInfo &&
+                !calleeTargetMethodInfo.isSynchronized &&
+                !calleeTargetMethodInfo.isNative &&
+                calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, [], 0);
               ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
               frames.push(calleeFrame);
@@ -1147,6 +1150,13 @@ module J2ME {
 
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo = resolveMethod(index, mi.classInfo, isStatic);
+
+            // Fast path for some of the most common interpreter call targets.
+            if (calleeMethodInfo.implKey === "java/lang/Object.<init>.()V") {
+              stack.pop();
+              continue;
+            }
+
             if (isStatic) {
               classInitCheck(calleeMethodInfo.classInfo, lastPC);
               if (U) {
@@ -1163,7 +1173,6 @@ module J2ME {
               switch (op) {
                 case Bytecodes.INVOKEVIRTUAL:
                   if (!calleeTargetMethodInfo.hasTwoSlotArguments &&
-                      !calleeTargetMethodInfo.isSynchronized &&
                       calleeTargetMethodInfo.argumentSlots < 4) {
                     frame.patch(3, Bytecodes.INVOKEVIRTUAL, Bytecodes.RESOLVED_INVOKEVIRTUAL);
                   }

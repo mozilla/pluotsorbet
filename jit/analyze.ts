@@ -31,7 +31,6 @@ module J2ME {
     "com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V": YieldReason.Root,
     "com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V": YieldReason.Root,
     "com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I": YieldReason.Root,
-    "com/sun/midp/main/CommandState.exitInternal.(I)V": YieldReason.Root,
     "com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I": YieldReason.Root,
     "com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z": YieldReason.Root,
     "com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V": YieldReason.Root,
