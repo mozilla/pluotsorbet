@@ -470,101 +470,6 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
     return J2ME.newString(value);
 };
 
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.beginReadingSkinFile.(Ljava/lang/String;)V"] = function(fileName) {
-    var data = CLASSES.loadFile(util.fromJavaString(fileName));
-    if (!data)
-        throw $.newIOException();
-    MIDP.skinFileData = new DataView(data);
-    MIDP.skinFilePos = 0;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readByteArray.(I)[B"] = function(len) {
-    if (!MIDP.skinFileData || (MIDP.skinFilePos + len) > MIDP.skinFileData.byteLength)
-        throw $.newIllegalStateException();
-    var bytes = util.newPrimitiveArray("B", len);
-    for (var n = 0; n < len; ++n) {
-        bytes[n] = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
-    }
-    return bytes;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readIntArray.()[I"] = function() {
-    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        throw $.newIllegalStateException();
-    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
-    MIDP.skinFilePos += 4;
-    var ints = util.newPrimitiveArray("I", len);
-    for (var n = 0; n < len; ++n) {
-        if ((MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-            throw $.newIllegalStateException();
-        ints[n] = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
-        MIDP.skinFilePos += 4;
-    }
-    return ints;
-};
-
-MIDP.STRING_ENCODING_USASCII = 0;
-MIDP.STRING_ENCODING_UTF8 = 1;
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.readStringArray.()[Ljava/lang/String;"] = function() {
-    if (!MIDP.skinFileData || (MIDP.skinFilePos + 4) > MIDP.skinFileData.byteLength)
-        throw $.newIllegalStateException();
-    var len = MIDP.skinFileData.getInt32(MIDP.skinFilePos, true);
-    MIDP.skinFilePos += 4;
-    var strings = J2ME.newStringArray(len);
-    for (var n = 0; n < len; ++n) {
-        if ((MIDP.skinFilePos + 2) > MIDP.skinFileData.byteLength)
-            throw $.newIllegalStateException();
-        var strLen = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
-        var strEnc = MIDP.skinFileData.getUint8(MIDP.skinFilePos++);
-        if ((MIDP.skinFilePos + strLen) > MIDP.skinFileData.byteLength)
-            throw $.newIllegalStateException();
-        var bytes = new Uint8Array(MIDP.skinFileData.buffer).subarray(MIDP.skinFilePos, MIDP.skinFilePos + strLen);
-        MIDP.skinFilePos += strLen;
-        var str;
-        if (strEnc === MIDP.STRING_ENCODING_USASCII) {
-            str = "";
-            for (var i = 0; i < strLen; ++i)
-                str += String.fromCharCode(bytes[i]);
-        } else if (strEnc === MIDP.STRING_ENCODING_UTF8) {
-            str = util.decodeUtf8(bytes);
-        } else {
-            throw $.newIllegalStateException();
-        }
-        strings[n] = J2ME.newString(str);
-    }
-    return strings;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/LoadedSkinData.finishReadingSkinFile.()I"] = function() {
-    MIDP.skinFileData = null;
-    MIDP.skinFilePos = 0;
-    return 0;
-};
-
-MIDP.sharedPool = null;
-MIDP.sharedSkinData = null;
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareResourcePool.(Ljava/lang/Object;)V"] = function(pool) {
-    MIDP.sharedPool = pool;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.getSharedResourcePool.()Ljava/lang/Object;"] = function() {
-    return MIDP.sharedPool;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.shareSkinData.(Ljava/lang/Object;)V"] = function(skinData) {
-    MIDP.sharedSkinData = skinData;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.getSharedSkinData.()Ljava/lang/Object;"] = function() {
-    return MIDP.sharedSkinData;
-};
-
-Native["com/sun/midp/chameleon/skins/resources/SkinResourcesImpl.ifLoadAllResources0.()Z"] = function() {
-    return 0;
-};
-
 Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
     var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = CLASSES.loadFile(fileName);
@@ -578,10 +483,6 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     for (var n = 0; n < bytes.byteLength; ++n)
         bytes[n] = src[n];
     return bytes;
-};
-
-Native["com/sun/midp/chameleon/layers/SoftButtonLayer.isNativeSoftButtonLayerSupported0.()Z"] = function() {
-    return 0;
 };
 
 MIDP.Context2D = (function() {
@@ -1151,12 +1052,6 @@ Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(exit) {
 Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function() {
     console.warn("SuspendSystem$MIDPSystem.allMidletsKilled.()Z not implemented");
     return 0;
-};
-
-Native["com/sun/midp/chameleon/input/InputModeFactory.getInputModeIds.()[I"] = function() {
-    var ids = util.newPrimitiveArray("I", 1);
-    ids[0] = 1; // KEYBOARD_INPUT_MODE
-    return ids;
 };
 
 /* We don't care about the system keys SELECT,
