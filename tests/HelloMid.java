@@ -11,6 +11,10 @@ class HelloGraphics extends Canvas implements Runnable {
     Image offscreenImage = null;
     Image offscreenImage2 = null;
 
+    public HelloGraphics() {
+        setTitle("Hello");
+    }
+
     protected void paint(Graphics g) {
         g.setColor(0x00FFFFFF);
         g.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
