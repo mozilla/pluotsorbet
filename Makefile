@@ -1,10 +1,10 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 
-all: build java jasmin tests j2me shumway
+all: config-build java jasmin tests j2me shumway
 
 test: all
 	tests/runtests.py
@@ -48,7 +48,7 @@ closure: build/j2me.js aot
 shumway: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
 
-build:
+config-build:
 	echo "config.release = ${RELEASE};" > config/build.js
 
 tests:
