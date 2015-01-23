@@ -61,7 +61,7 @@ certs:
 	make -C certs
 
 # Makes an output/ directory containing the packaged open web app files.
-app: build java certs
+app: config-build java certs
 	tools/package.sh
 
 clean:
