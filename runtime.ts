@@ -1464,7 +1464,7 @@ module J2ME {
 
     compiledCount ++;
 
-    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey);
+    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
     var s = performance.now();
 
     var compiledMethod;
