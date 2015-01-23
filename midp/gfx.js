@@ -432,7 +432,9 @@ var currentlyFocusedTextEditor;
     }
 
     function withAnchor(g, c, anchor, x, y, w, h) {
-        var [x, y] = withClip(g, c, x, y);
+        var pair = withClip(g, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         if (anchor & RIGHT) {
             x -= w;
@@ -813,7 +815,10 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(graphics);
         c.save();
 
-        [x, y] = withClip(graphics, c, x, y);
+        var pair = withClip(graphics, c, x, y);
+        x = pair[0];
+        y = pair[1];
+
         c.drawImage(context.canvas, x, y);
 
         c.restore();
@@ -830,7 +835,10 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(g);
         c.save();
 
-        [x, y] = withAnchor(g, c, anchor, x, y, texture.width, texture.height);
+        var pair = withAnchor(g, c, anchor, x, y, texture.width, texture.height);
+        x = pair[0];
+        y = pair[1];
+
         c.drawImage(texture, x, y);
 
         c.restore();
@@ -1127,11 +1135,15 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(g);
         c.save();
 
-        [x, y] = withClip(g, c, x, y);
+        var pair = withClip(g, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         parseEmojiString(str).forEach(function(part) {
             if (part.text) {
-                var [textX, textY] = withTextAnchor(g, c, anchor, x, y, part.text);
+                var pair = withTextAnchor(g, c, anchor, x, y, part.text);
+                var textX = pair[0];
+                var textY = pair[1];
 
                 if (isOpaque) {
                     withOpaquePixel(g, c);
@@ -1177,9 +1189,11 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
-        [x, y] = withTextAnchor(this, c, anchor, x, y, chr);
+        pair = withTextAnchor(this, c, anchor, x, y, chr), x = pair[0], y = pair[1];
 
         withPixel(this, c);
 
@@ -1192,7 +1206,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        var [x, y] = withClip(this, c, x1, y1);
+        var pair = withClip(this, c, x1, y1);
+        var x = pair[0];
+        var y = pair[1];
 
         withPixel(this, c);
 
@@ -1219,7 +1235,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -1239,7 +1257,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -1261,7 +1281,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -1281,7 +1303,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -1351,7 +1375,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(g);
         c.save();
 
-        [x, y] = withAnchor(g, c, anchor, x, y, sw, sh);
+        var pair = withAnchor(g, c, anchor, x, y, sw, sh);
+        x = pair[0];
+        y = pair[1];
 
         c.translate(x, y);
 
@@ -1378,7 +1404,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        var [x, y] = withClip(this, c, x1, y1);
+        var pair = withClip(this, c, x1, y1);
+        var x = pair[0];
+        var y = pair[1];
 
         withPixel(this, c);
 
@@ -1408,7 +1436,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         c.drawImage(context.canvas, x, y);
 

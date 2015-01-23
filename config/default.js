@@ -1,4 +1,7 @@
-// Midlet-specific customization code.
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+
+'use strict';
 
 var MIDlet = {
   name: "aMIDlet",
@@ -12,6 +15,8 @@ var MIDlet = {
 };
 
 var config = {
+  main: "com/sun/midp/main/MIDletSuiteLoader",
+  midletClassName: "RunTests",
 };
 
 // The base directory of the app, relative to the current page.  Normally this
