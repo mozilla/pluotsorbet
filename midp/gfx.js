@@ -992,11 +992,13 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.initScreen0.(III)V"] = function(displayId, w, h) {
         this.displayId = displayId;
         setDimensions(this, w, h);
+        resetGC(this);
     };
 
     Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;II)V"] = function(img, w, h) {
         this.img = img;
         setDimensions(this, w, h);
+        resetGC(this);
     };
 
     function isScreenGraphics(g) {
