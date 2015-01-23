@@ -7,11 +7,14 @@
  * Pre-load dependencies and then load the main page.
  */
 (function() {
-  var midletClassName = config.midletClassName ? config.midletClassName.replace(/\//g, '.') : "RunTests";
   var loadingPromises = [];
-  if (midletClassName == "RunTests") {
+  if (config.midletClassName == "RunTests") {
     loadingPromises.push(loadScript("tests/contacts.js"),
                          loadScript("tests/index.js"));
+  }
+
+  if (navigator.userAgent.indexOf('Chrome') > -1) {
+    loadingPromises.push(loadScript("chrome_polyfills.js"));
   }
 
   Promise.all(loadingPromises).then(function() {

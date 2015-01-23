@@ -10,11 +10,13 @@
   <link rel="stylesheet" type="text/css" href="style/drawer.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
-  <script type="text/javascript" src="midlet.js" defer></script>
+  <script type="text/javascript" src="config/default.js" defer></script>
+  <script type="text/javascript" src="config/midlet.js" defer></script>
+  <script type="text/javascript" src="config/build.js" defer></script>
+  <script type="text/javascript" src="config/urlparams.js" defer></script>
   <!-- Uncomment the line below to enable the profiler. -->
   <!--<script type="text/javascript" src="build/shumway.js" defer></script>-->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
-  <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
@@ -141,11 +143,13 @@
     <section id="drawer" role="region">
       <header style="display:none">
         <a href="#"><span class="icon icon-menu">hide sidebar</span></a>
-        <a href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <a id="header-drawer-button" href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <menu id="header-ok-button" type="toolbar" style="display:none"><button>√</button></menu>
         <h1 id="display_title"></h1>
       </header>
       <div id="main" role="main">
         <canvas id="canvas"></canvas>
+        <button id="back-button">Back</button>
       </div>
     </section>
   </div>
