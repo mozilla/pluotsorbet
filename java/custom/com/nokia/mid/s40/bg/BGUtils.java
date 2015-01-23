@@ -7,6 +7,8 @@ import com.sun.midp.midletsuite.MIDletSuiteLockedException;
 import com.sun.midp.security.SecurityToken;
 
 public class BGUtils {
+    private static boolean launchMIDletCalled = false;
+
     private static SecurityToken classSecurityToken;
 
     public static void initSecurityToken(SecurityToken token) {
@@ -15,14 +17,27 @@ public class BGUtils {
         }
     }
 
+    public static native int getFGMIDletNumber();
+    public static native String getFGMIDletClass();
+    public static native void waitUserInteraction();
+
+    /* Start the FG MIDlet when the page becomes visible and if
+       launchIEMIDlet hasn't been called (we want launchIEMIDlet
+       to launch the MIDlet if possible) */
     public static void setBGMIDletResident(boolean param) {
-        System.out.println("warning: BGUtils.setBGMIDletResident(Z)V not implemented (" + param + ")");
+      BGUtils.waitUserInteraction();
+
+      if (BGUtils.launchMIDletCalled) {
+        return;
+      }
+
+      int midletNumber = BGUtils.getFGMIDletNumber();
+      String midletClass = BGUtils.getFGMIDletClass();
+
+      MIDletSuiteUtils.execute(midletNumber, midletClass, null);
     }
 
-    public static native String getFGMIDlet(int midletNumber);
-    public static native void waitUserInteraction();
     public static native void addSystemProperties(String args);
-    public static native void startMIDlet(int midletNumber, String midletClass, String thirdArg);
 
     public static boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args) {
         System.out.println("midletSuiteVendor: " + midletSuiteVendor);
@@ -31,12 +46,14 @@ public class BGUtils {
         System.out.println("startupNoteText: " + startupNoteText);
         System.out.println("args: " + args);
 
+        BGUtils.launchMIDletCalled = true;
+
         BGUtils.waitUserInteraction();
 
         try {
             BGUtils.addSystemProperties(args);
 
-            MIDletSuiteUtils.execute(midletNumber, BGUtils.getFGMIDlet(midletNumber), null);
+            MIDletSuiteUtils.execute(midletNumber, BGUtils.getFGMIDletClass(), null);
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace();
