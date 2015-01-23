@@ -71,7 +71,7 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
 
 Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     key = util.fromJavaString(key);
-    var value = null;
+    var value;
     switch (key) {
     case "microedition.encoding":
         // The value of this property is different than the value on a real Nokia Asha 503 phone.
@@ -235,14 +235,14 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         // just put the whole string here as a workaround and fix this in issue #688.
         value = "encoding=jpeg&quality=80&progressive=true&type=jfif&width=400&height=400";
         break;
-    }
-
-    if (!value) {
+    default:
         if (MIDP.additionalProperties[key]) {
             value = MIDP.additionalProperties[key];
         } else {
             console.warn("UNKNOWN PROPERTY (java/lang/System): " + key);
+            value = null;
         }
+        break;
     }
 
     return J2ME.newString(value);
