@@ -26,7 +26,7 @@ index.html is a webapp that runs j2me.js. The URL parameters you pass to index.h
 
 ### URL parameters
 
-See full list at libs/urlparams.js
+You can specify URL parameters to override the configuration. See the full list of parameters at config/urlparams.js.
 
 * `main` - default is `com/sun/midp/main/MIDletSuiteLoader`
 * `midletClassName` - must be set to the main class to run. Only valid when default `main` parameter is used. Defaults to `RunTests`

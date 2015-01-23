@@ -3,13 +3,7 @@
 
 'use strict';
 
-// To launch the unit tests: ?main=RunTests
-// To launch the MIDP demo: ?main=com/sun/midp/main/MIDletSuiteLoader&midletClassName=HelloCommandMIDlet
-// To launch a JAR file: ?main=com/sun/midp/main/MIDletSuiteLoader&args=app.jar
-
 var jvm = new JVM();
-
-var main = config.main || "com/sun/midp/main/MIDletSuiteLoader";
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
@@ -17,7 +11,7 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
 
 var jars = ["java/classes.jar"];
 
-if (MIDP.midletClassName == "RunTests") {
+if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
 }
 
@@ -171,7 +165,7 @@ if (config.downloadJAD) {
   }));
 }
 
-if (MIDP.midletClassName == "RunTests") {
+if (config.midletClassName == "RunTests") {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"));
@@ -194,7 +188,7 @@ function start() {
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
-  jvm.startIsolate0(main, config.args);
+  jvm.startIsolate0(config.main, config.args);
 }
 
 Promise.all(loadingPromises).then(start);

@@ -24,7 +24,7 @@
    *    terminal: a faster canvas based console if Shumway.js is included.
    */
   var ENABLED_CONSOLE_TYPES = (config.logConsole || "page").split(",");
-  var minLogLevel = LOG_LEVELS[config.logLevel || "log"];
+  var minLogLevel = LOG_LEVELS[config.logLevel || (config.release ? "error" : "log")];
 
 
   //================================================================
