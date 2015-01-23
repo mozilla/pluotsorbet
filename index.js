@@ -543,17 +543,11 @@ DumbPipe.registerOpener("exit", function(message, sender) {
 });
 
 DumbPipe.registerOpener("backgroundCheck", function(message, sender) {
-  //if (!navigator.mozHasPendingMessage) {
-    //sender(true);
-  //}
-
-  //sender(navigator.mozHasPendingMessage('alarm'));
-
-  sender(true);
-
-  navigator.mozAlarms.add(new Date(Date.now() + 10000), 'ignoreTimezone', {});
-
-  navigator.mozSetMessageHandler('alarm', function() {
+  if (navigator.mozAlarms) {
     navigator.mozAlarms.add(new Date(Date.now() + 10000), 'ignoreTimezone', {});
-  });
+
+    navigator.mozSetMessageHandler('alarm', function() {
+      navigator.mozAlarms.add(new Date(Date.now() + 10000), 'ignoreTimezone', {});
+    });
+  }
 });
