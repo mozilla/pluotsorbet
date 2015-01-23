@@ -54,6 +54,7 @@ module J2ME.Bytecode {
   export class BlockMap {
     method: MethodInfo;
     blocks: Block [];
+    hasBackwardBranches: boolean;
     private blockMap: Block [];
     private startBlock: Block;
     private canTrap: Uint32ArrayBitSet;
@@ -62,6 +63,7 @@ module J2ME.Bytecode {
     constructor(method: MethodInfo) {
       this.blocks = [];
       this.method = method;
+      this.hasBackwardBranches = false;
       this.blockMap = new Array<Block>(method.code.length);
       this.canTrap = new Uint32ArrayBitSet(this.blockMap.length);
       this.exceptionHandlers = this.method.exception_table;
@@ -141,7 +143,13 @@ module J2ME.Bytecode {
     }
 
     private setSuccessors(predBci: number, successors: Block []) {
-      // writer.writeLn("setSuccessors " + predBci + " " + successors.map(x => x.startBci).join(", "));
+      if (!this.hasBackwardBranches) {
+        for (var i = 0; i < successors.length; i++) {
+          if (successors[i].startBci < predBci) {
+            this.hasBackwardBranches = true;
+          }
+        }
+      }
       var predecessor = this.blockMap[predBci];
       assert (predecessor.successors.length === 0, predecessor.successors.map(x => x.startBci).join(", "));
       ArrayUtilities.pushMany(predecessor.successors, successors);

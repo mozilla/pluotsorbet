@@ -202,6 +202,7 @@ module J2ME {
     private stack: string [];
     private variables: string [];
     private lockObject: string;
+    private hasOSREntryPoint = false;
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
@@ -227,12 +228,14 @@ module J2ME {
     }
 
     compile(): CompiledMethodInfo {
+      this.blockMap = new BlockMap(this.methodInfo);
+      this.blockMap.build();
       this.emitPrologue();
       this.emitBody();
       if (this.variables.length) {
         this.emitter.prependLn("var " + this.variables.join(", ") + ";");
       }
-      return new CompiledMethodInfo(this.parameters, this.emitter.toString(), this.referencedClasses);
+      return new CompiledMethodInfo(this.parameters, this.emitter.toString(), this.referencedClasses, this.hasOSREntryPoint);
     }
 
     needsVariable(name: string) {
@@ -254,25 +257,25 @@ module J2ME {
     }
 
     emitBody() {
-      var blockMap = this.blockMap = new BlockMap(this.methodInfo);
-      blockMap.build();
+      var blockMap = this.blockMap;
       writer && blockMap.trace(writer);
       var blocks = blockMap.blocks;
       var stream = new BytecodeStream(this.methodInfo.code);
 
       var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
-      var needsSwitch = true;
+      var needsBranching = blocks.length > 1 || blocks[0].isLoopHeader;
 
-      if (!needsSwitch && blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
+      // if (!needsSwitch && blocks.length === 1 && !needsTry && !blocks[0].isLoopHeader) {
+      if (!needsBranching) {
         this.emitBlockBody(stream, blocks[0]);
         return;
       }
-      this.emitter.enter("while (true) {");
+      needsBranching && this.emitter.enter("while (true) {");
       if (emitCallMethodLoopCounter) {
         this.emitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
       needsTry && this.emitter.enter("try {");
-      this.emitter.enter("switch (bi) {");
+      needsBranching && this.emitter.enter("switch (bi) {");
 
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
@@ -295,7 +298,7 @@ module J2ME {
         this.emitter.writeLn("J2ME.Debug.assert(false, 'Invalid BI.');");
         this.emitter.outdent();
       }
-      this.emitter.leave("}");
+      needsBranching && this.emitter.leave("}");
       if (needsTry) {
         this.emitter.leaveAndEnter("} catch (ex) {");
         this.sp = 0;
@@ -312,7 +315,7 @@ module J2ME {
         this.emitter.writeLn("throw " + this.peek(Kind.Reference) + ";");
         this.emitter.leave("}");
       }
-      this.emitter.leave("}");
+      needsBranching && this.emitter.leave("}");
     }
 
     emitExceptionHandler(handler: ExceptionHandler) {
@@ -420,22 +423,31 @@ module J2ME {
     }
 
     private emitOSREntryPoint() {
-      // Are we doing an OSR?
-      this.emitter.enter("if (O) {");
-      this.emitter.writeLn("var local = O.local;");
+      var needsOSREntryPoint = this.blockMap.hasBackwardBranches;
 
-      // Restore locals.
-      for (var i = 0; i < this.methodInfo.max_locals; i++) {
-        this.emitter.writeLn(this.getLocal(i) + " = local[" + i + "];");
+      if (needsOSREntryPoint) {
+        // Are we doing an OSR?
+        this.emitter.enter("if (O) {");
+        this.emitter.writeLn("var local = O.local;");
+
+        // Restore locals.
+        for (var i = 0; i < this.methodInfo.max_locals; i++) {
+          this.emitter.writeLn(this.getLocal(i) + " = local[" + i + "];");
+        }
+        this.needsVariable("re");
+        this.emitter.writeLn("bi = O.pc;");
+        this.emitter.writeLn("O = null;");
+        if (this.methodInfo.isSynchronized) {
+          this.emitter.leaveAndEnter("} else {");
+          this.emitMonitorEnter(0, this.lockObject);
+        }
+        this.emitter.leave("}");
+        this.hasOSREntryPoint = true;
+      } else {
+        if (this.methodInfo.isSynchronized) {
+          this.emitMonitorEnter(0, this.lockObject);
+        }
       }
-      this.needsVariable("re");
-      this.emitter.writeLn("bi = O.pc;");
-      this.emitter.writeLn("O = null;");
-      if (this.methodInfo.isSynchronized) {
-        this.emitter.leaveAndEnter("} else {");
-        this.emitMonitorEnter(0, this.lockObject);
-      }
-      this.emitter.leave("}");
     }
 
     lookupClass(cpi: number): ClassInfo {
