@@ -1,21 +1,9 @@
 package com.nokia.mid.s40.bg;
 
 import com.sun.midp.main.MIDletSuiteUtils;
-import com.sun.midp.midletsuite.MIDletSuiteStorage;
-import com.sun.midp.midlet.MIDletSuite;
-import com.sun.midp.midletsuite.MIDletSuiteLockedException;
-import com.sun.midp.security.SecurityToken;
 
 public class BGUtils {
     private static boolean launchMIDletCalled = false;
-
-    private static SecurityToken classSecurityToken;
-
-    public static void initSecurityToken(SecurityToken token) {
-        if (classSecurityToken == null) {
-            classSecurityToken = token;
-        }
-    }
 
     public static native int getFGMIDletNumber();
     public static native String getFGMIDletClass();
