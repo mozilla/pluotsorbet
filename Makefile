@@ -3,7 +3,7 @@ BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 
-all: java jasmin tests j2me shumway
+all: java jasmin tests j2me shumway aot
 
 test: all
 	tests/runtests.py
@@ -27,10 +27,10 @@ j2me: build/j2me.js build/jsc.js
 
 aot: java j2me
 	@echo "Compiling ..."
-	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar > build/classes.jar.js
-	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar > build/tests.jar.js
+	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > build/classes.jar.js
+	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > build/tests.jar.js
 	if test -f program.jar; then \
-		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar > build/program.jar.js; \
+		js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > build/program.jar.js; \
 	fi
 	@echo "Done"
 
