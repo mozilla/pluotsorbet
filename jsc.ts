@@ -218,6 +218,9 @@ module J2ME {
       }
       if (file) {
         methodNameList = file.replace(/\r?\n/g, "\n").split("\n");
+
+        // Trim Whitespace
+        methodNameList = methodNameList.map(x => x.replace(/^\s+|\s+$/g, ""));
       }
     }
 

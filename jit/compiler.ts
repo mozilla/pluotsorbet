@@ -432,10 +432,22 @@ module J2ME {
       }
     }
 
+    var filteredClassInfoList: ClassInfo [] = [];
     for (var i = 0; i < orderedClassInfoList.length; i++) {
       var classInfo = orderedClassInfoList[i];
+      var methods = classInfo.methods;
+      for (var j = 0; j < methods.length; j++) {
+        var method = methods[j];
+        if (methodFilter(method)) {
+          // If at least one method is found, compile the class.
+          filteredClassInfoList.push(classInfo);
+          break;
+        }
+      }
+    }
 
-      writer.writeLn("//// " + classInfo.className);
+    for (var i = 0; i < filteredClassInfoList.length; i++) {
+      var classInfo = filteredClassInfoList[i];
 
       if (emitter.debugInfo) {
         writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
