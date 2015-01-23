@@ -239,7 +239,7 @@ module J2ME {
       optimizeMethodBytecode(frame.methodInfo);
     }
 
-    frame.methodInfo.interpreterCallCount ++;
+    mi.interpreterCallCount ++;
 
     profile && interpreterCount ++;
 
