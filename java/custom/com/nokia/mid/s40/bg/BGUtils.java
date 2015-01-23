@@ -21,6 +21,8 @@ public class BGUtils {
 
     public static native String getFGMIDlet(int midletNumber);
     public static native void waitUserInteraction();
+    public static native void addSystemProperties(String args);
+    public static native void startMIDlet(int midletNumber, String midletClass, String thirdArg);
 
     public static boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args) {
         System.out.println("midletSuiteVendor: " + midletSuiteVendor);
@@ -32,8 +34,8 @@ public class BGUtils {
         BGUtils.waitUserInteraction();
 
         try {
-            MIDletSuiteStorage storage = MIDletSuiteStorage.getMIDletSuiteStorage(classSecurityToken);
-            MIDletSuite next = storage.getMIDletSuite(midletNumber, false);
+            BGUtils.addSystemProperties(args);
+
             MIDletSuiteUtils.execute(midletNumber, BGUtils.getFGMIDlet(midletNumber), null);
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
