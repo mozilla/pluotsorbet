@@ -19,6 +19,9 @@ public class BGUtils {
         System.out.println("warning: BGUtils.setBGMIDletResident(Z)V not implemented (" + param + ")");
     }
 
+    public static native String getFGMIDlet(int midletNumber);
+    public static native void waitUserInteraction();
+
     public static boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args) {
         System.out.println("midletSuiteVendor: " + midletSuiteVendor);
         System.out.println("midletName: " + midletName);
@@ -26,10 +29,12 @@ public class BGUtils {
         System.out.println("startupNoteText: " + startupNoteText);
         System.out.println("args: " + args);
 
+        BGUtils.waitUserInteraction();
+
         try {
             MIDletSuiteStorage storage = MIDletSuiteStorage.getMIDletSuiteStorage(classSecurityToken);
             MIDletSuite next = storage.getMIDletSuite(midletNumber, false);
-            MIDletSuiteUtils.execute(midletNumber, MIDLET, null);
+            MIDletSuiteUtils.execute(midletNumber, BGUtils.getFGMIDlet(midletNumber), null);
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace();
