@@ -246,8 +246,6 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getCaretPosition(), 2);
     }
 
-    private native boolean isTextEditorReallyFocused();
-
     public void test(TestHarness th) {
         testConstraints(th, TextField.ANY, 3);
         testConstraints(th, TextField.PASSWORD, 0);

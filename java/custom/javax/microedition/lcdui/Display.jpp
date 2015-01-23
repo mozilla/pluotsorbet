@@ -2388,6 +2388,8 @@ public class Display {
         // #endif ENABLE_CHAMELEON
     }
 
+    private static native void setTitle(String title);
+
     /**                                                              `
      * Update the system's account of abstract commands.
      *
@@ -2428,12 +2430,14 @@ public class Display {
         }
         // #else
         if (current == null) {
+            setTitle("");
             // clear abstract commands
             NativeMenu.updateCommands(null, 0, null, 0);
             return;
         }
 
         Displayable d = current.lGetDisplayable();
+        setTitle(d.getTitle());
 
         // Displayable commands
         Command[] screenCommands = d.commands;

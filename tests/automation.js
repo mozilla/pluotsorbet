@@ -21,6 +21,7 @@ casper.options.onWaitTimeout = function() {
 var gfxTests = [
   { name: "gfx/AlertTest", maxDifferent: 1942 },
   { name: "gfx/CanvasTest", maxDifferent: 0 },
+  { name: "gfx/CanvasWithHeaderTest", maxDifferent: 1400 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
   { name: "gfx/ImageRenderingTest", maxDifferent: 0 },
   { name: "gfx/FillRectTest", maxDifferent: 0 },
@@ -65,6 +66,7 @@ var gfxTests = [
   { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
   { name: "gfx/TextEditorGfxTest", maxDifferent: 953 },
+  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 178 },
 ];
 
 var expectedUnitTestResults = [

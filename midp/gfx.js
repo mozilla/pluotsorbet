@@ -5,6 +5,35 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+
+    var NativeDisplay = function() {
+        this.fullScreen = 1;
+    };
+
+    var NativeDisplays = {
+        get: function(id) {
+            var d = this._map.get(id);
+            if (!d) {
+                d = new NativeDisplay();
+                this._map.set(id, d);
+            }
+            return d;
+        },
+
+        _map: new Map()
+    };
+
+    function setFullScreen(isFullScreen) {
+        var sidebar = document.getElementById("sidebar");
+        var header = document.getElementById("drawer").querySelector("header");
+        var canvas = MIDP.Context2D.canvas;
+        sidebar.style.display = header.style.display =
+            isFullScreen ? "none" : "block";
+        var headerHeight = isFullScreen ? 0 : header.offsetHeight;
+        canvas.height = MIDP.ScreenHeight - headerHeight;
+        canvas.dispatchEvent(new Event('canvasresize'));
+    }
+
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = util.newPrimitiveArray("I", 1);
         ids[0] = 1;
@@ -53,14 +82,17 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
-        console.warn("DisplayDevice.setFullScreen0.(IIZ)V not implemented (" +
-                     hardwareId + ", " + displayId + ", " + mode + ")");
+        var d = NativeDisplays.get(displayId);
+        d.fullScreen = mode;
+        if (MIDP.displayId === displayId) {
+            setFullScreen(mode);
+        }
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
-        console.warn("DisplayDevice.gainedForeground0.(II)V not implemented (" + hardwareId + ", " + displayId + ")");
         document.getElementById("splash-screen").style.display = "none";
-        document.getElementById("display_title").textContent = MIDlet.name;
+        var d = NativeDisplays.get(displayId);
+        setFullScreen(d.fullScreen);
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {
@@ -409,7 +441,9 @@ var currentlyFocusedTextEditor;
     }
 
     function withAnchor(g, c, anchor, x, y, w, h) {
-        var [x, y] = withClip(g, c, x, y);
+        var pair = withClip(g, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         if (anchor & RIGHT) {
             x -= w;
@@ -620,7 +654,10 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(graphics);
         c.save();
 
-        [x, y] = withClip(graphics, c, x, y);
+        var pair = withClip(graphics, c, x, y);
+        x = pair[0];
+        y = pair[1];
+
         c.drawImage(context.canvas, x, y);
 
         c.restore();
@@ -633,7 +670,10 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withAnchor(this, c, anchor, x, y, texture.width, texture.height);
+        var pair = withAnchor(this, c, anchor, x, y, texture.width, texture.height);
+        x = pair[0];
+        y = pair[1];
+
         c.drawImage(texture, x, y);
 
         c.restore();
@@ -663,11 +703,15 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(g);
         c.save();
 
-        [x, y] = withClip(g, c, x, y);
+        var pair = withClip(g, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         parseEmojiString(str).forEach(function(part) {
             if (part.text) {
-                var [textX, textY] = withTextAnchor(g, c, anchor, x, y, part.text);
+                var pair = withTextAnchor(g, c, anchor, x, y, part.text);
+                var textX = pair[0];
+                var textY = pair[1];
 
                 if (isOpaque) {
                     withOpaquePixel(g, c);
@@ -713,9 +757,11 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
-        [x, y] = withTextAnchor(this, c, anchor, x, y, chr);
+        pair = withTextAnchor(this, c, anchor, x, y, chr), x = pair[0], y = pair[1];
 
         withPixel(this, c);
 
@@ -728,7 +774,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        var [x, y] = withClip(this, c, x1, y1);
+        var pair = withClip(this, c, x1, y1);
+        var x = pair[0];
+        var y = pair[1];
 
         withPixel(this, c);
 
@@ -755,7 +803,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -775,7 +825,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -797,7 +849,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -817,7 +871,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
@@ -892,7 +948,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withAnchor(this, c, anchor, x, y, sw, sh);
+        var pair = withAnchor(this, c, anchor, x, y, sw, sh);
+        x = pair[0];
+        y = pair[1];
 
         c.translate(x, y);
 
@@ -917,7 +975,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        var [x, y] = withClip(this, c, x1, y1);
+        var pair = withClip(this, c, x1, y1);
+        var x = pair[0];
+        var y = pair[1];
 
         withPixel(this, c);
 
@@ -947,7 +1007,9 @@ var currentlyFocusedTextEditor;
         var c = withGraphics(this);
         c.save();
 
-        [x, y] = withClip(this, c, x, y);
+        var pair = withClip(this, c, x, y);
+        x = pair[0];
+        y = pair[1];
 
         c.drawImage(context.canvas, x, y);
 
@@ -1049,6 +1111,10 @@ var currentlyFocusedTextEditor;
         }
     };
 
+    Native["javax/microedition/lcdui/Display.setTitle.(Ljava/lang/String;)V"] = function(title) {
+        document.getElementById("display_title").textContent = util.fromJavaString(title);
+    };
+
     Native["com/nokia/mid/ui/CanvasItem.setSize.(II)V"] = function(width, height) {
         this.textEditor.setStyle("width", width + "px");
         this.textEditor.setStyle("height", height + "px");
@@ -1068,9 +1134,9 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.setPosition0.(II)V"] = function(x, y) {
-        var headerHeight = (!config.nativeMenu) ? 0 : document.getElementById("drawer").querySelector("header").offsetHeight;
+        var top = MIDP.Context2D.canvas.offsetTop;
         this.textEditor.setStyle("left", x + "px");
-        this.textEditor.setStyle("top", (headerHeight + y) + "px");
+        this.textEditor.setStyle("top", (top + y) + "px");
     };
 
     Native["com/nokia/mid/ui/CanvasItem.getPositionX.()I"] = function() {
@@ -1078,7 +1144,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.getPositionY.()I"] = function() {
-        return parseInt(this.textEditor.getStyle("top")) || 0;
+        var base = MIDP.Context2D.canvas.offsetTop;
+        return (parseInt(this.textEditor.getStyle("top")) - base) || 0;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function() {
@@ -1516,9 +1583,25 @@ var currentlyFocusedTextEditor;
         } else {
             var menu = document.getElementById("sidebar").querySelector("nav ul");
 
+            var okCommand = null;
+            var backCommand = null;
+
+            var isSidebarEmpty = true;
             validCommands.forEach(function(command) {
+                var commandType = command.klass.classInfo.getField("I.commandType.I").get(command);
+                // Skip the OK command which will shown in the header.
+                if (commandType == OK) {
+                    okCommand = command;
+                    return;
+                }
+                // Skip the BACK command which will shown in the footer.
+                if (commandType == BACK) {
+                    backCommand = command;
+                    return;
+                }
                 var li = document.createElement("li");
-                li.textContent = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
+                var text = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
+                li.innerHTML = "<a>" + text + "</a>";
 
                 li.onclick = function(e) {
                     e.preventDefault();
@@ -1529,7 +1612,29 @@ var currentlyFocusedTextEditor;
                 };
 
                 menu.appendChild(li);
+                isSidebarEmpty = false;
             });
+
+            document.getElementById("header-drawer-button").style.display =
+                isSidebarEmpty ? "none" : "block";
+
+            // If existing, the OK command will be shown in the header.
+            var headerBtn = document.getElementById("header-ok-button");
+            if (okCommand) {
+                headerBtn.style.display = "block";
+                headerBtn.onclick = sendEvent.bind(headerBtn, okCommand);
+            } else {
+                headerBtn.style.display = "none";
+            }
+
+            // If existing, the BACK command will be shown in the footer.
+            var backBtn = document.getElementById("back-button");
+            if (backCommand) {
+                backBtn.style.display = "block";
+                backBtn.onclick = sendEvent.bind(backBtn, backCommand);
+            } else {
+                backBtn.style.display = "none";
+            }
         }
     };
 })(Native);

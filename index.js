@@ -13,6 +13,10 @@
                          loadScript("tests/index.js"));
   }
 
+  if (navigator.userAgent.indexOf('Chrome') > -1) {
+    loadingPromises.push(loadScript("chrome_polyfills.js"));
+  }
+
   Promise.all(loadingPromises).then(function() {
     document.getElementById("mozbrowser").src = "main.html" + location.search;
   });
@@ -532,4 +536,8 @@ DumbPipe.registerOpener("windowOpen", function(message, sender) {
 
 DumbPipe.registerOpener("reload", function(message, sender) {
   window.location.reload();
+});
+
+DumbPipe.registerOpener("exit", function(message, sender) {
+  window.close();
 });
