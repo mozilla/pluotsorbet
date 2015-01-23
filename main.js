@@ -25,15 +25,6 @@ if (config.jars) {
   jars = jars.concat(config.jars.split(":"));
 }
 
-if (config.pushConn && config.pushMidlet) {
-  MIDP.ConnectionRegistry.addConnection({
-    connection: config.pushConn,
-    midlet: config.pushMidlet,
-    filter: "*",
-    suiteId: "1"
-  });
-}
-
 // Mobile info gets accessed a lot, so we cache it on startup.
 var mobileInfo;
 var getMobileInfo = new Promise(function(resolve, reject) {
@@ -44,7 +35,7 @@ var getMobileInfo = new Promise(function(resolve, reject) {
   });
 });
 
-var loadingPromises = [initFS, getMobileInfo];
+var loadingPromises = [initFS, getMobileInfo, backgroundCheck];
 
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
@@ -73,7 +64,7 @@ function processJAD(data) {
 }
 
 if (config.jad) {
-  loadingPromises.push(load(config.jad, "text").then(processJAD));
+  loadingPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
 }
 
 function performDownload(url, dialog, callback) {
@@ -168,7 +159,7 @@ if (config.downloadJAD) {
         }
       });
     });
-  }));
+  }).then(backgroundCheck));
 }
 
 if (MIDP.midletClassName == "RunTests") {
