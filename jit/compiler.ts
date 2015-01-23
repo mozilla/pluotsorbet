@@ -142,7 +142,7 @@ module J2ME {
 
   export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
-    var mangledClassName = mangleClass(classInfo);
+    var mangledClassName = classInfo.mangledName;
     if (emitter.closure) {
       writer.writeLn("/** @constructor */");
     }
@@ -227,7 +227,7 @@ module J2ME {
       });
     }
 
-    var mangledClassName = mangleClass(classInfo);
+    var mangledClassName = classInfo.mangledName;
 
     emitter.writer.writeLn(mangledClassName + ".classSymbols = [" + referencedClasses.map(classInfo => {
       return quote(classInfo.className);
@@ -240,7 +240,7 @@ module J2ME {
                             methodFilter: (methodInfo: MethodInfo) => boolean,
                             ctx: Context): CompiledMethodInfo [] {
     var writer = emitter.writer;
-    var mangledClassName = mangleClass(classInfo);
+    var mangledClassName = classInfo.mangledName;
     if (!isIdentifierName(mangledClassName)) {
       mangledClassName = quote(mangledClassName);
     }
@@ -276,7 +276,7 @@ module J2ME {
       if (!methodFilter(method)) {
         continue;
       }
-      var mangledMethodName = mangleMethod(method);
+      var mangledMethodName = method.mangledName;
       if (!isIdentifierName(mangledMethodName)) {
         mangledMethodName = quote(mangledMethodName);
       }
@@ -285,7 +285,7 @@ module J2ME {
         continue;
       }
       try {
-        var mangledClassAndMethodName = mangleClassAndMethod(method);
+        var mangledClassAndMethodName = method.mangledClassAndMethodName;
         if (emitter.debugInfo) {
           writer.writeLn("// " + method.implKey + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForPC(0));
         }

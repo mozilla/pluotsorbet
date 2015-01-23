@@ -472,10 +472,32 @@ module J2ME {
     }
 
     pushClassInitFrame(classInfo: ClassInfo) {
-      if (this.runtime.initialized[classInfo.className]) {
+      if (this.runtime.initialized[classInfo.className] ||
+          this.runtime.pending[classInfo.className]) {
         return;
       }
+      var needsInitialization = true;
+      if (!classInfo.staticInitializer) {
+        needsInitialization = false;
+        // Special case Isolate.
+        if (classInfo.className === "com/sun/cldc/isolate/Isolate") {
+          needsInitialization = true;
+        }
+        var superClass = classInfo.superClass;
+        while (superClass) {
+          if (!this.runtime.initialized[superClass.className] &&
+            superClass.staticInitializer) {
+            needsInitialization = true;
+            break;
+          }
+          superClass = superClass.superClass;
+        }
+      }
       linkKlass(classInfo);
+      if (!needsInitialization) {
+        this.runtime.initialized[classInfo.className] = true;
+        return;
+      }
       var classInitFrame = this.getClassInitFrame(classInfo);
       this.executeFrames([classInitFrame]);
     }

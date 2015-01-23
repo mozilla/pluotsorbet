@@ -965,6 +965,56 @@ module J2ME {
   }
 
   export module HashUtilities {
+    // Copyright (c) 2011 Gary Court
+    //
+    // Permission is hereby granted, free of charge, to any person obtaining
+    // a copy of this software and associated documentation files (the
+    // "Software"), to deal in the Software without restriction, including
+    // without limitation the rights to use, copy, modify, merge, publish,
+    // distribute, sublicense, and/or sell copies of the Software, and to
+    // permit persons to whom the Software is furnished to do so, subject to
+    // the following conditions:
+    //
+    // The above copyright notice and this permission notice shall be
+    // included in all copies or substantial portions of the Software.
+    //
+    // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    // IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    // CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    // https://github.com/garycourt/murmurhash-js
+    export function hashBytesTo32BitsMurmur(data: Uint8Array, offset: number, length: number) {
+      var l = length, h = 0x12345678 ^ l, i = offset, k;
+      while (l >= 4) {
+        k =
+          (data[i]) |
+          (data[++i] << 8) |
+          (data[++i] << 16) |
+          (data[++i] << 24);
+        k = (((k & 0xffff) * 0x5bd1e995) + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+        k ^= k >>> 24;
+        k = (((k & 0xffff) * 0x5bd1e995) + ((((k >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+        h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16)) ^ k;
+        l -= 4;
+        ++i;
+      }
+      switch (l) {
+        case 3: h ^= data[i + 2] << 16;
+        case 2: h ^= data[i + 1] <<  8;
+        case 1: h ^= data[i];
+          h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+      }
+      h ^= h >>> 13;
+      h = (((h & 0xffff) * 0x5bd1e995) + ((((h >>> 16) * 0x5bd1e995) & 0xffff) << 16));
+      h ^= h >>> 15;
+      return h >>> 0;
+    }
+    // end of imported section
+
     export function hashBytesTo32BitsAdler(data: Uint8Array, offset: number, length: number): number {
       var a = 1;
       var b = 0;
