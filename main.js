@@ -29,7 +29,7 @@ var getMobileInfo = new Promise(function(resolve, reject) {
   });
 });
 
-var loadingPromises = [initFS, getMobileInfo, backgroundCheck];
+var loadingPromises = [initFS, getMobileInfo];
 
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
