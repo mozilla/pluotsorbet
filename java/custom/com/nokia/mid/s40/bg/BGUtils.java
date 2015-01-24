@@ -5,9 +5,9 @@ import com.sun.midp.main.MIDletSuiteUtils;
 public class BGUtils {
     private static boolean launchMIDletCalled = false;
 
-    public static native int getFGMIDletNumber();
-    public static native String getFGMIDletClass();
-    public static native void waitUserInteraction();
+    private static native int getFGMIDletNumber();
+    private static native String getFGMIDletClass();
+    private static native void waitUserInteraction();
 
     /* Start the FG MIDlet when the page becomes visible and if
        launchIEMIDlet hasn't been called (we want launchIEMIDlet
@@ -25,7 +25,7 @@ public class BGUtils {
       MIDletSuiteUtils.execute(midletNumber, midletClass, null);
     }
 
-    public static native void addSystemProperties(String args);
+    private static native void addSystemProperties(String args);
 
     public static boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args) {
         System.out.println("midletSuiteVendor: " + midletSuiteVendor);
