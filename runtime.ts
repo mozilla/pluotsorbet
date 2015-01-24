@@ -24,6 +24,16 @@ module J2ME {
   declare var Instrument;
 
   /**
+   * Turns on just-in-time compilation of methods.
+   */
+  export var enableRuntimeCompilation = true;
+
+  /**
+   * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
+   */
+  var hashedMangledNames = false;
+
+  /**
    * Traces method execution.
    */
   export var traceWriter = null;
@@ -39,14 +49,49 @@ module J2ME {
   export var linkWriter = null;
 
   /**
+   * Traces JIT compilation.
+   */
+  export var jitWriter = null;
+
+  /**
    * Traces class loading.
    */
   export var loadWriter = null;
 
   /**
+   * Traces winding and unwinding.
+   */
+  export var windingWriter = null;
+
+  /**
    * Traces class initialization.
    */
   export var initWriter = null;
+
+
+  export enum MethodState {
+    /**
+     * All methods start in this state.
+     */
+    Cold = 0,
+
+    /**
+     * Methods have this state if code has been compiled for them or
+     * there is a native implementation that needs to be used.
+     */
+    Compiled = 1,
+
+    /**
+     * We don't want to compiled these methods, they may be too large
+     * to benefit from JIT compilation.
+     */
+    NotCompiled = 2,
+
+    /**
+     * Methods are not compiled because of some exception.
+     */
+    CannotCompile = 3
+  }
 
   declare var Shumway;
 
@@ -55,7 +100,10 @@ module J2ME {
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
   export var baselineMethodCounter = new Metrics.Counter(true);
+  export var asyncCounter = new Metrics.Counter(true);
   export var jitMethodInfos = {};
+
+  export var unwindCount = 0;
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
@@ -186,6 +234,8 @@ module J2ME {
   declare var util;
 
   import assert = J2ME.Debug.assert;
+  import concat3 = StringUtilities.concat3;
+  import concat5 = StringUtilities.concat5;
 
   export enum RuntimeStatus {
     New       = 1,
@@ -200,7 +250,10 @@ module J2ME {
     Compiled
   }
 
+  var hashMap = Object.create(null);
+
   var hashArray = new Int32Array(1024);
+
   function hashString(s: string) {
     if (hashArray.length < s.length) {
       hashArray = new Int32Array((hashArray.length * 2 / 3) | 0);
@@ -209,11 +262,17 @@ module J2ME {
     for (var i = 0; i < s.length; i++) {
       data[i] = s.charCodeAt(i);
     }
-    return HashUtilities.hashBytesTo32BitsAdler(data, 0, s.length);
+    var hash = HashUtilities.hashBytesTo32BitsMurmur(data, 0, s.length);
+
+    if (!release) { // Check to see that no collisions have ever happened.
+      if (hashMap[hash] && hashMap[hash] !== s) {
+        assert(false, "This is very bad.")
+      }
+      hashMap[hash] = s;
+    }
+
+    return hash;
   }
-
-  var friendlyMangledNames = true;
-
 
   function isIdentifierChar(c: number): boolean {
     return (c >= 97   && c <= 122)   || // a .. z
@@ -276,60 +335,57 @@ module J2ME {
   }
 
   var stringHashes = Object.create(null);
-  var stringHasheCount = 0;
+  var stringHashCount = 0;
+
+  function hashStringStrong(s): string {
+    // Hash with Murmur hash.
+    var result = StringUtilities.variableLengthEncodeInt32(hashString(s));
+    // Also use the length for some more precision.
+    result += StringUtilities.toEncoding(s.length & 0x3f);
+    return result;
+  }
 
   export function hashStringToString(s: string) {
-    if (stringHasheCount > 1024) {
-      return StringUtilities.variableLengthEncodeInt32(hashString(s));
+    if (stringHashCount > 1024) {
+      return hashStringStrong(s);
     }
     var c = stringHashes[s];
     if (c) {
       return c;
     }
-    c = stringHashes[s] = StringUtilities.variableLengthEncodeInt32(hashString(s));
-    stringHasheCount ++;
+    c = stringHashes[s] = hashStringStrong(s);
+    stringHashCount ++;
     return c;
   }
 
   export function mangleClassAndMethod(methodInfo: MethodInfo) {
-    var name = methodInfo.classInfo.className + "_" + methodInfo.name + "_" + hashStringToString(methodInfo.signature);
-    if (friendlyMangledNames) {
+    var name = concat5(methodInfo.classInfo.className, "_", methodInfo.name, "_", hashStringToString(methodInfo.signature));
+    if (!hashedMangledNames) {
       return escapeString(name);
     }
-    var hash = hashString(name);
-    return StringUtilities.variableLengthEncodeInt32(hash);
+    return hashStringToString(name);
   }
 
   export function mangleMethod(methodInfo: MethodInfo) {
-    var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
-    if (friendlyMangledNames) {
+    var name = concat3(methodInfo.name, "_", hashStringToString(methodInfo.signature));
+    if (!hashedMangledNames) {
       return escapeString(name);
     }
-    var hash = hashString(name);
-    return StringUtilities.variableLengthEncodeInt32(hash);
+    return "$" + hashStringToString(name);
+  }
+
+  export function mangleClassName(name: string): string {
+    if (!hashedMangledNames) {
+      return "$" + escapeString(name);
+    }
+    return "$" + hashStringToString(name);
   }
 
   export function mangleClass(classInfo: ClassInfo) {
-    if (classInfo instanceof PrimitiveArrayClassInfo) {
-      switch (classInfo) {
-        case PrimitiveArrayClassInfo.Z: return "Uint8Array";
-        case PrimitiveArrayClassInfo.C: return "Uint16Array";
-        case PrimitiveArrayClassInfo.F: return "Float32Array";
-        case PrimitiveArrayClassInfo.D: return "Float64Array";
-        case PrimitiveArrayClassInfo.B: return "Int8Array";
-        case PrimitiveArrayClassInfo.S: return "Int16Array";
-        case PrimitiveArrayClassInfo.I: return "Int32Array";
-        case PrimitiveArrayClassInfo.J: return "Int64Array";
-      }
-    } else if (classInfo.isArrayClass) {
-      return "$AK(" + mangleClass(classInfo.elementClass) + ")";
-    } else {
-      if (friendlyMangledNames) {
-        return "$" + escapeString(classInfo.className);
-      }
-      var hash = hashString(classInfo.className);
-      return "$" + StringUtilities.variableLengthEncodeInt32(hash);
+    if (classInfo.mangledName) {
+      return classInfo.mangledName;
     }
+    return mangleClassName(classInfo.className);
   }
 
   /**
@@ -550,11 +606,15 @@ module J2ME {
     }
 
     yield() {
+      windingWriter && windingWriter.writeLn("yielding");
+      unwindCount ++;
       runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
+      windingWriter && windingWriter.writeLn("pausing");
+      unwindCount ++;
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
     }
@@ -848,7 +908,7 @@ module J2ME {
 
   export function registerKlassSymbol(className: string) {
     // TODO: This needs to be kept in sync to how mangleClass works.
-    var mangledName = "$" + escapeString(className);
+    var mangledName = mangleClassName(className);
     if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       return;
     }
@@ -981,7 +1041,7 @@ module J2ME {
 
   function makeKlassConstructor(classInfo: ClassInfo): Klass {
     var klass: Klass;
-    var mangledName = mangleClass(classInfo);
+    var mangledName = classInfo.mangledName;
     if (classInfo.isInterface) {
       klass = <Klass><any>function () {
         Debug.unexpected("Should never be instantiated.")
@@ -1041,7 +1101,7 @@ module J2ME {
       return;
     }
     enterTimeline("linkKlass", {classInfo: classInfo});
-    var mangledName = mangleClass(classInfo);
+    var mangledName = classInfo.mangledName;
     var klass;
     classInfo.klass = klass = getKlass(classInfo);
     classInfo.klass.classInfo = classInfo;
@@ -1127,7 +1187,7 @@ module J2ME {
         // Some Native MethodInfos are constructed but never called;
         // that's fine, unless we actually try to call them.
         return function missingImplementation() {
-          release || assert (false, "Method " + methodInfo.name + " is native but does not have an implementation.");
+          stderrWriter.errorLn("implKey " + methodInfo.implKey + " is native but does not have an implementation.");
         }
       }
     } else if (implKey in Override) {
@@ -1140,8 +1200,8 @@ module J2ME {
 
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
-      return function fastInterpreterFrameAdapter() {
-        var frame = new Frame(methodInfo, [], 0);
+      var method = function fastInterpreterFrameAdapter() {
+        var frame = Frame.create(methodInfo, [], 0);
         var j = 0;
         if (!methodInfo.isStatic) {
           frame.setLocal(j++, this);
@@ -1150,12 +1210,14 @@ module J2ME {
         for (var i = 0; i < slots; i++) {
           frame.setLocal(j++, arguments[i]);
         }
-        return $.ctx.executeNewFrameSet([frame]);
-      }
+        return $.ctx.executeFrames([frame]);
+      };
+      (<any>method).methodInfo = methodInfo;
+      return method;
     }
 
-    return function interpreterFrameAdapter() {
-      var frame = new Frame(methodInfo, [], 0);
+    var method = function interpreterFrameAdapter() {
+      var frame = Frame.create(methodInfo, [], 0);
       var j = 0;
       if (!methodInfo.isStatic) {
         frame.setLocal(j++, this);
@@ -1182,14 +1244,14 @@ module J2ME {
           return;
         }
       }
-      return $.ctx.executeNewFrameSet([frame]);
+      return $.ctx.executeFrames([frame]);
     };
+    (<any>method).methodInfo = methodInfo;
+    return method;
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    var name = methodInfo.mangledClassAndMethodName;
-    var method = jsGlobal[name];
-    return method;
+    return jsGlobal[methodInfo.mangledClassAndMethodName];
   }
 
   /**
@@ -1233,6 +1295,7 @@ module J2ME {
         linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
         fn = nativeMethod;
         methodType = MethodType.Native;
+        methodInfo.state = MethodState.Compiled;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
@@ -1242,13 +1305,13 @@ module J2ME {
           // out from.
           jitMethodInfos[fn.name] = methodInfo;
           updateGlobalObject = false;
+          methodInfo.state = MethodState.Compiled;
         } else {
           linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
           methodType = MethodType.Interpreted;
           fn = prepareInterpretedMethod(methodInfo);
         }
       }
-
       if (false && methodTimeline) {
         fn = profilingWrapper(fn, methodInfo, methodType);
         updateGlobalObject = true;
@@ -1284,7 +1347,7 @@ module J2ME {
         // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
         // var key = MethodType[methodType] + " " + methodInfo.implKey;
         nativeCounter.count(key);
-        var s = ops;
+        var s = bytecodeCount;
         try {
           methodTimeline.enter(key);
           var r;
@@ -1304,9 +1367,9 @@ module J2ME {
             default:
               r = fn.apply(this, arguments);
           }
-          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
         } catch (e) {
-          methodTimeline.leave(key, s !== ops ? { ops: ops - s } : undefined);
+          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
           throw e;
         }
         return r;
@@ -1316,16 +1379,6 @@ module J2ME {
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
         var args = Array.prototype.slice.apply(arguments);
-        /*
-        var printArgs = args.map(function (x) {
-          return toDebugString(x);
-        }).join(", ");
-        var printObj = "";
-        if (!methodInfo.isStatic) {
-          printObj = " <" + toDebugString(this) + "> ";
-        }
-        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.classInfo.className + "/" + methodInfo.name + signatureToDefinition(methodInfo.signature, true, true) + printObj + ", arguments: " + printArgs);
-        */
         traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
@@ -1379,6 +1432,93 @@ module J2ME {
     }
     klass.prototype.klass = klass;
     initializeKlassTables(klass);
+  }
+
+  /**
+   * Number of methods that have been compiled thus far.
+   */
+  export var compiledCount = 0;
+
+  /**
+   * Number of ms that have been spent compiled code thus far.
+   */
+  var totalJITTime = 0;
+
+  /**
+   * Compiles method and links it up at runtime.
+   */
+  export function compileAndLinkMethod(methodInfo: MethodInfo) {
+    // Don't do anything if we're past the compiled state.
+    if (methodInfo.state >= MethodState.Compiled) {
+      return;
+    }
+
+    // Don't compile methods that are too large.
+    if (methodInfo.code.length > 2000) {
+      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.code.length);
+      methodInfo.state = MethodState.NotCompiled;
+      return;
+    }
+
+    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
+
+    compiledCount ++;
+
+    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
+    var s = performance.now();
+
+    var compiledMethod;
+    enterTimeline("Compiling");
+    try {
+      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+    } catch (e) {
+      methodInfo.state = MethodState.CannotCompile;
+      jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
+      leaveTimeline("Compiling");
+      return;
+    }
+    leaveTimeline("Compiling");
+    var compiledMethodName = mangledClassAndMethodName;
+    var source = "function " + compiledMethodName +
+                 "(" + compiledMethod.args.join(",") + ") {\n" +
+                   compiledMethod.body +
+                 "\n}";
+
+    enterTimeline("Eval Compiled Code");
+    // This overwrites the method on the global object.
+    (1, eval)(source);
+    leaveTimeline("Eval Compiled Code");
+
+    // Attach the compiled method to the method info object.
+    var fn = jsGlobal[mangledClassAndMethodName];
+    methodInfo.fn = fn;
+    methodInfo.state = MethodState.Compiled;
+
+    // Link member methods on the prototype.
+    if (!methodInfo.isStatic) {
+      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
+    }
+
+    // Make JITed code available in the |jitMethodInfos| so that bailout
+    // code can figure out the caller.
+    jitMethodInfos[mangledClassAndMethodName] = methodInfo;
+
+    // Make sure all the referenced symbols are registered.
+    var referencedClasses = compiledMethod.referencedClasses;
+    for (var i = 0; i < referencedClasses.length; i++) {
+      var referencedClass = referencedClasses[i];
+      registerKlassSymbol(referencedClass.className);
+    }
+
+    var methodJITTime = (performance.now() - s);
+    totalJITTime += methodJITTime;
+    if (jitWriter) {
+      jitWriter.leave(
+        "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
+        "codeSize: " + methodInfo.code.length + ", " +
+        "sourceSize: " + compiledMethod.body.length);
+      jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
+    }
   }
 
   export function isAssignableTo(from: Klass, to: Klass): boolean {
@@ -1565,7 +1705,7 @@ module J2ME {
   }
 
   export function classInitCheck(classInfo: ClassInfo, pc: number) {
-    if (classInfo.isArrayClass || $.initialized[classInfo.className]) {
+    if (classInfo.isArrayClass) {
       return;
     }
     $.ctx.pushClassInitFrame(classInfo);
@@ -1585,6 +1725,11 @@ var Runtime = J2ME.Runtime;
  * read very often.
  */
 var U: J2ME.VMState = J2ME.VMState.Running;
+
+/**
+ * OSR Frame.
+ */
+var O: J2ME.Frame = null;
 
 /**
  * Runtime exports for compiled code.

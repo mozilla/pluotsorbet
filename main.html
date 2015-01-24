@@ -10,11 +10,13 @@
   <link rel="stylesheet" type="text/css" href="style/drawer.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
-  <script type="text/javascript" src="midlet.js" defer></script>
+  <script type="text/javascript" src="config/default.js" defer></script>
+  <script type="text/javascript" src="config/midlet.js" defer></script>
+  <script type="text/javascript" src="config/build.js" defer></script>
+  <script type="text/javascript" src="config/urlparams.js" defer></script>
   <!-- Uncomment the line below to enable the profiler. -->
   <!--<script type="text/javascript" src="build/shumway.js" defer></script>-->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
-  <script type="text/javascript" src="libs/urlparams.js" defer></script>
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
@@ -56,12 +58,11 @@
   <script type="text/javascript" src="midp/pim.js" defer></script>
   <script type="text/javascript" src="midp/device_control.js" defer></script>
   <script type="text/javascript" src="game-ui.js" defer></script>
-  <script type="text/javascript" src="desktop-ui.js" defer></script>
 
   <!-- run make aot to generate these -->
-  <script type="text/javascript" src="build/classes.jar.js" defer></script>
+  <!--<script type="text/javascript" src="build/classes.jar.js" defer></script>-->
   <!--<script type="text/javascript" src="build/program.jar.js" defer></script>-->
-  <script type="text/javascript" src="build/tests.jar.js" defer></script>
+  <!--<script type="text/javascript" src="build/tests.jar.js" defer></script>-->
   <script type="text/javascript" src="main.js" defer></script>
 </head>
 
@@ -90,7 +91,11 @@
 
   <div id="settings">
     <section>
-      <div>x,y <span id="xy"></span></div>
+      <div>BytecodeCount: <span id="bytecodeCount"></span></div>
+      <div>InterpreterCount: <span id="interpreterCount"></span></div>
+      <div>CompiledCount: <span id="compiledCount"></span></div>
+      <div>OnStackReplacementCount: <span id="onStackReplacementCount"></span></div>
+      <div>UnwindCount: <span id="unwindCount"></span></div>
     </section>
     <section>
       <select id="loglevel">
@@ -137,11 +142,13 @@
     <section id="drawer" role="region">
       <header style="display:none">
         <a href="#"><span class="icon icon-menu">hide sidebar</span></a>
-        <a href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <a id="header-drawer-button" href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <menu id="header-ok-button" type="toolbar" style="display:none"><button>√</button></menu>
         <h1 id="display_title"></h1>
       </header>
       <div id="main" role="main">
         <canvas id="canvas"></canvas>
+        <button id="back-button">Back</button>
       </div>
     </section>
   </div>

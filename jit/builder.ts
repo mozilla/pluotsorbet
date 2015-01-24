@@ -60,56 +60,10 @@ module J2ME {
     }
   }
 
-  export function isTwoSlot(kind: Kind) {
-    return kind === Kind.Long || kind === Kind.Double;
-  }
-
   export function assertHigh(x: Value) {
     assert (x === null);
   }
 
-  export enum CompilationTarget {
-    Runtime,
-    Buildtime,
-    Static
-  }
-
-  export enum TAGS {
-    CONSTANT_Class = 7,
-    CONSTANT_Fieldref = 9,
-    CONSTANT_Methodref = 10,
-    CONSTANT_InterfaceMethodref = 11,
-    CONSTANT_String = 8,
-    CONSTANT_Integer = 3,
-    CONSTANT_Float = 4,
-    CONSTANT_Long = 5,
-    CONSTANT_Double = 6,
-    CONSTANT_NameAndType = 12,
-    CONSTANT_Utf8 = 1,
-    CONSTANT_Unicode = 2
-}
-
-  export interface ConstantPoolEntry {
-    tag: TAGS;
-    name_index: number;
-    bytes: string;
-    class_index: number;
-    name_and_type_index: number;
-    signature_index: number;
-    string_index: number;
-    integer: number;
-    float: number;
-    double: number;
-    highBits: number;
-    lowBits: number;
-  }
-
-  export interface ExceptionHandler {
-    start_pc: number;
-    end_pc: number;
-    handler_pc: number;
-    catch_type: number;
-  }
 
   function assertKind(kind: Kind, x: Node): Node {
     assert(stackKind(x.kind) === stackKind(kind), "Got " + kindCharacter(stackKind(x.kind)) + " expected " + kindCharacter(stackKind(kind)));
@@ -420,10 +374,6 @@ module J2ME {
         }
       }
     }
-  }
-
-  export function quote(s) {
-    return "\"" + s + "\"";
   }
 
   interface WorklistItem {

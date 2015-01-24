@@ -6,15 +6,7 @@ module J2ME {
     u8: Uint8Array;
     offset: number;
 
-    static arrays: string [][] = Reader.makeArrays(128);
-
-    private static makeArrays(length) {
-      var arrays = [];
-      for (var i = 0; i < length; i ++) {
-        arrays.push(new Array(i));
-      }
-      return arrays;
-    }
+    static arrays: string [][] = ArrayUtilities.makeArrays(128);
 
     static getArray(length: number) {
       return Reader.arrays[length];

@@ -1,5 +1,9 @@
 module J2ME {
 
+  import quote = StringUtilities.quote;
+
+  declare var optimizerCompileMethod;
+
   export class Emitter {
     constructor(
       public writer: IndentingWriter,
@@ -11,7 +15,13 @@ module J2ME {
       // ...
     }
   }
-  
+
+  export enum CompilationTarget {
+    Runtime,
+    Buildtime,
+    Static
+  }
+
   function getClassInheritanceChain(classInfo: ClassInfo): ClassInfo [] {
     var list = [];
     var klass = classInfo;
@@ -132,7 +142,7 @@ module J2ME {
 
   export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
-    var mangledClassName = mangleClass(classInfo);
+    var mangledClassName = classInfo.mangledName;
     if (emitter.closure) {
       writer.writeLn("/** @constructor */");
     }
@@ -217,19 +227,21 @@ module J2ME {
       });
     }
 
-    var mangledClassName = mangleClass(classInfo);
+    var mangledClassName = classInfo.mangledName;
 
     emitter.writer.writeLn(mangledClassName + ".classSymbols = [" + referencedClasses.map(classInfo => {
       return quote(classInfo.className);
     }).join(", ") + "];");
   }
 
+  var failedCompilations = 0;
+
   function compileClassInfo(emitter: Emitter, classInfo: ClassInfo,
                             methodFilter: (methodInfo: MethodInfo) => boolean,
                             ctx: Context): CompiledMethodInfo [] {
     var writer = emitter.writer;
-    var mangledClassName = mangleClass(classInfo);
-    if (!J2ME.C4.Backend.isIdentifierName(mangledClassName)) {
+    var mangledClassName = classInfo.mangledName;
+    if (!isIdentifierName(mangledClassName)) {
       mangledClassName = quote(mangledClassName);
     }
 
@@ -264,8 +276,8 @@ module J2ME {
       if (!methodFilter(method)) {
         continue;
       }
-      var mangledMethodName = mangleMethod(method);
-      if (!J2ME.C4.Backend.isIdentifierName(mangledMethodName)) {
+      var mangledMethodName = method.mangledName;
+      if (!isIdentifierName(mangledMethodName)) {
         mangledMethodName = quote(mangledMethodName);
       }
       if (emitter.definitions) {
@@ -273,15 +285,16 @@ module J2ME {
         continue;
       }
       try {
-        var mangledClassAndMethodName = mangleClassAndMethod(method);
+        var mangledClassAndMethodName = method.mangledClassAndMethodName;
         if (emitter.debugInfo) {
-          writer.writeLn("// " + classInfo.className + "/" + method.name + " " + method.signature + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForPC(0));
+          writer.writeLn("// " + method.implKey + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForPC(0));
         }
         var compiledMethod = undefined;
         try {
           compiledMethod = compileMethod(method, ctx, CompilationTarget.Static);
         } catch (e) {
-          writer.writeLn("// Compiler Exception: " + e.toString());
+          stderrWriter.errorLn("Compiler Exception: " + method.implKey + " " + e.toString());
+          failedCompilations ++;
         }
         if (compiledMethod && compiledMethod.body) {
           var compiledMethodName = mangledClassAndMethodName;
@@ -355,6 +368,9 @@ module J2ME {
 
     var compiledMethods: CompiledMethodInfo [] = [];
     var classInfoList: ClassInfo [] = [];
+
+    CLASSES.loadAllClassFiles();
+
     Object.keys(jarFiles).every(function (path) {
       if (path.substr(-4) !== ".jar" || !jarFilter(path)) {
         return true;
@@ -431,15 +447,17 @@ module J2ME {
       ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, methodFilter, ctx));
     }
 
+    var color = failedCompilations ? IndentingWriter.YELLOW : IndentingWriter.GREEN;
+    stderrWriter.colorLn(color, "Compiled " + compiledMethods.length + " methods OK, " + failedCompilations + " failed.");
+
     stdoutWriter.writeLn(code);
 
     stdoutWriter.enter("/*");
     baselineCounter && baselineCounter.traceSorted(stdoutWriter);
     yieldCounter && yieldCounter.traceSorted(stdoutWriter);
+    yieldGraph && traceYieldGraph(stdoutWriter);
     stdoutWriter.enter("*/");
     // yieldCounter.traceSorted(stdoutWriter);
-
-    // stdoutWriter.writeLn("Compiled " + baselineCompiled + " of " + baselineTotal);
   }
 }
 

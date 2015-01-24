@@ -22,7 +22,7 @@ function asyncImpl(returnKind, promise) {
       name: "RaiseExceptionSynthetic",
       signature: "()V",
       isStatic: true,
-      classInfo: Object.create(J2ME.ClassInfo.prototype, {
+      classInfo: J2ME.ClassInfo.createFromObject({
         className: {value: "java/lang/Object"},
         vmc: {value: {}},
         vfc: {value: {}},
@@ -35,7 +35,7 @@ function asyncImpl(returnKind, promise) {
         0xbf              // athrow
       ])
     });
-    var callee = new Frame(syntheticMethod, [exception], 0);
+    var callee = Frame.create(syntheticMethod, [exception], 0);
     ctx.frames.push(callee);
     ctx.execute();
   });

@@ -1,9 +1,10 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts")
-JIT_SRCS=$(shell find jit -name "*.ts")
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
+JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
+RELEASE ?= 0
 
-all: java jasmin tests j2me shumway
+all: config-build java jasmin tests j2me shumway
 
 test: all
 	tests/runtests.py
@@ -15,7 +16,11 @@ build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
 	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js
 
-build/jsc.js: jsc.ts build/j2me.js
+build/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
+	@echo "Building J2ME JSC"
+	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out build/j2me-jsc.js
+
+build/jsc.js: jsc.ts build/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
 	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out build/jsc.js
 
@@ -43,6 +48,9 @@ closure: build/j2me.js aot
 shumway: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
 
+config-build:
+	echo "config.release = ${RELEASE};" > config/build.js
+
 tests:
 	make -C tests
 
@@ -53,12 +61,13 @@ certs:
 	make -C certs
 
 # Makes an output/ directory containing the packaged open web app files.
-app: java certs
+app: config-build java certs
 	tools/package.sh
 
 clean:
 	rm -f j2me.js `find . -name "*~"`
 	rm -rf build
+	rm -f config/build.js
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
