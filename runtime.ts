@@ -29,6 +29,11 @@ module J2ME {
   export var enableRuntimeCompilation = true;
 
   /**
+   * Turns on onStackReplacement
+   */
+  export var enableOnStackReplacement = true;
+
+  /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
    */
   var hashedMangledNames = false;
