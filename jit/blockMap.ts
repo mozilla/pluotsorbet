@@ -483,5 +483,38 @@ module J2ME.Bytecode {
       });
       writer.outdent();
     }
+
+    public traceDOTFile(writer: IndentingWriter) {
+      writer.enter("digraph CFG {");
+
+      writer.writeLn("graph [bgcolor = gray10];");
+      writer.writeLn("edge [fontname = Consolas, fontsize = 11, color = white, fontcolor = white];");
+      writer.writeLn("node [shape = box, fontname = Consolas, fontsize = 11, color = white, fontcolor = black, style = filled];");
+      writer.writeLn("rankdir = TB;");
+
+
+      var blocks = this.blocks;
+      blocks.forEach(function (block) {
+        var label = "B" + block.blockID + " " +
+          (block.isLoopHeader ? "H" : "") +
+          (block.isLoopEnd ? "E" : "") +
+          // (block.isExceptionEntry ? "X" : "") +
+          // (block.hasHandlers ? "X" : "") +
+          " l:" + block.loops.toString(2) +
+          " e:" + block.exits.toString(2) +
+          " i:" + block.loopID +
+          " p:" + block.predecessors.length;
+
+        writer.writeLn("B" + block.blockID + " [label = \"" + label + "\"];");
+      });
+
+      blocks.forEach(function (block) {
+        block.successors.forEach(function (successor) {
+          writer.writeLn("B" + block.blockID + " -> " + "B" + successor.blockID);
+        });
+      });
+      writer.leave("}");
+    }
+
   }
 }
