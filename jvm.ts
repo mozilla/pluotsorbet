@@ -45,6 +45,7 @@ module J2ME {
       runtime.updateStatus(RuntimeStatus.Started);
 
       var classInfo = CLASSES.getClass(mainClass);
+      linkKlass(classInfo);
       if (!classInfo)
         throw new Error("Could not find or load main class " + mainClass);
 

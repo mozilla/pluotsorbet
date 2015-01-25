@@ -1,6 +1,9 @@
 module J2ME.Bytecode {
   import assert = Debug.assert;
+  import pushUnique = ArrayUtilities.pushUnique;
   import Uint32ArrayBitSet = BitSets.Uint32ArrayBitSet;
+
+  declare var Relooper;
 
   var writer = new IndentingWriter();
 
@@ -12,12 +15,13 @@ module J2ME.Bytecode {
     public isLoopEnd: boolean;
     public hasHandlers: boolean;
     public blockID: number;
+    public relooperBlockID: number;
 
     public region: any;
 
     public successors: Block [];
+    public predecessors: Block [];
     public normalSuccessors: number;
-    public numberOfPredecessors: number = 0;
 
     visited: boolean;
     active: boolean;
@@ -27,6 +31,7 @@ module J2ME.Bytecode {
 
     constructor() {
       this.successors = [];
+      this.predecessors = [];
     }
 
     public clone(): Block {
@@ -41,7 +46,7 @@ module J2ME.Bytecode {
       block.loopID = this.loopID;
       block.blockID = this.blockID;
       block.successors = this.successors.slice(0);
-      block.numberOfPredecessors = this.numberOfPredecessors;
+      block.predecessors = this.predecessors.slice(0);
       return block;
     }
   }
@@ -429,7 +434,7 @@ module J2ME.Bytecode {
 
       for (var i = 0; i < block.successors.length; i++) {
         var successor = block.successors[i];
-        successor.numberOfPredecessors ++;
+        pushUnique(successor.predecessors, block);
         // Recursively process successors.
         loops |= this.computeBlockOrderFrom(block.successors[i]);
         if (successor.active) {
