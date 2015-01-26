@@ -35,18 +35,20 @@ var fs = (function() {
   };
 
   Store.DBNAME = "asyncStorage";
-  Store.DBVERSION = 3;
-  Store.OLDDBSTORENAME = "keyvaluepairs";
-  Store.DBSTORENAME = "fs";
+  Store.DBVERSION = 4;
+  Store.DBSTORENAME_1 = "keyvaluepairs";
+  Store.DBSTORENAME_2 = "fs";
+  Store.DBSTORENAME_4 = "fs4";
+  Store.DBSTORENAME = Store.DBSTORENAME_4;
 
   Store.prototype.upgrade = {
     "1to2": function(db, transaction, next) {
       // Create new object store.
-      var newObjectStore = db.createObjectStore(Store.DBSTORENAME);
+      var newObjectStore = db.createObjectStore(Store.DBSTORENAME_2);
 
       // Iterate the keys in the old object store and copy their values
       // to the new one, converting them from old- to new-style records.
-      var oldObjectStore = transaction.objectStore(Store.OLDDBSTORENAME);
+      var oldObjectStore = transaction.objectStore(Store.DBSTORENAME_1);
       var oldRecords = {};
       oldObjectStore.openCursor().onsuccess = function(event) {
         var cursor = event.target.result;
@@ -77,13 +79,13 @@ var fs = (function() {
           newObjectStore.put(newRecord, key);
         }
 
-        db.deleteObjectStore(Store.OLDDBSTORENAME);
+        db.deleteObjectStore(Store.DBSTORENAME_1);
         next();
       };
     },
 
     "2to3": function(db, transaction, next) {
-      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var objectStore = transaction.objectStore(Store.DBSTORENAME_2);
       objectStore.createIndex("parentDir", "parentDir", { unique: false });
 
       // Convert records to the new format:
@@ -105,6 +107,30 @@ var fs = (function() {
         }
       };
     },
+
+    "3to4": function(db, transaction, next) {
+      // Create new object store.
+      var newObjectStore = db.createObjectStore(Store.DBSTORENAME_4, { keyPath: "pathname" });
+      newObjectStore.createIndex("parentDir", "parentDir", { unique: false });
+
+      // Iterate the keys in the old object store and copy their values
+      // to the new one, converting them from old- to new-style records.
+      var oldObjectStore = transaction.objectStore(Store.DBSTORENAME_2);
+      oldObjectStore.openCursor().onsuccess = function(event) {
+        var cursor = event.target.result;
+
+        if (cursor) {
+          var newRecord = cursor.value;
+          newRecord.pathname = cursor.key;
+          newObjectStore.put(newRecord);
+          cursor.continue();
+          return;
+        }
+
+        db.deleteObjectStore(Store.DBSTORENAME_2);
+        next();
+      };
+    },
   };
 
   Store.prototype.init = function(cb) {
@@ -123,7 +149,12 @@ var fs = (function() {
       if (event.oldVersion == 0) {
         // If the database doesn't exist yet, then all we have to do
         // is create the object store for the latest version of the database.
-        var objectStore = openreq.result.createObjectStore(Store.DBSTORENAME);
+        // XXX This is brittle, because there are two places where the latest
+        // version of the database is created: here and in the most recent
+        // upgrade function.  So we should refactor this code, perhaps moving
+        // the initial object store creation into a "0to1" upgrade function,
+        // or perhaps moving the latest object store creation into a function.
+        var objectStore = openreq.result.createObjectStore(Store.DBSTORENAME, { keyPath: "pathname" });
         objectStore.createIndex("parentDir", "parentDir", { unique: false });
       } else {
         var version = event.oldVersion;
@@ -224,7 +255,8 @@ var fs = (function() {
     this.changesToSync.forEach((function(change, key) {
       var req;
       if (change.type == "put") {
-        req = objectStore.put(change.value, key);
+        change.value.pathname = key;
+        req = objectStore.put(change.value);
         if (DEBUG_FS) { console.log("put " + key); }
         req.onerror = function() {
           console.error("Error putting " + key + ": " + req.error.name);
@@ -311,7 +343,8 @@ var fs = (function() {
           record.data = new Blob([new Int8Array(record.data)]);
         }
         this.map.set(key, record);
-        var req = objectStore.put(record, key);
+        record.pathname = key;
+        var req = objectStore.put(record);
         req.onerror = reportRequestError.bind(null, "import", req);
       }).bind(this));
       transaction.oncomplete = function() {
