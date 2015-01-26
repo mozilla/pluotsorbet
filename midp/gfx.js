@@ -329,7 +329,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = config.fontSize ? config.fontSize : Math.max(10, (MIDP.Context2D.canvas.height / 35) | 0);
+        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (MIDP.Context2D.canvas.height / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
@@ -361,7 +361,7 @@ var currentlyFocusedTextEditor;
         // with some spaces removed.
         // We need this css string to have the same format as that of the
         // MIDP.Context2D.font to do comparison in withFont() function.
-        this.css = style + size + "pt " + face;
+        this.css = style + size + "px " + face;
         this.size = size;
         this.style = style;
         this.face = face;
