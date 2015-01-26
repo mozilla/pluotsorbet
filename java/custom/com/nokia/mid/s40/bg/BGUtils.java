@@ -2,19 +2,28 @@ package com.nokia.mid.s40.bg;
 
 import com.sun.midp.main.MIDletSuiteUtils;
 
+class WaitUserInteractionThread extends Thread {
+    public void run() {
+        BGUtils.waitUserInteraction();
+        BGUtils.startMIDlet();
+    }
+}
+
 public class BGUtils {
     private static boolean launchMIDletCalled = false;
 
     private static native int getFGMIDletNumber();
     private static native String getFGMIDletClass();
-    private static native void waitUserInteraction();
+    static native void waitUserInteraction();
 
     /* Start the FG MIDlet when the page becomes visible and if
        launchIEMIDlet hasn't been called (we want launchIEMIDlet
        to launch the MIDlet if possible) */
     public static void setBGMIDletResident(boolean param) {
-      BGUtils.waitUserInteraction();
+      new WaitUserInteractionThread().start();
+    }
 
+    public static void startMIDlet() {
       if (BGUtils.launchMIDletCalled) {
         return;
       }
