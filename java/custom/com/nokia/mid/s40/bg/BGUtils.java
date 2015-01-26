@@ -37,12 +37,6 @@ public class BGUtils {
     private static native void addSystemProperties(String args);
 
     public static boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args) {
-        System.out.println("midletSuiteVendor: " + midletSuiteVendor);
-        System.out.println("midletName: " + midletName);
-        System.out.println("midletNumber: " + midletNumber);
-        System.out.println("startupNoteText: " + startupNoteText);
-        System.out.println("args: " + args);
-
         BGUtils.launchMIDletCalled = true;
 
         BGUtils.waitUserInteraction();
