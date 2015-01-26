@@ -59,14 +59,14 @@ var gfxTests = [
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
   { name: "gfx/RectAfterText", maxDifferent: 637 },
-  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 1060 },
-  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 1060 },
-  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 1060 },
+  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 0 },
+  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 0 },
+  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 0 },
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
   { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferent: 0 },
-  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 0 },
+  { name: "gfx/TextEditorGfxTest", maxDifferent: 1339 },
+  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
 ];
 
 var expectedUnitTestResults = [
