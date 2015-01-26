@@ -52,6 +52,7 @@ module J2ME {
     "javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V": YieldReason.Root,
     "com/nokia/mid/ui/TextEditorThread.sleep.()V": YieldReason.Root,
     "com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z": YieldReason.Root,
+    "com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.receiveData.([B)I": YieldReason.Root,
     "com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z": YieldReason.Root,

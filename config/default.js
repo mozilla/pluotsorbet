@@ -12,6 +12,8 @@ var MIDlet = {
   SMSDialogReceiveFilter: function(message) {
     return message;
   },
+
+  wakeUpAlarm: 60000, // ms, i.e. 60 seconds
 };
 
 var config = {
