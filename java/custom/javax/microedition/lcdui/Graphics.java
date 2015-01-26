@@ -523,7 +523,6 @@ public class Graphics {
      */
     public static final int DOTTED = 1;
 
-    private native void init0(Font font);
     private native void initScreen0(int displayId, int width, int height);
     private native void initImage0(Image img, int width, int height);
 
@@ -531,7 +530,6 @@ public class Graphics {
      * Create a Graphics object
      */
     Graphics() {
-        init0(Font.getDefaultFont());
     }
 
     /**

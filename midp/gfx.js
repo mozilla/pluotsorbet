@@ -379,6 +379,21 @@ var currentlyFocusedTextEditor;
         return len + emojiLen;
     }
 
+    var defaultFont;
+    function getDefaultFont() {
+        if (!defaultFont) {
+            var classInfo = CLASSES.loadAndLinkClass("javax/microedition/lcdui/Font");
+            defaultFont = new classInfo.klass();
+            var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(III)V");
+            jsGlobal[methodInfo.mangledClassAndMethodName].call(defaultFont, 0, 0, 0);
+        }
+        return defaultFont;
+    }
+
+    Override["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function() {
+        return getDefaultFont();
+    };
+
     Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(str) {
         return calcStringWidth(this, util.fromJavaString(str));
     };
@@ -695,7 +710,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(font) {
-        this.currentFont = font ? font : this.defaultFont;
+        this.currentFont = font ? font : getDefaultFont();
     };
 
     var SOLID = 0;
@@ -963,7 +978,7 @@ var currentlyFocusedTextEditor;
         return (red*76 + green*150 + blue*29) >> 8;
     }
 
-    Native["javax/microedition/lcdui/Graphics.init0.(Ljavax/microedition/lcdui/Font;)V"] = function(defaultFont) {
+    Override["javax/microedition/lcdui/Graphics.<init>.()V"] = function() {
         this.maxWidth = 0;
         this.maxHeight = 0;
         this.transX = 0;
@@ -982,8 +997,7 @@ var currentlyFocusedTextEditor;
         this.clipX2 = 0;
         this.clipY1 = 0;
         this.clipY2 = 0;
-        this.defaultFont = defaultFont;
-        this.currentFont = defaultFont;
+        this.currentFont = getDefaultFont();
         this.displayId = -1;
         this.img = null;
         this.style = SOLID;
@@ -1006,7 +1020,7 @@ var currentlyFocusedTextEditor;
     }
 
     function resetGC(g) {
-        g.currentFont = g.defaultFont;
+        g.currentFont = getDefaultFont();
         g.style       = SOLID;
         g.rgbColor    = g.gray = 0;
         g.pixel       = getPixel(g.rgbColor, g.gray, true);
