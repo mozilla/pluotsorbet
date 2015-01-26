@@ -1097,11 +1097,11 @@ Native["com/sun/mmedia/DirectRecord.nCommit.(I)I"] = function(handle) {
 };
 
 Native["com/sun/mmedia/DirectRecord.nPause.(I)I"] = function(handle) {
-    return asyncImpl("I", Media.PlayerCache[handle].audioRecorder.pause());
+    asyncImpl("I", Media.PlayerCache[handle].audioRecorder.pause());
 };
 
 Native["com/sun/mmedia/DirectRecord.nStop.(I)I"] = function(handle) {
-    return asyncImpl("I", Media.PlayerCache[handle].audioRecorder.stop());
+    asyncImpl("I", Media.PlayerCache[handle].audioRecorder.stop());
 };
 
 Native["com/sun/mmedia/DirectRecord.nClose.(I)I"] = function(handle) {
