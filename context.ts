@@ -385,7 +385,7 @@ module J2ME {
 
     getPriority() {
       if (this.thread) {
-        return this.thread.$priority;
+        return this.thread.priority;
       }
       return NORMAL_PRIORITY;
     }

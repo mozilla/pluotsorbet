@@ -10,6 +10,13 @@ module J2ME {
           return self._hashCode = $.nextHashCode();
         }
       }
+    },
+    "java/lang/Thread": {
+      fields: {
+        instanceSymbols: {
+          "priority.I": "priority"
+        }
+      }
     }
   }
 }

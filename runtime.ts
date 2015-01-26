@@ -819,7 +819,7 @@ module J2ME {
     export interface Thread extends java.lang.Object {
       pid: number;
       alive: boolean;
-      $priority: number;
+      priority: number;
     }
 
     export interface Exception extends java.lang.Object {
