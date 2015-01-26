@@ -34,14 +34,14 @@ Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"]
 Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
   asyncImpl("V", new Promise(function(resolve, reject) {
     // If the page is visible, just start the FG MIDlet
-    if (document.hidden === false) {
+    if (!document.hidden) {
         resolve();
         return;
     }
 
     // Otherwise, wait until the page becomes visible, then start the FG MIDlet
     document.addEventListener("visibilitychange", function onVisible() {
-      if (document.hidden === false) {
+      if (!document.hidden) {
         document.removeEventListener("visibilitychange", onVisible, false);
         resolve();
       }
