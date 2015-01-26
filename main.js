@@ -375,6 +375,7 @@ function requestTimelineBuffers(fn) {
   if (J2ME.timeline) {
     fn([
       J2ME.timeline,
+      J2ME.threadTimeline,
       J2ME.methodTimeline
     ]);
     return;

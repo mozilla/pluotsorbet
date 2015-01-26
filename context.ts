@@ -517,6 +517,10 @@ module J2ME {
     }
 
     setAsCurrentContext() {
+      if ($) {
+        threadTimeline && threadTimeline.leave();
+      }
+      threadTimeline && threadTimeline.enter(this.runtime.id + ":" + this.id);
       $ = this.runtime;
       if ($.ctx === this) {
         return;
@@ -526,6 +530,9 @@ module J2ME {
     }
 
     clearCurrentContext() {
+      if ($) {
+        threadTimeline && threadTimeline.leave();
+      }
       $ = null;
       Context.setWriters(Context.writer);
     }
