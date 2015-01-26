@@ -22,8 +22,7 @@
  *    network_mnc
  *    platform
  *    profile
- *    pushConn
- *    pushMidlet
+ *    fgMidletClass
  *    autosize
  *    fontSize
  *

@@ -3,9 +3,6 @@
 
 'use strict';
 
-var fgMIDletClass = config.pushMidlet;
-var fgMIDletNumber = 1;
-
 function backgroundCheck() {
   if (!MIDP.manifest["Nokia-MIDlet-bg-server"]) {
     return;
@@ -15,11 +12,11 @@ function backgroundCheck() {
 }
 
 Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function() {
-  return J2ME.newString(fgMIDletClass);
+  return J2ME.newString(config.fgMidletClass);
 };
 
 Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
-  return fgMIDletNumber;
+  return 1;
 };
 
 MIDP.additionalProperties = {};
