@@ -12,6 +12,8 @@ var MIDlet = {
   SMSDialogReceiveFilter: function(message) {
     return message;
   },
+
+  wakeUpAlarm: 3600000,
 };
 
 var config = {
