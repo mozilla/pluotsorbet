@@ -10,6 +10,9 @@ class CustomRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         self.send_header("Expires", "0")
         SimpleHTTPServer.SimpleHTTPRequestHandler.end_headers(self)
 
+    # Don't log successful requests to minimize test automation output.
+    def log_request(self, code='-', size='-'): pass
+
 port = 8000
 if len(sys.argv) > 1:
     port = int(sys.argv[1])

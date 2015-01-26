@@ -17,10 +17,11 @@ public class TestSSLStreamConnection implements Testlet {
     static final String HOST = "localhost";
     static final int PORT = 54443;
     static final String MESSAGE = "I haven't stopped thinking about recreating that pluot sorbet.";
-    static final WebPublicKeyStore KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
+    WebPublicKeyStore KEY_STORE;
     TestHarness th;
 
     public void test(TestHarness th) {
+        KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
         this.th = th;
 
         try {

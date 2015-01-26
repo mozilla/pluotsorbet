@@ -15,6 +15,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     http: [
@@ -22,6 +23,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     https: [
@@ -29,6 +31,7 @@ Media.ContentTypes = {
         "audio/mpeg",
         "image/jpeg",
         "image/png",
+        "audio/amr"
     ],
 
     rtp: [],
@@ -83,7 +86,41 @@ Media.supportedImageFormats = ["JPEG", "PNG"];
 Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
 
-Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I", function(jProtocol) {
+Media.convert3gpToAmr = function(inBuffer) {
+    // The buffer to store the converted amr file.
+    var outBuffer = new Uint8Array(inBuffer.length);
+
+    // Add AMR header.
+    var AMR_HEADER = "#!AMR\n";
+    outBuffer.set(new TextEncoder("utf-8").encode(AMR_HEADER));
+    var outOffset = AMR_HEADER.length;
+
+    var textDecoder = new TextDecoder("utf-8");
+    var inOffset = 0;
+    while (inOffset + 8 < inBuffer.length) {
+        // Get the box size
+        var size = 0;
+        for (var i = 0; i < 4; i++) {
+            size = inBuffer[inOffset + i] + (size << 8);
+        }
+        // Search the box of type mdat.
+        var type = textDecoder.decode(inBuffer.subarray(inOffset + 4, inOffset + 8));
+        if (type === "mdat" && inOffset + size <= inBuffer.length) {
+            // Extract raw AMR data from the box and append to the out buffer.
+            var data = inBuffer.subarray(inOffset + 8, inOffset + size);
+            outBuffer.set(data, outOffset);
+            outOffset += data.length;
+        }
+        inOffset += size;
+    }
+
+    if (outOffset === AMR_HEADER.length) {
+        console.warn("Failed to extract AMR from 3GP file.");
+    }
+    return outBuffer.subarray(0, outOffset);
+};
+
+Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I"] = function(jProtocol) {
     var protocol = util.fromJavaString(jProtocol);
     var types = [];
     if (protocol) {
@@ -105,22 +142,23 @@ Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/
         return 0;
     }
     return Media.ListCache.create(types);
-});
+};
 
-Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesNext.(I)Ljava/lang/String;", function(hdlr) {
+Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesNext.(I)Ljava/lang/String;"] = function(hdlr) {
     var cached = Media.ListCache.get(hdlr);
     if (!cached) {
         console.error("Invalid hdlr: " + hdlr);
         return null;
     }
-    return cached.shift() || null;
-});
+    var s = cached.shift();
+    return s ? J2ME.newString(s) : null;
+};
 
-Native.create("com/sun/mmedia/DefaultConfiguration.nListContentTypesClose.(I)V", function(hdlr) {
+Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesClose.(I)V"] = function(hdlr) {
     Media.ListCache.remove(hdlr);
-});
+};
 
-Native.create("com/sun/mmedia/DefaultConfiguration.nListProtocolsOpen.(Ljava/lang/String;)I", function(jMime) {
+Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsOpen.(Ljava/lang/String;)I"] = function(jMime) {
     var mime = util.fromJavaString(jMime);
     var protocols = [];
     for (var protocol in Media.ContentTypes) {
@@ -132,20 +170,21 @@ Native.create("com/sun/mmedia/DefaultConfiguration.nListProtocolsOpen.(Ljava/lan
         return 0;
     }
     return Media.ListCache.create(protocols);
-});
+};
 
-Native.create("com/sun/mmedia/DefaultConfiguration.nListProtocolsNext.(I)Ljava/lang/String;", function(hdlr) {
+Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsNext.(I)Ljava/lang/String;"] = function(hdlr) {
     var cached = Media.ListCache.get(hdlr);
     if (!cached) {
         console.error("Invalid hdlr: " + hdlr);
         return null;
     }
-    return cached.shift() || null;
-});
+    var s = cached.shift();
+    return s ? J2ME.newString(s) : null;
+};
 
-Native.create("com/sun/mmedia/DefaultConfiguration.nListProtocolsClose.(I)V", function(hdlr) {
+Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsClose.(I)V"] = function(hdlr) {
     Media.ListCache.remove(hdlr);
-});
+};
 
 Media.PlayerCache = {
 };
@@ -153,212 +192,110 @@ Media.PlayerCache = {
 function AudioPlayer(playerContainer) {
     this.playerContainer = playerContainer;
 
-    this.isMuted = false;
-
-    /* @type {AudioBuffer} */
-    this.audioBuffer = null;
-
-    this.audioContext = new AudioContext();
-
-    /* @type {AudioBufferSourceNode} */
-    this.source = null;
-
-    /*
-     * Audio gain node used to control volume.
-     */
-    this.gainNode = this.audioContext.createGain();
-
-    this.volume = Math.round(this.gainNode.gain.value * 100);
-
-    this.gainNode.connect(this.audioContext.destination);
-
-    this.isPlaying = false;
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.duration = 0;
+    /* @type HTMLAudioElement */
+    this.audio = new Audio();
 
     this.isVideoControlSupported = false;
     this.isVolumeControlSupported = true;
 }
 
 AudioPlayer.prototype.realize = function() {
-    return new Promise(function(resolve, reject) { resolve(true); });
-}
+    return Promise.resolve(1);
+};
 
 AudioPlayer.prototype.play = function() {
-    var offset = this.stopTime - this.startTime;
-    this.source = this.audioContext.createBufferSource();
-    this.source.buffer = this.cloneBuffer();
-    this.source.connect(this.gainNode || this.audioContext.destination);
-    this.source.start(0, offset);
-    this.isPlaying = true;
-    this.startTime = this.audioContext.currentTime - offset;
-    this.source.onended = function() {
+    this.audio.play();
+    this.audio.onended = function() {
         MIDP.sendNativeEvent({
             type: MIDP.MMAPI_EVENT,
             intParam1: this.playerContainer.pId,
-            intParam2: Math.ceil(this.getDuration()),
+            intParam2: this.getDuration(),
             intParam3: 0,
             intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
         }, MIDP.foregroundIsolateId);
-
-        this.close();
     }.bind(this);
-}
+};
 
 AudioPlayer.prototype.start = function() {
-    if (this.playerContainer.contentSize > 0) {
-        this.decode(this.playerContainer.data.subarray(0, this.playerContainer.contentSize), function(decoded) {
-            // Save a copy of the audio buffer for resuming or replaying.
-            this.audioBuffer = decoded;
-            this.duration = decoded.duration;
-            this.play();
-        }.bind(this));
-
+    if (this.playerContainer.contentSize == 0) {
+        console.warn("Cannot start playing.");
         return;
     }
 
-    console.warn("Cannot start playing.");
-}
+    if (this.audio.src) {
+        this.play();
+        return;
+    }
+
+    new Promise(function(resolve, reject) {
+        var blob = new Blob([ this.playerContainer.data.subarray(0, this.playerContainer.contentSize) ],
+                            { type: this.playerContainer.contentType });
+        this.audio.src = URL.createObjectURL(blob);
+        this.audio.onloadedmetadata = function() {
+            resolve();
+            this.play();
+        }.bind(this);
+        this.audio.onerror = reject;
+    }.bind(this)).done(function() {
+        URL.revokeObjectURL(this.audio.src);
+    }.bind(this));
+};
 
 AudioPlayer.prototype.pause = function() {
-    if (!this.isPlaying) {
+    if (this.audio.paused) {
         return;
     }
-
-    this.isPlaying = false;
-    this.source.onended = null;
-    this.stopTime = this.audioContext.currentTime;
-    this.source.stop();
-    this.source.disconnect();
-    this.source = null;
-}
+    this.audio.onended = null;
+    this.audio.pause();
+};
 
 AudioPlayer.prototype.resume = function() {
-    if (this.isPlaying) {
+    if (!this.audio.paused) {
         return;
     }
-
-    if (this.stopTime - this.startTime >= this.duration) {
-        return;
-    }
-
     this.play();
-}
+};
 
 AudioPlayer.prototype.close = function() {
-    if (this.source) {
-        this.source.stop();
-        this.source.disconnect();
-        this.source = null;
-    }
-
-    if (this.gainNode) {
-        this.gainNode.disconnect();
-        this.gainNode = null;
-    }
-
-    this.audioBuffer = null;
-
-    this.startTime = 0;
-    this.stopTime = 0;
-    this.isPlaying = false;
-}
+    this.audio.pause();
+    this.audio.src = "";
+};
 
 AudioPlayer.prototype.getMediaTime = function() {
-    var time = 0;
-
-    if (this.isPlaying) {
-        time = this.audioContext.currentTime - this.startTime;
-    } else {
-        time = Math.min(this.duration, this.stopTime - this.startTime);
-    }
-
-    return Math.round(time * 1000);
-}
+    return Math.round(this.audio.currentTime * 1000);
+};
 
 // The range of ms has already been checked, we don't need to check it again.
 AudioPlayer.prototype.setMediaTime = function(ms) {
-    var offset = ms / 1000;
-
-    if (this.isPlaying) {
-        this.pause();
-        this.stopTime = this.startTime + offset;
-        this.resume();
-    } else {
-        this.startTime = 0;
-        this.stopTime = this.startTime + offset;
-    }
-
+    this.audio.currentTime = ms / 1000;
     return ms;
 };
 
-AudioPlayer.prototype.cloneBuffer = function() {
-    var buffer = this.audioBuffer;
-    var cloned = this.audioContext.createBuffer(
-                    buffer.numberOfChannels,
-                    buffer.length,
-                    buffer.sampleRate
-                 );
-
-    for (var i = 0; i < buffer.numberOfChannels; ++i) {
-        var channel = buffer.getChannelData(i);
-        cloned.getChannelData(i).set(new Float32Array(channel));
-    }
-    return cloned;
-};
-
-AudioPlayer.prototype.decode = function(encoded, callback) {
-    // Clone a copy before decoding to keep the original buffer unchanged.
-    this.audioContext.decodeAudioData(encoded.buffer.slice(), callback);
-};
-
 AudioPlayer.prototype.getVolume = function() {
-    return this.volume;
+    return Math.floor(this.audio.volume * 100);
 };
 
 AudioPlayer.prototype.setVolume = function(level) {
-    if (!this.gainNode) {
-        return -1;
-    }
     if (level < 0) {
         level = 0;
     } else if (level > 100) {
         level = 100;
     }
-    this.volume = level;
-    if (!this.isMuted) {
-        this.gainNode.gain.value = level / 100;
-    }
+    this.audio.volume = level / 100;
     return level;
-}
+};
 
 AudioPlayer.prototype.getMute = function() {
-    return this.isMuted;
-}
+    return this.audio.muted;
+};
 
 AudioPlayer.prototype.setMute = function(mute) {
-    if (this.isMuted === mute) {
-        return;
-    }
-    this.isMuted = mute;
-    if (!this.gainNode) {
-        return;
-    }
-    if (mute) {
-        this.gainNode.gain.value = 0;
-    } else {
-        this.gainNode.gain.value = this.volume / 100;
-    }
-}
+    this.audio.muted = mute;
+};
 
 AudioPlayer.prototype.getDuration = function() {
-    if (!this.audioBuffer) {
-        return -1; // Player.TIME_UNKNOWN
-    }
-
-    return this.duration * 1000;
-}
+    return Math.round(this.audio.duration * 1000);
+};
 
 function ImagePlayer(playerContainer) {
     this.url = playerContainer.url;
@@ -374,11 +311,15 @@ function ImagePlayer(playerContainer) {
 ImagePlayer.prototype.realize = function() {
     var objectUrl;
 
+    var ctx = $.ctx;
+
     var p = new Promise((function(resolve, reject) {
-        this.image.onload = resolve.bind(null, true);
+        this.image.onload = resolve.bind(null, 1);
         this.image.onerror = function() {
-            reject(new JavaException("javax/microedition/media/MediaException", "Failed to load image"));
+            ctx.setAsCurrentContext();
+            reject($.newMediaException("Failed to load image"));
         };
+
         if (this.url.startsWith("file")) {
             fs.open(this.url.substring(7), (function(fd) {
                 var imgData = fs.read(fd);
@@ -391,14 +332,12 @@ ImagePlayer.prototype.realize = function() {
         }
     }).bind(this));
 
-    var clean = function() {
+    p.done(function() {
         if (!objectUrl) {
             return;
         }
         URL.revokeObjectURL(objectUrl);
-    };
-
-    p.then(clean, clean);
+    });
 
     return p;
 }
@@ -411,7 +350,7 @@ ImagePlayer.prototype.pause = function() {
 
 ImagePlayer.prototype.close = function() {
     if (this.image.parentNode) {
-        document.getElementById("display").removeChild(this.image);
+        this.image.parentNode.removeChild(this.image);
     }
 }
 
@@ -432,7 +371,7 @@ ImagePlayer.prototype.setLocation = function(x, y, w, h) {
     this.image.style.top = y + "px";
     this.image.style.width = w + "px";
     this.image.style.height = h + "px";
-    document.getElementById("display").appendChild(this.image);
+    document.getElementById("main").appendChild(this.image);
 }
 
 ImagePlayer.prototype.setVisible = function(visible) {
@@ -453,6 +392,7 @@ function ImageRecorder(playerContainer) {
     this.realizeResolver = null;
 
     this.snapshotData = null;
+    this.ctx = $.ctx;
 }
 
 ImageRecorder.prototype.realize = function() {
@@ -464,12 +404,13 @@ ImageRecorder.prototype.realize = function() {
 }
 
 ImageRecorder.prototype.recipient = function(message) {
+    this.ctx.setAsCurrentContext();
     switch (message.type) {
         case "initerror":
             if (message.name == "PermissionDeniedError") {
-                this.realizeRejector(new JavaException("java/lang/SecurityException", "Not permitted to init camera"));
+                this.realizeRejector($.newSecurityException("Not permitted to init camera"));
             } else {
-                this.realizeRejector(new JavaException("javax/microedition/media/MediaException", "Failed to init camera, no camera?"));
+                this.realizeRejector($.newMediaException("Failed to init camera, no camera?"));
             }
             this.realizeResolver = null;
             this.realizeRejector = null;
@@ -479,7 +420,7 @@ ImageRecorder.prototype.recipient = function(message) {
         case "gotstream":
             this.width = message.width;
             this.height = message.height;
-            this.realizeResolver(true);
+            this.realizeResolver(1);
             this.realizeResolver = null;
             this.realizeRejector = null;
             break;
@@ -522,7 +463,7 @@ ImageRecorder.prototype.getHeight = function() {
 }
 
 ImageRecorder.prototype.setLocation = function(x, y, w, h) {
-    var displayElem = document.getElementById("display");
+    var displayElem = document.getElementById("main");
     this.sender({
         type: "setPosition",
         x: x + displayElem.offsetLeft,
@@ -613,7 +554,7 @@ PlayerContainer.prototype.realize = function(contentType) {
             this.mediaFormat = Media.contentTypeToFormat.get(contentType) || this.mediaFormat;
             if (this.mediaFormat === "UNKNOWN") {
                 console.warn("Unsupported content type: " + contentType);
-                resolve(false);
+                resolve(0);
                 return;
             }
         }
@@ -621,7 +562,7 @@ PlayerContainer.prototype.realize = function(contentType) {
         if (Media.supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
             this.player = new AudioPlayer(this);
             if (this.isAudioCapture()) {
-                this.audioRecorder = new AudioRecorder();
+                this.audioRecorder = new AudioRecorder(contentType);
             }
             this.player.realize().then(resolve);
         } else if (Media.supportedImageFormats.indexOf(this.mediaFormat) !== -1) {
@@ -633,7 +574,7 @@ PlayerContainer.prototype.realize = function(contentType) {
             this.player.realize().then(resolve, reject);
         } else {
             console.warn("Unsupported media format (" + this.mediaFormat + ") for " + this.url);
-            resolve(false);
+            resolve(0);
         }
     }).bind(this));
 };
@@ -713,10 +654,6 @@ PlayerContainer.prototype.writeBuffer = function(buffer) {
     this.contentSize += buffer.length;
 };
 
-PlayerContainer.prototype.play = function() {
-    this.player.play();
-};
-
 PlayerContainer.prototype.start = function() {
     this.player.start();
 };
@@ -784,12 +721,20 @@ PlayerContainer.prototype.getDuration = function() {
 }
 
 var AudioRecorder = function(aMimeType) {
-    this.mimeType = aMimeType || "audio/ogg";
+    this.mimeType = aMimeType || "audio/3gpp";
     this.eventListeners = {};
     this.data = new Uint8Array();
     this.sender = DumbPipe.open("audiorecorder", {
         mimeType: this.mimeType
     }, this.recipient.bind(this));
+};
+
+AudioRecorder.prototype.getContentType = function() {
+    if (this.mimeType == "audio/3gpp") {
+        return "audio/amr";
+    }
+
+    return this.mimeType;
 };
 
 AudioRecorder.prototype.recipient = function(message) {
@@ -862,7 +807,11 @@ AudioRecorder.prototype.stop = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            this.data = new Uint8Array(message.data);
+            var data = new Uint8Array(message.data);
+            if (this.getContentType() === "audio/amr") {
+                data = Media.convert3gpToAmr(data);
+            }
+            this.data = data;
             resolve(1);
         }.bind(this);
 
@@ -922,17 +871,17 @@ AudioRecorder.prototype.close = function() {
     }.bind(this));
 };
 
-Native.create("com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I", function(appId, pId, jURI) {
+Native["com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I"] = function(appId, pId, jURI) {
     var url = util.fromJavaString(jURI);
     var id = pId + (appId << 32);
     Media.PlayerCache[id] = new PlayerContainer(url, pId);
     return id;
-});
+};
 
 /**
  * @return 0 - failed; 1 - succeeded.
  */
-Native.create("com/sun/mmedia/PlayerImpl.nTerm.(I)I", function(handle) {
+Native["com/sun/mmedia/PlayerImpl.nTerm.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
     if (!player) {
         return 1;
@@ -940,39 +889,39 @@ Native.create("com/sun/mmedia/PlayerImpl.nTerm.(I)I", function(handle) {
     player.close();
     delete Media.PlayerCache[handle];
     return 1;
-});
+};
 
-Native.create("com/sun/mmedia/PlayerImpl.nGetMediaFormat.(I)Ljava/lang/String;", function(handle) {
+Native["com/sun/mmedia/PlayerImpl.nGetMediaFormat.(I)Ljava/lang/String;"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.mediaFormat = player.getMediaFormat();
-    return player.mediaFormat;
-});
+    return J2ME.newString(player.mediaFormat);
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nGetContentType.(I)Ljava/lang/String;", function(handle) {
-    return Media.PlayerCache[handle].getContentType();
-});
+Native["com/sun/mmedia/DirectPlayer.nGetContentType.(I)Ljava/lang/String;"] = function(handle) {
+    return J2ME.newString(Media.PlayerCache[handle].getContentType());
+};
 
-Native.create("com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z", function(handle) {
-    return Media.PlayerCache[handle].isHandledByDevice();
-});
+Native["com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z"] = function(handle) {
+    return Media.PlayerCache[handle].isHandledByDevice() ? 1 : 0;
+};
 
-Native.create("com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z", function(handle, jMime) {
+Native["com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z"] = function(handle, jMime) {
     var mime = util.fromJavaString(jMime);
     var player = Media.PlayerCache[handle];
-    return player.realize(mime);
-}, true);
+    asyncImpl("Z", player.realize(mime));
+};
 
-Native.create("com/sun/mmedia/MediaDownload.nGetJavaBufferSize.(I)I", function(handle) {
+Native["com/sun/mmedia/MediaDownload.nGetJavaBufferSize.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
     return player.getBufferSize();
-});
+};
 
-Native.create("com/sun/mmedia/MediaDownload.nGetFirstPacketSize.(I)I", function(handle) {
+Native["com/sun/mmedia/MediaDownload.nGetFirstPacketSize.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
     return player.getBufferSize() / 2;
-});
+};
 
-Native.create("com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I", function(handle, buffer, offset, size) {
+Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, buffer, offset, size) {
     var player = Media.PlayerCache[handle];
     var bufferSize = player.getBufferSize();
 
@@ -985,225 +934,230 @@ Native.create("com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I", function(handl
 
     // Returns the package size and set it to the half of the java buffer size.
     return bufferSize / 2;
-});
+};
 
-Native.create("com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z", function(handle) {
+Native["com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z"] = function(handle) {
     console.warn("com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z not implemented");
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V", function(handle, contentSize, _) {
+Native["com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V"] = function(handle, contentSize) {
     var player = Media.PlayerCache[handle];
     player.wholeContentSize = contentSize.toNumber();
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nIsToneControlSupported.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nIsToneControlSupported.(I)Z"] = function(handle) {
     console.info("To support ToneControl, implement com.sun.mmedia.DirectTone.");
-    return false;
-});
+    return 0;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nIsMIDIControlSupported.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nIsMIDIControlSupported.(I)Z"] = function(handle) {
     console.info("To support MIDIControl, implement com.sun.mmedia.DirectMIDI.");
-    return false;
-});
+    return 0;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nIsVideoControlSupported.(I)Z", function(handle) {
-    return Media.PlayerCache[handle].isVideoControlSupported();
-});
+Native["com/sun/mmedia/DirectPlayer.nIsVideoControlSupported.(I)Z"] = function(handle) {
+    return Media.PlayerCache[handle].isVideoControlSupported() ? 1 : 0;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nIsVolumeControlSupported.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nIsVolumeControlSupported.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
-    return player.isVolumeControlSupported();
-});
+    return player.isVolumeControlSupported() ? 1 : 0;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nIsNeedBuffering.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nIsNeedBuffering.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nIsNeedBuffering.(I)Z not implemented.");
-    return false;
-});
+    return 0;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nPcmAudioPlayback.(I)Z not implemented.");
-    return false;
-});
+    return 0;
+};
 
 // Device is available?
-Native.create("com/sun/mmedia/DirectPlayer.nAcquireDevice.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nAcquireDevice.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nAcquireDevice.(I)Z not implemented.");
-    return true;
-});
+    return 1;
+};
 
 // Relase device reference
-Native.create("com/sun/mmedia/DirectPlayer.nReleaseDevice.(I)V", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nReleaseDevice.(I)V"] = function(handle) {
     var player = Media.PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nReleaseDevice.(I)V not implemented.");
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nSwitchToForeground.(II)Z", function(handle, options) {
+Native["com/sun/mmedia/DirectPlayer.nSwitchToForeground.(II)Z"] = function(handle, options) {
     var player = Media.PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nSwitchToForeground.(II)Z not implemented. ");
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nSwitchToBackground.(II)Z", function(handle, options) {
+Native["com/sun/mmedia/DirectPlayer.nSwitchToBackground.(II)Z"] = function(handle, options) {
     var player = Media.PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nSwitchToBackground.(II)Z not implemented. ");
-    return true;
-});
+    return 1;
+};
 
 // Start Prefetch of Native Player
-Native.create("com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     console.warn("com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z not implemented.");
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
     return player.getMediaTime();
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I", function(handle, ms) {
+Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, ms) {
     var container = Media.PlayerCache[handle];
     return container.player.setMediaTime(ms);
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nStart.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nStart.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.start();
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nStop.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nStop.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.close();
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nTerm.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nTerm.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.close();
     delete Media.PlayerCache[handle];
     return 1;
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nPause.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nPause.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.pause();
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nResume.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nResume.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
     player.resume();
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nGetWidth.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nGetWidth.(I)I"] = function(handle) {
     return Media.PlayerCache[handle].getWidth();
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nGetHeight.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nGetHeight.(I)I"] = function(handle) {
     return Media.PlayerCache[handle].getHeight();
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nSetLocation.(IIIII)Z", function(handle, x, y, w, h) {
+Native["com/sun/mmedia/DirectPlayer.nSetLocation.(IIIII)Z"] = function(handle, x, y, w, h) {
     Media.PlayerCache[handle].setLocation(x, y, w, h);
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nSetVisible.(IZ)Z", function(handle, visible) {
+Native["com/sun/mmedia/DirectPlayer.nSetVisible.(IZ)Z"] = function(handle, visible) {
     Media.PlayerCache[handle].setVisible(visible);
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nIsRecordControlSupported.(I)Z", function(handle) {
-    return !!(Media.PlayerCache[handle] && Media.PlayerCache[handle].audioRecorder);
-});
+Native["com/sun/mmedia/DirectPlayer.nIsRecordControlSupported.(I)Z"] = function(handle) {
+    return !!(Media.PlayerCache[handle] && Media.PlayerCache[handle].audioRecorder) ? 1 : 0;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nGetDuration.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nGetDuration.(I)I"] = function(handle) {
     return Media.PlayerCache[handle].getDuration();
-})
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I", function(handle, locator) {
-    console.warn("com/sun/mmedia/DirectRecord.nSetLocator.(I)I not implemented.");
-    return -1;
-});
+Native["com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I"] = function(handle, locator) {
+    // Let the DirectRecord class handle writing to files / uploading via HTTP
+    return 0;
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nGetRecordedSize.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectRecord.nGetRecordedSize.(I)I"] = function(handle) {
     return Media.PlayerCache[handle].getRecordedSize();
-});
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nGetRecordedData.(III[B)I", function(handle, offset, size, buffer) {
+Native["com/sun/mmedia/DirectRecord.nGetRecordedData.(III[B)I"] = function(handle, offset, size, buffer) {
     Media.PlayerCache[handle].getRecordedData(offset, size, buffer);
     return 1;
-});
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nCommit.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectRecord.nCommit.(I)I"] = function(handle) {
     // In DirectRecord.java, before nCommit, nPause or nStop is called,
     // which means all the recorded data has been fetched, so do nothing here.
     return 1;
-});
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nPause.(I)I", function(handle) {
-    return Media.PlayerCache[handle].audioRecorder.pause();
-}, true);
+Native["com/sun/mmedia/DirectRecord.nPause.(I)I"] = function(handle) {
+    asyncImpl("I", Media.PlayerCache[handle].audioRecorder.pause());
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nStop.(I)I", function(handle) {
-    return Media.PlayerCache[handle].audioRecorder.stop();
-}, true);
+Native["com/sun/mmedia/DirectRecord.nStop.(I)I"] = function(handle) {
+    asyncImpl("I", Media.PlayerCache[handle].audioRecorder.stop());
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nClose.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectRecord.nClose.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
 
     if (!player || !player.audioRecorder) {
         // We need to check if |audioRecorder| is still available, because |nClose|
         // might be called twice in DirectRecord.java, and only IOException is
         // handled in DirectRecord.java, let use IOException instead of IllegalStateException.
-        throw new JavaException("java/io/IOException");
+        throw $.newIOException();
     }
 
-    return player.audioRecorder.close().then(function(result) {
+    asyncImpl("I", player.audioRecorder.close().then(function(result) {
        delete player.audioRecorder;
        return result;
-    });
-}, true);
+    }));
+};
 
-Native.create("com/sun/mmedia/DirectRecord.nStart.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectRecord.nStart.(I)I"] = function(handle) {
     // In DirectRecord.java, nStart plays two roles: real start and resume.
     // Let's handle this on the other side of the DumbPipe.
-    return Media.PlayerCache[handle].audioRecorder.start();
-}, true);
+    asyncImpl("I", Media.PlayerCache[handle].audioRecorder.start());
+};
+
+Native["com/sun/mmedia/DirectRecord.nGetRecordedType.(I)Ljava/lang/String;"] = function(handle) {
+    return J2ME.newString(Media.PlayerCache[handle].audioRecorder.getContentType());
+};
 
 /**
  * @return the volume level between 0 and 100 if succeeded. Otherwise -1.
  */
-Native.create("com/sun/mmedia/DirectVolume.nGetVolume.(I)I", function(handle) {
+Native["com/sun/mmedia/DirectVolume.nGetVolume.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
     return player.getVolume();
-});
+};
 
 /**
  * @param level The volume level between 0 and 100.
  * @return the volume level set between 0 and 100 if succeeded. Otherwise -1.
  */
-Native.create("com/sun/mmedia/DirectVolume.nSetVolume.(II)I", function(handle, level) {
+Native["com/sun/mmedia/DirectVolume.nSetVolume.(II)I"] = function(handle, level) {
     var player = Media.PlayerCache[handle];
-    return player.setVolume(level);
-});
+    player.setVolume(level);
+    return level;
+};
 
-Native.create("com/sun/mmedia/DirectVolume.nIsMuted.(I)Z", function(handle) {
+Native["com/sun/mmedia/DirectVolume.nIsMuted.(I)Z"] = function(handle) {
     var player = Media.PlayerCache[handle];
-    return player.getMute();
-});
+    return player.getMute() ? 1 : 0;
+};
 
-Native.create("com/sun/mmedia/DirectVolume.nSetMute.(IZ)Z", function(handle, mute) {
+Native["com/sun/mmedia/DirectVolume.nSetMute.(IZ)Z"] = function(handle, mute) {
     var player = Media.PlayerCache[handle];
     player.setMute(mute);
-    return true;
-});
+    return 1;
+};
 
 Media.TonePlayerCache = {
 };
@@ -1293,42 +1247,42 @@ TonePlayer.prototype.stopTone = function() {
     this.gainNode.gain.linearRampToValueAtTime(0, current + TonePlayer.FADE_TIME);
 };
 
-Native.create("com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z", function(appId, note, duration, volume) {
+Native["com/sun/mmedia/NativeTonePlayer.nPlayTone.(IIII)Z"] = function(appId, note, duration, volume) {
     if (!Media.TonePlayerCache[appId]) {
         Media.TonePlayerCache[appId] = new TonePlayer();
     }
     Media.TonePlayerCache[appId].playTone(note, duration, volume);
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z", function(appId) {
+Native["com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z"] = function(appId) {
     Media.TonePlayerCache[appId].stopTone();
-    return true;
-});
+    return 1;
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V", function(handle, imageType) {
+Native["com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V"] = function(handle, imageType) {
     Media.PlayerCache[handle].startSnapshot(util.fromJavaString(imageType));
-});
+};
 
-Native.create("com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B", function(handle) {
+Native["com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B"] = function(handle) {
     return Media.PlayerCache[handle].getSnapshotData();
-});
+};
 
-Native.create("com/sun/amms/GlobalMgrImpl.nCreatePeer.()I", function() {
+Native["com/sun/amms/GlobalMgrImpl.nCreatePeer.()I"] = function() {
     console.warn("com/sun/amms/GlobalMgrImpl.nCreatePeer.()I not implemented.");
     return 1;
-});
+};
 
-Native.create("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I", function(typeName) {
+Native["com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I"] = function(typeName) {
     console.warn("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I not implemented.");
     return 2;
-});
+};
 
-Native.create("com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V", function(mute) {
+Native["com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V"] = function(mute) {
     console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nSetMute.(Z)V not implemented.");
-});
+};
 
-Native.create("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I", function() {
+Native["com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I"] = function() {
     console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I not implemented.");
     return 100;
-});
+};

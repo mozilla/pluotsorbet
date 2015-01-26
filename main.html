@@ -6,32 +6,28 @@
   <link rel="stylesheet" type="text/css" href="style/main.css">
   <link rel="stylesheet" type="text/css" href="style/confirm.css">
   <link rel="stylesheet" type="text/css" href="style/progress_activity.css">
+  <link rel="stylesheet" type="text/css" href="style/headers.css">
+  <link rel="stylesheet" type="text/css" href="style/drawer.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
-  <script type="text/javascript" src="libs/urlparams.js" defer></script>
+  <script type="text/javascript" src="config/default.js" defer></script>
+  <script type="text/javascript" src="config/midlet.js" defer></script>
+  <script type="text/javascript" src="config/build.js" defer></script>
+  <script type="text/javascript" src="config/urlparams.js" defer></script>
+  <!-- Uncomment the line below to enable the profiler. -->
+  <!--<script type="text/javascript" src="build/shumway.js" defer></script>-->
+  <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
   <script type="text/javascript" src="libs/console.js" defer></script>
+  <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
+  <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
-  <script type="text/javascript" src="classfile/reader.js" defer></script>
-  <script type="text/javascript" src="classfile/accessflags.js" defer></script>
-  <script type="text/javascript" src="classfile/attributetypes.js" defer></script>
-  <script type="text/javascript" src="classfile/classfile.js" defer></script>
-  <script type="text/javascript" src="classfile/tags.js" defer></script>
-  <script type="text/javascript" src="classinfo.js" defer></script>
-  <script type="text/javascript" src="arrays.js" defer></script>
-  <script type="text/javascript" src="signature.js" defer></script>
-  <script type="text/javascript" src="opcodes.js" defer></script>
-  <script type="text/javascript" src="classes.js" defer></script>
+  <script type="text/javascript" src="build/j2me.js" defer></script>
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="string.js" defer></script>
-  <script type="text/javascript" src="frame.js" defer></script>
-  <script type="text/javascript" src="vm.js" defer></script>
-  <script type="text/javascript" src="runtime.js" defer></script>
   <script type="text/javascript" src="instrument.js" defer></script>
-  <script type="text/javascript" src="context.js" defer></script>
-  <script type="text/javascript" src="jvm.js" defer></script>
   <script type="text/javascript" src="libs/load.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
   <script type="text/javascript" src="libs/long.js" defer></script>
@@ -41,14 +37,13 @@
   <script type="text/javascript" src="libs/rusha.js" defer></script>
   <script type="text/javascript" src="libs/forge/util.js" defer></script>
   <script type="text/javascript" src="libs/forge/md5.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn2.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn/jsbn.js" defer></script>
+  <script type="text/javascript" src="libs/jsbn/jsbn2.js" defer></script>
   <script type="text/javascript" src="libs/contacts.js" defer></script>
-  <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
   <script type="text/javascript" src="libs/pipe.js" defer></script>
   <script type="text/javascript" src="libs/contact2vcard.js" defer></script>
   <script type="text/javascript" src="libs/emoji.js" defer></script>
-  <script type="text/javascript" src="libs/FileSaver.js" defer></script>
+  <script type="text/javascript" src="libs/FileSaver/FileSaver.js" defer></script>
   <script type="text/javascript" src="midp/midp.js" defer></script>
   <script type="text/javascript" src="midp/frameanimator.js" defer></script>
   <script type="text/javascript" src="midp/fs.js" defer></script>
@@ -63,20 +58,44 @@
   <script type="text/javascript" src="midp/pim.js" defer></script>
   <script type="text/javascript" src="midp/device_control.js" defer></script>
   <script type="text/javascript" src="game-ui.js" defer></script>
-  <script type="text/javascript" src="desktop-ui.js" defer></script>
+
+  <!-- run make aot to generate these -->
+  <!--<script type="text/javascript" src="build/classes.jar.js" defer></script>-->
+  <!--<script type="text/javascript" src="build/program.jar.js" defer></script>-->
+  <!--<script type="text/javascript" src="build/tests.jar.js" defer></script>-->
   <script type="text/javascript" src="main.js" defer></script>
-  <script type="text/javascript" src="midlet.js" defer></script>
 </head>
 
 <body>
-  <pre id="console"></pre>
+  <div id="pageContainer">
+    <pre id="consoleContainer">
+    </pre>
+    <div id="profilerContainer">
+      <div id="profilerToolbar">
+        <div class="toolbarLabel">Profiler <span id="profilerMessage" class="toolbarMessage">6 Seconds</span></div>
+        <div id="profilerButtons">
+          <div id="profilerStartStop">Start</div>
+        </div>
+      </div>
+      <div id="profiler">
+        <div id="profileList">
+        </div>
+        <div id="profilePanel">
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- The raw console is used for unit tests, so it's not visible by default: -->
   <pre id="raw-console" style="display: none"></pre>
 
   <div id="settings">
     <section>
-      <div>x,y <span id="xy"></span></div>
+      <div>BytecodeCount: <span id="bytecodeCount"></span></div>
+      <div>InterpreterCount: <span id="interpreterCount"></span></div>
+      <div>CompiledCount: <span id="compiledCount"></span></div>
+      <div>OnStackReplacementCount: <span id="onStackReplacementCount"></span></div>
+      <div>UnwindCount: <span id="unwindCount"></span></div>
     </section>
     <section>
       <select id="loglevel">
@@ -89,19 +108,50 @@
       </select>
       <input id="console-filter-input" type="text" placeholder="Filter Console Output" value="">
       <button id="console-clear">Clear console</button>
-      <label><input type="checkbox" id="auto-scroll" checked>Auto-Scroll At Bottom</label>
+      <button id="console-save">Save console</button>
+      <label><input type="checkbox" id="perfWriter">Perf</label>
     </section>
     <section>
-      <button id="clearstorage">Clear storage</button>
+      <button id="deleteDatabase">Delete Database</button>
       <button id="exportstorage">Export storage</button>
       <div>Import storage:</div>
-      <input type="file" id="importstorage">
+      <input type="file" id="importstoragefile">
+      <input type="text" id="importstorageurl" placeholder="URL to FS backup">
+      <button id="importstorage">Import</button>
       <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
       <button id="profile">Profile: OFF</button>
+      <button id="clearCounters">Clear Counters</button>
+      <button id="dumpCounters">Dump Counters</button>
+      <button id="sampleCounters1">One sample for 1s</button>
+      <button id="sampleCounters2">One sample for 100ms (2s)</button>
+      <button id="start">Start</button>
+      <button id="loadAllClasses">Load All Classes</button>
     </section>
   </div>
-  <div id="display"><canvas id="canvas"></canvas></div>
+  <div id="display">
+    <section id="sidebar" data-type="sidebar" style="display:none">
+      <header>
+        <h1>Menu</h1>
+      </header>
+      <nav>
+        <ul>
+        </ul>
+      </nav>
+    </section>
+    <section id="drawer" role="region">
+      <header style="display:none">
+        <a href="#"><span class="icon icon-menu">hide sidebar</span></a>
+        <a id="header-drawer-button" href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <menu id="header-ok-button" type="toolbar" style="display:none"><button>√</button></menu>
+        <h1 id="display_title"></h1>
+      </header>
+      <div id="main" role="main">
+        <canvas id="canvas"></canvas>
+        <button id="back-button">Back</button>
+      </div>
+    </section>
+  </div>
   <div id="gamepad">
     <button id="up">up</button>
     <button id="down">down</button>
@@ -109,6 +159,27 @@
     <button id="right">right</button>
     <button id="fire">fire</button>
   </div>
+
+  <div class="splash-screen" id="splash-screen">
+    <h1 class="title">Loading</h1>
+    <div class="splash-progress-container">
+      <progress></progress>
+    </div>
+  </div>
+
+  <form role="dialog" data-type="confirm"
+        class="lcdui-alert"
+        id="lcdui-alert" style="display: none">
+    <section>
+      <h1 class="title"></h1>
+      <p class="text"></p>
+      <p style="border-top: 0"><progress style="display: none"></progress></p>
+    </section>
+    <menu>
+      <button class="button0" style="display: none"></button>
+      <button class="button1" style="display: none"></button>
+    </menu>
+  </form>
 
   <form role="dialog" data-type="confirm"
         class="sms-listener-prompt"
@@ -146,7 +217,7 @@
       <h1 class="download-dialog-text"></h1>
       <progress class="pack-activity" value="0" max="100"></progress>
     </section>
-    <menu style="text-align: center">
+    <menu>
       <button class="recommend" style="display: none">Retry</button>
     </menu>
   </form>

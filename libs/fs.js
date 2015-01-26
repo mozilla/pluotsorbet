@@ -1,6 +1,6 @@
 'use strict';
 
-var DEBUG_FS = false;
+var DEBUG_FS = true;
 
 var fs = (function() {
   var reportRequestError = function(type, request) {
@@ -634,7 +634,7 @@ var fs = (function() {
     var record = store.getItem(path);
 
     if (!record) {
-      return true;
+      return false;
     }
 
     // If it's a directory that isn't empty, then we can't remove it.
@@ -782,22 +782,16 @@ var fs = (function() {
     if (oldRecord.isDir) {
       for (var value of store.map.values()) {
         if (value && value.parentDir === oldPath) {
+          console.error("rename directory containing files not implemented: " + oldPath + " to " + newPath);
           return false;
         }
       }
     }
 
-    // XXX Remove already checks if the directory is empty, so we shouldn't
-    // do that above as well.
-    if (remove(oldPath)) {
-      if (oldRecord.isDir) {
-        // XXX This'll update the directory's mtime, which is probably not what
-        // should happen to a directory that is only moved.
-        return mkdir(newPath);
-      } else {
-        return create(newPath, oldRecord.data);
-      }
-    }
+    store.removeItem(oldPath);
+    oldRecord.parentDir = dirname(newPath);
+    store.setItem(newPath, oldRecord);
+    return true;
   }
 
   function stat(path) {

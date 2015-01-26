@@ -9,6 +9,7 @@ import com.nokia.mid.s40.codec.DataEncoder;
 import com.nokia.mid.s40.codec.DataDecoder;
 import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
+import gnu.testlet.TestUtils;
 
 public class TestNokiaImageProcessingInMultiThread implements Testlet {
     LocalMessageProtocolConnection client;
@@ -23,33 +24,16 @@ public class TestNokiaImageProcessingInMultiThread implements Testlet {
             this.th = th;
         }
 
-        byte[] read(InputStream is) throws IOException {
-            int l = is.available();
-            byte[] buffer = new byte[l+1];
-            int length = 0;
-
-            while ((l = is.read(buffer, length, buffer.length - length)) != -1) {
-                length += l;
-                if (length == buffer.length) {
-                    byte[] b = new byte[buffer.length + 4096];
-                    System.arraycopy(buffer, 0, b, 0, length);
-                    buffer = b;
-                }
-            }
-
-            return buffer;
-        }
-
         public void run() {
             try {
                 LocalMessageProtocolConnection client = (LocalMessageProtocolConnection)Connector.open("localmsg://" + PROTO_NAME);
-                FileConnection originalImage = (FileConnection)Connector.open("file:///" + this.name, Connector.READ_WRITE);
+                FileConnection originalImage = (FileConnection)Connector.open("file:////" + this.name, Connector.READ_WRITE);
                 if (!originalImage.exists()) {
                     originalImage.create();
                 }
                 OutputStream os = originalImage.openDataOutputStream();
                 InputStream is = TestNokiaImageProcessingInMultiThread.class.getResourceAsStream("test.jpg");
-                os.write(read(is));
+                os.write(TestUtils.read(is));
                 os.close();
 
                 DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
@@ -76,7 +60,7 @@ public class TestNokiaImageProcessingInMultiThread implements Testlet {
                 th.check(dataDecoder.getString(13), "Scale");
                 th.check(dataDecoder.getInteger(2), 42);
                 th.check(dataDecoder.getString(10), "Complete");
-                String path = "file:///" + dataDecoder.getString(11);
+                String path = "file:////" + dataDecoder.getString(11);
 
                 FileConnection file = (FileConnection)Connector.open(path);
                 th.check(file.exists(), "File exists");

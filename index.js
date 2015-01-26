@@ -7,11 +7,14 @@
  * Pre-load dependencies and then load the main page.
  */
 (function() {
-  var midletClassName = urlParams.midletClassName ? urlParams.midletClassName.replace(/\//g, '.') : "RunTests";
   var loadingPromises = [];
-  if (midletClassName == "RunTests") {
+  if (config.midletClassName == "RunTests") {
     loadingPromises.push(loadScript("tests/contacts.js"),
                          loadScript("tests/index.js"));
+  }
+
+  if (navigator.userAgent.indexOf('Chrome') > -1) {
+    loadingPromises.push(loadScript("chrome_polyfills.js"));
   }
 
   Promise.all(loadingPromises).then(function() {
@@ -128,13 +131,13 @@ DumbPipe.registerOpener("mobileInfo", function(message, sender) {
   // for testing/debugging on a desktop.
   var mobileInfo = {
     network: {
-      mcc: urlParams.network_mcc || "310", // United States
-      mnc: urlParams.network_mnc || "001",
+      mcc: config.network_mcc || "310", // United States
+      mnc: config.network_mnc || "001",
     },
     icc: {
-      mcc: urlParams.icc_mcc || "310", // United States
-      mnc: urlParams.icc_mnc || "001",
-      msisdn: urlParams.icc_msisdn || "10005551212",
+      mcc: config.icc_mcc || "310", // United States
+      mnc: config.icc_mnc || "001",
+      msisdn: config.icc_msisdn || "10005551212",
     },
   };
 
@@ -334,6 +337,7 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
 
 DumbPipe.registerOpener("camera", function(message, sender) {
   var mediaStream = null;
+  var url = null;
 
   var video = document.createElement("video");
   document.body.appendChild(video);
@@ -359,8 +363,13 @@ DumbPipe.registerOpener("camera", function(message, sender) {
     audio: false,
   }, function(localMediaStream) {
     mediaStream = localMediaStream;
+    url = URL.createObjectURL(localMediaStream);
 
-    video.src = URL.createObjectURL(localMediaStream);
+    video.onerror = video.onloadeddata = function() {
+      URL.revokeObjectURL(url);
+    };
+
+    video.src = url;
     video.play();
   }, function(err) {
     console.log("Error: " + err);
@@ -441,6 +450,15 @@ DumbPipe.registerOpener("notification", function(message, sender) {
       notification.onshow = function() {
         sender({ type: "opened" });
       };
+      notification.onclick = function() {
+        var request = navigator.mozApps.getSelf();
+        request.onsuccess = function() {
+          var app = request.result;
+          if (app) {
+            app.launch();
+          }
+        };
+      };
     }
 
     if (Notification.permission === "granted") {
@@ -472,12 +490,12 @@ DumbPipe.registerOpener("notification", function(message, sender) {
   }
 });
 
-DumbPipe.registerOpener("JARDownloader", function(message, sender) {
-  loadWithProgress(urlParams.downloadJAD, "text", function(data) {
+DumbPipe.registerOpener("JARDownloader", function(url, sender) {
+  loadWithProgress(url, "text", function(jadData) {
     try {
       var manifest = {};
 
-      data
+      jadData
       .replace(/\r\n|\r/g, "\n")
       .replace(/\n /g, "")
       .split("\n")
@@ -494,11 +512,11 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
 
       if (!jarURL.startsWith("http")) {
         var jarName = jarURL.substring(jarURL.lastIndexOf("/") + 1);
-        jarURL = urlParams.downloadJAD.substring(0, urlParams.downloadJAD.lastIndexOf("/") + 1) + jarName;
+        jarURL = url.substring(0, url.lastIndexOf("/") + 1) + jarName;
       }
 
-      loadWithProgress(jarURL, "arraybuffer", function(data) {
-        sender({ type: "done", data: data });
+      loadWithProgress(jarURL, "arraybuffer", function(jarData) {
+        sender({ type: "done", data: { jadData: jadData, jarData: jarData } });
       }, function() {
         sender({ type: "fail" });
       }, function(progress) {
@@ -510,4 +528,16 @@ DumbPipe.registerOpener("JARDownloader", function(message, sender) {
   }, function() {
     sender({ type: "fail" });
   });
+});
+
+DumbPipe.registerOpener("windowOpen", function(message, sender) {
+  window.open(message);
+});
+
+DumbPipe.registerOpener("reload", function(message, sender) {
+  window.location.reload();
+});
+
+DumbPipe.registerOpener("exit", function(message, sender) {
+  window.close();
 });

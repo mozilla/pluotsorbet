@@ -91,7 +91,7 @@ public class FileUIMIDlet extends MIDlet {
             dataDecoder.getStart(14);
             dataDecoder.getString(10);
             dataDecoder.getString(11);
-            String path = "file:///" + dataDecoder.getString(11);
+            String path = "file:////" + dataDecoder.getString(11);
             dataDecoder.getBoolean();
             dataDecoder.getInteger(7);
             dataDecoder.getEnd(14);

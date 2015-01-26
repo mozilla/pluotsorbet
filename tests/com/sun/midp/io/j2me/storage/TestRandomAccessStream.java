@@ -53,10 +53,26 @@ public class TestRandomAccessStream implements Testlet {
             th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
+
+        exceptionThrown = false;
+        try {
+            ras.connect("afile2", Connector.READ);
+        } catch(IOException e) {
+            exceptionThrown = true;
+        }
+        th.check(exceptionThrown);
+
+        exceptionThrown = false;
+        try {
+            ras.connect("adir/afile", Connector.READ);
+        } catch(IOException e) {
+            exceptionThrown = true;
+        }
+        th.check(exceptionThrown);
     }
 
     void cleanup() throws IOException {
-        FileConnection file = (FileConnection)Connector.open("file:///afile");
+        FileConnection file = (FileConnection)Connector.open("file:////afile");
         file.delete();
         file.close();
     }

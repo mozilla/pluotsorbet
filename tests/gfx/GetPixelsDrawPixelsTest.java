@@ -5,7 +5,6 @@ import javax.microedition.midlet.*;
 import com.nokia.mid.ui.*;
 
 public class GetPixelsDrawPixelsTest extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
@@ -40,6 +39,7 @@ public class GetPixelsDrawPixelsTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

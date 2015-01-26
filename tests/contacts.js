@@ -1,7 +1,14 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-var fakeContacts = [{
+var fakeContacts = [
+{
+  id: 0,
+  name: ["Test Contact 0"],
+  familyName: ["Contact 0"],
+  tel: null,
+},
+{
   id: 1,
   name: ["Test Contact 1"],
   familyName: ["Contact 1"],
@@ -34,7 +41,41 @@ var fakeContacts = [{
     value: "+16505550103",
     carrier: "C4",
   },],
+},
+{
+  id: 3,
+  name: ["Test Contact 3"],
+  familyName: ["Contact 3"],
+  tel: null,
+},
+{
+  id: 4,
+  name: ["Test Contact 4"],
+  familyName: ["Contact 4"],
+  tel: null,
+},
+{
+  id: 5,
+  name: ["Test Contact 5"],
+  familyName: ["Contact 5"],
+  tel: [{
+    type: ["home"],
+    pref: true,
+    value: "+16505550104",
+    carrier: "C5",
+  },
+  {
+    type: ["work"],
+    pref: false,
+    value: "+16505550105",
+    carrier: "C6",
+  },],
 },];
+
+// Polyfill to enable testing in chrome.
+if (typeof mozContact === "undefined") {
+  function mozContact() {}
+}
 
 // Turn the contact object into a mozContact to make the testing
 // environment more similar to reality.

@@ -6,11 +6,13 @@ import javax.microedition.midlet.*;
 import com.nokia.mid.ui.*;
 
 public class CreateImageWithRegionTest extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics screenG) {
+            screenG.setColor(0x00FFFFFF);
+            screenG.fillRect(0, 0, getWidth(), getHeight());
+
             Image image;
             try {
                 image = Image.createImage("/gfx/images/FirefoxLogo.png");
@@ -39,6 +41,7 @@ public class CreateImageWithRegionTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 

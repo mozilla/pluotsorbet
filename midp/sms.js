@@ -92,7 +92,10 @@ function promptForMessageText() {
                                                  " " + MIDlet.SMSDialogTimeoutText;
 
     document.body.appendChild(el);
-    input.focus();
+    if (currentlyFocusedTextEditor) {
+      currentlyFocusedTextEditor.blur();
+      currentlyFocusedTextEditor = null;
+    }
 
     var elapsedMS = 0;
     var intervalID = setInterval(function() {
@@ -109,7 +112,7 @@ function promptForMessageText() {
     }, MIDlet.SMSDialogTimeout);
 }
 
-Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I", function(host, msid, port) {
+Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(host, msid, port) {
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
@@ -117,11 +120,11 @@ Native.create("com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I",
     };
 
     return ++MIDP.lastSMSConnection;
-});
+};
 
-Native.create("com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I",
+Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] =
 function(port, msid, handle, smsPacket) {
-    return new Promise(function(resolve, reject) {
+    asyncImpl("I", new Promise(function(resolve, reject) {
         promptForMessageText();
 
         function receiveSMS() {
@@ -139,11 +142,11 @@ function(port, msid, handle, smsPacket) {
                 address[i] = addr.charCodeAt(i);
             }
 
-            smsPacket.class.getField("I.message.[B").set(smsPacket, message);
-            smsPacket.class.getField("I.address.[B").set(smsPacket, address);
-            smsPacket.class.getField("I.port.I").set(smsPacket, port);
-            smsPacket.class.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
-            smsPacket.class.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
+            smsPacket.klass.classInfo.getField("I.message.[B").set(smsPacket, message);
+            smsPacket.klass.classInfo.getField("I.address.[B").set(smsPacket, address);
+            smsPacket.klass.classInfo.getField("I.port.I").set(smsPacket, port);
+            smsPacket.klass.classInfo.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
+            smsPacket.klass.classInfo.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
 
             return text.length;
         }
@@ -156,22 +159,23 @@ function(port, msid, handle, smsPacket) {
             resolve(receiveSMS());
           }
         }
-    });
-}, true);
+    }));
+};
 
-Native.create("com/sun/midp/io/j2me/sms/Protocol.close0.(III)I", function(port, handle, deRegister) {
+Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(port, handle, deRegister) {
     delete MIDP.smsConnections[handle];
     return 0;
-});
+};
 
-Native.create("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I", function(msgBuffer, msgLen, msgType, hasPort) {
+Native["com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I"] = function(msgBuffer, msgLen, msgType, hasPort) {
     console.warn("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I not implemented");
     return 1;
-});
+};
 
-Native.create("com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I",
+Native["com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I"] =
 function(handle, type, host, destPort, sourcePort, message) {
-    return new Promise(function(resolve, reject) {
+    var ctx = $.ctx;
+    asyncImpl("I", new Promise(function(resolve, reject) {
         var activity = new MozActivity({
             name: "new",
             data: {
@@ -186,7 +190,8 @@ function(handle, type, host, destPort, sourcePort, message) {
         };
 
         activity.onerror = function() {
-          reject(new JavaException("java/io/IOException", "Error while sending SMS message"));
+          ctx.setAsCurrentContext();
+          reject($.newIOException("Error while sending SMS message"));
         };
-    });
-}, true);
+    }));
+};

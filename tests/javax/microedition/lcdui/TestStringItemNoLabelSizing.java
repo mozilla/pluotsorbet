@@ -65,12 +65,12 @@ public class TestStringItemNoLabelSizing implements Testlet {
     private void checkSizes(StringItem si, int expectedW, int expectedH) {
         int w = getW(si);
         int h = getH(si);
-        if (expectedW != 0) {
-            th.todo(expectedW, w);
-            th.todo(expectedH, h);
-        } else {
+        if (expectedW == w && expectedH == h) {
             th.check(expectedW, w);
             th.check(expectedH, h);
+        } else {
+            th.todo(expectedW, w);
+            th.todo(expectedH, h);
         }
     }
 

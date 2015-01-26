@@ -12,6 +12,7 @@
 
 .method public test(Lgnu/testlet/TestHarness;)V
    .limit stack 2
+   .limit locals 2
 
    aload_1
    iconst_1

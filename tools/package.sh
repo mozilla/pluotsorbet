@@ -7,9 +7,11 @@ PACKAGE_DIR="output"
 
 rm -rf $PACKAGE_DIR/
 mkdir $PACKAGE_DIR
+mkdir $PACKAGE_DIR/build
 
 # setup the root
 cp *.js *.html *.webapp $PACKAGE_DIR/.
+cp build/j2me.js $PACKAGE_DIR/build/.
 
 # copy over jars/jads that are used for the webapp
 # NB: we could be smart about this and parse the manifest, patches welcome!
@@ -29,6 +31,12 @@ cp -R classfile $PACKAGE_DIR/.
 # copy entire contents of libs dir
 cp -R libs $PACKAGE_DIR/.
 
+# copy entire contents of config dir
+cp -R config $PACKAGE_DIR/.
+
+# Merge app.js into a config file that gets loaded.
+cat $PACKAGE_DIR/config/app.js >> $PACKAGE_DIR/config/midlet.js && rm $PACKAGE_DIR/config/app.js
+
 # copy entire contents of midp dir
 cp -R midp $PACKAGE_DIR/.
 
@@ -40,3 +48,6 @@ mkdir $PACKAGE_DIR/tests
 cp tests/tests.jar $PACKAGE_DIR/tests/.
 cp tests/*.js $PACKAGE_DIR/tests/.
 
+# copy icons
+mkdir $PACKAGE_DIR/img
+cp img/*.png $PACKAGE_DIR/img/.

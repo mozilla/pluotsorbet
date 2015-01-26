@@ -5,8 +5,14 @@
 
 // Directories in the filesystem.
 var initialDirs = [
+  "/MemoryCard",
   "/Persistent",
-  "/Photos",
+  "/Phone",
+  "/Phone/_my_downloads",
+  "/Phone/_my_pictures",
+  "/Phone/_my_videos",
+  "/Phone/_my_recordings",
+  "/Private",
 ];
 
 // Files in the filesystem.  We load the data from the source path on the real
@@ -19,13 +25,17 @@ var initialFiles = [
 var initFS = new Promise(function(resolve, reject) {
   fs.init(resolve);
 }).then(function() {
+  if (typeof config !== "undefined" && config.midletClassName == "RunTests") {
+    initialDirs.push("/tcktestdir");
+  }
+
   initialDirs.forEach(function(dir) {
     fs.mkdir(dir);
   });
 }).then(function() {
   var filePromises = [];
 
-  if (typeof MIDP !== "undefined" && MIDP.midletClassName == "RunTests") {
+  if (typeof config !== "undefined" && config.midletClassName == "RunTests") {
     initialFiles.push({ sourcePath: "certs/_test.ks", targetPath: "/_test.ks" });
   }
 

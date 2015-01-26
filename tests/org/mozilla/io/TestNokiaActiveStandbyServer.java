@@ -10,6 +10,7 @@ import com.nokia.mid.ui.lcdui.Indicator;
 import com.nokia.mid.ui.lcdui.IndicatorManager;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
+import gnu.testlet.TestUtils;
 
 public class TestNokiaActiveStandbyServer implements Testlet {
     LocalMessageProtocolConnection client;
@@ -78,26 +79,9 @@ public class TestNokiaActiveStandbyServer implements Testlet {
         dataDecoder.getInteger(4);
     }
 
-    byte[] read(InputStream is) throws IOException {
-        int l = is.available();
-        byte[] buffer = new byte[l+1];
-        int length = 0;
-
-        while ((l = is.read(buffer, length, buffer.length - length)) != -1) {
-            length += l;
-            if (length == buffer.length) {
-                byte[] b = new byte[buffer.length + 4096];
-                System.arraycopy(buffer, 0, b, 0, length);
-                buffer = b;
-            }
-        }
-
-        return buffer;
-    }
-
     public void testUpdate(TestHarness th) throws IOException {
         InputStream is = getClass().getResourceAsStream("/gfx/images/FirefoxLogo.png");
-        byte[] icon = read(is);
+        byte[] icon = TestUtils.read(is);
 
         DataEncoder dataEncoder = new DataEncoder("Conv-BEB");
         dataEncoder.put(13, "name", "Update");

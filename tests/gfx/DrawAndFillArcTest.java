@@ -4,11 +4,13 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 
 public class DrawAndFillArcTest extends MIDlet {
-    private Command quitCommand;
     private Display display;
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
             g.setColor(255, 0, 0);
             g.drawArc(getWidth() / 2, getHeight() / 2, getWidth(), getHeight(), 90, 300);
             g.setColor(0, 0, 255);
@@ -23,6 +25,7 @@ public class DrawAndFillArcTest extends MIDlet {
 
     public void startApp() {
         TestCanvas test = new TestCanvas();
+        test.setFullScreenMode(true);
         display.setCurrent(test);
     }
 
