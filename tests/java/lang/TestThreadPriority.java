@@ -22,6 +22,10 @@ public class TestThreadPriority implements Testlet {
             new Prioritized(priorities[i]).start();
         }
 
+        // The priority of the main thread is 5. Threads with higher priorities
+        // should preempt the main thread to run first.
+        th.check(result, "9 7 ");
+
         String expected = "9 7 5 1 ";
         try {
             while (result.length() < expected.length()) {
