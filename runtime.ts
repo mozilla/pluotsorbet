@@ -97,6 +97,7 @@ module J2ME {
 
   export var timeline;
   export var methodTimeline;
+  export var threadTimeline;
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
   export var baselineMethodCounter = new Metrics.Counter(true);
@@ -108,6 +109,7 @@ module J2ME {
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
     methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
+    threadTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Threads");
   }
 
   export function enterTimeline(name: string, data?: any) {
