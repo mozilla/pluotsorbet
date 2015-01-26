@@ -13,7 +13,7 @@ var MIDlet = {
     return message;
   },
 
-  wakeUpAlarm: 60000,
+  wakeUpAlarm: 60000, // ms, i.e. 60 seconds
 };
 
 var config = {
