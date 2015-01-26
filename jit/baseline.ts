@@ -126,8 +126,9 @@ module J2ME {
       case Kind.Short:
         return "Int16Array";
       case Kind.Byte:
-      case Kind.Boolean:
         return "Int8Array";
+      case Kind.Boolean:
+        return "Uint8Array";
       case Kind.Float:
         return "Float32Array";
       case Kind.Long:
