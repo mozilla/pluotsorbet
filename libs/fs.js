@@ -176,18 +176,14 @@ var fs = (function() {
       if (DEBUG_FS) { console.log("getAll initiated"); }
       var objectStore = transaction.objectStore(Store.DBSTORENAME);
       var then = performance.now();
-      var req = objectStore.openCursor();
-      req.onsuccess = (function(event) {
-        var cursor = event.target.result;
-        if (cursor) {
-          this.map.set(cursor.key, cursor.value);
-          cursor.continue();
-        }
-      }).bind(this);
-      transaction.oncomplete = function() {
+      objectStore.mozGetAll().onsuccess = (function(event) {
+        var records = event.target.result;
+        for (var i = 0; i < records.length; ++i) {
+          this.map.set(records[i].pathname, records[i]);
+        };
         if (DEBUG_FS) { console.log("getAll completed in " + (performance.now() - then) + "ms"); }
         cb();
-      };
+      }).bind(this);
     }).bind(this);
   };
 
