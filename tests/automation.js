@@ -65,8 +65,8 @@ var gfxTests = [
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
   { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferent: 1145 },
-  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 178 },
+  { name: "gfx/TextEditorGfxTest", maxDifferent: 0 },
+  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 0 },
 ];
 
 var expectedUnitTestResults = [
@@ -240,7 +240,7 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?fontSize=10&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page")
+        .thenOpen("http://localhost:8000/index.html?fontSize=12&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {
