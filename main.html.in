@@ -158,6 +158,8 @@
       </header>
       <div id="main" role="main">
         <canvas id="canvas" style="image-rendering: -moz-crisp-edges"></canvas>
+        <input id="password-editor" class="text-editor" type="password" style="opacity:0;z-index:-999">
+        <div id="textarea-editor" class="text-editor" contenteditable="true" style="opacity:0;z-index:-999"></div>
         <button id="back-button">Back</button>
       </div>
     </section>

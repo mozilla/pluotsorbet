@@ -319,3 +319,10 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   border: none;
   border-bottom: 1px solid #555;
 }
+
+/* Styles for text editors */
+.text-editor {
+  position: absolute;
+  border: none;
+  resize: none;
+}

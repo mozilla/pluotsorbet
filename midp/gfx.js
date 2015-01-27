@@ -1479,8 +1479,6 @@ var currentlyFocusedTextEditor;
         this.visible = false;
         this.backgroundColor = 0xFFFFFFFF | 0; // opaque white
         this.foregroundColor = 0xFF000000 | 0; // opaque black
-        this.textEditor.setStyle("border", "none");
-        this.textEditor.setStyle("resize", "none");
         this.textEditor.setStyle("backgroundColor", abgrIntToCSS(this.backgroundColor));
         this.textEditor.setStyle("color", abgrIntToCSS(this.foregroundColor));
 
@@ -1505,7 +1503,6 @@ var currentlyFocusedTextEditor;
         this.textEditor.setAttribute("maxlength", maxSize);
         this.textEditor.setStyle("width", width + "px");
         this.textEditor.setStyle("height", height + "px");
-        this.textEditor.setStyle("position", "absolute");
         this.textEditor.setVisible(false);
         var font = this.klass.classInfo.getField("I.font.Ljavax/microedition/lcdui/Font;").get(this);
         this.textEditor.setFont(font);
