@@ -1082,7 +1082,10 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
             // It seems that one server only serves on client at a time, let's
             // store an object instead of the constructor.
             this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
-            MIDP.ConnectionRegistry.pushNotify("localmsg:" + this.protocolName);
+            localmsgServerCreated = true;
+            if (localmsgServerWait) {
+              localmsgServerWait();
+            }
         } else {
             // Actually, there should always be a server, but we need this check
             // for apps that use the Nokia built-in servers (because we haven't

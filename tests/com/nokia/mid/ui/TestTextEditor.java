@@ -70,17 +70,23 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getForegroundColor(), 0x33333333);
 
         th.check(textEditor.getLineMarginHeight(), 0);
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= tolerance, "One");
+        int value = Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight());
+        th.check(value <= tolerance, "One: " + value);
         textEditor.setMultiline(true);
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= tolerance, "Two");
+        value = Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight());
+        th.check(value <= tolerance, "Two: " + value);
         textEditor.setContent("A\nB");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= tolerance * 2, "Three");
+        value = Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2);
+        th.check(value <= tolerance * 2, "Three: " + value);
         textEditor.setContent("A\r\nB");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2) <= tolerance * 2, "Four");
+        value = Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 2);
+        th.check(value <= tolerance * 2, "Four: " + value);
         textEditor.setContent("A\nB\nC");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 3) <= tolerance * 3, "Five");
+        value = Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight() * 3);
+        th.check(value <= tolerance * 3, "Five: " + value);
         textEditor.setContent("");
-        th.check(Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight()) <= tolerance, "Six");
+        value = Math.abs(textEditor.getContentHeight() - Font.getDefaultFont().getHeight());
+        th.check(value <= tolerance, "Six: " + value);
 
         th.check(textEditor.getPositionX(), 0);
         th.check(textEditor.getPositionY(), 0);
@@ -247,7 +253,7 @@ public class TestTextEditor extends Canvas implements Testlet {
     }
 
     public void test(TestHarness th) {
-        testConstraints(th, TextField.ANY, 3);
+        testConstraints(th, TextField.ANY, 5);
         testConstraints(th, TextField.PASSWORD, 0);
         testEmoji(th);
     }

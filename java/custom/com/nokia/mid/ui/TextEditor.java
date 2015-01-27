@@ -93,10 +93,7 @@ public class TextEditor extends CanvasItem {
     // which already includes leading (margin below the text).  So we set this
     // to zero, although this will be inaccurate if the native implementation
     // adds a line margin.
-    public int getLineMarginHeight() {
-        System.out.println("TextEditor::getLineMarginHeight needs a more correct implementation");
-        return 0;
-    }
+    native public int getLineMarginHeight();
 
     native public int getContentHeight();
 
@@ -107,10 +104,7 @@ public class TextEditor extends CanvasItem {
     native public int getCaretPosition();
 
     // Gets the topmost pixel position of the topmost visible line in the editor.
-    public int getVisibleContentPosition() {
-        System.out.println("TextEditor::getVisibleContentPosition() not implemented");
-        return 0;
-    }
+    native public int getVisibleContentPosition();
 
     // Gets the font being used in rendering the text content in this TextEditor.
     public Font getFont() {

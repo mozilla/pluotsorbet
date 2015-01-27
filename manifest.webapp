@@ -40,7 +40,13 @@
     },
     "storage": {
        "description": "Required to store files without limitations"
+    },
+    "alarms": {
+      "description": "Required to perform tasks while the app isn't running"
     }
   },
+  "messages": [
+    { "alarm": "/index.html" }
+  ],
   "type": "privileged"
 }
