@@ -104,10 +104,8 @@ var currentlyFocusedTextEditor;
     };
 
 
-    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
-        console.warn("DisplayDevice.refresh0.(IIIIII)V not implemented (" +
-                     hardwareId + ", " + displayId + ", " + x1 + ", " + y1 + ", " + x2 + ", " + y2 + ")");
-    };
+    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] =
+        UnimplementedNative("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V");
 
     function swapRB(pixel) {
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
@@ -1656,6 +1654,12 @@ var currentlyFocusedTextEditor;
         this.textEditor.setContent(str);
         this.setCaretPosition(this.textEditor.getSize());
     };
+
+    Native["com/nokia/mid/ui/TextEditor.getLineMarginHeight.()I"] =
+        UnimplementedNative("com/nokia/mid/ui/TextEditor.getLineMarginHeight.()I", 0);
+
+    Native["com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I"] =
+        UnimplementedNative("com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I", 0);
 
     Native["com/nokia/mid/ui/TextEditor.getContentHeight.()I"] = function() {
         return this.textEditor.getContentHeight();
