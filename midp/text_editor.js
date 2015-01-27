@@ -1,6 +1,9 @@
 'use strict';
 
 var TextEditorProvider = (function() {
+    var eTextArea = document.getElementById('textarea-editor');
+    var ePassword = document.getElementById('password-editor');
+
     function extendsObject(targetObj, srcObj) {
         for (var m in srcObj) {
             targetObj[m] = srcObj[m];
@@ -16,6 +19,8 @@ var TextEditorProvider = (function() {
         top: 0,
         constraints: 0,
         type: "",
+        content: "",
+        visible: false,
 
         // opaque white
         backgroundColor:  0xFFFFFFFF | 0,
@@ -79,7 +84,7 @@ var TextEditorProvider = (function() {
 
         focus: function() {
             this.focused = true;
-            this.textEditorElem && this.textEditorElem.focus();
+            this.textEditorElem.focus();
         },
 
         blur: function() {
@@ -88,7 +93,7 @@ var TextEditorProvider = (function() {
         },
 
         getVisible: function() {
-            return this.visible || false;
+            return this.visible;
         },
 
         setVisible: function(aVisible) {
@@ -109,6 +114,12 @@ var TextEditorProvider = (function() {
                 // To make sure the j2me control could be clicked again to show the
                 // textEditor, we need to put the textEditor at the bottom.
                 this.textEditorElem.classList.remove("show");
+            }
+
+            if (this.visible) {
+                this.activate();
+            } else {
+                this.deactivate();
             }
         },
 
@@ -191,60 +202,69 @@ var TextEditorProvider = (function() {
     }
 
     function TextAreaEditor() {
-        this.content = "";
-        this.textEditorElem = document.createElement('div');
-        this.textEditorElem.contentEditable = true;
-
-        this.textEditorElem.onkeydown = function(e) {
-            if (this.getContentSize() >= this.getAttribute("maxlength")) {
-                // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-                if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
-                    e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
-                    (e.keyCode >= 65 && e.keyCode <= 90)   || // letter keys
-                    (e.keyCode >= 96 && e.keyCode <= 111)  || // numpad keys
-                    (e.keyCode >= 186 && e.keyCode <= 192) || // ;=,-./` (in order)
-                    (e.keyCode >= 219 && e.keyCode <= 222)) { // [\]' (in order)
-                    return false;
-                }
-            }
-        }.bind(this);
-
-        this.textEditorElem.oninput = function(e) {
-            if (e.isComposing) {
-                return;
-            }
-
-            // Save the current selection.
-            var range = this.getSelectionRange();
-
-            // Remove the last <br> tag if any.
-            var content = this.textEditorElem.innerHTML;
-            var lastBr = content.lastIndexOf("<br>");
-            if (lastBr !== -1) {
-                content = content.substring(0, lastBr);
-            }
-
-            // Replace <br> by \n
-            content = content.replace("<br>", "\n", "g");
-
-            // Convert the emoji images back to characters.
-            // The original character is stored in the alt attribute of its
-            // img tag with the format of <img ... alt='X' ..>.
-            content = content.replace(/<img[^>]*alt="(\S*)"[^>]*>/g, '$1');
-
-            this.setContent(content);
-
-            // Restore the current selection after updating emoji images.
-            this.setSelectionRange(range[0].index, range[1].index);
-
-            // Notify TextEditor listeners.
-            if (this.oninputCallback) {
-                this.oninputCallback();
-            }
-        }.bind(this);
+        this.textEditorElem = eTextArea;
+        this.textEditorElem.innerHTML = "";
     }
 
     TextAreaEditor.prototype = extendsObject({
+        html: '',
+
+        activate: function() {
+            this.textEditorElem.onkeydown = function(e) {
+                if (this.getContentSize() >= this.getAttribute("maxlength")) {
+                    // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
+                    if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
+                        e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
+                        (e.keyCode >= 65 && e.keyCode <= 90)   || // letter keys
+                        (e.keyCode >= 96 && e.keyCode <= 111)  || // numpad keys
+                        (e.keyCode >= 186 && e.keyCode <= 192) || // ;=,-./` (in order)
+                        (e.keyCode >= 219 && e.keyCode <= 222)) { // [\]' (in order)
+                        return false;
+                    }
+                }
+                return true;
+            }.bind(this);
+
+            this.textEditorElem.oninput = function(e) {
+                if (e.isComposing) {
+                    return;
+                }
+
+                // Save the current selection.
+                var range = this.getSelectionRange();
+
+                // Remove the last <br> tag if any.
+                var content = this.textEditorElem.innerHTML;
+                var lastBr = content.lastIndexOf("<br>");
+                if (lastBr !== -1) {
+                    content = content.substring(0, lastBr);
+                }
+
+                // Replace <br> by \n
+                content = content.replace("<br>", "\n", "g");
+
+                // Convert the emoji images back to characters.
+                // The original character is stored in the alt attribute of its
+                // img tag with the format of <img ... alt='X' ..>.
+                content = content.replace(/<img[^>]*alt="(\S*)"[^>]*>/g, '$1');
+
+                this.setContent(content);
+
+                // Restore the current selection after updating emoji images.
+                this.setSelectionRange(range[0].index, range[1].index);
+
+                // Notify TextEditor listeners.
+                if (this.oninputCallback) {
+                    this.oninputCallback();
+                }
+            }.bind(this);
+        },
+
+        deactivate: function() {
+            this.textEditorElem.onkeydown = null;
+            this.textEditorElem.oninput = null;
+        },
+
         getContent: function() {
             return this.content;
         },
@@ -255,7 +275,7 @@ var TextEditorProvider = (function() {
 
             this.content = content;
 
-            if (!this.textEditorElem) {
+            if (!this.visible) {
                 return;
             }
 
@@ -279,6 +299,7 @@ var TextEditorProvider = (function() {
             html = html.replace(emoji.regEx, toImg) + "<br>";
 
             this.textEditorElem.innerHTML = html;
+            this.html = html;
         },
 
         _getNodeTextLength: function(node) {
@@ -294,7 +315,7 @@ var TextEditorProvider = (function() {
         },
 
         _getSelectionOffset: function(node, offset) {
-            if (!this.textEditorElem) {
+            if (!this.visible) {
                 return { index: 0, node: null };
             }
 
@@ -349,7 +370,7 @@ var TextEditorProvider = (function() {
         },
 
         setSelectionRange: function(from, to) {
-            if (!this.textEditorElem) {
+            if (!this.visible) {
                 this.selectionRange = [from, to];
             } else {
                 if (from != to) {
@@ -407,7 +428,7 @@ var TextEditorProvider = (function() {
             var div = document.getElementById("hidden-textarea-editor");
             div.style.setProperty("width", this.getWidth() + "px");
             div.style.setProperty("font", this.font.css);
-            div.innerHTML = this.textEditorElem.innerHTML;
+            div.innerHTML = this.html;
             var height = div.offsetHeight;
 
             div.innerHTML = "";
@@ -417,32 +438,38 @@ var TextEditorProvider = (function() {
     }, CommonEditorPrototype);
 
     function PasswordEditor() {
-        this.textEditorElem = document.createElement('input');
-        this.textEditorElem.type = 'password';
-
-        this.textEditorElem.oninput = function() {
-            this.content = this.textEditorElem.value;
-            if (this.oninputCallback) {
-                this.oninputCallback();
-            }
-        }.bind(this);
+        this.textEditorElem = ePassword;
+        ePassword.value = "";
     }
 
     PasswordEditor.prototype = extendsObject({
+        activate: function() {
+            this.textEditorElem.oninput = function() {
+                this.content = ePassword.value;
+                if (this.oninputCallback) {
+                    this.oninputCallback();
+                }
+            }.bind(this);
+        },
+
+        deactivate: function() {
+            this.textEditorElem.oninput = null;
+        },
+
         getContent: function() {
-            return this.content || '';
+            return this.content;
         },
 
         setContent: function(content) {
             this.content = content;
 
-            if (this.textEditorElem) {
+            if (this.visible) {
                 this.textEditorElem.value = content;
             }
         },
 
         getSelectionStart: function() {
-            if (this.textEditorElem) {
+            if (this.visible) {
                 return { index: this.textEditorElem.selectionStart, node: this.textEditorElem };
             }
 
@@ -450,7 +477,7 @@ var TextEditorProvider = (function() {
         },
 
         setSelectionRange: function(from, to) {
-            if (!this.textEditorElem) {
+            if (!this.visible) {
                 this.selectionRange = [from, to];
             } else {
                 this.textEditorElem.setSelectionRange(from, to);
