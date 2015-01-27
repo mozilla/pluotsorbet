@@ -361,26 +361,15 @@ var TextEditorProvider = (function() {
          * with the same style as the TextEditor element.
          */
         getContentHeight: function() {
-            var div = document.createElement("div");
+            var div = document.getElementById("hidden-textarea-editor");
             div.style.setProperty("width", this.getStyle("width"));
-            div.style.setProperty("overflow", "none");
-            div.style.setProperty("word-break", "break-all");
-            div.style.setProperty("word-wrap", "break-word");
-            div.style.setProperty("white-space", "pre-wrap");
-            div.style.setProperty("position", "absolute");
-            div.style.setProperty("left", "0px");
-            div.style.setProperty("top", "0px");
-            div.style.setProperty("visibility", "hidden");
-            div.style.setProperty("display", "block");
             div.style.setProperty("font-style", this.getStyle("font-style"));
             div.style.setProperty("font-size", this.getStyle("font-size"));
             div.style.setProperty("font-face", this.getStyle("font-face"));
             div.innerHTML = this.textEditorElem.innerHTML;
-            document.body.appendChild(div);
-
             var height = div.offsetHeight;
 
-            document.body.removeChild(div);
+            div.innerHTML = "";
 
             return height;
         },

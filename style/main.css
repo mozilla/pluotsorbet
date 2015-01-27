@@ -337,3 +337,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   left: 0;
   top: 0;
 }
+
+#hidden-textarea-editor {
+  visibility: hidden;
+}
