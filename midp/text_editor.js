@@ -240,7 +240,7 @@ var TextEditorProvider = (function() {
                 this.setContent(content);
 
                 // Restore the current selection after updating emoji images.
-                this.setSelectionRange(range[0].index, range[1].index);
+                this.setSelectionRange(range[0], range[1]);
 
                 // Notify TextEditor listeners.
                 if (this.oninputCallback) {
@@ -305,13 +305,13 @@ var TextEditorProvider = (function() {
 
         _getSelectionOffset: function(node, offset) {
             if (!this.visible) {
-                return { index: 0, node: null };
+                return 0;
             }
 
             if (node !== this.textEditorElem &&
                 node.parentNode !== this.textEditorElem) {
                 console.error("_getSelectionOffset called while the editor is unfocused");
-                return { index: 0, node: null };
+                return 0;
             }
 
             var selectedNode = null;
@@ -334,7 +334,7 @@ var TextEditorProvider = (function() {
                 selectedNode = children[offset - 1];
             }
 
-            return { index: count, node: selectedNode };
+            return count;
         },
 
         getSelectionEnd: function() {
@@ -351,7 +351,7 @@ var TextEditorProvider = (function() {
             var start = this.getSelectionStart();
             var end = this.getSelectionEnd();
 
-            if (start.index > end.index) {
+            if (start > end) {
                 return [ end, start ];
             }
 
@@ -359,42 +359,42 @@ var TextEditorProvider = (function() {
         },
 
         setSelectionRange: function(from, to) {
+            this.selectionRange = [from, to];
             if (!this.visible) {
-                this.selectionRange = [from, to];
-            } else {
-                if (from != to) {
-                    console.error("setSelectionRange not supported when from != to");
-                }
+                return;
+            }
+            if (from != to) {
+                console.error("setSelectionRange not supported when from != to");
+            }
 
-                var children = this.textEditorElem.childNodes;
-                for (var i = 0; i < children.length; i++) {
-                    var cur = children[i];
-                    var length = this._getNodeTextLength(cur);
+            var children = this.textEditorElem.childNodes;
+            for (var i = 0; i < children.length; i++) {
+                var cur = children[i];
+                var length = this._getNodeTextLength(cur);
 
-                    if (length >= from) {
-                        var selection = window.getSelection();
-                        var range;
-                        if (selection.rangeCount === 0) {
-                            // XXX: This makes it so chrome does not break here, but
-                            // text boxes still do not behave correctly in chrome.
-                            range = document.createRange();
-                            selection.addRange(range);
-                        } else {
-                            range = selection.getRangeAt(0);
-                        }
-                        if (cur.textContent) {
-                            range.setStart(cur, from);
-                        } else if (from === 0) {
-                            range.setStartBefore(cur);
-                        } else {
-                            range.setStartAfter(cur);
-                        }
-                        range.collapse(true);
-                        break;
+                if (length >= from) {
+                    var selection = window.getSelection();
+                    var range;
+                    if (selection.rangeCount === 0) {
+                        // XXX: This makes it so chrome does not break here, but
+                        // text boxes still do not behave correctly in chrome.
+                        range = document.createRange();
+                        selection.addRange(range);
+                    } else {
+                        range = selection.getRangeAt(0);
                     }
-
-                    from -= length;
+                    if (cur.textContent) {
+                        range.setStart(cur, from);
+                    } else if (from === 0) {
+                        range.setStartBefore(cur);
+                    } else {
+                        range.setStartAfter(cur);
+                    }
+                    range.collapse(true);
+                    break;
                 }
+
+                from -= length;
             }
         },
 
@@ -458,18 +458,37 @@ var TextEditorProvider = (function() {
 
         getSelectionStart: function() {
             if (this.visible) {
-                return { index: this.textEditorElem.selectionStart, node: this.textEditorElem };
+                return this.textEditorElem.selectionStart;
             }
 
-            return { index: 0, node: null };
+            return 0;
+        },
+
+        getSelectionEnd: function() {
+            if (this.visible) {
+                return this.textEditorElem.selectionEnd;
+            }
+
+            return 0;
+        },
+
+        getSelectionRange: function() {
+            var start = this.getSelectionStart();
+            var end = this.getSelectionEnd();
+
+            if (start > end) {
+                return [ end, start ];
+            }
+
+            return [ start, end ];
         },
 
         setSelectionRange: function(from, to) {
+            this.selectionRange = [from, to];
             if (!this.visible) {
-                this.selectionRange = [from, to];
-            } else {
-                this.textEditorElem.setSelectionRange(from, to);
+                return;
             }
+            this.textEditorElem.setSelectionRange(from, to);
         },
 
         getSlice: function(from, to) {
