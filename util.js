@@ -129,10 +129,6 @@ var util = (function () {
       return J2ME.newObject(classInfo.klass);
   }
 
-  function newString(s) {
-    return J2ME.newString(s);
-  }
-
   /**
    * Returns an ArrayBufferView of the underlying code points
    * represented by the given Java string.
@@ -218,7 +214,6 @@ var util = (function () {
     newPrimitiveArray: newPrimitiveArray,
     newMultiArray: newMultiArray,
     newObject: newObject,
-    newString: newString,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,
