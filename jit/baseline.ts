@@ -1058,8 +1058,10 @@ module J2ME {
     emitTableSwitch(block: Block, stream: BytecodeStream) {
       var tableSwitch = stream.readTableSwitch();
       var value = this.pop(Kind.Int);
-
-      var targets = {};
+      // We need some text in the body of the table switch block, otherwise the
+      // branch condition variable is ignored.
+      var branchBlock = Relooper.addBlock("// Table Switch", String(value));
+      Relooper.addBranch(block.relooperBlockID, branchBlock);
       var defaultTarget = this.getBlock(stream.currentBCI + tableSwitch.defaultOffset()).relooperBlockID;
       for (var i = 0; i < tableSwitch.numberOfCases(); i++) {
         var key = tableSwitch.keyAt(i);
@@ -1067,22 +1069,20 @@ module J2ME {
         if (target === defaultTarget) {
           continue;
         }
-        if (!targets[target]) {
-          targets[target] = [];
-        }
-        targets[target].push(value + " === " + key);
+        var caseTargetBlock = Relooper.addBlock();
+        Relooper.addBranch(branchBlock, caseTargetBlock, "case " + key + ":");
+        Relooper.addBranch(caseTargetBlock, target);
       }
-      for (var target in targets) {
-        var condition = targets[target].join(" || ");
-        Relooper.addBranch(block.relooperBlockID, target, condition);
-      }
-      Relooper.addBranch(block.relooperBlockID, defaultTarget);
+      Relooper.addBranch(branchBlock, defaultTarget);
     }
 
     emitLookupSwitch(block: Block, stream: BytecodeStream) {
       var lookupSwitch = stream.readLookupSwitch();
       var value = this.pop(Kind.Int);
-      var targets = {};
+      // We need some text in the body of the lookup switch block, otherwise the
+      // branch condition variable is ignored.
+      var branchBlock = Relooper.addBlock("// Lookup Switch", String(value));
+      Relooper.addBranch(block.relooperBlockID, branchBlock);
       var defaultTarget = this.getBlock(stream.currentBCI + lookupSwitch.defaultOffset()).relooperBlockID;
       for (var i = 0; i < lookupSwitch.numberOfCases(); i++) {
         var key = lookupSwitch.keyAt(i);
@@ -1090,16 +1090,11 @@ module J2ME {
         if (target === defaultTarget) {
           continue;
         }
-        if (!targets[target]) {
-          targets[target] = [];
-        }
-        targets[target].push(value + " === " + key);
+        var caseTargetBlock = Relooper.addBlock();
+        Relooper.addBranch(branchBlock, caseTargetBlock, "case " + key + ":");
+        Relooper.addBranch(caseTargetBlock, target);
       }
-      for (var target in targets) {
-        var condition = targets[target].join(" || ");
-        Relooper.addBranch(block.relooperBlockID, target, condition);
-      }
-      Relooper.addBranch(block.relooperBlockID, defaultTarget);
+      Relooper.addBranch(branchBlock, defaultTarget);
     }
 
     emitBytecode(stream: BytecodeStream, block: Block) {
