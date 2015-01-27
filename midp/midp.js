@@ -1045,7 +1045,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(dis
 };
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    var obj = util.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    var obj = J2ME.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent").klass);
     obj.klass.classInfo.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
     MIDP.sendEvent(obj, $.ctx.runtime.isolate.id);
 };

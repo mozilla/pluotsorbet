@@ -627,7 +627,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     var data = CLASSES.loadFile(fileName);
     var obj = null;
     if (data) {
-        obj = util.newObject(CLASSES.java_lang_Object);
+        obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
         obj.data = new Uint8Array(data);
         obj.pos = 0;
     }
@@ -635,7 +635,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(source) {
-    var obj = util.newObject(CLASSES.java_lang_Object);
+    var obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
     obj.data = new Uint8Array(source.data);
     obj.pos = source.pos;
     return obj;

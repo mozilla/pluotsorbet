@@ -1031,7 +1031,7 @@ module J2ME {
             if (U) {
               return;
             }
-            stack.push(util.newObject(classInfo));
+            stack.push(newObject(classInfo.klass));
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
