@@ -645,6 +645,7 @@ module J2ME {
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
     private static _runningQueue: PriorityQueue = new PriorityQueue();
+    private static _processQueueScheduled: boolean = false;
 
     id: number;
 
@@ -662,7 +663,6 @@ module J2ME {
      *      higher priority thread is scheduled to run.
      */
     static scheduleRunningContext(ctx: Context) {
-      var isEmpty = Runtime._runningQueue.isEmpty();
       // Preempt current thread if the new thread has higher priority
       if ($ && ctx.getPriority() > $.ctx.getPriority()) {
         Runtime._runningQueue.enqueue($.ctx, true);
@@ -671,13 +671,16 @@ module J2ME {
       } else {
         Runtime._runningQueue.enqueue(ctx, false);
       }
-      if (isEmpty) {
-        Runtime.processRunningQueue();
-      }
+      Runtime.processRunningQueue();
     }
 
     private static processRunningQueue() {
+      if (Runtime._processQueueScheduled) {
+        return;
+      }
+      Runtime._processQueueScheduled = true;
       (<any>window).setZeroTimeout(function() {
+        Runtime._processQueueScheduled = false;
         try {
           Runtime._runningQueue.dequeue().execute();
         } finally {
