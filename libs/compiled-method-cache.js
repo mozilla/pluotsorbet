@@ -28,9 +28,9 @@ var CompiledMethodCache = (function() {
     return new Promise(function(resolve, reject) {
       DEBUG && debug("restore");
 
+      var then = performance.now();
       var transaction = database.transaction(OBJECT_STORE, "readonly");
       var objectStore = transaction.objectStore(OBJECT_STORE);
-
       var request = objectStore.getAll();
 
       request.onerror = function() {
@@ -39,13 +39,11 @@ var CompiledMethodCache = (function() {
       };
 
       request.onsuccess = function() {
-        for (var i = 0; i < request.result.length; i++) {
+        var count = request.result.length;
+        for (var i = 0; i < count; i++) {
           cache.set(request.result[i][KEY_PATH], request.result[i]);
         }
-      };
-
-      transaction.oncomplete = function() {
-        DEBUG && debug("restore complete");
+        DEBUG && debug("restore complete: " + count + " methods in " + (performance.now() - then) + "ms");
       };
     });
   }
