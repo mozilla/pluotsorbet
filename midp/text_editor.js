@@ -98,17 +98,21 @@ var TextEditorProvider = (function() {
         setVisible: function(aVisible) {
             this.visible = aVisible;
 
+            if (!this.textEditorElem) {
+                return;
+            }
+
             if (aVisible) {
+                // Add the "show" class to set opacity to 0.
                 // Sometimes in Java, setVisible() is called after focus(), to make
                 // sure the native input won't lose focus, we change opacity instead
                 // of visibility.
-                this.setStyle('opaque', 1);
-                this.setStyle('z-index', 999);
+                this.textEditorElem.classList.add("show");
             } else {
-                this.setStyle('opaque', 0);
+                // Remove the "show" class to set z-index to -999.
                 // To make sure the j2me control could be clicked again to show the
                 // textEditor, we need to put the textEditor at the bottom.
-                this.setStyle('z-index', -999);
+                this.textEditorElem.classList.remove("show");
             }
         },
 
@@ -596,4 +600,3 @@ var TextEditorProvider = (function() {
         }
     };
 })();
-

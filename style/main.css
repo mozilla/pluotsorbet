@@ -325,6 +325,13 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   position: absolute;
   border: none;
   resize: none;
+  opacity: 0;
+  z-index: -999;
+}
+
+.text-editor.show{
+  opacity: 1;
+  z-index: 10;
 }
 
 #textarea-editor {
