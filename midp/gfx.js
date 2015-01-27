@@ -1467,7 +1467,7 @@ var currentlyFocusedTextEditor;
         }
 
         this.textEditorId = ++textEditorId;
-        this.textEditor = TextEditorProvider.getEditor(constraints, null);
+        this.textEditor = TextEditorProvider.getEditor(constraints, null, this.textEditorId);
         this.visible = false;
         this.textEditor.setBackgroundColor(0xFFFFFFFF | 0); // opaque white
         this.textEditor.setForegroundColor(0xFF000000 | 0); // opaque black
@@ -1575,7 +1575,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setConstraints.(I)V"] = function(constraints) {
-        this.textEditor = TextEditorProvider.getEditor(constraints, this.textEditor);
+        this.textEditor = TextEditorProvider.getEditor(constraints, this.textEditor, this.textEditorId);
     };
 
     Native["com/nokia/mid/ui/TextEditor.getConstraints.()I"] = function() {

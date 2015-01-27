@@ -21,26 +21,14 @@ var TextEditorProvider = (function() {
         type: "",
         content: "",
         visible: false,
+        id: -1,
+        selectionRange: [0, 0],
 
         // opaque white
         backgroundColor:  0xFFFFFFFF | 0,
 
         // opaque black
         foregroundColor:  0xFF000000 | 0,
-
-        destroy: function() {
-            if (this.textEditorElem && this.textEditorElem.parentNode) {
-                this.textEditorElem.parentNode.removeChild(this.textEditorElem);
-            }
-            if (this.textEditorElem) {
-                this.textEditorElem.oninput = null;
-            }
-            this.attached = false;
-            this.textEditorElem = null;
-            this.oninputCallback = null;
-            this.constraints = null;
-            this.attributes = null;
-        },
 
         attach: function() {
             this.attached = true;
@@ -55,29 +43,25 @@ var TextEditorProvider = (function() {
         },
 
         decorateTextEditorElem: function() {
-            if (this.parentNode) {
-                this.parentNode.appendChild(this.textEditorElem);
-            }
-
-            // Set attributes and styles.
+            // Set attributes.
             if (this.attributes) {
                 for (var attr in this.attributes) {
                     this.textEditorElem.setAttribute(attr, this.attributes[attr]);
                 }
             }
 
-            this.setContent(this.content || '');
-            if (this.selectionRange) {
-                this.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
-                delete this.selectionRange;
-            }
+            this.setContent(this.content);
 
-            if (this.focused) this.focus();
-            this.setVisible(this.visible);
+            this.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
+            this.setSize(this.width, this.height);
+            this.setFont(this.font);
+            this.setPosition(this.left, this.top);
+            this.setBackgroundColor(this.backgroundColor);
+            this.setForegroundColor(this.foregroundColor);
         },
 
         _setStyle: function(styleKey, styleValue) {
-            if (this.textEditorElem) {
+            if (this.visible) {
                 this.textEditorElem.style.setProperty(styleKey, styleValue);
             }
         },
@@ -117,9 +101,15 @@ var TextEditorProvider = (function() {
             }
 
             if (this.visible) {
+                var oldId = this.textEditorElem.getAttribute("editorId") || -1;
+                if (oldId !== this.id) {
+                    this.textEditorElem.setAttribute("editorId", this.id);
+                    this.decorateTextEditorElem();
+                }
                 this.activate();
             } else {
                 this.deactivate();
+                this.selectionRange = this.getSelectionRange();
             }
         },
 
@@ -203,7 +193,6 @@ var TextEditorProvider = (function() {
 
     function TextAreaEditor() {
         this.textEditorElem = eTextArea;
-        this.textEditorElem.innerHTML = "";
     }
 
     TextAreaEditor.prototype = extendsObject({
@@ -439,7 +428,6 @@ var TextEditorProvider = (function() {
 
     function PasswordEditor() {
         this.textEditorElem = ePassword;
-        ePassword.value = "";
     }
 
     PasswordEditor.prototype = extendsObject({
@@ -499,7 +487,7 @@ var TextEditorProvider = (function() {
     }, CommonEditorPrototype);
 
     return {
-        getEditor: function(constraints, oldEditor) {
+        getEditor: function(constraints, oldEditor, editorId) {
             var TYPE_TEXTAREA = 'textarea';
             var TYPE_PASSWORD = 'password';
 
@@ -507,7 +495,7 @@ var TextEditorProvider = (function() {
             var CONSTRAINT_ANY = 0;
             var CONSTRAINT_PASSWORD = 0x10000;
 
-            function _createEditor(type, constraints) {
+            function _createEditor(type, constraints, editorId) {
                 var editor;
                 switch(type) {
                     case TYPE_PASSWORD:
@@ -520,6 +508,7 @@ var TextEditorProvider = (function() {
                 }
                 editor.type = type;
                 editor.constraints = constraints;
+                editor.id = editorId;
                 return editor;
             }
 
@@ -544,8 +533,7 @@ var TextEditorProvider = (function() {
             var newEditor;
 
             if (!oldEditor) {
-                newEditor = _createEditor(type, constraints);
-                newEditor.decorateTextEditorElem();
+                newEditor = _createEditor(type, constraints, editorId);
                 return newEditor;
             }
 
@@ -553,31 +541,20 @@ var TextEditorProvider = (function() {
                 return oldEditor;
             }
 
-            // The type is changed and we need to copy all the attributes/styles.
-            var newEditor = _createEditor(type, constraints);
+            // The type is changed and we need to copy all the attributes.
+            var newEditor = _createEditor(type, constraints, editorId);
+            ["attributes",
+             "width", "height",
+             "left", "top",
+             "backgroundColor", "foregroundColor",
+             "attached",
+             "content",
+             "font"].forEach(function(attr) {
+                newEditor[attr] = oldEditor[attr];
+            });
 
-            if (oldEditor.attributes) {
-                for (var attrName in oldEditor.attributes) {
-                    newEditor.setAttribute(attrName, oldEditor.attributes[attrName]);
-                }
-            }
-            newEditor.setSize(oldEditor.getWidth(), oldEditor.getHeight());
-            newEditor.setPosition(oldEditor.getLeft(), oldEditor.getTop());
-            newEditor.setBackgroundColor(oldEditor.getBackgroundColor());
-            newEditor.setForegroundColor(oldEditor.getForegroundColor());
-            if (oldEditor.focused) {
-                newEditor.focus();
-            }
-            newEditor.setVisible(oldEditor.getVisible());
-            if (oldEditor.oninputCallback) {
-                newEditor.oninput(oldEditor.oninputCallback);
-            }
-            newEditor.attached = oldEditor.attached;
-            newEditor.setContent(oldEditor.getContent());
-
-            newEditor.font = oldEditor.font;
-
-            oldEditor.destroy();
+            // Call setVisible to update display.
+            newEditor.setVisible(oldEditor.visible);
             return newEditor;
         }
     };
