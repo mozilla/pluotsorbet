@@ -15,6 +15,12 @@ var TextEditorProvider = (function() {
         left: 0,
         top: 0,
 
+        // opaque white
+        backgroundColor:  0xFFFFFFFF | 0,
+
+        // opaque black
+        foregroundColor:  0xFF000000 | 0,
+
         destroy: function() {
             if (this.textEditorElem && this.textEditorElem.parentNode) {
                 this.textEditorElem.parentNode.removeChild(this.textEditorElem);
@@ -173,6 +179,24 @@ var TextEditorProvider = (function() {
 
         getTop: function() {
             return this.top;
+        },
+
+        setBackgroundColor: function(color) {
+            this.backgroundColor = color;
+            this.setStyle("backgroundColor", util.abgrIntToCSS(color));
+        },
+
+        getBackgroundColor: function() {
+            return this.backgroundColor;
+        },
+
+        setForegroundColor: function(color) {
+            this.foregroundColor =  color;
+            this.setStyle("color", util.abgrIntToCSS(color));
+        },
+
+        getForegroundColor: function() {
+            return this.foregroundColor;
         },
 
         oninput: function(callback) {
@@ -530,6 +554,8 @@ var TextEditorProvider = (function() {
                                   this.textEditor.getHeight());
                 newEditor.setPosition(this.textEditor.getLeft(),
                                   this.textEditor.getTop());
+                newEditor.setBackgroundColor(this.textEditor.getBackgroundColor());
+                newEditor.setForegroundColor(this.textEditor.getForegroundColor());
                 if (this.textEditor.focused) {
                     newEditor.focus();
                 }
@@ -648,6 +674,22 @@ var TextEditorProvider = (function() {
 
         getTop: function() {
             return this.textEditor.getTop();
+        },
+
+        setBackgroundColor: function(color) {
+            this.textEditor.setBackgroundColor(color);
+        },
+
+        getBackgroundColor: function() {
+            return this.textEditor.getBackgroundColor();
+        },
+
+        setForegroundColor: function(color) {
+            this.textEditor.setForegroundColor(color);
+        },
+
+        getForegroundColor: function() {
+            return this.textEditor.getForegroundColor();
         },
 
         oninput: function(callback) {

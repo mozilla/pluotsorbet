@@ -493,16 +493,8 @@ var currentlyFocusedTextEditor;
         return [x, y];
     }
 
-    function abgrIntToCSS(pixel) {
-        var a = (pixel >> 24) & 0xff;
-        var b = (pixel >> 16) & 0xff;
-        var g = (pixel >> 8) & 0xff;
-        var r = pixel & 0xff;
-        return "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
-    };
-
     function withPixel(g, c) {
-        c.fillStyle = c.strokeStyle = abgrIntToCSS(g.pixel);
+        c.fillStyle = c.strokeStyle = util.abgrIntToCSS(g.pixel);
     }
 
     /**
@@ -1477,10 +1469,8 @@ var currentlyFocusedTextEditor;
         this.textEditorId = ++textEditorId;
         this.textEditor = TextEditorProvider.createEditor(constraints);
         this.visible = false;
-        this.backgroundColor = 0xFFFFFFFF | 0; // opaque white
-        this.foregroundColor = 0xFF000000 | 0; // opaque black
-        this.textEditor.setStyle("backgroundColor", abgrIntToCSS(this.backgroundColor));
-        this.textEditor.setStyle("color", abgrIntToCSS(this.foregroundColor));
+        this.textEditor.setBackgroundColor(0xFFFFFFFF | 0); // opaque white
+        this.textEditor.setForegroundColor(0xFF000000 | 0); // opaque black
 
         this.getCaretPosition = function() {
             if (this.textEditor.isAttached()) {
@@ -1620,18 +1610,16 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.getBackgroundColor.()I"] = function() {
-        return this.backgroundColor;
+        return this.textEditor.getBackgroundColor();
     };
     Native["com/nokia/mid/ui/TextEditor.getForegroundColor.()I"] = function() {
-        return this.foregroundColor;
+        return this.textEditor.getForegroundColor();
     };
     Native["com/nokia/mid/ui/TextEditor.setBackgroundColor.(I)V"] = function(backgroundColor) {
-        this.backgroundColor = backgroundColor;
-        this.textEditor.setStyle("backgroundColor", abgrIntToCSS(backgroundColor));
+        this.textEditor.setBackgroundColor(backgroundColor);
     };
     Native["com/nokia/mid/ui/TextEditor.setForegroundColor.(I)V"] = function(foregroundColor) {
-        this.foregroundColor = foregroundColor;
-        this.textEditor.setStyle("color", abgrIntToCSS(foregroundColor));
+        this.textEditor.setForegroundColor(foregroundColor);
     };
 
     Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function() {
