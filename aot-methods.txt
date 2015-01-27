@@ -4,14 +4,8 @@ java/util/Vector.addElement.(Ljava/lang/Object;)V
 java/util/Vector.size.()I
 java/util/Vector.elementAt.(I)Ljava/lang/Object;
 java/util/Vector.ensureCapacityHelper.(I)V
-javax/microedition/lcdui/Graphics.getClipX.()I
-javax/microedition/lcdui/Graphics.getClipY.()I
-javax/microedition/lcdui/Graphics.getClipWidth.()I
-javax/microedition/lcdui/Graphics.getClipHeight.()I
 java/io/DataInputStream.read.()I
-javax/microedition/lcdui/Graphics.setClip.(IIII)V
 java/lang/Math.max.(II)I
-javax/microedition/lcdui/Graphics.clipRect.(IIII)V
 com/sun/cldc/i18n/uclc/DefaultCaseConverter.isDigit.(C)Z
 com/nokia/mid/ui/DirectUtils.getDirectGraphics.(Ljavax/microedition/lcdui/Graphics;)Lcom/nokia/mid/ui/DirectGraphics;
 com/nokia/mid/ui/DirectGraphicsImp.<init>.(Ljavax/microedition/lcdui/Graphics;)V
@@ -27,14 +21,9 @@ java/util/PropertyPermission.<init>.(Ljava/lang/String;Ljava/lang/String;)V
 java/security/BasicPermission.<init>.(Ljava/lang/String;Ljava/lang/String;)V
 java/util/PropertyPermission.init.(I)V
 java/security/Permission.getName.()Ljava/lang/String;
-javax/microedition/lcdui/Graphics.setColor.(I)V
-javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;
-javax/microedition/lcdui/Graphics.getColor.()I
 java/util/Vector.<init>.(II)V
 java/util/Vector.<init>.(I)V
-javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V
 java/util/Vector.<init>.()V
-javax/microedition/lcdui/Graphics.grayVal.(III)I
 java/util/Vector.copyInto.([Ljava/lang/Object;)V
 com/sun/midp/events/Event.getType.()I
 java/lang/Integer.parseInt.(Ljava/lang/String;I)I
@@ -46,7 +35,6 @@ javax/microedition/lcdui/Canvas.repaint.(IIII)V
 java/util/Vector.removeAllElements.()V
 com/sun/midp/events/EventQueue.post.(Lcom/sun/midp/events/Event;)V
 javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;
-javax/microedition/lcdui/Graphics.resetGC.()V
 javax/microedition/lcdui/DisplayableLFImpl.lIsShown.()Z
 javax/microedition/lcdui/DisplayableLFImpl.lRequestPaint.(IIIILjava/lang/Object;)V
 javax/microedition/lcdui/Display.isShown.(Ljavax/microedition/lcdui/DisplayableLF;)Z
@@ -92,7 +80,6 @@ java/util/Vector.elements.()Ljava/util/Enumeration;
 java/util/VectorEnumerator.<init>.(Ljava/util/Vector;)V
 java/util/VectorEnumerator.hasMoreElements.()Z
 com/sun/midp/lcdui/LCDUIEventListener.process.(Lcom/sun/midp/events/Event;)V
-javax/microedition/lcdui/Graphics.reset.(IIII)V
 javax/microedition/lcdui/Display.callPaint.(IIIILjava/lang/Object;)V
 javax/microedition/lcdui/DisplayableLFImpl.uIsScrollNative.()Z
 javax/microedition/lcdui/CanvasLFImpl.uCallPaint.(Ljavax/microedition/lcdui/Graphics;Ljava/lang/Object;)V
@@ -128,7 +115,6 @@ java/io/PrintStream.ensureOpen.()V
 java/io/OutputStreamWriter.ensureOpen.()V
 com/sun/cldc/i18n/j2me/UTF_8_Writer.write.([CII)V
 javax/microedition/lcdui/Image.getRGB.([IIIIIII)V
-javax/microedition/lcdui/Graphics.setDimensions.(II)V
 javax/microedition/lcdui/Graphics.<init>.()V
 com/nokia/mid/ui/DirectUtils.createImage.(III)Ljavax/microedition/lcdui/Image;
 javax/microedition/lcdui/Image.createImage.(II)Ljavax/microedition/lcdui/Image;
@@ -138,7 +124,6 @@ javax/microedition/lcdui/Image.isMutable.()Z
 javax/microedition/lcdui/ImageData.isMutable.()Z
 javax/microedition/lcdui/Graphics.getImageGraphics.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Graphics;
 java/lang/Math.abs.(I)I
-javax/microedition/lcdui/Graphics.translate.(II)V
 javax/microedition/lcdui/Image.createRGBImage.([IIIZ)Ljavax/microedition/lcdui/Image;
 javax/microedition/lcdui/ImageDataFactory.createImmutableImageData.([IIIZ)Ljavax/microedition/lcdui/ImageData;
 java/util/Vector.setElementAt.(Ljava/lang/Object;I)V
@@ -173,7 +158,6 @@ java/io/PrintStream.newLine.()V
 java/io/OutputStreamWriter.write.(I)V
 java/io/Writer.write.(I)V
 com/nokia/mid/ui/TextEditor.getFont.()Ljavax/microedition/lcdui/Font;
-com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I
 com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderData.()[B
 java/util/Vector.indexOf.(Ljava/lang/Object;)I
 java/lang/Long.longValue.()J

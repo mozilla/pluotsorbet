@@ -30,7 +30,6 @@ build/jsc.js: jsc.ts build/j2me-jsc.js
 j2me: build/j2me.js build/jsc.js
 
 aot: build/classes.jar.js
-
 build/classes.jar.js: java/classes.jar build/jsc.js aot-methods.txt
 	@echo "Compiling ..."
 	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > build/classes.jar.js
