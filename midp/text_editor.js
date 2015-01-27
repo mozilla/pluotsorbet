@@ -3,6 +3,7 @@
 var TextEditorProvider = (function() {
     var eTextArea = document.getElementById('textarea-editor');
     var ePassword = document.getElementById('password-editor');
+    var currentVisibleEditor = null;
 
     function extendsObject(targetObj, srcObj) {
         for (var m in srcObj) {
@@ -67,11 +68,17 @@ var TextEditorProvider = (function() {
         },
 
         focus: function() {
+            if (currentVisibleEditor !== this) {
+                return;
+            }
             this.focused = true;
             this.textEditorElem.focus();
         },
 
         blur: function() {
+            if (currentVisibleEditor !== this) {
+                return;
+            }
             this.focused = false;
             this.textEditorElem && this.textEditorElem.blur();
         },
@@ -81,10 +88,22 @@ var TextEditorProvider = (function() {
         },
 
         setVisible: function(aVisible) {
+            // Check if we need to show or hide the html editor elements.
+            if ((currentVisibleEditor === this && aVisible) ||
+                (currentVisibleEditor !== this && !aVisible)) {
+                this.visible = aVisible;
+                return;
+            }
+
             this.visible = aVisible;
 
-            if (!this.textEditorElem) {
-                return;
+            if (aVisible) {
+                if (currentVisibleEditor) {
+                    currentVisibleEditor.visible = false;
+                }
+                currentVisibleEditor = this;
+            } else {
+                currentVisibleEditor = null;
             }
 
             if (aVisible) {
