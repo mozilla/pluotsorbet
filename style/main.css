@@ -326,3 +326,14 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   border: none;
   resize: none;
 }
+
+#textarea-editor {
+  word-break: break-all;
+  word-wrap: break-word;
+  overflow: auto;
+  white-space: pre-wrap;
+  -moz-appearance: textfield-multiline;
+  display: block;
+  left: 0;
+  top: 0;
+}

@@ -151,11 +151,6 @@ var TextEditorProvider = (function() {
         this.content = "";
         this.textEditorElem = document.createElement('div');
         this.textEditorElem.contentEditable = true;
-        this.setStyle('word-break', 'break-all');
-        this.setStyle('word-wrap', 'break-word');
-        this.setStyle('overflow', 'auto');
-        this.setStyle('white-space', 'pre-wrap');
-        this.setStyle('-moz-appearance', 'textfield-multiline');
 
         this.textEditorElem.onkeydown = function(e) {
             if (this.getSize() >= this.getAttribute("maxlength")) {
