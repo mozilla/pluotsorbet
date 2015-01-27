@@ -680,11 +680,10 @@ module J2ME {
       (<any>window).setZeroTimeout(function() {
         try {
           Runtime._runningQueue.dequeue().execute();
-        } catch (e) {
-          // Suppress the exception.
-        }
-        if (!Runtime._runningQueue.isEmpty()) {
-          Runtime.processRunningQueue();;
+        } finally {
+          if (!Runtime._runningQueue.isEmpty()) {
+            Runtime.processRunningQueue();
+          }
         }
       });
     }
