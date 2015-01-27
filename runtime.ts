@@ -1161,16 +1161,27 @@ module J2ME {
     return null;
   }
 
+  function reportError(method, key) {
+    return function() {
+      try {
+        return method.apply(this, arguments);
+      } catch (e) {
+        stderrWriter.errorLn("Native " + key + " throws:" + e);
+        throw e;
+      }
+    };
+  }
+
   function findNativeMethodImplementation(methodInfo: MethodInfo) {
+    var implKey = methodInfo.implKey;
     // Look in bindings first.
     var binding = findNativeMethodBinding(methodInfo);
     if (binding) {
-      return binding;
+      return release ? binding : reportError(binding, implKey);
     }
-    var implKey = methodInfo.implKey;
     if (methodInfo.isNative) {
       if (implKey in Native) {
-        return Native[implKey];
+        return release ? Native[implKey] : reportError(Native[implKey], implKey);
       } else {
         // Some Native MethodInfos are constructed but never called;
         // that's fine, unless we actually try to call them.
@@ -1179,7 +1190,7 @@ module J2ME {
         }
       }
     } else if (implKey in Override) {
-      return Override[implKey];
+      return release ? Override[implKey] : reportError(Override[implKey], implKey);
     }
     return null;
   }
