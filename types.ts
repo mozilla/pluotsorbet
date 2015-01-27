@@ -89,6 +89,33 @@ module J2ME {
     }
   }
 
+  export function getKindCheck(kind: Kind): (x: any) => boolean {
+    switch (kind) {
+      case Kind.Boolean:
+        return (x) => x === 0 || x === 1;
+      case Kind.Byte:
+        return (x) => (x | 0) === x && x >= Constants.BYTE_MIN && x <= Constants.BYTE_MAX;
+      case Kind.Short:
+        return (x) => (x | 0) === x && x >= Constants.SHORT_MIN && x <= Constants.SHORT_MAX;
+      case Kind.Char:
+        return (x) => (x | 0) === x && x >= Constants.CHAR_MIN && x <= Constants.CHAR_MAX;
+      case Kind.Int:
+        return (x) => (x | 0) === x;
+      case Kind.Float:
+        return (x) => Math.fround(x) === x;
+      case Kind.Long:
+        return (x) => x instanceof Long;
+      case Kind.Double:
+        return (x) => (+x) === x;
+      case Kind.Reference:
+        return (x) => x === null || x instanceof Object;
+      case Kind.Void:
+        return (x) => typeof x === "undefined";
+      default:
+        throw Debug.unexpected("Unknown kind: " + kind);
+    }
+  }
+
   export function getSignatureKind(signature: string): Kind {
     switch (signature[0]) {
       case 'Z':
