@@ -1483,7 +1483,7 @@ var currentlyFocusedTextEditor;
         this.textEditor.setStyle("color", abgrIntToCSS(this.foregroundColor));
 
         this.getCaretPosition = function() {
-            if (this.textEditor.getParent()) {
+            if (this.textEditor.isAttached()) {
                 return this.textEditor.getSelectionStart().index;
             }
             if (this.caretPosition !== null) {
@@ -1493,7 +1493,7 @@ var currentlyFocusedTextEditor;
         };
 
         this.setCaretPosition = function(index) {
-            if (this.textEditor.getParent()) {
+            if (this.textEditor.isAttached()) {
                 this.textEditor.setSelectionRange(index, index);
             } else {
                 this.caretPosition = index;
@@ -1517,7 +1517,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.attachNativeImpl.()V"] = function() {
-        this.textEditor.setParent(document.getElementById("display"));
+        this.textEditor.attach();
         if (this.caretPosition !== null) {
             this.textEditor.setSelectionRange(this.caretPosition, this.caretPosition);
             this.caretPosition = null;
@@ -1526,7 +1526,7 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/CanvasItem.detachNativeImpl.()V"] = function() {
         this.caretPosition = this.textEditor.getSelectionStart().index;
-        this.textEditor.setParent(null);
+        this.textEditor.detach();
     };
 
     Native["javax/microedition/lcdui/Display.unfocusTextEditorForScreenChange.()V"] = function() {

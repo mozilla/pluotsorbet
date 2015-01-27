@@ -9,6 +9,8 @@ var TextEditorProvider = (function() {
     }
 
     var CommonEditorPrototype = {
+        attached: false,
+
         destroy: function() {
             if (this.textEditorElem && this.textEditorElem.parentNode) {
                 this.textEditorElem.parentNode.removeChild(this.textEditorElem);
@@ -16,29 +18,23 @@ var TextEditorProvider = (function() {
             if (this.textEditorElem) {
                 this.textEditorElem.oninput = null;
             }
-            this.parentNode = null;
+            this.attached = false;
             this.textEditorElem = null;
             this.oninputCallback = null;
             this.constraints = null;
             this.attributes = null;
         },
 
-        setParent: function(parentNode) {
-            this.parentNode = parentNode;
-            if (!parentNode) {
-                if (this.textEditorElem.parentNode) {
-                    this.textEditorElem.parentNode.removeChild(this.textEditorElem);
-                }
-                return;
-            }
-
-            if (this.textEditorElem) {
-                parentNode.appendChild(this.textEditorElem);
-            }
+        attach: function() {
+            this.attached = true;
         },
 
-        getParent: function() {
-            return this.parentNode;
+        detach: function() {
+            this.attached = false;
+        },
+
+        isAttached: function() {
+            return this.attached;
         },
 
         decorateTextEditorElem: function() {
@@ -500,9 +496,7 @@ var TextEditorProvider = (function() {
                 if (this.textEditor.oninputCallback) {
                     newEditor.oninput(this.textEditor.oninputCallback);
                 }
-                if (this.textEditor.parentNode) {
-                    newEditor.setParent(this.textEditor.parentNode);
-                }
+                newEditor.attached = this.textEditor.attached;
                 newEditor.setContent(this.textEditor.getContent());
 
                 newEditor.font = this.textEditor.font;
@@ -519,12 +513,16 @@ var TextEditorProvider = (function() {
             return this.constraints || 0;
         },
 
-        setParent: function(parentNode) {
-            this.textEditor.setParent(parentNode);
+        attach: function() {
+            this.textEditor.attach();
         },
 
-        getParent: function() {
-            return this.textEditor.parentNode;
+        dettach: function() {
+            this.textEditor.dettach();
+        },
+
+        isAttached: function() {
+            return this.textEditor.isAttached();
         },
 
         setStyle: function(styleKey, styleValue) {
