@@ -945,10 +945,7 @@ module J2ME {
           case Bytecodes.NEWARRAY:
             type = frame.read8();
             size = stack.pop();
-            if (size < 0) {
-              throw $.newNegativeArraySizeException();
-            }
-            stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
+            stack.push(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
             break;
           case Bytecodes.ANEWARRAY:
             index = frame.read16();

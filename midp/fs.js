@@ -386,7 +386,7 @@ function(jPath, filterArray, includeHidden) {
 
             files.forEach(function(file, i) {
                 var bytesFile = encoder.encode(file);
-                var fileArray = util.newPrimitiveArray("B", bytesFile.byteLength);
+                var fileArray = J2ME.newByteArray(bytesFile.byteLength);
                 fileArray.set(bytesFile);
                 filesArray[i] = fileArray;
             });

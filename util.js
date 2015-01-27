@@ -107,12 +107,6 @@ var util = (function () {
     return J2ME.fromJavaString(jStr);
   }
 
-  // Remove and switch to newArray
-  function newPrimitiveArray(type, size) {
-    var constructor = J2ME.getArrayConstructor(type);
-    return new constructor(size);
-  }
-
   function newMultiArray(classInfo, lengths) {
     var length = lengths[0];
     var array = J2ME.newArray(classInfo.elementClass.klass, length);
@@ -206,7 +200,6 @@ var util = (function () {
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
-    newPrimitiveArray: newPrimitiveArray,
     newMultiArray: newMultiArray,
     stringToCharArray: stringToCharArray,
     id: id,

@@ -474,7 +474,7 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() 
         var depth = this.stackTrace.length;
         var classNames = J2ME.newObjectArray(depth);
         var methodNames = J2ME.newObjectArray(depth);
-        var offsets = util.newPrimitiveArray("I", depth);
+        var offsets = J2ME.newIntArray(depth);
         this.stackTrace.forEach(function(e, n) {
             classNames[n] = J2ME.newString(e.className);
             methodNames[n] = J2ME.newString(e.methodName);
@@ -838,7 +838,7 @@ Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(
     }
 
     var count = 0;
-    var bytearr = util.newPrimitiveArray("B", utflen + 2);
+    var bytearr = J2ME.newByteArray(utflen + 2);
     bytearr[count++] = (utflen >>> 8) & 0xFF;
     bytearr[count++] = (utflen >>> 0) & 0xFF;
     for (var i = 0; i < str.length; i++) {
