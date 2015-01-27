@@ -158,7 +158,6 @@ java/io/PrintStream.newLine.()V
 java/io/OutputStreamWriter.write.(I)V
 java/io/Writer.write.(I)V
 com/nokia/mid/ui/TextEditor.getFont.()Ljavax/microedition/lcdui/Font;
-com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I
 com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderData.()[B
 java/util/Vector.indexOf.(Ljava/lang/Object;)I
 java/lang/Long.longValue.()J
