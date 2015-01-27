@@ -594,9 +594,99 @@ module J2ME {
     Pausing = 2
   }
 
+  /** @const */ export var MAX_PRIORITY: number = 10;
+  /** @const */ export var MIN_PRIORITY: number = 1;
+  /** @const */ export var NORMAL_PRIORITY: number = 5;
+
+  class PriorityQueue {
+    private _top: number;
+    private _queues: Context[][];
+
+    constructor() {
+      this._top = MIN_PRIORITY;
+      this._queues = [];
+      for (var i = MIN_PRIORITY; i <= MAX_PRIORITY; i++) {
+        this._queues[i] = [];
+      }
+    }
+
+    /*
+     * @param jump If true, move the context to the first of others who have the
+     * same priority.
+     */
+    enqueue(ctx: Context, jump: boolean) {
+      var priority = ctx.getPriority();
+      release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY,
+                        "Invalid priority: " + priority);
+      if (jump) {
+        this._queues[priority].unshift(ctx);
+      } else {
+        this._queues[priority].push(ctx);
+      }
+      this._top = Math.max(priority, this._top);
+    }
+
+    dequeue(): Context {
+      if (this.isEmpty()) {
+        return null;
+      }
+      var ctx = this._queues[this._top].shift();
+      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY) {
+        this._top--;
+      }
+      return ctx;
+    }
+
+    isEmpty() {
+      return this._top === MIN_PRIORITY && this._queues[this._top].length === 0;
+    }
+  }
+
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
+    private static _runningQueue: PriorityQueue = new PriorityQueue();
+
     id: number;
+
+
+    /*
+     * The thread scheduler uses green thread algorithm, which a preemptive,
+     * priority based algorithm.
+     * All Java threads have a priority and the thread with he highest priority
+     * is scheduled to run.
+     * In case two threads have the same priority a FIFO ordering is followed.
+     * A different thread is invoked to run only if
+     *   1. The current thread blocks or terminates.
+     *   2. A thread with a higher priority than the current thread enters the
+     *      Runnable state. The lower priority thread is preempted and the
+     *      higher priority thread is scheduled to run.
+     */
+    static scheduleRunningContext(ctx: Context) {
+      var isEmpty = Runtime._runningQueue.isEmpty();
+      // Preempt current thread if the new thread has higher priority
+      if ($ && ctx.getPriority() > $.ctx.getPriority()) {
+        Runtime._runningQueue.enqueue($.ctx, true);
+        Runtime._runningQueue.enqueue(ctx, false);
+        $.pause("preempt");
+      } else {
+        Runtime._runningQueue.enqueue(ctx, false);
+      }
+      if (isEmpty) {
+        Runtime.processRunningQueue();
+      }
+    }
+
+    private static processRunningQueue() {
+      (<any>window).setZeroTimeout(function() {
+        try {
+          Runtime._runningQueue.dequeue().execute();
+        } finally {
+          if (!Runtime._runningQueue.isEmpty()) {
+            Runtime.processRunningQueue();
+          }
+        }
+      });
+    }
 
     /**
      * Bailout callback whenever a JIT frame is unwound.
@@ -756,6 +846,7 @@ module J2ME {
     export interface Thread extends java.lang.Object {
       pid: number;
       alive: boolean;
+      priority: number;
     }
 
     export interface Exception extends java.lang.Object {
