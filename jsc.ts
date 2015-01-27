@@ -208,7 +208,7 @@ module J2ME {
         classNameList = file.replace(/\r?\n/g, "\n").split("\n");
       }
     }
-    var methodNameList;
+    var methodFilterList = null;
     if (methodFileFilterOption.value) {
       var file;
       try {
@@ -217,7 +217,16 @@ module J2ME {
 
       }
       if (file) {
-        methodNameList = file.replace(/\r?\n/g, "\n").split("\n");
+        methodFilterList = [];
+        var lines = file.replace(/\r?\n/g, "\n").split("\n");
+        for (var i = 0; i < lines.length; i++) {
+          // Trim Whitespace
+          var line = lines[i].replace(/^\s+|\s+$/g, "");
+          if (line === "") {
+            continue;
+          }
+          methodFilterList.push(line);
+        }
       }
     }
 
@@ -235,17 +244,20 @@ module J2ME {
       }
       return false;
     }
-    function methodFilter(methodInfo: MethodInfo): boolean {
-      if (methodNameList) {
-        return methodNameList.indexOf(methodInfo.implKey) >= 0;
-      } else if (!methodFilterOption.value) {
-        return true;
-      }
-      return methodInfo.implKey === methodFilterOption.value;
+    if (methodFilterOption.value) {
+      methodFilterList = [methodFilterOption.value];
     }
+
     stdoutWriter.writeLn("var start = performance.now();");
-    compile(jvm, jarFilter, classFilter, methodFilter, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    compile(jvm, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value, definitionOption.value);
     stdoutWriter.writeLn("console.log(\"Loaded " + jarFileFilterOption.value + " in \" + (performance.now() - start).toFixed(2) + \" ms.\");");
+    if (methodFilterList !== null && methodFilterList.length) {
+      stderrWriter.enter("The following method(s) in the method filter list failed to compile or were not found:");
+      for (var i = 0; i < methodFilterList.length; i++) {
+        stderrWriter.errorLn(methodFilterList[i]);
+      }
+      stderrWriter.leave("");
+    }
     if (verboseOption.value) {
       // ...
     }
