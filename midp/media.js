@@ -70,6 +70,7 @@ Media.extToFormat = new Map([
     ["jpeg", "JPEG"],
     ["png", "PNG"],
     ["wav", "wav"],
+    ["ogg", "ogg"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -933,7 +934,7 @@ Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, bu
 
     // Check the parameters.
     if (buffer === null || size === 0) {
-        return bufferSize / 2;
+        return bufferSize >>> 1;
     }
 
     player.writeBuffer(buffer.subarray(offset, offset + size));

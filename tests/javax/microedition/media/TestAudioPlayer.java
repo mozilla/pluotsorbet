@@ -31,7 +31,7 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         try {
             InputStream is = getClass().getResourceAsStream("/javax/microedition/media/hello.wav");
             Player player = Manager.createPlayer(is, "audio/x-wav");
-            testPlay(player);
+            testPlay(player, "audio/x-wav");
         } catch (Exception e) {
             e.printStackTrace();
             th.fail("Unexpected exception: " + e);
@@ -50,7 +50,29 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             os.close();
 
             Player player = Manager.createPlayer(url);
-            testPlay(player);
+            testPlay(player, "audio/x-wav");
+
+            file.delete();
+            file.close();
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+
+        // Test player with file URL with a odd size
+        try {
+            String url = "file:////hello.ogg";
+            FileConnection file = (FileConnection)Connector.open(url, Connector.READ_WRITE);
+            if (!file.exists()) {
+                file.create();
+            }
+            OutputStream os = file.openDataOutputStream();
+            InputStream is = getClass().getResourceAsStream("/javax/microedition/media/hello.ogg");
+            os.write(TestUtils.read(is));
+            os.close();
+
+            Player player = Manager.createPlayer(url);
+            testPlay(player, "audio/ogg");
 
             file.delete();
             file.close();
@@ -60,7 +82,7 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         }
     }
 
-    private void testPlay(Player player) throws Exception {
+    private void testPlay(Player player, String expectedContentType) throws Exception {
         player.addPlayerListener(this);
 
         // Check duration
@@ -72,7 +94,7 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
         player.start();
 
         // Check content type.
-        th.check(player.getContentType(), "audio/x-wav");
+        th.check(player.getContentType(), expectedContentType);
 
         // Play the audio for a short time.
         while (player.getMediaTime() <= 0) {
