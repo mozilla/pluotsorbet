@@ -64,35 +64,35 @@ Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) 
     return;
   }
 
-  var count = this.klass.classInfo.getField("I.count.I").get(this);
-  var buf = this.klass.classInfo.getField("I.buf.[B").get(this);
+  var count = this.count;
+  var buf = this.buf;
 
   var newcount = count + len;
   if (newcount > buf.length) {
     var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
-    this.klass.classInfo.getField("I.buf.[B").set(this, buf);
+    this.buf = buf;
   }
 
   buf.set(b.subarray(off, off + len), count);
-  this.klass.classInfo.getField("I.count.I").set(this, newcount);
+  this.count = newcount;
 };
 
 Override["java/io/ByteArrayOutputStream.write.(I)V"] = function(value) {
-  var count = this.klass.classInfo.getField("I.count.I").get(this);
-  var buf = this.klass.classInfo.getField("I.buf.[B").get(this);
+  var count = this.count;
+  var buf = this.buf;
 
   var newcount = count + 1;
   if (newcount > buf.length) {
     var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
     newbuf.set(buf);
     buf = newbuf;
-    this.klass.classInfo.getField("I.buf.[B").set(this, buf);
+    this.buf = buf;
   }
 
   buf[count] = value;
-  this.klass.classInfo.getField("I.count.I").set(this, newcount);
+  this.count = newcount;
 };
 
 Override["java/io/ByteArrayInputStream.<init>.([B)V"] = function(buf) {

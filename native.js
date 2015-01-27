@@ -861,7 +861,7 @@ Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(
 Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(cbuf, off, len) {
   var outputArray = [];
 
-  var pendingSurrogate = this.klass.classInfo.getField("I.pendingSurrogate.I").get(this);
+  var pendingSurrogate = this.pendingSurrogate;
 
   var inputChar = 0;
   var outputSize = 0;
@@ -918,7 +918,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(cbu
     count++;
   }
 
-  this.klass.classInfo.getField("I.pendingSurrogate.I").set(this, pendingSurrogate);
+  this.pendingSurrogate = pendingSurrogate;
 
   var totalSize = outputArray.reduce(function(total, cur) {
     return total + cur.length;
@@ -938,7 +938,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(cbuf, of
   var outputSize = 0;
   var outputCount = 0;
   var count = 0;
-  var localPendingSurrogate = this.klass.classInfo.getField("I.pendingSurrogate.I").get(this);
+  var localPendingSurrogate = this.pendingSurrogate;
   while (count < length) {
     inputChar = 0xffff & cbuf[offset + count];
     if (0 != localPendingSurrogate) {

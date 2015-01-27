@@ -200,8 +200,8 @@ var currentlyFocusedTextEditor;
     }
 
     function setImageData(imageData, width, height, data) {
-        imageData.klass.classInfo.getField("I.width.I").set(imageData, width);
-        imageData.klass.classInfo.getField("I.height.I").set(imageData, height);
+        imageData.width = width;
+        imageData.height = height;
         imageData.context = data;
     }
 
@@ -288,14 +288,14 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(image) {
-        var imageData = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
+        var imageData = image.imageData;
         imageData.klass.classInfo.getField("I.isMutable.Z").set(imageData, 1);
     };
 
     Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(image, argb) {
-        var width = image.klass.classInfo.getField("I.width.I").get(image);
-        var height = image.klass.classInfo.getField("I.height.I").get(image);
-        var imageData = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
+        var width = image.width;
+        var height = image.height;
+        var imageData = image.imageData;
 
         var ctx = createContext2d(width, height);
         setImageData(imageData, width, height, ctx);
@@ -424,7 +424,7 @@ var currentlyFocusedTextEditor;
         if (img === null) {
             c = MIDP.Context2D;
         } else {
-            var imgData = img.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(img),
+            var imgData = img.imageData,
                 c = imgData.context;
         }
 
@@ -761,7 +761,7 @@ var currentlyFocusedTextEditor;
     var TYPE_USHORT_565_RGB = 565;
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(rgba) {
-        var g = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
+        var g = this.graphics;
         var red = (rgba >> 16) & 0xff;
         var green = (rgba >> 8) & 0xff;
         var blue = rgba & 0xff;
@@ -772,7 +772,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function() {
-        var g = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
+        var g = this.graphics;
         return (g.pixel >> 24) & 0xff;
     };
 
@@ -791,12 +791,12 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("Format unsupported");
         }
 
-        var graphics = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
+        var graphics = this.graphics;
         var image = graphics.img;
         if (!image) {
             throw $.newIllegalArgumentException("getPixels with no image not yet supported");
         }
-        var imageData = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image);
+        var imageData = image.imageData;
 
         var abgrData = new Int32Array(imageData.context.getImageData(x, y, width, height).data.buffer);
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
@@ -815,7 +815,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("Format unsupported");
         }
 
-        var graphics = this.klass.classInfo.getField("I.graphics.Ljavax/microedition/lcdui/Graphics;").get(this);
+        var graphics = this.graphics;
 
         var context = createContext2d(width, height);
         var imageData = context.createImageData(width, height);
@@ -842,8 +842,7 @@ var currentlyFocusedTextEditor;
     };
 
     function renderImage(g, image, x, y, anchor) {
-        var texture = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image)
-                                 .context.canvas;
+        var texture = image.imageData.context.canvas;
 
         var c = withGraphics(g);
         c.save();
@@ -1383,7 +1382,7 @@ var currentlyFocusedTextEditor;
     var TRANS_MIRROR_ROT90 = 7;
 
     function renderRegion(g, image, sx, sy, sw, sh, transform, x, y, anchor) {
-        var imgData = image.klass.classInfo.getField("I.imageData.Ljavax/microedition/lcdui/ImageData;").get(image),
+        var imgData = image.imageData,
             texture = imgData.context.canvas;
 
         var c = withGraphics(g);

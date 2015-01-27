@@ -1365,7 +1365,19 @@ module J2ME {
           var symbolName = symbols[key];
           var object = field.isStatic ? klass : klass.prototype;
           release || assert (!object.hasOwnProperty(symbolName), "Should not overwrite existing properties.");
-          ObjectUtilities.defineNonEnumerableForwardingProperty(object, symbolName, field.mangledName);
+          var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
+          var setter;
+          if (release) {
+            setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
+          } else {
+            setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
+          }
+          Object.defineProperty(object, symbolName, {
+            get: getter,
+            set: setter,
+            configurable: true,
+            enumerable: false
+          });
         }
       }
     }
@@ -1777,8 +1789,14 @@ module J2ME {
   }
 
   export enum Constants {
-    INT_MAX =  2147483647,
-    INT_MIN = -2147483648
+    BYTE_MIN = -128,
+    BYTE_MAX = 127,
+    SHORT_MIN = -32768,
+    SHORT_MAX = 32767,
+    CHAR_MIN = 0,
+    CHAR_MAX = 65535,
+    INT_MIN = -2147483648,
+    INT_MAX =  2147483647
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
