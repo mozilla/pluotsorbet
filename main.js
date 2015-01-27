@@ -205,6 +205,9 @@ window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
    indexedDB.deleteDatabase("asyncStorage");
  };
+ document.getElementById("clearMethodCache").onclick = function() {
+   CompiledMethodCache.clear();
+ };
  document.getElementById("exportstorage").onclick = function() {
    fs.exportStore(function(blob) {
      saveAs(blob, "fs-" + Date.now() + ".json");
@@ -250,7 +253,8 @@ window.onload = function() {
     el.textContent = numberWithCommas(J2ME.interpreterCount);
 
     var el = document.getElementById("compiledCount");
-    el.textContent = numberWithCommas(J2ME.compiledCount);
+    el.textContent = numberWithCommas(J2ME.compiledMethodCount) + " / " +
+                     numberWithCommas(J2ME.cachedMethodCount);
 
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);

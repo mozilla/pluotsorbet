@@ -1445,7 +1445,12 @@ module J2ME {
   /**
    * Number of methods that have been compiled thus far.
    */
-  export var compiledCount = 0;
+  export var compiledMethodCount = 0;
+
+  /**
+   * Number of methods that have been loaded from the code cache thus far.
+   */
+  export var cachedMethodCount = 0;
 
   /**
    * Number of ms that have been spent compiled code thus far.
@@ -1471,17 +1476,17 @@ module J2ME {
     var compiledMethod;
 
     if (compiledMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+      cachedMethodCount ++;
       jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
       return linkMethod(methodInfo, compiledMethod.source, compiledMethod.referencedClasses);
     }
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
-    compiledCount ++;
-
     jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
     var s = performance.now();
 
+    compiledMethodCount ++;
     enterTimeline("Compiling");
     try {
       compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
