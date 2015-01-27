@@ -918,7 +918,7 @@ Native["com/sun/mmedia/MediaDownload.nGetJavaBufferSize.(I)I"] = function(handle
 
 Native["com/sun/mmedia/MediaDownload.nGetFirstPacketSize.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
-    return player.getBufferSize() / 2;
+    return player.getBufferSize() >>> 1;
 };
 
 Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, buffer, offset, size) {
@@ -933,7 +933,7 @@ Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, bu
     player.writeBuffer(buffer.subarray(offset, offset + size));
 
     // Returns the package size and set it to the half of the java buffer size.
-    return bufferSize / 2;
+    return bufferSize >>> 1;
 };
 
 Native["com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z"] = function(handle) {
