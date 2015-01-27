@@ -75,7 +75,7 @@ var TextEditorProvider = (function() {
             this.setVisible(this.visible);
         },
 
-        setStyle: function(styleKey, styleValue) {
+        _setStyle: function(styleKey, styleValue) {
             // Set input/textarea elem styles.
             if (!this.styles) {
                 this.styles = {};
@@ -147,14 +147,14 @@ var TextEditorProvider = (function() {
 
         setFont: function(font) {
             this.font = font;
-            this.setStyle("font", font.css);
+            this._setStyle("font", font.css);
         },
 
         setSize: function(width, height) {
             this.width = width;
             this.height = height;
-            this.setStyle("width", width + "px");
-            this.setStyle("height", height + "px");
+            this._setStyle("width", width + "px");
+            this._setStyle("height", height + "px");
         },
 
         getWidth: function() {
@@ -169,8 +169,8 @@ var TextEditorProvider = (function() {
             this.left = left;
             this.top = top;
             var t = MIDP.Context2D.canvas.offsetTop + top;
-            this.setStyle("left", left + "px");
-            this.setStyle("top",  t + "px");
+            this._setStyle("left", left + "px");
+            this._setStyle("top",  t + "px");
         },
 
         getLeft: function() {
@@ -183,7 +183,7 @@ var TextEditorProvider = (function() {
 
         setBackgroundColor: function(color) {
             this.backgroundColor = color;
-            this.setStyle("backgroundColor", util.abgrIntToCSS(color));
+            this._setStyle("backgroundColor", util.abgrIntToCSS(color));
         },
 
         getBackgroundColor: function() {
@@ -192,7 +192,7 @@ var TextEditorProvider = (function() {
 
         setForegroundColor: function(color) {
             this.foregroundColor =  color;
-            this.setStyle("color", util.abgrIntToCSS(color));
+            this._setStyle("color", util.abgrIntToCSS(color));
         },
 
         getForegroundColor: function() {
@@ -540,11 +540,6 @@ var TextEditorProvider = (function() {
             // If the type is changed, we need to copy all the attributes/styles.
             if (type != this.type) {
                 var newEditor = _createEditor(type);
-                if (this.textEditor.styles) {
-                    for (var styleKey in this.textEditor.styles) {
-                        newEditor.setStyle(styleKey, this.textEditor.styles[styleKey]);
-                    }
-                }
                 if (this.textEditor.attributes) {
                     for (var attrName in this.textEditor.attributes) {
                         newEditor.setAttribute(attrName, this.textEditor.attributes[attrName]);
@@ -590,10 +585,6 @@ var TextEditorProvider = (function() {
 
         isAttached: function() {
             return this.textEditor.isAttached();
-        },
-
-        setStyle: function(styleKey, styleValue) {
-            this.textEditor.setStyle(styleKey, styleValue);
         },
 
         getStyle:  function(styleKey) {
