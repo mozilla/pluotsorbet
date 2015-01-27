@@ -564,6 +564,8 @@ PlayerContainer.prototype.realize = function(contentType) {
                 resolve(0);
                 return;
             }
+        } else {
+            this.contentType = Media.formatToContentType.get(this.mediaFormat);
         }
 
         if (Media.supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
@@ -636,7 +638,7 @@ PlayerContainer.prototype.getMediaFormat = function() {
 };
 
 PlayerContainer.prototype.getContentType = function() {
-    return this.contentType || Media.formatToContentType.get(this.mediaFormat);
+    return this.contentType;
 };
 
 PlayerContainer.prototype.isHandledByDevice = function() {
