@@ -198,12 +198,20 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "1.7";
         break;
     case "com.nokia.mid.mnc":
-        // The concatenation of the MCC and MNC for the ICC (i.e. SIM card).
-        value = util.pad(mobileInfo.icc.mcc, 3) + util.pad(mobileInfo.icc.mnc, 3);
+        if (mobileInfo.icc.mcc && mobileInfo.icc.mnc) {
+            // The concatenation of the MCC and MNC for the ICC (i.e. SIM card).
+            value = util.pad(mobileInfo.icc.mcc, 3) + util.pad(mobileInfo.icc.mnc, 3);
+        } else {
+            value = null;
+        }
         break;
     case "com.nokia.mid.networkID":
-        // The concatenation of MCC and MNC for the network.
-        value = util.pad(mobileInfo.network.mcc, 3) + util.pad(mobileInfo.network.mnc, 3);
+        if (mobileInfo.network.mcc && mobileInfo.network.mnc) {
+            // The concatenation of MCC and MNC for the network.
+            value = util.pad(mobileInfo.network.mcc, 3) + util.pad(mobileInfo.network.mnc, 3);
+        } else {
+            value = null;
+        }
         break;
     case "com.nokia.mid.imei":
         console.warn("Property 'com.nokia.mid.imei' is a stub");
