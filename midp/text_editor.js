@@ -59,12 +59,6 @@ var TextEditorProvider = (function() {
                 }
             }
 
-            if (this.styles) {
-                for (var styleKey in this.styles) {
-                    this.textEditorElem.style.setProperty(styleKey, this.styles[styleKey]);
-                }
-            }
-
             this.setContent(this.content || '');
             if (this.selectionRange) {
                 this.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
@@ -76,19 +70,9 @@ var TextEditorProvider = (function() {
         },
 
         _setStyle: function(styleKey, styleValue) {
-            // Set input/textarea elem styles.
-            if (!this.styles) {
-                this.styles = {};
-            }
-
-            this.styles[styleKey] = styleValue;
             if (this.textEditorElem) {
                 this.textEditorElem.style.setProperty(styleKey, styleValue);
             }
-        },
-
-        getStyle:  function(styleKey) {
-            return (this.styles && this.styles[styleKey]) || null;
         },
 
         focus: function() {
@@ -419,10 +403,8 @@ var TextEditorProvider = (function() {
          */
         getContentHeight: function() {
             var div = document.getElementById("hidden-textarea-editor");
-            div.style.setProperty("width", this.getStyle("width"));
-            div.style.setProperty("font-style", this.getStyle("font-style"));
-            div.style.setProperty("font-size", this.getStyle("font-size"));
-            div.style.setProperty("font-face", this.getStyle("font-face"));
+            div.style.setProperty("width", this.getWidth() + "px");
+            div.style.setProperty("font", this.font.css);
             div.innerHTML = this.textEditorElem.innerHTML;
             var height = div.offsetHeight;
 
@@ -585,10 +567,6 @@ var TextEditorProvider = (function() {
 
         isAttached: function() {
             return this.textEditor.isAttached();
-        },
-
-        getStyle:  function(styleKey) {
-            return this.textEditor.getStyle(styleKey);
         },
 
         getContent: function() {
