@@ -69,6 +69,8 @@ Media.extToFormat = new Map([
     ["jpg", "JPEG"],
     ["jpeg", "JPEG"],
     ["png", "PNG"],
+    ["wav", "wav"],
+    ["ogg", "ogg"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -79,6 +81,11 @@ Media.contentTypeToFormat = new Map([
     ["image/jpeg", "JPEG"],
     ["image/png", "PNG"],
 ]);
+
+Media.formatToContentType = new Map();
+for (var elem of Media.contentTypeToFormat) {
+    Media.formatToContentType.set(elem[1], elem[0])
+}
 
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
@@ -557,6 +564,8 @@ PlayerContainer.prototype.realize = function(contentType) {
                 resolve(0);
                 return;
             }
+        } else {
+            this.contentType = Media.formatToContentType.get(this.mediaFormat);
         }
 
         if (Media.supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
@@ -918,7 +927,7 @@ Native["com/sun/mmedia/MediaDownload.nGetJavaBufferSize.(I)I"] = function(handle
 
 Native["com/sun/mmedia/MediaDownload.nGetFirstPacketSize.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
-    return player.getBufferSize() / 2;
+    return player.getBufferSize() >>> 1;
 };
 
 Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, buffer, offset, size) {
@@ -927,13 +936,13 @@ Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, bu
 
     // Check the parameters.
     if (buffer === null || size === 0) {
-        return bufferSize / 2;
+        return bufferSize >>> 1;
     }
 
     player.writeBuffer(buffer.subarray(offset, offset + size));
 
     // Returns the package size and set it to the half of the java buffer size.
-    return bufferSize / 2;
+    return bufferSize >>> 1;
 };
 
 Native["com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z"] = function(handle) {
