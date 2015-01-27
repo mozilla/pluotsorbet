@@ -10,6 +10,10 @@ var TextEditorProvider = (function() {
 
     var CommonEditorPrototype = {
         attached: false,
+        width: 0,
+        height: 0,
+        left: 0,
+        top: 0,
 
         destroy: function() {
             if (this.textEditorElem && this.textEditorElem.parentNode) {
@@ -138,8 +142,39 @@ var TextEditorProvider = (function() {
         setFont: function(font) {
             this.font = font;
             this.setStyle("font-style", font.style);
-            this.setStyle("font-size", font.size + "px");
+            this.setStyle("font-size", font.height + "px");
             this.setStyle("font-face", font.face);
+        },
+
+        setSize: function(width, height) {
+            this.width = width;
+            this.height = height;
+            this.setStyle("width", width + "px");
+            this.setStyle("height", height + "px");
+        },
+
+        getWidth: function() {
+            return this.width;
+        },
+
+        getHeight: function() {
+            return this.height;
+        },
+
+        setPosition: function(left, top) {
+            this.left = left;
+            this.top = top;
+            var t = MIDP.Context2D.canvas.offsetTop + top;
+            this.setStyle("left", left + "px");
+            this.setStyle("top",  t + "px");
+        },
+
+        getLeft: function() {
+            return this.left;
+        },
+
+        getTop: function() {
+            return this.top;
         },
 
         oninput: function(callback) {
@@ -153,7 +188,7 @@ var TextEditorProvider = (function() {
         this.textEditorElem.contentEditable = true;
 
         this.textEditorElem.onkeydown = function(e) {
-            if (this.getSize() >= this.getAttribute("maxlength")) {
+            if (this.getContentSize() >= this.getAttribute("maxlength")) {
                 // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
                 if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
                     e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
@@ -350,9 +385,9 @@ var TextEditorProvider = (function() {
         },
 
         /*
-         * The TextEditor::size() method returns the length of the content in codepoints
+         * The TextEditor::getContentSize() method returns the length of the content in codepoints
          */
-        getSize: function() {
+        getContentSize: function() {
             return util.toCodePointArray(this.content).length;
         },
 
@@ -420,7 +455,7 @@ var TextEditorProvider = (function() {
             return this.content.slice(from, to);
         },
 
-        getSize: function() {
+        getContentSize: function() {
             return this.content.length;
         },
 
@@ -493,6 +528,10 @@ var TextEditorProvider = (function() {
                         newEditor.setAttribute(attrName, this.textEditor.attributes[attrName]);
                     }
                 }
+                newEditor.setSize(this.textEditor.getWidth(),
+                                  this.textEditor.getHeight());
+                newEditor.setPosition(this.textEditor.getLeft(),
+                                  this.textEditor.getTop());
                 if (this.textEditor.focused) {
                     newEditor.focus();
                 }
@@ -573,8 +612,8 @@ var TextEditorProvider = (function() {
             return this.textEditor.getAttribute(attrName);
         },
 
-        getSize: function() {
-            return this.textEditor.getSize();
+        getContentSize: function() {
+            return this.textEditor.getContentSize();
         },
 
         getSlice: function(from, to) {
@@ -587,6 +626,30 @@ var TextEditorProvider = (function() {
 
         setFont: function(font) {
             this.textEditor.setFont(font);
+        },
+
+        setSize: function(width, height) {
+            this.textEditor.setSize(width, height);
+        },
+
+        getWidth: function() {
+            return this.textEditor.getWidth();
+        },
+
+        getHeight: function() {
+            return this.textEditor.getHeight();
+        },
+
+        setPosition: function(left, top) {
+            this.textEditor.setPosition(left, top);
+        },
+
+        getLeft: function() {
+            return this.textEditor.getLeft();
+        },
+
+        getTop: function() {
+            return this.textEditor.getTop();
         },
 
         oninput: function(callback) {
