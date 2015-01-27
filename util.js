@@ -113,15 +113,9 @@ var util = (function () {
     return new constructor(size);
   }
 
-
-  // Remove
-  function newArray(classInfo, size) {
-    return J2ME.newArray(classInfo.klass, size);
-  }
-
   function newMultiArray(classInfo, lengths) {
     var length = lengths[0];
-    var array = newArray(classInfo.elementClass, length);
+    var array = J2ME.newArray(classInfo.elementClass.klass, length);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i=0; i<length; i++)
@@ -222,7 +216,6 @@ var util = (function () {
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
     newPrimitiveArray: newPrimitiveArray,
-    newArray: newArray,
     newMultiArray: newMultiArray,
     newObject: newObject,
     newString: newString,

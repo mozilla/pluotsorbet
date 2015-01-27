@@ -955,10 +955,7 @@ module J2ME {
             classInfo = resolveClass(index, mi.classInfo, false);
             classInitCheck(classInfo, frame.pc - 3);
             size = stack.pop();
-            if (size < 0) {
-              throw $.newNegativeArraySizeException();
-            }
-            stack.push(util.newArray(classInfo, size));
+            stack.push(newArray(classInfo.klass, size));
             break;
           case Bytecodes.MULTIANEWARRAY:
             index = frame.read16();
