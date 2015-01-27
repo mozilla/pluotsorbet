@@ -1467,7 +1467,7 @@ var currentlyFocusedTextEditor;
         }
 
         this.textEditorId = ++textEditorId;
-        this.textEditor = TextEditorProvider.createEditor(constraints);
+        this.textEditor = TextEditorProvider.getEditor(constraints, null);
         this.visible = false;
         this.textEditor.setBackgroundColor(0xFFFFFFFF | 0); // opaque white
         this.textEditor.setForegroundColor(0xFF000000 | 0); // opaque black
@@ -1575,11 +1575,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setConstraints.(I)V"] = function(constraints) {
-        this.textEditor.setConstraints(constraints);
+        this.textEditor = TextEditorProvider.getEditor(constraints, this.textEditor);
     };
 
     Native["com/nokia/mid/ui/TextEditor.getConstraints.()I"] = function() {
-        return this.textEditor.getConstraints();
+        return this.textEditor.constraints;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(shouldFocus) {

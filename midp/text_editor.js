@@ -14,6 +14,8 @@ var TextEditorProvider = (function() {
         height: 0,
         left: 0,
         top: 0,
+        constraints: 0,
+        type: "",
 
         // opaque white
         backgroundColor:  0xFFFFFFFF | 0,
@@ -469,14 +471,8 @@ var TextEditorProvider = (function() {
         },
     }, CommonEditorPrototype);
 
-    function TextEditorWrapper(constraints) {
-        this.textEditor = null;
-        this.setConstraints(constraints);
-        this.textEditor.decorateTextEditorElem();
-    }
-
-    TextEditorWrapper.prototype = {
-        setConstraints: function(constraints) {
+    return {
+        getEditor: function(constraints, oldEditor) {
             var TYPE_TEXTAREA = 'textarea';
             var TYPE_PASSWORD = 'password';
 
@@ -484,14 +480,20 @@ var TextEditorProvider = (function() {
             var CONSTRAINT_ANY = 0;
             var CONSTRAINT_PASSWORD = 0x10000;
 
-            function _createEditor(type) {
+            function _createEditor(type, constraints) {
+                var editor;
                 switch(type) {
                     case TYPE_PASSWORD:
-                        return new PasswordEditor();
-                    case TYPE_TEXTAREA:
+                        editor = new PasswordEditor();
+                        break;
+                    case TYPE_TEXTAREA: // fall through
                     default:
-                        return new TextAreaEditor();
+                        editor = new TextAreaEditor();
+                        break;
                 }
+                editor.type = type;
+                editor.constraints = constraints;
+                return editor;
             }
 
             var type = TYPE_TEXTAREA;
@@ -512,163 +514,44 @@ var TextEditorProvider = (function() {
                 }
             }
 
-            if (!this.textEditor) {
-                this.textEditor = _createEditor(type);
-                this.type = type;
-                this.constraints = constraints;
-                return;
+            var newEditor;
+
+            if (!oldEditor) {
+                newEditor = _createEditor(type, constraints);
+                newEditor.decorateTextEditorElem();
+                return newEditor;
             }
 
-            // If the type is changed, we need to copy all the attributes/styles.
-            if (type != this.type) {
-                var newEditor = _createEditor(type);
-                if (this.textEditor.attributes) {
-                    for (var attrName in this.textEditor.attributes) {
-                        newEditor.setAttribute(attrName, this.textEditor.attributes[attrName]);
-                    }
-                }
-                newEditor.setSize(this.textEditor.getWidth(),
-                                  this.textEditor.getHeight());
-                newEditor.setPosition(this.textEditor.getLeft(),
-                                  this.textEditor.getTop());
-                newEditor.setBackgroundColor(this.textEditor.getBackgroundColor());
-                newEditor.setForegroundColor(this.textEditor.getForegroundColor());
-                if (this.textEditor.focused) {
-                    newEditor.focus();
-                }
-                newEditor.setVisible(this.textEditor.getVisible());
-                if (this.textEditor.oninputCallback) {
-                    newEditor.oninput(this.textEditor.oninputCallback);
-                }
-                newEditor.attached = this.textEditor.attached;
-                newEditor.setContent(this.textEditor.getContent());
-
-                newEditor.font = this.textEditor.font;
-
-                this.textEditor.destroy();
-                this.textEditor = newEditor;
+            if (type === oldEditor.type) {
+                return oldEditor;
             }
 
-            this.type = type;
-            this.constraints = constraints;
-        },
+            // The type is changed and we need to copy all the attributes/styles.
+            var newEditor = _createEditor(type, constraints);
 
-        getConstraints: function() {
-            return this.constraints || 0;
-        },
+            if (oldEditor.attributes) {
+                for (var attrName in oldEditor.attributes) {
+                    newEditor.setAttribute(attrName, oldEditor.attributes[attrName]);
+                }
+            }
+            newEditor.setSize(oldEditor.getWidth(), oldEditor.getHeight());
+            newEditor.setPosition(oldEditor.getLeft(), oldEditor.getTop());
+            newEditor.setBackgroundColor(oldEditor.getBackgroundColor());
+            newEditor.setForegroundColor(oldEditor.getForegroundColor());
+            if (oldEditor.focused) {
+                newEditor.focus();
+            }
+            newEditor.setVisible(oldEditor.getVisible());
+            if (oldEditor.oninputCallback) {
+                newEditor.oninput(oldEditor.oninputCallback);
+            }
+            newEditor.attached = oldEditor.attached;
+            newEditor.setContent(oldEditor.getContent());
 
-        attach: function() {
-            this.textEditor.attach();
-        },
+            newEditor.font = oldEditor.font;
 
-        dettach: function() {
-            this.textEditor.dettach();
-        },
-
-        isAttached: function() {
-            return this.textEditor.isAttached();
-        },
-
-        getContent: function() {
-            return this.textEditor.getContent()
-        },
-
-        setContent: function(content) {
-            this.textEditor.setContent(content);
-        },
-
-        focus: function() {
-            this.textEditor.focus();
-        },
-
-        blur: function() {
-            this.textEditor.blur();
-        },
-
-        setVisible: function(aVisible) {
-            this.textEditor.setVisible(aVisible);
-        },
-
-        getSelectionStart: function() {
-            return this.textEditor.getSelectionStart();
-        },
-
-        setSelectionRange: function(from, to) {
-            this.textEditor.setSelectionRange(from, to);
-        },
-
-        setAttribute: function(attrName, value) {
-            this.textEditor.setAttribute(attrName, value);
-        },
-
-        getAttribute: function(attrName) {
-            return this.textEditor.getAttribute(attrName);
-        },
-
-        getContentSize: function() {
-            return this.textEditor.getContentSize();
-        },
-
-        getSlice: function(from, to) {
-            return this.textEditor.getSlice(from, to);
-        },
-
-        getContentHeight: function() {
-            return this.textEditor.getContentHeight();
-        },
-
-        setFont: function(font) {
-            this.textEditor.setFont(font);
-        },
-
-        setSize: function(width, height) {
-            this.textEditor.setSize(width, height);
-        },
-
-        getWidth: function() {
-            return this.textEditor.getWidth();
-        },
-
-        getHeight: function() {
-            return this.textEditor.getHeight();
-        },
-
-        setPosition: function(left, top) {
-            this.textEditor.setPosition(left, top);
-        },
-
-        getLeft: function() {
-            return this.textEditor.getLeft();
-        },
-
-        getTop: function() {
-            return this.textEditor.getTop();
-        },
-
-        setBackgroundColor: function(color) {
-            this.textEditor.setBackgroundColor(color);
-        },
-
-        getBackgroundColor: function() {
-            return this.textEditor.getBackgroundColor();
-        },
-
-        setForegroundColor: function(color) {
-            this.textEditor.setForegroundColor(color);
-        },
-
-        getForegroundColor: function() {
-            return this.textEditor.getForegroundColor();
-        },
-
-        oninput: function(callback) {
-            this.textEditor.oninput(callback);
-        },
-    };
-
-    return {
-        createEditor: function(constraints) {
-            return new TextEditorWrapper(constraints);
+            oldEditor.destroy();
+            return newEditor;
         }
     };
 })();
