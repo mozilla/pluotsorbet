@@ -150,8 +150,9 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page")
     .withFrame(0, basicUnitTests);
 
+    // Run the same unit tests again to test the compiled method cache.
     casper
-    .thenOpen("http://localhost:8000/index.html?numCalled=1000&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?logConsole=web,page")
     .withFrame(0, basicUnitTests);
 
     casper
