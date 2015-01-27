@@ -31,7 +31,7 @@ var CompiledMethodCache = (function() {
       var transaction = database.transaction(OBJECT_STORE, "readonly");
       var objectStore = transaction.objectStore(OBJECT_STORE);
 
-      var request = objectStore.mozGetAll();
+      var request = objectStore.getAll();
 
       request.onerror = function() {
         console.error("Error restoring: " + request.error.name);
