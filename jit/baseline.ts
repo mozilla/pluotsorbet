@@ -263,7 +263,7 @@ module J2ME {
       this.emitPrologue();
       this.emitBody();
       if (this.variables.length) {
-        this.blockEmitter.prependLn("var " + this.variables.join(", ") + ";");
+        this.bodyEmitter.prependLn("var " + this.variables.join(", ") + ";");
       }
       return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint);
     }
