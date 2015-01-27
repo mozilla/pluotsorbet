@@ -55,9 +55,8 @@ public class TestAudioPlayer implements Testlet, PlayerListener {
             file.delete();
             file.close();
         } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
             e.printStackTrace();
-            // Bug #651
-            th.todo(false, "Unexpected exception: " + e);
         }
     }
 

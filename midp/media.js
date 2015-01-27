@@ -69,6 +69,7 @@ Media.extToFormat = new Map([
     ["jpg", "JPEG"],
     ["jpeg", "JPEG"],
     ["png", "PNG"],
+    ["wav", "wav"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -79,6 +80,11 @@ Media.contentTypeToFormat = new Map([
     ["image/jpeg", "JPEG"],
     ["image/png", "PNG"],
 ]);
+
+Media.formatToContentType = new Map();
+for (var elem of Media.contentTypeToFormat) {
+    Media.formatToContentType.set(elem[1], elem[0])
+}
 
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
@@ -629,7 +635,7 @@ PlayerContainer.prototype.getMediaFormat = function() {
 };
 
 PlayerContainer.prototype.getContentType = function() {
-    return this.contentType;
+    return this.contentType || Media.formatToContentType.get(this.mediaFormat);
 };
 
 PlayerContainer.prototype.isHandledByDevice = function() {
