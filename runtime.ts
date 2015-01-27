@@ -22,6 +22,7 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var Instrument;
+  declare var CompiledMethodCache;
 
   /**
    * Turns on just-in-time compilation of methods.
@@ -1462,6 +1463,13 @@ module J2ME {
       return;
     }
 
+    var compiledMethod;
+
+    if (compiledMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+      jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
+      return linkMethod(methodInfo, compiledMethod.source, compiledMethod.referencedClasses);
+    }
+
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
     compiledCount ++;
@@ -1469,7 +1477,6 @@ module J2ME {
     jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
     var s = performance.now();
 
-    var compiledMethod;
     enterTimeline("Compiling");
     try {
       compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
@@ -1486,12 +1493,41 @@ module J2ME {
                    compiledMethod.body +
                  "\n}";
 
+    var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.className });
+
+    try {
+      CompiledMethodCache.put({
+        key: methodInfo.implKey,
+        source: source,
+        referencedClasses: referencedClasses,
+      });
+    } catch(e) {
+      jitWriter && jitWriter.writeLn("Cannot cache: " + methodInfo.implKey + " because of " + e);
+    }
+
+    linkMethod(methodInfo, source, referencedClasses);
+
+    var methodJITTime = (performance.now() - s);
+    totalJITTime += methodJITTime;
+    if (jitWriter) {
+      jitWriter.leave(
+        "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
+        "codeSize: " + methodInfo.code.length + ", " +
+        "sourceSize: " + compiledMethod.body.length);
+      jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
+    }
+  }
+
+  /**
+   * Links up compiled method at runtime.
+   */
+  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[]) {
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
     (1, eval)(source);
     leaveTimeline("Eval Compiled Code");
 
-    // Attach the compiled method to the method info object.
+    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
     methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
@@ -1506,20 +1542,8 @@ module J2ME {
     jitMethodInfos[mangledClassAndMethodName] = methodInfo;
 
     // Make sure all the referenced symbols are registered.
-    var referencedClasses = compiledMethod.referencedClasses;
     for (var i = 0; i < referencedClasses.length; i++) {
-      var referencedClass = referencedClasses[i];
-      registerKlassSymbol(referencedClass.className);
-    }
-
-    var methodJITTime = (performance.now() - s);
-    totalJITTime += methodJITTime;
-    if (jitWriter) {
-      jitWriter.leave(
-        "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
-        "codeSize: " + methodInfo.code.length + ", " +
-        "sourceSize: " + compiledMethod.body.length);
-      jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
+      registerKlassSymbol(referencedClasses[i]);
     }
   }
 
