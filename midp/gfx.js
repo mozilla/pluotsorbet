@@ -1801,6 +1801,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/VirtualKeyboard.getHeight.()I"] = function() {
+        console.log("KEYBOARD HEIGHT: " + keyboardHeight);
         return keyboardHeight;
     };
 
@@ -1831,6 +1832,11 @@ var currentlyFocusedTextEditor;
             el.parentElement.removeChild(el);
             if (currentlyFocusedTextEditor) {
                 currentlyFocusedTextEditor.focus();
+            }
+        } else {
+            if (currentlyFocusedTextEditor) {
+                currentlyFocusedTextEditor.blur();
+                currentlyFocusedTextEditor = null;
             }
         }
     };
