@@ -23,7 +23,10 @@
 
 module J2ME.Bytecode {
   import assert = Debug.assert;
+  import pushUnique = ArrayUtilities.pushUnique;
   import Uint32ArrayBitSet = BitSets.Uint32ArrayBitSet;
+
+  declare var Relooper;
 
   var writer = new IndentingWriter();
 
@@ -35,12 +38,13 @@ module J2ME.Bytecode {
     public isLoopEnd: boolean;
     public hasHandlers: boolean;
     public blockID: number;
+    public relooperBlockID: number;
 
     public region: any;
 
     public successors: Block [];
+    public predecessors: Block [];
     public normalSuccessors: number;
-    public numberOfPredecessors: number = 0;
 
     visited: boolean;
     active: boolean;
@@ -50,6 +54,7 @@ module J2ME.Bytecode {
 
     constructor() {
       this.successors = [];
+      this.predecessors = [];
     }
 
     public clone(): Block {
@@ -64,7 +69,7 @@ module J2ME.Bytecode {
       block.loopID = this.loopID;
       block.blockID = this.blockID;
       block.successors = this.successors.slice(0);
-      block.numberOfPredecessors = this.numberOfPredecessors;
+      block.predecessors = this.predecessors.slice(0);
       return block;
     }
   }
@@ -77,6 +82,7 @@ module J2ME.Bytecode {
   export class BlockMap {
     method: MethodInfo;
     blocks: Block [];
+    hasBackwardBranches: boolean;
     private blockMap: Block [];
     private startBlock: Block;
     private canTrap: Uint32ArrayBitSet;
@@ -85,6 +91,7 @@ module J2ME.Bytecode {
     constructor(method: MethodInfo) {
       this.blocks = [];
       this.method = method;
+      this.hasBackwardBranches = false;
       this.blockMap = new Array<Block>(method.code.length);
       this.canTrap = new Uint32ArrayBitSet(this.blockMap.length);
       this.exceptionHandlers = this.method.exception_table;
@@ -164,7 +171,13 @@ module J2ME.Bytecode {
     }
 
     private setSuccessors(predBci: number, successors: Block []) {
-      // writer.writeLn("setSuccessors " + predBci + " " + successors.map(x => x.startBci).join(", "));
+      if (!this.hasBackwardBranches) {
+        for (var i = 0; i < successors.length; i++) {
+          if (successors[i].startBci < predBci) {
+            this.hasBackwardBranches = true;
+          }
+        }
+      }
       var predecessor = this.blockMap[predBci];
       assert (predecessor.successors.length === 0, predecessor.successors.map(x => x.startBci).join(", "));
       ArrayUtilities.pushMany(predecessor.successors, successors);
@@ -444,7 +457,7 @@ module J2ME.Bytecode {
 
       for (var i = 0; i < block.successors.length; i++) {
         var successor = block.successors[i];
-        successor.numberOfPredecessors ++;
+        pushUnique(successor.predecessors, block);
         // Recursively process successors.
         loops |= this.computeBlockOrderFrom(block.successors[i]);
         if (successor.active) {
@@ -498,5 +511,38 @@ module J2ME.Bytecode {
       });
       writer.outdent();
     }
+
+    public traceDOTFile(writer: IndentingWriter) {
+      writer.enter("digraph CFG {");
+
+      writer.writeLn("graph [bgcolor = gray10];");
+      writer.writeLn("edge [fontname = Consolas, fontsize = 11, color = white, fontcolor = white];");
+      writer.writeLn("node [shape = box, fontname = Consolas, fontsize = 11, color = white, fontcolor = black, style = filled];");
+      writer.writeLn("rankdir = TB;");
+
+
+      var blocks = this.blocks;
+      blocks.forEach(function (block) {
+        var label = "B" + block.blockID + " " +
+          (block.isLoopHeader ? "H" : "") +
+          (block.isLoopEnd ? "E" : "") +
+          // (block.isExceptionEntry ? "X" : "") +
+          // (block.hasHandlers ? "X" : "") +
+          " l:" + block.loops.toString(2) +
+          " e:" + block.exits.toString(2) +
+          " i:" + block.loopID +
+          " p:" + block.predecessors.length;
+
+        writer.writeLn("B" + block.blockID + " [label = \"" + label + "\"];");
+      });
+
+      blocks.forEach(function (block) {
+        block.successors.forEach(function (successor) {
+          writer.writeLn("B" + block.blockID + " -> " + "B" + successor.blockID);
+        });
+      });
+      writer.leave("}");
+    }
+
   }
 }

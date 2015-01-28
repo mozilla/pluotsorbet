@@ -1,8 +1,9 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build relooper
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
+VERSION ?=$(shell date +%s)
 
 all: config-build java jasmin tests j2me shumway aot
 
@@ -11,6 +12,9 @@ test: all
 
 jasmin:
 	make -C tools/jasmin-2.4
+
+relooper:
+	make -C jit/relooper/
 
 build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
@@ -48,7 +52,9 @@ build/shumway.js: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
 
 config-build:
-	echo "config.release = ${RELEASE};" > config/build.js
+	echo "// generated, build-specific configuration" > config/build.js
+	echo "config.release = ${RELEASE};" >> config/build.js
+	echo "config.version = \"${VERSION}\";" >> config/build.js
 
 tests/tests.jar: tests
 tests:

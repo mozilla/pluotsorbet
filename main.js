@@ -168,6 +168,11 @@ function toggle(button) {
 var bigBang = 0;
 
 function start() {
+  if (MIDP.manifest["MIDlet-Version"] && MIDP.manifest["MIDlet-Version"] !== localStorage.getItem("lastMidletVersion")) {
+    CompiledMethodCache.clear().catch(console.error.bind(console));
+    localStorage.setItem("lastMidletVersion", MIDP.manifest["MIDlet-Version"]);
+  }
+
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
@@ -219,6 +224,9 @@ window.onload = function() {
      });
    }
  };
+ document.getElementById("clearCompiledMethodCache").onclick = function() {
+   CompiledMethodCache.clear().then(function() { console.log("cleared compiled method cache") });
+ };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);
@@ -243,7 +251,8 @@ window.onload = function() {
     el.textContent = numberWithCommas(J2ME.interpreterCount);
 
     var el = document.getElementById("compiledCount");
-    el.textContent = numberWithCommas(J2ME.compiledCount);
+    el.textContent = numberWithCommas(J2ME.compiledMethodCount) + " / " +
+                     numberWithCommas(J2ME.cachedMethodCount);
 
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);
