@@ -1705,6 +1705,15 @@ module J2ME {
       return;
     }
   }
+
+  var preemptionCounter = 0;
+  export function checkPreemption() {
+    preemptionCounter ++;
+    if (preemptionCounter % 100 === 0) {
+      console.info("preemption " + preemptionCounter);
+      $.yield();
+    }
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1745,3 +1754,5 @@ var CAS = J2ME.checkArrayStore;
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
+
+var CP = J2ME.checkPreemption;

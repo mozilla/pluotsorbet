@@ -436,6 +436,9 @@ module J2ME {
         this.emitter.leaveAndEnter("} else {");
         this.emitMonitorEnter(0, this.lockObject);
       }
+      if (canYield(this.methodInfo)) {
+        this.emitPreemptionCheck(0);
+      }
       this.emitter.leave("}");
     }
 
@@ -803,6 +806,11 @@ module J2ME {
     emitMonitorEnter(nextPC: number, object: string) {
       this.emitter.writeLn("ME(" + object + ");");
       this.emitUnwind(this.pc, nextPC);
+    }
+
+    emitPreemptionCheck(nextPC: number) {
+      this.emitter.writeLn("CP();");
+      this.emitUnwind(nextPC, nextPC);
     }
 
     emitMonitorExit(object: string) {
