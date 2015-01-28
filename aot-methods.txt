@@ -103,9 +103,6 @@ com/sun/midp/lcdui/DisplayContainer.findDisplayEventConsumer.(I)Lcom/sun/midp/lc
 javax/microedition/lcdui/Display$DisplayAccessImpl.getDisplayEventConsumer.()Lcom/sun/midp/lcdui/DisplayEventConsumer;
 java/lang/Character.isDigit.(C)Z
 com/nokia/mid/ui/CanvasItem.setPosition.(II)V
-com/nokia/mid/ui/gestures/GestureEventImpl.getStartX.()I
-com/nokia/mid/ui/gestures/GestureEventImpl.getStartY.()I
-com/nokia/mid/ui/gestures/GestureEventImpl.getType.()I
 com/sun/midp/events/NativeEventMonitor.run.()V
 javax/microedition/lcdui/Image.getWidth.()I
 java/util/Hashtable.get.(Ljava/lang/Object;)Ljava/lang/Object;
@@ -138,14 +135,11 @@ javax/microedition/rms/RecordStore.isOpen.()Z
 javax/microedition/lcdui/Display$DisplayEventConsumerImpl.handlePointerEvent.(III)V
 javax/microedition/lcdui/DisplayableLFImpl.uCallPointerEvent.(III)V
 com/nokia/mid/ui/gestures/GestureRegistrationManager.callListener.(Lcom/nokia/mid/ui/gestures/GestureEvent;)V
-com/nokia/mid/ui/gestures/GestureEventImpl.<init>.(IIIIIFIIIIIIIIII)V
 javax/microedition/lcdui/Display$DisplayEventConsumerImpl.handleGestureEvent.(Lcom/nokia/mid/ui/gestures/GestureEvent;)V
 java/lang/Long.<init>.(J)V
 com/sun/midp/rms/RecordStoreUtil.calculateBlockSize.(I)I
 javax/microedition/lcdui/CanvasLFImpl.uCallPointerDragged.(II)V
 com/sun/cldc/io/ResourceInputStream.read.([BII)I
-com/nokia/mid/ui/gestures/GestureEventImpl.getDragDistanceX.()I
-com/nokia/mid/ui/gestures/GestureEventImpl.getDragDistanceY.()I
 java/io/PrintStream.println.(Ljava/lang/String;)V
 java/io/PrintStream.print.(Ljava/lang/String;)V
 java/io/PrintStream.write.(Ljava/lang/String;)V
