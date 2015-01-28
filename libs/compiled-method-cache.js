@@ -25,7 +25,7 @@ var CompiledMethodCache = (function() {
   };
 
   function restore() {
-    return new Promise(function(resolve, reject) {
+    return openDatabase.then(new Promise(function(resolve, reject) {
       DEBUG && debug("restore");
 
       var then = performance.now();
@@ -44,12 +44,13 @@ var CompiledMethodCache = (function() {
           cache.set(request.result[i][KEY_PATH], request.result[i]);
         }
         DEBUG && debug("restore complete: " + count + " methods in " + (performance.now() - then) + "ms");
+        resolve();
       };
-    });
+    }));
   }
 
   function clear() {
-    return new Promise(function(resolve, reject) {
+    return openDatabase.then(new Promise(function(resolve, reject) {
       DEBUG && debug("clear");
 
       // First clear the in-memory cache, in case we've already restored it
@@ -68,8 +69,9 @@ var CompiledMethodCache = (function() {
 
       request.onsuccess = function() {
         DEBUG && debug("clear complete in " + (performance.now() - then) + "ms");
+        resolve();
       };
-    });
+    }));
   }
 
   var openDatabase = new Promise(function(resolve, reject) {
@@ -137,11 +139,8 @@ var CompiledMethodCache = (function() {
       };
 
       request.onsuccess = function() {
-        resolve();
-      };
-
-      transaction.oncomplete = function() {
         DEBUG && debug("put " + obj[KEY_PATH] + " complete");
+        resolve();
       };
     }));
   }
