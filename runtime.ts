@@ -803,133 +803,6 @@ module J2ME {
     }
   }
 
-  export module java.lang {
-    export interface Object {
-      /**
-       * Reference to the runtime klass.
-       */
-      klass: Klass
-
-      /**
-       * All objects have an internal hash code.
-       */
-      _hashCode: number;
-
-      /**
-       * Some objects may have a lock.
-       */
-      _lock: Lock;
-
-      waiting: Context [];
-
-      clone(): java.lang.Object;
-      equals(obj: java.lang.Object): boolean;
-      finalize(): void;
-      getClass(): java.lang.Class;
-      hashCode(): number;
-      notify(): void;
-      notifyAll(): void;
-      toString(): java.lang.String;
-      notify(): void;
-      notify(timeout: number): void;
-      notify(timeout: number, nanos: number): void;
-    }
-
-    export interface Class extends java.lang.Object {
-      /**
-       * RuntimeKlass associated with this Class object.
-       */
-      runtimeKlass: RuntimeKlass;
-    }
-
-    export interface String extends java.lang.Object {
-      str: string;
-    }
-
-    export interface Thread extends java.lang.Object {
-      pid: number;
-      alive: boolean;
-      priority: number;
-    }
-
-    export interface Exception extends java.lang.Object {
-      message: string;
-    }
-
-    export interface IllegalArgumentException extends java.lang.Exception {
-    }
-
-    export interface IllegalStateException extends java.lang.Exception {
-    }
-
-    export interface NullPointerException extends java.lang.Exception {
-    }
-
-    export interface RuntimeException extends java.lang.Exception {
-    }
-
-    export interface IndexOutOfBoundsException extends java.lang.Exception {
-    }
-
-    export interface ArrayIndexOutOfBoundsException extends java.lang.Exception {
-    }
-
-    export interface StringIndexOutOfBoundsException extends java.lang.Exception {
-    }
-
-    export interface ArrayStoreException extends java.lang.Exception {
-    }
-
-    export interface IllegalMonitorStateException extends java.lang.Exception {
-    }
-
-    export interface ClassCastException extends java.lang.Exception {
-    }
-
-    export interface NegativeArraySizeException extends java.lang.Exception {
-    }
-
-    export interface ArithmeticException extends java.lang.Exception {
-    }
-
-    export interface ClassNotFoundException extends java.lang.Exception {
-    }
-
-    export interface SecurityException extends java.lang.Exception {
-    }
-
-    export interface IllegalThreadStateException extends java.lang.Exception {
-    }
-
-  }
-
-  export module java.io {
-
-    export interface IOException extends java.lang.Exception {
-    }
-
-    export interface UTFDataFormatException extends java.lang.Exception {
-    }
-
-    export interface UnsupportedEncodingException extends java.lang.Exception {
-    }
-
-  }
-
-  export module javax.microedition.media {
-
-    export interface MediaException extends java.lang.Exception {
-    }
-
-  }
-
-  export module com.sun.cldc.isolate {
-    export interface Isolate extends java.lang.Object {
-      id: number;
-      runtime: Runtime;
-    }
-  }
-
   function initializeClassObject(runtimeKlass: RuntimeKlass) {
     linkWriter && linkWriter.writeLn("Initializing Class Object For: " + runtimeKlass.templateKlass);
     release || assert(!runtimeKlass.classObject);
@@ -1368,7 +1241,19 @@ module J2ME {
           var symbolName = symbols[key];
           var object = field.isStatic ? klass : klass.prototype;
           release || assert (!object.hasOwnProperty(symbolName), "Should not overwrite existing properties.");
-          ObjectUtilities.defineNonEnumerableForwardingProperty(object, symbolName, field.mangledName);
+          var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
+          var setter;
+          if (release) {
+            setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
+          } else {
+            setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
+          }
+          Object.defineProperty(object, symbolName, {
+            get: getter,
+            set: setter,
+            configurable: true,
+            enumerable: false
+          });
         }
       }
     }
@@ -1780,8 +1665,14 @@ module J2ME {
   }
 
   export enum Constants {
-    INT_MAX =  2147483647,
-    INT_MIN = -2147483648
+    BYTE_MIN = -128,
+    BYTE_MAX = 127,
+    SHORT_MIN = -32768,
+    SHORT_MAX = 32767,
+    CHAR_MIN = 0,
+    CHAR_MAX = 65535,
+    INT_MIN = -2147483648,
+    INT_MAX =  2147483647
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {

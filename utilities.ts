@@ -640,6 +640,13 @@ module J2ME {
     export function makeForwardingSetter(target: string): (any) => void {
       return <(any) => void> new Function("value", "this[\"" + target + "\"] = value;");
     }
+
+    export function makeDebugForwardingSetter(target: string, checker: (x: any) => boolean): (any) => void {
+      return function (value) {
+        Debug.assert(checker(value), "Unexpected value for target " + target);
+        this[target] = value;
+      }
+    }
   }
 
   export module StringUtilities {
