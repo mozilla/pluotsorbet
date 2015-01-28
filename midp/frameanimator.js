@@ -64,19 +64,14 @@ Native["com/nokia/mid/ui/frameanimator/FrameAnimator.unregister.()V"] = function
   this.nativeObject.unregister();
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V"] = function(x, y) {
-  console.warn("FrameAnimator.drag(II)V not implemented (" + x + ", " + y + ")");
-};
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V"] =
+  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V");
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V"] = function(speed, direction, friction, angle) {
-  console.warn("FrameAnimator.kineticScroll(IIIF)V not implemented (" +
-               speed + ", " + direction + ", " + friction + ", " + angle + ")");
-};
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V"] =
+  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V");
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V"] = function(speed, direction, friction, angle, limitUp, limitDown) {
-  console.warn("FrameAnimator.limitedKineticScroll(IIIFII)V not implemented (" +
-               speed + ", " + direction + ", " + friction + ", " + angle + ", " + limitUp + ", " + limitDown + ")");
-};
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V"] =
+  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V");
 
 Native["com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V"] =
   UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V");
