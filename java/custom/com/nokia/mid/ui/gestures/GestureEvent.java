@@ -1,7 +1,6 @@
 package com.nokia.mid.ui.gestures;
 
-public interface GestureEvent
-{
+public interface GestureEvent {
     int getType();
     int getDragDistanceX();
     int getDragDistanceY();

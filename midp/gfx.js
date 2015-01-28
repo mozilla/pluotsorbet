@@ -104,8 +104,7 @@ var currentlyFocusedTextEditor;
     };
 
 
-    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] =
-        UnimplementedNative("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V");
+    addUnimplementedNative("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V");
 
     function swapRB(pixel) {
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
@@ -1660,11 +1659,8 @@ var currentlyFocusedTextEditor;
         this.setCaretPosition(this.textEditor.getSize());
     };
 
-    Native["com/nokia/mid/ui/TextEditor.getLineMarginHeight.()I"] =
-        UnimplementedNative("com/nokia/mid/ui/TextEditor.getLineMarginHeight.()I", 0);
-
-    Native["com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I"] =
-        UnimplementedNative("com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I", 0);
+    addUnimplementedNative("com/nokia/mid/ui/TextEditor.getLineMarginHeight.()I", 0);
+    addUnimplementedNative("com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I", 0);
 
     Native["com/nokia/mid/ui/TextEditor.getContentHeight.()I"] = function() {
         return this.textEditor.getContentHeight();
@@ -1922,29 +1918,21 @@ var currentlyFocusedTextEditor;
         return nextMidpDisplayableId++;
     };
 
-    Native["javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V"] =
-        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V");
+    addUnimplementedNative("javax/microedition/lcdui/FormLFImpl.setScrollPosition0.(I)V");
+    addUnimplementedNative("javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I", 0);
 
-    Native["javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I"] =
-        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.getScrollPosition0.()I", 0);
+    addUnimplementedNative(
+        "javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I",
+        function() { return nextMidpDisplayableId++ }
+    );
 
-    Native["javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I"] =
-        UnimplementedNative(
-            "javax/microedition/lcdui/FormLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I",
-            function() { return nextMidpDisplayableId++ }
-        );
+    addUnimplementedNative("javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V");
+    addUnimplementedNative("javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I", 0);
 
-    Native["javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V"] =
-        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.showNativeResource0.(IIII)V");
-
-    Native["javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I"] =
-        UnimplementedNative("javax/microedition/lcdui/FormLFImpl.getViewportHeight0.()I", 0);
-
-    Native["javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I"] =
-        UnimplementedNative(
-            "javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I",
-            function() { return nextMidpDisplayableId++ }
-        );
+    addUnimplementedNative(
+        "javax/microedition/lcdui/StringItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjava/lang/String;ILjavax/microedition/lcdui/Font;)I",
+        function() { return nextMidpDisplayableId++ }
+    );
 
     Native["javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V"] = function(nativeId, w, h) {
         console.warn("javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V not implemented");
@@ -1962,20 +1950,11 @@ var currentlyFocusedTextEditor;
         console.warn("javax/microedition/lcdui/ItemLFImpl.hide0.(I)V not implemented");
     };
 
-    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I"] =
-        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I", 10);
-
-    Native["javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I"] =
-        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I", 10);
-
-    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I"] =
-        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I", 10);
-
-    Native["javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I"] =
-        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I", 10);
-
-    Native["javax/microedition/lcdui/ItemLFImpl.delete0.(I)V"] =
-        UnimplementedNative("javax/microedition/lcdui/ItemLFImpl.delete0.(I)V");
+    addUnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumWidth0.(I)I", 10);
+    addUnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getMinimumHeight0.(I)I", 10);
+    addUnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredWidth0.(II)I", 10);
+    addUnimplementedNative("javax/microedition/lcdui/ItemLFImpl.getPreferredHeight0.(II)I", 10);
+    addUnimplementedNative("javax/microedition/lcdui/ItemLFImpl.delete0.(I)V");
 
     var BACK = 2;
     var CANCEL = 3;
