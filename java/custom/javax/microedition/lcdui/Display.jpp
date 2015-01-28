@@ -78,9 +78,6 @@ import com.sun.me.gci.windowsystem.GCIDisplay;
 import com.sun.me.gci.windowsystem.GCIScreenWidget;
 // #endif
 
-import com.nokia.mid.ui.gestures.GestureEvent;
-import com.nokia.mid.ui.gestures.GestureRegistrationManager;
-
 /**
  * <code>Display</code> represents the manager of the display and
  * input devices of the
@@ -3288,12 +3285,6 @@ public class Display {
             }
             // #endif ENABLE_CHAMELEON
         } // handlePointerEvent()
-
-        public void handleGestureEvent(GestureEvent event) {
-            if(current != null) {
-                GestureRegistrationManager.callListener(event);
-            }
-        }
 
         /**
          * Called from the event delivery system when a command is seen.

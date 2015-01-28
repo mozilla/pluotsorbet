@@ -45,6 +45,7 @@ import com.sun.midp.log.LogChannels;
 
 import com.nokia.mid.ui.gestures.GestureEvent;
 import com.nokia.mid.ui.gestures.GestureEventImpl;
+import com.nokia.mid.ui.gestures.GestureRegistrationManager;
 
 /**
  * Listener for LCDUI events (user inputs, etc).
@@ -215,7 +216,7 @@ public class DisplayEventListener implements EventListener {
                                                                      nativeEvent.intParam14,
                                                                      nativeEvent.intParam15,
                                                                      nativeEvent.intParam16);
-                    dc.handleGestureEvent(gestureEvent);
+                    GestureRegistrationManager.callListener(gestureEvent);
 
                 default:
                     if (Logging.REPORT_LEVEL <= Logging.WARNING) {
