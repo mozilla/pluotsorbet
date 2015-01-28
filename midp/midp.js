@@ -862,9 +862,13 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
         fs.remove("/midlet.jar");
         fs.create("/midlet.jar", new Blob([ data.jarData ]));
 
-        MIDP.pendingMIDletUpdate = null;
-        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-        DumbPipe.close(DumbPipe.open("reload", {}));
+        new Promise(function(resolve, reject) {
+            fs.syncStore(resolve);
+        }).then(function() {
+            MIDP.pendingMIDletUpdate = null;
+            DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+            DumbPipe.close(DumbPipe.open("reload", {}));
+        });
     });
 };
 
