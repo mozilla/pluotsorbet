@@ -592,15 +592,35 @@ Native["com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V"] = function(fd
     fs.flush(fd);
 };
 
+var lastFCOutputStreamWrite = 0;
+
 Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = function(val, fd) {
     var buf = new Uint8Array(1);
     buf[0] = val;
-    fs.write(fd, buf);
+
+    var now = Date.now();
+    if (now - lastFCOutputStreamWrite > 10) {
+        lastFCOutputStreamWrite = now;
+        asyncImpl("V", new Promise(function(resolve, reject) {
+            fs.write(fd, buf);
+            resolve();
+        }));
+    } else {
+        fs.write(fd, buf);
+    }
 };
 
-Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] =
-function(byteArray, offset, count, fd) {
-    fs.write(fd, byteArray.subarray(offset, offset+count));
+Native["com/ibm/oti/connection/file/FCOutputStream.writeImpl.([BIII)V"] = function(byteArray, offset, count, fd) {
+    var now = Date.now();
+    if (now - lastFCOutputStreamWrite > 10) {
+        lastFCOutputStreamWrite = now;
+        asyncImpl("V", new Promise(function(resolve, reject) {
+            fs.write(fd, byteArray.subarray(offset, offset+count));
+            resolve();
+        }));
+    } else {
+        fs.write(fd, byteArray.subarray(offset, offset+count));
+    }
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(fileName, mode) {
