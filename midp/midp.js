@@ -869,6 +869,12 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
           });
         }),
       ]).then(function() {
+        // Sync the fs to persistent storage to ensure we persist the update
+        // before reloading the app.
+        return new Promise(function(resolve, reject) {
+          fs.syncStore(resolve);
+        });
+      }).then(function() {
         MIDP.pendingMIDletUpdate = null;
         DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
         DumbPipe.close(DumbPipe.open("reload", {}));
