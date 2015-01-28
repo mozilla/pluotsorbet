@@ -19,6 +19,7 @@ PACKAGE_FILES = \
   javax/microedition/media/hello.wav \
   javax/microedition/media/audio.3gp \
   javax/microedition/media/audio.amr \
+  javax/microedition/media/hello.ogg \
   $(NULL)
 
 all: tests.jar

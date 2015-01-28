@@ -78,9 +78,8 @@ Native["com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFI
                speed + ", " + direction + ", " + friction + ", " + angle + ", " + limitUp + ", " + limitDown + ")");
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V"] = function() {
-  console.warn("FrameAnimator.stop()V not implemented");
-};
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V"] =
+  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V");
 
 Native["com/nokia/mid/ui/frameanimator/FrameAnimator.isRegistered.()Z"] = function() {
   return this.nativeObject.isRegistered() ? 1 : 0;
