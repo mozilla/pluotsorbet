@@ -231,6 +231,9 @@ window.onload = function() {
      });
    }
  };
+ document.getElementById("clearCompiledMethodCache").onclick = function() {
+   CompiledMethodCache.clear().then(function() { console.log("cleared compiled method cache") });
+ };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;
    toggle(this);
