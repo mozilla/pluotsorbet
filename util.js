@@ -107,36 +107,15 @@ var util = (function () {
     return J2ME.fromJavaString(jStr);
   }
 
-  // Remove and switch to newArray
-  function newPrimitiveArray(type, size) {
-    var constructor = J2ME.getArrayConstructor(type);
-    return new constructor(size);
-  }
-
-
-  // Remove
-  function newArray(classInfo, size) {
-    return J2ME.newArray(classInfo.klass, size);
-  }
-
   function newMultiArray(classInfo, lengths) {
     var length = lengths[0];
-    var array = newArray(classInfo.elementClass, length);
+    var array = J2ME.newArray(classInfo.elementClass.klass, length);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i=0; i<length; i++)
         array[i] = newMultiArray(classInfo.elementClass, lengths);
     }
     return array;
-  }
-
-  // Remove
-  function newObject(classInfo) {
-      return J2ME.newObject(classInfo.klass);
-  }
-
-  function newString(s) {
-    return J2ME.newString(s);
   }
 
   /**
@@ -221,11 +200,7 @@ var util = (function () {
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
-    newPrimitiveArray: newPrimitiveArray,
-    newArray: newArray,
     newMultiArray: newMultiArray,
-    newObject: newObject,
-    newString: newString,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,

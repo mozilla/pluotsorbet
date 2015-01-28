@@ -474,7 +474,7 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() 
         var depth = this.stackTrace.length;
         var classNames = J2ME.newObjectArray(depth);
         var methodNames = J2ME.newObjectArray(depth);
-        var offsets = util.newPrimitiveArray("I", depth);
+        var offsets = J2ME.newIntArray(depth);
         this.stackTrace.forEach(function(e, n) {
             classNames[n] = J2ME.newString(e.className);
             methodNames[n] = J2ME.newString(e.methodName);
@@ -627,7 +627,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     var data = CLASSES.loadFile(fileName);
     var obj = null;
     if (data) {
-        obj = util.newObject(CLASSES.java_lang_Object);
+        obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
         obj.data = new Uint8Array(data);
         obj.pos = 0;
     }
@@ -635,7 +635,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(source) {
-    var obj = util.newObject(CLASSES.java_lang_Object);
+    var obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
     obj.data = new Uint8Array(source.data);
     obj.pos = source.pos;
     return obj;
@@ -838,7 +838,7 @@ Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(
     }
 
     var count = 0;
-    var bytearr = util.newPrimitiveArray("B", utflen + 2);
+    var bytearr = J2ME.newByteArray(utflen + 2);
     bytearr[count++] = (utflen >>> 8) & 0xFF;
     bytearr[count++] = (utflen >>> 0) & 0xFF;
     for (var i = 0; i < str.length; i++) {

@@ -35,7 +35,7 @@ var currentlyFocusedTextEditor;
     }
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
-        var ids = util.newPrimitiveArray("I", 1);
+        var ids = J2ME.newIntArray( 1);
         ids[0] = 1;
         return ids;
     };

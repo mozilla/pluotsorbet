@@ -656,7 +656,7 @@ PlayerContainer.prototype.isVolumeControlSupported = function() {
 
 PlayerContainer.prototype.writeBuffer = function(buffer) {
     if (this.contentSize === 0) {
-        this.data = util.newPrimitiveArray("B", this.getBufferSize());
+        this.data = J2ME.newByteArray(this.getBufferSize());
     }
 
     this.data.set(buffer, this.contentSize);
