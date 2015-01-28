@@ -1205,6 +1205,10 @@ module J2ME {
    * callers should be calling that instead of this.
    */
   export function linkKlass(classInfo: ClassInfo) {
+    // We shouldn't do any linking if we're not in the runtime phase.
+    if (phase !== ExecutionPhase.Runtime) {
+      return;
+    }
     if (classInfo.klass) {
       return;
     }
