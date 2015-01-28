@@ -611,7 +611,7 @@ Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
 };
 
 Native["java/lang/Thread.yield.()V"] = function() {
-    $.yield("Thread.yield");
+    $.yield();
 };
 
 Native["java/lang/Thread.activeCount.()I"] = function() {

@@ -68,10 +68,6 @@ module J2ME {
    */
   export var initWriter = null;
 
-  /**
-   * Traces thread execution.
-   */
-  export var threadWriter = null;
 
   export enum MethodState {
     /**
@@ -704,16 +700,16 @@ module J2ME {
       $.ctx.bailout(methodInfo, bci, nextBCI, local, stack, lockObject);
     }
 
-    yield(reason: string) {
+    yield() {
+      windingWriter && windingWriter.writeLn("yielding");
       unwindCount ++;
-      threadWriter && threadWriter.writeLn("yielding " + reason);
-      runtimeCounter && runtimeCounter.count("yielding " + reason);
+      runtimeCounter && runtimeCounter.count("yielding");
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
+      windingWriter && windingWriter.writeLn("pausing");
       unwindCount ++;
-      threadWriter && threadWriter.writeLn("pausing " + reason);
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
     }
@@ -1709,58 +1705,6 @@ module J2ME {
       return;
     }
   }
-
-  /**
-   * Last time we preempted a thread.
-   */
-  var lastPreemption = 0;
-
-  /**
-   * The preemption check should be quick. We don't always want to measure
-   * time so we use a quick counter and mask to determine when to do the
-   * more expensive preemption check.
-   */
-  var preemptionSamples = 0;
-  var preemptionSampleMask = 0xFF;
-
-  /**
-   * Number of ms between preemptions, chosen arbitrarily.
-   */
-  var preemptionInterval = 100;
-
-  /**
-   * Number of preemptions thus far.
-   */
-  export var preemptionCount = 0;
-
-  /**
-   * Periodically preempts the current thread. Calls to this method are inserted in
-   * methods that can yield.
-   */
-  export function checkPreemption() {
-    preemptionSamples ++;
-    if ((preemptionSamples & preemptionSampleMask) === 0) {
-      preempt();
-    }
-  }
-
-  /**
-   * TODO: We will almost always preempt the next time we call this if the application
-   * has been idle. Figure out a better heurisitc here, maybe measure the frequency at
-   * at which |checkPreemption| is invoked and ony preempt if the frequency is sustained
-   * for a longer period of time *and* the time since we last preempted is above the
-   * |preemptionInterval|.
-   */
-  function preempt() {
-    var now = performance.now();
-    var elapsed = now - lastPreemption;
-    if (elapsed > preemptionInterval) {
-      lastPreemption = now;
-      preemptionCount ++;
-      threadWriter && threadWriter.writeLn("Preemption timeout: " + elapsed.toFixed(2) + " ms, samples: " + preemptionSamples + ", count: " + preemptionCount);
-      $.yield("preemption");
-    }
-  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1801,5 +1745,3 @@ var CAS = J2ME.checkArrayStore;
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
-
-var CP = J2ME.checkPreemption;
