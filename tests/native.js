@@ -142,7 +142,7 @@ Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = f
 
 Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(data) {
   var converted = Media.convert3gpToAmr(new Uint8Array(data));
-  var result = util.newPrimitiveArray("B", converted.length);
+  var result = J2ME.newByteArray(converted.length);
   result.set(converted);
   return result;
 };

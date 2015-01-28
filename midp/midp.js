@@ -14,7 +14,7 @@ Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/la
         throw $.newIOException();
     var length = bytes.byteLength;
     var data = new Uint8Array(bytes);
-    var array = util.newPrimitiveArray("B", length);
+    var array = J2ME.newByteArray(length);
     for (var n = 0; n < length; ++n)
         array[n] = data[n];
     return array;
@@ -450,7 +450,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
         return null;
     }
     var len = data.byteLength;
-    var bytes = util.newPrimitiveArray("B", len);
+    var bytes = J2ME.newByteArray(len);
     var src = new Uint8Array(data);
     for (var n = 0; n < bytes.byteLength; ++n)
         bytes[n] = src[n];
@@ -1051,7 +1051,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(dis
 };
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    var obj = util.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent"));
+    var obj = J2ME.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent").klass);
     obj.klass.classInfo.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
     MIDP.sendEvent(obj, $.ctx.runtime.isolate.id);
 };
@@ -1342,17 +1342,8 @@ Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     return 0;
 };
 
-Native["com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
-
-Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
-
-Native["com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
-
-Native["com/sun/j2me/content/InvocationStore.resetFlags0.(I)V"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
-
-Native["com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V"] =
-    UnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
+addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");

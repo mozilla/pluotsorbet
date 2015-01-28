@@ -168,7 +168,7 @@ Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = fu
 Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function() {
   var data = this.encoder.getData();
 
-  var array = util.newPrimitiveArray("B", data.length);
+  var array = J2ME.newByteArray(data.length);
   for (var i = 0; i < data.length; i++) {
     array[i] = data.charCodeAt(i);
   }
