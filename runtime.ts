@@ -35,6 +35,11 @@ module J2ME {
   export var enableOnStackReplacement = true;
 
   /**
+   * Turns on caching of JIT-compiled methods.
+   */
+  export var enableCompiledMethodCache = true;
+
+  /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
    */
   var hashedMangledNames = false;
@@ -1072,6 +1077,10 @@ module J2ME {
    * callers should be calling that instead of this.
    */
   export function linkKlass(classInfo: ClassInfo) {
+    // We shouldn't do any linking if we're not in the runtime phase.
+    if (phase !== ExecutionPhase.Runtime) {
+      return;
+    }
     if (classInfo.klass) {
       return;
     }
@@ -1226,6 +1235,14 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
+    if (enableCompiledMethodCache) {
+      var cachedMethod;
+      if (!jsGlobal[methodInfo.mangledClassAndMethodName] && (cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+        cachedMethodCount ++;
+        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+      }
+    }
+
     return jsGlobal[methodInfo.mangledClassAndMethodName];
   }
 
@@ -1452,12 +1469,13 @@ module J2ME {
       return;
     }
 
-    var compiledMethod;
-
-    if (compiledMethod = CompiledMethodCache.get(methodInfo.implKey)) {
-      cachedMethodCount ++;
-      jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-      return linkMethod(methodInfo, compiledMethod.source, compiledMethod.referencedClasses);
+    if (enableCompiledMethodCache) {
+      var cachedMethod;
+      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+        cachedMethodCount ++;
+        jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
+        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+      }
     }
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
@@ -1465,10 +1483,11 @@ module J2ME {
     jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
     var s = performance.now();
 
-    compiledMethodCount ++;
+    var compiledMethod;
     enterTimeline("Compiling");
     try {
-      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget[enableCompiledMethodCache ? "Static" : "Runtime"]);
+      compiledMethodCount ++;
     } catch (e) {
       methodInfo.state = MethodState.CannotCompile;
       jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
@@ -1484,14 +1503,12 @@ module J2ME {
 
     var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.className });
 
-    try {
+    if (enableCompiledMethodCache) {
       CompiledMethodCache.put({
         key: methodInfo.implKey,
         source: source,
         referencedClasses: referencedClasses,
-      });
-    } catch(e) {
-      jitWriter && jitWriter.writeLn("Cannot cache: " + methodInfo.implKey + " because of " + e);
+      }).catch(stderrWriter.errorLn.bind(stderrWriter));
     }
 
     linkMethod(methodInfo, source, referencedClasses);
@@ -1511,6 +1528,8 @@ module J2ME {
    * Links up compiled method at runtime.
    */
   export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[]) {
+    jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
+
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
     (1, eval)(source);

@@ -175,6 +175,11 @@ function toggle(button) {
 var bigBang = 0;
 
 function start() {
+  if (MIDP.manifest["MIDlet-Version"] && MIDP.manifest["MIDlet-Version"] !== localStorage.getItem("lastMidletVersion")) {
+    CompiledMethodCache.clear().catch(console.error.bind(console));
+    localStorage.setItem("lastMidletVersion", MIDP.manifest["MIDlet-Version"]);
+  }
+
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
@@ -205,9 +210,6 @@ window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
    indexedDB.deleteDatabase("asyncStorage");
  };
- document.getElementById("clearMethodCache").onclick = function() {
-   CompiledMethodCache.clear();
- };
  document.getElementById("exportstorage").onclick = function() {
    fs.exportStore(function(blob) {
      saveAs(blob, "fs-" + Date.now() + ".json");
@@ -228,6 +230,9 @@ window.onload = function() {
        performImport(blob);
      });
    }
+ };
+ document.getElementById("clearCompiledMethodCache").onclick = function() {
+   CompiledMethodCache.clear().then(function() { console.log("cleared compiled method cache") });
  };
  document.getElementById("trace").onclick = function() {
    VM.DEBUG = !VM.DEBUG;

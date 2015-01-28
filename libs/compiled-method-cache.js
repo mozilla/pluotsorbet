@@ -4,7 +4,7 @@
 'use strict';
 
 var CompiledMethodCache = (function() {
-  var DEBUG = true;
+  var DEBUG = false;
   var DATABASE = "CompiledMethodCache";
   var VERSION = 1;
   var OBJECT_STORE = "methods";
@@ -25,13 +25,13 @@ var CompiledMethodCache = (function() {
   };
 
   function restore() {
-    return new Promise(function(resolve, reject) {
+    return openDatabase.then(new Promise(function(resolve, reject) {
       DEBUG && debug("restore");
 
+      var then = performance.now();
       var transaction = database.transaction(OBJECT_STORE, "readonly");
       var objectStore = transaction.objectStore(OBJECT_STORE);
-
-      var request = objectStore.mozGetAll();
+      var request = objectStore.getAll();
 
       request.onerror = function() {
         console.error("Error restoring: " + request.error.name);
@@ -39,15 +39,39 @@ var CompiledMethodCache = (function() {
       };
 
       request.onsuccess = function() {
-        for (var i = 0; i < request.result.length; i++) {
+        var count = request.result.length;
+        for (var i = 0; i < count; i++) {
           cache.set(request.result[i][KEY_PATH], request.result[i]);
         }
+        DEBUG && debug("restore complete: " + count + " methods in " + (performance.now() - then) + "ms");
+        resolve();
+      };
+    }));
+  }
+
+  function clear() {
+    return openDatabase.then(new Promise(function(resolve, reject) {
+      DEBUG && debug("clear");
+
+      // First clear the in-memory cache, in case we've already restored it
+      // from the database.
+      cache.clear();
+
+      var then = performance.now();
+      var transaction = database.transaction(OBJECT_STORE, "readwrite");
+      var objectStore = transaction.objectStore(OBJECT_STORE);
+      var request = objectStore.clear();
+
+      request.onerror = function() {
+        console.error("Error clearing: " + request.error.name);
+        reject(request.error.name);
       };
 
-      transaction.oncomplete = function() {
-        DEBUG && debug("restore complete");
+      request.onsuccess = function() {
+        DEBUG && debug("clear complete in " + (performance.now() - then) + "ms");
+        resolve();
       };
-    });
+    }));
   }
 
   var openDatabase = new Promise(function(resolve, reject) {
@@ -77,8 +101,19 @@ var CompiledMethodCache = (function() {
 
     request.onsuccess = function() {
       DEBUG && debug("open success");
+
       database = request.result;
-      restore();
+
+      var oldVersion = localStorage.getItem("lastAppVersion");
+      if (config.version === oldVersion) {
+        DEBUG && debug("app version " + config.version + " === " + oldVersion + "; restore");
+        restore().catch(console.error.bind(console));
+      } else {
+        DEBUG && debug("app version " + config.version + " !== " + oldVersion + "; clear");
+        clear().catch(console.error.bind(console));
+        localStorage.setItem("lastAppVersion", config.version);
+      }
+
       resolve();
     };
   });
@@ -104,37 +139,8 @@ var CompiledMethodCache = (function() {
       };
 
       request.onsuccess = function() {
-        resolve();
-      };
-
-      transaction.oncomplete = function() {
         DEBUG && debug("put " + obj[KEY_PATH] + " complete");
-      };
-    }));
-  }
-
-  function clear() {
-    DEBUG && debug("clear");
-
-    cache.clear();
-
-    return openDatabase.then(new Promise(function(resolve, reject) {
-      var transaction = database.transaction(OBJECT_STORE, "readwrite");
-      var objectStore = transaction.objectStore(OBJECT_STORE);
-
-      var request = objectStore.clear();
-
-      request.onerror = function() {
-        console.error("Error clearing store: " + request.error.name);
-        reject(request.error.name);
-      };
-
-      request.onsuccess = function() {
         resolve();
-      };
-
-      transaction.oncomplete = function() {
-        DEBUG && debug("clear complete");
       };
     }));
   }
