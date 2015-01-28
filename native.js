@@ -1049,7 +1049,7 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
     }));
 };
 
-function UnimplementedNative(signature, returnValue) {
+function addUnimplementedNative(signature, returnValue) {
     var doNotWarn;
 
     if (typeof returnValue === "function") {
@@ -1064,5 +1064,5 @@ function UnimplementedNative(signature, returnValue) {
         return doNotWarn();
     };
 
-    return function() { return warnOnce() };
+    Native[signature] = function() { return warnOnce() };
 }
