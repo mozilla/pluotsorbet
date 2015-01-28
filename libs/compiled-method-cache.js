@@ -4,7 +4,7 @@
 'use strict';
 
 var CompiledMethodCache = (function() {
-  var DEBUG = true;
+  var DEBUG = false;
   var DATABASE = "CompiledMethodCache";
   var VERSION = 1;
   var OBJECT_STORE = "methods";
