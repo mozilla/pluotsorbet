@@ -48,6 +48,30 @@ var CompiledMethodCache = (function() {
     });
   }
 
+  function clear() {
+    return new Promise(function(resolve, reject) {
+      DEBUG && debug("clear");
+
+      // First clear the in-memory cache, in case we've already restored it
+      // from the database.
+      cache.clear();
+
+      var then = performance.now();
+      var transaction = database.transaction(OBJECT_STORE, "readwrite");
+      var objectStore = transaction.objectStore(OBJECT_STORE);
+      var request = objectStore.clear();
+
+      request.onerror = function() {
+        console.error("Error clearing: " + request.error.name);
+        reject(request.error.name);
+      };
+
+      request.onsuccess = function() {
+        DEBUG && debug("clear complete in " + (performance.now() - then) + "ms");
+      };
+    });
+  }
+
   var openDatabase = new Promise(function(resolve, reject) {
     DEBUG && debug("open");
 
@@ -75,8 +99,19 @@ var CompiledMethodCache = (function() {
 
     request.onsuccess = function() {
       DEBUG && debug("open success");
+
       database = request.result;
-      restore();
+
+      var oldVersion = localStorage.getItem("CompiledMethodCache.appVersion");
+      if (config.version === oldVersion) {
+        DEBUG && debug("app version " + config.version + " === " + oldVersion + "; restore");
+        restore();
+      } else {
+        DEBUG && debug("app version " + config.version + " !== " + oldVersion + "; clear");
+        clear();
+        localStorage.setItem("CompiledMethodCache.appVersion", config.version);
+      }
+
       resolve();
     };
   });
@@ -107,32 +142,6 @@ var CompiledMethodCache = (function() {
 
       transaction.oncomplete = function() {
         DEBUG && debug("put " + obj[KEY_PATH] + " complete");
-      };
-    }));
-  }
-
-  function clear() {
-    DEBUG && debug("clear");
-
-    cache.clear();
-
-    return openDatabase.then(new Promise(function(resolve, reject) {
-      var transaction = database.transaction(OBJECT_STORE, "readwrite");
-      var objectStore = transaction.objectStore(OBJECT_STORE);
-
-      var request = objectStore.clear();
-
-      request.onerror = function() {
-        console.error("Error clearing store: " + request.error.name);
-        reject(request.error.name);
-      };
-
-      request.onsuccess = function() {
-        resolve();
-      };
-
-      transaction.oncomplete = function() {
-        DEBUG && debug("clear complete");
       };
     }));
   }
