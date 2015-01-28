@@ -418,6 +418,12 @@ module J2ME {
         : "null";
 
       this.emitOSREntryPoint();
+
+      // Insert a preemption check at the top of the method. We can only
+      // do this if the method has the necessary unwinding code.
+      if (canYield(this.methodInfo)) {
+        this.emitPreemptionCheck(0);
+      }
     }
 
     private emitOSREntryPoint() {
@@ -435,9 +441,6 @@ module J2ME {
       if (this.methodInfo.isSynchronized) {
         this.emitter.leaveAndEnter("} else {");
         this.emitMonitorEnter(0, this.lockObject);
-      }
-      if (canYield(this.methodInfo)) {
-        this.emitPreemptionCheck(0);
       }
       this.emitter.leave("}");
     }
