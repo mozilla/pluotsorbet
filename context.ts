@@ -598,13 +598,12 @@ module J2ME {
       $.pause("block");
     }
 
-    unblock(obj, queue, notifyAll, callback) {
+    unblock(obj, queue, notifyAll) {
       while (obj[queue] && obj[queue].length) {
         var ctx = obj[queue].pop();
         if (!ctx)
           continue;
-        // Wait until next tick, so that we are sure to notify all waiting.
-        (<any>window).setZeroTimeout(callback.bind(null, ctx));
+          ctx.wakeup(obj)
         if (!notifyAll)
           break;
       }
@@ -651,9 +650,7 @@ module J2ME {
         return;
       }
       object._lock = null;
-      this.unblock(object, "ready", false, function (ctx) {
-        ctx.wakeup(object);
-      });
+      this.unblock(object, "ready", false);
     }
 
     wait(object: java.lang.Object, timeout) {
@@ -685,9 +682,7 @@ module J2ME {
       if (!obj._lock || obj._lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
 
-      this.unblock(obj, "waiting", notifyAll, function (ctx) {
-        ctx.wakeup(obj);
-      });
+      this.unblock(obj, "waiting", notifyAll);
     }
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
