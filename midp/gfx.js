@@ -1423,8 +1423,14 @@ var currentlyFocusedTextEditor;
 
         withPixel(this, c);
 
-        var dx = (x2 - x1) || 1;
-        var dy = (y2 - y1) || 1;
+        var dx = (x2 - x1);
+        var dy = (y2 - y1);
+        if (dx === 0) {
+            x += .5;
+        }
+        if (dy === 0) {
+            y += .5;
+        }
 
         c.beginPath();
         c.moveTo(x, y);
