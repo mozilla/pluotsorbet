@@ -140,8 +140,6 @@ javax/microedition/lcdui/DisplayableLFImpl.uCallPointerEvent.(III)V
 com/nokia/mid/ui/gestures/GestureRegistrationManager.callListener.(Lcom/nokia/mid/ui/gestures/GestureEvent;)V
 com/nokia/mid/ui/gestures/GestureEventImpl.<init>.(IIIIIFIIIIIIIIII)V
 javax/microedition/lcdui/Display$DisplayEventConsumerImpl.handleGestureEvent.(Lcom/nokia/mid/ui/gestures/GestureEvent;)V
-com/nokia/mid/ui/gestures/GestureInteractiveZone.contains.(II)Z
-com/nokia/mid/ui/gestures/GestureInteractiveZone.supports.(I)Z
 java/lang/Long.<init>.(J)V
 com/sun/midp/rms/RecordStoreUtil.calculateBlockSize.(I)I
 javax/microedition/lcdui/CanvasLFImpl.uCallPointerDragged.(II)V
