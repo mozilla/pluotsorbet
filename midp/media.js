@@ -1295,3 +1295,5 @@ Native["com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I"] = functio
     console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I not implemented.");
     return 100;
 };
+
+addUnimplementedNative("com/sun/amms/directcontrol/DirectVolumeControl.nIsMuted.()Z", 0);
