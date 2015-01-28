@@ -89,12 +89,20 @@ preprocessor statements are implemented:
     #endif
     #error ERROR_STRING
     #include "FILE"
+    @varName@
 
 As well, preprocess will do in-line substitution of defined variables.
 Although this is currently off by default because substitution will occur
 in program strings, which is not ideal. When a future version of
 preprocess can lex languages being preprocessed it will NOT substitute
 into program strings and substitution will be turned ON by default.
+
+A workaround is made to resolve this issue. Variables embraced by @ will be
+substitute by its value in the  emitted lines. For example if we define
+NAME="Yuan Xulei", the input file:
+    <p>Hello I'm @NAME@!</p>
+will output:
+    <p>Hello I'm Yuan Xulei!</p>
 
 Please send any feedback to [Trent Mick](mailto:trentm@google's mail
 thing.com).

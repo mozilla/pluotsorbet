@@ -87,6 +87,11 @@
 
     And other languages.
 
+    Variables embraced by @ will be substitute by its value in the  emitted
+    lines. For example if we define NAME="Yuan Xulei", the input file:
+        <p>Hello I'm @NAME@!</p>
+    will output:
+        <p>Hello I'm Yuan Xulei!</p>
 
     Preprocessor Syntax
     -------------------
@@ -103,6 +108,7 @@
         #error <error string>
         #include "<file>"
         #include <var>
+        @varName@
       where <expr> is any valid Python expression.
     - The expression after #if/elif may be a Python statement. It is an
       error to refer to a variable that has not been defined by a -D
@@ -536,7 +542,7 @@ def preprocess(infile, outfile=sys.stdout, defines={},
                     if substitute:
                         for name in reversed(sorted(defines, key=len)):
                             value = defines[name]
-                            sline = sline.replace(name, str(value))
+                            sline = sline.replace("@" + name + "@", str(value))
                     fout.write(sline)
                 elif keepLines:
                     log.debug("keep blank line (%s)" % states[-1][1])
