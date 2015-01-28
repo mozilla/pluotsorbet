@@ -942,20 +942,14 @@ module J2ME {
           case Bytecodes.NEWARRAY:
             type = frame.read8();
             size = stack.pop();
-            if (size < 0) {
-              throw $.newNegativeArraySizeException();
-            }
-            stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
+            stack.push(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
             break;
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo, false);
             classInitCheck(classInfo, frame.pc - 3);
             size = stack.pop();
-            if (size < 0) {
-              throw $.newNegativeArraySizeException();
-            }
-            stack.push(util.newArray(classInfo, size));
+            stack.push(newArray(classInfo.klass, size));
             break;
           case Bytecodes.MULTIANEWARRAY:
             index = frame.read16();
@@ -1031,7 +1025,7 @@ module J2ME {
             if (U) {
               return;
             }
-            stack.push(util.newObject(classInfo));
+            stack.push(newObject(classInfo.klass));
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();

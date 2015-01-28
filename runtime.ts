@@ -1614,6 +1614,10 @@ module J2ME {
     return newArray(Klasses.byte, size);
   }
 
+  export function newIntArray(size: number): number[]  {
+    return newArray(Klasses.int, size);
+  }
+
   export function getArrayKlass(elementKlass: Klass): Klass {
     // Have we already created one? We need to maintain pointer identity.
     if (elementKlass.arrayKlass) {
