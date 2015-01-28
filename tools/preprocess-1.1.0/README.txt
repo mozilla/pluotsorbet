@@ -2,7 +2,7 @@ preprocess.py -- a portable multi-language file preprocessor
 ============================================================
 
 Download the latest preprocess.py packages from here:
-    (archive) http://preprocess.googlecode.com/files/preprocess-1.2.0.zip
+    (archive) http://preprocess.googlecode.com/files/preprocess-1.1.0.zip
 
 
 Home            : http://trentm.com/projects/preprocess/
