@@ -706,7 +706,7 @@ class ContentTypesRegistry:
         @returns {str|None} Returns None if could not determine the
             content type.
         """
-        basename = os.path.basename(path)
+        basename = os.path.basename(path).rstrip(".in")
         contentType = None
         # Try to determine from the path.
         if not contentType and self.filenameMap.has_key(basename):

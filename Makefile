@@ -1,14 +1,24 @@
 .PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 VERSION ?=$(shell date +%s)
+PROFILE ?= $(if $(findstring 0,$(RELEASE)),1,0)
+
+toBool = $(if $(findstring 1,$(1)),true,false)
+PREPROCESS_DEFS = -D RELEASE=$(call toBool,$(RELEASE)) \
+                  -D PROFILE=$(call toBool,$(PROFILE))
+PREPROCESS_SRCS = $(shell find . -name "*.in")
+PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
 all: config-build java jasmin tests j2me shumway aot
 
 test: all
 	tests/runtests.py
+
+$(PREPROCESS_DESTS): $(PREPROCESS_SRCS) config/build.js
+	$(foreach file,$(PREPROCESS_SRCS), python tools/preprocess-1.1.0/lib/preprocess.py $(PREPROCESS_DEFS) -s -o $(file:.in=) $(file);)
 
 jasmin:
 	make -C tools/jasmin-2.4
