@@ -64,17 +64,10 @@ Native["com/nokia/mid/ui/frameanimator/FrameAnimator.unregister.()V"] = function
   this.nativeObject.unregister();
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V"] =
-  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V");
-
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V"] =
-  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V");
-
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V"] =
-  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V");
-
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V"] =
-  UnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V");
+addUnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.drag.(II)V");
+addUnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScroll.(IIIF)V");
+addUnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V");
+addUnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V");
 
 Native["com/nokia/mid/ui/frameanimator/FrameAnimator.isRegistered.()Z"] = function() {
   return this.nativeObject.isRegistered() ? 1 : 0;
