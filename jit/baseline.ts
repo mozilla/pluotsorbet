@@ -176,7 +176,7 @@ module J2ME {
       return classInfo.mangledName;
     }
     if (classInfo.isArrayClass) {
-      return "$AK(" + classConstant(classInfo.elementClass) + ")";
+      return "AK(" + classConstant(classInfo.elementClass) + ")";
     }
     if (classInfo.mangledName) {
       return classInfo.mangledName;
@@ -206,9 +206,9 @@ module J2ME {
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
-     * Make sure that none of these shadow gloal names, like "U" and "O".
+     * Make sure that none of these shadow global names, like "U" and "O".
      */
-    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "_R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
+    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
@@ -300,7 +300,7 @@ module J2ME {
       if (needsTry) {
         this.emitter.leaveAndEnter("} catch (ex) {");
         this.sp = 0;
-        this.emitPush(Kind.Reference, "$TE(ex)");
+        this.emitPush(Kind.Reference, "TE(ex)");
         if (this.hasHandlers) {
           var handlers = this.methodInfo.exception_table;
           for (var i = 0; i < handlers.length; i++) {
@@ -320,9 +320,9 @@ module J2ME {
       var check = "";
       if (handler.catch_type > 0) {
         var classInfo = this.lookupClass(handler.catch_type);
-        check = "$IOK";
+        check = "IOK";
         if (classInfo.isInterface) {
-          check = "$IOI";
+          check = "IOI";
         }
         check += "(" + this.peek(Kind.Reference) + ", " + classConstant(classInfo) + ")";
         check = " && " + check;
@@ -693,9 +693,9 @@ module J2ME {
       var value = this.pop(stackKind(kind));
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      emitCheckArrayBounds && this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
+      emitCheckArrayBounds && this.emitter.writeLn("CAB(" + array + ", " + index + ");");
       if (kind === Kind.Reference) {
-        emitCheckArrayStore && this.emitter.writeLn("$CAS(" + array + ", " + value + ");");
+        emitCheckArrayStore && this.emitter.writeLn("CAS(" + array + ", " + value + ");");
       }
       this.emitter.writeLn(array + "[" + index + "] = " + value + ";");
     }
@@ -703,7 +703,7 @@ module J2ME {
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      emitCheckArrayBounds && this.emitter.writeLn("$CAB(" + array + ", " + index + ");");
+      emitCheckArrayBounds && this.emitter.writeLn("CAB(" + array + ", " + index + ");");
       this.emitPush(kind, array + "[" + index + "]");
     }
 
@@ -734,7 +734,7 @@ module J2ME {
           return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
-          this.emitPush(Kind.Reference, "$S(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")");
+          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")");
           return;
         default:
           throw "Not done for: " + entry.tag;
@@ -761,9 +761,9 @@ module J2ME {
     emitCheckCast(cpi: number) {
       var object = this.peek(Kind.Reference);
       var classInfo = this.lookupClass(cpi);
-      var call = "$CCK";
+      var call = "CCK";
       if (classInfo.isInterface) {
-        call = "$CCI";
+        call = "CCI";
       }
       this.emitter.writeLn(call + "(" + object + ", " + classConstant(classInfo) + ");");
     }
@@ -771,9 +771,9 @@ module J2ME {
     emitInstanceOf(cpi: number) {
       var object = this.pop(Kind.Reference);
       var classInfo = this.lookupClass(cpi);
-      var call = "$IOK";
+      var call = "IOK";
       if (classInfo.isInterface) {
-        call = "$IOI";
+        call = "IOI";
       }
       this.emitPush(Kind.Int, call + "(" + object + ", " + classConstant(classInfo) + ") | 0");
     }
@@ -786,7 +786,7 @@ module J2ME {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
-      this.emitPush(Kind.Reference, "$NA(" + classConstant(classInfo) + ", " + length + ")");
+      this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")");
     }
 
     emitUnwind(pc: number, nextPC: number) {
@@ -801,12 +801,12 @@ module J2ME {
     }
 
     emitMonitorEnter(nextPC: number, object: string) {
-      this.emitter.writeLn("$ME(" + object + ");");
+      this.emitter.writeLn("ME(" + object + ");");
       this.emitUnwind(this.pc, nextPC);
     }
 
     emitMonitorExit(object: string) {
-      this.emitter.writeLn("$MX(" + object + ");");
+      this.emitter.writeLn("MX(" + object + ");");
     }
 
     emitStackOp(opcode: Bytecodes) {
@@ -863,7 +863,7 @@ module J2ME {
       var y = this.pop(result);
       var x = this.pop(result);
       if (canTrap) {
-        var checkName = result === Kind.Long ? "$CDZL" : "$CDZ";
+        var checkName = result === Kind.Long ? "CDZL" : "CDZ";
         this.emitter.writeLn(checkName + "(" + y + ");");
       }
       var v;

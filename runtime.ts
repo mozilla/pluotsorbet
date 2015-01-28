@@ -1720,23 +1720,24 @@ var O: J2ME.Frame = null;
 
 /**
  * Runtime exports for compiled code.
+ * DO NOT use these short names outside of compiled code.
  */
-var $IOK = J2ME.instanceOfKlass;
-var $IOI = J2ME.instanceOfInterface;
+var IOK = J2ME.instanceOfKlass;
+var IOI = J2ME.instanceOfInterface;
 
-var $CCK = J2ME.checkCastKlass;
-var $CCI = J2ME.checkCastInterface;
+var CCK = J2ME.checkCastKlass;
+var CCI = J2ME.checkCastInterface;
 
-var $AK = J2ME.getArrayKlass;
-var $NA = J2ME.newArray;
-var $S = J2ME.newStringConstant;
+var AK = J2ME.getArrayKlass;
+var NA = J2ME.newArray;
+var SC = J2ME.newStringConstant;
 
-var $CDZ = J2ME.checkDivideByZero;
-var $CDZL = J2ME.checkDivideByZeroLong;
+var CDZ = J2ME.checkDivideByZero;
+var CDZL = J2ME.checkDivideByZeroLong;
 
-var $CAB = J2ME.checkArrayBounds;
-var $CAS = J2ME.checkArrayStore;
+var CAB = J2ME.checkArrayBounds;
+var CAS = J2ME.checkArrayStore;
 
-var $ME = J2ME.monitorEnter;
-var $MX = J2ME.monitorExit;
-var $TE = J2ME.translateException;
+var ME = J2ME.monitorEnter;
+var MX = J2ME.monitorExit;
+var TE = J2ME.translateException;
