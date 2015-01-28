@@ -168,9 +168,7 @@ midp/fs.js contains native implementations of various midp filesystem APIs.
 
 Those implementations call out to lib/fs.js which is a JS implementation of a filesystem.
 
-Uses async\_storage.js (from gaia) - async API for accessing IndexedDB
-
-Java APIs are sync but our implementations use async APIs
+Java APIs are sync, so our implementation stores files in memory and makes them available mostly synchronously.
 
 ## Implementing Java functions in native code
 
