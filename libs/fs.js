@@ -371,15 +371,15 @@ var fs = (function() {
     var newBufferSize = 512;
 
     // The buffer grows exponentially until the content size
-    // reaches 65536. After this threshold, it starts to grow
-    // linearly in increments of 65536 bytes.
-    if (newContentSize < 65536) {
+    // reaches 524288. After this threshold, it starts to grow
+    // linearly in increments of 524288 bytes.
+    if (newContentSize < 524288) {
       while (newContentSize > newBufferSize) {
         newBufferSize <<= 1;
       }
     } else {
       while (newContentSize > newBufferSize) {
-        newBufferSize += 65536;
+        newBufferSize += 524288;
       }
     }
 
