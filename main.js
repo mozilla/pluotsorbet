@@ -175,6 +175,11 @@ function toggle(button) {
 var bigBang = 0;
 
 function start() {
+  if (MIDP.manifest["MIDlet-Version"] && MIDP.manifest["MIDlet-Version"] !== localStorage.getItem("lastMidletVersion")) {
+    CompiledMethodCache.clear().catch(console.error.bind(console));
+    localStorage.setItem("lastMidletVersion", MIDP.manifest["MIDlet-Version"]);
+  }
+
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
   CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);

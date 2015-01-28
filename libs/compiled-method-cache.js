@@ -102,14 +102,14 @@ var CompiledMethodCache = (function() {
 
       database = request.result;
 
-      var oldVersion = localStorage.getItem("CompiledMethodCache.appVersion");
+      var oldVersion = localStorage.getItem("lastAppVersion");
       if (config.version === oldVersion) {
         DEBUG && debug("app version " + config.version + " === " + oldVersion + "; restore");
-        restore();
+        restore().catch(console.error.bind(console));
       } else {
         DEBUG && debug("app version " + config.version + " !== " + oldVersion + "; clear");
-        clear();
-        localStorage.setItem("CompiledMethodCache.appVersion", config.version);
+        clear().catch(console.error.bind(console));
+        localStorage.setItem("lastAppVersion", config.version);
       }
 
       resolve();
