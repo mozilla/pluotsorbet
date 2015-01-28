@@ -319,7 +319,7 @@ module J2ME {
       console.log(s);
     });
 
-    id: number
+    id: number;
 
     /*
      * Contains method frames separated by special frame instances called marker frames. These
@@ -381,6 +381,13 @@ module J2ME {
       jitWriter = writers & WriterFlags.JIT ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
+    }
+
+    getPriority() {
+      if (this.thread) {
+        return this.thread.priority;
+      }
+      return NORMAL_PRIORITY;
     }
 
     kill() {
@@ -517,6 +524,10 @@ module J2ME {
     }
 
     setAsCurrentContext() {
+      if ($) {
+        threadTimeline && threadTimeline.leave();
+      }
+      threadTimeline && threadTimeline.enter(this.runtime.id + ":" + this.id);
       $ = this.runtime;
       if ($.ctx === this) {
         return;
@@ -526,6 +537,9 @@ module J2ME {
     }
 
     clearCurrentContext() {
+      if ($) {
+        threadTimeline && threadTimeline.leave();
+      }
       $ = null;
       Context.setWriters(Context.writer);
     }
@@ -535,7 +549,7 @@ module J2ME {
       this.resume();
     }
 
-    private execute() {
+    execute() {
       var start = performance.now();
       this.setAsCurrentContext();
       do {
@@ -573,7 +587,7 @@ module J2ME {
     }
 
     resume() {
-      (<any>window).setZeroTimeout(this.execute.bind(this));
+      Runtime.scheduleRunningContext(this);
     }
 
     block(obj, queue, lockLevel) {

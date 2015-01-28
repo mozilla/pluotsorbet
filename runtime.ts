@@ -97,6 +97,7 @@ module J2ME {
 
   export var timeline;
   export var methodTimeline;
+  export var threadTimeline;
   export var nativeCounter = new Metrics.Counter(true);
   export var runtimeCounter = new Metrics.Counter(true);
   export var baselineMethodCounter = new Metrics.Counter(true);
@@ -108,6 +109,7 @@ module J2ME {
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
     methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
+    threadTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Threads");
   }
 
   export function enterTimeline(name: string, data?: any) {
@@ -592,9 +594,102 @@ module J2ME {
     Pausing = 2
   }
 
+  /** @const */ export var MAX_PRIORITY: number = 10;
+  /** @const */ export var MIN_PRIORITY: number = 1;
+  /** @const */ export var NORMAL_PRIORITY: number = 5;
+
+  class PriorityQueue {
+    private _top: number;
+    private _queues: Context[][];
+
+    constructor() {
+      this._top = MIN_PRIORITY;
+      this._queues = [];
+      for (var i = MIN_PRIORITY; i <= MAX_PRIORITY; i++) {
+        this._queues[i] = [];
+      }
+    }
+
+    /*
+     * @param jump If true, move the context to the first of others who have the
+     * same priority.
+     */
+    enqueue(ctx: Context, jump: boolean) {
+      var priority = ctx.getPriority();
+      release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY,
+                        "Invalid priority: " + priority);
+      if (jump) {
+        this._queues[priority].unshift(ctx);
+      } else {
+        this._queues[priority].push(ctx);
+      }
+      this._top = Math.max(priority, this._top);
+    }
+
+    dequeue(): Context {
+      if (this.isEmpty()) {
+        return null;
+      }
+      var ctx = this._queues[this._top].shift();
+      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY) {
+        this._top--;
+      }
+      return ctx;
+    }
+
+    isEmpty() {
+      return this._top === MIN_PRIORITY && this._queues[this._top].length === 0;
+    }
+  }
+
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
+    private static _runningQueue: PriorityQueue = new PriorityQueue();
+    private static _processQueueScheduled: boolean = false;
+
     id: number;
+
+
+    /*
+     * The thread scheduler uses green thread algorithm, which a preemptive,
+     * priority based algorithm.
+     * All Java threads have a priority and the thread with he highest priority
+     * is scheduled to run.
+     * In case two threads have the same priority a FIFO ordering is followed.
+     * A different thread is invoked to run only if
+     *   1. The current thread blocks or terminates.
+     *   2. A thread with a higher priority than the current thread enters the
+     *      Runnable state. The lower priority thread is preempted and the
+     *      higher priority thread is scheduled to run.
+     */
+    static scheduleRunningContext(ctx: Context) {
+      // Preempt current thread if the new thread has higher priority
+      if ($ && ctx.getPriority() > $.ctx.getPriority()) {
+        Runtime._runningQueue.enqueue($.ctx, true);
+        Runtime._runningQueue.enqueue(ctx, false);
+        $.pause("preempt");
+      } else {
+        Runtime._runningQueue.enqueue(ctx, false);
+      }
+      Runtime.processRunningQueue();
+    }
+
+    private static processRunningQueue() {
+      if (Runtime._processQueueScheduled) {
+        return;
+      }
+      Runtime._processQueueScheduled = true;
+      (<any>window).setZeroTimeout(function() {
+        Runtime._processQueueScheduled = false;
+        try {
+          Runtime._runningQueue.dequeue().execute();
+        } finally {
+          if (!Runtime._runningQueue.isEmpty()) {
+            Runtime.processRunningQueue();
+          }
+        }
+      });
+    }
 
     /**
      * Bailout callback whenever a JIT frame is unwound.
@@ -705,132 +800,6 @@ module J2ME {
   export class Lock {
     constructor(public thread: java.lang.Thread, public level: number) {
       // ...
-    }
-  }
-
-  export module java.lang {
-    export interface Object {
-      /**
-       * Reference to the runtime klass.
-       */
-      klass: Klass
-
-      /**
-       * All objects have an internal hash code.
-       */
-      _hashCode: number;
-
-      /**
-       * Some objects may have a lock.
-       */
-      _lock: Lock;
-
-      waiting: Context [];
-
-      clone(): java.lang.Object;
-      equals(obj: java.lang.Object): boolean;
-      finalize(): void;
-      getClass(): java.lang.Class;
-      hashCode(): number;
-      notify(): void;
-      notifyAll(): void;
-      toString(): java.lang.String;
-      notify(): void;
-      notify(timeout: number): void;
-      notify(timeout: number, nanos: number): void;
-    }
-
-    export interface Class extends java.lang.Object {
-      /**
-       * RuntimeKlass associated with this Class object.
-       */
-      runtimeKlass: RuntimeKlass;
-    }
-
-    export interface String extends java.lang.Object {
-      str: string;
-    }
-
-    export interface Thread extends java.lang.Object {
-      pid: number;
-      alive: boolean;
-    }
-
-    export interface Exception extends java.lang.Object {
-      message: string;
-    }
-
-    export interface IllegalArgumentException extends java.lang.Exception {
-    }
-
-    export interface IllegalStateException extends java.lang.Exception {
-    }
-
-    export interface NullPointerException extends java.lang.Exception {
-    }
-
-    export interface RuntimeException extends java.lang.Exception {
-    }
-
-    export interface IndexOutOfBoundsException extends java.lang.Exception {
-    }
-
-    export interface ArrayIndexOutOfBoundsException extends java.lang.Exception {
-    }
-
-    export interface StringIndexOutOfBoundsException extends java.lang.Exception {
-    }
-
-    export interface ArrayStoreException extends java.lang.Exception {
-    }
-
-    export interface IllegalMonitorStateException extends java.lang.Exception {
-    }
-
-    export interface ClassCastException extends java.lang.Exception {
-    }
-
-    export interface NegativeArraySizeException extends java.lang.Exception {
-    }
-
-    export interface ArithmeticException extends java.lang.Exception {
-    }
-
-    export interface ClassNotFoundException extends java.lang.Exception {
-    }
-
-    export interface SecurityException extends java.lang.Exception {
-    }
-
-    export interface IllegalThreadStateException extends java.lang.Exception {
-    }
-
-  }
-
-  export module java.io {
-
-    export interface IOException extends java.lang.Exception {
-    }
-
-    export interface UTFDataFormatException extends java.lang.Exception {
-    }
-
-    export interface UnsupportedEncodingException extends java.lang.Exception {
-    }
-
-  }
-
-  export module javax.microedition.media {
-
-    export interface MediaException extends java.lang.Exception {
-    }
-
-  }
-
-  export module com.sun.cldc.isolate {
-    export interface Isolate extends java.lang.Object {
-      id: number;
-      runtime: Runtime;
     }
   }
 
@@ -1272,7 +1241,19 @@ module J2ME {
           var symbolName = symbols[key];
           var object = field.isStatic ? klass : klass.prototype;
           release || assert (!object.hasOwnProperty(symbolName), "Should not overwrite existing properties.");
-          ObjectUtilities.defineNonEnumerableForwardingProperty(object, symbolName, field.mangledName);
+          var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
+          var setter;
+          if (release) {
+            setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
+          } else {
+            setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
+          }
+          Object.defineProperty(object, symbolName, {
+            get: getter,
+            set: setter,
+            configurable: true,
+            enumerable: false
+          });
         }
       }
     }
@@ -1599,6 +1580,10 @@ module J2ME {
     return newArray(Klasses.byte, size);
   }
 
+  export function newIntArray(size: number): number[]  {
+    return newArray(Klasses.int, size);
+  }
+
   export function getArrayKlass(elementKlass: Klass): Klass {
     // Have we already created one? We need to maintain pointer identity.
     if (elementKlass.arrayKlass) {
@@ -1684,8 +1669,14 @@ module J2ME {
   }
 
   export enum Constants {
-    INT_MAX =  2147483647,
-    INT_MIN = -2147483648
+    BYTE_MIN = -128,
+    BYTE_MAX = 127,
+    SHORT_MIN = -32768,
+    SHORT_MAX = 32767,
+    CHAR_MIN = 0,
+    CHAR_MAX = 65535,
+    INT_MIN = -2147483648,
+    INT_MAX =  2147483647
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
@@ -1733,23 +1724,24 @@ var O: J2ME.Frame = null;
 
 /**
  * Runtime exports for compiled code.
+ * DO NOT use these short names outside of compiled code.
  */
-var $IOK = J2ME.instanceOfKlass;
-var $IOI = J2ME.instanceOfInterface;
+var IOK = J2ME.instanceOfKlass;
+var IOI = J2ME.instanceOfInterface;
 
-var $CCK = J2ME.checkCastKlass;
-var $CCI = J2ME.checkCastInterface;
+var CCK = J2ME.checkCastKlass;
+var CCI = J2ME.checkCastInterface;
 
-var $AK = J2ME.getArrayKlass;
-var $NA = J2ME.newArray;
-var $S = J2ME.newStringConstant;
+var AK = J2ME.getArrayKlass;
+var NA = J2ME.newArray;
+var SC = J2ME.newStringConstant;
 
-var $CDZ = J2ME.checkDivideByZero;
-var $CDZL = J2ME.checkDivideByZeroLong;
+var CDZ = J2ME.checkDivideByZero;
+var CDZL = J2ME.checkDivideByZeroLong;
 
-var $CAB = J2ME.checkArrayBounds;
-var $CAS = J2ME.checkArrayStore;
+var CAB = J2ME.checkArrayBounds;
+var CAS = J2ME.checkArrayStore;
 
-var $ME = J2ME.monitorEnter;
-var $MX = J2ME.monitorExit;
-var $TE = J2ME.translateException;
+var ME = J2ME.monitorEnter;
+var MX = J2ME.monitorExit;
+var TE = J2ME.translateException;

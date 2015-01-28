@@ -138,7 +138,7 @@ var TextEditorProvider = (function() {
         setFont: function(font) {
             this.font = font;
             this.setStyle("font-style", font.style);
-            this.setStyle("font-size", font.size);
+            this.setStyle("font-size", font.size + "px");
             this.setStyle("font-face", font.face);
         },
 

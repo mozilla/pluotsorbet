@@ -276,7 +276,7 @@ module J2ME.C4.Backend {
   };
 
   IR.JVMString.prototype.compile = function (cx: Context): AST.Node {
-    return new AST.CallExpression(new AST.Identifier("$S"), [constant(this.value)]);
+    return new AST.CallExpression(new AST.Identifier("SC"), [constant(this.value)]);
   };
 
   IR.JVMClass.prototype.compile = function (cx: Context): AST.Node {
@@ -285,18 +285,18 @@ module J2ME.C4.Backend {
 
   IR.JVMCheckCast.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    var runtimeFunction = "$CCK";
+    var runtimeFunction = "CCK";
     if (this.classInfo.isInterface) {
-      runtimeFunction = "$CCI";
+      runtimeFunction = "CCI";
     }
     return new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]);
   };
 
   IR.JVMInstanceOf.prototype.compile = function (cx: Context): AST.Node {
     var object = compileValue(this.object, cx);
-    var runtimeFunction = "$IOK";
+    var runtimeFunction = "IOK";
     if (this.classInfo.isInterface) {
-      runtimeFunction = "$IOI";
+      runtimeFunction = "IOI";
     }
     return new AST.BinaryExpression("|", new AST.CallExpression(new AST.Identifier(runtimeFunction), [object, id(mangleClass(this.classInfo))]), new AST.Literal(0));
   };
@@ -305,9 +305,9 @@ module J2ME.C4.Backend {
     var value = compileValue(this.value, cx);
     var check;
     if (this.value.kind === Kind.Long) {
-      check = "$CDZL";
+      check = "CDZL";
     } else {
-      check = "$CDZ";
+      check = "CDZ";
     }
     return new AST.CallExpression(new AST.Identifier(check), [value]);
   };
@@ -345,7 +345,7 @@ module J2ME.C4.Backend {
 
   IR.JVMNewObjectArray.prototype.compile = function (cx: Context): AST.Node {
     var emitClassInitializationCheck = !CLASSES.isPreInitializedClass(this.classInfo);
-    var callee: AST.Node = call(id("$NA"), [id(mangleClass(this.classInfo)), compileValue(this.length, cx)]);
+    var callee: AST.Node = call(id("NA"), [id(mangleClass(this.classInfo)), compileValue(this.length, cx)]);
     if (emitClassInitializationCheck) {
       callee = new AST.SequenceExpression([getRuntimeClass(this.classInfo), callee]);
     }
@@ -353,11 +353,11 @@ module J2ME.C4.Backend {
   };
 
   function checkArrayBounds(array, index) {
-    return new AST.CallExpression(new AST.Identifier("$CAB"), [array, index]);
+    return new AST.CallExpression(new AST.Identifier("CAB"), [array, index]);
   }
 
   function checkArrayStore(array, value) {
-    return new AST.CallExpression(new AST.Identifier("$CAS"), [array, value]);
+    return new AST.CallExpression(new AST.Identifier("CAS"), [array, value]);
   }
 
   IR.JVMStoreIndexed.prototype.compile = function (cx: Context): AST.Node {

@@ -541,3 +541,13 @@ DumbPipe.registerOpener("reload", function(message, sender) {
 DumbPipe.registerOpener("exit", function(message, sender) {
   window.close();
 });
+
+DumbPipe.registerOpener("backgroundCheck", function(message, sender) {
+  if (navigator.mozAlarms) {
+    navigator.mozAlarms.add(new Date(Date.now() + MIDlet.wakeUpAlarm), 'ignoreTimezone', {});
+
+    navigator.mozSetMessageHandler('alarm', function() {
+      navigator.mozAlarms.add(new Date(Date.now() + MIDlet.wakeUpAlarm), 'ignoreTimezone', {});
+    });
+  }
+});
