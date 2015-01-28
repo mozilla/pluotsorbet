@@ -65,17 +65,40 @@ public class TestVirtualKeyboard extends Canvas implements Testlet {
         th.check(VirtualKeyboard.getXPosition(), 0);
         // th.check(VirtualKeyboard.getYPosition() + VirtualKeyboard.getHeight(), /* Window height */);
         // th.check(VirtualKeyboard.getWidth(), /* Width of window */);
-
-        // It would be nice to verify these values, but it's not clear
-        // what they should be (probably varies across devices)
-        // th.check(VirtualKeyboard.getYPosition(), /* unknown */);
-        // th.check(VirtualKeyboard.getHeight(), /* unknown */);
     }
 
     public void test(TestHarness th) {
         TestKeyboardVisibilityListener listener = new TestKeyboardVisibilityListener(th);
         th.check(null == listener, false);
         VirtualKeyboard.setVisibilityListener(listener);
+
+
+
+        // `getCustomKeyboardControl` is unimplemented
+        boolean gotExpectedException = false;
+        try {
+            VirtualKeyboard.getCustomKeyboardControl();
+        } catch (RuntimeException e) {
+            gotExpectedException = true;
+        } catch (Exception e) {
+            gotExpectedException = false;
+        }
+
+        th.check(gotExpectedException, "getCustomKeyboardControl throws RuntimeException");
+
+        // `suppressSizeChanged` is unimplemented
+        gotExpectedException = false;
+        try {
+            VirtualKeyboard.suppressSizeChanged(true);
+        } catch (RuntimeException e) {
+            gotExpectedException = true;
+        } catch (Exception e) {
+            gotExpectedException = false;
+        }
+
+        th.check(gotExpectedException, "suppressSizeChanged throws RuntimeException");
+
+
 
         verifyKeyboardHidden(th);
 

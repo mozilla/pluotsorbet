@@ -24,14 +24,7 @@ var currentlyFocusedTextEditor;
     };
 
     function setFullScreen(isFullScreen) {
-        var sidebar = document.getElementById("sidebar");
-        var header = document.getElementById("drawer").querySelector("header");
-        var canvas = MIDP.Context2D.canvas;
-        sidebar.style.display = header.style.display =
-            isFullScreen ? "none" : "block";
-        var headerHeight = isFullScreen ? 0 : header.offsetHeight;
-        canvas.height = MIDP.ScreenHeight - headerHeight;
-        canvas.dispatchEvent(new Event('canvasresize'));
+        MIDP.setFullScreen(isFullScreen);
     }
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
@@ -65,16 +58,20 @@ var currentlyFocusedTextEditor;
         return 1;
     };
 
+    Native["com/sun/midp/lcdui/DisplayDevice.reverseOrientation0.(I)Z"] = function(id) {
+        return 0;
+    };
+
     Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = function(id) {
         return 0;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return MIDP.Context2D.canvas.width;
+        return MIDP.ScreenWidth;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return MIDP.Context2D.canvas.height;
+        return MIDP.ScreenHeight;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
@@ -1737,86 +1734,6 @@ var currentlyFocusedTextEditor;
         }
 
         return dirtyEditors.shift();
-    };
-
-    var initialWindowHeight = window.innerHeight;
-    var isVKVisible = false;
-    var keyboardHeight = 0;
-    var pendingShowNotify = false;
-    var pendingHideNotify = false;
-    var keyboardVisibilityListenerResolve;
-    window.addEventListener("resize", function(evt) {
-        if (window.innerHeight < initialWindowHeight) {
-            if (isVKVisible) {
-                console.warn("Window shrunk but we thought the keyboard was already visible!");
-            }
-            isVKVisible = true;
-            keyboardHeight = initialWindowHeight - window.innerHeight;
-            if (pendingHideNotify) {
-                pendingHideNotify = false;
-                return;
-            } else if (keyboardVisibilityListenerResolve) {
-                keyboardVisibilityListenerResolve(1);
-                keyboardVisibilityListenerResolve = null;
-            } else {
-                pendingShowNotify = true;
-            }
-        } else if (window.innerHeight >= initialWindowHeight) {
-            if (window.innerHeight > initialWindowHeight) {
-                console.warn("Window grew beyond initial size!");
-                initialWindowHeight = window.innerHeight;
-            }
-            if (!isVKVisible) {
-                console.warn("Window grew but we thought the keyboard was already hidden!");
-            }
-            isVKVisible = false;
-            keyboardHeight = 0;
-            if (pendingShowNotify) {
-                pendingShowNotify = false;
-                return;
-            } else if (keyboardVisibilityListenerResolve) {
-                keyboardVisibilityListenerResolve(0);
-                keyboardVisibilityListenerResolve = null;
-            } else {
-                pendingHideNotify = true;
-            }
-        }
-    });
-
-    Native["com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z"] = function() {
-        return isVKVisible ? 1 : 0;
-    };
-
-    Native["com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I"] = function() {
-        return 0;
-    };
-
-    Native["com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I"] = function() {
-        // We should return the number of pixels between the top of the
-        // screen and the top of the keyboard
-        return window.innerHeight;
-    };
-
-    Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
-        return window.innerWidth;
-    };
-
-    Native["com/nokia/mid/ui/VirtualKeyboard.getHeight.()I"] = function() {
-        return keyboardHeight;
-    };
-
-    Native["com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z"] = function() {
-        asyncImpl("Z", new Promise(function(resolve, reject) {
-            if (pendingShowNotify) {
-                resolve(1);
-                pendingShowNotify = false;
-            } else if (pendingHideNotify) {
-                resolve(0);
-                pendingHideNotify = false;
-            } else {
-                keyboardVisibilityListenerResolve = resolve;
-            }
-        }));
     };
 
     var curDisplayableId = 0;
