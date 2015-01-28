@@ -611,6 +611,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
         break;
 
         case "Music":
+        case "Sound":
           accept = "audio/*";
         break;
 
