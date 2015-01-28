@@ -611,6 +611,7 @@ _gDefaultContentTypes = """
     Makefile            /^[Mm]akefile.*$/
     PHP                 .php
     JavaScript          .js
+    JavaScript          .ts
     CSS                 .css
     C++                 .c       # C++ because then we can use //-style comments
     C++                 .cpp
