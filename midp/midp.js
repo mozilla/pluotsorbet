@@ -482,6 +482,9 @@ MIDP.Context2D = (function() {
     MIDP.ScreenHeight = c.height;
     MIDP.ScreenWidth = c.width;
 
+    window.addEventListener("keyboardHidden", onKeyboardHidden);
+    window.addEventListener("keyboardShown", onKeyboardShown);
+
     function sendPenEvent(pt, whichType) {
         MIDP.sendNativeEvent({
             type: MIDP.PEN_EVENT,
@@ -526,7 +529,6 @@ MIDP.Context2D = (function() {
         canvasRect = c.getBoundingClientRect();
         c.style.height = c.height + "px";
         c.style.top = (MIDP.ScreenHeight - c.height) + "px";
-        //MIDP.sendNativeEvent({ type: MIDP.SCREEN_REPAINT_EVENT }, MIDP.foregroundIsolateId);
     });
 
     function getEventPoint(event) {
@@ -1378,6 +1380,40 @@ var pendingShowNotify = false;
 var pendingHideNotify = false;
 var keyboardVisibilityListenerResolve;
 
+function onKeyboardShown(evt) {
+    if (isVKVisible) {
+        console.warn("keyboardShown but we thought keyboard was already visible!");
+    }
+
+    isVKVisible = true;
+
+    if (pendingHideNotify) {
+        pendingHideNotify = false;
+    } else if (keyboardVisibilityListenerResolve) {
+        keyboardVisibilityListenerResolve(1);
+        keyboardVisibilityListenerResolve = null;
+    } else {
+        pendingShowNotify = true;
+    }
+}
+
+function onKeyboardHidden(evt) {
+    if (!isVKVisible) {
+        console.warn("keyboardHidden but we thought the keyboard was already hidden!");
+    }
+
+    isVKVisible = false;
+
+    if (pendingShowNotify) {
+        pendingShowNotify = false;
+    } else if (keyboardVisibilityListenerResolve) {
+        keyboardVisibilityListenerResolve(0);
+        keyboardVisibilityListenerResolve = null;
+    } else {
+        pendingHideNotify = true;
+    }
+}
+
 function onWindowResize(evt) {
     var shouldSendRotate = false;
     if (window.innerWidth > MIDP.ScreenWidth) {
@@ -1391,40 +1427,14 @@ function onWindowResize(evt) {
     }
 
     if (window.innerHeight < MIDP.ScreenHeight) {
-        if (isVKVisible) {
-            console.warn("Window shrunk but we thought the keyboard was already visible!");
-        }
-
-        isVKVisible = true;
-
-        if (pendingHideNotify) {
-            pendingHideNotify = false;
-        } else if (keyboardVisibilityListenerResolve) {
-            keyboardVisibilityListenerResolve(1);
-            keyboardVisibilityListenerResolve = null;
-        } else {
-            pendingShowNotify = true;
-        }
+        window.dispatchEvent(new Event("keyboardShown"));
     } else if (window.innerHeight >= MIDP.ScreenHeight) {
         if (window.innerHeight > MIDP.ScreenHeight) {
             console.warn("Window grew beyond initial height!");
             MIDP.ScreenHeight = window.innerHeight;
             shouldSendRotate = true;
         }
-        if (!isVKVisible) {
-            console.warn("Window grew but we thought the keyboard was already hidden!");
-        }
-
-        isVKVisible = false;
-
-        if (pendingShowNotify) {
-            pendingShowNotify = false;
-        } else if (keyboardVisibilityListenerResolve) {
-            keyboardVisibilityListenerResolve(0);
-            keyboardVisibilityListenerResolve = null;
-        } else {
-            pendingHideNotify = true;
-        }
+        window.dispatchEvent(new Event("keyboardHidden"));
     }
 
     if (shouldSendRotate) {

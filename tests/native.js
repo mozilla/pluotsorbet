@@ -71,11 +71,11 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function() {
-  DumbPipe.open("hideKeyboard", null, function(message) {});
+  window.dispatchEvent(new Event("keyboardHidden"));
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V"] = function() {
-  DumbPipe.open("showKeyboard", null, function(message) {});
+  window.dispatchEvent(new Event("keyboardShown"));
 };
 
 Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = function() {
