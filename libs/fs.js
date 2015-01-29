@@ -176,7 +176,7 @@ var fs = (function() {
       if (DEBUG_FS) { console.log("getAll initiated"); }
       var objectStore = transaction.objectStore(Store.DBSTORENAME);
       var then = performance.now();
-      objectStore.mozGetAll().onsuccess = (function(event) {
+      objectStore.getAll().onsuccess = (function(event) {
         var records = event.target.result;
         for (var i = 0; i < records.length; ++i) {
           this.map.set(records[i].pathname, records[i]);
