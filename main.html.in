@@ -14,7 +14,7 @@
   <script type="text/javascript" src="config/midlet.js" defer></script>
   <script type="text/javascript" src="config/build.js" defer></script>
   <script type="text/javascript" src="config/urlparams.js" defer></script>
-  <!-- #if PROFILE -->
+  <!-- #if PROFILE == "true" -->
   <script type="text/javascript" src="build/shumway.js" defer></script>
   <!-- #endif -->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
