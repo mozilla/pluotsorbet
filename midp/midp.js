@@ -6,6 +6,90 @@
 var MIDP = {
 };
 
+MIDP.isFullScreen = false;
+MIDP.setFullScreen = function(isFS) {
+    MIDP.isFullScreen = isFS;
+    MIDP.updateCanvas();
+};
+
+MIDP.updateCanvas = function() {
+    var sidebar = document.getElementById("sidebar");
+    var header = document.getElementById("drawer").querySelector("header");
+    var canvas = MIDP.Context2D.canvas;
+    sidebar.style.display = header.style.display =
+        MIDP.isFullScreen ? "none" : "block";
+    var headerHeight = MIDP.isFullScreen ? 0 : header.offsetHeight;
+    canvas.height = MIDP.ScreenHeight - headerHeight;
+    canvas.dispatchEvent(new Event('canvasresize'));
+};
+
+MIDP.isVKVisible = false;
+MIDP.pendingShowNotify = false;
+MIDP.pendingHideNotify = false;
+MIDP.keyboardVisibilityListenerResolve = null;
+MIDP.onKeyboardShown = function(evt) {
+    if (MIDP.isVKVisible) {
+        console.warn("keyboardShown but we thought keyboard was already visible!");
+    }
+
+    MIDP.isVKVisible = true;
+
+    if (MIDP.pendingHideNotify) {
+        MIDP.pendingHideNotify = false;
+    } else if (MIDP.keyboardVisibilityListenerResolve) {
+        MIDP.keyboardVisibilityListenerResolve(1);
+        MIDP.keyboardVisibilityListenerResolve = null;
+    } else {
+        MIDP.pendingShowNotify = true;
+    }
+};
+
+MIDP.onKeyboardHidden = function(evt) {
+    if (!MIDP.isVKVisible) {
+        console.warn("keyboardHidden but we thought the keyboard was already hidden!");
+    }
+
+    MIDP.isVKVisible = false;
+
+    if (MIDP.pendingShowNotify) {
+        MIDP.pendingShowNotify = false;
+    } else if (MIDP.keyboardVisibilityListenerResolve) {
+        MIDP.keyboardVisibilityListenerResolve(0);
+        MIDP.keyboardVisibilityListenerResolve = null;
+    } else {
+        MIDP.pendingHideNotify = true;
+    }
+};
+
+MIDP.onWindowResize = function(evt) {
+    var shouldSendRotate = false;
+    if (window.innerWidth > MIDP.ScreenWidth) {
+        console.warn("Window grew beyond initial width!");
+        MIDP.ScreenWidth = window.innerWidth;
+        shouldSendRotate = true;
+    } else if (window.innerWidth < MIDP.ScreenWidth) {
+        console.warn("Window shrunk from initial width!");
+        MIDP.ScreenWidth = window.innerWidth;
+        shouldSendRotate = true;
+    }
+
+    if (window.innerHeight < MIDP.ScreenHeight) {
+        window.dispatchEvent(new Event("keyboardShown"));
+    } else if (window.innerHeight >= MIDP.ScreenHeight) {
+        if (window.innerHeight > MIDP.ScreenHeight) {
+            console.warn("Window grew beyond initial height!");
+            MIDP.ScreenHeight = window.innerHeight;
+            shouldSendRotate = true;
+        }
+        window.dispatchEvent(new Event("keyboardHidden"));
+    }
+
+    if (shouldSendRotate) {
+        MIDP.updateCanvas();
+        MIDP.sendNativeEvent({ type: MIDP.ROTATION_EVENT, intParam1: 0, intParam2: 0, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+    }
+};
+
 MIDP.manifest = {};
 
 Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
@@ -1355,96 +1439,12 @@ addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me
 addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
 addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
 addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
-
-
-MIDP.isFullScreen = false;
-MIDP.setFullScreen = function(isFS) {
-    MIDP.isFullScreen = isFS;
-    MIDP.updateCanvas();
-}
-
-MIDP.updateCanvas = function() {
-    var sidebar = document.getElementById("sidebar");
-    var header = document.getElementById("drawer").querySelector("header");
-    var canvas = MIDP.Context2D.canvas;
-    sidebar.style.display = header.style.display =
-        MIDP.isFullScreen ? "none" : "block";
-    var headerHeight = MIDP.isFullScreen ? 0 : header.offsetHeight;
-    canvas.height = MIDP.ScreenHeight - headerHeight;
-    canvas.dispatchEvent(new Event('canvasresize'));
-}
-
-MIDP.isVKVisible = false;
-MIDP.pendingShowNotify = false;
-MIDP.pendingHideNotify = false;
-MIDP.keyboardVisibilityListenerResolve = null;
-
-MIDP.onKeyboardShown = function(evt) {
-    if (MIDP.isVKVisible) {
-        console.warn("keyboardShown but we thought keyboard was already visible!");
-    }
-
-    MIDP.isVKVisible = true;
-
-    if (MIDP.pendingHideNotify) {
-        MIDP.pendingHideNotify = false;
-    } else if (MIDP.keyboardVisibilityListenerResolve) {
-        MIDP.keyboardVisibilityListenerResolve(1);
-        MIDP.keyboardVisibilityListenerResolve = null;
-    } else {
-        MIDP.pendingShowNotify = true;
-    }
-}
-
-MIDP.onKeyboardHidden = function(evt) {
-    if (!MIDP.isVKVisible) {
-        console.warn("keyboardHidden but we thought the keyboard was already hidden!");
-    }
-
-    MIDP.isVKVisible = false;
-
-    if (MIDP.pendingShowNotify) {
-        MIDP.pendingShowNotify = false;
-    } else if (MIDP.keyboardVisibilityListenerResolve) {
-        MIDP.keyboardVisibilityListenerResolve(0);
-        MIDP.keyboardVisibilityListenerResolve = null;
-    } else {
-        MIDP.pendingHideNotify = true;
-    }
-}
-
-MIDP.onWindowResize = function(evt) {
-    var shouldSendRotate = false;
-    if (window.innerWidth > MIDP.ScreenWidth) {
-        console.warn("Window grew beyond initial width!");
-        MIDP.ScreenWidth = window.innerWidth;
-        shouldSendRotate = true;
-    } else if (window.innerWidth < MIDP.ScreenWidth) {
-        console.warn("Window shrunk from initial width!");
-        MIDP.ScreenWidth = window.innerWidth;
-        shouldSendRotate = true;
-    }
-
-    if (window.innerHeight < MIDP.ScreenHeight) {
-        window.dispatchEvent(new Event("keyboardShown"));
-    } else if (window.innerHeight >= MIDP.ScreenHeight) {
-        if (window.innerHeight > MIDP.ScreenHeight) {
-            console.warn("Window grew beyond initial height!");
-            MIDP.ScreenHeight = window.innerHeight;
-            shouldSendRotate = true;
-        }
-        window.dispatchEvent(new Event("keyboardHidden"));
-    }
-
-    if (shouldSendRotate) {
-        MIDP.updateCanvas();
-        MIDP.sendNativeEvent({ type: MIDP.ROTATION_EVENT, intParam1: 0, intParam2: 0, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
-    }
-};
-
-addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;", null);
-addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
 addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
+addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
+
+Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;"] = function() {
+    throw $.newIllegalArgumentException("VirtualKeyboard::getCustomKeyboardControl() not implemented")
+};
 
 Native["com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z"] = function() {
     return MIDP.isVKVisible ? 1 : 0;
