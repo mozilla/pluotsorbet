@@ -472,7 +472,7 @@ MIDP.Context2D = (function() {
       c.style.left = "0px";
       c.style.height = c.height + "px";
       c.style.width = c.width + "px";
-      window.addEventListener("resize", onWindowResize);
+      window.addEventListener("resize", MIDP.onWindowResize);
     } else {
       document.documentElement.classList.add('debug-mode');
       c.width = 240;
@@ -482,8 +482,8 @@ MIDP.Context2D = (function() {
     MIDP.ScreenHeight = c.height;
     MIDP.ScreenWidth = c.width;
 
-    window.addEventListener("keyboardHidden", onKeyboardHidden);
-    window.addEventListener("keyboardShown", onKeyboardShown);
+    window.addEventListener("keyboardHidden", MIDP.onKeyboardHidden);
+    window.addEventListener("keyboardShown", MIDP.onKeyboardShown);
 
     function sendPenEvent(pt, whichType) {
         MIDP.sendNativeEvent({
@@ -526,9 +526,9 @@ MIDP.Context2D = (function() {
     // Cache the canvas position for future computation.
     var canvasRect = c.getBoundingClientRect();
     c.addEventListener("canvasresize", function() {
-        canvasRect = c.getBoundingClientRect();
         c.style.height = c.height + "px";
         c.style.top = (MIDP.ScreenHeight - c.height) + "px";
+        canvasRect = c.getBoundingClientRect();
     });
 
     function getEventPoint(event) {
@@ -1357,9 +1357,9 @@ addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
 addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
 
 
-var isFullScreen = false;
+MIDP.isFullScreen = false;
 MIDP.setFullScreen = function(isFS) {
-    isFullScreen = isFS;
+    MIDP.isFullScreen = isFS;
     MIDP.updateCanvas();
 }
 
@@ -1368,53 +1368,52 @@ MIDP.updateCanvas = function() {
     var header = document.getElementById("drawer").querySelector("header");
     var canvas = MIDP.Context2D.canvas;
     sidebar.style.display = header.style.display =
-        isFullScreen ? "none" : "block";
-    var headerHeight = isFullScreen ? 0 : header.offsetHeight;
+        MIDP.isFullScreen ? "none" : "block";
+    var headerHeight = MIDP.isFullScreen ? 0 : header.offsetHeight;
     canvas.height = MIDP.ScreenHeight - headerHeight;
     canvas.dispatchEvent(new Event('canvasresize'));
 }
 
-var isVKVisible = false;
-var keyboardHeight = 0;
-var pendingShowNotify = false;
-var pendingHideNotify = false;
-var keyboardVisibilityListenerResolve;
+MIDP.isVKVisible = false;
+MIDP.pendingShowNotify = false;
+MIDP.pendingHideNotify = false;
+MIDP.keyboardVisibilityListenerResolve;
 
-function onKeyboardShown(evt) {
-    if (isVKVisible) {
+MIDP.onKeyboardShown = function(evt) {
+    if (MIDP.isVKVisible) {
         console.warn("keyboardShown but we thought keyboard was already visible!");
     }
 
-    isVKVisible = true;
+    MIDP.isVKVisible = true;
 
-    if (pendingHideNotify) {
-        pendingHideNotify = false;
-    } else if (keyboardVisibilityListenerResolve) {
-        keyboardVisibilityListenerResolve(1);
-        keyboardVisibilityListenerResolve = null;
+    if (MIDP.pendingHideNotify) {
+        MIDP.pendingHideNotify = false;
+    } else if (MIDP.keyboardVisibilityListenerResolve) {
+        MIDP.keyboardVisibilityListenerResolve(1);
+        MIDP.keyboardVisibilityListenerResolve = null;
     } else {
-        pendingShowNotify = true;
+        MIDP.pendingShowNotify = true;
     }
 }
 
-function onKeyboardHidden(evt) {
-    if (!isVKVisible) {
+MIDP.onKeyboardHidden = function(evt) {
+    if (!MIDP.isVKVisible) {
         console.warn("keyboardHidden but we thought the keyboard was already hidden!");
     }
 
-    isVKVisible = false;
+    MIDP.isVKVisible = false;
 
-    if (pendingShowNotify) {
-        pendingShowNotify = false;
-    } else if (keyboardVisibilityListenerResolve) {
-        keyboardVisibilityListenerResolve(0);
-        keyboardVisibilityListenerResolve = null;
+    if (MIDP.pendingShowNotify) {
+        MIDP.pendingShowNotify = false;
+    } else if (MIDP.keyboardVisibilityListenerResolve) {
+        MIDP.keyboardVisibilityListenerResolve(0);
+        MIDP.keyboardVisibilityListenerResolve = null;
     } else {
-        pendingHideNotify = true;
+        MIDP.pendingHideNotify = true;
     }
 }
 
-function onWindowResize(evt) {
+MIDP.onWindowResize = function(evt) {
     var shouldSendRotate = false;
     if (window.innerWidth > MIDP.ScreenWidth) {
         console.warn("Window grew beyond initial width!");
@@ -1443,20 +1442,12 @@ function onWindowResize(evt) {
     }
 };
 
-Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;"] = function() {
-    throw $.newRuntimeException("VirtualKeyboard::getCustomKeyboardControl() not implemented");
-};
-
-Native["com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V"] = function(bl) {
-    console.warn("VirtualKeyboard::hideOpenKeypadCommand(boolean) not implemented");
-};
-
-Native["com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V"] = function(bl) {
-    throw $.newRuntimeException("VirtualKeyboard::suppressSizeChanged(boolean) not implemented");
-};
+addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;", null);
+addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
+addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
 
 Native["com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z"] = function() {
-    return isVKVisible ? 1 : 0;
+    return MIDP.isVKVisible ? 1 : 0;
 };
 
 Native["com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I"] = function() {
@@ -1479,14 +1470,14 @@ Native["com/nokia/mid/ui/VirtualKeyboard.getHeight.()I"] = function() {
 
 Native["com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z"] = function() {
     asyncImpl("Z", new Promise(function(resolve, reject) {
-        if (pendingShowNotify) {
+        if (MIDP.pendingShowNotify) {
             resolve(1);
-            pendingShowNotify = false;
-        } else if (pendingHideNotify) {
+            MIDP.pendingShowNotify = false;
+        } else if (MIDP.pendingHideNotify) {
             resolve(0);
-            pendingHideNotify = false;
+            MIDP.pendingHideNotify = false;
         } else {
-            keyboardVisibilityListenerResolve = resolve;
+            MIDP.keyboardVisibilityListenerResolve = resolve;
         }
     }));
 };

@@ -23,10 +23,6 @@ var currentlyFocusedTextEditor;
         _map: new Map()
     };
 
-    function setFullScreen(isFullScreen) {
-        MIDP.setFullScreen(isFullScreen);
-    }
-
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = J2ME.newIntArray( 1);
         ids[0] = 1;
@@ -82,14 +78,14 @@ var currentlyFocusedTextEditor;
         var d = NativeDisplays.get(displayId);
         d.fullScreen = mode;
         if (MIDP.displayId === displayId) {
-            setFullScreen(mode);
+            MIDP.setFullScreen(mode);
         }
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
         document.getElementById("splash-screen").style.display = "none";
         var d = NativeDisplays.get(displayId);
-        setFullScreen(d.fullScreen);
+        MIDP.setFullScreen(d.fullScreen);
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {

@@ -75,30 +75,12 @@ public class TestVirtualKeyboard extends Canvas implements Testlet {
 
 
         // `getCustomKeyboardControl` is unimplemented
-        boolean gotExpectedException = false;
-        try {
-            VirtualKeyboard.getCustomKeyboardControl();
-        } catch (RuntimeException e) {
-            gotExpectedException = true;
-        } catch (Exception e) {
-            gotExpectedException = false;
-        }
-
-        th.check(gotExpectedException, "getCustomKeyboardControl throws RuntimeException");
+        CustomKeyboardControl c = VirtualKeyboard.getCustomKeyboardControl();
+        th.check(c == null, "getCustomKeyboardControl returns null");
 
         // `suppressSizeChanged` is unimplemented
-        gotExpectedException = false;
-        try {
-            VirtualKeyboard.suppressSizeChanged(true);
-        } catch (RuntimeException e) {
-            gotExpectedException = true;
-        } catch (Exception e) {
-            gotExpectedException = false;
-        }
-
-        th.check(gotExpectedException, "suppressSizeChanged throws RuntimeException");
-
-
+        VirtualKeyboard.suppressSizeChanged(true);
+        th.check(true, "suppressSizeChanged doesn't throw");
 
         verifyKeyboardHidden(th);
 
