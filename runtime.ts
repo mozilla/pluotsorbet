@@ -46,7 +46,7 @@ module J2ME {
   /**
    * Turns on caching of JIT-compiled methods.
    */
-  export var enableCompiledMethodCache = true;
+  export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
 
   /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.

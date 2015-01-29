@@ -3,7 +3,15 @@
 
 'use strict';
 
-console.print = console.log;
+if (typeof console === "undefined") {
+  var console = {
+    log: print
+  }
+}
+
+console.print = function (c) {
+  putstr(String.fromCharCode(c));
+};
 
 function check() {
 
@@ -70,7 +78,7 @@ var config = {
 };
 
 try {
-  load("build/j2me.js","libs/zipfile.js", "blackBox.js",
+  load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
        "libs/encoding.js", "util.js",
        "instrument.js",
        "override.js", "native.js", "tests/override.js", 
@@ -79,7 +87,7 @@ try {
 
   // load("build/classes.jar.js");
   // load("build/program.jar.js");
-  load("build/tests.jar.js");
+  // load("build/tests.jar.js");
 
   var dump = putstr;
 
@@ -96,7 +104,7 @@ try {
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.All;
+  J2ME.writers = J2ME.WriterFlags.JIT;
 
   print("INITIALIZATION TIME: " + (dateNow() - start));
 
