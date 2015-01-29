@@ -74,9 +74,9 @@ var TextEditorProvider = (function() {
                     resolve()
                     return;
                 }
-                setTimeout(this.textEditorElem.focus);
+                setTimeout(this.textEditorElem.focus.bind(this.textEditorElem));
                 this.textEditorElem.onfocus = resolve;
-            });
+            }.bind(this));
         },
 
         blur: function() {
@@ -86,9 +86,9 @@ var TextEditorProvider = (function() {
                     resolve();
                     return;
                 }
+                setTimeout(this.textEditorElem.blur.bind(this.textEditorElem));
                 this.textEditorElem.onblur = resolve;
-                this.textEditorElem.blur();
-            });
+            }.bind(this));
         },
 
         getVisible: function() {
