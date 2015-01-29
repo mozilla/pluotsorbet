@@ -4,7 +4,7 @@ JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 VERSION ?=$(shell date +%s)
-PROFILE ?= $(if $(findstring 0,$(RELEASE)),1,0)
+PROFILE ?= 0
 
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
