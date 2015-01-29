@@ -79,7 +79,7 @@ Native["com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V"] = function() {
 };
 
 Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = function() {
-  return currentlyFocusedTextEditor.textEditor.focused ? 1 : 0;
+  return currentlyFocusedTextEditor.focused ? 1 : 0;
 };
 
 Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(pathStr) {
