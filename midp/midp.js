@@ -1377,7 +1377,7 @@ MIDP.updateCanvas = function() {
 MIDP.isVKVisible = false;
 MIDP.pendingShowNotify = false;
 MIDP.pendingHideNotify = false;
-MIDP.keyboardVisibilityListenerResolve;
+MIDP.keyboardVisibilityListenerResolve = null;
 
 MIDP.onKeyboardShown = function(evt) {
     if (MIDP.isVKVisible) {
