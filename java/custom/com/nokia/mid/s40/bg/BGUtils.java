@@ -3,6 +3,9 @@ package com.nokia.mid.s40.bg;
 import com.sun.midp.main.MIDletSuiteUtils;
 
 class WaitUserInteractionThread extends Thread {
+    public WaitUserInteractionThread() {
+        setPriority(Thread.MAX_PRIORITY);
+    }
     public void run() {
         BGUtils.waitUserInteraction();
         BGUtils.startMIDlet();
