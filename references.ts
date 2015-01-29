@@ -1,5 +1,6 @@
 // Basics
 
+///<reference path='config.ts' />
 ///<reference path='utilities.ts' />
 
 ///<reference path='classfile/classfile.ts' />

@@ -1,14 +1,34 @@
 .PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 VERSION ?=$(shell date +%s)
+PROFILE ?= 0
+
+# Create a checksum file to monitor the changes of the Makefile configuration.
+# If the configuration has changed, we update the checksum file to let the files
+# which depend on it to regenerate.
+
+CHECKSUM := "$(RELEASE)$(PROFILE)"
+OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
+$(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
+
+toBool = $(if $(findstring 1,$(1)),true,false)
+PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
+             -D RELEASE=$(call toBool,$(RELEASE)) \
+             -D PROFILE=$(call toBool,$(PROFILE)) \
+             -D VERSION=$(VERSION)
+PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
+PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
 all: config-build java jasmin tests j2me shumway aot
 
 test: all
 	tests/runtests.py
+
+$(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
+	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
 jasmin:
 	make -C tools/jasmin-2.4
@@ -48,10 +68,10 @@ shumway: build/shumway.js
 build/shumway.js: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
 
-config-build:
-	echo "// generated, build-specific configuration" > config/build.js
-	echo "config.release = ${RELEASE};" >> config/build.js
-	echo "config.version = \"${VERSION}\";" >> config/build.js
+# We should update config/build.js everytime to generate the new VERSION number
+# based on current time.
+config-build: config/build.js.in
+	$(PREPROCESS) -o config/build.js config/build.js.in
 
 tests/tests.jar: tests
 tests:
