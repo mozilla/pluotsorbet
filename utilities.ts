@@ -20,9 +20,6 @@ var inBrowser = typeof console !== "undefined" && console.info;
 declare var putstr;
 declare var printErr;
 
-/** @const */ var release: boolean = true;
-/** @const */ var profile: boolean = true;
-
 declare var dateNow: () => number;
 
 declare var dump: (message: string) => void;
