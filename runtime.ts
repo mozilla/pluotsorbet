@@ -1166,7 +1166,11 @@ module J2ME {
       try {
         return method.apply(this, arguments);
       } catch (e) {
-        stderrWriter.errorLn("Native " + key + " throws:" + e);
+        // Filter JAVA exception and only report the native js exception, which
+        // cannnot be handled properly by the JAVA code.
+        if (!e.klass) {
+          stderrWriter.errorLn("Native " + key + " throws: " + e);
+        }
         throw e;
       }
     };
