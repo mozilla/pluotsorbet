@@ -3,6 +3,7 @@ BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*")
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
+VERSION ?=$(shell date +%s)
 
 all: config-build java jasmin tests j2me shumway aot
 
@@ -48,7 +49,9 @@ build/shumway.js: $(SHUMWAY_SRCS)
 	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
 
 config-build:
-	echo "config.release = ${RELEASE};" > config/build.js
+	echo "// generated, build-specific configuration" > config/build.js
+	echo "config.release = ${RELEASE};" >> config/build.js
+	echo "config.version = \"${VERSION}\";" >> config/build.js
 
 tests/tests.jar: tests
 tests:

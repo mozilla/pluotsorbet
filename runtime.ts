@@ -14,6 +14,15 @@ declare var Long: {
   fromNumber(value: number);
 }
 
+interface Promise {
+  catch(onRejected: { (reason: any): any; }): Promise;
+}
+
+interface CompiledMethodCache {
+  get(key: string): { key: string; source: string; referencedClasses: string[]; };
+  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise;
+}
+
 declare var throwHelper;
 declare var throwPause;
 declare var throwYield;
@@ -22,11 +31,17 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var Instrument;
+  declare var CompiledMethodCache;
 
   /**
    * Turns on just-in-time compilation of methods.
    */
   export var enableRuntimeCompilation = true;
+
+  /**
+   * Turns on caching of JIT-compiled methods.
+   */
+  var enableCompiledMethodCache = true;
 
   /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
@@ -1066,6 +1081,10 @@ module J2ME {
    * callers should be calling that instead of this.
    */
   export function linkKlass(classInfo: ClassInfo) {
+    // We shouldn't do any linking if we're not in the runtime phase.
+    if (phase !== ExecutionPhase.Runtime) {
+      return;
+    }
     if (classInfo.klass) {
       return;
     }
@@ -1220,6 +1239,13 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
+    if (enableCompiledMethodCache) {
+      var cachedMethod;
+      if (!jsGlobal[methodInfo.mangledClassAndMethodName] && (cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+      }
+    }
+
     return jsGlobal[methodInfo.mangledClassAndMethodName];
   }
 
@@ -1441,6 +1467,14 @@ module J2ME {
       return;
     }
 
+    if (enableCompiledMethodCache) {
+      var cachedMethod;
+      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+        jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
+        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+      }
+    }
+
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
     compiledCount ++;
@@ -1451,7 +1485,7 @@ module J2ME {
     var compiledMethod;
     enterTimeline("Compiling");
     try {
-      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget.Runtime);
+      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget[enableCompiledMethodCache ? "Static" : "Runtime"]);
     } catch (e) {
       methodInfo.state = MethodState.CannotCompile;
       jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
@@ -1465,12 +1499,41 @@ module J2ME {
                    compiledMethod.body +
                  "\n}";
 
+    var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.className });
+
+    if (enableCompiledMethodCache) {
+      CompiledMethodCache.put({
+        key: methodInfo.implKey,
+        source: source,
+        referencedClasses: referencedClasses,
+      }).catch(stderrWriter.errorLn.bind(stderrWriter));
+    }
+
+    linkMethod(methodInfo, source, referencedClasses);
+
+    var methodJITTime = (performance.now() - s);
+    totalJITTime += methodJITTime;
+    if (jitWriter) {
+      jitWriter.leave(
+        "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
+        "codeSize: " + methodInfo.code.length + ", " +
+        "sourceSize: " + compiledMethod.body.length);
+      jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
+    }
+  }
+
+  /**
+   * Links up compiled method at runtime.
+   */
+  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[]) {
+    jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
+
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
     (1, eval)(source);
     leaveTimeline("Eval Compiled Code");
 
-    // Attach the compiled method to the method info object.
+    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
     methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
@@ -1485,20 +1548,8 @@ module J2ME {
     jitMethodInfos[mangledClassAndMethodName] = methodInfo;
 
     // Make sure all the referenced symbols are registered.
-    var referencedClasses = compiledMethod.referencedClasses;
     for (var i = 0; i < referencedClasses.length; i++) {
-      var referencedClass = referencedClasses[i];
-      registerKlassSymbol(referencedClass.className);
-    }
-
-    var methodJITTime = (performance.now() - s);
-    totalJITTime += methodJITTime;
-    if (jitWriter) {
-      jitWriter.leave(
-        "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
-        "codeSize: " + methodInfo.code.length + ", " +
-        "sourceSize: " + compiledMethod.body.length);
-      jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
+      registerKlassSymbol(referencedClasses[i]);
     }
   }
 
