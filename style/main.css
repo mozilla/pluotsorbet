@@ -37,6 +37,7 @@ body {
   background: url("headers/images/icons/back.png") rgba(249, 124, 23, 0.7) no-repeat scroll center center;
   border: medium none;
   border-radius: 20px 0 0 0;
+  z-index: 999;
 }
 
 #back-button:hover {
