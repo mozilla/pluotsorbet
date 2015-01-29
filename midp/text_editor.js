@@ -74,7 +74,7 @@ var TextEditorProvider = (function() {
                     resolve()
                     return;
                 }
-                this.textEditorElem.focus();
+                setTimeout(this.textEditorElem.focus);
                 this.textEditorElem.onfocus = resolve;
             });
         },
