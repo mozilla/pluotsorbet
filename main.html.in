@@ -14,8 +14,9 @@
   <script type="text/javascript" src="config/midlet.js" defer></script>
   <script type="text/javascript" src="config/build.js" defer></script>
   <script type="text/javascript" src="config/urlparams.js" defer></script>
-  <!-- Uncomment the line below to enable the profiler. -->
-  <!--<script type="text/javascript" src="build/shumway.js" defer></script>-->
+  <!-- #if PROFILE == "true" -->
+  <script type="text/javascript" src="build/shumway.js" defer></script>
+  <!-- #endif -->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
