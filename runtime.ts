@@ -88,6 +88,10 @@ module J2ME {
    */
   export var initWriter = null;
 
+  /**
+   * Traces generated code.
+   */
+  export var codeWriter = null;
 
   export enum MethodState {
     /**
@@ -1510,6 +1514,7 @@ module J2ME {
                    compiledMethod.body +
                  "\n}";
 
+    codeWriter && codeWriter.writeLns(source);
     var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.className });
 
     if (enableCompiledMethodCache) {
