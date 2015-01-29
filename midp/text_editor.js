@@ -24,6 +24,7 @@ var TextEditorProvider = (function() {
         visible: false,
         id: -1,
         selectionRange: [0, 0],
+        focused: false,
 
         // opaque white
         backgroundColor:  0xFFFFFFFF | 0,
@@ -68,6 +69,7 @@ var TextEditorProvider = (function() {
         },
 
         focus: function() {
+            this.focused = true;
             return new Promise(function(resolve, reject) {
                 if (currentVisibleEditor !== this ||
                     document.activeElement === this.textEditorElem) {
@@ -80,6 +82,7 @@ var TextEditorProvider = (function() {
         },
 
         blur: function() {
+            this.focused = false;
             return new Promise(function(resolve, reject) {
                 if (currentVisibleEditor !== this ||
                     document.activeElement !== this.textEditorElem) {
@@ -132,9 +135,15 @@ var TextEditorProvider = (function() {
                 if (oldId !== this.id) {
                     this.textEditorElem.setAttribute("editorId", this.id);
                     this.decorateTextEditorElem();
+                    if (this.focused) {
+                        setTimeout(this.textEditorElem.focus.bind(this.textEditorElem));
+                    }
                 }
                 this.activate();
             } else {
+                if (!this.focused) {
+                    setTimeout(this.textEditorElem.blur.bind(this.textEditorElem));
+                }
                 this.deactivate();
             }
         },
