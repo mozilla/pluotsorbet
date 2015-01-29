@@ -260,8 +260,8 @@ var TextEditorProvider = (function() {
 
                 // Convert the emoji images back to characters.
                 // The original character is stored in the alt attribute of its
-                // img tag with the format of <img ... alt='X' ..>.
-                content = content.replace(/<img[^>]*alt="(\S*)"[^>]*>/g, '$1');
+                // object tag with the format of <object ... name='X' ..>.
+                content = content.replace(/<object[^>]*name="(\S*)"[^>]*><\/object>/g, '$1');
 
                 this.setContent(content);
 
@@ -305,7 +305,8 @@ var TextEditorProvider = (function() {
                 style += 'background:url(' + emojiData.img.src + ') -' + (emojiData.x * scale) + 'px 0px no-repeat;';
                 style += 'background-size:' + (emojiData.img.naturalWidth * scale) + 'px ' + this.font.size + 'px;';
 
-                return '<img src="style/blank.gif" style="' + style + '" alt="' + str + '">';
+                // We use <object> instead of <img> to not allow image resizing.
+                return '<object style="' + style + '" name="' + str + '"></object>';
             }.bind(this);
 
             // Replace "\n" by <br>
@@ -325,7 +326,7 @@ var TextEditorProvider = (function() {
                 return node.nextSibling ? 1 : 0;
             } else {
                 // It should be an HTMLImageElement of a emoji.
-                return util.toCodePointArray(node.alt).length;
+                return util.toCodePointArray(node.name).length;
             }
         },
 
