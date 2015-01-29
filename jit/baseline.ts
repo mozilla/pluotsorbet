@@ -483,12 +483,6 @@ module J2ME {
         }
       }
 
-      // Insert a preemption check at the top of the method. We can only
-      // do this if the method has the necessary unwinding code.
-      if (canYield(this.methodInfo)) {
-        this.emitPreemptionCheck(this.bodyEmitter, 0);
-      }
-
       if (needsEntryDispatch) {
         var entryBlock = Relooper.addBlock("// Entry Dispatch Block");
 
@@ -860,11 +854,6 @@ module J2ME {
 
     private emitMonitorExit(emitter: Emitter, object: string) {
       emitter.writeLn("MX(" + object + ");");
-    }
-
-    private emitPreemptionCheck(emitter: Emitter, nextPC: number) {
-      emitter.writeLn("CP();");
-      this.emitUnwind(emitter, nextPC, nextPC);
     }
 
     emitStackOp(opcode: Bytecodes) {

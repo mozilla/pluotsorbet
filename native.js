@@ -611,7 +611,7 @@ Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
 };
 
 Native["java/lang/Thread.yield.()V"] = function() {
-    $.yield("Thread.yield");
+    $.yield();
 };
 
 Native["java/lang/Thread.activeCount.()I"] = function() {
@@ -1049,7 +1049,7 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
     }));
 };
 
-function UnimplementedNative(signature, returnValue) {
+function addUnimplementedNative(signature, returnValue) {
     var doNotWarn;
 
     if (typeof returnValue === "function") {
@@ -1064,5 +1064,5 @@ function UnimplementedNative(signature, returnValue) {
         return doNotWarn();
     };
 
-    return function() { return warnOnce() };
+    Native[signature] = function() { return warnOnce() };
 }

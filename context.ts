@@ -14,16 +14,15 @@ module J2ME {
   declare var setZeroTimeout;
 
   export enum WriterFlags {
-    None   = 0x00,
-    Trace  = 0x01,
-    Link   = 0x02,
-    Init   = 0x04,
-    Perf   = 0x08,
-    Load   = 0x10,
-    JIT    = 0x20,
-    Thread = 0x40,
+    None  = 0x00,
+    Trace = 0x01,
+    Link  = 0x02,
+    Init  = 0x04,
+    Perf  = 0x08,
+    Load  = 0x10,
+    JIT   = 0x20,
 
-    All   = Trace | Link | Init | Perf | Load | JIT | Thread
+    All   = Trace | Link | Init | Perf | Load | JIT
   }
 
   /**
@@ -381,7 +380,6 @@ module J2ME {
       linkWriter = writers & WriterFlags.Link ? writer : null;
       jitWriter = writers & WriterFlags.JIT ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
-      threadWriter = writers & WriterFlags.Thread ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
     }
 
@@ -562,6 +560,17 @@ module J2ME {
             this.bailoutFrames = [];
           }
           var frames = this.frames;
+          if (windingWriter) {
+            windingWriter.enter("Unwound");
+            frames.map(function (f) {
+              if (Frame.isMarker(f)) {
+                windingWriter.writeLn("- marker -");
+              } else {
+                windingWriter.writeLn((f.methodInfo.state === MethodState.Compiled ? "C" : "I") + " " + f.toString());
+              }
+            });
+            windingWriter.leave("");
+          }
           switch (U) {
             case VMState.Yielding:
               this.resume();
@@ -589,13 +598,12 @@ module J2ME {
       $.pause("block");
     }
 
-    unblock(obj, queue, notifyAll, callback) {
+    unblock(obj, queue, notifyAll) {
       while (obj[queue] && obj[queue].length) {
         var ctx = obj[queue].pop();
         if (!ctx)
           continue;
-        // Wait until next tick, so that we are sure to notify all waiting.
-        (<any>window).setZeroTimeout(callback.bind(null, ctx));
+          ctx.wakeup(obj)
         if (!notifyAll)
           break;
       }
@@ -642,9 +650,7 @@ module J2ME {
         return;
       }
       object._lock = null;
-      this.unblock(object, "ready", false, function (ctx) {
-        ctx.wakeup(object);
-      });
+      this.unblock(object, "ready", false);
     }
 
     wait(object: java.lang.Object, timeout) {
@@ -676,9 +682,7 @@ module J2ME {
       if (!obj._lock || obj._lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
 
-      this.unblock(obj, "waiting", notifyAll, function (ctx) {
-        ctx.wakeup(obj);
-      });
+      this.unblock(obj, "waiting", notifyAll);
     }
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {

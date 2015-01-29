@@ -855,30 +855,20 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     document.body.appendChild(dialog);
 
     performDownload(MIDP.pendingMIDletUpdate, dialog, function(data) {
-      dialog.parentElement.removeChild(dialog);
+        dialog.parentElement.removeChild(dialog);
 
-      Promise.all([
+        fs.remove("/midlet.jad");
+        fs.create("/midlet.jad", new Blob([ data.jadData ]));
+        fs.remove("/midlet.jar");
+        fs.create("/midlet.jar", new Blob([ data.jarData ]));
+
         new Promise(function(resolve, reject) {
-          fs.remove("/midlet.jad", function() {
-            fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
-          });
-        }),
-        new Promise(function(resolve, reject) {
-          fs.remove("/midlet.jar", function() {
-            fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
-          });
-        }),
-      ]).then(function() {
-        // Sync the fs to persistent storage to ensure we persist the update
-        // before reloading the app.
-        return new Promise(function(resolve, reject) {
-          fs.syncStore(resolve);
+            fs.syncStore(resolve);
+        }).then(function() {
+            MIDP.pendingMIDletUpdate = null;
+            DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+            DumbPipe.close(DumbPipe.open("reload", {}));
         });
-      }).then(function() {
-        MIDP.pendingMIDletUpdate = null;
-        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-        DumbPipe.close(DumbPipe.open("reload", {}));
-      });
     });
 };
 
@@ -1342,17 +1332,8 @@ Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     return 0;
 };
 
-Native["com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
-
-Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
-
-Native["com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
-
-Native["com/sun/j2me/content/InvocationStore.resetFlags0.(I)V"] =
-    UnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
-
-Native["com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V"] =
-    UnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
+addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
+addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");

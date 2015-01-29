@@ -31,6 +31,9 @@ cp -R classfile $PACKAGE_DIR/.
 # copy entire contents of libs dir
 cp -R libs $PACKAGE_DIR/.
 
+# copy entire contents of polyfill dir
+cp -R polyfill $PACKAGE_DIR/.
+
 # copy entire contents of config dir
 cp -R config $PACKAGE_DIR/.
 
