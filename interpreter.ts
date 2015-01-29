@@ -270,7 +270,8 @@ module J2ME {
               mi.blockMap = blockMap;
             }
 
-            if (blockMap.getBlock(frame.pc).isLoopHeader) {
+            var block = blockMap.getBlock(frame.pc);
+            if (block.isLoopHeader && !block.isInnerLoopHeader()) {
               profile && onStackReplacementCount++;
 
               // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.

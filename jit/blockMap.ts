@@ -52,6 +52,10 @@ module J2ME.Bytecode {
     public exits: number = 0; // long
     public loopID: number = -1; // long
 
+    public isInnerLoopHeader() {
+      return this.isLoopHeader && (this.loops !== (1 << this.loopID));
+    }
+
     constructor() {
       this.successors = [];
       this.predecessors = [];
@@ -482,7 +486,7 @@ module J2ME.Bytecode {
       ", ").padRight(" ", 5) +
       "bci: [" + block.startBci + ", " + block.endBci + "]" +
       (block.successors.length ? ", successors: => " + block.successors.map(b => b.blockID).join(", ") : "") +
-      (block.isLoopHeader ? " isLoopHeader" : "") +
+      (block.isLoopHeader ? " isLoopHeader, inner: " + block.isInnerLoopHeader() : "") +
       (block.isLoopEnd ? " isLoopEnd" : "") +
       (block.isExceptionEntry ? " isExceptionEntry" : "") +
       (block.hasHandlers ? " hasHandlers" : "") +

@@ -450,7 +450,7 @@ module J2ME {
       var blocks = this.blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
-        if (block.isLoopHeader) {
+        if (block.isLoopHeader && !block.isInnerLoopHeader()) {
           needsOSREntryPoint = true;
           needsEntryDispatch = true;
         }
@@ -491,7 +491,7 @@ module J2ME {
         for (var i = 0; i < blocks.length; i++) {
           var block = blocks[i];
           if (i === 0 || // First block always gets a entry point.
-              block.isLoopHeader || // Loop headers need entry points so we can OSR.
+              (block.isLoopHeader && !block.isInnerLoopHeader()) || // Outer loop headers need entry points so we can OSR.
               block.isExceptionEntry) {
             Relooper.addBranch(entryBlock, block.relooperBlockID, "pc === " + block.startBci);
           }
