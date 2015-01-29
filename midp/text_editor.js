@@ -68,19 +68,27 @@ var TextEditorProvider = (function() {
         },
 
         focus: function() {
-            if (currentVisibleEditor !== this) {
-                return;
-            }
-            this.focused = true;
-            this.textEditorElem.focus();
+            return new Promise(function(resolve, reject) {
+                if (currentVisibleEditor !== this ||
+                    document.activeElement === this.textEditorElem) {
+                    resolve()
+                    return;
+                }
+                this.textEditorElem.focus();
+                this.textEditorElem.onfocus = resolve;
+            });
         },
 
         blur: function() {
-            if (currentVisibleEditor !== this) {
-                return;
-            }
-            this.focused = false;
-            this.textEditorElem && this.textEditorElem.blur();
+            return new Promise(function(resolve, reject) {
+                if (currentVisibleEditor !== this ||
+                    document.activeElement !== this.textEditorElem) {
+                    resolve();
+                    return;
+                }
+                this.textEditorElem.onblur = resolve;
+                this.textEditorElem.blur();
+            });
         },
 
         getVisible: function() {

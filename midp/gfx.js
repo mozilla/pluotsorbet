@@ -1583,14 +1583,18 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(shouldFocus) {
+        var promise;
         if (shouldFocus && (currentlyFocusedTextEditor != this.textEditor)) {
-            this.textEditor.focus();
+            promise = this.textEditor.focus();
             currentlyFocusedTextEditor = this.textEditor;
         } else if (!shouldFocus && (currentlyFocusedTextEditor == this.textEditor)) {
-            this.textEditor.blur();
+            promise = this.textEditor.blur();
             currentlyFocusedTextEditor = null;
+        } else {
+            promise = Promise.resolve();
         }
         this.focused = shouldFocus;
+        asyncImpl("V", promise);
     };
 
     Native["com/nokia/mid/ui/TextEditor.hasFocus.()Z"] = function() {
