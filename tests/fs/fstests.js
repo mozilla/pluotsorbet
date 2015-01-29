@@ -70,60 +70,56 @@ var promiseFS = {};
  */
 var getBranch = function(dir) {
   return new Promise(function(resolve, reject) {
-    fs.list(dir, function(error, files) {
-      Promise.all(files.map(function(file) {
-        return new Promise(function(resolve, reject) {
-          var path = dir + file;
-          promiseFS.stat(path).then(function(stat) {
-            stat.name = file;
-            if (stat.isDir) {
-              getBranch(path).then(function(children) {
-                stat.children = children;
-                resolve(stat);
-              });
-            } else {
-              promiseFS.open(path).then(function(fd) {
-                stat.data = Array.prototype.slice.call(fs.read(fd));
-                fs.close(fd);
-                resolve(stat);
-              });
-            }
+    var files = fs.list(dir);
+    Promise.all(files.map(function(file) {
+      return new Promise(function(resolve, reject) {
+        var path = dir + file;
+        var stat = fs.stat(path);
+        stat.name = file;
+        if (stat.isDir) {
+          getBranch(path).then(function(children) {
+            stat.children = children;
+            resolve(stat);
           });
-        });
-      })).then(resolve);
-    });
+        } else {
+          promiseFS.open(path).then(function(fd) {
+            stat.data = Array.prototype.slice.call(fs.read(fd));
+            fs.close(fd);
+            resolve(stat);
+          });
+        }
+      });
+    })).then(resolve);
   });
 };
 
 var fd;
 
 tests.push(function() {
-  fs.exists("/", function(exists) {
-    is(exists, true, "root directory exists");
-    next();
-  });
+  is(fs.exists("/"), true, "root directory exists");
+  next();
 });
 
 tests.push(function() {
-  fs.stat("/", function(stat) {
-    ok(stat.isDir, "/ is a directory");
-    next();
-  });
+  ok(fs.stat("/").isDir, "/ is a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 0, "files is an empty array");
-    next();
-  })
+  var files = fs.list("/");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 0, "files is an empty array");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(error, files) {
-    is(error.message, "Path does not exist", "can't list a path that does not exist");
-    next();
-  });
+  try {
+    fs.list("/tmp");
+    ok(false, "can't list a path that does not exist");
+  } catch (ex) {
+    is(ex.message, "Path does not exist", "can't list a path that does not exist");
+  }
+  next();
 });
 
 tests.push(function() {
@@ -149,269 +145,237 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.mkdir("/prova/", function(created) {
-    is(created, true, "created a directory");
-    next();
-  });
+  var created = fs.mkdir("/prova/");
+  is(created, true, "created a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.remove("/prova/", function(removed) {
-    is(removed, true, "removed a directory");
-    next();
-  });
+  var removed = fs.remove("/prova/");
+  is(removed, true, "removed a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.mkdir("/tmp", function(created) {
-    is(created, true, "created a directory");
-    next();
-  });
+  var created = fs.mkdir("/tmp");
+  is(created, true, "created a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.mkdir("/tmp/ciao", function(created) {
-    is(created, true, "created a directory");
-    next();
-  });
+  var created = fs.mkdir("/tmp/ciao");
+  is(created, true, "created a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.stat("/tmp", function(stat) {
-    ok(stat.isDir, "/tmp is a directory");
-    next();
-  });
+  var stat = fs.stat("/tmp");
+  ok(stat.isDir, "/tmp is a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.create("/tmp", new Blob(), function(created) {
-    is(created, false, "can't create a file with the same path of an already existing directory");
-    next();
-  });
+  var created = fs.create("/tmp", new Blob());
+  is(created, false, "can't create a file with the same path of an already existing directory");
+  next();
 });
 
 tests.push(function() {
-  fs.stat("/tmp", function(stat) {
-    ok(stat.isDir, "/tmp is still a directory");
-    next();
-  });
+  var stat = fs.stat("/tmp");
+  ok(stat.isDir, "/tmp is still a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.create("/non-existent-dir/tmp", new Blob(), function(created) {
-    is(created, false, "can't create a file in a non-existent directory");
-    next();
-  });
+  var created = fs.create("/non-existent-dir/tmp", new Blob());
+  is(created, false, "can't create a file in a non-existent directory");
+  next();
 });
 
 tests.push(function() {
-  fs.exists("/non-existent-dir", function(exists) {
-    is(exists, false, "non-existent directory still doesn't exist");
-    next();
-  });
+  var exists = fs.exists("/non-existent-dir");
+  is(exists, false, "non-existent directory still doesn't exist");
+  next();
 });
 
 tests.push(function() {
-  fs.mkdir("/tmp", function(created) {
-    is(created, false, "can't create a directory with the same path of an already existing directory");
-    next();
-  });
+  var created = fs.mkdir("/tmp");
+  is(created, false, "can't create a directory with the same path of an already existing directory");
+  next();
 });
 
 tests.push(function() {
-  fs.create("/tmp/tmp.txt", new Blob(), function(created) {
-    is(created, true, "created a file");
-    next();
-  });
+  var created = fs.create("/tmp/tmp.txt", new Blob());
+  is(created, true, "created a file");
+  next();
 });
 
 tests.push(function() {
-  fs.create("/tmp/tmp.txt", new Blob(), function(created) {
-    is(created, false, "can't create a file that already exists");
-    next();
-  });
+  var created = fs.create("/tmp/tmp.txt", new Blob());
+  is(created, false, "can't create a file that already exists");
+  next();
 });
 
 tests.push(function() {
-  fs.stat("/tmp/tmp.txt", function(stat) {
-    ok(!stat.isDir, "/tmp/tmp.txt is not a directory");
-    next();
-  });
+  var stat = fs.stat("/tmp/tmp.txt");
+  ok(!stat.isDir, "/tmp/tmp.txt is not a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.mkdir("/tmp/tmp.txt", function(created) {
-    is(created, false, "can't create a directory with the same path of an already existing file");
-    next();
-  });
+  var created = fs.mkdir("/tmp/tmp.txt");
+  is(created, false, "can't create a directory with the same path of an already existing file");
+  next();
 });
 
 tests.push(function() {
-  fs.stat("/tmp/tmp.txt", function(stat) {
-    ok(!stat.isDir, "/tmp/tmp.txt is still not a directory");
-    next();
-  });
+  var stat = fs.stat("/tmp/tmp.txt");
+  ok(!stat.isDir, "/tmp/tmp.txt is still not a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 0, "newly created file's size is 0");
-    next();
-  });
+  var size = fs.size("/tmp/tmp.txt");
+  is(size, 0, "newly created file's size is 0");
+  next();
 });
 
 tests.push(function() {
-  fs.size("/tmp", function(size) {
-    is(size, -1, "can't get directory size");
-    next();
-  });
+  var size = fs.size("/tmp");
+  is(size, -1, "can't get directory size");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files is an array with 1 element: " + files);
-    is(files[0], "tmp/", "tmp is in files");
-    next();
-  })
+  var files = fs.list("/");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 1, "files is an array with 1 element: " + files);
+  is(files[0], "tmp/", "tmp is in files");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 2, "files is an empty array");
-    is(files[0], "ciao/", "ciao is in files");
-    is(files[1], "tmp.txt", "tmp.txt is in files");
-    next();
-  })
+  var files = fs.list("/tmp");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 2, "files is an empty array");
+  is(files[0], "ciao/", "ciao is in files");
+  is(files[1], "tmp.txt", "tmp.txt is in files");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 0, "files is an empty array");
-    next();
-  })
+  var files = fs.list("/tmp/ciao");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 0, "files is an empty array");
+  next();
 });
 
 tests.push(function() {
-  fs.truncate("/tmp", function(truncated) {
-    is(truncated, false, "can't truncate a directory");
-    next();
-  })
+  var truncated = fs.truncate("/tmp");
+  is(truncated, false, "can't truncate a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.truncate("/tmp/tmp.txt", function(truncated) {
-    is(truncated, true, "truncated a file");
-    next();
-  })
+  var truncated = fs.truncate("/tmp/tmp.txt");
+  is(truncated, true, "truncated a file");
+  next();
 });
 
 tests.push(function() {
-  fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 0, "truncated file's size is 0");
-    next();
-  });
+  var size = fs.size("/tmp/tmp.txt");
+  is(size, 0, "truncated file's size is 0");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp/tmp.txt", function(error, files) {
-    is(error.message, "Path is not a directory", "can't list the children of a file");
-    next();
-  });
+  try {
+    fs.list("/tmp/tmp.txt");
+    ok(false, "can't list the children of a file");
+  } catch (ex) {
+    is(ex.message, "Path is not a directory", "can't list the children of a file");
+  }
+  next();
 });
 
 tests.push(function() {
-  fs.create("/tmp/ciao/tmp.txt", new Blob(), function(created) {
-    is(created, true, "created a file");
-    next();
-  });
+  var created = fs.create("/tmp/ciao/tmp.txt", new Blob());
+  is(created, true, "created a file");
+  next();
 });
 
 tests.push(function() {
-  fs.mkdir("/tmp/ciao/tmp", function(created) {
-    is(created, true, "created a directory");
-    next();
-  });
+  var created = fs.mkdir("/tmp/ciao/tmp");
+  is(created, true, "created a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 2, "files has 2 entries");
-    is(files[0], "tmp.txt", "tmp.txt is in files");
-    is(files[1], "tmp/", "tmp is in files");
-    next();
-  })
+  var files = fs.list("/tmp/ciao");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 2, "files has 2 entries");
+  is(files[0], "tmp.txt", "tmp.txt is in files");
+  is(files[1], "tmp/", "tmp is in files");
+  next();
 });
 
 tests.push(function() {
-  fs.remove("/tmp/ciao/tmp.txt", function(removed) {
-    is(removed, true, "removed a file");
-    next();
-  });
+  var removed = fs.remove("/tmp/ciao/tmp.txt");
+  is(removed, true, "removed a file");
+  next();
 });
 
 tests.push(function() {
-  fs.exists("/tmp/ciao/tmp.txt", function(exists) {
-    is(exists, false, "removed file doesn't exist");
-    next();
-  });
+  var exists = fs.exists("/tmp/ciao/tmp.txt");
+  is(exists, false, "removed file doesn't exist");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files has 1 entry");
-    is(files[0], "tmp/", "tmp is in files");
-    next();
-  })
+  var files = fs.list("/tmp/ciao");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 1, "files has 1 entry");
+  is(files[0], "tmp/", "tmp is in files");
+  next();
 });
 
 tests.push(function() {
-  fs.remove("/tmp/ciao", function(removed) {
-    is(removed, false, "can't remove a dir with children");
-    next();
-  });
+  var removed = fs.remove("/tmp/ciao");
+  is(removed, false, "can't remove a dir with children");
+  next();
 });
 
 tests.push(function() {
-  fs.remove("/tmp/ciao/tmp", function(removed) {
-    is(removed, true, "removed a directory");
-    next();
-  });
+  var removed = fs.remove("/tmp/ciao/tmp");
+  is(removed, true, "removed a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.exists("/tmp/ciao/tmp", function(exists) {
-    is(exists, false, "removed dir doesn't exist");
-    next();
-  });
+  var exists = fs.exists("/tmp/ciao/tmp");
+  is(exists, false, "removed dir doesn't exist");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp/ciao", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 0, "files is empty");
-    next();
-  })
+  var files = fs.list("/tmp/ciao");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 0, "files is empty");
+  next();
 });
 
 tests.push(function() {
-  fs.remove("/tmp/ciao", function(removed) {
-    is(removed, true, "removed a directory");
-    next();
-  });
+  var removed = fs.remove("/tmp/ciao");
+  is(removed, true, "removed a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.list("/tmp", function(error, files) {
-    ok(files instanceof Array, "files is an array");
-    is(files.length, 1, "files has one entry");
-    is(files[0], "tmp.txt", "tmp.txt is in files");
-    next();
-  })
+  var files = fs.list("/tmp");
+  ok(files instanceof Array, "files is an array");
+  is(files.length, 1, "files has one entry");
+  is(files[0], "tmp.txt", "tmp.txt is in files");
+  next();
 });
 
 tests.push(function() {
@@ -585,10 +549,9 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 0, "unflushed file's size is 0");
-    next();
-  });
+  var size = fs.size("/tmp/tmp.txt");
+  is(size, 0, "unflushed file's size is 0");
+  next();
 });
 
 tests.push(function() {
@@ -645,87 +608,71 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 131079, "file's size after closing is 131079");
-    next();
-  });
+  var size = fs.size("/tmp/tmp.txt");
+  is(size, 131079, "file's size after closing is 131079");
+  next();
 });
 
 tests.push(function() {
-  fs.truncate("/tmp/tmp.txt", function(truncated) {
-    is(truncated, true, "truncated a file");
-    next();
-  })
+  var truncated = fs.truncate("/tmp/tmp.txt");
+  is(truncated, true, "truncated a file");
+  next();
 });
 
 tests.push(function() {
-  fs.size("/tmp/tmp.txt", function(size) {
-    is(size, 0, "truncated file's size is 0");
-    next();
-  });
+  var size = fs.size("/tmp/tmp.txt");
+  is(size, 0, "truncated file's size is 0");
+  next();
 });
 
 tests.push(function() {
-  fs.rename("/tmp/tmp.txt", "/tmp/tmp2.txt", function(renamed) {
-    ok(renamed, "File renamed");
-    next();
-  });
+  var renamed = fs.rename("/tmp/tmp.txt", "/tmp/tmp2.txt");
+  ok(renamed, "File renamed");
+  next();
 });
 
 tests.push(function() {
-  fs.create("/file", new Blob([1,2,3,4]), function(created) {
-    ok(created, "File created");
-    fs.rename("/file", "/file2", function(renamed) {
-      ok(renamed, "File renamed");
-      fs.size("/file2", function(size) {
-        is(size, 4, "Renamed file size is correct");
-        fs.exists("/file", function(exists) {
-          ok(!exists, "file doesn't exist anymore");
-          next();
-        });
-      });
-    });
-  });
+  var created = fs.create("/file", new Blob([1,2,3,4]));
+  ok(created, "File created");
+  var renamed = fs.rename("/file", "/file2");
+  ok(renamed, "File renamed");
+  var size = fs.size("/file2");
+  is(size, 4, "Renamed file size is correct");
+  var exists = fs.exists("/file");
+  ok(!exists, "file doesn't exist anymore");
+  next();
 });
 
 tests.push(function() {
-  fs.mkdir("/newdir", function(created) {
-    ok(created, "Directory created");
-    fs.rename("/newdir", "/newdir2", function(renamed) {
-      ok(renamed, "Directory renamed");
-      fs.exists("/newdir", function(exists) {
-        ok(!exists, "newdir doesn't exist anymore");
-        next();
-      });
-    });
-  });
+  var created = fs.mkdir("/newdir");
+  ok(created, "Directory created");
+  var renamed = fs.rename("/newdir", "/newdir2");
+  ok(renamed, "Directory renamed");
+  var exists = fs.exists("/newdir");
+  ok(!exists, "newdir doesn't exist anymore");
+  next();
 });
 
 tests.push(function() {
-  fs.rename("/tmp", "/tmp3", function(renamed) {
-    ok(!renamed, "Can't rename a non-empty directory");
-    fs.exists("/tmp", function(exists) {
-      ok(exists, "Directory still exists after an error while renaming");
-      next();
-    });
-  });
+  var renamed = fs.rename("/tmp", "/tmp3");
+  ok(!renamed, "Can't rename a non-empty directory");
+  var exists = fs.exists("/tmp");
+  ok(exists, "Directory still exists after an error while renaming");
+  next();
 });
 
 tests.push(function() {
-  fs.rename("/tmp", "/newdir2", function(renamed) {
-    ok(!renamed, "Can't rename a directory with a path to a directory that already exists");
-    fs.exists("/tmp", function(exists) {
-      ok(exists, "Directory still exists after an error while renaming");
-      next();
-    });
-  });
+  var renamed = fs.rename("/tmp", "/newdir2");
+  ok(!renamed, "Can't rename a directory with a path to a directory that already exists");
+  var exists = fs.exists("/tmp");
+  ok(exists, "Directory still exists after an error while renaming");
+  next();
 });
 
 tests.push(function() {
-  fs.rename("/nonexisting", "/nonexising2", function(renamed) {
-    ok(!renamed, "Can't rename a non-existing file");
-    next();
-  });
+  var renamed = fs.rename("/nonexisting", "/nonexisting2");
+  ok(!renamed, "Can't rename a non-existing file");
+  next();
 });
 
 // stat/mtime tests
@@ -735,21 +682,18 @@ tests.push(function() {
   var fd;
 
   tests.push(function() {
-    fs.stat("/tmp/stat.txt", function(stat) {
-      is(stat, null, "nonexistent file doesn't have stat");
-      next();
-    });
+    var stat = fs.stat("/tmp/stat.txt");
+    is(stat, null, "nonexistent file doesn't have stat");
+    next();
   });
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.create("/tmp/stat.txt", new Blob(), function(created) {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          ok(stat.mtime > lastTime, "create updates mtime");
-          lastTime = stat.mtime;
-          next();
-        });
-      });
+      fs.create("/tmp/stat.txt", new Blob());
+      var stat = fs.stat("/tmp/stat.txt");
+      ok(stat.mtime > lastTime, "create updates mtime");
+      lastTime = stat.mtime;
+      next();
     }, 1);
   });
 
@@ -757,20 +701,8 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.open("/tmp/stat.txt", function(aFD) {
         fd = aFD;
-        fs.stat("/tmp/stat.txt", function(stat) {
-          is(stat.mtime, lastTime, "open doesn't update mtime");
-          lastTime = stat.mtime;
-          next();
-        });
-      });
-    }, 1);
-  });
-
-  tests.push(function() {
-    window.setTimeout(function() {
-      fs.flush(fd);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "flush on just opened file doesn't update mtime");
+        var stat = fs.stat("/tmp/stat.txt");
+        is(stat.mtime, lastTime, "open doesn't update mtime");
         lastTime = stat.mtime;
         next();
       });
@@ -779,11 +711,20 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
+      fs.flush(fd);
+      var stat = fs.stat("/tmp/stat.txt");
+      is(stat.mtime, lastTime, "flush on just opened file doesn't update mtime");
+      lastTime = stat.mtime;
+      next();
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("mi"));
-      fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime, lastTime, "write without flush doesn't update mtime");
-        next();
-      });
+      var stat = fs.stat("/tmp/stat.txt");
+      ok(stat.mtime, lastTime, "write without flush doesn't update mtime");
+      next();
     }, 1);
   });
 
@@ -791,151 +732,129 @@ tests.push(function() {
     window.setTimeout(function() {
       fs.write(fd, new TextEncoder().encode("sc"));
       fs.flush(fd);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "write and then flush updates mtime");
-        lastTime = stat.mtime;
-        next();
-      });
+      var stat = fs.stat("/tmp/stat.txt");
+      ok(stat.mtime > lastTime, "write and then flush updates mtime");
+      lastTime = stat.mtime;
+      next();
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
       fs.flush(fd);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "flush on non-dirty file doesn't change mtime");
-        lastTime = stat.mtime;
-        next();
-      });
+      var stat = fs.stat("/tmp/stat.txt");
+      is(stat.mtime, lastTime, "flush on non-dirty file doesn't change mtime");
+      lastTime = stat.mtime;
+      next();
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 4);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "ftruncate to same size doesn't update mtime");
-        lastTime = stat.mtime;
-        next();
-      });
+      var stat = fs.stat("/tmp/stat.txt");
+      is(stat.mtime, lastTime, "ftruncate to same size doesn't update mtime");
+      lastTime = stat.mtime;
+      next();
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 5);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "ftruncate to larger size doesn't update mtime");
-        next();
-      });
+      var stat = fs.stat("/tmp/stat.txt");
+      is(stat.mtime, lastTime, "ftruncate to larger size doesn't update mtime");
+      next();
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
       fs.ftruncate(fd, 3);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat.mtime, lastTime, "ftruncate to smaller size doesn't update mtime");
-        next();
-      });
+      var stat = fs.stat("/tmp/stat.txt");
+      is(stat.mtime, lastTime, "ftruncate to smaller size doesn't update mtime");
+      next();
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
       fs.close(fd);
-      fs.stat("/tmp/stat.txt", function(stat) {
-        ok(stat.mtime > lastTime, "close after changes updates mtime");
-        lastTime = stat.mtime;
-        next();
-      });
+      var stat = fs.stat("/tmp/stat.txt");
+      ok(stat.mtime > lastTime, "close after changes updates mtime");
+      lastTime = stat.mtime;
+      next();
     }, 1);
   });
 
   tests.push(function() {
     fs.open("/tmp/stat.txt", function(fd) {
-      fs.stat("/tmp/stat.txt", function(stat) {
-        var mtime = stat.mtime;
-        window.setTimeout(function() {
-          fs.close(fd);
-          fs.stat("/tmp/stat.txt", function(stat) {
-            is(stat.mtime, mtime, "close without changes doesn't update mtime");
-            next();
-          });
-        }, 1);
-      });
-    });
-  });
-
-  tests.push(function() {
-    window.setTimeout(function() {
-      fs.truncate("/tmp/stat.txt", function() {
-        fs.stat("/tmp/stat.txt", function(stat) {
-          ok(stat.mtime > lastTime, "truncate updates mtime");
-          lastTime = stat.mtime;
-          next();
-        });
-      });
-    }, 1);
-  });
-
-  tests.push(function() {
-    window.setTimeout(function() {
-      fs.rename("/tmp/stat.txt", "/tmp/stat2.txt", function() {
-        fs.stat("/tmp/stat2.txt", function(stat) {
-          is(stat.mtime, lastTime, "rename doesn't update mtime");
-          // Rename it back to its original name so the next test
-          // doesn't have to know about the name change.
-          fs.rename("/tmp/stat2.txt", "/tmp/stat.txt", function() {
-            next();
-          });
-        });
-      });
-    }, 1);
-  });
-
-  tests.push(function() {
-    fs.remove("/tmp/stat.txt", function() {
-      fs.stat("/tmp/stat.txt", function(stat) {
-        is(stat, null, "removed file no longer has stat");
+      var stat = fs.stat("/tmp/stat.txt");
+      var mtime = stat.mtime;
+      window.setTimeout(function() {
+        fs.close(fd);
+        var stat = fs.stat("/tmp/stat.txt");
+        is(stat.mtime, mtime, "close without changes doesn't update mtime");
         next();
-      });
+      }, 1);
     });
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.truncate("/tmp/stat.txt");
+      var stat = fs.stat("/tmp/stat.txt");
+      ok(stat.mtime > lastTime, "truncate updates mtime");
+      lastTime = stat.mtime;
+      next();
+    }, 1);
+  });
+
+  tests.push(function() {
+    window.setTimeout(function() {
+      fs.rename("/tmp/stat.txt", "/tmp/stat2.txt");
+      var stat = fs.stat("/tmp/stat2.txt")
+      is(stat.mtime, lastTime, "rename doesn't update mtime");
+
+      // Rename it back to its original name so the next test
+      // doesn't have to know about the name change.
+      fs.rename("/tmp/stat2.txt", "/tmp/stat.txt");
+      next();
+    }, 1);
+  });
+
+  tests.push(function() {
+    fs.remove("/tmp/stat.txt");
+    var stat = fs.stat("/tmp/stat.txt");
+    is(stat, null, "removed file no longer has stat");
+    next();
   });
 })();
 
 tests.push(function() {
-  fs.mkdir("/tmp/stat", function() {
-    fs.stat("/tmp/stat", function(stat) {
-      var mtime = stat.mtime;
-      window.setTimeout(function() {
-        fs.rename("/tmp/stat", "/tmp/stat2", function() {
-          fs.stat("/tmp/stat2", function(stat) {
-            is(stat.mtime, mtime, "rename directory doesn't update mtime");
-            next();
-          });
-        });
-      }, 1);
-    });
-  });
+  fs.mkdir("/tmp/stat");
+  var stat = fs.stat("/tmp/stat");
+  var mtime = stat.mtime;
+  window.setTimeout(function() {
+    fs.rename("/tmp/stat", "/tmp/stat2")
+    var stat = fs.stat("/tmp/stat2");
+    is(stat.mtime, mtime, "rename directory doesn't update mtime");
+    next();
+  }, 1);
 });
 
 tests.push(function() {
-  fs.mkdir("/statDir", function() {
-    fs.stat("/statDir", function(stat) {
-      ok(stat.isDir, "/statDir is a directory");
-      next();
-    });
-  });
+  fs.mkdir("/statDir");
+  var stat = fs.stat("/statDir");
+  ok(stat.isDir, "/statDir is a directory");
+  next();
 });
 
 tests.push(function() {
-  fs.create("/statDir/file", new Blob(), function() {
-    fs.stat("/statDir/file", function(stat) {
-      ok(!stat.isDir, "/statDir/file isn't a directory");
-      next();
-    });
-  });
+  fs.create("/statDir/file", new Blob());
+  var stat = fs.stat("/statDir/file");
+  ok(!stat.isDir, "/statDir/file isn't a directory");
+  next();
 });
 
 tests.push(function() {
@@ -949,38 +868,15 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.create("/write-purge-read", new Blob(), function(created) {
-    fs.open("/write-purge-read", function(fd) {
-      fs.write(fd, new TextEncoder().encode("marco"));
-      fs.close(fd);
-      fs.purgeStore(function() {
-        fs.open("/write-purge-read", function(fd) {
-          var data = fs.read(fd);
-          is(data.byteLength, 5, "read from a file with 5 bytes");
-          is(new TextDecoder().decode(data), "marco", "read correct");
-          fs.close(fd);
-          fs.remove("/write-purge-read", function() {
-            next();
-          });
-        });
-      });
-    });
-  });
-});
-
-tests.push(function() {
   fs.addTransientPath("/transient-path");
-  fs.create("/transient-path", new Blob(), function(created) {
-    fs.open("/transient-path", function(fd) {
-      fs.write(fd, new TextEncoder().encode("marco"));
-      fs.close(fd);
-      fs.purgeStore(function() {
-        fs.exists("/transient-path", function(exists) {
-          is(exists, false, "transient file doesn't exist after purge");
-          next();
-        });
-      });
-    });
+  fs.create("/transient-path", new Blob());
+  fs.open("/transient-path", function(fd) {
+    fs.write(fd, new TextEncoder().encode("marco"));
+    fs.close(fd);
+    fs.purgeStore();
+    var exists = fs.exists("/transient-path");
+    is(exists, false, "transient file doesn't exist after purge");
+    next();
   });
 });
 
@@ -1002,7 +898,6 @@ tests.push(function() {
 });
 
 fs.init(function() {
-  fs.clear(function() {
-    next();
-  });
+  fs.clear();
+  next();
 });

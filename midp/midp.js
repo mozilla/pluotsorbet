@@ -855,30 +855,20 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     document.body.appendChild(dialog);
 
     performDownload(MIDP.pendingMIDletUpdate, dialog, function(data) {
-      dialog.parentElement.removeChild(dialog);
+        dialog.parentElement.removeChild(dialog);
 
-      Promise.all([
+        fs.remove("/midlet.jad");
+        fs.create("/midlet.jad", new Blob([ data.jadData ]));
+        fs.remove("/midlet.jar");
+        fs.create("/midlet.jar", new Blob([ data.jarData ]));
+
         new Promise(function(resolve, reject) {
-          fs.remove("/midlet.jad", function() {
-            fs.create("/midlet.jad", new Blob([ data.jadData ]), resolve);
-          });
-        }),
-        new Promise(function(resolve, reject) {
-          fs.remove("/midlet.jar", function() {
-            fs.create("/midlet.jar", new Blob([ data.jarData ]), resolve);
-          });
-        }),
-      ]).then(function() {
-        // Sync the fs to persistent storage to ensure we persist the update
-        // before reloading the app.
-        return new Promise(function(resolve, reject) {
-          fs.syncStore(resolve);
+            fs.syncStore(resolve);
+        }).then(function() {
+            MIDP.pendingMIDletUpdate = null;
+            DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+            DumbPipe.close(DumbPipe.open("reload", {}));
         });
-      }).then(function() {
-        MIDP.pendingMIDletUpdate = null;
-        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-        DumbPipe.close(DumbPipe.open("reload", {}));
-      });
     });
 };
 
