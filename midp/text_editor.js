@@ -136,7 +136,6 @@ var TextEditorProvider = (function() {
                 this.activate();
             } else {
                 this.deactivate();
-                this.selectionRange = this.getSelectionRange();
             }
         },
 

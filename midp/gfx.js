@@ -1593,7 +1593,6 @@ var currentlyFocusedTextEditor;
         } else {
             promise = Promise.resolve();
         }
-        this.focused = shouldFocus;
         asyncImpl("V", promise);
     };
 
