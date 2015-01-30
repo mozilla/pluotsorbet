@@ -25,6 +25,7 @@ var TextEditorProvider = (function() {
         id: -1,
         selectionRange: [0, 0],
         focused: false,
+        oninputCallback: null,
 
         // opaque white
         backgroundColor:  0xFFFFFFFF | 0,
@@ -597,7 +598,8 @@ var TextEditorProvider = (function() {
              "backgroundColor", "foregroundColor",
              "attached",
              "content",
-             "font"].forEach(function(attr) {
+             "font",
+             "oninputCallback"].forEach(function(attr) {
                 newEditor[attr] = oldEditor[attr];
             });
 
