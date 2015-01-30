@@ -493,13 +493,13 @@ module J2ME {
       }
     }
 
-    newStringConstant(s: string): java.lang.String {
-      if (internedStrings.has(s)) {
-        return internedStrings.get(s);
+    newStringConstant(jsString: string): java.lang.String {
+      if (internedStrings.has(jsString)) {
+        return internedStrings.get(jsString);
       }
-      var obj = J2ME.newString(s);
-      internedStrings.set(s, obj);
-      return obj;
+      var javaString = J2ME.newString(jsString);
+      internedStrings.set(jsString, javaString);
+      return javaString;
     }
 
     setStatic(field, value) {
@@ -1118,7 +1118,13 @@ module J2ME {
       switch (classInfo.className) {
         case "java/lang/Object": Klasses.java.lang.Object = klass; break;
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass; break;
+        case "java/lang/String": Klasses.java.lang.String = klass;
+          Object.defineProperty(klass.prototype, "viewString", {
+            get: function () {
+              return fromJavaString(this);
+            }
+          });
+          break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
         case "java/lang/IllegalArgumentException": Klasses.java.lang.IllegalArgumentException = klass; break;
@@ -1629,17 +1635,23 @@ module J2ME {
     return new klass();
   }
 
-  export function newString(str: string): java.lang.String {
-    if (str === null || str === undefined) {
+  export function newString(jsString: string): java.lang.String {
+    if (jsString === null || jsString === undefined) {
       return null;
     }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
-    object.str = str;
+    var value = new Uint16Array(jsString.length);
+    var length = jsString.length;
+    for (var i = 0; i < length; i++) {
+      value[i] = jsString.charCodeAt(i);
+    }
+    object.value = value;
+    object.count = length;
     return object;
   }
 
-  export function newStringConstant(str: string): java.lang.String {
-    return $.newStringConstant(str);
+  export function newStringConstant(jsString: string): java.lang.String {
+    return $.newStringConstant(jsString);
   };
 
   export function newArray(klass: Klass, size: number) {
@@ -1705,11 +1717,11 @@ module J2ME {
     return "[" + value.klass.classInfo.className + hashcode + "]";
   }
 
-  export function fromJavaString(value: java.lang.String): string {
-    if (!value) {
+  export function fromJavaString(javaString: java.lang.String): string {
+    if (!javaString) {
       return null;
     }
-    return value.str;
+    return util.fromJavaChars(javaString.value, javaString.offset, javaString.count);
   }
 
   export function checkDivideByZero(value: number) {

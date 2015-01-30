@@ -11,6 +11,15 @@ module J2ME {
         }
       }
     },
+    "java/lang/String": {
+      fields: {
+        instanceSymbols: {
+          "value.[C": "value",
+          "offset.I": "offset",
+          "count.I": "count"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
@@ -99,7 +108,9 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-      str: string;
+      value: Uint16Array;
+      offset: number;
+      count: number;
     }
 
     export interface Thread extends java.lang.Object {
