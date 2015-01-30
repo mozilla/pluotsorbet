@@ -158,6 +158,10 @@
       </header>
       <div id="main" role="main">
         <canvas id="canvas" style="image-rendering: -moz-crisp-edges"></canvas>
+        <input id="password-editor" class="text-editor" type="password">
+        <div id="textarea-editor" class="text-editor" contenteditable="true"></div>
+        <!-- The hidden textarea editor is used to measure the content height -->
+        <div id="hidden-textarea-editor" class="text-editor"></div>
         <button id="back-button">Back</button>
       </div>
     </section>
