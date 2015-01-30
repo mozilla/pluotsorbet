@@ -73,7 +73,7 @@ var TextEditorProvider = (function() {
             return new Promise(function(resolve, reject) {
                 if (currentVisibleEditor !== this ||
                     document.activeElement === this.textEditorElem) {
-                    resolve()
+                    resolve();
                     return;
                 }
                 setTimeout(this.textEditorElem.focus.bind(this.textEditorElem));
@@ -118,15 +118,8 @@ var TextEditorProvider = (function() {
             }
 
             if (aVisible) {
-                // Add the "show" class to set opacity to 0.
-                // Sometimes in Java, setVisible() is called after focus(), to make
-                // sure the native input won't lose focus, we change opacity instead
-                // of visibility.
                 this.textEditorElem.classList.add("show");
             } else {
-                // Remove the "show" class to set z-index to -999.
-                // To make sure the j2me control could be clicked again to show the
-                // textEditor, we need to put the textEditor at the bottom.
                 this.textEditorElem.classList.remove("show");
             }
 
@@ -213,7 +206,7 @@ var TextEditorProvider = (function() {
         },
 
         setForegroundColor: function(color) {
-            this.foregroundColor =  color;
+            this.foregroundColor = color;
             this._setStyle("color", util.abgrIntToCSS(color));
         },
 

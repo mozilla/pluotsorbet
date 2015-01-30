@@ -1591,7 +1591,7 @@ var currentlyFocusedTextEditor;
             promise = this.textEditor.blur();
             currentlyFocusedTextEditor = null;
         } else {
-            promise = Promise.resolve();
+            return;
         }
         asyncImpl("V", promise);
     };
