@@ -10,6 +10,10 @@ if (!jsGlobal.performance.now) {
   jsGlobal.performance.now = typeof dateNow !== 'undefined' ? dateNow : Date.now;
 }
 
+declare var load: (string) => void;
+
+load("libs/relooper.js"); // Load before we polyfill the window object.
+
 var CC = {};
 
 jsGlobal.window = {
@@ -62,7 +66,6 @@ jsGlobal.config = {
 };
 
 module J2ME {
-  declare var load: (string) => void;
   declare var process, require, global, quit, help, scriptArgs, arguments, snarf;
 
   var isNode = typeof process === 'object';

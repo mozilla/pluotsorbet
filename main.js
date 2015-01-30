@@ -246,7 +246,8 @@ window.onload = function() {
     el.textContent = numberWithCommas(J2ME.interpreterCount);
 
     var el = document.getElementById("compiledCount");
-    el.textContent = numberWithCommas(J2ME.compiledCount);
+    el.textContent = numberWithCommas(J2ME.compiledMethodCount) + " / " +
+                     numberWithCommas(J2ME.cachedMethodCount);
 
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);

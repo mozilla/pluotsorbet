@@ -33,6 +33,9 @@ $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 jasmin:
 	make -C tools/jasmin-2.4
 
+relooper:
+	make -C jit/relooper/
+
 build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
 	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js

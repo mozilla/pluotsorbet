@@ -18,7 +18,6 @@ module J2ME {
 
   export enum CompilationTarget {
     Runtime,
-    Buildtime,
     Static
   }
 
@@ -337,7 +336,10 @@ module J2ME {
   }
 
   export class CompiledMethodInfo {
-    constructor(public args: string [], public body: string, public referencedClasses: ClassInfo []) {
+    constructor(public args: string [],
+                public body: string,
+                public referencedClasses: ClassInfo [],
+                public hasOSREntryPoint: boolean = false) {
       // ...
     }
   }

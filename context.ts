@@ -21,8 +21,9 @@ module J2ME {
     Perf  = 0x08,
     Load  = 0x10,
     JIT   = 0x20,
+    Code  = 0x40,
 
-    All   = Trace | Link | Init | Perf | Load | JIT
+    All   = Trace | Link | Init | Perf | Load | JIT | Code
   }
 
   /**
@@ -379,6 +380,7 @@ module J2ME {
       perfWriter = writers & WriterFlags.Perf ? writer : null;
       linkWriter = writers & WriterFlags.Link ? writer : null;
       jitWriter = writers & WriterFlags.JIT ? writer : null;
+      codeWriter = writers & WriterFlags.Code ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
     }

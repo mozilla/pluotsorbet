@@ -39,9 +39,14 @@ module J2ME {
   export var enableRuntimeCompilation = true;
 
   /**
+   * Turns on onStackReplacement
+   */
+  export var enableOnStackReplacement = true;
+
+  /**
    * Turns on caching of JIT-compiled methods.
    */
-  var enableCompiledMethodCache = true;
+  export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
 
   /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
@@ -83,6 +88,10 @@ module J2ME {
    */
   export var initWriter = null;
 
+  /**
+   * Traces generated code.
+   */
+  export var codeWriter = null;
 
   export enum MethodState {
     /**
@@ -1257,6 +1266,7 @@ module J2ME {
     if (enableCompiledMethodCache) {
       var cachedMethod;
       if (!jsGlobal[methodInfo.mangledClassAndMethodName] && (cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+        cachedMethodCount ++;
         linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
       }
     }
@@ -1459,7 +1469,12 @@ module J2ME {
   /**
    * Number of methods that have been compiled thus far.
    */
-  export var compiledCount = 0;
+  export var compiledMethodCount = 0;
+
+  /**
+   * Number of methods that have been loaded from the code cache thus far.
+   */
+  export var cachedMethodCount = 0;
 
   /**
    * Number of ms that have been spent compiled code thus far.
@@ -1485,14 +1500,13 @@ module J2ME {
     if (enableCompiledMethodCache) {
       var cachedMethod;
       if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+        cachedMethodCount ++;
         jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
         return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
       }
     }
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-
-    compiledCount ++;
 
     jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
     var s = performance.now();
@@ -1501,6 +1515,7 @@ module J2ME {
     enterTimeline("Compiling");
     try {
       compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget[enableCompiledMethodCache ? "Static" : "Runtime"]);
+      compiledMethodCount ++;
     } catch (e) {
       methodInfo.state = MethodState.CannotCompile;
       jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
@@ -1514,6 +1529,7 @@ module J2ME {
                    compiledMethod.body +
                  "\n}";
 
+    codeWriter && codeWriter.writeLns(source);
     var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.className });
 
     if (enableCompiledMethodCache) {

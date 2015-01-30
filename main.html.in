@@ -27,12 +27,14 @@
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
+
+  <script type="text/javascript" src="libs/compiled-method-cache.js" defer></script>
+  <script type="text/javascript" src="libs/relooper.js" defer></script>
   <script type="text/javascript" src="build/j2me.js" defer></script>
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="string.js" defer></script>
   <script type="text/javascript" src="instrument.js" defer></script>
-  <script type="text/javascript" src="libs/compiled-method-cache.js" defer></script>
   <script type="text/javascript" src="libs/load.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
   <script type="text/javascript" src="libs/long.js" defer></script>
@@ -155,7 +157,7 @@
         <h1 id="display_title"></h1>
       </header>
       <div id="main" role="main">
-        <canvas id="canvas"></canvas>
+        <canvas id="canvas" style="image-rendering: -moz-crisp-edges"></canvas>
         <button id="back-button">Back</button>
       </div>
     </section>
