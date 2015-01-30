@@ -174,7 +174,7 @@
     <button id="fire">fire</button>
   </div>
 
-  <div class="splash-screen" id="splash-screen">
+  <div class="splash-screen" id="splash-screen" style="display: none">
     <h1 class="title">Loading</h1>
     <div class="splash-progress-container">
       <progress></progress>

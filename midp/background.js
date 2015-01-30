@@ -5,6 +5,7 @@
 
 function backgroundCheck() {
   if (!MIDP.manifest["Nokia-MIDlet-bg-server"]) {
+    document.getElementById("splash-screen").style.display = "block";
     return;
   }
 
@@ -55,5 +56,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
 
       localmsgServerWait = resolve;
     });
+  }).then(function() {
+    document.getElementById("splash-screen").style.display = "block";
   }));
 };
