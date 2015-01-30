@@ -1710,11 +1710,8 @@ var currentlyFocusedTextEditor;
             if (currentlyFocusedTextEditor) {
                 currentlyFocusedTextEditor.focus();
             }
-        } else {
-            if (currentlyFocusedTextEditor) {
-                currentlyFocusedTextEditor.blur();
-                currentlyFocusedTextEditor = null;
-            }
+        } else if (currentlyFocusedTextEditor) {
+            currentlyFocusedTextEditor.blur();
         }
     };
 
