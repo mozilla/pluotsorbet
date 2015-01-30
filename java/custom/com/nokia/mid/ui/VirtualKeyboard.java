@@ -13,6 +13,7 @@ class VKVisibilityNotificationRunnable implements Runnable {
                 if (null == listener) {
                     continue;
                 }
+
                 // NB: A malicious or poorly-written listener can block
                 //     in one of `showNotify` or `hideNotify`, causing
                 //     us to stop sending visibility notifications and
@@ -24,6 +25,7 @@ class VKVisibilityNotificationRunnable implements Runnable {
                 //     some reasonable amount of time. This is a lot
                 //     of thread creation and will only help poorly-
                 //     written programs so is probably overkill.
+
                 if (isShow) {
                     listener.showNotify(VirtualKeyboard.SYSTEM_KEYBOARD);
                 } else {
@@ -54,13 +56,9 @@ public class VirtualKeyboard {
     public static final int VKB_MODE_ALPHA_UPPER_CASE = 3;
     public static final int VKB_MODE_ALPHA_UPPER_CASE_LOCKED = 4;
 
-    public static CustomKeyboardControl getCustomKeyboardControl() {
-        throw new RuntimeException("VirtualKeyboard::getCustomKeyboardControl() not implemented");
-    }
+    public native static CustomKeyboardControl getCustomKeyboardControl();
 
-    public static void hideOpenKeypadCommand(boolean bl) {
-        System.out.println("VirtualKeyboard::hideOpenKeypadCommand(boolean) not implemented");
-    }
+    public native static void hideOpenKeypadCommand(boolean bl);
 
     public native static boolean isVisible();
 
@@ -72,6 +70,8 @@ public class VirtualKeyboard {
 
     public native static int getHeight();
 
+    public native static void suppressSizeChanged(boolean bl);
+
     public static void setVisibilityListener(KeyboardVisibilityListener listener) {
         if (null == visibilityNotifier) {
             visibilityNotifier = new VKVisibilityNotificationRunnable();
@@ -81,11 +81,6 @@ public class VirtualKeyboard {
         visibilityNotifier.setListener(listener);
     }
 
-    public static void suppressSizeChanged(boolean bl) {
-        throw new RuntimeException("VirtualKeyboard::suppressSizeChanged(boolean) not implemented");
-    }
-
     private static VKVisibilityNotificationRunnable visibilityNotifier = null;
     private static Thread listenerThread = null;
 }
-
