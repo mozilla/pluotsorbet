@@ -659,4 +659,5 @@
     exports.fromNumber = fromNumber;
     exports.fromBits = fromBits;
     exports.fromString = fromString;
+    exports.constructor = Long;
 })(typeof exports === "undefined" ? this.Long = {} : exports);
