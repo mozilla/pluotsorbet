@@ -22,7 +22,7 @@
   });
 })();
 
-var childOrigin;
+var childOrigin = document.location.origin;
 document.getElementById("mozbrowser").addEventListener("mozbrowserlocationchange", function(event) {
   childOrigin = new URL(event.detail).origin;
   var parentOrigin = document.location.origin;
