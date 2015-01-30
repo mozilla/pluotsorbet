@@ -239,10 +239,10 @@ module J2ME {
 
     mi.interpreterCallCount ++;
 
-    profile && interpreterCount ++;
+    interpreterCount ++;
 
     while (true) {
-      profile && bytecodeCount ++;
+      bytecodeCount ++;
       mi.bytecodeCount ++;
 
       // TODO: Make sure this works even if we JIT everything. At the moment it fails
@@ -272,7 +272,7 @@ module J2ME {
 
             var block = blockMap.getBlock(frame.pc);
             if (block.isLoopHeader && !block.isInnerLoopHeader()) {
-              profile && onStackReplacementCount++;
+              onStackReplacementCount++;
 
               // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
               frames.pop();
