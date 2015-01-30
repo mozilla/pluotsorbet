@@ -70,9 +70,9 @@ var gfxTests = [
 ];
 
 var expectedUnitTestResults = [
-  { name: "pass", number: 71551 },
+  { name: "pass", number: 71560 },
   { name: "fail", number: 0 },
-  { name: "known fail", number: 214 },
+  { name: "known fail", number: 215 },
   { name: "unknown pass", number: 0 }
 ];
 

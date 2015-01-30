@@ -15,6 +15,7 @@ public class TestAlert extends Canvas implements Testlet {
 
     public void test(TestHarness th) {
         Alert alert = new Alert("Hello World", "Some text", null, AlertType.INFO);
+        alert.setTimeout(Alert.FOREVER);
         TextEditor textEditor = TextEditor.createTextEditor("Hello, world!", 20, 0, 100, 24);
         textEditor.setParent(this);
 
