@@ -63,11 +63,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return MIDP.ScreenWidth;
+        return MIDP.Context2D.canvas.width;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return MIDP.ScreenHeight;
+        return MIDP.Context2D.canvas.height;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
