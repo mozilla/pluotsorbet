@@ -1518,25 +1518,6 @@ var currentlyFocusedTextEditor;
         this.textEditor.detach();
     };
 
-    Native["javax/microedition/lcdui/Display.unfocusTextEditorForScreenChange.()V"] = function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-            currentlyFocusedTextEditor = null;
-        }
-    };
-
-    Native["javax/microedition/lcdui/Display.unfocusTextEditorForAlert.()V"] = function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-        }
-    };
-
-    Native["javax/microedition/lcdui/Display.refocusTextEditorAfterAlert.()V"] = function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.focus();
-        }
-    };
-
     Native["javax/microedition/lcdui/Display.setTitle.(Ljava/lang/String;)V"] = function(title) {
         document.getElementById("display_title").textContent = util.fromJavaString(title);
     };
