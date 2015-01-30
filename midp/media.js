@@ -69,6 +69,8 @@ Media.extToFormat = new Map([
     ["jpg", "JPEG"],
     ["jpeg", "JPEG"],
     ["png", "PNG"],
+    ["wav", "wav"],
+    ["ogg", "ogg"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -79,6 +81,11 @@ Media.contentTypeToFormat = new Map([
     ["image/jpeg", "JPEG"],
     ["image/png", "PNG"],
 ]);
+
+Media.formatToContentType = new Map();
+for (var elem of Media.contentTypeToFormat) {
+    Media.formatToContentType.set(elem[1], elem[0])
+}
 
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
@@ -557,6 +564,8 @@ PlayerContainer.prototype.realize = function(contentType) {
                 resolve(0);
                 return;
             }
+        } else {
+            this.contentType = Media.formatToContentType.get(this.mediaFormat);
         }
 
         if (Media.supportedAudioFormats.indexOf(this.mediaFormat) !== -1) {
@@ -647,7 +656,7 @@ PlayerContainer.prototype.isVolumeControlSupported = function() {
 
 PlayerContainer.prototype.writeBuffer = function(buffer) {
     if (this.contentSize === 0) {
-        this.data = util.newPrimitiveArray("B", this.getBufferSize());
+        this.data = J2ME.newByteArray(this.getBufferSize());
     }
 
     this.data.set(buffer, this.contentSize);
@@ -918,7 +927,7 @@ Native["com/sun/mmedia/MediaDownload.nGetJavaBufferSize.(I)I"] = function(handle
 
 Native["com/sun/mmedia/MediaDownload.nGetFirstPacketSize.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
-    return player.getBufferSize() / 2;
+    return player.getBufferSize() >>> 1;
 };
 
 Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, buffer, offset, size) {
@@ -927,13 +936,13 @@ Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(handle, bu
 
     // Check the parameters.
     if (buffer === null || size === 0) {
-        return bufferSize / 2;
+        return bufferSize >>> 1;
     }
 
     player.writeBuffer(buffer.subarray(offset, offset + size));
 
     // Returns the package size and set it to the half of the java buffer size.
-    return bufferSize / 2;
+    return bufferSize >>> 1;
 };
 
 Native["com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z"] = function(handle) {
@@ -1016,7 +1025,7 @@ Native["com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I"] = function(handle) {
 
 Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, ms) {
     var container = Media.PlayerCache[handle];
-    return container.player.setMediaTime(ms);
+    return container.player.setMediaTime(ms.toInt());
 };
 
 Native["com/sun/mmedia/DirectPlayer.nStart.(I)Z"] = function(handle) {
@@ -1286,3 +1295,5 @@ Native["com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I"] = functio
     console.warn("com/sun/amms/directcontrol/DirectVolumeControl.nGetLevel.()I not implemented.");
     return 100;
 };
+
+addUnimplementedNative("com/sun/amms/directcontrol/DirectVolumeControl.nIsMuted.()Z", 0);

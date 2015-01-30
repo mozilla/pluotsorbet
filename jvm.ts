@@ -45,6 +45,7 @@ module J2ME {
       runtime.updateStatus(RuntimeStatus.Started);
 
       var classInfo = CLASSES.getClass(mainClass);
+      linkKlass(classInfo);
       if (!classInfo)
         throw new Error("Could not find or load main class " + mainClass);
 
@@ -52,7 +53,7 @@ module J2ME {
       if (!entryPoint)
         throw new Error("Could not find main method in class " + mainClass);
 
-      ctx.thread = runtime.mainThread = util.newObject(CLASSES.java_lang_Thread);
+      ctx.thread = runtime.mainThread = <java.lang.Thread>newObject(CLASSES.java_lang_Thread.klass);
       ctx.thread.pid = util.id();
       ctx.thread.alive = true;
 

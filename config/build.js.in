@@ -1,0 +1,4 @@
+// generated, build-specific configuration
+
+config.release = @RELEASE@;
+config.version = "@VERSION@";

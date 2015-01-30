@@ -132,12 +132,12 @@ function(port, msid, handle, smsPacket) {
             var text = sms.text;
             var addr = sms.addr;
 
-            var message = util.newPrimitiveArray("B", text.length);
+            var message = J2ME.newByteArray(text.length);
             for (var i = 0; i < text.length; i++) {
                 message[i] = text.charCodeAt(i);
             }
 
-            var address = util.newPrimitiveArray("B", addr.length);
+            var address = J2ME.newByteArray(addr.length);
             for (var i = 0; i < addr.length; i++) {
                 address[i] = addr.charCodeAt(i);
             }

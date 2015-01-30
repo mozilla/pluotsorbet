@@ -11,7 +11,7 @@ classes.jar: $(SRCS) $(JPP_DESTS)
 	mkdir build build-src
 	cp -a cldc1.1.1/. vm/. midp/. jsr-075/. build-src/
 	cp -a custom/. build-src/
-	javac -cp build-src -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build `find ./build-src -name *.java` > /dev/null
+	javac -cp build-src -g:none -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build `find ./build-src -name *.java` > /dev/null
 	cd build && jar cvf0 ../classes.jar *
 	jar uvf0 classes.jar $(EXTRA)
 	rm -rf build build-src

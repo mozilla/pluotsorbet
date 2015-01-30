@@ -89,47 +89,25 @@ var initialFilesByDir = {
 
 function testInit() {
   tests.push(function() {
-    var i = -1;
-
-    var checkNextPath = function() {
-      if (++i < initialPaths.length) {
-        var path = initialPaths[i];
-        fs.exists(path, function(exists) {
-          is(exists, true, path + " exists");
-          checkNextPath();
-        });
-      } else {
-        next();
-      }
-    };
-
-    checkNextPath();
+    initialPaths.forEach(function(path) {
+      is(fs.exists(path), true, path + " exists");
+    });
+    next();
   });
 
   tests.push(function() {
-    var dirs = Object.keys(initialFilesByDir);
-    var i = -1;
-
-    var checkNextDir = function() {
-      if (++i < dirs.length) {
-        var dir = dirs[i];
-        var initialFiles = initialFilesByDir[dir].slice(0);
-        fs.list(dir, function(error, files) {
-          initialFiles.sort();
-          files.sort();
-          ok(files instanceof Array, "directory list is an array");
-          is(files.length, initialFiles.length, "directory contains expected number of files");
-          for (var j = 0; j < initialFiles.length; j++) {
-            is(files[j], initialFiles[j], "file in position " + j + " is expected");
-          }
-          checkNextDir();
-        });
-      } else {
-        next();
+    Object.keys(initialFilesByDir).forEach(function(dir) {
+      var initialFiles = initialFilesByDir[dir].slice(0);
+      var files = fs.list(dir);
+      initialFiles.sort();
+      files.sort();
+      ok(files instanceof Array, "directory list is an array");
+      is(files.length, initialFiles.length, "directory contains expected number of files");
+      for (var i = 0; i < initialFiles.length; i++) {
+        is(files[i], initialFiles[i], "file in position " + i + " is expected");
       }
-    };
-
-    checkNextDir();
+    });
+    next();
   });
 
   next();

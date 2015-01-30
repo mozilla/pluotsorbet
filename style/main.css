@@ -37,6 +37,7 @@ body {
   background: url("headers/images/icons/back.png") rgba(249, 124, 23, 0.7) no-repeat scroll center center;
   border: medium none;
   border-radius: 20px 0 0 0;
+  z-index: 999;
 }
 
 #back-button:hover {
@@ -318,4 +319,31 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   margin: 2px auto 4px auto;
   border: none;
   border-bottom: 1px solid #555;
+}
+
+/* Styles for text editors */
+.text-editor {
+  position: absolute;
+  border: none;
+  resize: none;
+  visibility: hidden;
+}
+
+.text-editor.show{
+  visibility: visible;
+}
+
+#textarea-editor {
+  word-break: break-all;
+  word-wrap: break-word;
+  overflow: auto;
+  white-space: pre-wrap;
+  -moz-appearance: textfield-multiline;
+  display: block;
+  left: 0;
+  top: 0;
+}
+
+#hidden-textarea-editor {
+  visibility: hidden;
 }

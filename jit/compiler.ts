@@ -18,7 +18,6 @@ module J2ME {
 
   export enum CompilationTarget {
     Runtime,
-    Buildtime,
     Static
   }
 
@@ -237,7 +236,7 @@ module J2ME {
   var failedCompilations = 0;
 
   function compileClassInfo(emitter: Emitter, classInfo: ClassInfo,
-                            methodFilter: (methodInfo: MethodInfo) => boolean,
+                            methodFilterList: string[],
                             ctx: Context): CompiledMethodInfo [] {
     var writer = emitter.writer;
     var mangledClassName = classInfo.mangledName;
@@ -273,7 +272,7 @@ module J2ME {
       if (!method.code) {
         continue;
       }
-      if (!methodFilter(method)) {
+      if (methodFilterList !== null && methodFilterList.indexOf(method.implKey) < 0) {
         continue;
       }
       var mangledMethodName = method.mangledName;
@@ -297,6 +296,9 @@ module J2ME {
           failedCompilations ++;
         }
         if (compiledMethod && compiledMethod.body) {
+          if (methodFilterList) {
+            methodFilterList.splice(methodFilterList.indexOf(method.implKey), 1);
+          }
           var compiledMethodName = mangledClassAndMethodName;
           writer.enter("function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
@@ -334,7 +336,10 @@ module J2ME {
   }
 
   export class CompiledMethodInfo {
-    constructor(public args: string [], public body: string, public referencedClasses: ClassInfo []) {
+    constructor(public args: string [],
+                public body: string,
+                public referencedClasses: ClassInfo [],
+                public hasOSREntryPoint: boolean = false) {
       // ...
     }
   }
@@ -354,7 +359,7 @@ module J2ME {
   export function compile(jvm: any,
                           jarFilter: (jarFile: string) => boolean,
                           classFilter: (classInfo: ClassInfo) => boolean,
-                          methodFilter: (methodInfo: MethodInfo) => boolean,
+                          methodFilterList: string[],
                           fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
     var jarFiles = CLASSES.jarFiles;
@@ -432,10 +437,22 @@ module J2ME {
       }
     }
 
+    var filteredClassInfoList: ClassInfo [] = [];
     for (var i = 0; i < orderedClassInfoList.length; i++) {
       var classInfo = orderedClassInfoList[i];
+      var methods = classInfo.methods;
+      for (var j = 0; j < methods.length; j++) {
+        var method = methods[j];
+        if (methodFilterList === null || methodFilterList.indexOf(method.implKey) >= 0) {
+          // If at least one method is found, compile the class.
+          filteredClassInfoList.push(classInfo);
+          break;
+        }
+      }
+    }
 
-      writer.writeLn("//// " + classInfo.className);
+    for (var i = 0; i < filteredClassInfoList.length; i++) {
+      var classInfo = filteredClassInfoList[i];
 
       if (emitter.debugInfo) {
         writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
@@ -444,7 +461,7 @@ module J2ME {
       if (classInfo.isInterface) {
         continue;
       }
-      ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, methodFilter, ctx));
+      ArrayUtilities.pushMany(compiledMethods, compileClassInfo(emitter, classInfo, methodFilterList, ctx));
     }
 
     var color = failedCompilations ? IndentingWriter.YELLOW : IndentingWriter.GREEN;

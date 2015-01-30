@@ -21,8 +21,9 @@ module J2ME {
     Perf  = 0x08,
     Load  = 0x10,
     JIT   = 0x20,
+    Code  = 0x40,
 
-    All   = Trace | Link | Init | Perf | Load | JIT
+    All   = Trace | Link | Init | Perf | Load | JIT | Code
   }
 
   /**
@@ -319,7 +320,7 @@ module J2ME {
       console.log(s);
     });
 
-    id: number
+    id: number;
 
     /*
      * Contains method frames separated by special frame instances called marker frames. These
@@ -379,8 +380,16 @@ module J2ME {
       perfWriter = writers & WriterFlags.Perf ? writer : null;
       linkWriter = writers & WriterFlags.Link ? writer : null;
       jitWriter = writers & WriterFlags.JIT ? writer : null;
+      codeWriter = writers & WriterFlags.Code ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
+    }
+
+    getPriority() {
+      if (this.thread) {
+        return this.thread.priority;
+      }
+      return NORMAL_PRIORITY;
     }
 
     kill() {
@@ -542,7 +551,7 @@ module J2ME {
       this.resume();
     }
 
-    private execute() {
+    execute() {
       var start = performance.now();
       this.setAsCurrentContext();
       do {
@@ -580,7 +589,7 @@ module J2ME {
     }
 
     resume() {
-      (<any>window).setZeroTimeout(this.execute.bind(this));
+      Runtime.scheduleRunningContext(this);
     }
 
     block(obj, queue, lockLevel) {
@@ -591,13 +600,12 @@ module J2ME {
       $.pause("block");
     }
 
-    unblock(obj, queue, notifyAll, callback) {
+    unblock(obj, queue, notifyAll) {
       while (obj[queue] && obj[queue].length) {
         var ctx = obj[queue].pop();
         if (!ctx)
           continue;
-        // Wait until next tick, so that we are sure to notify all waiting.
-        (<any>window).setZeroTimeout(callback.bind(null, ctx));
+          ctx.wakeup(obj)
         if (!notifyAll)
           break;
       }
@@ -644,9 +652,7 @@ module J2ME {
         return;
       }
       object._lock = null;
-      this.unblock(object, "ready", false, function (ctx) {
-        ctx.wakeup(object);
-      });
+      this.unblock(object, "ready", false);
     }
 
     wait(object: java.lang.Object, timeout) {
@@ -678,9 +684,7 @@ module J2ME {
       if (!obj._lock || obj._lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
 
-      this.unblock(obj, "waiting", notifyAll, function (ctx) {
-        ctx.wakeup(obj);
-      });
+      this.unblock(obj, "waiting", notifyAll);
     }
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {

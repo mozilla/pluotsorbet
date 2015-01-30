@@ -14,15 +14,22 @@
   <script type="text/javascript" src="config/midlet.js" defer></script>
   <script type="text/javascript" src="config/build.js" defer></script>
   <script type="text/javascript" src="config/urlparams.js" defer></script>
-  <!-- Uncomment the line below to enable the profiler. -->
-  <!--<script type="text/javascript" src="build/shumway.js" defer></script>-->
+  <!-- #if PROFILE == "true" -->
+  <script type="text/javascript" src="build/shumway.js" defer></script>
+  <!-- #endif -->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
+  <script type="text/javascript" src="polyfill/fromcodepoint.js" defer></script>
+  <script type="text/javascript" src="polyfill/codepointat.js" defer></script>
+  <script type="text/javascript" src="polyfill/IndexedDB-getAll-shim.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>
+
+  <script type="text/javascript" src="libs/compiled-method-cache.js" defer></script>
+  <script type="text/javascript" src="libs/relooper.js" defer></script>
   <script type="text/javascript" src="build/j2me.js" defer></script>
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
@@ -58,10 +65,11 @@
   <script type="text/javascript" src="midp/pim.js" defer></script>
   <script type="text/javascript" src="midp/device_control.js" defer></script>
   <script type="text/javascript" src="midp/background.js" defer></script>
+  <script type="text/javascript" src="midp/gestures.js" defer></script>
   <script type="text/javascript" src="game-ui.js" defer></script>
 
   <!-- run make aot to generate these -->
-  <!--<script type="text/javascript" src="build/classes.jar.js" defer></script>-->
+  <script type="text/javascript" src="build/classes.jar.js" defer></script>
   <!--<script type="text/javascript" src="build/program.jar.js" defer></script>-->
   <!--<script type="text/javascript" src="build/tests.jar.js" defer></script>-->
   <script type="text/javascript" src="main.js" defer></script>
@@ -119,6 +127,7 @@
       <input type="file" id="importstoragefile">
       <input type="text" id="importstorageurl" placeholder="URL to FS backup">
       <button id="importstorage">Import</button>
+      <button id="clearCompiledMethodCache">Clear Compiled Method Cache</button>
       <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
       <button id="profile">Profile: OFF</button>
@@ -148,7 +157,11 @@
         <h1 id="display_title"></h1>
       </header>
       <div id="main" role="main">
-        <canvas id="canvas"></canvas>
+        <canvas id="canvas" style="image-rendering: -moz-crisp-edges"></canvas>
+        <input id="password-editor" class="text-editor" type="password">
+        <div id="textarea-editor" class="text-editor" contenteditable="true"></div>
+        <!-- The hidden textarea editor is used to measure the content height -->
+        <div id="hidden-textarea-editor" class="text-editor"></div>
         <button id="back-button">Back</button>
       </div>
     </section>

@@ -20,9 +20,6 @@ var inBrowser = typeof console !== "undefined" && console.info;
 declare var putstr;
 declare var printErr;
 
-/** @const */ var release: boolean = true;
-/** @const */ var profile: boolean = true;
-
 declare var dateNow: () => number;
 
 declare var dump: (message: string) => void;
@@ -639,6 +636,13 @@ module J2ME {
 
     export function makeForwardingSetter(target: string): (any) => void {
       return <(any) => void> new Function("value", "this[\"" + target + "\"] = value;");
+    }
+
+    export function makeDebugForwardingSetter(target: string, checker: (x: any) => boolean): (any) => void {
+      return function (value) {
+        Debug.assert(checker(value), "Unexpected value for target " + target);
+        this[target] = value;
+      }
     }
   }
 

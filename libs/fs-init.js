@@ -29,17 +29,9 @@ var initFS = new Promise(function(resolve, reject) {
     initialDirs.push("/tcktestdir");
   }
 
-  // Create directories sequentially so parents exist before children
-  // are created.  We could use fs.mkdirp instead, but it won't necessarily
-  // be faster, since it'll still create parents before children, and each
-  // child's creation will trigger existence checks on all parent dirs.
-  return initialDirs.reduce(function(current, next) {
-    return current.then(function() {
-      return new Promise(function(resolve, reject) {
-        fs.mkdir(next, resolve);
-      });
-    });
-  }, Promise.resolve());
+  initialDirs.forEach(function(dir) {
+    fs.mkdir(dir);
+  });
 }).then(function() {
   var filePromises = [];
 
@@ -49,15 +41,14 @@ var initFS = new Promise(function(resolve, reject) {
 
   initialFiles.forEach(function(file) {
     filePromises.push(new Promise(function(resolve, reject) {
-        fs.exists(file.targetPath, function(exists) {
-          if (exists) {
-            resolve();
-          } else {
-            load(APP_BASE_DIR + file.sourcePath, "blob").then(function(data) {
-              fs.create(file.targetPath, data, resolve);
-            });
-          }
-      });
+      if (fs.exists(file.targetPath)) {
+        resolve();
+      } else {
+        load(APP_BASE_DIR + file.sourcePath, "blob").then(function(data) {
+          fs.create(file.targetPath, data);
+          resolve();
+        });
+      }
     }));
   });
 

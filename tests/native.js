@@ -71,15 +71,15 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function() {
-  DumbPipe.open("hideKeyboard", null, function(message) {});
+  window.dispatchEvent(new Event("keyboardHidden"));
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V"] = function() {
-  DumbPipe.open("showKeyboard", null, function(message) {});
+  window.dispatchEvent(new Event("keyboardShown"));
 };
 
 Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = function() {
-  return currentlyFocusedTextEditor.textEditor.focused ? 1 : 0;
+  return currentlyFocusedTextEditor.focused ? 1 : 0;
 };
 
 Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(pathStr) {
@@ -142,7 +142,7 @@ Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = f
 
 Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(data) {
   var converted = Media.convert3gpToAmr(new Uint8Array(data));
-  var result = util.newPrimitiveArray("B", converted.length);
+  var result = J2ME.newByteArray(converted.length);
   result.set(converted);
   return result;
 };

@@ -108,8 +108,6 @@ module J2ME {
 
   export var onStackReplacementCount = 0;
 
-  export var onStackReplacementIsEnabled = true;
-
   /**
    * Temporarily used for fn.apply.
    */
@@ -241,10 +239,10 @@ module J2ME {
 
     mi.interpreterCallCount ++;
 
-    profile && interpreterCount ++;
+    interpreterCount ++;
 
     while (true) {
-      profile && bytecodeCount ++;
+      bytecodeCount ++;
       mi.bytecodeCount ++;
 
       // TODO: Make sure this works even if we JIT everything. At the moment it fails
@@ -260,56 +258,56 @@ module J2ME {
       try {
         if (frame.pc < lastPC) {
           mi.backwardsBranchCount ++;
-          if (onStackReplacementIsEnabled && mi.state === MethodState.Compiled) {
+          if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
             // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
             // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
             // on stack replacement.
 
-            profile && onStackReplacementCount ++;
-
-            // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
-            frames.pop();
-
-            // Remember the return kind since we'll need it later.
-            var returnKind = mi.getReturnKind();
-
-            // Set the global OSR frame to the current frame.
-            O = frame;
-
-            var blockMap = O.methodInfo.blockMap;
+            var blockMap = mi.blockMap;
             if (!blockMap) {
-              blockMap = new BlockMap(O.methodInfo);
+              blockMap = new BlockMap(mi);
               blockMap.build();
-              O.methodInfo.blockMap = blockMap;
+              mi.blockMap = blockMap;
             }
 
-            // Convert between PC and block ID which is what the baseline JIT expects as the PC.
-            O.pc = blockMap.getBlock(O.pc).blockID;
+            var block = blockMap.getBlock(frame.pc);
+            if (block.isLoopHeader && !block.isInnerLoopHeader()) {
+              onStackReplacementCount++;
 
-            // Set the current frame before doing the OSR in case an exception is thrown.
-            frame = frames[frames.length - 1];
+              // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
+              frames.pop();
 
-            // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
-            returnValue = O.methodInfo.fn();
-            if (U) {
-              return;
-            }
+              // Remember the return kind since we'll need it later.
+              var returnKind = mi.getReturnKind();
 
-            // Usual code to return from the interpreter or push the return value.
-            if (Frame.isMarker(frame)) {
-              return returnValue;
-            }
-            mi = frame.methodInfo;
-            ci = mi.classInfo;
-            rp = ci.resolved_constant_pool;
-            stack = frame.stack;
-            lastPC = -1;
+              // Set the global OSR frame to the current frame.
+              O = frame;
 
-            if (returnKind !== Kind.Void) {
-              if (isTwoSlot(returnKind)) {
-                stack.push2(returnValue);
-              } else {
-                stack.push(returnValue);
+              // Set the current frame before doing the OSR in case an exception is thrown.
+              frame = frames[frames.length - 1];
+
+              // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
+              returnValue = O.methodInfo.fn();
+              if (U) {
+                return;
+              }
+
+              // Usual code to return from the interpreter or push the return value.
+              if (Frame.isMarker(frame)) {
+                return returnValue;
+              }
+              mi = frame.methodInfo;
+              ci = mi.classInfo;
+              rp = ci.resolved_constant_pool;
+              stack = frame.stack;
+              lastPC = -1;
+
+              if (returnKind !== Kind.Void) {
+                if (isTwoSlot(returnKind)) {
+                  stack.push2(returnValue);
+                } else {
+                  stack.push(returnValue);
+                }
               }
             }
           }
@@ -945,20 +943,14 @@ module J2ME {
           case Bytecodes.NEWARRAY:
             type = frame.read8();
             size = stack.pop();
-            if (size < 0) {
-              throw $.newNegativeArraySizeException();
-            }
-            stack.push(util.newPrimitiveArray("????ZCFDBSIJ"[type], size));
+            stack.push(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
             break;
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo, false);
             classInitCheck(classInfo, frame.pc - 3);
             size = stack.pop();
-            if (size < 0) {
-              throw $.newNegativeArraySizeException();
-            }
-            stack.push(util.newArray(classInfo, size));
+            stack.push(newArray(classInfo.klass, size));
             break;
           case Bytecodes.MULTIANEWARRAY:
             index = frame.read16();
@@ -1034,7 +1026,7 @@ module J2ME {
             if (U) {
               return;
             }
-            stack.push(util.newObject(classInfo));
+            stack.push(newObject(classInfo.klass));
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
