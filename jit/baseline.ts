@@ -440,6 +440,12 @@ module J2ME {
         this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : this.getLocal(0)
         : "null";
 
+      // Insert a preemption check at the top of the method. We can only
+      // do this if the method has the necessary unwinding code.
+      if (canYield(this.methodInfo)) {
+        this.emitPreemptionCheck(this.bodyEmitter, 0);
+      }
+
       this.emitEntryPoints();
     }
 
@@ -850,6 +856,11 @@ module J2ME {
     private emitMonitorEnter(emitter: Emitter, nextPC: number, object: string) {
       emitter.writeLn("ME(" + object + ");");
       this.emitUnwind(emitter, this.pc, nextPC);
+    }
+
+    private emitPreemptionCheck(emitter: Emitter, nextPC: number) {
+      emitter.writeLn("CP();");
+      this.emitUnwind(emitter, nextPC, nextPC);
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {

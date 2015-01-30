@@ -22,8 +22,9 @@ module J2ME {
     Load  = 0x10,
     JIT   = 0x20,
     Code  = 0x40,
+    Thread = 0x80,
 
-    All   = Trace | Link | Init | Perf | Load | JIT | Code
+    All   = Trace | Link | Init | Perf | Load | JIT | Code | Thread
   }
 
   /**
@@ -382,6 +383,7 @@ module J2ME {
       jitWriter = writers & WriterFlags.JIT ? writer : null;
       codeWriter = writers & WriterFlags.Code ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
+      threadWriter = writers & WriterFlags.Thread ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
     }
 
@@ -562,17 +564,6 @@ module J2ME {
             this.bailoutFrames = [];
           }
           var frames = this.frames;
-          if (windingWriter) {
-            windingWriter.enter("Unwound");
-            frames.map(function (f) {
-              if (Frame.isMarker(f)) {
-                windingWriter.writeLn("- marker -");
-              } else {
-                windingWriter.writeLn((f.methodInfo.state === MethodState.Compiled ? "C" : "I") + " " + f.toString());
-              }
-            });
-            windingWriter.leave("");
-          }
           switch (U) {
             case VMState.Yielding:
               this.resume();
