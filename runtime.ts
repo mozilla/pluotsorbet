@@ -1726,13 +1726,13 @@ module J2ME {
 
   export function checkDivideByZero(value: number) {
     if (value === 0) {
-      throw $.newArithmeticException("/ by zero");
+      throwArithmeticException();
     }
   }
 
   export function checkDivideByZeroLong(value: Long) {
     if (value.isZero()) {
-      throw $.newArithmeticException("/ by zero");
+      throwArithmeticException();
     }
   }
 
@@ -1747,6 +1747,14 @@ module J2ME {
     if ((index >>> 0) >= (array.length >>> 0)) {
       throw $.newArrayIndexOutOfBoundsException(String(index));
     }
+  }
+
+  export function throwArrayIndexOutOfBoundsException(index: number) {
+    throw $.newArrayIndexOutOfBoundsException(String(index));
+  }
+
+  export function throwArithmeticException() {
+    throw $.newArithmeticException("/ by zero");
   }
 
   export function checkArrayStore(array: java.lang.Object, value: any) {
@@ -1839,3 +1847,5 @@ var CAS = J2ME.checkArrayStore;
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
+var TI = J2ME.throwArrayIndexOutOfBoundsException;
+var TA = J2ME.throwArithmeticException;
