@@ -130,7 +130,6 @@
       <button id="clearCompiledMethodCache">Clear Compiled Method Cache</button>
       <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
-      <button id="profile">Profile: OFF</button>
       <button id="clearCounters">Clear Counters</button>
       <button id="dumpCounters">Dump Counters</button>
       <button id="sampleCounters1">One sample for 1s</button>

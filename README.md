@@ -143,17 +143,6 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
-When debugging using the WebIDE, enable the option "select an iframe as the currently targeted document" and select the iframe containing main.html as the debugging target. NB: you need to connect to a target device running FxOS 2.1 or up to use this feature in WebIDE.
-
-Use these JS calls within the console to start and stop profiling (TODO: I haven't actually gotten these to work):
-
-        Instrument.startProfile()
-        Instrument.stopProfile()
-
-It can be helpful to increase this `about:config` option: `devtools.hud.loglimit.console`
-
-Alternatively, use the "Performance" tab of the Firefox Developer Tools.
-
 ### Java profiling
 
 j2me.js includes its own profiler that is capable of measuring the performance of Java methods running inside its JVM.

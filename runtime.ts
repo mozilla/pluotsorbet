@@ -30,7 +30,6 @@ declare var throwYield;
 module J2ME {
   declare var Native, Override;
   declare var VM;
-  declare var Instrument;
   declare var CompiledMethodCache;
 
   /**

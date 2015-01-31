@@ -344,22 +344,7 @@ window.onload = function() {
     }
     setTimeout(sample, 2000); // Wait 2s before starting.
   };
- document.getElementById("profile").onclick = function() {
-   if (getIsOff(this)) {
-     Instrument.startProfile();
-   } else {
-     Instrument.stopProfile();
-   }
-   toggle(this);
- };
- if (Instrument.profiling) {
-   toggle(document.getElementById("profile"));
- }
 };
-
-if (config.profile && !/no|0/.test(config.profile)) {
-  Instrument.startProfile();
-}
 
 function requestTimelineBuffers(fn) {
   if (J2ME.timeline) {
