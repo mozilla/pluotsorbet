@@ -82,17 +82,14 @@ module J2ME {
    * Debugging helper to make sure native methods were implemented correctly.
    */
   function checkReturnValue(methodInfo: MethodInfo, returnValue: any) {
-    if (returnValue instanceof Promise) {
-      console.error("You forgot to call asyncImpl():", methodInfo.implKey);
-    } else if (methodInfo.getReturnKind() === Kind.Void && returnValue) {
-      console.error("You returned something in a void method:", methodInfo.implKey);
-    } else if (methodInfo.getReturnKind() !== Kind.Void && (returnValue === undefined) &&
-      !U) {
-      console.error("You returned undefined in a non-void method:", methodInfo.implKey);
-    } else if (typeof returnValue === "string") {
-      console.error("You returned a non-wrapped string:", methodInfo.implKey);
-    } else if (returnValue === true || returnValue === false) {
-      console.error("You returned a JS boolean:", methodInfo.implKey);
+    if (U) {
+      if (typeof returnValue !== "undefined") {
+        assert(false, "Expected undefined return value during unwind, got " + returnValue);
+      }
+      return;
+    }
+    if (!(getKindCheck(methodInfo.getReturnKind())(returnValue))) {
+      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue);
     }
   }
 

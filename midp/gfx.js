@@ -63,11 +63,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return MIDP.ScreenWidth;
+        return MIDP.Context2D.canvas.width;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return MIDP.ScreenHeight;
+        return MIDP.Context2D.canvas.height;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
@@ -1518,25 +1518,6 @@ var currentlyFocusedTextEditor;
         this.textEditor.detach();
     };
 
-    Native["javax/microedition/lcdui/Display.unfocusTextEditorForScreenChange.()V"] = function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-            currentlyFocusedTextEditor = null;
-        }
-    };
-
-    Native["javax/microedition/lcdui/Display.unfocusTextEditorForAlert.()V"] = function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.blur();
-        }
-    };
-
-    Native["javax/microedition/lcdui/Display.refocusTextEditorAfterAlert.()V"] = function() {
-        if (currentlyFocusedTextEditor) {
-            currentlyFocusedTextEditor.focus();
-        }
-    };
-
     Native["javax/microedition/lcdui/Display.setTitle.(Ljava/lang/String;)V"] = function(title) {
         document.getElementById("display_title").textContent = util.fromJavaString(title);
     };
@@ -1729,6 +1710,8 @@ var currentlyFocusedTextEditor;
             if (currentlyFocusedTextEditor) {
                 currentlyFocusedTextEditor.focus();
             }
+        } else if (currentlyFocusedTextEditor) {
+            currentlyFocusedTextEditor.blur();
         }
     };
 
@@ -1930,7 +1913,9 @@ var currentlyFocusedTextEditor;
                 }
                 var li = document.createElement("li");
                 var text = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
-                li.innerHTML = "<a>" + text + "</a>";
+                var a = document.createElement("a");
+                a.textContent = text;
+                li.appendChild(a);
 
                 li.onclick = function(e) {
                     e.preventDefault();
