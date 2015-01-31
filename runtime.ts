@@ -1656,10 +1656,14 @@ module J2ME {
 
   export function newArray(klass: Klass, size: number) {
     if (size < 0) {
-      throw $.newNegativeArraySizeException();
+      throwNegativeArraySizeException();
     }
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
+  }
+
+  export function throwNegativeArraySizeException() {
+    throw $.newNegativeArraySizeException();
   }
 
   export function newObjectArray(size: number): java.lang.Object[] {
@@ -1849,3 +1853,4 @@ var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
 var TI = J2ME.throwArrayIndexOutOfBoundsException;
 var TA = J2ME.throwArithmeticException;
+var TN = J2ME.throwNegativeArraySizeException;

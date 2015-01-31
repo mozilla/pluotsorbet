@@ -74,11 +74,14 @@ module J2ME {
   var emitCheckArrayStore = true;
 
 
-  function needsBoundsCheck(methodInfo: MethodInfo) {
+  /**
+   * Unsafe methods.
+   */
+  function isPriviledged(methodInfo: MethodInfo) {
     if (priviledgedClasses[methodInfo.classInfo.className]) {
-      return false;
+      return true;
     }
-    return true;
+    return false;
   }
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
@@ -244,7 +247,7 @@ module J2ME {
     private lockObject: string;
     private hasOSREntryPoint = false;
     private entryBlock: number;
-    private needsBoundsCheck: boolean;
+    private isPriviledged: boolean;
 
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
@@ -268,7 +271,7 @@ module J2ME {
       this.bodyEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.blockEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.target = target;
-      this.needsBoundsCheck = needsBoundsCheck(this.methodInfo);
+      this.isPriviledged = isPriviledged(this.methodInfo);
     }
 
     compile(): CompiledMethodInfo {
@@ -758,8 +761,15 @@ module J2ME {
       }
     }
 
+    emitNegativeArraySizeCheck(length: string) {
+      if (this.isPriviledged) {
+        return;
+      }
+      this.blockEmitter.writeLn(length + " < 0 && TN();");
+    }
+
     emitBoundsCheck(array: string, index: string) {
-      if (!this.needsBoundsCheck) {
+      if (this.isPriviledged) {
         return;
       }
       if (!emitCheckArrayBounds) {
@@ -777,7 +787,7 @@ module J2ME {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
       this.emitBoundsCheck(array, index);
-      if (kind === Kind.Reference) {
+      if (!this.isPriviledged && kind === Kind.Reference) {
         emitCheckArrayStore && this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
       }
       this.blockEmitter.writeLn(array + "[" + index + "] = " + value + ";");
@@ -839,6 +849,7 @@ module J2ME {
     emitNewTypeArray(typeCode: number) {
       var kind = arrayTypeCodeToKind(typeCode);
       var length = this.pop(Kind.Int);
+      this.emitNegativeArraySizeCheck(length);
       this.emitPush(Kind.Reference, "new " + kindToTypedArrayName(kind) + "(" + length + ")");
     }
 
@@ -870,6 +881,7 @@ module J2ME {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
+      this.emitNegativeArraySizeCheck(length);
       this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")");
     }
 
