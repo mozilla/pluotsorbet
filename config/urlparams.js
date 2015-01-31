@@ -11,7 +11,6 @@
  *    icc_mcc
  *    icc_mnc
  *    icc_msisdn
- *    instrument
  *    jad
  *    jars
  *    logConsole
