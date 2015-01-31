@@ -749,12 +749,20 @@ module J2ME {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
         call = inlineMethods[methodInfo.implKey];
       }
+      if (!(calleeCanYield || emitCompilerAssertions)) {
+        if (types[0].kind !== Kind.Void) {
+          this.emitPush(types[0].kind, call);
+        } else {
+          this.blockEmitter.writeLn(call + ";");
+        }
+        return;
+      }
       this.needsVariable("re");
       this.blockEmitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
         this.emitUnwind(this.blockEmitter, this.pc, nextPC);
-      } else {
-        emitCompilerAssertions && this.emitNoUnwindAssertion();
+      } else if (emitCompilerAssertions) {
+        this.emitNoUnwindAssertion();
       }
       if (types[0].kind !== Kind.Void) {
         this.emitPush(types[0].kind, "re");
