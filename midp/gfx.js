@@ -1147,24 +1147,24 @@ var currentlyFocusedTextEditor;
         x = pair[0];
         y = pair[1];
 
+        if (isOpaque) {
+            withOpaquePixel(g, c);
+        } else {
+            withPixel(g, c);
+        }
+
         parseEmojiString(str).forEach(function(part) {
             if (part.text) {
                 var pair = withTextAnchor(g, c, anchor, x, y, part.text);
                 var textX = pair[0];
                 var textY = pair[1];
 
-                if (isOpaque) {
-                    withOpaquePixel(g, c);
-                } else {
-                    withPixel(g, c);
-                }
-
                 c.fillText(part.text, textX, textY);
 
                 // If there are emojis in the string that we need to draw,
                 // we need to calculate the string width
                 if (part.emoji) {
-                    x += measureWidth(c, part.text)
+                    x += measureWidth(c, part.text);
                 }
             }
 
