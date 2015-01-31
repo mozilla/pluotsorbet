@@ -97,6 +97,9 @@ class String {
     /** The count is the number of characters in the String. */
     private int count;
 
+    /** Immutable, so we can cache the hash code. */
+    private int cachedHashCode;
+
     /**
      * Initializes a newly created <code>String</code> object so that it
      * represents an empty character sequence.
@@ -713,6 +716,9 @@ class String {
      * @return  a hash code value for this object.
      */
     public int hashCode() {
+        if (cachedHashCode > 0) {
+          return cachedHashCode;
+        }
         int h = 0;
         int off = offset;
         char val[] = value;
@@ -721,6 +727,7 @@ class String {
         for (int i = 0; i < len; i++) {
             h = 31*h + val[off++];
         }
+        cachedHashCode = h;
         return h;
     }
 
