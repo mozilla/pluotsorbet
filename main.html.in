@@ -34,7 +34,6 @@
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="string.js" defer></script>
-  <script type="text/javascript" src="instrument.js" defer></script>
   <script type="text/javascript" src="libs/load.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
   <script type="text/javascript" src="libs/long.js" defer></script>
