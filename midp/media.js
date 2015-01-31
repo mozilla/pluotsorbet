@@ -1025,7 +1025,7 @@ Native["com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I"] = function(handle) {
 
 Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, ms) {
     var container = Media.PlayerCache[handle];
-    return container.player.setMediaTime(ms);
+    return container.player.setMediaTime(ms.toInt());
 };
 
 Native["com/sun/mmedia/DirectPlayer.nStart.(I)Z"] = function(handle) {

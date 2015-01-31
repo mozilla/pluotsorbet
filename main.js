@@ -175,7 +175,9 @@ function start() {
   jvm.startIsolate0(config.main, config.args);
 }
 
-Promise.all(loadingPromises).then(start);
+Promise.all(loadingPromises).then(start, function (reason) {
+  console.error("Loading failed: \"" + reason + "\"");
+});
 
 document.getElementById("start").onclick = function() {
   start();

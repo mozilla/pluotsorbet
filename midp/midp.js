@@ -551,11 +551,6 @@ MIDP.Context2D = (function() {
       c.width = window.innerWidth;
       c.height = window.innerHeight;
       document.documentElement.classList.add('autosize');
-      c.style.position = "fixed";
-      c.style.top = "0px";
-      c.style.left = "0px";
-      c.style.height = c.height + "px";
-      c.style.width = c.width + "px";
       window.addEventListener("resize", MIDP.onWindowResize);
     } else {
       document.documentElement.classList.add('debug-mode');
