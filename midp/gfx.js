@@ -990,6 +990,7 @@ var currentlyFocusedTextEditor;
         this.displayId = -1;
         this.img = null;
         this.style = SOLID;
+        this.clipped = false;
     };
 
     Native["javax/microedition/lcdui/Graphics.initScreen0.(III)V"] = function(displayId, w, h) {
