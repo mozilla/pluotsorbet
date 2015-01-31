@@ -1197,7 +1197,9 @@ var currentlyFocusedTextEditor;
         var chr = String.fromCharCode(jChr);
 
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x, y);
         x = pair[0];
@@ -1209,12 +1211,16 @@ var currentlyFocusedTextEditor;
 
         c.fillText(chr, x, y);
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x1, y1);
         var x = pair[0];
@@ -1234,7 +1240,9 @@ var currentlyFocusedTextEditor;
         c.closePath();
         c.fill();
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(x, y, w, h) {
@@ -1243,7 +1251,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x, y);
         x = pair[0];
@@ -1256,7 +1266,9 @@ var currentlyFocusedTextEditor;
 
         c.strokeRect(x, y, w, h);
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
@@ -1265,7 +1277,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x, y);
         x = pair[0];
@@ -1280,7 +1294,9 @@ var currentlyFocusedTextEditor;
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
         c.stroke();
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(x, y, w, h) {
@@ -1289,7 +1305,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x, y);
         x = pair[0];
@@ -1302,7 +1320,9 @@ var currentlyFocusedTextEditor;
 
         c.fillRect(x, y, w, h);
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
@@ -1311,7 +1331,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x, y);
         x = pair[0];
@@ -1326,7 +1348,9 @@ var currentlyFocusedTextEditor;
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
         c.fill();
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(x, y, width, height, startAngle, arcAngle) {
@@ -1335,7 +1359,6 @@ var currentlyFocusedTextEditor;
         }
 
         var c = withGraphics(this);
-        c.save();
 
         withPixel(this, c);
 
@@ -1344,8 +1367,6 @@ var currentlyFocusedTextEditor;
         c.beginPath();
         createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, false);
         c.stroke();
-
-        c.restore();
     };
 
     Native["javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V"] = function(x, y, width, height, startAngle, arcAngle) {
@@ -1354,7 +1375,6 @@ var currentlyFocusedTextEditor;
         }
 
         var c = withGraphics(this);
-        c.save();
 
         withPixel(this, c);
 
@@ -1365,8 +1385,6 @@ var currentlyFocusedTextEditor;
         createEllipticalArc(c, x, y, width / 2, height / 2, startRad, endRad, true);
         c.moveTo(x, y);
         c.fill();
-
-        c.restore();
     };
 
     var TRANS_NONE = 0;
@@ -1416,7 +1434,9 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x1, y1);
         var x = pair[0];
@@ -1439,7 +1459,9 @@ var currentlyFocusedTextEditor;
         c.stroke();
         c.closePath();
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
