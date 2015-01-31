@@ -381,9 +381,7 @@ module J2ME {
         check += "(" + this.peek(Kind.Reference) + ", " + classConstant(classInfo) + ")";
         check = " && " + check;
       }
-      this.bodyEmitter.enter("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") {");
-      this.bodyEmitter.writeLn("pc = " + this.getBlockIndex(handler.handler_pc) + "; continue;");
-      this.bodyEmitter.leave("}");
+      this.bodyEmitter.writeLn("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") { pc = " + this.getBlockIndex(handler.handler_pc) + "; continue; }");
       return;
     }
 
