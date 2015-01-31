@@ -87,6 +87,9 @@ module J2ME {
   }
 
   export function isFinalMethod(methodInfo: MethodInfo): boolean {
+    if (isFinalClass(methodInfo.classInfo)) {
+      return true;
+    }
     // XXX Determine whether we can start using the code in this function.
     return false;
     var result = methodInfo.isFinal;
