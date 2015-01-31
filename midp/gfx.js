@@ -810,7 +810,9 @@ var currentlyFocusedTextEditor;
         context.putImageData(imageData, 0, 0);
 
         var c = withGraphics(graphics);
-        c.save();
+        if (graphics.clipped) {
+            c.save();
+        }
 
         var pair = withClip(graphics, c, x, y);
         x = pair[0];
@@ -818,7 +820,9 @@ var currentlyFocusedTextEditor;
 
         c.drawImage(context.canvas, x, y);
 
-        c.restore();
+        if (graphics.clipped) {
+            c.restore();
+        }
     };
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
@@ -829,7 +833,9 @@ var currentlyFocusedTextEditor;
         var texture = image.imageData.context.canvas;
 
         var c = withGraphics(g);
-        c.save();
+        if (g.clipped) {
+            c.save();
+        }
 
         var pair = withAnchor(g, c, anchor, x, y, texture.width, texture.height);
         x = pair[0];
@@ -837,7 +843,9 @@ var currentlyFocusedTextEditor;
 
         c.drawImage(texture, x, y);
 
-        c.restore();
+        if (g.clipped) {
+            c.restore();
+        }
 
         return 1;
     }
@@ -1130,7 +1138,9 @@ var currentlyFocusedTextEditor;
         var font = g.currentFont;
 
         var c = withGraphics(g);
-        c.save();
+        if (g.clipped) {
+            c.save();
+        }
 
         var pair = withClip(g, c, x, y);
         x = pair[0];
@@ -1164,7 +1174,9 @@ var currentlyFocusedTextEditor;
             }
         });
 
-        c.restore();
+        if (g.clipped) {
+            c.restore();
+        }
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
@@ -1370,7 +1382,9 @@ var currentlyFocusedTextEditor;
             texture = imgData.context.canvas;
 
         var c = withGraphics(g);
-        c.save();
+        if (g.clipped || transform !== TRANS_NONE) {
+            c.save();
+        }
 
         var pair = withAnchor(g, c, anchor, x, y, sw, sh);
         x = pair[0];
@@ -1392,7 +1406,9 @@ var currentlyFocusedTextEditor;
 
         c.drawImage(texture, sx, sy, sw, sh, 0, 0, sw, sh);
 
-        c.restore();
+        if (g.clipped || transform !== TRANS_NONE) {
+            c.restore();
+        }
 
         return true;
     };
@@ -1437,7 +1453,9 @@ var currentlyFocusedTextEditor;
         context.putImageData(imageData, 0, 0);
 
         var c = withGraphics(this);
-        c.save();
+        if (this.clipped) {
+            c.save();
+        }
 
         var pair = withClip(this, c, x, y);
         x = pair[0];
@@ -1445,7 +1463,9 @@ var currentlyFocusedTextEditor;
 
         c.drawImage(context.canvas, x, y);
 
-        c.restore();
+        if (this.clipped) {
+            c.restore();
+        }
     };
 
     var textEditorId = 0,
