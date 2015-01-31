@@ -44,6 +44,7 @@ module J2ME {
     "com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.receiveData.([B)I": YieldReason.Root,
+    "org/mozilla/io/LocalMsgConnection.waitConnection.()V": YieldReason.Root,
     "com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z": YieldReason.Root,
     "com/sun/mmedia/DirectRecord.nPause.(I)I": YieldReason.Root,
     "com/sun/mmedia/DirectRecord.nStop.(I)I": YieldReason.Root,
@@ -60,6 +61,7 @@ module J2ME {
     "java/lang/Class.invoke_clinit.()V": YieldReason.Root,
     "java/lang/Class.newInstance.()Ljava/lang/Object;": YieldReason.Root,
     "java/lang/Thread.yield.()V": YieldReason.Root,
+    "java/lang/Thread.start0.()V": YieldReason.Root,
     // Test Files:
     "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
