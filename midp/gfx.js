@@ -1913,7 +1913,9 @@ var currentlyFocusedTextEditor;
                 }
                 var li = document.createElement("li");
                 var text = util.fromJavaString(command.klass.classInfo.getField("I.shortLabel.Ljava/lang/String;").get(command));
-                li.innerHTML = "<a>" + text + "</a>";
+                var a = document.createElement("a");
+                a.textContent = text;
+                li.appendChild(a);
 
                 li.onclick = function(e) {
                     e.preventDefault();
