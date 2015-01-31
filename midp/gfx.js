@@ -1409,8 +1409,6 @@ var currentlyFocusedTextEditor;
         x = pair[0];
         y = pair[1];
 
-        c.translate(x, y);
-
         if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
             c.scale(-1, 1);
         } else if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270) {
@@ -1423,7 +1421,7 @@ var currentlyFocusedTextEditor;
             c.rotate(1.5 * Math.PI);
         }
 
-        c.drawImage(texture, sx, sy, sw, sh, 0, 0, sw, sh);
+        c.drawImage(texture, sx, sy, sw, sh, x, y, sw, sh);
 
         if (g.clipped || transform !== TRANS_NONE) {
             c.restore();
