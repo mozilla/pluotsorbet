@@ -5,7 +5,6 @@ import java.util.Hashtable;
 
 class TextEditorThread implements Runnable {
     // We need a thread to be able to wake from js when there is an async js keyboard event.
-    native void sleep();
     native int getNextDirtyEditor();
 
     Hashtable listeners;
@@ -16,7 +15,6 @@ class TextEditorThread implements Runnable {
 
     public void run() {
         while (true) {
-            sleep();
             int dirty = getNextDirtyEditor();
             TextEditor t = (TextEditor)listeners.get("" + dirty);
             t.myListener.inputAction(t, TextEditorListener.ACTION_CONTENT_CHANGE);

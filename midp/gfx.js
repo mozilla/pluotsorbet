@@ -1718,23 +1718,16 @@ var currentlyFocusedTextEditor;
         this.textEditor.setFont(font);
     };
 
-    Native["com/nokia/mid/ui/TextEditorThread.sleep.()V"] = function() {
-        asyncImpl("V", new Promise(function(resolve, reject) {
-          if (!dirtyEditors.length) {
-              textEditorResolve = resolve;
-          } else {
-              resolve();
-          }
-        }));
-    };
-
     Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I"] = function() {
-        if (!dirtyEditors.length) {
-            console.error("ERROR: getNextDirtyEditor called but no dirty editors");
-            return 0;
+        if (dirtyEditors.length) {
+            return dirtyEditors.shift();
         }
 
-        return dirtyEditors.shift();
+        asyncImpl("I", new Promise(function(resolve, reject) {
+            textEditorResolve = function() {
+                resolve(dirtyEditors.shift());
+            }
+        }));
     };
 
     var curDisplayableId = 0;
