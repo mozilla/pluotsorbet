@@ -1493,15 +1493,15 @@ var currentlyFocusedTextEditor;
         textEditorResolve = null,
         dirtyEditors = [];
 
-    function wakeTextEditorThread(id) {
-        dirtyEditors.push(id);
+    function wakeTextEditorThread(textEditor) {
+        dirtyEditors.push(textEditor);
         if (textEditorResolve) {
             textEditorResolve();
             textEditorResolve = null;
         }
     }
 
-    Native["com/nokia/mid/ui/TextEditor.init.(Ljava/lang/String;IIII)I"] =
+    Native["com/nokia/mid/ui/TextEditor.init.(Ljava/lang/String;IIII)V"] =
     function(text, maxSize, constraints, width, height) {
         if (constraints != 0) {
             console.warn("TextEditor.constraints not implemented");
@@ -1541,9 +1541,8 @@ var currentlyFocusedTextEditor;
         this.setCaretPosition(this.textEditor.getContentSize());
 
         this.textEditor.oninput(function(e) {
-            wakeTextEditorThread(this.textEditorId);
+            wakeTextEditorThread(this);
         }.bind(this));
-        return textEditorId;
     };
 
     Native["com/nokia/mid/ui/CanvasItem.attachNativeImpl.()V"] = function() {
@@ -1718,7 +1717,7 @@ var currentlyFocusedTextEditor;
         this.textEditor.setFont(font);
     };
 
-    Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;"] = function() {
         if (dirtyEditors.length) {
             return dirtyEditors.shift();
         }
