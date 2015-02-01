@@ -3,13 +3,14 @@ package com.nokia.mid.ui;
 import javax.microedition.lcdui.Font;
 import java.util.Hashtable;
 
-class TextEditorThread implements Runnable {
+class TextEditorThread extends Thread {
     // We need a thread to be able to wake from js when there is an async js keyboard event.
     native int getNextDirtyEditor();
 
     Hashtable listeners;
 
     TextEditorThread() {
+        setPriority(Thread.MAX_PRIORITY);
         listeners = new Hashtable();
     }
 
@@ -42,8 +43,7 @@ public class TextEditor extends CanvasItem {
 
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
-            Thread t = new Thread(textEditorThread);
-            t.start();
+            textEditorThread.start();
         }
     }
 
