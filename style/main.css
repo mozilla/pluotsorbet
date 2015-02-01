@@ -194,7 +194,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   left: calc(50% - 17px);
 }
 
-.background-screen {
+#background-screen {
   z-index: 2;
   position: absolute;
   top: 0;
@@ -207,12 +207,12 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   background-image: url("../img/icon-128.png");
 }
 
-.debug-mode .background-screen {
+.debug-mode #background-screen {
   width: 240px;
   height: 320px;
 }
 
-.autosize .background-screen {
+.autosize #background-screen {
   display: block;
   width: 100%;
   height: 100%;

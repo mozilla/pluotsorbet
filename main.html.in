@@ -181,7 +181,7 @@
     </div>
   </div>
 
-  <div class="background-screen" id="background-screen">
+  <div id="background-screen">
   </div>
 
   <form role="dialog" data-type="confirm"
