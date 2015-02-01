@@ -143,14 +143,6 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
-### Java profiling
-
-j2me.js includes its own profiler that is capable of measuring the performance of Java methods running inside its JVM.
-
-When running j2me.js in Desktop Firefox, click the "profile" button that appears below the output iframe. Press the button again to stop profiling. You should get output including the total time taken inside each method and the number of times each method was called.
-
-Add "&profile=1" to your URL parameter list to enable profile immediately upon loading j2me.js (index.html).
-
 ## Filesystem
 
 midp/fs.js contains native implementations of various midp filesystem APIs.
