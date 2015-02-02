@@ -202,7 +202,7 @@
   NativeConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        dump(item.message);
+        dump(item.message + "\n");
       }
     }
   };
