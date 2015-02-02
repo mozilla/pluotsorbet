@@ -885,6 +885,10 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) 
 
     var ctx = $.ctx;
     mutex.waiting.push(function() {
+        // We can't use asyncImpl in this native because we can't simply execute
+        // the context that called lock0 without pausing the context that called unlock0.
+        // So, we're scheduling the context that called lock0.
+
         mutex.locked = true;
         mutex.holder = ctx.runtime.isolate.id;
         Runtime.scheduleRunningContext(ctx);
