@@ -107,7 +107,7 @@ public class RunTests extends MIDlet {
             System.err.println(e);
             harness.fail("Test threw an unexpected exception");
         }
-        if (harness.failed() > 0)
+        // if (harness.failed() > 0)
             harness.report();
         pass += harness.passed();
         fail += harness.failed();
