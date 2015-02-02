@@ -1,6 +1,5 @@
 module J2ME {
   declare var util;
-  declare var Instrument;
   declare var Promise;
 
   import BytecodeStream = Bytecode.BytecodeStream;
