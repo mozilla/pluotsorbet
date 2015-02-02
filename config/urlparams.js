@@ -22,7 +22,6 @@
  *    network_mnc
  *    platform
  *    profile
- *    fgMidletClass
  *    autosize
  *    fontSize
  *

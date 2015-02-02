@@ -489,7 +489,7 @@ Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/l
         }
         break;
     case "com.sun.midp.events.dispatchTableInitSize":
-        value = "16";
+        value = "71";
         break;
     case "microedition.locale":
         value = navigator.language;

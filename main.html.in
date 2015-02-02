@@ -180,6 +180,9 @@
     </div>
   </div>
 
+  <div id="background-screen">
+  </div>
+
   <form role="dialog" data-type="confirm"
         class="lcdui-alert"
         id="lcdui-alert" style="display: none">

@@ -39,7 +39,7 @@ module J2ME {
     "com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I": YieldReason.Root,
     "com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I": YieldReason.Root,
     "javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V": YieldReason.Root,
-    "com/nokia/mid/ui/TextEditorThread.sleep.()V": YieldReason.Root,
+    "com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;": YieldReason.Root,
     "com/nokia/mid/ui/TextEditor.setFocus.(Z)V": YieldReason.Root,
     "com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z": YieldReason.Root,
     "com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V": YieldReason.Root,
