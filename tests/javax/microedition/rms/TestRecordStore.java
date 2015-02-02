@@ -119,7 +119,8 @@ public class TestRecordStore implements Testlet {
             th.check(record.length, largeData.length);
             th.check(i, record.length);
         } catch (Exception e) {
-            th.todo(false, "Unexpected exception: " + e);
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
         }
 
         store.closeRecordStore();
