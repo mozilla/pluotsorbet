@@ -12,12 +12,13 @@ import javax.microedition.lcdui.TextField;
 
 public class TestTextEditor extends Canvas implements Testlet {
     public void testConstraints(TestHarness th, int constraints, int tolerance) {
-        TextEditor textEditor = new TextEditor("Hello, world!", 20, 0, 100, 24);
+        String text = "</div>Hello, world!";
+        TextEditor textEditor = new TextEditor(text, 20, 0, 100, 24);
         textEditor.setVisible(true);
 
-        th.check(textEditor.getContent(), "Hello, world!");
+        th.check(textEditor.getContent(), text);
         th.check(textEditor.getMaxSize(), 20);
-        th.check(textEditor.getCaretPosition(), 13);
+        th.check(textEditor.getCaretPosition(), text.length());
 
         textEditor.setConstraints(constraints);
         th.check(textEditor.getConstraints(), constraints);
