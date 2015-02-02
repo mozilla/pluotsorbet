@@ -179,7 +179,7 @@
     push: function(item) {
       if (item.matchesCurrentFilters()) {
         this.flush(); // Preserve order w/r/t console.print().
-        windowConsole[item.levelName].apply(windowConsole, item.args);
+        windowConsole[item.levelName].apply(windowConsole, [item.message]);
       }
     },
 
@@ -202,7 +202,7 @@
   NativeConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        dumpLine(item.message);
+        dump(item.message);
       }
     }
   };
