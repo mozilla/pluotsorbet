@@ -551,7 +551,6 @@ module J2ME {
     }
 
     execute() {
-      var start = performance.now();
       this.setAsCurrentContext();
       do {
         VM.execute();
