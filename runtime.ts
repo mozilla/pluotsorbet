@@ -1635,17 +1635,18 @@ module J2ME {
     return new klass();
   }
 
-  export function newString(jsString: string): java.lang.String {
-    if (jsString === null || jsString === undefined) {
+  export function newString(value: any): java.lang.String {
+    if (value === null || value === undefined) {
       return null;
     }
+    var jsString = String(value);
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
-    var value = new Uint16Array(jsString.length);
+    var array = new Uint16Array(jsString.length);
     var length = jsString.length;
     for (var i = 0; i < length; i++) {
-      value[i] = jsString.charCodeAt(i);
+      array[i] = jsString.charCodeAt(i);
     }
-    object.value = value;
+    object.value = array;
     object.count = length;
     return object;
   }
