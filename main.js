@@ -224,10 +224,6 @@ window.onload = function() {
  document.getElementById("clearCompiledMethodCache").onclick = function() {
    CompiledMethodCache.clear().then(function() { console.log("cleared compiled method cache") });
  };
- document.getElementById("trace").onclick = function() {
-   VM.DEBUG = !VM.DEBUG;
-   toggle(this);
- };
  document.getElementById("printAllExceptions").onclick = function() {
    VM.DEBUG_PRINT_ALL_EXCEPTIONS = !VM.DEBUG_PRINT_ALL_EXCEPTIONS;
    toggle(this);
