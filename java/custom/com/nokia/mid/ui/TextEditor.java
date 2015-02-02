@@ -14,7 +14,9 @@ class TextEditorThread extends Thread {
     public void run() {
         while (true) {
             TextEditor dirty = getNextDirtyEditor();
-            dirty.myListener.inputAction(dirty, TextEditorListener.ACTION_CONTENT_CHANGE);
+            if (dirty.myListener != null) {
+                dirty.myListener.inputAction(dirty, TextEditorListener.ACTION_CONTENT_CHANGE);
+            }
         }
     }
 }
