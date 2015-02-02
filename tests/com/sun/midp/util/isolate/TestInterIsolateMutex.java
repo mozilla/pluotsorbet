@@ -46,7 +46,6 @@ class LockerIsolate2 {
             Thread.sleep(1000);
         } catch (Exception e) {}
         m.unlock();
-        System.out.println("UNLOCKED");
     }
 }
 
