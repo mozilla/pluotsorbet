@@ -1,4 +1,4 @@
-# j2me.js [![Build Status](https://travis-ci.org/andreasgal/j2me.js.svg)](https://travis-ci.org/andreasgal/j2me.js)
+# j2me.js [![Build Status](https://travis-ci.org/mozilla/j2me.js.svg)](https://travis-ci.org/mozilla/j2me.js)
 
 j2me.js is a J2ME virtual machine in JavaScript.
 
@@ -11,9 +11,9 @@ The current goals of j2me.js are:
 
 Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
-Get the [j2me.js repo](https://github.com/andreasgal/j2me.js) if you don't have it already
+Get the [j2me.js repo](https://github.com/mozilla/j2me.js) if you don't have it already
 
-        git clone https://github.com/andreasgal/j2me.js
+        git clone https://github.com/mozilla/j2me.js
 
 Build using make:
 
