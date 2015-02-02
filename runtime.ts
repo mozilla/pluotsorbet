@@ -1536,7 +1536,7 @@ module J2ME {
         key: methodInfo.implKey,
         source: source,
         referencedClasses: referencedClasses,
-      }).catch(stderrWriter.errorLn.bind(stderrWriter));
+      });
     }
 
     linkMethod(methodInfo, source, referencedClasses);
