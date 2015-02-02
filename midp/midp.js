@@ -890,6 +890,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) 
         }
 
         mutex.waiting.push(function() {
+            ctx.setAsCurrentContext();
             mutex.locked = true;
             mutex.holder = ctx.runtime.isolate.id;
             resolve();
