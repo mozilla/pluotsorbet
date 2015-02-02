@@ -25,6 +25,7 @@ var TextEditorProvider = (function() {
         id: -1,
         selectionRange: [0, 0],
         focused: false,
+        oninputCallback: null,
 
         // opaque white
         backgroundColor:  0xFFFFFFFF | 0,
@@ -251,21 +252,24 @@ var TextEditorProvider = (function() {
                 var range = this.getSelectionRange();
 
                 // Remove the last <br> tag if any.
-                var content = this.textEditorElem.innerHTML;
-                var lastBr = content.lastIndexOf("<br>");
+                var html = this.textEditorElem.innerHTML;
+                var lastBr = html.lastIndexOf("<br>");
                 if (lastBr !== -1) {
-                    content = content.substring(0, lastBr);
+                    html = html.substring(0, lastBr);
                 }
 
-                // Replace <br> by \n
-                content = content.replace("<br>", "\n", "g");
+                // Replace <br> by \n so that textContent attribute doesn't
+                // strip new lines.
+                html = html.replace("<br>", "\n", "g");
 
                 // Convert the emoji images back to characters.
                 // The original character is stored in the alt attribute of its
                 // object tag with the format of <object ... name='X' ..>.
-                content = content.replace(/<object[^>]*name="(\S*)"[^>]*><\/object>/g, '$1');
+                html = html.replace(/<object[^>]*name="(\S*)"[^>]*><\/object>/g, '$1');
 
-                this.setContent(content);
+                this.textEditorElem.innerHTML = html;
+
+                this.setContent(this.textEditorElem.textContent);
 
                 // Restore the current selection after updating emoji images.
                 this.setSelectionRange(range[0], range[1]);
@@ -292,6 +296,10 @@ var TextEditorProvider = (function() {
 
             this.content = content;
 
+            // Escape the content to avoid malicious injection via innerHTML.
+            this.textEditorElem.textContent = content;
+            var html = this.textEditorElem.innerHTML;
+
             if (!this.visible) {
                 return;
             }
@@ -312,7 +320,7 @@ var TextEditorProvider = (function() {
             }.bind(this);
 
             // Replace "\n" by <br>
-            var html = content.replace("\n", "<br>", "g");
+            html = html.replace("\n", "<br>", "g");
 
             html = html.replace(emoji.regEx, toImg) + "<br>";
 
@@ -597,7 +605,8 @@ var TextEditorProvider = (function() {
              "backgroundColor", "foregroundColor",
              "attached",
              "content",
-             "font"].forEach(function(attr) {
+             "font",
+             "oninputCallback"].forEach(function(attr) {
                 newEditor[attr] = oldEditor[attr];
             });
 

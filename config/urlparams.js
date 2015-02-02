@@ -20,7 +20,6 @@
  *    network_mcc
  *    network_mnc
  *    platform
- *    fgMidletClass
  *    autosize
  *    fontSize
  *

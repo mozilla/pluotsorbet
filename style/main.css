@@ -168,6 +168,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 .splash-screen {
+  display: none;
   z-index: 2;
   background: #2d2d2d;
   overflow: hidden;
@@ -176,7 +177,6 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 .autosize .splash-screen {
-  display: block;
   position: absolute;
   top: 0;
   left: 0;
@@ -192,6 +192,30 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   position: absolute;
   top: calc(50% - 17px);
   left: calc(50% - 17px);
+}
+
+#background-screen {
+  z-index: 2;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: auto;
+  bottom: auto;
+  background-color: white;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-image: url("../img/icon-128.png");
+}
+
+.debug-mode #background-screen {
+  width: 240px;
+  height: 320px;
+}
+
+.autosize #background-screen {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /**
@@ -333,7 +357,10 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   visibility: visible;
 }
 
-#textarea-editor {
+div.text-editor {
+  margin: 0;
+  padding: 0;
+  box-sizing:  border-box;
   word-break: break-all;
   word-wrap: break-word;
   overflow: auto;
