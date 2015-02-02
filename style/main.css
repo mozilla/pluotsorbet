@@ -333,7 +333,10 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   visibility: visible;
 }
 
-#textarea-editor {
+div.text-editor {
+  margin: 0;
+  padding: 0;
+  box-sizing:  border-box;
   word-break: break-all;
   word-wrap: break-word;
   overflow: auto;
