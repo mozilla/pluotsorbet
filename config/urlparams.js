@@ -11,7 +11,6 @@
  *    icc_mcc
  *    icc_mnc
  *    icc_msisdn
- *    instrument
  *    jad
  *    jars
  *    logConsole
@@ -21,8 +20,6 @@
  *    network_mcc
  *    network_mnc
  *    platform
- *    profile
- *    fgMidletClass
  *    autosize
  *    fontSize
  *

@@ -3,28 +3,21 @@ package com.nokia.mid.ui;
 import javax.microedition.lcdui.Font;
 import java.util.Hashtable;
 
-class TextEditorThread implements Runnable {
+class TextEditorThread extends Thread {
     // We need a thread to be able to wake from js when there is an async js keyboard event.
-    native void sleep();
-    native int getNextDirtyEditor();
-
-    Hashtable listeners;
+    native TextEditor getNextDirtyEditor();
 
     TextEditorThread() {
-        listeners = new Hashtable();
+        setPriority(Thread.MAX_PRIORITY);
     }
 
     public void run() {
         while (true) {
-            sleep();
-            int dirty = getNextDirtyEditor();
-            TextEditor t = (TextEditor)listeners.get("" + dirty);
-            t.myListener.inputAction(t, TextEditorListener.ACTION_CONTENT_CHANGE);
+            TextEditor dirty = getNextDirtyEditor();
+            if (dirty.myListener != null) {
+                dirty.myListener.inputAction(dirty, TextEditorListener.ACTION_CONTENT_CHANGE);
+            }
         }
-    }
-
-    void register(int id, TextEditor t) {
-        listeners.put("" + id, t);
     }
 }
 
@@ -35,22 +28,20 @@ public class TextEditor extends CanvasItem {
     protected TextEditorListener myListener;
 
     private boolean multiline = false;
-    private int myId;
     private static TextEditorThread textEditorThread;
     private Font font = Font.getDefaultFont();
 
     protected TextEditor(String text, int maxSize, int constraints, int width, int height) {
-        myId = init(text, maxSize, constraints, width, height);
+        init(text, maxSize, constraints, width, height);
 
         if (textEditorThread == null) {
             textEditorThread = new TextEditorThread();
-            Thread t = new Thread(textEditorThread);
-            t.start();
+            textEditorThread.start();
         }
     }
 
     // Initialize the native representation.
-    native private int init(String text, int maxSize, int constraints, int width, int height);
+    native private void init(String text, int maxSize, int constraints, int width, int height);
 
     // Creates a new TextEditor object with the given initial contents, maximum size in characters, constraints and editor size in pixels.
     public static TextEditor createTextEditor(String text, int maxSize, int constraints, int width, int height) {
@@ -186,7 +177,6 @@ public class TextEditor extends CanvasItem {
     // Sets a listener for content changes in this TextEditor, replacing any previous TextEditorListener.
     public void setTextEditorListener(TextEditorListener listener) {
         myListener = listener;
-        textEditorThread.register(myId, this);
     }
 
     // Returns the multiline state of the TextEditor.

@@ -97,7 +97,9 @@ public class TestRecordStore implements Testlet {
         try {
             RecordEnumeration recordenumeration = store.enumerateRecords(null, null,
                 true);
+            th.check(recordenumeration.hasNextElement());
             th.check(recordenumeration.nextRecordId(), recordId1);
+            th.check(recordenumeration.hasNextElement());
             th.check(recordenumeration.nextRecordId(), recordId2);
 
             byte record[];
@@ -118,8 +120,39 @@ public class TestRecordStore implements Testlet {
                     break;
             th.check(record.length, largeData.length);
             th.check(i, record.length);
+
+            recordenumeration.destroy();
         } catch (Exception e) {
-            th.todo(false, "Unexpected exception: " + e);
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+
+        store.closeRecordStore();
+    }
+
+    private void testGetRecords() throws RecordStoreException {
+        RecordStore store = RecordStore.openRecordStore(RECORD_STORE_NAME, false);
+
+        try {
+            byte record[];
+            int i;
+
+            record = store.getRecord(recordId1);
+            for (i = 0; i < record.length; i++)
+                if (record[i] != smallData[i])
+                    break;
+            th.check(record.length, smallData.length);
+            th.check(i, record.length);
+
+            record = store.getRecord(recordId2);
+            for (i = 0; i < record.length; i++)
+                if (record[i] != largeData[i])
+                    break;
+            th.check(record.length, largeData.length);
+            th.check(i, record.length);
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+            e.printStackTrace();
         }
 
         store.closeRecordStore();
@@ -251,6 +284,7 @@ public class TestRecordStore implements Testlet {
             setupRSTest();
             testSequentialRMS();
             testEnumeration();
+            testGetRecords();
             testCompactRecords();
             //cleanup();
             //testSizeLimit();

@@ -34,7 +34,6 @@
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="string.js" defer></script>
-  <script type="text/javascript" src="instrument.js" defer></script>
   <script type="text/javascript" src="libs/load.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
   <script type="text/javascript" src="libs/long.js" defer></script>
@@ -128,9 +127,7 @@
       <input type="text" id="importstorageurl" placeholder="URL to FS backup">
       <button id="importstorage">Import</button>
       <button id="clearCompiledMethodCache">Clear Compiled Method Cache</button>
-      <button id="trace">Trace: OFF</button>
       <button id="printAllExceptions">Print all exceptions: OFF</button>
-      <button id="profile">Profile: OFF</button>
       <button id="clearCounters">Clear Counters</button>
       <button id="dumpCounters">Dump Counters</button>
       <button id="sampleCounters1">One sample for 1s</button>
@@ -179,6 +176,9 @@
     <div class="splash-progress-container">
       <progress></progress>
     </div>
+  </div>
+
+  <div id="background-screen">
   </div>
 
   <form role="dialog" data-type="confirm"

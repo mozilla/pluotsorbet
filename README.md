@@ -1,4 +1,4 @@
-# j2me.js [![Build Status](https://travis-ci.org/andreasgal/j2me.js.svg)](https://travis-ci.org/andreasgal/j2me.js)
+# j2me.js [![Build Status](https://travis-ci.org/mozilla/j2me.js.svg)](https://travis-ci.org/mozilla/j2me.js)
 
 j2me.js is a J2ME virtual machine in JavaScript.
 
@@ -11,9 +11,9 @@ The current goals of j2me.js are:
 
 Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
-Get the [j2me.js repo](https://github.com/andreasgal/j2me.js) if you don't have it already
+Get the [j2me.js repo](https://github.com/mozilla/j2me.js) if you don't have it already
 
-        git clone https://github.com/andreasgal/j2me.js
+        git clone https://github.com/mozilla/j2me.js
 
 Build using make:
 
@@ -142,25 +142,6 @@ Modelines for JS files:
 ### JS profiling
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
-
-When debugging using the WebIDE, enable the option "select an iframe as the currently targeted document" and select the iframe containing main.html as the debugging target. NB: you need to connect to a target device running FxOS 2.1 or up to use this feature in WebIDE.
-
-Use these JS calls within the console to start and stop profiling (TODO: I haven't actually gotten these to work):
-
-        Instrument.startProfile()
-        Instrument.stopProfile()
-
-It can be helpful to increase this `about:config` option: `devtools.hud.loglimit.console`
-
-Alternatively, use the "Performance" tab of the Firefox Developer Tools.
-
-### Java profiling
-
-j2me.js includes its own profiler that is capable of measuring the performance of Java methods running inside its JVM.
-
-When running j2me.js in Desktop Firefox, click the "profile" button that appears below the output iframe. Press the button again to stop profiling. You should get output including the total time taken inside each method and the number of times each method was called.
-
-Add "&profile=1" to your URL parameter list to enable profile immediately upon loading j2me.js (index.html).
 
 ## Filesystem
 
