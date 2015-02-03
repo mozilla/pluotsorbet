@@ -65,15 +65,15 @@ LocationProvider.prototype.requestData = function() {
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getListOfLocationProviders.()Ljava/lang/String;"] = function() {
     // If there are more than one providers, separate them by comma.
-    return util.newString(Location.PROVIDER_NAME);
+    return J2ME.newString(Location.PROVIDER_NAME);
 };
 
 addUnimplementedNative("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V");
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] = function(criteria) {
     criteria.klass.classInfo.getField("I.providerName.Ljava/lang/String;")
-                  .set(criteria, util.newString(Location.PROVIDER_NAME));
-    return true;
+                  .set(criteria, J2ME.newString(Location.PROVIDER_NAME));
+    return 1;
 };
 
 addUnimplementedNative("com/sun/j2me/location/LocationProviderInfo.initNativeClass.()V");
@@ -101,7 +101,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava/lang/S
                   .set(criteria, true);
     criteria.klass.classInfo.getField("I.averageResponseTime.I")
                   .set(criteria, 10000);
-    return true;
+    return 1;
 };
 
 Native["com/sun/j2me/location/PlatformLocationProvider.setUpdateIntervalImpl.(II)V"] = function(providerId, interval) {
@@ -132,7 +132,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILco
 
     locationInfo.klass.classInfo.getField("I.method.I")
                       .set(locationInfo, 0);
-    return true;
+    return 1;
 };
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getStateImpl.(I)I"] = function(providerId) {
@@ -143,12 +143,13 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getStateImpl.(I)I"] = fun
 Native["com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z"] = function(providerId, timeout) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
         var provider = Location.Providers[providerId];
-        provider.requestData().then(resolve.bind(null, true));
-        setTimeout(resolve.bind(null, false), timeout);
+        provider.requestData().then(resolve.bind(null, 1));
+        setTimeout(resolve.bind(null, 0), timeout);
     }));
 };
 
 Native["com/sun/j2me/location/PlatformLocationProvider.receiveNewLocationImpl.(IJ)Z"] = function(providerId, timestamp) {
     var provider = Location.Providers[providerId];
-    return Math.abs(timestamp.toNumber() - provider.position.timestamp) < 10000;
+    var result = Math.abs(timestamp.toNumber() - provider.position.timestamp) < 10000;
+    return result ? 1 : 0;
 };
