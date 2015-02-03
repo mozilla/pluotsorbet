@@ -614,7 +614,7 @@ module J2ME {
         window.clearTimeout(this.lockTimeout);
         this.lockTimeout = null;
       }
-      if (obj._lock) {
+      if (obj._lock.level !== 0) {
         if (!obj.ready)
           obj.ready = [];
         obj.ready.push(this);
@@ -635,6 +635,11 @@ module J2ME {
         object._lock = new Lock(this.thread, 1);
         return;
       }
+      if (lock.level === 0) {
+        lock.thread = this.thread;
+        lock.level = 1;
+        return;
+      }
       if (lock.thread === this.thread) {
         ++lock.level;
         return;
@@ -649,7 +654,6 @@ module J2ME {
       if (--lock.level > 0) {
         return;
       }
-      object._lock = null;
       this.unblock(object, "ready", false);
     }
 
@@ -660,8 +664,9 @@ module J2ME {
       if (!lock || lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       var lockLevel = lock.level;
-      while (lock.level > 0)
+      for (var i = lockLevel; i > 0; i--) {
         this.monitorExit(object);
+      }
       if (timeout) {
         var self = this;
         this.lockTimeout = window.setTimeout(function () {
