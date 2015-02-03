@@ -645,6 +645,10 @@ module J2ME {
 
     monitorExit(object: java.lang.Object) {
       var lock = object._lock;
+      if (lock.level === 1 && lock.ready.length === 0) {
+        lock.level = 0;
+        return;
+      }
       if (lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       if (--lock.level > 0) {
