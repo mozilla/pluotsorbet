@@ -15,6 +15,10 @@ if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
 }
 
+if (typeof Benchmark !== "undefined") {
+  Benchmark.startup.init();
+}
+
 if (config.jars) {
   jars = jars.concat(config.jars.split(":"));
 }

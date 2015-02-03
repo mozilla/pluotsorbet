@@ -5,6 +5,7 @@ SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
+BENCHMARK ?= 0
 
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
@@ -18,6 +19,7 @@ toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(call toBool,$(PROFILE)) \
+             -D BENCHMARK=$(call toBool,$(BENCHMARK)) \
              -D VERSION=$(VERSION)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
