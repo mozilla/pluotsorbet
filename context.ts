@@ -591,16 +591,14 @@ module J2ME {
     }
 
     block(obj, queue, lockLevel) {
-      if (!obj[queue])
-        obj[queue] = [];
-      obj[queue].push(this);
+      obj._lock[queue].push(this);
       this.lockLevel = lockLevel;
       $.pause("block");
     }
 
     unblock(obj, queue, notifyAll) {
-      while (obj[queue] && obj[queue].length) {
-        var ctx = obj[queue].pop();
+      while (obj._lock[queue].length) {
+        var ctx = obj._lock[queue].pop();
         if (!ctx)
           continue;
           ctx.wakeup(obj)
@@ -615,9 +613,7 @@ module J2ME {
         this.lockTimeout = null;
       }
       if (obj._lock.level !== 0) {
-        if (!obj.ready)
-          obj.ready = [];
-        obj.ready.push(this);
+        obj._lock.ready.push(this);
       } else {
         while (this.lockLevel-- > 0) {
           this.monitorEnter(obj);
@@ -670,9 +666,9 @@ module J2ME {
       if (timeout) {
         var self = this;
         this.lockTimeout = window.setTimeout(function () {
-          object.waiting.forEach(function (ctx, n) {
+          lock.waiting.forEach(function (ctx, n) {
             if (ctx === self) {
-              object.waiting[n] = null;
+              lock.waiting[n] = null;
               ctx.wakeup(object);
             }
           });
