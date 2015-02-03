@@ -280,13 +280,6 @@ Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
     return J2ME.getRuntimeKlass($.ctx.runtime, this.klass).classObject;
 };
 
-Native["java/lang/Object.hashCode.()I"] = function() {
-    var hashCode = this.hashCode;
-    while (!hashCode)
-        hashCode = this.hashCode = util.id();
-    return hashCode;
-};
-
 Native["java/lang/Object.wait.(J)V"] = function(timeout) {
     $.ctx.wait(this, timeout.toNumber());
 };
