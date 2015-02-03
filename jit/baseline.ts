@@ -775,10 +775,7 @@ module J2ME {
     }
 
     emitBoundsCheck(array: string, index: string) {
-      if (this.isPriviledged) {
-        return;
-      }
-      if (!emitCheckArrayBounds) {
+      if (this.isPriviledged || !emitCheckArrayBounds) {
         return;
       }
       if (inlineRuntimeCalls) {
@@ -788,13 +785,20 @@ module J2ME {
       }
     }
 
+    emitArrayStoreCheck(array: string, value: string) {
+      if (this.isPriviledged || !emitCheckArrayStore) {
+        return;
+      }
+      this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
+    }
+
     emitStoreIndexed(kind: Kind) {
       var value = this.pop(stackKind(kind));
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
       this.emitBoundsCheck(array, index);
-      if (!this.isPriviledged && kind === Kind.Reference) {
-        emitCheckArrayStore && this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
+      if (kind === Kind.Reference) {
+        this.emitArrayStoreCheck(array, value);
       }
       this.blockEmitter.writeLn(array + "[" + index + "] = " + value + ";");
     }
