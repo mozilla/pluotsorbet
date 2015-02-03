@@ -861,6 +861,7 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I
 };
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) {
+    var ctx = $.ctx;
     var mutex;
     for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
         if (MIDP.InterIsolateMutexes[i].id == id) {
@@ -875,26 +876,21 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) 
 
     if (!mutex.locked) {
         mutex.locked = true;
-        mutex.holder = $.ctx.runtime.isolate.id;
+        mutex.holder = ctx.runtime.isolate.id;
         return;
     }
 
-    if (mutex.holder == $.ctx.runtime.isolate.id) {
+    if (mutex.holder == ctx.runtime.isolate.id) {
         throw $.newRuntimeException("Attempting to lock mutex twice within the same Isolate");
     }
 
-    var ctx = $.ctx;
-    mutex.waiting.push(function() {
-        // We can't use asyncImpl in this native because we can't simply execute
-        // the context that called lock0 without pausing the context that called unlock0.
-        // So, we're scheduling the context that called lock0.
-
-        mutex.locked = true;
-        mutex.holder = ctx.runtime.isolate.id;
-        Runtime.scheduleRunningContext(ctx);
-    });
-
-    $.pause("Async");
+    asyncImpl("V", new Promise(function(resolve, reject) {
+        mutex.waiting.push(function() {
+            mutex.locked = true;
+            mutex.holder = ctx.runtime.isolate.id;
+            resolve();
+        });
+    }));
 };
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id) {
