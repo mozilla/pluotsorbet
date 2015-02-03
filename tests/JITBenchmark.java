@@ -6,6 +6,9 @@ import java.io.ByteArrayOutputStream;
 
 class JITBenchmark {
 
+  static class A {}
+  static class B extends A {}
+
   public static int size = 1024 * 256;
 
   public static void createObjectArrays() {
@@ -108,6 +111,17 @@ class JITBenchmark {
     }
   }
 
+  public static void arrayTypeCheck() {
+    A [] array = new A [1024];
+    A a = new A();
+    B b = new B();
+    int count = size * 10;
+    for (int i = 0; i < count - 1; i++) {
+      array[i % 1024] = a;
+      array[i % 1024] = b;
+    }
+  }
+
   public static void main(String[] args) {
     long start = 0;
 
@@ -145,5 +159,10 @@ class JITBenchmark {
     System.out.println("hashtable: ...");
     hashtable();
     System.out.println("hashtable: " + (System.currentTimeMillis() - start));
+
+    start = System.currentTimeMillis();
+    System.out.println("arrayTypeCheck: ...");
+    arrayTypeCheck();
+    System.out.println("arrayTypeCheck: " + (System.currentTimeMillis() - start));
   }
 }
