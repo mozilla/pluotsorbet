@@ -68,9 +68,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getListOfLocationProvider
     return util.newString(Location.PROVIDER_NAME);
 };
 
-Native["com/sun/j2me/location/CriteriaImpl.initNativeClass.()V"] = function() {
-    console.warn("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V not implemented");
-};
+addUnimplementedNative("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V");
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] = function(criteria) {
     criteria.klass.classInfo.getField("I.providerName.Ljava/lang/String;")
@@ -78,13 +76,8 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteria
     return true;
 };
 
-Native["com/sun/j2me/location/LocationProviderInfo.initNativeClass.()V"] = function() {
-    console.warn("com/sun/j2me/location/LocationProviderInfo.initNativeClass.()V not implemented");
-};
-
-Native["com/sun/j2me/location/LocationInfo.initNativeClass.()V"] = function() {
-    console.warn("com/sun/j2me/location/LocationInfo.initNativeClass.()V not implemented");
-};
+addUnimplementedNative("com/sun/j2me/location/LocationProviderInfo.initNativeClass.()V");
+addUnimplementedNative("com/sun/j2me/location/LocationInfo.initNativeClass.()V");
 
 Native["com/sun/j2me/location/PlatformLocationProvider.open.(Ljava/lang/String;)I"] = function(name) {
     var provider = new LocationProvider();
