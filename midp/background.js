@@ -56,7 +56,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
         resolve();
       }
     }, false);
-  }).then(function() {
+  })/*.then(function() {
     return new Promise(function(resolve, reject) {
       if (localmsgServerCreated) {
         resolve();
@@ -65,7 +65,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
 
       localmsgServerWait = resolve;
     });
-  }).then(function() {
+  })*/.then(function() {
     document.getElementById("splash-screen").style.display = "block";
     document.getElementById("background-screen").style.display = "none";
   }));
