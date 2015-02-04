@@ -821,8 +821,12 @@ module J2ME {
   }
 
   export class Lock {
+    ready: Context [];
+    waiting: Context [];
+
     constructor(public thread: java.lang.Thread, public level: number) {
-      // ...
+      this.ready = [];
+      this.waiting = [];
     }
   }
 
