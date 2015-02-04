@@ -68,18 +68,6 @@ import javax.microedition.lcdui.Display;
  */
 
 public abstract class MIDlet {
-
-    /**
-     * Inner class to request security token from SecurityInitializer.
-     * SecurityInitializer should be able to check this inner class name.
-     */
-    static private class SecurityTrusted
-        implements ImplicitlyTrustedClass {}
-
-    /** Security token to allow access to implementation APIs */
-    private static SecurityToken classSecurityToken =
-        SecurityInitializer.requestToken(new SecurityTrusted());
-
     /** Internal peer of this MIDlet */
     private MIDletPeer peer;
 
@@ -102,7 +90,7 @@ public abstract class MIDlet {
      * management software is creating the MIDlet.
      */
     protected MIDlet() {
-        peer = MIDletStateHandler.newMIDletPeer(classSecurityToken, this);
+        peer = MIDletStateHandler.newMIDletPeer(this);
 
         // Ensure that a display for this midlet is created
         Display d = Display.getDisplay(this);
