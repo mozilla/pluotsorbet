@@ -172,9 +172,6 @@ public class MIDletStateHandler {
         MIDletStateListener theMIDletStateListener,
         MIDletLoader theMidletLoader,
         PlatformRequest thePlatformRequestHandler) {
-
-        token.checkIfPermissionAllowed(Permissions.AMS);
-
         listener = theMIDletStateListener;
         midletLoader = theMidletLoader;
 
@@ -224,8 +221,6 @@ public class MIDletStateHandler {
                             String displayName) throws
            ClassNotFoundException, InstantiationException,
            IllegalAccessException {
-
-        AccessController.checkPermission(Permissions.AMS_PERMISSION_NAME);
         createAndRegisterMIDlet(externalAppId, classname);
     }
 
@@ -273,8 +268,6 @@ public class MIDletStateHandler {
                             String classname, String displayName) throws
            ClassNotFoundException, InstantiationException,
            IllegalAccessException {
-
-        token.checkIfPermissionAllowed(Permissions.AMS);
         createAndRegisterMIDlet(externalAppId, classname);
     }
 
