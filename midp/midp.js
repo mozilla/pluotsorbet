@@ -474,10 +474,6 @@ Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midl
 Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
 };
 
-Native["com/sun/midp/main/AppIsolateMIDletSuiteLoader.allocateReservedResources0.()Z"] = function() {
-  return 1;
-};
-
 Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     var value;
     switch (util.fromJavaString(key)) {

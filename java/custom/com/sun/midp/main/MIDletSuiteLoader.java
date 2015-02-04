@@ -29,10 +29,8 @@ package com.sun.midp.main;
 import com.sun.midp.lcdui.ForegroundEventProducer;
 import com.sun.midp.midlet.*;
 import com.sun.midp.jsr.JSRInitializer;
-import com.sun.midp.automation.AutomationInitializer;
 import com.sun.midp.io.j2me.push.PushRegistryInternal;
 import com.sun.midp.content.CHManager;
-import com.sun.midp.wma.WMACleanupMonitor;
 import com.sun.midp.configurator.Constants;
 import com.sun.midp.i18n.*;
 import com.sun.midp.log.*;
@@ -105,10 +103,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
         // Initialize JSR subsystems
         JSRInitializer.init();
 
-        // Initaialize automation API
-        AutomationInitializer.init(
-            eventQueue, midletControllerEventProducer);
-
         // Start inbound connection watcher thread.
         PushRegistryInternal.startListening(internalSecurityToken);
 
@@ -116,15 +110,8 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
         CHManager.getManager(internalSecurityToken).init(
             midletProxyList, eventQueue);
 
-        // Initialize WMA's cleanup monitor
-        WMACleanupMonitor.init(midletProxyList);
-
         // Initialize Pipe service
         com.sun.midp.io.j2me.pipe.Protocol.registerService(internalSecurityToken);
-        
-        // Initialize AutoTester service
-        com.sun.midp.installer.AutoTesterServiceInitializer.init(
-                internalSecurityToken);
 
         // Initialize Pipe service
         com.sun.midp.io.j2me.pipe.Protocol.registerService(internalSecurityToken);
@@ -152,29 +139,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
 
         // Init gloabal systems common for all isolates
         initGlobalSystems();
-    }
-
-    /**
-     * Sets suite arguments as temporary suite properties.
-     * The implementation extends base class method with
-     * additional properties specific for AMS MIDlet in
-     * the internal suite.
-     */
-    protected void setSuiteProperties() {
-        super.setSuiteProperties();
-
-        // Handle logo displaying for Manager MIDlet
-        if (suiteId == MIDletSuite.INTERNAL_SUITE_ID) {
-            // Disable logo when startup performance is being
-            // measured or if the logo has been displayed already
-            if (Constants.MEASURE_STARTUP || state.logoDisplayed) {
-                midletSuite.setTempProperty(
-                    internalSecurityToken, "logo-displayed", "");
-            } else {
-                state.logoDisplayed = true;
-            }
-        }
-
     }
 
     /**
@@ -337,12 +301,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
     public static void main(String args[]) {
         try {
             MIDletSuiteLoader loader = new MIDletSuiteLoader();
-
-            /**
-             * The following call has no effect until both USE_WTK_DEBUG
-             * and USE_MULTIPLE_ISOLATES are true.
-             */
-            DebugUtil.attachDebugger();
 
             loader.runMIDletSuite();
         } catch (Throwable t) {

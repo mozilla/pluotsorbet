@@ -60,24 +60,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
         this.midletDisplayName = args[2];
         this.args = new String[] {args[3], args[4], args[5]};
         this.externalAppId = Integer.parseInt(args[6]);
-
-        if (args.length > 7) {
-            boolean isDebugMode = Integer.parseInt(args[7]) != 0;
-
-            if (isDebugMode) {
-                currentIsolate = Isolate.currentIsolate();
-                currentIsolate.attachDebugger();
-
-                // wait for a connection from debugger
-                while (!currentIsolate.isDebuggerConnected()) {
-                    try {
-                        Thread.sleep(300);
-                    } catch (Exception e) {
-                        // ignore
-                    }
-                }
-            }
-        }
     }
 
     /** Inits suite loader instance */
@@ -111,8 +93,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
 
         AmsUtil.initClassInAppIsolate(
             midletExecuteEventProducer);
-        
-        initLinks();
 
         com.sun.midp.io.j2me.pipe.Protocol.initUserContext();
     }
@@ -128,14 +108,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
             // loaded. This will not effect the reference already obtained.
             currentIsolate.setAPIAccess(false);
         }
-    }
-
-    /**
-     * Allocates resources for a suite task according
-     * to global resource policy
-     */
-    protected boolean allocateReservedResources() {
-        return allocateReservedResources0();
     }
 
     /**
@@ -185,27 +157,9 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
     private native void finalize();
 
     /**
-     * Allocates reserved resources for the given isolate.
-     *
-     * @return true if the reserved resources are available otherwise false
-     */
-    private native static boolean allocateReservedResources0();
-
-    /**
      * Handles a fatal error
      *
      * @param t the Throwable that caused the fatal error
      */
     private static native void handleFatalError(Throwable t);
-    
-    /**
-     * Installs initial set of links for this isolate
-     */
-    private void initLinks() {
-        Link[] myLinks = LinkPortal.getLinks();
-        
-        if (myLinks.length == 2) {
-            SystemServiceLinkPortal.linksObtained(myLinks);
-        }
-    }
 }

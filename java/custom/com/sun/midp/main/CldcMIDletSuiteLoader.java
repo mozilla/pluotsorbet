@@ -37,11 +37,7 @@ import com.sun.midp.lcdui.*;
 import com.sun.midp.midletsuite.*;
 import com.sun.midp.configurator.Constants;
 import com.sun.midp.i18n.ResourceConstants;
-import com.sun.midp.installer.InternalMIDletSuiteImpl;
-import com.sun.midp.installer.JadProperties;
-import com.sun.midp.installer.ManifestProperties;
 import com.sun.midp.io.j2me.storage.RandomAccessStream;
-import com.sun.midp.jarutil.JarReader;
 import com.sun.midp.log.*;
 import com.sun.midp.publickeystore.WebPublicKeyStore;
 import com.sun.midp.util.Properties;
@@ -135,17 +131,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
      */
     protected void reportError(int errorCode) {
         reportError(errorCode, null);
-    }
-
-    /**
-     * Allocates resources for a suite execution according to
-     * global resource policy.
-     *
-     * @return true in the case resources were successfully allocated,
-     *   false otherwise
-     */
-    protected boolean allocateReservedResources() {
-        return true;
     }
 
     /**
@@ -272,12 +257,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
         // Hint VM of startup finish: system init phase 
         MIDletSuiteUtils.vmEndStartUp(isolateId);
 
-        if (suiteId == -1 && midletClassName.equals("internal")) {
-            // no class name, need to look for it in the JAD file
-            midletClassName = 
-                ((InternalMIDletSuiteImpl)midletSuite).getMIDletClassName();
-        }
-
         midletStateHandler.startSuite(
             this, midletSuite, externalAppId, midletClassName);
     }
@@ -323,125 +302,13 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
         MIDletSuiteStorage storage;
         MIDletSuite suite = null;
 
-        if (suiteId == MIDletSuite.INTERNAL_SUITE_ID) {
-            Properties props = null;
+        storage = MIDletSuiteStorage.
+            getMIDletSuiteStorage(internalSecurityToken);
 
-            // This is support the CLDC WTK
-            if (args != null && args.length > 0 && args[0] != null) {
-                
-                if (args[0].toLowerCase().endsWith(".jad")) {
-                    /*
-                     * Check if the arg 0 ends with .jad,
-                     * which means it is a path to the JAD file.
-                     */
-                    props = getJadProps(args[0]);
-                } else if (args[0].toLowerCase().endsWith(".jar")) {
-                    /*
-                     * Check if the arg 0 ends with .jar,
-                     * which means it is a path to the JAR file.
-                     */
-                    props = getJarProps(args[0]);
-                }
-            }
-
-            if (props == null) {
-                suite = InternalMIDletSuiteImpl.create(midletDisplayName,
-                                                       suiteId);
-            } else {
-                suite = InternalMIDletSuiteImpl.create(midletDisplayName,
-                                                       suiteId, props);
-            }
-        } else {
-            storage = MIDletSuiteStorage.
-                getMIDletSuiteStorage(internalSecurityToken);
-
-            suite = storage.getMIDletSuite(suiteId, false);
-            Logging.initLogSettings(suiteId);
-        }
+        suite = storage.getMIDletSuite(suiteId, false);
+        Logging.initLogSettings(suiteId);
 
         return suite;
-    }
-
-    /**
-     * Gets the properties of a JAD.
-     *
-     * @param filePath full path of the JAD
-     *
-     * @return JAD properties
-     */
-    private Properties getJadProps(String filePath) {
-        JadProperties jadProps = null;
-        try {
-            /* Open JAD file and extract properties */
-            RandomAccessStream storage =
-                new RandomAccessStream(internalSecurityToken);
-            storage.connect(filePath, Connector.READ);
-            try {
-                int size = storage.getSizeOf();
-                byte[] buffer = new byte[size];
-                DataInputStream dis = storage.openDataInputStream();
-                try {
-                    dis.readFully(buffer);
-                    InputStream is = new ByteArrayInputStream(buffer);
-                    jadProps = new JadProperties();
-                    jadProps.load(is, null);
-                    buffer = null;
-                    is = null;
-                } finally {
-                    dis.close();
-                }
-            } finally {
-                storage.disconnect();
-            }
-        } catch (Throwable t){
-            t.printStackTrace();
-        }
-
-        return jadProps;
-    }
-
-    /**
-     * Gets the properties of a JAR.
-     *
-     * @param filePath full path of the JAR
-     *
-     * @return JAR properties
-     */
-    private Properties getJarProps(String filePath) {
-        String jarPath = null;
-        String subPath;
-        ManifestProperties jarProps = null;
-        int index = filePath.indexOf(';');
-
-        /* parse classpath for a jar file */
-        while(index != -1) {
-            /* parse classpath token by token asuming delimited is ';' */
-            subPath = filePath.substring(0, index);
-            if (subPath.toLowerCase().indexOf(".jar") != -1) {
-                jarPath = subPath;
-                break;
-            } else {
-                // get rid of the first token
-                filePath = filePath.substring(index+1, filePath.length());
-                index = filePath.indexOf(';'); // look for the next token
-            }
-        }
-
-        if ((jarPath == null) &&
-            (filePath.toLowerCase().indexOf(".jar") != -1)) {
-            jarPath = filePath;
-        }
-
-        try {
-            byte[] manifest =
-                JarReader.readJarEntry(jarPath, MIDletSuite.JAR_MANIFEST);
-            jarProps = new ManifestProperties();
-            jarProps.load(new ByteArrayInputStream(manifest));
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-
-        return jarProps;
     }
 
     /**
@@ -539,24 +406,13 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
 
                 throw new
                     RuntimeException("Suite environment not complete.");
-        }
-
-            // Regard resource policy for the suite task
-            if (!allocateReservedResources()) {
-                reportError(Constants.MIDLET_RESOURCE_LIMIT);
-                return;
-            }          
+        }       
 
             // Create suite instance ready for start
             midletSuite = createMIDletSuite();
 
             if (midletSuite == null) {
                 reportError(Constants.MIDLET_SUITE_NOT_FOUND);
-                return;
-            }
-
-            if (!midletSuite.isEnabled()) {
-                reportError(Constants.MIDLET_SUITE_DISABLED);
                 return;
             }
 
