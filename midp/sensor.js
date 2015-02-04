@@ -14,8 +14,8 @@ AccelerometerSensor.model = {
     contextType: "user",
     connectionType: 1, // ChannelType.TYPE_DOUBLE = 1
     maxBufferSize: 256,
-    availabilityPush: false,
-    conditionPush: false,
+    availabilityPush: 0,
+    conditionPush: 0,
     channelCount: 3,
     properties: [
         "vendor", "FirefoxOS",
@@ -172,7 +172,7 @@ AccelerometerSensor.readBuffer = (function() {
         // Set data length
         write_int32(result, DATA_LENGTH);
         // Set validity
-        write_boolean(result, true);
+        write_boolean(result, 1);
         // Set uncertainty
         write_float32(result, 0);
         // Set sensor data.
@@ -264,23 +264,23 @@ Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/s
 
 Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(number) {
     // Only support the acceleration sensor with number = 0.
-    return number === 0;
+    return number === 0 ? 1 : 0;
 };
 
 Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(number) {
     if (number !== 0) {
-        return false;
+        return 0;
     }
     AccelerometerSensor.open();
-    return true;
+    return 1;
 };
 
 Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(number) {
     if (number !== 0) {
-        return false;
+        return 0;
     }
     AccelerometerSensor.close();
-    return true;
+    return 1;
 };
 
 Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(sensorNumber, channelNumber) {
