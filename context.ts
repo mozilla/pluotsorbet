@@ -670,12 +670,13 @@ module J2ME {
       if (timeout) {
         var self = this;
         this.lockTimeout = window.setTimeout(function () {
-          lock.waiting.forEach(function (ctx, n) {
+          for (var i = 0; i < lock.waiting.length; i++) {
+            var ctx = lock.waiting[i];
             if (ctx === self) {
-              lock.waiting[n] = null;
+              lock.waiting[i] = null;
               ctx.wakeup(object);
             }
-          });
+          }
         }, timeout);
       } else {
         this.lockTimeout = null;

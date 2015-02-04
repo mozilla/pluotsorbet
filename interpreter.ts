@@ -180,10 +180,11 @@ module J2ME {
       ctx.kill();
       if (ctx.thread && ctx.thread._lock.waiting && ctx.thread._lock.waiting.length > 0) {
         console.error(buildExceptionLog(e, stackTrace));
-        ctx.thread._lock.waiting.forEach(function(waitingCtx, n) {
-          ctx.thread._lock.waiting[n] = null;
+        for (var i = 0; i < ctx.thread._lock.waiting.length; i++) {
+          var waitingCtx = ctx.thread._lock.waiting[i];
+          ctx.thread._lock.waiting[i] = null;
           waitingCtx.wakeup(ctx.thread);
-        });
+        }
       }
       throw new Error(buildExceptionLog(e, stackTrace));
     } else {
