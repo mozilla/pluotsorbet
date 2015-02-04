@@ -493,7 +493,7 @@ Native["com/ibm/oti/connection/file/FCInputStream.readByteImpl.(I)I"] = function
 
     var data = fs.read(fd, curpos, curpos+1);
 
-    return (data.byteLength > 0) ? data[0] : -1;
+    return (data.byteLength > 0) ? (data[0] & 0xFF) : -1;
 };
 
 Native["com/ibm/oti/connection/file/FCInputStream.closeImpl.(I)V"] = function(fd) {
@@ -551,7 +551,7 @@ Native["com/ibm/oti/connection/file/FCOutputStream.syncImpl.(I)V"] = function(fd
 };
 
 Native["com/ibm/oti/connection/file/FCOutputStream.writeByteImpl.(II)V"] = function(val, fd) {
-    var buf = new Uint8Array(1);
+    var buf = new Int8Array(1);
     buf[0] = val;
     fs.write(fd, buf);
 };
