@@ -858,17 +858,13 @@ module J2ME {
 
       this.needsVariable("lk");
       emitter.writeLn("lk = " + object + "._lock;");
-      emitter.enter("if (lk && lk.level === 0) {");
-      emitter.writeLn("lk.thread = th;");
-      emitter.writeLn("lk.level = 1;");
-      emitter.leaveAndEnter("} else {");
-      emitter.writeLn("ME(" + object + ");");
+      emitter.enter("if (lk && lk.level === 0) { lk.thread = th; lk.level = 1; } else { ME(" + object + ");");
       this.emitUnwind(emitter, this.pc, nextPC);
       emitter.leave("}");
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {
-      emitter.writeLn("if (" + object + "._lock.level === 1 && " + object + "._lock.ready.length === 0) " + object + "._lock.level = 0; else MX(" + object + ")");
+      emitter.writeLn("if (" + object + "._lock.level === 1 && " + object + "._lock.ready.length === 0) " + object + "._lock.level = 0; else MX(" + object + ");");
     }
 
     emitStackOp(opcode: Bytecodes) {
