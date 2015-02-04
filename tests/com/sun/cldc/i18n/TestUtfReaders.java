@@ -39,52 +39,42 @@ public class TestUtfReaders implements Testlet {
     public String teststr3 = "hello, world!";
 
     public void test2way(int strId, String s, String e) {
-        try{
-            byte[] b = s.getBytes(e);
+        byte[] b = s.getBytes(e);
 
-            String t = new String(b,e);
+        String t = new String(b,e);
 
-            int diff = s.compareTo(t);
-            th.check(diff, 0);
-        } catch (Throwable t) {
-          th.fail("Unexpected exception: " + t);
-          t.printStackTrace();
-        }
+        int diff = s.compareTo(t);
+        th.check(diff, 0);
     }
 
     public void testMark(int strId, String s, String e) {
-        try{
-            byte[] b = s.getBytes(e);
-            final StreamReader r = //new ReaderUTF16(new ByteArrayInputStream(b));
-                    (StreamReader)Class.forName("com.sun.cldc.i18n.j2me."+e+"_Reader").newInstance();
-            final ByteArrayInputStream bais = new ByteArrayInputStream(b);
-            r.open(bais, "UTF_16");
+        byte[] b = s.getBytes(e);
+        final StreamReader r = //new ReaderUTF16(new ByteArrayInputStream(b));
+                (StreamReader)Class.forName("com.sun.cldc.i18n.j2me."+e+"_Reader").newInstance();
+        final ByteArrayInputStream bais = new ByteArrayInputStream(b);
+        r.open(bais, "UTF_16");
 
-            th.check(r.markSupported(), bais.markSupported());
-            th.check(r.markSupported());
-            r.mark(2);
+        th.check(r.markSupported(), bais.markSupported());
+        th.check(r.markSupported());
+        r.mark(2);
 
-            int c1 = r.read();
-            int c2 = r.read();
-            r.reset();
+        int c1 = r.read();
+        int c2 = r.read();
+        r.reset();
 
-            int c3 = r.read();
-            int c4 = r.read();
-            th.check(c1, c3);
-            th.check(c2, c4);
-            r.reset();
+        int c3 = r.read();
+        int c4 = r.read();
+        th.check(c1, c3);
+        th.check(c2, c4);
+        r.reset();
 
-            int c;
-            String s2 = "";
-            while(-1 != (c=r.read())) {
-                s2+=(char)c;
-            }
-
-            th.check(s, s2);
-        } catch (Throwable t) {
-            th.fail("Unexpected exception: " + t);
-            t.printStackTrace();
+        int c;
+        String s2 = "";
+        while(-1 != (c=r.read())) {
+            s2+=(char)c;
         }
+
+        th.check(s, s2);
     }
 
     /**
