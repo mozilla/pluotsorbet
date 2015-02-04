@@ -1052,7 +1052,7 @@ module J2ME {
           case Bytecodes.MONITORENTER:
             object = stack.pop();
             ctx.monitorEnter(object);
-            if (U === VMState.Pausing) {
+            if (U === VMState.Pausing || U === VMState.Stopping) {
               return;
             }
             break;
@@ -1197,7 +1197,7 @@ module J2ME {
                     : frame.getLocal(0);
                 }
                 ctx.monitorEnter(calleeFrame.lockObject);
-                if (U === VMState.Pausing) {
+                if (U === VMState.Pausing || U === VMState.Stopping) {
                   return;
                 }
               }
