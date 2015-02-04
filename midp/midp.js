@@ -97,7 +97,7 @@ Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/la
     if (!bytes)
         throw $.newIOException();
     var length = bytes.byteLength;
-    var data = new Uint8Array(bytes);
+    var data = new Int8Array(bytes);
     var array = J2ME.newByteArray(length);
     for (var n = 0; n < length; ++n)
         array[n] = data[n];
@@ -535,7 +535,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     }
     var len = data.byteLength;
     var bytes = J2ME.newByteArray(len);
-    var src = new Uint8Array(data);
+    var src = new Int8Array(data);
     for (var n = 0; n < bytes.byteLength; ++n)
         bytes[n] = src[n];
     return bytes;

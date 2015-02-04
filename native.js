@@ -790,7 +790,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I"] = function(cbuf
 };
 
 Native["java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;"] = function(bytearr) {
-    var array = new Uint8Array(bytearr.buffer);
+    var array = new Int8Array(bytearr.buffer);
     try {
         return J2ME.newString(util.decodeUtf8Array(array));
     } catch(e) {
@@ -853,7 +853,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(cbu
   var count = 0;
 
   while (count < len) {
-    var outputByte = new Uint8Array(4);     // Never more than 4 encoded bytes
+    var outputByte = new Int8Array(4);     // Never more than 4 encoded bytes
     inputChar = 0xffff & cbuf[off + count];
     if (0 != pendingSurrogate) {
       if (0xdc00 <= inputChar && inputChar <= 0xdfff) {

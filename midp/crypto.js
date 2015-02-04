@@ -99,7 +99,7 @@ Native["com/sun/midp/crypto/SHA.nativeFinal.([BII[BI[I[I[I[I)V"] = function(inBu
     }
 
     var hash = hasher.digest();
-    outBuf.set(new Uint8Array(hash.buffer), outOff);
+    outBuf.set(new Int8Array(hash.buffer), outOff);
 
     // XXX Call the reset method instead to completely reset the object.
     data.set(MIDP.emptyDataArray);
@@ -120,7 +120,7 @@ Native["com/sun/midp/crypto/SHA.nativeClone.([I)V"] = function(data) {
 };
 
 Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(inBuf, inOff, inLen, state, num, count, data) {
-    MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Uint8Array(inBuf.subarray(inOff, inOff + inLen))));
+    MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Int8Array(inBuf.subarray(inOff, inOff + inLen))));
 };
 
 Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
