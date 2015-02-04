@@ -27,11 +27,7 @@
 package com.sun.midp.main;
 
 import com.sun.cldc.isolate.Isolate;
-import com.sun.midp.io.j2me.pipe.Protocol;
-import com.sun.midp.links.Link;
-import com.sun.midp.links.LinkPortal;
 import com.sun.midp.security.Permissions;
-import com.sun.midp.services.SystemServiceLinkPortal;
 
 /**
  * The first class loaded in an application Isolate by the MIDP AMS to
@@ -93,8 +89,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
 
         AmsUtil.initClassInAppIsolate(
             midletExecuteEventProducer);
-
-        com.sun.midp.io.j2me.pipe.Protocol.initUserContext();
     }
 
     /** Restricts suite access to internal API */

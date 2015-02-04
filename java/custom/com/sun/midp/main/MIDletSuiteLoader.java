@@ -109,12 +109,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
         // Initialize the Content Handler Monitor of MIDlet exits
         CHManager.getManager(internalSecurityToken).init(
             midletProxyList, eventQueue);
-
-        // Initialize Pipe service
-        com.sun.midp.io.j2me.pipe.Protocol.registerService(internalSecurityToken);
-
-        // Initialize Pipe service
-        com.sun.midp.io.j2me.pipe.Protocol.registerService(internalSecurityToken);
     }
 
     /**
