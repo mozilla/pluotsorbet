@@ -56,7 +56,8 @@ public class RunTests extends MIDlet {
         }
 
         public void report() {
-            System.out.println(testName + ": " + pass + " pass, " + fail + " fail, " + unknownPass + " unknown pass");
+            System.out.println(testName + ": " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " +
+                               unknownPass + " unknown pass");
         }
 
         public int passed() {
