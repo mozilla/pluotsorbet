@@ -64,7 +64,7 @@ build/program.jar.js: program.jar build/jsc.js aot-methods.txt
 	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > build/program.jar.js
 
 closure: build/classes.jar.js build/j2me.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
 		&& mv build/j2me.cc.js build/j2me.js
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js \
 		&& mv build/classes.jar.cc.js build/classes.jar.js

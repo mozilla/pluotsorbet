@@ -33,7 +33,9 @@ public class TestInputOutputStorage implements Testlet {
     public void test(TestHarness th) {
         try {
             FileConnection file = (FileConnection)Connector.open("file:////prova");
-            th.check(!file.exists());
+            if (file.exists()) {
+                file.delete();
+            }
             file.create();
 
             RandomAccessStream ras = new RandomAccessStream();

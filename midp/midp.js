@@ -97,7 +97,7 @@ Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/la
     if (!bytes)
         throw $.newIOException();
     var length = bytes.byteLength;
-    var data = new Uint8Array(bytes);
+    var data = new Int8Array(bytes);
     var array = J2ME.newByteArray(length);
     for (var n = 0; n < length; ++n)
         array[n] = data[n];
@@ -535,7 +535,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     }
     var len = data.byteLength;
     var bytes = J2ME.newByteArray(len);
-    var src = new Uint8Array(data);
+    var src = new Int8Array(data);
     for (var n = 0; n < bytes.byteLength; ++n)
         bytes[n] = src[n];
     return bytes;
@@ -862,33 +862,29 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) {
     var ctx = $.ctx;
+    var mutex;
+    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
+        if (MIDP.InterIsolateMutexes[i].id == id) {
+            mutex = MIDP.InterIsolateMutexes[i];
+            break;
+        }
+    }
+
+    if (!mutex) {
+        throw $.newIllegalStateException("Invalid mutex ID");
+    }
+
+    if (!mutex.locked) {
+        mutex.locked = true;
+        mutex.holder = ctx.runtime.isolate.id;
+        return;
+    }
+
+    if (mutex.holder == ctx.runtime.isolate.id) {
+        throw $.newRuntimeException("Attempting to lock mutex twice within the same Isolate");
+    }
+
     asyncImpl("V", new Promise(function(resolve, reject) {
-        ctx.setAsCurrentContext();
-        var mutex;
-        for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-            if (MIDP.InterIsolateMutexes[i].id == id) {
-                mutex = MIDP.InterIsolateMutexes[i];
-                break;
-            }
-        }
-
-        if (!mutex) {
-            reject($.newIllegalStateException("Invalid mutex ID"));
-            return;
-        }
-
-        if (!mutex.locked) {
-            mutex.locked = true;
-            mutex.holder = ctx.runtime.isolate.id;
-            resolve();
-            return;
-        }
-
-        if (mutex.holder == ctx.runtime.isolate.id) {
-            reject($.newRuntimeException("Attempting to lock mutex twice within the same Isolate"));
-            return;
-        }
-
         mutex.waiting.push(function() {
             mutex.locked = true;
             mutex.holder = ctx.runtime.isolate.id;
