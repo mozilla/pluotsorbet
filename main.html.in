@@ -178,6 +178,12 @@
     </div>
   </div>
 
+  <div class="splash-screen" id="exit-screen">
+    <div class="splash-progress-container">
+      <progress></progress>
+    </div>
+  </div>
+
   <div id="background-screen">
   </div>
 
