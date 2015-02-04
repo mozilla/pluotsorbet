@@ -14,13 +14,9 @@ declare var Long: {
   fromNumber(value: number);
 }
 
-interface Promise {
-  catch(onRejected: { (reason: any): any; }): Promise;
-}
-
 interface CompiledMethodCache {
   get(key: string): { key: string; source: string; referencedClasses: string[]; };
-  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise;
+  put(key: string, value: { source: string; referencedClasses: string[]; }): void;
 }
 
 declare var throwHelper;
@@ -1532,11 +1528,10 @@ module J2ME {
     var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.className });
 
     if (enableCompiledMethodCache) {
-      CompiledMethodCache.put({
-        key: methodInfo.implKey,
+      CompiledMethodCache.put(methodInfo.implKey, {
         source: source,
         referencedClasses: referencedClasses,
-      }).catch(stderrWriter.errorLn.bind(stderrWriter));
+      });
     }
 
     linkMethod(methodInfo, source, referencedClasses);
