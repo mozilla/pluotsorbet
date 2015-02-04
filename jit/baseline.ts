@@ -853,7 +853,11 @@ module J2ME {
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {
+      emitter.writeLn("if (" + object + "._lock.level === 1 && " + object + "._lock.ready.length === 0) {");
+      emitter.writeLn(object + "._lock.level = 0;");
+      emitter.writeLn("} else {");
       emitter.writeLn("MX(" + object + ");");
+      emitter.writeLn("}");
     }
 
     emitStackOp(opcode: Bytecodes) {
