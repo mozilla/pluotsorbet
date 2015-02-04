@@ -38,11 +38,8 @@ Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Lja
 
 Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] =
 function(filenameBase, name, ext) {
-    asyncImpl("Z", new Promise(function(resolve, reject) {
-        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
-        // return fs.exists(path) ? 1 : 0;
-        resolve(fs.exists(path) ? 1 : 0);
-    }));
+    var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
+    return fs.exists(path) ? 1 : 0;
 };
 
 Native["com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V"] =
@@ -134,17 +131,11 @@ Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(handle
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(handle) {
-    asyncImpl("V", new Promise(function(resolve, reject) {
-        fs.flush(handle);
-        resolve();
-    }));
+    fs.flush(handle);
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(handle) {
-    asyncImpl("V", new Promise(function(resolve, reject) {
-        fs.close(handle);
-        resolve();
-    }));
+    fs.close(handle);
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V"] = function(handle, size) {
