@@ -293,5 +293,8 @@ Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(se
         return J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, 0);
     }
 
-    return AccelerometerSensor.readBuffer(channelNumber);
+    asyncImpl("[B", new Promise(function(resolve, reject) {
+        var result = AccelerometerSensor.readBuffer(channelNumber);
+        setTimeout(resolve.bind(null, result), 50);
+    }));
 };
