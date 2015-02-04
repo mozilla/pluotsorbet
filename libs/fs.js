@@ -383,7 +383,7 @@ var fs = (function() {
       }
     }
 
-    var newArray = new Uint8Array(newBufferSize);
+    var newArray = new Int8Array(newBufferSize);
     newArray.set(this.array);
 
     this.array = newArray;
@@ -463,7 +463,7 @@ var fs = (function() {
         var fd = openedFiles.push({
           dirty: false,
           path: path,
-          buffer: new FileBuffer(new Uint8Array(reader.result)),
+          buffer: new FileBuffer(new Int8Array(reader.result)),
           mtime: record.mtime,
           size: record.size,
           position: 0,
