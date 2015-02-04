@@ -848,8 +848,13 @@ module J2ME {
     }
 
     private emitMonitorEnter(emitter: Emitter, nextPC: number, object: string) {
+      emitter.writeLn("if (" + object + "._lock && " + object + "._lock.level === 0) {");
+      emitter.writeLn(object + "._lock.thread = $.ctx.thread;");
+      emitter.writeLn(object + "._lock.level = 1;");
+      emitter.writeLn("} else {");
       emitter.writeLn("ME(" + object + ");");
       this.emitUnwind(emitter, this.pc, nextPC);
+      emitter.writeLn("}");
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {

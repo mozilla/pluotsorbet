@@ -627,13 +627,13 @@ module J2ME {
 
     monitorEnter(object: java.lang.Object) {
       var lock = object._lock;
-      if (!lock) {
-        object._lock = new Lock(this.thread, 1);
-        return;
-      }
-      if (lock.level === 0) {
+      if (lock && lock.level === 0) {
         lock.thread = this.thread;
         lock.level = 1;
+        return;
+      }
+      if (!lock) {
+        object._lock = new Lock(this.thread, 1);
         return;
       }
       if (lock.thread === this.thread) {
