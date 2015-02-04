@@ -205,8 +205,8 @@ To use it, first install a recent version of the
 
 `make closure` compiles some JavaScript code with the Closure compiler.
 
-To use it, first download Shumway's version of the compiler to tools/closure.jar:
+To use it, first download this custom version of the compiler to tools/closure.jar:
 
 ```
-wget https://github.com/mozilla/shumway/raw/master/utils/closure.jar -P tools/
+wget https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar -P tools/
 ```
