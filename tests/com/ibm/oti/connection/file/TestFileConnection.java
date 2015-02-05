@@ -337,14 +337,14 @@ public class TestFileConnection implements Testlet {
                 in.read(data, 0, 5);
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "File Connection InputStream closed");
+                th.check(e.getMessage(), "Stream closed");
             }
 
             try {
                 in.read();
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "File Connection InputStream closed");
+                th.check(e.getMessage(), "Stream closed");
             }
 
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova");

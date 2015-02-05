@@ -624,7 +624,7 @@ var fs = (function() {
     return !!record;
   }
 
-  function truncate(path) {
+  function truncate(path, size) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs truncate " + path); }
 
@@ -633,9 +633,9 @@ var fs = (function() {
       return false;
     }
 
-    record.data = new Blob();
+    record.data = record.data.slice(0, size || 0, record.data.type);
     record.mtime = Date.now();
-    record.size = 0;
+    record.size = size;
     store.setItem(path, record);
     return true;
   }
@@ -891,6 +891,7 @@ var fs = (function() {
   }
 
   return {
+    normalize: normalizePath,
     dirname: dirname,
     init: init,
     open: open,
