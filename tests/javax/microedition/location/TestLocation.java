@@ -11,11 +11,13 @@ public class TestLocation implements Testlet, LocationListener {
     public void locationUpdated(LocationProvider provider, final Location location) {
         try {
             QualifiedCoordinates c = location.getQualifiedCoordinates();
-            if (c != null) {
-                System.out.println("new Location Latitude: " + c.getLatitude() +
-                                   " Logitude: " + c.getLongitude());
-
-            }
+            th.check(c.getLatitude(), 45);
+            th.check(c.getLongitude(), -122);
+            th.check(c.getAltitude(), 500);
+            th.check(c.getHorizontalAccuracy(), 200);
+            th.check(c.getVerticalAccuracy(), 10);
+            th.check(location.getSpeed(), 90);
+            th.check(location.getCourse(), 2);
         } catch (Exception e) {
             e.printStackTrace();
             th.fail("Unexpected exception: " + e);
