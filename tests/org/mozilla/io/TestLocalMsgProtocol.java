@@ -9,6 +9,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestLocalMsgProtocol implements Testlet {
+    public int getExpectedPass() { return 16; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     LocalMessageProtocolServerConnection server;
     LocalMessageProtocolConnection client;
     static final String PROTO_NAME = "marco";

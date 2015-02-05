@@ -16,6 +16,9 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 class TestArithmetic implements Testlet {
+    public int getExpectedPass() { return 276; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 2; }
     TestHarness th;
 
     private static int int_3 = -3;

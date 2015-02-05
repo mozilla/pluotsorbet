@@ -4,6 +4,9 @@ import java.io.*;
 import gnu.testlet.*;
 
 public class ByteArrayInputStreamTest implements Testlet {
+    public int getExpectedPass() { return 46; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         byte[] a = new byte[11];
         for (int i = 0; i < a.length; i++) {

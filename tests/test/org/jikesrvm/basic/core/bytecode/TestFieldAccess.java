@@ -16,6 +16,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 class TestFieldAccess implements Testlet {
+  public int getExpectedPass() { return 18; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   static boolean s0 = true;
   static byte s1 = -1;
   static char s2 = 'A';

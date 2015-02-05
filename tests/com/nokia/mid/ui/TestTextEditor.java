@@ -11,6 +11,9 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.TextField;
 
 public class TestTextEditor extends Canvas implements Testlet {
+    public int getExpectedPass() { return 146; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void testConstraints(TestHarness th, int constraints, int tolerance) {
         String text = "</div>Hello, world!";
         TextEditor textEditor = new TextEditor(text, 20, 0, 100, 24);

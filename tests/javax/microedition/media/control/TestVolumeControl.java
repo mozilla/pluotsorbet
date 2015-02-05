@@ -6,6 +6,9 @@ import java.io.*;
 import javax.microedition.media.*;
 
 public class TestVolumeControl implements Testlet, PlayerListener {
+    public int getExpectedPass() { return 11; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
      /**
