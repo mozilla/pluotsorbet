@@ -31,6 +31,9 @@ import gnu.testlet.Testlet;
 import java.util.Random;
 
 public class TestRecordStore implements Testlet {
+    public int getExpectedPass() { return 15; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 1; }
     TestHarness th;
 
     final String RECORD_STORE_NAME = "testrms";

@@ -5,6 +5,9 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 public class TestDirectGraphics implements Testlet {
+    public int getExpectedPass() { return 6; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 1; }
     public void test(TestHarness th) {
         int[] pixels = new int[1];
         Image image = DirectUtils.createImage(1, 1, 0x0000FF00);

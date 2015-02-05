@@ -16,6 +16,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 class TestReturn implements Testlet {
+  public int getExpectedPass() { return 11; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test(TestHarness th) {
     th.check(boolean_f());
     th.check(byte_f(), 2);
