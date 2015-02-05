@@ -4,6 +4,9 @@ import java.io.*;
 import gnu.testlet.*;
 
 public class DataInputStreamTest implements Testlet {
+	public int getExpectedPass() { return 44; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	public void test(TestHarness th) {
 		try {
 			byte[] input = {-2, 54, -2, 0, 1, 0, -128, 1, 91, -64, 0x0C, 0x7A, -31, 0x47, -82, 0x14, 0x7B, 0x41, 0x09, 

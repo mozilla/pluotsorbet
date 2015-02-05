@@ -102,11 +102,11 @@ module J2ME {
       case Kind.Int:
         return (x) => (x | 0) === x;
       case Kind.Float:
-        return (x) => Math.fround(x) === x;
+        return (x) => isNaN(x) || Math.fround(x) === x;
       case Kind.Long:
-        return (x) => x instanceof Long;
+        return (x) => x instanceof Long.constructor;
       case Kind.Double:
-        return (x) => (+x) === x;
+        return (x) => isNaN(x) || (+x) === x;
       case Kind.Reference:
         return (x) => x === null || x instanceof Object;
       case Kind.Void:

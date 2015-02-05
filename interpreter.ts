@@ -1,6 +1,5 @@
 module J2ME {
   declare var util;
-  declare var Instrument;
   declare var Promise;
 
   import BytecodeStream = Bytecode.BytecodeStream;
@@ -82,17 +81,14 @@ module J2ME {
    * Debugging helper to make sure native methods were implemented correctly.
    */
   function checkReturnValue(methodInfo: MethodInfo, returnValue: any) {
-    if (returnValue instanceof Promise) {
-      console.error("You forgot to call asyncImpl():", methodInfo.implKey);
-    } else if (methodInfo.getReturnKind() === Kind.Void && returnValue) {
-      console.error("You returned something in a void method:", methodInfo.implKey);
-    } else if (methodInfo.getReturnKind() !== Kind.Void && (returnValue === undefined) &&
-      !U) {
-      console.error("You returned undefined in a non-void method:", methodInfo.implKey);
-    } else if (typeof returnValue === "string") {
-      console.error("You returned a non-wrapped string:", methodInfo.implKey);
-    } else if (returnValue === true || returnValue === false) {
-      console.error("You returned a JS boolean:", methodInfo.implKey);
+    if (U) {
+      if (typeof returnValue !== "undefined") {
+        assert(false, "Expected undefined return value during unwind, got " + returnValue);
+      }
+      return;
+    }
+    if (!(getKindCheck(methodInfo.getReturnKind())(returnValue))) {
+      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue);
     }
   }
 
@@ -182,12 +178,13 @@ module J2ME {
 
     if (ctx.current() === Frame.Start) {
       ctx.kill();
-      if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
+      if (ctx.thread && ctx.thread._lock.waiting && ctx.thread._lock.waiting.length > 0) {
         console.error(buildExceptionLog(e, stackTrace));
-        ctx.thread.waiting.forEach(function(waitingCtx, n) {
-          ctx.thread.waiting[n] = null;
+        for (var i = 0; i < ctx.thread._lock.waiting.length; i++) {
+          var waitingCtx = ctx.thread._lock.waiting[i];
+          ctx.thread._lock.waiting[i] = null;
           waitingCtx.wakeup(ctx.thread);
-        });
+        }
       }
       throw new Error(buildExceptionLog(e, stackTrace));
     } else {
@@ -1325,7 +1322,6 @@ module J2ME {
     static execute = interpret;
     static Yield = {toString: function () { return "YIELD" }};
     static Pause = {toString: function () { return "PAUSE" }};
-    static DEBUG = false;
     static DEBUG_PRINT_ALL_EXCEPTIONS = false;
   }
 }

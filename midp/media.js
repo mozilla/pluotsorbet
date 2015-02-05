@@ -714,7 +714,7 @@ PlayerContainer.prototype.getRecordedSize = function() {
 PlayerContainer.prototype.getRecordedData = function(offset, size, buffer) {
     var toRead = (size < this.audioRecorder.data.length) ? size : this.audioRecorder.data.byteLength;
     buffer.set(this.audioRecorder.data.subarray(0, toRead), offset);
-    this.audioRecorder.data = new Uint8Array(this.audioRecorder.data.buffer.slice(toRead));
+    this.audioRecorder.data = new Int8Array(this.audioRecorder.data.buffer.slice(toRead));
 };
 
 PlayerContainer.prototype.startSnapshot = function(imageType) {
@@ -732,7 +732,7 @@ PlayerContainer.prototype.getDuration = function() {
 var AudioRecorder = function(aMimeType) {
     this.mimeType = aMimeType || "audio/3gpp";
     this.eventListeners = {};
-    this.data = new Uint8Array();
+    this.data = new Int8Array();
     this.sender = DumbPipe.open("audiorecorder", {
         mimeType: this.mimeType
     }, this.recipient.bind(this));
@@ -816,7 +816,7 @@ AudioRecorder.prototype.stop = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            var data = new Uint8Array(message.data);
+            var data = new Int8Array(message.data);
             if (this.getContentType() === "audio/amr") {
                 data = Media.convert3gpToAmr(data);
             }
@@ -854,7 +854,7 @@ AudioRecorder.prototype.pause = function() {
             // The audio data we received are encoded with a proper format, it doesn't
             // make sense to concatenate them like the socket, so let just override
             // the buffered data here.
-            this.data = new Uint8Array(message.data);
+            this.data = new Int8Array(message.data);
             resolve(1);
         }.bind(this);
 
@@ -1025,7 +1025,7 @@ Native["com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I"] = function(handle) {
 
 Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, ms) {
     var container = Media.PlayerCache[handle];
-    return container.player.setMediaTime(ms);
+    return container.player.setMediaTime(ms.toInt());
 };
 
 Native["com/sun/mmedia/DirectPlayer.nStart.(I)Z"] = function(handle) {

@@ -6,6 +6,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestDataEncodeDecode implements Testlet {
+    public int getExpectedPass() { return 92; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     void testString(TestHarness th) throws IOException {
         DataEncoder encoder = new DataEncoder("whatever");
         encoder.putStart(DataType.STRUCT, "event");

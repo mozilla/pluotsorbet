@@ -25,6 +25,9 @@ import gnu.testlet.TestHarness;
 
 public class min implements Testlet
 {
+  public int getExpectedPass() { return 41; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
     {
       harness.checkPoint("Small doubles");

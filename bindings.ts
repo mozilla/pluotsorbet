@@ -76,8 +76,6 @@ module J2ME {
        */
       _lock: Lock;
 
-      waiting: Context [];
-
       clone(): java.lang.Object;
       equals(obj: java.lang.Object): boolean;
       finalize(): void;

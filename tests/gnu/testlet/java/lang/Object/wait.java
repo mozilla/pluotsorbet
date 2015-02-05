@@ -30,6 +30,9 @@ import gnu.testlet.TestHarness;
  * with threaded programming.
  */
 public final class wait implements Testlet {
+  public int getExpectedPass() { return 8; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
   {
     // wait must have reasonable args

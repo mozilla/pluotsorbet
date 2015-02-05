@@ -11,12 +11,17 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.TextField;
 
 public class TestTextEditor extends Canvas implements Testlet {
+    public int getExpectedPass() { return 146; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void testConstraints(TestHarness th, int constraints, int tolerance) {
-        TextEditor textEditor = new TextEditor("Hello, world!", 20, 0, 100, 24);
+        String text = "</div>Hello, world!";
+        TextEditor textEditor = new TextEditor(text, 20, 0, 100, 24);
+        textEditor.setVisible(true);
 
-        th.check(textEditor.getContent(), "Hello, world!");
+        th.check(textEditor.getContent(), text);
         th.check(textEditor.getMaxSize(), 20);
-        th.check(textEditor.getCaretPosition(), 13);
+        th.check(textEditor.getCaretPosition(), text.length());
 
         textEditor.setConstraints(constraints);
         th.check(textEditor.getConstraints(), constraints);
@@ -46,11 +51,11 @@ public class TestTextEditor extends Canvas implements Testlet {
         th.check(textEditor.getWidth(), 120);
         th.check(textEditor.getHeight(), 28);
 
-        th.check(textEditor.isVisible(), false);
-        textEditor.setVisible(true);
         th.check(textEditor.isVisible(), true);
         textEditor.setVisible(false);
         th.check(textEditor.isVisible(), false);
+        textEditor.setVisible(true);
+        th.check(textEditor.isVisible(), true);
 
         textEditor.setParent(this);
         th.check(textEditor.getParent(), this);
@@ -125,6 +130,8 @@ public class TestTextEditor extends Canvas implements Testlet {
         textEditor.setFont(font);
         th.check(textEditor.getFont(), font);
 
+        textEditor.setVisible(false);
+
         textEditor.setParent(null);
     }
 
@@ -136,7 +143,6 @@ public class TestTextEditor extends Canvas implements Testlet {
         textEditor.setBackgroundColor(0x00FFFFFF);
         textEditor.setForegroundColor(0xFF000000);
         textEditor.setVisible(true);
-        textEditor.setFocus(true);
         textEditor.setPosition(0, 0);
 
         th.check(textEditor.getCaretPosition(), 13);
@@ -250,6 +256,8 @@ public class TestTextEditor extends Canvas implements Testlet {
         textEditor.setMaxSize(2);
         th.check(textEditor.size(), 2);
         th.check(textEditor.getCaretPosition(), 2);
+
+        textEditor.setVisible(false);
     }
 
     public void test(TestHarness th) {

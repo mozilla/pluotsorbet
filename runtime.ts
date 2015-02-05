@@ -30,7 +30,6 @@ declare var throwYield;
 module J2ME {
   declare var Native, Override;
   declare var VM;
-  declare var Instrument;
   declare var CompiledMethodCache;
 
   /**
@@ -827,8 +826,12 @@ module J2ME {
   }
 
   export class Lock {
+    ready: Context [];
+    waiting: Context [];
+
     constructor(public thread: java.lang.Thread, public level: number) {
-      // ...
+      this.ready = [];
+      this.waiting = [];
     }
   }
 

@@ -26,6 +26,9 @@ import gnu.testlet.TestHarness;
  */
 public class longDivide implements Testlet
 {
+  public int getExpectedPass() { return 21; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   /**
    * Entry point to this test.

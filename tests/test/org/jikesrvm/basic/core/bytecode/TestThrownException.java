@@ -18,6 +18,9 @@ import gnu.testlet.Testlet;
 import java.io.IOException;
 
 class TestThrownException implements Testlet {
+  public int getExpectedPass() { return 7; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   private static void testHardwareException() {
     int i = 1;
     int j = 0;

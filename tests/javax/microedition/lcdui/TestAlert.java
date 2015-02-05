@@ -11,10 +11,14 @@ import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 
 public class TestAlert extends Canvas implements Testlet {
+    public int getExpectedPass() { return 8; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     private native boolean isTextEditorReallyFocused();
 
     public void test(TestHarness th) {
         Alert alert = new Alert("Hello World", "Some text", null, AlertType.INFO);
+        alert.setTimeout(Alert.FOREVER);
         TextEditor textEditor = TextEditor.createTextEditor("Hello, world!", 20, 0, 100, 24);
         textEditor.setParent(this);
 

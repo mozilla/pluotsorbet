@@ -179,7 +179,7 @@
     push: function(item) {
       if (item.matchesCurrentFilters()) {
         this.flush(); // Preserve order w/r/t console.print().
-        windowConsole[item.levelName].apply(windowConsole, item.args);
+        windowConsole[item.levelName].apply(windowConsole, [item.message]);
       }
     },
 
@@ -202,7 +202,7 @@
   NativeConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        dumpLine(item.message);
+        dump(item.message + "\n");
       }
     }
   };
@@ -344,7 +344,9 @@
     info: logAtLevel.bind(null, "info"),
     warn: logAtLevel.bind(null, "warn"),
     error: logAtLevel.bind(null, "error"),
-    print: print
+    print: print,
+    profile: typeof console !== "undefined" && console.profile ? console.profile.bind(console) : null,
+    profileEnd: typeof console !== "undefined" && console.profileEnd ? console.profileEnd.bind(console) : null,
   };
 
 })();

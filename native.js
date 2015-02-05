@@ -69,6 +69,12 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
     }
 };
 
+var stubProperties = {
+  "com.nokia.multisim.slots": 1,
+  "com.nokia.mid.imsi": "000000000000000",
+  "com.nokia.mid.imei": "",
+};
+
 Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     key = util.fromJavaString(key);
     var value;
@@ -178,21 +184,9 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     case "com.nokia.keyboard.type":
         value = "None";
         break;
-    case "com.nokia.multisim.slots":
-        console.warn("Property 'com.nokia.multisim.slots' is a stub");
-        value = "1";
-        break;
-    case "com.nokia.multisim.imsi.sim2":
-        console.warn("Property 'com.nokia.multisim.imsi.sim2' is a stub");
-        value = null;
-        break;
     case "com.nokia.mid.batterylevel":
         // http://developer.nokia.com/community/wiki/Checking_battery_level_in_Java_ME
         value = Math.floor(navigator.battery.level * 100).toString();
-        break;
-    case "com.nokia.mid.imsi":
-        console.warn("Property 'com.nokia.mid.imsi' is a stub");
-        value = "000000000000000";
         break;
     case "com.nokia.mid.ui.version":
         value = "1.7";
@@ -212,10 +206,6 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         } else {
             value = null;
         }
-        break;
-    case "com.nokia.mid.imei":
-        console.warn("Property 'com.nokia.mid.imei' is a stub");
-        value = "";
         break;
     case "com.nokia.mid.ui.customfontsize":
         value = "true";
@@ -246,9 +236,11 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     default:
         if (MIDP.additionalProperties[key]) {
             value = MIDP.additionalProperties[key];
+        } else if (typeof stubProperties[key] !== "undefined") {
+            value = stubProperties[key];
         } else {
             console.warn("UNKNOWN PROPERTY (java/lang/System): " + key);
-            value = null;
+            stubProperties[key] = value = null;
         }
         break;
     }
@@ -286,13 +278,6 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
     return J2ME.getRuntimeKlass($.ctx.runtime, this.klass).classObject;
-};
-
-Native["java/lang/Object.hashCode.()I"] = function() {
-    var hashCode = this.hashCode;
-    while (!hashCode)
-        hashCode = this.hashCode = util.id();
-    return hashCode;
 };
 
 Native["java/lang/Object.wait.(J)V"] = function(timeout) {
@@ -805,7 +790,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I"] = function(cbuf
 };
 
 Native["java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;"] = function(bytearr) {
-    var array = new Uint8Array(bytearr.buffer);
+    var array = new Int8Array(bytearr.buffer);
     try {
         return J2ME.newString(util.decodeUtf8Array(array));
     } catch(e) {
@@ -868,7 +853,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(cbu
   var count = 0;
 
   while (count < len) {
-    var outputByte = new Uint8Array(4);     // Never more than 4 encoded bytes
+    var outputByte = new Int8Array(4);     // Never more than 4 encoded bytes
     inputChar = 0xffff & cbuf[off + count];
     if (0 != pendingSurrogate) {
       if (0xdc00 <= inputChar && inputChar <= 0xdfff) {

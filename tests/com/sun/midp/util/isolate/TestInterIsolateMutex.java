@@ -49,7 +49,24 @@ class LockerIsolate2 {
     }
 }
 
+class LockerThread extends Thread {
+    public void run() {
+        SecurityToken t = SecurityTokenProvider.getToken();
+        InterIsolateMutex m = InterIsolateMutex.getInstance(t, "mutex");
+
+        m.lock();
+        try {
+            // Give the test some time to test waiting for the lock
+            Thread.sleep(1000);
+        } catch (Exception e) {}
+        m.unlock();
+    }
+}
+
 public class TestInterIsolateMutex implements Testlet {
+    public int getExpectedPass() { return 3; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         SecurityToken t = SecurityTokenProvider.getToken();
         InterIsolateMutex m = InterIsolateMutex.getInstance(t, "mutex");
@@ -125,6 +142,60 @@ public class TestInterIsolateMutex implements Testlet {
             m.lock();
 
             iso.waitForExit();
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+        }
+
+        m.unlock();
+
+        try {
+            Isolate iso1 = new Isolate("com.sun.midp.util.isolate.LockerIsolate1", new String[] {});
+            Isolate iso2 = new Isolate("com.sun.midp.util.isolate.LockerIsolate2", new String[] {});
+
+            iso2.start();
+            iso1.start();
+
+            m.lock();
+            m.unlock();
+
+            iso2.waitForExit();
+            iso1.waitForExit();
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+        }
+
+        try {
+            Isolate iso = new Isolate("com.sun.midp.util.isolate.LockerIsolate2", new String[] {});
+            LockerThread lockerThread = new LockerThread();
+
+            lockerThread.start();
+
+            try {
+                Thread.yield();
+            } catch (Exception e) {}
+
+            iso.start();
+
+            iso.waitForExit();
+            lockerThread.join();
+        } catch (Exception e) {
+            th.fail("Unexpected exception: " + e);
+        }
+
+        try {
+            Isolate iso = new Isolate("com.sun.midp.util.isolate.LockerIsolate2", new String[] {});
+            LockerThread lockerThread = new LockerThread();
+
+            iso.start();
+
+            try {
+                Thread.yield();
+            } catch (Exception e) {}
+
+            lockerThread.start();
+
+            iso.waitForExit();
+            lockerThread.join();
         } catch (Exception e) {
             th.fail("Unexpected exception: " + e);
         }

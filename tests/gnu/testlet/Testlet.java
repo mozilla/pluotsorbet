@@ -21,5 +21,8 @@
 package gnu.testlet;
 
 public interface Testlet {
+    public abstract int getExpectedPass();
+    public abstract int getExpectedFail();
+    public abstract int getExpectedKnownFail();
     public abstract void test (TestHarness harness);
 }
