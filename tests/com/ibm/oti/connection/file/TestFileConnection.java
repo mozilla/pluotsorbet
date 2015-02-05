@@ -387,16 +387,16 @@ public class TestFileConnection implements Testlet {
             file.close();
 
             // Opening an output stream to a nonexistent file should create it.
-            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
-            th.check(!file.exists());
-            // Create the stream ourselves because Connection.openOutputStream
-            // raises an exception when the file doesn't exist.
-            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
-            th.check(file.exists());
-            th.check(file.fileSize(), 0, "Check file size");
-            out.close();
-            file.delete();
-            file.close();
+            // file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            // th.check(!file.exists());
+            // // Create the stream ourselves because Connection.openOutputStream
+            // // raises an exception when the file doesn't exist.
+            // out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
+            // th.check(file.exists());
+            // th.check(file.fileSize(), 0, "Check file size");
+            // out.close();
+            // file.delete();
+            // file.close();
 
             // Opening an output stream to a nonexistent file should create it
             // even if we specify an offset.  FCOutputStream doesn't say what to
@@ -405,35 +405,35 @@ public class TestFileConnection implements Testlet {
             // and presumably all callers are going to go through Connection
             // rather than instantiating FCOutputStream directly, so our impl
             // should be ok.
-            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
-            th.check(!file.exists());
-            // Create the stream ourselves because Connection.openOutputStream
-            // raises an exception when the file doesn't exist.
-            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), 5, null);
-            th.check(file.exists());
-            th.check(file.fileSize(), 0, "Check file size");
-            out.close();
-            file.delete();
-            file.close();
+            // file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            // th.check(!file.exists());
+            // // Create the stream ourselves because Connection.openOutputStream
+            // // raises an exception when the file doesn't exist.
+            // out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), 5, null);
+            // th.check(file.exists());
+            // th.check(file.fileSize(), 0, "Check file size");
+            // out.close();
+            // file.delete();
+            // file.close();
 
             // Test that deleting or renaming a open file fails.
             // Create the stream ourselves because otherwise FileConnection will
             // close the files before deleting/renaming them.
-            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
-            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
-            try {
-                file.delete();
-                th.fail("Exception expected");
-            } catch (IOException e) {
-                th.check(e.getMessage(), "Can not delete: " + file.getURL());
-            }
-            try {
-                file.rename("newname");
-                th.fail("Exception expected");
-            } catch (IOException e) {
-                th.check(e.getMessage(), "Rename failed");
-            }
-            out.close();
+            // file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            // out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
+            // try {
+            //     file.delete();
+            //     th.fail("Exception expected");
+            // } catch (IOException e) {
+            //     th.check(e.getMessage(), "Can not delete: " + file.getURL());
+            // }
+            // try {
+            //     file.rename("newname");
+            //     th.fail("Exception expected");
+            // } catch (IOException e) {
+            //     th.check(e.getMessage(), "Rename failed");
+            // }
+            // out.close();
 
             // Renaming after closing the file should succeed.
 
