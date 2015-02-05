@@ -6,6 +6,10 @@ import gnu.testlet.TestUtils;
 import com.nokia.mid.location.LocationUtil;
 
 public class TestLocation implements Testlet, LocationListener {
+    public int getExpectedPass() { return 8; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
+
     TestHarness th;
 
     public void locationUpdated(LocationProvider provider, final Location location) {
