@@ -10,7 +10,7 @@ Location.PROVIDER_NAME = "browser";
 
 Location.Providers = {};
 
-// Provider ID should be greater or equanl to 1.
+// Provider ID should be greater or equal to 1.
 Location.Providers.nextId = 1;
 
 var LocationProvider = function() {
@@ -96,9 +96,9 @@ Native["com/sun/j2me/location/PlatformLocationProvider.resetImpl.(I)V"] = functi
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava/lang/String;Lcom/sun/j2me/location/LocationProviderInfo;)Z"] = function(name, criteria) {
     criteria.klass.classInfo.getField("I.canReportAltitude.Z")
-                  .set(criteria, true);
+                  .set(criteria, 1);
     criteria.klass.classInfo.getField("I.canReportSpeedCource.Z")
-                  .set(criteria, true);
+                  .set(criteria, 1);
     criteria.klass.classInfo.getField("I.averageResponseTime.I")
                   .set(criteria, 10000);
     return 1;
@@ -112,7 +112,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILco
     var provider = Location.Providers[providerId];
     var pos = provider.position;
     locationInfo.klass.classInfo.getField("I.isValid.Z")
-                      .set(locationInfo, true);
+                      .set(locationInfo, 1);
     locationInfo.klass.classInfo.getField("I.timestamp.J")
                       .set(locationInfo, Long.fromNumber(pos.timestamp));
     locationInfo.klass.classInfo.getField("I.latitude.D")
@@ -129,7 +129,6 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILco
                       .set(locationInfo, pos.speed);
     locationInfo.klass.classInfo.getField("I.course.F")
                       .set(locationInfo, pos.heading);
-
     locationInfo.klass.classInfo.getField("I.method.I")
                       .set(locationInfo, 0);
     return 1;
