@@ -488,10 +488,6 @@ DumbPipe.registerOpener("locationprovider", function(message, sender) {
         LocationProvider.state = LocationProvider.OUT_OF_SERVICE;
         clearWatch();
         sendData();
-    }, {
-        enableHighAccuracy: true,
-        timeout: 2000,
-        maximumAge: 0
     });
     clearWatchInterval = setInterval(function() {
       // Stop watching after being inactive for 30s to save power.
