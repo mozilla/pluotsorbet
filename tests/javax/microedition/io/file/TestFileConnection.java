@@ -1,7 +1,6 @@
-package com.ibm.oti.connection.file;
+package javax.microedition.io.file;
 
 import javax.microedition.io.*;
-import javax.microedition.io.file.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.util.Hashtable;
