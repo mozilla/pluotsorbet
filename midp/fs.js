@@ -920,3 +920,20 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)
         throw $.newIOException("Rename failed");
     }
 };
+
+// Pretend there is 1GiB in total and available.
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.totalSize.()J",
+                       Long.fromNumber(1024 * 1024 * 1024));
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.availableSize.()J",
+                       Long.fromNumber(1024 * 1024 * 1024));
+
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V");
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V");
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J", Long.fromNumber(0));
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.setHidden0.(Z)V");
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isHidden0.()Z"] = function() {
+    // Per the comment in DefaultFileHandler.isHidden, we pretend we're Unix
+    // and always return false.
+    return 0;
+};
