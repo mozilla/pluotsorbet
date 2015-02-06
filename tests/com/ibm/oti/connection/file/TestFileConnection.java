@@ -435,8 +435,9 @@ public class TestFileConnection implements Testlet {
             // }
             // out.close();
 
-            // Renaming after closing the file should succeed.
-
+            // Renaming before closing the file should succeed.
+            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            file.create();
             file.rename("newname");
             file.close();
 
@@ -495,8 +496,8 @@ public class TestFileConnection implements Testlet {
             try {
                 file = (FileConnection)Connector.open(dirPath + "prov>");
                 th.fail("Exception expected");
-            } catch (IllegalArgumentException e) {
-                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///Private/prov>");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Contains characters invalid for a filename");
             }
 
             // Check that the fileconn.dir.photos property value is longer than 8 characters.

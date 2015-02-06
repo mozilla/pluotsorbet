@@ -633,6 +633,10 @@ var fs = (function() {
       return false;
     }
 
+    if (size >= record.size) {
+      return true;
+    }
+
     record.data = record.data.slice(0, size || 0, record.data.type);
     record.mtime = Date.now();
     record.size = size;

@@ -642,8 +642,9 @@ Native["javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang
 
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.initialize.()V");
 
-// XXX Return characters in isValidFilenameImpl.
-addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;", null);
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;"] = function() {
+    return J2ME.newString('<>:"\\|?');
+};
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getFileSeparator.()C"] = function() {
     return "/".charCodeAt(0);
@@ -897,5 +898,25 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = functio
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(byteOffset) {
     var pathname = MIDP.nativeFilePointerToName.get(this.$fileName.toNumber());
     console.log("DefaultFileHandler.lastModified: " + pathname);
+
+    // XXX If the file is open, flush it first.
+
     fs.truncate(pathname, byteOffset.toNumber());
+};
+
+Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
+    var pathname = MIDP.nativeFilePointerToName.get(this.$fileHandler.$fileName.toNumber());
+    var fd = MIDP.openFiles.get(this.$fileHandler.$fileName);
+    var available = fs.getsize(fd) - fs.getpos(fd);
+    console.log("Protocol.available: " + pathname + ": " + available);
+    return available;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)V"] = function(newName) {
+    var pathname = MIDP.nativeFilePointerToName.get(this.$fileName.toNumber());
+    console.log("DefaultFileHandler.rename0: " + pathname);
+    console.log("newName: " + util.fromJavaString(newName));
+    if (!fs.rename(pathname, util.fromJavaString(newName))) {
+        throw $.newIOException("Rename failed");
+    }
 };
