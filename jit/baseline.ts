@@ -22,6 +22,13 @@ module J2ME {
   export var baselineCounter = null; // new Metrics.Counter(true);
 
   /**
+   * The preemption check should be quick. We don't always want to measure
+   * time so we use a quick counter and mask to determine when to do the
+   * more expensive preemption check.
+   */
+  var preemptionSampleMask = 0xFF;
+
+  /**
    * Expressions to inline for commonly invoked methods.
    */
   var inlineMethods = {
@@ -871,7 +878,8 @@ module J2ME {
     }
 
     private emitPreemptionCheck(emitter: Emitter, nextPC: string) {
-      emitter.writeLn("CP();");
+      emitter.writeLn("PS ++;");
+      emitter.writeLn("if ((PS & " + preemptionSampleMask + ") === 0) PE();");
       this.emitUnwind(emitter, String(nextPC), String(nextPC));
     }
 
