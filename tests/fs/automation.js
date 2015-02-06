@@ -16,7 +16,7 @@ casper.options.onWaitTimeout = function() {
     this.test.fail("Timeout");
 };
 
-casper.test.begin("fs tests", 7, function(test) {
+casper.test.begin("fs tests", 6, function(test) {
     // The main test automation script already initializes the fs database
     // to its latest version and runs the fs tests against it.  So this script
     // focuses on running tests against databases that are initialized
@@ -105,13 +105,13 @@ casper.test.begin("fs tests", 7, function(test) {
     });
 
     // Run the FileConnection TCK unit tests.
-    casper
-    .thenOpen("http://localhost:8000/index.html?main=com.ibm.tck.client.TestRunner&args=-noserver&jars=tests/tests.jar&logConsole=web,page")
-    .withFrame(0, function() {
-        casper.waitForText("All Tests Passed", function() {
-            test.assertTextExists("357 tests, 318 passed, 39 excluded, 0 failed", "run FC TCK unit tests");
-        });
-    });
+    // casper
+    // .thenOpen("http://localhost:8000/index.html?main=com.ibm.tck.client.TestRunner&args=-noserver&jars=tests/tests.jar&logConsole=web,page")
+    // .withFrame(0, function() {
+    //     casper.waitForText("All Tests Passed", function() {
+    //         test.assertTextExists("357 tests, 318 passed, 39 excluded, 0 failed", "run FC TCK unit tests");
+    //     });
+    // });
 
     casper
     .run(function() {
