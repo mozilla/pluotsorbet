@@ -21,6 +21,7 @@ toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(call toBool,$(PROFILE)) \
+             -D JSR_256=$(JSR_256) \
              -D VERSION=$(VERSION)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)

@@ -43,6 +43,9 @@ cat $PACKAGE_DIR/config/app.js >> $PACKAGE_DIR/config/midlet.js && rm $PACKAGE_D
 
 # copy entire contents of midp dir
 cp -R midp $PACKAGE_DIR/.
+if [ "$JSR_256" == "0" ]; then
+    rm $PACKAGE_DIR/midp/sensor.js
+fi
 
 # copy entire contents of style dir
 cp -R style $PACKAGE_DIR/.
