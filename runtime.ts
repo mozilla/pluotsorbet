@@ -875,15 +875,8 @@ module J2ME {
         });
         initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
-        // release || assert(!U);
+        release || assert(!U, "Unwinding during static initializer not supported.");
 
-        //// TODO: monitorEnter
-        //if (klass.staticInitializer) {
-        //  klass.staticInitializer.call(runtimeKlass);
-        //}
-        //if (klass.staticConstructor) {
-        //  klass.staticConstructor.call(runtimeKlass);
-        //}
         return runtimeKlass;
       }
     });

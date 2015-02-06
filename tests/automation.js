@@ -126,7 +126,6 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
                 if (failed === "0") {
                     test.pass('main unit tests');
                 } else {
-                    this.echo("data:image/png;base64," + this.captureBase64('png'));
                     test.fail(failed + " unit test(s) failed");
                 }
             }
