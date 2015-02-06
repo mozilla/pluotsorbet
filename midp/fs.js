@@ -626,22 +626,10 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
     MIDP.openFiles.delete(this.$fileName);
 };
 
-MIDP.nativeFileNameToPointer = new Map();
-MIDP.nativeFilePointerToName = new Map();
-MIDP.lastNativeFilePointer = 0;
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativeName.(Ljava/lang/String;J)J"] = function(name, oldName) {
-    name = fs.normalize(util.fromJavaString(name));
-    var pointer;
-    if (MIDP.nativeFileNameToPointer.has(name)) {
-        pointer = MIDP.nativeFileNameToPointer.get(name);
-    } else {
-        pointer = ++MIDP.lastNativeFilePointer;
-        MIDP.nativeFileNameToPointer.set(name, pointer);
-        MIDP.nativeFilePointerToName.set(pointer, name);
-    }
-console.log(name + " has pointer " + pointer);
-    return Long.fromNumber(pointer);
-};
+// Not implemented because we don't use native pointers, so we've commented out
+// calls to this private method in DefaultFileHandler.
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativeName.(Ljava/lang/String;J)J",
+                       Long.fromNumber(0));
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getFileSeparator.()C"] = function() {
     return "/".charCodeAt(0);

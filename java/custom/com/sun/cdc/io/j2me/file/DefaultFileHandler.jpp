@@ -48,6 +48,9 @@ class DefaultFileHandler implements BaseFileHandler {
     /** Write handle. */
     private int writeHandle = 0;
 
+    /**
+     * The full native path to the file.  Used by natives to access the file.
+     */
     private String nativePath;
 
     /** File name. */
@@ -96,14 +99,15 @@ class DefaultFileHandler implements BaseFileHandler {
         }
 
         nativePath = getFullNativePath(rootName, fileName, true);
-        if (nativePath != null) {
-            this.fileName = getNativeName(nativePath, this.fileName);
-        } else {
-            if (Logging.REPORT_LEVEL <= Logging.ERROR) {
-                Logging.report(Logging.ERROR, LogChannels.LC_STORAGE,
-                    "connect(): unable to get native path");
-            }
-        }
+        // We don't set this.fileName because we don't use native pointers.
+        // if (nativePath != null) {
+        //     this.fileName = getNativeName(nativePath, this.fileName);
+        // } else {
+        //     if (Logging.REPORT_LEVEL <= Logging.ERROR) {
+        //         Logging.report(Logging.ERROR, LogChannels.LC_STORAGE,
+        //             "connect(): unable to get native path");
+        //     }
+        // }
         return nativePath;
     }
 
@@ -547,9 +551,10 @@ class DefaultFileHandler implements BaseFileHandler {
             return null;
         }
 
-        if (storeRootDir) {
-            this.rootDir = getNativeName(rootPath, this.rootDir);
-        }
+        // We don't set this.rootDir because we don't use native pointers.
+        // if (storeRootDir) {
+        //     this.rootDir = getNativeName(rootPath, this.rootDir);
+        // }
 
         StringBuffer name = new StringBuffer(rootPath);
         int rootPathLen = name.length();
