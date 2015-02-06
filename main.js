@@ -149,7 +149,7 @@ if (config.downloadJAD) {
   }).then(backgroundCheck));
 }
 
-if (config.midletClassName == "RunTests") {
+if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"));
