@@ -242,7 +242,6 @@ java/util/Hashtable.rehash.()V
 java/lang/Class.getResourceAsStream.(Ljava/lang/String;)Ljava/io/InputStream;
 com/sun/cldc/io/ResourceInputStream.<init>.(Ljava/lang/String;)V
 com/sun/midp/io/j2me/file/Protocol.<init>.()V
-com/sun/midp/io/j2me/file/Protocol.openPrim.(Ljava/lang/String;IZ)Ljavax/microedition/io/Connection;
 java/lang/Thread.<init>.()V
 java/lang/Boolean.equals.(Ljava/lang/Object;)Z
 java/lang/Integer.equals.(Ljava/lang/Object;)Z
