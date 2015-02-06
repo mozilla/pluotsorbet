@@ -639,7 +639,7 @@ var fs = (function() {
 
     record.data = record.data.slice(0, size || 0, record.data.type);
     record.mtime = Date.now();
-    record.size = size;
+    record.size = size || 0;
     store.setItem(path, record);
     return true;
   }
