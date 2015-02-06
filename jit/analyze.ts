@@ -24,6 +24,8 @@ module J2ME {
    * at the right spots.
    */
   export var yieldMap = {
+    "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V": YieldReason.Root,
+    "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V": YieldReason.Root,
     "java/lang/Thread.sleep.(J)V": YieldReason.Root,
     "com/sun/cldc/isolate/Isolate.waitStatus.(I)V": YieldReason.Root,
     "com/sun/midp/links/LinkPortal.getLinkCount0.()I": YieldReason.Root,
@@ -64,8 +66,6 @@ module J2ME {
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.dumbPipe.()Z": YieldReason.Root,
     "gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I": YieldReason.Root,
-
-
   };
 
   export var yieldVirtualMap = {
