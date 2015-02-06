@@ -66,6 +66,8 @@ public class FileSystemRegistry {
             throw new NullPointerException();
         }
 
+        // Commented out because we don't need to perform security checks
+        // for a filesystem that is only ever used by a single midlet.
         // checkReadPermission();
 
         // Create and register file system events listener
@@ -98,7 +100,10 @@ public class FileSystemRegistry {
 
     // JAVADOC COMMENT ELIDED
     public static Enumeration listRoots() {
+        // Commented out because we don't need to perform security checks
+        // for a filesystem that is only ever used by a single midlet.
         // checkReadPermission();
+
         // retrieve up-to-date list of mounted roots
         return Protocol.listRoots().elements();
     }

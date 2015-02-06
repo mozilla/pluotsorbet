@@ -750,6 +750,8 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
      * opening permission check fails.
      */
     protected void inputStreamPermissionCheck() throws InterruptedIOException {
+        // Commented out because we don't need to perform security checks
+        // for a filesystem that is only ever used by a single midlet.
         // checkReadPermission();
     }
 
@@ -758,6 +760,8 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
      * opening permission check fails.
      */
     protected void outputStreamPermissionCheck() throws InterruptedIOException {
+        // Commented out because we don't need to perform security checks
+        // for a filesystem that is only ever used by a single midlet.
         // checkWritePermission();
     }
 
@@ -965,14 +969,18 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
 
         connect(fileRoot, filePath + fileName);
 
+        // Added so we continue to pass a test in TestFileConnection
+        // that asserts that Connector.open throws an IOException if there are
+        // illegal characters in the filename.
         checkIllegalChars(fileName);
 
         // Perform security checks before any object state changes since
         // this method is used not only by Connector.open() but
         // by FileConnection.setFileConnection() too.
-        // XXX Commented out because we don't need to perform security checks
+        //
+        // Commented out because we don't need to perform security checks
         // for a filesystem that is only ever used by a single midlet.
-        // TODO: scrub these security checks from the code more completely.
+        //
         // switch (mode) {
         // case Connector.READ:
         //     checkReadPermission(nativePathName, mode);
@@ -1197,6 +1205,8 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
         }
     }
 
+    // Override the superclass's implementation, which always returns 0,
+    // with a native that returns the actual number of bytes available.
     native public int available() throws IOException;
 }
 /**

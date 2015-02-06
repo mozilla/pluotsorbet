@@ -566,33 +566,35 @@ class DefaultFileHandler implements BaseFileHandler {
         }
 
         // If the file is in the private directory, adjust the path
-        String privateDirURL =
-            Configuration.getSystemProperty("fileconn.dir.private");
-        if (privateDirURL != null) {
-            int privateDirURLLen = privateDirURL.length();
-
-            /*
-             * Check if fileName starts with the private directory path,
-             * i.e. private directory URL without leading "file:///".
-             * The first '/' in fileName is skipped.
-             */
-            if (privateDirURLLen > 0 && fileName.regionMatches(true, 1,
-                privateDirURL, PREFIX_LEN, privateDirURLLen - PREFIX_LEN)) {
-
-                // Length of the private directory path, i.e. without leading
-                // ("file:///" + rootName)
-                int privatePathLen = privateDirURLLen - PREFIX_LEN -
-                    rootNameLen;
-
-                // Insert suite ID immediately after the private directory path
-                // XXX Commented out because each installation is configured
-                // to install and run a single midlet, so it isn't necessary
-                // to partition the Private filesystem root in this way.
-                // name.insert(rootPathLen + privatePathLen,
-                //     getSuiteIdString(AppPackage.getInstance().getId()) +
-                //     getFileSeparator());
-            }
-        }
+        //
+        // Commented out because each installation is configured
+        // to install and run a single midlet, so it isn't necessary
+        // to partition the Private filesystem root in this way.
+        //
+        // String privateDirURL =
+        //     Configuration.getSystemProperty("fileconn.dir.private");
+        // if (privateDirURL != null) {
+        //     int privateDirURLLen = privateDirURL.length();
+        //
+        //     /*
+        //      * Check if fileName starts with the private directory path,
+        //      * i.e. private directory URL without leading "file:///".
+        //      * The first '/' in fileName is skipped.
+        //      */
+        //     if (privateDirURLLen > 0 && fileName.regionMatches(true, 1,
+        //         privateDirURL, PREFIX_LEN, privateDirURLLen - PREFIX_LEN)) {
+        //
+        //         // Length of the private directory path, i.e. without leading
+        //         // ("file:///" + rootName)
+        //         int privatePathLen = privateDirURLLen - PREFIX_LEN -
+        //             rootNameLen;
+        //
+        //         // Insert suite ID immediately after the private directory path
+        //         name.insert(rootPathLen + privatePathLen,
+        //             getSuiteIdString(AppPackage.getInstance().getId()) +
+        //             getFileSeparator());
+        //     }
+        // }
 
         pathToNativeSeparator(name, rootPathLen,
             name.length() - rootPathLen);
