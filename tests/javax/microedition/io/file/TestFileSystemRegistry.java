@@ -7,6 +7,9 @@ import java.util.Enumeration;
 import javax.microedition.io.Connector;
 
 public class TestFileSystemRegistry implements Testlet {
+    public int getExpectedPass() { return 5; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
 
     public void test(TestHarness th) {
         try {

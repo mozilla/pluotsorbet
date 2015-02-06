@@ -31,6 +31,9 @@ import java.util.Vector;
  */
 public class copyInto implements Testlet 
 {
+  public int getExpectedPass() { return 11; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   /**
    * Runs the test using the specified harness.

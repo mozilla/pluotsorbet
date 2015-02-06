@@ -30,6 +30,9 @@ class TestScreenWithoutFocus extends Canvas {
 }
 
 public class TestTextEditorFocus implements Testlet {
+    public int getExpectedPass() { return 9; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 1; }
     private native boolean isTextEditorReallyFocused(TextEditor textEditor);
 
     public void test(TestHarness th) {

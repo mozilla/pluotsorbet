@@ -26,6 +26,9 @@ import gnu.testlet.TestHarness;
 
 public class ObjectTest	implements Testlet
 {
+	public int getExpectedPass() { return 0; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	boolean finFlag = false;
 
   protected static TestHarness harness;

@@ -69,13 +69,6 @@ var gfxTests = [
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
 ];
 
-var expectedUnitTestResults = [
-  { name: "pass", number: 71563 },
-  { name: "fail", number: 0 },
-  { name: "known fail", number: 215 },
-  { name: "unknown pass", number: 0 }
-];
-
 /**
  * Add a step that syncs the virtual filesystem to the persistent datastore,
  * to ensure all changes are synced before we move to the next step.
@@ -123,23 +116,18 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     function basicUnitTests() {
         casper.waitForText("DONE", function() {
             var content = this.getPageContent();
-            var regex = /DONE: (\d+) pass, (\d+) fail, (\d+) known fail, (\d+) unknown pass/;
+            var regex = /DONE: (\d+) class pass, (\d+) class fail/;
             var match = content.match(regex);
-            if (!match || !match.length || match.length < 5) {
+            if (!match || !match.length || match.length < 3) {
                 this.echo("data:image/png;base64," + this.captureBase64('png'));
                 test.fail('failed to parse status line of main unit tests');
             } else {
-                var msg = "";
-                for (var i = 0; i < expectedUnitTestResults.length; i++) {
-                    if (match[i+1] != expectedUnitTestResults[i].number) {
-                        msg += "\n\tExpected " + expectedUnitTestResults[i].number + " " + expectedUnitTestResults[i].name + ". Got " + match[i+1];
-                    }
-                }
-                if (!msg) {
+                var failed = match[2];
+                if (failed === "0") {
                     test.pass('main unit tests');
                 } else {
                     this.echo("data:image/png;base64," + this.captureBase64('png'));
-                    test.fail(msg);
+                    test.fail(failed + " unit test(s) failed");
                 }
             }
             syncFS();
