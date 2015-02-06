@@ -6,11 +6,14 @@ RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 
+JSR_256 ?= 1
+export JSR_256
+
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(JSR_256)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 

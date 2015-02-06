@@ -1,4 +1,10 @@
-SRCS=$(shell find . -not -path "./support/*" -name "*.java")
+EXCLUDED="./support/*"
+
+ifeq ($(JSR_256),0)
+EXCLUDED += "./javax/microedition/sensor/*"
+endif
+
+SRCS=$(shell find . $(foreach path,$(EXCLUDED),-not -path $(path)) -name "*.java")
 JASMIN_SRCS=$(shell find . -name "*.j")
 
 BUILDTIME_SUPPORT_DIR=support/buildtime
