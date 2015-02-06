@@ -355,22 +355,275 @@ Native["javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang
     return array;
 };
 
-addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.initialize.()V");
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.create: " + pathname);
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;"] = function() {
-    return J2ME.newString('<>:"\\|?');
+    var stat = fs.stat(pathname);
+
+    if (stat !== null || !fs.create(pathname, new Blob())) {
+        throw $.newIOException("error creating " + pathname);
+    }
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getFileSeparator.()C"] = function() {
-    return "/".charCodeAt(0);
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.exists.()Z"] = function() {
+    // console.log("exists: " + [p for (p in this)].join(","));
+    // console.log("exists: " + (this["$fileName"].toNumber()));
+    var pathname = util.fromJavaString(this.$nativePath);
+    var exists = fs.exists(pathname);
+    console.log("DefaultFileHandler.exists: " + pathname + " " + exists);
+    return exists ? 1 : 0;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isDirectory.()Z"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    var stat = fs.stat(pathname);
+    var isDirectory = !!stat && stat.isDir;
+    console.log("DefaultFileHandler.isDirectory: " + pathname + " " + (isDirectory));
+    return isDirectory ? 1 : 0;
 }
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativePathForRoot.(Ljava/lang/String;)Ljava/lang/String;"] =
-function(root) {
-// XXX Ensure root is in MIDP.fsRoots?
-console.log("getNativePathForRoot: " + util.fromJavaString(root));
-    var nativePath = J2ME.newString("/" + util.fromJavaString(root));
-    return nativePath;
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.delete.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.delete: " + pathname);
+    if (!fs.remove(pathname)) {
+        throw $.newIOException();
+    }
+};
+
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)V"] = function(newName) {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("current nativePath: " + util.fromJavaString(this.$nativePath));
+    console.log("DefaultFileHandler.rename0: " + pathname);
+    console.log("newName: " + fs.normalize(util.fromJavaString(newName)));
+    if (fs.exists(util.fromJavaString(newName)) || !fs.rename(pathname, util.fromJavaString(newName))) {
+        throw $.newIOException("Rename failed");
+    }
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(byteOffset) {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.lastModified: " + pathname);
+
+    var stat = fs.stat(pathname);
+
+    if (!stat) {
+        throw $.newIOException("file does not exist");
+    }
+
+    if (stat.isDir) {
+        throw $.newIOException("file is directory");
+    }
+
+    // TODO If the file is open, flush it first.
+
+    fs.truncate(pathname, byteOffset.toNumber());
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.fileSize: " + pathname);
+
+    return Long.fromNumber(fs.size(pathname));
+};
+
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J", Long.fromNumber(0));
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.canRead: " + pathname);
+    return fs.exists(pathname) ? 1 : 0;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canWrite.()Z"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.canWrite: " + pathname);
+    return fs.exists(pathname) ? 1 : 0;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isHidden0.()Z"] = function() {
+    // Per the comment in DefaultFileHandler.isHidden, we pretend we're Unix
+    // and always return false.
+    return 0;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    if (!fs.exists(pathname)) {
+        throw $.newIOException("file does not exist");
+    }
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    if (!fs.exists(pathname)) {
+        throw $.newIOException("file does not exist");
+    }
+};
+
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.setHidden0.(Z)V");
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.mkdir.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.mkdir: " + pathname);
+
+    if (!fs.mkdir(pathname)) {
+        throw $.newIOException("error creating " + pathname);
+    };
+};
+
+// Pretend there is 1GiB in total and available.
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.availableSize.()J",
+                       Long.fromNumber(1024 * 1024 * 1024));
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.totalSize.()J",
+                       Long.fromNumber(1024 * 1024 * 1024));
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.lastModified: " + pathname);
+    var stat = fs.stat(pathname);
+    return Long.fromNumber(stat != null ? stat.mtime : 0);
+};
+
+MIDP.openFiles = new Map();
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.openForRead: " + pathname);
+
+    var fileNumber = this.$fileName;
+    if (MIDP.openFiles.has(fileNumber)) {
+        // Already open.
+        // XXX Should we track position separately for the input and output
+        // streams?
+        var fd = MIDP.openFiles.get(fileNumber);
+        fs.setpos(fd, 0);
+        return;
+    }
+
+    var stat = fs.stat(pathname);
+    if (!stat) {
+        throw $.newIOException("file doesn't exist");
+    }
+    if (stat.isDir) {
+        throw $.newIOException("file is a directory");
+    }
+
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.open(pathname, function(fd) {
+            // The key is the $fileName Long, not the primitive number
+            // it represents, so a file can be opened by multiple handlers.
+            MIDP.openFiles.set(fileNumber, fd);
+            resolve();
+        });
+    }));
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForRead.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.closeForRead: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+    fs.close(fd);
+    MIDP.openFiles.delete(this.$fileName);
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.openForWrite: " + pathname);
+
+    var fileNumber = this.$fileName;
+    if (MIDP.openFiles.has(fileNumber)) {
+        // Already open.
+        return;
+    }
+
+    var stat = fs.stat(pathname);
+    if (!stat) {
+        throw $.newIOException("file doesn't exist");
+    }
+    if (stat.isDir) {
+        throw $.newIOException("file is a directory");
+    }
+
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.open(pathname, function(fd) {
+            // The key is the $fileName Long, not the primitive number
+            // it represents, so a file can be opened by multiple handlers.
+            MIDP.openFiles.set(fileNumber, fd);
+            resolve();
+        });
+    }));
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForWrite.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.closeForWrite: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+    fs.close(fd);
+    MIDP.openFiles.delete(this.$fileName);
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.closeForReadWrite: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+    fs.close(fd);
+    MIDP.openFiles.delete(this.$fileName);
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.read: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+
+    if (off < 0 || len < 0 || off > b.byteLength || (b.byteLength - off) < len) {
+        throw $.newIOException();
+    }
+
+    if (b.byteLength == 0 || len == 0) {
+        return 0;
+    }
+
+    var curpos = fs.getpos(fd);
+    var data = fs.read(fd, curpos, curpos + len);
+    b.set(data, off);
+
+    return (data.byteLength > 0) ? data.byteLength : -1;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.write: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+    fs.write(fd, b.subarray(off, off + len));
+    // The "length of data really written," which is always the length requested
+    // in our implementation.
+    return len;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.positionForWrite: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+    fs.setpos(fd, offset.toNumber());
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.flush: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+    if (fd) {
+        fs.flush(fd);
+    }
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
+    var pathname = util.fromJavaString(this.$nativePath);
+    console.log("DefaultFileHandler.close: " + pathname);
+    var fd = MIDP.openFiles.get(this.$fileName);
+    fs.close(fd);
+    MIDP.openFiles.delete(this.$fileName);
 };
 
 MIDP.nativeFileNameToPointer = new Map();
@@ -390,43 +643,8 @@ console.log(name + " has pointer " + pointer);
     return Long.fromNumber(pointer);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getSuiteIdString.(I)Ljava/lang/String;"] = function(id) {
-console.log("getSuiteIdString: " + id);
-    // return J2ME.newString(id.toString());
-    // The implementation adds this to the path of the file, presumably
-    // to segregate files by midlet, but we only run a single midlet
-    // per installation, so presumably we don't have to do that.
-    return J2ME.newString("");
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.exists.()Z"] = function() {
-    // console.log("exists: " + [p for (p in this)].join(","));
-    // console.log("exists: " + (this["$fileName"].toNumber()));
-    var pathname = util.fromJavaString(this.$nativePath);
-    var exists = fs.exists(pathname);
-    console.log("DefaultFileHandler.exists: " + pathname + " " + exists);
-    return exists ? 1 : 0;
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.mkdir.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.mkdir: " + pathname);
-
-    if (!fs.mkdir(pathname)) {
-        throw $.newIOException("error creating " + pathname);
-    };
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getMountedRoots.()Ljava/lang/String;"] = function() {
-    return J2ME.newString(MIDP.fsRoots.join("\n"));
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isDirectory.()Z"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    var stat = fs.stat(pathname);
-    var isDirectory = !!stat && stat.isDir;
-    console.log("DefaultFileHandler.isDirectory: " + pathname + " " + (isDirectory));
-    return isDirectory ? 1 : 0;
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getFileSeparator.()C"] = function() {
+    return "/".charCodeAt(0);
 }
 
 MIDP.openDirs = new Map();
@@ -469,208 +687,31 @@ console.log(iterator.index + " " + nextFile);
     return nextFile ? J2ME.newString(nextFile) : null;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.create: " + pathname);
-
-    var stat = fs.stat(pathname);
-
-    if (stat !== null || !fs.create(pathname, new Blob())) {
-        throw $.newIOException("error creating " + pathname);
-    }
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getMountedRoots.()Ljava/lang/String;"] = function() {
+    return J2ME.newString(MIDP.fsRoots.join("\n"));
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.fileSize: " + pathname);
-
-    return Long.fromNumber(fs.size(pathname));
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativePathForRoot.(Ljava/lang/String;)Ljava/lang/String;"] =
+function(root) {
+// XXX Ensure root is in MIDP.fsRoots?
+console.log("getNativePathForRoot: " + util.fromJavaString(root));
+    var nativePath = J2ME.newString("/" + util.fromJavaString(root));
+    return nativePath;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canWrite.()Z"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.canWrite: " + pathname);
-    return fs.exists(pathname) ? 1 : 0;
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;"] = function() {
+    return J2ME.newString('<>:"\\|?');
 };
 
-MIDP.openFiles = new Map();
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.initialize.()V");
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.openForWrite: " + pathname);
-
-    var fileNumber = this.$fileName;
-    if (MIDP.openFiles.has(fileNumber)) {
-        // Already open.
-        return;
-    }
-
-    var stat = fs.stat(pathname);
-    if (!stat) {
-        throw $.newIOException("file doesn't exist");
-    }
-    if (stat.isDir) {
-        throw $.newIOException("file is a directory");
-    }
-
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        fs.open(pathname, function(fd) {
-            // The key is the $fileName Long, not the primitive number
-            // it represents, so a file can be opened by multiple handlers.
-            MIDP.openFiles.set(fileNumber, fd);
-            resolve();
-        });
-    }));
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.positionForWrite: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-    fs.setpos(fd, offset.toNumber());
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.write: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-    fs.write(fd, b.subarray(off, off + len));
-    // The "length of data really written," which is always the length requested
-    // in our implementation.
-    return len;
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.flush: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-    if (fd) {
-        fs.flush(fd);
-    }
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.close: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-    fs.close(fd);
-    MIDP.openFiles.delete(this.$fileName);
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForWrite.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.closeForWrite: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-    fs.close(fd);
-    MIDP.openFiles.delete(this.$fileName);
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.canRead: " + pathname);
-    return fs.exists(pathname) ? 1 : 0;
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.openForRead: " + pathname);
-
-    var fileNumber = this.$fileName;
-    if (MIDP.openFiles.has(fileNumber)) {
-        // Already open.
-        // XXX Should we track position separately for the input and output
-        // streams?
-        var fd = MIDP.openFiles.get(fileNumber);
-        fs.setpos(fd, 0);
-        return;
-    }
-
-    var stat = fs.stat(pathname);
-    if (!stat) {
-        throw $.newIOException("file doesn't exist");
-    }
-    if (stat.isDir) {
-        throw $.newIOException("file is a directory");
-    }
-
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        fs.open(pathname, function(fd) {
-            // The key is the $fileName Long, not the primitive number
-            // it represents, so a file can be opened by multiple handlers.
-            MIDP.openFiles.set(fileNumber, fd);
-            resolve();
-        });
-    }));
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.read: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-
-    if (off < 0 || len < 0 || off > b.byteLength || (b.byteLength - off) < len) {
-        throw $.newIOException();
-    }
-
-    if (b.byteLength == 0 || len == 0) {
-        return 0;
-    }
-
-    var curpos = fs.getpos(fd);
-    var data = fs.read(fd, curpos, curpos + len);
-    b.set(data, off);
-
-    return (data.byteLength > 0) ? data.byteLength : -1;
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForRead.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.closeForRead: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-    fs.close(fd);
-    MIDP.openFiles.delete(this.$fileName);
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.closeForReadWrite: " + pathname);
-    var fd = MIDP.openFiles.get(this.$fileName);
-    fs.close(fd);
-    MIDP.openFiles.delete(this.$fileName);
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.delete.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.delete: " + pathname);
-    if (!fs.remove(pathname)) {
-        throw $.newIOException();
-    }
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.lastModified: " + pathname);
-    var stat = fs.stat(pathname);
-    return Long.fromNumber(stat != null ? stat.mtime : 0);
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(byteOffset) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("DefaultFileHandler.lastModified: " + pathname);
-
-    var stat = fs.stat(pathname);
-
-    if (!stat) {
-        throw $.newIOException("file does not exist");
-    }
-
-    if (stat.isDir) {
-        throw $.newIOException("file is directory");
-    }
-
-    // TODO If the file is open, flush it first.
-
-    fs.truncate(pathname, byteOffset.toNumber());
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getSuiteIdString.(I)Ljava/lang/String;"] = function(id) {
+console.log("getSuiteIdString: " + id);
+    // return J2ME.newString(id.toString());
+    // The implementation adds this to the path of the file, presumably
+    // to segregate files by midlet, but we only run a single midlet
+    // per installation, so presumably we don't have to do that.
+    return J2ME.newString("");
 };
 
 Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
@@ -679,43 +720,4 @@ Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
     var available = fs.getsize(fd) - fs.getpos(fd);
     console.log("Protocol.available: " + pathname + ": " + available);
     return available;
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)V"] = function(newName) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    console.log("current nativePath: " + util.fromJavaString(this.$nativePath));
-    console.log("DefaultFileHandler.rename0: " + pathname);
-    console.log("newName: " + fs.normalize(util.fromJavaString(newName)));
-    if (fs.exists(util.fromJavaString(newName)) || !fs.rename(pathname, util.fromJavaString(newName))) {
-        throw $.newIOException("Rename failed");
-    }
-};
-
-// Pretend there is 1GiB in total and available.
-addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.totalSize.()J",
-                       Long.fromNumber(1024 * 1024 * 1024));
-addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.availableSize.()J",
-                       Long.fromNumber(1024 * 1024 * 1024));
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    if (!fs.exists(pathname)) {
-        throw $.newIOException("file does not exist");
-    }
-};
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    if (!fs.exists(pathname)) {
-        throw $.newIOException("file does not exist");
-    }
-};
-
-addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J", Long.fromNumber(0));
-addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.setHidden0.(Z)V");
-
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isHidden0.()Z"] = function() {
-    // Per the comment in DefaultFileHandler.isHidden, we pretend we're Unix
-    // and always return false.
-    return 0;
 };
