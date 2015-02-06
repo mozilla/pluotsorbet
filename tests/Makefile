@@ -1,7 +1,10 @@
 EXCLUDED="./support/*"
 
 ifeq ($(JSR_256),0)
-EXCLUDED += "./javax/microedition/sensor/*"
+EXCLUDED += \
+  "./javax/microedition/sensor/*" \
+  "./midlets/Cottage360/*" \
+  $(NULL)
 endif
 
 SRCS=$(shell find . $(foreach path,$(EXCLUDED),-not -path $(path)) -name "*.java")
@@ -16,7 +19,6 @@ PACKAGE_FILES = \
   gnu/testlet/vm/test.png \
   gfx/images/* \
   midlets/test.png \
-  midlets/Cottage360/res/* \
   midlets/favouriteartists/images/* \
   midlets/blogwriter/images/* \
   midlets/rlinks/images/* \
@@ -28,6 +30,10 @@ PACKAGE_FILES = \
   javax/microedition/media/audio.amr \
   javax/microedition/media/hello.ogg \
   $(NULL)
+
+ifeq ($(JSR_256),1)
+PACKAGE_FILES += midlets/Cottage360/res/*
+endif
 
 all: tests.jar
 
