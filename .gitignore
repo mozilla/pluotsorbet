@@ -44,6 +44,7 @@ java/midp/javax/microedition/lcdui/MMHelperImpl.java
 java/midp/javax/wireless/messaging/MessageConnection.java
 java/midp/com/sun/amms/DirectSoundSource3D.java
 java/midp/com/sun/amms/GlobalMgrImpl.java
+java/midp/com/sun/cdc/io/j2me/file/DefaultFileHandler.java
 java/midp/com/sun/jsr082/bluetooth/BCC.java
 java/midp/com/sun/jsr082/bluetooth/JavacallBluetoothStack.java
 java/midp/com/sun/jsr082/bluetooth/SDDB.java
