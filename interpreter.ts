@@ -83,12 +83,12 @@ module J2ME {
   function checkReturnValue(methodInfo: MethodInfo, returnValue: any) {
     if (U) {
       if (typeof returnValue !== "undefined") {
-        assert(false, "Expected undefined return value during unwind, got " + returnValue);
+        assert(false, "Expected undefined return value during unwind, got " + returnValue + " in " + methodInfo.implKey);
       }
       return;
     }
     if (!(getKindCheck(methodInfo.getReturnKind())(returnValue))) {
-      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue);
+      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue + " in " + methodInfo.implKey);
     }
   }
 
