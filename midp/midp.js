@@ -975,30 +975,22 @@ MIDP.copyEvent = function(obj, isolateId) {
         if (e[field.name] === undefined) {
           return;
         }
+
         field.set(obj, e[field.name]);
     });
 }
 
-MIDP.deliverWaitForNativeEventResult = function(resolve, nativeEvent, isolateId) {
-    if (MIDP.nativeEventQueues[isolateId].length > 0)
-        MIDP.copyEvent(nativeEvent, isolateId);
-    resolve(MIDP.nativeEventQueues[isolateId].length);
-}
-
-MIDP.sendEvent = function(obj, isolateId) {
-    var e = { type: obj.klass.classInfo.getField("I.type.I").get(obj) };
-    obj.klass.classInfo.fields.forEach(function(field) {
-        e[field.name] = field.get(obj);
-    });
-    MIDP.sendNativeEvent(e, isolateId);
-}
-
 MIDP.sendNativeEvent = function(e, isolateId) {
     MIDP.nativeEventQueues[isolateId].push(e);
+
     var elem = MIDP.waitingNativeEventQueue[isolateId];
-    if (!elem)
+    if (!elem) {
         return;
-    MIDP.deliverWaitForNativeEventResult(elem.resolve, elem.nativeEvent, isolateId);
+    }
+
+    MIDP.copyEvent(elem.nativeEvent, isolateId);
+    elem.resolve(MIDP.nativeEventQueues[isolateId].length);
+
     delete MIDP.waitingNativeEventQueue[isolateId];
 }
 
@@ -1049,38 +1041,29 @@ Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = functio
 };
 
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
-    console.warn("EventQueue.resetNativeEventQueue.()V not implemented");
+    MIDP.nativeEventQueues[$.ctx.runtime.isolate.id] = [];
 };
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
 function(obj, isolateId) {
-    if (!MIDP.nativeEventQueues[isolateId]) {
-      MIDP.nativeEventQueues[isolateId] = [];
-    }
-
-    MIDP.sendEvent(obj, isolateId);
+    MIDP.sendNativeEvent(obj, isolateId);
 };
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
 function(nativeEvent) {
-    var ctx = $.ctx;
+    var isolateId = $.ctx.runtime.isolate.id;
+    var nativeEventQueueLen = MIDP.nativeEventQueues[isolateId].length;
+
+    if (nativeEventQueueLen !== 0) {
+        MIDP.copyEvent(nativeEvent, isolateId);
+        return nativeEventQueueLen;
+    }
+
     asyncImpl("I", new Promise(function(resolve, reject) {
-        ctx.setAsCurrentContext();
-        var isolateId = ctx.runtime.isolate.id;
-
-        if (!MIDP.nativeEventQueues[isolateId]) {
-          MIDP.nativeEventQueues[isolateId] = [];
-        }
-
-        if (MIDP.nativeEventQueues[isolateId].length === 0) {
-            MIDP.waitingNativeEventQueue[isolateId] = {
-              resolve: resolve,
-              nativeEvent: nativeEvent,
-            };
-            return;
-        }
-
-        MIDP.deliverWaitForNativeEventResult(resolve, nativeEvent, isolateId);
+        MIDP.waitingNativeEventQueue[isolateId] = {
+            resolve: resolve,
+            nativeEvent: nativeEvent,
+        };
     }));
 };
 
@@ -1136,7 +1119,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(dis
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
     var obj = J2ME.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent").klass);
     obj.klass.classInfo.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
-    MIDP.sendEvent(obj, $.ctx.runtime.isolate.id);
+    MIDP.sendNativeEvent(obj, $.ctx.runtime.isolate.id);
 };
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {
