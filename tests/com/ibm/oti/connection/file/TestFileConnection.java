@@ -415,7 +415,8 @@ public class TestFileConnection implements Testlet {
             out = file.openOutputStream();
             file.rename("newname");
             th.check(file.getName(), "newname");
-            file.delete();
+            out.close();
+            file.close();
 
             // The file with the old name doesn't exist anymore.
             file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");

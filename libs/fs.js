@@ -661,12 +661,14 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs remove " + path); }
 
     if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
+      if (DEBUG_FS) { console.log("file is open"); }
       return false;
     }
 
     var record = store.getItem(path);
 
     if (!record) {
+      if (DEBUG_FS) { console.log("file does not exist"); }
       return false;
     }
 
@@ -674,6 +676,7 @@ var fs = (function() {
     if (record.isDir) {
       for (var value of store.map.values()) {
         if (value && value.parentDir === path) {
+          if (DEBUG_FS) { console.log("directory is not empty"); }
           return false;
         }
       }
