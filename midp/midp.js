@@ -980,6 +980,14 @@ MIDP.copyEvent = function(obj, isolateId) {
     });
 }
 
+MIDP.sendEvent = function(obj, isolateId) {
+    var e = { type: obj.klass.classInfo.getField("I.type.I").get(obj) };
+    obj.klass.classInfo.fields.forEach(function(field) {
+        e[field.name] = field.get(obj);
+    });
+    MIDP.sendNativeEvent(e, isolateId);
+}
+
 MIDP.sendNativeEvent = function(e, isolateId) {
     MIDP.nativeEventQueues[isolateId].push(e);
 
@@ -1046,7 +1054,7 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() 
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
 function(obj, isolateId) {
-    MIDP.sendNativeEvent(obj, isolateId);
+    MIDP.sendEvent(obj, isolateId);
 };
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
@@ -1119,7 +1127,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(dis
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
     var obj = J2ME.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent").klass);
     obj.klass.classInfo.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
-    MIDP.sendNativeEvent(obj, $.ctx.runtime.isolate.id);
+    MIDP.sendEvent(obj, $.ctx.runtime.isolate.id);
 };
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {
