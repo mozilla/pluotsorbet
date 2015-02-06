@@ -56,6 +56,43 @@ module J2ME {
           "height.I": "height"
         }
       }
+    },
+    "com/sun/midp/events/Event": {
+      fields: {
+        instanceSymbols: {
+          "type.I": "type",
+          "next.Lcom/sun/midp/events/Event;": "next",
+        }
+      }
+    },
+    "com/sun/midp/events/NativeEvent": {
+      fields: {
+        instanceSymbols: {
+          "intParam1.I": "intParam1",
+          "intParam2.I": "intParam2",
+          "intParam3.I": "intParam3",
+          "intParam4.I": "intParam4",
+          "intParam5.I": "intParam5",
+          "intParam6.I": "intParam6",
+          "intParam7.I": "intParam7",
+          "intParam8.I": "intParam8",
+          "intParam9.I": "intParam9",
+          "intParam10.I": "intParam10",
+          "intParam11.I": "intParam11",
+          "intParam12.I": "intParam12",
+          "intParam13.I": "intParam13",
+          "intParam14.I": "intParam14",
+          "intParam15.I": "intParam15",
+          "intParam16.I": "intParam16",
+          "floatParam1.F": "floatParam1",
+          "stringParam1.Ljava/lang/String;": "stringParam1",
+          "stringParam2.Ljava/lang/String;": "stringParam2",
+          "stringParam3.Ljava/lang/String;": "stringParam3",
+          "stringParam4.Ljava/lang/String;": "stringParam4",
+          "stringParam5.Ljava/lang/String;": "stringParam5",
+          "stringParam6.Ljava/lang/String;": "stringParam6",
+        }
+      }
     }
   };
 
@@ -224,6 +261,39 @@ module J2ME {
   export module com.nokia.mid.ui {
     export interface DirectGraphicsImp extends java.lang.Object {
       graphics: javax.microedition.lcdui.Graphics;
+    }
+  }
+
+  export module com.sun.midp.events {
+    export interface Event {
+      type: number;
+      next: com.sun.midp.events.Event;
+    }
+
+    export interface NativeEvent extends com.sun.midp.events.Event {
+      intParam1: number;
+      intParam2: number;
+      intParam3: number;
+      intParam4: number;
+      intParam5: number;
+      intParam6: number;
+      intParam7: number;
+      intParam8: number;
+      intParam9: number;
+      intParam10: number;
+      intParam11: number;
+      intParam12: number;
+      intParam13: number;
+      intParam14: number;
+      intParam15: number;
+      intParam16: number;
+      floatParam1: number;
+      stringParam1: java.lang.String;
+      stringParam2: java.lang.String;
+      stringParam3: java.lang.String;
+      stringParam4: java.lang.String;
+      stringParam5: java.lang.String;
+      stringParam6: java.lang.String;
     }
   }
 }
