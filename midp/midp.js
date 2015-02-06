@@ -975,14 +975,6 @@ MIDP.copyEvent = function(e, obj, isolateId) {
     }
 }
 
-MIDP.sendEvent = function(obj, isolateId) {
-    var e = { type: obj.type };
-    obj.klass.classInfo.fields.forEach(function(field) {
-        e[field.name] = field.get(obj);
-    });
-    MIDP.sendNativeEvent(e, isolateId);
-}
-
 MIDP.sendNativeEvent = function(e, isolateId) {
     var elem = MIDP.waitingNativeEventQueue[isolateId];
     if (!elem) {
@@ -1048,7 +1040,12 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() 
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
 function(obj, isolateId) {
-    MIDP.sendEvent(obj, isolateId);
+    var e = { type: obj.type };
+    obj.klass.classInfo.fields.forEach(function(field) {
+        e[field.name] = field.get(obj);
+    });
+
+    MIDP.sendNativeEvent(e, isolateId);
 };
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
