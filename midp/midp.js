@@ -968,8 +968,7 @@ MIDP.foregroundIsolateId;
 MIDP.nativeEventQueues = {};
 MIDP.waitingNativeEventQueue = {};
 
-MIDP.copyEvent = function(obj, isolateId) {
-    var e = MIDP.nativeEventQueues[isolateId].shift();
+MIDP.copyEvent = function(e, obj, isolateId) {
     obj.klass.classInfo.getField("I.type.I").set(obj, e.type);
     obj.klass.classInfo.fields.forEach(function(field) {
         if (e[field.name] === undefined) {
@@ -989,14 +988,13 @@ MIDP.sendEvent = function(obj, isolateId) {
 }
 
 MIDP.sendNativeEvent = function(e, isolateId) {
-    MIDP.nativeEventQueues[isolateId].push(e);
-
     var elem = MIDP.waitingNativeEventQueue[isolateId];
     if (!elem) {
+        MIDP.nativeEventQueues[isolateId].push(e);
         return;
     }
 
-    MIDP.copyEvent(elem.nativeEvent, isolateId);
+    MIDP.copyEvent(e, elem.nativeEvent, isolateId);
     elem.resolve(MIDP.nativeEventQueues[isolateId].length);
 
     delete MIDP.waitingNativeEventQueue[isolateId];
@@ -1060,11 +1058,11 @@ function(obj, isolateId) {
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
 function(nativeEvent) {
     var isolateId = $.ctx.runtime.isolate.id;
-    var nativeEventQueueLen = MIDP.nativeEventQueues[isolateId].length;
+    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
 
-    if (nativeEventQueueLen !== 0) {
-        MIDP.copyEvent(nativeEvent, isolateId);
-        return nativeEventQueueLen;
+    if (nativeEventQueue.length !== 0) {
+        MIDP.copyEvent(nativeEventQueue.shift(), nativeEvent, isolateId);
+        return nativeEventQueue.length;
     }
 
     asyncImpl("I", new Promise(function(resolve, reject) {
@@ -1077,10 +1075,12 @@ function(nativeEvent) {
 
 Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
 function(obj) {
-    if (!MIDP.nativeEventQueues[$.ctx.runtime.isolate.id].length) {
+    var isolateId = $.ctx.runtime.isolate.id;
+    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
+    if (!nativeEventQueue.length) {
         return 0;
     }
-    MIDP.copyEvent(obj, $.ctx.runtime.isolate.id);
+    MIDP.copyEvent(nativeEventQueue.shift(), obj, isolateId);
     return 1;
 };
 
