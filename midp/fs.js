@@ -20,10 +20,6 @@ MIDP.fsRootNames = [
     "Private",
 ];
 
-function getAbsolutePath(jPath) {
-    return "/" + util.decodeUtf8(jPath);
-}
-
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(storageId) {
     return J2ME.newString("assets/" + storageId + "/");
 };
