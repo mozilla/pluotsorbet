@@ -150,3 +150,7 @@ Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = fu
   result.set(converted);
   return result;
 };
+
+// Many tests create FileConnection objects to files with the "/" root,
+// so add it to the list of valid roots.
+MIDP.fsRoots.push("/");
