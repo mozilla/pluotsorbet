@@ -968,7 +968,7 @@ MIDP.foregroundIsolateId;
 MIDP.nativeEventQueues = {};
 MIDP.waitingNativeEventQueue = {};
 
-MIDP.copyEvent = function(e, obj, isolateId) {
+MIDP.copyEvent = function(e, obj) {
     var keys = Object.keys(e);
     for (var i = 0; i < keys.length; i++) {
       obj[keys[i]] = e[keys[i]];
@@ -982,7 +982,7 @@ MIDP.sendNativeEvent = function(e, isolateId) {
         return;
     }
 
-    MIDP.copyEvent(e, elem.nativeEvent, isolateId);
+    MIDP.copyEvent(e, elem.nativeEvent);
     elem.resolve(MIDP.nativeEventQueues[isolateId].length);
 
     delete MIDP.waitingNativeEventQueue[isolateId];
@@ -1054,7 +1054,7 @@ function(nativeEvent) {
     var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
 
     if (nativeEventQueue.length !== 0) {
-        MIDP.copyEvent(nativeEventQueue.shift(), nativeEvent, isolateId);
+        MIDP.copyEvent(nativeEventQueue.shift(), nativeEvent);
         return nativeEventQueue.length;
     }
 
@@ -1073,7 +1073,7 @@ function(obj) {
     if (!nativeEventQueue.length) {
         return 0;
     }
-    MIDP.copyEvent(nativeEventQueue.shift(), obj, isolateId);
+    MIDP.copyEvent(nativeEventQueue.shift(), obj);
     return 1;
 };
 
