@@ -977,30 +977,34 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
         // Perform security checks before any object state changes since
         // this method is used not only by Connector.open() but
         // by FileConnection.setFileConnection() too.
-        //
-        // Commented out because we don't need to perform security checks
-        // for a filesystem that is only ever used by a single midlet.
-        //
-        // switch (mode) {
-        // case Connector.READ:
-        //     checkReadPermission(nativePathName, mode);
-        //     checkReadMode();
-        //     maxOStreams = 0;
-        //     break;
-        // case Connector.WRITE:
-        //     checkWritePermission(nativePathName, mode);
-        //     checkWriteMode();
-        //     maxIStreams = 0;
-        //     break;
-        // case Connector.READ_WRITE:
-        //     checkReadPermission(nativePathName, mode);
-        //     checkReadMode();
-        //     checkWritePermission(nativePathName, mode);
-        //     checkWriteMode();
-        //     break;
-        // default:
-        //     throw new IllegalArgumentException("Invalid mode");
-        // }
+        switch (mode) {
+        case Connector.READ:
+            // Commented out because we don't need to perform security checks
+            // for a filesystem that is only ever used by a single midlet.
+            // checkReadPermission(nativePathName, mode);
+            checkReadMode();
+            maxOStreams = 0;
+            break;
+        case Connector.WRITE:
+            // Commented out because we don't need to perform security checks
+            // for a filesystem that is only ever used by a single midlet.
+            // checkWritePermission(nativePathName, mode);
+            checkWriteMode();
+            maxIStreams = 0;
+            break;
+        case Connector.READ_WRITE:
+            // Commented out because we don't need to perform security checks
+            // for a filesystem that is only ever used by a single midlet.
+            // checkReadPermission(nativePathName, mode);
+            checkReadMode();
+            // Commented out because we don't need to perform security checks
+            // for a filesystem that is only ever used by a single midlet.
+            // checkWritePermission(nativePathName, mode);
+            checkWriteMode();
+            break;
+        default:
+            throw new IllegalArgumentException("Invalid mode");
+        }
 
         this.fileURL = fileURL;
         this.mode = mode;
