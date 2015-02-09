@@ -58,6 +58,9 @@
   <script type="text/javascript" src="midp/text_editor.js" defer></script>
   <script type="text/javascript" src="midp/localmsg.js" defer></script>
   <script type="text/javascript" src="midp/media.js" defer></script>
+  <!-- #if JSR_256 == 1 -->
+  <script type="text/javascript" src="midp/sensor.js" defer></script>
+  <!-- #endif -->
   <script type="text/javascript" src="midp/socket.js" defer></script>
   <script type="text/javascript" src="midp/sms.js" defer></script>
   <script type="text/javascript" src="midp/codec.js" defer></script>
