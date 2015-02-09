@@ -32,7 +32,7 @@ import java.security.*;
 import java.util.PropertyPermission;
 
 /**
- * The <code>Sys</code> class contains several useful priviledged functions.
+ * The <code>Sys</code> class contains several useful privileged functions.
  */
 public final class Sys {
   private Sys() { }

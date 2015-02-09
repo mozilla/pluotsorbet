@@ -187,7 +187,7 @@ class ByteArrayInputStream extends InputStream {
         if (len <= 0) {
             return 0;
         }
-        System.arraycopy(buf, pos, b, off, len);
+        Sys.copyByteArray(buf, pos, b, off, len);
         pos += len;
         return len;
     }

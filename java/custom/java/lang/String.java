@@ -200,7 +200,7 @@ class String {
      * @since      JDK1.1
      */
     public String(byte bytes[], int off, int len, String enc)
-            throws UnsupportedEncodingException
+        throws UnsupportedEncodingException
     {
         this(Helper.byteToCharArray(bytes, off, len, enc));
     }
@@ -219,7 +219,7 @@ class String {
      * @since      JDK1.1
      */
     public String(byte bytes[], String enc)
-            throws UnsupportedEncodingException
+        throws UnsupportedEncodingException
     {
         this(bytes, 0, bytes.length, enc);
     }
