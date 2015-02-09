@@ -53,6 +53,17 @@ class DefaultFileHandler implements BaseFileHandler {
      */
     private String nativePath;
 
+    /**
+     * Native descriptor of the file while it is open for reading or writing.
+     */
+    private int nativeDescriptor = -1;
+
+    /**
+     * Whether or not the file is currently open for reading or writing.
+     */
+    private boolean isOpenForRead = false;
+    private boolean isOpenForWrite = false;
+
     /** File name. */
     private long fileName   = 0;
     // The dir name is required when checking the fileSystem sizes

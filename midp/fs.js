@@ -488,21 +488,16 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = functio
     return Long.fromNumber(stat != null ? stat.mtime : 0);
 };
 
-// A map from DefaultFileHandler instances with open input/output streams
-// to the file descriptors used by the fs API to identify open files.
-MIDP.openFileHandlers = new Map();
-
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.openForRead: " + pathname);
 
-    if (MIDP.openFileHandlers.has(this)) {
-        // The file is already open, so we reset its position so the caller
-        // will start reading from the beginning of the file.
-        // XXX Should we track the position separately for the input and output
-        // streams?
-        var fd = MIDP.openFileHandlers.get(this);
+    if (this.$nativeDescriptor !== -1) {
+        // The file is already open, so we only have to reset its position
+        // so the caller will start reading from the beginning of the file.
+        var fd = this.$nativeDescriptor;
         fs.setpos(fd, 0);
+        this.$isOpenForRead = 1;
         return;
     }
 
@@ -520,7 +515,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function
 
     asyncImpl("I", new Promise(function(resolve, reject) {
         fs.open(pathname, function(fd) {
-            MIDP.openFileHandlers.set(fileHandler, fd);
+            fileHandler.$isOpenForRead = 1;
+            fileHandler.$nativeDescriptor = fd;
             resolve();
         });
     }));
@@ -529,22 +525,24 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForRead.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.closeForRead: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
-    fs.close(fd);
-    MIDP.openFileHandlers.delete(this);
+    this.$isOpenForRead = 0;
+    if (this.$isOpenForWrite === 0) {
+        var fd = this.$nativeDescriptor;
+        this.$nativeDescriptor = -1;
+        fs.close(fd);
+    }
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.openForWrite: " + pathname);
 
-    if (MIDP.openFileHandlers.has(this)) {
-        // The file is already open, so we reset its position so the caller
-        // will start writing from the beginning of the file.
-        // XXX Should we track the position separately for the input and output
-        // streams?
-        var fd = MIDP.openFileHandlers.get(this);
+    if (this.$nativeDescriptor !== -1) {
+        // The file is already open, so we only have to reset its position
+        // so the caller will start writing from the beginning of the file.
+        var fd = this.$nativeDescriptor;
         fs.setpos(fd, 0);
+        this.$isOpenForWrite = 1;
         return;
     }
 
@@ -562,7 +560,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = functio
 
     asyncImpl("I", new Promise(function(resolve, reject) {
         fs.open(pathname, function(fd) {
-            MIDP.openFileHandlers.set(fileHandler, fd);
+            fileHandler.$isOpenForWrite = 1;
+            fileHandler.$nativeDescriptor = fd;
             resolve();
         });
     }));
@@ -571,23 +570,28 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = functio
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForWrite.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.closeForWrite: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
-    fs.close(fd);
-    MIDP.openFileHandlers.delete(this);
+    this.$isOpenForWrite = 0;
+    if (this.$isOpenForRead === 0) {
+        var fd = this.$nativeDescriptor;
+        this.$nativeDescriptor = -1;
+        fs.close(fd);
+    }
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.closeForReadWrite: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
+    this.$isOpenForRead = 0;
+    this.$isOpenForWrite = 0;
+    var fd = this.$nativeDescriptor;
+    this.$nativeDescriptor = -1;
     fs.close(fd);
-    MIDP.openFileHandlers.delete(this);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.read: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
+    var fd = this.$nativeDescriptor;
 
     if (off < 0 || len < 0 || off > b.byteLength || (b.byteLength - off) < len) {
         throw $.newIOException();
@@ -607,7 +611,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.write: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
+    var fd = this.$nativeDescriptor;
     fs.write(fd, b.subarray(off, off + len));
     // The "length of data really written," which is always the length requested
     // in our implementation.
@@ -617,14 +621,14 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
+    var fd = this.$nativeDescriptor;
     fs.setpos(fd, offset.toNumber());
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.flush: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
+    var fd = this.$nativeDescriptor;
     if (fd) {
         fs.flush(fd);
     }
@@ -633,9 +637,13 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.close: " + pathname);
-    var fd = MIDP.openFileHandlers.get(this);
-    fs.close(fd);
-    MIDP.openFileHandlers.delete(this);
+    this.$isOpenForRead = 0;
+    this.$isOpenForWrite = 0;
+    var fd = this.$nativeDescriptor;
+    this.$nativeDescriptor = -1;
+    if (fd !== -1) {
+        fs.close(fd);
+    }
 };
 
 // Not implemented because we don't use native pointers, so we've commented out
@@ -716,7 +724,7 @@ DEBUG_FS && console.log("getSuiteIdString: " + id);
 
 Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
     var pathname = util.fromJavaString(this.$fileHandler.$nativePath);
-    var fd = MIDP.openFileHandlers.get(this.$fileHandler);
+    var fd = this.$fileHandler.$nativeDescriptor;
     var available = fs.getsize(fd) - fs.getpos(fd);
     DEBUG_FS && console.log("Protocol.available: " + pathname + ": " + available);
     return available;
