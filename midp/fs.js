@@ -400,16 +400,27 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = functio
     return Long.fromNumber(stat != null ? stat.mtime : 0);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.openForRead: " + pathname);
+MIDP.markFileHandler = function(fileHandler, mode, state) {
+    switch(mode) {
+        case "read":
+            fileHandler.$isOpenForRead = state ? 1 : 0;
+            break;
+        case "write":
+            fileHandler.$isOpenForWrite = state ? 1 : 0;
+            break;
+    }
+};
 
-    if (this.$nativeDescriptor !== -1) {
+MIDP.openFileHandler = function(fileHandler, mode) {
+    var pathname = util.fromJavaString(fileHandler.$nativePath);
+    DEBUG_FS && console.log("MIDP.openFileHandler: " + pathname + " for " + mode);
+
+    if (fileHandler.$nativeDescriptor !== -1) {
         // The file is already open, so we only have to reset its position
-        // so the caller will start reading from the beginning of the file.
-        var fd = this.$nativeDescriptor;
+        // and mark it as open.
+        var fd = fileHandler.$nativeDescriptor;
         fs.setpos(fd, 0);
-        this.$isOpenForRead = 1;
+        MIDP.markFileHandler(fileHandler, mode, true);
         return;
     }
 
@@ -423,81 +434,59 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function
         throw $.newIOException("file is a directory");
     }
 
-    var fileHandler = this;
-
     asyncImpl("I", new Promise(function(resolve, reject) {
         fs.open(pathname, function(fd) {
-            fileHandler.$isOpenForRead = 1;
             fileHandler.$nativeDescriptor = fd;
+            MIDP.markFileHandler(fileHandler, mode, true);
             resolve();
         });
     }));
+};
+
+MIDP.closeFileHandler = function(fileHandler, mode) {
+    var pathname = util.fromJavaString(fileHandler.$nativePath);
+    DEBUG_FS && console.log("MIDP.closeFileHandler: " + pathname + " for " + mode);
+
+    MIDP.markFileHandler(fileHandler, mode, false);
+
+    var isOpenForOtherMode;
+    switch(mode) {
+        case "read":
+            isOpenForOtherMode = fileHandler.$isOpenForWrite;
+            break;
+        case "write":
+            isOpenForOtherMode = fileHandler.$isOpenForRead;
+            break;
+    }
+
+    // If the file isn't open for the other mode, but it still has a native
+    // descriptor, then it's time to close the native file.  Otherwise, we leave
+    // it open until it gets closed for the other mode.
+    if (isOpenForOtherMode === 0 && fileHandler.$nativeDescriptor !== -1) {
+        fs.close(fileHandler.$nativeDescriptor);
+        fileHandler.$nativeDescriptor = -1;
+    }
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function() {
+    MIDP.openFileHandler(this, "read");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForRead.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.closeForRead: " + pathname);
-    this.$isOpenForRead = 0;
-    if (this.$isOpenForWrite === 0) {
-        var fd = this.$nativeDescriptor;
-        this.$nativeDescriptor = -1;
-        fs.close(fd);
-    }
+    MIDP.closeFileHandler(this, "read");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.openForWrite: " + pathname);
-
-    if (this.$nativeDescriptor !== -1) {
-        // The file is already open, so we only have to reset its position
-        // so the caller will start writing from the beginning of the file.
-        var fd = this.$nativeDescriptor;
-        fs.setpos(fd, 0);
-        this.$isOpenForWrite = 1;
-        return;
-    }
-
-    var stat = fs.stat(pathname);
-
-    if (!stat) {
-        throw $.newIOException("file does not exist");
-    }
-
-    if (stat.isDir) {
-        throw $.newIOException("file is a directory");
-    }
-
-    var fileHandler = this;
-
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        fs.open(pathname, function(fd) {
-            fileHandler.$isOpenForWrite = 1;
-            fileHandler.$nativeDescriptor = fd;
-            resolve();
-        });
-    }));
+    MIDP.openFileHandler(this, "write");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForWrite.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.closeForWrite: " + pathname);
-    this.$isOpenForWrite = 0;
-    if (this.$isOpenForRead === 0) {
-        var fd = this.$nativeDescriptor;
-        this.$nativeDescriptor = -1;
-        fs.close(fd);
-    }
+    MIDP.closeFileHandler(this, "write");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.closeForReadWrite: " + pathname);
-    this.$isOpenForRead = 0;
-    this.$isOpenForWrite = 0;
-    var fd = this.$nativeDescriptor;
-    this.$nativeDescriptor = -1;
-    fs.close(fd);
+    MIDP.closeFileHandler(this, "read");
+    MIDP.closeFileHandler(this, "write");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
@@ -549,13 +538,9 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.close: " + pathname);
-    this.$isOpenForRead = 0;
-    this.$isOpenForWrite = 0;
-    var fd = this.$nativeDescriptor;
-    this.$nativeDescriptor = -1;
-    if (fd !== -1) {
-        fs.close(fd);
-    }
+
+    MIDP.closeFileHandler(this, "read");
+    MIDP.closeFileHandler(this, "write");
 };
 
 // Not implemented because we don't use native pointers, so we've commented out
