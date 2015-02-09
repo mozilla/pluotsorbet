@@ -22,6 +22,13 @@ module J2ME {
   export var baselineCounter = null; // new Metrics.Counter(true);
 
   /**
+   * The preemption check should be quick. We don't always want to measure
+   * time so we use a quick counter and mask to determine when to do the
+   * more expensive preemption check.
+   */
+  var preemptionSampleMask = 0xFF;
+
+  /**
    * Expressions to inline for commonly invoked methods.
    */
   var inlineMethods = {
@@ -489,6 +496,13 @@ module J2ME {
         }
       }
 
+      // Insert a preemption check after the OSR code so the pc
+      // and state will be stored. We can only do this if the
+      // method has the necessary unwinding code.
+      if (canYield(this.methodInfo)) {
+        this.emitPreemptionCheck(this.bodyEmitter, "pc");
+      }
+
       if (needsEntryDispatch) {
         var entryBlock = Relooper.addBlock("// Entry Dispatch Block");
 
@@ -690,7 +704,7 @@ module J2ME {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.className);
           this.blockEmitter.writeLn(this.runtimeClass(classInfo) + ";");
           if (classInfo.staticInitializer && canYield(classInfo.staticInitializer)) {
-            this.emitUnwind(this.blockEmitter, this.pc, this.pc);
+            this.emitUnwind(this.blockEmitter, String(this.pc), String(this.pc));
           } else {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
@@ -732,7 +746,7 @@ module J2ME {
       this.needsVariable("re");
       this.blockEmitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
-        this.emitUnwind(this.blockEmitter, this.pc, nextPC);
+        this.emitUnwind(this.blockEmitter, String(this.pc), String(nextPC));
       } else {
         emitCompilerAssertions && this.emitNoUnwindAssertion();
       }
@@ -842,7 +856,7 @@ module J2ME {
       this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")");
     }
 
-    private emitUnwind(emitter: Emitter, pc: number, nextPC: number) {
+    private emitUnwind(emitter: Emitter, pc: string, nextPC: string) {
       var local = this.local.join(", ");
       var stack = this.stack.slice(0, this.sp).join(", ");
       emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
@@ -859,8 +873,14 @@ module J2ME {
       this.needsVariable("lk");
       emitter.writeLn("lk = " + object + "._lock;");
       emitter.enter("if (lk && lk.level === 0) { lk.thread = th; lk.level = 1; } else { ME(" + object + ");");
-      this.emitUnwind(emitter, this.pc, nextPC);
+      this.emitUnwind(emitter, String(this.pc), String(nextPC));
       emitter.leave("}");
+    }
+
+    private emitPreemptionCheck(emitter: Emitter, nextPC: string) {
+      emitter.writeLn("PS ++;");
+      emitter.writeLn("if ((PS & " + preemptionSampleMask + ") === 0) PE();");
+      this.emitUnwind(emitter, String(nextPC), String(nextPC));
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {
