@@ -65,7 +65,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ipBytes, 
         this.options[SOCKET_OPT.RCVBUF] = 8192;
         this.options[SOCKET_OPT.SNDBUF] = 8192;
 
-        this.data = new Uint8Array();
+        this.data = new Int8Array();
         this.waitingData = null;
 
         this.socket.onopen = function() {
@@ -88,11 +88,11 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ipBytes, 
         this.socket.ondata = (function(message) {
             // console.log("this.socket.ondata: " + JSON.stringify(message));
             if (this.data.byteLength === 0) {
-                this.data = new Uint8Array(message.data);
+                this.data = new Int8Array(message.data);
             } else {
-                var newArray = new Uint8Array(this.data.byteLength + message.data.byteLength);
+                var newArray = new Int8Array(this.data.byteLength + message.data.byteLength);
                 newArray.set(this.data);
-                newArray.set(new Uint8Array(message.data), this.data.byteLength);
+                newArray.set(new Int8Array(message.data), this.data.byteLength);
                 this.data = newArray;
             }
 

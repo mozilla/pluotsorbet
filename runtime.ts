@@ -614,7 +614,8 @@ module J2ME {
   export enum VMState {
     Running = 0,
     Yielding = 1,
-    Pausing = 2
+    Pausing = 2,
+    Stopping = 3
   }
 
   /** @const */ export var MAX_PRIORITY: number = 10;
@@ -737,6 +738,10 @@ module J2ME {
       U = VMState.Pausing;
     }
 
+    stop() {
+      U = VMState.Stopping;
+    }
+
     constructor(jvm: JVM) {
       super(jvm);
       this.id = Runtime._nextId ++;
@@ -821,8 +826,12 @@ module J2ME {
   }
 
   export class Lock {
+    ready: Context [];
+    waiting: Context [];
+
     constructor(public thread: java.lang.Thread, public level: number) {
-      // ...
+      this.ready = [];
+      this.waiting = [];
     }
   }
 
@@ -871,15 +880,8 @@ module J2ME {
         });
         initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
-        // release || assert(!U);
+        release || assert(!U, "Unwinding during static initializer not supported.");
 
-        //// TODO: monitorEnter
-        //if (klass.staticInitializer) {
-        //  klass.staticInitializer.call(runtimeKlass);
-        //}
-        //if (klass.staticConstructor) {
-        //  klass.staticConstructor.call(runtimeKlass);
-        //}
         return runtimeKlass;
       }
     });

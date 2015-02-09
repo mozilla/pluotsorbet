@@ -6,11 +6,14 @@ RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 
+JSR_256 ?= 1
+export JSR_256
+
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(JSR_256)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -18,6 +21,7 @@ toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(call toBool,$(PROFILE)) \
+             -D JSR_256=$(JSR_256) \
              -D VERSION=$(VERSION)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
@@ -61,8 +65,11 @@ build/tests.jar.js: tests/tests.jar build/jsc.js aot-methods.txt
 build/program.jar.js: program.jar build/jsc.js aot-methods.txt
 	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > build/program.jar.js
 
-closure: build/classes.jar.js build/j2me.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SHUMWAY_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
+tools/closure.jar:
+	wget -O $@ https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar
+
+closure: build/classes.jar.js build/j2me.js tools/closure.jar
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
 		&& mv build/j2me.cc.js build/j2me.js
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js \
 		&& mv build/classes.jar.cc.js build/classes.jar.js

@@ -215,6 +215,7 @@ module J2ME {
     private methodInfo: MethodInfo;
     private parameters: string [];
     private hasHandlers: boolean;
+    private hasMonitorEnter: boolean;
     private blockStackHeightMap: number [];
     private initializedClasses: any;
     private referencedClasses: ClassInfo [];
@@ -242,6 +243,7 @@ module J2ME {
       this.referencedClasses = [];
       this.initializedClasses = null;
       this.hasHandlers = !!methodInfo.exception_table.length;
+      this.hasMonitorEnter = false;
       this.blockStackHeightMap = [0];
       this.bodyEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.blockEmitter = new Emitter(target !== CompilationTarget.Runtime);
@@ -262,8 +264,12 @@ module J2ME {
       this.entryBlock = blocks[0].relooperBlockID;
       this.emitPrologue();
       this.emitBody();
+
       if (this.variables.length) {
         this.bodyEmitter.prependLn("var " + this.variables.join(", ") + ";");
+      }
+      if (this.hasMonitorEnter) {
+        this.bodyEmitter.prependLn("var th = $.ctx.thread;");
       }
       return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint);
     }
@@ -848,12 +854,17 @@ module J2ME {
     }
 
     private emitMonitorEnter(emitter: Emitter, nextPC: number, object: string) {
-      emitter.writeLn("ME(" + object + ");");
+      this.hasMonitorEnter = true;
+
+      this.needsVariable("lk");
+      emitter.writeLn("lk = " + object + "._lock;");
+      emitter.enter("if (lk && lk.level === 0) { lk.thread = th; lk.level = 1; } else { ME(" + object + ");");
       this.emitUnwind(emitter, this.pc, nextPC);
+      emitter.leave("}");
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {
-      emitter.writeLn("MX(" + object + ");");
+      emitter.writeLn("if (" + object + "._lock.level === 1 && " + object + "._lock.ready.length === 0) " + object + "._lock.level = 0; else MX(" + object + ");");
     }
 
     emitStackOp(opcode: Bytecodes) {

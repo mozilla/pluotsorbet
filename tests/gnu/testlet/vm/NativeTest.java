@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class NativeTest implements Testlet {
+    public int getExpectedPass() { return 17; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     native static int getInt();
     native static int fromJavaString(String string);
     native static int decodeUtf8(byte[] string);

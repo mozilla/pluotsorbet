@@ -40,6 +40,9 @@ import javax.microedition.io.StreamConnection;
 import javax.microedition.io.Connector;
 
 public class TestHttpHeaders implements Testlet {
+    public int getExpectedPass() { return 12; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     final String URL = "//nonexistent.example.com:8080/foo/bar?bazz#mumble";
 
     StubHttpProtocol conn;

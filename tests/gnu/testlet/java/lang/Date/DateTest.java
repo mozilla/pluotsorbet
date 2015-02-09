@@ -4,6 +4,9 @@ import java.util.Date;
 import gnu.testlet.*;
 
 public class DateTest implements Testlet {
+    public int getExpectedPass() { return 5; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
 		Date d = new Date();
 		// This test is not reliable:

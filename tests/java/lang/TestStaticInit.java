@@ -4,6 +4,9 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 public class TestStaticInit implements Testlet {
+    public int getExpectedPass() { return 2; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     static class TestClass {
         static int value = 0;
     }

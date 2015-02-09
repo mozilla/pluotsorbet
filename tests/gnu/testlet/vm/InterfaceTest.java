@@ -4,6 +4,9 @@ import java.util.Vector;
 import gnu.testlet.*;
 
 public class InterfaceTest implements Testlet {
+    public int getExpectedPass() { return 6; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     private interface A {
         public void x();
 

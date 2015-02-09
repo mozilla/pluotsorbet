@@ -31,6 +31,9 @@ import gnu.testlet.Testlet;
 import java.util.Random;
 
 public class TestRecordStore implements Testlet {
+    public int getExpectedPass() { return 15; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 1; }
     TestHarness th;
 
     final String RECORD_STORE_NAME = "testrms";
@@ -252,11 +255,11 @@ public class TestRecordStore implements Testlet {
                 store.addRecord(getRandomRecord(DOUBLE_SIZE), 0, DOUBLE_SIZE);
 
                 //Checking data is not damaged by preceding operations
-                RecordEnumeration enum = store.enumerateRecords(null, null, false);
+                RecordEnumeration recordEnum = store.enumerateRecords(null, null, false);
                 boolean damaged = false;
 
-                while (enum.hasNextElement()) {
-                    int id = enum.nextRecordId();
+                while (recordEnum.hasNextElement()) {
+                    int id = recordEnum.nextRecordId();
                     byte[] record = store.getRecord(id);
                     if (id == id1 || id == id2 || !isValidRandomRecord(record)) {
                         damaged = true;

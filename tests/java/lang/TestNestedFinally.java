@@ -4,6 +4,9 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 public class TestNestedFinally implements Testlet {
+    public int getExpectedPass() { return 2; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     private boolean foo1Reached = false;
     private int foo2Value = 1;
 
