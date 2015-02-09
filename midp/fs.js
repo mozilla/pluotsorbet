@@ -509,7 +509,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function
     var stat = fs.stat(pathname);
 
     if (!stat) {
-        throw $.newIOException("file doesn't exist");
+        throw $.newIOException("file does not exist");
     }
 
     if (stat.isDir) {
@@ -562,8 +562,6 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = functio
 
     asyncImpl("I", new Promise(function(resolve, reject) {
         fs.open(pathname, function(fd) {
-            // The key is the $fileName Long, not the primitive number
-            // it represents, so a file can be opened by multiple handlers.
             MIDP.openFileHandlers.set(fileHandler, fd);
             resolve();
         });
