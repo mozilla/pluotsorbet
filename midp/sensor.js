@@ -202,33 +202,24 @@ Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/S
         return;
     }
     var m = AccelerometerSensor.model;
-    model.klass.classInfo.getField("I.description.Ljava/lang/String;")
-               .set(model, J2ME.newString(m.description));
-    model.klass.classInfo.getField("I.model.Ljava/lang/String;")
-               .set(model, J2ME.newString(m.model));
-    model.klass.classInfo.getField("I.quantity.Ljava/lang/String;")
-               .set(model, J2ME.newString(m.quantity));
-    model.klass.classInfo.getField("I.contextType.Ljava/lang/String;")
-               .set(model, J2ME.newString(m.contextType));
-    model.klass.classInfo.getField("I.connectionType.I")
-               .set(model, m.connectionType);
-    model.klass.classInfo.getField("I.maxBufferSize.I")
-               .set(model, m.maxBufferSize);
-    model.klass.classInfo.getField("I.availabilityPush.Z")
-               .set(model, m.availabilityPush);
-    model.klass.classInfo.getField("I.conditionPush.Z")
-               .set(model, m.conditionPush);
-    model.klass.classInfo.getField("I.channelCount.I")
-               .set(model, m.channelCount);
-    model.klass.classInfo.getField("I.errorCodes.[I").set(model, J2ME.newArray(J2ME.PrimitiveArrayClassInfo.I.klass, 0));
-    model.klass.classInfo.getField("I.errorMsgs.[Ljava/lang/String;").set(model, J2ME.newStringArray(0));
+    model.description = J2ME.newString(m.description);
+    model.model = J2ME.newString(m.model);
+    model.quantity = J2ME.newString(m.quantity);
+    model.contextType = J2ME.newString(m.contextType);
+    model.connectionType = m.connectionType;
+    model.maxBufferSize = m.maxBufferSize;
+    model.availabilityPush = m.availabilityPush;
+    model.conditionPush = m.conditionPush;
+    model.channelCount = m.channelCount;
+    model.errorCodes = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.I.klass, 0);
+    model.errorMsgs = J2ME.newStringArray(0);
 
     var n = m.properties.length;
     var p = J2ME.newStringArray(n);
     for (var i = 0; i < n; i++) {
         p[i] = J2ME.newString(m.properties[i]);
     }
-    model.klass.classInfo.getField("I.properties.[Ljava/lang/String;").set(model, p);
+    model.properties = p;
 };
 
 Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] = function(sensorsNumber, number, model) {
@@ -241,25 +232,19 @@ Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/s
         return;
     }
     var c = AccelerometerSensor.channels[number];
-    model.klass.classInfo.getField("I.scale.I")
-               .set(model, c.scale);
-    model.klass.classInfo.getField("I.name.Ljava/lang/String;")
-               .set(model, J2ME.newString(c.name));
-    model.klass.classInfo.getField("I.unit.Ljava/lang/String;")
-               .set(model, J2ME.newString(c.unit));
-    model.klass.classInfo.getField("I.dataType.I")
-               .set(model, c.dataType);
-    model.klass.classInfo.getField("I.accuracy.I")
-               .set(model, c.accuracy);
-    model.klass.classInfo.getField("I.mrangeCount.I")
-               .set(model, c.mrangeArray.length);
+    model.scale = c.scale;
+    model.name = J2ME.newString(c.name);
+    model.unit = J2ME.newString(c.unit);
+    model.dataType = c.dataType;
+    model.accuracy = c.accuracy;
+    model.mrangeCount = c.mrangeArray.length;
 
     var n = c.mrangeArray.length;
     var array = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.J.klass, n);
     for (var i = 0; i < n; i++) {
         array[i] = c.mrangeArray[i];
     }
-    model.klass.classInfo.getField("I.mrageArray.[J").set(model, array);
+    model.mrageArray = array;
 };
 
 Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(number) {
