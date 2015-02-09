@@ -263,94 +263,6 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
     console.warn("RecordStoreRegistry.stopAllRecordStoreListeners.(I)V not implemented (" + taskId + ")");
 };
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(fileName, mode) {
-    var path = "/" + util.fromJavaString(fileName);
-
-    var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        function open() {
-            fs.open(path, function(fd) {
-                ctx.setAsCurrentContext();
-                if (fd == -1) {
-                    reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
-                } else {
-                    resolve(fd);
-                }
-            });
-        }
-
-        if (fs.exists(path)) {
-            open();
-        } else if (mode == 1) {
-            ctx.setAsCurrentContext();
-            reject($.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist"));
-        } else if (fs.create(path, new Blob())) {
-            open();
-        } else {
-            ctx.setAsCurrentContext();
-            reject($.newIOException("RandomAccessStream::open(" + path + ") failed creating the file"));
-        }
-    }));
-};
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] =
-function(handle, buffer, offset, length) {
-    var from = fs.getpos(handle);
-    var to = from + length;
-    var readBytes = fs.read(handle, from, to);
-
-    if (readBytes.byteLength <= 0) {
-        return -1;
-    }
-
-    var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
-    for (var i = 0; i < readBytes.byteLength; i++) {
-        subBuffer[i] = readBytes[i];
-    }
-    return readBytes.byteLength;
-};
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] =
-function(handle, buffer, offset, length) {
-    fs.write(handle, buffer.subarray(offset, offset + length));
-};
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"] = function(handle) {
-    fs.flush(handle);
-};
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V"] = function(handle, position) {
-    fs.setpos(handle, position);
-};
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(handle) {
-    var size = fs.getsize(handle);
-
-    if (size == -1) {
-        throw $.newIOException("RandomAccessStream::sizeOf(" + handle + ") failed");
-    }
-
-    return size;
-};
-
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(handle) {
-    fs.close(handle);
-};
-
-Native["javax/microedition/io/file/FileSystemRegistry.initImpl.()V"] = function() {
-    console.warn("javax/microedition/io/file/FileSystemRegistry.initImpl.()V not implemented");
-};
-
-Native["javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;"] = function() {
-    var array = J2ME.newStringArray(MIDP.fsRoots.length);
-
-    for (var i = 0; i < MIDP.fsRoots.length; i++) {
-        array[i] = J2ME.newString(MIDP.fsRoots[i]);
-    }
-
-    return array;
-};
-
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.create: " + pathname);
@@ -728,4 +640,92 @@ Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
     var available = fs.getsize(fd) - fs.getpos(fd);
     DEBUG_FS && console.log("Protocol.available: " + pathname + ": " + available);
     return available;
+};
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(fileName, mode) {
+    var path = "/" + util.fromJavaString(fileName);
+
+    var ctx = $.ctx;
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        function open() {
+            fs.open(path, function(fd) {
+                ctx.setAsCurrentContext();
+                if (fd == -1) {
+                    reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
+                } else {
+                    resolve(fd);
+                }
+            });
+        }
+
+        if (fs.exists(path)) {
+            open();
+        } else if (mode == 1) {
+            ctx.setAsCurrentContext();
+            reject($.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist"));
+        } else if (fs.create(path, new Blob())) {
+            open();
+        } else {
+            ctx.setAsCurrentContext();
+            reject($.newIOException("RandomAccessStream::open(" + path + ") failed creating the file"));
+        }
+    }));
+};
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] =
+function(handle, buffer, offset, length) {
+    var from = fs.getpos(handle);
+    var to = from + length;
+    var readBytes = fs.read(handle, from, to);
+
+    if (readBytes.byteLength <= 0) {
+        return -1;
+    }
+
+    var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
+    for (var i = 0; i < readBytes.byteLength; i++) {
+        subBuffer[i] = readBytes[i];
+    }
+    return readBytes.byteLength;
+};
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] =
+function(handle, buffer, offset, length) {
+    fs.write(handle, buffer.subarray(offset, offset + length));
+};
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"] = function(handle) {
+    fs.flush(handle);
+};
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V"] = function(handle, position) {
+    fs.setpos(handle, position);
+};
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(handle) {
+    var size = fs.getsize(handle);
+
+    if (size == -1) {
+        throw $.newIOException("RandomAccessStream::sizeOf(" + handle + ") failed");
+    }
+
+    return size;
+};
+
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(handle) {
+    fs.close(handle);
+};
+
+Native["javax/microedition/io/file/FileSystemRegistry.initImpl.()V"] = function() {
+    console.warn("javax/microedition/io/file/FileSystemRegistry.initImpl.()V not implemented");
+};
+
+Native["javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;"] = function() {
+    var array = J2ME.newStringArray(MIDP.fsRoots.length);
+
+    for (var i = 0; i < MIDP.fsRoots.length; i++) {
+        array[i] = J2ME.newString(MIDP.fsRoots[i]);
+    }
+
+    return array;
 };
