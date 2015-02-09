@@ -28,6 +28,7 @@ module J2ME {
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V": YieldReason.Root,
     "java/lang/Thread.sleep.(J)V": YieldReason.Root,
     "com/sun/cldc/isolate/Isolate.waitStatus.(I)V": YieldReason.Root,
+    "com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B": YieldReason.Root,
     "com/sun/midp/links/LinkPortal.getLinkCount0.()I": YieldReason.Root,
     "com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V": YieldReason.Root,
     "com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V": YieldReason.Root,

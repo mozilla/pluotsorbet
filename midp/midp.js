@@ -923,8 +923,9 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id
 };
 
 MIDP.exit = function(code) {
-    $.pause("exit");
+    $.stop();
     DumbPipe.open("exit", null, function(message) {});
+    document.getElementById("exit-screen").style.display = "block";
 };
 
 MIDP.pendingMIDletUpdate = null;

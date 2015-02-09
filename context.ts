@@ -577,6 +577,10 @@ module J2ME {
               break;
             case VMState.Pausing:
               break;
+            case VMState.Stopping:
+              this.clearCurrentContext();
+              this.kill();
+              return;
           }
           U = VMState.Running;
           this.clearCurrentContext();
@@ -617,7 +621,7 @@ module J2ME {
       } else {
         while (this.lockLevel-- > 0) {
           this.monitorEnter(obj);
-          if (U === VMState.Pausing) {
+          if (U === VMState.Pausing || U === VMState.Stopping) {
             return;
           }
         }

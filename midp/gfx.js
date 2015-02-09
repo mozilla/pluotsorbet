@@ -20,7 +20,9 @@ var currentlyFocusedTextEditor;
             return d;
         },
 
-        _map: new Map()
+        _map: new Map(),
+
+        foreground: -1
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
@@ -77,7 +79,7 @@ var currentlyFocusedTextEditor;
     Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
         var d = NativeDisplays.get(displayId);
         d.fullScreen = mode;
-        if (MIDP.displayId === displayId) {
+        if (NativeDisplays.foreground === displayId) {
             MIDP.setFullScreen(mode);
         }
     };
@@ -86,6 +88,7 @@ var currentlyFocusedTextEditor;
         document.getElementById("background-screen").style.display = "none";
         document.getElementById("splash-screen").style.display = "none";
         var d = NativeDisplays.get(displayId);
+        NativeDisplays.foreground = displayId;
         MIDP.setFullScreen(d.fullScreen);
     };
 

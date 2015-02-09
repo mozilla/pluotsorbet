@@ -33,6 +33,37 @@ module J2ME {
         }
       }
     },
+    "com/sun/javame/sensor/ChannelModel": {
+      fields: {
+        instanceSymbols: {
+          "scale.I": "scale",
+          "name.Ljava/lang/String;": "name",
+          "unit.Ljava/lang/String;": "unit",
+          "dataType.I": "dataType",
+          "accuracy.I": "accuracy",
+          "mrangeCount.I": "mrangeCount",
+          "mrageArray.[J": "mrageArray"
+        }
+      }
+    },
+    "com/sun/javame/sensor/SensorModel": {
+      fields: {
+        instanceSymbols: {
+          "description.Ljava/lang/String;": "description",
+          "model.Ljava/lang/String;": "model",
+          "quantity.Ljava/lang/String;": "quantity",
+          "contextType.Ljava/lang/String;": "contextType",
+          "connectionType.I": "connectionType",
+          "maxBufferSize.I": "maxBufferSize",
+          "availabilityPush.Z": "availabilityPush",
+          "conditionPush.Z": "conditionPush",
+          "channelCount.I": "channelCount",
+          "errorCodes.[I": "errorCodes",
+          "errorMsgs.[Ljava/lang/String;": "errorMsgs",
+          "properties.[Ljava/lang/String;": "properties"
+        }
+      }
+    },
     "com/nokia/mid/ui/DirectGraphicsImp": {
       fields: {
         instanceSymbols: {

@@ -83,12 +83,12 @@ module J2ME {
   function checkReturnValue(methodInfo: MethodInfo, returnValue: any) {
     if (U) {
       if (typeof returnValue !== "undefined") {
-        assert(false, "Expected undefined return value during unwind, got " + returnValue);
+        assert(false, "Expected undefined return value during unwind, got " + returnValue + " in " + methodInfo.implKey);
       }
       return;
     }
     if (!(getKindCheck(methodInfo.getReturnKind())(returnValue))) {
-      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue);
+      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue + " in " + methodInfo.implKey);
     }
   }
 
@@ -1052,7 +1052,7 @@ module J2ME {
           case Bytecodes.MONITORENTER:
             object = stack.pop();
             ctx.monitorEnter(object);
-            if (U === VMState.Pausing) {
+            if (U === VMState.Pausing || U === VMState.Stopping) {
               return;
             }
             break;
@@ -1197,7 +1197,7 @@ module J2ME {
                     : frame.getLocal(0);
                 }
                 ctx.monitorEnter(calleeFrame.lockObject);
-                if (U === VMState.Pausing) {
+                if (U === VMState.Pausing || U === VMState.Stopping) {
                   return;
                 }
               }

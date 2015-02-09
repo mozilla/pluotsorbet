@@ -614,7 +614,8 @@ module J2ME {
   export enum VMState {
     Running = 0,
     Yielding = 1,
-    Pausing = 2
+    Pausing = 2,
+    Stopping = 3
   }
 
   /** @const */ export var MAX_PRIORITY: number = 10;
@@ -735,6 +736,10 @@ module J2ME {
       unwindCount ++;
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
+    }
+
+    stop() {
+      U = VMState.Stopping;
     }
 
     constructor(jvm: JVM) {
