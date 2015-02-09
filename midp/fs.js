@@ -530,9 +530,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
     var pathname = util.fromJavaString(this.$nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.flush: " + pathname);
     var fd = this.$nativeDescriptor;
-    if (fd) {
-        fs.flush(fd);
-    }
+    fs.flush(fd);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
