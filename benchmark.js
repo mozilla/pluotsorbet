@@ -8,15 +8,15 @@ var Benchmark = (function() {
   }
 
   var startup = {
-    numRounds: 5,
-    roundDelay: 500, // ms to delay starting next round of tests
+    numRounds: 10,
+    roundDelay: 5000, // ms to delay starting next round of tests
     startTime: null,
     baseline: [],
     run: function() {
       this.round = 0;
       this.times = [];
       this.running = true;
-      this.runNextRound(false);
+      this.runNextRound();
     },
     get round() {
       return localStorage["round"] | 0;
@@ -62,20 +62,26 @@ var Benchmark = (function() {
         this.finish();
         return;
       }
-      this.runNextRound(true);
+      this.runNextRound();
     },
-    runNextRound: function(useDelay) {
+    runNextRound: function() {
       function run() {
         DumbPipe.close(DumbPipe.open("reload", {}));
       }
-      if(!useDelay) {
-        run();
-      } else {
-        console.log("Scheduling next round to run in " + this.roundDelay + "ms");
-        setTimeout(run, this.roundDelay);
+      if (typeof netscape !== "undefined" && netscape.security.PrivilegeManager) {
+        // To enable GC use a seperate profile and enable the pref:
+        // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
+        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        console.log("Forcing CC/GC.");
+        for (var i = 0; i < 3; i++) {
+          Components.utils.forceCC();
+          Components.utils.forceGC();
+        }
       }
+      console.log("Scheduling round " + (this.round + 1) + " of " + this.numRounds + " to run in " + this.roundDelay + "ms");
+      setTimeout(run, this.roundDelay);
     },
-    finish() {
+    finish: function() {
       this.running = false;
       var times = this.times;
       var message = "Current times: " + JSON.stringify(times) + "\n";
