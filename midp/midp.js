@@ -1041,9 +1041,12 @@ Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
 function(obj, isolateId) {
     var e = { type: obj.type };
-    obj.klass.classInfo.fields.forEach(function(field) {
-        e[field.name] = field.get(obj);
-    });
+
+    var fields = obj.klass.classInfo.fields;
+    for (var i = 0; i < fields.length; i++) {
+      var field = fields[i];
+      e[field.name] = field.get(obj);
+    }
 
     MIDP.sendNativeEvent(e, isolateId);
 };
