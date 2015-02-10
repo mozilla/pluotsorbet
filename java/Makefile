@@ -16,6 +16,13 @@ SRC_DIRS += jsr-082/.
 JPP_SRCS += $(shell find ./jsr-082 -name *.jpp)
 endif
 
+ifeq ($(JSR_179),1)
+SRCS += $(shell find ./jsr-179 -name *.java)
+SRC_DIRS += jsr-179/.
+JPP_DEFS += -DENABLE_JSR_179
+JPP_SRCS += $(shell find ./jsr-179 -name *.jpp)
+endif
+
 JPP_DESTS=$(JPP_SRCS:.jpp=.java)
 EXTRA=$(shell find . -name *.png) $(shell find . -name *.bin) $(shell find . -name *.xml)
 

@@ -7,6 +7,10 @@ EXCLUDED += \
   $(NULL)
 endif
 
+ifeq ($(JSR_179),0)
+EXCLUDED += "./javax/microedition/location/*"
+endif
+
 SRCS=$(shell find . $(foreach path,$(EXCLUDED),-not -path $(path)) -name "*.java")
 JASMIN_SRCS=$(shell find . -name "*.j")
 

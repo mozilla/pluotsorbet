@@ -57,7 +57,9 @@
   <script type="text/javascript" src="midp/gfx.js" defer></script>
   <script type="text/javascript" src="midp/text_editor.js" defer></script>
   <script type="text/javascript" src="midp/localmsg.js" defer></script>
+  <!-- #if JSR_179 == 1 -->
   <script type="text/javascript" src="midp/location.js" defer></script>
+  <!-- #endif -->
   <script type="text/javascript" src="midp/media.js" defer></script>
   <!-- #if JSR_256 == 1 -->
   <script type="text/javascript" src="midp/sensor.js" defer></script>
