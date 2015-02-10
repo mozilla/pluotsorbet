@@ -11,7 +11,7 @@
     "url": "http://mozilla.org"
   },
   "default_locale": "en",
-  "orientation": ["portrait-primary"],
+  "orientation": ["portrait", "landscape"],
   "permissions": {
     "tcp-socket": {
       "description": "Required to connect to internet"

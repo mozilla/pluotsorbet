@@ -6,7 +6,7 @@
 var MIDP = {
 };
 
-MIDP.isFullScreen = false;
+MIDP.isFullScreen = true;
 MIDP.setFullScreen = function(isFS) {
     MIDP.isFullScreen = isFS;
     MIDP.updateCanvas();
@@ -15,78 +15,37 @@ MIDP.setFullScreen = function(isFS) {
 MIDP.updateCanvas = function() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
-    var canvas = MIDP.Context2D.canvas;
+    var canvas = document.getElementById("canvas");
     sidebar.style.display = header.style.display =
         MIDP.isFullScreen ? "none" : "block";
     var headerHeight = MIDP.isFullScreen ? 0 : header.offsetHeight;
-    canvas.height = MIDP.ScreenHeight - headerHeight;
-    canvas.dispatchEvent(new Event('canvasresize'));
-};
+    var newHeight = MIDP.physicalScreenHeight - headerHeight;
+    var newWidth = MIDP.physicalScreenWidth;
 
-MIDP.isVKVisible = false;
-MIDP.pendingShowNotify = false;
-MIDP.pendingHideNotify = false;
-MIDP.keyboardVisibilityListenerResolve = null;
-MIDP.onKeyboardShown = function(evt) {
-    if (MIDP.isVKVisible) {
-        console.warn("keyboardShown but we thought keyboard was already visible!");
-    }
-
-    MIDP.isVKVisible = true;
-
-    if (MIDP.pendingHideNotify) {
-        MIDP.pendingHideNotify = false;
-    } else if (MIDP.keyboardVisibilityListenerResolve) {
-        MIDP.keyboardVisibilityListenerResolve(1);
-        MIDP.keyboardVisibilityListenerResolve = null;
-    } else {
-        MIDP.pendingShowNotify = true;
-    }
-};
-
-MIDP.onKeyboardHidden = function(evt) {
-    if (!MIDP.isVKVisible) {
-        console.warn("keyboardHidden but we thought the keyboard was already hidden!");
-    }
-
-    MIDP.isVKVisible = false;
-
-    if (MIDP.pendingShowNotify) {
-        MIDP.pendingShowNotify = false;
-    } else if (MIDP.keyboardVisibilityListenerResolve) {
-        MIDP.keyboardVisibilityListenerResolve(0);
-        MIDP.keyboardVisibilityListenerResolve = null;
-    } else {
-        MIDP.pendingHideNotify = true;
+    if (newHeight != canvas.height || newWidth != canvas.width) {
+      canvas.height = newHeight;
+      canvas.width = newWidth;
+      canvas.style.height = canvas.height + "px";
+      canvas.style.width = canvas.width + "px";
+      canvas.style.top = headerHeight + "px";
+      canvas.dispatchEvent(new Event("canvasresize"));
     }
 };
 
 MIDP.onWindowResize = function(evt) {
-    var shouldSendRotate = false;
-    if (window.innerWidth > MIDP.ScreenWidth) {
-        console.warn("Window grew beyond initial width!");
-        MIDP.ScreenWidth = window.innerWidth;
-        shouldSendRotate = true;
-    } else if (window.innerWidth < MIDP.ScreenWidth) {
-        console.warn("Window shrunk from initial width!");
-        MIDP.ScreenWidth = window.innerWidth;
-        shouldSendRotate = true;
-    }
+    var newPhysicalScreenWidth = window.outerWidth - MIDP.horizontalChrome;
+    var newPhysicalScreenHeight = window.outerHeight - MIDP.verticalChrome;
 
-    if (window.innerHeight < MIDP.ScreenHeight) {
-        window.dispatchEvent(new Event("keyboardShown"));
-    } else if (window.innerHeight >= MIDP.ScreenHeight) {
-        if (window.innerHeight > MIDP.ScreenHeight) {
-            console.warn("Window grew beyond initial height!");
-            MIDP.ScreenHeight = window.innerHeight;
-            shouldSendRotate = true;
-        }
-        window.dispatchEvent(new Event("keyboardHidden"));
-    }
-
-    if (shouldSendRotate) {
-        MIDP.updateCanvas();
-        MIDP.sendNativeEvent({ type: MIDP.ROTATION_EVENT, intParam1: 0, intParam2: 0, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+    if (newPhysicalScreenWidth != MIDP.physicalScreenWidth || newPhysicalScreenHeight != MIDP.physicalScreenHeight) {
+      MIDP.physicalScreenWidth = newPhysicalScreenWidth;
+      MIDP.physicalScreenHeight = newPhysicalScreenHeight;
+      MIDP.lastWindowInnerHeight = window.innerHeight;
+      MIDP.updateCanvas();
+    } else if (MIDP.lastWindowInnerHeight != window.innerHeight) {
+      MIDP.lastWindowInnerHeight = window.innerHeight;
+      MIDP.sendVirtualKeyboardEvent();
+    } else {
+      console.warn("Unhandled resize event!");
     }
 };
 
@@ -541,28 +500,72 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     return bytes;
 };
 
-MIDP.ScreenHeight = 0;
-MIDP.ScreenWidth = 0;
+MIDP.isVKVisibleAutosize = function() {
+    var expectedHeightWithNoKeyboard = window.outerHeight - MIDP.verticalChrome;
+    if (window.innerHeight == expectedHeightWithNoKeyboard) {
+        return false;
+    } else if (window.innerHeight < expectedHeightWithNoKeyboard) {
+        return true;
+    } else {
+        console.warn("window is taller than expected in isVKVisible!");
+        return false;
+    }
+};
+
+MIDP.isVKVisibleDebug = function() {
+    return false;
+}
 
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
 
     if (config.autosize && !/no|0/.test(config.autosize)) {
-      c.width = window.innerWidth;
-      c.height = window.innerHeight;
       document.documentElement.classList.add('autosize');
+
+      // Chrome amounts:
+      //   The difference between the outer[Height|Width] and the actual
+      //   amount of space we have available. So far, horizontalChrome is
+      //   always 0 and verticalChrome is always the size of the status bar,
+      //   which has been 30px in testing. These are assumed to be static
+      //   throughout the lifetime of the app, and things will break if that
+      //   assumption is violated.
+      MIDP.verticalChrome = window.outerHeight - window.innerHeight;
+      MIDP.horizontalChrome = window.outerWidth - window.innerWidth;
+
+      // "Physical" dimensions:
+      //   The amount of space available to J2ME. This is always the
+      //   outer[Height|Width] minus the [vertical|horizontal]Chrome amount.
+      //
+      //   Note that these values will not always equal the size of our window.
+      //   Specifically, when the FxOS keyboard is visible, the window shrinks,
+      //   so `window.inner[Height|Width]` will be
+      //   smaller than these values. J2ME apps expect that the keyboard
+      //   overlaps the window rather than squishing it, so we simulate that
+      //   by keeping track of these "physical" values.
+      //
+      //   Note also that these values do not take into account the size of
+      //   the header, which might shrink our canvas. To find out how much
+      //   space is actually available to the current MIDlet, check
+      //   `document.getElementById("canvas").[width|height]`.
+      MIDP.physicalScreenWidth = window.outerWidth - MIDP.horizontalChrome;
+      MIDP.physicalScreenHeight = window.outerHeight - MIDP.verticalChrome;
+
+      // Cached value of `window.innerHeight` so that we can tell when it
+      // changes. This is useful for determining when to send keyboard
+      // visibility events.
+      MIDP.lastWindowInnerHeight = window.innerHeight;
+
+      MIDP.updateCanvas();
+      MIDP.isVKVisible = MIDP.isVKVisibleAutosize;
       window.addEventListener("resize", MIDP.onWindowResize);
     } else {
       document.documentElement.classList.add('debug-mode');
-      c.width = 240;
-      c.height = 320;
+      MIDP.physicalScreenWidth = 240;
+      MIDP.physicalScreenHeight = 320;
+
+      MIDP.updateCanvas();
+      MIDP.isVKVisible = MIDP.isVKVisibleDebug;
     }
-
-    MIDP.ScreenHeight = c.height;
-    MIDP.ScreenWidth = c.width;
-
-    window.addEventListener("keyboardHidden", MIDP.onKeyboardHidden);
-    window.addEventListener("keyboardShown", MIDP.onKeyboardShown);
 
     function sendPenEvent(pt, whichType) {
         MIDP.sendNativeEvent({
@@ -605,9 +608,8 @@ MIDP.Context2D = (function() {
     // Cache the canvas position for future computation.
     var canvasRect = c.getBoundingClientRect();
     c.addEventListener("canvasresize", function() {
-        c.style.height = c.height + "px";
-        c.style.top = (MIDP.ScreenHeight - c.height) + "px";
         canvasRect = c.getBoundingClientRect();
+        MIDP.sendRotationEvent();
     });
 
     function getEventPoint(event) {
@@ -989,6 +991,30 @@ MIDP.sendNativeEvent = function(e, isolateId) {
     delete MIDP.waitingNativeEventQueue[isolateId];
 }
 
+MIDP.sendVirtualKeyboardEvent = function() {
+    if (-1 != MIDP.displayId) {
+        MIDP.sendNativeEvent({
+            type: MIDP.VIRTUAL_KEYBOARD_EVENT,
+            intParam1: 0,
+            intParam2: 0,
+            intParam3: 0,
+            intParam4: MIDP.displayId,
+        }, MIDP.foregroundIsolateId);
+    }
+};
+
+MIDP.sendRotationEvent = function() {
+    if (-1 != MIDP.displayId) {
+        MIDP.sendNativeEvent({
+            type: MIDP.ROTATION_EVENT,
+            intParam1: 0,
+            intParam2: 0,
+            intParam3: 0,
+            intParam4: MIDP.displayId,
+        }, MIDP.foregroundIsolateId);
+    }
+}
+
 MIDP.KEY_EVENT = 1;
 MIDP.PEN_EVENT = 2;
 MIDP.PRESSED = 1;
@@ -999,6 +1025,7 @@ MIDP.EVENT_QUEUE_SHUTDOWN = 31;
 MIDP.ROTATION_EVENT = 43;
 MIDP.MMAPI_EVENT = 45;
 MIDP.SCREEN_REPAINT_EVENT = 47;
+MIDP.VIRTUAL_KEYBOARD_EVENT = 58,
 MIDP.GESTURE_EVENT = 71;
 MIDP.GESTURE_TAP = 0x1;
 MIDP.GESTURE_LONG_PRESS = 0x2;
@@ -1423,8 +1450,17 @@ Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/m
     throw $.newIllegalArgumentException("VirtualKeyboard::getCustomKeyboardControl() not implemented")
 };
 
+MIDP.keyboardVisibilityListener = null;
+Native["com/nokia/mid/ui/VirtualKeyboard.setVisibilityListener.(Lcom/nokia/mid/ui/KeyboardVisibilityListener;)V"] = function(listener) {
+    MIDP.keyboardVisibilityListener = listener;
+};
+
+Native["javax/microedition/lcdui/Display.getKeyboardVisibilityListener.()Lcom/nokia/mid/ui/KeyboardVisibilityListener;"] = function() {
+    return MIDP.keyboardVisibilityListener;
+};
+
 Native["com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z"] = function() {
-    return MIDP.isVKVisible ? 1 : 0;
+    return MIDP.isVKVisible() ? 1 : 0;
 };
 
 Native["com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I"] = function() {
@@ -1434,27 +1470,18 @@ Native["com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I"] = function() {
 Native["com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I"] = function() {
     // We should return the number of pixels between the top of the
     // screen and the top of the keyboard
-    return window.innerHeight;
+    return MIDP.Context2D.canvas.height - MIDP.getKeyboardHeight();
 };
 
 Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
+    // The keyboard is always the same width as our window
     return window.innerWidth;
 };
 
 Native["com/nokia/mid/ui/VirtualKeyboard.getHeight.()I"] = function() {
-    return MIDP.ScreenHeight - window.innerHeight;
+    return MIDP.getKeyboardHeight();
 };
 
-Native["com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z"] = function() {
-    asyncImpl("Z", new Promise(function(resolve, reject) {
-        if (MIDP.pendingShowNotify) {
-            resolve(1);
-            MIDP.pendingShowNotify = false;
-        } else if (MIDP.pendingHideNotify) {
-            resolve(0);
-            MIDP.pendingHideNotify = false;
-        } else {
-            MIDP.keyboardVisibilityListenerResolve = resolve;
-        }
-    }));
+MIDP.getKeyboardHeight = function() {
+    return MIDP.physicalScreenHeight - window.innerHeight;
 };
