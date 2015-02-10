@@ -70,7 +70,7 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
 };
 
 var stubProperties = {
-  "com.nokia.multisim.slots": 1,
+  "com.nokia.multisim.slots": "1",
   "com.nokia.mid.imsi": "000000000000000",
   "com.nokia.mid.imei": "",
 };
