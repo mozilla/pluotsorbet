@@ -1,7 +1,7 @@
 SRCS=$(shell find ./cldc1.1.1 -name *.java) $(shell find ./vm -name *.java) $(shell find ./midp -name *.java) $(shell find ./custom -name *.java)
 SRC_DIRS=cldc1.1.1/. vm/. midp/. custom/.
 JPP_DEFS=-DENABLE_JSR_205 -DENABLE_SSL -DENABLE_PUBLICKEYSTORE -DENABLE_JSR_211 -DENABLE_MULTIPLE_ISOLATES -DRECORD -DUSE_FILE_CONNECTION -DENABLE_JSR_234
-JPP_SRCS=$(shell find ./cldc1.1.1 -name *.jpp) $(shell find ./vm -name *.jpp) $(shell find ./midp -name *.jpp) $(shell find ./jsr-075 -name *.jpp) $(shell find ./custom -name *.jpp)
+JPP_SRCS=$(shell find ./cldc1.1.1 -name *.jpp) $(shell find ./vm -name *.jpp) $(shell find ./midp -name *.jpp) $(shell find ./custom -name *.jpp)
 
 ifeq ($(JSR_256),1)
 SRCS += $(shell find ./jsr-256 -name *.java)
