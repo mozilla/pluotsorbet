@@ -9,6 +9,20 @@
    return
 .end method
 
+.method public getExpectedPass()I
+   iconst_1
+   ireturn
+.end method
+
+.method public getExpectedFail()I
+   iconst_0
+   ireturn
+.end method
+
+.method public getExpectedKnownFail()I
+   iconst_0
+   ireturn
+.end method
 
 .method public test(Lgnu/testlet/TestHarness;)V
    .limit stack 2

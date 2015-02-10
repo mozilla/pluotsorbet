@@ -8,6 +8,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestRandomAccessStream implements Testlet {
+    public int getExpectedPass() { return 108; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         RandomAccessStream ras = new RandomAccessStream();
 

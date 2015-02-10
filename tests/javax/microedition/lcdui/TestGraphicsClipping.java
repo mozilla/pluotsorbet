@@ -30,6 +30,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestGraphicsClipping implements Testlet {
+    public int getExpectedPass() { return 1296; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
 
     static final int BACKGROUND_COLOR = 0xffffffff;
     int width = 10;

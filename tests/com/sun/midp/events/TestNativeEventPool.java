@@ -33,6 +33,9 @@ import gnu.testlet.Testlet;
  * Unit tests for the NativeEventPool class.
  */
 public class TestNativeEventPool implements Testlet {
+    public int getExpectedPass() { return 25; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     /**

@@ -21,8 +21,9 @@ module J2ME {
     Load  = 0x10,
     JIT   = 0x20,
     Code  = 0x40,
+    Thread = 0x80,
 
-    All   = Trace | Link | Init | Perf | Load | JIT | Code
+    All   = Trace | Link | Init | Perf | Load | JIT | Code | Thread
   }
 
   /**
@@ -381,6 +382,7 @@ module J2ME {
       jitWriter = writers & WriterFlags.JIT ? writer : null;
       codeWriter = writers & WriterFlags.Code ? writer : null;
       initWriter = writers & WriterFlags.Init ? writer : null;
+      threadWriter = writers & WriterFlags.Thread ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
     }
 
@@ -551,7 +553,6 @@ module J2ME {
     }
 
     execute() {
-      var start = performance.now();
       this.setAsCurrentContext();
       do {
         VM.execute();
@@ -561,23 +562,16 @@ module J2ME {
             this.bailoutFrames = [];
           }
           var frames = this.frames;
-          if (windingWriter) {
-            windingWriter.enter("Unwound");
-            frames.map(function (f) {
-              if (Frame.isMarker(f)) {
-                windingWriter.writeLn("- marker -");
-              } else {
-                windingWriter.writeLn((f.methodInfo.state === MethodState.Compiled ? "C" : "I") + " " + f.toString());
-              }
-            });
-            windingWriter.leave("");
-          }
           switch (U) {
             case VMState.Yielding:
               this.resume();
               break;
             case VMState.Pausing:
               break;
+            case VMState.Stopping:
+              this.clearCurrentContext();
+              this.kill();
+              return;
           }
           U = VMState.Running;
           this.clearCurrentContext();
@@ -592,16 +586,14 @@ module J2ME {
     }
 
     block(obj, queue, lockLevel) {
-      if (!obj[queue])
-        obj[queue] = [];
-      obj[queue].push(this);
+      obj._lock[queue].push(this);
       this.lockLevel = lockLevel;
       $.pause("block");
     }
 
     unblock(obj, queue, notifyAll) {
-      while (obj[queue] && obj[queue].length) {
-        var ctx = obj[queue].pop();
+      while (obj._lock[queue].length) {
+        var ctx = obj._lock[queue].pop();
         if (!ctx)
           continue;
           ctx.wakeup(obj)
@@ -615,14 +607,12 @@ module J2ME {
         window.clearTimeout(this.lockTimeout);
         this.lockTimeout = null;
       }
-      if (obj._lock) {
-        if (!obj.ready)
-          obj.ready = [];
-        obj.ready.push(this);
+      if (obj._lock.level !== 0) {
+        obj._lock.ready.push(this);
       } else {
         while (this.lockLevel-- > 0) {
           this.monitorEnter(obj);
-          if (U === VMState.Pausing) {
+          if (U === VMState.Pausing || U === VMState.Stopping) {
             return;
           }
         }
@@ -632,6 +622,11 @@ module J2ME {
 
     monitorEnter(object: java.lang.Object) {
       var lock = object._lock;
+      if (lock && lock.level === 0) {
+        lock.thread = this.thread;
+        lock.level = 1;
+        return;
+      }
       if (!lock) {
         object._lock = new Lock(this.thread, 1);
         return;
@@ -645,12 +640,15 @@ module J2ME {
 
     monitorExit(object: java.lang.Object) {
       var lock = object._lock;
+      if (lock.level === 1 && lock.ready.length === 0) {
+        lock.level = 0;
+        return;
+      }
       if (lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       if (--lock.level > 0) {
         return;
       }
-      object._lock = null;
       this.unblock(object, "ready", false);
     }
 
@@ -661,17 +659,19 @@ module J2ME {
       if (!lock || lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
       var lockLevel = lock.level;
-      while (lock.level > 0)
+      for (var i = lockLevel; i > 0; i--) {
         this.monitorExit(object);
+      }
       if (timeout) {
         var self = this;
         this.lockTimeout = window.setTimeout(function () {
-          object.waiting.forEach(function (ctx, n) {
+          for (var i = 0; i < lock.waiting.length; i++) {
+            var ctx = lock.waiting[i];
             if (ctx === self) {
-              object.waiting[n] = null;
+              lock.waiting[i] = null;
               ctx.wakeup(object);
             }
-          });
+          }
         }, timeout);
       } else {
         this.lockTimeout = null;

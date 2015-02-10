@@ -26,6 +26,9 @@ import gnu.testlet.TestHarness;
  */
 public class byteDivide implements Testlet
 {
+  public int getExpectedPass() { return 21; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   /**
    * Entry pobyte to this test.

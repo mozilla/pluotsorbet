@@ -66,7 +66,7 @@ DataEncoder.prototype.getData = function() {
 }
 
 var DataDecoder = function(data, offset, length) {
-  this.data = JSON.parse(util.decodeUtf8(new Uint8Array(data.buffer, offset, length)));
+  this.data = JSON.parse(util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
   this.current = [];
 }
 

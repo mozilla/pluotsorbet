@@ -36,6 +36,9 @@ import gnu.testlet.*;
 import java.io.UnsupportedEncodingException;
 
 class StringBufferTest implements Testlet {
+    public int getExpectedPass() { return 25; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
 
     private TestHarness th;
     public void test(TestHarness th) {

@@ -97,7 +97,7 @@ Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/la
     if (!bytes)
         throw $.newIOException();
     var length = bytes.byteLength;
-    var data = new Uint8Array(bytes);
+    var data = new Int8Array(bytes);
     var array = J2ME.newByteArray(length);
     for (var n = 0; n < length; ++n)
         array[n] = data[n];
@@ -535,7 +535,7 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     }
     var len = data.byteLength;
     var bytes = J2ME.newByteArray(len);
-    var src = new Uint8Array(data);
+    var src = new Int8Array(data);
     for (var n = 0; n < bytes.byteLength; ++n)
         bytes[n] = src[n];
     return bytes;
@@ -583,7 +583,7 @@ MIDP.Context2D = (function() {
             intParam4: MIDP.displayId,
             intParam5: pt.x,
             intParam6: pt.y,
-            floatParam1: aFloatParam1 || 0.0,
+            floatParam1: Math.fround(aFloatParam1 || 0.0),
             intParam7: aIntParam7 || 0,
             intParam8: aIntParam8 || 0,
             intParam9: aIntParam9 || 0,
@@ -862,33 +862,29 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) {
     var ctx = $.ctx;
+    var mutex;
+    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
+        if (MIDP.InterIsolateMutexes[i].id == id) {
+            mutex = MIDP.InterIsolateMutexes[i];
+            break;
+        }
+    }
+
+    if (!mutex) {
+        throw $.newIllegalStateException("Invalid mutex ID");
+    }
+
+    if (!mutex.locked) {
+        mutex.locked = true;
+        mutex.holder = ctx.runtime.isolate.id;
+        return;
+    }
+
+    if (mutex.holder == ctx.runtime.isolate.id) {
+        throw $.newRuntimeException("Attempting to lock mutex twice within the same Isolate");
+    }
+
     asyncImpl("V", new Promise(function(resolve, reject) {
-        ctx.setAsCurrentContext();
-        var mutex;
-        for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-            if (MIDP.InterIsolateMutexes[i].id == id) {
-                mutex = MIDP.InterIsolateMutexes[i];
-                break;
-            }
-        }
-
-        if (!mutex) {
-            reject($.newIllegalStateException("Invalid mutex ID"));
-            return;
-        }
-
-        if (!mutex.locked) {
-            mutex.locked = true;
-            mutex.holder = ctx.runtime.isolate.id;
-            resolve();
-            return;
-        }
-
-        if (mutex.holder == ctx.runtime.isolate.id) {
-            reject($.newRuntimeException("Attempting to lock mutex twice within the same Isolate"));
-            return;
-        }
-
         mutex.waiting.push(function() {
             mutex.locked = true;
             mutex.holder = ctx.runtime.isolate.id;
@@ -927,8 +923,9 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id
 };
 
 MIDP.exit = function(code) {
-    $.pause("exit");
+    $.stop();
     DumbPipe.open("exit", null, function(message) {});
+    document.getElementById("exit-screen").style.display = "block";
 };
 
 MIDP.pendingMIDletUpdate = null;
@@ -972,37 +969,23 @@ MIDP.foregroundIsolateId;
 MIDP.nativeEventQueues = {};
 MIDP.waitingNativeEventQueue = {};
 
-MIDP.copyEvent = function(obj, isolateId) {
-    var e = MIDP.nativeEventQueues[isolateId].shift();
-    obj.klass.classInfo.getField("I.type.I").set(obj, e.type);
-    obj.klass.classInfo.fields.forEach(function(field) {
-        if (e[field.name] === undefined) {
-          return;
-        }
-        field.set(obj, e[field.name]);
-    });
-}
-
-MIDP.deliverWaitForNativeEventResult = function(resolve, nativeEvent, isolateId) {
-    if (MIDP.nativeEventQueues[isolateId].length > 0)
-        MIDP.copyEvent(nativeEvent, isolateId);
-    resolve(MIDP.nativeEventQueues[isolateId].length);
-}
-
-MIDP.sendEvent = function(obj, isolateId) {
-    var e = { type: obj.klass.classInfo.getField("I.type.I").get(obj) };
-    obj.klass.classInfo.fields.forEach(function(field) {
-        e[field.name] = field.get(obj);
-    });
-    MIDP.sendNativeEvent(e, isolateId);
+MIDP.copyEvent = function(e, obj) {
+    var keys = Object.keys(e);
+    for (var i = 0; i < keys.length; i++) {
+      obj[keys[i]] = e[keys[i]];
+    }
 }
 
 MIDP.sendNativeEvent = function(e, isolateId) {
-    MIDP.nativeEventQueues[isolateId].push(e);
     var elem = MIDP.waitingNativeEventQueue[isolateId];
-    if (!elem)
+    if (!elem) {
+        MIDP.nativeEventQueues[isolateId].push(e);
         return;
-    MIDP.deliverWaitForNativeEventResult(elem.resolve, elem.nativeEvent, isolateId);
+    }
+
+    MIDP.copyEvent(e, elem.nativeEvent);
+    elem.resolve(MIDP.nativeEventQueues[isolateId].length);
+
     delete MIDP.waitingNativeEventQueue[isolateId];
 }
 
@@ -1053,47 +1036,48 @@ Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = functio
 };
 
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
-    console.warn("EventQueue.resetNativeEventQueue.()V not implemented");
+    MIDP.nativeEventQueues[$.ctx.runtime.isolate.id] = [];
 };
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
 function(obj, isolateId) {
-    if (!MIDP.nativeEventQueues[isolateId]) {
-      MIDP.nativeEventQueues[isolateId] = [];
+    var e = { type: obj.type };
+
+    var fields = obj.klass.classInfo.fields;
+    for (var i = 0; i < fields.length; i++) {
+      var field = fields[i];
+      e[field.name] = field.get(obj);
     }
 
-    MIDP.sendEvent(obj, isolateId);
+    MIDP.sendNativeEvent(e, isolateId);
 };
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
 function(nativeEvent) {
-    var ctx = $.ctx;
+    var isolateId = $.ctx.runtime.isolate.id;
+    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
+
+    if (nativeEventQueue.length !== 0) {
+        MIDP.copyEvent(nativeEventQueue.shift(), nativeEvent);
+        return nativeEventQueue.length;
+    }
+
     asyncImpl("I", new Promise(function(resolve, reject) {
-        ctx.setAsCurrentContext();
-        var isolateId = ctx.runtime.isolate.id;
-
-        if (!MIDP.nativeEventQueues[isolateId]) {
-          MIDP.nativeEventQueues[isolateId] = [];
-        }
-
-        if (MIDP.nativeEventQueues[isolateId].length === 0) {
-            MIDP.waitingNativeEventQueue[isolateId] = {
-              resolve: resolve,
-              nativeEvent: nativeEvent,
-            };
-            return;
-        }
-
-        MIDP.deliverWaitForNativeEventResult(resolve, nativeEvent, isolateId);
+        MIDP.waitingNativeEventQueue[isolateId] = {
+            resolve: resolve,
+            nativeEvent: nativeEvent,
+        };
     }));
 };
 
 Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
 function(obj) {
-    if (!MIDP.nativeEventQueues[$.ctx.runtime.isolate.id].length) {
+    var isolateId = $.ctx.runtime.isolate.id;
+    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
+    if (!nativeEventQueue.length) {
         return 0;
     }
-    MIDP.copyEvent(obj, $.ctx.runtime.isolate.id);
+    MIDP.copyEvent(nativeEventQueue.shift(), obj);
     return 1;
 };
 
@@ -1138,9 +1122,7 @@ Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(dis
 };
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    var obj = J2ME.newObject(CLASSES.getClass("com/sun/midp/events/NativeEvent").klass);
-    obj.klass.classInfo.getField("I.type.I").set(obj, MIDP.EVENT_QUEUE_SHUTDOWN);
-    MIDP.sendEvent(obj, $.ctx.runtime.isolate.id);
+    MIDP.sendNativeEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
 };
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {

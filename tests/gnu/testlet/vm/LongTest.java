@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class LongTest implements Testlet {
+    public int getExpectedPass() { return 9; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     static long h = 0x0123456789abcdefL;
     static long a = 5;
     static long b = 7;

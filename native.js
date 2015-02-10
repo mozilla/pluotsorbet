@@ -70,7 +70,7 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
 };
 
 var stubProperties = {
-  "com.nokia.multisim.slots": 1,
+  "com.nokia.multisim.slots": "1",
   "com.nokia.mid.imsi": "000000000000000",
   "com.nokia.mid.imei": "",
 };
@@ -278,13 +278,6 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
     return J2ME.getRuntimeKlass($.ctx.runtime, this.klass).classObject;
-};
-
-Native["java/lang/Object.hashCode.()I"] = function() {
-    var hashCode = this.hashCode;
-    while (!hashCode)
-        hashCode = this.hashCode = util.id();
-    return hashCode;
 };
 
 Native["java/lang/Object.wait.(J)V"] = function(timeout) {
@@ -603,7 +596,7 @@ Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
 };
 
 Native["java/lang/Thread.yield.()V"] = function() {
-    $.yield();
+    $.yield("Thread.yield");
 };
 
 Native["java/lang/Thread.activeCount.()I"] = function() {
@@ -797,7 +790,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I"] = function(cbuf
 };
 
 Native["java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;"] = function(bytearr) {
-    var array = new Uint8Array(bytearr.buffer);
+    var array = new Int8Array(bytearr.buffer);
     try {
         return J2ME.newString(util.decodeUtf8Array(array));
     } catch(e) {
@@ -860,7 +853,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(cbu
   var count = 0;
 
   while (count < len) {
-    var outputByte = new Uint8Array(4);     // Never more than 4 encoded bytes
+    var outputByte = new Int8Array(4);     // Never more than 4 encoded bytes
     inputChar = 0xffff & cbuf[off + count];
     if (0 != pendingSurrogate) {
       if (0xdc00 <= inputChar && inputChar <= 0xdfff) {

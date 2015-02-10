@@ -6,6 +6,9 @@ import java.io.*;
 import javax.microedition.io.*;
 
 public class TestSocket implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 2; }
     public void test(TestHarness th) {
         try {
             testBasicSocketConnection(th);

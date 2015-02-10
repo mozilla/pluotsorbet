@@ -13,6 +13,9 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
 public class TestSSLStreamConnection implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 1; }
     static final String SOCKET_URL = "socket://localhost:54443";
     static final String HOST = "localhost";
     static final int PORT = 54443;
