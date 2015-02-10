@@ -71,8 +71,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getListOfLocationProvider
 addUnimplementedNative("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V");
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] = function(criteria) {
-    criteria.klass.classInfo.getField("I.providerName.Ljava/lang/String;")
-                  .set(criteria, J2ME.newString(Location.PROVIDER_NAME));
+    criteria.providerName = J2ME.newString(Location.PROVIDER_NAME);
     return 1;
 };
 
@@ -95,12 +94,9 @@ Native["com/sun/j2me/location/PlatformLocationProvider.resetImpl.(I)V"] = functi
 };
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava/lang/String;Lcom/sun/j2me/location/LocationProviderInfo;)Z"] = function(name, criteria) {
-    criteria.klass.classInfo.getField("I.canReportAltitude.Z")
-                  .set(criteria, 1);
-    criteria.klass.classInfo.getField("I.canReportSpeedCource.Z")
-                  .set(criteria, 1);
-    criteria.klass.classInfo.getField("I.averageResponseTime.I")
-                  .set(criteria, 10000);
+    criteria.canReportAltitude = 1;
+    criteria.canReportSpeedCource = 1;
+    criteria.averageResponseTime = 10000;
     return 1;
 };
 
@@ -111,26 +107,16 @@ Native["com/sun/j2me/location/PlatformLocationProvider.setUpdateIntervalImpl.(II
 Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILcom/sun/j2me/location/LocationInfo;)Z"] = function(providerId, locationInfo) {
     var provider = Location.Providers[providerId];
     var pos = provider.position;
-    locationInfo.klass.classInfo.getField("I.isValid.Z")
-                      .set(locationInfo, 1);
-    locationInfo.klass.classInfo.getField("I.timestamp.J")
-                      .set(locationInfo, Long.fromNumber(pos.timestamp));
-    locationInfo.klass.classInfo.getField("I.latitude.D")
-                      .set(locationInfo, pos.latitude);
-    locationInfo.klass.classInfo.getField("I.longitude.D")
-                      .set(locationInfo, pos.longitude);
-    locationInfo.klass.classInfo.getField("I.altitude.F")
-                      .set(locationInfo, pos.altitude);
-    locationInfo.klass.classInfo.getField("I.horizontalAccuracy.F")
-                      .set(locationInfo, pos.horizontalAccuracy);
-    locationInfo.klass.classInfo.getField("I.verticalAccuracy.F")
-                      .set(locationInfo, pos.verticalAccuracy);
-    locationInfo.klass.classInfo.getField("I.speed.F")
-                      .set(locationInfo, pos.speed);
-    locationInfo.klass.classInfo.getField("I.course.F")
-                      .set(locationInfo, pos.heading);
-    locationInfo.klass.classInfo.getField("I.method.I")
-                      .set(locationInfo, 0);
+    locationInfo.isValid = 1;
+    locationInfo.timestamp = Long.fromNumber(pos.timestamp);
+    locationInfo.latitude = pos.latitude;
+    locationInfo.longitude = pos.longitude;
+    locationInfo.altitude = Math.fround(pos.altitude);
+    locationInfo.horizontalAccuracy =  Math.fround(pos.horizontalAccuracy);
+    locationInfo.verticalAccuracy =  Math.fround(pos.verticalAccuracy);
+    locationInfo.speed = Math.fround(pos.speed);
+    locationInfo.course =  Math.fround(pos.course);
+    locationInfo.method = 0;
     return 1;
 };
 

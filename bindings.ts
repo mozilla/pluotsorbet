@@ -33,6 +33,38 @@ module J2ME {
         }
       }
     },
+    "com/sun/j2me/location/CriteriaImpl": {
+      fields: {
+        instanceSymbols: {
+          "providerName.Ljava/lang/String;": "providerName"
+        }
+      }
+    },
+    "com/sun/j2me/location/LocationProviderInfo": {
+      fields: {
+        instanceSymbols: {
+          "canReportAltitude.Z": "canReportAltitude",
+          "canReportSpeedCource.Z": "canReportSpeedCource",
+          "averageResponseTime.I": "averageResponseTime"
+        }
+      }
+    },
+    "com/sun/j2me/location/LocationInfo": {
+      fields: {
+        instanceSymbols: {
+          "isValid.Z": "isValid",
+          "timestamp.J": "timestamp",
+          "latitude.D": "latitude",
+          "longitude.D": "longitude",
+          "altitude.F": "altitude",
+          "horizontalAccuracy.F": "horizontalAccuracy",
+          "verticalAccuracy.F": "verticalAccuracy",
+          "speed.F": "speed",
+          "course.F": "course",
+          "method.I": "method"
+        }
+      }
+    },
     "com/sun/javame/sensor/ChannelModel": {
       fields: {
         instanceSymbols: {
