@@ -8,9 +8,12 @@ import javax.microedition.io.file.*;
 import java.io.*;
 
 public class TestAudioPlayer implements Testlet, PlayerListener {
+    public int getExpectedPass() { return 21; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
-    private static final long TIME_TOLERANCE = 100;
+    private static final long TIME_TOLERANCE = 175;
 
      /**
      * PlayerListener interface's method.

@@ -12,6 +12,9 @@ import javax.microedition.media.*;
 import javax.microedition.media.control.*;
 
 public class TestMediaImage implements Testlet, PlayerListener {
+    public int getExpectedPass() { return 3; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
     boolean started = false;
 

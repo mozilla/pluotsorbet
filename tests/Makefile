@@ -1,4 +1,13 @@
-SRCS=$(shell find . -not -path "./support/*" -name "*.java")
+EXCLUDED="./support/*"
+
+ifeq ($(JSR_256),0)
+EXCLUDED += \
+  "./javax/microedition/sensor/*" \
+  "./midlets/Cottage360/*" \
+  $(NULL)
+endif
+
+SRCS=$(shell find . $(foreach path,$(EXCLUDED),-not -path $(path)) -name "*.java")
 JASMIN_SRCS=$(shell find . -name "*.j")
 
 BUILDTIME_SUPPORT_DIR=support/buildtime
@@ -21,6 +30,10 @@ PACKAGE_FILES = \
   javax/microedition/media/audio.amr \
   javax/microedition/media/hello.ogg \
   $(NULL)
+
+ifeq ($(JSR_256),1)
+PACKAGE_FILES += midlets/Cottage360/res/*
+endif
 
 all: tests.jar
 

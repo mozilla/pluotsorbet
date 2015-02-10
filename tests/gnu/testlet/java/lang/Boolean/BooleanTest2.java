@@ -3,6 +3,9 @@ package gnu.testlet.java.lang.Boolean;
 import gnu.testlet.*;
 
 public class BooleanTest2 implements Testlet {
+    public int getExpectedPass() { return 11; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
 	th.check(Boolean.TRUE.booleanValue());
 	th.check(!Boolean.FALSE.booleanValue());

@@ -83,12 +83,12 @@ module J2ME {
   function checkReturnValue(methodInfo: MethodInfo, returnValue: any) {
     if (U) {
       if (typeof returnValue !== "undefined") {
-        assert(false, "Expected undefined return value during unwind, got " + returnValue);
+        assert(false, "Expected undefined return value during unwind, got " + returnValue + " in " + methodInfo.implKey);
       }
       return;
     }
     if (!(getKindCheck(methodInfo.getReturnKind())(returnValue))) {
-      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue);
+      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue + " in " + methodInfo.implKey);
     }
   }
 
@@ -178,12 +178,13 @@ module J2ME {
 
     if (ctx.current() === Frame.Start) {
       ctx.kill();
-      if (ctx.thread && ctx.thread.waiting && ctx.thread.waiting.length > 0) {
+      if (ctx.thread && ctx.thread._lock.waiting && ctx.thread._lock.waiting.length > 0) {
         console.error(buildExceptionLog(e, stackTrace));
-        ctx.thread.waiting.forEach(function(waitingCtx, n) {
-          ctx.thread.waiting[n] = null;
+        for (var i = 0; i < ctx.thread._lock.waiting.length; i++) {
+          var waitingCtx = ctx.thread._lock.waiting[i];
+          ctx.thread._lock.waiting[i] = null;
           waitingCtx.wakeup(ctx.thread);
-        });
+        }
       }
       throw new Error(buildExceptionLog(e, stackTrace));
     } else {
@@ -1051,7 +1052,7 @@ module J2ME {
           case Bytecodes.MONITORENTER:
             object = stack.pop();
             ctx.monitorEnter(object);
-            if (U === VMState.Pausing) {
+            if (U === VMState.Pausing || U === VMState.Stopping) {
               return;
             }
             break;
@@ -1196,7 +1197,7 @@ module J2ME {
                     : frame.getLocal(0);
                 }
                 ctx.monitorEnter(calleeFrame.lockObject);
-                if (U === VMState.Pausing) {
+                if (U === VMState.Pausing || U === VMState.Stopping) {
                   return;
                 }
               }

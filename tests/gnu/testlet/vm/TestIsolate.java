@@ -5,6 +5,9 @@ import com.sun.cldc.isolate.*;
 import gnu.testlet.vm.IsolatedClass;
 
 public class TestIsolate implements Testlet {
+    public int getExpectedPass() { return 4; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         th.check(IsolatedClass.val, 1);
 

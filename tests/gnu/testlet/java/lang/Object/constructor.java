@@ -37,6 +37,9 @@ import java.lang.Object;
  */
 public class constructor implements Testlet
 {
+    public int getExpectedPass() { return 2; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
 
     /**
      * Runs the test using the specified harness.
