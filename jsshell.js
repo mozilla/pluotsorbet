@@ -103,9 +103,7 @@ try {
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.JIT;
-
-  print("INITIALIZATION TIME: " + (dateNow() - start));
+  J2ME.writers = J2ME.WriterFlags.None;
 
   start = dateNow();
   var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
@@ -113,8 +111,6 @@ try {
   while (callbacks.length) {
     (callbacks.shift())();
   }
-
-  print("RUNNING TIME: " + (dateNow() - start));
 
   // J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
 

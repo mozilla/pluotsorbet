@@ -67,18 +67,18 @@ module J2ME {
    * Emits array bounds checks. Although this is necessary for correctness, most
    * applications work without them.
    */
-  var emitCheckArrayBounds = true;
+  export var emitCheckArrayBounds = true;
 
   /**
    * Inline calls to runtime methods whenever possible.
    */
-  var inlineRuntimeCalls = true;
+  export var inlineRuntimeCalls = true;
 
   /**
    * Emits array store type checks. Although this is necessary for correctness,
    * most applications work without them.
    */
-  var emitCheckArrayStore = true;
+  export var emitCheckArrayStore = true;
 
   /**
    * Unsafe methods.
@@ -93,7 +93,7 @@ module J2ME {
   /**
    * Emits preemption checks for methods that already yield.
    */
-  var emitCheckPreemption = false;
+  export var emitCheckPreemption = false;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
