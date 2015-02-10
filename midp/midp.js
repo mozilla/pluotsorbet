@@ -583,7 +583,7 @@ MIDP.Context2D = (function() {
             intParam4: MIDP.displayId,
             intParam5: pt.x,
             intParam6: pt.y,
-            floatParam1: aFloatParam1 || 0.0,
+            floatParam1: Math.fround(aFloatParam1 || 0.0),
             intParam7: aIntParam7 || 0,
             intParam8: aIntParam8 || 0,
             intParam9: aIntParam9 || 0,
