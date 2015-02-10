@@ -107,7 +107,7 @@ var Benchmark = (function() {
       }
       if (storage.deleteJitCache) {
         console.log("Deleting jit cache.");
-        indexedDB.deleteJitCache("CompiledMethodCache");
+        indexedDB.deleteDatabase("CompiledMethodCache");
       }
       console.log("Scheduling round " + (storage.round + 1) + " of " + storage.numRounds + " to run in " + storage.roundDelay + "ms");
       setTimeout(run, storage.roundDelay);
