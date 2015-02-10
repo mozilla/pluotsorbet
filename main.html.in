@@ -138,7 +138,18 @@
       <button id="sampleCounters2">One sample for 100ms (2s)</button>
       <button id="start">Start</button>
       <button id="loadAllClasses">Load All Classes</button>
+
     </section>
+    <!-- #if BENCHMARK == "true" -->
+    <section id="benchmark">
+      <button id="benchmark-startup-run">Run Startup Benchmark</button>
+      <button id="benchmark-startup-baseline">Build Benchmark Baseline</button>
+      <label><input type="number" min="1" max="100" id="benchmark-num-rounds"> Rounds</label>
+      <label><input type="number" id="benchmark-round-delay" min="0" max="20000"> Round Delay(ms)</label>
+      <label><input type="checkbox" id="benchmark-delete-fs">Delete FS before round</label>
+      <label><input type="checkbox" id="benchmark-delete-jit-cache">Delete JIT cache before round</label>
+    </section>
+    <!-- #endif -->
   </div>
   <div id="display">
     <section id="sidebar" data-type="sidebar" style="display:none">
