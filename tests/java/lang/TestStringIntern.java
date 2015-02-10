@@ -8,6 +8,9 @@ class S {
 }
 
 public class TestStringIntern implements Testlet {
+    public int getExpectedPass() { return 15; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         try {
             String m1 = "marco";

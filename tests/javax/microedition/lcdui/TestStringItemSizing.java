@@ -30,6 +30,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestStringItemSizing implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 168; }
     TestHarness th;
 
     /**

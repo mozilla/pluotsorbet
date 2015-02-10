@@ -26,6 +26,9 @@ import java.util.Hashtable;
 
 public class basic implements Testlet
 {
+  public int getExpectedPass() { return 11; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
     {
       // The toString tests have been commented out as they currently

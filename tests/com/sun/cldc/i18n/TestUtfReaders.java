@@ -32,6 +32,9 @@ import gnu.testlet.Testlet;
 import java.io.*;
 
 public class TestUtfReaders implements Testlet {
+    public int getExpectedPass() { return 72; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     public String teststr1 = "你好世界";

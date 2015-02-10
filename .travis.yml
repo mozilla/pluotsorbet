@@ -22,3 +22,5 @@ cache:
   directories:
     - node_modules
     - /tmp/j2me.js
+notifications:
+ irc: "irc.mozilla.org#j2mejs"

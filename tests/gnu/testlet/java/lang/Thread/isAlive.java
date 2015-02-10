@@ -27,6 +27,9 @@ import gnu.testlet.TestHarness;
 
 public class isAlive extends Thread implements Testlet
 {
+  public int getExpectedPass() { return 4; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   boolean started = false;
   boolean please_stop = false;

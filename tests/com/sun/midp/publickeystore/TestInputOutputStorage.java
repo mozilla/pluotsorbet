@@ -10,6 +10,9 @@ import java.io.*;
 import com.sun.midp.io.j2me.storage.RandomAccessStream;
 
 public class TestInputOutputStorage implements Testlet {
+    public int getExpectedPass() { return 13; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     void testWrite(TestHarness th, OutputStream out) throws IOException {
         OutputStorage outStorage = new OutputStorage(out);
         outStorage.writeValue((byte)1, "Marco");

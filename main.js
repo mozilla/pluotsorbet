@@ -256,6 +256,10 @@ window.onload = function() {
 
     var el = document.getElementById("unwindCount");
     el.textContent = numberWithCommas(J2ME.unwindCount);
+
+    var el = document.getElementById("preemptionCount");
+    el.textContent = numberWithCommas(J2ME.preemptionCount);
+
   }, 500);
 
   function dumpCounters() {

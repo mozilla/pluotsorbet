@@ -37,6 +37,9 @@ import java.util.Enumeration;
  */
 public class EnumerateAndModify implements Testlet
 {
+  public int getExpectedPass() { return 4; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   /**
    * test is the main test routine testing enumaration of keys and

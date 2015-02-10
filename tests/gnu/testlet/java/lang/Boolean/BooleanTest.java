@@ -26,6 +26,9 @@ import gnu.testlet.TestHarness;
 
 public class BooleanTest implements Testlet
 {
+  public int getExpectedPass() { return 8; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test_Basics(TestHarness harness)
   {
     harness.checkPoint ("Basics");

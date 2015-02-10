@@ -46,6 +46,9 @@ class TestKeyboardVisibilityListener implements com.nokia.mid.ui.KeyboardVisibil
 }
 
 public class TestVirtualKeyboard extends Canvas implements Testlet {
+    public int getExpectedPass() { return 9; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public native static void hideKeyboard();
     public native static void showKeyboard();
 

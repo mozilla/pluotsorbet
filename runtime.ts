@@ -88,6 +88,11 @@ module J2ME {
   export var initWriter = null;
 
   /**
+   * Traces thread execution.
+   */
+  export var threadWriter = null;
+
+  /**
    * Traces generated code.
    */
   export var codeWriter = null;
@@ -614,7 +619,8 @@ module J2ME {
   export enum VMState {
     Running = 0,
     Yielding = 1,
-    Pausing = 2
+    Pausing = 2,
+    Stopping = 3
   }
 
   /** @const */ export var MAX_PRIORITY: number = 10;
@@ -723,18 +729,22 @@ module J2ME {
       $.ctx.bailout(methodInfo, bci, nextBCI, local, stack, lockObject);
     }
 
-    yield() {
-      windingWriter && windingWriter.writeLn("yielding");
+    yield(reason: string) {
       unwindCount ++;
-      runtimeCounter && runtimeCounter.count("yielding");
+      threadWriter && threadWriter.writeLn("yielding " + reason);
+      runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
     }
 
     pause(reason: string) {
-      windingWriter && windingWriter.writeLn("pausing");
       unwindCount ++;
+      threadWriter && threadWriter.writeLn("pausing " + reason);
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
+    }
+
+    stop() {
+      U = VMState.Stopping;
     }
 
     constructor(jvm: JVM) {
@@ -821,8 +831,12 @@ module J2ME {
   }
 
   export class Lock {
+    ready: Context [];
+    waiting: Context [];
+
     constructor(public thread: java.lang.Thread, public level: number) {
-      // ...
+      this.ready = [];
+      this.waiting = [];
     }
   }
 
@@ -871,15 +885,8 @@ module J2ME {
         });
         initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
         $.ctx.pushClassInitFrame(classInfo);
-        // release || assert(!U);
+        release || assert(!U, "Unwinding during static initializer not supported.");
 
-        //// TODO: monitorEnter
-        //if (klass.staticInitializer) {
-        //  klass.staticInitializer.call(runtimeKlass);
-        //}
-        //if (klass.staticConstructor) {
-        //  klass.staticConstructor.call(runtimeKlass);
-        //}
         return runtimeKlass;
       }
     });
@@ -1811,6 +1818,39 @@ module J2ME {
       return;
     }
   }
+
+  /**
+   * Last time we preempted a thread.
+   */
+  var lastPreemption = 0;
+
+  /**
+   * Number of ms between preemptions, chosen arbitrarily.
+   */
+  var preemptionInterval = 100;
+
+  /**
+   * Number of preemptions thus far.
+   */
+  export var preemptionCount = 0;
+
+  /**
+   * TODO: We will almost always preempt the next time we call this if the application
+   * has been idle. Figure out a better heurisitc here, maybe measure the frequency at
+   * at which |checkPreemption| is invoked and ony preempt if the frequency is sustained
+   * for a longer period of time *and* the time since we last preempted is above the
+   * |preemptionInterval|.
+   */
+  export function preempt() {
+    var now = performance.now();
+    var elapsed = now - lastPreemption;
+    if (elapsed > preemptionInterval) {
+      lastPreemption = now;
+      preemptionCount ++;
+      threadWriter && threadWriter.writeLn("Preemption timeout: " + elapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+      $.yield("preemption");
+    }
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1854,3 +1894,6 @@ var TE = J2ME.translateException;
 var TI = J2ME.throwArrayIndexOutOfBoundsException;
 var TA = J2ME.throwArithmeticException;
 var TN = J2ME.throwNegativeArraySizeException;
+
+var PE = J2ME.preempt;
+var PS = 0; // Preemption samples.
