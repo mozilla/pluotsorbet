@@ -1,4 +1,4 @@
-SRCS=$(shell find . -name "*.java") $(shell find ./scimark2src/jnt/scimark2 -name "*.java")
+SRCS=$(shell find . -name "*.java")
 
 benchmark.jar: $(SRCS)
 	rm -rf build
