@@ -168,6 +168,7 @@ public class EventQueue implements Runnable {
         dispatchTable = new DispatchData[tableSize];
 
         eventQueueThread = new Thread(this);
+        eventQueueThread.setPriority(Thread.MAX_PRIORITY);
 
         eventQueueLock = new Object();
 
@@ -177,6 +178,7 @@ public class EventQueue implements Runnable {
         eventMonitorThread =
             new Thread(
                 new NativeEventMonitor(eventQueueLock, this, pool));
+        eventMonitorThread.setPriority(Thread.MAX_PRIORITY);
 // #endif ENABLE_GCI
 
     }
