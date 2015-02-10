@@ -13,7 +13,7 @@ public class UTF8Bench {
     FileConnection file;
     char[] cbuf, cbufReader;
 
-	  void generateData() throws IOException {
+    void generateData() throws IOException {
         String str = "";
         String part = "abcdefghilmnopqrstuvzABCDEFGHILMNOPQRSTUVZabcdefghilmnopqrstuvzABCDEFGHILMNOPQRSTUVZ";
         for (int i = 0; i < 2000; i++) {
@@ -30,9 +30,9 @@ public class UTF8Bench {
             file.delete();
         }
         file.create();
-	  }
+    }
 
-	  void writeUtf8Data(OutputStream os) throws IOException {
+    void writeUtf8Data(OutputStream os) throws IOException {
       OutputStreamWriter osWriter = new OutputStreamWriter(os, "UTF_8");
       osWriter.write(cbuf, 0, cbuf.length);
     }
@@ -42,7 +42,7 @@ public class UTF8Bench {
       isReader.read(cbufReader, 0, cbufReader.length);
     }
 
-	  void runBenchmark() {
+    void runBenchmark() {
       try {
           long start, time;
 
@@ -64,10 +64,10 @@ public class UTF8Bench {
       } catch (IOException e) {
         e.printStackTrace();
       }
-	  }
+    }
 
-	  public static void main(String args[]) {
-	  	UTF8Bench bench = new UTF8Bench();
-	  	bench.runBenchmark();
-	  }
+    public static void main(String args[]) {
+      UTF8Bench bench = new UTF8Bench();
+      bench.runBenchmark();
+    }
 }
