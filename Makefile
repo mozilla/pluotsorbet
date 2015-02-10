@@ -7,8 +7,13 @@ VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
 
+# Sensor support
 JSR_256 ?= 1
 export JSR_256
+
+# Bluetooth support
+JSR_082 ?= 1
+export JSR_082
 
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
