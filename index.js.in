@@ -436,6 +436,7 @@ DumbPipe.registerOpener("camera", function(message, sender) {
   };
 });
 
+// #if JSR_179 == 1
 var LocationProvider = {};
 LocationProvider.AVAILABLE = 1;
 LocationProvider.TEMPORARILY_UNAVAILABLE = 1;
@@ -534,6 +535,7 @@ DumbPipe.registerOpener("locationprovider", function(message, sender) {
     }
   };
 });
+// #endif
 
 var notification = null;
 DumbPipe.registerOpener("notification", function(message, sender) {
