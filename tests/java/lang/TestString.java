@@ -5,6 +5,9 @@ import gnu.testlet.TestHarness;
 import java.lang.String.*;
 
 public class TestString implements Testlet {
+    public int getExpectedPass() { return 5; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         // Check a few places where StringTest.java is incomplete.
 

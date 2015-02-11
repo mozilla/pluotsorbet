@@ -344,7 +344,9 @@
     info: logAtLevel.bind(null, "info"),
     warn: logAtLevel.bind(null, "warn"),
     error: logAtLevel.bind(null, "error"),
-    print: print
+    print: print,
+    profile: typeof console !== "undefined" && console.profile ? console.profile.bind(console) : null,
+    profileEnd: typeof console !== "undefined" && console.profileEnd ? console.profileEnd.bind(console) : null,
   };
 
 })();

@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class FieldNotFoundException implements Testlet {
+    public int getExpectedPass() { return 3; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     void throw1(TestHarness th) {
         boolean caught = false;
         try {

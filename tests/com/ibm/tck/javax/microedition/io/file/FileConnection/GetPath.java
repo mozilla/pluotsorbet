@@ -181,10 +181,10 @@ public class GetPath extends TestCaseWithLog {
 		// path for roots must be "/" + root
 		boolean passed = false;
 		try {
-			Enumeration  enum = FileSystemRegistry.listRoots();
+			Enumeration  rootsEnum = FileSystemRegistry.listRoots();
 
-			while (enum.hasMoreElements()) {
-				String root = (String) enum.nextElement();
+			while (rootsEnum.hasMoreElements()) {
+				String root = (String) rootsEnum.nextElement();
 				String url = "file:///" + root;
 				
 				FileConnection conn = null;
@@ -224,10 +224,10 @@ public class GetPath extends TestCaseWithLog {
 		// path for roots must be "/" + root
 		boolean passed = false;
 		try {
-			Enumeration  enum = FileSystemRegistry.listRoots();
+			Enumeration  rootsEnum = FileSystemRegistry.listRoots();
 
-			while (enum.hasMoreElements()) {
-				String root = (String) enum.nextElement();
+			while (rootsEnum.hasMoreElements()) {
+				String root = (String) rootsEnum.nextElement();
 				String url = "file://localhost/" + root;
 				
 				FileConnection conn = null;

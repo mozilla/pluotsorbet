@@ -1,4 +1,17 @@
-SRCS=$(shell find . -not -path "./support/*" -name "*.java")
+EXCLUDED="./support/*"
+
+ifeq ($(JSR_256),0)
+EXCLUDED += \
+  "./javax/microedition/sensor/*" \
+  "./midlets/Cottage360/*" \
+  $(NULL)
+endif
+
+ifeq ($(JSR_179),0)
+EXCLUDED += "./javax/microedition/location/*"
+endif
+
+SRCS=$(shell find . $(foreach path,$(EXCLUDED),-not -path $(path)) -name "*.java")
 JASMIN_SRCS=$(shell find . -name "*.j")
 
 BUILDTIME_SUPPORT_DIR=support/buildtime
@@ -22,6 +35,10 @@ PACKAGE_FILES = \
   javax/microedition/media/hello.ogg \
   $(NULL)
 
+ifeq ($(JSR_256),1)
+PACKAGE_FILES += midlets/Cottage360/res/*
+endif
+
 all: tests.jar
 
 ../java/classes.jar:
@@ -30,7 +47,7 @@ all: tests.jar
 Testlets.java: $(SRCS) $(JASMIN_SRCS) Makefile
 	echo "public class Testlets {" > $@
 	echo "  static String[] list = {" >> $@
-	grep "implements Testlet" `find . -name "*.java"` | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
+	grep "implements Testlet" $(SRCS) | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
 	grep "implements gnu/testlet/Testlet" `find . -name "*.j"` | sed -e "s/^.\///" -e "s/\.j.*//" -e "s/\(.*\)/\"\1\",/" >> $@
 	echo "  null};" >> $@
 	echo "};" >> $@

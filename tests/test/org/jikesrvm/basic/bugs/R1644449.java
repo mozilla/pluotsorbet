@@ -19,6 +19,9 @@ import gnu.testlet.Testlet;
  * [ 1644449 ] Floating point display breaks on IA32.
  */
 public class R1644449 implements Testlet {
+  public int getExpectedPass() { return 1; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public static float b = 0.009765625f;
   public static float a = 10.57379f;
 

@@ -33,6 +33,9 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 
 public class TestSprite implements Testlet {
+    public int getExpectedPass() { return 162; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     public void test(TestHarness th) {

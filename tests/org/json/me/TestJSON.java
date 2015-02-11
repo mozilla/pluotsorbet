@@ -30,6 +30,9 @@ import gnu.testlet.Testlet;
 import java.util.Vector;
 
 public class TestJSON implements Testlet {
+    public int getExpectedPass() { return 13; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         try {
             String jsonStr = "{\"team\":\"Bursaspor\",\"manager\":\"Ertuğrul Sağlam\",\"year\":\"2010\"}";

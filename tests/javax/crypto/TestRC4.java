@@ -38,6 +38,9 @@ import java.security.InvalidKeyException;
  * This test case tests ARCFOUR (RC4) cipher
  */
 public class TestRC4 implements Testlet {
+    public int getExpectedPass() { return 66; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     private static final byte[] SECRET_KEY = {
         0x73, 0x65, 0x63, 0x72, 0x65, 0x74 // "secret"
     };

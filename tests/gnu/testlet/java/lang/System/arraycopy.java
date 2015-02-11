@@ -26,6 +26,9 @@ import gnu.testlet.TestHarness;
 
 public class arraycopy implements Testlet
 {
+  public int getExpectedPass() { return 30; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void fill (int[] a)
   {
     for (int i = 0; i < a.length; ++i)

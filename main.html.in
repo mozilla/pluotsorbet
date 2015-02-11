@@ -61,7 +61,13 @@
   <script type="text/javascript" src="midp/gfx.js" defer></script>
   <script type="text/javascript" src="midp/text_editor.js" defer></script>
   <script type="text/javascript" src="midp/localmsg.js" defer></script>
+  <!-- #if JSR_179 == 1 -->
+  <script type="text/javascript" src="midp/location.js" defer></script>
+  <!-- #endif -->
   <script type="text/javascript" src="midp/media.js" defer></script>
+  <!-- #if JSR_256 == 1 -->
+  <script type="text/javascript" src="midp/sensor.js" defer></script>
+  <!-- #endif -->
   <script type="text/javascript" src="midp/socket.js" defer></script>
   <script type="text/javascript" src="midp/sms.js" defer></script>
   <script type="text/javascript" src="midp/codec.js" defer></script>
@@ -108,6 +114,7 @@
       <div>CompiledCount: <span id="compiledCount"></span></div>
       <div>OnStackReplacementCount: <span id="onStackReplacementCount"></span></div>
       <div>UnwindCount: <span id="unwindCount"></span></div>
+      <div>PreemptionCount: <span id="preemptionCount"></span></div>
     </section>
     <section>
       <select id="loglevel">
@@ -188,6 +195,12 @@
 
   <div class="splash-screen" id="splash-screen">
     <h1 class="title">Loading</h1>
+    <div class="splash-progress-container">
+      <progress></progress>
+    </div>
+  </div>
+
+  <div class="splash-screen" id="exit-screen">
     <div class="splash-progress-container">
       <progress></progress>
     </div>
