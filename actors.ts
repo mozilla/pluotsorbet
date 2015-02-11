@@ -6,8 +6,6 @@ module J2ME {
   declare var classObjects;
   declare var util;
 
-  import BlockMap = Bytecode.BlockMap;
-
   export interface ConstantPoolEntry {
     tag: TAGS;
     name_index: number;
@@ -134,7 +132,7 @@ module J2ME {
     mangledName: string;
     mangledClassAndMethodName: string;
 
-    blockMap: BlockMap;
+    onStackReplacementEntryPoints: number [];
 
     line_number_table: {start_pc: number; line_number: number} [];
 
@@ -229,7 +227,7 @@ module J2ME {
       this.bytecodeCount = 0;
 
       this.isOptimized = false;
-      this.blockMap = null;
+      this.onStackReplacementEntryPoints = null;
     }
 
     public getReturnKind(): Kind {

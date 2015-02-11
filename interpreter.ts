@@ -260,15 +260,7 @@ module J2ME {
             // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
             // on stack replacement.
 
-            var blockMap = mi.blockMap;
-            if (!blockMap) {
-              blockMap = new BlockMap(mi);
-              blockMap.build();
-              mi.blockMap = blockMap;
-            }
-
-            var block = blockMap.getBlock(frame.pc);
-            if (block.isLoopHeader && !block.isInnerLoopHeader()) {
+            if (mi.onStackReplacementEntryPoints.indexOf(frame.pc) > -1) {
               onStackReplacementCount++;
 
               // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
