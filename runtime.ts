@@ -1565,13 +1565,14 @@ module J2ME {
   export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[]) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
-    enterTimeline("Eval Compiled Code");
-    // This overwrites the method on the global object.
-    (1, eval)(source);
-    leaveTimeline("Eval Compiled Code");
+    enterTimeline("Link Compiled Code");
+    // Still not as bad as eval!
+    var fn = new Function('return ' + source)();
+    leaveTimeline("Link Compiled Code");
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    var fn = jsGlobal[mangledClassAndMethodName];
+
+    jsGlobal[mangledClassAndMethodName] = fn;
     methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
 
