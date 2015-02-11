@@ -49,4 +49,10 @@ public final class Sys {
       dst[dstOffset++] = src[srcOffset++];
     }
   }
+
+  /**
+   * Evals code in the JS shell, only available in non-release builds as an
+   * escape hatch for the purpose of testing and profiling.
+   */
+  public native static void eval(String src);
 }
