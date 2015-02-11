@@ -178,7 +178,7 @@ module J2ME {
 
     if (ctx.current() === Frame.Start) {
       ctx.kill();
-      if (ctx.thread && ctx.thread._lock.waiting && ctx.thread._lock.waiting.length > 0) {
+      if (ctx.thread && ctx.thread._lock && ctx.thread._lock.waiting.length > 0) {
         console.error(buildExceptionLog(e, stackTrace));
         for (var i = 0; i < ctx.thread._lock.waiting.length; i++) {
           var waitingCtx = ctx.thread._lock.waiting[i];
