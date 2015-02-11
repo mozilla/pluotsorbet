@@ -500,22 +500,6 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     return bytes;
 };
 
-MIDP.isVKVisibleAutosize = function() {
-    var expectedHeightWithNoKeyboard = window.outerHeight - MIDP.verticalChrome;
-    if (window.innerHeight == expectedHeightWithNoKeyboard) {
-        return false;
-    } else if (window.innerHeight < expectedHeightWithNoKeyboard) {
-        return true;
-    } else {
-        console.warn("window is taller than expected in isVKVisible!");
-        return false;
-    }
-};
-
-MIDP.isVKVisibleDebug = function() {
-    return false;
-}
-
 MIDP.Context2D = (function() {
     var c = document.getElementById("canvas");
 
@@ -556,7 +540,17 @@ MIDP.Context2D = (function() {
       MIDP.lastWindowInnerHeight = window.innerHeight;
 
       MIDP.updateCanvas();
-      MIDP.isVKVisible = MIDP.isVKVisibleAutosize;
+      MIDP.isVKVisible = function() {
+          var expectedHeightWithNoKeyboard = window.outerHeight - MIDP.verticalChrome;
+          if (window.innerHeight == expectedHeightWithNoKeyboard) {
+              return false;
+          } else if (window.innerHeight < expectedHeightWithNoKeyboard) {
+              return true;
+          } else {
+              console.warn("window is taller than expected in isVKVisible!");
+              return false;
+          }
+      };
       window.addEventListener("resize", MIDP.onWindowResize);
     } else {
       document.documentElement.classList.add('debug-mode');
@@ -564,7 +558,9 @@ MIDP.Context2D = (function() {
       MIDP.physicalScreenHeight = 320;
 
       MIDP.updateCanvas();
-      MIDP.isVKVisible = MIDP.isVKVisibleDebug;
+      MIDP.isVKVisible = function() {
+          return false;
+      };
     }
 
     function sendPenEvent(pt, whichType) {
