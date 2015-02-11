@@ -147,7 +147,9 @@ var Benchmark = (function() {
   };
 
   // Start right away instead of in init() so we can see any speedups in script loading.
-  startup.startTimer();
+  if (storage.running) {
+    startup.startTimer();
+  }
 
   return {
     initUI: function() {
@@ -188,13 +190,14 @@ var Benchmark = (function() {
     },
     startup: {
       init: function() {
-        var stoppedTimer = false;
-        Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function() {
-          if (stoppedTimer) {
-            return;
-          }
-          stoppedTimer = true;
+        if (!storage.running) {
+          return;
+        }
+        var implKey = "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V";
+        var originalFn = Native[implKey];
+        Native[implKey] = function() {
           startup.stopTimer();
+          originalFn.apply(null, arguments);
         };
       },
       run: startup.run.bind(startup),
