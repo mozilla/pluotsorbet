@@ -151,6 +151,8 @@ The startup benchmark measures from when the benchmark.js file loads to the call
 
 To use:
 
+*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds*
+
 1. Checkout the version you want to be the baseline(usually mozilla/master).
 1. Build a benchmark build `RELEASE=1 BENCHMARK=1 make`
 1. Open the midlet you want to test and click `Build Benchmark Baseline`
