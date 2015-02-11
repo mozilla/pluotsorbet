@@ -143,6 +143,24 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
+## Benchmarks
+
+### Startup Benchmark
+
+The startup benchmark measures from when the benchmark.js file loads to the call of `DisplayDevice.gainedForeground0`. Included in a benchmark build are helpers to build baseline scores so that subsequent runs of the benchmark can be compared. A t-test is used in the comparison to see if the changes were significant.
+
+To use:
+
+1. Checkout the version you want to be the baseline(usually mozilla/master).
+1. Build a benchmark build `RELEASE=1 BENCHMARK=1 make`
+1. Open the midlet you want to test and click `Build Benchmark Baseline`
+1. When finished the message `FINISHED BUILDING BASELINE` will show up in the console.
+1. Apply/checkout your changes to the code
+1. Rebuild `RELEASE=1 BENCHMARK=1 make`
+1. Refresh the midlet
+1. Click `Run Startup Benchmark`
+1. Once done, the benchmark will dump results to the console. If it says "FASTER" or "SLOWER" the t-test has determined the results were significant. If it says "INSIGNIFICANT RESULT" the changes were likely not enough to be differentiated from the noise of the test. 
+
 ## Filesystem
 
 midp/fs.js contains native implementations of various midp filesystem APIs.
