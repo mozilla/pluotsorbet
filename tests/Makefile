@@ -57,7 +57,7 @@ tests.jar: $(SRCS) $(JASMIN_SRCS) Testlets.java
 	mkdir build
 	# Build the buildtime support classes in-place, not in ./build, so they aren't available at runtime.
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -extdirs "" $(BUILDTIME_SUPPORT_SRCS) > /dev/null
-	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar:$(BUILDTIME_SUPPORT_DIR) -extdirs "" -d ./build $(SRCS) > /dev/null
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -cp $(BUILDTIME_SUPPORT_DIR) -extdirs "" -d ./build $(SRCS) > /dev/null
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -extdirs "" -d ./build $(RUNTIME_SUPPORT_SRCS) > /dev/null
 	java -jar ../tools/jasmin-2.4/jasmin.jar -d build/ $(JASMIN_SRCS)
 	jar cvfe tests.jar RunTests -C build/ .
