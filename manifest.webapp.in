@@ -13,6 +13,11 @@
   "default_locale": "en",
   "orientation": ["portrait", "landscape"],
   "permissions": {
+    // #if JSR_179 == 1
+    "geolocation": {
+       "description": "Required by location API."
+    },
+    // #endif
     "tcp-socket": {
       "description": "Required to connect to internet"
     },
