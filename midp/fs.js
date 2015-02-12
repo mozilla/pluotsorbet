@@ -590,10 +590,6 @@ DEBUG_FS && console.log(iterator.index + " " + nextFile);
     return nextFile ? J2ME.newString(nextFile) : null;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getMountedRoots.()Ljava/lang/String;"] = function() {
-    return J2ME.newString(MIDP.fsRoots.join("\n"));
-};
-
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativePathForRoot.(Ljava/lang/String;)Ljava/lang/String;"] =
 function(root) {
 // XXX Ensure root is in MIDP.fsRoots?

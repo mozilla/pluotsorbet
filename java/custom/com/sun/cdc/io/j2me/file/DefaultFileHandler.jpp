@@ -195,24 +195,6 @@ class DefaultFileHandler implements BaseFileHandler {
         return list;
     }
 
-    /**
-     * List filesystem roots available on the device. For the description of
-     * the correct root format see <code>FileConnection</code> documentation.
-     * @return array of roots;
-     *         empty array is returned if there are no roots available.
-     */
-    public Vector listRoots() {
-        Vector roots = new Vector();
-        String s = getMountedRoots();
-        if (s != null) {
-            String[] rs = StringUtil.split(s, '\n', 0);
-            for (int i = 0; i < rs.length; i++) {
-                roots.addElement(rs[i]);
-            }
-        }
-        return roots;
-    }
-
     // JAVADOC COMMENT ELIDED - see FileConnection.create() description
     public native void create() throws IOException;
 
@@ -651,13 +633,6 @@ class DefaultFileHandler implements BaseFileHandler {
      * @return the name of the file.
      */
     private native String dirGetNextFile(long dirHandle, boolean includeHidden);
-
-    /**
-     * Gets the mounted root file systems.
-     * @return A string containing currently mounted roots
-     *          separated by '\n' character
-     */
-    private native String getMountedRoots();
 
     /**
      * Gets OS path for the specified file system root.

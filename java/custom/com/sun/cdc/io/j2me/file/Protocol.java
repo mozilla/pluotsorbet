@@ -1132,15 +1132,19 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
         checkWritePermission(nativePathName, mode);
     }
 
-
     /**
-     * Gets an array of file system roots.
-     * @return up-to-date array of file system roots;
+     * List filesystem roots available on the device. For the description of
+     * the correct root format see <code>FileConnection</code> documentation.
+     * @return array of roots;
      *         empty array is returned if there are no roots available.
      */
     public static Vector listRoots() {
-        BaseFileHandler fh = getFileHandler();
-        return fh.listRoots();
+        int length = FileSystemRegistry.roots.length;
+        Vector roots = new Vector(length);
+        for (int i = 0; i < length; i++) {
+            roots.addElement(FileSystemRegistry.roots[i]);
+        }
+        return roots;
     }
 
     // JAVADOC COMMENT ELIDED - see FileConnection.list() description

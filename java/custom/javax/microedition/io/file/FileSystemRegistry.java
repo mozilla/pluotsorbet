@@ -59,7 +59,7 @@ public class FileSystemRegistry {
     // filesystem roots are constant and mounted on startup, so we can do this
     // once on initialization.
     private static native String[] getRoots();
-    private static String[] roots = getRoots();
+    public static final String[] roots = getRoots();
 
     /** Constructor. */
     FileSystemRegistry() {
