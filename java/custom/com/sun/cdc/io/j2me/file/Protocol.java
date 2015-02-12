@@ -876,10 +876,6 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
      * @throws IOException if the connection is closed
      */
     protected void ensureConnected() throws IOException {
-        if (!isRoot(fileRoot)) {
-            throw new IOException("Root is not accessible");
-        }
-
         connect(fileRoot, filePath + fileName);
     }
 
@@ -892,6 +888,10 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
      */
     private void connect(String root, String pathName) throws IOException {
         if (fileHandler == null) {
+            if (!isRoot(root)) {
+                throw new IOException("Root is not accessible");
+            }
+
             fileHandler = getFileHandler();
 
             nativePathName = fileHandler.connect(root, pathName);
