@@ -403,8 +403,8 @@ VideoPlayer.prototype.realize = function() {
     var ctx = $.ctx;
 
     var p = new Promise((function(resolve, reject) {
-        this.video.addEventListener("canplay", (function onCanPlayThrough() {
-            this.video.removeEventListener("canplay", onCanPlayThrough);
+        this.video.addEventListener("canplay", (function onCanPlay() {
+            this.video.removeEventListener("canplay", onCanPlay);
             resolve(1);
         }).bind(this));
 
@@ -447,6 +447,7 @@ VideoPlayer.prototype.close = function() {
     if (this.video.parentNode) {
         this.video.parentNode.removeChild(this.video);
     }
+    this.video.pause();
 }
 
 VideoPlayer.prototype.getMediaTime = function() {
