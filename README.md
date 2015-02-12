@@ -99,7 +99,6 @@ If the testlet uses sockets, you must start 4 servers (instead of just the http 
 
 Frequent causes of failure include:
 
-* automation.js expects a different number of tests to have passed than the number that actually passed (this is very common when adding new tests)
 * timeout: Travis machines are generally slower than dev machines and so tests that pass locally will fail in the continuous integration tests
 * Number of differing pixels in a gfx/rendering test exceeds the threshold allowed in automation.js. This will often happen because slimerJS uses a different version of Firefox than the developer. This can also happen because the test renders text, whose font rendering can vary from machine to machine, perhaps even with the same font.
 
