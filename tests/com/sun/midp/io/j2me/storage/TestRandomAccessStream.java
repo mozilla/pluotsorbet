@@ -25,7 +25,7 @@ public class TestRandomAccessStream implements Testlet {
         exceptionThrown = false;
         try {
             ras.connect("afile", Connector.READ_WRITE);
-            th.check(0, ras.getSizeOf());
+            th.check(ras.getSizeOf(), 0);
         } catch(IOException e) {
             exceptionThrown = true;
         }
@@ -37,16 +37,16 @@ public class TestRandomAccessStream implements Testlet {
                 bytes[i] = (byte)i;
             }
             int bytesReadWritten = ras.writeBytes(bytes, 0, 100);
-            th.check(100, bytesReadWritten);
+            th.check(bytesReadWritten, 100);
             ras.commitWrite();
 
-            th.check(100, ras.getSizeOf());
+            th.check(ras.getSizeOf(), 100);
 
             ras.setPosition(0);
             bytesReadWritten = ras.readBytes(bytes, 0, 100);
-            th.check(100, bytesReadWritten);
+            th.check(bytesReadWritten, 100);
             for (int i = 0; i < 100; i++) {
-                th.check(i, bytes[i]);
+                th.check(bytes[i], i);
             }
 
             ras.close();
