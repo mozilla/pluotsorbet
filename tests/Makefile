@@ -7,6 +7,10 @@ EXCLUDED += \
   $(NULL)
 endif
 
+ifeq ($(JSR_179),0)
+EXCLUDED += "./javax/microedition/location/*"
+endif
+
 SRCS=$(shell find . $(foreach path,$(EXCLUDED),-not -path $(path)) -name "*.java")
 JASMIN_SRCS=$(shell find . -name "*.j")
 
@@ -43,7 +47,7 @@ all: tests.jar
 Testlets.java: $(SRCS) $(JASMIN_SRCS) Makefile
 	echo "public class Testlets {" > $@
 	echo "  static String[] list = {" >> $@
-	grep "implements Testlet" `find . -name "*.java"` | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
+	grep "implements Testlet" $(SRCS) | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
 	grep "implements gnu/testlet/Testlet" `find . -name "*.j"` | sed -e "s/^.\///" -e "s/\.j.*//" -e "s/\(.*\)/\"\1\",/" >> $@
 	echo "  null};" >> $@
 	echo "};" >> $@

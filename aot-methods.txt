@@ -134,7 +134,7 @@ java/lang/Integer.toString.(I)Ljava/lang/String;
 javax/microedition/rms/RecordStore.isOpen.()Z
 javax/microedition/lcdui/Display$DisplayEventConsumerImpl.handlePointerEvent.(III)V
 javax/microedition/lcdui/DisplayableLFImpl.uCallPointerEvent.(III)V
-com/nokia/mid/ui/gestures/GestureRegistrationManager.callListener.(Lcom/nokia/mid/ui/gestures/GestureEvent;)V
+com/nokia/mid/ui/gestures/GestureRegistrationManager.process.(Lcom/sun/midp/events/Event;)V
 java/lang/Long.<init>.(J)V
 com/sun/midp/rms/RecordStoreUtil.calculateBlockSize.(I)I
 javax/microedition/lcdui/CanvasLFImpl.uCallPointerDragged.(II)V

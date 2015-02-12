@@ -122,27 +122,36 @@ var CompiledMethodCache = (function() {
     return cache.get(key);
   }
 
-  function put(obj) {
-    DEBUG && debug("put " + obj[KEY_PATH]);
+  var recordsToFlush = [];
+  var flushTimer = null;
 
-    cache.set(obj[KEY_PATH], obj);
-
-    return openDatabase.then(new Promise(function(resolve, reject) {
+  function flush() {
+    flushTimer = null;
+    openDatabase.then(function() {
+      var then = performance.now();
       var transaction = database.transaction(OBJECT_STORE, "readwrite");
       var objectStore = transaction.objectStore(OBJECT_STORE);
-
-      var request = objectStore.put(obj);
-
-      request.onerror = function() {
-        console.error("Error putting " + key + ": " + request.error.name);
-        reject(request.error.name);
+      var numRecords = recordsToFlush.length;
+      for (var i = 0; i < numRecords; i++) {
+        var request = objectStore.put(recordsToFlush[i]);
+      }
+      recordsToFlush = [];
+      DEBUG && (transaction.oncomplete = function(event) {
+        debug("flushed " + numRecords + " in " + (performance.now() - then) + "ms");
+      });
+      transaction.onerror = function(event) {
+        console.error("error flushing " + event.target.name);
       };
+    });
+  }
 
-      request.onsuccess = function() {
-        DEBUG && debug("put " + obj[KEY_PATH] + " complete");
-        resolve();
-      };
-    }));
+  function put(obj) {
+    DEBUG && debug("put " + obj[KEY_PATH]);
+    cache.set(obj[KEY_PATH], obj);
+    recordsToFlush.push(obj);
+    if (!flushTimer) {
+      flushTimer = setTimeout(flush, 3000 /* ms; 3 seconds */);
+    }
   }
 
   return {
