@@ -32,7 +32,6 @@
 package javax.microedition.io.file;
 
 import com.sun.cdc.io.j2me.file.RootCache;
-import com.sun.cdc.io.j2me.file.Protocol;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -55,6 +54,12 @@ public class FileSystemRegistry {
      * is created and registered.
      */
     private static boolean isListenerRegistered = false;
+
+    // Get and cache the list of filesystem roots.  In our implementation,
+    // filesystem roots are constant and mounted on startup, so we can do this
+    // once on initialization.
+    private static native String[] getRoots();
+    private static String[] roots = getRoots();
 
     /** Constructor. */
     FileSystemRegistry() {
@@ -104,8 +109,20 @@ public class FileSystemRegistry {
         // for a filesystem that is only ever used by a single midlet.
         // checkReadPermission();
 
-        // retrieve up-to-date list of mounted roots
-        return Protocol.listRoots().elements();
+        return new Enumeration() {
+            int count = 0;
+
+            public boolean hasMoreElements() {
+                return count < roots.length;
+            }
+
+            public Object nextElement() {
+                if (count < roots.length) {
+                    return roots[count++];
+                }
+                throw new NoSuchElementException();
+            }
+        };
     }
 
     /**

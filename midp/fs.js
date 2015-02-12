@@ -5,7 +5,7 @@
 
 var RECORD_STORE_BASE = "/RecordStore";
 
-// The filesystem roots, which are used by both FileSystemRegistry.getRootsImpl
+// The filesystem roots, which are used by both FileSystemRegistry.getRoots
 // and System.getProperty to provide inquiring midlets with the list.  Each root
 // must have a trailing slash.  See FileSystemRegistry.listRoots for more info.
 MIDP.fsRoots = [
@@ -699,11 +699,7 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(
     fs.close(handle);
 };
 
-Native["javax/microedition/io/file/FileSystemRegistry.initImpl.()V"] = function() {
-    console.warn("javax/microedition/io/file/FileSystemRegistry.initImpl.()V not implemented");
-};
-
-Native["javax/microedition/io/file/FileSystemRegistry.getRootsImpl.()[Ljava/lang/String;"] = function() {
+Native["javax/microedition/io/file/FileSystemRegistry.getRoots.()[Ljava/lang/String;"] = function() {
     var array = J2ME.newStringArray(MIDP.fsRoots.length);
 
     for (var i = 0; i < MIDP.fsRoots.length; i++) {
