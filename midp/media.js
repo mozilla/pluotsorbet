@@ -71,6 +71,7 @@ Media.extToFormat = new Map([
     ["png", "PNG"],
     ["wav", "wav"],
     ["ogg", "ogg"],
+    ["mp4", "MPEG4"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -80,6 +81,7 @@ Media.contentTypeToFormat = new Map([
     ["audio/mpeg", "MPEG_layer_3"],
     ["image/jpeg", "JPEG"],
     ["image/png", "PNG"],
+    ["video/mp4", "MPEG4"]
 ]);
 
 Media.formatToContentType = new Map();
@@ -89,6 +91,7 @@ for (var elem of Media.contentTypeToFormat) {
 
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
+Media.supportedVideoFormats = ["MPEG4"];
 
 Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
@@ -385,6 +388,105 @@ ImagePlayer.prototype.setVisible = function(visible) {
     this.image.style.visibility = visible ? "visible" : "hidden";
 }
 
+function VideoPlayer(playerContainer) {
+    this.playerContainer = playerContainer;
+
+    this.video = document.createElement("video");
+    this.video.style.position = "absolute";
+    this.video.style.visibility = "hidden";
+
+    this.isVideoControlSupported = true;
+    this.isVolumeControlSupported = true;
+}
+
+VideoPlayer.prototype.realize = function() {
+    var ctx = $.ctx;
+
+    var p = new Promise((function(resolve, reject) {
+        this.video.addEventListener("canplay", (function onCanPlayThrough() {
+            this.video.removeEventListener("canplay", onCanPlayThrough);
+            resolve(1);
+        }).bind(this));
+
+        this.video.onerror = function() {
+            ctx.setAsCurrentContext();
+            reject($.newMediaException("Failed to load video"));
+        };
+
+        if (this.playerContainer.url.startsWith("file")) {
+            fs.open(this.playerContainer.url.substring(7), (function(fd) {
+                var videoData = fs.read(fd);
+                fs.close(fd);
+                this.video.src = URL.createObjectURL(new Blob([ videoData ]),
+                                                     { type: this.playerContainer.contentType });
+            }).bind(this));
+        } else {
+            this.video.src = this.playerContainer.url;
+        }
+    }).bind(this));
+
+    p.done(function() {
+        if (!this.video.src) {
+            return;
+        }
+        URL.revokeObjectURL(this.video.src);
+    }.bind(this));
+
+    return p;
+}
+
+VideoPlayer.prototype.start = function() {
+    this.video.play();
+}
+
+VideoPlayer.prototype.pause = function() {
+    this.video.pause();
+}
+
+VideoPlayer.prototype.close = function() {
+    if (this.video.parentNode) {
+        this.video.parentNode.removeChild(this.video);
+    }
+}
+
+VideoPlayer.prototype.getMediaTime = function() {
+    return Math.round(this.video.currentTime * 1000);
+}
+
+VideoPlayer.prototype.getWidth = function() {
+    return this.video.videoWidth;
+}
+
+VideoPlayer.prototype.getHeight = function() {
+    return this.video.videoHeight;
+}
+
+VideoPlayer.prototype.setLocation = function(x, y, w, h) {
+    this.video.style.left = x + "px";
+    this.video.style.top = y + "px";
+    this.video.style.width = w + "px";
+    this.video.style.height = h + "px";
+    document.getElementById("main").appendChild(this.video);
+}
+
+VideoPlayer.prototype.setVisible = function(visible) {
+    this.video.style.visibility = visible ? "visible" : "hidden";
+}
+
+VideoPlayer.prototype.getVolume = function() {
+    return Math.floor(this.video.volume * 100);
+};
+
+VideoPlayer.prototype.setVolume = function(level) {
+    if (level < 0) {
+        level = 0;
+    } else if (level > 100) {
+        level = 100;
+    }
+    this.video.volume = level / 100;
+    return level;
+};
+
 function ImageRecorder(playerContainer) {
     this.playerContainer = playerContainer;
 
@@ -580,6 +682,9 @@ PlayerContainer.prototype.realize = function(contentType) {
             } else {
                 this.player = new ImagePlayer(this);
             }
+            this.player.realize().then(resolve, reject);
+        } else if (Media.supportedVideoFormats.indexOf(this.mediaFormat) !== -1) {
+            this.player = new VideoPlayer(this);
             this.player.realize().then(resolve, reject);
         } else {
             console.warn("Unsupported media format (" + this.mediaFormat + ") for " + this.url);
