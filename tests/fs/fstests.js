@@ -614,12 +614,16 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  var truncated = fs.truncate("/tmp/tmp.txt");
-  is(truncated, true, "truncated a file");
+  var truncated = fs.truncate("/tmp/tmp.txt", 11);
+  is(truncated, true, "truncated a file to 11 bytes");
+  var size = fs.size("/tmp/tmp.txt");
+  is(size, 11, "truncated file's size is 11");
   next();
 });
 
 tests.push(function() {
+  var truncated = fs.truncate("/tmp/tmp.txt");
+  is(truncated, true, "truncated a file");
   var size = fs.size("/tmp/tmp.txt");
   is(size, 0, "truncated file's size is 0");
   next();

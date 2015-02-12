@@ -24,6 +24,8 @@ module J2ME {
    * at the right spots.
    */
   export var yieldMap = {
+    "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V": YieldReason.Root,
+    "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V": YieldReason.Root,
     "java/lang/Thread.sleep.(J)V": YieldReason.Root,
     "com/sun/cldc/isolate/Isolate.waitStatus.(I)V": YieldReason.Root,
     "com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z": YieldReason.Root,
@@ -35,10 +37,6 @@ module J2ME {
     "com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I": YieldReason.Root,
     "com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I": YieldReason.Root,
     "com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I": YieldReason.Root,
-    "com/ibm/oti/connection/file/Connection.truncateImpl.([BJ)V": YieldReason.Root,
-    "com/ibm/oti/connection/file/FCInputStream.openImpl.([B)I": YieldReason.Root,
-    "com/ibm/oti/connection/file/FCOutputStream.openImpl.([B)I": YieldReason.Root,
-    "com/ibm/oti/connection/file/FCOutputStream.openOffsetImpl.([BJ)I": YieldReason.Root,
     "com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I": YieldReason.Root,
     "javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V": YieldReason.Root,
     "com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;": YieldReason.Root,
@@ -70,8 +68,6 @@ module J2ME {
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.dumbPipe.()Z": YieldReason.Root,
     "gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I": YieldReason.Root,
-
-
   };
 
   export var yieldVirtualMap = {

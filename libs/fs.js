@@ -624,7 +624,7 @@ var fs = (function() {
     return !!record;
   }
 
-  function truncate(path) {
+  function truncate(path, size) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs truncate " + path); }
 
@@ -633,9 +633,13 @@ var fs = (function() {
       return false;
     }
 
-    record.data = new Blob();
+    if (size >= record.size) {
+      return true;
+    }
+
+    record.data = record.data.slice(0, size || 0, record.data.type);
     record.mtime = Date.now();
-    record.size = 0;
+    record.size = size || 0;
     store.setItem(path, record);
     return true;
   }
@@ -657,12 +661,14 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs remove " + path); }
 
     if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
+      if (DEBUG_FS) { console.log("file is open"); }
       return false;
     }
 
     var record = store.getItem(path);
 
     if (!record) {
+      if (DEBUG_FS) { console.log("file does not exist"); }
       return false;
     }
 
@@ -670,6 +676,7 @@ var fs = (function() {
     if (record.isDir) {
       for (var value of store.map.values()) {
         if (value && value.parentDir === path) {
+          if (DEBUG_FS) { console.log("directory is not empty"); }
           return false;
         }
       }
@@ -891,6 +898,7 @@ var fs = (function() {
   }
 
   return {
+    normalize: normalizePath,
     dirname: dirname,
     init: init,
     open: open,

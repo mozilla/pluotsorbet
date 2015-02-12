@@ -1,7 +1,6 @@
-package com.ibm.oti.connection.file;
+package javax.microedition.io.file;
 
 import javax.microedition.io.*;
-import javax.microedition.io.file.*;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.util.Hashtable;
@@ -11,7 +10,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestFileConnection implements Testlet {
-    public int getExpectedPass() { return 160; }
+    public int getExpectedPass() { return 157; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
     String dirPath;
@@ -340,14 +339,14 @@ public class TestFileConnection implements Testlet {
                 in.read(data, 0, 5);
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "File Connection InputStream closed");
+                th.check(e.getMessage(), "Stream closed");
             }
 
             try {
                 in.read();
                 th.fail("Exception expected");
             } catch (IOException e) {
-                th.check(e.getMessage(), "File Connection InputStream closed");
+                th.check(e.getMessage(), "Stream closed");
             }
 
             file = (FileConnection)Connector.open(dirPath + "provaDir/prova");
@@ -389,64 +388,40 @@ public class TestFileConnection implements Testlet {
             file.delete();
             file.close();
 
-            // Opening an output stream to a nonexistent file should create it.
+            // Opening an output stream to a nonexistent file should throw
+            // an exception.
             file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
             th.check(!file.exists());
-            // Create the stream ourselves because Connection.openOutputStream
-            // raises an exception when the file doesn't exist.
-            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
-            th.check(file.exists());
-            th.check(file.fileSize(), 0, "Check file size");
-            out.close();
-            file.delete();
-            file.close();
-
-            // Opening an output stream to a nonexistent file should create it
-            // even if we specify an offset.  FCOutputStream doesn't say what to
-            // do if offset > fileSize, and our impl simply ignores the problem,
-            // although Connection sets offset to fileSize in that case,
-            // and presumably all callers are going to go through Connection
-            // rather than instantiating FCOutputStream directly, so our impl
-            // should be ok.
-            file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
+            try {
+                out = file.openOutputStream();
+                th.fail("Exception expected opening output stream to nonexistent file");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Target file doesn't exist");
+            }
             th.check(!file.exists());
-            // Create the stream ourselves because Connection.openOutputStream
-            // raises an exception when the file doesn't exist.
-            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), 5, null);
-            th.check(file.exists());
-            th.check(file.fileSize(), 0, "Check file size");
             out.close();
-            file.delete();
             file.close();
 
-            // Test that deleting or renaming a open file fails.
-            // Create the stream ourselves because otherwise FileConnection will
-            // close the files before deleting/renaming them.
+            // Deleting a file with an open output stream succeeds.
             file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
-            out = new FCOutputStream((file.getPath() + file.getName()).getBytes("UTF-8"), null);
-            try {
-                file.delete();
-                th.fail("Exception expected");
-            } catch (IOException e) {
-                th.check(e.getMessage(), "Can not delete: " + file.getURL());
-            }
-            try {
-                file.rename("newname");
-                th.fail("Exception expected");
-            } catch (IOException e) {
-                th.check(e.getMessage(), "Rename failed");
-            }
-            out.close();
+            file.create();
+            out = file.openOutputStream();
+            file.delete();
+            th.check(!file.exists());
 
-            // Renaming after closing the file should succeed.
-
+            // Renaming a file with an open output stream succeeds.
+            file.create();
+            out = file.openOutputStream();
             file.rename("newname");
+            th.check(file.getName(), "newname");
+            out.close();
             file.close();
 
             // The file with the old name doesn't exist anymore.
             file = (FileConnection)Connector.open(dirPath + "provaDir/nonexistent.txt");
             th.check(!file.exists());
             file.close();
+
             // The file with the new name exists.
             file = (FileConnection)Connector.open(dirPath + "provaDir/newname");
             th.check(file.exists());
@@ -498,8 +473,8 @@ public class TestFileConnection implements Testlet {
             try {
                 file = (FileConnection)Connector.open(dirPath + "prov>");
                 th.fail("Exception expected");
-            } catch (IllegalArgumentException e) {
-                th.check(e.getMessage(), "Invalid file name in FileConnection Url: ///Private/prov>");
+            } catch (IOException e) {
+                th.check(e.getMessage(), "Contains characters invalid for a filename");
             }
 
             // Check that the fileconn.dir.photos property value is longer than 8 characters.
