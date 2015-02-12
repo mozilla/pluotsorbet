@@ -3,6 +3,9 @@ node_js:
   - "0.10"
 env:
   - DISPLAY=:99.0
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y gstreamer0.10-plugins-good gstreamer0.10-ffmpeg
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
@@ -17,7 +20,6 @@ before_script:
   - export PATH=$PATH:/tmp/js
 script:
   - make test
-sudo: false
 cache:
   directories:
     - node_modules
