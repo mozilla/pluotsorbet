@@ -10,12 +10,14 @@ var RECORD_STORE_BASE = "/RecordStore";
 // must have a trailing slash.  See FileSystemRegistry.listRoots for more info.
 MIDP.fsRoots = [
     "MemoryCard/",
+    "Persistent/",
     "Phone/",
     "Private/",
 ];
 // The names here should be localized.
 MIDP.fsRootNames = [
     "Memory card",
+    "Persistent",
     "Phone memory",
     "Private",
 ];
