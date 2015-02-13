@@ -213,13 +213,7 @@ AudioPlayer.prototype.realize = function() {
 AudioPlayer.prototype.play = function() {
     this.audio.play();
     this.audio.onended = function() {
-        MIDP.sendNativeEvent({
-            type: MIDP.MMAPI_EVENT,
-            intParam1: this.playerContainer.pId,
-            intParam2: this.getDuration(),
-            intParam3: 0,
-            intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
-        }, MIDP.foregroundIsolateId);
+        MIDP.sendEndOfMediaEvent(this.playerContainer.pId, this.getDuration());
     }.bind(this);
 };
 
@@ -434,15 +428,7 @@ ImageRecorder.prototype.recipient = function(message) {
 
         case "snapshot":
             this.snapshotData = new Int8Array(message.data);
-
-            MIDP.sendNativeEvent({
-                type: MIDP.MMAPI_EVENT,
-                intParam1: this.playerContainer.pId,
-                intParam2: 0,
-                intParam3: 0,
-                intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
-            }, MIDP.foregroundIsolateId);
-
+            MIDP.sendMediaSnapshotFinishedEvent(this.playerContainer.pId);
             break;
     }
 }

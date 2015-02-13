@@ -1,26 +1,25 @@
-/* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
+/* -*- Mode: JavaScript; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
 
-var MIDP = {
+var MIDP = (function() {
+  var canvas = document.getElementById("canvas");
+
+  var isFullScreen = true;
+function setFullScreen(isFS) {
+    isFullScreen = isFS;
+    updateCanvas();
 };
 
-MIDP.isFullScreen = true;
-MIDP.setFullScreen = function(isFS) {
-    MIDP.isFullScreen = isFS;
-    MIDP.updateCanvas();
-};
-
-MIDP.updateCanvas = function() {
+  function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
-    var canvas = document.getElementById("canvas");
     sidebar.style.display = header.style.display =
-        MIDP.isFullScreen ? "none" : "block";
-    var headerHeight = MIDP.isFullScreen ? 0 : header.offsetHeight;
-    var newHeight = MIDP.physicalScreenHeight - headerHeight;
-    var newWidth = MIDP.physicalScreenWidth;
+        isFullScreen ? "none" : "block";
+    var headerHeight = isFullScreen ? 0 : header.offsetHeight;
+    var newHeight = physicalScreenHeight - headerHeight;
+    var newWidth = physicalScreenWidth;
 
     if (newHeight != canvas.height || newWidth != canvas.width) {
       canvas.height = newHeight;
@@ -30,26 +29,26 @@ MIDP.updateCanvas = function() {
       canvas.style.top = headerHeight + "px";
       canvas.dispatchEvent(new Event("canvasresize"));
     }
-};
+  };
 
-MIDP.onWindowResize = function(evt) {
-    var newPhysicalScreenWidth = window.outerWidth - MIDP.horizontalChrome;
-    var newPhysicalScreenHeight = window.outerHeight - MIDP.verticalChrome;
+  function onWindowResize(evt) {
+    var newPhysicalScreenWidth = window.outerWidth - horizontalChrome;
+    var newPhysicalScreenHeight = window.outerHeight - verticalChrome;
 
-    if (newPhysicalScreenWidth != MIDP.physicalScreenWidth || newPhysicalScreenHeight != MIDP.physicalScreenHeight) {
-      MIDP.physicalScreenWidth = newPhysicalScreenWidth;
-      MIDP.physicalScreenHeight = newPhysicalScreenHeight;
-      MIDP.lastWindowInnerHeight = window.innerHeight;
-      MIDP.updateCanvas();
-    } else if (MIDP.lastWindowInnerHeight != window.innerHeight) {
-      MIDP.lastWindowInnerHeight = window.innerHeight;
-      MIDP.sendVirtualKeyboardEvent();
+    if (newPhysicalScreenWidth != physicalScreenWidth || newPhysicalScreenHeight != physicalScreenHeight) {
+      physicalScreenWidth = newPhysicalScreenWidth;
+      physicalScreenHeight = newPhysicalScreenHeight;
+      lastWindowInnerHeight = window.innerHeight;
+      updateCanvas();
+    } else if (lastWindowInnerHeight != window.innerHeight) {
+      lastWindowInnerHeight = window.innerHeight;
+      sendVirtualKeyboardEvent();
     } else {
       console.warn("Unhandled resize event!");
     }
 };
 
-MIDP.manifest = {};
+  var manifest = {};
 
 Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
     var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
@@ -67,7 +66,7 @@ Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function
     console.info(util.fromJavaString(message));
 };
 
-MIDP.groupTBL = [
+  var groupTBL = [
     "net_access",
     "low_level_net_access",
     "call_control",
@@ -84,17 +83,17 @@ MIDP.groupTBL = [
     "authentication",
     "smart_card",
     "satsa"
-];
+  ];
 
 Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
-    var list = J2ME.newStringArray(MIDP.groupTBL.length);
-    MIDP.groupTBL.forEach(function (e, n) {
+    var list = J2ME.newStringArray(groupTBL.length);
+    groupTBL.forEach(function (e, n) {
         list[n] = J2ME.newString(e);
     });
     return list;
 };
 
-MIDP.messagesTBL = [
+  var messagesTBL = [
      ["Airtime",
       "How often should %1 ask for permission to use airtime? Using airtime may result in charges.",
       "Don't use airtime and don't ask",
@@ -187,9 +186,9 @@ MIDP.messagesTBL = [
 Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
     var name = util.fromJavaString(jName);
     var list = null;
-    MIDP.groupTBL.forEach(function(e, n) {
+    groupTBL.forEach(function(e, n) {
         if (e === name) {
-            var messages = MIDP.messagesTBL[n];
+            var messages = messagesTBL[n];
             list = J2ME.newStringArray(messages.length);
             messages.forEach(function (e, n) {
                 list[n] = J2ME.newString(e);
@@ -199,7 +198,7 @@ Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[
     return list;
 };
 
-MIDP.membersTBL = [
+  var membersTBL = [
     ["javax.microedition.io.Connector.http",
      "javax.microedition.io.Connector.https",
      "javax.microedition.io.Connector.obex.client.tcp",
@@ -255,9 +254,9 @@ MIDP.membersTBL = [
 Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
     var name = util.fromJavaString(jName);
     var list = null;
-    MIDP.groupTBL.forEach(function(e, n) {
+    groupTBL.forEach(function(e, n) {
         if (e === name) {
-            var members = MIDP.membersTBL[n];
+            var members = membersTBL[n];
             list = J2ME.newStringArray(members.length);
             members.forEach(function (e, n) {
                 list[n] = J2ME.newString(e);
@@ -272,7 +271,7 @@ Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lan
     if (request.startsWith("http://") || request.startsWith("https://")) {
         if (request.endsWith(".jad")) {
             // The download will start after the MIDlet has terminated its execution.
-            MIDP.pendingMIDletUpdate = request;
+            pendingMIDletUpdate = request;
             return 1;
         } else {
             DumbPipe.close(DumbPipe.open("windowOpen", request));
@@ -304,7 +303,7 @@ Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/C
     state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, J2ME.newString((args.length > 2) ? args[2] : ""));
 };
 
-MIDP.domainTBL = [
+  var domainTBL = [
     "manufacturer",
     "operator",
     "identified_third_party",
@@ -314,88 +313,88 @@ MIDP.domainTBL = [
 ];
 
 Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
-    var list = J2ME.newStringArray(MIDP.domainTBL.length);
-    MIDP.domainTBL.forEach(function (e, n) {
+    var list = J2ME.newStringArray(domainTBL.length);
+    domainTBL.forEach(function (e, n) {
         list[n] = J2ME.newString(e);
     });
     return list;
 };
 
-MIDP.NEVER = 0;
-MIDP.ALLOW = 1;
-MIDP.BLANKET = 4;
-MIDP.SESSION = 8;
-MIDP.ONESHOT = 16;
+var NEVER = 0;
+var ALLOW = 1;
+var BLANKET = 4;
+var SESSION = 8;
+var ONESHOT = 16;
 
-MIDP.identifiedTBL = {
-    net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    low_level_net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    call_control: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    application_auto_invocation: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    local_connectivity: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    restricted_messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    multimedia_recording: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    read_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    write_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    location: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    landmark: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    payment: { max: MIDP.ALLOW,   default: MIDP.ALLOW},
-    authentication: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    smart_card: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
-};
+  var identifiedTBL = {
+    net_access: { max: BLANKET, default: SESSION},
+    low_level_net_access: { max: BLANKET, default: SESSION},
+    call_control: { max: BLANKET, default: ONESHOT},
+    application_auto_invocation: { max: BLANKET, default: ONESHOT},
+    local_connectivity: { max: BLANKET, default: SESSION},
+    messaging: { max: BLANKET, default: ONESHOT},
+    restricted_messaging: { max: BLANKET, default: ONESHOT},
+    multimedia_recording: { max: BLANKET, default: SESSION},
+    read_user_data_access: { max: BLANKET, default: ONESHOT},
+    write_user_data_access: { max: BLANKET, default: ONESHOT},
+    location: { max: BLANKET, default: SESSION},
+    landmark: { max: BLANKET, default: SESSION},
+    payment: { max: ALLOW,   default: ALLOW},
+    authentication: { max: BLANKET, default: SESSION},
+    smart_card: { max: BLANKET, default: SESSION},
+    satsa: { max: NEVER,   default: NEVER},
+  };
 
-MIDP.unidentifiedTBL = {
-    net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    low_level_net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    call_control: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    application_auto_invocation: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    local_connectivity: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    restricted_messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    multimedia_recording: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    read_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    write_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    location: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    landmark: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    payment: { max: MIDP.NEVER,   default: MIDP.NEVER},
-    authentication: { max: MIDP.NEVER,   default: MIDP.NEVER},
-    smart_card: { max: MIDP.NEVER,   default: MIDP.NEVER},
-    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
-};
+  var unidentifiedTBL = {
+    net_access: { max: SESSION, default: ONESHOT},
+    low_level_net_access: { max: SESSION, default: ONESHOT},
+    call_control: { max: ONESHOT, default: ONESHOT},
+    application_auto_invocation: { max: SESSION, default: ONESHOT},
+    local_connectivity: { max: BLANKET, default: ONESHOT},
+    messaging: { max: ONESHOT, default: ONESHOT},
+    restricted_messaging: { max: ONESHOT, default: ONESHOT},
+    multimedia_recording: { max: SESSION, default: ONESHOT},
+    read_user_data_access: { max: ONESHOT, default: ONESHOT},
+    write_user_data_access: { max: ONESHOT, default: ONESHOT},
+    location: { max: SESSION, default: ONESHOT},
+    landmark: { max: SESSION, default: ONESHOT},
+    payment: { max: NEVER,   default: NEVER},
+    authentication: { max: NEVER,   default: NEVER},
+    smart_card: { max: NEVER,   default: NEVER},
+    satsa: { max: NEVER,   default: NEVER},
+  };
 
 Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    var allow = MIDP.NEVER;
+    var allow = NEVER;
     switch (util.fromJavaString(domain)) {
     case "manufacturer":
     case "maximum":
     case "operator":
-        allow = MIDP.ALLOW;
+        allow = ALLOW;
         break;
     case "identified_third_party":
-        allow = MIDP.identifiedTBL[util.fromJavaString(group)].default;
+        allow = identifiedTBL[util.fromJavaString(group)].default;
         break;
     case "unidentified_third_party":
-        allow = MIDP.unidentifiedTBL[util.fromJavaString(group)].default;
+        allow = unidentifiedTBL[util.fromJavaString(group)].default;
         break;
     }
     return allow;
 };
 
 Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    var allow = MIDP.NEVER;
+    var allow = NEVER;
     switch (util.fromJavaString(domain)) {
     case "manufacturer":
     case "maximum":
     case "operator":
-        allow = MIDP.ALLOW;
+        allow = ALLOW;
         break;
     case "identified_third_party":
-        allow = MIDP.identifiedTBL[util.fromJavaString(group)].max;
+        allow = identifiedTBL[util.fromJavaString(group)].max;
         break;
     case "unidentified_third_party":
-        allow = MIDP.unidentifiedTBL[util.fromJavaString(group)].max;
+        allow = unidentifiedTBL[util.fromJavaString(group)].max;
         break;
     }
     return allow;
@@ -409,16 +408,17 @@ Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
     return $.ctx.runtime.isolate.id;
 };
 
+  var AMSIsolateId;
 Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function() {
-    MIDP.AMSIsolateId = $.ctx.runtime.isolate.id;
+    AMSIsolateId = $.ctx.runtime.isolate.id;
 };
 
 Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function() {
-    return MIDP.AMSIsolateId;
+    return AMSIsolateId;
 };
 
 Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function() {
-    return MIDP.AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
+    return AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
 };
 
 Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
@@ -427,7 +427,7 @@ Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midl
     // The formula depens on the ID of the isolate that calls createDisplayId, that is
     // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
     // the display ID.
-    MIDP.displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
+    displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
 };
 
 Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
@@ -500,9 +500,12 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
     return bytes;
 };
 
-MIDP.Context2D = (function() {
-    var c = document.getElementById("canvas");
-
+  var verticalChrome;
+  var horizontalChrome;
+  var physicalScreenWidth;
+  var physicalScreenHeight;
+  var lastWindowInnerHeight;
+  var isVKVisible;
     if (config.autosize && !/no|0/.test(config.autosize)) {
       document.documentElement.classList.add('autosize');
 
@@ -513,8 +516,8 @@ MIDP.Context2D = (function() {
       //   which has been 30px in testing. These are assumed to be static
       //   throughout the lifetime of the app, and things will break if that
       //   assumption is violated.
-      MIDP.verticalChrome = window.outerHeight - window.innerHeight;
-      MIDP.horizontalChrome = window.outerWidth - window.innerWidth;
+      verticalChrome = window.outerHeight - window.innerHeight;
+      horizontalChrome = window.outerWidth - window.innerWidth;
 
       // "Physical" dimensions:
       //   The amount of space available to J2ME. This is always the
@@ -531,17 +534,17 @@ MIDP.Context2D = (function() {
       //   the header, which might shrink our canvas. To find out how much
       //   space is actually available to the current MIDlet, check
       //   `document.getElementById("canvas").[width|height]`.
-      MIDP.physicalScreenWidth = window.outerWidth - MIDP.horizontalChrome;
-      MIDP.physicalScreenHeight = window.outerHeight - MIDP.verticalChrome;
+      physicalScreenWidth = window.outerWidth - horizontalChrome;
+      physicalScreenHeight = window.outerHeight - verticalChrome;
 
       // Cached value of `window.innerHeight` so that we can tell when it
       // changes. This is useful for determining when to send keyboard
       // visibility events.
-      MIDP.lastWindowInnerHeight = window.innerHeight;
+      lastWindowInnerHeight = window.innerHeight;
 
-      MIDP.updateCanvas();
-      MIDP.isVKVisible = function() {
-          var expectedHeightWithNoKeyboard = window.outerHeight - MIDP.verticalChrome;
+      updateCanvas();
+      isVKVisible = function() {
+          var expectedHeightWithNoKeyboard = window.outerHeight - verticalChrome;
           if (window.innerHeight == expectedHeightWithNoKeyboard) {
               return false;
           } else if (window.innerHeight < expectedHeightWithNoKeyboard) {
@@ -551,35 +554,35 @@ MIDP.Context2D = (function() {
               return false;
           }
       };
-      window.addEventListener("resize", MIDP.onWindowResize);
+      window.addEventListener("resize", onWindowResize);
     } else {
       document.documentElement.classList.add('debug-mode');
-      MIDP.physicalScreenWidth = 240;
-      MIDP.physicalScreenHeight = 320;
+      physicalScreenWidth = 240;
+      physicalScreenHeight = 320;
 
-      MIDP.updateCanvas();
-      MIDP.isVKVisible = function() {
+      updateCanvas();
+      isVKVisible = function() {
           return false;
       };
     }
 
     function sendPenEvent(pt, whichType) {
-        MIDP.sendNativeEvent({
-            type: MIDP.PEN_EVENT,
+        sendNativeEvent({
+            type: PEN_EVENT,
             intParam1: whichType,
             intParam2: pt.x,
             intParam3: pt.y,
-            intParam4: MIDP.displayId
-        }, MIDP.foregroundIsolateId);
+            intParam4: displayId
+        }, foregroundIsolateId);
     }
 
     function sendGestureEvent(pt, distancePt, whichType, aFloatParam1, aIntParam7, aIntParam8, aIntParam9) {
-        MIDP.sendNativeEvent({
-            type: MIDP.GESTURE_EVENT,
+        sendNativeEvent({
+            type: GESTURE_EVENT,
             intParam1: whichType,
             intParam2: distancePt && distancePt.x || 0,
             intParam3: distancePt && distancePt.y || 0,
-            intParam4: MIDP.displayId,
+            intParam4: displayId,
             intParam5: pt.x,
             intParam6: pt.y,
             floatParam1: Math.fround(aFloatParam1 || 0.0),
@@ -593,7 +596,7 @@ MIDP.Context2D = (function() {
             intParam14: 0,
             intParam15: 0,
             intParam16: 0
-        }, MIDP.foregroundIsolateId);
+        }, foregroundIsolateId);
     }
 
     // In the simulator and on device, use touch events; in desktop
@@ -602,10 +605,10 @@ MIDP.Context2D = (function() {
     var supportsTouch = ("ontouchstart" in document.documentElement);
 
     // Cache the canvas position for future computation.
-    var canvasRect = c.getBoundingClientRect();
-    c.addEventListener("canvasresize", function() {
-        canvasRect = c.getBoundingClientRect();
-        MIDP.sendRotationEvent();
+    var canvasRect = canvas.getBoundingClientRect();
+    canvas.addEventListener("canvasresize", function() {
+        canvasRect = canvas.getBoundingClientRect();
+        sendRotationEvent();
     });
 
     function getEventPoint(event) {
@@ -629,20 +632,20 @@ MIDP.Context2D = (function() {
     var longPressTimeoutID = null;
     var longPressDetected = false;
 
-    c.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
+    canvas.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
         event.preventDefault(); // Prevent unnecessary fake mouse events.
         var pt = getEventPoint(event);
-        sendPenEvent(pt, MIDP.PRESSED);
+        sendPenEvent(pt, PRESSED);
         mouseDownInfo = pt;
 
         longPressDetected = false;
         longPressTimeoutID = setTimeout(function() {
             longPressDetected = true;
-            sendGestureEvent(pt, null, MIDP.GESTURE_LONG_PRESS);
+            sendGestureEvent(pt, null, GESTURE_LONG_PRESS);
         }, LONG_PRESS_TIMEOUT);
     });
 
-    c.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
+    canvas.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
         if (!mouseDownInfo) {
             return; // Mousemove on desktop; ignored.
         }
@@ -654,7 +657,7 @@ MIDP.Context2D = (function() {
         }
 
         var pt = getEventPoint(event);
-        sendPenEvent(pt, MIDP.DRAGGED);
+        sendPenEvent(pt, DRAGGED);
         var distance = {
             x: pt.x - mouseDownInfo.x,
             y: pt.y - mouseDownInfo.y
@@ -668,7 +671,7 @@ MIDP.Context2D = (function() {
             mouseDownInfo.x = pt.x;
             mouseDownInfo.y = pt.y;
             if (!longPressDetected) {
-                sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
+                sendGestureEvent(pt, distance, GESTURE_DRAG);
             }
         }
 
@@ -734,7 +737,7 @@ MIDP.Context2D = (function() {
         }
 
         var pt = getEventPoint(event);
-        sendPenEvent(pt, MIDP.RELEASED);
+        sendPenEvent(pt, RELEASED);
 
         if (!longPressDetected) {
             if (mouseDownInfo.isDragging) {
@@ -748,27 +751,24 @@ MIDP.Context2D = (function() {
                     // between touchend event and the last touchmove event is
                     // larger than a threshold.
                     if (deltaTime > 300 || flickSpeed.speed == 0) {
-                        sendGestureEvent(pt, null, MIDP.GESTURE_DROP);
+                        sendGestureEvent(pt, null, GESTURE_DROP);
                     } else {
-                        sendGestureEvent(pt, null, MIDP.GESTURE_FLICK,
+                        sendGestureEvent(pt, null, GESTURE_FLICK,
                             flickSpeed.direction,
                             flickSpeed.speed,
                             flickSpeed.speedX,
                             flickSpeed.speedY);
                     }
                 } else {
-                    sendGestureEvent(pt, null, MIDP.GESTURE_DROP);
+                    sendGestureEvent(pt, null, GESTURE_DROP);
                 }
             } else {
-                sendGestureEvent(pt, null, MIDP.GESTURE_TAP);
+                sendGestureEvent(pt, null, GESTURE_TAP);
             }
         }
 
         mouseDownInfo = null; // Clear the way for the next gesture.
     });
-
-    return c.getContext("2d");
-})();
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function() {
     return 0;
@@ -816,12 +816,12 @@ Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
 };
 
 Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function() {
-    var keys = Object.keys(MIDP.manifest);
+    var keys = Object.keys(manifest);
     var arr = J2ME.newStringArray(keys.length * 2);
     var i = 0;
     keys.forEach(function(key) {
       arr[i++] = J2ME.newString(key);
-      arr[i++] = J2ME.newString(MIDP.manifest[key]);
+      arr[i++] = J2ME.newString(manifest[key]);
     });
     return arr;
 };
@@ -832,27 +832,27 @@ Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImage
     return 0;
 };
 
-MIDP.InterIsolateMutexes = [];
-MIDP.LastInterIsolateMutexID = -1;
+var interIsolateMutexes = [];
+var lastInterIsolateMutexID = -1;
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(jName) {
     var name = util.fromJavaString(jName);
 
     var mutex;
-    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-        if (MIDP.InterIsolateMutexes[i].name === name) {
-            mutex = MIDP.InterIsolateMutexes[i];
+    for (var i = 0; i < interIsolateMutexes.length; i++) {
+        if (interIsolateMutexes[i].name === name) {
+            mutex = interIsolateMutexes[i];
         }
     }
 
     if (!mutex) {
       mutex = {
         name: name,
-        id: ++MIDP.LastInterIsolateMutexID,
+        id: ++lastInterIsolateMutexID,
         locked: false,
         waiting: [],
       };
-      MIDP.InterIsolateMutexes.push(mutex);
+      interIsolateMutexes.push(mutex);
     }
 
     return mutex.id;
@@ -861,9 +861,9 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I
 Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) {
     var ctx = $.ctx;
     var mutex;
-    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-        if (MIDP.InterIsolateMutexes[i].id == id) {
-            mutex = MIDP.InterIsolateMutexes[i];
+    for (var i = 0; i < interIsolateMutexes.length; i++) {
+        if (interIsolateMutexes[i].id == id) {
+            mutex = interIsolateMutexes[i];
             break;
         }
     }
@@ -893,9 +893,9 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) 
 
 Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id) {
     var mutex;
-    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-        if (MIDP.InterIsolateMutexes[i].id == id) {
-            mutex = MIDP.InterIsolateMutexes[i];
+    for (var i = 0; i < interIsolateMutexes.length; i++) {
+        if (interIsolateMutexes[i].id == id) {
+            mutex = interIsolateMutexes[i];
             break;
         }
     }
@@ -920,18 +920,18 @@ Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id
     }
 };
 
-MIDP.exit = function(code) {
+  function exit(code) {
     $.stop();
     DumbPipe.open("exit", null, function(message) {});
     document.getElementById("exit-screen").style.display = "block";
-};
+  };
 
-MIDP.pendingMIDletUpdate = null;
+  var pendingMIDletUpdate = null;
 
 Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     console.info("Isolate stops with code " + code + " and reason " + reason);
-    if (!MIDP.pendingMIDletUpdate) {
-        MIDP.exit();
+    if (!pendingMIDletUpdate) {
+        exit();
         return;
     }
 
@@ -941,7 +941,7 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     dialog.classList.add('visible');
     document.body.appendChild(dialog);
 
-    performDownload(MIDP.pendingMIDletUpdate, dialog, function(data) {
+    performDownload(pendingMIDletUpdate, dialog, function(data) {
         dialog.parentElement.removeChild(dialog);
 
         fs.remove("/midlet.jad");
@@ -955,7 +955,7 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
             }),
             CompiledMethodCache.clear(),
         ]).then(function() {
-            MIDP.pendingMIDletUpdate = null;
+            pendingMIDletUpdate = null;
             DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
             DumbPipe.close(DumbPipe.open("reload", {}));
         });
@@ -963,95 +963,133 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
 };
 
 // The foreground isolate will get the user events (keypresses, etc.)
-MIDP.foregroundIsolateId;
-MIDP.nativeEventQueues = {};
-MIDP.waitingNativeEventQueue = {};
+  var foregroundIsolateId;
+  var displayId;
+  var nativeEventQueues = {};
+  var waitingNativeEventQueue = {};
 
-MIDP.copyEvent = function(e, obj) {
+  function copyEvent(e, obj) {
     var keys = Object.keys(e);
     for (var i = 0; i < keys.length; i++) {
       obj[keys[i]] = e[keys[i]];
     }
-}
+  }
 
-MIDP.sendNativeEvent = function(e, isolateId) {
-    var elem = MIDP.waitingNativeEventQueue[isolateId];
+  function sendNativeEvent(e, isolateId) {
+    var elem = waitingNativeEventQueue[isolateId];
     if (!elem) {
-        MIDP.nativeEventQueues[isolateId].push(e);
+        nativeEventQueues[isolateId].push(e);
         return;
     }
 
-    MIDP.copyEvent(e, elem.nativeEvent);
-    elem.resolve(MIDP.nativeEventQueues[isolateId].length);
+    copyEvent(e, elem.nativeEvent);
+    elem.resolve(nativeEventQueues[isolateId].length);
 
-    delete MIDP.waitingNativeEventQueue[isolateId];
-}
+    delete waitingNativeEventQueue[isolateId];
+  }
 
-MIDP.sendVirtualKeyboardEvent = function() {
-    if (-1 != MIDP.displayId) {
-        MIDP.sendNativeEvent({
-            type: MIDP.VIRTUAL_KEYBOARD_EVENT,
+  function sendVirtualKeyboardEvent() {
+    if (undefined != displayId && undefined != foregroundIsolateId) {
+        sendNativeEvent({
+            type: VIRTUAL_KEYBOARD_EVENT,
             intParam1: 0,
             intParam2: 0,
             intParam3: 0,
-            intParam4: MIDP.displayId,
-        }, MIDP.foregroundIsolateId);
+            intParam4: displayId,
+        }, foregroundIsolateId);
     }
-};
+  };
 
-MIDP.sendRotationEvent = function() {
-    if (-1 != MIDP.displayId) {
-        MIDP.sendNativeEvent({
-            type: MIDP.ROTATION_EVENT,
+  function sendRotationEvent() {
+    if (undefined != displayId && undefined != foregroundIsolateId) {
+        sendNativeEvent({
+            type: ROTATION_EVENT,
             intParam1: 0,
             intParam2: 0,
             intParam3: 0,
-            intParam4: MIDP.displayId,
-        }, MIDP.foregroundIsolateId);
+            intParam4: displayId,
+        }, foregroundIsolateId);
     }
-}
+  }
 
-MIDP.KEY_EVENT = 1;
-MIDP.PEN_EVENT = 2;
-MIDP.PRESSED = 1;
-MIDP.RELEASED = 2;
-MIDP.DRAGGED = 3;
-MIDP.COMMAND_EVENT = 3;
-MIDP.EVENT_QUEUE_SHUTDOWN = 31;
-MIDP.ROTATION_EVENT = 43;
-MIDP.MMAPI_EVENT = 45;
-MIDP.SCREEN_REPAINT_EVENT = 47;
-MIDP.VIRTUAL_KEYBOARD_EVENT = 58,
-MIDP.GESTURE_EVENT = 71;
-MIDP.GESTURE_TAP = 0x1;
-MIDP.GESTURE_LONG_PRESS = 0x2;
-MIDP.GESTURE_DRAG = 0x4;
-MIDP.GESTURE_DROP = 0x8;
-MIDP.GESTURE_FLICK = 0x10;
-MIDP.GESTURE_LONG_PRESS_REPEATED = 0x20;
-MIDP.GESTURE_PINCH = 0x40;
-MIDP.GESTURE_DOUBLE_TAP = 0x80;
-MIDP.GESTURE_RECOGNITION_START = 0x4000;
-MIDP.GESTURE_RECOGNITION_END = 0x8000;
+  function sendCommandEvent(id) {
+    if (undefined != displayId && undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: COMMAND_EVENT,
+        intParam1: id,
+        intParam2: 0,
+        intParam3: 0,
+        intParam4: displayId,
+      }, foregroundIsolateId);
+    }
+  }
 
-MIDP.suppressKeyEvents = false;
+  function sendEndOfMediaEvent(pId, duration) {
+    if (undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: MMAPI_EVENT,
+        intParam1: pId,
+        intParam2: duration,
+        intParam3: 0,
+        intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
+      }, foregroundIsolateId);
+    }
+  }
 
-MIDP.keyPress = function(keyCode) {
-    if (!MIDP.suppressKeyEvents)
-        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+  function sendMediaSnapshotFinishedEvent(pId) {
+    if (undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: MMAPI_EVENT,
+        intParam1: pId,
+        intParam2: 0,
+        intParam3: 0,
+        intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
+      }, foregroundIsolateId);
+    }
+  }
+
+  var KEY_EVENT = 1;
+  var PEN_EVENT = 2;
+  var PRESSED = 1;
+  var RELEASED = 2;
+  var DRAGGED = 3;
+  var COMMAND_EVENT = 3;
+  var EVENT_QUEUE_SHUTDOWN = 31;
+  var ROTATION_EVENT = 43;
+  var MMAPI_EVENT = 45;
+  var SCREEN_REPAINT_EVENT = 47;
+  var VIRTUAL_KEYBOARD_EVENT = 58;
+  var GESTURE_EVENT = 71;
+  var GESTURE_TAP = 0x1;
+  var GESTURE_LONG_PRESS = 0x2;
+  var GESTURE_DRAG = 0x4;
+  var GESTURE_DROP = 0x8;
+  var GESTURE_FLICK = 0x10;
+  var GESTURE_LONG_PRESS_REPEATED = 0x20;
+  var GESTURE_PINCH = 0x40;
+  var GESTURE_DOUBLE_TAP = 0x80;
+  var GESTURE_RECOGNITION_START = 0x4000;
+  var GESTURE_RECOGNITION_END = 0x8000;
+
+  var suppressKeyEvents = false;
+
+  function keyPress(keyCode) {
+    if (!suppressKeyEvents) {
+      sendNativeEvent({ type: KEY_EVENT, intParam1: PRESSED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
+    }
 };
 
-MIDP.keyRelease = function(keyCode) {
-    if (!MIDP.suppressKeyEvents)
-        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.RELEASED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
+function keyRelease(keyCode) {
+    if (!suppressKeyEvents)
+      sendNativeEvent({ type: KEY_EVENT, intParam1: RELEASED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
 };
 
 window.addEventListener("keypress", function(ev) {
-    MIDP.keyPress(ev.which);
+    keyPress(ev.which);
 });
 
 window.addEventListener("keyup", function(ev) {
-    MIDP.keyRelease(ev.which);
+    keyRelease(ev.which);
 });
 
 Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function() {
@@ -1059,7 +1097,7 @@ Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = functio
 };
 
 Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
-    MIDP.nativeEventQueues[$.ctx.runtime.isolate.id] = [];
+    nativeEventQueues[$.ctx.runtime.isolate.id] = [];
 };
 
 Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
@@ -1072,21 +1110,21 @@ function(obj, isolateId) {
       e[field.name] = field.get(obj);
     }
 
-    MIDP.sendNativeEvent(e, isolateId);
+    sendNativeEvent(e, isolateId);
 };
 
 Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
 function(nativeEvent) {
     var isolateId = $.ctx.runtime.isolate.id;
-    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
+    var nativeEventQueue = nativeEventQueues[isolateId];
 
     if (nativeEventQueue.length !== 0) {
-        MIDP.copyEvent(nativeEventQueue.shift(), nativeEvent);
+        copyEvent(nativeEventQueue.shift(), nativeEvent);
         return nativeEventQueue.length;
     }
 
     asyncImpl("I", new Promise(function(resolve, reject) {
-        MIDP.waitingNativeEventQueue[isolateId] = {
+        waitingNativeEventQueue[isolateId] = {
             resolve: resolve,
             nativeEvent: nativeEvent,
         };
@@ -1096,18 +1134,18 @@ function(nativeEvent) {
 Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
 function(obj) {
     var isolateId = $.ctx.runtime.isolate.id;
-    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
+    var nativeEventQueue = nativeEventQueues[isolateId];
     if (!nativeEventQueue.length) {
         return 0;
     }
-    MIDP.copyEvent(nativeEventQueue.shift(), obj);
+    copyEvent(nativeEventQueue.shift(), obj);
     return 1;
 };
 
-MIDP.localizedStrings = new Map();
+var localizedStrings = new Map();
 
 Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(id) {
-    if (MIDP.localizedStrings.size === 0) {
+    if (localizedStrings.size === 0) {
         // First build up a mapping of field names to field IDs
         var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
         var constantsMap = new Map();
@@ -1127,11 +1165,11 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
             var attrs = entries[n].attributes;
             // map the key value to a field ID
             var id = constantsMap.get(attrs.Key.value);
-            MIDP.localizedStrings.set(id, attrs.Value.value);
+            localizedStrings.set(id, attrs.Value.value);
         }
     }
 
-    var value = MIDP.localizedStrings.get(id);
+    var value = localizedStrings.get(id);
 
     if (!value) {
         throw $.newIllegalStateException();
@@ -1140,12 +1178,12 @@ Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"
     return J2ME.newString(value);
 };
 
-Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(displayId, drawTrusted) {
-    console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + displayId + ", " + drawTrusted + ")");
+Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(dispId, drawTrusted) {
+    console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + dispId + ", " + drawTrusted + ")");
 };
 
 Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    MIDP.sendNativeEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
+    sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
 };
 
 Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {
@@ -1154,7 +1192,7 @@ Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/Comm
 
 Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(exit) {
     console.info("Exit: " + exit);
-    MIDP.exit();
+    exit();
 };
 
 Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function() {
@@ -1167,23 +1205,23 @@ Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = f
   but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
 */
 
-MIDP.SYSTEM_KEY_POWER = 1;
-MIDP.SYSTEM_KEY_SEND = 2;
-MIDP.SYSTEM_KEY_END = 3;
-MIDP.SYSTEM_KEY_CLEAR = 4;
+var SYSTEM_KEY_POWER = 1;
+var SYSTEM_KEY_SEND = 2;
+var SYSTEM_KEY_END = 3;
+var SYSTEM_KEY_CLEAR = 4;
 
-MIDP.systemKeyMap = {
-  8: MIDP.SYSTEM_KEY_CLEAR, // Backspace
-  112: MIDP.SYSTEM_KEY_POWER, // F1
-  116: MIDP.SYSTEM_KEY_SEND, // F5
-  114: MIDP.SYSTEM_KEY_END, // F3
+var systemKeyMap = {
+  8: SYSTEM_KEY_CLEAR, // Backspace
+  112: SYSTEM_KEY_POWER, // F1
+  116: SYSTEM_KEY_SEND, // F5
+  114: SYSTEM_KEY_END, // F3
 };
 
 Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(key) {
-    return MIDP.systemKeyMap[key] || 0;
+    return systemKeyMap[key] || 0;
 };
 
-MIDP.keyMap = {
+var keyMap = {
     1: 119, // UP
     2: 97, // LEFT
     5: 100, // RIGHT
@@ -1196,10 +1234,10 @@ MIDP.keyMap = {
 };
 
 Native["javax/microedition/lcdui/KeyConverter.getKeyCode.(I)I"] = function(key) {
-    return MIDP.keyMap[key] || 0;
+    return keyMap[key] || 0;
 };
 
-MIDP.keyNames = {
+var keyNames = {
     119: "Up",
     97: "Left",
     100: "Right",
@@ -1212,10 +1250,10 @@ MIDP.keyNames = {
 };
 
 Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(keyCode) {
-    return J2ME.newString((keyCode in MIDP.keyNames) ? MIDP.keyNames[keyCode] : String.fromCharCode(keyCode));
+    return J2ME.newString((keyCode in keyNames) ? keyNames[keyCode] : String.fromCharCode(keyCode));
 };
 
-MIDP.gameKeys = {
+var gameKeys = {
     119: 1,  // UP
     97: 2,   // LEFT
     115: 6,  // DOWN
@@ -1228,23 +1266,23 @@ MIDP.gameKeys = {
 };
 
 Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(keyCode) {
-    return MIDP.gameKeys[keyCode] || 0;
+    return gameKeys[keyCode] || 0;
 };
 
 Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(canvas, suppressKeyEvents) {
-    MIDP.suppressKeyEvents = suppressKeyEvents;
+    suppressKeyEvents = suppressKeyEvents;
 };
 
 Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function() {
-    MIDP.displayId = -1;
+    displayId = undefined;
 };
 
-Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(isolateId, displayId) {
-    MIDP.displayId = displayId;
-    MIDP.foregroundIsolateId = isolateId;
+Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(isolateId, dispId) {
+    displayId = dispId;
+    foregroundIsolateId = isolateId;
 };
 
-MIDP.ConnectionRegistry = {
+var connectionRegistry = {
     // The lastRegistrationId is in common between alarms and push notifications
     lastRegistrationId:  -1,
     pushRegistrations: [],
@@ -1290,7 +1328,7 @@ MIDP.ConnectionRegistry = {
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(time) {
     asyncImpl("I", new Promise(function(resolve, reject) {
-        MIDP.ConnectionRegistry.waitForRegistration(function(id) {
+        connectionRegistry.waitForRegistration(function(id) {
             resolve(id);
         });
     }));
@@ -1301,7 +1339,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"
 
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
-    MIDP.ConnectionRegistry.addConnection({
+    connectionRegistry.addConnection({
         connection: values[0],
         midlet: values[1],
         filter: values[2],
@@ -1316,7 +1354,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
 
     var lastAlarm = 0;
     var id = null;
-    var alarms = MIDP.ConnectionRegistry.alarms;
+    var alarms = connectionRegistry.alarms;
     for (var i = 0; i < alarms.length; i++) {
         if (alarms[i].midlet == midlet) {
             if (time != 0) {
@@ -1332,7 +1370,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
     }
 
     if (lastAlarm == 0 && time != 0) {
-        id = MIDP.ConnectionRegistry.addAlarm({
+        id = connectionRegistry.addAlarm({
             midlet: midlet,
             time: time
         });
@@ -1345,7 +1383,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
         }
 
         setTimeout(function() {
-            MIDP.ConnectionRegistry.addReadyRegistration(id);
+            connectionRegistry.addReadyRegistration(id);
         }, relativeTime);
     }
 
@@ -1354,7 +1392,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = functi
 
 Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(handle, regentry, entrysz) {
     var reg;
-    var alarms = MIDP.ConnectionRegistry.alarms;
+    var alarms = connectionRegistry.alarms;
     for (var i = 0; i < alarms.length; i++) {
         if (alarms[i].id == handle) {
             reg = alarms[i];
@@ -1362,7 +1400,7 @@ Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = func
     }
 
     if (!reg) {
-        var pushRegistrations = MIDP.ConnectionRegistry.pushRegistrations;
+        var pushRegistrations = connectionRegistry.pushRegistrations;
         for (var i = 0; i < pushRegistrations.length; i++) {
             if (pushRegistrations[i].id == handle) {
                 reg = pushRegistrations[i];
@@ -1446,13 +1484,13 @@ Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/m
     throw $.newIllegalArgumentException("VirtualKeyboard::getCustomKeyboardControl() not implemented")
 };
 
-MIDP.keyboardVisibilityListener = null;
+var keyboardVisibilityListener = null;
 Native["com/nokia/mid/ui/VirtualKeyboard.setVisibilityListener.(Lcom/nokia/mid/ui/KeyboardVisibilityListener;)V"] = function(listener) {
-    MIDP.keyboardVisibilityListener = listener;
+    keyboardVisibilityListener = listener;
 };
 
 Native["javax/microedition/lcdui/Display.getKeyboardVisibilityListener.()Lcom/nokia/mid/ui/KeyboardVisibilityListener;"] = function() {
-    return MIDP.keyboardVisibilityListener;
+    return keyboardVisibilityListener;
 };
 
 Native["com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z"] = function() {
@@ -1466,7 +1504,7 @@ Native["com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I"] = function() {
 Native["com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I"] = function() {
     // We should return the number of pixels between the top of the
     // screen and the top of the keyboard
-    return MIDP.Context2D.canvas.height - MIDP.getKeyboardHeight();
+    return canvas.height - getKeyboardHeight();
 };
 
 Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
@@ -1475,9 +1513,24 @@ Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
 };
 
 Native["com/nokia/mid/ui/VirtualKeyboard.getHeight.()I"] = function() {
-    return MIDP.getKeyboardHeight();
+    return getKeyboardHeight();
 };
 
-MIDP.getKeyboardHeight = function() {
-    return MIDP.physicalScreenHeight - window.innerHeight;
+function getKeyboardHeight() {
+    return physicalScreenHeight - window.innerHeight;
 };
+
+  return {
+    isVKVisible: isVKVisible,
+    setFullScreen: setFullScreen,
+    manifest: manifest,
+    sendCommandEvent: sendCommandEvent,
+    sendVirtualKeyboardEvent: sendVirtualKeyboardEvent,
+    sendEndOfMediaEvent: sendEndOfMediaEvent,
+    sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
+    keyPress: keyPress,
+    keyRelease: keyRelease,
+    displayId: displayId,
+    context2D: canvas.getContext("2d"),
+  };
+})();
