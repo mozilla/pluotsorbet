@@ -72,6 +72,7 @@ Media.extToFormat = new Map([
     ["wav", "wav"],
     ["ogg", "ogg"],
     ["mp4", "MPEG4"],
+    ["webm", "WebM"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -81,7 +82,8 @@ Media.contentTypeToFormat = new Map([
     ["audio/mpeg", "MPEG_layer_3"],
     ["image/jpeg", "JPEG"],
     ["image/png", "PNG"],
-    ["video/mp4", "MPEG4"]
+    ["video/mp4", "MPEG4"],
+    ["video/webm", "WebM"],
 ]);
 
 Media.formatToContentType = new Map();
@@ -91,7 +93,7 @@ for (var elem of Media.contentTypeToFormat) {
 
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
-Media.supportedVideoFormats = ["MPEG4"];
+Media.supportedVideoFormats = ["MPEG4", "WebM"];
 
 Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
