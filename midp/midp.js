@@ -501,7 +501,8 @@ Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/Strin
 };
 
 MIDP.Context2D = (function() {
-    var c = document.getElementById("canvas");
+    var realCanvas = document.getElementById("canvas");
+    var bufferCanvas = document.createElement('canvas');
 
     if (config.autosize && !/no|0/.test(config.autosize)) {
       document.documentElement.classList.add('autosize');
@@ -540,6 +541,13 @@ MIDP.Context2D = (function() {
       MIDP.lastWindowInnerHeight = window.innerHeight;
 
       MIDP.updateCanvas();
+
+      // Normally this will have happened in the 'canvasresize' event handler
+      // that will have been called from `MIDP.updateCanvas` but the event
+      // handler hasn't been set up yet.
+      bufferCanvas.height = realCanvas.height;
+      bufferCanvas.width = realCanvas.width;
+
       MIDP.isVKVisible = function() {
           var expectedHeightWithNoKeyboard = window.outerHeight - MIDP.verticalChrome;
           if (window.innerHeight == expectedHeightWithNoKeyboard) {
@@ -558,6 +566,13 @@ MIDP.Context2D = (function() {
       MIDP.physicalScreenHeight = 320;
 
       MIDP.updateCanvas();
+
+      // Normally this will have happened in the 'canvasresize' event handler
+      // that will have been called from `MIDP.updateCanvas` but the event
+      // handler hasn't been set up yet.
+      bufferCanvas.height = realCanvas.height;
+      bufferCanvas.width = realCanvas.width;
+
       MIDP.isVKVisible = function() {
           return false;
       };
@@ -602,9 +617,11 @@ MIDP.Context2D = (function() {
     var supportsTouch = ("ontouchstart" in document.documentElement);
 
     // Cache the canvas position for future computation.
-    var canvasRect = c.getBoundingClientRect();
-    c.addEventListener("canvasresize", function() {
-        canvasRect = c.getBoundingClientRect();
+    var canvasRect = realCanvas.getBoundingClientRect();
+    realCanvas.addEventListener("canvasresize", function() {
+        bufferCanvas.height = realCanvas.height;
+        bufferCanvas.width = realCanvas.width;
+        canvasRect = realCanvas.getBoundingClientRect();
         MIDP.sendRotationEvent();
     });
 
@@ -629,7 +646,7 @@ MIDP.Context2D = (function() {
     var longPressTimeoutID = null;
     var longPressDetected = false;
 
-    c.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
+    realCanvas.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
         event.preventDefault(); // Prevent unnecessary fake mouse events.
         var pt = getEventPoint(event);
         sendPenEvent(pt, MIDP.PRESSED);
@@ -642,7 +659,7 @@ MIDP.Context2D = (function() {
         }, LONG_PRESS_TIMEOUT);
     });
 
-    c.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
+    realCanvas.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
         if (!mouseDownInfo) {
             return; // Mousemove on desktop; ignored.
         }
@@ -767,7 +784,7 @@ MIDP.Context2D = (function() {
         mouseDownInfo = null; // Clear the way for the next gesture.
     });
 
-    return c.getContext("2d");
+    return bufferCanvas.getContext('2d');
 })();
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function() {

@@ -101,7 +101,31 @@ var currentlyFocusedTextEditor;
     };
 
 
-    addUnimplementedNative("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V");
+    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
+        if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
+            console.warn("DisplayDevice.refresh0: Invalid value");
+            x1 = Math.max(0, x1);
+            y1 = Math.max(0, y1);
+            x2 = Math.max(0, x2);
+            y2 = Math.max(0, y2);
+        }
+
+        var bufferCanvas = MIDP.Context2D.canvas;
+        var realCanvas = document.getElementById("canvas");
+        var maxWidth = realCanvas.width;
+        var maxHeight = realCanvas.height;
+        var width = x2 - x1;
+        var height = y2 - y1;
+
+        if (height > maxHeight || width > maxWidth) {
+            console.warn("DisplayDevice.refresh0: Invalid value");
+            height = Math.min(maxHeight, height);
+            width = Math.min(maxWidth, width);
+        }
+
+        var ctx = realCanvas.getContext('2d');
+        ctx.drawImage(bufferCanvas, x1, y1, width, height, x1, y1, width, height);
+    }
 
     function swapRB(pixel) {
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
