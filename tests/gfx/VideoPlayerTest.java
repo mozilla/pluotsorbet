@@ -34,16 +34,16 @@ public class VideoPlayerTest extends MIDlet implements PlayerListener {
     public void startApp() {
         try {
             String dirPath = System.getProperty("fileconn.dir.private");
-            FileConnection file = (FileConnection)Connector.open(dirPath + "test.mp4", Connector.READ_WRITE);
+            FileConnection file = (FileConnection)Connector.open(dirPath + "test.webm", Connector.READ_WRITE);
             if (!file.exists()) {
                 file.create();
             }
             OutputStream os = file.openDataOutputStream();
-            InputStream is = getClass().getResourceAsStream("/javax/microedition/media/test.mp4");
+            InputStream is = getClass().getResourceAsStream("/javax/microedition/media/test.webm");
             os.write(TestUtils.read(is));
             os.close();
 
-            Player player = Manager.createPlayer(dirPath + "test.mp4");
+            Player player = Manager.createPlayer(dirPath + "test.webm");
 
             player.addPlayerListener(this);
 
