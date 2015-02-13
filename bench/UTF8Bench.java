@@ -59,6 +59,7 @@ public class UTF8Bench {
           InputStream is = file.openInputStream();
           start = JVM.monotonicTimeMillis();
           readUtf8Data(is);
+          time = JVM.monotonicTimeMillis() - start;
           System.out.println("readUtf8Data: " + time);
           is.close();
       } catch (IOException e) {
