@@ -397,6 +397,13 @@ function VideoPlayer(playerContainer) {
 
     this.isVideoControlSupported = true;
     this.isVolumeControlSupported = true;
+
+    // VideoPlayer::start could be called while the video element
+    // is hidden, causing the call to HTMLVideoElement::play to be
+    // ignored.
+    // Thus, we need to call HTMLVideoElement::play when the element
+    // gets visible.
+    this.isPlaying = false;
 }
 
 VideoPlayer.prototype.realize = function() {
@@ -436,18 +443,23 @@ VideoPlayer.prototype.realize = function() {
 }
 
 VideoPlayer.prototype.start = function() {
-    this.video.play();
+    if (this.video.style.visibility === "hidden") {
+        this.isPlaying = true;
+    } else {
+        this.video.play();
+    }
 }
 
 VideoPlayer.prototype.pause = function() {
     this.video.pause();
+    this.isPlaying = false;
 }
 
 VideoPlayer.prototype.close = function() {
     if (this.video.parentNode) {
         this.video.parentNode.removeChild(this.video);
     }
-    this.video.pause();
+    this.pause();
 }
 
 VideoPlayer.prototype.getMediaTime = function() {
@@ -472,6 +484,9 @@ VideoPlayer.prototype.setLocation = function(x, y, w, h) {
 
 VideoPlayer.prototype.setVisible = function(visible) {
     this.video.style.visibility = visible ? "visible" : "hidden";
+    if (this.isPlaying) {
+        this.video.play();
+    }
 }
 
 VideoPlayer.prototype.getVolume = function() {
