@@ -319,8 +319,6 @@ function ImagePlayer(playerContainer) {
 }
 
 ImagePlayer.prototype.realize = function() {
-    var objectUrl;
-
     var ctx = $.ctx;
 
     var p = new Promise((function(resolve, reject) {
@@ -335,19 +333,20 @@ ImagePlayer.prototype.realize = function() {
                 var imgData = fs.read(fd);
                 fs.close(fd);
                 this.image.src = URL.createObjectURL(new Blob([ imgData ]));
-                objectUrl = this.image.src;
             }).bind(this));
         } else {
             this.image.src = this.url;
         }
     }).bind(this));
 
-    p.done(function() {
-        if (!objectUrl) {
+    p.catch(function() {
+      // Ignore promise rejection, we only need to revoke the object URL
+    }).then((function() {
+        if (!this.image.src) {
             return;
         }
-        URL.revokeObjectURL(objectUrl);
-    });
+        URL.revokeObjectURL(this.image.src);
+    }).bind(this));
 
     return p;
 }
@@ -432,12 +431,14 @@ VideoPlayer.prototype.realize = function() {
         }
     }).bind(this));
 
-    p.done(function() {
+    p.catch(function() {
+      // Ignore promise rejection, we only need to revoke the object URL
+    }).then((function() {
         if (!this.video.src) {
             return;
         }
         URL.revokeObjectURL(this.video.src);
-    }.bind(this));
+    }).bind(this));
 
     return p;
 }
