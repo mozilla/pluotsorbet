@@ -69,8 +69,8 @@ function(filenameBase, name, ext) {
         var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
         function openCallback(fd) {
-            ctx.setAsCurrentContext();
             if (fd == -1) {
+                ctx.setAsCurrentContext();
                 reject($.newIOException("openRecordStoreFile: open failed"));
             } else {
                 resolve(fd); // handle
@@ -630,8 +630,8 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
     asyncImpl("I", new Promise(function(resolve, reject) {
         function open() {
             fs.open(path, function(fd) {
-                ctx.setAsCurrentContext();
                 if (fd == -1) {
+                    ctx.setAsCurrentContext();
                     reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
                 } else {
                     resolve(fd);

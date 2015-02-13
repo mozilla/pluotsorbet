@@ -25,7 +25,10 @@ Native["gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V"] = function() {
   var ctx = $.ctx;
   asyncImpl("V", new Promise(function(resolve, reject) {
     ctx.setAsCurrentContext();
-    setTimeout(reject.bind(null, $.newNullPointerException("An exception")), 100);
+    setTimeout(function() {
+      ctx.setAsCurrentContext();
+      reject($.newNullPointerException("An exception"))
+    }, 100);
   }));
 };
 

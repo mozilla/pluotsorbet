@@ -411,9 +411,9 @@ ImageRecorder.prototype.realize = function() {
 }
 
 ImageRecorder.prototype.recipient = function(message) {
-    this.ctx.setAsCurrentContext();
     switch (message.type) {
         case "initerror":
+            this.ctx.setAsCurrentContext();
             if (message.name == "PermissionDeniedError") {
                 this.realizeRejector($.newSecurityException("Not permitted to init camera"));
             } else {
