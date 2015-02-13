@@ -482,8 +482,7 @@ module J2ME {
     }
 
     pushClassInitFrame(classInfo: ClassInfo) {
-      if (this.runtime.initialized[classInfo.className] ||
-          this.runtime.pending[classInfo.className]) {
+      if (this.runtime.initialized[classInfo.className]) {
         return;
       }
       var needsInitialization = true;
@@ -503,7 +502,12 @@ module J2ME {
           superClass = superClass.superClass;
         }
       }
-      linkKlass(classInfo);
+      // This method may be called multiple times by different threads while the class
+      // is being initialized and still in the pending state. Only link the klass on the first
+      // call.
+      if (!this.runtime.pending[classInfo.className]) {
+        linkKlass(classInfo);
+      }
       if (!needsInitialization) {
         this.runtime.initialized[classInfo.className] = true;
         return;
