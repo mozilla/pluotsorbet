@@ -3,48 +3,6 @@ package com.nokia.mid.ui;
 import com.nokia.mid.ui.CustomKeyboardControl;
 import com.nokia.mid.ui.KeyboardVisibilityListener;
 
-class VKVisibilityNotificationRunnable implements Runnable {
-    private Object listenerLock = new Object();
-
-    public void run() {
-        while(true) {
-            boolean isShow = sleepUntilVKVisibilityChange();
-            synchronized(listenerLock) {
-                if (null == listener) {
-                    continue;
-                }
-
-                // NB: A malicious or poorly-written listener can block
-                //     in one of `showNotify` or `hideNotify`, causing
-                //     us to stop sending visibility notifications and
-                //     causing the next call to `setListener` to also
-                //     block. We could alleviate this by creating a
-                //     new Thread on which we will make the call to
-                //     `showNotify` or `hideNotify`, then waiting for
-                //     the thread to notify us but timing out after
-                //     some reasonable amount of time. This is a lot
-                //     of thread creation and will only help poorly-
-                //     written programs so is probably overkill.
-
-                if (isShow) {
-                    listener.showNotify(VirtualKeyboard.SYSTEM_KEYBOARD);
-                } else {
-                    listener.hideNotify(VirtualKeyboard.SYSTEM_KEYBOARD);
-                }
-            }
-        }
-    }
-
-    public void setListener(KeyboardVisibilityListener listener) {
-        synchronized(listenerLock) {
-            this.listener = listener;
-        }
-    }
-
-    private KeyboardVisibilityListener listener;
-    private native boolean sleepUntilVKVisibilityChange();
-}
-
 public class VirtualKeyboard {
     public static final int CUSTOM_KEYBOARD = 1;
     public static final int SYSTEM_KEYBOARD = 2;
@@ -72,15 +30,5 @@ public class VirtualKeyboard {
 
     public native static void suppressSizeChanged(boolean bl);
 
-    public static void setVisibilityListener(KeyboardVisibilityListener listener) {
-        if (null == visibilityNotifier) {
-            visibilityNotifier = new VKVisibilityNotificationRunnable();
-            listenerThread = new Thread(visibilityNotifier);
-            listenerThread.start();
-        }
-        visibilityNotifier.setListener(listener);
-    }
-
-    private static VKVisibilityNotificationRunnable visibilityNotifier = null;
-    private static Thread listenerThread = null;
+    public native static void setVisibilityListener(KeyboardVisibilityListener listener);
 }

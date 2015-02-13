@@ -23,6 +23,13 @@ interface CompiledMethodCache {
   put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise;
 }
 
+interface AOTMetaData {
+  /**
+   * On stack replacement pc entry points.
+   */
+  osr: number [];
+}
+
 declare var throwHelper;
 declare var throwPause;
 declare var throwYield;
@@ -31,6 +38,8 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var CompiledMethodCache;
+
+  export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
   /**
    * Turns on just-in-time compilation of methods.
@@ -1269,11 +1278,17 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
+    var fn = jsGlobal[methodInfo.mangledClassAndMethodName];
+    if (fn) {
+      aotMethodCount++;
+      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
+      return fn;
+    }
     if (enableCompiledMethodCache) {
       var cachedMethod;
-      if (!jsGlobal[methodInfo.mangledClassAndMethodName] && (cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
         cachedMethodCount ++;
-        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
       }
     }
 
@@ -1483,6 +1498,11 @@ module J2ME {
   export var cachedMethodCount = 0;
 
   /**
+   * Number of methods that have been loaded from ahead of time compiled code thus far.
+   */
+  export var aotMethodCount = 0;
+
+  /**
    * Number of ms that have been spent compiled code thus far.
    */
   var totalJITTime = 0;
@@ -1508,7 +1528,7 @@ module J2ME {
       if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
         cachedMethodCount ++;
         jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
       }
     }
 
@@ -1543,10 +1563,11 @@ module J2ME {
         key: methodInfo.implKey,
         source: source,
         referencedClasses: referencedClasses,
+        onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
       });
     }
 
-    linkMethod(methodInfo, source, referencedClasses);
+    linkMethod(methodInfo, source, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
 
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
@@ -1562,7 +1583,7 @@ module J2ME {
   /**
    * Links up compiled method at runtime.
    */
-  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[]) {
+  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
@@ -1574,6 +1595,7 @@ module J2ME {
     var fn = jsGlobal[mangledClassAndMethodName];
     methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
+    methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 
     // Link member methods on the prototype.
     if (!methodInfo.isStatic) {
@@ -1830,6 +1852,7 @@ module J2ME {
 
 var Runtime = J2ME.Runtime;
 
+var AOTMD = J2ME.aotMetaData;
 
 /**
  * Are we currently unwinding the stack because of a Yield? This technically

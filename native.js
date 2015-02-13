@@ -223,8 +223,6 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
         value = "true";
         break;
     case "audio.encodings":
-        // The value of this property is different than the value on a real Nokia Asha 503 phone.
-        // On a real phone, it is: encoding=audio/amr
         value = "encoding=audio/amr";
         break;
     case "video.snapshot.encodings":

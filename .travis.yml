@@ -25,4 +25,10 @@ cache:
     - node_modules
     - /tmp/j2me.js
 notifications:
- irc: "irc.mozilla.org#j2mejs"
+  irc:
+    channels:
+      - "irc.mozilla.org#j2me.js"
+    template:
+      - "%{repository_slug} - %{commit_message} - %{result} - %{build_url}"
+    use_notice: true
+    skip_join: true
