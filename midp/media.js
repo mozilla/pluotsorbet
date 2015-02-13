@@ -485,7 +485,7 @@ VideoPlayer.prototype.setLocation = function(x, y, w, h) {
 
 VideoPlayer.prototype.setVisible = function(visible) {
     this.video.style.visibility = visible ? "visible" : "hidden";
-    if (this.isPlaying) {
+    if (visible && this.isPlaying) {
         this.video.play();
     }
 }
