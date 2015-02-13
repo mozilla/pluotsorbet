@@ -134,6 +134,17 @@ module J2ME.Bytecode {
       return this.blockMap[bci];
     }
 
+    public getOSREntryPoints() {
+      var points = [];
+      for (var i = 0; i < this.blocks.length; i++) {
+        var block = this.blocks[i];
+        if (block.isLoopHeader && !block.isInnerLoopHeader()) {
+          points.push(block.startBci);
+        }
+      }
+      return points;
+    }
+
     private makeBlock(startBci: number): Block {
       var oldBlock = this.blockMap[startBci];
       if (!oldBlock) {

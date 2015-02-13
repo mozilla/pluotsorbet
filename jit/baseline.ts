@@ -283,7 +283,7 @@ module J2ME {
       if (this.hasMonitorEnter) {
         this.bodyEmitter.prependLn("var th = $.ctx.thread;");
       }
-      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint);
+      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.blockMap.getOSREntryPoints());
     }
 
     needsVariable(name: string) {
