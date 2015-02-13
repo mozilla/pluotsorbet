@@ -896,74 +896,31 @@ var currentlyFocusedTextEditor;
     }
 
     function setClip(g, x, y, width, height) {
-        var translatedX1, translatedY1;
-        var translatedX2, translatedY2;
-
-        // If width or height is zero or less then zero,
-        // we do not preserve the current clipping and
-        // set all clipping values to zero.
         if ((width <= 0) || (height <= 0)) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
+        } else {
+            g.clipX1 = Math.max(0, x + g.transX) & 0x7fff;
+            g.clipY1 = Math.max(0, y + g.transY) & 0x7fff;
+
+            g.clipX2 = Math.min(g.maxWidth, x + g.transX + width) & 0x7fff;
+            g.clipY2 = Math.min(g.maxHeight, y + g.transY + height) & 0x7fff;
+
+            if (g.runtimeClipEnforce) {
+                g.clipX1 = Math.max(g.clipX1, g.systemClipX1);
+                g.clipY1 = Math.max(g.clipY1, g.systemClipY1);
+                g.clipX2 = Math.min(g.clipX2, g.systemClipX2);
+                g.clipY2 = Math.min(g.clipY2, g.systemClipY2);
+            }
         }
 
-        // Translate the given coordinates
-        translatedX1 = x + g.transX;
-        translatedY1 = y + g.transY;
-
-        // Detect Overflow
-        translatedX1 = Math.max(0, translatedX1);
-        translatedX1 = Math.min(translatedX1, g.maxWidth);
-        translatedY1 = Math.max(0, translatedY1);
-        translatedY1 = Math.min(translatedY1, g.maxHeight);
-
-        g.clipX1 = (translatedX1 & 0x7fff);
-        g.clipY1 = (translatedY1 & 0x7fff);
-
-        if ((translatedX1 >= g.maxWidth)
-            || (translatedY1 >= g.maxHeight)) {
+        if (g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
         }
 
-        // Check against the runtime library clip values
-        if (g.runtimeClipEnforce) {
-          if (g.clipX1 < g.systemClipX1)
-                  clipX1 = g.systemClipX1;
-          if (g.clipY1 < g.systemClipY1) {
-                  clipY1 = g.systemClipY1;
-          }
-        }
-
-        // Translate the given width, height to abs. coordinates
-        translatedX2 = x + g.transX + width;
-        translatedY2 = y + g.transY + height;
-
-        // Detect overflow
-        translatedX2 = Math.max(0, translatedX2);
-        translatedX2 = Math.min(translatedX2, g.maxWidth);
-        translatedY2 = Math.max(0, translatedY2);
-        translatedY2 = Math.min(translatedY2, g.maxHeight);
-
-        g.clipX2 = (translatedX2 & 0x7FFF);
-        g.clipY2 = (translatedY2 & 0x7FFF);
-
-        // Check against the runtime library clip values
-        if (g.runtimeClipEnforce) {
-            if (g.clipX2 > g.systemClipX2) {
-                g.clipX2 = g.systemClipX2;
-            }
-            if (g.clipY2 > g.systemClipY2) {
-                g.clipY2 = g.systemClipY2;
-            }
-        }
-
-        if ((g.clipX1 != 0) || (g.clipY1 != 0)
-                || (g.clipX2 != g.maxWidth) || (g.clipY2 != g.maxHeight)) {
-            g.clipped = true;
-        }
+        g.clipped = g.clipX1 > 0 ||
+                    g.clipY1 > 0 ||
+                    g.clipX2 < g.maxWidth ||
+                    g.clipY2 < g.maxHeight;
     }
 
     function grayVal(red, green, blue) {
@@ -1039,82 +996,24 @@ var currentlyFocusedTextEditor;
     }
 
     function clipRect(g, x, y, width, height) {
-        var translatedX1, translatedY1;
-        var translatedX2, translatedY2;
-
         if (width <= 0 || height <= 0) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
+        } else {
+            g.clipX1 = Math.max(g.clipX1, x + g.transX) & 0x7fff;
+            g.clipY1 = Math.max(g.clipY1, y + g.transY) & 0x7fff;
+
+            g.clipX2 = Math.min(g.clipX2, x + g.transX + width) & 0x7fff;
+            g.clipY2 = Math.min(g.clipY2, y + g.transY + height) & 0x7fff;
         }
 
-        // Translate the given coordinates
-        translatedX1 = x + g.transX;
-        translatedY1 = y + g.transY;
-
-        // Detect overflow
-        if (translatedX1 < 0) {
-            translatedX1 = (x < 0 || g.transX < 0) ? 0 : g.maxWidth;
-        }
-        if (translatedY1 < 0) {
-            translatedY1 = (y < 0 || g.transY < 0) ? 0 : g.maxHeight;
-        }
-
-        // If the passed in rect is below our current clip
-        if ((g.clipX2 < translatedX1) || (g.clipY2 < translatedY1)) {
-            // we have no intersection
+        if (g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
         }
 
-        if (translatedX1 > g.clipX1) {
-            g.clipX1 = (translatedX1 & 0x7fff);
-            g.clipped = true;
-        }
-
-        if (translatedY1 > g.clipY1) {
-            g.clipY1 = (translatedY1 & 0x7fff);
-            g.clipped = true;
-        }
-
-        // Start handling bottom right area
-
-        translatedX2 = x + g.transX + width;
-        translatedY2 = y + g.transY + height;
-
-        // Detect Overflow
-        if (translatedX2 < 0) {
-            translatedX2 = (x < 0 || g.transX < 0) ? translatedX1 : g.maxWidth;
-        }
-        if (translatedY2 < 0) {
-            translatedY2 = (y < 0 || g.transY < 0) ? translatedY1 : g.maxHeight;
-        }
-
-        // If the passed in rect is above our current clip
-        if (translatedX2 < g.clipX1 || translatedY2 < g.clipY1) {
-            // we have no intersection
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
-        }
-
-        if (translatedX2 <= g.clipX2) {
-            g.clipX2 = translatedX2 & 0xffff;
-            g.clipped = true;
-        }
-
-        if (translatedY2 <= g.clipY2) {
-            g.clipY2 = translatedY2 & 0xffff;
-            g.clipped = true;
-        }
-
-        if (g.clipped == true) {
-            if (g.clipX2 < g.clipX1)
-              g.clipX2 = g.clipX1;
-            if (g.clipY2 < g.clipY1)
-              g.clipY2 = g.clipY1;
-        }
+        g.clipped = g.clipX1 > 0 ||
+                    g.clipY1 > 0 ||
+                    g.clipX2 < g.maxWidth ||
+                    g.clipY2 < g.maxHeight;
     }
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
