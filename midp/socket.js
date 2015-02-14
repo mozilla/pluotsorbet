@@ -145,17 +145,17 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(data, of
 Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(data, offset, length) {
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
-        ctx.setAsCurrentContext();
         if (this.socket.isClosed) {
+          ctx.setAsCurrentContext();
           reject($.newIOException("socket is closed"));
           return;
         }
 
         this.socket.onsend = function(message) {
-            ctx.setAsCurrentContext();
             this.socket.onsend = null;
             if ("error" in message) {
                 console.error(message.error);
+                ctx.setAsCurrentContext();
                 reject($.newIOException("error writing to socket"));
             } else if (message.result) {
                 resolve(length);

@@ -1,4 +1,4 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
@@ -36,7 +36,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot
+all: config-build java jasmin tests j2me shumway aot benchmarks
 
 test: all
 	tests/runtests.py
@@ -108,6 +108,9 @@ certs:
 app: config-build java certs
 	tools/package.sh
 
+benchmarks:
+	make -C bench
+
 clean:
 	rm -f j2me.js `find . -name "*~"`
 	rm -rf build
@@ -115,3 +118,4 @@ clean:
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
+	make -C bench clean

@@ -67,6 +67,7 @@ var gfxTests = [
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
   { name: "gfx/TextEditorGfxTest", maxDifferent: 1375 },
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
+  { name: "gfx/VideoPlayerTest", maxDifferent: 0 },
 ];
 
 /**

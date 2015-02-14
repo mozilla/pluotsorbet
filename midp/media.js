@@ -71,6 +71,8 @@ Media.extToFormat = new Map([
     ["png", "PNG"],
     ["wav", "wav"],
     ["ogg", "ogg"],
+    ["mp4", "MPEG4"],
+    ["webm", "WebM"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -80,6 +82,8 @@ Media.contentTypeToFormat = new Map([
     ["audio/mpeg", "MPEG_layer_3"],
     ["image/jpeg", "JPEG"],
     ["image/png", "PNG"],
+    ["video/mp4", "MPEG4"],
+    ["video/webm", "WebM"],
 ]);
 
 Media.formatToContentType = new Map();
@@ -89,6 +93,7 @@ for (var elem of Media.contentTypeToFormat) {
 
 Media.supportedAudioFormats = ["MPEG_layer_3", "wav", "amr", "ogg"];
 Media.supportedImageFormats = ["JPEG", "PNG"];
+Media.supportedVideoFormats = ["MPEG4", "WebM"];
 
 Media.EVENT_MEDIA_END_OF_MEDIA = 1;
 Media.EVENT_MEDIA_SNAPSHOT_FINISHED = 11;
@@ -310,8 +315,6 @@ function ImagePlayer(playerContainer) {
 }
 
 ImagePlayer.prototype.realize = function() {
-    var objectUrl;
-
     var ctx = $.ctx;
 
     var p = new Promise((function(resolve, reject) {
@@ -326,19 +329,20 @@ ImagePlayer.prototype.realize = function() {
                 var imgData = fs.read(fd);
                 fs.close(fd);
                 this.image.src = URL.createObjectURL(new Blob([ imgData ]));
-                objectUrl = this.image.src;
             }).bind(this));
         } else {
             this.image.src = this.url;
         }
     }).bind(this));
 
-    p.done(function() {
-        if (!objectUrl) {
+    p.catch(function() {
+      // Ignore promise rejection, we only need to revoke the object URL
+    }).then((function() {
+        if (!this.image.src) {
             return;
         }
-        URL.revokeObjectURL(objectUrl);
-    });
+        URL.revokeObjectURL(this.image.src);
+    }).bind(this));
 
     return p;
 }
@@ -379,6 +383,123 @@ ImagePlayer.prototype.setVisible = function(visible) {
     this.image.style.visibility = visible ? "visible" : "hidden";
 }
 
+function VideoPlayer(playerContainer) {
+    this.playerContainer = playerContainer;
+
+    this.video = document.createElement("video");
+    this.video.style.position = "absolute";
+    this.video.style.visibility = "hidden";
+
+    this.isVideoControlSupported = true;
+    this.isVolumeControlSupported = true;
+
+    // VideoPlayer::start could be called while the video element
+    // is hidden, causing the call to HTMLVideoElement::play to be
+    // ignored.
+    // Thus, we need to call HTMLVideoElement::play when the element
+    // gets visible.
+    this.isPlaying = false;
+}
+
+VideoPlayer.prototype.realize = function() {
+    var ctx = $.ctx;
+
+    var p = new Promise((function(resolve, reject) {
+        this.video.addEventListener("canplay", (function onCanPlay() {
+            this.video.removeEventListener("canplay", onCanPlay);
+            resolve(1);
+        }).bind(this));
+
+        this.video.onerror = function() {
+            ctx.setAsCurrentContext();
+            reject($.newMediaException("Failed to load video"));
+        };
+
+        if (this.playerContainer.url.startsWith("file")) {
+            fs.open(this.playerContainer.url.substring(7), (function(fd) {
+                var videoData = fs.read(fd);
+                fs.close(fd);
+                this.video.src = URL.createObjectURL(new Blob([ videoData ]),
+                                                     { type: this.playerContainer.contentType });
+            }).bind(this));
+        } else {
+            this.video.src = this.playerContainer.url;
+        }
+    }).bind(this));
+
+    p.catch(function() {
+      // Ignore promise rejection, we only need to revoke the object URL
+    }).then((function() {
+        if (!this.video.src) {
+            return;
+        }
+        URL.revokeObjectURL(this.video.src);
+    }).bind(this));
+
+    return p;
+}
+
+VideoPlayer.prototype.start = function() {
+    if (this.video.style.visibility === "hidden") {
+        this.isPlaying = true;
+    } else {
+        this.video.play();
+    }
+}
+
+VideoPlayer.prototype.pause = function() {
+    this.video.pause();
+    this.isPlaying = false;
+}
+
+VideoPlayer.prototype.close = function() {
+    if (this.video.parentNode) {
+        this.video.parentNode.removeChild(this.video);
+    }
+    this.pause();
+}
+
+VideoPlayer.prototype.getMediaTime = function() {
+    return Math.round(this.video.currentTime * 1000);
+}
+
+VideoPlayer.prototype.getWidth = function() {
+    return this.video.videoWidth;
+}
+
+VideoPlayer.prototype.getHeight = function() {
+    return this.video.videoHeight;
+}
+
+VideoPlayer.prototype.setLocation = function(x, y, w, h) {
+    this.video.style.left = x + "px";
+    this.video.style.top = y + "px";
+    this.video.style.width = w + "px";
+    this.video.style.height = h + "px";
+    document.getElementById("main").appendChild(this.video);
+}
+
+VideoPlayer.prototype.setVisible = function(visible) {
+    this.video.style.visibility = visible ? "visible" : "hidden";
+    if (visible && this.isPlaying) {
+        this.video.play();
+    }
+}
+
+VideoPlayer.prototype.getVolume = function() {
+    return Math.floor(this.video.volume * 100);
+};
+
+VideoPlayer.prototype.setVolume = function(level) {
+    if (level < 0) {
+        level = 0;
+    } else if (level > 100) {
+        level = 100;
+    }
+    this.video.volume = level / 100;
+    return level;
+};
+
 function ImageRecorder(playerContainer) {
     this.playerContainer = playerContainer;
 
@@ -405,9 +526,9 @@ ImageRecorder.prototype.realize = function() {
 }
 
 ImageRecorder.prototype.recipient = function(message) {
-    this.ctx.setAsCurrentContext();
     switch (message.type) {
         case "initerror":
+            this.ctx.setAsCurrentContext();
             if (message.name == "PermissionDeniedError") {
                 this.realizeRejector($.newSecurityException("Not permitted to init camera"));
             } else {
@@ -566,6 +687,9 @@ PlayerContainer.prototype.realize = function(contentType) {
             } else {
                 this.player = new ImagePlayer(this);
             }
+            this.player.realize().then(resolve, reject);
+        } else if (Media.supportedVideoFormats.indexOf(this.mediaFormat) !== -1) {
+            this.player = new VideoPlayer(this);
             this.player.realize().then(resolve, reject);
         } else {
             console.warn("Unsupported media format (" + this.mediaFormat + ") for " + this.url);
