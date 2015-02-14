@@ -176,7 +176,7 @@ e.g.:
       return Math.min(a, b);
     };
 
-If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in runtime.ts, e.g.:
+If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in vm/runtime.ts, e.g.:
 
     throw $.newNullPointerException("Cannot copy to/from a null array.");
 

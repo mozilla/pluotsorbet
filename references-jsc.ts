@@ -2,21 +2,21 @@
 ///<reference path='config.ts' />
 ///<reference path='utilities.ts' />
 
-///<reference path='classfile/classfile.ts' />
-///<reference path='classfile/reader.ts' />
+///<reference path='vm/classfile.ts' />
+///<reference path='vm/reader.ts' />
 
 ///<reference path='options.ts' />
 ///<reference path='metrics.ts' />
 ///<reference path='bytecodes.ts' />
 ///<reference path='jit/blockMap.ts' />
 ///<reference path='types.ts' />
-///<reference path='classRegistry.ts' />
-///<reference path='jvm.ts' />
+///<reference path='vm/classRegistry.ts' />
+///<reference path='vm/jvm.ts' />
 ///<reference path='actors.ts' />
 ///<reference path='bindings.ts' />
-///<reference path='runtime.ts' />
+///<reference path='vm/runtime.ts' />
 ///<reference path='interpreter.ts' />
-///<reference path='context.ts' />
+///<reference path='vm/context.ts' />
 
 // JIT
 
