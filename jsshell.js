@@ -65,12 +65,21 @@ var document = {
       },
       getBoundingClientRect: function() {
         return { top: 0, left: 0, width: 0, height: 0 };
-      }
+      },
+      querySelector: function() {
+        return { style: "" };
+      },
+      dispatchEvent: function(event) {
+      },
+      style: "",
     };
   },
   addEventListener: function() {
   },
 };
+
+var Event = function() {
+}
 
 var config = {
   logConsole: "native",
@@ -81,8 +90,9 @@ try {
   load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
        "libs/encoding.js", "util.js",
        "override.js", "native.js", "tests/override.js", 
-       "string.js", "midp/midp.js",
-       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js");
+       "string.js", "midp/midp.js", "midp/gestures.js",
+       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
+       "build/classes.jar.js");
 
   // load("build/classes.jar.js");
   // load("build/program.jar.js");
@@ -96,6 +106,7 @@ try {
 
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  CLASSES.addPath("bench/benchmar.jar", snarf("bench/benchmark.jar", "binary").buffer);
   //CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
