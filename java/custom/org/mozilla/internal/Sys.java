@@ -45,6 +45,10 @@ public final class Sys {
       return;
     }
 
+    if (srcOffset < 0 || (srcOffset + length) > src.length || dstOffset < 0 || (dstOffset + length) > dst.length || length < 0) {
+      throw new ArrayIndexOutOfBoundsException("Invalid index.");
+    }
+
     for (int n = 0; n < length; ++n) {
       dst[dstOffset++] = src[srcOffset++];
     }
@@ -56,6 +60,10 @@ public final class Sys {
     if (src == dst) {
       System.arraycopy(src, srcOffset, dst, dstOffset, length);
       return;
+    }
+
+    if (srcOffset < 0 || (srcOffset + length) > src.length || dstOffset < 0 || (dstOffset + length) > dst.length || length < 0) {
+      throw new ArrayIndexOutOfBoundsException("Invalid index.");
     }
 
     for (int n = 0; n < length; ++n) {
