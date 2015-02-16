@@ -41,22 +41,7 @@ public class GestureRegistrationManager implements EventListener {
 
     public void process(Event event) {
         NativeEvent nativeEvent = (NativeEvent)event;
-        GestureEvent gestureEvent = new GestureEventImpl(nativeEvent.intParam1,
-                                                         nativeEvent.intParam2,
-                                                         nativeEvent.intParam3,
-                                                         nativeEvent.intParam5,
-                                                         nativeEvent.intParam6,
-                                                         nativeEvent.floatParam1,
-                                                         nativeEvent.intParam7,
-                                                         nativeEvent.intParam8,
-                                                         nativeEvent.intParam9,
-                                                         nativeEvent.intParam10,
-                                                         nativeEvent.intParam11,
-                                                         nativeEvent.intParam12,
-                                                         nativeEvent.intParam13,
-                                                         nativeEvent.intParam14,
-                                                         nativeEvent.intParam15,
-                                                         nativeEvent.intParam16);
+        GestureEvent gestureEvent = new GestureEventImpl(nativeEvent);
 
         for (int i = 0; i < zoneRegistrations.size(); i++) {
             ZoneRegistration zoneReg = (ZoneRegistration)zoneRegistrations.elementAt(i);
