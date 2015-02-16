@@ -44,6 +44,10 @@ function Promise() {
   // ...
 }
 
+function Event() {
+  // ...
+}
+
 var document = {
   documentElement: {
     classList: {
@@ -65,6 +69,15 @@ var document = {
       },
       getBoundingClientRect: function() {
         return { top: 0, left: 0, width: 0, height: 0 };
+      },
+      querySelector: function () {
+        return {
+          style: {}
+        };
+      },
+      style: {},
+      dispatchEvent: function () {
+
       }
     };
   },
@@ -96,6 +109,7 @@ try {
 
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  CLASSES.addPath("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
   //CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
