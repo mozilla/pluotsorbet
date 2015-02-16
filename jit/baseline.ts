@@ -321,7 +321,7 @@ module J2ME {
       if (this.hasMonitorEnter) {
         this.bodyEmitter.prependLn("var th = $.ctx.thread;");
       }
-      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.blockMap.getOSREntryPoints());
+      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint ? this.blockMap.getOSREntryPoints() : []);
     }
 
     needsVariable(name: string) {
@@ -501,10 +501,11 @@ module J2ME {
       var needsOSREntryPoint = false;
       var needsEntryDispatch = false;
 
-      var blocks = this.blockMap.blocks;
+      var blockMap = this.blockMap;
+      var blocks = blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
-        if (block.isLoopHeader && !block.isInnerLoopHeader()) {
+        if (blockMap.invokeCount > 0 && block.isLoopHeader && !block.isInnerLoopHeader()) {
           needsOSREntryPoint = true;
           needsEntryDispatch = true;
         }
