@@ -835,7 +835,8 @@ module J2ME {
     }
 
     emitIncrement(stream: BytecodeStream) {
-      this.blockEmitter.writeLn(this.getLocal(stream.readLocalIndex()) + " += " + stream.readIncrement() + ";");
+      var local = this.getLocal(stream.readLocalIndex());
+      this.blockEmitter.writeLn(local + " = " + local + " + " + stream.readIncrement() + " | 0;");
     }
 
     emitGoto(block: Block, stream: BytecodeStream) {
