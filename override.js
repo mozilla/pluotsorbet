@@ -77,7 +77,7 @@ Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) 
     buf.set(b.subarray(off, off + len), count);
   } else {
     for (var i = 0; i < len; i++) {
-      buf[count + i] = b[off + i];
+      buf[count++] = b[off++];
     }
   }
 
@@ -150,9 +150,16 @@ Override["java/io/ByteArrayInputStream.read.([BII)I"] = function(b, off, len) {
     return 0;
   }
 
-  b.set(this.buf.subarray(this.pos, this.pos + len), off);
+  if (len > 128) {
+    b.set(this.buf.subarray(this.pos, this.pos + len), off);
+    this.pos += len;
+  } else {
+    for (var i = 0; i < len; i++) {
+      b[off++] = this.buf[this.pos++];
+    }
+  }
 
-  this.pos += len;
+
   return len;
 };
 
