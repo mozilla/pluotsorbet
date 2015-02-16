@@ -1019,6 +1019,9 @@ module J2ME {
     }
 
     emitDivideByZeroCheck(kind: Kind, value: string) {
+      if (this.isPriviledged) {
+        return;
+      }
       if (inlineRuntimeCalls && kind !== Kind.Long) {
         this.blockEmitter.writeLn(value + " === 0 && TA();");
       } else {
