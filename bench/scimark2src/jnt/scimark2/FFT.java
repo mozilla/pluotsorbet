@@ -14,6 +14,7 @@ package jnt.scimark2;
    */
 
 public class FFT {
+  final static int SEED = 113;
 
   public static final double num_flops(int N)
   {
@@ -59,9 +60,10 @@ public class FFT {
   /** Make a random array of n (complex) elements. */
   public static double[] makeRandom(int n){
     int nd = 2*n;
+    Random R = new Random(SEED);
     double data[] = new double[nd];
     for(int i=0; i<nd; i++)
-      data[i]= Math.random();
+      data[i]= R.nextDouble();
     return data; }
 
   /** Simple Test routine. */

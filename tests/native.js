@@ -24,8 +24,10 @@ Native["gnu/testlet/vm/NativeTest.throwException.()V"] = function() {
 Native["gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V"] = function() {
   var ctx = $.ctx;
   asyncImpl("V", new Promise(function(resolve, reject) {
-    ctx.setAsCurrentContext();
-    setTimeout(reject.bind(null, $.newNullPointerException("An exception")), 100);
+    setTimeout(function() {
+      ctx.setAsCurrentContext();
+      reject($.newNullPointerException("An exception"))
+    }, 100);
   }));
 };
 
@@ -71,11 +73,13 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function() {
-  window.dispatchEvent(new Event("keyboardHidden"));
+  MIDP.isVKVisible = function() { return false; };
+  MIDP.sendVirtualKeyboardEvent();
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V"] = function() {
-  window.dispatchEvent(new Event("keyboardShown"));
+  MIDP.isVKVisible = function() { return true; };
+  MIDP.sendVirtualKeyboardEvent();
 };
 
 Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = function() {
@@ -150,3 +154,7 @@ Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = fu
   result.set(converted);
   return result;
 };
+
+// Many tests create FileConnection objects to files with the "/" root,
+// so add it to the list of valid roots.
+MIDP.fsRoots.push("/");

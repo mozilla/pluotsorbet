@@ -153,7 +153,7 @@ if (config.downloadJAD) {
   }).then(backgroundCheck));
 }
 
-if (config.midletClassName == "RunTests") {
+if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"));
@@ -249,7 +249,8 @@ window.onload = function() {
 
     var el = document.getElementById("compiledCount");
     el.textContent = numberWithCommas(J2ME.compiledMethodCount) + " / " +
-                     numberWithCommas(J2ME.cachedMethodCount);
+                     numberWithCommas(J2ME.cachedMethodCount) + " / " +
+                     numberWithCommas(J2ME.aotMethodCount);
 
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);

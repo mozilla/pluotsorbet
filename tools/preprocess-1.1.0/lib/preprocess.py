@@ -612,6 +612,7 @@ _gDefaultContentTypes = """
     PHP                 .php
     JavaScript          .js
     JavaScript          .ts
+    JavaScript          .webapp
     CSS                 .css
     C++                 .c       # C++ because then we can use //-style comments
     C++                 .cpp
