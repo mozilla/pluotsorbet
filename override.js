@@ -62,12 +62,25 @@ Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) 
   var newcount = count + len;
   if (newcount > buf.length) {
     var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
-    newbuf.set(buf);
+    if (newbuf.length > 128) {
+      newbuf.set(buf);
+    } else {
+      for (var i = 0; i < buf.length; i++) {
+        newbuf[i] = buf[i];
+      }
+    }
     buf = newbuf;
     this.buf = buf;
   }
 
-  buf.set(b.subarray(off, off + len), count);
+  if (len > 128) {
+    buf.set(b.subarray(off, off + len), count);
+  } else {
+    for (var i = 0; i < len; i++) {
+      buf[count + i] = b[off + i];
+    }
+  }
+
   this.count = newcount;
 };
 
@@ -78,7 +91,13 @@ Override["java/io/ByteArrayOutputStream.write.(I)V"] = function(value) {
   var newcount = count + 1;
   if (newcount > buf.length) {
     var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
-    newbuf.set(buf);
+    if (newbuf.length > 128) {
+      newbuf.set(buf);
+    } else {
+      for (var i = 0; i < buf.length; i++) {
+        newbuf[i] = buf[i];
+      }
+    }
     buf = newbuf;
     this.buf = buf;
   }
