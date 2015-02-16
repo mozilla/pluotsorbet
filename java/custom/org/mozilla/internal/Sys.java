@@ -37,9 +37,22 @@ import java.util.PropertyPermission;
 public final class Sys {
   private Sys() { }
 
-  public static void copyByteArray(byte [] src, int srcOffset,
-                                   byte [] dst, int dstOffset,
-                                   int length) {
+  public static void copyArray(byte [] src, int srcOffset,
+                               byte [] dst, int dstOffset,
+                               int length) {
+    if (src == dst) {
+      System.arraycopy(src, srcOffset, dst, dstOffset, length);
+      return;
+    }
+
+    for (int n = 0; n < length; ++n) {
+      dst[dstOffset++] = src[srcOffset++];
+    }
+  }
+
+  public static void copyArray(char [] src, int srcOffset,
+                               char [] dst, int dstOffset,
+                               int length) {
     if (src == dst) {
       System.arraycopy(src, srcOffset, dst, dstOffset, length);
       return;

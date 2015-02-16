@@ -29,6 +29,7 @@ package java.lang;
 import java.io.UnsupportedEncodingException;
 import com.sun.cldc.i18n.*;
 import com.sun.cldchi.jvm.JVM;
+import org.mozilla.internal.Sys;
 
 /**
  * The <code>String</code> class represents character strings. All
@@ -368,7 +369,7 @@ class String {
             );
         }
         // NOTE: dst not checked, cannot use unchecked arraycopy
-        System.arraycopy(value, offset + srcBegin, dst, dstBegin,
+        Sys.copyArray(value, offset + srcBegin, dst, dstBegin,
                 srcEnd - srcBegin);
     }
 

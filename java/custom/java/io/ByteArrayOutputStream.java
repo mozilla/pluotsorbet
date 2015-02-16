@@ -91,7 +91,7 @@ public class ByteArrayOutputStream extends OutputStream {
         int newcount = count + 1;
         if (newcount > buf.length) {
             byte newbuf[] = new byte[Math.max(buf.length << 1, newcount)];
-            Sys.copyByteArray(buf, 0, newbuf, 0, count);
+            Sys.copyArray(buf, 0, newbuf, 0, count);
             buf = newbuf;
         }
         buf[count] = (byte)b;
@@ -116,10 +116,10 @@ public class ByteArrayOutputStream extends OutputStream {
         int newcount = count + len;
         if (newcount > buf.length) {
             byte newbuf[] = new byte[Math.max(buf.length << 1, newcount)];
-            Sys.copyByteArray(buf, 0, newbuf, 0, count);
+            Sys.copyArray(buf, 0, newbuf, 0, count);
             buf = newbuf;
         }
-        Sys.copyByteArray(b, off, buf, count, len);
+        Sys.copyArray(b, off, buf, count, len);
         count = newcount;
     }
 
@@ -148,7 +148,7 @@ public class ByteArrayOutputStream extends OutputStream {
             return buf;
         } else {
             byte newbuf[] = new byte[count];
-            Sys.copyByteArray(buf, 0, newbuf, 0, count);
+            Sys.copyArray(buf, 0, newbuf, 0, count);
             return newbuf;
         }
     }
