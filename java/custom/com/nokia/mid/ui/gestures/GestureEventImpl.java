@@ -3,11 +3,7 @@ package com.nokia.mid.ui.gestures;
 import com.sun.midp.events.NativeEvent;
 
 public class GestureEventImpl implements GestureEvent {
-    NativeEvent nativeEvent;
-
-    public GestureEventImpl(NativeEvent nativeEvent) {
-        this.nativeEvent = nativeEvent;
-    }
+    protected NativeEvent nativeEvent;
 
     public int getType() {
         return nativeEvent.intParam1;

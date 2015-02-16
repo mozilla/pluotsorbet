@@ -21,6 +21,11 @@ public class GestureRegistrationManager implements EventListener {
     private static Vector zoneRegistrations = new Vector();
     private static Hashtable listenerRegistrations = new Hashtable();
 
+    // http://developer.nokia.com/resources/library/Java/_zip/GUID-237420DE-CCBE-4A74-A129-572E0708D428/com/nokia/mid/ui/gestures/GestureEvent.html
+    // The API imposes the restriction that the gesture event data is only valid during the call to
+    // GestureListener.gestureAction(Object, GestureInteractiveZone, GestureEvent).
+    private static GestureEventImpl gestureEvent = new GestureEventImpl();
+
     static {
         EventQueue eventQueue = EventQueue.getEventQueue();
         eventQueue.registerEventListener(EventTypes.GESTURE_EVENT, GestureRegistrationManager.getRegistrationManagerInstance());
@@ -40,8 +45,7 @@ public class GestureRegistrationManager implements EventListener {
     }
 
     public void process(Event event) {
-        NativeEvent nativeEvent = (NativeEvent)event;
-        GestureEvent gestureEvent = new GestureEventImpl(nativeEvent);
+        gestureEvent.nativeEvent = (NativeEvent)event;
 
         for (int i = 0; i < zoneRegistrations.size(); i++) {
             ZoneRegistration zoneReg = (ZoneRegistration)zoneRegistrations.elementAt(i);
