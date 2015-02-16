@@ -296,6 +296,9 @@ module J2ME.Bytecode {
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
             this.invokeCount ++;
+            if (this.canTrapAt(opcode, bci)) {
+              this.canTrap.set(bci);
+            }
             break;
           default: {
             if (this.canTrapAt(opcode, bci)) {
