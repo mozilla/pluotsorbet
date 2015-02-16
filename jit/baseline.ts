@@ -36,11 +36,15 @@ module J2ME {
   };
 
   /**
-   * Methods in these classes have special powers.
+   * These methods have special powers. Methods are added to this set based on the regexp patterns in |priviledgedPatterns|.
    */
-  var priviledgedClasses = {
-    "org/mozilla/internal/Sys": true
-  }
+  var priviledgedMethods = {};
+
+  var priviledgedPatterns = [
+    "org/mozilla/internal/Sys*"
+    // "com/sun/*",
+    // "java/*"
+  ];
 
   /**
    * Emits optimization results inline as comments in the generated source.
@@ -84,10 +88,19 @@ module J2ME {
    * Unsafe methods.
    */
   function isPriviledged(methodInfo: MethodInfo) {
-    if (priviledgedClasses[methodInfo.classInfo.className]) {
+    var priviledged = priviledgedMethods[methodInfo.implKey];
+    if (priviledged) {
       return true;
+    } else if (priviledged === false) {
+      return false;
     }
-    return false;
+    // Check patterns.
+    for (var i = 0; i < priviledgedPatterns.length; i++) {
+      if (methodInfo.implKey.match(priviledgedPatterns[i])) {
+        return priviledgedMethods[methodInfo.implKey] = true;
+      }
+    }
+    return priviledgedMethods[methodInfo.implKey] = false;
   }
 
   /**
