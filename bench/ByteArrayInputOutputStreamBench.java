@@ -36,8 +36,8 @@ public class ByteArrayInputOutputStreamBench {
     void writeArray64(byte[] array) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (int i = 0; i < 64; i++) {
-          baos.write(array, i << 6, 64);
-          baos.close();
+            baos.write(array, i << 6, 64);
+            baos.close();
         }
     }
 
@@ -45,39 +45,39 @@ public class ByteArrayInputOutputStreamBench {
         ByteArrayInputStream bais = new ByteArrayInputStream(array);
         byte[] output = new byte[4096];
         for (int i = 0; i < 64; i++) {
-          bais.read(output, i << 6, 64);
+            bais.read(output, i << 6, 64);
         }
     }
 
     void writeArray128(byte[] array) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (int i = 0; i < 32; i++) {
-          baos.write(array, i << 7, 128);
-          baos.close();
+            baos.write(array, i << 7, 128);
         }
+        baos.close();
     }
 
     void readArray128(byte[] array) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(array);
         byte[] output = new byte[4096];
         for (int i = 0; i < 32; i++) {
-          bais.read(output, i << 7, 128);
+            bais.read(output, i << 7, 128);
         }
     }
 
     void writeArray256(byte[] array) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         for (int i = 0; i < 16; i++) {
-          baos.write(array, i << 8, 256);
-          baos.close();
+            baos.write(array, i << 8, 256);
         }
+        baos.close();
     }
 
     void readArray256(byte[] array) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(array);
         byte[] output = new byte[4096];
         for (int i = 0; i < 16; i++) {
-          bais.read(output, i << 8, 256);
+            bais.read(output, i << 8, 256);
         }
     }
 
