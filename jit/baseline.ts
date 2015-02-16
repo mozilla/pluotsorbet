@@ -36,11 +36,11 @@ module J2ME {
   };
 
   /**
-   * These methods have special powers. Methods are added to this set based on the regexp patterns in |priviledgedPatterns|.
+   * These methods have special powers. Methods are added to this set based on the regexp patterns in |privilegedPatterns|.
    */
-  var priviledgedMethods = {};
+  var privilegedMethods = {};
 
-  var priviledgedPatterns = [
+  var privilegedPatterns = [
     "org/mozilla/internal/Sys*"
     // "com/sun/*",
     // "java/*"
@@ -87,20 +87,20 @@ module J2ME {
   /**
    * Unsafe methods.
    */
-  function isPriviledged(methodInfo: MethodInfo) {
-    var priviledged = priviledgedMethods[methodInfo.implKey];
-    if (priviledged) {
+  function isPrivileged(methodInfo: MethodInfo) {
+    var privileged = privilegedMethods[methodInfo.implKey];
+    if (privileged) {
       return true;
-    } else if (priviledged === false) {
+    } else if (privileged === false) {
       return false;
     }
     // Check patterns.
-    for (var i = 0; i < priviledgedPatterns.length; i++) {
-      if (methodInfo.implKey.match(priviledgedPatterns[i])) {
-        return priviledgedMethods[methodInfo.implKey] = true;
+    for (var i = 0; i < privilegedPatterns.length; i++) {
+      if (methodInfo.implKey.match(privilegedPatterns[i])) {
+        return privilegedMethods[methodInfo.implKey] = true;
       }
     }
-    return priviledgedMethods[methodInfo.implKey] = false;
+    return privilegedMethods[methodInfo.implKey] = false;
   }
 
   /**
@@ -272,7 +272,7 @@ module J2ME {
     private lockObject: string;
     private hasOSREntryPoint = false;
     private entryBlock: number;
-    private isPriviledged: boolean;
+    private isPrivileged: boolean;
 
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
@@ -297,7 +297,7 @@ module J2ME {
       this.bodyEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.blockEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.target = target;
-      this.isPriviledged = isPriviledged(this.methodInfo);
+      this.isPrivileged = isPrivileged(this.methodInfo);
     }
 
     compile(): CompiledMethodInfo {
@@ -806,14 +806,14 @@ module J2ME {
     }
 
     emitNegativeArraySizeCheck(length: string) {
-      if (this.isPriviledged) {
+      if (this.isPrivileged) {
         return;
       }
       this.blockEmitter.writeLn(length + " < 0 && TN();");
     }
 
     emitBoundsCheck(array: string, index: string) {
-      if (this.isPriviledged || !emitCheckArrayBounds) {
+      if (this.isPrivileged || !emitCheckArrayBounds) {
         return;
       }
       if (inlineRuntimeCalls) {
@@ -824,7 +824,7 @@ module J2ME {
     }
 
     emitArrayStoreCheck(array: string, value: string) {
-      if (this.isPriviledged || !emitCheckArrayStore) {
+      if (this.isPrivileged || !emitCheckArrayStore) {
         return;
       }
       this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
@@ -1019,7 +1019,7 @@ module J2ME {
     }
 
     emitDivideByZeroCheck(kind: Kind, value: string) {
-      if (this.isPriviledged) {
+      if (this.isPrivileged) {
         return;
       }
       if (inlineRuntimeCalls && kind !== Kind.Long) {
