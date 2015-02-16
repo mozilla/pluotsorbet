@@ -69,7 +69,8 @@ module J2ME {
         "java/io/IOException",
         "java/lang/IllegalArgumentException",
         "java/lang/IndexOutOfBoundsException",
-        "java/lang/StringIndexOutOfBoundsException"
+        "java/lang/StringIndexOutOfBoundsException",
+        "org/mozilla/internal/Sys"
       ];
 
       for (var i = 0; i < classNames.length; i++) {
