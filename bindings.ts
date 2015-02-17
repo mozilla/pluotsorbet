@@ -27,14 +27,6 @@ module J2ME {
         }
       }
     },
-    "java/io/ByteArrayOutputStream": {
-      fields: {
-        instanceSymbols: {
-          "count.I": "count",
-          "buf.[B": "buf"
-        }
-      }
-    },
     "com/sun/cldc/i18n/j2me/UTF_8_Writer": {
       fields: {
         instanceSymbols: {
