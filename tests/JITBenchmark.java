@@ -124,11 +124,11 @@ class JITBenchmark {
 
   public static void begin() {
     System.gc();
-    start = System.currentTimeMillis();
+    start = System.monotonicTimeMillis();
   }
 
   public static void finish(String name) {
-    System.out.println(name + ": " + (System.currentTimeMillis() - start));
+    System.out.println(name + ": " + (System.monotonicTimeMillis() - start));
   }
 
   public static void main(String[] args) {
@@ -139,7 +139,7 @@ class JITBenchmark {
     size = 1024;
 
     begin();
-    start = System.currentTimeMillis();
+    start = System.monotonicTimeMillis();
     createObjectArrays();
     createPrimitiveArrays();
     writeByteArrayOutputStream();
@@ -152,7 +152,7 @@ class JITBenchmark {
 
     size = 1024 * 256;
 
-    long start = System.currentTimeMillis();
+    long start = System.monotonicTimeMillis();
     begin();
     createObjectArrays();
     finish("createObjectArrays");
@@ -186,6 +186,6 @@ class JITBenchmark {
     finish("arrayTypeCheck");
 
     System.out.println();
-    System.out.println("Total: " + (System.currentTimeMillis() - start));
+    System.out.println("Total: " + (System.monotonicTimeMillis() - start));
   }
 }
