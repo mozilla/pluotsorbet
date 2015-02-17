@@ -7,6 +7,9 @@ import javax.wireless.messaging.MessageConnection;
 import javax.wireless.messaging.TextMessage;
 
 public class SendSMSTest implements Testlet {
+    public int getExpectedPass() { return 3; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     native String getNumber();
     native String getBody();
 

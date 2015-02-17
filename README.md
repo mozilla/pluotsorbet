@@ -1,4 +1,4 @@
-# j2me.js [![Build Status](https://travis-ci.org/andreasgal/j2me.js.svg)](https://travis-ci.org/andreasgal/j2me.js)
+# j2me.js [![Build Status](https://travis-ci.org/mozilla/j2me.js.svg)](https://travis-ci.org/mozilla/j2me.js)
 
 j2me.js is a J2ME virtual machine in JavaScript.
 
@@ -11,9 +11,9 @@ The current goals of j2me.js are:
 
 Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
-Get the [j2me.js repo](https://github.com/andreasgal/j2me.js) if you don't have it already
+Get the [j2me.js repo](https://github.com/mozilla/j2me.js) if you don't have it already
 
-        git clone https://github.com/andreasgal/j2me.js
+        git clone https://github.com/mozilla/j2me.js
 
 Build using make:
 
@@ -26,7 +26,7 @@ index.html is a webapp that runs j2me.js. The URL parameters you pass to index.h
 
 ### URL parameters
 
-See full list at libs/urlparams.js
+You can specify URL parameters to override the configuration. See the full list of parameters at config/urlparams.js.
 
 * `main` - default is `com/sun/midp/main/MIDletSuiteLoader`
 * `midletClassName` - must be set to the main class to run. Only valid when default `main` parameter is used. Defaults to `RunTests`
@@ -99,7 +99,6 @@ If the testlet uses sockets, you must start 4 servers (instead of just the http 
 
 Frequent causes of failure include:
 
-* automation.js expects a different number of tests to have passed than the number that actually passed (this is very common when adding new tests)
 * timeout: Travis machines are generally slower than dev machines and so tests that pass locally will fail in the continuous integration tests
 * Number of differing pixels in a gfx/rendering test exceeds the threshold allowed in automation.js. This will often happen because slimerJS uses a different version of Firefox than the developer. This can also happen because the test renders text, whose font rendering can vary from machine to machine, perhaps even with the same font.
 
@@ -143,34 +142,13 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
-When debugging using the WebIDE, enable the option "select an iframe as the currently targeted document" and select the iframe containing main.html as the debugging target. NB: you need to connect to a target device running FxOS 2.1 or up to use this feature in WebIDE.
-
-Use these JS calls within the console to start and stop profiling (TODO: I haven't actually gotten these to work):
-
-        Instrument.startProfile()
-        Instrument.stopProfile()
-
-It can be helpful to increase this `about:config` option: `devtools.hud.loglimit.console`
-
-Alternatively, use the "Performance" tab of the Firefox Developer Tools.
-
-### Java profiling
-
-j2me.js includes its own profiler that is capable of measuring the performance of Java methods running inside its JVM.
-
-When running j2me.js in Desktop Firefox, click the "profile" button that appears below the output iframe. Press the button again to stop profiling. You should get output including the total time taken inside each method and the number of times each method was called.
-
-Add "&profile=1" to your URL parameter list to enable profile immediately upon loading j2me.js (index.html).
-
 ## Filesystem
 
 midp/fs.js contains native implementations of various midp filesystem APIs.
 
 Those implementations call out to lib/fs.js which is a JS implementation of a filesystem.
 
-Uses async\_storage.js (from gaia) - async API for accessing IndexedDB
-
-Java APIs are sync but our implementations use async APIs
+Java APIs are sync, so our implementation stores files in memory and makes them available mostly synchronously.
 
 ## Implementing Java functions in native code
 
@@ -194,14 +172,13 @@ If you need to implement a method in JS but you can't declare it `native` in Jav
 
 e.g.:
 
-   Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(...) {...});
+    Override["java/lang/Math.min.(II)I"] = function(a, b) {
+      return Math.min(a, b);
+    };
 
+If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in runtime.ts, e.g.:
 
-If raising a Java `Exception`, throw new instance of Java `Exception` class
-
-e.g.:
-
-    throw new JavaException("java/lang/NullPointerException", "Cannot copy to/from a null array.");
+    throw $.newNullPointerException("Cannot copy to/from a null array.");
 
 Remember:
 
@@ -210,3 +187,26 @@ Remember:
   * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
   * Context is last param to every function registered using `Native.create` or `Override.create`
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
+
+## Packaging
+
+The repository includes tools for packaging j2me.js into an Open Web App.
+It's possible to simply package the entire contents of your working directory,
+but these tools will produce a better app.
+
+### Compiling With AOT Compiler
+
+`make aot` compiles some Java code into JavaScript with an ahead-of-time (AOT) compiler.
+
+To use it, first install a recent version of the
+[JavaScript shell](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Introduction_to_the_JavaScript_shell).
+
+### Compiling With Closure
+
+`make closure` compiles some JavaScript code with the Closure compiler.
+
+To use it, first download this custom version of the compiler to tools/closure.jar:
+
+```
+wget https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar -P tools/
+```

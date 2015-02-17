@@ -47,7 +47,7 @@ PIM.supportedFields = [
 PIM.lastListHandle = 0;
 PIM.openLists = {};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getListNamesCount0.(I)I", function(listType) {
+Native["com/sun/j2me/pim/PIMProxy.getListNamesCount0.(I)I"] = function(listType) {
   console.warn("PIMProxy.getListNamesCount0.(I)I incomplete");
 
   if (listType === PIM.CONTACT_LIST) {
@@ -55,14 +55,14 @@ Native.create("com/sun/j2me/pim/PIMProxy.getListNamesCount0.(I)I", function(list
   }
 
   return 0;
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V", function(names) {
+Native["com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V"] = function(names) {
   console.warn("PIMProxy.getListNames0.([Ljava/lang/String;)V incomplete");
-  names[0] = util.newString("ContactList");
-});
+  names[0] = J2ME.newString("ContactList");
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I", function(listType, listName, mode) {
+Native["com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I"] = function(listType, listName, mode) {
   console.warn("PIMProxy.listOpen0.(ILjava/lang/String;I)I incomplete");
 
   if (mode !== PIM.READ_ONLY) {
@@ -76,15 +76,15 @@ Native.create("com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I", fun
   }
 
   return 0;
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z", function(listHandle, description) {
+Native["com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z"] = function(listHandle, description) {
   console.warn("PIMProxy.getNextItemDescription0.(I[I)Z incomplete");
 
-  return new Promise(function(resolve, reject) {
+  asyncImpl("Z", new Promise(function(resolve, reject) {
     contacts.getNext(function(contact) {
       if (contact == null) {
-        resolve(false);
+        resolve(0);
         return;
       }
 
@@ -99,72 +99,72 @@ Native.create("com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z", functi
         description[1] = PIM.curVcard.byteLength;
         description[2] = 1;
 
-        resolve(true);
+        resolve(1);
       });
     });
-  });
-}, true);
+  }));
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getNextItemData0.(I[BI)Z", function(itemHandle, data, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getNextItemData0.(I[BI)Z"] = function(itemHandle, data, dataHandle) {
   console.warn("PIMProxy.getNextItemData0.(I[BI)Z incomplete");
   data.set(PIM.curVcard);
-  return true;
-});
+  return 1;
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getItemCategories0.(II)Ljava/lang/String;", function(itemHandle, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getItemCategories0.(II)Ljava/lang/String;"] = function(itemHandle, dataHandle) {
   console.warn("PIMProxy.getItemCategories0.(II)Ljava/lang/String; not implemented");
   return null;
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.listClose0.(I)Z", function(listHandle, description) {
+Native["com/sun/j2me/pim/PIMProxy.listClose0.(I)Z"] = function(listHandle, description) {
   if (!(listHandle in PIM.openLists)) {
-    return false;
+    return 0;
   }
 
   delete PIM.openLists[listHandle];
-  return true;
-});
+  return 1;
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getDefaultListName.(I)Ljava/lang/String;", function(listType) {
+Native["com/sun/j2me/pim/PIMProxy.getDefaultListName.(I)Ljava/lang/String;"] = function(listType) {
   if (listType === PIM.CONTACT_LIST) {
-    return "ContactList";
+    return J2ME.newString("ContactList");
   }
 
   if (listType === PIM.EVENT_LIST) {
-    return "EventList";
+    return J2ME.newString("EventList");
   }
 
   if (listType === PIM.TODO_LIST) {
-    return "TodoList";
+    return J2ME.newString("TodoList");
   }
 
   return null;
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getFieldsCount0.(I[I)I", function(listHandle, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getFieldsCount0.(I[I)I"] = function(listHandle, dataHandle) {
   return PIM.supportedFields.length;
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getFieldLabelsCount0.(III)I", function(listHandle, fieldIndex, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getFieldLabelsCount0.(III)I"] = function(listHandle, fieldIndex, dataHandle) {
   console.warn("PIMProxy.getFieldLabelsCount0.(III)I not implemented");
   return 1;
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V", function(listHandle, desc, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V"] = function(listHandle, desc, dataHandle) {
   console.warn("PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V incomplete");
 
   PIM.supportedFields.forEach(function(field, i) {
-    desc[i].class.getField("I.field.I").set(desc[i], field.field);
-    desc[i].class.getField("I.dataType.I").set(desc[i], field.dataType);
-    desc[i].class.getField("I.maxValues.I").set(desc[i], field.maxValues);
+    desc[i].klass.classInfo.getField("I.field.I").set(desc[i], field.field);
+    desc[i].klass.classInfo.getField("I.dataType.I").set(desc[i], field.dataType);
+    desc[i].klass.classInfo.getField("I.maxValues.I").set(desc[i], field.maxValues);
   });
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getAttributesCount0.(I[I)I", function(listHandle, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getAttributesCount0.(I[I)I"] = function(listHandle, dataHandle) {
   console.warn("PIMProxy.getAttributesCount0.(I[I)I not implemented");
   return 0;
-});
+};
 
-Native.create("com/sun/j2me/pim/PIMProxy.getAttributes0.(I[Lcom/sun/j2me/pim/PIMAttribute;I)V", function(listHandle, attr, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getAttributes0.(I[Lcom/sun/j2me/pim/PIMAttribute;I)V"] = function(listHandle, attr, dataHandle) {
   console.warn("PIMProxy.getAttributes0.(I[Lcom/sun/j2me/pim/PIMAttribute;I)V not implemented");
-});
+};

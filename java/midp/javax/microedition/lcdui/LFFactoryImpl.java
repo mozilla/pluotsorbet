@@ -27,147 +27,159 @@
 package javax.microedition.lcdui;
 
 /**
-* This is a factory class for the look & feel classes.
+* This is a factory class for the look &amp; feel classes.
 */
 class LFFactoryImpl extends LFFactory {
 
     // *** Displayable look & feels *****
 
     /**
-     * Returns an Alert look & feel implementation.
+     * Returns an <code>Alert</code> look &amp; feel implementation.
      *
-     * @param a - <placeholder>
-     * @return an Alert look & feel implementation
+     * @param a The <code>Alert</code> associated with this look&amp;feel
+     *
+     * @return an <code>Alert</code> look &amp; feel implementation
      */
     AlertLF getAlertLF(Alert a) {
-        return new AlertLFImpl(a);
+	return new AlertLFImpl(a);
     }
 
     /**
-     * Returns a Canvas look & feel implementation.
+     * Returns a <code>Canvas</code> look &amp; feel implementation.
      *
-     * @param c - <placeholder>
-     * @return a Canvas look & feel implementation
+     * @param c The <code>Canvas</code> associated with this look&amp;feel
+     *
+     * @return a <code>Canvas</code> look &amp; feel implementation
      */
     CanvasLF getCanvasLF(Canvas c) {
-        return new CanvasLFImpl(c);
+	return new CanvasLFImpl(c);
     }
 
     /**
-     * Returns a Form look & feel implementation.
+     * Returns a <code>Form</code> look &amp; feel implementation.
      *
-     * @param f - <placeholder>
-     * @return a Form look & feel implementation
+     * @param f The <code>Form</code> associated with this look&amp;feel
+     *
+     * @return a <code>Form</code> look &amp; feel implementation
      */
     FormLF getFormLF(Form f) {
-        return new FormLFImpl(f, f.items, f.numOfItems);
+	return new FormLFImpl(f, f.items, f.numOfItems);
     }
 
     /**
-     * Returns a List look & feel implementation.
+     * Returns a <code>List</code> look &amp; feel implementation.
      *
-     * @param list - <placeholder>
-     * @return a List look & feel implementation
+     * @param list The <code>List</code> associated with this look&amp;feel
+     *
+     * @return a <code>List</code> look &amp; feel implementation
      */
     FormLF getListLF(List list) {
-        return new FormLFImpl(list, list.cg);
+	return new FormLFImpl(list, list.cg);
     }
 
     /**
-     * Returns a TextBox look & feel implementation.
+     * Returns a <code>TextBox</code> look &amp; feel implementation.
      *
-     * @param tb - <placeholder>
-     * @return a TextBox look & feel implementation
+     * @param tb The <code>TextBox</code> associated with this look&amp;feel
+     *
+     * @return a <code>TextBox</code> look &amp; feel implementation
      */
     FormLF getTextBoxFormLF(TextBox tb) {
-        return new FormLFImpl(tb, tb.textField);
+	return new FormLFImpl(tb, tb.textField);
     }
 
     // ** Item look & feels ******** */
 
     /**
-     * Returns a ChoiceGroup look & feel implementation.
+     * Returns a <code>ChoiceGroup</code> look &amp; feel implementation.
      *
-     * @param item - <placeholder>
-     * @return a ChoiceGroup look & feel implementation
+     * @param cg The <code>ChoiceGroup</code> associated with this 
+     *           look&amp;feel
+     *
+     * @return a <code>ChoiceGroup</code> look &amp; feel implementation
      */
-    ChoiceGroupLF getChoiceGroupLF(ChoiceGroup item) {       
-        ChoiceGroup cg = item;
-        if (cg.choiceType == Choice.POPUP) {
-            return new ChoiceGroupPopupLFImpl(cg);
-        } else {
-            return new ChoiceGroupLFImpl(cg);
-        }
+    ChoiceGroupLF getChoiceGroupLF(ChoiceGroup cg) {
+	return new ChoiceGroupLFImpl(cg);
     }
 
     /**
-     * Returns a CustomItem look & feel implementation.
+     * Returns a <code>CustomItem</code> look &amp; feel implementation.
      *
-     * @param item - <placeholder>
-     * @return a CustomItem look & feel implementation
+     * @param ci The <code>CustomItem</code> associated with this 
+     *             look&amp;feel
+     *
+     * @return a <code>CustomItem</code> look &amp; feel implementation
      */
-    CustomItemLF getCustomItemLF(CustomItem item) {
-        return new CustomItemLFImpl(item);
+    CustomItemLF getCustomItemLF(CustomItem ci) {
+	return new CustomItemLFImpl(ci);
+	
     }  
 
     /**
-     * Returns a DateField look & feel implementation.
+     * Returns a <code>DateField</code> look &amp; feel implementation.
      *
-     * @param item - <placeholder>
-     * @return a DateField look & feel implementation
+     * @param df The <code>DateField</code> associated with this look&amp;feel
+     *
+     * @return a <code>DateField</code> look &amp; feel implementation
      */  
-    DateFieldLF getDateFieldLF(DateField item) {
-        return new DateFieldLFImpl(item);
+    DateFieldLF getDateFieldLF(DateField df) {
+	return new DateFieldLFImpl(df);
     }
     
     /**
-     * Returns a Gauge look & feel implementation.
+     * Returns a <code>Gauge</code> look &amp; feel implementation.
      *
-     * @param item - <placeholder>
-     * @return a Gauge look & feel implementation
+     * @param g The <code>Gauge</code> associated with this look&amp;feel
+     *
+     * @return a <code>Gauge</code> look &amp; feel implementation
      */
-    GaugeLF getGaugeLF(Gauge item) {
-        return new GaugeLFImpl(item);
+    GaugeLF getGaugeLF(Gauge g) {
+	return new GaugeLFImpl(g);
     }
 
     /**
-     * Returns an ImageItem look & feel implementation.
+     * Returns an <code>ImageItem</code> look &amp; feel implementation.
      *
-     * @param item - <placeholder>
-     * @return an ImageItem look & feel implementation
+     * @param imgItem The <code>Alert</code> associated with this look&amp;feel
+     *
+     * @return an <code>ImageItem</code> look &amp; feel implementation
      */
-    ImageItemLF getImageItemLF(ImageItem item) {
-        return new ImageItemLFImpl(item);
+    ImageItemLF getImageItemLF(ImageItem imgItem) {
+	return new ImageItemLFImpl(imgItem);
     }
 
     /**
-     * Returns a StringItem look & feel implementation.
+     * Returns a <code>StringItem</code> look &amp; feel implementation.
      *
-     * @param item - <placeholder>
-     * @return a StringItem look & feel implementation
+     * @param strItem The <code>StringItem</code> associated with this 
+     *                look&amp;feel
+     *
+     * @return a <code>StringItem</code> look &amp; feel implementation
      */
-    StringItemLF getStringItemLF(StringItem item) {
-        return new StringItemLFImpl(item);
+    StringItemLF getStringItemLF(StringItem strItem) {
+	return new StringItemLFImpl(strItem);
     }
 
     /**
-     * Returns a Spacer look & feel implementation.
+     * Returns a <code>Spacer</code> look &amp; feel implementation.
      *
-     * @param spacer <placeholder>
-     * @return a Spacer look & feel implementation
+     * @param spacer The <code>Spacer</code> associated with this look&amp;feel
+     *
+     * @return a <code>Spacer</code> look &amp; feel implementation
      */
     SpacerLF getSpacerLF(Spacer spacer) {
         return new SpacerLFImpl(spacer);
     }
 
     /**
-     * Returns a TextField look & feel implementation.
+     * Returns a <code>TextField</code> look &amp; feel implementation.
      *
-     * @param tf - <placeholder>
-     * @return a TextField look & feel implementation
+     * @param tf The <code>TextField</code> associated with this look&amp;feel
+     *
+     * @return a <code>TextField</code> look &amp; feel implementation
      */
     TextFieldLF getTextFieldLF(TextField tf) {
-        return new TextFieldLFImpl(tf);
+	    return new TextFieldLFImpl(tf);
     }
 
     /**
@@ -178,16 +190,17 @@ class LFFactoryImpl extends LFFactory {
      * @return a TextField look & feel implementation
      */
     TextFieldLF getTextBoxLF(TextField tf) {
-        return new TextBoxLFImpl(tf);
+	return new TextFieldLFImpl(tf);
     }
 
     /**
-     * Returns a Ticker look and feel implementation.
+     * Returns a <code>Ticker</code> look &amp; feel implementation.
      *
-     * @param ticker - <placeholder>
-     * @return a Ticker look and feel implementation.
+     * @param ticker The <code>Ticker</code> associated with this look&amp;feel
+     *
+     * @return a <code>Ticker</code> look &amp; feel implementation.
      */
     TickerLF getTickerLF(Ticker ticker) {
-        return new TickerLFImpl(ticker);
+	return new TickerLFImpl(ticker);
     }
 }

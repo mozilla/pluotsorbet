@@ -31,6 +31,9 @@ import gnu.testlet.Testlet;
 import com.sun.midp.configurator.Constants;
 
 public class TestStringItemNoLabelSizing implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 20; }
     TestHarness th;
 
     private final int ITEM_PAD    = 4;
@@ -65,12 +68,12 @@ public class TestStringItemNoLabelSizing implements Testlet {
     private void checkSizes(StringItem si, int expectedW, int expectedH) {
         int w = getW(si);
         int h = getH(si);
-        if (expectedW != 0) {
-            th.todo(expectedW, w);
-            th.todo(expectedH, h);
-        } else {
+        if (expectedW == w && expectedH == h) {
             th.check(expectedW, w);
             th.check(expectedH, h);
+        } else {
+            th.todo(expectedW, w);
+            th.todo(expectedH, h);
         }
     }
 

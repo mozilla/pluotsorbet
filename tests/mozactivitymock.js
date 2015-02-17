@@ -4,13 +4,13 @@
 var lastSMSNumber = null;
 var lastSMSBody = null;
 
-Native.create("javax/wireless/messaging/SendSMSTest.getNumber.()Ljava/lang/String;", function() {
-  return lastSMSNumber;
-});
+Native["javax/wireless/messaging/SendSMSTest.getNumber.()Ljava/lang/String;"] = function() {
+  return J2ME.newString(lastSMSNumber);
+};
 
-Native.create("javax/wireless/messaging/SendSMSTest.getBody.()Ljava/lang/String;", function() {
-  return lastSMSBody;
-});
+Native["javax/wireless/messaging/SendSMSTest.getBody.()Ljava/lang/String;"] = function() {
+  return J2ME.newString(lastSMSBody);
+};
 
 function MozActivity(obj) {
   if (obj.name === "new") {

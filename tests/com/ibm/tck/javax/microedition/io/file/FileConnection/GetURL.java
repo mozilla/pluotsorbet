@@ -332,10 +332,10 @@ public class GetURL extends TestCaseWithLog {
 		// url for roots must be something like "file:///root/"  in the escaped form		
 		boolean passed = false;
 		try {
-			Enumeration  enum = FileSystemRegistry.listRoots();
+			Enumeration  rootsEnum = FileSystemRegistry.listRoots();
 
-			while (enum.hasMoreElements()) {
-				String root = (String) enum.nextElement();
+			while (rootsEnum.hasMoreElements()) {
+				String root = (String) rootsEnum.nextElement();
 				String url = "file:///" + root;
 				
 				FileConnection conn = null;
@@ -377,10 +377,10 @@ public class GetURL extends TestCaseWithLog {
 		// url for roots must be something like "file:///root/" in the escaped form		
 		boolean passed = false;
 		try {
-			Enumeration  enum = FileSystemRegistry.listRoots();
+			Enumeration  rootsEnum = FileSystemRegistry.listRoots();
 
-			while (enum.hasMoreElements()) {
-				String root = (String) enum.nextElement();
+			while (rootsEnum.hasMoreElements()) {
+				String root = (String) rootsEnum.nextElement();
 				String url = "file://localhost/" + root;
 				
 				FileConnection conn = null;

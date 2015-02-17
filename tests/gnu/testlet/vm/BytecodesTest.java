@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class BytecodesTest implements Testlet {
+    public int getExpectedPass() { return 49; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
 		String s = null;
 		th.check(s == null);

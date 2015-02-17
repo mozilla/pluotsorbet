@@ -104,41 +104,18 @@ var util = (function () {
   }
 
   function fromJavaString(jStr) {
-    if (!jStr)
-      return null;
-    return jStr.str;
+    return J2ME.fromJavaString(jStr);
   }
 
-  function newPrimitiveArray(type, size) {
-    var constructor = ARRAYS[type];
-    if (!constructor.prototype.class)
-      CLASSES.initPrimitiveArrayType(type, constructor);
-    return new constructor(size);
-  }
-
-  function newArray(typeName, size) {
-    return new (CLASSES.getClass(typeName).constructor)(size);
-  }
-
-  function newMultiArray(typeName, lengths) {
+  function newMultiArray(classInfo, lengths) {
     var length = lengths[0];
-    var array = newArray(typeName, length);
+    var array = J2ME.newArray(classInfo.elementClass.klass, length);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i=0; i<length; i++)
-        array[i] = newMultiArray(typeName.substr(1), lengths);
+        array[i] = newMultiArray(classInfo.elementClass, lengths);
     }
     return array;
-  }
-
-  function newObject(classInfo) {
-      return new (classInfo.constructor)();
-  }
-
-  function newString(s) {
-    var obj = newObject(CLASSES.java_lang_String);
-    obj.str = s;
-    return obj;
   }
 
   /**
@@ -212,27 +189,32 @@ var util = (function () {
     return chars;
   }
 
+  function abgrIntToCSS(pixel) {
+    var a = (pixel >> 24) & 0xff;
+    var b = (pixel >> 16) & 0xff;
+    var g = (pixel >> 8) & 0xff;
+    var r = pixel & 0xff;
+    return "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
-    decodeUt8Array: decodeUtf8Array,
+    decodeUtf8Array: decodeUtf8Array,
     javaUTF8Decode: javaUTF8Decode,
     defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
-    newPrimitiveArray: newPrimitiveArray,
-    newArray: newArray,
     newMultiArray: newMultiArray,
-    newObject: newObject,
-    newString: newString,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,
     compareTypedArrays: compareTypedArrays,
     pad: pad,
     toCodePointArray: toCodePointArray,
+    abgrIntToCSS: abgrIntToCSS,
   };
 })();

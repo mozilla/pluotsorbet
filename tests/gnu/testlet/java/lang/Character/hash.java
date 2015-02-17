@@ -25,6 +25,9 @@ import gnu.testlet.TestHarness;
 
 public class hash implements Testlet
 {
+  public int getExpectedPass() { return 2; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
     {
       Character a = new Character ('\uffda');

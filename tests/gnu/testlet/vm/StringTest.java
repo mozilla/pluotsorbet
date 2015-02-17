@@ -6,6 +6,9 @@ import java.io.*;
 import java.util.Date;
 
 public class StringTest implements Testlet {
+	public int getExpectedPass() { return 99; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	public void test(TestHarness th) {
 		try {
 			String s = new String();

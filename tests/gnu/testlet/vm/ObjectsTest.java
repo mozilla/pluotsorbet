@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class ObjectsTest implements Testlet {
+	public int getExpectedPass() { return 5; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	
 	class A {
 		private int a;

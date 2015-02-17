@@ -8,6 +8,9 @@ public class DrawAndFillRoundRectTest extends MIDlet {
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
             g.setColor(255, 0, 0);
             g.drawRoundRect(0, 0, getWidth(), getHeight(), getWidth() / 2, getHeight() / 2);
             g.setColor(0, 0, 255);

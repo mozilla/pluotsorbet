@@ -4,6 +4,9 @@ import java.io.*;
 import gnu.testlet.*;
 
 public class PrintStreamTest implements Testlet {
+	public int getExpectedPass() { return 2; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	public void test(TestHarness th) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		PrintStream s = new PrintStream(out);

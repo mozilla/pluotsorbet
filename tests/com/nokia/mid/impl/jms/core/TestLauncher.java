@@ -8,6 +8,9 @@ import javax.microedition.io.file.*;
 import javax.microedition.io.*;
 
 public class TestLauncher implements Testlet {
+    public int getExpectedPass() { return 3; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     native boolean checkImageModalDialog();
 
     public void test(TestHarness th) {

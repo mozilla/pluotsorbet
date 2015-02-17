@@ -25,6 +25,9 @@ import gnu.testlet.TestHarness;
 
 public class hashcode_Boolean implements Testlet
 {
+  public int getExpectedPass() { return 2; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
     {
       Boolean a = new Boolean(true);

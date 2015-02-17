@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class ArrayTest implements Testlet {
+    public int getExpectedPass() { return 11; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
 	byte b1[][] = new byte[3][4];
 	b1[1][2] = 5;

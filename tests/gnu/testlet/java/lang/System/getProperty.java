@@ -25,6 +25,9 @@ import gnu.testlet.TestHarness;
 
 public class getProperty implements Testlet
 {
+  public int getExpectedPass() { return 4; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   TestHarness harness;
 

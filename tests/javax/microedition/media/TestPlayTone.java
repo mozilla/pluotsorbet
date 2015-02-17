@@ -7,6 +7,9 @@ import gnu.testlet.Testlet;
 import javax.microedition.media.control.ToneControl;
 
 public class TestPlayTone implements Testlet {
+    public int getExpectedPass() { return 1; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
 
     public void test(TestHarness th) {
         Configuration config = Configuration.getConfiguration();

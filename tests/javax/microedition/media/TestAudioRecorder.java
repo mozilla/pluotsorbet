@@ -8,6 +8,9 @@ import javax.microedition.io.file.*;
 import java.io.*;
 
 public class TestAudioRecorder implements Testlet {
+    public int getExpectedPass() { return 1; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     private static native byte[] convert3gpToAmr(byte[] data);

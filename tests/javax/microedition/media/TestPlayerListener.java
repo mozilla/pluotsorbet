@@ -5,6 +5,9 @@ import gnu.testlet.Testlet;
 import java.io.InputStream;
 
 public class TestPlayerListener implements Testlet, PlayerListener {
+    public int getExpectedPass() { return 2; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     boolean endOfMedia = false;
     boolean started = false;
 

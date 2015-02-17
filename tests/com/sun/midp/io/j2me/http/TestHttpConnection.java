@@ -6,6 +6,9 @@ import java.io.*;
 import javax.microedition.io.*;
 
 public class TestHttpConnection implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 2; }
     public void test(TestHarness th) {
         try {
             HttpConnection hc = (HttpConnection)Connector.open("http://localhost:8000/tests/test.html");

@@ -26,6 +26,9 @@ import gnu.testlet.TestHarness;
 
 public class LongTest implements Testlet
 {
+  public int getExpectedPass() { return 39; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   protected static TestHarness harness;
 	public void test_Basics()

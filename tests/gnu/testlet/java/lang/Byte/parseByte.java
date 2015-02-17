@@ -29,6 +29,9 @@ import gnu.testlet.TestHarness;
  */
 public class parseByte implements Testlet
 {
+  public int getExpectedPass() { return 16; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
   {
     byte b;

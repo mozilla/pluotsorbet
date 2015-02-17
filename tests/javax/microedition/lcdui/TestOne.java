@@ -30,6 +30,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestOne implements Testlet {
+    public int getExpectedPass() { return 480; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     // utilities

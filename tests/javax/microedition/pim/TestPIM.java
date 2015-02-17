@@ -6,6 +6,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestPIM implements Testlet {
+    public int getExpectedPass() { return 28; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void testExportContact(TestHarness th, Contact contact) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 

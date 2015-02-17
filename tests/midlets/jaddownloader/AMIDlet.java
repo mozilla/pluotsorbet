@@ -7,7 +7,7 @@ public class AMIDlet extends midlets.TestMidlet {
         try {
             compare(getAppProperty("MIDlet-Name"), "AMIDlet");
             compare(getAppProperty("MIDlet-Vendor"), "MIDlet Suite Vendor");
-            compare(getAppProperty("MIDlet-Version"), "1.0.0");
+            compare(getAppProperty("MIDlet-Version"), getAppProperty("arg-0"));
         } catch (NullPointerException ex) {
             fail(ex);
         }

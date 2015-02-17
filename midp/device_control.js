@@ -3,7 +3,7 @@
 
 'use strict';
 
-Native.create("com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V", function(freq, longDuration, _) {
+Native["com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V"] = function(freq, longDuration) {
   // If method is called during a previously called vibration that has been
   // activated from this method, the previous vibration is stopped and the new
   // one is activated using the new set of parameters.
@@ -17,12 +17,12 @@ Native.create("com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V", function(freq, 
   var duration = longDuration.toNumber();
 
   if (freq < 0 || freq > 100 || duration < 0) {
-    throw new JavaException("java/lang/IllegalArgumentException");
+    throw new $.newIllegalArgumentException();
   }
 
   navigator.vibrate(duration);
-});
+};
 
-Native.create("com/nokia/mid/ui/DeviceControl.stopVibra.()V", function() {
+Native["com/nokia/mid/ui/DeviceControl.stopVibra.()V"] = function() {
   navigator.vibrate(0);
-});
+};

@@ -18,6 +18,9 @@ import gnu.testlet.Testlet;
 /*
  */
 class TestMath implements Testlet {
+  public int getExpectedPass() { return 26; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   TestHarness th;
 
   public void test(TestHarness th) {

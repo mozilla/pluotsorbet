@@ -31,6 +31,9 @@ import java.util.Hashtable;
  */
 public class HashContains extends Hashtable implements Testlet
 {
+  public int getExpectedPass() { return 3; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
   {
     Object a = new Object();

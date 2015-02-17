@@ -25,6 +25,9 @@ import gnu.testlet.TestHarness;
 
 public class max implements Testlet
 {
+  public int getExpectedPass() { return 32; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test (TestHarness harness)
     {
       harness.check (Double.toString (Math.max (0.0, -0.0)), "0.0");

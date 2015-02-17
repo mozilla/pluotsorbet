@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class OpsTest implements Testlet {
+     public int getExpectedPass() { return 15; }
+     public int getExpectedFail() { return 0; }
+     public int getExpectedKnownFail() { return 0; }
      int iadd(int a, int b) {
         return a + b;
     }

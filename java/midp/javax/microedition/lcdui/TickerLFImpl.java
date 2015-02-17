@@ -26,49 +26,53 @@
 
 package javax.microedition.lcdui;
 
-import com.sun.midp.configurator.Constants;
-
 /**
- * Implementation class for TickerLF interface.
+ * Implementation class for <code>TickerLF</code> interface.
  */
 class TickerLFImpl implements TickerLF {
 
     /**
-     * Constructs a new <code>Ticker</code> object, given its initial
-     * contents string.
-     * @param ticker Ticker object for which L&F has to be created
-     * @throws NullPointerException if <code>str</code> is <code>null</code>
+     * Constructs a new <code>TickerLFImpl</code> object for a given 
+     * <code>Ticker</code>.
+     *
+     * @param ticker <code>Ticker</code> object for which L&amp;F has 
+     *               to be created
      */
     TickerLFImpl(Ticker ticker) {
-	    this.ticker = ticker;
+	this.ticker = ticker;
     }
 
     /**
-     * needed for implementations where the ticker is operated through the
-     * Displayable directly
-     * @param owner the last Displayable this ticker was set to
+     * This is needed in order to delegate the string setting to
+     * <code>DisplayableLFImpl</code>.
+     *
+     * @param owner the last <code>Displayable</code> this ticker was set to
      */
     public void lSetOwner(DisplayableLF owner) {
-        this.owner = owner;
+	this.owner = (DisplayableLFImpl)owner;
     }
-    
+
     /**
-     * change the string set to this ticker
+     * Change the string set to this ticker.
+     *
      * @param str string to set on this ticker.
      */
     public void lSetString(String str) {
-        if (owner != null) {
-            Display d = owner.lGetCurrentDisplay();
-            if (d != null) {
-                d.lSetTicker(owner, ticker);
-            }
-        }
+
+	// this method should have no effect if this ticker is not owned
+	// by the current displayable. This is checked by DisplayableLFImpl
+	
+	if (owner != null) {
+	    owner.tickerTextChanged(ticker);
+	}
     }
 
-    /** DisplayableLF this ticker is associated with */
-    private DisplayableLF owner;
-    
-    /** Ticker object that corresponds to this Look & Feel object */
+    /** 
+     * <code>Ticker</code> object that corresponds to this Look &amp; Feel 
+     * object.
+     */
     private Ticker ticker;
-}
 
+    /** The last <code>Displayable</code> this ticker was set to. */
+    private DisplayableLFImpl owner = null;
+}

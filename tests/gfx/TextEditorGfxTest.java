@@ -25,7 +25,7 @@ public class TextEditorGfxTest extends MIDlet {
         String emoji3 = TestUtils.getEmojiString("2320e3");
 
         TextEditor textEditor = TextEditor.createTextEditor("A stri" + emoji1 + "ng wit" + emoji2 + "h emoj" + emoji3 + "i", 50, TextField.ANY, 150, 70);
-        textEditor.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE));
+        textEditor.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM));
         textEditor.setParent(canvas);
         textEditor.setMultiline(true);
         textEditor.setBackgroundColor(0x00FFFFFF);

@@ -31,6 +31,9 @@ import java.util.Hashtable;
  */
 public class ContainsHash extends Hashtable implements Testlet
 {
+  public int getExpectedPass() { return 2; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   private static Object a = new Object();
   private static Object b = new Object();
 

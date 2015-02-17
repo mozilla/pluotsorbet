@@ -18,10 +18,19 @@ import gnu.testlet.Testlet;
 import java.io.IOException;
 
 class TestThrownException implements Testlet {
+  public int getExpectedPass() { return 7; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   private static void testHardwareException() {
     int i = 1;
     int j = 0;
     int k = i / j;
+  }
+
+  private static void testHardwareExceptionLong() {
+    long i = 1;
+    long j = 0;
+    long k = i / j;
   }
 
   private static void testSoftwareException() {
@@ -63,10 +72,11 @@ class TestThrownException implements Testlet {
     if (choice == 4) testRethrownException();
     if (choice == 5) testNullException();
     if (choice == 6) testReThrownThruSynchronizedSection();
+    if (choice == 7) testHardwareExceptionLong();
   }
 
   public void test(TestHarness th) {
-    for (int i = 1; i <= 6; ++i) {
+    for (int i = 1; i <= 7; ++i) {
       try {
         trouble(i);
         th.fail("Exception expected");

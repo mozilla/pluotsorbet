@@ -12,6 +12,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.TestUtils;
 
 public class TestNokiaImageProcessingInMultiThread implements Testlet {
+    public int getExpectedPass() { return 12; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     LocalMessageProtocolConnection client;
     static final String PROTO_NAME = "nokia.image-processing";
 

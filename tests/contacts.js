@@ -72,6 +72,11 @@ var fakeContacts = [
   },],
 },];
 
+// Polyfill to enable testing in chrome.
+if (typeof mozContact === "undefined") {
+  function mozContact() {}
+}
+
 // Turn the contact object into a mozContact to make the testing
 // environment more similar to reality.
 function toMozContact(fakeContact) {

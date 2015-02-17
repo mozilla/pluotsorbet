@@ -16,6 +16,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 class TestClassLoading implements Testlet {
+  public int getExpectedPass() { return 9; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 6; }
   TestHarness th;
 
   public void test(TestHarness th) {

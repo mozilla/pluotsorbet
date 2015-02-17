@@ -6,6 +6,9 @@ import java.io.*;
 import javax.microedition.io.*;
 
 public class StressTestSocket implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 1; }
     TestHarness th;
     static final String URL = "socket://localhost:50003";
 

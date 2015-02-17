@@ -11,10 +11,14 @@ import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 
 public class TestAlert extends Canvas implements Testlet {
+    public int getExpectedPass() { return 8; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     private native boolean isTextEditorReallyFocused();
 
     public void test(TestHarness th) {
         Alert alert = new Alert("Hello World", "Some text", null, AlertType.INFO);
+        alert.setTimeout(Alert.FOREVER);
         TextEditor textEditor = TextEditor.createTextEditor("Hello, world!", 20, 0, 100, 24);
         textEditor.setParent(this);
 
@@ -30,8 +34,6 @@ public class TestAlert extends Canvas implements Testlet {
         } catch (InterruptedException e) {
             th.fail("Unexpected exception: " + e);
         }
-        int threshold = 1750;
-        th.compareScreenToReferenceImage("gfx/AlertTest.png", threshold, "First alert");
         th.check(textEditor.hasFocus(), "TextEditor kept focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
 
@@ -40,7 +42,6 @@ public class TestAlert extends Canvas implements Testlet {
         th.check(isTextEditorReallyFocused(), "TextEditor really regained focus");
 
         th.setScreenAndWait(alert);
-        th.compareScreenToReferenceImage("gfx/AlertTest.png", threshold, "Second alert");
         th.check(textEditor.hasFocus(), "TextEditor still has focus");
         th.check(!isTextEditorReallyFocused(), "TextEditor really lost focus");
     }

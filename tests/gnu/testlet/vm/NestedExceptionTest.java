@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class NestedExceptionTest implements Testlet {
+    public int getExpectedPass() { return 14; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     private static boolean firstFinallyCalled = false;
     private static boolean finallyReturnCalled = false;
     private static boolean finallyReturnReturned = false;

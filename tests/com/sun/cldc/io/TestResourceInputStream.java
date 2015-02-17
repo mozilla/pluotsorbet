@@ -6,6 +6,9 @@ import gnu.testlet.Testlet;
 import java.io.*;
 
 public class TestResourceInputStream implements Testlet {
+    public int getExpectedPass() { return 4; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     private String readLine(InputStreamReader reader) throws IOException {

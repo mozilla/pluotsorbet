@@ -7,6 +7,9 @@ import javax.microedition.io.file.FileConnection;
 import javax.microedition.rms.RecordStoreException;
 
 public class TestRecordStoreFileNatives implements Testlet, SuiteContainer {
+    public int getExpectedPass() { return 14; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     // SuiteContainer stubs
     public int getCallersSuiteId() { return 0; }
     public int getSuiteId(String vendorName, String suiteName) { return 0; }

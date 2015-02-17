@@ -6,6 +6,9 @@ import java.io.InputStream;
 import java.io.IOException;
 
 public class TestHttpsConnection implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 2; }
     TestHarness th;
 
     public void test(TestHarness th) {

@@ -4,6 +4,7 @@
 'use strict';
 
 (function() {
+
   var windowConsole = window.console;
 
   var LOG_LEVELS = {
@@ -19,15 +20,17 @@
    * The console(s) to which messages should be output.  A comma-separated list
    * of one or more of these consoles:
    *    web: the browser's Web Console (default)
-   *    page: the in-page console (an HTML element with ID "console")
    *    native: the native console (via the *dump* function)
+   *    terminal: a faster canvas based console if Shumway.js is included.
    */
-  var ENABLED_CONSOLE_TYPES = (urlParams.logConsole || "page").split(",");
-  var minLogLevel = LOG_LEVELS[urlParams.logLevel || "log"];
+  var ENABLED_CONSOLE_TYPES = (config.logConsole || "page").split(",");
+  var minLogLevel = LOG_LEVELS[config.logLevel || (config.release ? "error" : "log")];
 
 
   //================================================================
 
+
+  var startTime = performance.now();
 
   /**
    * Every log entry serializes itself into a LogItem, so that it can
@@ -42,15 +45,36 @@
     }
 
     this.levelName = levelName;
+    this.ctx = typeof $ !== "undefined" && $ ? $.ctx : null;
     this.logLevel = LOG_LEVELS[levelName];
     this.args = args;
+    this.time = performance.now() - startTime;
+  }
+
+  function padRight(str, c, n) {
+    var length = str.length;
+    if (!c || length >= n) {
+      return str;
+    }
+    var max = (n - length) / c.length;
+    for (var i = 0; i < max; i++) {
+      str += c;
+    }
+    return str;
   }
 
   LogItem.prototype = {
+    get messagePrefix() {
+      var s = typeof J2ME !== "undefined" ? J2ME.Context.currentContextPrefix() : "";
+      if (false) {
+        s = this.time.toFixed(2) + " " + s;
+      }
+      return padRight(s.toString(), " ", 4) + " | ";
+    },
 
     get message() {
       if (this._message === undefined) {
-        this._message = this.args.join(" ");
+        this._message = this.messagePrefix + this.args.join(" ") + " ";
       }
       return this._message;
     },
@@ -79,17 +103,13 @@
     },
 
     matchesCurrentFilters: function() {
-      return (this.logLevel >= minLogLevel &&
-              (CONSOLES.page.currentFilterText === "" ||
-               this.searchPredicate.indexOf(CONSOLES.page.currentFilterText) !== -1));
+      return this.logLevel >= minLogLevel;
     }
   };
 
 
   //================================================================
   // Console Implementations
-
-
   /**
    * In-page console, providing dynamic filtering and colored output.
    * Renders to the document's "console" element.
@@ -140,7 +160,6 @@
 
   };
 
-
   /**
    * WebConsole: The standard console.log() and friends.
    */
@@ -160,7 +179,7 @@
     push: function(item) {
       if (item.matchesCurrentFilters()) {
         this.flush(); // Preserve order w/r/t console.print().
-        windowConsole[item.levelName].apply(windowConsole, item.args);
+        windowConsole[item.levelName].apply(windowConsole, [item.message]);
       }
     },
 
@@ -183,7 +202,7 @@
   NativeConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        dump(item.message);
+        dump(item.message + "\n");
       }
     }
   };
@@ -199,16 +218,83 @@
   RawConsoleForTests.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        this.el.textContent += item.levelName[0].toUpperCase() + ' ' + item.message + '\n';
+        this.el.textContent += item.levelName[0].toUpperCase() + ' ' + item.args.join(" ") + '\n';
       }
     }
   };
 
+  function TerminalConsole(selector) {
+    this.buffer = new Terminal.Buffer();
+    this.view = new Terminal.View(new Terminal.Screen(document.querySelector(selector), 10), this.buffer);
+    this.count = 0;
+    window.addEventListener(
+      'console-clear', this.onClear.bind(this));
+    window.addEventListener(
+      'console-save', this.onSave.bind(this));
+  }
+
+  var contextColors = ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666"];
+
+
+  function toRGB565(r, g, b) {
+    return ((r / 256 * 32) & 0x1F) << 11 |
+           ((g / 256 * 64) & 0x3F) <<  5 |
+           ((b / 256 * 32) & 0x1F) <<  0;
+  }
+
+    //trace: 0,
+    //log: 1,
+    //info: 2,
+    //warn: 3,
+    //error: 4,
+    //silent: 5,
+
+  var colors = [
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0xFF),
+    toRGB565(0xFF, 0xFF, 0),
+    toRGB565(0xFF, 0, 0),
+    toRGB565(0, 0, 0),
+  ];
+
+  var lastTime = 0;
+  TerminalConsole.prototype = {
+    push: function(item) {
+      if (item.matchesCurrentFilters()) {
+        this.buffer.color = colors[item.logLevel];
+        var thisTime = performance.now();
+        var prefix = (thisTime - lastTime).toFixed(2) + " : ";
+        prefix = "";
+        lastTime = thisTime;
+        this.buffer.writeString(prefix.padLeft(" ", 4) + item.logLevel + " " + item.message);
+        this.buffer.writeLine();
+        this.view.scrollToBottom();
+      }
+    },
+    onClear: function() {
+      this.buffer.clear();
+      this.view.scrollToBottom();
+    },
+    onSave: function() {
+      var string = this.buffer.toString();
+      var b = this.buffer;
+      var l = [];
+      for (var i = 0; i < b.h; i++) {
+        l.push(b.getLine(i));
+      }
+      var blob = new Blob([l.join("\n")], {type:'text/plain'});
+      saveAs(blob, "console-" + Date.now() + ".txt");
+      // window.open(URL.createObjectURL(blob));
+    }
+  }
+
   var CONSOLES = {
-    page: new PageConsole("#console"),
     web: new WebConsole(),
+    page: new PageConsole('#consoleContainer'),
     native: new NativeConsole(),
-    raw: new RawConsoleForTests("#raw-console")
+    raw: new RawConsoleForTests("#raw-console"),
+    terminal: typeof Terminal === "undefined" ? new WebConsole() : new TerminalConsole("#consoleContainer")
   };
 
   var print = CONSOLES.web.print.bind(CONSOLES.web);
@@ -224,30 +310,22 @@
   //================================================================
   // Filtering & Runtime Page Console Options
 
-  var logLevelSelect = document.querySelector('#loglevel');
-  var consoleFilterTextInput = document.querySelector('#console-filter-input');
-  var autoScrollCheckbox = document.querySelector('#auto-scroll');
-
   document.querySelector('#console-clear').addEventListener('click', function() {
     window.dispatchEvent(new CustomEvent('console-clear'));
   });
 
+  document.querySelector('#console-save').addEventListener('click', function() {
+    window.dispatchEvent(new CustomEvent('console-save'));
+  });
+
+  var logLevelSelect = document.querySelector('#loglevel');
   function updateFilters() {
     minLogLevel = logLevelSelect.value;
-    CONSOLES.page.currentFilterText = consoleFilterTextInput.value.toLowerCase();
     window.dispatchEvent(new CustomEvent('console-filters-changed'));
   }
 
   logLevelSelect.value = minLogLevel;
   logLevelSelect.addEventListener('change', updateFilters);
-
-  consoleFilterTextInput.value = "";
-  consoleFilterTextInput.addEventListener('input', updateFilters);
-
-  autoScrollCheckbox.checked = CONSOLES.page.shouldAutoScroll;
-  autoScrollCheckbox.addEventListener('change', function() {
-    CONSOLES.page.shouldAutoScroll = autoScrollCheckbox.checked;
-  });
 
 
   //----------------------------------------------------------------
@@ -266,7 +344,9 @@
     info: logAtLevel.bind(null, "info"),
     warn: logAtLevel.bind(null, "warn"),
     error: logAtLevel.bind(null, "error"),
-    print: print
+    print: print,
+    profile: typeof console !== "undefined" && console.profile ? console.profile.bind(console) : null,
+    profileEnd: typeof console !== "undefined" && console.profileEnd ? console.profileEnd.bind(console) : null,
   };
 
 })();

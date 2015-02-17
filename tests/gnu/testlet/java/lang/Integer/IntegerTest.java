@@ -3,6 +3,9 @@ package gnu.testlet.java.lang.Integer;
 import gnu.testlet.*;
 
 public class IntegerTest implements Testlet {
+	public int getExpectedPass() { return 38; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	public void test(TestHarness th) {
 		th.check(Integer.toString(543), ("543"));
 		th.check(Integer.toString(-543), ("-543"));

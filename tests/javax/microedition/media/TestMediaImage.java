@@ -12,7 +12,11 @@ import javax.microedition.media.*;
 import javax.microedition.media.control.*;
 
 public class TestMediaImage implements Testlet, PlayerListener {
+    public int getExpectedPass() { return 3; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
+    boolean started = false;
 
     public void test(TestHarness th) {
         this.th = th;
@@ -45,11 +49,12 @@ public class TestMediaImage implements Testlet, PlayerListener {
 
             player.start();
 
-            // We have to remove the listener now that we're done testing.
-            // Otherwise, it could receive additional calls to playerUpdate,
-            // including after we've returned, and the harness has tallied
-            // our total number of passed tests!
-            player.removePlayerListener(this);
+            synchronized (this) {
+                while (!started) {
+                    this.wait();
+                }
+            }
+            th.check(started);
 
             file.delete();
             file.close();
@@ -60,8 +65,13 @@ public class TestMediaImage implements Testlet, PlayerListener {
     }
 
     public void playerUpdate(Player player, String event, Object eventData) {
-        th.check(true);
-        player.close();
+        System.out.println(event);
+        if (event.equals("started")) {
+            started = true;
+            synchronized (this) {
+                this.notify();
+            }
+        }
     }
 }
 

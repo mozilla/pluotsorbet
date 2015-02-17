@@ -5,6 +5,9 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestUtils;
 
 public class TestFont implements Testlet {
+    public int getExpectedPass() { return 6; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     void testEmojiLength(TestHarness th, String code, int expectedUpper) {
         String emoji = TestUtils.getEmojiString(code);
         th.check(Font.getDefaultFont().stringWidth(emoji) <= expectedUpper);

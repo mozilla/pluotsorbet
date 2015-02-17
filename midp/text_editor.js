@@ -1,6 +1,10 @@
-'use strict'
+'use strict';
 
 var TextEditorProvider = (function() {
+    var eTextArea = document.getElementById('textarea-editor');
+    var ePassword = document.getElementById('password-editor');
+    var currentVisibleEditor = null;
+
     function extendsObject(targetObj, srcObj) {
         for (var m in srcObj) {
             targetObj[m] = srcObj[m];
@@ -9,110 +13,132 @@ var TextEditorProvider = (function() {
     }
 
     var CommonEditorPrototype = {
-        destroy: function() {
-            if (this.textEditorElem && this.textEditorElem.parentNode) {
-                this.textEditorElem.parentNode.removeChild(this.textEditorElem);
-            }
-            if (this.textEditorElem) {
-                this.textEditorElem.oninput = null;
-            }
-            this.parentNode = null;
-            this.textEditorElem = null;
-            this.oninputCallback = null;
-            this.constraints = null;
-            this.attributes = null;
+        attached: false,
+        width: 0,
+        height: 0,
+        left: 0,
+        top: 0,
+        constraints: 0,
+        type: "",
+        content: "",
+        visible: false,
+        id: -1,
+        selectionRange: [0, 0],
+        focused: false,
+        oninputCallback: null,
+
+        // opaque white
+        backgroundColor:  0xFFFFFFFF | 0,
+
+        // opaque black
+        foregroundColor:  0xFF000000 | 0,
+
+        attach: function() {
+            this.attached = true;
         },
 
-        setParent: function(parentNode) {
-            this.parentNode = parentNode;
-            if (!parentNode) {
-                if (this.textEditorElem.parentNode) {
-                    this.textEditorElem.parentNode.removeChild(this.textEditorElem);
-                }
-                return;
-            }
-
-            if (this.textEditorElem) {
-                parentNode.appendChild(this.textEditorElem);
-            }
+        detach: function() {
+            this.attached = false;
         },
 
-        getParent: function() {
-            return this.parentNode;
+        isAttached: function() {
+            return this.attached;
         },
 
         decorateTextEditorElem: function() {
-            if (this.parentNode) {
-                this.parentNode.appendChild(this.textEditorElem);
-            }
-
-            // Set attributes and styles.
+            // Set attributes.
             if (this.attributes) {
                 for (var attr in this.attributes) {
                     this.textEditorElem.setAttribute(attr, this.attributes[attr]);
                 }
             }
 
-            if (this.styles) {
-                for (var styleKey in this.styles) {
-                    this.textEditorElem.style.setProperty(styleKey, this.styles[styleKey]);
-                }
-            }
+            this.setContent(this.content);
 
-            this.setContent(this.content || '');
-            if (this.selectionRange) {
-                this.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
-                delete this.selectionRange;
-            }
-
-            if (this.focused) this.focus();
-            this.setVisible(this.visible);
+            this.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
+            this.setSize(this.width, this.height);
+            this.setFont(this.font);
+            this.setPosition(this.left, this.top);
+            this.setBackgroundColor(this.backgroundColor);
+            this.setForegroundColor(this.foregroundColor);
         },
 
-        setStyle: function(styleKey, styleValue) {
-            // Set input/textarea elem styles.
-            if (!this.styles) {
-                this.styles = {};
-            }
-
-            this.styles[styleKey] = styleValue;
-            if (this.textEditorElem) {
+        _setStyle: function(styleKey, styleValue) {
+            if (this.visible) {
                 this.textEditorElem.style.setProperty(styleKey, styleValue);
             }
         },
 
-        getStyle:  function(styleKey) {
-            return (this.styles && this.styles[styleKey]) || null;
-        },
-
         focus: function() {
             this.focused = true;
-            this.textEditorElem && this.textEditorElem.focus();
+            return new Promise(function(resolve, reject) {
+                if (currentVisibleEditor !== this ||
+                    document.activeElement === this.textEditorElem) {
+                    resolve();
+                    return;
+                }
+                setTimeout(this.textEditorElem.focus.bind(this.textEditorElem));
+                this.textEditorElem.onfocus = resolve;
+            }.bind(this));
         },
 
         blur: function() {
             this.focused = false;
-            this.textEditorElem && this.textEditorElem.blur();
+            return new Promise(function(resolve, reject) {
+                if (currentVisibleEditor !== this ||
+                    document.activeElement !== this.textEditorElem) {
+                    resolve();
+                    return;
+                }
+                setTimeout(this.textEditorElem.blur.bind(this.textEditorElem));
+                this.textEditorElem.onblur = resolve;
+            }.bind(this));
         },
 
         getVisible: function() {
-            return this.visible || false;
+            return this.visible;
         },
 
         setVisible: function(aVisible) {
+            // Check if we need to show or hide the html editor elements.
+            if ((currentVisibleEditor === this && aVisible) ||
+                (currentVisibleEditor !== this && !aVisible)) {
+                this.visible = aVisible;
+                return;
+            }
+
             this.visible = aVisible;
 
             if (aVisible) {
-                // Sometimes in Java, setVisible() is called after focus(), to make
-                // sure the native input won't lose focus, we change opacity instead
-                // of visibility.
-                this.setStyle('opaque', 1);
-                this.setStyle('z-index', 999);
+                if (currentVisibleEditor) {
+                    currentVisibleEditor.visible = false;
+                }
+                currentVisibleEditor = this;
             } else {
-                this.setStyle('opaque', 0);
-                // To make sure the j2me control could be clicked again to show the
-                // textEditor, we need to put the textEditor at the bottom.
-                this.setStyle('z-index', -999);
+                currentVisibleEditor = null;
+            }
+
+            if (aVisible) {
+                this.textEditorElem.classList.add("show");
+            } else {
+                this.textEditorElem.classList.remove("show");
+            }
+
+            if (this.visible) {
+                var oldId = this.textEditorElem.getAttribute("editorId") || -1;
+                if (oldId !== this.id) {
+                    this.textEditorElem.setAttribute("editorId", this.id);
+                    this.decorateTextEditorElem();
+                    if (this.focused) {
+                        setTimeout(this.textEditorElem.focus.bind(this.textEditorElem));
+                    }
+                }
+                this.activate();
+            } else {
+                if (!this.focused) {
+                    setTimeout(this.textEditorElem.blur.bind(this.textEditorElem));
+                }
+                this.deactivate();
             }
         },
 
@@ -137,9 +163,56 @@ var TextEditorProvider = (function() {
 
         setFont: function(font) {
             this.font = font;
-            this.setStyle("font-style", font.style);
-            this.setStyle("font-size", font.size);
-            this.setStyle("font-face", font.face);
+            this._setStyle("font", font.css);
+        },
+
+        setSize: function(width, height) {
+            this.width = width;
+            this.height = height;
+            this._setStyle("width", width + "px");
+            this._setStyle("height", height + "px");
+        },
+
+        getWidth: function() {
+            return this.width;
+        },
+
+        getHeight: function() {
+            return this.height;
+        },
+
+        setPosition: function(left, top) {
+            this.left = left;
+            this.top = top;
+            var t = MIDP.Context2D.canvas.offsetTop + top;
+            this._setStyle("left", left + "px");
+            this._setStyle("top",  t + "px");
+        },
+
+        getLeft: function() {
+            return this.left;
+        },
+
+        getTop: function() {
+            return this.top;
+        },
+
+        setBackgroundColor: function(color) {
+            this.backgroundColor = color;
+            this._setStyle("backgroundColor", util.abgrIntToCSS(color));
+        },
+
+        getBackgroundColor: function() {
+            return this.backgroundColor;
+        },
+
+        setForegroundColor: function(color) {
+            this.foregroundColor = color;
+            this._setStyle("color", util.abgrIntToCSS(color));
+        },
+
+        getForegroundColor: function() {
+            return this.foregroundColor;
         },
 
         oninput: function(callback) {
@@ -148,202 +221,174 @@ var TextEditorProvider = (function() {
     }
 
     function TextAreaEditor() {
-        this.textEditorElem = document.createElement('div');
-        this.textEditorElem.contentEditable = true;
-        this.setStyle('word-break', 'break-all');
-        this.setStyle('word-wrap', 'break-word');
-        this.setStyle('overflow', 'auto');
-        this.setStyle('white-space', 'pre-wrap');
-        this.setStyle('-moz-appearance', 'textfield-multiline');
+        this.textEditorElem = eTextArea;
+    }
 
-        this.textEditorElem.onkeydown = function(e) {
-            if (this.getSize() >= this.getAttribute("maxlength")) {
-                // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-                if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
-                    e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
-                    (e.keyCode >= 65 && e.keyCode <= 90)   || // letter keys
-                    (e.keyCode >= 96 && e.keyCode <= 111)  || // numpad keys
-                    (e.keyCode >= 186 && e.keyCode <= 192) || // ;=,-./` (in order)
-                    (e.keyCode >= 219 && e.keyCode <= 222)) { // [\]' (in order)
-                    return false;
+    TextAreaEditor.prototype = extendsObject({
+        html: '',
+
+        activate: function() {
+            this.textEditorElem.onkeydown = function(e) {
+                if (this.getContentSize() >= this.getAttribute("maxlength")) {
+                    // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
+                    if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
+                        e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
+                        (e.keyCode >= 65 && e.keyCode <= 90)   || // letter keys
+                        (e.keyCode >= 96 && e.keyCode <= 111)  || // numpad keys
+                        (e.keyCode >= 186 && e.keyCode <= 192) || // ;=,-./` (in order)
+                        (e.keyCode >= 219 && e.keyCode <= 222)) { // [\]' (in order)
+                        return false;
+                    }
                 }
-            }
+                return true;
+            }.bind(this);
 
-            if (e.keyCode == 8) {
+            this.textEditorElem.oninput = function(e) {
+                if (e.isComposing) {
+                    return;
+                }
+
+                // Save the current selection.
                 var range = this.getSelectionRange();
 
-                if (range[0].index != range[1].index) {
-                    // If some text has been selected, remove it and set the new caret position
-                    // to the first character before the selection.
-                    this.setContent(this.getSlice(0, range[0].index) + this.getSlice(range[1].index));
-                    this.setSelectionRange(range[0].index, range[0].index);
-                } else {
-                    var toRemove = 1;
-
-                    // If the node that is currently selected is an image and its codepoint length
-                    // is 2, we remove both the codepoints.
-                    // On the Nokia Asha, only the second codepoint is removed, so another emoji is
-                    // shown instead of the first one (the emoji associated with the first codepoint).
-                    if (range[0].node.nodeType === 1 && util.toCodePointArray(range[0].node.alt).length === 2) {
-                        toRemove = 2;
-                    }
-
-                    // If there's no text currently selected, remove the first character before
-                    // the current caret position and reduce the caret position by 1.
-                    this.setContent(this.getSlice(0, range[0].index - toRemove) + this.getSlice(range[0].index));
-                    this.setSelectionRange(range[0].index - toRemove, range[0].index - toRemove);
+                // Remove the last <br> tag if any.
+                var html = this.textEditorElem.innerHTML;
+                var lastBr = html.lastIndexOf("<br>");
+                if (lastBr !== -1) {
+                    html = html.substring(0, lastBr);
                 }
 
+                // Replace <br> by \n so that textContent attribute doesn't
+                // strip new lines.
+                html = html.replace("<br>", "\n", "g");
+
+                // Convert the emoji images back to characters.
+                // The original character is stored in the alt attribute of its
+                // object tag with the format of <object ... name='X' ..>.
+                html = html.replace(/<object[^>]*name="(\S*)"[^>]*><\/object>/g, '$1');
+
+                this.textEditorElem.innerHTML = html;
+
+                this.setContent(this.textEditorElem.textContent);
+
+                // Restore the current selection after updating emoji images.
+                this.setSelectionRange(range[0], range[1]);
+
+                // Notify TextEditor listeners.
                 if (this.oninputCallback) {
                     this.oninputCallback();
                 }
-
-                return false;
-            } else if (e.keyCode == 13) {
-                this.addToContent("\n");
-                return false;
-            }
-        }.bind(this);
-
-        this.textEditorElem.onkeypress = function(e) {
-            if (e.charCode) {
-                this.addToContent(String.fromCharCode(e.charCode));
-                return false;
-            }
-        }.bind(this);
-    }
-    TextAreaEditor.prototype = extendsObject({
-        getContent: function() {
-            return this.content || '';
+            }.bind(this);
         },
 
-        addToContent: function(newContent) {
-            var range = this.getSelectionRange();
+        deactivate: function() {
+            this.textEditorElem.onkeydown = null;
+            this.textEditorElem.oninput = null;
+        },
 
-            // Add the new content, replacing the current selection.
-            // If the selection is collapsed, just add the content
-            // at the selected position.
-            this.setContent(this.getSlice(0, range[0].index) +
-                            newContent +
-                            this.getSlice(range[1].index));
-
-            // Set the current selection after the new added character.
-            this.setSelectionRange(range[0].index + 1, range[0].index + 1);
-
-            // Notify TextEditor listeners.
-            if (this.oninputCallback) {
-                this.oninputCallback();
-            }
+        getContent: function() {
+            return this.content;
         },
 
         setContent: function(content) {
+            // Filter all the \r characters as we use \n.
+            content = content.replace("\r", "", "g");
+
             this.content = content;
 
-            if (!this.textEditorElem) {
+            // Escape the content to avoid malicious injection via innerHTML.
+            this.textEditorElem.textContent = content;
+            var html = this.textEditorElem.innerHTML;
+
+            if (!this.visible) {
                 return;
             }
 
             var toImg = function(str) {
-                return '<img src="' + emoji.strToImg(str) + '" height="' + this.font.size +
-                       'pt" width="' + this.font.size + 'pt" alt="' + str + '">';
+                var emojiData = emoji.getData(str, this.font.size);
+
+                var scale = this.font.size / emoji.squareSize;
+
+                var style = 'display:inline-block;';
+                style += 'width:' + this.font.size + 'px;';
+                style += 'height:' + this.font.size + 'px;';
+                style += 'background:url(' + emojiData.img.src + ') -' + (emojiData.x * scale) + 'px 0px no-repeat;';
+                style += 'background-size:' + (emojiData.img.naturalWidth * scale) + 'px ' + this.font.size + 'px;';
+
+                // We use <object> instead of <img> to not allow image resizing.
+                return '<object style="' + style + '" name="' + str + '"></object>';
             }.bind(this);
 
-            this.textEditorElem.innerHTML = content.replace(emoji.regEx, toImg) + "\n";
+            // Replace "\n" by <br>
+            html = html.replace("\n", "<br>", "g");
+
+            html = html.replace(emoji.regEx, toImg) + "<br>";
+
+            this.textEditorElem.innerHTML = html;
+            this.html = html;
+        },
+
+        _getNodeTextLength: function(node) {
+            if (node.nodeType == Node.TEXT_NODE) {
+                return node.textContent.length;
+            } else if (node instanceof HTMLBRElement) {
+                // Don't count the last <br>
+                return node.nextSibling ? 1 : 0;
+            } else {
+                // It should be an HTMLImageElement of a emoji.
+                return util.toCodePointArray(node.name).length;
+            }
+        },
+
+        _getSelectionOffset: function(node, offset) {
+            if (!this.visible) {
+                return 0;
+            }
+
+            if (node !== this.textEditorElem &&
+                node.parentNode !== this.textEditorElem) {
+                console.error("_getSelectionOffset called while the editor is unfocused");
+                return 0;
+            }
+
+            var selectedNode = null;
+            var count = 0;
+
+            if (node.nodeType === Node.TEXT_NODE) {
+                selectedNode = node;
+                count = offset;
+                var prev = node.previousSibling;
+                while (prev) {
+                    count += this._getNodeTextLength(prev);
+                    prev = prev.previousSibling;
+                }
+            } else {
+                var children = node.childNodes;
+                for (var i = 0; i < offset; i++) {
+                    var cur = children[i];
+                    count += this._getNodeTextLength(cur);
+                }
+                selectedNode = children[offset - 1];
+            }
+
+            return count;
         },
 
         getSelectionEnd: function() {
-            if (this.textEditorElem) {
-                var sel = window.getSelection();
-
-                if (sel.focusNode !== this.textEditorElem &&
-                    sel.focusNode.parentNode !== this.textEditorElem) {
-                    console.error("getSelectionEnd called while the editor is unfocused");
-                    return 0;
-                }
-
-                var selectedNode = null;
-                var count = 0;
-
-                if (sel.focusNode.nodeType === 3) {
-                    selectedNode = sel.focusOffset;
-                    count = sel.focusOffset;
-                    var prev = sel.focusNode.previousSibling;
-                    while (prev) {
-                        count += (prev.textContent) ? prev.textContent.length : util.toCodePointArray(prev.alt).length;
-                        prev = prev.previousSibling;
-                    }
-                } else {
-                    var children = sel.focusNode.childNodes;
-                    for (var i = 0; i < sel.focusOffset; i++) {
-                        var cur = children[i];
-                        count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
-                    }
-                    selectedNode = children[sel.focusOffset - 1];
-                }
-
-                // If the position returned is higher than the size of the content,
-                // the selected character is the additional "\n" that we have in the
-                // div innerHTML. We subtract 1 to the position to retrieve the correct
-                // value.
-                if (count > this.getSize()) {
-                    count = count - 1;
-                }
-
-                return { index: count, node: selectedNode };
-            }
-
-            return { index: 0, node: null };
+            var sel = window.getSelection();
+            return this._getSelectionOffset(sel.focusNode, sel.focusOffset);
         },
 
         getSelectionStart: function() {
-            if (this.textEditorElem) {
-                var sel = window.getSelection();
-
-                if (sel.anchorNode !== this.textEditorElem &&
-                    sel.anchorNode.parentNode !== this.textEditorElem) {
-                    console.error("getSelectionStart called while the editor is unfocused");
-                    return { index: 0, node: null };
-                }
-
-                var selectedNode = null;
-                var count = 0;
-
-                if (sel.anchorNode.nodeType === 3) {
-                    selectedNode = sel.anchorNode;
-                    count = sel.anchorOffset;
-                    var prev = sel.anchorNode.previousSibling;
-                    while (prev) {
-                        count += (prev.textContent) ? prev.textContent.length : util.toCodePointArray(prev.alt).length;
-                        prev = prev.previousSibling;
-                    }
-                } else {
-                    var children = sel.anchorNode.childNodes;
-                    for (var i = 0; i < sel.anchorOffset; i++) {
-                        var cur = children[i];
-                        count += (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
-                    }
-                    selectedNode = children[sel.anchorOffset - 1];
-                }
-
-                // If the position returned is higher than the size of the content,
-                // the selected character is the additional "\n" that we have in the
-                // div innerHTML. We subtract 1 to the position to retrieve the correct
-                // value.
-                if (count > this.getSize()) {
-                    count = count - 1;
-                }
-
-                return { index: count, node: selectedNode };
-            }
-
-            return { index: 0, node: null };
+            var sel = window.getSelection();
+            return this._getSelectionOffset(sel.anchorNode, sel.anchorOffset);
         },
 
         getSelectionRange: function() {
             var start = this.getSelectionStart();
             var end = this.getSelectionEnd();
 
-            if (start.index > end.index) {
+            if (start > end) {
                 return [ end, start ];
             }
 
@@ -351,41 +396,42 @@ var TextEditorProvider = (function() {
         },
 
         setSelectionRange: function(from, to) {
-            if (!this.textEditorElem) {
-                this.selectionRange = [from, to];
-            } else {
-                if (from != to) {
-                    console.error("setSelectionRange not supported when from != to");
-                }
+            this.selectionRange = [from, to];
+            if (!this.visible) {
+                return;
+            }
+            if (from != to) {
+                console.error("setSelectionRange not supported when from != to");
+            }
 
-                // If we're trying to set the selection to the last character and
-                // the last character is a "\n", we need to add 1 to the position
-                // because of the additional "\n" we have in the div innerHTML.
-                var size = this.getSize();
-                if (from === size && this.content[this.content.length-1] == "\n") {
-                    from = from + 1;
-                }
+            var children = this.textEditorElem.childNodes;
+            for (var i = 0; i < children.length; i++) {
+                var cur = children[i];
+                var length = this._getNodeTextLength(cur);
 
-                var children = this.textEditorElem.childNodes;
-                for (var i = 0; i < children.length; i++) {
-                    var cur = children[i];
-                    var length = (cur.textContent) ? cur.textContent.length : util.toCodePointArray(cur.alt).length;
-
-                    if (length >= from) {
-                        var range = window.getSelection().getRangeAt(0);
-                        if (cur.textContent) {
-                            range.setStart(cur, from);
-                        } else if (from === 0) {
-                            range.setStartBefore(cur);
-                        } else {
-                            range.setStartAfter(cur);
-                        }
-                        range.collapse(true);
-                        break;
+                if (length >= from) {
+                    var selection = window.getSelection();
+                    var range;
+                    if (selection.rangeCount === 0) {
+                        // XXX: This makes it so chrome does not break here, but
+                        // text boxes still do not behave correctly in chrome.
+                        range = document.createRange();
+                        selection.addRange(range);
+                    } else {
+                        range = selection.getRangeAt(0);
                     }
-
-                    from -= length;
+                    if (cur.textContent) {
+                        range.setStart(cur, from);
+                    } else if (from === 0) {
+                        range.setStartBefore(cur);
+                    } else {
+                        range.setStartAfter(cur);
+                    }
+                    range.collapse(true);
+                    break;
                 }
+
+                from -= length;
             }
         },
 
@@ -394,9 +440,9 @@ var TextEditorProvider = (function() {
         },
 
         /*
-         * The TextEditor::size() method returns the length of the content in codepoints
+         * The TextEditor::getContentSize() method returns the length of the content in codepoints
          */
-        getSize: function() {
+        getContentSize: function() {
             return util.toCodePointArray(this.content).length;
         },
 
@@ -405,94 +451,99 @@ var TextEditorProvider = (function() {
          * with the same style as the TextEditor element.
          */
         getContentHeight: function() {
-            var div = document.createElement("div");
-            div.style.setProperty("width", this.getStyle("width"));
-            div.style.setProperty("overflow", "none");
-            div.style.setProperty("word-break", "break-all");
-            div.style.setProperty("word-wrap", "break-word");
-            div.style.setProperty("white-space", "pre-wrap");
-            div.style.setProperty("position", "absolute");
-            div.style.setProperty("left", "0px");
-            div.style.setProperty("top", "0px");
-            div.style.setProperty("visibility", "hidden");
-            div.style.setProperty("display", "block");
-            div.style.setProperty("font-style", this.getStyle("font-style"));
-            div.style.setProperty("font-size", this.getStyle("font-size"));
-            div.style.setProperty("font-face", this.getStyle("font-face"));
-            div.innerHTML = this.textEditorElem.innerHTML;
-            document.body.appendChild(div);
-
+            var div = document.getElementById("hidden-textarea-editor");
+            div.style.setProperty("width", this.getWidth() + "px");
+            div.style.setProperty("font", this.font.css);
+            div.innerHTML = this.html;
             var height = div.offsetHeight;
 
-            document.body.removeChild(div);
+            div.innerHTML = "";
 
             return height;
         },
     }, CommonEditorPrototype);
 
     function PasswordEditor() {
-        this.textEditorElem = document.createElement('input');
-        this.textEditorElem.type = 'password';
-
-        this.textEditorElem.oninput = function() {
-            this.content = this.textEditorElem.value;
-            if (this.oninputCallback) {
-                this.oninputCallback();
-            }
-        }.bind(this);
+        this.textEditorElem = ePassword;
     }
 
     PasswordEditor.prototype = extendsObject({
+        activate: function() {
+            this.textEditorElem.oninput = function() {
+                this.content = ePassword.value;
+                if (this.oninputCallback) {
+                    this.oninputCallback();
+                }
+            }.bind(this);
+        },
+
+        deactivate: function() {
+            this.textEditorElem.oninput = null;
+        },
+
         getContent: function() {
-            return this.content || '';
+            return this.content;
         },
 
         setContent: function(content) {
             this.content = content;
 
-            if (this.textEditorElem) {
+            if (this.visible) {
                 this.textEditorElem.value = content;
             }
         },
 
         getSelectionStart: function() {
-            if (this.textEditorElem) {
-                return { index: this.textEditorElem.selectionStart, node: this.textEditorElem };
+            if (this.visible) {
+                return this.textEditorElem.selectionStart;
             }
 
-            return { index: 0, node: null };
+            return 0;
+        },
+
+        getSelectionEnd: function() {
+            if (this.visible) {
+                return this.textEditorElem.selectionEnd;
+            }
+
+            return 0;
+        },
+
+        getSelectionRange: function() {
+            var start = this.getSelectionStart();
+            var end = this.getSelectionEnd();
+
+            if (start > end) {
+                return [ end, start ];
+            }
+
+            return [ start, end ];
         },
 
         setSelectionRange: function(from, to) {
-            if (!this.textEditorElem) {
-                this.selectionRange = [from, to];
-            } else {
-                this.textEditorElem.setSelectionRange(from, to);
+            this.selectionRange = [from, to];
+            if (!this.visible) {
+                return;
             }
+            this.textEditorElem.setSelectionRange(from, to);
         },
 
         getSlice: function(from, to) {
             return this.content.slice(from, to);
         },
 
-        getSize: function() {
+        getContentSize: function() {
             return this.content.length;
         },
 
         getContentHeight: function() {
-            var lineHeight = this.font.class.getField("I.height.I").get(this.font);
+            var lineHeight = this.font.klass.classInfo.getField("I.height.I").get(this.font);
             return ((this.content.match(/\n/g) || []).length + 1) * lineHeight;
         },
     }, CommonEditorPrototype);
 
-    function TextEditorWrapper(constraints) {
-        this.textEditor = null;
-        this.setConstraints(constraints);
-        this.textEditor.decorateTextEditorElem();
-    }
-
-    TextEditorWrapper.prototype = {
-        setConstraints: function(constraints) {
+    return {
+        getEditor: function(constraints, oldEditor, editorId) {
             var TYPE_TEXTAREA = 'textarea';
             var TYPE_PASSWORD = 'password';
 
@@ -500,14 +551,21 @@ var TextEditorProvider = (function() {
             var CONSTRAINT_ANY = 0;
             var CONSTRAINT_PASSWORD = 0x10000;
 
-            function _createEditor(type) {
+            function _createEditor(type, constraints, editorId) {
+                var editor;
                 switch(type) {
                     case TYPE_PASSWORD:
-                        return new PasswordEditor();
-                    case TYPE_TEXTAREA:
+                        editor = new PasswordEditor();
+                        break;
+                    case TYPE_TEXTAREA: // fall through
                     default:
-                        return new TextAreaEditor();
+                        editor = new TextAreaEditor();
+                        break;
                 }
+                editor.type = type;
+                editor.constraints = constraints;
+                editor.id = editorId;
+                return editor;
             }
 
             var type = TYPE_TEXTAREA;
@@ -528,129 +586,33 @@ var TextEditorProvider = (function() {
                 }
             }
 
-            if (!this.textEditor) {
-                this.textEditor = _createEditor(type);
-                this.type = type;
-                this.constraints = constraints;
-                return;
+            var newEditor;
+
+            if (!oldEditor) {
+                newEditor = _createEditor(type, constraints, editorId);
+                return newEditor;
             }
 
-            // If the type is changed, we need to copy all the attributes/styles.
-            if (type != this.type) {
-                var newEditor = _createEditor(type);
-                if (this.textEditor.styles) {
-                    for (var styleKey in this.textEditor.styles) {
-                        newEditor.setStyle(styleKey, this.textEditor.styles[styleKey]);
-                    }
-                }
-                if (this.textEditor.attributes) {
-                    for (var attrName in this.textEditor.attributes) {
-                        newEditor.setAttribute(attrName, this.textEditor.attributes[attrName]);
-                    }
-                }
-                if (this.textEditor.focused) {
-                    newEditor.focus();
-                }
-                newEditor.setVisible(this.textEditor.getVisible());
-                if (this.textEditor.oninputCallback) {
-                    newEditor.oninput(this.textEditor.oninputCallback);
-                }
-                if (this.textEditor.parentNode) {
-                    newEditor.setParent(this.textEditor.parentNode);
-                }
-                newEditor.setContent(this.textEditor.getContent());
-
-                newEditor.font = this.textEditor.font;
-
-                this.textEditor.destroy();
-                this.textEditor = newEditor;
+            if (type === oldEditor.type) {
+                return oldEditor;
             }
 
-            this.type = type;
-            this.constraints = constraints;
-        },
+            // The type is changed and we need to copy all the attributes.
+            var newEditor = _createEditor(type, constraints, editorId);
+            ["attributes",
+             "width", "height",
+             "left", "top",
+             "backgroundColor", "foregroundColor",
+             "attached",
+             "content",
+             "font",
+             "oninputCallback"].forEach(function(attr) {
+                newEditor[attr] = oldEditor[attr];
+            });
 
-        getConstraints: function() {
-            return this.constraints || 0;
-        },
-
-        setParent: function(parentNode) {
-            this.textEditor.setParent(parentNode);
-        },
-
-        getParent: function() {
-            return this.textEditor.parentNode;
-        },
-
-        setStyle: function(styleKey, styleValue) {
-            this.textEditor.setStyle(styleKey, styleValue);
-        },
-
-        getStyle:  function(styleKey) {
-            return this.textEditor.getStyle(styleKey);
-        },
-
-        getContent: function() {
-            return this.textEditor.getContent()
-        },
-
-        setContent: function(content) {
-            this.textEditor.setContent(content);
-        },
-
-        focus: function() {
-            this.textEditor.focus();
-        },
-
-        blur: function() {
-            this.textEditor.blur();
-        },
-
-        setVisible: function(aVisible) {
-            this.textEditor.setVisible(aVisible);
-        },
-
-        getSelectionStart: function() {
-            return this.textEditor.getSelectionStart();
-        },
-
-        setSelectionRange: function(from, to) {
-            this.textEditor.setSelectionRange(from, to);
-        },
-
-        setAttribute: function(attrName, value) {
-            this.textEditor.setAttribute(attrName, value);
-        },
-
-        getAttribute: function(attrName) {
-            return this.textEditor.getAttribute(attrName);
-        },
-
-        getSize: function() {
-            return this.textEditor.getSize();
-        },
-
-        getSlice: function(from, to) {
-            return this.textEditor.getSlice(from, to);
-        },
-
-        getContentHeight: function() {
-            return this.textEditor.getContentHeight();
-        },
-
-        setFont: function(font) {
-            this.textEditor.setFont(font);
-        },
-
-        oninput: function(callback) {
-            this.textEditor.oninput(callback);
-        },
-    };
-
-    return {
-        createEditor: function(constraints) {
-            return new TextEditorWrapper(constraints);
+            // Call setVisible to update display.
+            newEditor.setVisible(oldEditor.visible);
+            return newEditor;
         }
     };
 })();
-

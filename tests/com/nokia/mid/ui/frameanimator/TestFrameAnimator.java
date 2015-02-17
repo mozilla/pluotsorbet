@@ -4,6 +4,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestFrameAnimator implements Testlet, FrameAnimatorListener {
+    public int getExpectedPass() { return 13; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         FrameAnimator animator = new FrameAnimator();
         th.check(animator.isRegistered(), false);

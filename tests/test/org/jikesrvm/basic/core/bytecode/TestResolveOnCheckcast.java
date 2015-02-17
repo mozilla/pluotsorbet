@@ -22,6 +22,9 @@ import gnu.testlet.Testlet;
  * Also described in [ 1147107 ]  unresolved instanceof etc. on &lt;null&gt; not compliant.
  */
 public class TestResolveOnCheckcast implements Testlet {
+  public int getExpectedPass() { return 1; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
 
   static interface A {
     String genString();

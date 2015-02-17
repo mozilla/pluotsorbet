@@ -21,6 +21,9 @@ import gnu.testlet.Testlet;
  * Should be tested with -X:aos:initial_compiler=opt in at least one test-configuration.
  */
 public class R1644460 implements Testlet {
+  public int getExpectedPass() { return 1; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public static float b = 0.009765625f;
   public static float a = 10.57379f;
 

@@ -4,6 +4,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestSystem implements Testlet {
+    public int getExpectedPass() { return 5; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         // Test a simple property with a constant value.
         th.check(System.getProperty("microedition.encoding"), "UTF-8");

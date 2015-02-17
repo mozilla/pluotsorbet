@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class ConditionsTest implements Testlet {
+	public int getExpectedPass() { return 19; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	public void test(TestHarness th) {
 		String a, b, c;
 		a = "smt";

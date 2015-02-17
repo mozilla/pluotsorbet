@@ -27,6 +27,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestHttpUrl implements Testlet {
+    public int getExpectedPass() { return 110; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 5; }
     /**
      * Runs all the tests.
      */

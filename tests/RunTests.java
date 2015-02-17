@@ -6,6 +6,7 @@ import com.sun.cldchi.jvm.JVM;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.*;
+import java.lang.Exception;
 import java.util.Vector;
 
 public class RunTests extends MIDlet {
@@ -55,7 +56,8 @@ public class RunTests extends MIDlet {
         }
 
         public void report() {
-            System.out.println(testName + ": " + pass + " pass, " + fail + " fail, " + unknownPass + " unknown pass");
+            System.out.println(testName + ": " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " +
+                               unknownPass + " unknown pass");
         }
 
         public int passed() {
@@ -75,7 +77,7 @@ public class RunTests extends MIDlet {
         }
     };
 
-    int pass = 0, fail = 0, knownFail = 0, unknownPass = 0;
+    int classPass = 0, classFail = 0, pass = 0, fail = 0, knownFail = 0, unknownPass = 0;
 
     void runTest(String name) {
         name = name.replace('/', '.');
@@ -100,9 +102,32 @@ public class RunTests extends MIDlet {
             harness.fail("Can't instantiate test");
         }
         Testlet t = (Testlet) obj;
-        t.test(harness);
-        if (harness.failed() > 0)
-            harness.report();
+        try {
+            t.test(harness);
+        } catch (Exception e) {
+            System.err.println(e);
+            harness.fail("Test threw an unexpected exception");
+        }
+        harness.report();
+        boolean classPassed = true;
+        if (harness.passed() != t.getExpectedPass()) {
+            classPassed = false;
+            System.err.println(name + ": test expected " + t.getExpectedPass() + " passes, got " + harness.passed());
+        }
+        if (harness.failed() != t.getExpectedFail()) {
+            classPassed = false;
+            System.err.println(name + ": test expected " + t.getExpectedFail() + " failures, got " + harness.failed());
+        }
+        if (harness.knownFailed() != t.getExpectedKnownFail()) {
+            classPassed = false;
+            System.err.println(name + ": test expected " + t.getExpectedKnownFail() + " known failures, got " + harness.knownFailed());
+        }
+        if (classPassed) {
+            classPass++;
+        } else {
+            classFail++;
+            System.err.println(name + ": class fail");
+        }
         pass += harness.passed();
         fail += harness.failed();
         knownFail += harness.knownFailed();
@@ -110,7 +135,7 @@ public class RunTests extends MIDlet {
     }
 
     public void startApp() {
-        String arg = getAppProperty("arg-0");
+        String arg = getAppProperty("arg-0").replace('.', '/');
 
         long then = JVM.monotonicTimeMillis();
 
@@ -128,7 +153,7 @@ public class RunTests extends MIDlet {
                     System.err.println("can't find test " + arg);
                 }
 
-                arg = getAppProperty("arg-" + ++i);
+                arg = getAppProperty("arg-" + ++i).replace('.', '/');
             }
         } else {
             for (int n = 0; n < Testlets.list.length; ++n) {
@@ -138,8 +163,9 @@ public class RunTests extends MIDlet {
                 runTest(name);
             }
         }
-        System.out.println("DONE: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " +
-                           unknownPass + " unknown pass, " + (JVM.monotonicTimeMillis() - then) + "ms");
+        System.out.println("TOTALS: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " +
+                           unknownPass + " unknown pass");
+        System.out.println("DONE: " + classPass + " class pass, " + classFail + " class fail, "  + (JVM.monotonicTimeMillis() - then) + "ms");
     }
 
     public void pauseApp() {

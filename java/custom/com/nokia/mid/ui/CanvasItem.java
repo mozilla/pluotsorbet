@@ -52,20 +52,7 @@ public abstract class CanvasItem {
     native public void setPosition0(int x, int y);
 
     public void setPosition(int x, int y) {
-        // The passed coordinate is relative to the parent canvas, we need to add up
-        // the anchor value of the parent to get the right coordinate in HTML.
-        if (!(parent instanceof Canvas)) {
-            setPosition0(x, y);
-            return;
-        }
-
-        Display display = ((Canvas)parent).getCurrentDisplay();
-        if (display == null) {
-            setPosition0(x, y);
-            return;
-        }
-
-        setPosition0(display.getDisplayableAnchorX() + x, display.getDisplayableAnchorY() + y);
+        setPosition0(x, y);
     }
 
     // Sets the Z-position, or the elevation, of the item.

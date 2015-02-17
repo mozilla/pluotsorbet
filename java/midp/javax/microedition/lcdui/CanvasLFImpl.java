@@ -27,29 +27,26 @@
 package javax.microedition.lcdui;
 
 /* import  javax.microedition.lcdui.KeyConverter; */
-import com.sun.midp.chameleon.layers.VirtualKeyListener;
-
-import com.sun.midp.i18n.ResourceConstants;
-
 import java.util.Vector;
 import java.util.Enumeration;
 
-/**
-* This is the look amps; feel implementation for Canvas.
-*/
-class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyListener {
+import  com.sun.midp.configurator.Constants;
 
+/**
+ * Look and feel implementation of <code>Canvas</code> based on 
+ * platform widget.
+ */
+class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF {
 
     /**
-     * Constructor.
-     * @param canvas - the canvas being stored in this object.
+     * LF implementation of <code>Canvas</code>.
+     * @param canvas the <code>Canvas</code> associated with this 
+     *               <code>CanvasLFImpl</code>
      */
     CanvasLFImpl(Canvas canvas) {
         super(canvas);
+    
         this.canvas = canvas;
-        if (currentDisplay != null) {
-            isDisplayRotated = currentDisplay.wantRotation;
-        }
     }
 
     // ************************************************************
@@ -57,7 +54,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     // ************************************************************
 
     /**
-     * Notifies look &amps; feel object that repaint of a (x, y, width, height)
+     * Notifies look &amp; feel object that repaint of a (x, y, width, height)
      * area is needed.
      *
      * SYNC NOTE: The caller of this method handles synchronization.
@@ -69,24 +66,26 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
      * @param target an optional paint target to receive the paint request
      *               when it returns via callPaint()
      */
-    public void lRepaint(int x, int y, int width, int height, Object target) {
-        lRequestPaint(x, y, width, height);
+    public void lRepaint(int x, int y, int width, int height, 
+                            Object target) {
+        lRequestPaint(x, y, width, height, target);
     }
     
     /**
-     * Notifies that repaint of the entire Canvas look &amps; feel is
-     * needed and should repaint the viewport area.
+     * Notifies that repaint of the entire <code>Canvas</code> look&amp;feel 
+     * is needed.
+     * Repaints the viewport area.
      *
      * SYNC NOTE: The caller of this method handles synchronization.
      */
     public void lRepaint() {
-        lRequestPaint();
+        lRequestPaintContents();
     }
 
     /**
-     * Request serviceRepaints from current Display.
-     * SYNC NOTE: No locking is held when
-     * this function is called because Display.serviceRepaints()
+     * Request serviceRepaints from current <code>Display</code>.
+     * SYNC NOTE: Unlike most other LF methods, no locking is held when
+     * this function is called because <code>Display.serviceRepaints()</code>
      * needs to handle its own locking.
      */
     public void uServiceRepaints() {
@@ -100,86 +99,49 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     }
 
     /**
-     * Notify this Canvas it is being shown on the given Display
+     * Notify this <code>Canvas</code> that it is being shown on the 
+     * given <code>Display</code>.
      */
     public void uCallShow() {
 
-        // Check full screen mode and call lCallShow below
+        // Create native resource with title and ticker
         super.uCallShow();
 
-        // SYNC NOTE: Call into app code. So do it outside LUICDLock
+        // Notify the canvas subclass before showing native resource
         synchronized (Display.calloutLock) {
             try {
                 canvas.showNotify();
-                /* For MMAPI VideoControl in a Canvas */
-                if (mmHelper != null) {
-                    for (Enumeration e = embeddedVideos.elements(); 
-                                              e.hasMoreElements();) {
-                        mmHelper.showVideo(e.nextElement());
-                    }
-                }
+		        /* For MMAPI VideoControl in a Canvas */
+		        if (mmHelper != null) {
+		            for (Enumeration e = embeddedVideos.elements();
+                                                    e.hasMoreElements();) {
+			        mmHelper.showVideo(e.nextElement());
+		            }
+		        }
             } catch (Throwable t) {
                 Display.handleThrowable(t);
             }
         }
+
     }
 
     /**
-     * Prepare this CanvasLF to show.
-     * Override the version in DisplayableLFImpl to perform layout.
-     */
-    void lCallShow() {
-        int oldState = state;
-        super.lCallShow();
-        if (oldState != FROZEN) {
-            layout();
-        }
-    }
-
-    /**
-     * Notify this Canvas it is being hidden on the given Display
-     */
-    public void uCallHide() {
-
-        int oldState = state;
-
-        super.uCallHide();
-
-        // SYNC NOTE: Call into app code. So do it outside LUICDLock
-        synchronized (Display.calloutLock) {
-            if (oldState == SHOWN) { 
-                try {
-                    canvas.hideNotify();
-                    if (mmHelper != null) {
-                        for (Enumeration e = embeddedVideos.elements(); 
-                                                  e.hasMoreElements();) {
-                            mmHelper.hideVideo(e.nextElement());
-                        }
-                    }
-                } catch (Throwable t) {
-                    Display.handleThrowable(t);
-                }
-                needRepaintBackground = true;
-            }
-        }
-    }
-
-    /**
-     * Notify this <code>Canvas</code> that it is being frozen on the 
+     * Notify this <code>Canvas</code> that it is being hidden on the 
      * given <code>Display</code>.
      */
-    public void uCallFreeze() {
+    public void uCallHide() {
         
         int oldState = state;
 
         // Delete native resources including title and ticker
-        super.uCallFreeze();
+        super.uCallHide();
 
         // Notify canvas subclass after hiding the native resource
         synchronized (Display.calloutLock) {
             if (oldState == SHOWN) {
                 try {
                     canvas.hideNotify();
+        		    /* For MMAPI VideoControl in a Canvas */
                     if (mmHelper != null) {
                         for (Enumeration e = embeddedVideos.elements();
                                                   e.hasMoreElements();) {
@@ -189,82 +151,79 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
                 } catch (Throwable t) {
                     Display.handleThrowable(t);
                 }
-                needRepaintBackground = true;
-           }
+            }
         }
     }
 
+     /**
+      * Notify this <code>Canvas</code> that it is being frozen on the
+      * given <code>Display</code>.
+      */
+
+     public void uCallFreeze() {
+ 
+         int oldState = state;
+ 
+         // Delete native resources including title and ticker
+         super.uCallFreeze();
+ 
+         // Notify canvas subclass after hiding the native resource
+         synchronized (Display.calloutLock) {
+             if (oldState == SHOWN) {
+                 try {
+                     canvas.hideNotify();
+                    // For MMAPI VideoControl in a Canvas 
+                    if (mmHelper != null) {
+                        for (Enumeration e = embeddedVideos.elements();
+                                                  e.hasMoreElements();) {
+                            mmHelper.hideVideo(e.nextElement());
+                        }
+                    }
+                 } catch (Throwable t) {
+                     Display.handleThrowable(t);
+                 }
+             }
+         }
+     }
+
+
     /**
-     * Paint this Canvas
+     * Paint this <code>Canvas</code>.
      *
-     * @param g the Graphics to paint to
+     * @param g the <code>Graphics</code> to paint to
      * @param target the target Object of this repaint
      */
     public void uCallPaint(Graphics g, Object target) {
-
-        synchronized (Display.LCDUILock) {
-            // SYNC NOTE: We assert the super function will not call into
-            // app code. So we can call it inside sync block.
-            super.lCallPaint(g, target);
-
-            // Optimize to not call paint at all
-            // when clipping is out of bound (relative to viewport)
-            if (g.getClipY() + g.getClipHeight() <= 0) {
-                return;
-            }
-        }
+        super.uCallPaint(g, target);
 
         // We prevent the Canvas from drawing outside of the
-        // allowable viewport - such as over the command labels
-        // or over the theme area.
+        // allowable viewport.
         // We also need to preserve the original translation.
-        g.preserveMIDPRuntimeGC(0, 0, viewport[WIDTH], viewport[HEIGHT]);
+//        g.preserveMIDPRuntimeGC(x, y, WIDTH, HEIGHT);
 
-        // Reset the graphics context according to
-        // the spec. requirement. This is a must
-        // before we call canvas's paint(g) since
-        // the title or ticker drawing routines may
-        // change the GC before.
+        // Reset the graphics context according to the spec. requirement. 
+        // This is a must before we call canvas's paint(g) since the 
+        // title or ticker drawing routines may change the GC before.
         g.resetGC();
 
-        synchronized (Display.calloutLock) {
-            // We need repaint background if an orientation has changed
-            if (currentDisplay != null) {
-                boolean isRotated = currentDisplay.wantRotation;
-                if (isDisplayRotated != isRotated) {
-                    isDisplayRotated = isRotated;
-                    needRepaintBackground = true;
-                }
-            }
-            try {
-                // Paint black background under the canvas
-                boolean isShown = canvas.isShown();
-                if (needRepaintBackground && isShown) {
-                    // We should repaint whole canvas: remove the clipping
-                    g.setClip(0, 0, canvas.getWidth(), canvas.getHeight());
-                    // Draw a black rectangle
-                    int savedColor = g.getColor();
-                    g.setColor(0, 0, 0);
-                    g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-                    g.setColor(savedColor);
-                }
-                needRepaintBackground = !isShown;
+        try {
+            synchronized (Display.calloutLock) {
                 canvas.paint(g);
-                // If there are any video players in this canvas,
-                // let the helper class invoke video rendering
-                // Update frames of any video players displayed on this Canvas
-                if (mmHelper != null) {
-                    for (Enumeration e = embeddedVideos.elements(); 
-                                                  e.hasMoreElements();) {
-                        mmHelper.paintVideo(e.nextElement(), g);
-                    }
-                }
-            } catch (Throwable t) {
-                Display.handleThrowable(t);
             }
+        } catch (Throwable t) {
+            Display.handleThrowable(t);
         }
 
-        g.restoreMIDPRuntimeGC();
+        // If there are any video players in this canvas,
+        // let the helper class invoke video rendering
+	// Update frames of any video players displayed on this Canvas
+	if (mmHelper != null) {
+            for (Enumeration e = embeddedVideos.elements();
+                                            e.hasMoreElements();) {
+		mmHelper.paintVideo(e.nextElement(), g);
+            }
+	}
+//        g.restoreMIDPRuntimeGC();
     }
 
     // ************************************************************
@@ -272,7 +231,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     // ************************************************************
 
     /**
-     * Handle a key press
+     * Handle a key press.
      *
      * @param keyCode The key that was pressed
      */
@@ -289,7 +248,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     }
 
     /**
-     * Handle a key release
+     * Handle a key release.
      *
      * @param keyCode The key that was released
      */
@@ -306,7 +265,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     }
 
     /**
-     * Handle a repeated key press
+     * Handle a repeated key press.
      *
      * @param keyCode The key that was pressed
      */
@@ -323,7 +282,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     }
 
     /**
-     * Handle a pointer press event
+     * Handle a pointer press event.
      *
      * @param x The x coordinate of the press
      * @param y The y coordinate of the press
@@ -339,7 +298,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     }
 
     /**
-     * Handle a pointer release event
+     * Handle a pointer release event.
      *
      * @param x The x coordinate of the release
      * @param y The y coordinate of the release
@@ -355,7 +314,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     }
 
     /**
-     * Handle a pointer drag event
+     * Handle a pointer drag event.
      *
      * @param x The x coordinate of the drag
      * @param y The y coordinate of the drag
@@ -372,13 +331,13 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
 
     /**
      * Add embedded video player.
-     * These are called by <code>MMHelperImpl</code>, whenever a video 
+     * This is called by <code>MMHelperImpl</code>, whenever a video 
      * player joins this canvas.
      *
      * @param video The player joining this canvas.
      */
      void addEmbeddedVideo(Object video) {
-         embeddedVideos.addElement(video);
+	 embeddedVideos.addElement(video);
      }
 
     /**
@@ -389,7 +348,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
      * @param video The player leaving this canvas.
      */
      void removeEmbeddedVideo(Object video) {
-         embeddedVideos.removeElement(video);
+	 embeddedVideos.removeElement(video);
      }
 
 
@@ -397,11 +356,13 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     //  private methods
     // ************************************************************
 
+
     /**
      * Test to see if the given keyCode should be sent to
-     * the application
+     * the application.
      *
      * @param keyCode the key code to pass to the application
+     *
      * @return true if the key should be allowed
      */
     private boolean allowKey(int keyCode) {
@@ -411,8 +372,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
 
         switch (KeyConverter.getGameAction(keyCode)) {
             case -1:
-                // Invalid keycode, don't
-                // block this key.
+                // Invalid keycode, don't block this key.
                 return true;
             case Canvas.UP:
             case Canvas.DOWN:
@@ -423,8 +383,7 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
             case Canvas.GAME_B:
             case Canvas.GAME_C:
             case Canvas.GAME_D :
-                // don't generate key events for
-                // the defined game keys
+                // don't generate key events for the defined game keys
                 return false;
             default:
                 return true;
@@ -432,35 +391,34 @@ class CanvasLFImpl extends DisplayableLFImpl implements CanvasLF, VirtualKeyList
     }
 
     /**
-     * Canvas being stored in this object.
+     * Create and show native resource for this <code>Canvas</code>.
+     */
+    void createNativeResource() {
+        nativeId = createNativeResource0(canvas.title,
+                    canvas.ticker == null ? null : canvas.ticker.getString());
+    }
+
+    /**
+     * Create and show native resource for this <code>Canvas</code>.
+     * @param title title of the canvas
+     * @param tickerText text for the ticker
+     * @return native resource ID
+     */
+    private native int createNativeResource0(String title, String tickerText);
+
+    /**
+     * <code>Canvas</code> being stored in this object.
      */
     Canvas canvas;
 
-    /**
-     * Is a repaint of black background needed?
-     */
-    private boolean needRepaintBackground = true;
-    
-    /**
-     * Is the display rotated?
-     */
-    private boolean isDisplayRotated = false;
-    
     /**
      * A vector of embedded video players.
      */
     private Vector embeddedVideos = new Vector(1);
 
     /**
-     * The MMHelperImpl instance.
+     * The <code>MMHelperImpl</code> instance.
      */
     private static MMHelperImpl mmHelper = MMHelperImpl.getInstance();
 
-    public void processKeyPressed(int keyCode) {
-        uCallKeyPressed(keyCode);
-    }
-
-    public void processKeyReleased(int keyCode) {
-        uCallKeyReleased(keyCode);
-    }
 }

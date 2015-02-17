@@ -16,6 +16,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 class TestFinally implements Testlet {
+  public int getExpectedPass() { return 4; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   private static int foo() {
     try {
       int a = 1;

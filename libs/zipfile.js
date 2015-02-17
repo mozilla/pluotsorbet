@@ -320,6 +320,8 @@ function inflate(bytes) {
   return new Uint8Array(buffer.buffer, 0, bufferLength);
 }
 
+var arrays = J2ME.ArrayUtilities.makeArrays(256);
+
 function ZipFile(buffer) {
   var bytes = new Uint8Array(buffer);
   var view = new DataView(buffer);
@@ -359,9 +361,15 @@ function ZipFile(buffer) {
     var local_header_offset = view.getInt32(pos + 42, true);
     // read the filename
     pos += 46;
+    if (arrays.length < filename_len) {
+      arrays = J2ME.ArrayUtilities.makeArrays(filename_len);
+    }
+    var array = arrays[filename_len];
     var filename = "";
-    for (var n = 0; n < filename_len; ++n)
-      filename += String.fromCharCode(bytes[pos++]);
+    for (var n = 0; n < filename_len; ++n) {
+      array[n] = String.fromCharCode(bytes[pos++]);
+    }
+    filename = array.join("");
     // locate the compressed data
     var local_extra_len = view.getInt16(local_header_offset + 28, true);
     var data_offset = local_header_offset + 30 + filename_len + local_extra_len;

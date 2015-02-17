@@ -30,6 +30,9 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestUrl implements Testlet {
+    public int getExpectedPass() { return 28; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     private void testUrl(String url, boolean isCorrect) {

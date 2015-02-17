@@ -26,16 +26,11 @@
 
 package javax.microedition.lcdui;
 
-import com.sun.midp.lcdui.Text;
 import com.sun.midp.configurator.Constants;
 import javax.microedition.lcdui.ChoiceGroup.CGElement;
-import com.sun.midp.chameleon.skins.ChoiceGroupSkin;
-import com.sun.midp.chameleon.skins.resources.ChoiceGroupResources;
-import com.sun.midp.chameleon.skins.ScreenSkin;
-import com.sun.midp.chameleon.layers.ScrollIndLayer;
 
 /**
- * This is the look &amps; feel implementation for ChoiceGroup.
+ *  This is the look and feel implementation for ChoiceGroup.
  */
 class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
 
@@ -45,19 +40,13 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      */
     ChoiceGroupLFImpl(ChoiceGroup choiceGroup) {
         super(choiceGroup);
+
         cg = choiceGroup;
 
-        ChoiceGroupResources.load();
-        
-        if (cg.numOfEls > 0) {
-            if (cg.choiceType != Choice.MULTIPLE) {
-                selectedIndex = 0;
-                cg.cgElements[selectedIndex].setSelected(true);        
-            }
-            hilightedIndex = -1;
+        if (cg.numOfEls > 0 && cg.choiceType != Choice.MULTIPLE) {
+            selectedIndex = 0;
+            cg.cgElements[selectedIndex].setSelected(true);
         }
-        contentX = getContentX(cg.choiceType);
-        elHeights = new int[cg.numOfEls + ChoiceGroup.GROW_FACTOR];
     }
 
     // *******************************************************
@@ -65,50 +54,8 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
     // ********************************************************
 
     /**
-     * Sets the content size in the passed in array.
-     * Content is calculated based on the availableWidth.
-     * size[WIDTH] and size[HEIGHT] should be set by this method.
-     * @param size The array that holds Item content size and location 
-     *             in Item internal bounds coordinate system.
-     * @param width The width available for this Item
-     */
-    public void lGetContentSize(int size[], int width) {
-        // Allow lists to be as big at least as the view port
-        if ((cg.owner != null) && (cg.owner instanceof List)) {
-            size[WIDTH] = cg.owner.getLF().lGetWidth();
-            int eHeight = calculateHeight(
-                       getAvailableContentWidth(cg.choiceType, 
-                                                size[WIDTH]));
-            size[HEIGHT] = (cg.owner.getLF().lGetHeight() > eHeight ? 
-                    cg.owner.getLF().lGetHeight() : eHeight);
-        } else {
-
-            if (cg.numOfEls == 0) {
-                size[WIDTH] = size[HEIGHT] = 0;
-            }
-
-            int availableWidth = getAvailableContentWidth(cg.choiceType, 
-                                                          width);
-
-            int eHeight = calculateHeight(availableWidth);
-            int maxContentWidth = getMaxElementWidth(availableWidth);
-
-            if (maxContentWidth <= availableWidth) {
-            // note that width - availableWidth equals
-            // choice image area all horizontal padding;
-            // thus width - availableWidth + maxContentWidth is
-            // the width of the widest element in ChoiceGroup with padding
-                size[WIDTH] = width - availableWidth + maxContentWidth;
-            } else {
-                size[WIDTH] = width;
-            }
-            size[HEIGHT] = eHeight;
-        }
-    }
-
-    /**
-     * Notifies L&F that an element was inserted into the 
-     * <code>ChoiceGroup</code> at the elementNum specified.
+     * Notifies Look &amps; Feel that an element was inserted into the 
+     * <code>ChoiceGroup</code> at the the elementNum specified.
      *
      * @param elementNum the index of the element where insertion occurred
      * @param stringPart the string part of the element to be inserted
@@ -116,105 +63,88 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      * or <code>null</code> if there is no image part
      */
     public void lInsert(int elementNum, String stringPart, Image imagePart) {
-        // Implicit, popup and exclusive 
-        // (in those case there is always a selection)
+        // make sure that there is a default selection
         if (cg.choiceType != Choice.MULTIPLE) {
             if (selectedIndex == -1) {
                 selectedIndex = 0;
                 cg.cgElements[selectedIndex].setSelected(true);
-            } else if (elementNum <= selectedIndex) {
+            } else if (elementNum < selectedIndex &&
+                       nativeId == DisplayableLFImpl.INVALID_NATIVE_ID) {
+                // an element was inserted before selectedIndex and
+                // selectedIndex has to be updated
                 selectedIndex++;
             }
         }
 
-        // set hilighted index (it always exists)
-        if (hasFocus && (elementNum <= hilightedIndex || hilightedIndex == -1)) {
-            hilightedIndex++;
-        }
-        
-        // Note that cg.numOfEls is already + 1
+        // Only update native resource if it exists.
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            ImageData imagePartData = null;
 
-        // elHeights is created in the constructor and cannot be null
-        if (cg.numOfEls - 1 == elHeights.length) { // full capacity reached
-            int[] newArray = 
-                new int[cg.numOfEls + ChoiceGroup.GROW_FACTOR];
-            System.arraycopy(elHeights, 0, newArray, 0, elementNum);
-            System.arraycopy(elHeights, elementNum, newArray, elementNum + 1, 
-                             cg.numOfEls - elementNum - 1);
-            elHeights = newArray; // swap them
+            if (imagePart != null) {
+              imagePartData = imagePart.getImageData();
+            }
 
-        } else if (elementNum != cg.numOfEls - 1) {
-            // if we're not appending
-            System.arraycopy(elHeights, elementNum, elHeights, elementNum + 1,
-                             cg.numOfEls - elementNum - 1);
+            insert0(nativeId, elementNum, 
+                    stringPart, imagePartData, 
+                    cg.cgElements[elementNum].selected);
         }
-                
+
         lRequestInvalidate(true, true);
     }
 
     /**
-     * Notifies L&F that an element referenced by <code>elementNum</code>
-     * was deleted in the corresponding ChoiceGroup.
+     * Notifies Look &amps; Feel that an element referenced by
+     * <code>elementNum</code> was deleted in the corresponding
+     * ChoiceGroup.
      *
      * @param elementNum the index of the deleted element
      */
     public void lDelete(int elementNum) {
+
+        // adjust selected index
         if (cg.numOfEls == 0) {
             selectedIndex = -1;
-            hilightedIndex = -1;
-        } else {
-                // adjust hilighted index
-            if (elementNum < hilightedIndex) {
-                hilightedIndex--;
-            } else if (elementNum == hilightedIndex &&
-                       hilightedIndex == cg.numOfEls) {
-                hilightedIndex = cg.numOfEls - 1;
-            }
-
-            if (cg.choiceType != ChoiceGroup.MULTIPLE) {
-                if (elementNum < selectedIndex) {
-                    selectedIndex--;
-                } else if (elementNum == selectedIndex &&
-                           selectedIndex == cg.numOfEls) {
-                    // last element is selected and deleted - 
-                    // new last should be selected
-                    selectedIndex = cg.numOfEls - 1;
+        } else if (cg.choiceType != ChoiceGroup.MULTIPLE) {
+            if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+                if (selectedIndex != -1 && selectedIndex < cg.numOfEls) {
+                    cg.cgElements[selectedIndex].setSelected(false);
                 }
-                cg.cgElements[selectedIndex].setSelected(true);
+                selectedIndex = getSelectedIndex0(nativeId);
             }
+
+            if (elementNum < selectedIndex) {
+                selectedIndex--;
+            } else if (elementNum == selectedIndex &&
+                       selectedIndex == cg.numOfEls) {
+                // last element is selected and deleted - 
+                // new last should be selected
+                selectedIndex = cg.numOfEls - 1;
+            }
+            cg.cgElements[selectedIndex].setSelected(true);
         }
 
-        // setup new elements array (note that numOfEls is already -1)
-        if (elementNum != cg.numOfEls) {
-            System.arraycopy(elHeights, elementNum + 1, elHeights,
-                             elementNum, cg.numOfEls - elementNum);
-        }
-        
-        // free some memory... (efficient for very large arrays) 
-        if (elHeights.length > (ChoiceGroup.GROW_FACTOR * 10) &&
-            elHeights.length / cg.numOfEls >= 2) {
-            int[] newArray = new int[cg.numOfEls + ChoiceGroup.GROW_FACTOR];
-            System.arraycopy(elHeights, 0, newArray, 0, cg.numOfEls);
-            elHeights = newArray;
-            newArray = null;
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            delete0(nativeId, elementNum, selectedIndex);
         }
 
         lRequestInvalidate(true, true);
     }
 
     /**
-     * Notifies L&F that all elements 
+     * Notifies Look &amps; Feel that all elements 
      * were deleted in the corresponding ChoiceGroup.
      */
     public void lDeleteAll() {
-        selectedIndex = hilightedIndex = -1;
-        elHeights = new int[ChoiceGroup.GROW_FACTOR]; // initial size
+        // Only update native resource if it exists.
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            deleteAll0(nativeId);
+        }
+        selectedIndex = -1;
         lRequestInvalidate(true, true);
-        
     }
 
     /**
-     * Notifies L&F that the <code>String</code> and 
+     * Notifies Look &amps; Fell that the <code>String</code> and 
      * <code>Image</code> parts of the
      * element referenced by <code>elementNum</code> were set in
      * the corresponding ChoiceGroup,
@@ -226,27 +156,29 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      * if there is no image part
      */
     public void lSet(int elementNum, String stringPart, Image imagePart) {
+        // Only update native resource if it exists.
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            ImageData imagePartData = null;
+            if (imagePart != null) {
+              imagePartData = imagePart.getImageData();
+            }
+
+            // for selected value to be passed correctly to the 
+            // newly created element we have to do the sync first
+            // (alternatively we could rely on native to maintain
+            // the selected state correctly)
+            syncSelectedIndex();
+            syncSelectedFlags();
+            set0(nativeId, elementNum, 
+                 stringPart, imagePartData, 
+                 cg.cgElements[elementNum].selected);
+        }
         lRequestInvalidate(true, true);
     }
 
-
     /**
-     * Notify this itemLF that its owner screen has changed.
-     * Clear internal state if its new owner is null.
-     *
-     * @param oldOwner old owner screen before this change. New owner
-     *                 can be found in Item model.
-     */
-    public void lSetOwner(Screen oldOwner) {
-        super.lSetOwner(oldOwner);
-        if (item.owner != null && item.owner instanceof List) {
-            drawsTraversalIndicator = false;
-        }
-    }
-
-    /**
-     * Notifies L&F that an element was selected/deselected in the 
-     * corresponding ChoiceGroup.
+     * Notifies Look &amps; Feel that an element was selected (or
+     * deselected) in the corresponding ChoiceGroup.
      *
      * @param elementNum the number of the element. Indexing of the
      * elements is zero-based
@@ -254,37 +186,70 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      * <code>false=not</code> selected
      */
     public void lSetSelectedIndex(int elementNum, boolean selected) {
-        setSelectedIndex(elementNum, selected);
-        lRequestPaint();
+        // Only update native resource if it exists.
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            setSelectedIndex0(nativeId, elementNum, selected);
+        } else {
+            if (cg.choiceType == Choice.MULTIPLE) {
+                cg.cgElements[elementNum].setSelected(selected);
+            } else {
+                // selected item cannot be deselected in 
+                // EXCLUSIVE, IMPLICIT, POPUP ChoiceGroup
+                if (!selected ||
+                    (/* choiceType != Choice.IMPLICIT && */
+                     selectedIndex == elementNum)) {
+                    return;
+                }
+                
+                cg.cgElements[selectedIndex].setSelected(false);
+                selectedIndex = elementNum;
+                cg.cgElements[selectedIndex].setSelected(true);
+            }
+        }
     }
 
     /**
-     * Notifies L&F that selected state was changed on several elements 
-     * in the corresponding MULTIPLE ChoiceGroup.
+     * Notifies Look &amps; Feel that selected state was changed on
+     * several elements in the corresponding MULTIPLE ChoiceGroup
+     * (cannot be null).
      * @param selectedArray an array in which the method collect the
      * selection status
      */
     public void lSetSelectedFlags(boolean[] selectedArray) {
-        lRequestPaint();
+        // Only update native resource if it exists.
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            setSelectedFlags0(nativeId, selectedArray, 
+                              selectedArray.length);
+        }
     }
 
     /**
-     * Notifies L&F that a new text fit policy was set in the corresponding
-     * ChoiceGroup.
+     * Notifies Look &amps; Feel that a new text fit policy was set
+     * in the corresponding ChoiceGroup.
      * @param fitPolicy preferred content fit policy for choice elements
      */
     public void lSetFitPolicy(int fitPolicy) {
-        lRequestInvalidate(true, true);
+        // Only update native resource if it exists.
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            setFitPolicy0(nativeId, fitPolicy);
+	    lRequestInvalidate(true, true);
+        }
     }
 
     /**
-     * Notifies L&F that a new font was set for an element with the 
-     * specified elementNum in the corresponding ChoiceGroup.
+     * Notifies Look &amps; Feel that a new font was set for an
+     * element with the  specified elementNum in the 
+     * corresponding ChoiceGroup.
      * @param elementNum the index of the element, starting from zero
      * @param font the preferred font to use to render the element
      */
     public void lSetFont(int elementNum, Font font) {
-        lRequestInvalidate(true, true);
+        // Only update native resource if it exists.
+        if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+            setFont0(nativeId, elementNum, 
+                     font.getFace(), font.getStyle(), font.getSize());
+	    lRequestInvalidate(true, true);
+        }
     }
 
     /**
@@ -294,7 +259,7 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      *           set by the app
      */
     public Font getDefaultFont() {
-        return getTextFont(cg.choiceType, false);
+	return Theme.curContentFont;
     }
 
     /**
@@ -302,12 +267,18 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      * @return currently selected index
      */
     public int lGetSelectedIndex() {
-        return selectedIndex;
+        if (nativeId == DisplayableLFImpl.INVALID_NATIVE_ID) {
+            return selectedIndex;
+        } else {
+            // sync with native
+            syncSelectedIndex();
+            return selectedIndex;
+        }
     }
 
 
     /**
-     * Gets selected flags (only elements corresponding to the 
+     * Gets selected flags.(only elements corresponding to the 
      * elements are expected to be filled). ChoiceGroup sets the rest to
      * false
      * @param selectedArray_return to contain the results
@@ -315,10 +286,21 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      */
     public int lGetSelectedFlags(boolean[] selectedArray_return) {
         int countSelected = 0;
-        for (int i = 0; i < cg.numOfEls; i++) {
-            selectedArray_return[i] = cg.cgElements[i].selected;
-            if (selectedArray_return[i]) {
-                countSelected++;
+        if (nativeId == DisplayableLFImpl.INVALID_NATIVE_ID) {
+            for (int i = 0; i < cg.numOfEls; i++) {
+                selectedArray_return[i] = cg.cgElements[i].selected;
+                if (selectedArray_return[i]) {
+                    countSelected++;
+                }
+            }
+            
+        } else {
+            countSelected = getSelectedFlags0(nativeId, selectedArray_return,
+                                              cg.numOfEls);
+            
+            // sync with native
+            for (int i = 0; i < cg.numOfEls; i++) {
+                cg.cgElements[i].setSelected(selectedArray_return[i]);
             }
         }
         return countSelected;
@@ -332,13 +314,59 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
      * @return true if the element is selected, false - otherwise
      */
     public boolean lIsSelected(int elementNum) {
-        return cg.cgElements[elementNum].selected;
+        if (nativeId == DisplayableLFImpl.INVALID_NATIVE_ID) {
+            return cg.cgElements[elementNum].selected;
+        }
+        
+        return isSelected0(nativeId, elementNum);
     }
 
     // *****************************************************
     //  Package private methods
     // *****************************************************
 
+    /**
+     * Called by event delivery to notify an ItemLF in current FormLF
+     * of a change in its peer state.
+     *
+     * @param hint index of the element whose selection status has changed
+     * @return always true so ItemStateListener should be notified
+     */
+    boolean uCallPeerStateChanged(int hint) {
+	// Any hint means selection has change
+	// For types other than IMPLICIT List, notify itemStateListener.
+	if (cg.choiceType != Choice.IMPLICIT) {
+	    return true; // notify itemStateListener
+	}
+
+	// For IMPLICIT List, notify commandListener
+	List list;
+	CommandListener cl;
+	Command cmd;
+
+	synchronized (Display.LCDUILock) {
+	    list = (List)cg.owner;
+
+	    if (list.listener == null ||
+		list.selectCommand == null ||
+		cg.numOfEls == 0) {
+		return false; // No itemStateListener to notify
+	    }
+
+	    cl = list.listener;
+	    cmd = list.selectCommand;
+	}
+	
+	try {
+	    synchronized (Display.calloutLock) {
+		cl.commandAction(cmd, list);
+	    }
+	} catch (Throwable thr) {
+	    Display.handleThrowable(thr);
+	}
+
+	return false; // No itemStateListener to notify
+    }
 
     /**
      * Determine if this Item should have a newline after it
@@ -367,673 +395,35 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
     }
 
     /**
-     * Handle traversal within this ChoiceGroup
-     *
-     * @param dir the direction of traversal
-     * @param viewportWidth the width of the viewport
-     * @param viewportHeight the height of the viewport
-     * @param visRect the in/out rectangle for the internal traversal location
-     * @return True if traversal occurred within this ChoiceGroup
+    /**
+     * Override <code>ItemLFImpl</code> method to sync with native resource
+     * before hiding the native resource. Selection of native resource will 
+     * be preserved before the resource is hidden.
      */
-    boolean lCallTraverse(int dir, int viewportWidth, int viewportHeight,
-                          int[] visRect) 
-    {
-        boolean ret = super.lCallTraverse(dir, viewportWidth, viewportHeight, visRect);
-        // all choice items are out of viewport.
-        // Probably justr the label (if it's present) is visible on the screen
-        int contentY = contentBounds[Y];
-        int contentH = contentBounds[HEIGHT];
+    void lHideNativeResource() {
+	// sync selected flags and selectedIndex
+	// before any visible native resource is deleted.
+	if (nativeId != DisplayableLFImpl.INVALID_NATIVE_ID) {
+	    syncSelectedIndex();
+	    syncSelectedFlags();
+	}
 
-
-        if (contentY > visRect[Y] + visRect[HEIGHT] ||
-            contentY + contentH < visRect[Y]) {
-            return ret;
-        }
-
-        // If we have no elements - just return false
-        
-        if (cg.numOfEls > 0) {
-            int newHeight = visRect[HEIGHT];
-            int newHilightedIndex = hilightedIndex;
-            if (isInternalCycle) {
-                if (hilightedIndex == (cg.numOfEls-1) && Canvas.DOWN == dir) {
-                    newHilightedIndex = 0;
-                    lScrollToItem(visRect, newHilightedIndex); 
-                } else if (newHilightedIndex == 0 && Canvas.UP == dir) {
-                    newHilightedIndex = cg.numOfEls-1;
-                    lScrollToItem(visRect, newHilightedIndex); 
-                } 
-            }
-            int newY = contentY;
-            boolean resetVisRect = false;
-
-            if (traversedIn) {
-                for (int i = 0; i < newHilightedIndex; i++) {
-                    newY += elHeights[i];
-                }
-                newHeight = elHeights[newHilightedIndex];
-
-                
-                // highlighted index is out of visible rect
-                // move highlight to the best place
-                if (newY + newHeight > visRect[Y] + visRect[HEIGHT]) {
-                    newHilightedIndex =
-                        getIndexByPointer(visRect[X],
-                                          visRect[Y] + visRect[HEIGHT] - 1);
-                } else if (newY < visRect[Y]) {
-                    newHilightedIndex = getIndexByPointer(visRect[X], visRect[Y] + 1);
-                }
-
-                resetVisRect = ret = (newHilightedIndex != hilightedIndex);
-                
-                // if the visRect does not contain highlighted item
-                // don't adjust the highlighted index once again
-                if (!ret) {
-                    switch (dir) {
-                    case Canvas.UP:
-                        if (hilightedIndex > 0) {
-                            if (newY >= visRect[Y]) {
-                                newHeight = elHeights[--newHilightedIndex];
-                                newY -=newHeight;
-                            }
-                            ret = true;
-                        }
-                        break;
-                    case Canvas.DOWN:
-                        if (hilightedIndex < (cg.numOfEls - 1)) {
-                            if (newY + newHeight <= visRect[Y] + visRect[HEIGHT]) {
-                                newY +=elHeights[newHilightedIndex];
-                                newHeight = elHeights[++newHilightedIndex];
-                            }
-                            ret = true;
-                        }
-                        break;
-                    case CustomItem.NONE:
-                        // don't move the highlight 
-                        ret = true;
-                        break;
-                    }
-                }
-            } else {
-
-                if (cg.choiceType == Choice.IMPLICIT &&
-                    pendingIndex == -1) {
-                    pendingIndex = selectedIndex;
-                }
-
-                if (pendingIndex != -1) {
-                    newHilightedIndex = pendingIndex;
-                    pendingIndex = -1;
-                } else if (newHilightedIndex == -1) {
-                    newHilightedIndex = getIndexByPointer(contentBounds[X], dir == Canvas.UP ?
-                                      contentY + contentH - 1 :
-                                      contentY);
-                }
-                
-                if (newHilightedIndex != -1) {
-                    traversedIn = true;
-                    ret = cg.numOfEls > 1;
-                    resetVisRect = true;
-                }
-            }
-            if (hilightedIndex != newHilightedIndex &&
-                newHilightedIndex != -1) {
-
-                if (resetVisRect) {
-                    newY = contentY;
-                    for (int i = 0; i < newHilightedIndex; i++) {
-                        newY += elHeights[i];
-                    }
-                    newHeight = elHeights[newHilightedIndex];
-                }
-
-                if (cg.choiceType == Choice.IMPLICIT) {
-                    setSelectedIndex(newHilightedIndex, true);
-                }
-                hilightedIndex = newHilightedIndex;
-                lRequestPaint();
-            }
-            visRect[Y] = newY;
-            visRect[HEIGHT] = newHeight;
-        }
-        return ret;
+	// Hide native resource
+        super.lHideNativeResource();
     }
 
     /**
-     *  If hilighted element of item is not completely visible should make it visible
-     * @param viewport
-     * @param visRect the in/out rectangle for the internal traversal location
-     * @return
+     * Creates and sets  native resource for current ChoiceGroup.
+     * Override function in ItemLFImpl.
+     * @param ownerId Owner screen's native resource id
      */
-    boolean lScrollToItem(int[] viewport, int[] visRect) {
-        return lScrollToItem(visRect, hilightedIndex ); 
-    }
-
-    /**
-     *  Set visRect as need to pHilightedIndex
-     * @param pHighlightedIndex the index of the highlighted element
-     * @param visRect the in/out rectangle for the internal traversal location
-     * @return true if 
-     */
-    boolean lScrollToItem(int[] visRect, int pHilightedIndex ) {
-        int contentY = contentBounds[Y];
-
-        if (cg.numOfEls > 0) {
-            int newY = contentY + ChoiceGroupSkin.PAD_H;
-            if (traversedIn) {
-                for (int i = 0; i < pHilightedIndex; i++) {
-                    newY += elHeights[i];
-                }
-             
-                if (newY + elHeights[pHilightedIndex] > visRect[Y] + visRect[HEIGHT] || newY < visRect[Y]) {
-                    visRect[Y] = bounds[Y] + newY;
-                    visRect[HEIGHT] = elHeights[pHilightedIndex];
-                    return true;
-                }
-            }
-        }
-        return false; 
-    }
-
-    /**
-     * Traverse out of this ChoiceGroup
-     */
-    void lCallTraverseOut() {
-        super.lCallTraverseOut();
-        traversedIn = false;
-        hilightedIndex = -1;
-    }
-
-    /**
-     * Determine if Form should not traverse to this ChoiceGroup
-     *
-     * @return true if Form should not traverse to this ChoiceGroup
-     */
-    boolean shouldSkipTraverse() {
-        if ((cg.label == null || cg.label.equals("")) &&
-            (cg.numOfEls == 0)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Get the index of choice item contains the pointer 
-     * @param x the x coordinate of the pointer
-     * @param y the y coordinate of the pointer
-     * @return the index of choice item
-     */      
-    int getIndexByPointer(int x, int y) {
-
-        int id = -1;
-        if (cg.numOfEls > 0) {
-            //if pointer was dragged outside the item.
-            if (contentBounds[X] <= x &&
-                x <= contentBounds[X] + contentBounds[WIDTH] &&
-                contentBounds[Y] <= y &&
-                y <= contentBounds[Y] + contentBounds[HEIGHT]) { 
-                int visY = contentBounds[Y];
-                for (int i = 0; i < cg.numOfEls; i++) {
-                    visY += elHeights[i];
-                    if (visY >= y) {
-                        id = i;
-                        break;
-                    }
-                }
-            }
-        }
-        return id;
-    }
-
-    /**
-     * Called by the system to signal a pointer press
-     *
-     * @param x the x coordinate of the pointer down
-     * @param y the y coordinate of the pointer down
-     *
-     * @see #getInteractionModes
-     */
-    void uCallPointerPressed(int x, int y) {
-        itemWasPressed = true;
-        int i = getIndexByPointer(x, y);
-        if (i >= 0) {
-            hilightedIndex = pendingIndex = i;
-            hasFocusWhenPressed = cg.cgElements[hilightedIndex].selected; 
-            if (cg.choiceType == Choice.IMPLICIT) {               
-                setSelectedIndex(hilightedIndex, true);
-            }
-            uRequestPaint();
-            //            getCurrentDisplay().serviceRepaints(cg.owner.getLF()); //make the change shown immediately for better user experience
-        }
-
-    }
-
-    /**
-     * Called by the system to signal a pointer release
-     *
-     * @param x the x coordinate of the pointer up
-     * @param y the x coordinate of the pointer up
-     */
-    void uCallPointerReleased(int x, int y) {
-        if (!itemWasPressed)
-            return;
-        int i = getIndexByPointer(x, y);
-        if (i == hilightedIndex) { // execute command only if no drag event occured
-            if (cg.choiceType == Choice.IMPLICIT) {
-                if (hasFocusWhenPressed || item.owner.numCommands <= 1) {
-                    uCallKeyPressed(Constants.KEYCODE_SELECT);
-                }
-            } else {
-                uCallKeyPressed(Constants.KEYCODE_SELECT);
-            }
-            uRequestPaint();
-        }
-        itemWasPressed = false;
-    }
-    
-    /**
-     * Handle a key press event
-     *
-     * @param keyCode the key which was pressed
-     */
-    void uCallKeyPressed(int keyCode) {
-        Form form = null;
-        List list = null;
-        Command cmd = null;
-        CommandListener cl = null;
-
-        synchronized (Display.LCDUILock) {
-
-            if (keyCode != Constants.KEYCODE_SELECT || (cg.numOfEls == 0)) {
-                return;
-            }
-
-            switch (cg.choiceType) {
-                case Choice.EXCLUSIVE:
-                    if (hilightedIndex == selectedIndex || hilightedIndex < 0) {
-                        return;
-                    }
-                    setSelectedIndex(hilightedIndex, true);
-                    if (cg.owner instanceof Form) {
-                        form = (Form)cg.owner; // notify itemStateListener
-                    }
-                    break;
-
-                case Choice.MULTIPLE:
-                    if (hilightedIndex < 0) {
-                        return;
-                    }
-                    setSelectedIndex(hilightedIndex,
-                        !cg.cgElements[hilightedIndex].selected);
-                    if (cg.owner instanceof Form) {
-                        form = (Form)cg.owner; // notify itemStateListener
-                    }
-                    break;
-
-                case Choice.IMPLICIT:
-                    list = (List)cg.owner;
-                    if (list.listener != null && list.selectCommand != null) {
-                        cl =  list.listener;
-                        cmd = list.selectCommand;
-                    }
-                    break;
-            }
-
-            lRequestPaint();
-
-        } // synchronized (LCDUILock)
-         
-        // For IMPLICIT List, notify command listener
-        if (cl != null) {
-            try {
-                // SYNC NOTE: We lock on calloutLock around any calls
-                // into application code.
-                synchronized (Display.calloutLock) {
-                    cl.commandAction(cmd, list);
-                }
-            } catch (Throwable thr) {
-                Display.handleThrowable(thr);
-            }
-        } else if (form != null) {
-            // For EXCLUSIVE and MULTIPLE CG, notify item state listener
-            form.uCallItemStateChanged(cg);
-        }
-    }
-
-    /**
-     * Get the total element height of this CGroup
-     *
-     * @param width the desired width for this CG
-     * @return the total element height
-     */
-    int calculateHeight(int width) {
-        int eHeight = 0;
-        for (int x = 0; x < cg.numOfEls; x++) {
-            eHeight += calculateElementHeight(cg.cgElements[x], x, width);
-        }
-        return eHeight;
-
-    }
-
-    /**
-     * Get the width of the widest element in choice group
-     *
-     * @param availableWidth The width available for rendering
-     *        content of the element
-     * @return the width of the widest element in the choice group
-     */
-    int getMaxElementWidth(int availableWidth) {
-        int width = 0;
-        int maxWidth = 0;
-        
-        for (int i = 0; i < cg.numOfEls; i++) {    
-            width = contentX;
-            if (cg.cgElements[i].imageEl != null) {
-                width += ChoiceGroupSkin.WIDTH_IMAGE +
-                    ChoiceGroupSkin.PAD_H;
-            }
-            
-            if ((cg.cgElements[i].stringEl != null) && 
-                (cg.cgElements[i].stringEl.length() > 0)) {
-                width += (2 * ChoiceGroupSkin.PAD_H) +
-                    Text.getWidestLineWidth(
-                                            cg.cgElements[i].stringEl,
-                                            width,
-                                            availableWidth, 
-                                            cg.cgElements[i].getFont());
-            }
-            if (width > maxWidth) {
-                maxWidth = width;
-            }
-        }
-        return maxWidth;
-    }
-
-    /**
-     * Sets or unsets selection of an element with elementNum index.
-     * @param elementNum index of the element which selection has to 
-     *        to changed
-     * @param selected - true if the element is to be selected,
-     *                   false - otherwise
-     */
-    void setSelectedIndex(int elementNum, boolean selected) {
-        if (cg.choiceType == Choice.MULTIPLE) {
-            cg.cgElements[elementNum].setSelected(selected);
-        } else {
-            // selected item cannot be deselected in 
-            // EXCLUSIVE, IMPLICIT, POPUP ChoiceGroup
-            if (!selected || 
-                (cg.choiceType != Choice.IMPLICIT && 
-                 selectedIndex == elementNum)) {
-                return;
-            }
-
-            if (hilightedIndex != elementNum &&
-                elementNum >= 0 && cg.choiceType == Choice.IMPLICIT) {
-                hilightedIndex = elementNum;
-            }
-
-            cg.cgElements[selectedIndex].setSelected(false);
-            selectedIndex = elementNum;
-            cg.cgElements[selectedIndex].setSelected(true);
-        }
-    }
-    
-    /**
-     * Paints the content area of this ChoiceGroup. 
-     * Graphics is translated to contents origin.
-     * @param g The graphics where Item content should be painted
-     * @param w The width available for the Item's content
-     * @param h The height available for the Item's content
-     */
-    void lPaintContent(Graphics g, int w, int h) {
-        lPaintElements(g, w, h);
-    }
-
-    /**
-     * Paints the all the elements onto the graphics that translated to
-     * the elements origin.
-     * @param g The graphics where elements should be painted
-     * @param w The width available for the elements content
-     * @param h The height available for the elements content
-     */
-    void lPaintElements(Graphics g, int w, int h) {
-
-        Image choiceImg;
-        int textOffset;
-        boolean hilighted;
-
-        int cType = cg.choiceType;
-        
-        int contentW = getAvailableContentWidth(cType, w);
-        int translatedY = 0;
-
-        // IMPL_NOTE: Right now we have no vertical padding per element,
-        // nor per line in the element
-        // ChoiceImage and content images are drawn at y = 0
-
-        // IMPL_NOTE: Content image area is always of PREFERRED_IMG_W and
-        // PREFERRED_IMG_H (even if the image is smaller or there is space)
-        // and it is always painted at y = 0 of the element
-
-        // Note that lPaintElements is always called after 
-        // ItemLFImpl.lDoInternalLayout() which will make sure that
-        // calculateElementHeight() was called
-
-        int mode = (cg.fitPolicy == Choice.TEXT_WRAP_OFF) ?
-                    (Text.NORMAL | Text.TRUNCATE) : Text.NORMAL;
-
-        int offSetX = ChoiceGroupSkin.PAD_H;
-
-        // start for
-        for (int iX, iY, iW, iH, i = 0; i < cg.numOfEls; i++) {
-
-            // note that background was cleared
-            // we will need to repaint background only for
-            // hilighted portion
-
-            choiceImg = getChoiceImage(cType,
-                                       cType == Choice.MULTIPLE ?
-                                           cg.cgElements[i].selected :
-                                           i == selectedIndex);
-            
-            if (choiceImg != null) {
-                if (ScreenSkin.RL_DIRECTION) {
-                    g.drawImage(choiceImg, bounds[WIDTH]
-                            - 2 * ChoiceGroupSkin.PAD_H - choiceImg.getWidth(),
-                            0, Graphics.LEFT | Graphics.TOP);
-                    offSetX = ChoiceGroupSkin.PAD_H;
-                } else {
-                    g.drawImage(choiceImg, 0, 0,
-                            Graphics.LEFT | Graphics.TOP);
-                    offSetX = ChoiceGroupSkin.PAD_H + choiceImg.getWidth();
-                }
-            } else {
-                g.setColor(ChoiceGroupSkin.COLOR_FG);
-                switch (cType) {
-                    case Choice.MULTIPLE:
-                        offSetX = ChoiceGroupSkin.PAD_H +
-                            ChoiceGroupSkin.WIDTH_IMAGE;
-                        g.drawRect(1, 1,
-                                   ChoiceGroupSkin.WIDTH_IMAGE - 3,
-                                   ChoiceGroupSkin.HEIGHT_IMAGE - 3);
-                        if (cg.cgElements[i].selected) {
-                            g.fillRect(3, 3,
-                                ChoiceGroupSkin.WIDTH_IMAGE - 6,
-                                ChoiceGroupSkin.HEIGHT_IMAGE - 6);
-                        }
-                        break;
-                    case Choice.EXCLUSIVE:
-                        offSetX = ChoiceGroupSkin.PAD_H +
-                            ChoiceGroupSkin.WIDTH_IMAGE;
-                        g.drawArc(1, 1,
-                            ChoiceGroupSkin.WIDTH_IMAGE - 2,
-                            ChoiceGroupSkin.HEIGHT_IMAGE - 2, 0, 360);
-                        if (i == selectedIndex) {
-                            g.fillArc(3, 3,
-                                ChoiceGroupSkin.WIDTH_IMAGE - 5,
-                                ChoiceGroupSkin.HEIGHT_IMAGE - 5, 0, 360);
-                        }
-                        break;
-                }
-            }
-                g.translate(offSetX, 0);
-
-            hilighted = (i == hilightedIndex && hasFocus);
-
-            if (hilighted) {
-                g.setColor(ScreenSkin.COLOR_BG_HL);
-                g.fillRect(-ChoiceGroupSkin.PAD_H, 0,
-                           ChoiceGroupSkin.PAD_H + contentW +
-                           ChoiceGroupSkin.PAD_H,
-                           elHeights[i]);
-            }
-
-            textOffset = 0;
-            if (cg.cgElements[i].imageEl != null) {
-
-
-                iX = g.getClipX();
-                iY = g.getClipY();
-                iW = g.getClipWidth();
-                iH = g.getClipHeight();
-
-                if (ScreenSkin.RL_DIRECTION) {
-                    if (choiceImg != null) {
-                        textOffset = w - ChoiceGroupSkin.WIDTH_IMAGE - choiceImg.getWidth() - 2 * ChoiceGroupSkin.PAD_H;
-                    } else {
-                        textOffset = w - ChoiceGroupSkin.WIDTH_IMAGE - ChoiceGroupSkin.PAD_H;                        
-                    }
-                }
-                g.clipRect(textOffset, 0,
-                           ChoiceGroupSkin.WIDTH_IMAGE,
-                           ChoiceGroupSkin.HEIGHT_IMAGE);
-                g.drawImage(cg.cgElements[i].imageEl,
-                            textOffset , 0,
-                            Graphics.LEFT | Graphics.TOP);
-                g.setClip(iX, iY, iW, iH);
-                textOffset = ChoiceGroupSkin.WIDTH_IMAGE +
-                        ChoiceGroupSkin.PAD_H;
-            }
-
-            g.translate(0, -1);
-            Text.paint(g, cg.cgElements[i].stringEl,
-                       cg.cgElements[i].getFont(),
-                       ChoiceGroupSkin.COLOR_FG,
-                       ScreenSkin.COLOR_FG_HL,
-                       contentW, elHeights[i], textOffset,
-                       (hilighted) ? mode | Text.INVERT : mode, null);
-            g.translate(-offSetX, elHeights[i] + 1);
-            translatedY += elHeights[i];
-
-        } // end for
-
-        g.translate(0, -translatedY);
-    }
-
-    /**
-     * Returns true if label and content can be placed on the same line.
-     * If this function returns always false then content will be
-     * always put on a new line in relation to label.
-     * 
-     * @param labelHeight The height available for the label
-     * @return true If label and content can be placed on the same line; 
-     *              otherwise - false.
-     */
-    boolean labelAndContentOnSameLine(int labelHeight) {
-        return cg.choiceType == Choice.POPUP ? 
-               super.labelAndContentOnSameLine(labelHeight) :
-               false;
-    }
-    /**
-     * Returns the font to use when rendering a choice element
-     * based on the boolean hilighted flag being passed in.
-     *
-     * @param type choicegroup type used to decide what font to return
-     * @param hilighted used to decide on hilighted font or normal font
-     * @return the font to use to render text
-    */
-    public static Font getTextFont(int type, boolean hilighted) {
-         return (hilighted) ? ChoiceGroupSkin.FONT_FOCUS : 
-            ChoiceGroupSkin.FONT;
-    }
-
-    /**
-     * Returns the available content width to render a choice element
-     * for the passed in choicegroup type and given total width.
-     *
-     * @param type choicegroup type
-     * @param w given width, used to calculate available width for content
-     * @return the available content width to render a choice element
-     */
-    static int getAvailableContentWidth(int type, int w) {
-        
-        w -= (2 * ChoiceGroupSkin.PAD_H); // Implicit
-        
-        switch (type) {
-        case Choice.EXCLUSIVE:
-        case Choice.MULTIPLE:
-            w -= (ChoiceGroupSkin.WIDTH_IMAGE + ChoiceGroupSkin.PAD_H);
-            break;
-            
-        case Choice.POPUP:
-            if (ChoiceGroupSkin.IMAGE_BUTTON_ICON != null) {
-                w -= ChoiceGroupSkin.IMAGE_BUTTON_ICON.getWidth();
-            } else {
-                w -= 11;
-            }
-            break;
-        }
-        
-        return w;
-    }
-
-    /**
-     * Returns the x-location where the content should be rendered within
-     * a choice element given the choicegroup type.
-     *
-     * @param type choicegroup type
-     * @return the x-location where to start rendering choice element
-     *         content
-     */
-    static int getContentX(int type) {
-        switch (type) {
-            case Choice.EXCLUSIVE:
-            case Choice.MULTIPLE:
-                return ((2 * ChoiceGroupSkin.PAD_H) +
-                    ChoiceGroupSkin.WIDTH_IMAGE);            
-        }
-        return ChoiceGroupSkin.PAD_H;
-    }
-
-    /**
-     * Returns the choice image (checkbox/radio button) based on the
-     * passed in choicegroup type.
-     *
-     * @param type choicegroup type
-     * @param on boolean indicating whether to return the 
-     *           "CHOICE_ON" image or the "CHOICE_OFF" image
-     * @return the CHOICE_ON or CHOICE_OFF image as requested
-     */
-    static Image getChoiceImage(int type, boolean on) {
-        switch (type) {
-        case Choice.EXCLUSIVE:
-            if (ChoiceGroupSkin.IMAGE_RADIO == null) {
-                return null;
-            }
-            return (on ? ChoiceGroupSkin.IMAGE_RADIO[1] : 
-                ChoiceGroupSkin.IMAGE_RADIO[0]);
-            
-        case Choice.MULTIPLE:
-            if (ChoiceGroupSkin.IMAGE_CHKBOX == null) {
-                return null;
-            }
-            return (on ? ChoiceGroupSkin.IMAGE_CHKBOX[1] :  
-                ChoiceGroupSkin.IMAGE_CHKBOX[0]);
-
-        default: // IMPLICIT or POPUP
-            return null;
-        }
+    void createNativeResource(int ownerId) {
+        nativeId = createNativeResource0(ownerId, cg.label, 
+					 (cg.owner instanceof List ? 
+					  -1 : cg.layout),
+                                         cg.choiceType, cg.fitPolicy, 
+                                         cg.cgElements, cg.numOfEls, 
+                                         selectedIndex);
     }
 
     // *****************************************************
@@ -1041,70 +431,190 @@ class ChoiceGroupLFImpl extends ItemLFImpl implements ChoiceGroupLF {
     // *****************************************************
 
     /**
-     * Calculate height of an choice group element.
-     *
-     * @param cgEl the element to calculate
-     * @param i index of the element
-     * @param availableWidth the tentative width
-     * @return the height under the given width
+     * Read and save user selection from native resource.
      */
-    private int calculateElementHeight(CGElement cgEl, int i, 
-                                       int availableWidth) 
-    {
-
-        // IMPL_NOTE there is an assumption here that text height is always
-        // taller then the choice image and taller then the content image
-
-        elHeights[i] = 0;
-
-        int textOffset = (cgEl.imageEl == null) ? 0 : 
-            ChoiceGroupSkin.WIDTH_IMAGE + 
-            ChoiceGroupSkin.PAD_H;
-        
-        Font fnt = cgEl.getFont();
-        
-        if (cg.fitPolicy == ChoiceGroup.TEXT_WRAP_OFF) {
-            elHeights[i] += fnt.getHeight();
-        } else {
-            elHeights[i] += Text.getHeightForWidth(cgEl.stringEl, fnt,
-                                                    availableWidth, textOffset);
+    private void syncSelectedIndex() {
+        if (cg.choiceType != Choice.MULTIPLE) {
+            int newSelectedIndex = getSelectedIndex0(nativeId);
+            if (selectedIndex != newSelectedIndex) {
+                if (selectedIndex != -1) {
+                    cg.cgElements[selectedIndex].setSelected(false);
+                }
+                selectedIndex = newSelectedIndex;
+                if (selectedIndex != -1) {
+                    cg.cgElements[selectedIndex].setSelected(true);
+                }
+            }
         }
- 
-        return elHeights[i];
     }
 
-    /** ChoiceGroup associated with this ChoiceGroupLF */
+    /**
+     * Read and save user selection from native resource.
+     */
+    private void syncSelectedFlags() {
+        if (cg.numOfEls > 0 && cg.choiceType == Choice.MULTIPLE) {
+            boolean[] selectedArray_return = new boolean[cg.numOfEls];
+            
+            getSelectedFlags0(nativeId, selectedArray_return,
+                              cg.numOfEls);
+            
+            for (int i = 0; i < cg.numOfEls; i++) {
+                cg.cgElements[i].setSelected(selectedArray_return[i]);
+            }
+        }
+    }
+
+    /**
+     * KNI function that creates native resource for current ChoiceGroup.
+     * @param ownerId Owner screen's native resource id (MidpDisplayable *)
+     * @param label string to be used as label for this ChoiceGroup
+     * @param layout layout directive associated with this <code>Item</code>
+     * @param choiceType should be EXCLUSIVE, MULTIPLE, IMPLICIT, POPUP
+     * @param fitPolicy should be TEXT_WRAP_DEFAULT, TEXT_WRAP_ON, or
+     *                    TEXT_WRAP_OFF
+     * @param cgElements array of CGElement that stores such data as
+     *                   image, text, font, selection state per element
+     * @param numChoices number of valid elements in cgElements array
+     * @param selectedIndex index of a currently selected element
+     *                      (has no meaning for MULTIPLE ChoiceGroup)
+     * @return native resource id (MidpItem *) of this ChoiceGroup
+     */
+    private native int createNativeResource0(int ownerId, String label, 
+					     int layout,
+                                             int choiceType, int fitPolicy,
+                                             CGElement []cgElements,
+                                             int numChoices,
+                                             int selectedIndex);
+
+
+    /**
+     * KNI function that notifies native resource of a new element
+     * inserted prior to the element specified
+     * 
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param elementNum the index of an element where insertion is to occur
+     * @param stringPart the string part of the element to be inserted
+     * @param imagePart the image part of the element to be inserted
+     * @param selected the selected state of the element to be inserted
+     */
+    private native void insert0(int nativeId, int elementNum, 
+                                String stringPart, ImageData imagePart,
+                                boolean selected);
+
+    /**
+     * KNI function that notifies native resource of a specified element
+     * being deleted in the corresponding ChoiceGroup.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param elementNum the index of an element to be deleted
+     * @param selectedIndex the index of an element to be selected after the
+     *        deletion is done (has no meaning for MULTIPLE ChoiceGroup)
+     */
+    private native void delete0(int nativeId, int elementNum, 
+                                int selectedIndex); 
+
+    /**
+     * KNI function that notifies native resource that all elements were
+     * deleted in the corresponding ChoiceGroup.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     */
+    private native void deleteAll0(int nativeId);
+
+    /**
+     * KNI function that notifies native resource of a specified element
+     * being set in the corresponding ChoiceGroup.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param elementNum the index of an element to be set
+     * @param stringPart the string part of the element to be set
+     * @param imagePart the image part of the element to be set
+     * @param selected the selected state of the element to be set
+     */
+    private native void set0(int nativeId, int elementNum, 
+                             String stringPart, ImageData imagePart, 
+                             boolean selected);
+
+    /**
+     * KNI function that notifies native resource of an element's new selected
+     * state in the corresponding ChoiceGroup.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param elementNum the index of an element which selected state changed
+     * @param selected the new selected state
+     */
+    private native void setSelectedIndex0(int nativeId, int elementNum,
+                                          boolean selected);
+    /**
+     * KNI function that notifies native resource of new selected
+     * states in the corresponding ChoiceGroup.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param selectedArray array with new selected states
+     * @param numSelectedArray number of elements in selectedArray to be used
+     */
+    private native void setSelectedFlags0(int nativeId, 
+                                          boolean []selectedArray,
+                                          int numSelectedArray);
+    /**
+     * KNI function that notifies native resource of fit policy change
+     * in the corresponding ChoiceGroup.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param fitPolicy new fit policy (can be TEXT_WRAP_OFF, TEXT_WRAP_ON,
+     *                  or TEXT_WRAP_DEFAULT)
+     */
+    private native void setFitPolicy0(int nativeId, int fitPolicy);
+
+    /**
+     * KNI function that notifies native resource of an element's new font
+     * setting in the corresponding ChoiceGroup.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param elementNum the index of an element which font has changed
+     * @param face of the newly set font
+     * @param style of the newly set font 
+     * @param size of newly set font
+     */
+    private native void setFont0(int nativeId, int elementNum,
+                                 int face, int style, int size);
+
+    /**
+     * KNI function that gets index of a currently selected index from 
+     * the ChoiceGroup's native resource.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @return index of the currently selected element
+     */
+    private native int getSelectedIndex0(int nativeId);
+
+    /**
+     * KNI function that queries the state of all elements in the native
+     * resource and returns it in the passed in selectedArray array.
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param selectedArray to contain the results
+     * @param numOfEls number of elements in selectedArray
+     * @return the number of elements selected in the native resource
+     */
+    private native int getSelectedFlags0(int nativeId, 
+                                         boolean[] selectedArray,
+                                         int numOfEls);
+    /**
+     * KNI function that queries the state of an element in the native
+     * resource
+     *
+     * @param nativeId native resource id (MidpItem *) of this ChoiceGroup
+     * @param elementNum the index of an element which state is queried
+     * @return the current state of an element in the nativer resource
+     */
+    private native boolean isSelected0(int nativeId, int elementNum);
+
+    /** ChoiceGroup associated with this ChoiceGroupLF. */
     ChoiceGroup cg;
 
     /**
-     * The currently selected index of this ChoiceGroup (-1 by default)
+     * The currently selected index of this ChoiceGroup (-1 by default).
      */
     int selectedIndex = -1;
-
-    /**
-     * The currently highlighted index of this ChoiceGroup (-1 by default)
-     */
-    int hilightedIndex = -1;
-
-    int pendingIndex = -1;
-    /**
-     * Stores the x-location of where the choice element content 
-     * would begin.
-     */
-    private int contentX = 0;
-
-    /**
-     * The array containing the individual heights of each element,
-     * based on the preferred layout width.
-     */
-    int[] elHeights;
-
-    /**
-     * A flag indicating if traversal has occurred into this
-     * CG on a prior lCallTraverse. Its reset to false again
-     * in lCallTraverseOut().
-     */
-    boolean traversedIn;
-
-    boolean hasFocusWhenPressed; // = false 
 }

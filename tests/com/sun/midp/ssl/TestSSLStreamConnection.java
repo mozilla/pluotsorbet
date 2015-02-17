@@ -13,14 +13,18 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
 public class TestSSLStreamConnection implements Testlet {
+    public int getExpectedPass() { return 0; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 1; }
     static final String SOCKET_URL = "socket://localhost:54443";
     static final String HOST = "localhost";
     static final int PORT = 54443;
     static final String MESSAGE = "I haven't stopped thinking about recreating that pluot sorbet.";
-    static final WebPublicKeyStore KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
+    WebPublicKeyStore KEY_STORE;
     TestHarness th;
 
     public void test(TestHarness th) {
+        KEY_STORE = WebPublicKeyStore.getTrustedKeyStore();
         this.th = th;
 
         try {

@@ -21,6 +21,9 @@ import gnu.testlet.Testlet;
  * Should be tested with -X:aos:initial_compiler=opt in at least one test-configuration.
  */
 public class R1657236 implements Testlet {
+  public int getExpectedPass() { return 1; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 0; }
   public void test(TestHarness th) {
     th.check(Float.toString(-0F), "-0.0");
   }

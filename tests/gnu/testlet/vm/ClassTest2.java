@@ -5,6 +5,9 @@ import java.util.Date;
 import gnu.testlet.*;
 
 public class ClassTest2 implements Testlet {
+	public int getExpectedPass() { return 11; }
+	public int getExpectedFail() { return 0; }
+	public int getExpectedKnownFail() { return 0; }
 	public void test(TestHarness th) {
 	    try {
 			Class c = Class.forName("java.util.Date");

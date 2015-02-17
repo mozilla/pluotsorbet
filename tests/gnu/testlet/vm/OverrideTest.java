@@ -3,6 +3,9 @@ package gnu.testlet.vm;
 import gnu.testlet.*;
 
 public class OverrideTest implements Testlet {
+    public int getExpectedPass() { return 2; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     static int overridden() {
         return 1;
     }

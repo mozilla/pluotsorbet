@@ -34,6 +34,9 @@ import com.sun.midp.lcdui.EventConstants;
  * Tests for the KeyConverter utility class.
  */
 public class TestKeyConverter implements Testlet {
+    public int getExpectedPass() { return 82; }
+    public int getExpectedFail() { return 0; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     /**
