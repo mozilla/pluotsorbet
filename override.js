@@ -42,14 +42,6 @@ function asyncImpl(returnKind, promise) {
   $.pause("Async");
 }
 
-Override["com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;"] = function(string) {
-  return J2ME.newString(decodeURIComponent(J2ME.fromJavaString(string)));
-};
-
-Override["com/ibm/oti/connection/file/Connection.encode.(Ljava/lang/String;)Ljava/lang/String;"] = function(string) {
-  return J2ME.newString(J2ME.fromJavaString(string).replace(/[^a-zA-Z0-9-_\.!~\*\\'()/:]/g, encodeURIComponent));
-};
-
 // The following Permissions methods are overriden to avoid expensive calls to
 // DomainPolicy.loadValues. This has the added benefit that we avoid many other
 // computations.
