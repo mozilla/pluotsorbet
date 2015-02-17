@@ -201,6 +201,9 @@ module J2ME {
       value: Uint16Array;
       offset: number;
       count: number;
+      _offset: number;
+      _count: number
+      _value: string;
     }
 
     export interface Thread extends java.lang.Object {

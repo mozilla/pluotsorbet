@@ -1754,7 +1754,16 @@ module J2ME {
     if (!javaString) {
       return null;
     }
-    return util.fromJavaChars(javaString.value, javaString.offset, javaString.count);
+    var o = javaString.offset;
+    var c = javaString.count;
+    if (javaString._value !== undefined && javaString._offset === o && javaString._count === c) {
+      return javaString._value;
+    }
+    // Cache decoded string. The buffer is immutable, but I think that the offset or count can change.
+    javaString._value = util.fromJavaChars(javaString.value, o, c);
+    javaString._offset = o;
+    javaString._count = c;
+    return javaString._value;
   }
 
   export function checkDivideByZero(value: number) {
