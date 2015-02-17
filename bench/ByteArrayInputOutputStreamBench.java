@@ -45,7 +45,7 @@ public class ByteArrayInputOutputStreamBench {
       try {
           long start, time;
 
-           byte[] array = generateArray();
+          byte[] array = generateArray();
 
           start = JVM.monotonicTimeMillis();
           for (int i = 0; i < 250; i++) {

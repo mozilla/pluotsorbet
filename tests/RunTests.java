@@ -126,6 +126,7 @@ public class RunTests extends MIDlet {
             classPass++;
         } else {
             classFail++;
+            System.err.println(name + ": class fail");
         }
         pass += harness.passed();
         fail += harness.failed();

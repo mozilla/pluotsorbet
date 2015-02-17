@@ -437,20 +437,6 @@ var currentlyFocusedTextEditor;
     var BOTTOM = 32;
     var BASELINE = 64;
 
-    function withGraphics(g) {
-        var img = g.img,
-            c = null;
-
-        if (img === null) {
-            c = MIDP.Context2D;
-        } else {
-            var imgData = img.imageData,
-                c = imgData.context;
-        }
-
-        return c;
-    }
-
     function withClip(g, c, x, y) {
         if (g.clipped) {
             c.beginPath();
@@ -837,7 +823,7 @@ var currentlyFocusedTextEditor;
 
         context.putImageData(imageData, 0, 0);
 
-        var c = withGraphics(graphics);
+        var c = graphics.context2D;
         if (graphics.clipped) {
             c.save();
         }
@@ -860,7 +846,7 @@ var currentlyFocusedTextEditor;
     function renderImage(g, image, x, y, anchor) {
         var texture = image.imageData.context.canvas;
 
-        var c = withGraphics(g);
+        var c = g.context2D;
         if (g.clipped) {
             c.save();
         }
@@ -1025,12 +1011,14 @@ var currentlyFocusedTextEditor;
         this.displayId = displayId;
         setDimensions(this, w, h);
         resetGC(this);
+        this.context2D = MIDP.Context2D;
     };
 
     Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;II)V"] = function(img, w, h) {
         this.img = img;
         setDimensions(this, w, h);
         resetGC(this);
+        this.context2D = img.imageData.context;
     };
 
     function isScreenGraphics(g) {
@@ -1166,7 +1154,7 @@ var currentlyFocusedTextEditor;
     function drawString(g, str, x, y, anchor, isOpaque) {
         var font = g.currentFont;
 
-        var c = withGraphics(g);
+        var c = g.context2D;
         if (g.clipped) {
             c.save();
         }
@@ -1224,7 +1212,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(jChr, x, y, anchor) {
         var chr = String.fromCharCode(jChr);
 
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
@@ -1245,7 +1233,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
@@ -1278,7 +1266,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
@@ -1304,7 +1292,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
@@ -1332,7 +1320,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
@@ -1358,7 +1346,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
@@ -1386,7 +1374,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = withGraphics(this);
+        var c = this.context2D;
 
         withPixel(this, c);
 
@@ -1402,7 +1390,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = withGraphics(this);
+        var c = this.context2D;
 
         withPixel(this, c);
 
@@ -1428,7 +1416,7 @@ var currentlyFocusedTextEditor;
         var imgData = image.imageData,
             texture = imgData.context.canvas;
 
-        var c = withGraphics(g);
+        var c = g.context2D;
         if (g.clipped || transform !== TRANS_NONE) {
             c.save();
         }
@@ -1459,7 +1447,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
@@ -1501,7 +1489,7 @@ var currentlyFocusedTextEditor;
 
         context.putImageData(imageData, 0, 0);
 
-        var c = withGraphics(this);
+        var c = this.context2D;
         if (this.clipped) {
             c.save();
         }
