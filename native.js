@@ -723,7 +723,6 @@ var waitingForLinks = {};
 Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function() {
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
-        ctx.setAsCurrentContext();
         var isolateId = ctx.runtime.isolate.id;
 
         if (!links[isolateId]) {
@@ -986,8 +985,8 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
         // the root dir to make sure it's valid.
         fileName = "/" + fileName;
         fs.open(fileName, function(fd) {
-            ctx.setAsCurrentContext();
             if (fd == -1) {
+                ctx.setAsCurrentContext();
                 console.error("File not found: " + fileName);
                 reject($.newException("File not found: " + fileName));
                 return;

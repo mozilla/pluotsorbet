@@ -33,6 +33,7 @@ PACKAGE_FILES = \
   javax/microedition/media/audio.3gp \
   javax/microedition/media/audio.amr \
   javax/microedition/media/hello.ogg \
+  javax/microedition/media/test.webm \
   $(NULL)
 
 ifeq ($(JSR_256),1)
@@ -43,6 +44,9 @@ all: tests.jar
 
 ../java/classes.jar:
 	cd ../java && make
+
+javax/microedition/media/test.webm: gfx/images/red.png
+	ffmpeg -loop 1 -i gfx/images/red.png -t 10 javax/microedition/media/test.webm
 
 Testlets.java: $(SRCS) $(JASMIN_SRCS) Makefile
 	echo "public class Testlets {" > $@

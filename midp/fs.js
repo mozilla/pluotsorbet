@@ -65,43 +65,37 @@ Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] =
 function(filenameBase, name, ext) {
     var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
-        function openCallback(fd) {
-            ctx.setAsCurrentContext();
-            if (fd == -1) {
-                reject($.newIOException("openRecordStoreFile: open failed"));
-            } else {
-                resolve(fd); // handle
-            }
-        }
+    var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
-
-        if (fs.exists(path)) {
-            fs.open(path, openCallback);
-        } else {
-            // Per the reference impl, create the file if it doesn't exist.
-            var dirname = fs.dirname(path);
-            if (fs.mkdirp(dirname)) {
-                if (fs.create(path, new Blob())) {
-                    fs.open(path, openCallback);
-                } else {
-                    // TODO: determine if this is actually necessary, as I think
-                    // we're still in synchronous execution of the native here.
+    function open() {
+        asyncImpl("I", new Promise(function(resolve, reject) {
+            fs.open(path, function(fd) {
+                if (fd == -1) {
                     ctx.setAsCurrentContext();
-
-                    reject($.newIOException("openRecordStoreFile: create failed"));
+                    reject($.newIOException("openRecordStoreFile: open failed"));
+                } else {
+                    resolve(fd); // handle
                 }
-            } else {
-                // TODO: determine if this is actually necessary, as I think
-                // we're still in synchronous execution of the native here.
-                ctx.setAsCurrentContext();
+            });
+        }));
+    }
 
-                reject($.newIOException("openRecordStoreFile: mkdirp failed"));
-            }
+    if (fs.exists(path)) {
+        open();
+    } else {
+        // Per the reference impl, create the file if it doesn't exist.
+        var dirname = fs.dirname(path);
+        if (!fs.mkdirp(dirname)) {
+            throw $.newIOException("openRecordStoreFile: mkdirp failed");
         }
-    }));
+
+        if (!fs.create(path, new Blob())) {
+            throw $.newIOException("openRecordStoreFile: create failed");
+        }
+
+        open();
+    }
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(handle, pos) {
@@ -627,30 +621,29 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
     var path = "/" + util.fromJavaString(fileName);
 
     var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        function open() {
+
+    function open() {
+        asyncImpl("I", new Promise(function(resolve, reject) {
             fs.open(path, function(fd) {
-                ctx.setAsCurrentContext();
                 if (fd == -1) {
+                    ctx.setAsCurrentContext();
                     reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
                 } else {
                     resolve(fd);
                 }
             });
-        }
+        }));
+    }
 
-        if (fs.exists(path)) {
-            open();
-        } else if (mode == 1) {
-            ctx.setAsCurrentContext();
-            reject($.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist"));
-        } else if (fs.create(path, new Blob())) {
-            open();
-        } else {
-            ctx.setAsCurrentContext();
-            reject($.newIOException("RandomAccessStream::open(" + path + ") failed creating the file"));
-        }
-    }));
+    if (fs.exists(path)) {
+        open();
+    } else if (mode == 1) {
+        throw $.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist");
+    } else if (fs.create(path, new Blob())) {
+        open();
+    } else {
+        throw $.newIOException("RandomAccessStream::open(" + path + ") failed creating the file");
+    }
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] =
