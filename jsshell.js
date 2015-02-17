@@ -94,7 +94,7 @@ try {
   load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
        "libs/encoding.js", "util.js",
        "override.js", "native.js", "tests/override.js", 
-       "string.js", "midp/midp.js", "midp/gestures.js",
+       "midp/midp.js", "midp/gestures.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
        "build/classes.jar.js");
 
