@@ -298,3 +298,12 @@ com/sun/midp/lcdui/DisplayDevice.isPrimaryDisplay.()Z
 com/sun/midp/main/MIDletProxy.getClassName.()Ljava/lang/String;
 com/sun/midp/rms/RmsEnvironment.getSecureFilenameBase.(I)Ljava/lang/String;
 com/sun/midp/midletsuite/SuiteContainerAdapter.getSecureFilenameBase.(I)Ljava/lang/String;
+com/nokia/mid/ui/gestures/GestureEventImpl.getType.()I
+com/nokia/mid/ui/gestures/GestureEventImpl.getDragDistanceX.()I
+com/nokia/mid/ui/gestures/GestureEventImpl.getDragDistanceY.()I
+com/nokia/mid/ui/gestures/GestureEventImpl.getStartX.()I
+com/nokia/mid/ui/gestures/GestureEventImpl.getStartY.()I
+com/nokia/mid/ui/gestures/GestureEventImpl.getFlickDirection.()F
+com/nokia/mid/ui/gestures/GestureEventImpl.getFlickSpeed.()I
+com/nokia/mid/ui/gestures/GestureEventImpl.getFlickSpeedX.()I
+com/nokia/mid/ui/gestures/GestureEventImpl.getFlickSpeedY.()I
