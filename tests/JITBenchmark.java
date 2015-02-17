@@ -4,6 +4,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 import java.io.ByteArrayOutputStream;
 import org.mozilla.internal.Sys;
+import com.sun.cldchi.jvm.JVM;
 
 class JITBenchmark {
 
@@ -124,11 +125,11 @@ class JITBenchmark {
 
   public static void begin() {
     System.gc();
-    start = System.monotonicTimeMillis();
+    start = JVM.monotonicTimeMillis();
   }
 
   public static void finish(String name) {
-    System.out.println(name + ": " + (System.monotonicTimeMillis() - start));
+    System.out.println(name + ": " + (JVM.monotonicTimeMillis() - start));
   }
 
   public static void main(String[] args) {
@@ -139,7 +140,7 @@ class JITBenchmark {
     size = 1024;
 
     begin();
-    start = System.monotonicTimeMillis();
+    start = JVM.monotonicTimeMillis();
     createObjectArrays();
     createPrimitiveArrays();
     writeByteArrayOutputStream();
@@ -152,7 +153,7 @@ class JITBenchmark {
 
     size = 1024 * 256;
 
-    long start = System.monotonicTimeMillis();
+    long start = JVM.monotonicTimeMillis();
     begin();
     createObjectArrays();
     finish("createObjectArrays");
@@ -186,6 +187,6 @@ class JITBenchmark {
     finish("arrayTypeCheck");
 
     System.out.println();
-    System.out.println("Total: " + (System.monotonicTimeMillis() - start));
+    System.out.println("Total: " + (JVM.monotonicTimeMillis() - start));
   }
 }
