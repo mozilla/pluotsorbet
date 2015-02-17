@@ -591,7 +591,7 @@ ImageRecorder.prototype.getHeight = function() {
 }
 
 ImageRecorder.prototype.setLocation = function(x, y, w, h) {
-    var displayElem = document.getElementById("main");
+    var displayElem = document.getElementById("display");
     this.sender({
         type: "setPosition",
         x: x + displayElem.offsetLeft,
