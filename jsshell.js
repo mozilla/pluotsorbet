@@ -106,7 +106,7 @@ try {
 
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-  CLASSES.addPath("bench/benchmar.jar", snarf("bench/benchmark.jar", "binary").buffer);
+  CLASSES.addPath("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
   //CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
