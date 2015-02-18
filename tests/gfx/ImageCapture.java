@@ -55,11 +55,9 @@ public class ImageCapture extends MIDlet {
                 }
 
                 videoControl.setVisible(true);
-            }
-        }
 
-        protected void pointerReleased(int x, int y) {
-            new CaptureThread().start();
+                new CaptureThread().start();
+            }
         }
     }
 
