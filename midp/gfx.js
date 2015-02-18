@@ -102,25 +102,27 @@ var currentlyFocusedTextEditor;
 
 
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
-        if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) {
-            console.warn("DisplayDevice.refresh0: Invalid value");
-            x1 = Math.max(0, x1);
-            y1 = Math.max(0, y1);
-            x2 = Math.max(0, x2);
-            y2 = Math.max(0, y2);
-        }
-
         var bufferCanvas = MIDP.Context2D.canvas;
         var realCanvas = document.getElementById("canvas");
-        var maxWidth = realCanvas.width;
-        var maxHeight = realCanvas.height;
+        var maxX = realCanvas.width;
+        var maxY = realCanvas.height;
+
+        x1 = Math.max(0, x1);
+        x1 = Math.min(maxX, x1);
+
+        y1 = Math.max(0, y1);
+        y1 = Math.min(maxY, y1);
+
+        x2 = Math.max(0, x2);
+        x2 = Math.min(maxX, x2);
+
+        y2 = Math.max(0, y2);
+        y2 = Math.min(maxY, y2);
+
         var width = x2 - x1;
         var height = y2 - y1;
-
-        if (height > maxHeight || width > maxWidth) {
-            console.warn("DisplayDevice.refresh0: Invalid value");
-            height = Math.min(maxHeight, height);
-            width = Math.min(maxWidth, width);
+        if (0 >= width || 0 >= height) {
+            return;
         }
 
         var ctx = realCanvas.getContext('2d');
