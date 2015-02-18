@@ -12,6 +12,9 @@ casper.options.waitTimeout = 70000;
 casper.options.verbose = true;
 casper.options.logLevel = "debug";
 casper.options.viewportSize = { width: 240, height: 320 };
+casper.options.clientScripts = [
+  "tests/mocks/getUserMedia.js",
+];
 
 casper.options.onWaitTimeout = function() {
     this.echo("data:image/png;base64," + this.captureBase64('png'));
@@ -237,12 +240,6 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
                     this.capture("test.png");
 
                     this.evaluate(function(testCase) {
-                        navigator.mozGetUserMedia = function(constraints, callback, errorCallback) {
-                            load("tests/javax/microedition/media/test.webm", "blob").then(function(blob) {
-                                callback(blob);
-                            });
-                        };
-
                         var gotURL = "test.png";
                         var expectedURL = "tests/" + testCase.name + ".png";
 
