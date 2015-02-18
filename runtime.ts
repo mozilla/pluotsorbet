@@ -1676,12 +1676,16 @@ module J2ME {
     }
     object.value = array;
     object.count = length;
+    // Cache JS string.
+    object._value = jsString;
+    object._count = length;
+    object._offset = 0;
     return object;
   }
 
   export function newStringConstant(jsString: string): java.lang.String {
     return $.newStringConstant(jsString);
-  };
+  }
 
   export function newArray(klass: Klass, size: number) {
     if (size < 0) {
