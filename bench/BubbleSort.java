@@ -1,6 +1,6 @@
 import com.sun.cldchi.jvm.JVM;
 
-class SimpleClass {
+class BubbleSort {
   private static void bubbleSort(int [] a, int left, int right) {
     for (int i = right; i > 1; i--) {
       for (int j = left; j < i; j++) {
@@ -27,7 +27,7 @@ class SimpleClass {
         array[j] = array.length - j;
       }
       long start = JVM.monotonicTimeMillis();
-      SimpleClass.bubbleSort(array, 0, array.length - 1);
+      BubbleSort.bubbleSort(array, 0, array.length - 1);
       total += JVM.monotonicTimeMillis() - start;
     }
 
