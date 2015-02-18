@@ -200,6 +200,10 @@ document.getElementById("loadAllClasses").onclick = function() {
   loadAllClasses();
 };
 
+if (typeof Benchmark !== "undefined") {
+  Benchmark.initUI("benchmark");
+}
+
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
    indexedDB.deleteDatabase("asyncStorage");
