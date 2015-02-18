@@ -5,6 +5,8 @@
 
 var MIDP = (function() {
   var canvas = document.getElementById("canvas");
+  var context2D = canvas.getContext("2d");
+  context2D.save();
 
   var isFullScreen = true;
   function setFullScreen(isFS) {
@@ -1531,6 +1533,6 @@ var MIDP = (function() {
     keyPress: keyPress,
     keyRelease: keyRelease,
     displayId: displayId,
-    context2D: canvas.getContext("2d"),
+    context2D: context2D,
   };
 })();

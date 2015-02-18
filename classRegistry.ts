@@ -67,7 +67,10 @@ module J2ME {
         "java/lang/StringBuffer",
         "java/util/Vector",
         "java/io/IOException",
-        "java/lang/IllegalArgumentException"
+        "java/lang/IllegalArgumentException",
+        "java/lang/IndexOutOfBoundsException",
+        "java/lang/StringIndexOutOfBoundsException",
+        "org/mozilla/internal/Sys"
       ];
 
       for (var i = 0; i < classNames.length; i++) {
