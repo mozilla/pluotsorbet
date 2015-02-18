@@ -370,7 +370,7 @@ class String {
         }
         // NOTE: dst not checked, cannot use unchecked arraycopy
         Sys.copyArray(value, offset + srcBegin, dst, dstBegin,
-                srcEnd - srcBegin);
+                      srcEnd - srcBegin);
     }
 
     /**
@@ -461,7 +461,7 @@ class String {
      */
     public boolean equalsIgnoreCase(String anotherString) {
         return (anotherString != null) && (anotherString.count == count) &&
-                regionMatches(true, 0, anotherString, 0, count);
+            regionMatches(true, 0, anotherString, 0, count);
     }
 
     /**
@@ -526,7 +526,7 @@ class String {
                     return c1 - c2;
                 }
                 k++;
-            }
+           }
         } else {
             while (n-- != 0) {
                 char c1 = v1[i++];
@@ -566,7 +566,7 @@ class String {
      * integer <i>k</i> less than <tt>len</tt> such that:
      * <blockquote><pre>
      * Character.toLowerCase(this.charAt(toffset+k)) !=
-     Character.toLowerCase(other.charAt(ooffset+k))
+               Character.toLowerCase(other.charAt(ooffset+k))
      * </pre></blockquote>
      * and:
      * <blockquote><pre>
@@ -590,8 +590,8 @@ class String {
      *          argument.
      */
     public boolean regionMatches(boolean ignoreCase,
-                                 int toffset,
-                                 String other, int ooffset, int len) {
+                                         int toffset,
+                                       String other, int ooffset, int len) {
         char ta[] = value;
         int to = offset + toffset;
         int tlim = offset + count;
@@ -600,7 +600,7 @@ class String {
 
         // Note: toffset, ooffset, or len might be near -1>>>1.
         if ((ooffset < 0) || (toffset < 0) || (toffset > (long)count - len) ||
-                (ooffset > (long)other.count - len)) {
+            (ooffset > (long)other.count - len)) {
             return false;
         }
         while (len-- > 0) {
@@ -782,21 +782,21 @@ class String {
      *          if the character does not occur.
      */
     public int indexOf(int ch, int fromIndex) {
-        int max = offset + count;
-        char v[] = value;
+	int max = offset + count;
+	char v[] = value;
 
-        if (fromIndex < 0) {
-            fromIndex = 0;
-        } else if (fromIndex >= count) {
-            // Note: fromIndex might be near -1>>>1.
-            return -1;
-        }
-        for (int i = offset + fromIndex ; i < max ; i++) {
-            if (v[i] == ch) {
-                return i - offset;
-            }
-        }
-        return -1;
+	if (fromIndex < 0) {
+	    fromIndex = 0;
+	} else if (fromIndex >= count) {
+	    // Note: fromIndex might be near -1>>>1.
+	    return -1;
+	}
+	for (int i = offset + fromIndex ; i < max ; i++) {
+	    if (v[i] == ch) {
+		return i - offset;
+	    }
+	}
+	return -1;
     }
 
     /**
@@ -923,7 +923,7 @@ class String {
         char first  = v2[strOffset];
         int i = offset + fromIndex;
 
-        startSearchForFirstChar:
+    startSearchForFirstChar:
         while (true) {
 
             /* Look for first character. */
@@ -1015,7 +1015,7 @@ class String {
             );
         }
         return ((beginIndex == 0) && (endIndex == count)) ? this :
-                new String(offset + beginIndex, endIndex - beginIndex, value);
+            new String(offset + beginIndex, endIndex - beginIndex, value);
     }
 
     /**
