@@ -1,27 +1,71 @@
 package com.nokia.mid.ui.gestures;
 
+import com.sun.midp.events.NativeEvent;
+
 public class GestureEventImpl implements GestureEvent {
-    public GestureEventImpl(int type, int dragDistanceX, int dragDistanceY, int startX, int startY,
-                            float flickDirection, int flickSpeed, int flickSpeedX, int flickSpeedY,
-                            int pinchDistanceStarting, int pinchDistanceCurrent, int pinchDistanceChange,
-                            int pinchCenterX, int pinchCenterY, int pinchCenterChangeX, int pinchCenterChangeY) {
-        // Overridden in midp/gestures.js
+    protected NativeEvent nativeEvent;
+
+    public int getType() {
+        return nativeEvent.intParam1;
     }
 
-    native public int getType();
-    native public int getDragDistanceX();
-    native public int getDragDistanceY();
-    native public int getStartX();
-    native public int getStartY();
-    native public float getFlickDirection();
-    native public int getFlickSpeed();
-    native public int getFlickSpeedX();
-    native public int getFlickSpeedY();
-    native public int getPinchDistanceStarting();
-    native public int getPinchDistanceCurrent();
-    native public int getPinchDistanceChange();
-    native public int getPinchCenterX();
-    native public int getPinchCenterY();
-    native public int getPinchCenterChangeX();
-    native public int getPinchCenterChangeY();
+    public int getDragDistanceX() {
+        return nativeEvent.intParam2;
+    }
+
+    public int getDragDistanceY() {
+        return nativeEvent.intParam3;
+    }
+
+    public int getStartX() {
+        return nativeEvent.intParam5;
+    }
+
+    public int getStartY() {
+        return nativeEvent.intParam6;
+    }
+
+    public float getFlickDirection() {
+        return nativeEvent.floatParam1;
+    }
+
+    public int getFlickSpeed() {
+        return nativeEvent.intParam7;
+    }
+
+    public int getFlickSpeedX() {
+        return nativeEvent.intParam8;
+    }
+
+    public int getFlickSpeedY() {
+        return nativeEvent.intParam9;
+    }
+
+    public int getPinchDistanceStarting() {
+        return nativeEvent.intParam10;
+    }
+
+    public int getPinchDistanceCurrent() {
+        return nativeEvent.intParam11;
+    }
+
+    public int getPinchDistanceChange() {
+        return nativeEvent.intParam12;
+    }
+
+    public int getPinchCenterX() {
+        return nativeEvent.intParam13;
+    }
+
+    public int getPinchCenterY() {
+        return nativeEvent.intParam14;
+    }
+
+    public int getPinchCenterChangeX() {
+        return nativeEvent.intParam15;
+    }
+
+    public int getPinchCenterChangeY() {
+        return nativeEvent.intParam16;
+    }
 }

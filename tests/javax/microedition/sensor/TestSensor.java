@@ -25,6 +25,7 @@ public class TestSensor implements Testlet, DataListener {
             synchronized(this) {
                 wait();
             }
+            conn.removeDataListener();
         } catch (Exception e) {
             e.printStackTrace();
             th.fail("Unexpected exception: " + e);

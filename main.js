@@ -15,6 +15,10 @@ if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
 }
 
+if (typeof Benchmark !== "undefined") {
+  Benchmark.startup.init();
+}
+
 if (config.jars) {
   jars = jars.concat(config.jars.split(":"));
 }
@@ -149,7 +153,7 @@ if (config.downloadJAD) {
   }).then(backgroundCheck));
 }
 
-if (config.midletClassName == "RunTests") {
+if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"));
@@ -195,6 +199,10 @@ function loadAllClasses() {
 document.getElementById("loadAllClasses").onclick = function() {
   loadAllClasses();
 };
+
+if (typeof Benchmark !== "undefined") {
+  Benchmark.initUI("benchmark");
+}
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
@@ -245,7 +253,8 @@ window.onload = function() {
 
     var el = document.getElementById("compiledCount");
     el.textContent = numberWithCommas(J2ME.compiledMethodCount) + " / " +
-                     numberWithCommas(J2ME.cachedMethodCount);
+                     numberWithCommas(J2ME.cachedMethodCount) + " / " +
+                     numberWithCommas(J2ME.aotMethodCount);
 
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);

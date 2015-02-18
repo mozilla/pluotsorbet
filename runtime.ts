@@ -23,6 +23,13 @@ interface CompiledMethodCache {
   put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise;
 }
 
+interface AOTMetaData {
+  /**
+   * On stack replacement pc entry points.
+   */
+  osr: number [];
+}
+
 declare var throwHelper;
 declare var throwPause;
 declare var throwYield;
@@ -31,6 +38,8 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var CompiledMethodCache;
+
+  export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
   /**
    * Turns on just-in-time compilation of methods.
@@ -497,13 +506,13 @@ module J2ME {
       }
     }
 
-    newStringConstant(s: string): java.lang.String {
-      if (internedStrings.has(s)) {
-        return internedStrings.get(s);
+    newStringConstant(jsString: string): java.lang.String {
+      if (internedStrings.has(jsString)) {
+        return internedStrings.get(jsString);
       }
-      var obj = J2ME.newString(s);
-      internedStrings.set(s, obj);
-      return obj;
+      var javaString = J2ME.newString(jsString);
+      internedStrings.set(jsString, javaString);
+      return javaString;
     }
 
     setStatic(field, value) {
@@ -1124,7 +1133,13 @@ module J2ME {
       switch (classInfo.className) {
         case "java/lang/Object": Klasses.java.lang.Object = klass; break;
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass; break;
+        case "java/lang/String": Klasses.java.lang.String = klass;
+          Object.defineProperty(klass.prototype, "viewString", {
+            get: function () {
+              return fromJavaString(this);
+            }
+          });
+          break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
         case "java/lang/IllegalArgumentException": Klasses.java.lang.IllegalArgumentException = klass; break;
@@ -1269,11 +1284,17 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
+    var fn = jsGlobal[methodInfo.mangledClassAndMethodName];
+    if (fn) {
+      aotMethodCount++;
+      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
+      return fn;
+    }
     if (enableCompiledMethodCache) {
       var cachedMethod;
-      if (!jsGlobal[methodInfo.mangledClassAndMethodName] && (cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
         cachedMethodCount ++;
-        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
       }
     }
 
@@ -1483,6 +1504,11 @@ module J2ME {
   export var cachedMethodCount = 0;
 
   /**
+   * Number of methods that have been loaded from ahead of time compiled code thus far.
+   */
+  export var aotMethodCount = 0;
+
+  /**
    * Number of ms that have been spent compiled code thus far.
    */
   var totalJITTime = 0;
@@ -1508,7 +1534,7 @@ module J2ME {
       if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
         cachedMethodCount ++;
         jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses);
+        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
       }
     }
 
@@ -1543,10 +1569,11 @@ module J2ME {
         key: methodInfo.implKey,
         source: source,
         referencedClasses: referencedClasses,
-      }).catch(stderrWriter.errorLn.bind(stderrWriter));
+        onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
+      });
     }
 
-    linkMethod(methodInfo, source, referencedClasses);
+    linkMethod(methodInfo, source, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
 
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
@@ -1562,7 +1589,7 @@ module J2ME {
   /**
    * Links up compiled method at runtime.
    */
-  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[]) {
+  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
@@ -1574,6 +1601,7 @@ module J2ME {
     var fn = jsGlobal[mangledClassAndMethodName];
     methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
+    methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 
     // Link member methods on the prototype.
     if (!methodInfo.isStatic) {
@@ -1635,25 +1663,40 @@ module J2ME {
     return new klass();
   }
 
-  export function newString(str: string): java.lang.String {
-    if (str === null || str === undefined) {
+  export function newString(value: any): java.lang.String {
+    if (value === null || value === undefined) {
       return null;
     }
+    var jsString = String(value);
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
-    object.str = str;
+    var array = new Uint16Array(jsString.length);
+    var length = jsString.length;
+    for (var i = 0; i < length; i++) {
+      array[i] = jsString.charCodeAt(i);
+    }
+    object.value = array;
+    object.count = length;
+    // Cache JS string.
+    object._value = jsString;
+    object._count = length;
+    object._offset = 0;
     return object;
   }
 
-  export function newStringConstant(str: string): java.lang.String {
-    return $.newStringConstant(str);
-  };
+  export function newStringConstant(jsString: string): java.lang.String {
+    return $.newStringConstant(jsString);
+  }
 
   export function newArray(klass: Klass, size: number) {
     if (size < 0) {
-      throw $.newNegativeArraySizeException();
+      throwNegativeArraySizeException();
     }
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
+  }
+
+  export function throwNegativeArraySizeException() {
+    throw $.newNegativeArraySizeException();
   }
 
   export function newObjectArray(size: number): java.lang.Object[] {
@@ -1711,22 +1754,31 @@ module J2ME {
     return "[" + value.klass.classInfo.className + hashcode + "]";
   }
 
-  export function fromJavaString(value: java.lang.String): string {
-    if (!value) {
+  export function fromJavaString(javaString: java.lang.String): string {
+    if (!javaString) {
       return null;
     }
-    return value.str;
+    var o = javaString.offset;
+    var c = javaString.count;
+    if (javaString._value !== undefined && javaString._offset === o && javaString._count === c) {
+      return javaString._value;
+    }
+    // Cache decoded string. The buffer is immutable, but I think that the offset or count can change.
+    javaString._value = util.fromJavaChars(javaString.value, o, c);
+    javaString._offset = o;
+    javaString._count = c;
+    return javaString._value;
   }
 
   export function checkDivideByZero(value: number) {
     if (value === 0) {
-      throw $.newArithmeticException("/ by zero");
+      throwArithmeticException();
     }
   }
 
   export function checkDivideByZeroLong(value: Long) {
     if (value.isZero()) {
-      throw $.newArithmeticException("/ by zero");
+      throwArithmeticException();
     }
   }
 
@@ -1741,6 +1793,14 @@ module J2ME {
     if ((index >>> 0) >= (array.length >>> 0)) {
       throw $.newArrayIndexOutOfBoundsException(String(index));
     }
+  }
+
+  export function throwArrayIndexOutOfBoundsException(index: number) {
+    throw $.newArrayIndexOutOfBoundsException(String(index));
+  }
+
+  export function throwArithmeticException() {
+    throw $.newArithmeticException("/ by zero");
   }
 
   export function checkArrayStore(array: java.lang.Object, value: any) {
@@ -1830,6 +1890,7 @@ module J2ME {
 
 var Runtime = J2ME.Runtime;
 
+var AOTMD = J2ME.aotMetaData;
 
 /**
  * Are we currently unwinding the stack because of a Yield? This technically
@@ -1866,6 +1927,9 @@ var CAS = J2ME.checkArrayStore;
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
+var TI = J2ME.throwArrayIndexOutOfBoundsException;
+var TA = J2ME.throwArithmeticException;
+var TN = J2ME.throwNegativeArraySizeException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.

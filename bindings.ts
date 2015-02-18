@@ -11,6 +11,15 @@ module J2ME {
         }
       }
     },
+    "java/lang/String": {
+      fields: {
+        instanceSymbols: {
+          "value.[C": "value",
+          "offset.I": "offset",
+          "count.I": "count"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
@@ -18,18 +27,42 @@ module J2ME {
         }
       }
     },
-    "java/io/ByteArrayOutputStream": {
-      fields: {
-        instanceSymbols: {
-          "count.I": "count",
-          "buf.[B": "buf"
-        }
-      }
-    },
     "com/sun/cldc/i18n/j2me/UTF_8_Writer": {
       fields: {
         instanceSymbols: {
           "pendingSurrogate.I": "pendingSurrogate"
+        }
+      }
+    },
+    "com/sun/j2me/location/CriteriaImpl": {
+      fields: {
+        instanceSymbols: {
+          "providerName.Ljava/lang/String;": "providerName"
+        }
+      }
+    },
+    "com/sun/j2me/location/LocationProviderInfo": {
+      fields: {
+        instanceSymbols: {
+          "canReportAltitude.Z": "canReportAltitude",
+          "canReportSpeedCource.Z": "canReportSpeedCource",
+          "averageResponseTime.I": "averageResponseTime"
+        }
+      }
+    },
+    "com/sun/j2me/location/LocationInfo": {
+      fields: {
+        instanceSymbols: {
+          "isValid.Z": "isValid",
+          "timestamp.J": "timestamp",
+          "latitude.D": "latitude",
+          "longitude.D": "longitude",
+          "altitude.F": "altitude",
+          "horizontalAccuracy.F": "horizontalAccuracy",
+          "verticalAccuracy.F": "verticalAccuracy",
+          "speed.F": "speed",
+          "course.F": "course",
+          "method.I": "method"
         }
       }
     },
@@ -165,7 +198,12 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-      str: string;
+      value: Uint16Array;
+      offset: number;
+      count: number;
+      _offset: number;
+      _count: number
+      _value: string;
     }
 
     export interface Thread extends java.lang.Object {

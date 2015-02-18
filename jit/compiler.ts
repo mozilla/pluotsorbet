@@ -217,6 +217,12 @@ module J2ME {
     return classInfo.className.replace(/\//g, '.');
   }
 
+  export function emitMethodMetaData(emitter: Emitter, methodInfo: MethodInfo, compiledMethodInfo: CompiledMethodInfo) {
+    var metaData = <AOTMetaData>Object.create(null);
+    metaData.osr = compiledMethodInfo.onStackReplacementEntryPoints;
+    emitter.writer.writeLn("AOTMD[\"" + methodInfo.mangledClassAndMethodName + "\"] = " + JSON.stringify(metaData) + ";");
+  }
+
   export function emitReferencedSymbols(emitter: Emitter, classInfo: ClassInfo, compiledMethods: CompiledMethodInfo []) {
     var referencedClasses = [];
     for (var i = 0; i < compiledMethods.length; i++) {
@@ -315,6 +321,7 @@ module J2ME {
               writer.writeLn("window[" + quote(mangledClassAndMethodName) + "] = " + mangledClassAndMethodName + ";");
             }
           }
+          emitMethodMetaData(emitter, method, compiledMethod);
           compiledMethods.push(compiledMethod);
         }
       } catch (x) {
@@ -339,7 +346,7 @@ module J2ME {
     constructor(public args: string [],
                 public body: string,
                 public referencedClasses: ClassInfo [],
-                public hasOSREntryPoint: boolean = false) {
+                public onStackReplacementEntryPoints: number [] = null) {
       // ...
     }
   }
