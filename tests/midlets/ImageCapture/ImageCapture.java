@@ -9,31 +9,11 @@ import java.io.IOException;
 public class ImageCapture extends MIDlet {
     private Player player;
     private VideoControl videoControl;
+    private Image capturedImage;
+    private TestCanvas testCanvas;
 
-    class TestCanvas extends Canvas {
-        private Image capturedImage;
-
-        protected void paint(Graphics g) {
-            g.setColor(0x00FFFFFF);
-            g.fillRect(0, 0, getWidth(), getHeight());
-
-            if (capturedImage != null) {
-                g.drawImage(capturedImage, 0, 0, Graphics.TOP | Graphics.LEFT);
-            } else {
-                videoControl.initDisplayMode(VideoControl.USE_DIRECT_VIDEO, this);
-                try {
-                    videoControl.setDisplayLocation(0, 0);
-                    videoControl.setDisplaySize(getWidth(), getHeight());
-                } catch (MediaException me) {
-                    System.out.println("Unexpected exception: " + me);
-                    me.printStackTrace();
-                }
-
-                videoControl.setVisible(true);
-            }
-        }
-
-        protected void pointerReleased(int x, int y) {
+    class CaptureThread extends Thread {
+        public void run() {
             try {
                 byte[] imageData;
 
@@ -45,11 +25,37 @@ public class ImageCapture extends MIDlet {
                 player = null;
                 videoControl = null;
 
-                this.repaint();
+                testCanvas.repaint();
             } catch (Exception e) {
                 System.out.println("Unexpected exception: " + e);
                 e.printStackTrace();
             }
+        }
+    }
+
+    class TestCanvas extends Canvas {
+        protected void paint(Graphics g) {
+            g.setColor(0x00FFFFFF);
+            g.fillRect(0, 0, getWidth(), getHeight());
+
+            if (capturedImage != null) {
+                g.drawImage(capturedImage, 20, 20, Graphics.TOP | Graphics.LEFT);
+            } else {
+                videoControl.initDisplayMode(VideoControl.USE_DIRECT_VIDEO, this);
+                try {
+                    videoControl.setDisplayLocation(20, 20);
+                    videoControl.setDisplaySize(77, 42);
+                } catch (MediaException me) {
+                    System.out.println("Unexpected exception: " + me);
+                    me.printStackTrace();
+                }
+
+                videoControl.setVisible(true);
+            }
+        }
+
+        protected void pointerReleased(int x, int y) {
+            new CaptureThread().start();
         }
     }
 
@@ -61,9 +67,9 @@ public class ImageCapture extends MIDlet {
 
             videoControl = (VideoControl)player.getControl("VideoControl");
 
-            TestCanvas test = new TestCanvas();
-            test.setFullScreenMode(true);
-            Display.getDisplay(this).setCurrent(test);
+            testCanvas = new TestCanvas();
+            testCanvas.setFullScreenMode(true);
+            Display.getDisplay(this).setCurrent(testCanvas);
 
             player.start();
         } catch (Exception e) {
