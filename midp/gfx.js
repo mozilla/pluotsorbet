@@ -1078,7 +1078,9 @@ var currentlyFocusedTextEditor;
         x += this.transX;
         y += this.transY;
 
-        pair = withTextAnchor(this, c, anchor, x, y, chr), x = pair[0], y = pair[1];
+        var pair = withTextAnchor(this, c, anchor, x, y, chr);
+        x = pair[0];
+        y = pair[1];
 
         withPixel(this, c);
 
