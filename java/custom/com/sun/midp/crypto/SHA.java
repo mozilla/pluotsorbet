@@ -73,7 +73,7 @@ final class SHA extends MessageDigest {
 
     private static final int[] w = new int[80];
 
-    protected long count;
+    private long count;
 
     private byte[] buffer = new byte[BLOCK_SIZE];
 
@@ -122,7 +122,7 @@ final class SHA extends MessageDigest {
      * @see #doFinal(byte[], int, int, byte[], int)
      */
     public void update(byte[] b, int offset, int len) {
-	    int n = (int)(count % BLOCK_SIZE);
+        int n = (int)(count % BLOCK_SIZE);
         count += len;
         int partLen = BLOCK_SIZE - n;
         int i = 0;
@@ -224,7 +224,7 @@ final class SHA extends MessageDigest {
         return cpy;
     }
 
-    protected void transform(byte[] in, int offset) {
+    private void transform(byte[] in, int offset) {
         int A = h0;
         int B = h1;
         int C = h2;
