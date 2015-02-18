@@ -486,8 +486,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = fu
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.read: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.read: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
 
     if (off < 0 || len < 0 || off > b.byteLength || (b.byteLength - off) < len) {
@@ -506,8 +505,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.write: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.write: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
     fs.write(fd, b.subarray(off, off + len));
     // The "length of data really written," which is always the length requested
@@ -516,22 +514,19 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
     fs.setpos(fd, offset.toNumber());
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.flush: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.flush: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
     fs.flush(fd);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.close: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.close: " + util.fromJavaString(this.$nativePath));
 
     MIDP.closeFileHandler(this, "read");
     MIDP.closeFileHandler(this, "write");
@@ -610,10 +605,9 @@ DEBUG_FS && console.log("getSuiteIdString: " + id);
 };
 
 Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
-    var pathname = util.fromJavaString(this.$fileHandler.$nativePath);
     var fd = this.$fileHandler.$nativeDescriptor;
     var available = fs.getsize(fd) - fs.getpos(fd);
-    DEBUG_FS && console.log("Protocol.available: " + pathname + ": " + available);
+    DEBUG_FS && console.log("Protocol.available: " + util.fromJavaString(this.$fileHandler.$nativePath) + ": " + available);
     return available;
 };
 
