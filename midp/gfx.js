@@ -977,11 +977,10 @@ var currentlyFocusedTextEditor;
         var newY1 = Math.max(0, y + g.transY) & 0x7fff;
         var newY2 = Math.min(g.maxHeight, y + g.transY + height) & 0x7fff;
 
-        newX1 = Math.max(g.clipX1, x + g.transX) & 0x7fff;
-        newY1 = Math.max(g.clipY1, y + g.transY) & 0x7fff;
-
-        newX2 = Math.min(g.clipX2, x + g.transX + width) & 0x7fff;
-        newY2 = Math.min(g.clipY2, y + g.transY + height) & 0x7fff;
+        g.clipX1 = Math.max(g.clipX1, x + g.transX) & 0x7fff;
+        g.clipY1 = Math.max(g.clipY1, y + g.transY) & 0x7fff;
+        g.clipX2 = Math.min(g.clipX2, x + g.transX + width) & 0x7fff;
+        g.clipY2 = Math.min(g.clipY2, y + g.transY + height) & 0x7fff;
 
         if (width <= 0 || height <= 0 || g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
