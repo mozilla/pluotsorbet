@@ -853,34 +853,42 @@ var currentlyFocusedTextEditor;
     }
 
     function setClip(g, x, y, width, height) {
-        if ((width <= 0) || (height <= 0)) {
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-        } else {
-            g.clipX1 = Math.max(0, x + g.transX) & 0x7fff;
-            g.clipY1 = Math.max(0, y + g.transY) & 0x7fff;
+        var newX1 = Math.max(0, x + g.transX) & 0x7fff;
+        var newX2 = Math.min(g.maxWidth, x + g.transX + width) & 0x7fff;
+        var newY1 = Math.max(0, y + g.transY) & 0x7fff;
+        var newY2 = Math.min(g.maxHeight, y + g.transY + height) & 0x7fff;
 
-            g.clipX2 = Math.min(g.maxWidth, x + g.transX + width) & 0x7fff;
-            g.clipY2 = Math.min(g.maxHeight, y + g.transY + height) & 0x7fff;
-
-            if (g.runtimeClipEnforce) {
-                g.clipX1 = Math.max(g.clipX1, g.systemClipX1);
-                g.clipY1 = Math.max(g.clipY1, g.systemClipY1);
-                g.clipX2 = Math.min(g.clipX2, g.systemClipX2);
-                g.clipY2 = Math.min(g.clipY2, g.systemClipY2);
-            }
+        if (g.runtimeClipEnforce) {
+            newX1 = Math.max(newX1, g.systemClipX1);
+            newY1 = Math.max(newY1, g.systemClipY1);
+            newX2 = Math.min(newX2, g.systemClipX2);
+            newY2 = Math.min(newY2, g.systemClipY2);
         }
 
-        if (g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
+        if (width <= 0 || height <= 0 || newX2 <= newX1 || newY2 <= newY1) {
+            newX1 = newY1 = newX2 = newY2 = 0;
         }
 
-        g.clipped = g.clipX1 > 0 ||
-                    g.clipY1 > 0 ||
-                    g.clipX2 < g.maxWidth ||
-                    g.clipY2 < g.maxHeight;
+        if (newX1 == g.clipX1 && newX2 == g.clipX2 && newY1 == g.clipY1 && newY2 == g.clipY2) {
+            return;
+        }
 
-        g.context2D.restore();
-        g.context2D.save();
+        // If we're expanding the clip rect, we need to restore the pre-clipped context
+        if (newX1 < g.clipX1 || newX2 > g.clipX2 || newY1 < g.clipY1 || newY2 > g.clipY2) {
+            g.context2D.restore();
+            g.context2D.save();
+        }
+
+        g.clipped = newX1 > 0 ||
+                    newY1 > 0 ||
+                    newX2 < g.maxWidth ||
+                    newY2 < g.maxHeight;
+
+        g.clipX1 = newX1;
+        g.clipX2 = newX2;
+        g.clipY1 = newY1;
+        g.clipY2 = newY2;
+
         if (g.clipped) {
             g.context2D.beginPath();
             g.context2D.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
@@ -964,17 +972,18 @@ var currentlyFocusedTextEditor;
     }
 
     function clipRect(g, x, y, width, height) {
-        if (width <= 0 || height <= 0) {
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-        } else {
-            g.clipX1 = Math.max(g.clipX1, x + g.transX) & 0x7fff;
-            g.clipY1 = Math.max(g.clipY1, y + g.transY) & 0x7fff;
+        var newX1 = Math.max(0, x + g.transX) & 0x7fff;
+        var newX2 = Math.min(g.maxWidth, x + g.transX + width) & 0x7fff;
+        var newY1 = Math.max(0, y + g.transY) & 0x7fff;
+        var newY2 = Math.min(g.maxHeight, y + g.transY + height) & 0x7fff;
 
-            g.clipX2 = Math.min(g.clipX2, x + g.transX + width) & 0x7fff;
-            g.clipY2 = Math.min(g.clipY2, y + g.transY + height) & 0x7fff;
-        }
+        newX1 = Math.max(g.clipX1, x + g.transX) & 0x7fff;
+        newY1 = Math.max(g.clipY1, y + g.transY) & 0x7fff;
 
-        if (g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
+        newX2 = Math.min(g.clipX2, x + g.transX + width) & 0x7fff;
+        newY2 = Math.min(g.clipY2, y + g.transY + height) & 0x7fff;
+
+        if (width <= 0 || height <= 0 || g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
         }
 
