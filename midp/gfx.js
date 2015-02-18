@@ -413,23 +413,9 @@ var currentlyFocusedTextEditor;
     var BOTTOM = 32;
     var BASELINE = 64;
 
-    function withClip(g, c, x, y) {
-        if (g.clipped) {
-            c.beginPath();
-            c.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
-            c.clip();
-        }
-
+    function withAnchor(g, c, anchor, x, y, w, h) {
         x += g.transX;
         y += g.transY;
-
-        return [x, y];
-    }
-
-    function withAnchor(g, c, anchor, x, y, w, h) {
-        var pair = withClip(g, c, x, y);
-        x = pair[0];
-        y = pair[1];
 
         if (anchor & RIGHT) {
             x -= w;
@@ -800,19 +786,11 @@ var currentlyFocusedTextEditor;
         context.putImageData(imageData, 0, 0);
 
         var c = graphics.context2D;
-        if (graphics.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(graphics, c, x, y);
-        x = pair[0];
-        y = pair[1];
+        x += graphics.transX;
+        y += graphics.transY;
 
         c.drawImage(context.canvas, x, y);
-
-        if (graphics.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
@@ -823,19 +801,12 @@ var currentlyFocusedTextEditor;
         var texture = image.imageData.context.canvas;
 
         var c = g.context2D;
-        if (g.clipped) {
-            c.save();
-        }
 
         var pair = withAnchor(g, c, anchor, x, y, texture.width, texture.height);
         x = pair[0];
         y = pair[1];
 
         c.drawImage(texture, x, y);
-
-        if (g.clipped) {
-            c.restore();
-        }
 
         return 1;
     }
@@ -882,73 +853,46 @@ var currentlyFocusedTextEditor;
     }
 
     function setClip(g, x, y, width, height) {
-        var translatedX1, translatedY1;
-        var translatedX2, translatedY2;
+        var newX1 = Math.max(0, x + g.transX) & 0x7fff;
+        var newX2 = Math.min(g.maxWidth, x + g.transX + width) & 0x7fff;
+        var newY1 = Math.max(0, y + g.transY) & 0x7fff;
+        var newY2 = Math.min(g.maxHeight, y + g.transY + height) & 0x7fff;
 
-        // If width or height is zero or less then zero,
-        // we do not preserve the current clipping and
-        // set all clipping values to zero.
-        if ((width <= 0) || (height <= 0)) {
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
+        if (g.runtimeClipEnforce) {
+            newX1 = Math.max(newX1, g.systemClipX1);
+            newY1 = Math.max(newY1, g.systemClipY1);
+            newX2 = Math.min(newX2, g.systemClipX2);
+            newY2 = Math.min(newY2, g.systemClipY2);
+        }
+
+        if (width <= 0 || height <= 0 || newX2 <= newX1 || newY2 <= newY1) {
+            newX1 = newY1 = newX2 = newY2 = 0;
+        }
+
+        if (newX1 == g.clipX1 && newX2 == g.clipX2 && newY1 == g.clipY1 && newY2 == g.clipY2) {
             return;
         }
 
-        // Translate the given coordinates
-        translatedX1 = x + g.transX;
-        translatedY1 = y + g.transY;
-
-        // Detect Overflow
-        translatedX1 = Math.max(0, translatedX1);
-        translatedX1 = Math.min(translatedX1, g.maxWidth);
-        translatedY1 = Math.max(0, translatedY1);
-        translatedY1 = Math.min(translatedY1, g.maxHeight);
-
-        g.clipX1 = (translatedX1 & 0x7fff);
-        g.clipY1 = (translatedY1 & 0x7fff);
-
-        if ((translatedX1 >= g.maxWidth)
-            || (translatedY1 >= g.maxHeight)) {
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
+        // If we're expanding the clip rect, we need to restore the pre-clipped context
+        if (newX1 < g.clipX1 || newX2 > g.clipX2 || newY1 < g.clipY1 || newY2 > g.clipY2) {
+            g.context2D.restore();
+            g.context2D.save();
         }
 
-        // Check against the runtime library clip values
-        if (g.runtimeClipEnforce) {
-          if (g.clipX1 < g.systemClipX1)
-                  clipX1 = g.systemClipX1;
-          if (g.clipY1 < g.systemClipY1) {
-                  clipY1 = g.systemClipY1;
-          }
-        }
+        g.clipped = newX1 > 0 ||
+                    newY1 > 0 ||
+                    newX2 < g.maxWidth ||
+                    newY2 < g.maxHeight;
 
-        // Translate the given width, height to abs. coordinates
-        translatedX2 = x + g.transX + width;
-        translatedY2 = y + g.transY + height;
+        g.clipX1 = newX1;
+        g.clipX2 = newX2;
+        g.clipY1 = newY1;
+        g.clipY2 = newY2;
 
-        // Detect overflow
-        translatedX2 = Math.max(0, translatedX2);
-        translatedX2 = Math.min(translatedX2, g.maxWidth);
-        translatedY2 = Math.max(0, translatedY2);
-        translatedY2 = Math.min(translatedY2, g.maxHeight);
-
-        g.clipX2 = (translatedX2 & 0x7FFF);
-        g.clipY2 = (translatedY2 & 0x7FFF);
-
-        // Check against the runtime library clip values
-        if (g.runtimeClipEnforce) {
-            if (g.clipX2 > g.systemClipX2) {
-                g.clipX2 = g.systemClipX2;
-            }
-            if (g.clipY2 > g.systemClipY2) {
-                g.clipY2 = g.systemClipY2;
-            }
-        }
-
-        if ((g.clipX1 != 0) || (g.clipY1 != 0)
-                || (g.clipX2 != g.maxWidth) || (g.clipY2 != g.maxHeight)) {
-            g.clipped = true;
+        if (g.clipped) {
+            g.context2D.beginPath();
+            g.context2D.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
+            g.context2D.clip();
         }
     }
 
@@ -984,17 +928,18 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.initScreen0.(III)V"] = function(displayId, w, h) {
+        this.context2D = MIDP.Context2D;
         this.displayId = displayId;
         setDimensions(this, w, h);
         resetGC(this);
-        this.context2D = MIDP.Context2D;
     };
 
     Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;II)V"] = function(img, w, h) {
+        this.context2D = img.imageData.context;
+        this.context2D.save();
         this.img = img;
         setDimensions(this, w, h);
         resetGC(this);
-        this.context2D = img.imageData.context;
     };
 
     function isScreenGraphics(g) {
@@ -1027,81 +972,29 @@ var currentlyFocusedTextEditor;
     }
 
     function clipRect(g, x, y, width, height) {
-        var translatedX1, translatedY1;
-        var translatedX2, translatedY2;
+        var newX1 = Math.max(0, x + g.transX) & 0x7fff;
+        var newX2 = Math.min(g.maxWidth, x + g.transX + width) & 0x7fff;
+        var newY1 = Math.max(0, y + g.transY) & 0x7fff;
+        var newY2 = Math.min(g.maxHeight, y + g.transY + height) & 0x7fff;
 
-        if (width <= 0 || height <= 0) {
+        g.clipX1 = Math.max(g.clipX1, x + g.transX) & 0x7fff;
+        g.clipY1 = Math.max(g.clipY1, y + g.transY) & 0x7fff;
+        g.clipX2 = Math.min(g.clipX2, x + g.transX + width) & 0x7fff;
+        g.clipY2 = Math.min(g.clipY2, y + g.transY + height) & 0x7fff;
+
+        if (width <= 0 || height <= 0 || g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
         }
 
-        // Translate the given coordinates
-        translatedX1 = x + g.transX;
-        translatedY1 = y + g.transY;
+        g.clipped = g.clipX1 > 0 ||
+                    g.clipY1 > 0 ||
+                    g.clipX2 < g.maxWidth ||
+                    g.clipY2 < g.maxHeight;
 
-        // Detect overflow
-        if (translatedX1 < 0) {
-            translatedX1 = (x < 0 || g.transX < 0) ? 0 : g.maxWidth;
-        }
-        if (translatedY1 < 0) {
-            translatedY1 = (y < 0 || g.transY < 0) ? 0 : g.maxHeight;
-        }
-
-        // If the passed in rect is below our current clip
-        if ((g.clipX2 < translatedX1) || (g.clipY2 < translatedY1)) {
-            // we have no intersection
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
-        }
-
-        if (translatedX1 > g.clipX1) {
-            g.clipX1 = (translatedX1 & 0x7fff);
-            g.clipped = true;
-        }
-
-        if (translatedY1 > g.clipY1) {
-            g.clipY1 = (translatedY1 & 0x7fff);
-            g.clipped = true;
-        }
-
-        // Start handling bottom right area
-
-        translatedX2 = x + g.transX + width;
-        translatedY2 = y + g.transY + height;
-
-        // Detect Overflow
-        if (translatedX2 < 0) {
-            translatedX2 = (x < 0 || g.transX < 0) ? translatedX1 : g.maxWidth;
-        }
-        if (translatedY2 < 0) {
-            translatedY2 = (y < 0 || g.transY < 0) ? translatedY1 : g.maxHeight;
-        }
-
-        // If the passed in rect is above our current clip
-        if (translatedX2 < g.clipX1 || translatedY2 < g.clipY1) {
-            // we have no intersection
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-            g.clipped = true;
-            return;
-        }
-
-        if (translatedX2 <= g.clipX2) {
-            g.clipX2 = translatedX2 & 0xffff;
-            g.clipped = true;
-        }
-
-        if (translatedY2 <= g.clipY2) {
-            g.clipY2 = translatedY2 & 0xffff;
-            g.clipped = true;
-        }
-
-        if (g.clipped == true) {
-            if (g.clipX2 < g.clipX1)
-              g.clipX2 = g.clipX1;
-            if (g.clipY2 < g.clipY1)
-              g.clipY2 = g.clipY1;
+        if (g.clipped) {
+            g.context2D.beginPath();
+            g.context2D.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
+            g.context2D.clip();
         }
     }
 
@@ -1131,13 +1024,9 @@ var currentlyFocusedTextEditor;
         var font = g.currentFont;
 
         var c = g.context2D;
-        if (g.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(g, c, x, y);
-        x = pair[0];
-        y = pair[1];
+        x += g.transX;
+        y += g.transY;
 
         if (isOpaque) {
             withOpaquePixel(g, c);
@@ -1166,10 +1055,6 @@ var currentlyFocusedTextEditor;
                 x += font.size;
             }
         });
-
-        if (g.clipped) {
-            c.restore();
-        }
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
@@ -1189,34 +1074,24 @@ var currentlyFocusedTextEditor;
         var chr = String.fromCharCode(jChr);
 
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x, y);
+        x += this.transX;
+        y += this.transY;
+
+        var pair = withTextAnchor(this, c, anchor, x, y, chr);
         x = pair[0];
         y = pair[1];
-
-        pair = withTextAnchor(this, c, anchor, x, y, chr), x = pair[0], y = pair[1];
 
         withPixel(this, c);
 
         c.fillText(chr, x, y);
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x1, y1);
-        var x = pair[0];
-        var y = pair[1];
+        var x = x1 + this.transX;
+        var y = y1 + this.transY;
 
         withPixel(this, c);
 
@@ -1231,10 +1106,6 @@ var currentlyFocusedTextEditor;
         c.lineTo(x + dx2, y + dy2);
         c.closePath();
         c.fill();
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(x, y, w, h) {
@@ -1243,13 +1114,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x, y);
-        x = pair[0];
-        y = pair[1];
+        x += this.transX;
+        y += this.transY;
 
         withPixel(this, c);
 
@@ -1257,10 +1124,6 @@ var currentlyFocusedTextEditor;
         h = h || 1;
 
         c.strokeRect(x, y, w, h);
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
@@ -1269,13 +1132,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x, y);
-        x = pair[0];
-        y = pair[1];
+        x += this.transX;
+        y += this.transY;
 
         withPixel(this, c);
 
@@ -1285,10 +1144,6 @@ var currentlyFocusedTextEditor;
         c.beginPath();
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
         c.stroke();
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(x, y, w, h) {
@@ -1297,13 +1152,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x, y);
-        x = pair[0];
-        y = pair[1];
+        x += this.transX;
+        y += this.transY;
 
         withPixel(this, c);
 
@@ -1311,10 +1162,6 @@ var currentlyFocusedTextEditor;
         h = h || 1;
 
         c.fillRect(x, y, w, h);
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
@@ -1323,13 +1170,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x, y);
-        x = pair[0];
-        y = pair[1];
+        x += this.transX;
+        y += this.transY;
 
         withPixel(this, c);
 
@@ -1339,10 +1182,6 @@ var currentlyFocusedTextEditor;
         c.beginPath();
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
         c.fill();
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(x, y, width, height, startAngle, arcAngle) {
@@ -1393,7 +1232,7 @@ var currentlyFocusedTextEditor;
             texture = imgData.context.canvas;
 
         var c = g.context2D;
-        if (g.clipped || transform !== TRANS_NONE) {
+        if (transform !== TRANS_NONE) {
             c.save();
         }
 
@@ -1415,7 +1254,7 @@ var currentlyFocusedTextEditor;
 
         c.drawImage(texture, sx, sy, sw, sh, x, y, sw, sh);
 
-        if (g.clipped || transform !== TRANS_NONE) {
+        if (transform !== TRANS_NONE) {
             c.restore();
         }
 
@@ -1424,13 +1263,9 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x1, y1);
-        var x = pair[0];
-        var y = pair[1];
+        var x = x1 + this.transX;
+        var y = y1 + this.transY;
 
         withPixel(this, c);
 
@@ -1448,10 +1283,6 @@ var currentlyFocusedTextEditor;
         c.lineTo(x + dx, y + dy);
         c.stroke();
         c.closePath();
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
@@ -1466,19 +1297,11 @@ var currentlyFocusedTextEditor;
         context.putImageData(imageData, 0, 0);
 
         var c = this.context2D;
-        if (this.clipped) {
-            c.save();
-        }
 
-        var pair = withClip(this, c, x, y);
-        x = pair[0];
-        y = pair[1];
+        x += this.transX;
+        y += this.transY;
 
         c.drawImage(context.canvas, x, y);
-
-        if (this.clipped) {
-            c.restore();
-        }
     };
 
     var textEditorId = 0,
