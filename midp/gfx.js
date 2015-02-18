@@ -928,7 +928,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.initScreen0.(III)V"] = function(displayId, w, h) {
-        this.context2D = MIDP.Context2D;
+        this.context2D = MIDP.context2D;
         this.displayId = displayId;
         setDimensions(this, w, h);
         resetGC(this);
