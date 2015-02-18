@@ -68,6 +68,7 @@ var gfxTests = [
   { name: "gfx/TextEditorGfxTest", maxDifferent: 1375 },
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
   { name: "gfx/VideoPlayerTest", maxDifferent: 0 },
+  { name: "gfx/ImageCapture", maxDifferent: 0 },
 ];
 
 /**
@@ -236,6 +237,12 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
                     this.capture("test.png");
 
                     this.evaluate(function(testCase) {
+                        navigator.mozGetUserMedia = function(constraints, callback, errorCallback) {
+                            load("tests/javax/microedition/media/test.webm", "blob").then(function(blob) {
+                                callback(blob);
+                            });
+                        };
+
                         var gotURL = "test.png";
                         var expectedURL = "tests/" + testCase.name + ".png";
 
