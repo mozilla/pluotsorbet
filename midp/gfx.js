@@ -104,19 +104,18 @@ var currentlyFocusedTextEditor;
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
         var bufferCanvas = MIDP.Context2D.canvas;
         var realCanvas = document.getElementById("canvas");
-        var maxX = realCanvas.width;
-        var maxY = realCanvas.height;
 
         x1 = Math.max(0, x1);
-        x1 = Math.min(maxX, x1);
-
         y1 = Math.max(0, y1);
-        y1 = Math.min(maxY, y1);
-
         x2 = Math.max(0, x2);
+        y2 = Math.max(0, y2);
+
+        var maxX = Math.min(realCanvas.width, MIDP.Context2D.canvas.width);
+        x1 = Math.min(maxX, x1);
         x2 = Math.min(maxX, x2);
 
-        y2 = Math.max(0, y2);
+        var maxY = Math.min(realCanvas.height, MIDP.Context2D.canvas.height);
+        y1 = Math.min(maxY, y1);
         y2 = Math.min(maxY, y2);
 
         var width = x2 - x1;
