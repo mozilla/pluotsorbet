@@ -72,6 +72,7 @@ var gfxTests = [
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
   { name: "gfx/VideoPlayerTest", maxDifferent: 0 },
   { name: "gfx/ImageCapture", maxDifferent: 0 },
+  { name: "gfx/CameraTest", maxDifferent: 0 },
 ];
 
 /**
