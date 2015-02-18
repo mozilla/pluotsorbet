@@ -161,13 +161,47 @@ final class SHA extends MessageDigest {
             throw new DigestException("Buffer too short.");
         }
 
-        byte[] tail = padBuffer(); // pad remaining bytes in buffer
+        // Pad remaining bytes in buffer
+        int n = (int)(count % BLOCK_SIZE);
+        int padding = (n < 56) ? (56 - n) : (120 - n);
+        byte[] tail = new byte[padding + 8];
+        // padding is always binary 1 followed by binary 0s
+        tail[0] = (byte) 0x80;
+        // save number of bits, casting the long to an array of 8 bytes
+        long bits = count << 3;
+        tail[padding++] = (byte)(bits >>> 56);
+        tail[padding++] = (byte)(bits >>> 48);
+        tail[padding++] = (byte)(bits >>> 40);
+        tail[padding++] = (byte)(bits >>> 32);
+        tail[padding++] = (byte)(bits >>> 24);
+        tail[padding++] = (byte)(bits >>> 16);
+        tail[padding++] = (byte)(bits >>> 8);
+        tail[padding  ] = (byte) bits;
+
         update(tail, 0, tail.length); // last transform of a message
-        byte[] result = getResult(); // make a result out of context
+
+        buf[offset] = (byte)(h0 >>> 24);
+        buf[offset + 1] = (byte)(h0 >>> 16);
+        buf[offset + 2] = (byte)(h0 >>> 8);
+        buf[offset + 3] = (byte)h0;
+        buf[offset + 4] = (byte)(h1 >>> 24);
+        buf[offset + 5] = (byte)(h1 >>> 16);
+        buf[offset + 6] = (byte)(h1 >>> 8);
+        buf[offset + 7] = (byte)h1;
+        buf[offset + 8] = (byte)(h2 >>> 24);
+        buf[offset + 9] = (byte)(h2 >>> 16);
+        buf[offset + 10] = (byte)(h2 >>> 8);
+        buf[offset + 11] = (byte)h2;
+        buf[offset + 12] = (byte)(h3 >>> 24);
+        buf[offset + 13] = (byte)(h3 >>> 16);
+        buf[offset + 14] = (byte)(h3 >>> 8);
+        buf[offset + 15] = (byte)h3;
+        buf[offset + 16] = (byte)(h4 >>> 24);
+        buf[offset + 17] = (byte)(h4 >>> 16);
+        buf[offset + 18] = (byte)(h4 >>> 8);
+        buf[offset + 19] = (byte)h4;
 
         reset(); // reset this instance for future re-use
-
-        Sys.copyArray(result, 0, buf, offset, len);
 
         return getDigestLength();
     }
@@ -191,59 +225,11 @@ final class SHA extends MessageDigest {
     }
 
     protected void transform(byte[] in, int offset) {
-        int[] result = sha(h0, h1, h2, h3, h4, in, offset);
-        h0 = result[0];
-        h1 = result[1];
-        h2 = result[2];
-        h3 = result[3];
-        h4 = result[4];
-    }
-
-    protected byte[] padBuffer() {
-        int n = (int)(count % BLOCK_SIZE);
-        int padding = (n < 56) ? (56 - n) : (120 - n);
-        byte[] result = new byte[padding + 8];
-        // padding is always binary 1 followed by binary 0s
-        result[0] = (byte) 0x80;
-        // save number of bits, casting the long to an array of 8 bytes
-        long bits = count << 3;
-        result[padding++] = (byte)(bits >>> 56);
-        result[padding++] = (byte)(bits >>> 48);
-        result[padding++] = (byte)(bits >>> 40);
-        result[padding++] = (byte)(bits >>> 32);
-        result[padding++] = (byte)(bits >>> 24);
-        result[padding++] = (byte)(bits >>> 16);
-        result[padding++] = (byte)(bits >>> 8);
-        result[padding  ] = (byte) bits;
-        return result;
-    }
-
-    protected byte[] getResult() {
-        return new byte[] {
-            (byte)(h0 >>> 24), (byte)(h0 >>> 16), (byte)(h0 >>> 8), (byte) h0,
-            (byte)(h1 >>> 24), (byte)(h1 >>> 16), (byte)(h1 >>> 8), (byte) h1,
-            (byte)(h2 >>> 24), (byte)(h2 >>> 16), (byte)(h2 >>> 8), (byte) h2,
-            (byte)(h3 >>> 24), (byte)(h3 >>> 16), (byte)(h3 >>> 8), (byte) h3,
-            (byte)(h4 >>> 24), (byte)(h4 >>> 16), (byte)(h4 >>> 8), (byte) h4 };
-    }
-
-    protected void resetContext() {
-        // magic SHA-1/RIPEMD160 initialisation constants
-        h0 = 0x67452301;
-        h1 = 0xEFCDAB89;
-        h2 = 0x98BADCFE;
-        h3 = 0x10325476;
-        h4 = 0xC3D2E1F0;
-    }
-
-    private static synchronized final int[] sha(int hh0, int hh1, int hh2,
-                                                int hh3, int hh4, byte[] in,
-                                                int offset) {
-        int A = hh0;
-        int B = hh1;
-        int C = hh2;
-        int D = hh3;
-        int E = hh4;
+        int A = h0;
+        int B = h1;
+        int C = h2;
+        int D = h3;
+        int E = h4;
         int r, T;
 
         for (r = 0; r < 16; r++) {
@@ -294,6 +280,19 @@ final class SHA extends MessageDigest {
             A = T;
         }
 
-        return new int[] { hh0 + A, hh1 + B, hh2 + C, hh3 + D, hh4 + E };
+        h0 = h0 + A;
+        h1 = h1 + B;
+        h2 = h2 + C;
+        h3 = h3 + D;
+        h4 = h4 + E;
+    }
+
+    private void resetContext() {
+        // magic SHA-1/RIPEMD160 initialisation constants
+        h0 = 0x67452301;
+        h1 = 0xEFCDAB89;
+        h2 = 0x98BADCFE;
+        h3 = 0x10325476;
+        h4 = 0xC3D2E1F0;
     }
 }
