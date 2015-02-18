@@ -44,10 +44,6 @@ function Promise() {
   // ...
 }
 
-function Event() {
-  // ...
-}
-
 var document = {
   documentElement: {
     classList: {

@@ -20,7 +20,6 @@ java/lang/String.substring.(I)Ljava/lang/String;
 java/lang/String.indexOf.(Ljava/lang/String;I)I
 java/lang/StringBuffer.length.()I
 java/lang/String.indexOf.(Ljava/lang/String;)I
-
 java/util/Vector.indexOf.(Ljava/lang/Object;I)I
 java/util/PropertyPermission.getActions.(I)Ljava/lang/String;
 java/util/Vector.addElement.(Ljava/lang/Object;)V
