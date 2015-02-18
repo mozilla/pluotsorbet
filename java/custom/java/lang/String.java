@@ -29,6 +29,7 @@ package java.lang;
 import java.io.UnsupportedEncodingException;
 import com.sun.cldc.i18n.*;
 import com.sun.cldchi.jvm.JVM;
+import org.mozilla.internal.Sys;
 
 /**
  * The <code>String</code> class represents character strings. All
@@ -96,6 +97,9 @@ class String {
 
     /** The count is the number of characters in the String. */
     private int count;
+
+    /** Immutable, so we can cache the hash code. */
+    private int cachedHashCode;
 
     /**
      * Initializes a newly created <code>String</code> object so that it
@@ -260,10 +264,12 @@ class String {
      * <code>null</code>.
      */
     public String (StringBuffer buffer) {
-        buffer.setShared();
-        this.value = buffer.getValue();
-        this.offset = 0;
-        this.count = buffer.length();
+        synchronized(buffer) {
+            buffer.setShared();
+            this.value = buffer.getValue();
+            this.offset = 0;
+            this.count = buffer.length();
+        }
     }
 
     // Package private constructor which shares value array for speed.
@@ -363,8 +369,8 @@ class String {
             );
         }
         // NOTE: dst not checked, cannot use unchecked arraycopy
-        System.arraycopy(value, offset + srcBegin, dst, dstBegin,
-                         srcEnd - srcBegin);
+        Sys.copyArray(value, offset + srcBegin, dst, dstBegin,
+                      srcEnd - srcBegin);
     }
 
     /**
@@ -711,6 +717,9 @@ class String {
      * @return  a hash code value for this object.
      */
     public int hashCode() {
+        if (cachedHashCode > 0) {
+          return cachedHashCode;
+        }
         int h = 0;
         int off = offset;
         char val[] = value;
@@ -719,6 +728,7 @@ class String {
         for (int i = 0; i < len; i++) {
             h = 31*h + val[off++];
         }
+        cachedHashCode = h;
         return h;
     }
 
