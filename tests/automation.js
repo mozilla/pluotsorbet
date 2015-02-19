@@ -4,6 +4,14 @@
 var system = require('system');
 var fs = require('fs');
 
+// Enable TCP socket API and grant tcp-socket permission to the testing page
+var { Cu } = require("chrome");
+Cu.import("resource://gre/modules/Services.jsm");
+Services.prefs.setBoolPref("dom.mozTCPSocket.enabled", true);
+var uri = Services.io.newURI("http://localhost:8000", null, null);
+var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
+Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
