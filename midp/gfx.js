@@ -691,11 +691,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function() {
-        return this.clipX2;
+        return this.clipX2 - this.clipX1;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipHeight.()I"] = function() {
-        return this.clipY2;
+        return this.clipY2 - this.clipY1;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(region) {
