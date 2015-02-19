@@ -51,7 +51,7 @@ PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 all: config-build java jasmin tests j2me shumway aot benchmarks
 
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/xulrunner
-	SLIMERJSLAUNCHER=build_tools/xulrunner/xulrunner casperjs --engine=slimerjs
+	SLIMERJSLAUNCHER=build_tools/xulrunner/xulrunner tests/runtests.py
 
 build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/labs/j2me.js/slimerjs-0.10.0pre-2014-12-17.zip
