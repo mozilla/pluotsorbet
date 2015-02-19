@@ -771,60 +771,6 @@ Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/s
     asyncImpl("V", new Promise(function(){}));
 };
 
-Native["java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;"] = function(bytearr) {
-    var array = new Int8Array(bytearr.buffer);
-    try {
-        return J2ME.newString(util.decodeUtf8Array(array));
-    } catch(e) {
-        try {
-            return J2ME.newString(util.javaUTF8Decode(array));
-        } catch (e) {
-            throw $.newUTFDataFormatException();
-        }
-    }
-};
-
-Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(jStr) {
-    var str = util.fromJavaString(jStr);
-
-    var utflen = 0;
-
-    for (var i = 0; i < str.length; i++) {
-        var c = str.charCodeAt(i);
-        if ((c >= 0x0001) && (c <= 0x007F)) {
-            utflen++;
-        } else if (c > 0x07FF) {
-            utflen += 3;
-        } else {
-            utflen += 2;
-        }
-    }
-
-    if (utflen > 65535) {
-        throw $.newUTFDataFormatException();
-    }
-
-    var count = 0;
-    var bytearr = J2ME.newByteArray(utflen + 2);
-    bytearr[count++] = (utflen >>> 8) & 0xFF;
-    bytearr[count++] = (utflen >>> 0) & 0xFF;
-    for (var i = 0; i < str.length; i++) {
-        var c = str.charCodeAt(i);
-        if ((c >= 0x0001) && (c <= 0x007F)) {
-            bytearr[count++] = c;
-        } else if (c > 0x07FF) {
-            bytearr[count++] = 0xE0 | ((c >> 12) & 0x0F);
-            bytearr[count++] = 0x80 | ((c >>  6) & 0x3F);
-            bytearr[count++] = 0x80 | ((c >>  0) & 0x3F);
-        } else {
-            bytearr[count++] = 0xC0 | ((c >>  6) & 0x1F);
-            bytearr[count++] = 0x80 | ((c >>  0) & 0x3F);
-        }
-    }
-
-    return bytearr;
-};
-
 Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
   console.warn("com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V not implemented");
 };
