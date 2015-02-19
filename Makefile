@@ -27,6 +27,16 @@ CHECKSUM := "$(RELEASE)$(PROFILE)$(JSR_256)$(JSR_179)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
+XULRUNNER_VERSION=31.0
+OLD_XULRUNNER_VERSION := $(shell [ -f build_tools/.xulrunner_version ] && cat build_tools/.xulrunner_version)
+$(shell [ "$(XULRUNNER_VERSION)" != "$(OLD_XULRUNNER_VERSION)" ] && echo $(XULRUNNER_VERSION) > build_tools/.xulrunner_version)
+
+SLIMERJS_VERSION=0.10.0pre
+OLD_SLIMERJS_VERSION := $(shell [ -f build_tools/.slimerjs_version ] && cat build_tools/.slimerjs_version)
+$(shell [ "$(SLIMERJS_VERSION)" != "$(OLD_SLIMERJS_VERSION)" ] && echo $(SLIMERJS_VERSION) > build_tools/.slimerjs_version)
+
+PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
+
 toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
@@ -40,8 +50,16 @@ PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
 all: config-build java jasmin tests j2me shumway aot benchmarks
 
-test: all
-	tests/runtests.py
+test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/xulrunner
+	SLIMERJSLAUNCHER=build_tools/xulrunner/xulrunner casperjs --engine=slimerjs
+
+build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/labs/j2me.js/slimerjs-0.10.0pre-2014-12-17.zip
+	unzip -o -d build_tools build_tools/slimerjs-0.10.0pre-2014-12-17.zip
+
+build_tools/xulrunner: build_tools/.xulrunner_version
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.linux-x86_64.tar.bz2
+	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.linux-x86_64.tar.bz2 -m
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
