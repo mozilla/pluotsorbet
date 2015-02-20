@@ -767,7 +767,9 @@ MIDP.Context2D = (function() {
         mouseDownInfo = null; // Clear the way for the next gesture.
     });
 
-    return c.getContext("2d");
+    var ret = c.getContext("2d");
+    ret.save();
+    return ret;
 })();
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function() {

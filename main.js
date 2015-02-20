@@ -15,6 +15,10 @@ if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
 }
 
+if (typeof Benchmark !== "undefined") {
+  Benchmark.startup.init();
+}
+
 if (config.jars) {
   jars = jars.concat(config.jars.split(":"));
 }
@@ -195,6 +199,10 @@ function loadAllClasses() {
 document.getElementById("loadAllClasses").onclick = function() {
   loadAllClasses();
 };
+
+if (typeof Benchmark !== "undefined") {
+  Benchmark.initUI("benchmark");
+}
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {

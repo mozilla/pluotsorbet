@@ -65,43 +65,37 @@ Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] =
 function(filenameBase, name, ext) {
     var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
-        function openCallback(fd) {
-            ctx.setAsCurrentContext();
-            if (fd == -1) {
-                reject($.newIOException("openRecordStoreFile: open failed"));
-            } else {
-                resolve(fd); // handle
-            }
-        }
+    var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase) + "/" + util.fromJavaString(name) + "." + ext;
 
-
-        if (fs.exists(path)) {
-            fs.open(path, openCallback);
-        } else {
-            // Per the reference impl, create the file if it doesn't exist.
-            var dirname = fs.dirname(path);
-            if (fs.mkdirp(dirname)) {
-                if (fs.create(path, new Blob())) {
-                    fs.open(path, openCallback);
-                } else {
-                    // TODO: determine if this is actually necessary, as I think
-                    // we're still in synchronous execution of the native here.
+    function open() {
+        asyncImpl("I", new Promise(function(resolve, reject) {
+            fs.open(path, function(fd) {
+                if (fd == -1) {
                     ctx.setAsCurrentContext();
-
-                    reject($.newIOException("openRecordStoreFile: create failed"));
+                    reject($.newIOException("openRecordStoreFile: open failed"));
+                } else {
+                    resolve(fd); // handle
                 }
-            } else {
-                // TODO: determine if this is actually necessary, as I think
-                // we're still in synchronous execution of the native here.
-                ctx.setAsCurrentContext();
+            });
+        }));
+    }
 
-                reject($.newIOException("openRecordStoreFile: mkdirp failed"));
-            }
+    if (fs.exists(path)) {
+        open();
+    } else {
+        // Per the reference impl, create the file if it doesn't exist.
+        var dirname = fs.dirname(path);
+        if (!fs.mkdirp(dirname)) {
+            throw $.newIOException("openRecordStoreFile: mkdirp failed");
         }
-    }));
+
+        if (!fs.create(path, new Blob())) {
+            throw $.newIOException("openRecordStoreFile: create failed");
+        }
+
+        open();
+    }
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(handle, pos) {
@@ -492,8 +486,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = fu
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.read: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.read: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
 
     if (off < 0 || len < 0 || off > b.byteLength || (b.byteLength - off) < len) {
@@ -512,8 +505,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.write: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.write: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
     fs.write(fd, b.subarray(off, off + len));
     // The "length of data really written," which is always the length requested
@@ -522,22 +514,19 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
     fs.setpos(fd, offset.toNumber());
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.flush: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.flush: " + util.fromJavaString(this.$nativePath));
     var fd = this.$nativeDescriptor;
     fs.flush(fd);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
-    var pathname = util.fromJavaString(this.$nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.close: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.close: " + util.fromJavaString(this.$nativePath));
 
     MIDP.closeFileHandler(this, "read");
     MIDP.closeFileHandler(this, "write");
@@ -616,10 +605,9 @@ DEBUG_FS && console.log("getSuiteIdString: " + id);
 };
 
 Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
-    var pathname = util.fromJavaString(this.$fileHandler.$nativePath);
     var fd = this.$fileHandler.$nativeDescriptor;
     var available = fs.getsize(fd) - fs.getpos(fd);
-    DEBUG_FS && console.log("Protocol.available: " + pathname + ": " + available);
+    DEBUG_FS && console.log("Protocol.available: " + util.fromJavaString(this.$fileHandler.$nativePath) + ": " + available);
     return available;
 };
 
@@ -627,30 +615,29 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
     var path = "/" + util.fromJavaString(fileName);
 
     var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        function open() {
+
+    function open() {
+        asyncImpl("I", new Promise(function(resolve, reject) {
             fs.open(path, function(fd) {
-                ctx.setAsCurrentContext();
                 if (fd == -1) {
+                    ctx.setAsCurrentContext();
                     reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
                 } else {
                     resolve(fd);
                 }
             });
-        }
+        }));
+    }
 
-        if (fs.exists(path)) {
-            open();
-        } else if (mode == 1) {
-            ctx.setAsCurrentContext();
-            reject($.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist"));
-        } else if (fs.create(path, new Blob())) {
-            open();
-        } else {
-            ctx.setAsCurrentContext();
-            reject($.newIOException("RandomAccessStream::open(" + path + ") failed creating the file"));
-        }
-    }));
+    if (fs.exists(path)) {
+        open();
+    } else if (mode == 1) {
+        throw $.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist");
+    } else if (fs.create(path, new Blob())) {
+        open();
+    } else {
+        throw $.newIOException("RandomAccessStream::open(" + path + ") failed creating the file");
+    }
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] =
