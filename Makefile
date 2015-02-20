@@ -78,6 +78,7 @@ build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 	rm -rf build_tools/slimerjs*
 	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/labs/j2me.js/slimerjs-0.10.0pre-2014-12-17.zip
 	unzip -o -d build_tools build_tools/slimerjs-0.10.0pre-2014-12-17.zip
+	touch build_tools/slimerjs-$(SLIMERJS_VERSION)
 
 build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	rm -rf build_tools/XUL* build_tools/xul*
