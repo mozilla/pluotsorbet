@@ -7,6 +7,7 @@ certs/j2se_test.ks
 tests/Testlets.java
 output/
 build/
+build_tools/
 .checksum
 java/build-src/
 java/build-srcs.txt
