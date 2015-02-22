@@ -119,7 +119,9 @@ var CompiledMethodCache = (function() {
   });
 
   function get(key) {
-    return cache.get(key);
+    var elem = cache.get(key);
+    cache.delete(key);
+    return elem;
   }
 
   var recordsToFlush = [];
