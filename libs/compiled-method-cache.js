@@ -120,7 +120,9 @@ var CompiledMethodCache = (function() {
 
   function get(key) {
     var elem = cache.get(key);
-    cache.delete(key);
+    if (elem) {
+      cache.delete(key);
+    }
     return elem;
   }
 
