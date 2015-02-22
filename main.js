@@ -38,6 +38,8 @@ var loadingPromises = [initFS, getMobileInfo];
 loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data) {
   CLASSES.addPath("java/classes.jar", data);
   CLASSES.initializeBuiltinClasses();
+  // Load the Isolate class, that is needed to start the VM (see jvm.ts)
+  CLASSES.getClass("com/sun/cldc/isolate/Isolate")
 }));
 
 jars.forEach(function(jar) {
