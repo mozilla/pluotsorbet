@@ -1,9 +1,6 @@
-interface TestInterface {
-  public void asd();
-}
+import com.sun.cldchi.jvm.JVM;
 
-class SimpleClass {
-
+class BubbleSort {
   private static void bubbleSort(int [] a, int left, int right) {
     for (int i = right; i > 1; i--) {
       for (int j = left; j < i; j++) {
@@ -17,19 +14,21 @@ class SimpleClass {
   }
 
   public static void main(String[] args) {
-    System.out.println("I'm hungry");
-
-    int [] array = new int [1024];
+    int[] array = new int[1024];
 
     for (int i = 0; i < array.length; i++) {
       array[i] = array.length - i;
     }
 
+    long total = 0L;
+
     for (int i = 0; i < 100; i++) {
       for (int j = 0; j < array.length; j++) {
         array[j] = array.length - j;
       }
-      SimpleClass.bubbleSort(array, 0, array.length - 1);
+      long start = JVM.monotonicTimeMillis();
+      BubbleSort.bubbleSort(array, 0, array.length - 1);
+      total += JVM.monotonicTimeMillis() - start;
     }
 
     String s = "";
@@ -37,5 +36,7 @@ class SimpleClass {
       s += array[i] + " ";
     }
     System.out.println(s);
+
+    System.out.println("BubbleSort: " + total);
   }
 }

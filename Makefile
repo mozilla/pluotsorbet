@@ -5,6 +5,7 @@ SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
+BENCHMARK ?= 0
 
 # Sensor support
 JSR_256 ?= 1
@@ -30,6 +31,7 @@ toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(call toBool,$(PROFILE)) \
+             -D BENCHMARK=$(call toBool,$(BENCHMARK)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
              -D VERSION=$(VERSION)
