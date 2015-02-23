@@ -13,9 +13,9 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
 public class TestSSLStreamConnection implements Testlet {
-    public int getExpectedPass() { return 0; }
+    public int getExpectedPass() { return 203; }
     public int getExpectedFail() { return 0; }
-    public int getExpectedKnownFail() { return 1; }
+    public int getExpectedKnownFail() { return 0; }
     static final String SOCKET_URL = "socket://localhost:54443";
     static final String HOST = "localhost";
     static final int PORT = 54443;
@@ -34,7 +34,7 @@ public class TestSSLStreamConnection implements Testlet {
             testSendOnClosedOutputStream();
             testReceiveOnClosedInputStream();
         } catch (IOException e) {
-            th.todo(false, "Unexpected exception: " + e);
+            th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
     }
@@ -62,7 +62,7 @@ public class TestSSLStreamConnection implements Testlet {
             InputStream is = s.openInputStream();
 
             send(os, MESSAGE);
-            th.todo(receive(is), MESSAGE);
+            th.check(receive(is), MESSAGE);
 
             os.close();
             is.close();
@@ -83,7 +83,7 @@ public class TestSSLStreamConnection implements Testlet {
             for (int i = 0; i < 100; i++) {
                 String message = "Message n." + i;
                 send(os, message);
-                th.todo(receive(is), message);
+                th.check(receive(is), message);
             }
 
             os.close();
@@ -105,7 +105,7 @@ public class TestSSLStreamConnection implements Testlet {
 
                 String message = "Message n." + i;
                 send(os, message);
-                th.todo(receive(is), message);
+                th.check(receive(is), message);
 
                 os.close();
                 is.close();
@@ -129,7 +129,7 @@ public class TestSSLStreamConnection implements Testlet {
                 send(os, MESSAGE);
                 th.fail("send on closed output stream");
             } catch(Exception e) {
-                th.todo(e, "java.io.InterruptedIOException: Stream closed");
+                th.check(e, "java.io.InterruptedIOException: Stream closed");
             }
 
             is.close();
@@ -153,7 +153,7 @@ public class TestSSLStreamConnection implements Testlet {
                 receive(is);
                 th.fail("receive on closed input stream");
             } catch(Exception e) {
-                th.todo(e, "java.io.InterruptedIOException: Stream closed");
+                th.check(e, "java.io.InterruptedIOException: Stream closed");
             }
 
             os.close();
