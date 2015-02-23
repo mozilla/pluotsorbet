@@ -22,6 +22,6 @@ notifications:
     channels:
       - "irc.mozilla.org#j2me.js"
     template:
-      - "%{repository_slug} - %{commit_message} - %{result} - %{build_url}"
+      - "%{repository_slug} - %{commit_subject} - %{result} - %{build_url}"
     use_notice: true
     skip_join: true
