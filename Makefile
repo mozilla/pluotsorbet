@@ -42,7 +42,7 @@ PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
 all: config-build java jasmin tests j2me shumway aot benchmarks
 
-$(shell mkdir build_tools)
+$(shell mkdir -p build_tools)
 
 XULRUNNER_VERSION=31.0
 OLD_XULRUNNER_VERSION := $(shell [ -f build_tools/.xulrunner_version ] && cat build_tools/.xulrunner_version)
