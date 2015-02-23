@@ -96,7 +96,7 @@ config-build: config/build.js.in
 	$(PREPROCESS) -o config/build.js config/build.js.in
 
 tests/tests.jar: tests
-tests:
+tests: java jasmin
 	make -C tests
 
 java/classes.jar: java
@@ -110,7 +110,7 @@ certs:
 app: config-build java certs
 	tools/package.sh
 
-benchmarks:
+benchmarks: java tests
 	make -C bench
 
 clean:
