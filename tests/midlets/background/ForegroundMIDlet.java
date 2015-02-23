@@ -9,12 +9,8 @@ public class ForegroundMIDlet extends MIDlet {
     public void startApp() {
         System.out.println("Hello World from foreground MIDlet");
 
-        if (System.getProperty("prop1") != null) {
-            System.out.println(System.getProperty("prop1"));
-        }
-
-        if (System.getProperty("prop2") != null) {
-            System.out.println(System.getProperty("prop2"));
+        if (System.getProperty("prop1") != null && System.getProperty("prop2") != null) {
+            System.out.println("prop1=" + System.getProperty("prop1") + " prop2=" + System.getProperty("prop2"));
         }
     }
 

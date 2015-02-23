@@ -217,8 +217,8 @@ casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet3&jad=tests/midlets/background/background3.jad&jars=tests/tests.jar&logConsole=web,page")
     .withFrame(0, function() {
-        casper.waitForText("Hello World from foreground MIDlet\nhello\nciao", function() {
-            test.pass();
+        casper.waitForText("Hello World from foreground MIDlet", function() {
+            test.assertTextExists("prop1=hello prop2=ciao");
         });
     });
 
