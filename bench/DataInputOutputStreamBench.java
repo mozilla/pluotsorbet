@@ -13,8 +13,8 @@ public class DataInputOutputStreamBench {
   void writeUTF(OutputStream out) throws IOException {
       DataOutputStream dos = new DataOutputStream(out);
 
-      for (int i = 0; i < 25000; i++) {
-          dos.writeUTF("abcdefghilmnopqrstuvzABCDEFGHILMNOPQRSTUVZabcdefghilmnopqrstuvzABCDEFGHILMNOPQRSTUVZ");
+      for (int i = 0; i < 50000; i++) {
+          dos.writeUTF("abcdefghilmnopqrstuvzABCDEFGHILMNOPQRSTUVZ");
       }
 
       dos.flush();

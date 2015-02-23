@@ -111,4 +111,11 @@ for process in server_processes:
 for stream in server_output_streams:
     sys.stdout.write(stream.read())
 
+p = subprocess.Popen(['js', 'jsshell.js', 'Basic'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+exit_code = 1
+for line in iter(p.stdout.readline, b''):
+    if "The end" in line:
+        exit_code = 0
+    sys.stdout.write(line)
+
 sys.exit(exit_code)

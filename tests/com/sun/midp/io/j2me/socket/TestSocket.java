@@ -6,21 +6,21 @@ import java.io.*;
 import javax.microedition.io.*;
 
 public class TestSocket implements Testlet {
-    public int getExpectedPass() { return 0; }
+    public int getExpectedPass() { return 12; }
     public int getExpectedFail() { return 0; }
-    public int getExpectedKnownFail() { return 2; }
+    public int getExpectedKnownFail() { return 0; }
     public void test(TestHarness th) {
         try {
             testBasicSocketConnection(th);
         } catch (IOException e) {
-            th.todo(false, "Unexpected exception: " + e);
+            th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
 
         try {
             testImmediatelyCloseConnection(th);
         } catch (IOException e) {
-            th.todo(false, "Unexpected exception: " + e);
+            th.fail("Unexpected exception: " + e);
             e.printStackTrace();
         }
     }
@@ -41,42 +41,42 @@ public class TestSocket implements Testlet {
         is.close();
 
         String received = new String(buf, 0, i-1);
-        th.todo(received, "HTTP/1.0 200 OK");
+        th.check(received, "HTTP/1.0 200 OK");
 
         int keepAlive = client.getSocketOption(SocketConnection.KEEPALIVE);
-        th.todo(keepAlive, 1);
+        th.check(keepAlive, 1);
 
         int linger = client.getSocketOption(SocketConnection.LINGER);
-        th.todo(linger, 0);
+        th.check(linger, 0);
 
         int sndbuf = client.getSocketOption(SocketConnection.SNDBUF);
-        th.todo(sndbuf, 8192);
+        th.check(sndbuf, 8192);
 
         int rcvbuf = client.getSocketOption(SocketConnection.RCVBUF);
-        th.todo(rcvbuf, 8192);
+        th.check(rcvbuf, 8192);
 
         int delay = client.getSocketOption(SocketConnection.DELAY);
-        th.todo(delay, 1);
+        th.check(delay, 1);
 
         client.setSocketOption(SocketConnection.KEEPALIVE, 0);
         keepAlive = client.getSocketOption(SocketConnection.KEEPALIVE);
-        th.todo(keepAlive, 0);
+        th.check(keepAlive, 0);
 
         client.setSocketOption(SocketConnection.LINGER, 1);
         linger = client.getSocketOption(SocketConnection.LINGER);
-        th.todo(linger, 1);
+        th.check(linger, 1);
 
         client.setSocketOption(SocketConnection.SNDBUF, 4096);
         sndbuf = client.getSocketOption(SocketConnection.SNDBUF);
-        th.todo(sndbuf, 4096);
+        th.check(sndbuf, 4096);
 
         client.setSocketOption(SocketConnection.RCVBUF, 16384);
         rcvbuf = client.getSocketOption(SocketConnection.RCVBUF);
-        th.todo(rcvbuf, 16384);
+        th.check(rcvbuf, 16384);
 
         client.setSocketOption(SocketConnection.DELAY, 0);
         delay = client.getSocketOption(SocketConnection.DELAY);
-        th.todo(delay, 0);
+        th.check(delay, 0);
 
         client.close();
     }
@@ -89,7 +89,7 @@ public class TestSocket implements Testlet {
         // that closes the connection (testBasicSocketConnection also causes
         // that function to be called, but the connection is already closed
         // by then).
-        th.todo(true, "socket connection opened and closed");
+        th.check(true, "socket connection opened and closed");
     }
 
 }
