@@ -27,8 +27,6 @@ CHECKSUM := "$(RELEASE)$(PROFILE)$(JSR_256)$(JSR_179)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
-PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
-
 toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
@@ -51,6 +49,8 @@ $(shell [ "$(XULRUNNER_VERSION)" != "$(OLD_XULRUNNER_VERSION)" ] && echo $(XULRU
 SLIMERJS_VERSION=0.10.0pre
 OLD_SLIMERJS_VERSION := $(shell [ -f build_tools/.slimerjs_version ] && cat build_tools/.slimerjs_version)
 $(shell [ "$(SLIMERJS_VERSION)" != "$(OLD_SLIMERJS_VERSION)" ] && echo $(SLIMERJS_VERSION) > build_tools/.slimerjs_version)
+
+PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
