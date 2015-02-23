@@ -26,8 +26,8 @@ cp java/*.jar $PACKAGE_DIR/java
 # copy entire certs dir, it's possible we just need the ks files
 cp -R certs $PACKAGE_DIR/.
 
-# copy entire classfile dir
-cp -R classfile $PACKAGE_DIR/.
+# copy entire vm dir
+cp -R vm $PACKAGE_DIR/.
 
 # copy entire contents of libs dir
 cp -R libs $PACKAGE_DIR/.
