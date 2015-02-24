@@ -44,7 +44,7 @@ var JARStore = (function() {
     };
   });
 
-  function addBuiltInJAR(jarName, jarData) {
+  function addBuiltIn(jarName, jarData) {
     var zip = new ZipFile(jarData, false);
 
     jars.set(jarName, {
@@ -91,7 +91,6 @@ var JARStore = (function() {
         };
 
         transaction.oncomplete = function() {
-          console.log(request.result);
           jars.set(jarName, {
             data: request.result,
             isBuiltIn: false,
@@ -114,10 +113,17 @@ var JARStore = (function() {
       return null;
     }
 
+    var bytes;
     if (entry.compression_method === 0) {
-      return entry.compressed_data;
+      bytes = entry.compressed_data;
     } else {
-      return inflate(entry.compressed_data);
+      bytes = inflate(entry.compressed_data);
+    }
+
+    if (jar.isBuiltIn) {
+      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    } else {
+      return bytes;
     }
   }
 
@@ -127,7 +133,6 @@ var JARStore = (function() {
       if (data) {
         return data;
       }
-      J2ME.stderrWriter.writeLn(fileName + " not found");
     }
   }
 
@@ -153,7 +158,7 @@ var JARStore = (function() {
   }
 
   return {
-    addBuiltInJAR: addBuiltInJAR,
+    addBuiltIn: addBuiltIn,
     installJAR: installJAR,
     loadJAR: loadJAR,
     loadFileFromJAR: loadFileFromJAR,
