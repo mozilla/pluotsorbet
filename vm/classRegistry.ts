@@ -20,7 +20,6 @@ module J2ME {
      */
     missingSourceFiles: Map<string, string []>;
 
-    jarFiles: Map<string, any>;
     classes: Map<string, ClassInfo>;
 
     preInitializedClasses: ClassInfo [];
@@ -35,7 +34,6 @@ module J2ME {
       this.sourceFiles = Object.create(null);
       this.missingSourceFiles = Object.create(null);
 
-      this.jarFiles = Object.create(null);
       this.classes = Object.create(null);
       this.preInitializedClasses = [];
     }
