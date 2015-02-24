@@ -3,6 +3,7 @@ DumbPipe.registerOpener("echo", function(message, sender) {
 });
 
 // Generate faked location data for tests
+// #if JSR_179 == 1
 LocationProvider.AVAILABLE = 1;
 DumbPipe.registerOpener("locationprovider", function(message, sender) {
   return function(message) {
@@ -26,3 +27,4 @@ DumbPipe.registerOpener("locationprovider", function(message, sender) {
     }
   };
 });
+// #endif

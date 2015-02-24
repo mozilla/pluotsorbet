@@ -119,7 +119,11 @@ var CompiledMethodCache = (function() {
   });
 
   function get(key) {
-    return cache.get(key);
+    var elem = cache.get(key);
+    if (elem) {
+      cache.delete(key);
+    }
+    return elem;
   }
 
   var recordsToFlush = [];
@@ -147,7 +151,6 @@ var CompiledMethodCache = (function() {
 
   function put(obj) {
     DEBUG && debug("put " + obj[KEY_PATH]);
-    cache.set(obj[KEY_PATH], obj);
     recordsToFlush.push(obj);
     if (!flushTimer) {
       flushTimer = setTimeout(flush, 3000 /* ms; 3 seconds */);
