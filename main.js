@@ -191,19 +191,6 @@ document.getElementById("start").onclick = function() {
   start();
 };
 
-function loadAllClasses() {
-  profiler.start(5000, false);
-  for (var i = 0; i < 1; i++) {
-    var s = performance.now();
-    CLASSES.loadAllClassFiles();
-    console.info("Loaded all classes in: " + (performance.now() - s));
-  }
-}
-
-document.getElementById("loadAllClasses").onclick = function() {
-  loadAllClasses();
-};
-
 if (typeof Benchmark !== "undefined") {
   Benchmark.initUI("benchmark");
 }

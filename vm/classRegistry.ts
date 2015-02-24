@@ -179,27 +179,6 @@ module J2ME {
       return classInfo;
     }
 
-    /**
-     * Used to test loading of all class files.
-     */
-    loadAllClassFiles() {
-      var jarFiles = this.jarFiles;
-      Object.keys(jarFiles).every(function (path) {
-        if (path.substr(-4) !== ".jar") {
-          return true;
-        }
-        var zipFile = jarFiles[path];
-        Object.keys(zipFile.directory).every(function (fileName) {
-          if (fileName.substr(-6) !== '.class') {
-            return true;
-          }
-          var className = fileName.substring(0, fileName.length - 6);
-          CLASSES.getClass(className);
-          return true;
-        });
-      });
-    }
-
     loadClass(className: string): ClassInfo {
       var classInfo = this.classes[className];
       if (classInfo) {

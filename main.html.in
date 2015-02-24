@@ -144,7 +144,6 @@
       <button id="sampleCounters1">One sample for 1s</button>
       <button id="sampleCounters2">One sample for 100ms (2s)</button>
       <button id="start">Start</button>
-      <button id="loadAllClasses">Load All Classes</button>
 
     </section>
     <!-- #if BENCHMARK == "true" -->
