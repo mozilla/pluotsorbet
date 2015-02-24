@@ -53,8 +53,5 @@
   "messages": [
     { "alarm": "/index.html" }
   ],
-  "type": "privileged",
-  "precompile": [
-    "libs/relooper.js"
-  ]
+  "type": "privileged"
 }
