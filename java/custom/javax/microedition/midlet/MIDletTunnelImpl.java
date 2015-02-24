@@ -24,28 +24,27 @@
  * information or have any questions.
  */
 
-package com.sun.midp.midlet;
+package javax.microedition.midlet;
 
-import javax.microedition.midlet.MIDlet;
-import javax.microedition.midlet.MIDletStateChangeException;
+import com.sun.midp.midlet.MIDletPeer;
 
-/**
- * This is the interface to "tunnel" across Java package namespace,
- * and call the protected methods in the another package namespace.
- * The callee package will implement this interface, and provide
- * a static utility instance to the caller package.
+/** 
+ * This is an implementation of the MIDletTunnel interface, to allow
+ * com.sun.midp.midlet.MIDletState instance to call protected and package
+ * private methods of javax.microedition.midlet.MIDlet.
  */
-public interface MIDletTunnel {
+public class MIDletTunnelImpl {
     /**
      * Returns the MIDletPeer object corresponding to the given
      * midlet instance.
      *
      * @param m MIDlet instance
-     *
-     * @return associated MIDletPeer instance
+     * @return associated MIDletState instance
      */
-    public MIDletPeer getMIDletPeer(MIDlet m);
-
+    public static MIDletPeer getMIDletPeer(MIDlet m) {
+        return m.getMIDletPeer();
+    }
+  
     /**
      * Calls the startApp method on the midlet instance.
      *
@@ -55,15 +54,19 @@ public interface MIDletTunnel {
      *     is thrown if the <code>MIDlet</code> cannot start now but 
      *     might be able to start at a later time.
      */
-    public void callStartApp(MIDlet m) 
-        throws MIDletStateChangeException;
+    public static void callStartApp(MIDlet m) 
+        throws MIDletStateChangeException {
+        m.startApp();
+    }
 
     /**
      * Calls the pauseApp method on the midlet instance.
      *
      * @param m MIDlet instance
      */
-    public void callPauseApp(MIDlet m);
+    public static void callPauseApp(MIDlet m) {
+        m.pauseApp();
+    }
 
     /**
      * Calls the destroyApp method on the midlet instance.
@@ -77,7 +80,8 @@ public interface MIDletTunnel {
      *     This exception is ignored if <code>unconditional</code>
      *     is equal to <code>true</code>.
      */
-    public void callDestroyApp(MIDlet m, boolean unconditional) 
-        throws MIDletStateChangeException;
-}
-
+    public static void callDestroyApp(MIDlet m, boolean unconditional) 
+        throws MIDletStateChangeException {
+        m.destroyApp(unconditional);
+    }
+} 

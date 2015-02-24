@@ -24,24 +24,35 @@
 
 package com.sun.midp.main;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.InputStream;
+
+import javax.microedition.io.Connector;
+
+import com.sun.j2me.security.AccessController;
+
 import com.sun.midp.midlet.*;
+import com.sun.midp.lcdui.*;
+import com.sun.midp.midletsuite.*;
+import com.sun.midp.configurator.Constants;
+import com.sun.midp.i18n.ResourceConstants;
+import com.sun.midp.io.j2me.storage.RandomAccessStream;
+import com.sun.midp.log.*;
+import com.sun.midp.publickeystore.WebPublicKeyStore;
+import com.sun.midp.util.Properties;
+import com.sun.midp.rms.RmsEnvironment;
+import com.sun.midp.rms.RecordStoreRegistry;
 import com.sun.midp.security.*;
 import com.sun.midp.events.EventQueue;
-import com.sun.midp.lcdui.*;
-import com.sun.midp.configurator.Constants;
 import com.sun.midp.log.*;
-import com.sun.midp.installer.InternalMIDletSuiteImpl;
+
 
 /**
  * The class presents abstract MIDlet suite loader with routines to prepare
- * runtime environment for a suite execution. The class provides generic
- * scenario to load, start and terminate a MIDlet suite in the common way
- * for both SVM and MVM modes. All the differences of SVM & MVM modes are
- * designed as virtual or abstract methods.
+ * runtime environment for CLDC a suite execution.
  */
-abstract class AbstractMIDletSuiteLoader
-	implements MIDletSuiteExceptionListener {
-
+abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
     /** The ID of the MIDlte suite task Isolate */
     protected int isolateId;
 
@@ -96,6 +107,18 @@ abstract class AbstractMIDletSuiteLoader
     /** Starts and controls MIDlets through the lifecycle states. */
     protected MIDletStateHandler midletStateHandler;
 
+    /** Event producer to send MIDlet state events to the AMS isolate. */
+    protected MIDletControllerEventProducer midletControllerEventProducer;
+
+    /** Listener for MIDlet related events (state changes, etc). */
+    protected MIDletEventListener midletEventListener;
+
+    /**
+     * Provides interface for display foreground notification,
+     * functionality that can not be publicly added to a javax package.
+     */
+    protected ForegroundEventListener foregroundEventListener;
+
     /**
      * Reports an error detected during MIDlet suite invocation.
      * @param errorCode the error code to report
@@ -108,17 +131,6 @@ abstract class AbstractMIDletSuiteLoader
      */
     protected void reportError(int errorCode) {
         reportError(errorCode, null);
-    }
-
-    /**
-     * Allocates resources for a suite execution according to
-     * global resource policy.
-     *
-     * @return true in the case resources were successfully allocated,
-     *   false otherwise
-     */
-    protected boolean allocateReservedResources() {
-        return true;
     }
 
     /**
@@ -140,16 +152,20 @@ abstract class AbstractMIDletSuiteLoader
 
     /** Core initialization of a MIDlet suite loader */
     protected void init() {
+        isolateId = MIDletSuiteUtils.getIsolateId();
+        amsIsolateId = MIDletSuiteUtils.getAmsIsolateId();
+
+        // Hint VM of startup beginning: system init phase
+        MIDletSuiteUtils.vmBeginStartUp(isolateId);
+
+        WebPublicKeyStore.initKeystoreLocation(internalSecurityToken,
+            Configuration.getProperty("com.sun.midp.publickeystore.WebPublicKeyStore"));
+
         // Init security tokens for core subsystems
         SecurityInitializer.initSystem();
 
         eventQueue = EventQueue.getEventQueue(
             internalSecurityToken);
-    }
-
-    /** Final actions to finish a MIDlet suite loader */
-    protected void done() {
-        eventQueue.shutdown();
     }
 
     /**
@@ -160,13 +176,59 @@ abstract class AbstractMIDletSuiteLoader
      * specific parts
      */
     protected void createSuiteEnvironment() {
+        midletControllerEventProducer =
+            new MIDletControllerEventProducer(
+                eventQueue,
+                amsIsolateId,
+                isolateId);
 
-	if (lcduiEnvironment == null) {
-	    throw new
-		RuntimeException("Suite environment not complete.");
-	}
+        foregroundController = new CldcForegroundController(
+            midletControllerEventProducer);
+
+	lcduiEnvironment = new LCDUIEnvironment(internalSecurityToken, 
+						eventQueue, isolateId, 
+						foregroundController);
+
+    if (lcduiEnvironment == null) {
+        throw new
+        RuntimeException("Suite environment not complete.");
+    }
 
         displayContainer = lcduiEnvironment.getDisplayContainer();
+
+        foregroundEventListener = new ForegroundEventListener(
+            eventQueue,
+            displayContainer);
+
+        midletStateHandler =
+            MIDletStateHandler.getMidletStateHandler();
+
+        MIDletStateListener midletStateListener =
+            new CldcMIDletStateListener(internalSecurityToken,
+                                        displayContainer,
+                                        midletControllerEventProducer);
+
+        midletStateHandler.initMIDletStateHandler(
+            internalSecurityToken,
+            midletStateListener,
+            new CldcMIDletLoader(internalSecurityToken),
+            new CldcPlatformRequest(internalSecurityToken));
+
+        midletEventListener = new MIDletEventListener(
+            internalSecurityToken,
+            midletStateHandler,
+            eventQueue);
+        
+        MidletSuiteContainer msc = 
+                new MidletSuiteContainer(MIDletSuiteStorage.getMIDletSuiteStorage(internalSecurityToken));
+        RmsEnvironment.init(internalSecurityToken, msc);
+    }
+
+    /** Final actions to finish a MIDlet suite loader */
+    protected void done() {
+        RecordStoreRegistry.shutdown(
+            internalSecurityToken);
+        eventQueue.shutdown();
     }
 
     /**
@@ -178,29 +240,22 @@ abstract class AbstractMIDletSuiteLoader
      */
     protected void initSuiteEnvironment() {
         lcduiEnvironment.setTrustedState(midletSuite.isTrusted());
+
+        /* Set up permission checking for this suite. */
+        AccessController.setAccessControlContext(
+            new CldcAccessControlContext(midletSuite));
     }
 
     /**
-     * Handles exception occurred during MIDlet suite execution.
-     * @param t exception instance
-     */
-    public abstract void handleException(Throwable t);
-
-    /** Restricts suite access to internal API */
-    protected void restrictAPIAccess() {
-        // IMPL_NOTE: No restrictions by default
-    }
-
-    /**
-     * Start MIDlet suite in the prepared environment
+     * Starts MIDlet suite in the prepared environment
+     * Overrides super method to hint VM of system startup
+     * phase is ended 
+     *
      * @throws Exception can be thrown during execution
      */
     protected void startSuite() throws Exception {
-        if (suiteId == -1 && midletClassName.equals("internal")) {
-            // no class name, need to look for it in the JAD file
-            midletClassName = 
-                ((InternalMIDletSuiteImpl)midletSuite).getMIDletClassName();
-        }
+        // Hint VM of startup finish: system init phase 
+        MIDletSuiteUtils.vmEndStartUp(isolateId);
 
         midletStateHandler.startSuite(
             this, midletSuite, externalAppId, midletClassName);
@@ -235,7 +290,7 @@ abstract class AbstractMIDletSuiteLoader
     protected abstract void exitLoader();
 
     /**
-     * Creates MIDlet suite instance by suite ID, the 
+     * Creates MIDlet suite instance by suite ID
      *
      * @return MIDlet suite to load
      *
@@ -243,7 +298,88 @@ abstract class AbstractMIDletSuiteLoader
      *   created because of a security reasons or some problems
      *   related to suite storage
      */
-    protected abstract MIDletSuite createMIDletSuite() throws Exception;
+    protected MIDletSuite createMIDletSuite() throws Exception {
+        MIDletSuiteStorage storage;
+        MIDletSuite suite = null;
+
+        storage = MIDletSuiteStorage.
+            getMIDletSuiteStorage(internalSecurityToken);
+
+        suite = storage.getMIDletSuite(suiteId, false);
+        Logging.initLogSettings(suiteId);
+
+        return suite;
+    }
+
+    /**
+     * Gets error code by exception type
+     *
+     * @param t exception instance
+     * @return error code
+     */
+    static protected int getErrorCode(Throwable t) {
+        if (t instanceof ClassNotFoundException) {
+            return Constants.MIDLET_CLASS_NOT_FOUND;
+        } else if (t instanceof InstantiationException) {
+            return Constants.MIDLET_INSTANTIATION_EXCEPTION;
+        } else if (t instanceof IllegalAccessException) {
+            return Constants.MIDLET_ILLEGAL_ACCESS_EXCEPTION;
+        } else if (t instanceof OutOfMemoryError) {
+            return Constants.MIDLET_OUT_OF_MEM_ERROR;
+        } else if (t instanceof MIDletSuiteLockedException) {
+            return Constants.MIDLET_INSTALLER_RUNNING;
+        } else {
+            return Constants.MIDLET_CONSTRUCTOR_FAILED;
+        }
+    }
+
+    /**
+     * Gets AMS error message ID by generic error code
+     *
+     * @param errorCode generic error code
+     * @return AMS error ID
+     */
+    static protected int getErrorMessageId(int errorCode) {
+        switch (errorCode) {
+            case Constants.MIDLET_SUITE_DISABLED:
+                return ResourceConstants.
+                    AMS_MIDLETSUITELDR_MIDLETSUITE_DISABLED;
+            case Constants.MIDLET_SUITE_NOT_FOUND:
+                return ResourceConstants.
+                    AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND;
+            case Constants.MIDLET_CLASS_NOT_FOUND:
+                return ResourceConstants.
+                    AMS_MIDLETSUITELDR_CANT_LAUNCH_MISSING_CLASS;
+            case Constants.MIDLET_INSTANTIATION_EXCEPTION:
+                return ResourceConstants.
+                    AMS_MIDLETSUITELDR_CANT_LAUNCH_ILL_OPERATION;
+            case Constants.MIDLET_ILLEGAL_ACCESS_EXCEPTION:
+                return ResourceConstants.
+                    AMS_MIDLETSUITELDR_CANT_LAUNCH_ILL_OPERATION;
+            case Constants.MIDLET_OUT_OF_MEM_ERROR:
+                return ResourceConstants.
+                    AMS_MIDLETSUITELDR_QUIT_OUT_OF_MEMORY;
+            default:
+                return ResourceConstants.
+                    AMS_MIDLETSUITELDR_UNEXPECTEDLY_QUIT;
+        }
+    }
+    
+    /**
+     * Handles exception occurred during MIDlet suite execution.
+     * @param t exception instance
+     */
+    public void handleException(Throwable t) {
+        t.printStackTrace();
+        int errorCode = getErrorCode(t);
+
+        reportError(errorCode, t.getMessage());
+    }
+
+    /** Restricts suite access to internal API */
+    protected void restrictAPIAccess() {
+        // IMPL_NOTE: No restrictions by default
+    }
 
     /**
      * Inits MIDlet suite runtime environment and start a MIDlet
@@ -270,24 +406,13 @@ abstract class AbstractMIDletSuiteLoader
 
                 throw new
                     RuntimeException("Suite environment not complete.");
-	    }
-
-            // Regard resource policy for the suite task
-            if (!allocateReservedResources()) {
-                reportError(Constants.MIDLET_RESOURCE_LIMIT);
-                return;
-            }          
+        }       
 
             // Create suite instance ready for start
             midletSuite = createMIDletSuite();
 
             if (midletSuite == null) {
                 reportError(Constants.MIDLET_SUITE_NOT_FOUND);
-                return;
-            }
-
-            if (!midletSuite.isEnabled()) {
-                reportError(Constants.MIDLET_SUITE_DISABLED);
                 return;
             }
 
