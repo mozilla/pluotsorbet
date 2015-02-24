@@ -149,7 +149,7 @@ certs:
 	make -C certs
 
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs
+app: config-build java certs j2me aot
 	tools/package.sh
 
 benchmarks: java tests
