@@ -756,19 +756,6 @@ Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/s
     asyncImpl("V", new Promise(function(){}));
 };
 
-Native["java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;"] = function(bytearr) {
-    var array = new Int8Array(bytearr.buffer);
-    try {
-        return J2ME.newString(util.decodeUtf8Array(array));
-    } catch(e) {
-        try {
-            return J2ME.newString(util.javaUTF8Decode(array));
-        } catch (e) {
-            throw $.newUTFDataFormatException();
-        }
-    }
-};
-
 Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(jStr) {
     var str = util.fromJavaString(jStr);
 
