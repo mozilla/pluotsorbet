@@ -62,6 +62,10 @@ var document = {
       addEventListener: function() {
       },
       getContext: function() {
+        return {
+          save: function() {
+          },
+        };
       },
       getBoundingClientRect: function() {
         return { top: 0, left: 0, width: 0, height: 0 };
@@ -89,7 +93,7 @@ var config = {
 try {
   load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
        "libs/encoding.js", "util.js",
-       "override.js", "native.js", "tests/override.js", 
+       "override.js", "vm/tags.js", "native.js", "tests/override.js", 
        "midp/midp.js", "midp/gestures.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
        "build/classes.jar.js");

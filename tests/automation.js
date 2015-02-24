@@ -4,6 +4,14 @@
 var system = require('system');
 var fs = require('fs');
 
+// Enable TCP socket API and grant tcp-socket permission to the testing page
+var { Cu } = require("chrome");
+Cu.import("resource://gre/modules/Services.jsm");
+Services.prefs.setBoolPref("dom.mozTCPSocket.enabled", true);
+var uri = Services.io.newURI("http://localhost:8000", null, null);
+var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
+Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
@@ -12,6 +20,9 @@ casper.options.waitTimeout = 70000;
 casper.options.verbose = true;
 casper.options.logLevel = "debug";
 casper.options.viewportSize = { width: 240, height: 320 };
+casper.options.clientScripts = [
+  "tests/mocks/getUserMedia.js",
+];
 
 casper.options.onWaitTimeout = function() {
     this.echo("data:image/png;base64," + this.captureBase64('png'));
@@ -68,6 +79,8 @@ var gfxTests = [
   { name: "gfx/TextEditorGfxTest", maxDifferent: 1375 },
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
   { name: "gfx/VideoPlayerTest", maxDifferent: 0 },
+  { name: "gfx/ImageCapture", maxDifferent: 0 },
+  { name: "gfx/CameraTest", maxDifferent: 0 },
 ];
 
 /**
