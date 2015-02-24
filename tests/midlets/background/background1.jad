@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+MIDlet-1: ForegroundMIDlet,,tests.background.ForegroundMIDlet
+MIDlet-2: BackgroundMIDlet1,,tests.background.BackgroundMIDlet1
+MIDlet-Permissions: com.nokia.mid.s40.io.Connector.localmsg
+MIDlet-Vendor: Mozilla
+Nokia-MIDlet-bg-memory-size: 350
+Nokia-MIDlet-Background-Exit-Confirm-en: DO NOT EXIT!
+Nokia-MIDlet-Save-Location: Root
+Nokia-MIDlet-bg-server: 2
+MIDlet-Name: BackgroundMIDlet
+Nokia-MIDlet-Dual-SIM-Compliant: true
+MIDlet-Version: 2.12.25
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.1

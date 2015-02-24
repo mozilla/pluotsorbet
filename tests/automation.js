@@ -105,7 +105,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -195,6 +195,30 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/background1.jad&jars=tests/tests.jar&logConsole=web,page")
+    .withFrame(0, function() {
+        casper.waitForText("Hello World from foreground MIDlet", function() {
+            test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet2&jad=tests/midlets/background/background2.jad&jars=tests/tests.jar&logConsole=web,page")
+    .withFrame(0, function() {
+        casper.waitForText("Hello World from foreground MIDlet", function() {
+            test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet3&jad=tests/midlets/background/background3.jad&jars=tests/tests.jar&logConsole=web,page")
+    .withFrame(0, function() {
+        casper.waitForText("Hello World from foreground MIDlet", function() {
+            test.assertTextExists("prop1=hello prop2=ciao");
         });
     });
 
