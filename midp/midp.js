@@ -967,7 +967,7 @@ var MIDP = (function() {
 
   // The foreground isolate will get the user events (keypresses, etc.)
   var foregroundIsolateId;
-  var displayId;
+  var displayId = -1;
   var nativeEventQueues = {};
   var waitingNativeEventQueue = {};
 
@@ -992,7 +992,7 @@ var MIDP = (function() {
   }
 
   function sendVirtualKeyboardEvent() {
-    if (undefined != displayId && undefined != foregroundIsolateId) {
+    if (-1 != displayId && undefined != foregroundIsolateId) {
       sendNativeEvent({
         type: VIRTUAL_KEYBOARD_EVENT,
         intParam1: 0,
@@ -1004,7 +1004,7 @@ var MIDP = (function() {
   };
 
   function sendRotationEvent() {
-    if (undefined != displayId && undefined != foregroundIsolateId) {
+    if (-1 != displayId && undefined != foregroundIsolateId) {
       sendNativeEvent({
         type: ROTATION_EVENT,
         intParam1: 0,
@@ -1016,7 +1016,7 @@ var MIDP = (function() {
   }
 
   function sendCommandEvent(id) {
-    if (undefined != displayId && undefined != foregroundIsolateId) {
+    if (-1 != displayId && undefined != foregroundIsolateId) {
       sendNativeEvent({
         type: COMMAND_EVENT,
         intParam1: id,
@@ -1273,12 +1273,12 @@ var MIDP = (function() {
     return gameKeys[keyCode] || 0;
   };
 
-  Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(canvas, suppressKeyEvents) {
-    suppressKeyEvents = suppressKeyEvents;
+  Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(canvas, shouldSuppress) {
+    suppressKeyEvents = shouldSuppress;
   };
 
   Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function() {
-    displayId = undefined;
+    displayId = -1;
   };
 
   Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(isolateId, dispId) {
