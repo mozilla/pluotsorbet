@@ -5,6 +5,9 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+    var tempContext = document.createElement("canvas").getContext("2d");
+    tempContext.canvas.width = 0;
+    tempContext.canvas.height = 0;
 
     var NativeDisplay = function() {
         this.fullScreen = 1;
@@ -192,19 +195,6 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    function createContext2d(width, height) {
-        var canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        return canvas.getContext("2d");
-    }
-
-    function setImageData(imageData, width, height, data) {
-        imageData.width = width;
-        imageData.height = height;
-        imageData.context = data;
-    }
-
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] =
     function(imageData, bytes, offset, length) {
         var ctx = $.ctx;
@@ -213,9 +203,10 @@ var currentlyFocusedTextEditor;
             var img = new Image();
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
-                var context = createContext2d(img.naturalWidth, img.naturalHeight);
+                var context = imageData.context;
+                context.canvas.width = img.naturalWidth;
+                context.canvas.height = img.naturalHeight;
                 context.drawImage(img, 0, 0);
-                setImageData(imageData, img.naturalWidth, img.naturalHeight, context);
 
                 URL.revokeObjectURL(img.src);
                 resolve();
@@ -230,7 +221,9 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
     function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
-        var context = createContext2d(width, height);
+        var context = dataDest.context;
+        context.canvas.width = width;
+        context.canvas.height = height;
 
         if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
             context.scale(-1, 1);
@@ -247,30 +240,32 @@ var currentlyFocusedTextEditor;
         var imgdata = dataSource.context.getImageData(x, y, width, height);
         context.putImageData(imgdata, 0, 0);
 
-        setImageData(dataDest, width, height, context);
-        dataDest.klass.classInfo.getField("I.isMutable.Z").set(dataDest, isMutable);
+        dataDest.isMutable = isMutable;
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.context.canvas;
-
-        var context = createContext2d(srcCanvas.width, srcCanvas.height);
+        var context = dest.context;
+        context.canvas.width = srcCanvas.width;
+        context.canvas.height = srcCanvas.height;
         context.drawImage(srcCanvas, 0, 0);
-        setImageData(dest, srcCanvas.width, srcCanvas.height, context);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] =
     function(imageData, width, height) {
-        var context = createContext2d(width, height);
+        var context = imageData.context;
+        context.canvas.width = width;
+        context.canvas.height = height;
         context.fillStyle = "rgb(255,255,255)"; // white
         context.fillRect(0, 0, width, height);
-        setImageData(imageData, width, height, context);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
     function(imageData, rgbData, width, height, processAlpha) {
-        var context = createContext2d(width, height);
+        var context = imageData.context;
+        context.canvas.width = width;
+        context.canvas.height = height;
         var ctxImageData = context.createImageData(width, height);
         var abgrData = new Int32Array(ctxImageData.data.buffer);
 
@@ -278,18 +273,41 @@ var currentlyFocusedTextEditor;
         converterFunc(rgbData, abgrData, width, height, 0, width);
 
         context.putImageData(ctxImageData, 0, 0);
-
-        setImageData(imageData, width, height, context);
     };
 
+    Native["javax/microedition/lcdui/ImageData.finalize.()V"] = function() {
+        this.context.canvas.width = 0;
+        this.context.canvas.height = 0;
+        this.context = null;
+    }
+
+    Native["javax/microedition/lcdui/ImageData.init0.(IIZ)V"] = function(w, h, isMutable) {
+        this.context = document.createElement("canvas").getContext("2d");
+        this.context.canvas.width = w;
+        this.context.canvas.height = h;
+        this.isMutable = isMutable;
+    }
+
+    Native["javax/microedition/lcdui/ImageData.getWidth.()I"] = function() {
+        return this.context.canvas.width;
+    }
+
+    Native["javax/microedition/lcdui/ImageData.getHeight.()I"] = function() {
+        return this.context.canvas.height;
+    }
+
+    Native["javax/microedition/lcdui/ImageData.isMutable.()Z"] = function() {
+        return this.isMutable;
+    }
+
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
-        var abgrData = new Int32Array(this.context.getImageData(x, y, width, height).data.buffer);
+        var context = this.context;
+        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     };
 
     Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(image) {
-        var imageData = image.imageData;
-        imageData.klass.classInfo.getField("I.isMutable.Z").set(imageData, 1);
+        image.imageData.isMutable = 1;
     };
 
     Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(image, argb) {
@@ -297,8 +315,9 @@ var currentlyFocusedTextEditor;
         var height = image.height;
         var imageData = image.imageData;
 
-        var ctx = createContext2d(width, height);
-        setImageData(imageData, width, height, ctx);
+        var ctx = imageData.context;
+        ctx.canvas.width = width;
+        ctx.canvas.height = height;
 
         var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Int32Array(ctxImageData.data.buffer);
@@ -778,17 +797,20 @@ var currentlyFocusedTextEditor;
 
         var graphics = this.graphics;
 
-        var context = createContext2d(width, height);
-        var imageData = context.createImageData(width, height);
+        tempContext.canvas.width = width;
+        tempContext.canvas.height = height;
+        var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
         converterFunc(pixels, abgrData, width, height, offset, scanlength);
 
-        context.putImageData(imageData, 0, 0);
+        tempContext.putImageData(imageData, 0, 0);
 
         var c = graphics.context2D;
 
-        c.drawImage(context.canvas, x, y);
+        c.drawImage(tempContext.canvas, x, y);
+        tempContext.canvas.width = 0;
+        tempContext.canvas.height = 0;
     };
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
@@ -1263,18 +1285,21 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
-        var context = createContext2d(width, height);
-        var imageData = context.createImageData(width, height);
+        tempContext.canvas.height = height;
+        tempContext.canvas.width = width;
+        var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
         var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
         converterFunc(rgbData, abgrData, width, height, offset, scanlength);
 
-        context.putImageData(imageData, 0, 0);
+        tempContext.putImageData(imageData, 0, 0);
 
         var c = this.context2D;
 
-        c.drawImage(context.canvas, x, y);
+        c.drawImage(tempContext.canvas, x, y);
+        tempContext.canvas.width = 0;
+        tempContext.canvas.height = 0;
     };
 
     var textEditorId = 0,

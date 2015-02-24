@@ -70,8 +70,6 @@ java/util/HashtableEntry.<init>.()V
 java/lang/Integer.hashCode.()I
 java/io/DataInputStream.readFully.([BII)V
 java/io/DataInputStream.read.([BII)I
-javax/microedition/lcdui/ImageData.getWidth.()I
-javax/microedition/lcdui/ImageData.getHeight.()I
 java/lang/String.valueOf.(Ljava/lang/Object;)Ljava/lang/String;
 com/nokia/mid/ui/CanvasItem.getParent.()Ljava/lang/Object;
 java/util/Vector.removeElementAt.(I)V
@@ -140,7 +138,6 @@ javax/microedition/lcdui/Image.createImage.(II)Ljavax/microedition/lcdui/Image;
 javax/microedition/lcdui/ImageDataFactory.createOffScreenImageData.(II)Ljavax/microedition/lcdui/ImageData;
 javax/microedition/lcdui/Image.getGraphics.()Ljavax/microedition/lcdui/Graphics;
 javax/microedition/lcdui/Image.isMutable.()Z
-javax/microedition/lcdui/ImageData.isMutable.()Z
 javax/microedition/lcdui/Graphics.getImageGraphics.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Graphics;
 java/lang/Math.abs.(I)I
 javax/microedition/lcdui/Image.createRGBImage.([IIIZ)Ljavax/microedition/lcdui/Image;
