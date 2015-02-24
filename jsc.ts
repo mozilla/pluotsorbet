@@ -65,8 +65,12 @@ jsGlobal.config = {
   args: "",
 };
 
+function Promise() {
+  // ...
+}
+
 module J2ME {
-  declare var process, require, global, quit, help, scriptArgs, arguments, snarf;
+  declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile;
 
   var isNode = typeof process === 'object';
   var writer: IndentingWriter;
@@ -78,7 +82,7 @@ module J2ME {
     }
   }
 
-  loadFiles("blackBox.js", "build/j2me-jsc.js", "libs/zipfile.js", "libs/encoding.js", "util.js");
+  loadFiles("blackBox.js", "build/j2me-jsc.js", "libs/zipfile.js", "libs/jarstore.js", "libs/encoding.js", "util.js");
 
   phase = ExecutionPhase.Compiler;
 
@@ -179,6 +183,8 @@ module J2ME {
       quit();
     }
 
+    var jarFiles = Object.create(null);
+
     release = releaseOption.value;
     var jvm = new JVM();
     for (var i = 0; i < files.length; i++) {
@@ -187,7 +193,9 @@ module J2ME {
         if (verboseOption.value) {
           writer.writeLn("Loading: " + file);
         }
-        CLASSES.addPath(file, snarf(file, "binary").buffer);
+        var data = snarf(file, "binary").buffer
+        CLASSES.addPath(file, data);
+        jarFiles[file] = new ZipFile(data);
       }
     }
     CLASSES.initializeBuiltinClasses();
@@ -248,7 +256,7 @@ module J2ME {
     }
 
     stdoutWriter.writeLn("var start = performance.now();");
-    compile(jvm, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    compile(jvm, jarFiles, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value, definitionOption.value);
     stdoutWriter.writeLn("console.log(\"Loaded " + jarFileFilterOption.value + " in \" + (performance.now() - start).toFixed(2) + \" ms.\");");
     if (methodFilterList !== null && methodFilterList.length) {
       stderrWriter.enter("The following method(s) in the method filter list failed to compile or were not found:");
