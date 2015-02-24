@@ -70,7 +70,7 @@ function Promise() {
 }
 
 module J2ME {
-  declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile;
+  declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile, JARStore;
 
   var isNode = typeof process === 'object';
   var writer: IndentingWriter;
@@ -194,7 +194,7 @@ module J2ME {
           writer.writeLn("Loading: " + file);
         }
         var data = snarf(file, "binary").buffer
-        CLASSES.addPath(file, data);
+        JARStore.addBuiltIn(file, data);
         jarFiles[file] = new ZipFile(data);
       }
     }

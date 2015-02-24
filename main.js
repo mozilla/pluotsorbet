@@ -36,13 +36,13 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 var loadingPromises = [initFS, getMobileInfo];
 
 loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data) {
-  CLASSES.addPath("java/classes.jar", data);
+  JARStore.addBuiltIn("java/classes.jar", data);
   CLASSES.initializeBuiltinClasses();
 }));
 
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
-    CLASSES.addPath(jar, data);
+    JARStore.addBuiltIn(jar, data);
   }));
 });
 
@@ -124,7 +124,7 @@ if (config.downloadJAD) {
         Promise.all([
           new Promise(function(resolve, reject) {
             fs.open("/midlet.jar", function(fd) {
-              CLASSES.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
+              JARStore.addBuiltIn("midlet.jar", fs.read(fd).buffer.slice(0));
               fs.close(fd);
               resolve();
             });
@@ -146,7 +146,7 @@ if (config.downloadJAD) {
         performDownload(config.downloadJAD, dialog, function(data) {
           dialog.parentElement.removeChild(dialog);
 
-          CLASSES.addPath("midlet.jar", data.jarData);
+          JARStore.addBuiltIn("midlet.jar", data.jarData);
           processJAD(data.jadData);
 
           fs.create("/midlet.jad", new Blob([ data.jadData ]));

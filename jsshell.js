@@ -108,10 +108,10 @@ try {
   CLASSES.addSourceDirectory("java/midp");
   // CLASSES.addSourceDirectory("bench/scimark2src");
 
-  CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-  CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-  CLASSES.addPath("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
-  //CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
+  JARStore.addBuiltIn("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
+  JARStore.addBuiltIn("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  JARStore.addBuiltIn("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
+  //JARStore.addBuiltIn("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
 

@@ -89,10 +89,6 @@ module J2ME {
       return this.preInitializedClasses.indexOf(classInfo) >= 0;
     }
 
-    addPath(name: string, buffer: ArrayBuffer) {
-      JARStore.addBuiltInJAR(name, buffer);
-    }
-
     addSourceDirectory(name: string) {
       this.sourceDirectories.push(name);
     }
@@ -124,24 +120,6 @@ module J2ME {
       return null;
     }
 
-    loadFileFromJar(jarName: string, fileName: string): ArrayBuffer {
-      var bytes = JARStore.loadFileFromJAR(jarName, fileName);
-      if (!bytes) {
-        return null;
-      }
-
-      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-    }
-
-    loadFile(fileName: string): ArrayBuffer {
-      var bytes = JARStore.loadFile(fileName);
-      if (!bytes) {
-        return null;
-      }
-
-      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-    }
-
     loadClassBytes(bytes: ArrayBuffer): ClassInfo {
       enterTimeline("loadClassBytes");
       var classInfo = new ClassInfo(bytes);
@@ -152,7 +130,7 @@ module J2ME {
 
     loadClassFile(fileName: string): ClassInfo {
       loadWriter && loadWriter.enter("> Loading Class File: " + fileName);
-      var bytes = this.loadFile(fileName);
+      var bytes = JARStore.loadFile(fileName);
       if (!bytes) {
         loadWriter && loadWriter.leave("< ClassNotFoundException");
         throw new (ClassNotFoundException)(fileName);

@@ -53,7 +53,7 @@ var MIDP = (function() {
   var manifest = {};
 
   Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
-    var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
+    var bytes = JARStore.loadFileFromJAR(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes) {
       throw $.newIOException();
     }
@@ -491,7 +491,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
     var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
-    var data = CLASSES.loadFile(fileName);
+    var data = JARStore.loadFile(fileName);
     if (!data) {
       console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
       return null;
@@ -1157,7 +1157,7 @@ var MIDP = (function() {
         constantsMap.set(field.name, classInfo.constant_pool[field.constantValue].integer);
       });
 
-      var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
+      var data = JARStore.loadFileFromJAR("java/classes.jar", "assets/0/en-US.xml");
       if (!data)
         throw $.newIOException();
 

@@ -595,7 +595,7 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(name) {
     var fileName = util.fromJavaString(name);
-    var data = CLASSES.loadFile(fileName);
+    var data = JARStore.loadFile(fileName);
     var obj = null;
     if (data) {
         obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
