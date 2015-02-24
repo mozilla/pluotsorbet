@@ -1,6 +1,7 @@
 module J2ME {
   declare var ZipFile;
   declare var snarf;
+  declare var JARStore;
 
   export class ClassRegistry {
     /**
@@ -91,7 +92,7 @@ module J2ME {
     }
 
     addPath(name: string, buffer: ArrayBuffer) {
-      this.jarFiles[name] = new ZipFile(buffer);
+      JARStore.addBuiltInJAR(name, buffer);
     }
 
     addSourceDirectory(name: string) {
@@ -126,29 +127,21 @@ module J2ME {
     }
 
     loadFileFromJar(jarName: string, fileName: string): ArrayBuffer {
-      var zip = this.jarFiles[jarName];
-      if (!zip)
+      var bytes = JARStore.loadFileFromJAR(jarName, fileName);
+      if (!bytes) {
         return null;
-      if (!(fileName in zip.directory))
-        return null;
-      var bytes = zip.read(fileName);
+      }
+
       return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     }
 
     loadFile(fileName: string): ArrayBuffer {
-      var data;
-      var jarFiles = this.jarFiles;
-      for (var k in jarFiles) {
-        var zip = jarFiles[k];
-        if (fileName in zip.directory) {
-          enterTimeline("ZIP", {file: fileName});
-          var bytes = zip.read(fileName);
-          data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-          leaveTimeline("ZIP");
-          break;
-        }
+      var bytes = JARStore.loadFile(fileName);
+      if (!bytes) {
+        return null;
       }
-      return data;
+
+      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     }
 
     loadClassBytes(bytes: ArrayBuffer): ClassInfo {
