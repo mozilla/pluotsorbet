@@ -65,11 +65,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return MIDP.Context2D.canvas.width;
+        return MIDP.context2D.canvas.width;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return MIDP.Context2D.canvas.height;
+        return MIDP.context2D.canvas.height;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
@@ -323,7 +323,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (MIDP.Context2D.canvas.height / 35) | 0);
+        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (MIDP.context2D.canvas.height / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
@@ -351,10 +351,10 @@ var currentlyFocusedTextEditor;
 
         // Note:
         // When a css string, such as ` 10 pt Arial, Helvetica`, is set to
-        // MIDP.Context2D.font, it will be formatted to `10 pt Arial,Helvetica`
+        // MIDP.context2D.font, it will be formatted to `10 pt Arial,Helvetica`
         // with some spaces removed.
         // We need this css string to have the same format as that of the
-        // MIDP.Context2D.font to do comparison in withFont() function.
+        // MIDP.context2D.font to do comparison in withFont() function.
         this.css = style + size + "px " + face;
         this.size = size;
         this.style = style;
@@ -364,8 +364,8 @@ var currentlyFocusedTextEditor;
     function calcStringWidth(font, str) {
         var emojiLen = 0;
 
-        withFont(font, MIDP.Context2D);
-        var len = measureWidth(MIDP.Context2D, str.replace(emoji.regEx, function() {
+        withFont(font, MIDP.context2D);
+        var len = measureWidth(MIDP.context2D, str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
         }));
@@ -393,8 +393,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        withFont(this, MIDP.Context2D);
-        return measureWidth(MIDP.Context2D, String.fromCharCode(char));
+        withFont(this, MIDP.context2D);
+        return measureWidth(MIDP.context2D, String.fromCharCode(char));
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -923,7 +923,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.initScreen0.(III)V"] = function(displayId, w, h) {
-        this.context2D = MIDP.Context2D;
+        this.context2D = MIDP.context2D;
         this.displayId = displayId;
         setDimensions(this, w, h);
         resetGC(this);
@@ -1680,11 +1680,7 @@ var currentlyFocusedTextEditor;
         });
 
         function sendEvent(command) {
-            MIDP.sendNativeEvent({
-                type: MIDP.COMMAND_EVENT,
-                intParam1: command.klass.classInfo.getField("I.id.I").get(command),
-                intParam4: MIDP.displayId,
-            }, MIDP.foregroundIsolateId);
+            MIDP.sendCommandEvent(command.klass.classInfo.getField("I.id.I").get(command));
         }
 
         if (el) {
