@@ -10,6 +10,7 @@ var JARStore = (function() {
 
   var database;
   var jars = new Map();
+  var jad;
 
   var upgrade = {
     "0to1": function(database, transaction, next) {
@@ -48,19 +49,22 @@ var JARStore = (function() {
     var zip = new ZipFile(jarData, false);
 
     jars.set(jarName, {
-      data: zip.directory,
+      directory: zip.directory,
       isBuiltIn: true,
     });
   }
 
-  function installJAR(jarName, jarData) {
+  function installJAR(jarName, jarData, jadData) {
     return openDatabase.then(function() {
       return new Promise(function(resolve, reject) {
         var zip = new ZipFile(jarData, true);
 
         var transaction = database.transaction(OBJECT_STORE, "readwrite");
         var objectStore = transaction.objectStore(OBJECT_STORE);
-        var request = objectStore.put(zip.directory, jarName);
+        var request = objectStore.put({
+          jar: zip.directory,
+          jad: jadData ? jadData : null,
+        }, jarName);
 
         request.onerror = function() {
           console.error("Error installing: " + request.error.name);
@@ -69,7 +73,7 @@ var JARStore = (function() {
 
         transaction.oncomplete = function() {
           jars.set(jarName, {
-            data: zip.directory,
+            directory: zip.directory,
             isBuiltIn: false,
           });
           resolve();
@@ -91,11 +95,20 @@ var JARStore = (function() {
         };
 
         transaction.oncomplete = function() {
-          jars.set(jarName, {
-            data: request.result,
-            isBuiltIn: false,
-          });
-          resolve();
+          if (request.result) {
+            jars.set(jarName, {
+              directory: request.result.jar,
+              isBuiltIn: false,
+            });
+
+            if (request.result.jad) {
+              jad = request.result.jad;
+            }
+
+            resolve(true);
+          } else {
+            resolve(false);
+          }
         };
       });
     });
@@ -107,7 +120,7 @@ var JARStore = (function() {
       return null;
     }
 
-    var entry = jar.data[fileName];
+    var entry = jar.directory[fileName];
 
     if (!entry) {
       return null;
@@ -134,6 +147,10 @@ var JARStore = (function() {
         return data;
       }
     }
+  }
+
+  function getJAD() {
+    return jad;
   }
 
   function clear() {
@@ -163,6 +180,7 @@ var JARStore = (function() {
     loadJAR: loadJAR,
     loadFileFromJAR: loadFileFromJAR,
     loadFile: loadFile,
+    getJAD: getJAD,
     clear: clear,
   };
 })();
