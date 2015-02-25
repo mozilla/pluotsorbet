@@ -79,11 +79,11 @@ var DumbPipe = {
   },
 
   receiveMessage: function(event) {
-    if (event.source === window) {
+    var envelope = event.data;
+
+    if (typeof envelope !== "object" || !("pipeID" in envelope)) {
       return;
     }
-
-    var envelope = event.data;
 
     if (this.recipients[envelope.pipeID]) {
       try {

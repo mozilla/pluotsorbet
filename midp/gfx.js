@@ -137,6 +137,10 @@ var currentlyFocusedTextEditor;
         }
     }
 
+    var ABGRToRGB565_R_MASK = parseInt("000000000000000011111000", 2);
+    var ABGRToRGB565_G_MASK = parseInt("000000001111110000000000", 2);
+    var ABGRToRGB565_B_MASK = parseInt("111110000000000000000000", 2);
+
     function ABGRToRGB565(abgrData, rgbData, width, height, offset, scanlength) {
         var i = 0;
         for (var y = 0; y < height; y++) {
@@ -144,9 +148,9 @@ var currentlyFocusedTextEditor;
 
             for (var x = 0; x < width; x++) {
                 var abgr = abgrData[i++];
-                rgbData[j++] = (abgr & 0b000000000000000011111000) << 8 |
-                               (abgr & 0b000000001111110000000000) >>> 5 |
-                               (abgr & 0b111110000000000000000000) >>> 19;
+                rgbData[j++] = (abgr & ABGRToRGB565_R_MASK) << 8 |
+                               (abgr & ABGRToRGB565_G_MASK) >>> 5 |
+                               (abgr & ABGRToRGB565_B_MASK) >>> 19;
             }
         }
     }
