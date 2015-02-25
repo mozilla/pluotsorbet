@@ -235,7 +235,6 @@ var emoji = (function() {
 
   var data;
   var images = [];
-  var imagesNum = 13;
 
   var squareSize = 16;
 
@@ -257,17 +256,31 @@ var emoji = (function() {
           data = obj;
         }));
 
-        for (var i = 0; i < imagesNum; i++) {
-          images[i] = new Image();
-          images[i].src = "style/emoji/emoji" + i + ".png";
+        if (!MIDlet.customEmojiImageRegex) {
+          for (var i = 0; i < 14; i++) {
+            if (i === 11) {
+              continue;
+            }
 
-          promises.push(new Promise(function(resolve, reject) {
-            images[i].onload = resolve;
-          }));
+            images[i] = new Image();
+            images[i].src = "style/emoji/emoji" + i + ".png";
+
+            promises.push(new Promise(function(resolve, reject) {
+              images[i].onload = resolve;
+            }));
+          }
         }
 
         Promise.all(promises).then(resolve);
       });
+    },
+
+    setCustomImage: function(i, data) {
+        images[i] = new Image();
+        images[i].src = URL.createObjectURL(new Blob([ data ]));
+        // We don't need to wait for the image to be loaded, it's always
+        // going to be ready because MIDlets are going to load it
+        // afterwards.
     },
 
     getData: function(str, size) {

@@ -601,6 +601,15 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
         obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
         obj.data = new Uint8Array(data);
         obj.pos = 0;
+
+        // Instead of loading the emoji images at startup, we load them
+        // as soon as MIDlets load them.
+        if (MIDlet.customEmojiImageRegex) {
+            var result = MIDlet.customEmojiImageRegex.exec(fileName);
+            if (result) {
+                emoji.setCustomImage(Number.parseInt(result[1], 16), data);
+            }
+        }
     }
     return obj;
 };
