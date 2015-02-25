@@ -21,16 +21,6 @@ var fs = (function() {
     // change for a given record.
     this.changesToSync = new Map();
 
-    // Transient paths are those that we store only in memory, so they vanish
-    // on shutdown.  By default, we sync paths to the disk store, so they
-    // survive shutdown and persist across restart.  Add paths to this map
-    // to save disk space and processing power for temporary files, log files,
-    // and other files that store transient data.
-    //
-    // To add paths to this map, call fs.addTransientPath().
-    //
-    this.transientPaths = new Map();
-
     this.db = null;
   };
 
@@ -199,16 +189,12 @@ var fs = (function() {
 
   Store.prototype.setItem = function(key, value) {
     this.map.set(key, value);
-    if (!this.transientPaths.has(key)) {
-      this.changesToSync.set(key, { type: "put", value: value });
-    }
+    this.changesToSync.set(key, { type: "put", value: value });
   };
 
   Store.prototype.removeItem = function(key) {
     this.map.set(key, null);
-    if (!this.transientPaths.has(key)) {
-      this.changesToSync.set(key, { type: "delete" });
-    }
+    this.changesToSync.set(key, { type: "delete" });
   };
 
   Store.prototype.clear = function() {
@@ -225,13 +211,6 @@ var fs = (function() {
     transaction.oncomplete = function() {
       if (DEBUG_FS) { console.log("clear completed"); }
     };
-  }
-
-  Store.prototype.purge = function() {
-    // Now that we keep all records in-memory, only transient paths get purged.
-    this.transientPaths.forEach((function(value, key) {
-      this.map.delete(key);
-    }).bind(this));
   }
 
   Store.prototype.sync = function(cb) {
@@ -349,10 +328,6 @@ var fs = (function() {
       };
     }).bind(this);
     reader.readAsText(file);
-  }
-
-  Store.prototype.addTransientPath = function(path) {
-    this.transientPaths.set(path, true);
   }
 
   var store = new Store();
@@ -871,10 +846,6 @@ var fs = (function() {
     store.sync(cb);
   }
 
-  function purgeStore() {
-    store.purge();
-  }
-
   function createUniqueFile(parentDir, completeName, blob) {
     var name = completeName;
     var ext = "";
@@ -898,10 +869,6 @@ var fs = (function() {
       }
     }
     return tryFile(completeName);
-  }
-
-  function addTransientPath(path) {
-    return store.addTransientPath(path);
   }
 
   function exportStore(cb) {
@@ -937,10 +904,8 @@ var fs = (function() {
     stat: stat,
     clear: clear,
     syncStore: syncStore,
-    purgeStore: purgeStore,
     exportStore: exportStore,
     importStore: importStore,
     createUniqueFile: createUniqueFile,
-    addTransientPath: addTransientPath,
   };
 })();
