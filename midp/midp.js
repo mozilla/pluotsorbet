@@ -947,21 +947,13 @@ var MIDP = (function() {
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
 
-      fs.remove("/midlet.jad");
-      fs.create("/midlet.jad", new Blob([ data.jadData ]));
-      fs.remove("/midlet.jar");
-      fs.create("/midlet.jar", new Blob([ data.jarData ]));
+      JARStore.installJAR("midlet.jar", data.jarData, data.jadData);
 
-      Promise.all([
-        new Promise(function(resolve, reject) {
-          fs.syncStore(resolve);
-        }),
-        CompiledMethodCache.clear(),
-        ]).then(function() {
-          pendingMIDletUpdate = null;
-          DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-          DumbPipe.close(DumbPipe.open("reload", {}));
-        });
+      CompiledMethodCache.clear().then(function() {
+        pendingMIDletUpdate = null;
+        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+        DumbPipe.close(DumbPipe.open("reload", {}));
+      });
     });
   };
 

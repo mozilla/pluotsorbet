@@ -118,42 +118,27 @@ function performDownload(url, dialog, callback) {
 }
 
 if (config.downloadJAD) {
-  loadingPromises.push(initFS.then(function() {
-    return new Promise(function(resolve, reject) {
-      if (fs.exists("/midlet.jar")) {
-        Promise.all([
-          new Promise(function(resolve, reject) {
-            fs.open("/midlet.jar", function(fd) {
-              JARStore.addBuiltIn("midlet.jar", fs.read(fd).buffer.slice(0));
-              fs.close(fd);
-              resolve();
-            });
-          }),
-          new Promise(function(resolve, reject) {
-            fs.open("/midlet.jad", function(fd) {
-              processJAD(util.decodeUtf8(fs.read(fd)));
-              fs.close(fd);
-              resolve();
-            });
-          }),
-        ]).then(resolve);
-      } else {
-        var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-        dialog.style.display = 'block';
-        dialog.classList.add('visible');
-        document.body.appendChild(dialog);
-
-        performDownload(config.downloadJAD, dialog, function(data) {
-          dialog.parentElement.removeChild(dialog);
-
-          JARStore.addBuiltIn("midlet.jar", data.jarData);
-          processJAD(data.jadData);
-
-          fs.create("/midlet.jad", new Blob([ data.jadData ]));
-          fs.create("/midlet.jar", new Blob([ data.jarData ]));
-          resolve();
-        });
+  loadingPromises.push(new Promise(function(resolve, reject) {
+    JARStore.loadJAR("midlet.jar").then(function(loaded) {
+      if (loaded) {
+        processJAD(JARStore.getJAD());
+        resolve();
+        return;
       }
+
+      var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+      dialog.style.display = 'block';
+      dialog.classList.add('visible');
+      document.body.appendChild(dialog);
+
+      performDownload(config.downloadJAD, dialog, function(data) {
+        dialog.parentElement.removeChild(dialog);
+
+        JARStore.installJAR("midlet.jar", data.jarData, data.jadData);
+
+        processJAD(data.jadData);
+        resolve();
+      });
     });
   }).then(backgroundCheck));
 }

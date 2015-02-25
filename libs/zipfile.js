@@ -380,6 +380,7 @@ function ZipFile(buffer, extract) {
     if (extract) {
       compressed_data = new Uint8Array(compressed_len);
       compressed_data.set(data);
+      compressed_data = compressed_data.buffer;
     } else {
       compressed_data = data;
     }
