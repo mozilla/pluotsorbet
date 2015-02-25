@@ -3,4 +3,4 @@
 
 'use strict';
 
-config.ignoredFiles.set("/Private/ignored-file", true);
+config.ignoredFiles.add("/Private/ignored-file");

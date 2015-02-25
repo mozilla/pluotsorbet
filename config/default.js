@@ -24,7 +24,7 @@ var config = {
   // writes to them and return no data from reads.  It's useful for log files
   // to which midlets write frequently but never read.  Specify one by setting
   // a string pathname key to the boolean true value.
-  ignoredFiles: new Map(),
+  ignoredFiles: new Set(),
 };
 
 // The base directory of the app, relative to the current page.  Normally this
