@@ -4,12 +4,9 @@
 'use strict';
 
 var util = (function () {
-  var Utf8TextDecoder;
+  var Utf8TextDecoder = new TextDecoder("utf-8");
 
   function decodeUtf8(arrayBuffer) {
-    if (!Utf8TextDecoder) {
-      Utf8TextDecoder = new TextDecoder("utf-8");
-    }
     return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
   }
 
