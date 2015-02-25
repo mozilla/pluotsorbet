@@ -22,8 +22,8 @@ var config = {
 
   // Ignored files are files that always exist and are empty, so we discard
   // writes to them and return no data from reads.  It's useful for log files
-  // to which midlets write frequently but never read.  Specify one by setting
-  // a string pathname key to the boolean true value.
+  // to which midlets write frequently but never read.  Specify one by adding
+  // the string pathname to the set via config.ignoredFiles.add().
   ignoredFiles: new Set(),
 };
 
