@@ -327,34 +327,13 @@ Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = funct
   return classObject;
 };
 
-Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
-    var className = this.runtimeKlass.templateKlass.classInfo.className;
-    var syntheticMethod = new MethodInfo({
-      name: "ClassNewInstanceSynthetic",
-      signature: "()Ljava/lang/Object;",
-      isStatic: true,
-      classInfo: J2ME.ClassInfo.createFromObject({
-        className: {value: className},
-        vmc: {value: {}},
-        vfc: {value: {}},
-        constant_pool: {value: [
-          null,
-          { tag: TAGS.CONSTANT_Class, name_index: 2 },
-          { bytes: className },
-          { tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 4 },
-          { name_index: 5, signature_index: 6 },
-          { bytes: "<init>" },
-          { bytes: "()V" },
-        ]}
-      }),
-      code: new Uint8Array([
-        0xbb, 0x00, 0x01, // new <idx=1>
-        0x59,             // dup
-        0xb7, 0x00, 0x03, // invokespecial <idx=3>
-        0xb0              // areturn
-      ]),
-    });
-    return $.ctx.executeFrames([new Frame(syntheticMethod, [], 0)]);
+Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
+  return new this.runtimeKlass.templateKlass;
+};
+
+Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
+  // The following can trigger an unwind.
+  CLASSES.getMethod(o.klass.classInfo, "I.<init>.()V").fn.call(o);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {
