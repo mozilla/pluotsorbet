@@ -203,7 +203,7 @@ module J2ME {
       this.isStatic = opts.isStatic;
       this.isSynchronized = opts.isSynchronized;
       this.isAbstract = opts.isAbstract;
-      this.isFinal = opts.isAbstract;
+      this.isFinal = opts.isFinal;
       this.state = MethodState.Cold;
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
