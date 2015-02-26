@@ -947,9 +947,10 @@ var MIDP = (function() {
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
 
-      JARStore.installJAR("midlet.jar", data.jarData, data.jadData);
-
-      CompiledMethodCache.clear().then(function() {
+      Promise.all([
+        JARStore.installJAR("midlet.jar", data.jarData, data.jadData),
+        CompiledMethodCache.clear(),
+      ]).then(function() {
         pendingMIDletUpdate = null;
         DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
         DumbPipe.close(DumbPipe.open("reload", {}));
