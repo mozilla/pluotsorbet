@@ -27,6 +27,7 @@
   <script type="text/javascript" src="polyfill/fromcodepoint.js" defer></script>
   <script type="text/javascript" src="polyfill/codepointat.js" defer></script>
   <script type="text/javascript" src="polyfill/IndexedDB-getAll-shim.js" defer></script>
+  <script type="text/javascript" src="polyfill/map.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
