@@ -1179,7 +1179,7 @@ var emoji = (function() {
       return new Promise(function(resolve, reject) {
         var promises = [];
 
-        if (!MIDlet.customEmojiImageRegex) {
+        if (!config.customEmojiImageRegex) {
           for (var i = 0; i < 14; i++) {
             if (i === 11) {
               continue;
