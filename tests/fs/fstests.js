@@ -871,19 +871,6 @@ tests.push(function() {
   });
 });
 
-tests.push(function() {
-  fs.addTransientPath("/transient-path");
-  fs.create("/transient-path", new Blob());
-  fs.open("/transient-path", function(fd) {
-    fs.write(fd, new TextEncoder().encode("marco"));
-    fs.close(fd);
-    fs.purgeStore();
-    var exists = fs.exists("/transient-path");
-    is(exists, false, "transient file doesn't exist after purge");
-    next();
-  });
-});
-
 // Export the fs store, import it again, and verify that the state of the fs
 // is equivalent.
 tests.push(function() {
