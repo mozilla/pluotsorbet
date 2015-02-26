@@ -105,7 +105,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -447,6 +447,12 @@ casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
                 });
             });
         });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/tests/jarstore/jarstoretests.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 23 pass, 0 fail", "JARStore unit tests");
     });
 
     casper
