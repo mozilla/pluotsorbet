@@ -301,8 +301,7 @@ var currentlyFocusedTextEditor;
     }
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
-        var context = this.context;
-        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(this.context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     };
 
