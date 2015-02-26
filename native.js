@@ -1020,3 +1020,9 @@ function addUnimplementedNative(signature, returnValue) {
 
     Native[signature] = function() { return warnOnce() };
 }
+
+Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
+    if (!release) {
+        eval(J2ME.fromJavaString(src));
+    }
+};
