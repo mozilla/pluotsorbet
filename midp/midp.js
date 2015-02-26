@@ -927,7 +927,7 @@ var MIDP = (function() {
     $.stop();
     DumbPipe.open("exit", null, function(message) {});
     document.getElementById("exit-screen").style.display = "block";
-  };
+  }
 
   var pendingMIDletUpdate = null;
 
@@ -1186,8 +1186,8 @@ var MIDP = (function() {
     console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
   };
 
-  Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(exit) {
-    console.info("Exit: " + exit);
+  Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(status) {
+    console.info("Exit: " + status);
     exit();
   };
 
