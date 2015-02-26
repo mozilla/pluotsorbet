@@ -134,10 +134,10 @@ if (config.downloadJAD) {
       performDownload(config.downloadJAD, dialog, function(data) {
         dialog.parentElement.removeChild(dialog);
 
-        JARStore.installJAR("midlet.jar", data.jarData, data.jadData);
-
-        processJAD(data.jadData);
-        resolve();
+        JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
+          processJAD(data.jadData);
+          resolve();
+        });
       });
     });
   }).then(backgroundCheck));
