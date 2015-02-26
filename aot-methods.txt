@@ -70,6 +70,8 @@ java/util/HashtableEntry.<init>.()V
 java/lang/Integer.hashCode.()I
 java/io/DataInputStream.readFully.([BII)V
 java/io/DataInputStream.read.([BII)I
+javax/microedition/lcdui/ImageData.getWidth.()I
+javax/microedition/lcdui/ImageData.getHeight.()I
 java/lang/String.valueOf.(Ljava/lang/Object;)Ljava/lang/String;
 com/nokia/mid/ui/CanvasItem.getParent.()Ljava/lang/Object;
 java/util/Vector.removeElementAt.(I)V
@@ -77,7 +79,6 @@ java/lang/ref/WeakReference.<init>.(Ljava/lang/Object;)V
 java/lang/ref/Reference.<init>.(Ljava/lang/Object;)V
 javax/microedition/lcdui/ImageDataFactory.getImageDataFactory.()Ljavax/microedition/lcdui/AbstractImageDataFactory;
 javax/microedition/lcdui/Image.<init>.(Ljavax/microedition/lcdui/ImageData;)V
-javax/microedition/lcdui/ImageData.<init>.(IIZ)V
 com/sun/midp/events/Event.<init>.(I)V
 javax/microedition/lcdui/Displayable.getHeight.()I
 javax/microedition/lcdui/DisplayableLFImpl.lGetHeight.()I
@@ -138,6 +139,7 @@ javax/microedition/lcdui/Image.createImage.(II)Ljavax/microedition/lcdui/Image;
 javax/microedition/lcdui/ImageDataFactory.createOffScreenImageData.(II)Ljavax/microedition/lcdui/ImageData;
 javax/microedition/lcdui/Image.getGraphics.()Ljavax/microedition/lcdui/Graphics;
 javax/microedition/lcdui/Image.isMutable.()Z
+javax/microedition/lcdui/ImageData.isMutable.()Z
 javax/microedition/lcdui/Graphics.getImageGraphics.(Ljavax/microedition/lcdui/Image;)Ljavax/microedition/lcdui/Graphics;
 java/lang/Math.abs.(I)I
 javax/microedition/lcdui/Image.createRGBImage.([IIIZ)Ljavax/microedition/lcdui/Image;
@@ -308,7 +310,6 @@ java/util/Vector.removeElement.(Ljava/lang/Object;)Z
 javax/microedition/lcdui/Display.getCurrent.()Ljavax/microedition/lcdui/Displayable;
 javax/microedition/lcdui/Image.createImage.(Ljava/lang/String;)Ljavax/microedition/lcdui/Image;
 javax/microedition/lcdui/ImageDataFactory.createResourceImageData.(Ljava/lang/String;)Ljavax/microedition/lcdui/ImageData;
-javax/microedition/lcdui/ImageData.<init>.()V
 javax/microedition/lcdui/ImageDataFactory.loadAndCreateImmutableImageDataFromCache.(Ljavax/microedition/lcdui/ImageData;Ljava/lang/String;)Z
 javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageData.(Ljavax/microedition/lcdui/ImageData;Ljava/lang/String;)Z
 com/sun/midp/io/Util.toJavaString.([B)Ljava/lang/String;
