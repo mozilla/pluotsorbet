@@ -129,8 +129,10 @@ var JARStore = (function() {
     var bytes;
     if (entry.compression_method === 0) {
       bytes = entry.compressed_data;
-    } else {
+    } else if (entry.compression_method === 8) {
       bytes = inflate(entry.compressed_data);
+    } else {
+      return null;
     }
 
     if (jar.isBuiltIn) {
@@ -140,7 +142,7 @@ var JARStore = (function() {
         // Classes are loaded just once and then are cached in ClassRegistry::classes
         delete jar.directory[fileName];
       }
-      return bytes;
+      return bytes.buffer;
     }
   }
 
