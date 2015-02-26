@@ -498,47 +498,12 @@ Native["java/lang/Thread.start0.()V"] = function() {
         throw $.newIllegalThreadStateException();
     this.alive = true;
     this.pid = util.id();
-    var run = CLASSES.getMethod(this.klass.classInfo, "I.run.()V");
     // Create a context for the thread and start it.
     var newCtx = new Context($.ctx.runtime);
     newCtx.thread = this;
 
-
-    var syntheticMethod = new MethodInfo({
-      name: "ThreadStart0Synthetic",
-      signature: "()V",
-      classInfo: J2ME.ClassInfo.createFromObject({
-        className: {value: this.klass.classInfo.className},
-        vmc: {value: {}},
-        vfc: {value: {}},
-        constant_pool: {value: [
-          null,
-          { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
-          { tag: TAGS.CONSTANT_Class, name_index: 3 },
-          { bytes: "java/lang/Thread" },
-          { tag: TAGS.CONSTANT_Methodref, name_index: 5, signature_index: 6 },
-          { bytes: "run" },
-          { bytes: "()V" },
-          { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 8 },
-          { name_index: 9, signature_index: 10 },
-          { bytes: "internalExit" },
-          { bytes: "()V" },
-        ]},
-      }),
-      code: new Uint8Array([
-        0x2a,             // aload_0
-        0x59,             // dup
-        0xb6, 0x00, 0x01, // invokespecial <idx=1>
-        0xb7, 0x00, 0x07, // invokespecial <idx=7>
-        0xb1,             // return
-      ])
-    });
-
-    newCtx.start([new Frame(syntheticMethod, [ this ], 0)]);
-};
-
-Native["java/lang/Thread.internalExit.()V"] = function() {
-    this.alive = false;
+    var run = CLASSES.getMethod(this.klass.classInfo, "I.run.()V");
+    newCtx.start([new Frame(run, [ this ], 0)]);
 };
 
 Native["java/lang/Thread.isAlive.()Z"] = function() {
