@@ -1,3 +1,8 @@
+/*
+ node-jvm
+ Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
+*/
+
 var $: J2ME.Runtime; // The currently-executing runtime.
 
 interface Math {
