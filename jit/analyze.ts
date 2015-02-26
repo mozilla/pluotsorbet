@@ -236,7 +236,7 @@ module J2ME {
           case Bytecodes.RESOLVED_INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
-            var cpi = stream.readCPI()
+            var cpi = stream.readCPI();
             var callee = methodInfo.classInfo.resolve(cpi, op === Bytecodes.INVOKESTATIC);
 
             if (op !== Bytecodes.INVOKESTATIC) {

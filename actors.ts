@@ -6,6 +6,9 @@ module J2ME {
   declare var classObjects;
   declare var util;
 
+  import Counter = Metrics.Counter;
+  declare var byteSize;
+
   export interface ConstantPoolEntry {
     tag: TAGS;
     name_index: number;
@@ -473,6 +476,19 @@ module J2ME {
 
     toString() {
       return "[class " + this.className + "]";
+    }
+
+    count(counter: Counter) {
+      counter.count("Classes", 1);
+      counter.count("Methods", this.methods.length);
+      counter.count("Fields", this.fields.length);
+
+      for (var i = 0; i < this.methods.length; i++) {
+        var m = this.methods[i];
+        if (m.code) {
+          counter.count("Code", m.code.length);
+        }
+      }
     }
 
     /**

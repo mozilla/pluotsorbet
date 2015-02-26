@@ -1,6 +1,7 @@
 // Basics
 ///<reference path='config.ts' />
 ///<reference path='utilities.ts' />
+///<reference path='parser.ts' />
 
 ///<reference path='vm/classfile.ts' />
 ///<reference path='vm/reader.ts' />
