@@ -21,16 +21,6 @@ var fs = (function() {
     // change for a given record.
     this.changesToSync = new Map();
 
-    // Transient paths are those that we store only in memory, so they vanish
-    // on shutdown.  By default, we sync paths to the disk store, so they
-    // survive shutdown and persist across restart.  Add paths to this map
-    // to save disk space and processing power for temporary files, log files,
-    // and other files that store transient data.
-    //
-    // To add paths to this map, call fs.addTransientPath().
-    //
-    this.transientPaths = new Map();
-
     this.db = null;
   };
 
@@ -199,16 +189,12 @@ var fs = (function() {
 
   Store.prototype.setItem = function(key, value) {
     this.map.set(key, value);
-    if (!this.transientPaths.has(key)) {
-      this.changesToSync.set(key, { type: "put", value: value });
-    }
+    this.changesToSync.set(key, { type: "put", value: value });
   };
 
   Store.prototype.removeItem = function(key) {
     this.map.set(key, null);
-    if (!this.transientPaths.has(key)) {
-      this.changesToSync.set(key, { type: "delete" });
-    }
+    this.changesToSync.set(key, { type: "delete" });
   };
 
   Store.prototype.clear = function() {
@@ -225,13 +211,6 @@ var fs = (function() {
     transaction.oncomplete = function() {
       if (DEBUG_FS) { console.log("clear completed"); }
     };
-  }
-
-  Store.prototype.purge = function() {
-    // Now that we keep all records in-memory, only transient paths get purged.
-    this.transientPaths.forEach((function(value, key) {
-      this.map.delete(key);
-    }).bind(this));
   }
 
   Store.prototype.sync = function(cb) {
@@ -351,10 +330,6 @@ var fs = (function() {
     reader.readAsText(file);
   }
 
-  Store.prototype.addTransientPath = function(path) {
-    this.transientPaths.set(path, true);
-  }
-
   var store = new Store();
 
   var FileBuffer = function(array) {
@@ -448,7 +423,8 @@ var fs = (function() {
     });
   }
 
-  var openedFiles = [null, null, null];
+  var openedFiles = new Map();
+  var lastId = 2;
 
   function open(path, cb) {
     path = normalizePath(path);
@@ -460,7 +436,7 @@ var fs = (function() {
     } else {
       var reader = new FileReader();
       reader.addEventListener("loadend", function() {
-        var fd = openedFiles.push({
+        openedFiles.set(++lastId, {
           dirty: false,
           path: path,
           buffer: new FileBuffer(new Int8Array(reader.result)),
@@ -468,31 +444,37 @@ var fs = (function() {
           size: record.size,
           position: 0,
           record: record,
-        }) - 1;
-        cb(fd);
+        });
+        cb(lastId);
       });
       reader.readAsArrayBuffer(record.data);
     }
   }
 
   function close(fd) {
-    if (fd >= 0 && openedFiles[fd]) {
-      if (DEBUG_FS) { console.log("fs close " + openedFiles[fd].path); }
+    if (fd < 0) {
+      return;
+    }
+
+    var file = openedFiles.get(fd);
+    if (file) {
+      if (DEBUG_FS) { console.log("fs close " + file.path); }
       flush(fd);
-      openedFiles.splice(fd, 1, null);
+      openedFiles.delete(fd);
     }
   }
 
   function read(fd, from, to) {
-    if (!openedFiles[fd]) {
+    var file = openedFiles.get(fd);
+    if (!file) {
       return null;
     }
-    if (DEBUG_FS) { console.log("fs read " + openedFiles[fd].path); }
+    if (DEBUG_FS) { console.log("fs read " + file.path); }
 
-    var buffer = openedFiles[fd].buffer;
+    var buffer = file.buffer;
 
     if (typeof from === "undefined") {
-      from = openedFiles[fd].position;
+      from = file.position;
     }
 
     if (!to || to > buffer.contentSize) {
@@ -503,18 +485,20 @@ var fs = (function() {
       from = buffer.contentSize;
     }
 
-    openedFiles[fd].position += to - from;
+    file.position += to - from;
     return buffer.array.subarray(from, to);
   }
 
   function write(fd, data, from) {
-    if (DEBUG_FS) { console.log("fs write " + openedFiles[fd].path); }
+    var file = openedFiles.get(fd);
+
+    if (DEBUG_FS) { console.log("fs write " + file.path); }
 
     if (typeof from == "undefined") {
-      from = openedFiles[fd].position;
+      from = file.position;
     }
 
-    var buffer = openedFiles[fd].buffer;
+    var buffer = file.buffer;
 
     if (from > buffer.contentSize) {
       from = buffer.contentSize;
@@ -526,7 +510,6 @@ var fs = (function() {
 
     buffer.array.set(data, from);
 
-    var file = openedFiles[fd];
     file.position = from + data.byteLength;
     file.mtime = Date.now();
     file.size = buffer.contentSize;
@@ -534,25 +517,27 @@ var fs = (function() {
   }
 
   function getpos(fd) {
-    return openedFiles[fd].position;
+    return openedFiles.get(fd).position;
   }
 
   function setpos(fd, pos) {
-    openedFiles[fd].position = pos;
+    openedFiles.get(fd).position = pos;
   }
 
   function getsize(fd) {
-    if (!openedFiles[fd]) {
+    var file = openedFiles.get(fd);
+
+    if (!file) {
       return -1;
     }
 
-    return openedFiles[fd].buffer.contentSize;
+    return file.buffer.contentSize;
   }
 
   function flush(fd) {
-    if (DEBUG_FS) { console.log("fs flush " + openedFiles[fd].path); }
+    var openedFile = openedFiles.get(fd);
 
-    var openedFile = openedFiles[fd];
+    if (DEBUG_FS) { console.log("fs flush " + openedFile.path); }
 
     // Bail early if the file has not been modified.
     if (!openedFile.dirty) {
@@ -567,11 +552,10 @@ var fs = (function() {
   }
 
   function flushAll() {
-    for (var fd = 0; fd < openedFiles.length; fd++) {
-      if (!openedFiles[fd] || !openedFiles[fd].dirty) {
-        continue;
+    for (var entry of openedFiles) {
+      if (entry[1].dirty) {
+        flush(entry[0]);
       }
-      flush(fd);
     }
 
     // After flushing to the in-memory datastore, sync it to the persistent one.
@@ -645,9 +629,10 @@ var fs = (function() {
   }
 
   function ftruncate(fd, size) {
-    if (DEBUG_FS) { console.log("fs ftruncate " + openedFiles[fd].path); }
+    var file = openedFiles.get(fd);
 
-    var file = openedFiles[fd];
+    if (DEBUG_FS) { console.log("fs ftruncate " + file.path); }
+
     if (size != file.buffer.contentSize) {
       file.buffer.setSize(size);
       file.dirty = true;
@@ -660,9 +645,11 @@ var fs = (function() {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs remove " + path); }
 
-    if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
-      if (DEBUG_FS) { console.log("file is open"); }
-      return false;
+    for (var file of openedFiles.values()) {
+      if (file.path === path) {
+        if (DEBUG_FS) { console.log("file is open"); }
+        return false;
+      }
     }
 
     var record = store.getItem(path);
@@ -802,8 +789,11 @@ var fs = (function() {
     newPath = normalizePath(newPath);
     if (DEBUG_FS) { console.log("fs rename " + oldPath + " -> " + newPath); }
 
-    if (openedFiles.findIndex(function(file) { return file && file.path === oldPath; }) != -1) {
-      return false;
+    for (var file of openedFiles.values()) {
+      if (file.path === oldPath) {
+        if (DEBUG_FS) { console.log("file is open"); }
+        return false;
+      }
     }
 
     var oldRecord = store.getItem(oldPath);
@@ -856,10 +846,6 @@ var fs = (function() {
     store.sync(cb);
   }
 
-  function purgeStore() {
-    store.purge();
-  }
-
   function createUniqueFile(parentDir, completeName, blob) {
     var name = completeName;
     var ext = "";
@@ -883,10 +869,6 @@ var fs = (function() {
       }
     }
     return tryFile(completeName);
-  }
-
-  function addTransientPath(path) {
-    return store.addTransientPath(path);
   }
 
   function exportStore(cb) {
@@ -922,10 +904,8 @@ var fs = (function() {
     stat: stat,
     clear: clear,
     syncStore: syncStore,
-    purgeStore: purgeStore,
     exportStore: exportStore,
     importStore: importStore,
     createUniqueFile: createUniqueFile,
-    addTransientPath: addTransientPath,
   };
 })();

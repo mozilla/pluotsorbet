@@ -1,3 +1,8 @@
+/*
+ node-jvm
+ Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
+*/
+
 module J2ME {
   declare var util;
   export class Reader {
@@ -56,8 +61,10 @@ module J2ME {
       return data;
     }
 
+    // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
+    // http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
     readStringFast(length: number): string {
-      var a = Reader.getArray(length);
+      var a = (length < 128) ? Reader.getArray(length) : new Array(length);
       var i = 0, j = 0;
       var o = this.offset;
       var e = o + length;
@@ -85,7 +92,7 @@ module J2ME {
       }
       this.offset = o;
       if (j !== a.length) {
-        var b = Reader.getArray(j);
+        var b = (j < 128) ? Reader.getArray(j) : new Array(j);
         for (var i = 0; i < j; i++) {
           b[i] = a[i];
         }
@@ -108,18 +115,17 @@ module J2ME {
     }
 
     readStringSlow(length) {
-      // NB: no need to create a new slice.
-      var data = new Uint8Array(this.view.buffer, this.offset, length);
-      this.offset += length;
-
       // First try w/ TextDecoder, fallback to manually parsing if there was an
       // error. This will handle parsing errors resulting from Java's modified
       // UTF-8 implementation.
       try {
+        // NB: no need to create a new slice.
+        var data = new Uint8Array(this.view.buffer, this.offset, length);
         var s = util.decodeUtf8Array(data);
+        this.offset += length;
         return s;
       } catch (e) {
-        return util.javaUTF8Decode(data);
+        return this.readStringFast(length);
       }
     }
 

@@ -3,21 +3,6 @@
 
 'use strict';
 
-var TAGS = {
-    CONSTANT_Class: 7,
-    CONSTANT_Fieldref: 9,
-    CONSTANT_Methodref: 10,
-    CONSTANT_InterfaceMethodref: 11,
-    CONSTANT_String: 8,
-    CONSTANT_Integer: 3,
-    CONSTANT_Float: 4,
-    CONSTANT_Long: 5,
-    CONSTANT_Double: 6,
-    CONSTANT_NameAndType: 12,
-    CONSTANT_Utf8: 1,
-    CONSTANT_Unicode: 2,
-};
-
 var Native = {};
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
@@ -771,19 +756,6 @@ Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/s
     asyncImpl("V", new Promise(function(){}));
 };
 
-Native["java/io/DataInputStream.bytesToUTF.([B)Ljava/lang/String;"] = function(bytearr) {
-    var array = new Int8Array(bytearr.buffer);
-    try {
-        return J2ME.newString(util.decodeUtf8Array(array));
-    } catch(e) {
-        try {
-            return J2ME.newString(util.javaUTF8Decode(array));
-        } catch (e) {
-            throw $.newUTFDataFormatException();
-        }
-    }
-};
-
 Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(jStr) {
     var str = util.fromJavaString(jStr);
 
@@ -869,8 +841,8 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
                 mask.style.position = "absolute";
                 mask.style.top = 0;
                 mask.style.left = 0;
-                mask.style.height = MIDP.Context2D.canvas.height + "px";
-                mask.style.width = MIDP.Context2D.canvas.width + "px";
+                mask.style.height = MIDP.context2D.canvas.height + "px";
+                mask.style.width = MIDP.context2D.canvas.width + "px";
                 mask.style.backgroundColor = "#000";
                 mask.style.backgroundPosition = "center center";
                 mask.style.backgroundRepeat = "no-repeat";

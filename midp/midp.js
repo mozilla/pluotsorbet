@@ -1,26 +1,27 @@
-/* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
+/* -*- Mode: JavaScript; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
 
-var MIDP = {
-};
+var MIDP = (function() {
+  var canvas = document.getElementById("canvas");
+  var context2D = canvas.getContext("2d");
+  context2D.save();
 
-MIDP.isFullScreen = true;
-MIDP.setFullScreen = function(isFS) {
-    MIDP.isFullScreen = isFS;
-    MIDP.updateCanvas();
-};
+  var isFullScreen = true;
+  function setFullScreen(isFS) {
+    isFullScreen = isFS;
+    updateCanvas();
+  };
 
-MIDP.updateCanvas = function() {
+  function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
-    var canvas = document.getElementById("canvas");
     sidebar.style.display = header.style.display =
-        MIDP.isFullScreen ? "none" : "block";
-    var headerHeight = MIDP.isFullScreen ? 0 : header.offsetHeight;
-    var newHeight = MIDP.physicalScreenHeight - headerHeight;
-    var newWidth = MIDP.physicalScreenWidth;
+        isFullScreen ? "none" : "block";
+    var headerHeight = isFullScreen ? 0 : header.offsetHeight;
+    var newHeight = physicalScreenHeight - headerHeight;
+    var newWidth = physicalScreenWidth;
 
     if (newHeight != canvas.height || newWidth != canvas.width) {
       canvas.height = newHeight;
@@ -30,44 +31,46 @@ MIDP.updateCanvas = function() {
       canvas.style.top = headerHeight + "px";
       canvas.dispatchEvent(new Event("canvasresize"));
     }
-};
+  };
 
-MIDP.onWindowResize = function(evt) {
-    var newPhysicalScreenWidth = window.outerWidth - MIDP.horizontalChrome;
-    var newPhysicalScreenHeight = window.outerHeight - MIDP.verticalChrome;
+  function onWindowResize(evt) {
+    var newPhysicalScreenWidth = window.outerWidth - horizontalChrome;
+    var newPhysicalScreenHeight = window.outerHeight - verticalChrome;
 
-    if (newPhysicalScreenWidth != MIDP.physicalScreenWidth || newPhysicalScreenHeight != MIDP.physicalScreenHeight) {
-      MIDP.physicalScreenWidth = newPhysicalScreenWidth;
-      MIDP.physicalScreenHeight = newPhysicalScreenHeight;
-      MIDP.lastWindowInnerHeight = window.innerHeight;
-      MIDP.updateCanvas();
-    } else if (MIDP.lastWindowInnerHeight != window.innerHeight) {
-      MIDP.lastWindowInnerHeight = window.innerHeight;
-      MIDP.sendVirtualKeyboardEvent();
+    if (newPhysicalScreenWidth != physicalScreenWidth || newPhysicalScreenHeight != physicalScreenHeight) {
+      physicalScreenWidth = newPhysicalScreenWidth;
+      physicalScreenHeight = newPhysicalScreenHeight;
+      lastWindowInnerHeight = window.innerHeight;
+      updateCanvas();
+    } else if (lastWindowInnerHeight != window.innerHeight) {
+      lastWindowInnerHeight = window.innerHeight;
+      sendVirtualKeyboardEvent();
     } else {
       console.warn("Unhandled resize event!");
     }
-};
+  };
 
-MIDP.manifest = {};
+  var manifest = {};
 
-Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
+  Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
     var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
-    if (!bytes)
-        throw $.newIOException();
+    if (!bytes) {
+      throw $.newIOException();
+    }
     var length = bytes.byteLength;
     var data = new Int8Array(bytes);
     var array = J2ME.newByteArray(length);
-    for (var n = 0; n < length; ++n)
-        array[n] = data[n];
+    for (var n = 0; n < length; ++n) {
+      array[n] = data[n];
+    }
     return array;
-};
+  };
 
-Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
+  Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
     console.info(util.fromJavaString(message));
-};
+  };
 
-MIDP.groupTBL = [
+  var groupTBL = [
     "net_access",
     "low_level_net_access",
     "call_control",
@@ -84,122 +87,122 @@ MIDP.groupTBL = [
     "authentication",
     "smart_card",
     "satsa"
-];
+  ];
 
-Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
-    var list = J2ME.newStringArray(MIDP.groupTBL.length);
-    MIDP.groupTBL.forEach(function (e, n) {
-        list[n] = J2ME.newString(e);
+  Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
+    var list = J2ME.newStringArray(groupTBL.length);
+    groupTBL.forEach(function (e, n) {
+      list[n] = J2ME.newString(e);
     });
     return list;
-};
+  };
 
-MIDP.messagesTBL = [
-     ["Airtime",
-      "How often should %1 ask for permission to use airtime? Using airtime may result in charges.",
-      "Don't use airtime and don't ask",
-      "Is it OK to Use Airtime?",
-      "%1 wants to send and receive data using the network. This will use airtime and may result in charges.\n\nIs it OK to use airtime?",
-      ],
-     ["Network",
-      "How often should %1 ask for permission to use network? Using network may result in charges.",
-      "Don't use network and don't ask",
-      "Is it OK to Use Network?",
-      "%1 wants to send and receive data using the network. This will use airtime and may result in charges.\n\nIs it OK to use network?"
-      ],
-     ["Restricted Network Connections",
-      "How often should %1 ask for permission to open a restricted network connection?",
-      "Don't open any restricted connections and don't ask",
-      "Is it OK to open a restricted network connection?",
-      "%1 wants to open a restricted network connection.\n\nIs it OK to open a restricted network connection?"
-      ],
-     ["Auto-Start Registration",
-      "How often should %1 ask for permission to register itself to automatically start?",
-      "Don't register and don't ask",
-      "Is it OK to automatically start the application?",
-      "%1 wants to register itself to be automatically started.\n\nIs it OK to register to be automatically started?"
-      ],
-     ["Computer Connection",
-      "How often should %1 ask for permission to connect to a computer? This may require a data cable that came with your phone.",
-      "Don't connect and don't ask",
-      "Is it OK to Connect?",
-      "%1 wants to connect to a computer. This may require a data cable.\n\nIs it OK to make a connection?"
-      ],
-     ["Messaging",
-      "How often should %1 ask for permission before sending or receiving text messages?",
-      "Don't send or receive messages and don't ask",
-      "Is it OK to Send Messages?",
-      "%1 wants to send text message(s). This could result in charges.%3 message(s) will be sent to %2.\n\nIs it OK to send messages?"
-      ],
-     ["Secured Messaging",
-      "How often should %1 ask for permission before sending or receiving secured text messages?",
-      "Don't send or receive secured messages and don't ask",
-      "Is it OK to Send secured Messages?",
-      "%1 wants to send text secured message(s). This could result in charges.%3 message(s) will be sent to %2.\n\nIs it OK to send messages?"
-      ],
-     ["Recording",
-      "How often should %1 ask for permission to record audio and images? This will use space on your phone.",
-      "Don't record and don't ask",
-      "Is it OK to Record?",
-      "%1 wants to record an image or audio clip.\n\nIs it OK to record?"
-      ],
-     ["Read Personal Data",
-      "How often should %1 ask for permission to read your personal data (contacts, appointments, etc)?",
-      "Don't read my data and don't ask",
-      "Is it OK to read your personal data?",
-      "%1 wants to read your personal data (contacts, appointments, etc)\n\nIs it OK to read your personal data?"
-      ],
-     ["Update Personal Data",
-      "How often should %1 ask for permission to update your personal data (contacts, appointments, etc)?",
-      "Don't update my data and don't ask",
-      "Is it OK to update your personal data?",
-      "%1 wants to update your personal data (contacts, appointments, etc)\n\nIs it OK to update your personal data?",
-      "%1 wants to update %2\n\nIs it OK to update this data?"
-      ],
-     ["Obtain Current Location",
-      "How often should %1 ask for permission to obtain your location?",
-      "Don't give my location and don't ask",
-      "Is it OK to obtain your location?",
-      "Application %1 wants to obtain your the location.\n\nIs it OK to obtain your location?"
-      ],
-     ["Access Landmark Database",
-      "How often should %1 ask for permission to access your landmark database?",
-      "Don't access my landmark database and don't ask",
-      "Is it OK to access your landmark database?",
-      "Application %1 wants to access your landmark database.\n\nIs it OK to access your landmark database?"
-      ],
-     ["payment"],
-     ["Personal Indentification",
-      "How often should %1 ask for permission to use your smart card to identify you?",
-      "Don't sign and don't ask",
-      "Is it OK to obtain your personal signature?",
-      "%1 wants to obtain your personal digital signature.\n\nIs it OK to obtain your personal signature?\nContent to be signed:\n\n%3"
-      ],
-     ["Smart Card Communication",
-      "How often should %1 ask for permission to access your smart card?",
-      "Don't access my smart card and don't ask",
-      "Is it OK to access your smart card?",
-      "Application %1 wants to access your smart card.\n\nIs it OK to access your smart card?"
-      ],
-     ["satsa"]
-];
+  var messagesTBL = [
+    ["Airtime",
+     "How often should %1 ask for permission to use airtime? Using airtime may result in charges.",
+     "Don't use airtime and don't ask",
+     "Is it OK to Use Airtime?",
+     "%1 wants to send and receive data using the network. This will use airtime and may result in charges.\n\nIs it OK to use airtime?",
+    ],
+    ["Network",
+     "How often should %1 ask for permission to use network? Using network may result in charges.",
+     "Don't use network and don't ask",
+     "Is it OK to Use Network?",
+     "%1 wants to send and receive data using the network. This will use airtime and may result in charges.\n\nIs it OK to use network?"
+    ],
+    ["Restricted Network Connections",
+     "How often should %1 ask for permission to open a restricted network connection?",
+     "Don't open any restricted connections and don't ask",
+     "Is it OK to open a restricted network connection?",
+     "%1 wants to open a restricted network connection.\n\nIs it OK to open a restricted network connection?"
+    ],
+    ["Auto-Start Registration",
+     "How often should %1 ask for permission to register itself to automatically start?",
+     "Don't register and don't ask",
+     "Is it OK to automatically start the application?",
+     "%1 wants to register itself to be automatically started.\n\nIs it OK to register to be automatically started?"
+    ],
+    ["Computer Connection",
+     "How often should %1 ask for permission to connect to a computer? This may require a data cable that came with your phone.",
+     "Don't connect and don't ask",
+     "Is it OK to Connect?",
+     "%1 wants to connect to a computer. This may require a data cable.\n\nIs it OK to make a connection?"
+    ],
+    ["Messaging",
+     "How often should %1 ask for permission before sending or receiving text messages?",
+     "Don't send or receive messages and don't ask",
+     "Is it OK to Send Messages?",
+     "%1 wants to send text message(s). This could result in charges.%3 message(s) will be sent to %2.\n\nIs it OK to send messages?"
+    ],
+    ["Secured Messaging",
+     "How often should %1 ask for permission before sending or receiving secured text messages?",
+     "Don't send or receive secured messages and don't ask",
+     "Is it OK to Send secured Messages?",
+     "%1 wants to send text secured message(s). This could result in charges.%3 message(s) will be sent to %2.\n\nIs it OK to send messages?"
+    ],
+    ["Recording",
+     "How often should %1 ask for permission to record audio and images? This will use space on your phone.",
+     "Don't record and don't ask",
+     "Is it OK to Record?",
+     "%1 wants to record an image or audio clip.\n\nIs it OK to record?"
+    ],
+    ["Read Personal Data",
+     "How often should %1 ask for permission to read your personal data (contacts, appointments, etc)?",
+     "Don't read my data and don't ask",
+     "Is it OK to read your personal data?",
+     "%1 wants to read your personal data (contacts, appointments, etc)\n\nIs it OK to read your personal data?"
+    ],
+    ["Update Personal Data",
+     "How often should %1 ask for permission to update your personal data (contacts, appointments, etc)?",
+     "Don't update my data and don't ask",
+     "Is it OK to update your personal data?",
+     "%1 wants to update your personal data (contacts, appointments, etc)\n\nIs it OK to update your personal data?",
+     "%1 wants to update %2\n\nIs it OK to update this data?"
+    ],
+    ["Obtain Current Location",
+     "How often should %1 ask for permission to obtain your location?",
+     "Don't give my location and don't ask",
+     "Is it OK to obtain your location?",
+     "Application %1 wants to obtain your the location.\n\nIs it OK to obtain your location?"
+    ],
+    ["Access Landmark Database",
+     "How often should %1 ask for permission to access your landmark database?",
+     "Don't access my landmark database and don't ask",
+     "Is it OK to access your landmark database?",
+     "Application %1 wants to access your landmark database.\n\nIs it OK to access your landmark database?"
+    ],
+    ["payment"],
+    ["Personal Indentification",
+     "How often should %1 ask for permission to use your smart card to identify you?",
+     "Don't sign and don't ask",
+     "Is it OK to obtain your personal signature?",
+     "%1 wants to obtain your personal digital signature.\n\nIs it OK to obtain your personal signature?\nContent to be signed:\n\n%3"
+    ],
+    ["Smart Card Communication",
+     "How often should %1 ask for permission to access your smart card?",
+     "Don't access my smart card and don't ask",
+     "Is it OK to access your smart card?",
+     "Application %1 wants to access your smart card.\n\nIs it OK to access your smart card?"
+    ],
+    ["satsa"]
+  ];
 
-Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
+  Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
     var name = util.fromJavaString(jName);
     var list = null;
-    MIDP.groupTBL.forEach(function(e, n) {
-        if (e === name) {
-            var messages = MIDP.messagesTBL[n];
-            list = J2ME.newStringArray(messages.length);
-            messages.forEach(function (e, n) {
-                list[n] = J2ME.newString(e);
-            });
-        }
+    groupTBL.forEach(function(e, n) {
+      if (e === name) {
+        var messages = messagesTBL[n];
+        list = J2ME.newStringArray(messages.length);
+        messages.forEach(function (e, n) {
+          list[n] = J2ME.newString(e);
+        });
+      }
     });
     return list;
-};
+  };
 
-MIDP.membersTBL = [
+  var membersTBL = [
     ["javax.microedition.io.Connector.http",
      "javax.microedition.io.Connector.https",
      "javax.microedition.io.Connector.obex.client.tcp",
@@ -250,51 +253,51 @@ MIDP.membersTBL = [
     ["javax.microedition.apdu.aid",
      "javax.microedition.jcrmi"],
     ["javax.microedition.apdu.sat"],
-];
+  ];
 
-Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
+  Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
     var name = util.fromJavaString(jName);
     var list = null;
-    MIDP.groupTBL.forEach(function(e, n) {
-        if (e === name) {
-            var members = MIDP.membersTBL[n];
-            list = J2ME.newStringArray(members.length);
-            members.forEach(function (e, n) {
-                list[n] = J2ME.newString(e);
-            });
-        }
+    groupTBL.forEach(function(e, n) {
+      if (e === name) {
+        var members = membersTBL[n];
+        list = J2ME.newStringArray(members.length);
+        members.forEach(function (e, n) {
+          list[n] = J2ME.newString(e);
+        });
+      }
     });
     return list;
-};
+  };
 
-Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
+  Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
     request = util.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
-        if (request.endsWith(".jad")) {
-            // The download will start after the MIDlet has terminated its execution.
-            MIDP.pendingMIDletUpdate = request;
-            return 1;
-        } else {
-            DumbPipe.close(DumbPipe.open("windowOpen", request));
-        }
+      if (request.endsWith(".jad")) {
+        // The download will start after the MIDlet has terminated its execution.
+        pendingMIDletUpdate = request;
+        return 1;
+      } else {
+        DumbPipe.close(DumbPipe.open("windowOpen", request));
+      }
     } else if (request.startsWith("x-contacts:add?number=")) {
-        new MozActivity({
-            name: "new",
-            data: {
-                type: "webcontacts/contact",
-                params: {
-                    tel: request.substring(22),
-                },
-            },
-        });
+      new MozActivity({
+        name: "new",
+        data: {
+          type: "webcontacts/contact",
+          params: {
+            tel: request.substring(22),
+          },
+        },
+      });
     } else {
       console.warn("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z not implemented for: " + request);
     }
 
     return 0;
-};
+  };
 
-Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(state) {
+  Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(state) {
     var suiteId = (config.midletClassName === "internal") ? -1 : 1;
     state.klass.classInfo.getField("I.suiteId.I").set(state, suiteId);
     state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, J2ME.newString(config.midletClassName));
@@ -302,639 +305,637 @@ Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/C
     state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, J2ME.newString((args.length > 0) ? args[0] : ""));
     state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, J2ME.newString((args.length > 1) ? args[1] : ""));
     state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, J2ME.newString((args.length > 2) ? args[2] : ""));
-};
+  };
 
-MIDP.domainTBL = [
+  var domainTBL = [
     "manufacturer",
     "operator",
     "identified_third_party",
     "unidentified_third_party,unsecured",
     "minimum,unsecured",
     "maximum,unsecured",
-];
+  ];
 
-Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
-    var list = J2ME.newStringArray(MIDP.domainTBL.length);
-    MIDP.domainTBL.forEach(function (e, n) {
-        list[n] = J2ME.newString(e);
+  Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
+    var list = J2ME.newStringArray(domainTBL.length);
+    domainTBL.forEach(function (e, n) {
+      list[n] = J2ME.newString(e);
     });
     return list;
-};
+  };
 
-MIDP.NEVER = 0;
-MIDP.ALLOW = 1;
-MIDP.BLANKET = 4;
-MIDP.SESSION = 8;
-MIDP.ONESHOT = 16;
+  var NEVER = 0;
+  var ALLOW = 1;
+  var BLANKET = 4;
+  var SESSION = 8;
+  var ONESHOT = 16;
 
-MIDP.identifiedTBL = {
-    net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    low_level_net_access: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    call_control: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    application_auto_invocation: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    local_connectivity: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    restricted_messaging: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    multimedia_recording: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    read_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    write_user_data_access: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    location: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    landmark: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    payment: { max: MIDP.ALLOW,   default: MIDP.ALLOW},
-    authentication: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    smart_card: { max: MIDP.BLANKET, default: MIDP.SESSION},
-    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
-};
+  var identifiedTBL = {
+    net_access: { max: BLANKET, default: SESSION},
+    low_level_net_access: { max: BLANKET, default: SESSION},
+    call_control: { max: BLANKET, default: ONESHOT},
+    application_auto_invocation: { max: BLANKET, default: ONESHOT},
+    local_connectivity: { max: BLANKET, default: SESSION},
+    messaging: { max: BLANKET, default: ONESHOT},
+    restricted_messaging: { max: BLANKET, default: ONESHOT},
+    multimedia_recording: { max: BLANKET, default: SESSION},
+    read_user_data_access: { max: BLANKET, default: ONESHOT},
+    write_user_data_access: { max: BLANKET, default: ONESHOT},
+    location: { max: BLANKET, default: SESSION},
+    landmark: { max: BLANKET, default: SESSION},
+    payment: { max: ALLOW,   default: ALLOW},
+    authentication: { max: BLANKET, default: SESSION},
+    smart_card: { max: BLANKET, default: SESSION},
+    satsa: { max: NEVER,   default: NEVER},
+  };
 
-MIDP.unidentifiedTBL = {
-    net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    low_level_net_access: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    call_control: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    application_auto_invocation: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    local_connectivity: { max: MIDP.BLANKET, default: MIDP.ONESHOT},
-    messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    restricted_messaging: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    multimedia_recording: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    read_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    write_user_data_access: { max: MIDP.ONESHOT, default: MIDP.ONESHOT},
-    location: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    landmark: { max: MIDP.SESSION, default: MIDP.ONESHOT},
-    payment: { max: MIDP.NEVER,   default: MIDP.NEVER},
-    authentication: { max: MIDP.NEVER,   default: MIDP.NEVER},
-    smart_card: { max: MIDP.NEVER,   default: MIDP.NEVER},
-    satsa: { max: MIDP.NEVER,   default: MIDP.NEVER},
-};
+  var unidentifiedTBL = {
+    net_access: { max: SESSION, default: ONESHOT},
+    low_level_net_access: { max: SESSION, default: ONESHOT},
+    call_control: { max: ONESHOT, default: ONESHOT},
+    application_auto_invocation: { max: SESSION, default: ONESHOT},
+    local_connectivity: { max: BLANKET, default: ONESHOT},
+    messaging: { max: ONESHOT, default: ONESHOT},
+    restricted_messaging: { max: ONESHOT, default: ONESHOT},
+    multimedia_recording: { max: SESSION, default: ONESHOT},
+    read_user_data_access: { max: ONESHOT, default: ONESHOT},
+    write_user_data_access: { max: ONESHOT, default: ONESHOT},
+    location: { max: SESSION, default: ONESHOT},
+    landmark: { max: SESSION, default: ONESHOT},
+    payment: { max: NEVER,   default: NEVER},
+    authentication: { max: NEVER,   default: NEVER},
+    smart_card: { max: NEVER,   default: NEVER},
+    satsa: { max: NEVER,   default: NEVER},
+  };
 
-Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    var allow = MIDP.NEVER;
+  Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
+    var allow = NEVER;
     switch (util.fromJavaString(domain)) {
-    case "manufacturer":
-    case "maximum":
-    case "operator":
-        allow = MIDP.ALLOW;
+      case "manufacturer":
+      case "maximum":
+      case "operator":
+        allow = ALLOW;
         break;
-    case "identified_third_party":
-        allow = MIDP.identifiedTBL[util.fromJavaString(group)].default;
+      case "identified_third_party":
+        allow = identifiedTBL[util.fromJavaString(group)].default;
         break;
-    case "unidentified_third_party":
-        allow = MIDP.unidentifiedTBL[util.fromJavaString(group)].default;
+      case "unidentified_third_party":
+        allow = unidentifiedTBL[util.fromJavaString(group)].default;
         break;
     }
     return allow;
-};
+  };
 
-Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    var allow = MIDP.NEVER;
+  Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
+    var allow = NEVER;
     switch (util.fromJavaString(domain)) {
-    case "manufacturer":
-    case "maximum":
-    case "operator":
-        allow = MIDP.ALLOW;
+      case "manufacturer":
+      case "maximum":
+      case "operator":
+        allow = ALLOW;
         break;
-    case "identified_third_party":
-        allow = MIDP.identifiedTBL[util.fromJavaString(group)].max;
+      case "identified_third_party":
+        allow = identifiedTBL[util.fromJavaString(group)].max;
         break;
-    case "unidentified_third_party":
-        allow = MIDP.unidentifiedTBL[util.fromJavaString(group)].max;
+      case "unidentified_third_party":
+        allow = unidentifiedTBL[util.fromJavaString(group)].max;
         break;
     }
     return allow;
-};
+  };
 
-Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function() {
+  Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function() {
     console.warn("Permissions.loadingFinished.()V not implemented");
-};
+  };
 
-Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
+  Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
     return $.ctx.runtime.isolate.id;
-};
+  };
 
-Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function() {
-    MIDP.AMSIsolateId = $.ctx.runtime.isolate.id;
-};
+  var AMSIsolateId;
+  Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function() {
+    AMSIsolateId = $.ctx.runtime.isolate.id;
+  };
 
-Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function() {
-    return MIDP.AMSIsolateId;
-};
+  Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function() {
+    return AMSIsolateId;
+  };
 
-Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function() {
-    return MIDP.AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
-};
+  Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function() {
+    return AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
+  };
 
-Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
+  Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
     // See DisplayContainer::createDisplayId, called by the LCDUIEnvironment constructor,
     // called by CldcMIDletSuiteLoader::createSuiteEnvironment.
     // The formula depens on the ID of the isolate that calls createDisplayId, that is
     // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
     // the display ID.
-    MIDP.displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
-};
+    displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
+  };
 
-Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
-};
+  Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
+  };
 
-Native["com/sun/midp/main/AppIsolateMIDletSuiteLoader.allocateReservedResources0.()Z"] = function() {
-  return 1;
-};
+  Native["com/sun/midp/main/AppIsolateMIDletSuiteLoader.allocateReservedResources0.()Z"] = function() {
+    return 1;
+  };
 
-Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
+  Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     var value;
     switch (util.fromJavaString(key)) {
-    case "com.sun.midp.publickeystore.WebPublicKeyStore":
+      case "com.sun.midp.publickeystore.WebPublicKeyStore":
         if (config.midletClassName == "RunTests") {
           value = "_test.ks";
         } else {
           value = "_main.ks";
         }
         break;
-    case "com.sun.midp.events.dispatchTableInitSize":
+      case "com.sun.midp.events.dispatchTableInitSize":
         value = "71";
         break;
-    case "microedition.locale":
+      case "microedition.locale":
         value = navigator.language;
         break;
-    case "datagram":
+      case "datagram":
         value = "com.sun.midp.io.j2me.datagram.ProtocolPushImpl";
         break;
-    case "com.sun.midp.io.j2me.socket.buffersize":
+      case "com.sun.midp.io.j2me.socket.buffersize":
         value = null;
         break;
-    case "com.sun.midp.io.http.proxy":
+      case "com.sun.midp.io.http.proxy":
         value = null;
         break;
-    case "com.sun.midp.io.http.force_non_persistent":
+      case "com.sun.midp.io.http.force_non_persistent":
         value = null;
         break;
-    case "com.sun.midp.io.http.max_persistent_connections":
+      case "com.sun.midp.io.http.max_persistent_connections":
         value = null;
         break;
-    case "com.sun.midp.io.http.persistent_connection_linger_time":
+      case "com.sun.midp.io.http.persistent_connection_linger_time":
         value = null;
         break;
-    case "com.sun.midp.io.http.input_buffer_size":
+      case "com.sun.midp.io.http.input_buffer_size":
         value = null;
         break;
-    case "com.sun.midp.io.http.output_buffer_size":
+      case "com.sun.midp.io.http.output_buffer_size":
         value = null;
         break;
-    default:
+      default:
         console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
         value = null;
         break;
     }
     return J2ME.newString(value);
-};
+  };
 
-Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
+  Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
     var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = CLASSES.loadFile(fileName);
     if (!data) {
-        console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
-        return null;
+      console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
+      return null;
     }
     var len = data.byteLength;
     var bytes = J2ME.newByteArray(len);
     var src = new Int8Array(data);
-    for (var n = 0; n < bytes.byteLength; ++n)
-        bytes[n] = src[n];
+    for (var n = 0; n < bytes.byteLength; ++n) {
+      bytes[n] = src[n];
+    }
     return bytes;
-};
+  };
 
-MIDP.Context2D = (function() {
-    var c = document.getElementById("canvas");
+  var verticalChrome;
+  var horizontalChrome;
+  var physicalScreenWidth;
+  var physicalScreenHeight;
+  var lastWindowInnerHeight;
+  var isVKVisible;
+  if (config.autosize && !/no|0/.test(config.autosize)) {
+    document.documentElement.classList.add('autosize');
 
-    if (config.autosize && !/no|0/.test(config.autosize)) {
-      document.documentElement.classList.add('autosize');
+    // Chrome amounts:
+    //   The difference between the outer[Height|Width] and the actual
+    //   amount of space we have available. So far, horizontalChrome is
+    //   always 0 and verticalChrome is always the size of the status bar,
+    //   which has been 30px in testing. These are assumed to be static
+    //   throughout the lifetime of the app, and things will break if that
+    //   assumption is violated.
+    verticalChrome = window.outerHeight - window.innerHeight;
+    horizontalChrome = window.outerWidth - window.innerWidth;
 
-      // Chrome amounts:
-      //   The difference between the outer[Height|Width] and the actual
-      //   amount of space we have available. So far, horizontalChrome is
-      //   always 0 and verticalChrome is always the size of the status bar,
-      //   which has been 30px in testing. These are assumed to be static
-      //   throughout the lifetime of the app, and things will break if that
-      //   assumption is violated.
-      MIDP.verticalChrome = window.outerHeight - window.innerHeight;
-      MIDP.horizontalChrome = window.outerWidth - window.innerWidth;
+    // "Physical" dimensions:
+    //   The amount of space available to J2ME. This is always the
+    //   outer[Height|Width] minus the [vertical|horizontal]Chrome amount.
+    //
+    //   Note that these values will not always equal the size of our window.
+    //   Specifically, when the FxOS keyboard is visible, the window shrinks,
+    //   so `window.inner[Height|Width]` will be
+    //   smaller than these values. J2ME apps expect that the keyboard
+    //   overlaps the window rather than squishing it, so we simulate that
+    //   by keeping track of these "physical" values.
+    //
+    //   Note also that these values do not take into account the size of
+    //   the header, which might shrink our canvas. To find out how much
+    //   space is actually available to the current MIDlet, check
+    //   `document.getElementById("canvas").[width|height]`.
+    physicalScreenWidth = window.outerWidth - horizontalChrome;
+    physicalScreenHeight = window.outerHeight - verticalChrome;
 
-      // "Physical" dimensions:
-      //   The amount of space available to J2ME. This is always the
-      //   outer[Height|Width] minus the [vertical|horizontal]Chrome amount.
-      //
-      //   Note that these values will not always equal the size of our window.
-      //   Specifically, when the FxOS keyboard is visible, the window shrinks,
-      //   so `window.inner[Height|Width]` will be
-      //   smaller than these values. J2ME apps expect that the keyboard
-      //   overlaps the window rather than squishing it, so we simulate that
-      //   by keeping track of these "physical" values.
-      //
-      //   Note also that these values do not take into account the size of
-      //   the header, which might shrink our canvas. To find out how much
-      //   space is actually available to the current MIDlet, check
-      //   `document.getElementById("canvas").[width|height]`.
-      MIDP.physicalScreenWidth = window.outerWidth - MIDP.horizontalChrome;
-      MIDP.physicalScreenHeight = window.outerHeight - MIDP.verticalChrome;
+    // Cached value of `window.innerHeight` so that we can tell when it
+    // changes. This is useful for determining when to send keyboard
+    // visibility events.
+    lastWindowInnerHeight = window.innerHeight;
 
-      // Cached value of `window.innerHeight` so that we can tell when it
-      // changes. This is useful for determining when to send keyboard
-      // visibility events.
-      MIDP.lastWindowInnerHeight = window.innerHeight;
+    updateCanvas();
+    isVKVisible = function() {
+      var expectedHeightWithNoKeyboard = window.outerHeight - verticalChrome;
+      if (window.innerHeight == expectedHeightWithNoKeyboard) {
+        return false;
+      } else if (window.innerHeight < expectedHeightWithNoKeyboard) {
+        return true;
+      } else {
+        console.warn("window is taller than expected in isVKVisible!");
+        return false;
+      }
+    };
+    window.addEventListener("resize", onWindowResize);
+  } else {
+    document.documentElement.classList.add('debug-mode');
+    physicalScreenWidth = 240;
+    physicalScreenHeight = 320;
 
-      MIDP.updateCanvas();
-      MIDP.isVKVisible = function() {
-          var expectedHeightWithNoKeyboard = window.outerHeight - MIDP.verticalChrome;
-          if (window.innerHeight == expectedHeightWithNoKeyboard) {
-              return false;
-          } else if (window.innerHeight < expectedHeightWithNoKeyboard) {
-              return true;
+    updateCanvas();
+    isVKVisible = function() {
+      return false;
+    };
+  }
+
+  function sendPenEvent(pt, whichType) {
+    sendNativeEvent({
+      type: PEN_EVENT,
+      intParam1: whichType,
+      intParam2: pt.x,
+      intParam3: pt.y,
+      intParam4: displayId
+    }, foregroundIsolateId);
+  }
+
+  function sendGestureEvent(pt, distancePt, whichType, aFloatParam1, aIntParam7, aIntParam8, aIntParam9) {
+    sendNativeEvent({
+      type: GESTURE_EVENT,
+      intParam1: whichType,
+      intParam2: distancePt && distancePt.x || 0,
+      intParam3: distancePt && distancePt.y || 0,
+      intParam4: displayId,
+      intParam5: pt.x,
+      intParam6: pt.y,
+      floatParam1: Math.fround(aFloatParam1 || 0.0),
+      intParam7: aIntParam7 || 0,
+      intParam8: aIntParam8 || 0,
+      intParam9: aIntParam9 || 0,
+      intParam10: 0,
+      intParam11: 0,
+      intParam12: 0,
+      intParam13: 0,
+      intParam14: 0,
+      intParam15: 0,
+      intParam16: 0
+    }, foregroundIsolateId);
+  }
+
+  // In the simulator and on device, use touch events; in desktop
+  // mode, we must use mouse events (unless you enable touch events
+  // in devtools).
+  var supportsTouch = ("ontouchstart" in document.documentElement);
+
+  // Cache the canvas position for future computation.
+  var canvasRect = canvas.getBoundingClientRect();
+  canvas.addEventListener("canvasresize", function() {
+    canvasRect = canvas.getBoundingClientRect();
+    sendRotationEvent();
+  });
+
+  function getEventPoint(event) {
+    var item = ((event.touches && event.touches[0]) || // touchstart, touchmove
+        (event.changedTouches && event.changedTouches[0]) || // touchend
+        event); // mousedown, mouseup, mousemove
+    return {
+      x: item.pageX - (canvasRect.left | 0),
+      y: item.pageY - (canvasRect.top | 0)
+    };
+  }
+
+  // Input Handling: Some MIDlets (usually older ones) respond to
+  // "pen" events; others respond to "gesture" events. We must fire
+  // both. A distance threshold ensures that touches with an "intent
+  // to tap" will likely result in a tap.
+
+  var LONG_PRESS_TIMEOUT = 1000;
+  var MIN_DRAG_DISTANCE_SQUARED = 5 * 5;
+  var mouseDownInfo = null;
+  var longPressTimeoutID = null;
+  var longPressDetected = false;
+
+  canvas.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
+    event.preventDefault(); // Prevent unnecessary fake mouse events.
+    var pt = getEventPoint(event);
+    sendPenEvent(pt, PRESSED);
+    mouseDownInfo = pt;
+
+    longPressDetected = false;
+    longPressTimeoutID = setTimeout(function() {
+      longPressDetected = true;
+      sendGestureEvent(pt, null, GESTURE_LONG_PRESS);
+    }, LONG_PRESS_TIMEOUT);
+  });
+
+  canvas.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
+    if (!mouseDownInfo) {
+      return; // Mousemove on desktop; ignored.
+    }
+    event.preventDefault();
+
+    if (longPressTimeoutID) {
+      clearTimeout(longPressTimeoutID);
+      longPressTimeoutID = null;
+    }
+
+    var pt = getEventPoint(event);
+    sendPenEvent(pt, DRAGGED);
+    var distance = {
+      x: pt.x - mouseDownInfo.x,
+      y: pt.y - mouseDownInfo.y
+    };
+    // If this gesture is dragging, or we've moved a substantial
+    // amount since the original "down" event, begin or continue a
+    // drag event. Using squared distance to avoid needing sqrt.
+    if (mouseDownInfo.isDragging || (distance.x * distance.x + distance.y * distance.y > MIN_DRAG_DISTANCE_SQUARED)) {
+      mouseDownInfo.isDragging = true;
+      mouseDownInfo.x = pt.x;
+      mouseDownInfo.y = pt.y;
+      if (!longPressDetected) {
+        sendGestureEvent(pt, distance, GESTURE_DRAG);
+      }
+    }
+
+    // Just store the dragging event info here, then calc the speed and
+    // determine whether the gesture is GESTURE_DROP or GESTURE_FLICK in
+    // the mouseup event listener.
+    if (!mouseDownInfo.draggingPts) {
+      mouseDownInfo.draggingPts = [];
+    }
+
+    // Only store the latest two drag events.
+    if (mouseDownInfo.draggingPts.length > 1) {
+      mouseDownInfo.draggingPts.shift();
+    }
+
+    mouseDownInfo.draggingPts.push({
+      pt: getEventPoint(event),
+      time: new Date().getTime()
+    });
+  });
+
+  function calcFlickSpeed() {
+    var currentDragPT = mouseDownInfo.draggingPts[1];
+    var lastDragPT = mouseDownInfo.draggingPts[0];
+
+    var deltaX = currentDragPT.pt.x - lastDragPT.pt.x;
+    var deltaY = currentDragPT.pt.y - lastDragPT.pt.y;
+    var deltaTimeInMs = currentDragPT.time - lastDragPT.time;
+
+    var speedX = Math.round(deltaX * 1000 / deltaTimeInMs);
+    var speedY = Math.round(deltaY * 1000 / deltaTimeInMs);
+    var speed  = Math.round(Math.sqrt(speedX * speedX + speedY * speedY));
+
+    var direction = 0;
+    if (deltaX >= 0 && deltaY >=0) {
+      direction = Math.atan(deltaY / deltaX);
+    } else if (deltaX < 0 && deltaY >= 0) {
+      direction = Math.PI + Math.atan(deltaY / deltaX);
+    } else if (deltaX < 0 && deltaY < 0) {
+      direction = Math.atan(deltaY / deltaX) - Math.PI;
+    } else if (deltaX >= 0 && deltaY < 0) {
+      direction = Math.atan(deltaY / deltaX);
+    }
+
+    return {
+      direction: direction,
+      speed: speed,
+      speedX: speedX,
+      speedY: speedY
+    };
+  }
+
+  // The end listener goes on `document` so that we properly detect touchend/mouseup anywhere.
+  document.addEventListener(supportsTouch ? "touchend" : "mouseup", function(event) {
+    if (!mouseDownInfo) {
+      return; // Touchstart wasn't on the canvas.
+    }
+    event.preventDefault();
+
+    if (longPressTimeoutID) {
+      clearTimeout(longPressTimeoutID);
+      longPressTimeoutID = null;
+    }
+
+    var pt = getEventPoint(event);
+    sendPenEvent(pt, RELEASED);
+
+    if (!longPressDetected) {
+      if (mouseDownInfo.isDragging) {
+        if (mouseDownInfo.draggingPts && mouseDownInfo.draggingPts.length == 2) {
+          var deltaTime = new Date().getTime() - mouseDownInfo.draggingPts[1].time;
+          var flickSpeed = calcFlickSpeed();
+          // On the real Nokia device, if user touch on the screen and
+          // move the finger, then stop moving for a while and lift
+          // the finger, it will trigger a normal GESTURE_DROP instead
+          // of GESTURE_FLICK event, so let's check if the time gap
+          // between touchend event and the last touchmove event is
+          // larger than a threshold.
+          if (deltaTime > 300 || flickSpeed.speed == 0) {
+            sendGestureEvent(pt, null, GESTURE_DROP);
           } else {
-              console.warn("window is taller than expected in isVKVisible!");
-              return false;
+            sendGestureEvent(pt, null, GESTURE_FLICK,
+                             flickSpeed.direction,
+                             flickSpeed.speed,
+                             flickSpeed.speedX,
+                             flickSpeed.speedY);
           }
-      };
-      window.addEventListener("resize", MIDP.onWindowResize);
-    } else {
-      document.documentElement.classList.add('debug-mode');
-      MIDP.physicalScreenWidth = 240;
-      MIDP.physicalScreenHeight = 320;
-
-      MIDP.updateCanvas();
-      MIDP.isVKVisible = function() {
-          return false;
-      };
+        } else {
+          sendGestureEvent(pt, null, GESTURE_DROP);
+        }
+      } else {
+        sendGestureEvent(pt, null, GESTURE_TAP);
+      }
     }
 
-    function sendPenEvent(pt, whichType) {
-        MIDP.sendNativeEvent({
-            type: MIDP.PEN_EVENT,
-            intParam1: whichType,
-            intParam2: pt.x,
-            intParam3: pt.y,
-            intParam4: MIDP.displayId
-        }, MIDP.foregroundIsolateId);
-    }
+    mouseDownInfo = null; // Clear the way for the next gesture.
+  });
 
-    function sendGestureEvent(pt, distancePt, whichType, aFloatParam1, aIntParam7, aIntParam8, aIntParam9) {
-        MIDP.sendNativeEvent({
-            type: MIDP.GESTURE_EVENT,
-            intParam1: whichType,
-            intParam2: distancePt && distancePt.x || 0,
-            intParam3: distancePt && distancePt.y || 0,
-            intParam4: MIDP.displayId,
-            intParam5: pt.x,
-            intParam6: pt.y,
-            floatParam1: Math.fround(aFloatParam1 || 0.0),
-            intParam7: aIntParam7 || 0,
-            intParam8: aIntParam8 || 0,
-            intParam9: aIntParam9 || 0,
-            intParam10: 0,
-            intParam11: 0,
-            intParam12: 0,
-            intParam13: 0,
-            intParam14: 0,
-            intParam15: 0,
-            intParam16: 0
-        }, MIDP.foregroundIsolateId);
-    }
-
-    // In the simulator and on device, use touch events; in desktop
-    // mode, we must use mouse events (unless you enable touch events
-    // in devtools).
-    var supportsTouch = ("ontouchstart" in document.documentElement);
-
-    // Cache the canvas position for future computation.
-    var canvasRect = c.getBoundingClientRect();
-    c.addEventListener("canvasresize", function() {
-        canvasRect = c.getBoundingClientRect();
-        MIDP.sendRotationEvent();
-    });
-
-    function getEventPoint(event) {
-        var item = ((event.touches && event.touches[0]) || // touchstart, touchmove
-                    (event.changedTouches && event.changedTouches[0]) || // touchend
-                    event); // mousedown, mouseup, mousemove
-        return {
-            x: item.pageX - (canvasRect.left | 0),
-            y: item.pageY - (canvasRect.top | 0)
-        };
-    }
-
-    // Input Handling: Some MIDlets (usually older ones) respond to
-    // "pen" events; others respond to "gesture" events. We must fire
-    // both. A distance threshold ensures that touches with an "intent
-    // to tap" will likely result in a tap.
-
-    var LONG_PRESS_TIMEOUT = 1000;
-    var MIN_DRAG_DISTANCE_SQUARED = 5 * 5;
-    var mouseDownInfo = null;
-    var longPressTimeoutID = null;
-    var longPressDetected = false;
-
-    c.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
-        event.preventDefault(); // Prevent unnecessary fake mouse events.
-        var pt = getEventPoint(event);
-        sendPenEvent(pt, MIDP.PRESSED);
-        mouseDownInfo = pt;
-
-        longPressDetected = false;
-        longPressTimeoutID = setTimeout(function() {
-            longPressDetected = true;
-            sendGestureEvent(pt, null, MIDP.GESTURE_LONG_PRESS);
-        }, LONG_PRESS_TIMEOUT);
-    });
-
-    c.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
-        if (!mouseDownInfo) {
-            return; // Mousemove on desktop; ignored.
-        }
-        event.preventDefault();
-
-        if (longPressTimeoutID) {
-            clearTimeout(longPressTimeoutID);
-            longPressTimeoutID = null;
-        }
-
-        var pt = getEventPoint(event);
-        sendPenEvent(pt, MIDP.DRAGGED);
-        var distance = {
-            x: pt.x - mouseDownInfo.x,
-            y: pt.y - mouseDownInfo.y
-        };
-        // If this gesture is dragging, or we've moved a substantial
-        // amount since the original "down" event, begin or continue a
-        // drag event. Using squared distance to avoid needing sqrt.
-        if (mouseDownInfo.isDragging ||
-            (distance.x * distance.x + distance.y * distance.y > MIN_DRAG_DISTANCE_SQUARED)) {
-            mouseDownInfo.isDragging = true;
-            mouseDownInfo.x = pt.x;
-            mouseDownInfo.y = pt.y;
-            if (!longPressDetected) {
-                sendGestureEvent(pt, distance, MIDP.GESTURE_DRAG);
-            }
-        }
-
-        // Just store the dragging event info here, then calc the speed and
-        // determine whether the gesture is GESTURE_DROP or GESTURE_FLICK in
-        // the mouseup event listener.
-        if (!mouseDownInfo.draggingPts) {
-            mouseDownInfo.draggingPts = [];
-        }
-
-        // Only store the latest two drag events.
-        if (mouseDownInfo.draggingPts.length > 1) {
-            mouseDownInfo.draggingPts.shift();
-        }
-
-        mouseDownInfo.draggingPts.push({
-            pt: getEventPoint(event),
-            time: new Date().getTime()
-        });
-    });
-
-    function calcFlickSpeed() {
-        var currentDragPT = mouseDownInfo.draggingPts[1];
-        var lastDragPT = mouseDownInfo.draggingPts[0];
-
-        var deltaX = currentDragPT.pt.x - lastDragPT.pt.x;
-        var deltaY = currentDragPT.pt.y - lastDragPT.pt.y;
-        var deltaTimeInMs = currentDragPT.time - lastDragPT.time;
-
-        var speedX = Math.round(deltaX * 1000 / deltaTimeInMs);
-        var speedY = Math.round(deltaY * 1000 / deltaTimeInMs);
-        var speed  = Math.round(Math.sqrt(speedX * speedX + speedY * speedY));
-
-        var direction = 0;
-        if (deltaX >= 0 && deltaY >=0) {
-            direction = Math.atan(deltaY / deltaX);
-        } else if (deltaX < 0 && deltaY >= 0) {
-            direction = Math.PI + Math.atan(deltaY / deltaX);
-        } else if (deltaX < 0 && deltaY < 0) {
-            direction = Math.atan(deltaY / deltaX) - Math.PI;
-        } else if (deltaX >= 0 && deltaY < 0) {
-            direction = Math.atan(deltaY / deltaX);
-        }
-
-        return {
-            direction: direction,
-            speed: speed,
-            speedX: speedX,
-            speedY: speedY
-        };
-    }
-
-    // The end listener goes on `document` so that we properly detect touchend/mouseup anywhere.
-    document.addEventListener(supportsTouch ? "touchend" : "mouseup", function(event) {
-        if (!mouseDownInfo) {
-            return; // Touchstart wasn't on the canvas.
-        }
-        event.preventDefault();
-
-        if (longPressTimeoutID) {
-            clearTimeout(longPressTimeoutID);
-            longPressTimeoutID = null;
-        }
-
-        var pt = getEventPoint(event);
-        sendPenEvent(pt, MIDP.RELEASED);
-
-        if (!longPressDetected) {
-            if (mouseDownInfo.isDragging) {
-                if (mouseDownInfo.draggingPts && mouseDownInfo.draggingPts.length == 2) {
-                    var deltaTime = new Date().getTime() - mouseDownInfo.draggingPts[1].time;
-                    var flickSpeed = calcFlickSpeed();
-                    // On the real Nokia device, if user touch on the screen and
-                    // move the finger, then stop moving for a while and lift
-                    // the finger, it will trigger a normal GESTURE_DROP instead
-                    // of GESTURE_FLICK event, so let's check if the time gap
-                    // between touchend event and the last touchmove event is
-                    // larger than a threshold.
-                    if (deltaTime > 300 || flickSpeed.speed == 0) {
-                        sendGestureEvent(pt, null, MIDP.GESTURE_DROP);
-                    } else {
-                        sendGestureEvent(pt, null, MIDP.GESTURE_FLICK,
-                            flickSpeed.direction,
-                            flickSpeed.speed,
-                            flickSpeed.speedX,
-                            flickSpeed.speedY);
-                    }
-                } else {
-                    sendGestureEvent(pt, null, MIDP.GESTURE_DROP);
-                }
-            } else {
-                sendGestureEvent(pt, null, MIDP.GESTURE_TAP);
-            }
-        }
-
-        mouseDownInfo = null; // Clear the way for the next gesture.
-    });
-
-    var ret = c.getContext("2d");
-    ret.save();
-    return ret;
-})();
-
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function() {
+  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function() {
     return 0;
-};
+  };
 
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(id) {
+  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(id) {
     return id <= 1 ? 1 : 0;
-};
+  };
 
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(id) {
+  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(id) {
     return J2ME.newString(id.toString());
-};
+  };
 
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(suiteId) {
+  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(suiteId) {
     // We should be able to use the same storage ID for all MIDlet suites.
     return 0; // storageId
-};
+  };
 
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteJarPath.(I)Ljava/lang/String;"] = function(id) {
+  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteJarPath.(I)Ljava/lang/String;"] = function(id) {
     return J2ME.newString("");
-};
+  };
 
-Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(id, lock) {
+  Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(id, lock) {
     console.warn("MIDletSuiteImpl.lockMIDletSuite.(IZ)V not implemented (" + id + ", " + lock + ")");
-};
+  };
 
-Native["com/sun/midp/midletsuite/MIDletSuiteImpl.unlockMIDletSuite.(I)V"] = function(suiteId) {
+  Native["com/sun/midp/midletsuite/MIDletSuiteImpl.unlockMIDletSuite.(I)V"] = function(suiteId) {
     console.warn("MIDletSuiteImpl.unlockMIDletSuite.(I)V not implemented (" + suiteId + ")");
-};
+  };
 
-Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function() {
+  Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function() {
     this.klass.classInfo.getField("I.pushInterruptSetting.B").set(this, 1);
     console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
-};
+  };
 
-Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(suiteId, pushInterruptSetting, pushOptions, permissions) {
-    console.warn("SuiteSettings.save0.(IBI[B)V not implemented (" +
-                 suiteId + ", " + pushInterruptSetting + ", " + pushOptions + ", " + permissions + ")");
-};
+  Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(suiteId, pushInterruptSetting, pushOptions, permissions) {
+    console.warn("SuiteSettings.save0.(IBI[B)V not implemented (" + suiteId + ", " + pushInterruptSetting + ", " + pushOptions + ", " + permissions + ")");
+  };
 
-Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
+  Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
     // The MIDlet has to be trusted for opening SSL connections using port 443.
     this.klass.classInfo.getField("I.trusted.Z").set(this, 1);
     console.warn("com/sun/midp/midletsuite/InstallInfo.load.()V incomplete");
-};
+  };
 
-Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function() {
-    var keys = Object.keys(MIDP.manifest);
+  Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function() {
+    var keys = Object.keys(manifest);
     var arr = J2ME.newStringArray(keys.length * 2);
     var i = 0;
     keys.forEach(function(key) {
       arr[i++] = J2ME.newString(key);
-      arr[i++] = J2ME.newString(MIDP.manifest[key]);
+      arr[i++] = J2ME.newString(manifest[key]);
     });
     return arr;
-};
+  };
 
-Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(imageData, suiteId, fileName) {
+  Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(imageData, suiteId, fileName) {
     // We're not implementing the cache because looks like it isn't used much.
     // In a MIDlet I've been testing for a few minutes, there's been only one hit.
     return 0;
-};
+  };
 
-MIDP.InterIsolateMutexes = [];
-MIDP.LastInterIsolateMutexID = -1;
+  var interIsolateMutexes = [];
+  var lastInterIsolateMutexID = -1;
 
-Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(jName) {
+  Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(jName) {
     var name = util.fromJavaString(jName);
 
     var mutex;
-    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-        if (MIDP.InterIsolateMutexes[i].name === name) {
-            mutex = MIDP.InterIsolateMutexes[i];
-        }
+    for (var i = 0; i < interIsolateMutexes.length; i++) {
+      if (interIsolateMutexes[i].name === name) {
+        mutex = interIsolateMutexes[i];
+      }
     }
 
     if (!mutex) {
       mutex = {
         name: name,
-        id: ++MIDP.LastInterIsolateMutexID,
+        id: ++lastInterIsolateMutexID,
         locked: false,
         waiting: [],
       };
-      MIDP.InterIsolateMutexes.push(mutex);
+      interIsolateMutexes.push(mutex);
     }
 
     return mutex.id;
-};
+  };
 
-Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) {
+  Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) {
     var ctx = $.ctx;
     var mutex;
-    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-        if (MIDP.InterIsolateMutexes[i].id == id) {
-            mutex = MIDP.InterIsolateMutexes[i];
-            break;
-        }
+    for (var i = 0; i < interIsolateMutexes.length; i++) {
+      if (interIsolateMutexes[i].id == id) {
+        mutex = interIsolateMutexes[i];
+        break;
+      }
     }
 
     if (!mutex) {
-        throw $.newIllegalStateException("Invalid mutex ID");
+      throw $.newIllegalStateException("Invalid mutex ID");
     }
 
     if (!mutex.locked) {
-        mutex.locked = true;
-        mutex.holder = ctx.runtime.isolate.id;
-        return;
+      mutex.locked = true;
+      mutex.holder = ctx.runtime.isolate.id;
+      return;
     }
 
     if (mutex.holder == ctx.runtime.isolate.id) {
-        throw $.newRuntimeException("Attempting to lock mutex twice within the same Isolate");
+      throw $.newRuntimeException("Attempting to lock mutex twice within the same Isolate");
     }
 
     asyncImpl("V", new Promise(function(resolve, reject) {
-        mutex.waiting.push(function() {
-            mutex.locked = true;
-            mutex.holder = ctx.runtime.isolate.id;
-            resolve();
-        });
+      mutex.waiting.push(function() {
+        mutex.locked = true;
+        mutex.holder = ctx.runtime.isolate.id;
+        resolve();
+      });
     }));
-};
+  };
 
-Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id) {
+  Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id) {
     var mutex;
-    for (var i = 0; i < MIDP.InterIsolateMutexes.length; i++) {
-        if (MIDP.InterIsolateMutexes[i].id == id) {
-            mutex = MIDP.InterIsolateMutexes[i];
-            break;
-        }
+    for (var i = 0; i < interIsolateMutexes.length; i++) {
+      if (interIsolateMutexes[i].id == id) {
+        mutex = interIsolateMutexes[i];
+        break;
+      }
     }
 
     if (!mutex) {
-        throw $.newIllegalStateException("Invalid mutex ID");
+      throw $.newIllegalStateException("Invalid mutex ID");
     }
 
     if (!mutex.locked) {
-        throw $.newRuntimeException("Mutex is not locked");
+      throw $.newRuntimeException("Mutex is not locked");
     }
 
     if (mutex.holder !== $.ctx.runtime.isolate.id) {
-        throw $.newRuntimeException("Mutex is locked by different Isolate");
+      throw $.newRuntimeException("Mutex is locked by different Isolate");
     }
 
     mutex.locked = false;
 
     var firstWaiting = mutex.waiting.shift();
     if (firstWaiting) {
-        firstWaiting();
+      firstWaiting();
     }
-};
+  };
 
-MIDP.exit = function(code) {
+  function exit(code) {
     $.stop();
     DumbPipe.open("exit", null, function(message) {});
     document.getElementById("exit-screen").style.display = "block";
-};
+  }
 
-MIDP.pendingMIDletUpdate = null;
+  var pendingMIDletUpdate = null;
 
-Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
+  Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     console.info("Isolate stops with code " + code + " and reason " + reason);
-    if (!MIDP.pendingMIDletUpdate) {
-        MIDP.exit();
-        return;
+    if (!pendingMIDletUpdate) {
+      exit();
+      return;
     }
 
     // Perform updating.
@@ -943,249 +944,288 @@ Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     dialog.classList.add('visible');
     document.body.appendChild(dialog);
 
-    performDownload(MIDP.pendingMIDletUpdate, dialog, function(data) {
-        dialog.parentElement.removeChild(dialog);
+    performDownload(pendingMIDletUpdate, dialog, function(data) {
+      dialog.parentElement.removeChild(dialog);
 
-        fs.remove("/midlet.jad");
-        fs.create("/midlet.jad", new Blob([ data.jadData ]));
-        fs.remove("/midlet.jar");
-        fs.create("/midlet.jar", new Blob([ data.jarData ]));
+      fs.remove("/midlet.jad");
+      fs.create("/midlet.jad", new Blob([ data.jadData ]));
+      fs.remove("/midlet.jar");
+      fs.create("/midlet.jar", new Blob([ data.jarData ]));
 
-        Promise.all([
-            new Promise(function(resolve, reject) {
-                fs.syncStore(resolve);
-            }),
-            CompiledMethodCache.clear(),
+      Promise.all([
+        new Promise(function(resolve, reject) {
+          fs.syncStore(resolve);
+        }),
+        CompiledMethodCache.clear(),
         ]).then(function() {
-            MIDP.pendingMIDletUpdate = null;
-            DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-            DumbPipe.close(DumbPipe.open("reload", {}));
+          pendingMIDletUpdate = null;
+          DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+          DumbPipe.close(DumbPipe.open("reload", {}));
         });
     });
-};
+  };
 
-// The foreground isolate will get the user events (keypresses, etc.)
-MIDP.foregroundIsolateId;
-MIDP.nativeEventQueues = {};
-MIDP.waitingNativeEventQueue = {};
+  // The foreground isolate will get the user events (keypresses, etc.)
+  var foregroundIsolateId;
+  var displayId = -1;
+  var nativeEventQueues = {};
+  var waitingNativeEventQueue = {};
 
-MIDP.copyEvent = function(e, obj) {
+  function copyEvent(e, obj) {
     var keys = Object.keys(e);
     for (var i = 0; i < keys.length; i++) {
       obj[keys[i]] = e[keys[i]];
     }
-}
+  }
 
-MIDP.sendNativeEvent = function(e, isolateId) {
-    var elem = MIDP.waitingNativeEventQueue[isolateId];
+  function sendNativeEvent(e, isolateId) {
+    var elem = waitingNativeEventQueue[isolateId];
     if (!elem) {
-        MIDP.nativeEventQueues[isolateId].push(e);
-        return;
+      nativeEventQueues[isolateId].push(e);
+      return;
     }
 
-    MIDP.copyEvent(e, elem.nativeEvent);
-    elem.resolve(MIDP.nativeEventQueues[isolateId].length);
+    copyEvent(e, elem.nativeEvent);
+    elem.resolve(nativeEventQueues[isolateId].length);
 
-    delete MIDP.waitingNativeEventQueue[isolateId];
-}
+    delete waitingNativeEventQueue[isolateId];
+  }
 
-MIDP.sendVirtualKeyboardEvent = function() {
-    if (-1 != MIDP.displayId) {
-        MIDP.sendNativeEvent({
-            type: MIDP.VIRTUAL_KEYBOARD_EVENT,
-            intParam1: 0,
-            intParam2: 0,
-            intParam3: 0,
-            intParam4: MIDP.displayId,
-        }, MIDP.foregroundIsolateId);
+  function sendVirtualKeyboardEvent() {
+    if (-1 != displayId && undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: VIRTUAL_KEYBOARD_EVENT,
+        intParam1: 0,
+        intParam2: 0,
+        intParam3: 0,
+        intParam4: displayId,
+      }, foregroundIsolateId);
     }
-};
+  };
 
-MIDP.sendRotationEvent = function() {
-    if (-1 != MIDP.displayId) {
-        MIDP.sendNativeEvent({
-            type: MIDP.ROTATION_EVENT,
-            intParam1: 0,
-            intParam2: 0,
-            intParam3: 0,
-            intParam4: MIDP.displayId,
-        }, MIDP.foregroundIsolateId);
+  function sendRotationEvent() {
+    if (-1 != displayId && undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: ROTATION_EVENT,
+        intParam1: 0,
+        intParam2: 0,
+        intParam3: 0,
+        intParam4: displayId,
+      }, foregroundIsolateId);
     }
-}
+  }
 
-MIDP.KEY_EVENT = 1;
-MIDP.PEN_EVENT = 2;
-MIDP.PRESSED = 1;
-MIDP.RELEASED = 2;
-MIDP.DRAGGED = 3;
-MIDP.COMMAND_EVENT = 3;
-MIDP.EVENT_QUEUE_SHUTDOWN = 31;
-MIDP.ROTATION_EVENT = 43;
-MIDP.MMAPI_EVENT = 45;
-MIDP.SCREEN_REPAINT_EVENT = 47;
-MIDP.VIRTUAL_KEYBOARD_EVENT = 58,
-MIDP.GESTURE_EVENT = 71;
-MIDP.GESTURE_TAP = 0x1;
-MIDP.GESTURE_LONG_PRESS = 0x2;
-MIDP.GESTURE_DRAG = 0x4;
-MIDP.GESTURE_DROP = 0x8;
-MIDP.GESTURE_FLICK = 0x10;
-MIDP.GESTURE_LONG_PRESS_REPEATED = 0x20;
-MIDP.GESTURE_PINCH = 0x40;
-MIDP.GESTURE_DOUBLE_TAP = 0x80;
-MIDP.GESTURE_RECOGNITION_START = 0x4000;
-MIDP.GESTURE_RECOGNITION_END = 0x8000;
+  function sendCommandEvent(id) {
+    if (-1 != displayId && undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: COMMAND_EVENT,
+        intParam1: id,
+        intParam2: 0,
+        intParam3: 0,
+        intParam4: displayId,
+      }, foregroundIsolateId);
+    }
+  }
 
-MIDP.suppressKeyEvents = false;
+  function sendEndOfMediaEvent(pId, duration) {
+    if (undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: MMAPI_EVENT,
+        intParam1: pId,
+        intParam2: duration,
+        intParam3: 0,
+        intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
+      }, foregroundIsolateId);
+    }
+  }
 
-MIDP.keyPress = function(keyCode) {
-    if (!MIDP.suppressKeyEvents)
-        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.PRESSED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
-};
+  function sendMediaSnapshotFinishedEvent(pId) {
+    if (undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: MMAPI_EVENT,
+        intParam1: pId,
+        intParam2: 0,
+        intParam3: 0,
+        intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
+      }, foregroundIsolateId);
+    }
+  }
 
-MIDP.keyRelease = function(keyCode) {
-    if (!MIDP.suppressKeyEvents)
-        MIDP.sendNativeEvent({ type: MIDP.KEY_EVENT, intParam1: MIDP.RELEASED, intParam2: keyCode, intParam3: 0, intParam4: MIDP.displayId }, MIDP.foregroundIsolateId);
-};
+  var KEY_EVENT = 1;
+  var PEN_EVENT = 2;
+  var PRESSED = 1;
+  var RELEASED = 2;
+  var DRAGGED = 3;
+  var COMMAND_EVENT = 3;
+  var EVENT_QUEUE_SHUTDOWN = 31;
+  var ROTATION_EVENT = 43;
+  var MMAPI_EVENT = 45;
+  var SCREEN_REPAINT_EVENT = 47;
+  var VIRTUAL_KEYBOARD_EVENT = 58;
+  var GESTURE_EVENT = 71;
+  var GESTURE_TAP = 0x1;
+  var GESTURE_LONG_PRESS = 0x2;
+  var GESTURE_DRAG = 0x4;
+  var GESTURE_DROP = 0x8;
+  var GESTURE_FLICK = 0x10;
+  var GESTURE_LONG_PRESS_REPEATED = 0x20;
+  var GESTURE_PINCH = 0x40;
+  var GESTURE_DOUBLE_TAP = 0x80;
+  var GESTURE_RECOGNITION_START = 0x4000;
+  var GESTURE_RECOGNITION_END = 0x8000;
 
-window.addEventListener("keypress", function(ev) {
-    MIDP.keyPress(ev.which);
-});
+  var suppressKeyEvents = false;
 
-window.addEventListener("keyup", function(ev) {
-    MIDP.keyRelease(ev.which);
-});
+  function keyPress(keyCode) {
+    if (!suppressKeyEvents) {
+      sendNativeEvent({ type: KEY_EVENT, intParam1: PRESSED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
+    }
+  };
 
-Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function() {
+  function keyRelease(keyCode) {
+    if (!suppressKeyEvents) {
+      sendNativeEvent({ type: KEY_EVENT, intParam1: RELEASED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
+    }
+  };
+
+  window.addEventListener("keypress", function(ev) {
+    keyPress(ev.which);
+  });
+
+  window.addEventListener("keyup", function(ev) {
+    keyRelease(ev.which);
+  });
+
+  Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function() {
     return 0;
-};
+  };
 
-Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
-    MIDP.nativeEventQueues[$.ctx.runtime.isolate.id] = [];
-};
+  Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
+    nativeEventQueues[$.ctx.runtime.isolate.id] = [];
+  };
 
-Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
-function(obj, isolateId) {
-    var e = { type: obj.type };
+  Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
+    function(obj, isolateId) {
+      var e = { type: obj.type };
 
-    var fields = obj.klass.classInfo.fields;
-    for (var i = 0; i < fields.length; i++) {
-      var field = fields[i];
-      e[field.name] = field.get(obj);
-    }
+      var fields = obj.klass.classInfo.fields;
+      for (var i = 0; i < fields.length; i++) {
+        var field = fields[i];
+        e[field.name] = field.get(obj);
+      }
 
-    MIDP.sendNativeEvent(e, isolateId);
-};
+      sendNativeEvent(e, isolateId);
+    };
 
-Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
-function(nativeEvent) {
-    var isolateId = $.ctx.runtime.isolate.id;
-    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
+  Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
+    function(nativeEvent) {
+      var isolateId = $.ctx.runtime.isolate.id;
+      var nativeEventQueue = nativeEventQueues[isolateId];
 
-    if (nativeEventQueue.length !== 0) {
-        MIDP.copyEvent(nativeEventQueue.shift(), nativeEvent);
+      if (nativeEventQueue.length !== 0) {
+        copyEvent(nativeEventQueue.shift(), nativeEvent);
         return nativeEventQueue.length;
-    }
+      }
 
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        MIDP.waitingNativeEventQueue[isolateId] = {
-            resolve: resolve,
-            nativeEvent: nativeEvent,
+      asyncImpl("I", new Promise(function(resolve, reject) {
+        waitingNativeEventQueue[isolateId] = {
+          resolve: resolve,
+        nativeEvent: nativeEvent,
         };
-    }));
-};
+      }));
+    };
 
-Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
-function(obj) {
-    var isolateId = $.ctx.runtime.isolate.id;
-    var nativeEventQueue = MIDP.nativeEventQueues[isolateId];
-    if (!nativeEventQueue.length) {
+  Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
+    function(obj) {
+      var isolateId = $.ctx.runtime.isolate.id;
+      var nativeEventQueue = nativeEventQueues[isolateId];
+      if (!nativeEventQueue.length) {
         return 0;
+      }
+      copyEvent(nativeEventQueue.shift(), obj);
+      return 1;
+    };
+
+  var localizedStrings = new Map();
+
+  Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(id) {
+    if (localizedStrings.size === 0) {
+      // First build up a mapping of field names to field IDs
+      var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
+      var constantsMap = new Map();
+      classInfo.fields.forEach(function(field) {
+        constantsMap.set(field.name, classInfo.constant_pool[field.constantValue].integer);
+      });
+
+      var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
+      if (!data)
+        throw $.newIOException();
+
+      var text = util.decodeUtf8(data);
+      var xml = new window.DOMParser().parseFromString(text, "text/xml");
+      var entries = xml.getElementsByTagName("localized_string");
+
+      for (var n = 0; n < entries.length; ++n) {
+        var attrs = entries[n].attributes;
+        // map the key value to a field ID
+        var id = constantsMap.get(attrs.Key.value);
+        localizedStrings.set(id, attrs.Value.value);
+      }
     }
-    MIDP.copyEvent(nativeEventQueue.shift(), obj);
-    return 1;
-};
 
-MIDP.localizedStrings = new Map();
-
-Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(id) {
-    if (MIDP.localizedStrings.size === 0) {
-        // First build up a mapping of field names to field IDs
-        var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
-        var constantsMap = new Map();
-        classInfo.fields.forEach(function(field) {
-          constantsMap.set(field.name, classInfo.constant_pool[field.constantValue].integer);
-        });
-
-        var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
-        if (!data)
-            throw $.newIOException();
-
-        var text = util.decodeUtf8(data);
-        var xml = new window.DOMParser().parseFromString(text, "text/xml");
-        var entries = xml.getElementsByTagName("localized_string");
-
-        for (var n = 0; n < entries.length; ++n) {
-            var attrs = entries[n].attributes;
-            // map the key value to a field ID
-            var id = constantsMap.get(attrs.Key.value);
-            MIDP.localizedStrings.set(id, attrs.Value.value);
-        }
-    }
-
-    var value = MIDP.localizedStrings.get(id);
+    var value = localizedStrings.get(id);
 
     if (!value) {
-        throw $.newIllegalStateException();
+      throw $.newIllegalStateException();
     }
 
     return J2ME.newString(value);
-};
+  };
 
-Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(displayId, drawTrusted) {
-    console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + displayId + ", " + drawTrusted + ")");
-};
+  Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(dispId, drawTrusted) {
+    console.warn("Display.drawTrustedIcon0.(IZ)V not implemented (" + dispId + ", " + drawTrusted + ")");
+  };
 
-Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    MIDP.sendNativeEvent({ type: MIDP.EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
-};
+  Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
+    sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
+  };
 
-Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {
+  Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {
     console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
-};
+  };
 
-Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(exit) {
-    console.info("Exit: " + exit);
-    MIDP.exit();
-};
+  Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(status) {
+    console.info("Exit: " + status);
+    exit();
+  };
 
-Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function() {
+  Native["com/sun/midp/suspend/SuspendSystem$MIDPSystem.allMidletsKilled.()Z"] = function() {
     console.warn("SuspendSystem$MIDPSystem.allMidletsKilled.()Z not implemented");
     return 0;
-};
+  };
 
-/* We don't care about the system keys SELECT,
-  SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
-  but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
-*/
+  /* We don't care about the system keys SELECT,
+     SOFT_BUTTON1, SOFT_BUTTON2, DEBUG_TRACE1, CLAMSHELL_OPEN, CLAMSHELL_CLOSE,
+     but we do care about SYSTEM_KEY_CLEAR, so send it when the delete key is pressed.
+     */
 
-MIDP.SYSTEM_KEY_POWER = 1;
-MIDP.SYSTEM_KEY_SEND = 2;
-MIDP.SYSTEM_KEY_END = 3;
-MIDP.SYSTEM_KEY_CLEAR = 4;
+  var SYSTEM_KEY_POWER = 1;
+  var SYSTEM_KEY_SEND = 2;
+  var SYSTEM_KEY_END = 3;
+  var SYSTEM_KEY_CLEAR = 4;
 
-MIDP.systemKeyMap = {
-  8: MIDP.SYSTEM_KEY_CLEAR, // Backspace
-  112: MIDP.SYSTEM_KEY_POWER, // F1
-  116: MIDP.SYSTEM_KEY_SEND, // F5
-  114: MIDP.SYSTEM_KEY_END, // F3
-};
+  var systemKeyMap = {
+    8: SYSTEM_KEY_CLEAR, // Backspace
+    112: SYSTEM_KEY_POWER, // F1
+    116: SYSTEM_KEY_SEND, // F5
+    114: SYSTEM_KEY_END, // F3
+  };
 
-Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(key) {
-    return MIDP.systemKeyMap[key] || 0;
-};
+  Native["javax/microedition/lcdui/KeyConverter.getSystemKey.(I)I"] = function(key) {
+    return systemKeyMap[key] || 0;
+  };
 
-MIDP.keyMap = {
+  var keyMap = {
     1: 119, // UP
     2: 97, // LEFT
     5: 100, // RIGHT
@@ -1195,13 +1235,13 @@ MIDP.keyMap = {
     10: 101, // GAME_B
     11: 122, // GAME_C
     12: 99, // GAME_D
-};
+  };
 
-Native["javax/microedition/lcdui/KeyConverter.getKeyCode.(I)I"] = function(key) {
-    return MIDP.keyMap[key] || 0;
-};
+  Native["javax/microedition/lcdui/KeyConverter.getKeyCode.(I)I"] = function(key) {
+    return keyMap[key] || 0;
+  };
 
-MIDP.keyNames = {
+  var keyNames = {
     119: "Up",
     97: "Left",
     100: "Right",
@@ -1211,13 +1251,13 @@ MIDP.keyNames = {
     101: "Addressbook",
     122: "Menu",
     99: "Mail",
-};
+  };
 
-Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(keyCode) {
-    return J2ME.newString((keyCode in MIDP.keyNames) ? MIDP.keyNames[keyCode] : String.fromCharCode(keyCode));
-};
+  Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(keyCode) {
+    return J2ME.newString((keyCode in keyNames) ? keyNames[keyCode] : String.fromCharCode(keyCode));
+  };
 
-MIDP.gameKeys = {
+  var gameKeys = {
     119: 1,  // UP
     97: 2,   // LEFT
     115: 6,  // DOWN
@@ -1227,259 +1267,272 @@ MIDP.gameKeys = {
     101: 10, // GAME_B
     122: 11, // GAME_C
     99: 12   // GAME_D
-};
+  };
 
-Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(keyCode) {
-    return MIDP.gameKeys[keyCode] || 0;
-};
+  Native["javax/microedition/lcdui/KeyConverter.getGameAction.(I)I"] = function(keyCode) {
+    return gameKeys[keyCode] || 0;
+  };
 
-Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(canvas, suppressKeyEvents) {
-    MIDP.suppressKeyEvents = suppressKeyEvents;
-};
+  Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(canvas, shouldSuppress) {
+    suppressKeyEvents = shouldSuppress;
+  };
 
-Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function() {
-    MIDP.displayId = -1;
-};
+  Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function() {
+    displayId = -1;
+  };
 
-Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(isolateId, displayId) {
-    MIDP.displayId = displayId;
-    MIDP.foregroundIsolateId = isolateId;
-};
+  Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(isolateId, dispId) {
+    displayId = dispId;
+    foregroundIsolateId = isolateId;
+  };
 
-MIDP.ConnectionRegistry = {
+  var connectionRegistry = {
     // The lastRegistrationId is in common between alarms and push notifications
     lastRegistrationId:  -1,
     pushRegistrations: [],
     alarms: [],
     readyRegistrations: [],
     addReadyRegistration: function(id) {
-        this.readyRegistrations.push(id);
-        this.notify();
+      this.readyRegistrations.push(id);
+      this.notify();
     },
     notify: function() {
-        if (!this.readyRegistrations.length || !this.pendingPollCallback) {
-            return;
-        }
-        var cb = this.pendingPollCallback;
-        this.pendingPollCallback = null;
-        cb(this.readyRegistrations.pop());
+      if (!this.readyRegistrations.length || !this.pendingPollCallback) {
+        return;
+      }
+      var cb = this.pendingPollCallback;
+      this.pendingPollCallback = null;
+      cb(this.readyRegistrations.pop());
     },
     pushNotify: function(protocolName) {
-        for (var i = 0; i < this.pushRegistrations.length; i++) {
-            if (protocolName == this.pushRegistrations[i].connection) {
-                this.addReadyRegistration(this.pushRegistrations[i].id);
-            }
+      for (var i = 0; i < this.pushRegistrations.length; i++) {
+        if (protocolName == this.pushRegistrations[i].connection) {
+          this.addReadyRegistration(this.pushRegistrations[i].id);
         }
+      }
     },
     waitForRegistration: function(cb) {
-        if (this.pendingPollCallback) {
-            throw new Error("There can only be one waiter.");
-        }
-        this.pendingPollCallback = cb;
-        this.notify();
+      if (this.pendingPollCallback) {
+        throw new Error("There can only be one waiter.");
+      }
+      this.pendingPollCallback = cb;
+      this.notify();
     },
     addConnection: function(connection) {
-        connection.id = ++this.lastRegistrationId;
-        this.pushRegistrations.push(connection);
-        return connection.id;
+      connection.id = ++this.lastRegistrationId;
+      this.pushRegistrations.push(connection);
+      return connection.id;
     },
     addAlarm: function(alarm) {
-        alarm.id = ++this.lastRegistrationId;
-        this.alarms.push(alarm);
-        return alarm.id;
+      alarm.id = ++this.lastRegistrationId;
+      this.alarms.push(alarm);
+      return alarm.id;
     }
-};
+  };
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(time) {
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I"] = function(time) {
     asyncImpl("I", new Promise(function(resolve, reject) {
-        MIDP.ConnectionRegistry.waitForRegistration(function(id) {
-            resolve(id);
-        });
+      connectionRegistry.waitForRegistration(function(id) {
+        resolve(id);
+      });
     }));
-};
+  };
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(connection) {
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(connection) {
     var values = util.fromJavaString(connection).split(',');
 
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
-    MIDP.ConnectionRegistry.addConnection({
-        connection: values[0],
-        midlet: values[1],
-        filter: values[2],
-        suiteId: values[3]
+    connectionRegistry.addConnection({
+      connection: values[0],
+      midlet: values[1],
+      filter: values[2],
+      suiteId: values[3]
     });
 
     return 0;
-};
+  };
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(jMidlet, jTime) {
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(jMidlet, jTime) {
     var time = jTime.toNumber(), midlet = util.decodeUtf8(jMidlet);
 
     var lastAlarm = 0;
     var id = null;
-    var alarms = MIDP.ConnectionRegistry.alarms;
+    var alarms = connectionRegistry.alarms;
     for (var i = 0; i < alarms.length; i++) {
-        if (alarms[i].midlet == midlet) {
-            if (time != 0) {
-                id = alarms[i].id;
-                lastAlarm = alarms[i].time;
-                alarms[i].time = time;
-            } else {
-                alarms[i].splice(i, 1);
-            }
-
-            break;
+      if (alarms[i].midlet == midlet) {
+        if (time != 0) {
+          id = alarms[i].id;
+          lastAlarm = alarms[i].time;
+          alarms[i].time = time;
+        } else {
+          alarms[i].splice(i, 1);
         }
+
+        break;
+      }
     }
 
     if (lastAlarm == 0 && time != 0) {
-        id = MIDP.ConnectionRegistry.addAlarm({
-            midlet: midlet,
-            time: time
-        });
+      id = connectionRegistry.addAlarm({
+        midlet: midlet,
+        time: time
+      });
     }
 
     if (id !== null) {
-        var relativeTime = time - Date.now();
-        if (relativeTime < 0) {
-            relativeTime = 0;
-        }
+      var relativeTime = time - Date.now();
+      if (relativeTime < 0) {
+        relativeTime = 0;
+      }
 
-        setTimeout(function() {
-            MIDP.ConnectionRegistry.addReadyRegistration(id);
-        }, relativeTime);
+      setTimeout(function() {
+        connectionRegistry.addReadyRegistration(id);
+      }, relativeTime);
     }
 
     return Long.fromNumber(lastAlarm);
-};
+  };
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(handle, regentry, entrysz) {
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(handle, regentry, entrysz) {
     var reg;
-    var alarms = MIDP.ConnectionRegistry.alarms;
+    var alarms = connectionRegistry.alarms;
     for (var i = 0; i < alarms.length; i++) {
-        if (alarms[i].id == handle) {
-            reg = alarms[i];
-        }
+      if (alarms[i].id == handle) {
+        reg = alarms[i];
+      }
     }
 
     if (!reg) {
-        var pushRegistrations = MIDP.ConnectionRegistry.pushRegistrations;
-        for (var i = 0; i < pushRegistrations.length; i++) {
-            if (pushRegistrations[i].id == handle) {
-                reg = pushRegistrations[i];
-            }
+      var pushRegistrations = connectionRegistry.pushRegistrations;
+      for (var i = 0; i < pushRegistrations.length; i++) {
+        if (pushRegistrations[i].id == handle) {
+          reg = pushRegistrations[i];
         }
+      }
     }
 
     if (!reg) {
-        console.error("getMIDlet0 returns -1, this should never happen");
-        return -1;
+      console.error("getMIDlet0 returns -1, this should never happen");
+      return -1;
     }
 
     var str;
 
     if (reg.time) {
-        str = reg.midlet + ", 0, 1";
+      str = reg.midlet + ", 0, 1";
     } else {
-        str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
+      str = reg.connection + ", " + reg.midlet + ", " + reg.filter + ", " + reg.suiteId;
     }
 
     for (var i = 0; i < str.length; i++) {
-        regentry[i] = str.charCodeAt(i);
+      regentry[i] = str.charCodeAt(i);
     }
     regentry[str.length] = 0;
 
     return 0;
-};
+  };
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(suiteId, className) {
-    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
-                 suiteId + ", " + util.fromJavaString(className) + ")");
-};
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(suiteId, className) {
+    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" + suiteId + ", " + util.fromJavaString(className) + ")");
+  };
 
-Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(name) {
-    console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" +
-                 util.decodeUtf8(name) + ")");
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(name) {
+    console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" + util.decodeUtf8(name) + ")");
     return 0;
-};
+  };
 
-Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(gestureEventIdentity) {
+  Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.isSupported.(I)Z"] = function(gestureEventIdentity) {
     console.warn("GestureInteractiveZone.isSupported.(I)Z not implemented (" + gestureEventIdentity + ")");
     return 0;
-};
+  };
 
-Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(suiteId, permission) {
+  Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(suiteId, permission) {
     return 1;
-};
+  };
 
-Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(suiteId, permission) {
+  Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(suiteId, permission) {
     return 1;
-};
+  };
 
-Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function() {
+  Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function() {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
-};
+  };
 
-Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function() {
+  Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function() {
     console.warn("com/sun/j2me/content/RegistryStore.init.()Z not implemented");
     return 1;
-};
+  };
 
-Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
+  Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
     console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
     return J2ME.newString("");
-};
+  };
 
-Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
+  Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
     return 0;
-};
+  };
 
-addUnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
-addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
-addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
-addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
-addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
-addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
-addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
+  addUnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
+  addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
+  addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
+  addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
+  addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
+  addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
+  addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
 
-Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;"] = function() {
+  Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;"] = function() {
     throw $.newIllegalArgumentException("VirtualKeyboard::getCustomKeyboardControl() not implemented")
-};
+  };
 
-MIDP.keyboardVisibilityListener = null;
-Native["com/nokia/mid/ui/VirtualKeyboard.setVisibilityListener.(Lcom/nokia/mid/ui/KeyboardVisibilityListener;)V"] = function(listener) {
-    MIDP.keyboardVisibilityListener = listener;
-};
+  var keyboardVisibilityListener = null;
+  Native["com/nokia/mid/ui/VirtualKeyboard.setVisibilityListener.(Lcom/nokia/mid/ui/KeyboardVisibilityListener;)V"] = function(listener) {
+    keyboardVisibilityListener = listener;
+  };
 
-Native["javax/microedition/lcdui/Display.getKeyboardVisibilityListener.()Lcom/nokia/mid/ui/KeyboardVisibilityListener;"] = function() {
-    return MIDP.keyboardVisibilityListener;
-};
+  Native["javax/microedition/lcdui/Display.getKeyboardVisibilityListener.()Lcom/nokia/mid/ui/KeyboardVisibilityListener;"] = function() {
+    return keyboardVisibilityListener;
+  };
 
-Native["com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z"] = function() {
+  Native["com/nokia/mid/ui/VirtualKeyboard.isVisible.()Z"] = function() {
     return MIDP.isVKVisible() ? 1 : 0;
-};
+  };
 
-Native["com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I"] = function() {
+  Native["com/nokia/mid/ui/VirtualKeyboard.getXPosition.()I"] = function() {
     return 0;
-};
+  };
 
-Native["com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I"] = function() {
+  Native["com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I"] = function() {
     // We should return the number of pixels between the top of the
     // screen and the top of the keyboard
-    return MIDP.Context2D.canvas.height - MIDP.getKeyboardHeight();
-};
+    return canvas.height - getKeyboardHeight();
+  };
 
-Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
+  Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
     // The keyboard is always the same width as our window
     return window.innerWidth;
-};
+  };
 
-Native["com/nokia/mid/ui/VirtualKeyboard.getHeight.()I"] = function() {
-    return MIDP.getKeyboardHeight();
-};
+  Native["com/nokia/mid/ui/VirtualKeyboard.getHeight.()I"] = function() {
+    return getKeyboardHeight();
+  };
 
-MIDP.getKeyboardHeight = function() {
-    return MIDP.physicalScreenHeight - window.innerHeight;
-};
+  function getKeyboardHeight() {
+    return physicalScreenHeight - window.innerHeight;
+  };
+
+  return {
+    isVKVisible: isVKVisible,
+    setFullScreen: setFullScreen,
+    manifest: manifest,
+    sendCommandEvent: sendCommandEvent,
+    sendVirtualKeyboardEvent: sendVirtualKeyboardEvent,
+    sendEndOfMediaEvent: sendEndOfMediaEvent,
+    sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
+    keyPress: keyPress,
+    keyRelease: keyRelease,
+    displayId: displayId,
+    context2D: context2D,
+  };
+})();

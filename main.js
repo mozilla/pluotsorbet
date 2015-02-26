@@ -9,7 +9,7 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
 
-var jars = ["java/classes.jar"];
+var jars = [];
 
 if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
@@ -34,6 +34,11 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 });
 
 var loadingPromises = [initFS, getMobileInfo];
+
+loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data) {
+  CLASSES.addPath("java/classes.jar", data);
+  CLASSES.initializeBuiltinClasses();
+}));
 
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
@@ -156,7 +161,8 @@ if (config.downloadJAD) {
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
-                       loadScript("tests/mozactivitymock.js"));
+                       loadScript("tests/mozactivitymock.js"),
+                       loadScript("tests/config.js"));
 }
 
 loadingPromises.push(emoji.loadData());
@@ -173,7 +179,6 @@ var bigBang = 0;
 
 function start() {
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
-  CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
   jvm.startIsolate0(config.main, config.args);

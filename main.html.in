@@ -27,6 +27,7 @@
   <script type="text/javascript" src="polyfill/fromcodepoint.js" defer></script>
   <script type="text/javascript" src="polyfill/codepointat.js" defer></script>
   <script type="text/javascript" src="polyfill/IndexedDB-getAll-shim.js" defer></script>
+  <script type="text/javascript" src="polyfill/map.js" defer></script>
   <script type="text/javascript" src="legacy.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
@@ -36,6 +37,7 @@
   <script type="text/javascript" src="libs/relooper.js" defer></script>
   <script type="text/javascript" src="build/j2me.js" defer></script>
   <script type="text/javascript" src="override.js" defer></script>
+  <script type="text/javascript" src="vm/tags.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="libs/load.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
@@ -43,7 +45,6 @@
   <script type="text/javascript" src="libs/encoding.js" defer></script>
   <script type="text/javascript" src="libs/fs.js" defer></script>
   <script type="text/javascript" src="libs/fs-init.js" defer></script>
-  <script type="text/javascript" src="libs/rusha.js" defer></script>
   <script type="text/javascript" src="libs/forge/util.js" defer></script>
   <script type="text/javascript" src="libs/forge/md5.js" defer></script>
   <script type="text/javascript" src="libs/jsbn/jsbn.js" defer></script>

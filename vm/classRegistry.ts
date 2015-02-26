@@ -1,3 +1,8 @@
+/*
+ node-jvm
+ Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
+*/
+
 module J2ME {
   declare var ZipFile;
   declare var snarf;
@@ -20,7 +25,6 @@ module J2ME {
     missingSourceFiles: Map<string, string []>;
 
     jarFiles: Map<string, any>;
-    classFiles: Map<string, any>;
     classes: Map<string, ClassInfo>;
 
     preInitializedClasses: ClassInfo [];
@@ -36,7 +40,6 @@ module J2ME {
       this.missingSourceFiles = Object.create(null);
 
       this.jarFiles = Object.create(null);
-      this.classFiles = Object.create(null);
       this.classes = Object.create(null);
       this.preInitializedClasses = [];
     }
@@ -70,7 +73,9 @@ module J2ME {
         "java/lang/IllegalArgumentException",
         "java/lang/IndexOutOfBoundsException",
         "java/lang/StringIndexOutOfBoundsException",
-        "org/mozilla/internal/Sys"
+        "org/mozilla/internal/Sys",
+        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        "com/sun/cldc/isolate/Isolate",
       ];
 
       for (var i = 0; i < classNames.length; i++) {
@@ -91,11 +96,7 @@ module J2ME {
     }
 
     addPath(name: string, buffer: ArrayBuffer) {
-      if (name.substr(-4) === ".jar") {
-        this.jarFiles[name] = new ZipFile(buffer);
-      } else {
-        this.classFiles[name] = buffer;  
-      }
+      this.jarFiles[name] = new ZipFile(buffer);
     }
 
     addSourceDirectory(name: string) {
@@ -140,11 +141,7 @@ module J2ME {
     }
 
     loadFile(fileName: string): ArrayBuffer {
-      var classFiles = this.classFiles;
-      var data = classFiles[fileName];
-      if (data) {
-        return data;
-      }
+      var data;
       var jarFiles = this.jarFiles;
       for (var k in jarFiles) {
         var zip = jarFiles[k];
@@ -155,9 +152,6 @@ module J2ME {
           leaveTimeline("ZIP");
           break;
         }
-      }
-      if (data) {
-        classFiles[fileName] = data;
       }
       return data;
     }

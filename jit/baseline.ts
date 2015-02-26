@@ -41,7 +41,9 @@ module J2ME {
   var privilegedMethods = {};
 
   var privilegedPatterns = [
-    "org/mozilla/internal/Sys*"
+    "org/mozilla/internal/Sys*",
+    "com/sun/midp/crypto/SHA*",
+    "java/io/DataInputStream*",
     // "com/sun/*",
     // "java/*"
   ];
