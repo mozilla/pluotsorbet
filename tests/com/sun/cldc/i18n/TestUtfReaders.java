@@ -32,9 +32,9 @@ import gnu.testlet.Testlet;
 import java.io.*;
 
 public class TestUtfReaders implements Testlet {
-    public int getExpectedPass() { return 63; }
+    public int getExpectedPass() { return 72; }
     public int getExpectedFail() { return 0; }
-    public int getExpectedKnownFail() { return 3; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
 
     public String teststr1 = "你好世界";
@@ -85,12 +85,8 @@ public class TestUtfReaders implements Testlet {
 
             th.check(s, s2);
         } catch (Throwable t) {
-            if (e.equals("UTF_8")) {
-                th.todo(false, "Unexpected exception");
-            } else {
-                th.fail("Unexpected exception: " + t);
-                t.printStackTrace();
-            }
+            th.fail("Unexpected exception: " + t);
+            t.printStackTrace();
         }
     }
 

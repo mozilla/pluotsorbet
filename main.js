@@ -165,8 +165,6 @@ if (jars.indexOf("tests/tests.jar") !== -1) {
                        loadScript("tests/config.js"));
 }
 
-loadingPromises.push(emoji.loadData());
-
 function getIsOff(button) {
   return button.textContent.contains("OFF");
 }
