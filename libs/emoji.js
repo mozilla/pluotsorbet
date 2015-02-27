@@ -1179,31 +1179,27 @@ var emoji = (function() {
       return new Promise(function(resolve, reject) {
         var promises = [];
 
-        if (!config.customEmojiImageRegex) {
-          for (var i = 0; i < 14; i++) {
-            if (i === 11) {
-              continue;
-            }
-
-            images[i] = new Image();
-            images[i].src = "style/emoji/emoji" + i + ".png";
-
-            promises.push(new Promise(function(resolve, reject) {
-              images[i].onload = resolve;
-            }));
+        for (var i = 0; i < 13; i++) {
+          if (i == 11) {
+            continue;
           }
+
+          images[i] = new Image();
+          var num = i.toString(16);
+          if (config.customEmojiImageFormat) {
+            var fileName = config.customEmojiImageFormat.replace("NUM", num);
+            images[i].src = URL.createObjectURL(new Blob([ CLASSES.loadFile(fileName) ]));
+          } else {
+            images[i].src = "style/emoji/emoji" + num + ".png";
+          }
+
+          promises.push(new Promise(function(resolve, reject) {
+            images[i].onload = resolve;
+          }));
         }
 
         Promise.all(promises).then(resolve);
       });
-    },
-
-    setCustomImage: function(i, data) {
-        images[i] = new Image();
-        images[i].src = URL.createObjectURL(new Blob([ data ]));
-        // We don't need to wait for the image to be loaded, it's always
-        // going to be ready because MIDlets are going to load it
-        // afterwards.
     },
 
     getData: function(str, size) {

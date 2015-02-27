@@ -24,6 +24,7 @@ module J2ME {
    * at the right spots.
    */
   export var yieldMap = {
+    "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V": YieldReason.Root,
     "java/lang/Thread.sleep.(J)V": YieldReason.Root,
