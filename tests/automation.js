@@ -373,7 +373,7 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
         });
     });
 
-    // Run the test a second time to ensure loading the JAR stored in the FS works correctly.
+    // Run the test a second time to ensure loading the JAR stored in the JARStore works correctly.
     casper
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
     .withFrame(0, function() {
@@ -412,9 +412,9 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
         });
     });
 
-    // Clear the FS before downloading another JAD
+    // Clear the JARStore before downloading another JAD
     casper
-    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
+    .thenOpen("http://localhost:8000/tests/jarstore/clear-jarstore.html")
     .waitForText("DONE");
 
     casper
