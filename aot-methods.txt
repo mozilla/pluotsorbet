@@ -1,3 +1,5 @@
+com/sun/cldc/i18n/j2me/UTF_8_Reader.prepareForNextChar.(I)V
+com/sun/cldc/i18n/j2me/UTF_8_Reader.getByteOfCurrentChar.(IZ)I
 com/sun/cldc/io/ResourceInputStream.read.()I
 java/lang/StringBuffer.append.(C)Ljava/lang/StringBuffer;
 com/sun/cldc/io/ResourceInputStream.available.()I
