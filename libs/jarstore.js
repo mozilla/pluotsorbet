@@ -63,11 +63,11 @@ var JARStore = (function() {
         var objectStore = transaction.objectStore(OBJECT_STORE);
         var request = objectStore.put({
           jar: zip.directory,
-          jad: jadData ? jadData : null,
+          jad: jadData || null,
         }, jarName);
 
         request.onerror = function() {
-          console.error("Error installing: " + request.error.name);
+          console.error("Error installing " + jarName + ": " + request.error.name);
           reject(request.error.name);
         };
 
@@ -90,7 +90,7 @@ var JARStore = (function() {
         var request = objectStore.get(jarName);
 
         request.onerror = function() {
-          console.error("Error loading: " + request.error.name);
+          console.error("Error loading " + jarName + ": " + request.error.name);
           reject(request.error.name);
         };
 
