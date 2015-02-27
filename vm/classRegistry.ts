@@ -209,6 +209,7 @@ module J2ME {
           CLASSES.getClass(className);
           return true;
         });
+        return true;
       });
     }
 
