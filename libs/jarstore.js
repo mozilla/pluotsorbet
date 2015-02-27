@@ -7,6 +7,7 @@ var JARStore = (function() {
   var DATABASE = "JARStore";
   var VERSION = 1;
   var OBJECT_STORE = "files";
+  var KEY_PATH = "jarName";
 
   var database;
   var jars = new Map();
@@ -14,7 +15,7 @@ var JARStore = (function() {
 
   var upgrade = {
     "0to1": function(database, transaction, next) {
-      database.createObjectStore(OBJECT_STORE);
+      database.createObjectStore(OBJECT_STORE, { keyPath: KEY_PATH });
       next();
     },
   };
@@ -62,9 +63,10 @@ var JARStore = (function() {
         var transaction = database.transaction(OBJECT_STORE, "readwrite");
         var objectStore = transaction.objectStore(OBJECT_STORE);
         var request = objectStore.put({
+          jarName: jarName,
           jar: zip.directory,
           jad: jadData || null,
-        }, jarName);
+        });
 
         request.onerror = function() {
           console.error("Error installing " + jarName + ": " + request.error.name);
