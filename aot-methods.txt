@@ -79,6 +79,7 @@ java/lang/ref/WeakReference.<init>.(Ljava/lang/Object;)V
 java/lang/ref/Reference.<init>.(Ljava/lang/Object;)V
 javax/microedition/lcdui/ImageDataFactory.getImageDataFactory.()Ljavax/microedition/lcdui/AbstractImageDataFactory;
 javax/microedition/lcdui/Image.<init>.(Ljavax/microedition/lcdui/ImageData;)V
+javax/microedition/lcdui/ImageData.<init>.(IIZ)V
 com/sun/midp/events/Event.<init>.(I)V
 javax/microedition/lcdui/Displayable.getHeight.()I
 javax/microedition/lcdui/DisplayableLFImpl.lGetHeight.()I
@@ -310,6 +311,7 @@ java/util/Vector.removeElement.(Ljava/lang/Object;)Z
 javax/microedition/lcdui/Display.getCurrent.()Ljavax/microedition/lcdui/Displayable;
 javax/microedition/lcdui/Image.createImage.(Ljava/lang/String;)Ljavax/microedition/lcdui/Image;
 javax/microedition/lcdui/ImageDataFactory.createResourceImageData.(Ljava/lang/String;)Ljavax/microedition/lcdui/ImageData;
+javax/microedition/lcdui/ImageData.<init>.()V
 javax/microedition/lcdui/ImageDataFactory.loadAndCreateImmutableImageDataFromCache.(Ljavax/microedition/lcdui/ImageData;Ljava/lang/String;)Z
 javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageData.(Ljavax/microedition/lcdui/ImageData;Ljava/lang/String;)Z
 com/sun/midp/io/Util.toJavaString.([B)Ljava/lang/String;

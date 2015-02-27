@@ -195,6 +195,22 @@ var currentlyFocusedTextEditor;
         }
     }
 
+    function initImageData(imageData, width, height) {
+        var canvas = document.createElement("canvas");
+        imageData.context = canvas.getContext("2d");
+        setImageDataDimensions(imageData, width, height);
+        return imageData.context;
+    }
+
+    function setImageDataDimensions(imageData, width, height) {
+        var canvas = imageData.context.canvas;
+        canvas.width = width;
+        canvas.height = height;
+
+        imageData.width = width;
+        imageData.height = height;
+    }
+
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] =
     function(imageData, bytes, offset, length) {
         var ctx = $.ctx;
@@ -203,8 +219,7 @@ var currentlyFocusedTextEditor;
             var img = new Image();
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
-                var context = imageData.context;
-                setImageDataDimensions(imageData, img.naturalWidth, img.naturalHeight);
+                var context = initImageData(imageData, img.naturalWidth, img.naturalHeight);
                 context.drawImage(img, 0, 0);
 
                 URL.revokeObjectURL(img.src);
@@ -220,8 +235,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
     function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
-        var context = dataDest.context;
-        setImageDataDimensions(dataDest, width, height);
+        var context = initImageData(dataDest, width, height);
 
         if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
             context.scale(-1, 1);
@@ -244,23 +258,20 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.context.canvas;
-        var context = dest.context;
-        setImageDataDimensions(dest, srcCanvas.width, srcCanvas.height);
+        var context = initImageData(dest, srcCanvas.width, srcCanvas.height);
         context.drawImage(srcCanvas, 0, 0);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] =
     function(imageData, width, height) {
-        var context = imageData.context;
-        setImageDataDimensions(imageData, width, height);
+        var context = initImageData(imageData, width, height);
         context.fillStyle = "rgb(255,255,255)"; // white
         context.fillRect(0, 0, width, height);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
     function(imageData, rgbData, width, height, processAlpha) {
-        var context = imageData.context;
-        setImageDataDimensions(imageData, width, height);
+        var context = initImageData(imageData, width, height);
         var ctxImageData = context.createImageData(width, height);
         var abgrData = new Int32Array(ctxImageData.data.buffer);
 
@@ -269,25 +280,6 @@ var currentlyFocusedTextEditor;
 
         context.putImageData(ctxImageData, 0, 0);
     };
-
-    function setImageDataDimensions(imageData, w, h) {
-        imageData.klass.classInfo.getField("I.width.I").set(imageData, w);
-        imageData.context.canvas.width = w;
-
-        imageData.klass.classInfo.getField("I.height.I").set(imageData, h);
-        imageData.context.canvas.height = h;
-    }
-
-    Override["javax/microedition/lcdui/ImageData.<init>.()V"] = function() {
-        this.context = document.createElement("canvas").getContext("2d");
-        setImageDataDimensions(this, 0, 0);
-    }
-
-    Override["javax/microedition/lcdui/ImageData.<init>.(IIZ)V"] = function(w, h, isMutable) {
-        this.context = document.createElement("canvas").getContext("2d");
-        setImageDataDimensions(this, w, h);
-        this.klass.classInfo.getField("I.isMutable.Z").set(this, isMutable);
-    }
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
         var abgrData = new Int32Array(this.context.getImageData(x, y, width, height).data.buffer);
