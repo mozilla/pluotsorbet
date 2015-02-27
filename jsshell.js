@@ -3,6 +3,9 @@
 
 'use strict';
 
+// Define objects and functions that j2me.js expects
+// but are unavailable in the shell environment.
+
 if (typeof console === "undefined") {
   var console = {
     log: print

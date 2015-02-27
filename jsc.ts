@@ -16,6 +16,9 @@ load("libs/relooper.js"); // Load before we polyfill the window object.
 
 var CC = {};
 
+// Define objects and functions that j2me.js expects
+// but are unavailable in the shell environment.
+
 jsGlobal.window = {
   setZeroTimeout: function(callback) {
     callback();
@@ -65,8 +68,7 @@ jsGlobal.config = {
   args: "",
 };
 
-function Promise() {
-  // ...
+jsGlobal.Promise = function() {
 }
 
 module J2ME {
