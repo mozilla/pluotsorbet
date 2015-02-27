@@ -1103,7 +1103,8 @@ module J2ME {
                 returnValue = calleeMethod.call(object, a, b, c);
                 break;
               default:
-                debugger;
+                Debug.assertUnreachable("Unexpected number of arguments");
+                break;
             }
             stack.pop();
             if (!release) {
