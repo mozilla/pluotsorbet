@@ -76,4 +76,8 @@ public final class Sys {
    * escape hatch for the purpose of testing and profiling.
    */
   public native static void eval(String src);
+
+  public static void throwException(Exception e) throws Exception {
+    throw e;
+  }
 }

@@ -671,12 +671,18 @@ module J2ME {
     }
 
     emitGetField(fieldInfo: FieldInfo, isStatic: boolean) {
+      if (isStatic) {
+        this.emitClassInitializationCheck(fieldInfo.classInfo);
+      }
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       this.emitPush(signature.kind, object + "." + fieldInfo.mangledName);
     }
 
     emitPutField(fieldInfo: FieldInfo, isStatic: boolean) {
+      if (isStatic) {
+        this.emitClassInitializationCheck(fieldInfo.classInfo);
+      }
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var value = this.pop(signature.kind);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
@@ -740,14 +746,14 @@ module J2ME {
           var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", self access.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
-        } else if (this.methodInfo.classInfo.isAssignableTo(classInfo)) {
+        } else if (!classInfo.isInterface && this.methodInfo.classInfo.isAssignableTo(classInfo)) {
           var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", base access.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
         } else {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.className);
-          this.blockEmitter.writeLn(this.runtimeClass(classInfo) + ";");
-          if (classInfo.staticInitializer && canYield(classInfo.staticInitializer)) {
+          this.blockEmitter.writeLn("if ($.initialized[\"" + classInfo.className + "\"] === undefined) { " + this.runtimeClassObject(classInfo) + ".initialize(); }");
+          if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc), String(this.pc));
           } else {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
@@ -800,6 +806,7 @@ module J2ME {
       if (calleeCanYield) {
         this.emitUnwind(this.blockEmitter, String(this.pc), String(nextPC));
       } else {
+        emitCompilerAssertions && this.emitUndefinedReturnAssertion();
         emitCompilerAssertions && this.emitNoUnwindAssertion();
       }
       if (types[0].kind !== Kind.Void) {
@@ -945,6 +952,10 @@ module J2ME {
 
     emitNoUnwindAssertion() {
       this.blockEmitter.writeLn("if (U) { J2ME.Debug.assert(false, 'Unexpected unwind.'); }");
+    }
+
+    emitUndefinedReturnAssertion() {
+      this.blockEmitter.writeLn("if (U && re !== undefined) { J2ME.Debug.assert(false, 'Unexpected return value during unwind.'); }");
     }
 
     private emitMonitorEnter(emitter: Emitter, nextPC: number, object: string) {

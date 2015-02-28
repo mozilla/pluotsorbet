@@ -439,6 +439,7 @@ module J2ME {
       return returnValue;
     }
 
+<<<<<<< HEAD
     getClassInitFrame(classInfo: ClassInfo): Frame {
       return null;
       /*
@@ -515,12 +516,16 @@ module J2ME {
       this.executeFrames([classInitFrame]);
     }
 
+=======
+>>>>>>> fcc61a07ef753974b3ea9c44a688ebdb62b2a521
     createException(className: string, message?: string) {
       if (!message) {
         message = "";
       }
       message = "" + message;
       var classInfo = CLASSES.loadAndLinkClass(className);
+      classInitCheck(classInfo);
+      release || Debug.assert(!U, "Unexpected unwind during createException.");
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
@@ -550,8 +555,9 @@ module J2ME {
       Context.setWriters(Context.writer);
     }
 
-    start(frame: Frame) {
-      this.frames = [Frame.Start, frame];
+    start(frames: Frame[]) {
+      frames.unshift(Frame.Start);
+      this.frames = frames;
       this.resume();
     }
 
