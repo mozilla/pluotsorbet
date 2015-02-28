@@ -90,6 +90,8 @@ var currentlyFocusedTextEditor;
         var d = NativeDisplays.get(displayId);
         NativeDisplays.foreground = displayId;
         MIDP.setFullScreen(d.fullScreen);
+
+        asyncImpl("V", emoji.loadData());
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {
