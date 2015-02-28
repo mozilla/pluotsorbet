@@ -322,7 +322,7 @@ function inflate(bytes) {
 
 var arrays = J2ME.ArrayUtilities.makeArrays(256);
 
-function ZipFile(buffer) {
+function ZipFile(buffer, extract) {
   var bytes = new Uint8Array(buffer);
   var view = new DataView(buffer);
 
@@ -373,10 +373,20 @@ function ZipFile(buffer) {
     // locate the compressed data
     var local_extra_len = view.getInt16(local_header_offset + 28, true);
     var data_offset = local_header_offset + 30 + filename_len + local_extra_len;
+
     // add the entry to the directory
+    var compressed_data;
+    var data = new Uint8Array(buffer, data_offset, compressed_len);
+    if (extract) {
+      compressed_data = new Uint8Array(compressed_len);
+      compressed_data.set(data);
+    } else {
+      compressed_data = data;
+    }
+
     directory[filename] = {
       compression_method: compression_method,
-      compressed_data: new Uint8Array(buffer, data_offset, compressed_len)
+      compressed_data: compressed_data,
     };
     // advance to the next entry
     pos += extra_len + comment_len;

@@ -364,12 +364,12 @@ module J2ME {
   }
 
   export function compile(jvm: any,
+                          jarFiles: Map<string, any>,
                           jarFilter: (jarFile: string) => boolean,
                           classFilter: (classInfo: ClassInfo) => boolean,
                           methodFilterList: string[],
                           fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
     var runtime = new Runtime(jvm);
-    var jarFiles = CLASSES.jarFiles;
     var ctx = new Context(runtime);
     var code = "";
     var writer = new J2ME.IndentingWriter(false, function (s) {
@@ -380,8 +380,6 @@ module J2ME {
 
     var compiledMethods: CompiledMethodInfo [] = [];
     var classInfoList: ClassInfo [] = [];
-
-    CLASSES.loadAllClassFiles();
 
     Object.keys(jarFiles).every(function (path) {
       if (path.substr(-4) !== ".jar" || !jarFilter(path)) {

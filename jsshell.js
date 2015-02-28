@@ -3,6 +3,9 @@
 
 'use strict';
 
+// Define objects and functions that j2me.js expects
+// but are unavailable in the shell environment.
+
 if (typeof console === "undefined") {
   var console = {
     log: print
@@ -92,7 +95,7 @@ var config = {
 
 try {
   load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
-       "libs/encoding.js", "util.js",
+       "libs/encoding.js", "util.js", "libs/jarstore.js",
        "override.js", "vm/tags.js", "native.js", "tests/override.js", 
        "midp/midp.js", "midp/gestures.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
@@ -108,10 +111,10 @@ try {
   CLASSES.addSourceDirectory("java/midp");
   // CLASSES.addSourceDirectory("bench/scimark2src");
 
-  CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
-  CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
-  CLASSES.addPath("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
-  //CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
+  JARStore.addBuiltIn("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
+  JARStore.addBuiltIn("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
+  JARStore.addBuiltIn("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
+  //JARStore.addBuiltIn("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
 

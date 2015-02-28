@@ -41,6 +41,7 @@
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="libs/load.js" defer></script>
   <script type="text/javascript" src="libs/zipfile.js" defer></script>
+  <script type="text/javascript" src="libs/jarstore.js" defer></script>
   <script type="text/javascript" src="libs/long.js" defer></script>
   <script type="text/javascript" src="libs/encoding.js" defer></script>
   <script type="text/javascript" src="libs/fs.js" defer></script>
@@ -144,7 +145,6 @@
       <button id="sampleCounters1">One sample for 1s</button>
       <button id="sampleCounters2">One sample for 100ms (2s)</button>
       <button id="start">Start</button>
-      <button id="loadAllClasses">Load All Classes</button>
 
     </section>
     <!-- #if BENCHMARK == "true" -->
