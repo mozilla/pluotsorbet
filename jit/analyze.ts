@@ -74,7 +74,7 @@ module J2ME {
     // These can technically yield but are worth the risk.
     // XXX Determine the current status of this item.
     // "java/lang/Object.equals.(Ljava/lang/Object;)Z": YieldReason.None
-  }
+  };
 
   export function isFinalClass(classInfo: ClassInfo): boolean {
     var result = classInfo.isFinal;
@@ -97,7 +97,7 @@ module J2ME {
       var allSubClasses = classInfo.allSubClasses;
       result = true;
       for (var i = 0; i < allSubClasses.length; i++) {
-        var subClassMethods = allSubClasses[i].methods;
+        var subClassMethods = allSubClasses[i].getMethods();
         for (var j = 0; j < subClassMethods.length; j++) {
           var subClassMethodInfo = subClassMethods[j];
           if (methodInfo.name === subClassMethodInfo.name &&
@@ -112,7 +112,7 @@ module J2ME {
   }
 
   export function gatherCallees(callees: MethodInfo [], classInfo: ClassInfo, methodInfo: MethodInfo) {
-    var methods = classInfo.methods;
+    var methods = classInfo.getMethods();
 
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
@@ -237,7 +237,7 @@ module J2ME {
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
             var cpi = stream.readCPI();
-            var callee = methodInfo.classInfo.resolve(cpi, op === Bytecodes.INVOKESTATIC);
+            var callee = methodInfo.classInfo.resolveMethod(cpi, op === Bytecodes.INVOKESTATIC);
 
             if (op !== Bytecodes.INVOKESTATIC) {
               if (yieldVirtualMap[methodInfo.implKey] === YieldReason.None) {

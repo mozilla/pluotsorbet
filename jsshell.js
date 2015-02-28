@@ -13,6 +13,14 @@ console.print = function (c) {
   putstr(String.fromCharCode(c));
 };
 
+console.info = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
+console.error = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
 function check() {
 
 }
@@ -91,9 +99,9 @@ var config = {
 };
 
 try {
-  load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
+  load("build/shumway.js", "libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
        "libs/encoding.js", "util.js",
-       "override.js", "vm/tags.js", "native.js", "tests/override.js", 
+       "override.js", "vm/tags.js", "native.js", "tests/override.js",
        "midp/midp.js", "midp/gestures.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
        "build/classes.jar.js");
@@ -111,21 +119,26 @@ try {
   CLASSES.addPath("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   CLASSES.addPath("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
   CLASSES.addPath("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
-  //CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
+  CLASSES.addPath("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
 
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.None;
-
   start = dateNow();
   var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
 
-  while (callbacks.length) {
-    (callbacks.shift())();
-  }
+  //J2ME.writers = J2ME.WriterFlags.All;
+  //J2ME.loadWriter = new J2ME.IndentingWriter();
+  //J2ME.linkWriter = new J2ME.IndentingWriter();
+  //J2ME.classCounter.clear();
+  //CLASSES.loadAllClassFilesInJARFile("program.jar");
+  //J2ME.classCounter.trace(J2ME.loadWriter);
+  //
+  ////while (callbacks.length) {
+  ////  (callbacks.shift())();
+  ////}
 
   // J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
 

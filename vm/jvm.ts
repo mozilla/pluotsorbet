@@ -34,8 +34,8 @@ module J2ME {
     }
 
     startIsolate(isolate: Isolate) {
-      var mainClass = util.fromJavaString(isolate.klass.classInfo.getField("I._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
-      var mainArgs = isolate.klass.classInfo.getField("I._mainArgs.[Ljava/lang/String;").get(isolate);
+      var mainClass = util.fromJavaString(isolate.klass.classInfo.getFieldByName("I._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
+      var mainArgs = isolate.klass.classInfo.getFieldByName("I._mainArgs.[Ljava/lang/String;").get(isolate);
       var runtime = new J2ME.Runtime(this);
       var ctx = new Context(runtime);
 

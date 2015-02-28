@@ -12,35 +12,6 @@ module J2ME {
     StackMap: "StackMap"
   };
 
-  export enum ACCESS_FLAGS {
-    ACC_PUBLIC = 0x0001,
-    ACC_PRIVATE = 0x0002,
-    ACC_PROTECTED = 0x0004,
-    ACC_STATIC = 0x0008,
-    ACC_FINAL = 0x0010,
-    ACC_SYNCHRONIZED = 0x0020,
-    ACC_VOLATILE = 0x0040,
-    ACC_TRANSIENT = 0x0080,
-    ACC_NATIVE = 0x0100,
-    ACC_INTERFACE = 0x0200,
-    ACC_ABSTRACT = 0x0400
-  }
-
-  export enum TAGS {
-    CONSTANT_Class = 7,
-    CONSTANT_Fieldref = 9,
-    CONSTANT_Methodref = 10,
-    CONSTANT_InterfaceMethodref = 11,
-    CONSTANT_String = 8,
-    CONSTANT_Integer = 3,
-    CONSTANT_Float = 4,
-    CONSTANT_Long = 5,
-    CONSTANT_Double = 6,
-    CONSTANT_NameAndType = 12,
-    CONSTANT_Utf8 = 1,
-    CONSTANT_Unicode = 2
-  }
-
   export module AccessFlags {
     export function isPublic(flags) {
       return (flags & ACCESS_FLAGS.ACC_PUBLIC) === ACCESS_FLAGS.ACC_PUBLIC;
@@ -86,6 +57,7 @@ module J2ME {
 
       var item = classImage.constant_pool[attribute_name_index];
 
+      classCounter.count("Attr: " + TAGS[item.tag]);
       switch(item.tag) {
         case TAGS.CONSTANT_Long:
         case TAGS.CONSTANT_Float:
@@ -190,6 +162,7 @@ module J2ME {
     };
 
     var reader = new J2ME.Reader(classBytes);
+    classCounter.count("Bytes: ", classBytes.byteLength);
     classImage.magic = reader.read32().toString(16);
 
     classImage.version = {
@@ -201,6 +174,7 @@ module J2ME {
     var constant_pool_count = reader.read16();
     for(var i=1; i<constant_pool_count; i++) {
       var tag = reader.read8();
+      classCounter.count(TAGS[tag]);
       switch(tag) {
         case TAGS.CONSTANT_Class:
           var name_index = reader.read16();
@@ -209,6 +183,7 @@ module J2ME {
         case TAGS.CONSTANT_Utf8:
           var length = reader.read16();
           var bytes = reader.readString(length);
+          classCounter.count("String Size", bytes.length);
           classImage.constant_pool.push({ tag: tag, bytes: bytes });
           break;
         case TAGS.CONSTANT_Methodref:

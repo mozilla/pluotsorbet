@@ -424,7 +424,7 @@ module J2ME {
     if (classInfo.mangledName) {
       return classInfo.mangledName;
     }
-    return mangleClassName(classInfo.className);
+    return mangleClassName(classInfo.getClassNameString());
   }
 
   /**
@@ -854,7 +854,10 @@ module J2ME {
     release || assert(!runtimeKlass.classObject);
     runtimeKlass.classObject = <java.lang.Class><any>new Klasses.java.lang.Class();
     runtimeKlass.classObject.runtimeKlass = runtimeKlass;
-    var fields = runtimeKlass.templateKlass.classInfo.fields;
+    var fields = runtimeKlass.templateKlass.classInfo.getFields();
+    if (!fields) {
+      return;
+    }
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       if (field.isStatic) {
@@ -1031,7 +1034,7 @@ module J2ME {
     registerKlass(klass, classInfo);
     leaveTimeline("registerKlass");
 
-    if (classInfo.isArrayClass) {
+    if (classInfo instanceof ArrayClassInfo) {
       klass.isArrayKlass = true;
       var elementKlass = getKlass(classInfo.elementClass);
       elementKlass.arrayKlass = klass;
@@ -1059,7 +1062,7 @@ module J2ME {
         return "[Interface Klass " + classInfo.className + "]";
       };
       setKlassSymbol(mangledName, klass);
-    } else if (classInfo.isArrayClass) {
+    } else if (classInfo instanceof ArrayClassInfo) {
       var elementKlass = getKlass(classInfo.elementClass);
       // Have we already created one? We need to maintain pointer identity.
       if (elementKlass.arrayKlass) {
@@ -1306,7 +1309,7 @@ module J2ME {
    */
   function linkKlassFields(klass: Klass) {
     var classInfo = klass.classInfo;
-    var fields = classInfo.fields;
+    var fields = classInfo.getFields();
     var classBindings = Bindings[klass.classInfo.className];
     if (classBindings && classBindings.fields) {
       for (var i = 0; i < fields.length; i++) {
@@ -1338,8 +1341,11 @@ module J2ME {
   }
 
   function linkKlassMethods(klass: Klass) {
+    var methods = klass.classInfo.getMethods();
+    if (!methods) {
+      return;
+    }
     linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
-    var methods = klass.classInfo.methods;
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
       if (methodInfo.isAbstract) {
@@ -1468,9 +1474,11 @@ module J2ME {
     release || assert (!klass.interfaces);
     var interfaces = klass.interfaces = klass.superKlass ? klass.superKlass.interfaces.slice() : [];
 
-    var interfaceClassInfos = classInfo.interfaces;
-    for (var j = 0; j < interfaceClassInfos.length; j++) {
-      ArrayUtilities.pushUnique(interfaces, getKlass(interfaceClassInfos[j]));
+    var interfaceClassInfos = classInfo.getInterfaces();
+    if (interfaceClassInfos) {
+      for (var j = 0; j < interfaceClassInfos.length; j++) {
+        ArrayUtilities.pushUnique(interfaces, getKlass(interfaceClassInfos[j]));
+      }
     }
   }
 
@@ -1844,7 +1852,7 @@ module J2ME {
   }
 
   export function classInitCheck(classInfo: ClassInfo, pc: number) {
-    if (classInfo.isArrayClass) {
+    if (classInfo instanceof ArrayClassInfo) {
       return;
     }
     $.ctx.pushClassInitFrame(classInfo);

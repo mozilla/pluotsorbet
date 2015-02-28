@@ -439,7 +439,9 @@ module J2ME {
       return returnValue;
     }
 
-    getClassInitFrame(classInfo: ClassInfo) {
+    getClassInitFrame(classInfo: ClassInfo): Frame {
+      return null;
+      /*
       if (this.runtime.initialized[classInfo.className]) {
         return;
       }
@@ -479,6 +481,7 @@ module J2ME {
         ])
       });
       return Frame.create(syntheticMethod, [classInfo.getClassInitLockObject(this)], 0);
+      */
     }
 
     pushClassInitFrame(classInfo: ClassInfo) {

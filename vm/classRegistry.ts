@@ -1,6 +1,7 @@
 module J2ME {
   declare var ZipFile;
   declare var snarf;
+  export var classCounter = new Metrics.Counter(true);
 
   export class ClassRegistry {
     /**
@@ -153,8 +154,9 @@ module J2ME {
 
     loadClassBytes(bytes: ArrayBuffer): ClassInfo {
       enterTimeline("loadClassBytes");
-      var classInfo = new ClassInfo(bytes);
+      var classInfo = new ClassInfo(new Uint8Array(bytes));
       leaveTimeline("loadClassBytes", {className: classInfo.className});
+      loadWriter && loadWriter.writeLn("XXX: " + classInfo.className + " -> " + classInfo.superClassName + ";");
       this.classes[classInfo.className] = classInfo;
       return classInfo;
     }
@@ -177,11 +179,12 @@ module J2ME {
           superClass = superClass.superClass;
         }
       }
-      var classes = classInfo.classes;
-      classes.forEach(function (c, n) {
-        classes[n] = self.loadClass(c);
-      });
-      classInfo.complete();
+      var classes = classInfo.getClasses();
+      // FIXME
+      //classes.forEach(function (c, n) {
+      //  classes[n] = self.loadClass(c);
+      //});
+      // classInfo.complete();
       loadWriter && loadWriter.leave("<");
       return classInfo;
     }
@@ -191,19 +194,27 @@ module J2ME {
      */
     loadAllClassFiles() {
       var jarFiles = this.jarFiles;
+      var self = this;
       Object.keys(jarFiles).every(function (path) {
         if (path.substr(-4) !== ".jar") {
           return true;
         }
-        var zipFile = jarFiles[path];
-        Object.keys(zipFile.directory).every(function (fileName) {
-          if (fileName.substr(-6) !== '.class') {
-            return true;
-          }
-          var className = fileName.substring(0, fileName.length - 6);
-          CLASSES.getClass(className);
+        self.loadAllClassFilesInJARFile(path);
+      });
+    }
+
+    loadAllClassFilesInJARFile(path: string) {
+      var jarFiles = this.jarFiles;
+      var zipFile = jarFiles[path];
+      var self = this;
+      Object.keys(zipFile.directory).every(function (fileName) {
+        if (fileName.substr(-6) !== '.class') {
           return true;
-        });
+        }
+        var className = fileName.substring(0, fileName.length - 6);
+        var bytes = self.loadFile(className + ".class");
+        var classInfo2 = new ClassInfo(new Uint8Array(bytes));
+        return true;
       });
     }
 
@@ -222,8 +233,8 @@ module J2ME {
     }
 
     getEntryPoint(classInfo: ClassInfo): MethodInfo {
-      var methods = classInfo.methods;
-      for (var i=0; i<methods.length; i++) {
+      var methods = classInfo.getMethods();
+      for (var i = 0; i < methods.length; i++) {
         var method = methods[i];
         if (method.isPublic && method.isStatic && !method.isNative &&
             method.name === "main" &&
@@ -257,7 +268,8 @@ module J2ME {
         if (elementType[0] === "L") {
           elementType = elementType.substr(1).replace(";", "");
         }
-        classInfo = new ArrayClassInfo(typeName, this.getClass(elementType));
+        // FIXME
+        // classInfo = new ArrayClassInfo(typeName, this.getClass(elementType));
       }
       if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
         J2ME.linkKlass(classInfo);

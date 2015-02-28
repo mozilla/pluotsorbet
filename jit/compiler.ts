@@ -179,8 +179,8 @@ module J2ME {
     }
 
     if (emitter.definitions) {
-      emitFields(classInfo.fields, false);
-      emitFields(classInfo.fields, true);
+      emitFields(classInfo.getFields(), false);
+      emitFields(classInfo.getFields(), true);
       return;
     }
 
@@ -192,15 +192,15 @@ module J2ME {
     // writer.writeLn("this._hashCode = $.nextHashCode(this);");
     writer.writeLn("this._hashCode = 0;");
     getClassInheritanceChain(classInfo).forEach(function (ci) {
-      emitFields(ci.fields, false);
+      emitFields(ci.getFields(), false);
     });
     writer.leave("}");
 
     // Emit class static initializer if it has any static fields. We don't emit this for now
     // since it probably doesn't pay off to emit code that only gets executed once.
-    if (false && classInfo.fields.some(f => f.isStatic)) {
+    if (false && classInfo.getFields().some(f => f.isStatic)) {
       writer.enter(mangledClassName + ".staticInitializer = function() {");
-      emitFields(classInfo.fields, true);
+      emitFields(classInfo.getFields(), true);
       writer.leave("}");
     }
 
@@ -268,7 +268,7 @@ module J2ME {
 
     emitKlass(emitter, classInfo);
 
-    var methods = classInfo.methods;
+    var methods = classInfo.getMethods();
     var compiledMethods: CompiledMethodInfo [] = [];
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
@@ -447,7 +447,7 @@ module J2ME {
     var filteredClassInfoList: ClassInfo [] = [];
     for (var i = 0; i < orderedClassInfoList.length; i++) {
       var classInfo = orderedClassInfoList[i];
-      var methods = classInfo.methods;
+      var methods = classInfo.getMethods();
       for (var j = 0; j < methods.length; j++) {
         var method = methods[j];
         if (methodFilterList === null || methodFilterList.indexOf(method.implKey) >= 0) {

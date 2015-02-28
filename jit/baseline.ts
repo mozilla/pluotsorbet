@@ -243,7 +243,7 @@ module J2ME {
     if (classInfo instanceof PrimitiveArrayClassInfo) {
       return classInfo.mangledName;
     }
-    if (classInfo.isArrayClass) {
+    if (classInfo instanceof ArrayClassInfo) {
       return "AK(" + classConstant(classInfo.elementClass) + ")";
     }
     if (classInfo.mangledName) {
@@ -570,19 +570,19 @@ module J2ME {
     }
 
     lookupClass(cpi: number): ClassInfo {
-      var classInfo = this.methodInfo.classInfo.resolve(cpi, false);
+      var classInfo = this.methodInfo.classInfo.resolveClass(cpi);
       ArrayUtilities.pushUnique(this.referencedClasses, classInfo);
       return classInfo;
     }
 
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
-      var methodInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
+      var methodInfo = this.methodInfo.classInfo.resolveMethod(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, methodInfo.classInfo);
       return methodInfo;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
-      var fieldInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
+      var fieldInfo = this.methodInfo.classInfo.resolveField(cpi);
       ArrayUtilities.pushUnique(this.referencedClasses, fieldInfo.classInfo);
       return fieldInfo;
     }
@@ -725,8 +725,8 @@ module J2ME {
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
-      while (classInfo.isArrayClass) {
-        classInfo = classInfo.elementClass;
+      while (classInfo instanceof ArrayClassInfo) {
+        classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
         if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.className]) {

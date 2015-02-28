@@ -201,7 +201,7 @@ module J2ME {
     var frames = ctx.frames;
     var mi = frame.methodInfo;
     var ci = mi.classInfo;
-    var rp = ci.resolved_constant_pool;
+    var rp = ci.constantPool.resolved;
     var stack = frame.stack;
 
 
@@ -287,7 +287,7 @@ module J2ME {
               }
               mi = frame.methodInfo;
               ci = mi.classInfo;
-              rp = ci.resolved_constant_pool;
+              rp = ci.constantPool.resolved;
               stack = frame.stack;
               lastPC = -1;
 
@@ -1074,7 +1074,7 @@ module J2ME {
               mi = frame.methodInfo;
               mi.interpreterCallCount ++;
               ci = mi.classInfo;
-              rp = ci.resolved_constant_pool;
+              rp = ci.constantPool.resolved;
               stack = frame.stack;
               lastPC = -1;
               continue;
@@ -1179,7 +1179,7 @@ module J2ME {
               mi = frame.methodInfo;
               mi.interpreterCallCount ++;
               ci = mi.classInfo;
-              rp = ci.resolved_constant_pool;
+              rp = ci.constantPool.resolved;
               stack = frame.stack;
               lastPC = -1;
               if (calleeTargetMethodInfo.isSynchronized) {
@@ -1270,7 +1270,7 @@ module J2ME {
             }
             mi = frame.methodInfo;
             ci = mi.classInfo;
-            rp = ci.resolved_constant_pool;
+            rp = ci.constantPool.resolved;
             stack = frame.stack;
             lastPC = -1;
             if (op === Bytecodes.RETURN) {
@@ -1302,7 +1302,7 @@ module J2ME {
         assert (!Frame.isMarker(frame));
         mi = frame.methodInfo;
         ci = mi.classInfo;
-        rp = ci.resolved_constant_pool;
+        rp = ci.constantPool.resolved;
         stack = frame.stack;
         lastPC = -1;
         continue;
