@@ -99,8 +99,7 @@ var config = {
 };
 
 try {
-  load("build/shumway.js", "libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
-       "libs/encoding.js", "util.js",
+  load("libs/encoding.js", "util.js", "build/shumway.js", "libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
        "override.js", "vm/tags.js", "native.js", "tests/override.js",
        "midp/midp.js", "midp/gestures.js",
        "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
@@ -127,13 +126,13 @@ try {
   var jvm = new JVM();
 
   start = dateNow();
-  var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
+  // var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
 
-  //J2ME.writers = J2ME.WriterFlags.All;
-  //J2ME.loadWriter = new J2ME.IndentingWriter();
-  //J2ME.linkWriter = new J2ME.IndentingWriter();
-  //J2ME.classCounter.clear();
-  //CLASSES.loadAllClassFilesInJARFile("program.jar");
+  J2ME.writers = J2ME.WriterFlags.All;
+  J2ME.loadWriter = new J2ME.IndentingWriter();
+  J2ME.linkWriter = new J2ME.IndentingWriter();
+  J2ME.classCounter.clear();
+  CLASSES.loadAllClassFilesInJARFile("program.jar");
   //J2ME.classCounter.trace(J2ME.loadWriter);
   //
   ////while (callbacks.length) {

@@ -26,7 +26,8 @@ module J2ME {
         array[n] = args[n] ? J2ME.newString(args[n]) : null;
 
       ctx.executeFrames([
-        Frame.create(CLASSES.getMethod(isolateClassInfo, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
+        // Frame.create(CLASSES.getMethod(isolateClassInfo, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
+        Frame.create(isolateClassInfo.getMethodByName("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V", false),
                   [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ], 0)
       ]);
 

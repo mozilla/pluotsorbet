@@ -101,7 +101,7 @@ module J2ME {
     reset(methodInfo: MethodInfo, local: any [], localBase: number) {
       this.methodInfo = methodInfo;
       this.cp = methodInfo ? methodInfo.classInfo.constant_pool : null;
-      this.code = methodInfo ? methodInfo.code : null;
+      this.code = methodInfo ? methodInfo.codeAttribute.code : null;
       this.pc = 0;
       this.opPC = 0;
       this.stack = [];

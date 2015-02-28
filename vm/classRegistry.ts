@@ -268,8 +268,7 @@ module J2ME {
         if (elementType[0] === "L") {
           elementType = elementType.substr(1).replace(";", "");
         }
-        // FIXME
-        // classInfo = new ArrayClassInfo(typeName, this.getClass(elementType));
+        classInfo = new ArrayClassInfo(this.getClass(elementType));
       }
       if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
         J2ME.linkKlass(classInfo);
@@ -330,7 +329,6 @@ module J2ME {
         }
       }
     }
-
   }
 
   export var ClassNotFoundException = function(message) {

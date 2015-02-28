@@ -23,44 +23,49 @@ module J2ME {
     return true;
   }
 
-  export class Bytes {
-    u1: Uint8Array;
-    offset: number;
-
+  export class ByteStream {
     static arrays: string [][] = ArrayUtilities.makeArrays(128);
 
     static getArray(length: number) {
       return Reader.arrays[length];
     }
 
-    constructor(buffer: Uint8Array, offset: number) {
-      this.u1 = buffer;
-      this.offset = offset;
+    constructor (
+      public buffer: Uint8Array,
+      public offset: number
+    ) {
+      // ...
     }
 
+    u2(offset: number) {
+      var b = this.buffer;
+      var o = this.offset + offset;
+      return b[o] << 8 | b[o + 1];
+    }
+    
     clone() {
-      return new Bytes(this.u1, this.offset);
+      return new ByteStream(this.buffer, this.offset);
     }
 
     readU1() {
-      return this.u1[this.offset++];
+      return this.buffer[this.offset++];
     }
 
     peekU1() {
-      return this.u1[this.offset];
+      return this.buffer[this.offset];
     }
 
     readU2() {
-      var u1 = this.u1;
+      var buffer = this.buffer;
       var o = this.offset;
       this.offset += 2;
-      return u1[o] << 8 | u1[o + 1];
+      return buffer[o] << 8 | buffer[o + 1];
     }
 
     peekU16() {
-      var u1 = this.u1;
+      var buffer = this.buffer;
       var o = this.offset;
-      return u1[o] << 8 | u1[o + 1];
+      return buffer[o] << 8 | buffer[o + 1];
     }
 
     readU4() {
@@ -69,11 +74,11 @@ module J2ME {
 
     readI32() {
       var o = this.offset;
-      var u1 = this.u1;
-      var a = u1[o + 0];
-      var b = u1[o + 1];
-      var c = u1[o + 2];
-      var d = u1[o + 3];
+      var buffer = this.buffer;
+      var a = buffer[o + 0];
+      var b = buffer[o + 1];
+      var c = buffer[o + 2];
+      var d = buffer[o + 3];
       this.offset = o + 4;
       return (a << 24) | (b << 16) | (c << 8) | d;
     }
@@ -90,12 +95,12 @@ module J2ME {
     //  return data;
     //}
 
-    seek(offset: number): Bytes {
+    seek(offset: number): ByteStream {
       this.offset = offset;
       return this;
     }
 
-    skip(length: number): Bytes {
+    skip(length: number): ByteStream {
       this.offset += length;
       return this;
     }
@@ -107,9 +112,9 @@ module J2ME {
       var i = 0, j = 0;
       var o = this.offset;
       var e = o + length;
-      var u1 = this.u1;
+      var buffer = this.buffer;
       while (o < e) {
-        var x = u1[o++];
+        var x = buffer[o++];
         if (x <= 0x7f) {
           // Code points in the range '\u0001' to '\u007F' are represented by a
           // single byte.
@@ -119,13 +124,13 @@ module J2ME {
         } else if (x <= 0xdf) {
           // The null code point ('\u0000') and code points in the range '\u0080'
           // to '\u07FF' are represented by a pair of bytes x and y.
-          var y = u1[o++]
+          var y = buffer[o++]
           a[j++] = String.fromCharCode(((x & 0x1f) << 6) + (y & 0x3f));
         } else {
           // Code points in the range '\u0800' to '\uFFFF' are represented by 3
           // bytes x, y, and z.
-          var y = u1[o++];
-          var z = u1[o++];
+          var y = buffer[o++];
+          var z = buffer[o++];
           a[j++] = String.fromCharCode(((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f));
         }
       }
@@ -142,7 +147,7 @@ module J2ME {
 
     readString(length) {
       if (length === 1) {
-        var c = this.u1[this.offset];
+        var c = this.buffer[this.offset];
         if (c <= 0x7f) {
           this.offset++;
           return String.fromCharCode(c);
@@ -159,7 +164,7 @@ module J2ME {
       // UTF-8 implementation.
       try {
         // NB: no need to create a new slice.
-        var data = new Uint8Array(this.u1.buffer, this.offset, length);
+        var data = new Uint8Array(this.buffer.buffer, this.offset, length);
         var s = util.decodeUtf8Array(data);
         this.offset += length;
         return s;
@@ -169,25 +174,25 @@ module J2ME {
     }
 
     readBytes(length): Uint8Array {
-      var data = this.u1.subarray(this.offset, this.offset + length);
+      var data = this.buffer.subarray(this.offset, this.offset + length);
       this.offset += length;
       return data;
     }
 
-    //static readU4(u1: Uint8Array, o: number): number {
-    //  return Bytes.readI32(u1, o) >>> 0;
+    //static readU4(buffer: Uint8Array, o: number): number {
+    //  return ByteStream.readI32(buffer, o) >>> 0;
     //}
     //
-    //static readI32(u1: Uint8Array, o: number): number {
-    //  var a = u1[o + 0];
-    //  var b = u1[o + 1];
-    //  var c = u1[o + 2];
-    //  var d = u1[o + 3];
+    //static readI32(buffer: Uint8Array, o: number): number {
+    //  var a = buffer[o + 0];
+    //  var b = buffer[o + 1];
+    //  var c = buffer[o + 2];
+    //  var d = buffer[o + 3];
     //  return (a << 24) | (b << 16) | (c << 8) | d;
     //}
     //
-    static readU16(u1: Uint8Array, o: number): number {
-      return u1[o] << 8 | u1[o + 1];
+    static readU16(buffer: Uint8Array, o: number): number {
+      return buffer[o] << 8 | buffer[o + 1];
     }
   }
 
@@ -227,15 +232,7 @@ module J2ME {
     CONSTANT_Unicode = 2
   }
 
-  export enum CONSTANT_Class_info {
-    tag        = 0, // u1
-    name_index = 1  // u2 CONSTANT_Utf8_info
-  }
-
-  export class ConstantPool {
-    bytes: Bytes;
-    offset: number;
-    count: number;
+  export class ConstantPool extends ByteStream {
     entries: Uint32Array;
     resolved: any [];
 
@@ -255,9 +252,8 @@ module J2ME {
        4  // CONSTANT_NameAndType
     ]);
 
-    constructor(bytes: Bytes) {
-      this.bytes = bytes.clone();
-      this.offset = bytes.offset;
+    constructor(stream: ByteStream) {
+      super(stream.buffer, stream.offset);
       this.scanEntries();
     }
 
@@ -265,19 +261,19 @@ module J2ME {
      * Quickly scan over the constant pool and record the position of each constant pool entry.
      */
     private scanEntries() {
-      var s = this.bytes;
-      var c = this.count = s.readU2();
-      this.entries = new Uint32Array(this.count);
-      this.resolved = new Array(this.count);
+      var s = this;
+      var c  = s.readU2();
+      this.entries = new Uint32Array(c);
+      this.resolved = new Array(c);
       var S = ConstantPool.tagSize;
       var o = s.offset;
-      var u1 = s.u1;
+      var buffer = s.buffer;
       var e = this.entries;
       for (var i = 1; i < c; i++) {
         e[i] = o;
-        var t = u1[o++];
+        var t = buffer[o++];
         if (t === TAGS.CONSTANT_Utf8) {
-          o += 2 + Bytes.readU16(u1, o);
+          o += 2 + ByteStream.readU16(buffer, o);
         } else {
           o += S[t];
         }
@@ -292,27 +288,28 @@ module J2ME {
       return <Uint8Array>this.resolve(i, TAGS.CONSTANT_Utf8);
     }
 
-    u2(i: number, tag: TAGS, offset: number) {
-      var s = this.bytes.seek(this.entries[i]);
-      release || assert (s.peekU1() === tag);
-      return s.skip(offset).readU2();
+    readTagU2(i: number, tag: TAGS, offset: number) {
+      var b = this.buffer;
+      release || assert(b[this.entries[i]] === tag);
+      var o = this.entries[i] + offset;
+      return b[o] << 8 | b[o + 1];
     }
 
-    seek(i: number, tag: TAGS) {
-      this.bytes.seek(this.entries[i]);
-      release || assert(this.bytes.peekU1() === tag);
+    seekTag(i: number, tag: TAGS) {
+      this.seek(this.entries[i]);
+      release || assert(this.peekU1() === tag);
     }
 
     resolve(i: number, tag: TAGS): any {
-      var b = this.bytes, r = this.resolved[i];
+      var s = this, r = this.resolved[i];
       if (r === undefined) {
-        this.seek(i, tag);
-        switch (b.readU1()) {
+        this.seekTag(i, tag);
+        switch (s.readU1()) {
           case TAGS.CONSTANT_Utf8:
-            r = this.resolved[i] = b.readBytes(b.readU2());
+            r = this.resolved[i] = s.readBytes(s.readU2());
             break;
           case TAGS.CONSTANT_Class:
-            r = this.resolved[i] = CLASSES.loadClass(utf8ToString(this.resolve(b.readU2(), TAGS.CONSTANT_Utf8)));
+            r = this.resolved[i] = CLASSES.loadClass(utf8ToString(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
             break;
           default:
             assert(false);
@@ -380,22 +377,19 @@ module J2ME {
     }
   }
 
-  export class MethodInfo {
-    access_flags: number;
-    name_index: number;
-    descriptor_index: number;
+  export class MethodInfo extends ByteStream {
+    classInfo: ClassInfo;
+    name: string;
+    signature: string;
 
+    // FIX ME LATER
     fn: any;
 
-
-    classInfo: ClassInfo;
     offset: number;
     code: Uint8Array;
     codeAttribute: CodeAttribute;
 
-    name: string;
     state: MethodState;
-    signature: string;
     mangledName: string;
     mangledClassAndMethodName: string;
 
@@ -407,6 +401,7 @@ module J2ME {
     interpreterCallCount: number;
 
     argumentSlots: number;
+
     /**
      * The number of arguments to pop of the stack when calling this function.
      */
@@ -424,28 +419,23 @@ module J2ME {
     signatureDescriptor: SignatureDescriptor;
 
     constructor(classInfo: ClassInfo, offset: number) {
+      super(classInfo.buffer, offset);
       this.classInfo = classInfo;
-      this.offset = offset;
-
-      var b = classInfo.bytes.seek(offset);
-      this.access_flags = b.readU2();
-      this.name_index = b.readU2();
-      this.descriptor_index = b.readU2();
-      this.scanMethodInfoAttributes(b);
+      this.name = utf8ToString(classInfo.constantPool.resolve(this.name_index, TAGS.CONSTANT_Utf8));
+      this.signature = utf8ToString(classInfo.constantPool.resolve(this.descriptor_index, TAGS.CONSTANT_Utf8));
+      this.scanMethodInfoAttributes();
     }
 
-    scanMethodInfoAttributes(s: Bytes) {
-      var count = s.readU2();
-      for (var i = 0; i < count; i++) {
-        var attribute_name_index = s.readU2();
-        var attribute_length = s.readU4();
-        var o = s.offset;
-        var attribute_name = this.classInfo.constantPool.utf8(attribute_name_index);
-        if (strcmp(attribute_name, UTF8.Code)) {
-          this.codeAttribute = new CodeAttribute(this.classInfo, o);
-        }
-        s.seek(o + attribute_length);
-      }
+    get access_flags(): number {
+      return this.u2(0);
+    }
+
+    get name_index(): number {
+      return this.u2(2);
+    }
+
+    get descriptor_index(): number {
+      return this.u2(4);
     }
 
     public getReturnKind(): Kind {
@@ -480,8 +470,137 @@ module J2ME {
       return null;
     }
 
-
+    scanMethodInfoAttributes() {
+      var b = this.offset;
+      var s = this.skip(6);
+      var count = s.readU2();
+      for (var i = 0; i < count; i++) {
+        var attribute_name_index = s.readU2();
+        var attribute_length = s.readU4();
+        var o = s.offset;
+        var attribute_name = this.classInfo.constantPool.utf8(attribute_name_index);
+        if (strcmp(attribute_name, UTF8.Code)) {
+          this.codeAttribute = new CodeAttribute(s);
+        }
+        s.seek(o + attribute_length);
+      }
+      this.seek(b);
+    }
   }
+  /**
+  method_info {
+    u2             access_flags;
+    u2             name_index;
+    u2             descriptor_index;
+    u2             attributes_count;
+    attribute_info attributes[attributes_count];
+  }
+  */
+
+  //export class MethodInfo {
+  //  access_flags: number;
+  //  name_index: number;
+  //  descriptor_index: number;
+  //
+  //  fn: any;
+  //
+  //
+  //  classInfo: ClassInfo;
+  //  offset: number;
+  //  code: Uint8Array;
+  //  codeAttribute: CodeAttribute;
+  //
+  //  name: string;
+  //
+  //  state: MethodState;
+  //  signature: string;
+  //  mangledName: string;
+  //  mangledClassAndMethodName: string;
+  //
+  //  onStackReplacementEntryPoints: number [];
+  //
+  //  callCount: number;
+  //  bytecodeCount: number;
+  //  backwardsBranchCount: number;
+  //  interpreterCallCount: number;
+  //
+  //  argumentSlots: number;
+  //
+  //  /**
+  //   * The number of arguments to pop of the stack when calling this function.
+  //   */
+  //  consumeArgumentSlots: number;
+  //
+  //  hasTwoSlotArguments: boolean;
+  //
+  //  // Remove these
+  //  max_locals: number;
+  //  max_stack: number;
+  //
+  //  exception_table: any [];
+  //  implKey: string;
+  //  isOptimized: boolean;
+  //  signatureDescriptor: SignatureDescriptor;
+  //
+  //  constructor(classInfo: ClassInfo, offset: number) {
+  //    this.classInfo = classInfo;
+  //    this.offset = offset;
+  //
+  //    var b = classInfo.bytes.seek(offset);
+  //    this.access_flags = b.readU2();
+  //    this.name_index = b.readU2();
+  //    this.descriptor_index = b.readU2();
+  //    this.scanMethodInfoAttributes(b);
+  //  }
+  //
+  //  scanMethodInfoAttributes(s: ByteStream) {
+  //    var count = s.readU2();
+  //    for (var i = 0; i < count; i++) {
+  //      var attribute_name_index = s.readU2();
+  //      var attribute_length = s.readU4();
+  //      var o = s.offset;
+  //      var attribute_name = this.classInfo.constantPool.utf8(attribute_name_index);
+  //      if (strcmp(attribute_name, UTF8.Code)) {
+  //        this.codeAttribute = new CodeAttribute(this.classInfo, o);
+  //      }
+  //      s.seek(o + attribute_length);
+  //    }
+  //  }
+  //
+  //  public getReturnKind(): Kind {
+  //    return this.signatureDescriptor.typeDescriptors[0].kind;
+  //  }
+  //
+  //  get isNative(): boolean {
+  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_NATIVE);
+  //  }
+  //
+  //  get isFinal(): boolean {
+  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_FINAL);
+  //  }
+  //
+  //  get isPublic(): boolean {
+  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_PUBLIC);
+  //  }
+  //
+  //  get isStatic(): boolean {
+  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
+  //  }
+  //
+  //  get isSynchronized(): boolean {
+  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_SYNCHRONIZED);
+  //  }
+  //
+  //  get isAbstract(): boolean {
+  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_ABSTRACT);
+  //  }
+  //
+  //  getSourceLocationForPC(pc: number): SourceLocation {
+  //    return null;
+  //  }
+  //
+  //
+  //}
 
   enum ResolvedFlags {
     None          = 0,
@@ -495,8 +614,7 @@ module J2ME {
     max_stack: number;
     max_locals: number;
     code: Uint8Array;
-    constructor(classInfo: ClassInfo, offset: number) {
-      var s = classInfo.bytes;
+    constructor(s: ByteStream) {
       this.max_stack = s.readU2();
       this.max_locals = s.readU2();
       var code_length = s.readU4();
@@ -505,22 +623,21 @@ module J2ME {
     }
   }
 
-  export class ClassInfo {
-    bytes: Bytes = null;
-    constantPool: ConstantPool = null;
+  export class ClassInfo extends ByteStream {
+    constantPool: ConstantPool;
 
 
-    access_flags: number = 0;
-    this_class: number = 0;
-    super_class: number= 0;
+    access_flags: number;
+    this_class: number;
+    super_class: number;
 
-    name: string = null;
-    superClassName: string = null;
-    superClass: ClassInfo = null;
-    subClasses: ClassInfo [] = null;
-    allSubClasses: ClassInfo [] = null;
+    name: string;
+    superClassName: string;
+    superClass: ClassInfo;
+    subClasses: ClassInfo [];
+    allSubClasses: ClassInfo [];
 
-    staticInitializer: MethodInfo = null;
+    staticInitializer: MethodInfo;
 
     klass: Klass = null;
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
@@ -529,29 +646,27 @@ module J2ME {
     private classes: (number | ClassInfo) [] = null;
     private interfaces: (number | ClassInfo) [] = null;
 
-    sourceFile: string = null;
-    mangledName: string = null;
-
-    private _className: Uint16Array = null;
+    sourceFile: string;
+    mangledName: string;
 
     // Delete me:
-    constant_pool: any = null;
-    thread: any = null;
+    constant_pool: any;
+    thread: any;
 
     constructor(buffer: Uint8Array) {
+      super(buffer, 0);
       if (!buffer) {
         return;
       }
-
-      var b = this.bytes = new Bytes(buffer, 0);
-      b.readU4(); // magic
-      b.readU2(); // minor_version
-      b.readU2(); // major_version
-      this.constantPool = new ConstantPool(b);
-      b.seek(this.constantPool.bytes.offset);
-      this.access_flags = b.readU2();
-      this.this_class = b.readU2();
-      this.super_class = b.readU2();
+      var s = this;
+      s.readU4(); // magic
+      s.readU2(); // minor_version
+      s.readU2(); // major_version
+      this.constantPool = new ConstantPool(s);
+      s.seek(this.constantPool.offset);
+      this.access_flags = s.readU2();
+      this.this_class = s.readU2();
+      this.super_class = s.readU2();
 
       this.scanInterfaces();
       this.scanFields();
@@ -559,11 +674,10 @@ module J2ME {
       this.scanClassInfoAttributes();
 
       this.mangledName = mangleClass(this);
-      this.getMethods();
     }
 
     private scanInterfaces() {
-      var b = this.bytes;
+      var b = this;
       var interfaces_count = b.readU2();
       this.interfaces = new Array(interfaces_count);
       for (var i = 0; i < interfaces_count; i++) {
@@ -572,54 +686,54 @@ module J2ME {
     }
 
     private scanFields() {
-      var b = this.bytes;
-      var fields_count = b.readU2();
+      var s = this;
+      var fields_count = s.readU2();
       var f = this.fields = new Array(fields_count);
       for (var i = 0; i < fields_count; i++) {
-        f[i] = b.offset;
-        b.skip(6);
+        f[i] = s.offset;
+        s.skip(6);
         this.skipAttributes();
       }
     }
 
     private scanMethods() {
-      var b = this.bytes;
-      var methods_count = b.readU2();
+      var s = this;
+      var methods_count = s.readU2();
       var m = this.methods = new Array(methods_count);
       for (var i = 0; i < methods_count; i++) {
-        m[i] = b.offset;
-        b.skip(6);
+        m[i] = s.offset;
+        s.skip(6);
         this.skipAttributes();
       }
     }
 
     private skipAttributes() {
-      var b = this.bytes;
-      var attributes_count = b.readU2();
+      var s = this;
+      var attributes_count = s.readU2();
       for (var i = 0; i < attributes_count; i++) {
-        b.readU2();
-        b.skip(b.readU4());
+        s.readU2();
+        s.skip(s.readU4());
       }
     }
 
     scanClassInfoAttributes() {
-      var b = this.bytes;
-      var attributes_count = b.readU2();
+      var s = this;
+      var attributes_count = s.readU2();
       for (var i = 0; i < attributes_count; i++) {
-        var attribute_name_index = b.readU2();
-        var attribute_length = b.readU4();
-        var o = b.offset;
+        var attribute_name_index = s.readU2();
+        var attribute_length = s.readU4();
+        var o = s.offset;
         var attribute_name = this.constantPool.utf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.InnerClasses)) {
-          var number_of_classes = b.readU2();
+          var number_of_classes = s.readU2();
           assert (!this.classes);
           this.classes = new Array(number_of_classes);
           for(var i = 0; i < number_of_classes; i++) {
-            this.classes[i] = b.offset;
-            b.skip(8);
+            this.classes[i] = s.offset;
+            s.skip(8);
           }
         }
-        b.seek(o + attribute_length);
+        s.seek(o + attribute_length);
       }
     }
 
@@ -628,6 +742,32 @@ module J2ME {
         this.methods[i] = new MethodInfo(this, <number>this.methods[i]);
       }
       return <MethodInfo>this.methods[i];
+    }
+
+    indexOfMethod(name: string, signature: string, isStatic: boolean): number {
+      var methods = this.methods;
+      if (!methods) {
+        return -1;
+      }
+      for (var i = 0; i < methods.length; i++) {
+        var method = this.getMethod(i);
+        if (method.name === name && method.signature === signature && method.isStatic === isStatic) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    getMethodByName(name: string, signature: string, isStatic: boolean): MethodInfo {
+      var c = this;
+      do {
+        var i = c.indexOfMethod(name, signature, isStatic);
+        if (i >= 0) {
+          return c.getMethod(i);
+        }
+        c = c.superClass;
+      } while (c);
+      return null;
     }
 
     getMethods(): MethodInfo [] {
@@ -720,7 +860,7 @@ module J2ME {
     }
 
     getClassNameIndex(): number {
-      return this.constantPool.u2(this.this_class, TAGS.CONSTANT_Class, CONSTANT_Class_info.name_index);
+      return this.constantPool.readTagU2(this.this_class, TAGS.CONSTANT_Class, 1);
     }
 
     getClassName(): Uint8Array {
