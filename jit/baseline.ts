@@ -872,6 +872,16 @@ module J2ME {
       this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")");
     }
 
+    emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
+      var classInfo = this.lookupClass(cpi);
+      var numDimensions = stream.readUByte(stream.currentBCI + 3);
+      var dimensions = new Array(numDimensions);
+      for (var i = numDimensions - 1; i >= 0; i--) {
+        dimensions[i] = this.pop(Kind.Int);
+      }
+      this.emitPush(Kind.Reference, "NM(" + classConstant(classInfo) + ", [" + dimensions.join(", ") + "])");
+    }
+
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string) {
       var local = this.local.join(", ");
       var stack = this.stack.slice(0, this.sp).join(", ");
@@ -1352,6 +1362,7 @@ module J2ME {
         case Bytecodes.NEW            : this.emitNewInstance(stream.readCPI()); break;
         case Bytecodes.NEWARRAY       : this.emitNewTypeArray(stream.readLocalIndex()); break;
         case Bytecodes.ANEWARRAY      : this.emitNewObjectArray(stream.readCPI()); break;
+        case Bytecodes.MULTIANEWARRAY : this.emitNewMultiObjectArray(stream.readCPI(), stream); break;
         case Bytecodes.ARRAYLENGTH    : this.emitArrayLength(); break;
         case Bytecodes.ATHROW         : this.emitThrow(stream.currentBCI); break;
         case Bytecodes.CHECKCAST      : this.emitCheckCast(stream.readCPI()); break;
@@ -1363,7 +1374,6 @@ module J2ME {
         // The following bytecodes are not supported yet and are not frequently used.
         // case Bytecodes.JSR            : ... break;
         // case Bytecodes.RET            : ... break;
-        // case Bytecodes.MULTIANEWARRAY : ... break;
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
       }

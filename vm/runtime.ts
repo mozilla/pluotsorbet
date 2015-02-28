@@ -1682,6 +1682,18 @@ module J2ME {
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
   }
+  
+  export function newMultiArray(klass: Klass, lengths: number[]) {
+    var length = lengths[0];
+    var array = newArray(klass.elementKlass, length);
+    if (lengths.length > 1) {
+      lengths = lengths.slice(1);
+      for (var i = 0; i < length; i++) {
+        array[i] = newMultiArray(klass.elementKlass, lengths);
+      }
+    }
+    return array;
+  }
 
   export function newObjectArray(size: number): java.lang.Object[] {
     return newArray(Klasses.java.lang.Object, size);
@@ -1883,6 +1895,7 @@ var CCI = J2ME.checkCastInterface;
 
 var AK = J2ME.getArrayKlass;
 var NA = J2ME.newArray;
+var NM = J2ME.newMultiArray;
 var SC = J2ME.newStringConstant;
 
 var CDZ = J2ME.checkDivideByZero;
