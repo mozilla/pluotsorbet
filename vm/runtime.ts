@@ -511,13 +511,13 @@ module J2ME {
       }
     }
 
-    newStringConstant(jsString: string): java.lang.String {
-      if (internedStrings.has(jsString)) {
-        return internedStrings.get(jsString);
+    newStringConstant(s: string): java.lang.String {
+      if (internedStrings.has(s)) {
+        return internedStrings.get(s);
       }
-      var javaString = J2ME.newString(jsString);
-      internedStrings.set(jsString, javaString);
-      return javaString;
+      var obj = J2ME.newString(s);
+      internedStrings.set(s, obj);
+      return obj;
     }
 
     setStatic(field, value) {
@@ -1138,13 +1138,7 @@ module J2ME {
       switch (classInfo.className) {
         case "java/lang/Object": Klasses.java.lang.Object = klass; break;
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass;
-          Object.defineProperty(klass.prototype, "viewString", {
-            get: function () {
-              return fromJavaString(this);
-            }
-          });
-          break;
+        case "java/lang/String": Klasses.java.lang.String = klass; break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
         case "java/lang/IllegalArgumentException": Klasses.java.lang.IllegalArgumentException = klass; break;
@@ -1668,40 +1662,25 @@ module J2ME {
     return new klass();
   }
 
-  export function newString(value: any): java.lang.String {
-    if (value === null || value === undefined) {
+  export function newString(str: string): java.lang.String {
+    if (str === null || str === undefined) {
       return null;
     }
-    var jsString = String(value);
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
-    var array = new Uint16Array(jsString.length);
-    var length = jsString.length;
-    for (var i = 0; i < length; i++) {
-      array[i] = jsString.charCodeAt(i);
-    }
-    object.value = array;
-    object.count = length;
-    // Cache JS string.
-    object._value = jsString;
-    object._count = length;
-    object._offset = 0;
+    object.str = str;
     return object;
   }
 
-  export function newStringConstant(jsString: string): java.lang.String {
-    return $.newStringConstant(jsString);
-  }
+  export function newStringConstant(str: string): java.lang.String {
+    return $.newStringConstant(str);
+  };
 
   export function newArray(klass: Klass, size: number) {
     if (size < 0) {
-      throwNegativeArraySizeException();
+      throw $.newNegativeArraySizeException();
     }
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
-  }
-
-  export function throwNegativeArraySizeException() {
-    throw $.newNegativeArraySizeException();
   }
 
   export function newObjectArray(size: number): java.lang.Object[] {
@@ -1759,31 +1738,22 @@ module J2ME {
     return "[" + value.klass.classInfo.className + hashcode + "]";
   }
 
-  export function fromJavaString(javaString: java.lang.String): string {
-    if (!javaString) {
+  export function fromJavaString(value: java.lang.String): string {
+    if (!value) {
       return null;
     }
-    var o = javaString.offset;
-    var c = javaString.count;
-    if (javaString._value !== undefined && javaString._offset === o && javaString._count === c) {
-      return javaString._value;
-    }
-    // Cache decoded string. The buffer is immutable, but I think that the offset or count can change.
-    javaString._value = util.fromJavaChars(javaString.value, o, c);
-    javaString._offset = o;
-    javaString._count = c;
-    return javaString._value;
+    return value.str;
   }
 
   export function checkDivideByZero(value: number) {
     if (value === 0) {
-      throwArithmeticException();
+      throw $.newArithmeticException("/ by zero");
     }
   }
 
   export function checkDivideByZeroLong(value: Long) {
     if (value.isZero()) {
-      throwArithmeticException();
+      throw $.newArithmeticException("/ by zero");
     }
   }
 
@@ -1798,14 +1768,6 @@ module J2ME {
     if ((index >>> 0) >= (array.length >>> 0)) {
       throw $.newArrayIndexOutOfBoundsException(String(index));
     }
-  }
-
-  export function throwArrayIndexOutOfBoundsException(index: number) {
-    throw $.newArrayIndexOutOfBoundsException(String(index));
-  }
-
-  export function throwArithmeticException() {
-    throw $.newArithmeticException("/ by zero");
   }
 
   export function checkArrayStore(array: java.lang.Object, value: any) {
@@ -1932,9 +1894,6 @@ var CAS = J2ME.checkArrayStore;
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
-var TI = J2ME.throwArrayIndexOutOfBoundsException;
-var TA = J2ME.throwArithmeticException;
-var TN = J2ME.throwNegativeArraySizeException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
