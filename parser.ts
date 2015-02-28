@@ -969,7 +969,7 @@ module J2ME {
      * Object that holds static properties for this class.
      */
     getStaticObject(ctx: Context): java.lang.Object {
-      return <java.lang.Object><any>getRuntimeKlass(ctx.runtime, this.klass);
+      return <java.lang.Object><any>ctx.runtime.getRuntimeKlass(this.klass);
     }
 
     get isInterface(): boolean {
@@ -1006,7 +1006,7 @@ module J2ME {
      * are stored for this class.
      */
     getClassObject(): java.lang.Class {
-      return getRuntimeKlass($, this.klass).classObject;
+      return $.getRuntimeKlass(this.klass).classObject;
     }
 
     resolveClass(i: number): ClassInfo {

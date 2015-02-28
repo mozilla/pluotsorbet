@@ -232,6 +232,7 @@ module J2ME {
     }
 
     checkingForCanYield[methodInfo.implKey] = true;
+    var constantPool = methodInfo.classInfo.constantPool;
     try {
       var result = YieldReason.None;
       var stream = new BytecodeStream(methodInfo.code);
@@ -243,7 +244,7 @@ module J2ME {
           case Bytecodes.GETSTATIC:
           case Bytecodes.PUTSTATIC:
             var cpi = stream.readCPI();
-            var fieldInfo = methodInfo.classInfo.resolve(cpi, true);
+            var fieldInfo = constantPool.resolveField(cpi, true);
             var classInfo = fieldInfo.classInfo;
             result = canStaticInitializerYield(classInfo);
             break;
@@ -263,7 +264,7 @@ module J2ME {
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
             var cpi = stream.readCPI();
-            var callee = methodInfo.classInfo.resolveMethod(cpi, op === Bytecodes.INVOKESTATIC);
+            var callee = constantPool.resolveMethod(cpi, op === Bytecodes.INVOKESTATIC);
 
             if (op !== Bytecodes.INVOKESTATIC) {
               if (yieldVirtualMap[methodInfo.implKey] === YieldReason.None) {

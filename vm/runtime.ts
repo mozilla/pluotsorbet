@@ -894,7 +894,7 @@ module J2ME {
       $.setClassInitialized(runtimeKlass);
       return;
     }
-    var fields = runtimeKlass.templateKlass.classInfo.fields;
+    var fields = runtimeKlass.templateKlass.classInfo.getFields();
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       if (field.isStatic) {
@@ -1371,7 +1371,7 @@ module J2ME {
       return;
     }
     linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
-    var methods = klass.classInfo.methods;
+    var methods = klass.classInfo.getMethods();
     var classBindings = Bindings[klass.classInfo.className];
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
