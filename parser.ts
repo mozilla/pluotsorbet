@@ -284,7 +284,7 @@ module J2ME {
       s.offset = o;
     }
 
-    utf8(i: number): Uint8Array {
+    resolveUtf8(i: number): Uint8Array {
       return <Uint8Array>this.resolve(i, TAGS.CONSTANT_Utf8);
     }
 
@@ -300,7 +300,20 @@ module J2ME {
       release || assert(this.peekU1() === tag);
     }
 
-    resolve(i: number, tag: TAGS): any {
+    /**
+     * This causes the Utf8 string to be redecoded each time.
+     */
+    resolveUtf8String(i: number): string {
+      if (i === 0) return null;
+      return utf8ToString(this.resolveUtf8(i));
+    }
+
+    resolveUtf8ClassNameString(i: number): string {
+      if (i === 0) return null;
+      return this.resolveUtf8String(this.readTagU2(i, TAGS.CONSTANT_Class, 1));
+    }
+
+    resolve(i: number, tag: TAGS, isStatic: boolean = false): any {
       var s = this, r = this.resolved[i];
       if (r === undefined) {
         this.seekTag(i, tag);
@@ -310,6 +323,25 @@ module J2ME {
             break;
           case TAGS.CONSTANT_Class:
             r = this.resolved[i] = CLASSES.loadClass(utf8ToString(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
+            break;
+          case TAGS.CONSTANT_Fieldref:
+          case TAGS.CONSTANT_Methodref:
+          case TAGS.CONSTANT_InterfaceMethodref:
+            var class_index = s.readU2();
+            var name_and_type_index = s.readU2();
+            var classInfo = this.resolveClass(class_index);
+            var name_index = this.readTagU2(name_and_type_index, TAGS.CONSTANT_NameAndType, 1);
+            var type_index = this.readTagU2(name_and_type_index, TAGS.CONSTANT_NameAndType, 3);
+            var name = this.resolveUtf8String(name_index);
+            var type = this.resolveUtf8String(type_index);
+            if (tag === TAGS.CONSTANT_Fieldref) {
+              r = this.resolved[i] = classInfo.getFieldByName(name, type, isStatic);
+            } else {
+              r = this.resolved[i] = classInfo.getMethodByName(name, type, isStatic);
+            }
+            if (!r) {
+              throw $.newRuntimeException(classInfo.className + "." + name + "." + type + " not found");
+            }
             break;
           default:
             assert(false);
@@ -322,20 +354,32 @@ module J2ME {
     resolveClass(index: number): ClassInfo {
       return <ClassInfo>this.resolve(index, TAGS.CONSTANT_Class);
     }
+
+    resolveMethod(index: number, isStatic: boolean): MethodInfo {
+      return <MethodInfo>this.resolve(index, TAGS.CONSTANT_Methodref, isStatic);
+    }
+
+    resolveField(index: number, isStatic: boolean): FieldInfo {
+      return <FieldInfo>this.resolve(index, TAGS.CONSTANT_Fieldref, isStatic);
+    }
   }
 
-  export class FieldInfo {
-    offset: number;
+  export class FieldInfo extends ByteStream {
     classInfo: ClassInfo;
-    kind: Kind;
     name: string;
     mangledName: string;
     signature: string;
+    kind: Kind;
+
     access_flags: ACCESS_FLAGS;
 
     constructor(classInfo: ClassInfo, offset: number) {
-      this.offset = offset;
+      super(classInfo.buffer, offset);
       this.classInfo = classInfo;
+      this.access_flags = this.u2(0);
+      this.name = classInfo.constantPool.resolveUtf8String(this.u2(2));
+      this.signature = classInfo.constantPool.resolveUtf8String(this.u2(4));
+      this.kind = getSignatureKind(this.signature);
     }
 
     get isStatic(): boolean {
@@ -382,7 +426,7 @@ module J2ME {
     name: string;
     signature: string;
 
-    // FIX ME LATER
+    ///// FIX THESE LATER ////
     fn: any;
 
     offset: number;
@@ -421,9 +465,19 @@ module J2ME {
     constructor(classInfo: ClassInfo, offset: number) {
       super(classInfo.buffer, offset);
       this.classInfo = classInfo;
-      this.name = utf8ToString(classInfo.constantPool.resolve(this.name_index, TAGS.CONSTANT_Utf8));
-      this.signature = utf8ToString(classInfo.constantPool.resolve(this.descriptor_index, TAGS.CONSTANT_Utf8));
+      this.name = classInfo.constantPool.resolveUtf8String(this.name_index);
+      this.signature = classInfo.constantPool.resolveUtf8String(this.descriptor_index);
+      this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
       this.scanMethodInfoAttributes();
+
+      // TODO: make this lazy
+      this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
+      this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
+      this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
+      this.consumeArgumentSlots = this.argumentSlots;
+      if (!this.isStatic) {
+        this.consumeArgumentSlots ++;
+      }
     }
 
     get access_flags(): number {
@@ -478,7 +532,7 @@ module J2ME {
         var attribute_name_index = s.readU2();
         var attribute_length = s.readU4();
         var o = s.offset;
-        var attribute_name = this.classInfo.constantPool.utf8(attribute_name_index);
+        var attribute_name = this.classInfo.constantPool.resolveUtf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.Code)) {
           this.codeAttribute = new CodeAttribute(s);
         }
@@ -487,15 +541,6 @@ module J2ME {
       this.seek(b);
     }
   }
-  /**
-  method_info {
-    u2             access_flags;
-    u2             name_index;
-    u2             descriptor_index;
-    u2             attributes_count;
-    attribute_info attributes[attributes_count];
-  }
-  */
 
   //export class MethodInfo {
   //  access_flags: number;
@@ -625,17 +670,20 @@ module J2ME {
 
   export class ClassInfo extends ByteStream {
     constantPool: ConstantPool;
+    className: string;
+    superClassName: string;
+    superClass: ClassInfo = null;
+    subClasses: ClassInfo [] = [];
+    allSubClasses: ClassInfo [] = [];
 
+    ////////// Clean Up ////////////
 
     access_flags: number;
-    this_class: number;
-    super_class: number;
+    // this_class: number;
+    // super_class: number;
 
-    name: string;
-    superClassName: string;
-    superClass: ClassInfo;
-    subClasses: ClassInfo [];
-    allSubClasses: ClassInfo [];
+
+
 
     staticInitializer: MethodInfo;
 
@@ -665,8 +713,9 @@ module J2ME {
       this.constantPool = new ConstantPool(s);
       s.seek(this.constantPool.offset);
       this.access_flags = s.readU2();
-      this.this_class = s.readU2();
-      this.super_class = s.readU2();
+
+      this.className = this.constantPool.resolveUtf8ClassNameString(s.readU2());
+      this.superClassName = this.constantPool.resolveUtf8ClassNameString(s.readU2());
 
       this.scanInterfaces();
       this.scanFields();
@@ -674,6 +723,7 @@ module J2ME {
       this.scanClassInfoAttributes();
 
       this.mangledName = mangleClass(this);
+      this.mangleFields();
     }
 
     private scanInterfaces() {
@@ -693,6 +743,44 @@ module J2ME {
         f[i] = s.offset;
         s.skip(6);
         this.skipAttributes();
+      }
+    }
+
+    /**
+     * Gets the class hierarchy in derived -> base order.
+     */
+    private getClassHierarchy(): ClassInfo [] {
+      var classHierarchy = [];
+      var classInfo = this;
+      do {
+        classHierarchy.push(classInfo);
+        classInfo = classInfo.superClass;
+      } while (classInfo);
+      return classHierarchy;
+    }
+
+    private mangleFields() {
+      // Keep track of how many times a field name was used and resolve conflicts by
+      // prefixing filed names with numbers.
+      var classInfo: ClassInfo;
+      var classHierarchy = this.getClassHierarchy();
+      var count = Object.create(null);
+      for (var i = classHierarchy.length - 1; i >= 0; i--) {
+        classInfo = classHierarchy[i];
+        var fields = classInfo.getFields();
+        for (var j = 0; j < fields.length; j++) {
+          var field = fields[j];
+          var fieldName = field.name;
+          if (count[field.name] === undefined) {
+            count[fieldName] = 0;
+          }
+          var fieldCount = count[fieldName];
+          // Only mangle this classInfo's fields.
+          if (i === 0) {
+            field.mangledName = "$" + (fieldCount ? "$" + fieldCount : "") + field.name;
+          }
+          count[fieldName] ++;
+        }
       }
     }
 
@@ -723,7 +811,7 @@ module J2ME {
         var attribute_name_index = s.readU2();
         var attribute_length = s.readU4();
         var o = s.offset;
-        var attribute_name = this.constantPool.utf8(attribute_name_index);
+        var attribute_name = this.constantPool.resolveUtf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.InnerClasses)) {
           var number_of_classes = s.readU2();
           assert (!this.classes);
@@ -791,6 +879,36 @@ module J2ME {
       return <FieldInfo>this.fields[i];
     }
 
+    indexOfField(name: string, signature: string, isStatic: boolean): number {
+      var fields = this.fields;
+      if (!fields) {
+        return -1;
+      }
+      for (var i = 0; i < fields.length; i++) {
+        var field = this.getField(i);
+        if (field.name === name && field.signature === signature && field.isStatic === isStatic) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    getFieldByName(name: string, signature: string, isStatic: boolean): FieldInfo {
+      var c = this;
+      do {
+        var i = c.indexOfField(name, signature, isStatic);
+        if (i >= 0) {
+          return c.getField(i);
+        }
+        c = c.superClass;
+      } while (c);
+      return null;
+    }
+
+    getFieldByKey(key: string) {
+      return null;
+    }
+
     getFields(): FieldInfo [] {
       if (!this.fields) {
         return null;
@@ -847,33 +965,11 @@ module J2ME {
       return <ClassInfo []>this.interfaces;
     }
 
-    getFieldByName(fieldKey: string): FieldInfo {
-      // return CLASSES.getField(this, fieldKey);
-      return null;
-    }
-
     /**
      * Object that holds static properties for this class.
      */
     getStaticObject(ctx: Context): java.lang.Object {
       return <java.lang.Object><any>getRuntimeKlass(ctx.runtime, this.klass);
-    }
-
-    getClassNameIndex(): number {
-      return this.constantPool.readTagU2(this.this_class, TAGS.CONSTANT_Class, 1);
-    }
-
-    getClassName(): Uint8Array {
-      return this.constantPool.utf8(this.getClassNameIndex());
-    }
-
-    getClassNameString(): string {
-      return util.decodeUtf8Array(this.getClassName());
-    }
-
-    // TODO: Remove
-    get className(): string {
-      return this.getClassNameString();
     }
 
     get isInterface(): boolean {
@@ -1015,10 +1111,7 @@ module J2ME {
     constructor(elementClass: ClassInfo) {
       super(null);
       this.elementClass = elementClass;
-    }
-
-    getClassNameString(): string {
-      return "[" + this.elementClass.getClassNameString();
+      this.className = "[" + elementClass.className;
     }
 
     isAssignableTo(toClass: ClassInfo): boolean {

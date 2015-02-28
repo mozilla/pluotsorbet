@@ -424,7 +424,7 @@ module J2ME {
     if (classInfo.mangledName) {
       return classInfo.mangledName;
     }
-    return mangleClassName(classInfo.getClassNameString());
+    return mangleClassName(classInfo.className);
   }
 
   /**
