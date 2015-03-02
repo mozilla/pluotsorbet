@@ -653,7 +653,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           ext = selectedFile.name.substr(extIndex);
         }
 
-        var fileName = fs.createUniqueFile("/nokiafileui", "file" + ext, selectedFile);
+        var fileName = fs.createUniqueFile("/Private/nokiafileui", "file" + ext, selectedFile);
         var encoder = new DataEncoder();
 
         encoder.putStart(DataType.STRUCT, "event");
@@ -664,7 +664,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
         encoder.putStart(DataType.STRUCT, "unknown_struct"); // Name unknown
         encoder.put(DataType.STRING, "unknown_string_1", ""); // Name and value unknown
         encoder.put(DataType.WSTRING, "unknown_string_2", ""); // Name and value unknown
-        encoder.put(DataType.WSTRING, "unknown_string_3", "nokiafileui/" + fileName); // Name unknown
+        encoder.put(DataType.WSTRING, "unknown_string_3", "Private/nokiafileui/" + fileName); // Name unknown
         encoder.put(DataType.BOOLEAN, "unknown_boolean", 1); // Name and value unknown
         encoder.put(DataType.ULONG, "unknown_long", 0); // Name and value unknown
         encoder.putEnd(DataType.STRUCT, "unknown_struct"); // Name unknown
@@ -780,14 +780,14 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
             ext = fileName.substr(extIndex);
           }
 
-          var uniqueFileName = fs.createUniqueFile("/nokiaimageprocessing", "image" + ext, blob);
+          var uniqueFileName = fs.createUniqueFile("/Private/nokiaimageprocessing", "image" + ext, blob);
           var encoder = new DataEncoder();
 
           encoder.putStart(DataType.STRUCT, "event");
           encoder.put(DataType.METHOD, "name", "Scale");
           encoder.put(DataType.BYTE, "trans_id", trans_id);
           encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
-          encoder.put(DataType.WSTRING, "filename", "nokiaimageprocessing/" + uniqueFileName); // Name unknown
+          encoder.put(DataType.WSTRING, "filename", "Private/nokiaimageprocessing/" + uniqueFileName); // Name unknown
           encoder.putEnd(DataType.STRUCT, "event");
 
           var data = new TextEncoder().encode(encoder.getData());

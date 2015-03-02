@@ -1,6 +1,11 @@
 /* -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* vim: set shiftwidth=4 tabstop=4 autoindent cindent expandtab: */
 
+/*
+ node-jvm
+ Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
+*/
+
 'use strict';
 
 var TAGS = {

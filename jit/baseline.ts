@@ -41,11 +41,9 @@ module J2ME {
   var privilegedMethods = {};
 
   var privilegedPatterns = [
-    "org/mozilla/internal/Sys*",
     "com/sun/midp/crypto/SHA*",
     "java/io/DataInputStream*",
-    // "com/sun/*",
-    // "java/*"
+    "org/mozilla/internal/Sys*",
   ];
 
   /**
@@ -73,42 +71,18 @@ module J2ME {
    * Emits array bounds checks. Although this is necessary for correctness, most
    * applications work without them.
    */
-  export var emitCheckArrayBounds = true;
-
-  /**
-   * Inline calls to runtime methods whenever possible.
-   */
-  export var inlineRuntimeCalls = true;
+  var emitCheckArrayBounds = true;
 
   /**
    * Emits array store type checks. Although this is necessary for correctness,
    * most applications work without them.
    */
-  export var emitCheckArrayStore = true;
-
-  /**
-   * Unsafe methods.
-   */
-  function isPrivileged(methodInfo: MethodInfo) {
-    var privileged = privilegedMethods[methodInfo.implKey];
-    if (privileged) {
-      return true;
-    } else if (privileged === false) {
-      return false;
-    }
-    // Check patterns.
-    for (var i = 0; i < privilegedPatterns.length; i++) {
-      if (methodInfo.implKey.match(privilegedPatterns[i])) {
-        return privilegedMethods[methodInfo.implKey] = true;
-      }
-    }
-    return privilegedMethods[methodInfo.implKey] = false;
-  }
+  var emitCheckArrayStore = true;
 
   /**
    * Emits preemption checks for methods that already yield.
    */
-  export var emitCheckPreemption = false;
+  var emitCheckPreemption = false;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
@@ -274,8 +248,6 @@ module J2ME {
     private lockObject: string;
     private hasOSREntryPoint = false;
     private entryBlock: number;
-    private isPrivileged: boolean;
-
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
@@ -299,7 +271,6 @@ module J2ME {
       this.bodyEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.blockEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.target = target;
-      this.isPrivileged = isPrivileged(this.methodInfo);
     }
 
     compile(): CompiledMethodInfo {
@@ -323,7 +294,7 @@ module J2ME {
       if (this.hasMonitorEnter) {
         this.bodyEmitter.prependLn("var th = $.ctx.thread;");
       }
-      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint ? this.blockMap.getOSREntryPoints() : []);
+      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.blockMap.getOSREntryPoints());
     }
 
     needsVariable(name: string) {
@@ -413,7 +384,9 @@ module J2ME {
         check += "(" + this.peek(Kind.Reference) + ", " + classConstant(classInfo) + ")";
         check = " && " + check;
       }
-      this.bodyEmitter.writeLn("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") { pc = " + this.getBlockIndex(handler.handler_pc) + "; continue; }");
+      this.bodyEmitter.enter("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") {");
+      this.bodyEmitter.writeLn("pc = " + this.getBlockIndex(handler.handler_pc) + "; continue;");
+      this.bodyEmitter.leave("}");
       return;
     }
 
@@ -503,11 +476,10 @@ module J2ME {
       var needsOSREntryPoint = false;
       var needsEntryDispatch = false;
 
-      var blockMap = this.blockMap;
-      var blocks = blockMap.blocks;
+      var blocks = this.blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
-        if (blockMap.invokeCount > 0 && block.isLoopHeader && !block.isInnerLoopHeader()) {
+        if (block.isLoopHeader && !block.isInnerLoopHeader()) {
           needsOSREntryPoint = true;
           needsEntryDispatch = true;
         }
@@ -793,14 +765,6 @@ module J2ME {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
         call = inlineMethods[methodInfo.implKey];
       }
-      if (!(calleeCanYield || emitCompilerAssertions)) {
-        if (types[0].kind !== Kind.Void) {
-          this.emitPush(types[0].kind, call);
-        } else {
-          this.blockEmitter.writeLn(call + ";");
-        }
-        return;
-      }
       this.needsVariable("re");
       this.blockEmitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
@@ -814,38 +778,13 @@ module J2ME {
       }
     }
 
-    emitNegativeArraySizeCheck(length: string) {
-      if (this.isPrivileged) {
-        return;
-      }
-      this.blockEmitter.writeLn(length + " < 0 && TN();");
-    }
-
-    emitBoundsCheck(array: string, index: string) {
-      if (this.isPrivileged || !emitCheckArrayBounds) {
-        return;
-      }
-      if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("if ((" + index + " >>> 0) >= (" + array + ".length >>> 0)) TI(" + index + ");");
-      } else {
-        this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
-      }
-    }
-
-    emitArrayStoreCheck(array: string, value: string) {
-      if (this.isPrivileged || !emitCheckArrayStore) {
-        return;
-      }
-      this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
-    }
-
     emitStoreIndexed(kind: Kind) {
       var value = this.pop(stackKind(kind));
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      this.emitBoundsCheck(array, index);
+      emitCheckArrayBounds && this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
       if (kind === Kind.Reference) {
-        this.emitArrayStoreCheck(array, value);
+        emitCheckArrayStore && this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
       }
       this.blockEmitter.writeLn(array + "[" + index + "] = " + value + ";");
     }
@@ -853,13 +792,12 @@ module J2ME {
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      this.emitBoundsCheck(array, index);
+      emitCheckArrayBounds && this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
       this.emitPush(kind, array + "[" + index + "]");
     }
 
     emitIncrement(stream: BytecodeStream) {
-      var local = this.getLocal(stream.readLocalIndex());
-      this.blockEmitter.writeLn(local + " = " + local + " + " + stream.readIncrement() + " | 0;");
+      this.blockEmitter.writeLn(this.getLocal(stream.readLocalIndex()) + " += " + stream.readIncrement() + ";");
     }
 
     emitGoto(block: Block, stream: BytecodeStream) {
@@ -907,7 +845,6 @@ module J2ME {
     emitNewTypeArray(typeCode: number) {
       var kind = arrayTypeCodeToKind(typeCode);
       var length = this.pop(Kind.Int);
-      this.emitNegativeArraySizeCheck(length);
       this.emitPush(Kind.Reference, "new " + kindToTypedArrayName(kind) + "(" + length + ")");
     }
 
@@ -939,8 +876,17 @@ module J2ME {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
-      this.emitNegativeArraySizeCheck(length);
       this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")");
+    }
+
+    emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
+      var classInfo = this.lookupClass(cpi);
+      var numDimensions = stream.readUByte(stream.currentBCI + 3);
+      var dimensions = new Array(numDimensions);
+      for (var i = numDimensions - 1; i >= 0; i--) {
+        dimensions[i] = this.pop(Kind.Int);
+      }
+      this.emitPush(Kind.Reference, "NM(" + classConstant(classInfo) + ", [" + dimensions.join(", ") + "])");
     }
 
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string) {
@@ -1030,24 +976,13 @@ module J2ME {
           Debug.unexpected(Bytecodes[opcode]);
       }
     }
-
-    emitDivideByZeroCheck(kind: Kind, value: string) {
-      if (this.isPrivileged) {
-        return;
-      }
-      if (inlineRuntimeCalls && kind !== Kind.Long) {
-        this.blockEmitter.writeLn(value + " === 0 && TA();");
-      } else {
-        var checkName = kind === Kind.Long ? "CDZL" : "CDZ";
-        this.blockEmitter.writeLn(checkName + "(" + value + ");");
-      }
-    }
-
+    
     emitArithmeticOp(result: Kind, opcode: Bytecodes, canTrap: boolean) {
       var y = this.pop(result);
       var x = this.pop(result);
       if (canTrap) {
-        this.emitDivideByZeroCheck(result, y);
+        var checkName = result === Kind.Long ? "CDZL" : "CDZ";
+        this.blockEmitter.writeLn(checkName + "(" + y + ");");
       }
       var v;
       switch(opcode) {
@@ -1438,6 +1373,7 @@ module J2ME {
         case Bytecodes.NEW            : this.emitNewInstance(stream.readCPI()); break;
         case Bytecodes.NEWARRAY       : this.emitNewTypeArray(stream.readLocalIndex()); break;
         case Bytecodes.ANEWARRAY      : this.emitNewObjectArray(stream.readCPI()); break;
+        case Bytecodes.MULTIANEWARRAY : this.emitNewMultiObjectArray(stream.readCPI(), stream); break;
         case Bytecodes.ARRAYLENGTH    : this.emitArrayLength(); break;
         case Bytecodes.ATHROW         : this.emitThrow(stream.currentBCI); break;
         case Bytecodes.CHECKCAST      : this.emitCheckCast(stream.readCPI()); break;
@@ -1449,7 +1385,6 @@ module J2ME {
         // The following bytecodes are not supported yet and are not frequently used.
         // case Bytecodes.JSR            : ... break;
         // case Bytecodes.RET            : ... break;
-        // case Bytecodes.MULTIANEWARRAY : ... break;
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
       }

@@ -23,19 +23,18 @@ module J2ME {
         }
       }
     },
-    "java/lang/String": {
-      fields: {
-        instanceSymbols: {
-          "value.[C": "value",
-          "offset.I": "offset",
-          "count.I": "count"
-        }
-      }
-    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
           "priority.I": "priority"
+        }
+      }
+    },
+    "java/io/ByteArrayOutputStream": {
+      fields: {
+        instanceSymbols: {
+          "count.I": "count",
+          "buf.[B": "buf"
         }
       }
     },
@@ -212,12 +211,7 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-      value: Uint16Array;
-      offset: number;
-      count: number;
-      _offset: number;
-      _count: number
-      _value: string;
+      str: string;
     }
 
     export interface Thread extends java.lang.Object {

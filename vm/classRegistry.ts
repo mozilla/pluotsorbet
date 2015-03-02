@@ -1,6 +1,12 @@
+/*
+ node-jvm
+ Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
+*/
+
 module J2ME {
   declare var ZipFile;
   declare var snarf;
+  declare var JARStore;
 
   export class ClassRegistry {
     /**
@@ -19,7 +25,6 @@ module J2ME {
      */
     missingSourceFiles: Map<string, string []>;
 
-    jarFiles: Map<string, any>;
     classes: Map<string, ClassInfo>;
 
     preInitializedClasses: ClassInfo [];
@@ -34,7 +39,6 @@ module J2ME {
       this.sourceFiles = Object.create(null);
       this.missingSourceFiles = Object.create(null);
 
-      this.jarFiles = Object.create(null);
       this.classes = Object.create(null);
       this.preInitializedClasses = [];
     }
@@ -67,9 +71,9 @@ module J2ME {
         "java/util/Vector",
         "java/io/IOException",
         "java/lang/IllegalArgumentException",
-        "java/lang/IndexOutOfBoundsException",
-        "java/lang/StringIndexOutOfBoundsException",
-        "org/mozilla/internal/Sys"
+        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        "com/sun/cldc/isolate/Isolate",
+        "org/mozilla/internal/Sys",
       ];
 
       for (var i = 0; i < classNames.length; i++) {
@@ -87,10 +91,6 @@ module J2ME {
 
     isPreInitializedClass(classInfo: ClassInfo) {
       return this.preInitializedClasses.indexOf(classInfo) >= 0;
-    }
-
-    addPath(name: string, buffer: ArrayBuffer) {
-      this.jarFiles[name] = new ZipFile(buffer);
     }
 
     addSourceDirectory(name: string) {
@@ -124,32 +124,6 @@ module J2ME {
       return null;
     }
 
-    loadFileFromJar(jarName: string, fileName: string): ArrayBuffer {
-      var zip = this.jarFiles[jarName];
-      if (!zip)
-        return null;
-      if (!(fileName in zip.directory))
-        return null;
-      var bytes = zip.read(fileName);
-      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-    }
-
-    loadFile(fileName: string): ArrayBuffer {
-      var data;
-      var jarFiles = this.jarFiles;
-      for (var k in jarFiles) {
-        var zip = jarFiles[k];
-        if (fileName in zip.directory) {
-          enterTimeline("ZIP", {file: fileName});
-          var bytes = zip.read(fileName);
-          data = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-          leaveTimeline("ZIP");
-          break;
-        }
-      }
-      return data;
-    }
-
     loadClassBytes(bytes: ArrayBuffer): ClassInfo {
       enterTimeline("loadClassBytes");
       var classInfo = new ClassInfo(bytes);
@@ -160,7 +134,7 @@ module J2ME {
 
     loadClassFile(fileName: string): ClassInfo {
       loadWriter && loadWriter.enter("> Loading Class File: " + fileName);
-      var bytes = this.loadFile(fileName);
+      var bytes = JARStore.loadFile(fileName);
       if (!bytes) {
         loadWriter && loadWriter.leave("< ClassNotFoundException");
         throw new (ClassNotFoundException)(fileName);
@@ -183,27 +157,6 @@ module J2ME {
       classInfo.complete();
       loadWriter && loadWriter.leave("<");
       return classInfo;
-    }
-
-    /**
-     * Used to test loading of all class files.
-     */
-    loadAllClassFiles() {
-      var jarFiles = this.jarFiles;
-      Object.keys(jarFiles).every(function (path) {
-        if (path.substr(-4) !== ".jar") {
-          return true;
-        }
-        var zipFile = jarFiles[path];
-        Object.keys(zipFile.directory).every(function (fileName) {
-          if (fileName.substr(-6) !== '.class') {
-            return true;
-          }
-          var className = fileName.substring(0, fileName.length - 6);
-          CLASSES.getClass(className);
-          return true;
-        });
-      });
     }
 
     loadClass(className: string): ClassInfo {

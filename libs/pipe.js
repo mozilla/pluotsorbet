@@ -45,11 +45,8 @@ var DumbPipe = {
   sendQueue: [],
   isRunningSendQueue: false,
 
-  send: function(envelope, callback) {
-    this.sendQueue.push({
-      envelope: envelope,
-      callback: callback,
-    });
+  send: function(envelope) {
+    this.sendQueue.push(envelope);
 
     if (!this.isRunningSendQueue) {
       this.isRunningSendQueue = true;
@@ -58,18 +55,7 @@ var DumbPipe = {
   },
 
   runSendQueue: function() {
-    var item = this.sendQueue.shift();
-
-    if (item.callback) {
-      var result = JSON.parse(prompt(JSON.stringify(item.envelope)));
-      try {
-        item.callback(result);
-      } catch(ex) {
-        console.error(ex + "\n" + ex.stack);
-      }
-    } else {
-      alert(JSON.stringify(item.envelope));
-    }
+    alert(JSON.stringify(this.sendQueue.shift()));
 
     if (this.sendQueue.length > 0) {
       window.setZeroTimeout(this.runSendQueue.bind(this));
@@ -79,11 +65,11 @@ var DumbPipe = {
   },
 
   receiveMessage: function(event) {
-    if (event.source === window) {
+    var envelope = event.data;
+
+    if (typeof envelope !== "object" || !("pipeID" in envelope)) {
       return;
     }
-
-    var envelope = event.data;
 
     if (this.recipients[envelope.pipeID]) {
       try {

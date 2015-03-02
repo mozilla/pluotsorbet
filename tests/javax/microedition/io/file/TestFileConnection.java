@@ -10,7 +10,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestFileConnection implements Testlet {
-    public int getExpectedPass() { return 157; }
+    public int getExpectedPass() { return 167; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
     String dirPath;
@@ -147,6 +147,34 @@ public class TestFileConnection implements Testlet {
         modifiedTime = file.lastModified();
         th.check(modifiedTime, 0L, "deleted file has '0' mtime");
         lastTime = modifiedTime;
+
+        file.close();
+    }
+
+    void testIgnoredFile(TestHarness th) throws IOException {
+        FileConnection file = (FileConnection)Connector.open(dirPath + "ignored-file");
+
+        th.check(file.exists(), "ignored file exists");
+        th.check(file.lastModified(), 0L, "ignored file isn't modified");
+        th.check(file.fileSize(), 0, "ignored file is empty");
+
+        OutputStream out = file.openOutputStream();
+        out.write(new byte[]{ 7, 6, 5, 4, 3, 2, 1 });
+        out.close();
+        th.check(file.lastModified(), 0L, "ignored file isn't modified after write");
+        th.check(file.fileSize(), 0, "ignored file is empty after write");
+
+        file.truncate(3);
+        th.check(file.lastModified(), 0L, "ignored file isn't modified after truncate");
+        th.check(file.fileSize(), 0, "ignored file is empty after truncate");
+
+        InputStream in = file.openInputStream();
+        th.check(in.read(), -1, "ignored file read returns no data");
+        in.close();
+
+        file.delete();
+        th.check(file.exists(), "ignored file exists after delete");
+        th.check(file.lastModified(), 0L, "ignored file isn't modified after delete");
 
         file.close();
     }
@@ -369,6 +397,7 @@ public class TestFileConnection implements Testlet {
 
             testListFilter(th);
             testLastModified(th);
+            testIgnoredFile(th);
 
             dir.close();
             th.check(!dir.isOpen());

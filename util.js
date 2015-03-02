@@ -4,12 +4,9 @@
 'use strict';
 
 var util = (function () {
-  var Utf8TextDecoder;
+  var Utf8TextDecoder = new TextDecoder("utf-8");
 
   function decodeUtf8(arrayBuffer) {
-    if (!Utf8TextDecoder) {
-      Utf8TextDecoder = new TextDecoder("utf-8");
-    }
     return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
   }
 
@@ -29,37 +26,6 @@ var util = (function () {
    */
   function decodeUtf8Array(arr) {
     return fallibleUtf8Decoder.decode(arr);
-  }
-
-  // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
-  // http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
-  function javaUTF8Decode(arr) {
-    var str = '';
-    var i = 0;
-    while (i < arr.length) {
-        var x = arr[i++];
-
-        if (x <= 0x7f) {
-            // Code points in the range '\u0001' to '\u007F' are represented by a
-            // single byte.
-            // The 7 bits of data in the byte give the value of the code point
-            // represented.
-            str += String.fromCharCode(x);
-        } else if (x <= 0xdf) {
-            // The null code point ('\u0000') and code points in the range '\u0080'
-            // to '\u07FF' are represented by a pair of bytes x and y.
-            var y = arr[i++];
-            str += String.fromCharCode(((x & 0x1f) << 6) + (y & 0x3f));
-        } else {
-            // Code points in the range '\u0800' to '\uFFFF' are represented by 3
-            // bytes x, y, and z.
-            var y = arr[i++];
-            var z = arr[i++];
-            str += String.fromCharCode(((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f));
-        }
-    }
-
-    return str;
   }
 
   function defaultValue(type) {
@@ -105,17 +71,6 @@ var util = (function () {
 
   function fromJavaString(jStr) {
     return J2ME.fromJavaString(jStr);
-  }
-
-  function newMultiArray(classInfo, lengths) {
-    var length = lengths[0];
-    var array = J2ME.newArray(classInfo.elementClass.klass, length);
-    if (lengths.length > 1) {
-      lengths = lengths.slice(1);
-      for (var i=0; i<length; i++)
-        array[i] = newMultiArray(classInfo.elementClass, lengths);
-    }
-    return array;
   }
 
   /**
@@ -202,13 +157,11 @@ var util = (function () {
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
     decodeUtf8Array: decodeUtf8Array,
-    javaUTF8Decode: javaUTF8Decode,
     defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
-    newMultiArray: newMultiArray,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,

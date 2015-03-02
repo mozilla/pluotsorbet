@@ -9,7 +9,7 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
 
-var jars = ["java/classes.jar"];
+var jars = [];
 
 if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
@@ -35,9 +35,14 @@ var getMobileInfo = new Promise(function(resolve, reject) {
 
 var loadingPromises = [initFS, getMobileInfo];
 
+loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data) {
+  JARStore.addBuiltIn("java/classes.jar", data);
+  CLASSES.initializeBuiltinClasses();
+}));
+
 jars.forEach(function(jar) {
   loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
-    CLASSES.addPath(jar, data);
+    JARStore.addBuiltIn(jar, data);
   }));
 });
 
@@ -113,42 +118,27 @@ function performDownload(url, dialog, callback) {
 }
 
 if (config.downloadJAD) {
-  loadingPromises.push(initFS.then(function() {
-    return new Promise(function(resolve, reject) {
-      if (fs.exists("/midlet.jar")) {
-        Promise.all([
-          new Promise(function(resolve, reject) {
-            fs.open("/midlet.jar", function(fd) {
-              CLASSES.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
-              fs.close(fd);
-              resolve();
-            });
-          }),
-          new Promise(function(resolve, reject) {
-            fs.open("/midlet.jad", function(fd) {
-              processJAD(util.decodeUtf8(fs.read(fd)));
-              fs.close(fd);
-              resolve();
-            });
-          }),
-        ]).then(resolve);
-      } else {
-        var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-        dialog.style.display = 'block';
-        dialog.classList.add('visible');
-        document.body.appendChild(dialog);
+  loadingPromises.push(new Promise(function(resolve, reject) {
+    JARStore.loadJAR("midlet.jar").then(function(loaded) {
+      if (loaded) {
+        processJAD(JARStore.getJAD());
+        resolve();
+        return;
+      }
 
-        performDownload(config.downloadJAD, dialog, function(data) {
-          dialog.parentElement.removeChild(dialog);
+      var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+      dialog.style.display = 'block';
+      dialog.classList.add('visible');
+      document.body.appendChild(dialog);
 
-          CLASSES.addPath("midlet.jar", data.jarData);
+      performDownload(config.downloadJAD, dialog, function(data) {
+        dialog.parentElement.removeChild(dialog);
+
+        JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
           processJAD(data.jadData);
-
-          fs.create("/midlet.jad", new Blob([ data.jadData ]));
-          fs.create("/midlet.jar", new Blob([ data.jarData ]));
           resolve();
         });
-      }
+      });
     });
   }).then(backgroundCheck));
 }
@@ -156,10 +146,9 @@ if (config.downloadJAD) {
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/override.js"),
-                       loadScript("tests/mozactivitymock.js"));
+                       loadScript("tests/mozactivitymock.js"),
+                       loadScript("tests/config.js"));
 }
-
-loadingPromises.push(emoji.loadData());
 
 function getIsOff(button) {
   return button.textContent.contains("OFF");
@@ -173,7 +162,6 @@ var bigBang = 0;
 
 function start() {
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
-  CLASSES.initializeBuiltinClasses();
   profiler && profiler.start(2000, false);
   bigBang = performance.now();
   jvm.startIsolate0(config.main, config.args);
@@ -185,19 +173,6 @@ Promise.all(loadingPromises).then(start, function (reason) {
 
 document.getElementById("start").onclick = function() {
   start();
-};
-
-function loadAllClasses() {
-  profiler.start(5000, false);
-  for (var i = 0; i < 1; i++) {
-    var s = performance.now();
-    CLASSES.loadAllClassFiles();
-    console.info("Loaded all classes in: " + (performance.now() - s));
-  }
-}
-
-document.getElementById("loadAllClasses").onclick = function() {
-  loadAllClasses();
 };
 
 if (typeof Benchmark !== "undefined") {
