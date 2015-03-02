@@ -475,6 +475,7 @@ module J2ME {
       this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
       this.consumeArgumentSlots = this.argumentSlots;
+      this.mangledName = mangleMethod(this);
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
