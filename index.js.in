@@ -53,6 +53,10 @@ var DumbPipe = {
       return;
     }
 
+    window.setZeroTimeout(this.handlePipeEvent.bind(this, event));
+  },
+
+  handlePipeEvent: function(event) {
     if (event.detail.promptType == "custom-prompt") {
       console.warn("unresponsive script warning; figure out how to handle");
       return;
