@@ -24,6 +24,7 @@
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
   <script type="text/javascript" src="libs/console.js" defer></script>
   <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
+  <script type="text/javascript" src="polyfill/canvas-toblob.js" defer></script>
   <script type="text/javascript" src="polyfill/fromcodepoint.js" defer></script>
   <script type="text/javascript" src="polyfill/codepointat.js" defer></script>
   <script type="text/javascript" src="polyfill/IndexedDB-getAll-shim.js" defer></script>
