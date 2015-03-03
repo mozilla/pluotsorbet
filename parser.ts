@@ -485,6 +485,7 @@ module J2ME {
       this.name = classInfo.constantPool.resolveUtf8String(this.name_index);
       this.signature = classInfo.constantPool.resolveUtf8String(this.descriptor_index);
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
+      this.exception_table = [];
       this.scanMethodInfoAttributes();
 
       // TODO: make this lazy
@@ -550,6 +551,16 @@ module J2ME {
         var attribute_name = this.classInfo.constantPool.resolveUtf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.Code)) {
           this.codeAttribute = new CodeAttribute(s);
+
+          var exception_table_length = s.readU2();
+          for (var j = 0; j < exception_table_length; j++) {
+            this.exception_table.push({
+              start_pc: s.readU2(),
+              end_pc: s.readU2(),
+              handler_pc: s.readU2(),
+              catch_type: s.readU2(),
+            });
+          }
         }
         s.seek(o + attribute_length);
       }
@@ -574,7 +585,6 @@ module J2ME {
       this.max_locals = s.readU2();
       var code_length = s.readU4();
       this.code = s.readBytes(code_length);
-      var exception_table_length = s.readU2();
     }
   }
 
