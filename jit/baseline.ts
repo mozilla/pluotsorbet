@@ -229,15 +229,10 @@ module J2ME {
 
   /**
    * These bytecodes require stack flushing.
-   *
-   * Bytecodes that modify the order in which expressions are evaluated, like: SWAP and DUP must
-   * flushed the stack.
-   *
-   * Bytecodes that write to locals must flush the stack because they may overwrite a local that
-   * is used in an expression that appears on the stack. This is only true when the stack height
-   * is largar than 1.
    */
   function needsStackFlushBefore(opcode: Bytecodes, sp: number) {
+     // Bytecodes that modify the order in which expressions are evaluated, like: SWAP and DUP
+     // must flush the stack.
     switch (opcode) {
       case Bytecodes.DUP:
       case Bytecodes.DUP_X1:
@@ -248,6 +243,13 @@ module J2ME {
       case Bytecodes.SWAP:
         return true;
     }
+    // IINC can increment something that's on the stack, so we need to flush.
+    if (opcode === Bytecodes.IINC && sp > 0) {
+      return true;
+    }
+    // All other STORE bytecodes can also modify something that's on the stack. However,
+    // since these will pop the stack before the assignment, we only need to care about
+    // cases where sp > 1.
     if (Bytecode.isStore(opcode) && sp > 1) {
       return true;
     }
@@ -412,6 +414,7 @@ module J2ME {
       if (needsTry) {
         this.bodyEmitter.leaveAndEnter("} catch (ex) {");
         this.bodyEmitter.writeLn(this.getStackName(0) + " = TE(ex);");
+        this.blockStack = [this.getStackName(0)];
         this.sp = 1;
         if (this.hasHandlers) {
           var handlers = this.methodInfo.exception_table;
@@ -844,6 +847,7 @@ module J2ME {
         call = inlineMethods[methodInfo.implKey];
       }
       this.needsVariable("re");
+      this.flushBlockStack();
       this.blockEmitter.writeLn("re = " + call + ";");
       if (calleeCanYield) {
         this.emitUnwind(this.blockEmitter, String(this.pc), String(nextPC));
@@ -1169,7 +1173,10 @@ module J2ME {
     emitCompareOp(kind: Kind, isLessThan: boolean) {
       var y = this.pop(kind);
       var x = this.pop(kind);
-      var s = this.getStack(this.sp++, Precedence.Member);
+      this.flushBlockStack();
+      var sp = this.sp ++;
+      // Get the top stack slot and make sure it is also it in the |blockStack|.
+      var s = this.blockStack[sp] = this.getStackName(sp);
       if (kind === Kind.Long) {
         this.blockEmitter.enter("if (" + x + ".greaterThan(" + y + ")) {");
         this.blockEmitter.writeLn(s + " = 1");
