@@ -5,7 +5,7 @@ module J2ME {
 
   module UTF8 {
     export var Code = new Uint8Array([67, 111, 100, 101]);
-    export var InnerClasses = new Uint8Array([67, 111, 100, 101]);
+    export var InnerClasses = new Uint8Array([67, 111, 100, 101]); // TODO: Figure out the char codes for this string.
   }
 
   function strcmp(a: Uint8Array, b: Uint8Array): boolean {
@@ -23,6 +23,9 @@ module J2ME {
     return true;
   }
 
+  /**
+   * Base class of all class file structs.
+   */
   export class ByteStream {
     static arrays: string [][] = ArrayUtilities.makeArrays(128);
 
@@ -82,18 +85,6 @@ module J2ME {
       this.offset = o + 4;
       return (a << 24) | (b << 16) | (c << 8) | d;
     }
-
-    //readF32() {
-    //  var data = this.view.getFloat32(this.offset, false);
-    //  this.offset += 4;
-    //  return data;
-    //}
-    //
-    //readF64() {
-    //  var data = this.view.getFloat64(this.offset, false);
-    //  this.offset += 8;
-    //  return data;
-    //}
 
     seek(offset: number): ByteStream {
       this.offset = offset;
@@ -179,18 +170,6 @@ module J2ME {
       return data;
     }
 
-    //static readU4(buffer: Uint8Array, o: number): number {
-    //  return ByteStream.readI32(buffer, o) >>> 0;
-    //}
-    //
-    //static readI32(buffer: Uint8Array, o: number): number {
-    //  var a = buffer[o + 0];
-    //  var b = buffer[o + 1];
-    //  var c = buffer[o + 2];
-    //  var d = buffer[o + 3];
-    //  return (a << 24) | (b << 16) | (c << 8) | d;
-    //}
-    //
     static readU16(buffer: Uint8Array, o: number): number {
       return buffer[o] << 8 | buffer[o + 1];
     }
@@ -234,9 +213,19 @@ module J2ME {
   }
 
   export class ConstantPool extends ByteStream {
+    /**
+     * Starting positions of each entry in the constant pool.
+     */
     entries: Uint32Array;
+
+    /**
+     * Resolved constant pool references.
+     */
     resolved: any [];
 
+    /**
+     * Size of each tag. This is used to jump over constant pool entries quickly.
+     */
     private static tagSize = new Int8Array([
       -1, // ?
       -1, // CONSTANT_Utf8 has a variable length and needs to be handled differently.
@@ -289,6 +278,9 @@ module J2ME {
       return <Uint8Array>this.resolve(i, TAGS.CONSTANT_Utf8);
     }
 
+    /**
+     * Reads a 16-bit number at an offset from the constant pool entry index.
+     */
     readTagU2(i: number, tag: TAGS, offset: number) {
       var b = this.buffer;
       release || assert(b[this.entries[i]] === tag);
@@ -296,13 +288,17 @@ module J2ME {
       return b[o] << 8 | b[o + 1];
     }
 
+    /**
+     * Seeks the current stream position to a specified constant pool entry and
+     * returns the tag value.
+     */
     seekTag(i: number): TAGS {
       this.seek(this.entries[i]);
       return <TAGS>this.peekU1();
     }
 
     /**
-     * This causes the Utf8 string to be redecoded each time.
+     * This causes the Utf8 string to be redecoded each time so don't use it often.
      */
     resolveUtf8String(i: number): string {
       if (i === 0) return null;
@@ -387,7 +383,6 @@ module J2ME {
     mangledName: string;
     signature: string;
     kind: Kind;
-
     access_flags: ACCESS_FLAGS;
 
     constructor(classInfo: ClassInfo, offset: number) {
@@ -442,6 +437,7 @@ module J2ME {
     classInfo: ClassInfo;
     name: string;
     signature: string;
+    access_flags: ACCESS_FLAGS;
 
     ///// FIX THESE LATER ////
     fn: any;
@@ -481,6 +477,7 @@ module J2ME {
 
     constructor(classInfo: ClassInfo, offset: number) {
       super(classInfo.buffer, offset);
+      this.access_flags = this.u2(0);
       this.classInfo = classInfo;
       this.name = classInfo.constantPool.resolveUtf8String(this.name_index);
       this.signature = classInfo.constantPool.resolveUtf8String(this.descriptor_index);
@@ -497,10 +494,6 @@ module J2ME {
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
-    }
-
-    get access_flags(): number {
-      return this.u2(0);
     }
 
     get name_index(): number {
@@ -561,111 +554,6 @@ module J2ME {
     }
   }
 
-  //export class MethodInfo {
-  //  access_flags: number;
-  //  name_index: number;
-  //  descriptor_index: number;
-  //
-  //  fn: any;
-  //
-  //
-  //  classInfo: ClassInfo;
-  //  offset: number;
-  //  code: Uint8Array;
-  //  codeAttribute: CodeAttribute;
-  //
-  //  name: string;
-  //
-  //  state: MethodState;
-  //  signature: string;
-  //  mangledName: string;
-  //  mangledClassAndMethodName: string;
-  //
-  //  onStackReplacementEntryPoints: number [];
-  //
-  //  callCount: number;
-  //  bytecodeCount: number;
-  //  backwardsBranchCount: number;
-  //  interpreterCallCount: number;
-  //
-  //  argumentSlots: number;
-  //
-  //  /**
-  //   * The number of arguments to pop of the stack when calling this function.
-  //   */
-  //  consumeArgumentSlots: number;
-  //
-  //  hasTwoSlotArguments: boolean;
-  //
-  //  // Remove these
-  //  max_locals: number;
-  //  max_stack: number;
-  //
-  //  exception_table: any [];
-  //  implKey: string;
-  //  isOptimized: boolean;
-  //  signatureDescriptor: SignatureDescriptor;
-  //
-  //  constructor(classInfo: ClassInfo, offset: number) {
-  //    this.classInfo = classInfo;
-  //    this.offset = offset;
-  //
-  //    var b = classInfo.bytes.seek(offset);
-  //    this.access_flags = b.readU2();
-  //    this.name_index = b.readU2();
-  //    this.descriptor_index = b.readU2();
-  //    this.scanMethodInfoAttributes(b);
-  //  }
-  //
-  //  scanMethodInfoAttributes(s: ByteStream) {
-  //    var count = s.readU2();
-  //    for (var i = 0; i < count; i++) {
-  //      var attribute_name_index = s.readU2();
-  //      var attribute_length = s.readU4();
-  //      var o = s.offset;
-  //      var attribute_name = this.classInfo.constantPool.utf8(attribute_name_index);
-  //      if (strcmp(attribute_name, UTF8.Code)) {
-  //        this.codeAttribute = new CodeAttribute(this.classInfo, o);
-  //      }
-  //      s.seek(o + attribute_length);
-  //    }
-  //  }
-  //
-  //  public getReturnKind(): Kind {
-  //    return this.signatureDescriptor.typeDescriptors[0].kind;
-  //  }
-  //
-  //  get isNative(): boolean {
-  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_NATIVE);
-  //  }
-  //
-  //  get isFinal(): boolean {
-  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_FINAL);
-  //  }
-  //
-  //  get isPublic(): boolean {
-  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_PUBLIC);
-  //  }
-  //
-  //  get isStatic(): boolean {
-  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
-  //  }
-  //
-  //  get isSynchronized(): boolean {
-  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_SYNCHRONIZED);
-  //  }
-  //
-  //  get isAbstract(): boolean {
-  //    return !!(this.access_flags & ACCESS_FLAGS.ACC_ABSTRACT);
-  //  }
-  //
-  //  getSourceLocationForPC(pc: number): SourceLocation {
-  //    return null;
-  //  }
-  //
-  //
-  //}
-
   enum ResolvedFlags {
     None          = 0,
     Fields        = 1,
@@ -695,9 +583,9 @@ module J2ME {
     subClasses: ClassInfo [] = [];
     allSubClasses: ClassInfo [] = [];
 
-    ////////// Clean Up ////////////
-
     access_flags: number;
+
+    ////////// Clean Up ////////////
     // this_class: number;
     // super_class: number;
 
@@ -731,7 +619,6 @@ module J2ME {
       this.constantPool = new ConstantPool(s);
       s.seek(this.constantPool.offset);
       this.access_flags = s.readU2();
-
       this.className = this.constantPool.resolveUtf8ClassNameString(s.readU2());
       this.superClassName = this.constantPool.resolveUtf8ClassNameString(s.readU2());
 
