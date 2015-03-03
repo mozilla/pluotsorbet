@@ -1105,16 +1105,11 @@ module J2ME {
   }
 
   export class PrimitiveClassInfo extends ClassInfo {
-    private primitiveClassName: string;
 
     constructor(className, mangledName) {
       super(null);
-      this.primitiveClassName = className;
+      this.className = className;
       this.mangledName = mangledName;
-    }
-
-    getClassNameString(): string {
-      return this.primitiveClassName;
     }
 
     static Z = new PrimitiveClassInfo("Z", "boolean");
