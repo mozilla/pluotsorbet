@@ -328,9 +328,11 @@ module J2ME {
             case TAGS.CONSTANT_String:
               r = this.resolved[i] = $.newStringConstant(this.resolveUtf8String(s.readU2()));
               break;
-          //  case TAGS.CONSTANT_Long:
-          //    constant = Long.fromBits(entry.lowBits, entry.highBits);
-          //    break;
+            case TAGS.CONSTANT_Long:
+              var high = s.readU4();
+              var low = s.readU4();
+              r = this.resolved[i] = Long.fromBits(low, high);
+              break;
             case TAGS.CONSTANT_Double:
               r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readU4(), s.readU4());
               break;
