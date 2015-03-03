@@ -826,7 +826,7 @@ module J2ME {
       }
     }
 
-    getMethod(i: number): MethodInfo {
+    getMethodByIndex(i: number): MethodInfo {
       if (typeof this.methods[i] === "number") {
         this.methods[i] = new MethodInfo(this, <number>this.methods[i]);
       }
@@ -839,7 +839,7 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < methods.length; i++) {
-        var method = this.getMethod(i);
+        var method = this.getMethodByIndex(i);
         if (method.name === name && method.signature === signature && method.isStatic === isStatic) {
           return i;
         }
@@ -852,7 +852,7 @@ module J2ME {
       do {
         var i = c.indexOfMethod(name, signature, isStatic);
         if (i >= 0) {
-          return c.getMethod(i);
+          return c.getMethodByIndex(i);
         }
         c = c.superClass;
       } while (c);
@@ -867,7 +867,7 @@ module J2ME {
         return <MethodInfo []>this.methods;
       }
       for (var i = 0; i < this.methods.length; i++) {
-        this.getMethod(i);
+        this.getMethodByIndex(i);
       }
       this.resolvedFlags |= ResolvedFlags.Methods;
       return <MethodInfo []>this.methods;
