@@ -308,28 +308,6 @@ module J2ME {
       } while (classInfo);
     }
 
-    getMethod(classInfo, methodKey) {
-      var c = classInfo;
-      do {
-        var methods = c.methods;
-        for (var i=0; i<methods.length; ++i) {
-          var method = methods[i];
-          if (method.key === methodKey) {
-            return classInfo.vmc[methodKey] = method;
-          }
-        }
-        c = c.superClass;
-      } while (c);
-  
-      if (AccessFlags.isInterface(classInfo.access_flags)) {
-        for (var n = 0; n < classInfo.interfaces.length; ++n) {
-          var method = this.getMethod(classInfo.interfaces[n], methodKey);
-          if (method) {
-            return classInfo.vmc[methodKey] = method;
-          }
-        }
-      }
-    }
   }
 
   export var ClassNotFoundException = function(message) {

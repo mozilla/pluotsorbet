@@ -19,7 +19,7 @@ function asyncImpl(returnKind, promise) {
     ctx.execute();
   }, function(exception) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
-    var methodInfo = CLASSES.getMethod(classInfo, "S.throwException.(Ljava/lang/Exception;)V");
+    var methodInfo = classInfo.getMethodByName("throwException", "(Ljava/lang/Exception;)V", true);
     ctx.frames.push(Frame.create(methodInfo, [exception], 0));
     ctx.execute();
   });

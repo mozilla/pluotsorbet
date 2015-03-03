@@ -34,8 +34,8 @@ module J2ME {
 
       // The <init> frames go at the end of the array so they are executed first to initialize the thread and isolate.
       ctx.start([
-        Frame.create(CLASSES.getMethod(isolateClassInfo, "I.start.()V"), [ isolate ], 0),
-        Frame.create(CLASSES.getMethod(isolateClassInfo, "I.<init>.(Ljava/lang/String;[Ljava/lang/String;)V"),
+        Frame.create(isolateClassInfo.getMethodByName("start", "()V", false), [ isolate ], 0),
+        Frame.create(isolateClassInfo.getMethodByName("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V", false),
                                        [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ], 0)
       ]);
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
@@ -67,7 +67,7 @@ module J2ME {
 
       ctx.start([
         Frame.create(entryPoint, [ args ], 0),
-        Frame.create(CLASSES.getMethod(CLASSES.java_lang_Thread, "I.<init>.(Ljava/lang/String;)V"),
+        Frame.create(CLASSES.java_lang_Thread.getMethodByName("<init>", "(Ljava/lang/String;)V", false),
                      [ runtime.mainThread, J2ME.newString("main") ], 0)
       ]);
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");

@@ -286,7 +286,7 @@ Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
 Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var classInfo = this.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.className;
-    var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
+    var clinit = classInfo.getMethodByName("<clinit>", "()V", true);
     if (clinit && clinit.classInfo.className === className) {
         $.ctx.executeFrames([Frame.create(clinit, [], 0)]);
     }
@@ -333,7 +333,7 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
   // The following can trigger an unwind.
-  CLASSES.getMethod(o.klass.classInfo, "I.<init>.()V").fn.call(o);
+  o.klass.classInfo.getMethodByName("<init>", "()V", false).fn.call(o);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {
@@ -502,7 +502,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
     var newCtx = new Context($.ctx.runtime);
     newCtx.thread = this;
 
-    var run = CLASSES.getMethod(this.klass.classInfo, "I.run.()V");
+    var run = this.klass.classInfo.getMethodByName("run", "()V", false);
     newCtx.start([new Frame(run, [ this ], 0)]);
 };
 
