@@ -5,7 +5,8 @@ module J2ME {
 
   module UTF8 {
     export var Code = new Uint8Array([67, 111, 100, 101]);
-    export var InnerClasses = new Uint8Array([67, 111, 100, 101]); // TODO: Figure out the char codes for this string.
+    export var InnerClasses = new Uint8Array([73, 110, 110, 101, 114, 67, 108, 97, 115, 115, 101, 115]);
+    export var ConstantValue = new Uint8Array([67, 111, 110, 115, 116, 97, 110, 116, 86, 97, 108, 117, 101]);
   }
 
   function strcmp(a: Uint8Array, b: Uint8Array): boolean {
@@ -389,18 +390,27 @@ module J2ME {
     signature: string;
     kind: Kind;
     access_flags: ACCESS_FLAGS;
+    private constantvalue_index: number;
 
     constructor(classInfo: ClassInfo, offset: number) {
       super(classInfo.buffer, offset);
       this.classInfo = classInfo;
-      this.access_flags = this.u2(0);
-      this.name = classInfo.constantPool.resolveUtf8String(this.u2(2));
-      this.signature = classInfo.constantPool.resolveUtf8String(this.u2(4));
+      this.access_flags = this.readU2();
+      this.name = classInfo.constantPool.resolveUtf8String(this.readU2());
+      this.signature = classInfo.constantPool.resolveUtf8String(this.readU2());
       this.kind = getSignatureKind(this.signature);
+      this.scanFieldInfoAttributes();
     }
 
     get isStatic(): boolean {
       return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
+    }
+    
+    get constantValue(): any {
+      if (this.constantvalue_index === undefined) {
+        return;
+      }
+      return this.classInfo.constantPool.resolve(this.constantvalue_index, TAGS.CONSTANT_Any);
     }
 
     get(object: java.lang.Object) {
@@ -417,6 +427,22 @@ module J2ME {
 
     setStatic(value: any) {
       return this.set(this.classInfo.getStaticObject($.ctx), value);
+    }
+
+    scanFieldInfoAttributes() {
+      var s = this;
+      var attributes_count = s.readU2();
+      for (var i = 0; i < attributes_count; i++) {
+        var attribute_name_index = s.readU2();
+        var attribute_length = s.readU4();
+        var o = s.offset;
+        var attribute_name = this.classInfo.constantPool.resolveUtf8(attribute_name_index);
+        if (strcmp(attribute_name, UTF8.ConstantValue)) {
+          release || assert(attribute_length === 2, "Attribute length of ConstantValue must be 2.")
+          this.constantvalue_index = s.readU2();
+        }
+        s.seek(o + attribute_length);
+      }
     }
   }
 

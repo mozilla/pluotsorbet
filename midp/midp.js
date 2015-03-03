@@ -1153,8 +1153,9 @@ var MIDP = (function() {
       // First build up a mapping of field names to field IDs
       var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
       var constantsMap = new Map();
-      classInfo.fields.forEach(function(field) {
-        constantsMap.set(field.name, classInfo.constant_pool[field.constantValue].integer);
+      var fields = classInfo.getFields();
+      fields.forEach(function(field) {
+        constantsMap.set(field.name, field.constantValue);
       });
 
       var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
