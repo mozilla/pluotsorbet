@@ -227,6 +227,59 @@ module J2ME {
     return classInfo.mangledName;
   }
 
+  /**
+   * These bytecodes require stack flushing.
+   *
+   * Bytecodes that modify the order in which expressions are evaluated, like: SWAP and DUP must
+   * flushed the stack.
+   *
+   * Bytecodes that write to locals must flush the stack because they may overwrite a local that
+   * is used in an expression that appears on the stack. This is only true when the stack height
+   * is largar than 1.
+   */
+  function needsStackFlushBefore(opcode: Bytecodes, sp: number) {
+    switch (opcode) {
+      case Bytecodes.DUP:
+      case Bytecodes.DUP_X1:
+      case Bytecodes.DUP_X2:
+      case Bytecodes.DUP2:
+      case Bytecodes.DUP2_X1:
+      case Bytecodes.DUP2_X2:
+      case Bytecodes.SWAP:
+        return true;
+    }
+    if (Bytecode.isStore(opcode) && sp > 1) {
+      return true;
+    }
+    return false;
+  }
+
+  export enum Precedence {
+    Sequence            = 0,  // … , …
+    Assignment          = 3,  // … = …
+    Conditional         = 4,  // … ? … : …
+    LogicalOR           = 5,  // … || …
+    LogicalAND          = 6,  // … && …
+    BitwiseOR           = 7,  // … | …
+    BitwiseXOR          = 8,  // … ^ …
+    BitwiseAND          = 9,  // … & …
+    Equality            = 10, // … == …
+    Relational          = 11, // … < …
+    BitwiseShift        = 12, // … << …
+    Addition            = 13, // … + …
+    Subtraction         = 13, // … - …
+    Multiplication      = 14, // … * …
+    Division            = 14, // … / …
+    Remainder           = 14, // … % …
+    UnaryNegation       = 15, // - …
+    LogicalNOT          = 15, // ! …
+    Postfix             = 16, // … ++
+    Call                = 17, // … ( … )
+    New                 = 18, // new … ( … )
+    Member              = 18, // … . …
+    Primary             = 19
+  }
+
   export class BaselineCompiler {
     sp: number;
     pc: number;
@@ -244,6 +297,8 @@ module J2ME {
     private referencedClasses: ClassInfo [];
     private local: string [];
     private stack: string [];
+    private blockStack: string [];
+    private blockStackPrecedence: Precedence [];
     private variables: string [];
     private lockObject: string;
     private hasOSREntryPoint = false;
@@ -262,6 +317,8 @@ module J2ME {
       this.pc = 0;
       this.sp = 0;
       this.stack = [];
+      this.blockStack = [];
+      this.blockStackPrecedence = [];
       this.parameters = [];
       this.referencedClasses = [];
       this.initializedClasses = null;
@@ -354,7 +411,7 @@ module J2ME {
 
       if (needsTry) {
         this.bodyEmitter.leaveAndEnter("} catch (ex) {");
-        this.bodyEmitter.writeLn(this.getStack(0) + " = TE(ex);");
+        this.bodyEmitter.writeLn(this.getStackName(0) + " = TE(ex);");
         this.sp = 1;
         if (this.hasHandlers) {
           var handlers = this.methodInfo.exception_table;
@@ -400,6 +457,11 @@ module J2ME {
     emitBlockBody(stream: BytecodeStream, block: Block) {
       this.resetOptimizationState();
       this.sp = this.blockStackHeightMap[block.startBci];
+      this.blockStack = this.stack.slice(0, this.sp);
+      this.blockStackPrecedence = [];
+      for (var i = 0; i < this.sp; i++) {
+        this.blockStackPrecedence.push(Precedence.Primary);
+      }
       emitDebugInfoComments && this.blockEmitter.writeLn("// " + this.blockMap.blockToString(block));
       writer && writer.writeLn("emitBlock: " + block.startBci + " " + this.sp + " " + block.isExceptionEntry);
       release || assert(this.sp !== undefined, "Bad stack height");
@@ -413,6 +475,7 @@ module J2ME {
         stream.next();
       }
       if (this.sp >= 0) {
+        this.flushBlockStack();
         this.setSuccessorsBlockStackHeight(block, this.sp);
         if (!Bytecode.isBlockEnd(lastBC)) { // Fallthrough.
           Relooper.addBranch(block.relooperBlockID, this.getBlock(stream.currentBCI).relooperBlockID);
@@ -451,7 +514,7 @@ module J2ME {
       }
       var stack = this.stack;
       for (var i = 0; i < this.methodInfo.max_stack; i++) {
-        stack.push(this.getStack(i));
+        stack.push(this.getStackName(i));
       }
       if (stack.length) {
         this.bodyEmitter.writeLn("var " + stack.join(", ") + ";");
@@ -559,11 +622,19 @@ module J2ME {
       return fieldInfo;
     }
 
-    getStack(i: number): string {
+    getStackName(i: number): string {
       if (i >= BaselineCompiler.stackNames.length) {
         return "s" + (i - BaselineCompiler.stackNames.length);
       }
       return BaselineCompiler.stackNames[i];
+    }
+
+    getStack(i: number, precedence: Precedence): string {
+      var v = this.blockStack[i];
+      if (this.blockStackPrecedence[i] < precedence) {
+        v = "(" + v + ")";
+      }
+      return v;
     }
 
     getLocalName(i: number): string {
@@ -581,7 +652,7 @@ module J2ME {
     }
 
     emitLoadLocal(kind: Kind, i: number) {
-      this.emitPush(kind, this.getLocal(i));
+      this.emitPush(kind, this.getLocal(i), Precedence.Primary);
     }
 
     emitStoreLocal(kind: Kind, i: number) {
@@ -592,8 +663,8 @@ module J2ME {
       return this.peek(Kind.Void);
     }
 
-    peek(kind: Kind): string {
-      return this.getStack(this.sp - 1);
+    peek(kind: Kind, precedence: Precedence = Precedence.Sequence): string {
+      return this.getStack(this.sp - 1, precedence);
     }
 
     popAny(): string {
@@ -608,27 +679,40 @@ module J2ME {
 
     emitPushTemporary(...indices: number []) {
       for (var i = 0; i < indices.length; i++) {
-       this.emitPush(Kind.Void, "t" + indices[i]);
+       this.emitPush(Kind.Void, "t" + indices[i], Precedence.Primary);
       }
     }
 
-    pop(kind: Kind): string {
+    pop(kind: Kind, precedence: Precedence = Precedence.Primary): string {
       writer && writer.writeLn(" popping: sp: " + this.sp + " " + Kind[kind]);
       release || assert (this.sp, "SP below zero.");
       this.sp -= isTwoSlot(kind) ? 2 : 1;
-      var v = this.getStack(this.sp);
+      var v = this.getStack(this.sp, precedence);
       writer && writer.writeLn("  popped: sp: " + this.sp + " " + Kind[kind] + " " + v);
       return v;
     }
 
     emitPushAny(v) {
-      this.emitPush(Kind.Void, v);
+      this.emitPush(Kind.Void, v, Precedence.Sequence); // TODO: Revisit precedence.
     }
 
-    emitPush(kind: Kind, v) {
+    emitPush(kind: Kind, v, precedence: Precedence) {
       writer && writer.writeLn("push: sp: " + this.sp + " " + Kind[kind] + " " + v);
-      this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
+      // this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
+      this.blockStack[this.sp] = v;
+      this.blockStackPrecedence[this.sp] = precedence;
       this.sp += isTwoSlot(kind) ? 2 : 1;
+    }
+
+    flushBlockStack() {
+      for (var i = 0; i < this.sp; i++) {
+        var name = this.getStackName(i);
+        if (name !== this.blockStack[i]) {
+          this.blockEmitter.writeLn(name + " = " + this.blockStack[i] + ";");
+          this.blockStack[i] = name;
+          this.blockStackPrecedence[i] = Precedence.Primary;
+        }
+      }
     }
 
     emitReturn(kind: Kind) {
@@ -645,7 +729,7 @@ module J2ME {
     emitGetField(fieldInfo: FieldInfo, isStatic: boolean) {
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitPush(signature.kind, object + "." + fieldInfo.mangledName);
+      this.emitPush(signature.kind, object + "." + fieldInfo.mangledName, Precedence.Member);
     }
 
     emitPutField(fieldInfo: FieldInfo, isStatic: boolean) {
@@ -684,7 +768,7 @@ module J2ME {
     }
 
     emitIfZero(block: Block, stream: BytecodeStream, condition: Condition) {
-      var x = this.pop(Kind.Int);
+      var x = this.pop(Kind.Int, Precedence.Relational);
       this.emitIf(block, stream, x + " " + conditionToOperator(condition) + " 0");
     }
 
@@ -767,7 +851,7 @@ module J2ME {
         emitCompilerAssertions && this.emitNoUnwindAssertion();
       }
       if (types[0].kind !== Kind.Void) {
-        this.emitPush(types[0].kind, "re");
+        this.emitPush(types[0].kind, "re", Precedence.Primary);
       }
     }
 
@@ -786,7 +870,7 @@ module J2ME {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
       emitCheckArrayBounds && this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
-      this.emitPush(kind, array + "[" + index + "]");
+      this.emitPush(kind, array + "[" + index + "]", Precedence.Member);
     }
 
     emitIncrement(stream: BytecodeStream) {
@@ -804,20 +888,20 @@ module J2ME {
       var entry = cp[cpi];
       switch (entry.tag) {
         case TAGS.CONSTANT_Integer:
-          this.emitPush(Kind.Int, entry.integer);
+          this.emitPush(Kind.Int, entry.integer, Precedence.Primary);
           return;
         case TAGS.CONSTANT_Float:
-          this.emitPush(Kind.Float, doubleConstant(entry.float));
+          this.emitPush(Kind.Float, doubleConstant(entry.float), Precedence.Primary);
           return;
         case TAGS.CONSTANT_Double:
-          this.emitPush(Kind.Double, doubleConstant(entry.double));
+          this.emitPush(Kind.Double, doubleConstant(entry.double), Precedence.Primary);
           return;
         case TAGS.CONSTANT_Long:
-          this.emitPush(Kind.Long, "Long.fromBits(" + entry.lowBits + ", " + entry.highBits + ")");
+          this.emitPush(Kind.Long, "Long.fromBits(" + entry.lowBits + ", " + entry.highBits + ")", Precedence.Primary);
           return;
         case TAGS.CONSTANT_String:
           entry = cp[entry.string_index];
-          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")");
+          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")", Precedence.Primary);
           return;
         default:
           throw "Not done for: " + entry.tag;
@@ -832,13 +916,13 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "new " + classConstant(classInfo)+ "()");
+      this.emitPush(Kind.Reference, "new " + classConstant(classInfo)+ "()", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
       var kind = arrayTypeCodeToKind(typeCode);
       var length = this.pop(Kind.Int);
-      this.emitPush(Kind.Reference, "new " + kindToTypedArrayName(kind) + "(" + length + ")");
+      this.emitPush(Kind.Reference, "new " + kindToTypedArrayName(kind) + "(" + length + ")", Precedence.New);
     }
 
     emitCheckCast(cpi: number) {
@@ -858,18 +942,18 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      this.emitPush(Kind.Int, call + "(" + object + ", " + classConstant(classInfo) + ") | 0");
+      this.emitPush(Kind.Int, call + "(" + object + ", " + classConstant(classInfo) + ") | 0", Precedence.BitwiseOR);
     }
 
     emitArrayLength() {
-      this.emitPush(Kind.Int, this.pop(Kind.Reference) + ".length");
+      this.emitPush(Kind.Int, this.pop(Kind.Reference) + ".length", Precedence.Member);
     }
 
     emitNewObjectArray(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
-      this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")");
+      this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")", Precedence.Call);
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
@@ -879,12 +963,13 @@ module J2ME {
       for (var i = numDimensions - 1; i >= 0; i--) {
         dimensions[i] = this.pop(Kind.Int);
       }
-      this.emitPush(Kind.Reference, "NM(" + classConstant(classInfo) + ", [" + dimensions.join(", ") + "])");
+      this.emitPush(Kind.Reference, "NM(" + classConstant(classInfo) + ", [" + dimensions.join(", ") + "])", Precedence.Call);
     }
 
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string) {
       var local = this.local.join(", ");
-      var stack = this.stack.slice(0, this.sp).join(", ");
+      this.flushBlockStack();
+      var stack = this.blockStack.slice(0, this.sp).join(", ");
       emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
       baselineCounter && baselineCounter.count("emitUnwind");
     }
@@ -1001,21 +1086,21 @@ module J2ME {
         default:
           release || assert(false, Bytecodes[opcode]);
       }
-      this.emitPush(result, v);
+      this.emitPush(result, v, Precedence.Sequence); // TODO: Restrict precedence.
     }
 
     emitNegateOp(kind: Kind) {
       var x = this.pop(kind);
       switch(kind) {
         case Kind.Int:
-          this.emitPush(kind, "(- " + x + ")|0");
+          this.emitPush(kind, "(- " + x + ") | 0", Precedence.BitwiseOR);
           break;
         case Kind.Long:
-          this.emitPush(kind, x + ".negate()");
+          this.emitPush(kind, x + ".negate()", Precedence.Member); // TODO: Or is it call?
           break;
         case Kind.Float:
         case Kind.Double:
-          this.emitPush(kind, "- " + x);
+          this.emitPush(kind, "- " + x, Precedence.UnaryNegation);
           break;
         default:
           Debug.unexpected(Kind[kind]);
@@ -1027,9 +1112,9 @@ module J2ME {
       var x = this.pop(kind);
       var v;
       switch(opcode) {
-        case Bytecodes.ISHL: v = x + " << " + s; break;
-        case Bytecodes.ISHR: v = x + " >> " + s; break;
-        case Bytecodes.IUSHR: v = x + " >>> " + s; break;
+        case Bytecodes.ISHL:  this.emitPush(kind, x + " << "  + s, Precedence.BitwiseShift); return;
+        case Bytecodes.ISHR:  this.emitPush(kind, x + " >> "  + s, Precedence.BitwiseShift); return;
+        case Bytecodes.IUSHR: this.emitPush(kind, x + " >>> " + s, Precedence.BitwiseShift); return;
 
         case Bytecodes.LSHL: v = x + ".shiftLeft(" + s + ")"; break;
         case Bytecodes.LSHR: v = x + ".shiftRight(" + s + ")"; break;
@@ -1037,7 +1122,7 @@ module J2ME {
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
-      this.emitPush(kind, v);
+      this.emitPush(kind, v, Precedence.Call);
     }
 
     emitLogicOp(kind: Kind, opcode: Bytecodes) {
@@ -1045,17 +1130,17 @@ module J2ME {
       var x = this.pop(kind);
       var v;
       switch(opcode) {
-        case Bytecodes.IAND: v = x + " & " + y; break;
-        case Bytecodes.IOR: v = x + " | " + y; break;
-        case Bytecodes.IXOR: v = x + " ^ " + y; break;
+        case Bytecodes.IAND: this.emitPush(kind, x + " & " + y, Precedence.BitwiseAND); return;
+        case Bytecodes.IOR:  this.emitPush(kind, x + " | " + y, Precedence.BitwiseOR);  return;
+        case Bytecodes.IXOR: this.emitPush(kind, x + " ^ " + y, Precedence.BitwiseXOR); return;
 
         case Bytecodes.LAND: v = x + ".and(" + y + ")"; break;
-        case Bytecodes.LOR: v = x + ".or(" + y + ")"; break;
+        case Bytecodes.LOR:  v = x + ".or(" + y + ")"; break;
         case Bytecodes.LXOR: v = x + ".xor(" + y + ")"; break;
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
-      this.emitPush(kind, v);
+      this.emitPush(kind, v, Precedence.Call);
     }
 
     emitConvertOp(from: Kind, to: Kind, opcode: Bytecodes) {
@@ -1078,13 +1163,13 @@ module J2ME {
         case Bytecodes.D2L: v = "util.double2long(" + x + ")"; break;
         case Bytecodes.D2F: v = "Math.fround(" + x + ")"; break;
       }
-      this.emitPush(to, v);
+      this.emitPush(to, v, Precedence.Sequence); // TODO: Restrict precedence.
     }
 
     emitCompareOp(kind: Kind, isLessThan: boolean) {
       var y = this.pop(kind);
       var x = this.pop(kind);
-      var s = this.getStack(this.sp++);
+      var s = this.getStack(this.sp++, Precedence.Member);
       if (kind === Kind.Long) {
         this.blockEmitter.enter("if (" + x + ".greaterThan(" + y + ")) {");
         this.blockEmitter.writeLn(s + " = 1");
@@ -1161,30 +1246,36 @@ module J2ME {
       var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
       writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecodes[opcode]);
+
+      var flushBlockStackAfter = false;
       if ((block.isExceptionEntry || block.hasHandlers) && Bytecode.canTrap(opcode)) {
-        // This needs to update the PC not the BI.
         this.blockEmitter.writeLn("pc = " + this.pc + ";");
+        flushBlockStackAfter = true;
+      }
+
+      if (needsStackFlushBefore(opcode, this.sp)) {
+        this.flushBlockStack();
       }
 
       switch (opcode) {
         case Bytecodes.NOP            : break;
-        case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null"); break;
+        case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null", Precedence.Primary); break;
         case Bytecodes.ICONST_M1      :
         case Bytecodes.ICONST_0       :
         case Bytecodes.ICONST_1       :
         case Bytecodes.ICONST_2       :
         case Bytecodes.ICONST_3       :
         case Bytecodes.ICONST_4       :
-        case Bytecodes.ICONST_5       : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0); break;
+        case Bytecodes.ICONST_5       : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.Primary); break;
         case Bytecodes.FCONST_0       :
         case Bytecodes.FCONST_1       :
-        case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, opcode - Bytecodes.FCONST_0); break;
+        case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, opcode - Bytecodes.FCONST_0, Precedence.Primary); break;
         case Bytecodes.DCONST_0       :
-        case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0); break;
+        case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
         case Bytecodes.LCONST_0       :
-        case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0)); break;
-        case Bytecodes.BIPUSH         : this.emitPush(Kind.Int, stream.readByte()); break;
-        case Bytecodes.SIPUSH         : this.emitPush(Kind.Int, stream.readShort()); break;
+        case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0), Precedence.Primary); break;
+        case Bytecodes.BIPUSH         : this.emitPush(Kind.Int, stream.readByte(), Precedence.Primary); break;
+        case Bytecodes.SIPUSH         : this.emitPush(Kind.Int, stream.readShort(), Precedence.Primary); break;
         case Bytecodes.LDC            :
         case Bytecodes.LDC_W          :
         case Bytecodes.LDC2_W         : this.emitLoadConstant(stream.readCPI()); break;
@@ -1376,6 +1467,9 @@ module J2ME {
         // case Bytecodes.RET            : ... break;
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
+      }
+      if (flushBlockStackAfter) {
+        this.flushBlockStack();
       }
       writer && writer.writeLn("");
     }
