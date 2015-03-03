@@ -1119,6 +1119,10 @@ module J2ME {
       i32[0] = i; return f32[0];
     }
 
+    export function int64ToDouble(high: number, low: number) {
+      i32[0] = low; i32[1] = high; return f64[0];
+    }
+
     /**
      * Swap the bytes of a 16 bit number.
      */

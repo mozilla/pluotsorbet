@@ -69,10 +69,10 @@ module J2ME {
     }
 
     readU4() {
-      return this.readI32() >>> 0;
+      return this.readS4() >>> 0;
     }
 
-    readI32() {
+    readS4() {
       var o = this.offset;
       var buffer = this.buffer;
       var a = buffer[o + 0];
@@ -229,7 +229,8 @@ module J2ME {
     CONSTANT_Double = 6,
     CONSTANT_NameAndType = 12,
     CONSTANT_Utf8 = 1,
-    CONSTANT_Unicode = 2
+    CONSTANT_Unicode = 2,
+    CONSTANT_Any = 13 // NON-STANDARD
   }
 
   export class ConstantPool extends ByteStream {
@@ -295,9 +296,9 @@ module J2ME {
       return b[o] << 8 | b[o + 1];
     }
 
-    seekTag(i: number, tag: TAGS) {
+    seekTag(i: number): TAGS {
       this.seek(this.entries[i]);
-      release || assert(this.peekU1() === tag);
+      return <TAGS>this.peekU1();
     }
 
     /**
@@ -313,11 +314,27 @@ module J2ME {
       return this.resolveUtf8String(this.readTagU2(i, TAGS.CONSTANT_Class, 1));
     }
 
-    resolve(i: number, tag: TAGS, isStatic: boolean = false): any {
+    resolve(i: number, expectedTag: TAGS, isStatic: boolean = false): any {
       var s = this, r = this.resolved[i];
       if (r === undefined) {
-        this.seekTag(i, tag);
+        var tag = this.seekTag(i);
+        release || Debug.assert(expectedTag === TAGS.CONSTANT_Any || expectedTag === tag);
         switch (s.readU1()) {
+            case TAGS.CONSTANT_Integer:
+              r = this.resolved[i] = s.readS4();
+              break;
+            case TAGS.CONSTANT_Float:
+              r = this.resolved[i] = IntegerUtilities.int32ToFloat(s.readU4());
+              break;
+            case TAGS.CONSTANT_String:
+              r = this.resolved[i] = $.newStringConstant(this.resolveUtf8String(s.readU2()));
+              break;
+          //  case TAGS.CONSTANT_Long:
+          //    constant = Long.fromBits(entry.lowBits, entry.highBits);
+          //    break;
+            case TAGS.CONSTANT_Double:
+              r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readU4(), s.readU4());
+              break;
           case TAGS.CONSTANT_Utf8:
             r = this.resolved[i] = s.readBytes(s.readU2());
             break;
@@ -699,7 +716,6 @@ module J2ME {
     mangledName: string;
 
     // Delete me:
-    constant_pool: any;
     thread: any;
 
     constructor(buffer: Uint8Array) {
@@ -1031,7 +1047,7 @@ module J2ME {
      * Resolves a constant pool reference.
      */
     resolve(index: number, isStatic: boolean) {
-      // return this.constantPool.resolve(index);
+      return this.constantPool.resolve(index, TAGS.CONSTANT_Any, isStatic);
 
       //var rp = this.resolved_constant_pool;
       //var constant: any = rp[index];

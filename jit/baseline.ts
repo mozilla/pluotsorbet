@@ -869,7 +869,8 @@ module J2ME {
     }
 
     emitLoadConstant(cpi: number) {
-      var cp = this.methodInfo.classInfo.constant_pool;
+      var cp = this.methodInfo.classInfo.constantPool;
+      // !!!!!!!!!!!!!! use new constantPool attribute
       var entry = cp[cpi];
       switch (entry.tag) {
         case TAGS.CONSTANT_Integer:
