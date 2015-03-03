@@ -318,7 +318,7 @@ module J2ME {
       var s = this, r = this.resolved[i];
       if (r === undefined) {
         var tag = this.seekTag(i);
-        release || Debug.assert(expectedTag === TAGS.CONSTANT_Any || expectedTag === tag);
+        release || Debug.assert(expectedTag === TAGS.CONSTANT_Any || expectedTag === tag || (expectedTag === TAGS.CONSTANT_Methodref && tag === TAGS.CONSTANT_InterfaceMethodref));
         switch (s.readU1()) {
             case TAGS.CONSTANT_Integer:
               r = this.resolved[i] = s.readS4();
@@ -493,6 +493,7 @@ module J2ME {
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
       this.consumeArgumentSlots = this.argumentSlots;
       this.mangledName = mangleMethod(this);
+      this.mangledClassAndMethodName = mangleClassAndMethod(this);
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
