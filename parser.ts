@@ -873,7 +873,7 @@ module J2ME {
       return <MethodInfo []>this.methods;
     }
 
-    getField(i: number): FieldInfo {
+    getFieldByIndex(i: number): FieldInfo {
       if (typeof this.fields[i] === "number") {
         this.fields[i] = new FieldInfo(this, <number>this.fields[i]);
       }
@@ -886,7 +886,7 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < fields.length; i++) {
-        var field = this.getField(i);
+        var field = this.getFieldByIndex(i);
         if (field.name === name && field.signature === signature && field.isStatic === isStatic) {
           return i;
         }
@@ -899,15 +899,20 @@ module J2ME {
       do {
         var i = c.indexOfField(name, signature, isStatic);
         if (i >= 0) {
-          return c.getField(i);
+          return c.getFieldByIndex(i);
         }
         c = c.superClass;
       } while (c);
       return null;
     }
 
-    getFieldByKey(key: string) {
-      return null;
+    // DEPRECATED use getFieldByName
+    getField(key: string): FieldInfo {
+      var isStatic = key[0] === "S";
+      var secondDot = key.indexOf(".", 2);
+      var name = key.substring(2, secondDot);
+      var signature = key.substr(secondDot + 1);
+      return this.getFieldByName(name, signature, isStatic);
     }
 
     getFields(): FieldInfo [] {
@@ -918,7 +923,7 @@ module J2ME {
         return <FieldInfo []>this.fields;
       }
       for (var i = 0; i < this.fields.length; i++) {
-        this.getField(i);
+        this.getFieldByIndex(i);
       }
       this.resolvedFlags |= ResolvedFlags.Fields;
       return <FieldInfo []>this.fields;

@@ -277,37 +277,6 @@ module J2ME {
       return this.classes[typeName] = classInfo;
     }
 
-
-    getField(classInfo, fieldKey) {
-      if (classInfo.vfc[fieldKey]) {
-        return classInfo.vfc[fieldKey];
-      }
-  
-      do {
-        var fields = classInfo.fields;
-        for (var i=0; i<fields.length; ++i) {
-          var field = fields[i];
-          if (!field.key) {
-            field.key = (AccessFlags.isStatic(field.access_flags) ? "S" : "I") + "." + field.name + "." + field.signature;
-          }
-          if (field.key === fieldKey) {
-            return classInfo.vfc[fieldKey] = field;
-          }
-        }
-  
-        if (fieldKey[0] === 'S') {
-          for (var n = 0; n < classInfo.interfaces.length; ++n) {
-            var field = this.getField(classInfo.interfaces[n], fieldKey);
-            if (field) {
-              return classInfo.vfc[fieldKey] = field;
-            }
-          }
-        }
-  
-        classInfo = classInfo.superClass;
-      } while (classInfo);
-    }
-
   }
 
   export var ClassNotFoundException = function(message) {

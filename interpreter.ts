@@ -115,7 +115,7 @@ module J2ME {
 
   function buildExceptionLog(ex, stackTrace) {
     var className = ex.klass.classInfo.className;
-    var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
+    var detailMessage = util.fromJavaString(ex.klass.classInfo.getFieldByName("detailMessage", "Ljava/lang/String;", false).get(ex));
     return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
       return " - " + entry.className + "." + entry.methodName + "(), pc=" + entry.offset;
     }).join("\n") + "\n\n";
