@@ -682,19 +682,11 @@ module J2ME {
       }
     }
 
-    /*
-     * @param jump If true, move the context to the first of others who have the
-     * same priority.
-     */
-    enqueue(ctx: Context, jump: boolean) {
+    enqueue(ctx: Context) {
       var priority = ctx.getPriority();
       release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY,
                         "Invalid priority: " + priority);
-      if (jump) {
-        this._queues[priority].unshift(ctx);
-      } else {
-        this._queues[priority].push(ctx);
-      }
+      this._queues[priority].push(ctx);
       this._top = Math.max(priority, this._top);
     }
 
@@ -735,14 +727,7 @@ module J2ME {
      *      higher priority thread is scheduled to run.
      */
     static scheduleRunningContext(ctx: Context) {
-      // Preempt current thread if the new thread has higher priority
-      if ($ && ctx.getPriority() > $.ctx.getPriority()) {
-        Runtime._runningQueue.enqueue($.ctx, true);
-        Runtime._runningQueue.enqueue(ctx, false);
-        $.pause("preempt");
-      } else {
-        Runtime._runningQueue.enqueue(ctx, false);
-      }
+      Runtime._runningQueue.enqueue(ctx);
       Runtime.processRunningQueue();
     }
 
