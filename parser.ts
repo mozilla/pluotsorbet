@@ -310,6 +310,9 @@ module J2ME {
       return this.resolveUtf8String(this.readTagU2(i, TAGS.CONSTANT_Class, 1));
     }
 
+    /**
+     * Resolves a constant pool reference.
+     */
     resolve(i: number, expectedTag: TAGS, isStatic: boolean = false): any {
       var s = this, r = this.resolved[i];
       if (r === undefined) {
@@ -588,9 +591,6 @@ module J2ME {
     ////////// Clean Up ////////////
     // this_class: number;
     // super_class: number;
-
-
-
 
     staticInitializer: MethodInfo;
 
@@ -919,76 +919,24 @@ module J2ME {
       return $.getRuntimeKlass(this.klass).classObject;
     }
 
+    // DEPRECATED use constantPool.resolveClass
     resolveClass(i: number): ClassInfo {
       return null;
     }
 
+    // DEPRECATED use constantPool.resolveMethod
     resolveMethod(i: number, isStatic: boolean): MethodInfo {
       return null;
     }
 
+    // DEPRECATED use constantPool.resolveField
     resolveField(i: number): FieldInfo {
       return null;
     }
 
-    /**
-     * Resolves a constant pool reference.
-     */
+    // DEPRECATED use constantPool.resolve
     resolve(index: number, isStatic: boolean) {
       return this.constantPool.resolve(index, TAGS.CONSTANT_Any, isStatic);
-
-      //var rp = this.resolved_constant_pool;
-      //var constant: any = rp[index];
-      //if (constant !== undefined) {
-      //  return constant;
-      //}
-      //var cp = this.constant_pool;
-      //var entry = this.constant_pool[index];
-      //switch (entry.tag) {
-      //  case TAGS.CONSTANT_Integer:
-      //    constant = entry.integer;
-      //    break;
-      //  case TAGS.CONSTANT_Float:
-      //    constant = entry.float;
-      //    break;
-      //  case TAGS.CONSTANT_String:
-      //    constant = $.newStringConstant(cp[entry.string_index].bytes);
-      //    break;
-      //  case TAGS.CONSTANT_Long:
-      //    constant = Long.fromBits(entry.lowBits, entry.highBits);
-      //    break;
-      //  case TAGS.CONSTANT_Double:
-      //    constant = entry.double;
-      //    break;
-      //  case TAGS.CONSTANT_Class:
-      //    constant = CLASSES.getClass(cp[entry.name_index].bytes);
-      //    break;
-      //  case TAGS.CONSTANT_Fieldref:
-      //    var classInfo = this.resolve(entry.class_index, isStatic);
-      //    var fieldName = cp[cp[entry.name_and_type_index].name_index].bytes;
-      //    var signature = cp[cp[entry.name_and_type_index].signature_index].bytes;
-      //    constant = CLASSES.getField(classInfo, (isStatic ? "S" : "I") + "." + fieldName + "." + signature);
-      //    if (!constant) {
-      //      throw $.newRuntimeException(
-      //        classInfo.className + "." + fieldName + "." + signature + " not found");
-      //    }
-      //    break;
-      //  case TAGS.CONSTANT_Methodref:
-      //  case TAGS.CONSTANT_InterfaceMethodref:
-      //    var classInfo = this.resolve(entry.class_index, isStatic);
-      //    var methodName = cp[cp[entry.name_and_type_index].name_index].bytes;
-      //    var signature = cp[cp[entry.name_and_type_index].signature_index].bytes;
-      //    constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
-      //    if (!constant) {
-      //      constant = CLASSES.getMethod(classInfo, (isStatic ? "S" : "I") + "." + methodName + "." + signature);
-      //      throw $.newRuntimeException(
-      //        classInfo.className + "." + methodName + "." + signature + " not found");
-      //    }
-      //    break;
-      //  default:
-      //    throw new Error("not support constant type");
-      //}
-      //return rp[index] = constant;
     }
   }
 
