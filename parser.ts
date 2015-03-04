@@ -106,10 +106,11 @@ module J2ME {
 
     // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
     // http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
-    static readStringFast(buffer: Uint8Array, offset: number, length: number): string {
+    static readStringFast(buffer: Uint8Array): string {
+      var length = buffer.length;
       var a = (length < 128) ? ByteStream.getArray(length) : new Array(length);
       var i = 0, j = 0;
-      var o = offset;
+      var o = 0;
       var e = o + length;
       var buffer = buffer;
       while (o < e) {
@@ -143,29 +144,27 @@ module J2ME {
       return a.join("");
     }
 
-    static readString(buffer: Uint8Array, offset: number, length: number) {
+    static readString(buffer: Uint8Array) {
+      var length = buffer.length;
       if (length === 1) {
-        var c = buffer[offset];
+        var c = buffer[0];
         if (c <= 0x7f) {
           return String.fromCharCode(c);
         }
       } else if (length < 128) {
-        return ByteStream.readStringFast(buffer, offset, length);
+        return ByteStream.readStringFast(buffer);
       }
-      return ByteStream.readStringSlow(buffer, offset, length);
+      return ByteStream.readStringSlow(buffer);
     }
 
-    static readStringSlow(buffer: Uint8Array, offset: number, length: number) {
+    static readStringSlow(buffer: Uint8Array) {
       // First try w/ TextDecoder, fallback to manually parsing if there was an
       // error. This will handle parsing errors resulting from Java's modified
       // UTF-8 implementation.
       try {
-        // NB: no need to create a new slice.
-        var data = new Uint8Array(buffer.buffer, offset, length);
-        var s = util.decodeUtf8Array(data);
-        return s;
+        return util.decodeUtf8Array(buffer);
       } catch (e) {
-        return this.readStringFast(buffer, offset, length);
+        return this.readStringFast(buffer);
       }
     }
 
@@ -302,7 +301,7 @@ module J2ME {
     resolveUtf8String(i: number): string {
       if (i === 0) return null;
       var u8 = this.resolveUtf8(i);
-      return ByteStream.readString(u8, 0, u8.length);
+      return ByteStream.readString(u8);
     }
 
     resolveUtf8ClassNameString(i: number): string {
