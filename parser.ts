@@ -904,7 +904,7 @@ module J2ME {
 
     getClasses(): ClassInfo [] {
       if (!this.classes) {
-        return null;
+        return ArrayUtilities.EMPTY_ARRAY;
       }
       if (this.resolvedFlags & ResolvedFlags.Classes) {
         return <ClassInfo []>this.classes;
@@ -925,7 +925,7 @@ module J2ME {
 
     getInterfaces(): ClassInfo [] {
       if (!this.interfaces) {
-        return null;
+        return ArrayUtilities.EMPTY_ARRAY;
       }
       if (this.resolvedFlags & ResolvedFlags.Interfaces) {
         return <ClassInfo []>this.interfaces;
