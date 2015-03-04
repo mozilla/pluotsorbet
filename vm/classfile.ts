@@ -1,3 +1,8 @@
+/*
+ node-jvm
+ Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
+*/
+
 module J2ME {
   export var ATTRIBUTE_TYPES = {
     ConstantValue:  "ConstantValue",

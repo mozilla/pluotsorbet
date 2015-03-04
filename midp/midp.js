@@ -53,7 +53,7 @@ var MIDP = (function() {
   var manifest = {};
 
   Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
-    var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
+    var bytes = JARStore.loadFileFromJAR(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes) {
       throw $.newIOException();
     }
@@ -491,7 +491,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
     var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
-    var data = CLASSES.loadFile(fileName);
+    var data = JARStore.loadFile(fileName);
     if (!data) {
       console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
       return null;
@@ -927,7 +927,7 @@ var MIDP = (function() {
     $.stop();
     DumbPipe.open("exit", null, function(message) {});
     document.getElementById("exit-screen").style.display = "block";
-  };
+  }
 
   var pendingMIDletUpdate = null;
 
@@ -947,21 +947,14 @@ var MIDP = (function() {
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
 
-      fs.remove("/midlet.jad");
-      fs.create("/midlet.jad", new Blob([ data.jadData ]));
-      fs.remove("/midlet.jar");
-      fs.create("/midlet.jar", new Blob([ data.jarData ]));
-
       Promise.all([
-        new Promise(function(resolve, reject) {
-          fs.syncStore(resolve);
-        }),
+        JARStore.installJAR("midlet.jar", data.jarData, data.jadData),
         CompiledMethodCache.clear(),
-        ]).then(function() {
-          pendingMIDletUpdate = null;
-          DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-          DumbPipe.close(DumbPipe.open("reload", {}));
-        });
+      ]).then(function() {
+        pendingMIDletUpdate = null;
+        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+        DumbPipe.close(DumbPipe.open("reload", {}));
+      });
     });
   };
 
@@ -1158,7 +1151,7 @@ var MIDP = (function() {
         constantsMap.set(field.name, field.constantValue);
       });
 
-      var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
+      var data = JARStore.loadFileFromJAR("java/classes.jar", "assets/0/en-US.xml");
       if (!data)
         throw $.newIOException();
 
@@ -1195,8 +1188,8 @@ var MIDP = (function() {
     console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
   };
 
-  Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(exit) {
-    console.info("Exit: " + exit);
+  Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(status) {
+    console.info("Exit: " + status);
     exit();
   };
 

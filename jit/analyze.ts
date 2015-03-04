@@ -24,6 +24,7 @@ module J2ME {
    * at the right spots.
    */
   export var yieldMap = {
+    "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V": YieldReason.Root,
     "java/lang/Thread.sleep.(J)V": YieldReason.Root,
@@ -88,9 +89,6 @@ module J2ME {
   }
 
   export function isFinalMethod(methodInfo: MethodInfo): boolean {
-    if (isFinalClass(methodInfo.classInfo)) {
-      return true;
-    }
     // XXX Determine whether we can start using the code in this function.
     return false;
     var result = methodInfo.isFinal;
