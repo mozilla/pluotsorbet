@@ -335,6 +335,8 @@ module J2ME {
 
   export module ArrayUtilities {
     import assert = Debug.assert;
+    
+    export var EMPTY_ARRAY = [];
 
     export function makeArrays(length: number): any [][] {
       var arrays = [];

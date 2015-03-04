@@ -814,7 +814,7 @@ module J2ME {
 
     getMethods(): MethodInfo [] {
       if (!this.methods) {
-        return null;
+        return ArrayUtilities.EMPTY_ARRAY;
       }
       if (this.resolvedFlags & ResolvedFlags.Methods) {
         return <MethodInfo []>this.methods;
@@ -881,7 +881,7 @@ module J2ME {
 
     getFields(): FieldInfo [] {
       if (!this.fields) {
-        return null;
+        return ArrayUtilities.EMPTY_ARRAY;
       }
       if (this.resolvedFlags & ResolvedFlags.Fields) {
         return <FieldInfo []>this.fields;
@@ -1021,10 +1021,15 @@ module J2ME {
   export class ArrayClassInfo extends ClassInfo {
     elementClass: ClassInfo;
 
-    constructor(elementClass: ClassInfo) {
+    constructor(elementClass: ClassInfo, mangledName?: string) {
       super(null);
       this.elementClass = elementClass;
-      this.className = "[" + elementClass.className;
+      if (elementClass instanceof PrimitiveClassInfo || elementClass.className[0] === "[") {
+        this.className = "[" + elementClass.className;
+      } else {
+        this.className = "[L" + elementClass.className + ";";
+      }
+      this.mangledName = mangledName || mangleClassName(this.className);
     }
 
     isAssignableTo(toClass: ClassInfo): boolean {
@@ -1044,8 +1049,7 @@ module J2ME {
 
   export class PrimitiveArrayClassInfo extends ArrayClassInfo {
     constructor(elementClass: ClassInfo, mangledName: string) {
-      super(elementClass);
-      this.mangledName = mangledName;
+      super(elementClass, mangledName);
     }
     static Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "Uint8Array");
     static C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "Uint16Array");

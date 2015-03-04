@@ -341,7 +341,7 @@ Native["java/lang/Class.isInterface.()Z"] = function() {
 };
 
 Native["java/lang/Class.isArray.()Z"] = function() {
-    return this.runtimeKlass.templateKlass.classInfo.isArrayClass ? 1 : 0;
+    return this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo ? 1 : 0;
 };
 
 Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(fromClass) {
