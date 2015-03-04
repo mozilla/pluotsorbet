@@ -632,9 +632,9 @@ module J2ME {
       return BaselineCompiler.stackNames[i];
     }
 
-    getStack(i: number, precedence: Precedence): string {
+    getStack(i: number, contextPrecedence: Precedence): string {
       var v = this.blockStack[i];
-      if (this.blockStackPrecedence[i] < precedence) {
+      if (this.blockStackPrecedence[i] < contextPrecedence) {
         v = "(" + v + ")";
       }
       return v;
@@ -659,7 +659,7 @@ module J2ME {
     }
 
     emitStoreLocal(kind: Kind, i: number) {
-      this.blockEmitter.writeLn(this.getLocal(i) + " = " + this.pop(kind) + ";");
+      this.blockEmitter.writeLn(this.getLocal(i) + " = " + this.pop(kind, Precedence.Sequence) + ";");
     }
 
     peekAny(): string {
@@ -686,11 +686,11 @@ module J2ME {
       }
     }
 
-    pop(kind: Kind, precedence: Precedence = Precedence.Primary): string {
+    pop(kind: Kind, contextPrecedence: Precedence = Precedence.Primary): string {
       writer && writer.writeLn(" popping: sp: " + this.sp + " " + Kind[kind]);
       release || assert (this.sp, "SP below zero.");
       this.sp -= isTwoSlot(kind) ? 2 : 1;
-      var v = this.getStack(this.sp, precedence);
+      var v = this.getStack(this.sp, contextPrecedence);
       writer && writer.writeLn("  popped: sp: " + this.sp + " " + Kind[kind] + " " + v);
       return v;
     }
@@ -737,7 +737,7 @@ module J2ME {
 
     emitPutField(fieldInfo: FieldInfo, isStatic: boolean) {
       var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      var value = this.pop(signature.kind);
+      var value = this.pop(signature.kind, Precedence.Sequence);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       this.blockEmitter.writeLn(object + "." + fieldInfo.mangledName + " = " + value + ";");
     }
@@ -860,9 +860,9 @@ module J2ME {
     }
 
     emitStoreIndexed(kind: Kind) {
-      var value = this.pop(stackKind(kind));
-      var index = this.pop(Kind.Int);
-      var array = this.pop(Kind.Reference);
+      var value = this.pop(stackKind(kind), Precedence.Sequence);
+      var index = this.pop(Kind.Int, Precedence.Sequence);
+      var array = this.pop(Kind.Reference, Precedence.Sequence);
       emitCheckArrayBounds && this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
       if (kind === Kind.Reference) {
         emitCheckArrayStore && this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
@@ -871,8 +871,8 @@ module J2ME {
     }
 
     emitLoadIndexed(kind: Kind) {
-      var index = this.pop(Kind.Int);
-      var array = this.pop(Kind.Reference);
+      var index = this.pop(Kind.Int, Precedence.Sequence);
+      var array = this.pop(Kind.Reference, Precedence.Sequence);
       emitCheckArrayBounds && this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
       this.emitPush(kind, array + "[" + index + "]", Precedence.Member);
     }
