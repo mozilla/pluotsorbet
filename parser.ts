@@ -664,7 +664,6 @@ module J2ME {
       this.scanClassInfoAttributes();
 
       this.mangledName = mangleClass(this);
-      this.mangleFields();
     }
 
     private scanInterfaces() {
@@ -698,6 +697,12 @@ module J2ME {
         classInfo = classInfo.superClass;
       } while (classInfo);
       return classHierarchy;
+    }
+
+    public complete() {
+      enterTimeline("mangleFields");
+      this.mangleFields();
+      leaveTimeline("mangleFields");
     }
 
     private mangleFields() {
