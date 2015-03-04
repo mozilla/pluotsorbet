@@ -1506,7 +1506,7 @@ module J2ME {
     release || assert (!klass.interfaces);
     var interfaces = klass.interfaces = klass.superKlass ? klass.superKlass.interfaces.slice() : [];
 
-    var interfaceClassInfos = classInfo.getInterfaces();
+    var interfaceClassInfos = classInfo.getAllInterfaces();
     if (interfaceClassInfos) {
       for (var j = 0; j < interfaceClassInfos.length; j++) {
         ArrayUtilities.pushUnique(interfaces, getKlass(interfaceClassInfos[j]));
@@ -1825,6 +1825,9 @@ module J2ME {
 
   export function checkArrayStore(array: java.lang.Object, value: any) {
     var arrayKlass = array.klass;
+    if (value && !isAssignableTo(value.klass, arrayKlass.elementKlass)) {
+      debugger;
+    }
     if (value && !isAssignableTo(value.klass, arrayKlass.elementKlass)) {
       throw $.newArrayStoreException();
     }
