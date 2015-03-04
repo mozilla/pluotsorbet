@@ -1037,6 +1037,8 @@ module J2ME {
     constructor(elementClass: ClassInfo) {
       super(null);
       this.elementClass = elementClass;
+      this.superClass = CLASSES.java_lang_Object;
+      this.superClassName = CLASSES.java_lang_Object.className;
     }
 
     isAssignableTo(toClass: ClassInfo): boolean {
@@ -1062,7 +1064,6 @@ module J2ME {
       } else {
         this.className = "[L" + elementClass.className + ";";
       }
-      this.superClass = CLASSES.java_lang_Object;
       this.mangledName = mangleClassName(this.className);
     }
   }
@@ -1073,13 +1074,26 @@ module J2ME {
       this.mangledName = mangledName;
       this.className = "[" + elementClass.className;
     }
-    static Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "Uint8Array");
-    static C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "Uint16Array");
-    static F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "Float32Array");
-    static D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "Float64Array");
-    static B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "Int8Array");
-    static S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "Int16Array");
-    static I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "Int32Array");
-    static J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "Int64Array");
+    
+    static initialize() {
+      // Primitive array classes require the java_lang_Object to exists before they can be created.
+      PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "Uint8Array");
+      PrimitiveArrayClassInfo.C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "Uint16Array");
+      PrimitiveArrayClassInfo.F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "Float32Array");
+      PrimitiveArrayClassInfo.D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "Float64Array");
+      PrimitiveArrayClassInfo.B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "Int8Array");
+      PrimitiveArrayClassInfo.S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "Int16Array");
+      PrimitiveArrayClassInfo.I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "Int32Array");
+      PrimitiveArrayClassInfo.J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "Int64Array");
+    }
+
+    static Z: PrimitiveArrayClassInfo;
+    static C: PrimitiveArrayClassInfo;
+    static F: PrimitiveArrayClassInfo;
+    static D: PrimitiveArrayClassInfo;
+    static B: PrimitiveArrayClassInfo;
+    static S: PrimitiveArrayClassInfo;
+    static I: PrimitiveArrayClassInfo;
+    static J: PrimitiveArrayClassInfo;
   }
 }

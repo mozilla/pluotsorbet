@@ -81,10 +81,15 @@ module J2ME {
         this.preInitializedClasses.push(this.loadAndLinkClass(classNames[i]));
       }
 
-      // Link primitive values and primitive arrays.
-      for (var i = 0; i < "ZCFDBSIJ".length; i++) {
-        var typeName = "ZCFDBSIJ"[i];
+      // Link primitive values.
+      var primitiveTypes = "ZCFDBSIJ";
+      for (var i = 0; i < primitiveTypes.length; i++) {
+        var typeName = primitiveTypes[i];
         linkKlass(PrimitiveClassInfo[typeName]);
+      }
+      // Link primitive arrays.
+      PrimitiveArrayClassInfo.initialize();
+      for (var i = 0; i < primitiveTypes.length; i++) {
         this.getClass("[" + typeName);
       }
       leaveTimeline("initializeBuiltinClasses");
