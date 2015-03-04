@@ -1019,15 +1019,10 @@ module J2ME {
   export class ArrayClassInfo extends ClassInfo {
     elementClass: ClassInfo;
 
-    constructor(elementClass: ClassInfo, mangledName?: string) {
+    // XXX: This constructor should not be called directly.
+    constructor(elementClass: ClassInfo) {
       super(null);
       this.elementClass = elementClass;
-      if (elementClass instanceof PrimitiveClassInfo || elementClass.className[0] === "[") {
-        this.className = "[" + elementClass.className;
-      } else {
-        this.className = "[L" + elementClass.className + ";";
-      }
-      this.mangledName = mangledName || mangleClassName(this.className);
     }
 
     isAssignableTo(toClass: ClassInfo): boolean {
@@ -1045,9 +1040,24 @@ module J2ME {
     }
   }
 
+  export class ObjectArrayClassInfo extends ArrayClassInfo {
+    constructor(elementClass: ClassInfo) {
+      super(elementClass);
+      if (elementClass instanceof ArrayClassInfo) {
+        this.className = "[" + elementClass.className;
+      } else {
+        this.className = "[L" + elementClass.className + ";";
+      }
+      this.superClass = CLASSES.java_lang_Object;
+      this.mangledName = mangleClassName(this.className);
+    }
+  }
+
   export class PrimitiveArrayClassInfo extends ArrayClassInfo {
     constructor(elementClass: ClassInfo, mangledName: string) {
-      super(elementClass, mangledName);
+      super(elementClass);
+      this.mangledName = mangledName;
+      this.className = "[" + elementClass.className;
     }
     static Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "Uint8Array");
     static C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "Uint16Array");

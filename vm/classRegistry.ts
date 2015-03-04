@@ -212,7 +212,7 @@ module J2ME {
         if (elementType[0] === "L") {
           elementType = elementType.substr(1).replace(";", "");
         }
-        classInfo = new ArrayClassInfo(this.getClass(elementType));
+        classInfo = new ObjectArrayClassInfo(this.getClass(elementType));
       }
       if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
         J2ME.linkKlass(classInfo);
