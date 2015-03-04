@@ -798,6 +798,17 @@ module J2ME {
         }
         c = c.superClass;
       } while (c);
+
+      if (this.isInterface) {
+        var interfaces = this.getInterfaces();
+        for (var n = 0; n < interfaces.length; ++n) {
+          var method = interfaces[n].getMethodByName(name, signature, isStatic);
+          if (method) {
+            return method;
+          }
+        }
+      }
+
       return null;
     }
 
@@ -843,6 +854,17 @@ module J2ME {
         if (i >= 0) {
           return c.getFieldByIndex(i);
         }
+        
+        if (isStatic) {
+          var interfaces = this.getInterfaces();
+          for (var n = 0; n < interfaces.length; ++n) {
+            var field = interfaces[n].getFieldByName(name, signature, isStatic);
+            if (field) {
+              return field;
+            }
+          }
+        }
+
         c = c.superClass;
       } while (c);
       return null;
