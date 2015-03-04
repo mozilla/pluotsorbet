@@ -140,7 +140,7 @@ try {
   J2ME.loadWriter = new J2ME.IndentingWriter();
   J2ME.linkWriter = new J2ME.IndentingWriter();
   J2ME.classCounter.clear();
-  CLASSES.loadAllClassFilesInJARFile("program.jar");
+  //CLASSES.loadAllClassFilesInJARFile("program.jar");
   //J2ME.classCounter.trace(J2ME.loadWriter);
   //
   ////while (callbacks.length) {

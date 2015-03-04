@@ -1,7 +1,6 @@
 module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
-  var utf8ToString = util.decodeUtf8Array;
 
   module UTF8 {
     export var Code = new Uint8Array([67, 111, 100, 101]);
@@ -339,7 +338,7 @@ module J2ME {
             r = this.resolved[i] = s.readBytes(s.readU2());
             break;
           case TAGS.CONSTANT_Class:
-            r = this.resolved[i] = CLASSES.getClass(utf8ToString(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
+            r = this.resolved[i] = CLASSES.getClass(util.decodeUtf8Array(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
             break;
           case TAGS.CONSTANT_Fieldref:
           case TAGS.CONSTANT_Methodref:
