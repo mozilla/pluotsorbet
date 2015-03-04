@@ -341,7 +341,7 @@ module J2ME {
             r = this.resolved[i] = s.readBytes(s.readU2());
             break;
           case TAGS.CONSTANT_Class:
-            r = this.resolved[i] = CLASSES.loadClass(utf8ToString(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
+            r = this.resolved[i] = CLASSES.getClass(utf8ToString(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
             break;
           case TAGS.CONSTANT_Fieldref:
           case TAGS.CONSTANT_Methodref:
