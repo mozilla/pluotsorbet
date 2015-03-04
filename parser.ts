@@ -932,6 +932,15 @@ module J2ME {
       this.resolvedFlags |= ResolvedFlags.Interfaces;
       return <ClassInfo []>this.interfaces;
     }
+    
+    getAllInterfaces(): ClassInfo [] {
+      var interfaces = this.getInterfaces();
+      var allInterfaces = interfaces;
+      for (var i = 0; i < interfaces.length; i++) {
+        allInterfaces = allInterfaces.concat(interfaces[i].getAllInterfaces());
+      }
+      return allInterfaces;
+    }
 
     /**
      * Object that holds static properties for this class.
