@@ -972,7 +972,6 @@ module J2ME {
 
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string) {
       var local = this.local.join(", ");
-      this.flushBlockStack();
       var stack = this.blockStack.slice(0, this.sp).join(", ");
       emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
       baselineCounter && baselineCounter.count("emitUnwind");
