@@ -28,11 +28,6 @@ module J2ME {
    * Base class of all class file structs.
    */
   export class ByteStream {
-    static arrays: string [][] = ArrayUtilities.makeArrays(128);
-
-    static getArray(length: number) {
-      return Reader.arrays[length];
-    }
 
     constructor (
       public buffer: Uint8Array,
@@ -97,14 +92,26 @@ module J2ME {
       return this;
     }
 
+    readBytes(length): Uint8Array {
+      var data = this.buffer.subarray(this.offset, this.offset + length);
+      this.offset += length;
+      return data;
+    }
+
+    static arrays: string [][] = ArrayUtilities.makeArrays(128);
+
+    static getArray(length: number) {
+      return ByteStream.arrays[length];
+    }
+
     // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
     // http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
-    readStringFast(length: number): string {
-      var a = (length < 128) ? Reader.getArray(length) : new Array(length);
+    static readStringFast(buffer: Uint8Array, offset: number, length: number): string {
+      var a = (length < 128) ? ByteStream.getArray(length) : new Array(length);
       var i = 0, j = 0;
-      var o = this.offset;
+      var o = offset;
       var e = o + length;
-      var buffer = this.buffer;
+      var buffer = buffer;
       while (o < e) {
         var x = buffer[o++];
         if (x <= 0x7f) {
@@ -126,9 +133,8 @@ module J2ME {
           a[j++] = String.fromCharCode(((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f));
         }
       }
-      this.offset = o;
       if (j !== a.length) {
-        var b = (j < 128) ? Reader.getArray(j) : new Array(j);
+        var b = (j < 128) ? ByteStream.getArray(j) : new Array(j);
         for (var i = 0; i < j; i++) {
           b[i] = a[i];
         }
@@ -137,38 +143,30 @@ module J2ME {
       return a.join("");
     }
 
-    readString(length) {
+    static readString(buffer: Uint8Array, offset: number, length: number) {
       if (length === 1) {
-        var c = this.buffer[this.offset];
+        var c = buffer[offset];
         if (c <= 0x7f) {
-          this.offset++;
           return String.fromCharCode(c);
         }
       } else if (length < 128) {
-        return this.readStringFast(length);
+        return ByteStream.readStringFast(buffer, offset, length);
       }
-      return this.readStringSlow(length);
+      return ByteStream.readStringSlow(buffer, offset, length);
     }
 
-    readStringSlow(length) {
+    static readStringSlow(buffer: Uint8Array, offset: number, length: number) {
       // First try w/ TextDecoder, fallback to manually parsing if there was an
       // error. This will handle parsing errors resulting from Java's modified
       // UTF-8 implementation.
       try {
         // NB: no need to create a new slice.
-        var data = new Uint8Array(this.buffer.buffer, this.offset, length);
+        var data = new Uint8Array(buffer.buffer, offset, length);
         var s = util.decodeUtf8Array(data);
-        this.offset += length;
         return s;
       } catch (e) {
-        return this.readStringFast(length);
+        return this.readStringFast(buffer, offset, length);
       }
-    }
-
-    readBytes(length): Uint8Array {
-      var data = this.buffer.subarray(this.offset, this.offset + length);
-      this.offset += length;
-      return data;
     }
 
     static readU16(buffer: Uint8Array, o: number): number {
@@ -303,7 +301,8 @@ module J2ME {
      */
     resolveUtf8String(i: number): string {
       if (i === 0) return null;
-      return utf8ToString(this.resolveUtf8(i));
+      var u8 = this.resolveUtf8(i);
+      return ByteStream.readString(u8, 0, u8.length);
     }
 
     resolveUtf8ClassNameString(i: number): string {

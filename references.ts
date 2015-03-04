@@ -4,8 +4,6 @@
 ///<reference path='utilities.ts' />
 ///<reference path='parser.ts' />
 
-///<reference path='vm/classfile.ts' />
-///<reference path='vm/reader.ts' />
 ///<reference path='metrics.ts' />
 ///<reference path='bytecodes.ts' />
 ///<reference path='jit/blockMap.ts' />

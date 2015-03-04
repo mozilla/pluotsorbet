@@ -3,9 +3,6 @@
 ///<reference path='utilities.ts' />
 ///<reference path='parser.ts' />
 
-///<reference path='vm/classfile.ts' />
-///<reference path='vm/reader.ts' />
-
 ///<reference path='options.ts' />
 ///<reference path='metrics.ts' />
 ///<reference path='bytecodes.ts' />
