@@ -88,7 +88,7 @@ module J2ME {
     var compileExceptions = true;
     var compileSynchronized = true;
 
-    if (!compileExceptions && methodInfo.exception_table && methodInfo.exception_table.length) {
+    if (!compileExceptions && methodInfo.exception_table_length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
     if (!compileSynchronized && methodInfo.isSynchronized) {
@@ -265,7 +265,7 @@ module J2ME {
       this.parameters = [];
       this.referencedClasses = [];
       this.initializedClasses = null;
-      this.hasHandlers = !!methodInfo.exception_table.length;
+      this.hasHandlers = methodInfo.exception_table_length > 0;
       this.hasMonitorEnter = false;
       this.blockStackHeightMap = [0];
       this.bodyEmitter = new Emitter(target !== CompilationTarget.Runtime);
@@ -357,9 +357,8 @@ module J2ME {
         this.bodyEmitter.writeLn(this.getStack(0) + " = TE(ex);");
         this.sp = 1;
         if (this.hasHandlers) {
-          var handlers = this.methodInfo.exception_table;
-          for (var i = 0; i < handlers.length; i++) {
-            this.emitExceptionHandler(this.bodyEmitter, handlers[i]);
+          for (var i = 0; i < this.methodInfo.exception_table_length; i++) {
+            this.emitExceptionHandler(this.bodyEmitter, this.methodInfo.getExceptionEntryViewByIndex(i));
           }
         }
         if (this.methodInfo.isSynchronized) {

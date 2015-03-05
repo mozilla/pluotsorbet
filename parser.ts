@@ -480,6 +480,24 @@ module J2ME {
     interpreterCallCount: number = 0;
   }
 
+  export class ExceptionEntryView extends ByteStream {
+    get start_pc(): number {
+      return this.u2(0);
+    }
+
+    get end_pc(): number {
+      return this.u2(2);
+    }
+
+    get handler_pc(): number {
+      return this.u2(4);
+    }
+
+    get catch_type(): number {
+      return this.u2(6);
+    }
+  }
+
   export class MethodInfo extends ByteStream {
     classInfo: ClassInfo;
     name: string;
@@ -511,7 +529,8 @@ module J2ME {
 
     hasTwoSlotArguments: boolean;
 
-    exception_table: any [];
+    exception_table_length: number;
+    exception_table_offset: number;
     implKey: string;
     isOptimized: boolean;
     signatureDescriptor: SignatureDescriptor;
@@ -523,7 +542,6 @@ module J2ME {
       this.name = classInfo.constantPool.resolveUtf8String(this.name_index);
       this.signature = classInfo.constantPool.resolveUtf8String(this.descriptor_index);
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
-      this.exception_table = [];
       this.state = MethodState.Cold;
       // TODO: Make this lazy.
       this.stats = new MethodInfoStats();
@@ -582,6 +600,14 @@ module J2ME {
       return null;
     }
 
+    getExceptionEntryViewByIndex(i: number): ExceptionEntryView {
+      if (i >= this.exception_table_length) {
+        return null;
+      }
+
+      return new ExceptionEntryView(this.buffer, this.exception_table_offset + i * 8);
+    }
+
     scanMethodInfoAttributes() {
       var b = this.offset;
       var s = this.skip(6);
@@ -593,16 +619,8 @@ module J2ME {
         var attribute_name = this.classInfo.constantPool.resolveUtf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.Code)) {
           this.codeAttribute = new CodeAttribute(s);
-
-          var exception_table_length = s.readU2();
-          for (var j = 0; j < exception_table_length; j++) {
-            this.exception_table.push({
-              start_pc: s.readU2(),
-              end_pc: s.readU2(),
-              handler_pc: s.readU2(),
-              catch_type: s.readU2(),
-            });
-          }
+          this.exception_table_length = s.readU2();
+          this.exception_table_offset = s.offset;
         }
         s.seek(o + attribute_length);
       }

@@ -90,7 +90,6 @@ module J2ME.Bytecode {
     private blockMap: Block [];
     private startBlock: Block;
     private canTrap: Uint32ArrayBitSet;
-    exceptionHandlers: ExceptionHandler [];
 
     constructor(method: MethodInfo) {
       this.blocks = [];
@@ -98,7 +97,6 @@ module J2ME.Bytecode {
       this.hasBackwardBranches = false;
       this.blockMap = new Array<Block>(method.codeAttribute.code.length);
       this.canTrap = new Uint32ArrayBitSet(this.blockMap.length);
-      this.exceptionHandlers = this.method.exception_table;
     }
 
     build() {
@@ -113,8 +111,8 @@ module J2ME.Bytecode {
 
     private makeExceptionEntries() {
       // start basic blocks at all exception handler blocks and mark them as exception entries
-      for (var i = 0; i < this.exceptionHandlers.length; i++) {
-        var handler = this.exceptionHandlers[i];
+      for (var i = 0; i < this.method.exception_table_length; i++) {
+        var handler = this.method.getExceptionEntryViewByIndex(i);
         var block = this.makeBlock(handler.handler_pc);
         block.isExceptionEntry = true;
       }
@@ -363,8 +361,8 @@ module J2ME.Bytecode {
       for (var bci = this.canTrap.nextSetBit(0, length); bci >= 0; bci = this.canTrap.nextSetBit(bci + 1, length)) {
         var block = this.blockMap[bci];
         var handlers: ExceptionHandler [] = null;
-        for (var i = 0; i < this.exceptionHandlers.length; i++) {
-          var handler = this.exceptionHandlers[i];
+        for (var i = 0; i < this.method.exception_table_length; i++) {
+          var handler = this.method.getExceptionEntryViewByIndex(i);
           if (handler.start_pc <= bci && bci < handler.end_pc) {
             if (!handlers) {
               handlers = [];
