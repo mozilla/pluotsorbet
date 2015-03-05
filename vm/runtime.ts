@@ -1563,8 +1563,8 @@ module J2ME {
     }
 
     // Don't compile methods that are too large.
-    if (methodInfo.code.length > 2000) {
-      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.code.length);
+    if (methodInfo.codeAttribute.code.length > 2000) {
+      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
       return;
     }
@@ -1620,7 +1620,7 @@ module J2ME {
     if (jitWriter) {
       jitWriter.leave(
         "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
-        "codeSize: " + methodInfo.code.length + ", " +
+        "codeSize: " + methodInfo.codeAttribute.code.length + ", " +
         "sourceSize: " + compiledMethod.body.length);
       jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
     }

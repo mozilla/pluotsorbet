@@ -318,7 +318,7 @@ module J2ME {
     emitBody() {
       var blockMap = this.blockMap;
       writer && blockMap.trace(writer);
-      var stream = new BytecodeStream(this.methodInfo.code);
+      var stream = new BytecodeStream(this.methodInfo.codeAttribute.code);
 
       var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
 
@@ -439,7 +439,7 @@ module J2ME {
         parameterLocalIndex += isTwoSlot(kind) ? 2 : 1;
       }
 
-      var maxLocals = this.methodInfo.max_locals;
+      var maxLocals = this.methodInfo.codeAttribute.max_locals;
       for (var i = 0; i < maxLocals; i++) {
         local.push(this.getLocalName(i));
       }
@@ -450,7 +450,7 @@ module J2ME {
         this.bodyEmitter.writeLn(this.getLocal(0) + " = this;");
       }
       var stack = this.stack;
-      for (var i = 0; i < this.methodInfo.max_stack; i++) {
+      for (var i = 0; i < this.methodInfo.codeAttribute.max_stack; i++) {
         stack.push(this.getStack(i));
       }
       if (stack.length) {
@@ -494,7 +494,7 @@ module J2ME {
         this.bodyEmitter.writeLn("var local = O.local;");
 
         // Restore locals.
-        for (var i = 0; i < this.methodInfo.max_locals; i++) {
+        for (var i = 0; i < this.methodInfo.codeAttribute.max_locals; i++) {
           this.bodyEmitter.writeLn(this.getLocal(i) + " = local[" + i + "];");
         }
         this.needsVariable("re");

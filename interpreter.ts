@@ -39,7 +39,7 @@ module J2ME {
    */
   function optimizeMethodBytecode(methodInfo: MethodInfo) {
     interpreterCounter && interpreterCounter.count("optimize: " + methodInfo.implKey);
-    var stream = new BytecodeStream(methodInfo.code);
+    var stream = new BytecodeStream(methodInfo.codeAttribute.code);
     while (stream.currentBC() !== Bytecodes.END) {
       if (stream.rawCurrentBC() === Bytecodes.WIDE) {
         stream.next();

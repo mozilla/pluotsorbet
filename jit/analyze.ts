@@ -223,7 +223,7 @@ module J2ME {
       yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[YieldReason.Cycle]);
       return YieldReason.Cycle;
     }
-    if (!methodInfo.code) {
+    if (!methodInfo.codeAttribute) {
       assert (methodInfo.isNative || methodInfo.isAbstract);
       yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " Abstract");
       return yieldMap[methodInfo.implKey] = YieldReason.None;
@@ -233,9 +233,9 @@ module J2ME {
     var constantPool = methodInfo.classInfo.constantPool;
     try {
       var result = YieldReason.None;
-      var stream = new BytecodeStream(methodInfo.code);
+      var stream = new BytecodeStream(methodInfo.codeAttribute.code);
       stream.setBCI(0);
-      while (stream.currentBCI < methodInfo.code.length) {
+      while (stream.currentBCI < methodInfo.codeAttribute.code.length) {
         var op: Bytecodes = stream.currentBC();
         switch (op) {
           case Bytecodes.NEW:

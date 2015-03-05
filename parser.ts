@@ -471,7 +471,6 @@ module J2ME {
     fn: any;
 
     offset: number;
-    code: Uint8Array;
     codeAttribute: CodeAttribute;
 
     state: MethodState;
@@ -493,10 +492,6 @@ module J2ME {
     consumeArgumentSlots: number;
 
     hasTwoSlotArguments: boolean;
-
-    // Remove these
-    max_locals: number;
-    max_stack: number;
 
     exception_table: any [];
     implKey: string;

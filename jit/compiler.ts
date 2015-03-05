@@ -275,7 +275,7 @@ module J2ME {
       if (method.isNative) {
         continue;
       }
-      if (!method.code) {
+      if (!method.codeAttribute) {
         continue;
       }
       if (methodFilterList !== null && methodFilterList.indexOf(method.implKey) < 0) {
@@ -412,7 +412,8 @@ module J2ME {
 
     function hasDependencies(list, classInfo) {
       var superClass = classInfo.superClass;
-      if (!superClass && classInfo.interfaces.length === 0) {
+      var interfaces = classInfo.getAllInterfaces();
+      if (!superClass && interfaces.length === 0) {
         return false;
       }
       for (var i = 0; i < list.length; i++) {
@@ -421,9 +422,9 @@ module J2ME {
         }
       }
 
-      for (var j = 0; j < classInfo.interfaces; j++) {
+      for (var j = 0; j < interfaces; j++) {
         for (var i = 0; i < list.length; i++) {
-          if (list[i].className === classInfo.interfaces[j].className) {
+          if (list[i].className === interfaces[j].className) {
             return true;
           }
         }

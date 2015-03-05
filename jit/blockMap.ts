@@ -96,7 +96,7 @@ module J2ME.Bytecode {
       this.blocks = [];
       this.method = method;
       this.hasBackwardBranches = false;
-      this.blockMap = new Array<Block>(method.code.length);
+      this.blockMap = new Array<Block>(method.codeAttribute.code.length);
       this.canTrap = new Uint32ArrayBitSet(this.blockMap.length);
       this.exceptionHandlers = this.method.exception_table;
     }
@@ -207,7 +207,7 @@ module J2ME.Bytecode {
       // iterate over the bytecodes top to bottom.
       // mark the entrypoints of basic blocks and build lists of successors for
       // all bytecodes that end basic blocks (i.e. goto, ifs, switches, throw, jsr, returns, ret)
-      var code = this.method.code;
+      var code = this.method.codeAttribute.code;
       var current: Block = null;
       var bci = 0;
       while (bci < code.length) {
@@ -507,7 +507,7 @@ module J2ME.Bytecode {
     }
 
     public trace(writer: IndentingWriter, traceBytecode: boolean = false) {
-      var code = this.method.code;
+      var code = this.method.codeAttribute.code;
       var stream = new BytecodeStream(code);
 
       writer.enter("Block Map: " + this.blocks.map(b => b.blockID).join(", "));
