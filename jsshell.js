@@ -16,14 +16,6 @@ console.print = function (c) {
   putstr(String.fromCharCode(c));
 };
 
-console.info = function (c) {
-  putstr(String.fromCharCode(c));
-};
-
-console.error = function (c) {
-  putstr(String.fromCharCode(c));
-};
-
 function check() {
 
 }
@@ -103,11 +95,11 @@ var config = {
 
 try {
   load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
-       "libs/encoding.js", "util.js", "libs/jarstore.js",
-       "override.js", "vm/tags.js", "native.js", "string.js", "tests/override.js",
-       "midp/midp.js", "midp/gestures.js",
-       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
-       "build/classes.jar.js");
+    "libs/encoding.js", "util.js", "libs/jarstore.js",
+    "override.js", "vm/tags.js", "native.js", "string.js", "tests/override.js",
+    "midp/midp.js", "midp/gestures.js",
+    "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
+    "build/classes.jar.js");
 
   // load("build/classes.jar.js");
   // load("build/program.jar.js");
@@ -122,7 +114,7 @@ try {
   JARStore.addBuiltIn("java/classes.jar", snarf("java/classes.jar", "binary").buffer);
   JARStore.addBuiltIn("tests/tests.jar", snarf("tests/tests.jar", "binary").buffer);
   JARStore.addBuiltIn("bench/benchmark.jar", snarf("bench/benchmark.jar", "binary").buffer);
-  JARStore.addBuiltIn("program.jar", snarf("program.jar", "binary").buffer);
+  //JARStore.addBuiltIn("program.jar", snarf("program.jar", "binary").buffer);
 
   CLASSES.initializeBuiltinClasses();
 
@@ -134,18 +126,11 @@ try {
   print("INITIALIZATION TIME: " + (dateNow() - start));
 
   start = dateNow();
-  // var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
+  var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
 
-  J2ME.writers = J2ME.WriterFlags.All;
-  J2ME.loadWriter = new J2ME.IndentingWriter();
-  J2ME.linkWriter = new J2ME.IndentingWriter();
-  J2ME.classCounter.clear();
-  //CLASSES.loadAllClassFilesInJARFile("program.jar");
-  //J2ME.classCounter.trace(J2ME.loadWriter);
-  //
-  ////while (callbacks.length) {
-  ////  (callbacks.shift())();
-  ////}
+  while (callbacks.length) {
+    (callbacks.shift())();
+  }
 
   print("RUNNING TIME: " + (dateNow() - start));
 
