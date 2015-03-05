@@ -234,17 +234,17 @@ module J2ME {
 
     // We don't want to optimize methods for interpretation if we're going to be using the JIT until
     // we teach the Baseline JIT about the new bytecodes.
-    if (!enableRuntimeCompilation && !frame.methodInfo.isOptimized && frame.methodInfo.bytecodeCount > 100) {
+    if (!enableRuntimeCompilation && !frame.methodInfo.isOptimized && frame.methodInfo.stats.bytecodeCount > 100) {
       optimizeMethodBytecode(frame.methodInfo);
     }
 
-    mi.interpreterCallCount ++;
+    mi.stats.interpreterCallCount ++;
 
     interpreterCount ++;
 
     while (true) {
       bytecodeCount ++;
-      mi.bytecodeCount ++;
+      mi.stats.bytecodeCount ++;
 
       // TODO: Make sure this works even if we JIT everything. At the moment it fails
       // for synthetic method frames which have bad max_local counts.
@@ -252,13 +252,13 @@ module J2ME {
       // Inline heuristics that trigger JIT compilation here.
       if (enableRuntimeCompilation &&
           mi.state < MethodState.Compiled && // Give up if we're at this state.
-          mi.backwardsBranchCount + mi.interpreterCallCount > 10) {
+          mi.stats.backwardsBranchCount + mi.stats.interpreterCallCount > 10) {
         compileAndLinkMethod(mi);
       }
 
       try {
         if (frame.pc < lastPC) {
-          mi.backwardsBranchCount ++;
+          mi.stats.backwardsBranchCount ++;
           if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
             // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
             // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
@@ -1076,7 +1076,7 @@ module J2ME {
               frames.push(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
-              mi.interpreterCallCount ++;
+              mi.stats.interpreterCallCount ++;
               ci = mi.classInfo;
               rp = ci.constantPool.resolved;
               stack = frame.stack;
@@ -1182,7 +1182,7 @@ module J2ME {
               frames.push(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
-              mi.interpreterCallCount ++;
+              mi.stats.interpreterCallCount ++;
               ci = mi.classInfo;
               rp = ci.constantPool.resolved;
               stack = frame.stack;

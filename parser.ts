@@ -461,28 +461,34 @@ module J2ME {
     }
   }
 
+  export class MethodInfoStats {
+    callCount: number = 0;
+    bytecodeCount: number = 0;
+    backwardsBranchCount: number = 0;
+    interpreterCallCount: number = 0;
+  }
+
   export class MethodInfo extends ByteStream {
     classInfo: ClassInfo;
     name: string;
     signature: string;
     access_flags: ACCESS_FLAGS;
 
-    ///// FIX THESE LATER ////
-    fn: any;
+    state: MethodState;
 
-    offset: number;
+    stats: MethodInfoStats;
     codeAttribute: CodeAttribute;
 
-    state: MethodState;
+    ///// FIX THESE LATER ////
+    fn: any;
+    offset: number;
+
     mangledName: string;
     mangledClassAndMethodName: string;
 
     onStackReplacementEntryPoints: number [];
 
-    callCount: number;
-    bytecodeCount: number;
-    backwardsBranchCount: number;
-    interpreterCallCount: number;
+
 
     argumentSlots: number;
 
@@ -506,6 +512,10 @@ module J2ME {
       this.signature = classInfo.constantPool.resolveUtf8String(this.descriptor_index);
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
       this.exception_table = [];
+      this.state = MethodState.Cold;
+      // TODO: Make this lazy.
+      this.stats = new MethodInfoStats();
+      this.codeAttribute = null;
       this.scanMethodInfoAttributes();
 
       // TODO: make this lazy
