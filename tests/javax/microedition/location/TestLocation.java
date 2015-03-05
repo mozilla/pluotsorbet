@@ -26,9 +26,6 @@ public class TestLocation implements Testlet, LocationListener {
             e.printStackTrace();
             th.fail("Unexpected exception: " + e);
         }
-        // TODO There is an unknown bug that causes the following line blocking
-        // the VM.
-        // provider.setLocationListener(null, -1, -1, -1);
         synchronized(this) {
             this.notify();
         }
@@ -46,6 +43,7 @@ public class TestLocation implements Testlet, LocationListener {
             synchronized(this) {
                 this.wait();
             }
+            provider.setLocationListener(null, -1, -1, -1);
             th.pass();
         } catch (Exception e) {
             e.printStackTrace();
