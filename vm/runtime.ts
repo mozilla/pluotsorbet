@@ -1387,7 +1387,7 @@ module J2ME {
     };
   }
 
-  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function): Function {
+  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function) {
     var fn;
     var methodType;
     var nativeMethod = findNativeMethodImplementation(methodInfo);
@@ -1435,8 +1435,6 @@ module J2ME {
     if (!methodInfo.isStatic) {
       klass.prototype[methodInfo.mangledName] = fn;
     }
-
-    return fn;
   }
 
   function lazyLinkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function) {
@@ -1450,9 +1448,8 @@ module J2ME {
       }
 
       var lazyFn = function() {
-        var fn = linkKlassMethod(klass, methodInfo, globalFn);
-        var rv = fn.apply(this, arguments);
-        return rv;
+        linkKlassMethod(klass, methodInfo, globalFn);
+        return methodInfo.fn.apply(this, arguments);
       };
 
       jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = lazyFn;
