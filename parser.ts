@@ -858,7 +858,7 @@ module J2ME {
         }
         
         if (isStatic) {
-          var interfaces = this.getInterfaces();
+          var interfaces = c.getAllInterfaces();
           for (var n = 0; n < interfaces.length; ++n) {
             var field = interfaces[n].getFieldByName(name, signature, isStatic);
             if (field) {
