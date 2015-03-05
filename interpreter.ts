@@ -67,14 +67,6 @@ module J2ME {
     methodInfo.isOptimized = true;
   }
 
-  function resolve(index: number, classInfo: ClassInfo, isStatic: boolean = false): any {
-    return classInfo.resolve(index, isStatic);
-  }
-
-  function resolveField(index: number, classInfo: ClassInfo, isStatic: boolean): FieldInfo {
-    return <FieldInfo><any>classInfo.resolve(index, isStatic);
-  }
-
   function resolveClass(index: number, classInfo: ClassInfo): ClassInfo {
     var classInfo = classInfo.constantPool.resolveClass(index);
     linkKlass(classInfo);
@@ -346,12 +338,12 @@ module J2ME {
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
             index = (op === Bytecodes.LDC) ? frame.read8() : frame.read16();
-            constant = resolve(index, ci, false);
+            constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
             stack.push(constant);
             break;
           case Bytecodes.LDC2_W:
             index = frame.read16();
-            constant = resolve(index, ci, false);
+            constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:

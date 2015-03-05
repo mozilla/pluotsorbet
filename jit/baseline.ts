@@ -542,19 +542,19 @@ module J2ME {
     }
 
     lookupClass(cpi: number): ClassInfo {
-      var classInfo = this.methodInfo.classInfo.resolveClass(cpi);
+      var classInfo = this.methodInfo.classInfo.constantPool.resolveClass(cpi);
       ArrayUtilities.pushUnique(this.referencedClasses, classInfo);
       return classInfo;
     }
 
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
-      var methodInfo = this.methodInfo.classInfo.resolveMethod(cpi, isStatic);
+      var methodInfo = this.methodInfo.classInfo.constantPool.resolveMethod(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, methodInfo.classInfo);
       return methodInfo;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
-      var fieldInfo = this.methodInfo.classInfo.resolveField(cpi);
+      var fieldInfo = this.methodInfo.classInfo.constantPool.resolveField(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, fieldInfo.classInfo);
       return fieldInfo;
     }

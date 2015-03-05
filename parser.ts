@@ -994,26 +994,6 @@ module J2ME {
     getClassObject(): java.lang.Class {
       return $.getRuntimeKlass(this.klass).classObject;
     }
-
-    // DEPRECATED use constantPool.resolveClass
-    resolveClass(i: number): ClassInfo {
-      return null;
-    }
-
-    // DEPRECATED use constantPool.resolveMethod
-    resolveMethod(i: number, isStatic: boolean): MethodInfo {
-      return null;
-    }
-
-    // DEPRECATED use constantPool.resolveField
-    resolveField(i: number): FieldInfo {
-      return null;
-    }
-
-    // DEPRECATED use constantPool.resolve
-    resolve(index: number, isStatic: boolean) {
-      return this.constantPool.resolve(index, TAGS.CONSTANT_Any, isStatic);
-    }
   }
 
   export class PrimitiveClassInfo extends ClassInfo {
