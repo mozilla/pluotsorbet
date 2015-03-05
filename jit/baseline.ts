@@ -808,27 +808,28 @@ module J2ME {
 
     emitLoadConstant(cpi: number) {
       var cp = this.methodInfo.classInfo.constantPool;
-      // !!!!!!!!!!!!!! use new constantPool attribute
-      var entry = cp[cpi];
-      switch (entry.tag) {
+      var tag = cp.getConstantTag(cpi);
+
+      switch (tag) {
         case TAGS.CONSTANT_Integer:
-          this.emitPush(Kind.Int, entry.integer);
+          this.emitPush(Kind.Int, cp.resolve(cpi, tag));
           return;
         case TAGS.CONSTANT_Float:
-          this.emitPush(Kind.Float, doubleConstant(entry.float));
+          this.emitPush(Kind.Float, doubleConstant(cp.resolve(cpi, tag)));
           return;
         case TAGS.CONSTANT_Double:
-          this.emitPush(Kind.Double, doubleConstant(entry.double));
+          this.emitPush(Kind.Double, doubleConstant(cp.resolve(cpi, tag)));
           return;
         case TAGS.CONSTANT_Long:
-          this.emitPush(Kind.Long, "Long.fromBits(" + entry.lowBits + ", " + entry.highBits + ")");
+          var long = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Long, "Long.fromBits(" + long.getLowBits() + ", " + long.getHighBits() + ")");
           return;
         case TAGS.CONSTANT_String:
-          entry = cp[entry.string_index];
-          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")");
+          debugger;
+          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(cp.resolveString(cpi)) + ")");
           return;
         default:
-          throw "Not done for: " + entry.tag;
+          throw "Not done for: " + TAGS[tag];
       }
     }
 

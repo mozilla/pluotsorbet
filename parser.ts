@@ -289,7 +289,7 @@ module J2ME {
      * Seeks the current stream position to a specified constant pool entry and
      * returns the tag value.
      */
-    seekTag(i: number): TAGS {
+    private seekTag(i: number): TAGS {
       this.seek(this.entries[i]);
       return <TAGS>this.peekU1();
     }
@@ -306,6 +306,18 @@ module J2ME {
     resolveUtf8ClassNameString(i: number): string {
       if (i === 0) return null;
       return this.resolveUtf8String(this.readTagU2(i, TAGS.CONSTANT_Class, 1));
+    }
+
+    getConstantTag(i: number) {
+      return this.seekTag(i);
+    }
+
+    resolveString(i: number): string {
+      var s = this;
+      var tag = s.seekTag(i);
+      release || assert(tag === TAGS.CONSTANT_String);
+      s.readU1();
+      return this.resolveUtf8String(s.readU2())
     }
 
     /**
