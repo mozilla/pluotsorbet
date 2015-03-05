@@ -1476,7 +1476,7 @@ module J2ME {
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
         var args = Array.prototype.slice.apply(arguments);
-        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
+        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
         traceWriter.outdent();
@@ -1580,7 +1580,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
-    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
+    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
     var s = performance.now();
 
     var compiledMethod;
