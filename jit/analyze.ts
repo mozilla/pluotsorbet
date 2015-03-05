@@ -239,10 +239,12 @@ module J2ME {
         var op: Bytecodes = stream.currentBC();
         switch (op) {
           case Bytecodes.NEW:
+            var classInfo = constantPool.resolveClass(stream.readCPI());
+            result = canStaticInitializerYield(classInfo);
+            break;
           case Bytecodes.GETSTATIC:
           case Bytecodes.PUTSTATIC:
-            var cpi = stream.readCPI();
-            var fieldInfo = constantPool.resolveField(cpi, true);
+            var fieldInfo = constantPool.resolveField(stream.readCPI(), true);
             var classInfo = fieldInfo.classInfo;
             result = canStaticInitializerYield(classInfo);
             break;
