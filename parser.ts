@@ -172,13 +172,6 @@ module J2ME {
     }
   }
 
-  export class ExceptionHandler {
-    start_pc: number;
-    end_pc: number;
-    handler_pc: number;
-    catch_type: number;
-  }
-
   export enum ACCESS_FLAGS {
     ACC_PUBLIC = 0x0001,
     ACC_PRIVATE = 0x0002,

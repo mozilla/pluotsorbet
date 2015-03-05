@@ -79,7 +79,7 @@ module J2ME.Bytecode {
   }
 
   export class ExceptionBlock extends Block {
-    public handler: ExceptionHandler ;
+    public handler: ExceptionEntryView;
     public deoptBci: number;
   }
 
@@ -329,13 +329,13 @@ module J2ME.Bytecode {
 
     // catch_type
 
-    private handlerIsCatchAll(handler: ExceptionHandler) {
+    private handlerIsCatchAll(handler: ExceptionEntryView) {
       return handler.catch_type === 0;
     }
 
-    private exceptionDispatch: Map<ExceptionHandler, ExceptionBlock> = new Map<ExceptionHandler, ExceptionBlock>();
+    private exceptionDispatch: Map<ExceptionEntryView, ExceptionBlock> = new Map<ExceptionEntryView, ExceptionBlock>();
 
-    private makeExceptionDispatch(handlers: ExceptionHandler [], index: number, bci: number): Block {
+    private makeExceptionDispatch(handlers: ExceptionEntryView [], index: number, bci: number): Block {
       var handler = handlers[index];
       if (this.handlerIsCatchAll(handler)) {
         return this.blockMap[handler.handler_pc];
@@ -360,7 +360,7 @@ module J2ME.Bytecode {
       var length = this.canTrap.length;
       for (var bci = this.canTrap.nextSetBit(0, length); bci >= 0; bci = this.canTrap.nextSetBit(bci + 1, length)) {
         var block = this.blockMap[bci];
-        var handlers: ExceptionHandler [] = null;
+        var handlers: ExceptionEntryView [] = null;
         for (var i = 0; i < this.method.exception_table_length; i++) {
           var handler = this.method.getExceptionEntryViewByIndex(i);
           if (handler.start_pc <= bci && bci < handler.end_pc) {

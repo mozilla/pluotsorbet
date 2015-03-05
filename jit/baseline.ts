@@ -372,7 +372,7 @@ module J2ME {
       }
     }
 
-    private emitExceptionHandler(emitter: Emitter, handler: ExceptionHandler) {
+    private emitExceptionHandler(emitter: Emitter, handler: ExceptionEntryView) {
       var check = "";
       if (handler.catch_type > 0) {
         var classInfo = this.lookupClass(handler.catch_type);
