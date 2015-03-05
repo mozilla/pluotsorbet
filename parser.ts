@@ -504,7 +504,6 @@ module J2ME {
 
     ///// FIX THESE LATER ////
     fn: any;
-    offset: number;
 
     mangledName: string;
     mangledClassAndMethodName: string;
@@ -666,9 +665,6 @@ module J2ME {
 
     sourceFile: string;
     mangledName: string;
-
-    // Delete me:
-    thread: any;
 
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
