@@ -1442,7 +1442,7 @@ module J2ME {
       // in a few places, which can happen before we've set MethodInfo.state
       // while lazily linking the method.  So here we set it eagerly
       // (at least for methods with a native/override implementation).
-      // TODO: make MethodInfo.state a getter that links the method if needed.
+      // TODO: make MethodInfo.state a memoizing getter that links the method.
       if (findNativeMethodImplementation(methodInfo)) {
         methodInfo.state = MethodState.Compiled;
       }
