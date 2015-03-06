@@ -981,7 +981,8 @@ module J2ME {
     }
 
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string, forceInline: boolean = false) {
-      if (!forceInline && this.blockMap.invokeCount > 2) {
+      // Only emit throw unwinds if it saves on code size.
+      if (!forceInline && this.blockMap.invokeCount > 2 && this.stack.length < 256) {
         this.flushBlockStack();
         emitter.writeLn("U && TU(" + UnwindThrowLocation.encode(pc, nextPC, this.sp) + ");");
         this.hasUnwindThrow = true;

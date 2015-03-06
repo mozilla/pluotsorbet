@@ -1884,6 +1884,7 @@ module J2ME {
     static encode(pc, nextPC, sp) {
       var delta = nextPC - pc;
       release || assert (delta >= 0 && delta < 8, delta);
+      release || assert (sp >= 0 && sp < 256, sp);
       return pc << 11 | delta << 8 | sp;
     }
     location: number;
