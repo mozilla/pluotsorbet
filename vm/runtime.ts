@@ -1472,7 +1472,7 @@ module J2ME {
       // so we need to preserve a reference to it.
       var compiledFn = jsGlobal[methodInfo.mangledClassAndMethodName];
 
-      // linkKlassMethod(klass, methodInfo, compiledFn);
+      // linkKlassMethod(klass, methodInfo, compiledFn, false);
       lazyLinkKlassMethod(klass, methodInfo, compiledFn);
     }
 
