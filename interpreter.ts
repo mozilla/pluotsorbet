@@ -127,17 +127,18 @@ module J2ME {
     var stackTrace = e.stackTrace;
 
     do {
-      var exception_table = frame.methodInfo.exception_table;
       var handler_pc = null;
-      for (var i = 0; exception_table && i < exception_table.length; i++) {
-        if (frame.opPC >= exception_table[i].start_pc && frame.opPC < exception_table[i].end_pc) {
-          if (exception_table[i].catch_type === 0) {
-            handler_pc = exception_table[i].handler_pc;
+
+      for (var i = 0; i < frame.methodInfo.exception_table_length; i++) {
+        var exceptionEntryView = frame.methodInfo.getExceptionEntryViewByIndex(i);
+        if (frame.opPC >= exceptionEntryView.start_pc && frame.opPC < exceptionEntryView.end_pc) {
+          if (exceptionEntryView.catch_type === 0) {
+            handler_pc = exceptionEntryView.handler_pc;
             break;
           } else {
-            classInfo = resolveClass(exception_table[i].catch_type, frame.methodInfo.classInfo);
+            classInfo = resolveClass(exceptionEntryView.catch_type, frame.methodInfo.classInfo);
             if (isAssignableTo(e.klass, classInfo.klass)) {
-              handler_pc = exception_table[i].handler_pc;
+              handler_pc = exceptionEntryView.handler_pc;
               break;
             }
           }

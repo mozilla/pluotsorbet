@@ -1438,7 +1438,7 @@ module J2ME {
         if (methodType === MethodType.Interpreted) {
           nativeCounter.count(MethodType[MethodType.Interpreted]);
           key += methodInfo.isSynchronized ? " Synchronized" : "";
-          key += methodInfo.exception_table.length ? " Has Exceptions" : "";
+          key += methodInfo.exception_table_length ? " Has Exceptions" : "";
           // key += " " + methodInfo.implKey;
         }
         // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;

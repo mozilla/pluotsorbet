@@ -10,7 +10,6 @@
 ///<reference path='types.ts' />
 ///<reference path='vm/classRegistry.ts' />
 ///<reference path='vm/jvm.ts' />
-///<reference path='actors.ts' />
 ///<reference path='bindings.ts' />
 ///<reference path='vm/runtime.ts' />
 ///<reference path='interpreter.ts' />

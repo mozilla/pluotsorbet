@@ -752,7 +752,7 @@ module J2ME.Bytecode {
    * Determines if a given opcode denotes an instruction that stores a value to a local variable
    * after popping it from the operand stack.
    */
-  function isStore(opcode: Bytecodes): boolean {
+  export function isStore(opcode: Bytecodes): boolean {
     return (flags[opcode & 0xff] & Flags.STORE) != 0;
   }
 
