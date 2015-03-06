@@ -715,16 +715,13 @@ module J2ME {
 
 
     /*
-     * The thread scheduler uses green thread algorithm, which a preemptive,
+     * The thread scheduler uses green thread algorithm, which a non-preemptive,
      * priority based algorithm.
      * All Java threads have a priority and the thread with he highest priority
      * is scheduled to run.
      * In case two threads have the same priority a FIFO ordering is followed.
-     * A different thread is invoked to run only if
-     *   1. The current thread blocks or terminates.
-     *   2. A thread with a higher priority than the current thread enters the
-     *      Runnable state. The lower priority thread is preempted and the
-     *      higher priority thread is scheduled to run.
+     * A different thread is invoked to run only if the current thread blocks or
+     * terminates.
      */
     static scheduleRunningContext(ctx: Context) {
       Runtime._runningQueue.enqueue(ctx);
