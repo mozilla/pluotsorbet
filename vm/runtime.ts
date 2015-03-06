@@ -1381,19 +1381,19 @@ module J2ME {
     return fn;
   }
 
-  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, compiledFn: Function, alwaysUpdateGlobalObject: boolean = false) {
+  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, compiledFn: Function, isLazy: boolean) {
     var fn;
     var methodType;
     var methodDescription = methodInfo.name + methodInfo.signature;
-    var updateGlobalObject = true;
+    var updateGlobalObject = false;
     if (fn = findNativeMethodImplementation(methodInfo)) {
       linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
+      updateGlobalObject = true;
     } else if (fn = compiledFn) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
       methodType = MethodType.Compiled;
-      updateGlobalObject = false;
       aotMethodCount++;
       methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
       // Save method info so that we can figure out where we are bailing
@@ -1403,11 +1403,11 @@ module J2ME {
     } else if (enableCompiledMethodCache && (fn = findCachedMethod(methodInfo))) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Cached");
       methodType = MethodType.Compiled;
-      updateGlobalObject = false;
     } else {
       linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
       methodType = MethodType.Interpreted;
       fn = prepareInterpretedMethod(methodInfo);
+      updateGlobalObject = true;
     }
 
     if (false && methodTimeline) {
@@ -1423,9 +1423,10 @@ module J2ME {
     methodInfo.fn = fn;
 
     // Link even non-static methods globally so they can be invoked statically via invokespecial.
-    if (alwaysUpdateGlobalObject || updateGlobalObject) {
+    if (isLazy || updateGlobalObject) {
       jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
     }
+
     if (!methodInfo.isStatic) {
       klass.prototype[methodInfo.mangledName] = fn;
     }
@@ -1445,7 +1446,9 @@ module J2ME {
         // TODO: figure out why this fails for java/lang/Object.getClass.()Ljava/lang/Class;
         // (java_lang_Object_getClass_G_UxuCaT).
         // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
+
         linkKlassMethod(klass, methodInfo, compiledFn, true);
+
         return methodInfo.fn.apply(this, arguments);
       };
 
