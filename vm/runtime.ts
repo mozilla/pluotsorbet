@@ -1381,7 +1381,7 @@ module J2ME {
     return fn;
   }
 
-  function linkKlassMethod(methodInfo: MethodInfo, isLazy: boolean) {
+  export function linkKlassMethod(methodInfo: MethodInfo, isLazy: boolean) {
     var fn;
     var methodType;
     var methodDescription = methodInfo.name + methodInfo.signature;
@@ -1423,6 +1423,8 @@ module J2ME {
     methodInfo.fn = fn;
 
     // Link even non-static methods globally so they can be invoked statically via invokespecial.
+    // We always link the method globally if we're linking methods lazily,
+    // to overwrite the lazy linker function.
     if (isLazy || updateGlobalObject) {
       jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
     }
@@ -1433,17 +1435,9 @@ module J2ME {
   }
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo) {
-      // The interpreter checks if MethodInfo.state is MethodState.Compiled
-      // in a few places, which can happen before we've set MethodInfo.state
-      // while lazily linking the method.  So here we set it eagerly
-      // (at least for methods with a native/override implementation).
-      // TODO: make MethodInfo.state a memoizing getter that links the method.
-      if (findNativeMethodImplementation(methodInfo)) {
-        methodInfo.state = MethodState.Compiled;
-      }
-
-      var lazyFn = function() {
-        // TODO: figure out why this fails for java/lang/Object.getClass.()Ljava/lang/Class;
+      var lazyFn = function lazyFn() {
+        // TODO: figure out why this assertion fails
+        // for java/lang/Object.getClass.()Ljava/lang/Class;
         // (java_lang_Object_getClass_G_UxuCaT).
         // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
 

@@ -132,7 +132,7 @@ module J2ME {
     implKey: string;
     key: string;
     alternateImpl: {()};
-    fn: {()};
+    fn: any;
     attributes: any [];
     mangledName: string;
     mangledClassAndMethodName: string;
