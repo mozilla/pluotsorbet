@@ -1370,19 +1370,6 @@ module J2ME {
     };
   }
 
-  function findCompiledMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function): Function {
-    var fn = globalFn;
-    if (fn) {
-      aotMethodCount++;
-      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
-      // Save method info so that we can figure out where we are bailing
-      // out from.
-      jitMethodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
-      methodInfo.state = MethodState.Compiled;
-      return fn;
-    }
-  }
-
   function findCachedMethod(methodInfo: MethodInfo): Function {
     var fn;
     var cachedMethod;
@@ -1394,7 +1381,7 @@ module J2ME {
     return fn;
   }
 
-  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function, alwaysUpdateGlobalObject: boolean = false) {
+  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, compiledFn: Function, alwaysUpdateGlobalObject: boolean = false) {
     var fn;
     var methodType;
     var methodDescription = methodInfo.name + methodInfo.signature;
@@ -1403,10 +1390,16 @@ module J2ME {
       linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
-    } else if (fn = findCompiledMethod(klass, methodInfo, globalFn)) {
+    } else if (fn = compiledFn) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
       methodType = MethodType.Compiled;
       updateGlobalObject = false;
+      aotMethodCount++;
+      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
+      // Save method info so that we can figure out where we are bailing
+      // out from.
+      jitMethodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
+      methodInfo.state = MethodState.Compiled;
     } else if (enableCompiledMethodCache && (fn = findCachedMethod(methodInfo))) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Cached");
       methodType = MethodType.Compiled;
@@ -1438,7 +1431,7 @@ module J2ME {
     }
   }
 
-  function lazyLinkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function) {
+  function lazyLinkKlassMethod(klass: Klass, methodInfo: MethodInfo, compiledFn: Function) {
       // The interpreter checks if MethodInfo.state is MethodState.Compiled
       // in a few places, which can happen before we've set MethodInfo.state
       // while lazily linking the method.  So here we set it eagerly
@@ -1452,7 +1445,7 @@ module J2ME {
         // TODO: figure out why this fails for java/lang/Object.getClass.()Ljava/lang/Class;
         // (java_lang_Object_getClass_G_UxuCaT).
         // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
-        linkKlassMethod(klass, methodInfo, globalFn, true);
+        linkKlassMethod(klass, methodInfo, compiledFn, true);
         return methodInfo.fn.apply(this, arguments);
       };
 
@@ -1472,10 +1465,12 @@ module J2ME {
         continue;
       }
 
-      var globalFn = jsGlobal[methodInfo.mangledClassAndMethodName];
+      // Lazy linking overwrites the global function with the lazy linker,
+      // so we need to preserve a reference to it.
+      var compiledFn = jsGlobal[methodInfo.mangledClassAndMethodName];
 
-      // linkKlassMethod(klass, methodInfo, globalFn);
-      lazyLinkKlassMethod(klass, methodInfo, globalFn);
+      // linkKlassMethod(klass, methodInfo, compiledFn);
+      lazyLinkKlassMethod(klass, methodInfo, compiledFn);
     }
 
     linkWriter && linkWriter.outdent();
