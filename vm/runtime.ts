@@ -1448,6 +1448,9 @@ module J2ME {
       }
 
       var lazyFn = function() {
+        // TODO: figure out why this fails for java/lang/Object.getClass.()Ljava/lang/Class;
+        // (java_lang_Object_getClass_G_UxuCaT).
+        // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
         linkKlassMethod(klass, methodInfo, globalFn, true);
         return methodInfo.fn.apply(this, arguments);
       };
