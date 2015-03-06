@@ -1383,15 +1383,15 @@ module J2ME {
     }
   }
 
-  function findCachedMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
-        cachedMethodCount ++;
-        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-        return jsGlobal[methodInfo.mangledClassAndMethodName];
-      }
+  function findCachedMethod(methodInfo: MethodInfo): Function {
+    var fn;
+    var cachedMethod;
+    if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+      cachedMethodCount ++;
+      linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+      fn = jsGlobal[methodInfo.mangledClassAndMethodName];
     }
+    return fn;
   }
 
   function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function, alwaysUpdateGlobalObject: boolean = false) {
@@ -1407,7 +1407,7 @@ module J2ME {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
       methodType = MethodType.Compiled;
       updateGlobalObject = false;
-    } else if (fn = findCachedMethod(klass, methodInfo)) {
+    } else if (enableCompiledMethodCache && (fn = findCachedMethod(methodInfo))) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Cached");
       methodType = MethodType.Compiled;
       updateGlobalObject = false;
