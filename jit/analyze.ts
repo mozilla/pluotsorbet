@@ -89,8 +89,9 @@ module J2ME {
   }
 
   export function isFinalMethod(methodInfo: MethodInfo): boolean {
-    // XXX Determine whether we can start using the code in this function.
-    return false;
+    return methodInfo.isFinal;
+    // XXX The following can only be used if every class in all jars is loaded.
+    /*
     var result = methodInfo.isFinal;
     if (!result) {
       var classInfo = methodInfo.classInfo;
@@ -109,6 +110,7 @@ module J2ME {
       }
     }
     return result;
+    */
   }
 
   export function gatherCallees(callees: MethodInfo [], classInfo: ClassInfo, methodInfo: MethodInfo) {
