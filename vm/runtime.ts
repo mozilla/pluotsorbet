@@ -1282,23 +1282,6 @@ module J2ME {
     return method;
   }
 
-  function findCompiledMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function): Function {
-    var fn = globalFn;
-    if (fn) {
-      aotMethodCount++;
-      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
-      return fn;
-    }
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
-        cachedMethodCount ++;
-        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-        return jsGlobal[methodInfo.mangledClassAndMethodName];
-      }
-    }
-  }
-
   /**
    * Creates convenience getters / setters on Java objects.
    */
@@ -1387,35 +1370,53 @@ module J2ME {
     };
   }
 
+  function findCompiledMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function): Function {
+    var fn = globalFn;
+    if (fn) {
+      aotMethodCount++;
+      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
+      // Save method info so that we can figure out where we are bailing
+      // out from.
+      jitMethodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
+      methodInfo.state = MethodState.Compiled;
+      return fn;
+    }
+  }
+
+  function findCachedMethod(klass: Klass, methodInfo: MethodInfo): Function {
+    if (enableCompiledMethodCache) {
+      var cachedMethod;
+      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+        cachedMethodCount ++;
+        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+        return jsGlobal[methodInfo.mangledClassAndMethodName];
+      }
+    }
+  }
+
   function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function, alwaysUpdateGlobalObject: boolean = false) {
     var fn;
     var methodType;
-    var nativeMethod = findNativeMethodImplementation(methodInfo);
     var methodDescription = methodInfo.name + methodInfo.signature;
     var updateGlobalObject = true;
-    if (nativeMethod) {
+    if (fn = findNativeMethodImplementation(methodInfo)) {
       linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
-      fn = nativeMethod;
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
+    } else if (fn = findCompiledMethod(klass, methodInfo, globalFn)) {
+      linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
+      methodType = MethodType.Compiled;
+      updateGlobalObject = false;
+    } else if (fn = findCachedMethod(klass, methodInfo)) {
+      linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Cached");
+      methodType = MethodType.Compiled;
+      updateGlobalObject = false;
     } else {
-      // TODO: refactor findCompiledMethod and the conditional block below
-      // so they don't do a bunch of the same stuff.
-      fn = findCompiledMethod(klass, methodInfo, globalFn);
-      if (fn) {
-        linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
-        methodType = MethodType.Compiled;
-        // Save method info so that we can figure out where we are bailing
-        // out from.
-        jitMethodInfos[fn.name] = methodInfo;
-        updateGlobalObject = false;
-        methodInfo.state = MethodState.Compiled;
-      } else {
-        linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
-        methodType = MethodType.Interpreted;
-        fn = prepareInterpretedMethod(methodInfo);
-      }
+      linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
+      methodType = MethodType.Interpreted;
+      fn = prepareInterpretedMethod(methodInfo);
     }
+
     if (false && methodTimeline) {
       fn = profilingWrapper(fn, methodInfo, methodType);
       updateGlobalObject = true;
