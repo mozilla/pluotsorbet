@@ -2,7 +2,6 @@
 
 var TextEditorProvider = (function() {
     var eTextArea = document.getElementById('textarea-editor');
-    var ePassword = document.getElementById('password-editor');
     var currentVisibleEditor = null;
 
     function extendsObject(targetObj, srcObj) {
@@ -26,6 +25,7 @@ var TextEditorProvider = (function() {
         selectionRange: [0, 0],
         focused: false,
         oninputCallback: null,
+        inputmode: "",
 
         // opaque white
         backgroundColor:  0xFFFFFFFF | 0,
@@ -52,6 +52,8 @@ var TextEditorProvider = (function() {
                     this.textEditorElem.setAttribute(attr, this.attributes[attr]);
                 }
             }
+
+            this.textEditorElem.setAttribute("x-inputmode", this.inputmode);
 
             this.setContent(this.content);
 
@@ -463,14 +465,14 @@ var TextEditorProvider = (function() {
         },
     }, CommonEditorPrototype);
 
-    function PasswordEditor() {
-        this.textEditorElem = ePassword;
+    function InputEditor(type) {
+        this.textEditorElem = document.getElementById(type + "-editor");
     }
 
-    PasswordEditor.prototype = extendsObject({
+    InputEditor.prototype = extendsObject({
         activate: function() {
             this.textEditorElem.oninput = function() {
-                this.content = ePassword.value;
+                this.content = this.textEditorElem.value;
                 if (this.oninputCallback) {
                     this.oninputCallback();
                 }
@@ -544,52 +546,82 @@ var TextEditorProvider = (function() {
 
     return {
         getEditor: function(constraints, oldEditor, editorId) {
-            var TYPE_TEXTAREA = 'textarea';
-            var TYPE_PASSWORD = 'password';
-
             // https://docs.oracle.com/javame/config/cldc/ref-impl/midp2.0/jsr118/javax/microedition/lcdui/TextField.html#constraints
-            var CONSTRAINT_ANY = 0;
-            var CONSTRAINT_PASSWORD = 0x10000;
+            var TextField = {
+                ANY:                          0,
+                EMAILADDR:                    1,
+                NUMERIC:                      2,
+                PHONENUMBER:                  3,
+                URL:                          4,
+                DECIMAL:                      5,
+                PASSWORD:               0x10000,
+                NON_PREDICTIVE:         0x80000,
+                INITIAL_CAPS_WORD:     0x100000,
+                INITIAL_CAPS_SENTENCE: 0x200000,
+                CONSTRAINT_MASK:         0xFFFF
+            };
 
-            function _createEditor(type, constraints, editorId) {
+            function _createEditor(type, constraints, editorId, inputmode) {
                 var editor;
-                switch(type) {
-                    case TYPE_PASSWORD:
-                        editor = new PasswordEditor();
-                        break;
-                    case TYPE_TEXTAREA: // fall through
-                    default:
-                        editor = new TextAreaEditor();
-                        break;
+                if (type === "textarea") {
+                    editor = new TextAreaEditor();
+                } else {
+                    editor = new InputEditor(type);
                 }
                 editor.type = type;
                 editor.constraints = constraints;
                 editor.id = editorId;
+                editor.inputmode = inputmode;
                 return editor;
             }
 
-            var type = TYPE_TEXTAREA;
-            if (constraints == CONSTRAINT_ANY) {
-                type = TYPE_TEXTAREA;
-            } else if (constraints == (CONSTRAINT_ANY | CONSTRAINT_PASSWORD)) {
-                type = TYPE_PASSWORD;
+            var type = "";
+            var inputmode = "";
+            var mode = constraints & TextField.CONSTRAINT_MASK;
+            if (constraints & TextField.PASSWORD) {
+                type = "password";
+                if (mode === TextField.NUMERIC) {
+                    inputmode = "number";
+                }
             } else {
-                console.warn('Constraints ' + constraints + ' not supported.');
-
-                if (constraints & CONSTRAINT_PASSWORD) {
-                    // Special case: use the PASSWORD type if there's a PASSWORD constraint,
-                    // even though the mode isn't ANY.
-                    type = TYPE_PASSWORD;
+                switch (mode) {
+                    case TextField.EMAILADDR:
+                        type = "email";
+                        break;
+                    case TextField.DECIMAL: // fall through
+                    case TextField.NUMERIC:
+                        type = "number";
+                        break;
+                    case TextField.PHONENUMBER:
+                        type = "tel";
+                        break;
+                    case TextField.URL:
+                        type = "url";
+                        break;
+                    case TextField.ANY: // fall through
+                    default:
+                        type = "textarea";
+                        break;
+                }
+                if (constraints & TextField.NON_PREDICTIVE) {
+                    // No capitalization and no word suggestions
+                    inputmode = "verbatim";
+                } else if (constraints & TextField.INITIAL_CAPS_SENTENCE) {
+                    // Word suggestions and capitalization at the start of sentences
+                    inputmode = "latin-prose";
+                } else if (constraints & TextField.INITIAL_CAPS_WORD) {
+                    // Word suggestions and capitalization at each word
+                    inputmode = "latin-name";
                 } else {
-                    // Fall back to the default value.
-                    type = TYPE_TEXTAREA;
+                    // Word suggestions but no capitalization
+                    inputmode = "latin";
                 }
             }
 
             var newEditor;
 
             if (!oldEditor) {
-                newEditor = _createEditor(type, constraints, editorId);
+                newEditor = _createEditor(type, constraints, editorId, inputmode);
                 return newEditor;
             }
 
@@ -598,7 +630,7 @@ var TextEditorProvider = (function() {
             }
 
             // The type is changed and we need to copy all the attributes.
-            var newEditor = _createEditor(type, constraints, editorId);
+            var newEditor = _createEditor(type, constraints, editorId, inputmode);
             ["attributes",
              "width", "height",
              "left", "top",
@@ -611,7 +643,9 @@ var TextEditorProvider = (function() {
             });
 
             // Call setVisible to update display.
-            newEditor.setVisible(oldEditor.visible);
+            var visible = oldEditor.visible;
+            oldEditor.setVisible(false);
+            newEditor.setVisible(visible);
             return newEditor;
         }
     };
