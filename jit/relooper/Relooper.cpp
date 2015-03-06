@@ -33,7 +33,7 @@ static void PrintDebug(const char *Format, ...);
 #define DebugDump(x, ...)
 #endif
 
-#define INDENTATION 1
+#define INDENTATION 0
 
 struct Indenter {
   static int CurrIndent;
