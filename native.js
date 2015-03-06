@@ -541,13 +541,28 @@ Native["java/lang/Thread.start0.()V"] = function() {
           { name_index: 9, signature_index: 10 },
           { bytes: "internalExit" },
           { bytes: "()V" },
+          { tag: TAGS.CONSTANT_Methodref, class_index: 12, name_and_type_index: 14 },
+          { tag: TAGS.CONSTANT_Class, name_index: 13 },
+          { bytes: "java/lang/Object" },
+          { name_index: 15, signature_index: 16 },
+          { bytes: "notifyAll" },
+          { bytes: "()V" },
         ]},
       }),
       code: new Uint8Array([
         0x2a,             // aload_0
         0x59,             // dup
-        0xb6, 0x00, 0x01, // invokespecial <idx=1>
-        0xb7, 0x00, 0x07, // invokespecial <idx=7>
+        0xb6, 0x00, 0x01, // invokevitual <idx=1> Thread.run
+        0xb7, 0x00, 0x07, // invokespecial <idx=7> Thread.internalExit
+        0x2a,             // aload_0
+        0x59,             // dup
+        0x4c,             // astore_1
+        0xc2,             // monitorenter
+        0x2a,             // aload_0
+        // Signal waiters waiting on thread
+        0xb7, 0x00, 0x0b, // invokespecial <idx=11> Object.notifyAll
+        0x2b,             // aload_1
+        0xc3,             // monitorexit
         0xb1,             // return
       ])
     });
