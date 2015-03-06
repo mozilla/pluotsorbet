@@ -87,6 +87,7 @@ module J2ME.Bytecode {
     method: MethodInfo;
     blocks: Block [];
     hasBackwardBranches: boolean;
+    invokeCount: number;
     private blockMap: Block [];
     private startBlock: Block;
     private canTrap: Uint32ArrayBitSet;
@@ -96,6 +97,7 @@ module J2ME.Bytecode {
       this.blocks = [];
       this.method = method;
       this.hasBackwardBranches = false;
+      this.invokeCount = 0;
       this.blockMap = new Array<Block>(method.code.length);
       this.canTrap = new Uint32ArrayBitSet(this.blockMap.length);
       this.exceptionHandlers = this.method.exception_table;
@@ -292,6 +294,9 @@ module J2ME.Bytecode {
           default: {
             if (this.canTrapAt(opcode, bci)) {
               this.canTrap.set(bci);
+            }
+            if (Bytecode.isInvoke(opcode)) {
+              this.invokeCount ++;
             }
           }
         }
