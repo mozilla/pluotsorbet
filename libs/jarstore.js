@@ -137,6 +137,11 @@ var JARStore = (function() {
       return null;
     }
 
+    if (!jar.isBuiltIn && fileName.endsWith(".class")) {
+      // Classes are loaded just once and then are cached in ClassRegistry::classes
+      delete jar.directory[fileName];
+    }
+
     return bytes;
   }
 
