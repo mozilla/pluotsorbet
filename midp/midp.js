@@ -425,6 +425,7 @@ var MIDP = (function() {
     return AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
   };
 
+  // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
   Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
     // See DisplayContainer::createDisplayId, called by the LCDUIEnvironment constructor,
     // called by CldcMIDletSuiteLoader::createSuiteEnvironment.
@@ -432,6 +433,8 @@ var MIDP = (function() {
     // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
     // the display ID.
     displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
+
+    asyncImpl("V", Promise.all(loadingMIDletPromises));
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
