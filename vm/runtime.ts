@@ -446,7 +446,6 @@ module J2ME {
     pending: any;
     staticFields: any;
     classObjects: any;
-    classInitLockObjects: any;
     ctx: Context;
 
     isolate: com.sun.cldc.isolate.Isolate;
@@ -466,9 +465,39 @@ module J2ME {
       this.staticFields = {};
       this.classObjects = {};
       this.ctx = null;
-      this.classInitLockObjects = {};
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
       this._nextHashCode = this._runtimeId << 24;
+    }
+    
+    preInitializeClasses(ctx: Context) {
+      var prevCtx = $ ? $.ctx : null;
+      var preInit = CLASSES.preInitializedClasses;
+      ctx.setAsCurrentContext();
+      for (var i = 0; i < preInit.length; i++) {
+        var runtimeKlass = this.getRuntimeKlass(preInit[i].klass);
+        runtimeKlass.classObject.initialize();
+        release || Debug.assert(!U, "Unexpected unwind during preInitializeClasses.");
+      }
+      ctx.clearCurrentContext();
+      if (prevCtx) {
+        prevCtx.setAsCurrentContext();
+      }
+    }
+
+    /**
+     * After class intialization is finished the init9 method will invoke this so
+     * any further initialize calls can be avoided. This isn't set on the first call
+     * to a class initializer because there can be multiple calls into initialize from
+     * different threads that need trigger the Class.initialize() code so they block.
+     */
+    setClassInitialized(runtimeKlass: RuntimeKlass) {
+      var className = runtimeKlass.templateKlass.classInfo.className;
+      this.initialized[className] = true;
+    }
+
+    getRuntimeKlass(klass: Klass): RuntimeKlass {
+      var runtimeKlass = this[klass.classInfo.mangledName];
+      return runtimeKlass;
     }
 
     /**
@@ -859,6 +888,15 @@ module J2ME {
     release || assert(!runtimeKlass.classObject);
     runtimeKlass.classObject = <java.lang.Class><any>new Klasses.java.lang.Class();
     runtimeKlass.classObject.runtimeKlass = runtimeKlass;
+    var className = runtimeKlass.templateKlass.classInfo.className;
+    if (className === "java/lang/Object" ||
+        className === "java/lang/Class" ||
+        className === "java/lang/String" ||
+        className === "java/lang/Thread") {
+      (<any>runtimeKlass.classObject).status = 4;
+      $.setClassInitialized(runtimeKlass);
+      return;
+    }
     var fields = runtimeKlass.templateKlass.classInfo.fields;
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
@@ -897,10 +935,6 @@ module J2ME {
         Object.defineProperty(this, classInfo.mangledName, {
           value: runtimeKlass
         });
-        initWriter && initWriter.writeLn("Running Static Constructor: " + classInfo.className);
-        $.ctx.pushClassInitFrame(classInfo);
-        release || assert(!U, "Unwinding during static initializer not supported.");
-
         return runtimeKlass;
       }
     });
@@ -955,14 +989,6 @@ module J2ME {
       var className = classNames[i];
       registerKlassSymbol(className);
     }
-  }
-
-  export function getRuntimeKlass(runtime: Runtime, klass: Klass): RuntimeKlass {
-    release || assert(!(klass instanceof RuntimeKlass));
-    release || assert(klass.classInfo.mangledName);
-    var runtimeKlass = runtime[klass.classInfo.mangledName];
-    // assert(runtimeKlass instanceof RuntimeKlass);
-    return runtimeKlass;
   }
 
   function setKlassSymbol(mangledName: string, klass: Klass) {
@@ -1339,6 +1365,7 @@ module J2ME {
   function linkKlassMethods(klass: Klass) {
     linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
     var methods = klass.classInfo.methods;
+    var classBindings = Bindings[klass.classInfo.className];
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
       if (methodInfo.isAbstract) {
@@ -1388,6 +1415,12 @@ module J2ME {
       }
       if (!methodInfo.isStatic) {
         klass.prototype[methodInfo.mangledName] = fn;
+        if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
+          var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
+          if (methodKey) {
+            klass.prototype[methodKey] = fn;
+          }
+        }
       }
     }
 
@@ -1822,15 +1855,13 @@ module J2ME {
     return e;
   }
 
-  export function classInitCheck(classInfo: ClassInfo, pc: number) {
-    if (classInfo.isArrayClass) {
+  export function classInitCheck(classInfo: ClassInfo) {
+    if (classInfo.isArrayClass || $.initialized[classInfo.className]) {
       return;
     }
-    $.ctx.pushClassInitFrame(classInfo);
-    if (U) {
-      $.ctx.current().pc = pc;
-      return;
-    }
+    linkKlass(classInfo);
+    var runtimeKlass = $.getRuntimeKlass(classInfo.klass);
+    runtimeKlass.classObject.initialize();
   }
 
   /**
