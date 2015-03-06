@@ -1381,7 +1381,7 @@ module J2ME {
     return fn;
   }
 
-  function linkKlassMethod(methodInfo: MethodInfo, compiledFn: Function, isLazy: boolean) {
+  function linkKlassMethod(methodInfo: MethodInfo, isLazy: boolean) {
     var fn;
     var methodType;
     var methodDescription = methodInfo.name + methodInfo.signature;
@@ -1391,7 +1391,7 @@ module J2ME {
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
       updateGlobalObject = true;
-    } else if (fn = compiledFn) {
+    } else if (fn = methodInfo.compiledFn) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
       methodType = MethodType.Compiled;
       aotMethodCount++;
@@ -1432,7 +1432,7 @@ module J2ME {
     }
   }
 
-  function lazyLinkKlassMethod(methodInfo: MethodInfo, compiledFn: Function) {
+  function lazyLinkKlassMethod(methodInfo: MethodInfo) {
       // The interpreter checks if MethodInfo.state is MethodState.Compiled
       // in a few places, which can happen before we've set MethodInfo.state
       // while lazily linking the method.  So here we set it eagerly
@@ -1447,7 +1447,7 @@ module J2ME {
         // (java_lang_Object_getClass_G_UxuCaT).
         // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
 
-        linkKlassMethod(methodInfo, compiledFn, true);
+        linkKlassMethod(methodInfo, true);
 
         return methodInfo.fn.apply(this, arguments);
       };
@@ -1470,10 +1470,10 @@ module J2ME {
 
       // Lazy linking overwrites the global function with the lazy linker,
       // so we need to preserve a reference to it.
-      var compiledFn = jsGlobal[methodInfo.mangledClassAndMethodName];
+      methodInfo.compiledFn = jsGlobal[methodInfo.mangledClassAndMethodName];
 
-      // linkKlassMethod(methodInfo, compiledFn, false);
-      lazyLinkKlassMethod(methodInfo, compiledFn);
+      // linkKlassMethod(methodInfo, false);
+      lazyLinkKlassMethod(methodInfo);
     }
 
     linkWriter && linkWriter.outdent();
