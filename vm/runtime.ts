@@ -1903,40 +1903,47 @@ module J2ME {
     }
   }
 
+  /**
+   * Generic unwind throw.
+   */
   export function throwUnwind(pc: number, nextPC: number = pc + 3, sp: number = 0) {
     throw UnwindThrowLocation.instance.setLocation(pc, nextPC, sp);
   }
 
+  /**
+   * Unwind throws with different stack heights. This is useful so we can
+   * save a few bytes encoding the stack height in the function name.
+   */
   export function throwUnwind0(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 0);
+    throwUnwind(pc, nextPC, 0);
   }
 
   export function throwUnwind1(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 1);
+    throwUnwind(pc, nextPC, 1);
   }
 
   export function throwUnwind2(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 2);
+    throwUnwind(pc, nextPC, 2);
   }
 
   export function throwUnwind3(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 3);
+    throwUnwind(pc, nextPC, 3);
   }
 
   export function throwUnwind4(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 4);
+    throwUnwind(pc, nextPC, 4);
   }
 
   export function throwUnwind5(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 5);
+    throwUnwind(pc, nextPC, 5);
   }
 
   export function throwUnwind6(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 6);
+    throwUnwind(pc, nextPC, 6);
   }
 
   export function throwUnwind7(pc: number, nextPC: number = pc + 3) {
-    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, 7);
+    throwUnwind(pc, nextPC, 7);
   }
 }
 
@@ -1950,6 +1957,8 @@ var AOTMD = J2ME.aotMetaData;
  * read very often.
  */
 var U: J2ME.VMState = J2ME.VMState.Running;
+
+// Several unwind throws for different stack heights.
 
 var B0 = J2ME.throwUnwind0;
 var B1 = J2ME.throwUnwind1;

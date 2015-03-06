@@ -312,7 +312,10 @@ module J2ME {
      */
     static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
-    private hasUnwindThrow;
+    /**
+     * Indicates whether a unwind throw was emitted.
+     */
+    private hasUnwindThrow: boolean;
 
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
@@ -981,7 +984,7 @@ module J2ME {
     }
 
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string, forceInline: boolean = false) {
-      // Only emit throw unwinds if it saves on code size.
+      // Only emit unwind throws if it saves on code size.
       if (!forceInline && this.blockMap.invokeCount > 2 &&
           this.stack.length < 8) {
         this.flushBlockStack();
