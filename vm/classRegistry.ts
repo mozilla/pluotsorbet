@@ -129,9 +129,9 @@ module J2ME {
       return null;
     }
 
-    loadClassBytes(bytes: ArrayBuffer): ClassInfo {
+    loadClassBytes(bytes: Uint8Array): ClassInfo {
       enterTimeline("loadClassBytes");
-      var classInfo = new ClassInfo(new Uint8Array(bytes));
+      var classInfo = new ClassInfo(bytes);
       leaveTimeline("loadClassBytes", {className: classInfo.className});
       loadWriter && loadWriter.writeLn("XXX: " + classInfo.className + " -> " + classInfo.superClassName + ";");
       this.classes[classInfo.className] = classInfo;

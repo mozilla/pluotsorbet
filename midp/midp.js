@@ -58,10 +58,9 @@ var MIDP = (function() {
       throw $.newIOException();
     }
     var length = bytes.byteLength;
-    var data = new Int8Array(bytes);
     var array = J2ME.newByteArray(length);
     for (var n = 0; n < length; ++n) {
-      array[n] = data[n];
+      array[n] = bytes[n];
     }
     return array;
   };
@@ -498,9 +497,8 @@ var MIDP = (function() {
     }
     var len = data.byteLength;
     var bytes = J2ME.newByteArray(len);
-    var src = new Int8Array(data);
-    for (var n = 0; n < bytes.byteLength; ++n) {
-      bytes[n] = src[n];
+    for (var n = 0; n < len; ++n) {
+      bytes[n] = data[n];
     }
     return bytes;
   };
@@ -1155,7 +1153,7 @@ var MIDP = (function() {
       if (!data)
         throw $.newIOException();
 
-      var text = util.decodeUtf8(data);
+      var text = util.decodeUtf8Array(data);
       var xml = new window.DOMParser().parseFromString(text, "text/xml");
       var entries = xml.getElementsByTagName("localized_string");
 

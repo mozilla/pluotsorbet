@@ -531,7 +531,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     var obj = null;
     if (data) {
         obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-        obj.data = new Uint8Array(data);
+        obj.data = data;
         obj.pos = 0;
     }
     return obj;
