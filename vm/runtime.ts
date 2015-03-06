@@ -1394,7 +1394,7 @@ module J2ME {
     } else if (fn = methodInfo.compiledFn) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
       methodType = MethodType.Compiled;
-      aotMethodCount++;
+      aotMethodCount ++;
       methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
       // Save method info so that we can figure out where we are bailing
       // out from.
@@ -1432,6 +1432,8 @@ module J2ME {
     if (!methodInfo.isStatic) {
       methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
     }
+
+    linkedMethodCount ++;
   }
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo) {
@@ -1468,6 +1470,8 @@ module J2ME {
 
       // linkKlassMethod(methodInfo, false);
       lazyLinkKlassMethod(methodInfo);
+
+      loadedMethodCount ++;
     }
 
     linkWriter && linkWriter.outdent();
@@ -1533,6 +1537,16 @@ module J2ME {
    * Number of methods that have been loaded from ahead of time compiled code thus far.
    */
   export var aotMethodCount = 0;
+
+  /**
+   * Number of methods that have been loaded thus far.
+   */
+  export var loadedMethodCount = 0;
+
+  /**
+   * Number of methods that have been linked thus far.
+   */
+  export var linkedMethodCount = 0;
 
   /**
    * Number of ms that have been spent compiled code thus far.

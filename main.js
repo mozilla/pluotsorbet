@@ -231,6 +231,10 @@ window.onload = function() {
                      numberWithCommas(J2ME.cachedMethodCount) + " / " +
                      numberWithCommas(J2ME.aotMethodCount);
 
+    var el = document.getElementById("linkedCount");
+    el.textContent = numberWithCommas(J2ME.linkedMethodCount) + " / " +
+                     numberWithCommas(J2ME.loadedMethodCount);
+
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);
 
