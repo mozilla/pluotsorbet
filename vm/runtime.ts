@@ -1381,7 +1381,7 @@ module J2ME {
     return fn;
   }
 
-  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, compiledFn: Function, isLazy: boolean) {
+  function linkKlassMethod(methodInfo: MethodInfo, compiledFn: Function, isLazy: boolean) {
     var fn;
     var methodType;
     var methodDescription = methodInfo.name + methodInfo.signature;
@@ -1428,11 +1428,11 @@ module J2ME {
     }
 
     if (!methodInfo.isStatic) {
-      klass.prototype[methodInfo.mangledName] = fn;
+      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
     }
   }
 
-  function lazyLinkKlassMethod(klass: Klass, methodInfo: MethodInfo, compiledFn: Function) {
+  function lazyLinkKlassMethod(methodInfo: MethodInfo, compiledFn: Function) {
       // The interpreter checks if MethodInfo.state is MethodState.Compiled
       // in a few places, which can happen before we've set MethodInfo.state
       // while lazily linking the method.  So here we set it eagerly
@@ -1447,7 +1447,7 @@ module J2ME {
         // (java_lang_Object_getClass_G_UxuCaT).
         // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
 
-        linkKlassMethod(klass, methodInfo, compiledFn, true);
+        linkKlassMethod(methodInfo, compiledFn, true);
 
         return methodInfo.fn.apply(this, arguments);
       };
@@ -1455,7 +1455,7 @@ module J2ME {
       jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = lazyFn;
 
       if (!methodInfo.isStatic) {
-        klass.prototype[methodInfo.mangledName] = lazyFn;
+        methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = lazyFn;
       }
   }
 
@@ -1472,8 +1472,8 @@ module J2ME {
       // so we need to preserve a reference to it.
       var compiledFn = jsGlobal[methodInfo.mangledClassAndMethodName];
 
-      // linkKlassMethod(klass, methodInfo, compiledFn, false);
-      lazyLinkKlassMethod(klass, methodInfo, compiledFn);
+      // linkKlassMethod(methodInfo, compiledFn, false);
+      lazyLinkKlassMethod(methodInfo, compiledFn);
     }
 
     linkWriter && linkWriter.outdent();
