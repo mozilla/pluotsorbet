@@ -501,6 +501,10 @@ Native["java/lang/Thread.start0.()V"] = function() {
 
     var run = this.klass.classInfo.getMethodByName("run", "()V", false);
     newCtx.start([new Frame(run, [ this ], 0)]);
+}
+
+Native["java/lang/Thread.internalExit.()V"] = function() {
+    this.alive = false;
 };
 
 Native["java/lang/Thread.isAlive.()Z"] = function() {
