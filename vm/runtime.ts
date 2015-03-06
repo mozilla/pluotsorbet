@@ -496,8 +496,6 @@ module J2ME {
     }
 
     getRuntimeKlass(klass: Klass): RuntimeKlass {
-      release || assert(!(klass instanceof RuntimeKlass));
-      release || assert(klass.classInfo.mangledName);
       var runtimeKlass = this[klass.classInfo.mangledName];
       return runtimeKlass;
     }
