@@ -63,7 +63,6 @@ module J2ME {
        * because they don't have any static state.
        */
       var classNames = [
-        "com/sun/cldc/isolate/Isolate", // Not used frequently, but needs setup before we start the isolates.
         "java/lang/Integer",
         "java/lang/Character",
         "java/lang/Math",
