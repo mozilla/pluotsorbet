@@ -64,7 +64,7 @@ module J2ME {
   /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
    */
-  var hashedMangledNames = false;
+  var hashedMangledNames = release;
 
   /**
    * Traces method execution.
