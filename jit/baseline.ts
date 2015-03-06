@@ -565,7 +565,7 @@ module J2ME {
       if (needsOSREntryPoint) {
         // Are we doing an OSR?
         this.bodyEmitter.enter("if(O){");
-        this.bodyEmitter.writeLn("var _ = O.local;");
+        this.bodyEmitter.writeLn("var _=O.local;");
 
         // Restore locals.
         var restoreLocals = [];
@@ -982,9 +982,14 @@ module J2ME {
 
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string, forceInline: boolean = false) {
       // Only emit throw unwinds if it saves on code size.
-      if (!forceInline && this.blockMap.invokeCount > 2 && this.stack.length < 256) {
+      if (!forceInline && this.blockMap.invokeCount > 2 &&
+          this.stack.length < 8) {
         this.flushBlockStack();
-        emitter.writeLn("U&&TU(" + UnwindThrowLocation.encode(pc, nextPC, this.sp) + ");");
+        if (<any>nextPC - <any>pc === 3) {
+          emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
+        } else {
+          emitter.writeLn("U&&B" + this.sp + "(" + pc + "," + nextPC + ");");
+        }
         this.hasUnwindThrow = true;
       } else {
         var local = this.local.join(",");
