@@ -162,29 +162,29 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
         casper.waitForText("DONE", function() {
             test.assertTextExists("I m\n" +
                                   "I a ma\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I ma\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I 1 isolate\n" +
                                   "I Isolate ID correct\n" +
-                                  "I 4\n" +
                                   "I 5\n" +
+                                  "I 6\n" +
                                   "I 1 isolate\n" +
                                   "I ma\n" +
                                   "I ma\n" +
                                   "I 3 isolates\n" +
                                   "I 1 m1\n" +
-                                  "I 4\n" +
-                                  "I 2 m2\n" +
                                   "I 5\n" +
+                                  "I 2 m2\n" +
+                                  "I 6\n" +
                                   "I ma\n" +
                                   "I 1 isolate\n" +
                                   "I Isolates terminated\n" +
                                   "I r mar\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I mar\n" +
                                   "I c marc\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I marc\n" +
                                   "I Main isolate still running");
         });

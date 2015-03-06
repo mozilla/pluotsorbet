@@ -11,6 +11,18 @@ module J2ME {
         }
       }
     },
+    "java/lang/Class": {
+      fields: {
+        instanceSymbols: {
+          "status.I": "status"
+        }
+      },
+      methods: {
+        instanceSymbols: {
+          "initialize.()V": "initialize"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
@@ -194,6 +206,8 @@ module J2ME {
        * RuntimeKlass associated with this Class object.
        */
       runtimeKlass: RuntimeKlass;
+      status: number;
+      initialize(): void;
     }
 
     export interface String extends java.lang.Object {

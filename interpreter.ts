@@ -26,6 +26,14 @@ module J2ME {
     traceWriter.writeLn(toDebugString(array) + "[" + index + "] (" + toDebugString(array[index]) + ")");
   }
 
+  function classInitAndUnwindCheck(classInfo: ClassInfo, pc: number) {
+    classInitCheck(classInfo);
+    if (U) {
+      $.ctx.current().pc = pc;
+      return;
+    } 
+  }
+
   /**
    * Optimize method bytecode.
    */
@@ -937,7 +945,7 @@ module J2ME {
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo, false);
-            classInitCheck(classInfo, frame.pc - 3);
+            classInitAndUnwindCheck(classInfo, frame.pc - 3);
             size = stack.pop();
             stack.push(newArray(classInfo.klass, size));
             break;
@@ -992,7 +1000,7 @@ module J2ME {
           case Bytecodes.GETSTATIC:
             index = frame.read16();
             fieldInfo = resolveField(index, mi.classInfo, true);
-            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
+            classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -1002,7 +1010,7 @@ module J2ME {
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
             fieldInfo = resolveField(index, mi.classInfo, true);
-            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
+            classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -1011,7 +1019,7 @@ module J2ME {
           case Bytecodes.NEW:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo, false);
-            classInitCheck(classInfo, frame.pc - 3);
+            classInitAndUnwindCheck(classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -1141,7 +1149,7 @@ module J2ME {
             }
 
             if (isStatic) {
-              classInitCheck(calleeMethodInfo.classInfo, lastPC);
+              classInitAndUnwindCheck(calleeMethodInfo.classInfo, lastPC);
               if (U) {
                 return;
               }
