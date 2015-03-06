@@ -1387,7 +1387,7 @@ module J2ME {
     };
   }
 
-  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function) {
+  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo, globalFn: Function, alwaysUpdateGlobalObject: boolean = false) {
     var fn;
     var methodType;
     var nativeMethod = findNativeMethodImplementation(methodInfo);
@@ -1429,7 +1429,7 @@ module J2ME {
     methodInfo.fn = fn;
 
     // Link even non-static methods globally so they can be invoked statically via invokespecial.
-    if (updateGlobalObject) {
+    if (alwaysUpdateGlobalObject || updateGlobalObject) {
       jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
     }
     if (!methodInfo.isStatic) {
@@ -1448,7 +1448,7 @@ module J2ME {
       }
 
       var lazyFn = function() {
-        linkKlassMethod(klass, methodInfo, globalFn);
+        linkKlassMethod(klass, methodInfo, globalFn, true);
         return methodInfo.fn.apply(this, arguments);
       };
 
