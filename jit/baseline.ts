@@ -1021,7 +1021,7 @@ module J2ME {
         return;
       }
       emitter.writeLn("PS++;");
-      emitter.writeLn("if((PS & " + preemptionSampleMask + ")===0)PE();");
+      emitter.writeLn("if((PS&" + preemptionSampleMask + ")===0)PE();");
       this.emitUnwind(emitter, String(nextPC), String(nextPC));
     }
 
