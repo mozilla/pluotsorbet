@@ -744,7 +744,7 @@ module J2ME.Bytecode {
    * Determines if a given opcode denotes an instruction that stores a value to a local variable
    * after popping it from the operand stack.
    */
-  function isInvoke(opcode: Bytecodes): boolean {
+  export function isInvoke(opcode: Bytecodes): boolean {
     return (flags[opcode & 0xff] & Flags.INVOKE) != 0;
   }
 

@@ -402,7 +402,7 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
             return;
         var classInfo = methodInfo.classInfo;
         var className = classInfo.className;
-        this.stackTrace.unshift({ className: className, methodName: methodName, offset: frame.bci });
+        this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
     }.bind(this));
 };
 
