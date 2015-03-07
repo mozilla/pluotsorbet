@@ -766,10 +766,20 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(bci: number, nextBCI: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+    B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, bci, nextBCI, local, stack, lockObject);
+      $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
+    }
+
+    /**
+     * Bailout callback whenever a JIT frame is unwound that uses a slightly different calling
+     * convetion that makes it more convenient to emit in some cases.
+     */
+    T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
+      var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
+      release || assert(methodInfo !== undefined);
+      $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
     }
 
     yield(reason: string) {
@@ -1896,6 +1906,40 @@ module J2ME {
       $.yield("preemption");
     }
   }
+
+  export class UnwindThrowLocation {
+    static instance: UnwindThrowLocation = new UnwindThrowLocation();
+    constructor() {
+      this.location = 0;
+    }
+    static encode(pc, nextPC, sp) {
+      var delta = nextPC - pc;
+      release || assert (delta >= 0 && delta < 8, delta);
+      release || assert (sp >= 0 && sp < 256, sp);
+      return pc << 11 | delta << 8 | sp;
+    }
+    location: number;
+    set(location: number) {
+      this.location = location;
+      return this;
+    }
+    getPC() {
+      return (this.location >> 11) & 0xffff;
+    }
+    getNextPC() {
+      return this.getPC() + ((this.location >> 8) & 0x07);
+    }
+    getSP() {
+      return this.location & 0xff;
+    }
+  }
+
+  export function throwUnwind(location: number) {
+    if (location === 0) {
+      debugger;
+    }
+    throw UnwindThrowLocation.instance.set(location);
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1908,6 +1952,8 @@ var AOTMD = J2ME.aotMetaData;
  * read very often.
  */
 var U: J2ME.VMState = J2ME.VMState.Running;
+
+var TU = J2ME.throwUnwind;
 
 /**
  * OSR Frame.

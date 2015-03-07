@@ -312,6 +312,8 @@ module J2ME {
      */
     static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
+    private hasUnwindThrow;
+
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
       this.local = [];
@@ -330,6 +332,7 @@ module J2ME {
       this.bodyEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.blockEmitter = new Emitter(target !== CompilationTarget.Runtime);
       this.target = target;
+      this.hasUnwindThrow = false;
     }
 
     compile(): CompiledMethodInfo {
@@ -388,11 +391,6 @@ module J2ME {
         this.bodyEmitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
 
-      needsWhile && this.bodyEmitter.enter("while (1) {");
-      needsTry && this.bodyEmitter.enter("try {");
-
-      this.bodyEmitter.writeLn("var label = 0;");
-
       var blocks = blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
@@ -407,12 +405,24 @@ module J2ME {
         this.emitBlockBody(stream, block);
       }
 
+      if (this.hasUnwindThrow) {
+        needsTry = true;
+      }
+
+      needsWhile && this.bodyEmitter.enter("while (1) {");
+      needsTry && this.bodyEmitter.enter("try {");
+      this.bodyEmitter.writeLn("var label = 0;");
       this.bodyEmitter.writeLns(Relooper.render(this.entryBlock));
 
       emitCompilerAssertions && this.bodyEmitter.writeLn("J2ME.Debug.assert(false, 'Invalid PC: ' + pc)");
 
       if (needsTry) {
         this.bodyEmitter.leaveAndEnter("} catch (ex) {");
+        if (this.hasUnwindThrow) {
+          var local = this.local.join(", ");
+          var stack = this.stack.join(", ");
+          this.bodyEmitter.writeLn("if (U) { $.T(ex, [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
+        }
         this.bodyEmitter.writeLn(this.getStackName(0) + " = TE(ex);");
         this.blockStack = [this.getStackName(0)];
         this.sp = 1;
@@ -977,10 +987,17 @@ module J2ME {
       this.emitPush(Kind.Reference, "NM(" + classConstant(classInfo) + ", [" + dimensions.join(", ") + "])", Precedence.Call);
     }
 
-    private emitUnwind(emitter: Emitter, pc: string, nextPC: string) {
-      var local = this.local.join(", ");
-      var stack = this.blockStack.slice(0, this.sp).join(", ");
-      emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
+    private emitUnwind(emitter: Emitter, pc: string, nextPC: string, forceInline: boolean = false) {
+      // Only emit throw unwinds if it saves on code size.
+      if (!forceInline && this.blockMap.invokeCount > 2 && this.stack.length < 256) {
+        this.flushBlockStack();
+        emitter.writeLn("U && TU(" + UnwindThrowLocation.encode(pc, nextPC, this.sp) + ");");
+        this.hasUnwindThrow = true;
+      } else {
+        var local = this.local.join(", ");
+        var stack = this.blockStack.slice(0, this.sp).join(", ");
+        emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
+      }
       baselineCounter && baselineCounter.count("emitUnwind");
     }
 
@@ -998,7 +1015,7 @@ module J2ME {
       this.needsVariable("lk");
       emitter.writeLn("lk = " + object + "._lock;");
       emitter.enter("if (lk && lk.level === 0) { lk.thread = th; lk.level = 1; } else { ME(" + object + ");");
-      this.emitUnwind(emitter, String(this.pc), String(nextPC));
+      this.emitUnwind(emitter, String(this.pc), String(nextPC), true);
       emitter.leave("}");
     }
 
