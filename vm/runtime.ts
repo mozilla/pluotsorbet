@@ -64,7 +64,7 @@ module J2ME {
   /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
    */
-  var hashedMangledNames = false;
+  var hashedMangledNames = release;
 
   /**
    * Traces method execution.
@@ -1909,36 +1909,72 @@ module J2ME {
 
   export class UnwindThrowLocation {
     static instance: UnwindThrowLocation = new UnwindThrowLocation();
+    pc: number;
+    sp: number;
+    nextPC: number;
     constructor() {
-      this.location = 0;
+      this.pc = 0;
+      this.sp = 0;
+      this.nextPC = 0;
     }
-    static encode(pc, nextPC, sp) {
-      var delta = nextPC - pc;
-      release || assert (delta >= 0 && delta < 8, delta);
-      release || assert (sp >= 0 && sp < 256, sp);
-      return pc << 11 | delta << 8 | sp;
-    }
-    location: number;
-    set(location: number) {
-      this.location = location;
+    setLocation(pc: number, nextPC: number, sp: number) {
+      this.pc = pc;
+      this.sp = sp;
+      this.nextPC = nextPC;
       return this;
     }
     getPC() {
-      return (this.location >> 11) & 0xffff;
-    }
-    getNextPC() {
-      return this.getPC() + ((this.location >> 8) & 0x07);
+      return this.pc;
     }
     getSP() {
-      return this.location & 0xff;
+      return this.sp;
+    }
+    getNextPC() {
+      return this.nextPC;
     }
   }
 
-  export function throwUnwind(location: number) {
-    if (location === 0) {
-      debugger;
-    }
-    throw UnwindThrowLocation.instance.set(location);
+  /**
+   * Generic unwind throw.
+   */
+  export function throwUnwind(pc: number, nextPC: number = pc + 3, sp: number = 0) {
+    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, sp);
+  }
+
+  /**
+   * Unwind throws with different stack heights. This is useful so we can
+   * save a few bytes encoding the stack height in the function name.
+   */
+  export function throwUnwind0(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 0);
+  }
+
+  export function throwUnwind1(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 1);
+  }
+
+  export function throwUnwind2(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 2);
+  }
+
+  export function throwUnwind3(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 3);
+  }
+
+  export function throwUnwind4(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 4);
+  }
+
+  export function throwUnwind5(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 5);
+  }
+
+  export function throwUnwind6(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 6);
+  }
+
+  export function throwUnwind7(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 7);
   }
 }
 
@@ -1953,7 +1989,16 @@ var AOTMD = J2ME.aotMetaData;
  */
 var U: J2ME.VMState = J2ME.VMState.Running;
 
-var TU = J2ME.throwUnwind;
+// Several unwind throws for different stack heights.
+
+var B0 = J2ME.throwUnwind0;
+var B1 = J2ME.throwUnwind1;
+var B2 = J2ME.throwUnwind2;
+var B3 = J2ME.throwUnwind3;
+var B4 = J2ME.throwUnwind4;
+var B5 = J2ME.throwUnwind5;
+var B6 = J2ME.throwUnwind6;
+var B7 = J2ME.throwUnwind7;
 
 /**
  * OSR Frame.

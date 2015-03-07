@@ -187,7 +187,6 @@ module J2ME {
 
     var jarFiles = Object.create(null);
 
-    release = releaseOption.value;
     var jvm = new JVM();
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
