@@ -64,6 +64,7 @@ module J2ME {
     "java/lang/Class.newInstance.()Ljava/lang/Object;": YieldReason.Root,
     "java/lang/Thread.yield.()V": YieldReason.Root,
     "java/lang/Thread.start0.()V": YieldReason.Root,
+    "java/lang/Class.forName0.(Ljava/lang/String;)V": YieldReason.Root,
     // Test Files:
     "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
@@ -87,8 +88,9 @@ module J2ME {
   }
 
   export function isFinalMethod(methodInfo: MethodInfo): boolean {
-    // XXX Determine whether we can start using the code in this function.
-    return false;
+    return methodInfo.isFinal;
+    // XXX The following can only be used if every class in all jars is loaded.
+    /*
     var result = methodInfo.isFinal;
     if (!result) {
       var classInfo = methodInfo.classInfo;
@@ -107,6 +109,7 @@ module J2ME {
       }
     }
     return result;
+    */
   }
 
   export function gatherCallees(callees: MethodInfo [], classInfo: ClassInfo, methodInfo: MethodInfo) {
@@ -190,6 +193,22 @@ module J2ME {
 
   }
 
+  export function canStaticInitializerYield(classInfo: ClassInfo): YieldReason {
+    var result = YieldReason.None;
+    while (classInfo) {
+      var staticInitializer = classInfo.staticInitializer;
+      classInfo = classInfo.superClass;
+      if (!staticInitializer) {
+        continue;
+      }
+      result = canYield(staticInitializer);
+      if (result !== YieldReason.None) {
+        return result;
+      }
+    }
+    return result;
+  }
+
   export function canYield(methodInfo: MethodInfo): YieldReason {
     yieldWriter && yieldWriter.enter("> " + methodInfo.implKey);
     if (yieldMap[methodInfo.implKey] !== undefined) {
@@ -219,6 +238,14 @@ module J2ME {
       while (stream.currentBCI < methodInfo.code.length) {
         var op: Bytecodes = stream.currentBC();
         switch (op) {
+          case Bytecodes.NEW:
+          case Bytecodes.GETSTATIC:
+          case Bytecodes.PUTSTATIC:
+            var cpi = stream.readCPI();
+            var fieldInfo = methodInfo.classInfo.resolve(cpi, true);
+            var classInfo = fieldInfo.classInfo;
+            result = canStaticInitializerYield(classInfo);
+            break;
           case Bytecodes.MONITORENTER:
           case Bytecodes.MONITOREXIT:
             result = YieldReason.MonitorEnterExit;
@@ -240,6 +267,13 @@ module J2ME {
             if (op !== Bytecodes.INVOKESTATIC) {
               if (yieldVirtualMap[methodInfo.implKey] === YieldReason.None) {
                 result = YieldReason.None;
+                break;
+              }
+            }
+
+            if (op === Bytecodes.INVOKESTATIC) {
+              result = canStaticInitializerYield(methodInfo.classInfo);
+              if (result !== YieldReason.None) {
                 break;
               }
             }

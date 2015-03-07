@@ -298,6 +298,7 @@ com/sun/midp/lcdui/DisplayDevice.isPrimaryDisplay.()Z
 com/sun/midp/main/MIDletProxy.getClassName.()Ljava/lang/String;
 com/sun/midp/rms/RmsEnvironment.getSecureFilenameBase.(I)Ljava/lang/String;
 com/sun/midp/midletsuite/SuiteContainerAdapter.getSecureFilenameBase.(I)Ljava/lang/String;
+java/lang/Class.initialize.()V
 com/nokia/mid/ui/gestures/GestureEventImpl.getType.()I
 com/nokia/mid/ui/gestures/GestureEventImpl.getDragDistanceX.()I
 com/nokia/mid/ui/gestures/GestureEventImpl.getDragDistanceY.()I

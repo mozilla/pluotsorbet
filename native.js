@@ -260,7 +260,7 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
-    return J2ME.getRuntimeKlass($.ctx.runtime, this.klass).classObject;
+    return $.getRuntimeKlass(this.klass).classObject;
 };
 
 Native["java/lang/Object.wait.(J)V"] = function(timeout) {
@@ -275,65 +275,56 @@ Native["java/lang/Object.notifyAll.()V"] = function() {
     $.ctx.notify(this, true);
 };
 
-Native["java/lang/Class.invoke_clinit.()V"] = function() {
-    var classInfo = this.classInfo;
-    var className = classInfo.className;
-    var runtime = $.ctx.runtime;
-    if (runtime.initialized[className] || runtime.pending[className])
-        return;
-    runtime.pending[className] = true;
-    if (className === "com/sun/cldc/isolate/Isolate") {
-        // The very first isolate is granted access to the isolate API.
-        var isolate = classInfo.getStaticObject($.ctx);
-        CLASSES.getField(classInfo, "S._API_access_ok.I").set(isolate, 1);
+Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
+    var superKlass = this.runtimeKlass.templateKlass.superKlass;
+    if (!superKlass) {
+      return null;
     }
-    var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
+    return superKlass.classInfo.getClassObject();
+};
 
-    var frames = [];
+Native["java/lang/Class.invoke_clinit.()V"] = function() {
+    var classInfo = this.runtimeKlass.templateKlass.classInfo;
+    var className = classInfo.className;
+    var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
     if (clinit && clinit.classInfo.className === className) {
-        frames.push(Frame.create(clinit, [], 0));
-    }
-    if (classInfo.superClass) {
-        var classInitFrame = $.ctx.getClassInitFrame(classInfo.superClass);
-        if (classInitFrame) {
-            frames.push(classInitFrame);
-        }
-    }
-    if (frames.length) {
-        $.ctx.executeFrames(frames);
+        $.ctx.executeFrames([Frame.create(clinit, [], 0)]);
     }
 };
 
+Native["java/lang/Class.invoke_verify.()V"] = function() {
+    // There is currently no verification.
+};
+
 Native["java/lang/Class.init9.()V"] = function() {
-    var classInfo = this.classInfo;
-    var className = classInfo.className;
-    var runtime = $.ctx.runtime;
-    if (runtime.initialized[className])
-        return;
-    runtime.pending[className] = false;
-    runtime.initialized[className] = true;
+    $.setClassInitialized(this.runtimeKlass);
 };
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function() {
     return J2ME.newString(this.runtimeKlass.templateKlass.classInfo.className.replace(/\//g, "."));
 };
 
-Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
-    try {
-        if (!name)
-            throw new J2ME.ClassNotFoundException();
-        var className = util.fromJavaString(name).replace(/\./g, "/");
-        var classInfo = null;
-        classInfo = CLASSES.getClass(className);
-    } catch (e) {
-        if (e instanceof (J2ME.ClassNotFoundException))
-            throw $.newClassNotFoundException("'" + e.message + "' not found.");
-        throw e;
-    }
-    J2ME.linkKlass(classInfo);
-    var classObject = classInfo.getClassObject();
-    J2ME.Debug.assert(!U, "Unwinding isn't currently supported here.");
-    return classObject;
+Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
+  var classInfo = null;
+  try {
+    if (!name)
+      throw new J2ME.ClassNotFoundException();
+    var className = util.fromJavaString(name).replace(/\./g, "/");
+    classInfo = CLASSES.getClass(className);
+  } catch (e) {
+    if (e instanceof (J2ME.ClassNotFoundException))
+      throw $.newClassNotFoundException("'" + e.message + "' not found.");
+    throw e;
+  }
+  // The following can trigger an unwind.
+  J2ME.classInitCheck(classInfo);
+};
+
+Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
+  var className = util.fromJavaString(name).replace(/\./g, "/");
+  var classInfo = CLASSES.getClass(className);
+  var classObject = classInfo.getClassObject();
+  return classObject;
 };
 
 Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
@@ -550,18 +541,33 @@ Native["java/lang/Thread.start0.()V"] = function() {
           { name_index: 9, signature_index: 10 },
           { bytes: "internalExit" },
           { bytes: "()V" },
+          { tag: TAGS.CONSTANT_Methodref, class_index: 12, name_and_type_index: 14 },
+          { tag: TAGS.CONSTANT_Class, name_index: 13 },
+          { bytes: "java/lang/Object" },
+          { name_index: 15, signature_index: 16 },
+          { bytes: "notifyAll" },
+          { bytes: "()V" },
         ]},
       }),
       code: new Uint8Array([
         0x2a,             // aload_0
         0x59,             // dup
-        0xb6, 0x00, 0x01, // invokespecial <idx=1>
-        0xb7, 0x00, 0x07, // invokespecial <idx=7>
+        0xb6, 0x00, 0x01, // invokevitual <idx=1> Thread.run
+        0xb7, 0x00, 0x07, // invokespecial <idx=7> Thread.internalExit
+        0x2a,             // aload_0
+        0x59,             // dup
+        0x4c,             // astore_1
+        0xc2,             // monitorenter
+        0x2a,             // aload_0
+        // Signal waiters waiting on thread
+        0xb7, 0x00, 0x0b, // invokespecial <idx=11> Object.notifyAll
+        0x2b,             // aload_1
+        0xc3,             // monitorexit
         0xb1,             // return
       ])
     });
 
-    newCtx.start(new Frame(syntheticMethod, [ this ], 0));
+    newCtx.start([new Frame(syntheticMethod, [ this ], 0)]);
 };
 
 Native["java/lang/Thread.internalExit.()V"] = function() {

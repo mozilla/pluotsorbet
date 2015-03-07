@@ -208,7 +208,7 @@ module J2ME {
       this.isStatic = opts.isStatic;
       this.isSynchronized = opts.isSynchronized;
       this.isAbstract = opts.isAbstract;
-      this.isFinal = opts.isAbstract;
+      this.isFinal = opts.isFinal;
       this.state = MethodState.Cold;
       this.key = (this.isStatic ? "S." : "I.") + this.name + "." + this.signature;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
@@ -453,27 +453,18 @@ module J2ME {
      * are stored for this class.
      */
     getClassObject(): java.lang.Class {
-      return getRuntimeKlass($, this.klass).classObject;
+      return $.getRuntimeKlass(this.klass).classObject;
     }
 
     /**
      * Object that holds static properties for this class.
      */
     getStaticObject(ctx: Context): java.lang.Object {
-      return <java.lang.Object><any>getRuntimeKlass(ctx.runtime, this.klass);
+      return <java.lang.Object><any>ctx.runtime.getRuntimeKlass(this.klass);
     }
 
     getField(fieldKey: string) : FieldInfo {
       return CLASSES.getField(this, fieldKey);
-    }
-
-    getClassInitLockObject(ctx: Context) {
-      if (!(this.className in ctx.runtime.classInitLockObjects)) {
-        ctx.runtime.classInitLockObjects[this.className] = {
-          classInfo: this
-        };
-      }
-      return ctx.runtime.classInitLockObjects[this.className];
     }
 
     toString() {
