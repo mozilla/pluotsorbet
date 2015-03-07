@@ -80,4 +80,11 @@ public final class Sys {
   public static void throwException(Exception e) throws Exception {
     throw e;
   }
+
+  public static void runThread(Thread t) {
+    t.run();
+    synchronized (t) {
+      t.notifyAll();
+    }
+  }
 }
