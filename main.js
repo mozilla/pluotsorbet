@@ -33,7 +33,9 @@ var getMobileInfo = new Promise(function(resolve, reject) {
   });
 });
 
-var loadingPromises = [initFS, getMobileInfo];
+var loadingMIDletPromises = [initFS, getMobileInfo];
+
+var loadingPromises = [];
 
 loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data) {
   JARStore.addBuiltIn("java/classes.jar", data);
@@ -41,7 +43,7 @@ loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data)
 }));
 
 jars.forEach(function(jar) {
-  loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
+  loadingMIDletPromises.push(load(jar, "arraybuffer").then(function(data) {
     JARStore.addBuiltIn(jar, data);
   }));
 });
@@ -67,7 +69,7 @@ function processJAD(data) {
 }
 
 if (config.jad) {
-  loadingPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
+  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
 }
 
 function performDownload(url, dialog, callback) {
@@ -118,7 +120,7 @@ function performDownload(url, dialog, callback) {
 }
 
 if (config.downloadJAD) {
-  loadingPromises.push(new Promise(function(resolve, reject) {
+  loadingMIDletPromises.push(new Promise(function(resolve, reject) {
     JARStore.loadJAR("midlet.jar").then(function(loaded) {
       if (loaded) {
         processJAD(JARStore.getJAD());
