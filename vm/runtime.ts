@@ -1480,29 +1480,29 @@ module J2ME {
   }
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
-      var lazyFn = function lazyFn() {
-        // TODO: figure out why this assertion fails
-        // for java/lang/Object.getClass.()Ljava/lang/Class;
-        // (java_lang_Object_getClass_G_UxuCaT).
-        // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
+    var lazyFn = function lazyFn() {
+      // TODO: figure out why this assertion fails
+      // for java/lang/Object.getClass.()Ljava/lang/Class;
+      // (java_lang_Object_getClass_G_UxuCaT).
+      // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
 
-        linkKlassMethod(methodInfo, true);
+      linkKlassMethod(methodInfo, true);
 
-        return methodInfo.fn.apply(this, arguments);
-      };
+      return methodInfo.fn.apply(this, arguments);
+    };
 
-      jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = lazyFn;
+    jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = lazyFn;
 
-      if (!methodInfo.isStatic) {
-        methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = lazyFn;
-        var classBindings = Bindings[methodInfo.classInfo.className];
-        if (instanceSymbols) {
-          var methodKey = instanceSymbols[methodInfo.name + "." + methodInfo.signature];
-          if (methodKey) {
-            methodInfo.classInfo.klass.prototype[methodKey] = lazyFn;
-          }
+    if (!methodInfo.isStatic) {
+      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = lazyFn;
+      var classBindings = Bindings[methodInfo.classInfo.className];
+      if (instanceSymbols) {
+        var methodKey = instanceSymbols[methodInfo.name + "." + methodInfo.signature];
+        if (methodKey) {
+          methodInfo.classInfo.klass.prototype[methodKey] = lazyFn;
         }
       }
+    }
   }
 
   function linkKlassMethods(klass: Klass) {
