@@ -1834,9 +1834,6 @@ module J2ME {
   export function checkArrayStore(array: java.lang.Object, value: any) {
     var arrayKlass = array.klass;
     if (value && !isAssignableTo(value.klass, arrayKlass.elementKlass)) {
-      debugger;
-    }
-    if (value && !isAssignableTo(value.klass, arrayKlass.elementKlass)) {
       throw $.newArrayStoreException();
     }
   }
