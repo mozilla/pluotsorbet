@@ -204,8 +204,35 @@ Media.PlayerCache = {
 function AudioPlayer(playerContainer) {
     this.playerContainer = playerContainer;
 
+    this.messageHandlers = {
+        mediaTime: [],
+        duration: []
+    };
+
+    this.sender = DumbPipe.open("audioplayer", {}, function(message) {
+        switch (message.type) {
+            case "end":
+                MIDP.sendEndOfMediaEvent(this.playerContainer.pId, message.duration);
+                break;
+            case "mediaTime": // fall through
+            case "duration":
+                var f = this.messageHandlers[message.type].shift();
+                if (f) {
+                    f(message.data);
+                }
+                break;
+            default:
+                console.error("Unknown audioplayer message type: " + message.type)
+                break;
+        }
+    }.bind(this));
+
     /* @type HTMLAudioElement */
     this.audio = new Audio();
+    this.paused = true;
+    this.loaded = false;
+    this.volume = 100;
+    this.muted = false;
 
     this.isVideoControlSupported = false;
     this.isVolumeControlSupported = true;
@@ -215,70 +242,69 @@ AudioPlayer.prototype.realize = function() {
     return Promise.resolve(1);
 };
 
-AudioPlayer.prototype.play = function() {
-    this.audio.play();
-    this.audio.onended = function() {
-        MIDP.sendEndOfMediaEvent(this.playerContainer.pId, this.getDuration());
-    }.bind(this);
-};
-
 AudioPlayer.prototype.start = function() {
     if (this.playerContainer.contentSize == 0) {
         console.warn("Cannot start playing.");
         return;
     }
 
-    if (this.audio.src) {
-        this.play();
-        return;
+    var array = null;
+    if (!this.loaded) {
+        var data = this.playerContainer.data.subarray(0, this.playerContainer.contentSize);
+        // Convert the data to a regular Array to traverse the mozbrowser boundary.
+        var array = Array.prototype.slice.call(data);
+        array.constructor = Array;
+        this.loaded = true;
     }
-
-    new Promise(function(resolve, reject) {
-        var blob = new Blob([ this.playerContainer.data.subarray(0, this.playerContainer.contentSize) ],
-                            { type: this.playerContainer.contentType });
-        this.audio.src = URL.createObjectURL(blob);
-        this.audio.onloadedmetadata = function() {
-            resolve();
-            this.play();
-        }.bind(this);
-        this.audio.onerror = reject;
-    }.bind(this)).done(function() {
-        URL.revokeObjectURL(this.audio.src);
-    }.bind(this));
+    this.sender({
+        type: "start",
+        contentType: this.playerContainer.contentType,
+        data: array
+    });
+    this.paused = false;
 };
 
 AudioPlayer.prototype.pause = function() {
-    if (this.audio.paused) {
+    if (this.paused) {
         return;
     }
-    this.audio.onended = null;
-    this.audio.pause();
+    this.sender({ type: "pause" });
+    this.paused = true;
 };
 
 AudioPlayer.prototype.resume = function() {
-    if (!this.audio.paused) {
+    if (!this.paused) {
         return;
     }
-    this.play();
+    this.sender({ type: "play" });
+    this.paused = false;
 };
 
 AudioPlayer.prototype.close = function() {
-    this.audio.pause();
-    this.audio.src = "";
+    this.sender({ type: "close" });
+    this.paused = true;
+    this.loaded = false;
+    DumbPipe.close(this.sender);
 };
 
 AudioPlayer.prototype.getMediaTime = function() {
-    return Math.round(this.audio.currentTime * 1000);
+    var p =  new Promise(function(resolve, reject) {
+        this.sender({ type: "getMediaTime" });
+        this.messageHandlers.mediaTime.push(function(data) {
+            resolve(data);
+        });
+    }.bind(this));
+    asyncImpl("I", p);
 };
 
 // The range of ms has already been checked, we don't need to check it again.
 AudioPlayer.prototype.setMediaTime = function(ms) {
-    this.audio.currentTime = ms / 1000;
+    this.sender({ type: "setMediaTime", data: ms });
     return ms;
 };
 
 AudioPlayer.prototype.getVolume = function() {
-    return Math.floor(this.audio.volume * 100);
+    return this.volume;
 };
 
 AudioPlayer.prototype.setVolume = function(level) {
@@ -287,20 +313,28 @@ AudioPlayer.prototype.setVolume = function(level) {
     } else if (level > 100) {
         level = 100;
     }
-    this.audio.volume = level / 100;
+    this.sender({ type: "setVolume", data: level });
+    this.volume = level;
     return level;
 };
 
 AudioPlayer.prototype.getMute = function() {
-    return this.audio.muted;
+    return this.muted;
 };
 
 AudioPlayer.prototype.setMute = function(mute) {
-    this.audio.muted = mute;
+    this.muted = mute;
+    this.sender({ type: "setMute", data: mute });
 };
 
 AudioPlayer.prototype.getDuration = function() {
-    return Math.round(this.audio.duration * 1000);
+    var p = new Promise(function(resolve, reject) {
+        this.sender({ type: "getDuration" });
+        this.messageHandlers.duration.push(function(data) {
+            resolve(data);
+        });
+    }.bind(this));
+    asyncImpl("I", p);
 };
 
 function ImagePlayer(playerContainer) {

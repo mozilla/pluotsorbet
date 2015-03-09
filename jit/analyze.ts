@@ -48,6 +48,8 @@ module J2ME {
     "org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.receiveData.([B)I": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.waitConnection.()V": YieldReason.Root,
+    "com/sun/mmedia/DirectPlayer.nGetDuration.(I)I": YieldReason.Root,
+    "com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I": YieldReason.Root,
     "com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z": YieldReason.Root,
     "com/sun/mmedia/DirectRecord.nPause.(I)I": YieldReason.Root,
     "com/sun/mmedia/DirectRecord.nStop.(I)I": YieldReason.Root,
