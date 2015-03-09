@@ -402,7 +402,7 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
             return;
         var classInfo = methodInfo.classInfo;
         var className = classInfo.className;
-        this.stackTrace.unshift({ className: className, methodName: methodName, offset: frame.bci });
+        this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
     }.bind(this));
 };
 
@@ -499,13 +499,10 @@ Native["java/lang/Thread.start0.()V"] = function() {
     var newCtx = new Context($.ctx.runtime);
     newCtx.thread = this;
 
-    var run = this.klass.classInfo.getMethodByName("run", "()V", false);
+    var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
+    var run = classInfo.getMethodByName("runThread", "(Ljava/lang/Thread;)V", true);
     newCtx.start([new Frame(run, [ this ], 0)]);
 }
-
-Native["java/lang/Thread.internalExit.()V"] = function() {
-    this.alive = false;
-};
 
 Native["java/lang/Thread.isAlive.()Z"] = function() {
     return this.alive ? 1 : 0;

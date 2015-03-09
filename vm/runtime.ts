@@ -64,7 +64,7 @@ module J2ME {
   /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
    */
-  var hashedMangledNames = false;
+  var hashedMangledNames = release;
 
   /**
    * Traces method execution.
@@ -766,10 +766,20 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(bci: number, nextBCI: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+    B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, bci, nextBCI, local, stack, lockObject);
+      $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
+    }
+
+    /**
+     * Bailout callback whenever a JIT frame is unwound that uses a slightly different calling
+     * convetion that makes it more convenient to emit in some cases.
+     */
+    T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
+      var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
+      release || assert(methodInfo !== undefined);
+      $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
     }
 
     yield(reason: string) {
@@ -1905,6 +1915,76 @@ module J2ME {
       $.yield("preemption");
     }
   }
+
+  export class UnwindThrowLocation {
+    static instance: UnwindThrowLocation = new UnwindThrowLocation();
+    pc: number;
+    sp: number;
+    nextPC: number;
+    constructor() {
+      this.pc = 0;
+      this.sp = 0;
+      this.nextPC = 0;
+    }
+    setLocation(pc: number, nextPC: number, sp: number) {
+      this.pc = pc;
+      this.sp = sp;
+      this.nextPC = nextPC;
+      return this;
+    }
+    getPC() {
+      return this.pc;
+    }
+    getSP() {
+      return this.sp;
+    }
+    getNextPC() {
+      return this.nextPC;
+    }
+  }
+
+  /**
+   * Generic unwind throw.
+   */
+  export function throwUnwind(pc: number, nextPC: number = pc + 3, sp: number = 0) {
+    throw UnwindThrowLocation.instance.setLocation(pc, nextPC, sp);
+  }
+
+  /**
+   * Unwind throws with different stack heights. This is useful so we can
+   * save a few bytes encoding the stack height in the function name.
+   */
+  export function throwUnwind0(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 0);
+  }
+
+  export function throwUnwind1(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 1);
+  }
+
+  export function throwUnwind2(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 2);
+  }
+
+  export function throwUnwind3(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 3);
+  }
+
+  export function throwUnwind4(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 4);
+  }
+
+  export function throwUnwind5(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 5);
+  }
+
+  export function throwUnwind6(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 6);
+  }
+
+  export function throwUnwind7(pc: number, nextPC: number = pc + 3) {
+    throwUnwind(pc, nextPC, 7);
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1917,6 +1997,17 @@ var AOTMD = J2ME.aotMetaData;
  * read very often.
  */
 var U: J2ME.VMState = J2ME.VMState.Running;
+
+// Several unwind throws for different stack heights.
+
+var B0 = J2ME.throwUnwind0;
+var B1 = J2ME.throwUnwind1;
+var B2 = J2ME.throwUnwind2;
+var B3 = J2ME.throwUnwind3;
+var B4 = J2ME.throwUnwind4;
+var B5 = J2ME.throwUnwind5;
+var B6 = J2ME.throwUnwind6;
+var B7 = J2ME.throwUnwind7;
 
 /**
  * OSR Frame.

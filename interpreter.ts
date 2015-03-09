@@ -109,7 +109,7 @@ module J2ME {
     var className = ex.klass.classInfo.className;
     var detailMessage = util.fromJavaString(ex.klass.classInfo.getFieldByName("detailMessage", "Ljava/lang/String;", false).get(ex));
     return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
-      return " - " + entry.className + "." + entry.methodName + "(), pc=" + entry.offset;
+      return " - " + entry.className + "." + entry.methodName + entry.methodSignature + ", pc=" + entry.offset;
     }).join("\n") + "\n\n";
   }
 
@@ -150,6 +150,7 @@ module J2ME {
         stackTrace.push({
           className: classInfo.className,
           methodName: frame.methodInfo.name,
+          methodSignature: frame.methodInfo.signature,
           offset: frame.pc
         });
       }
