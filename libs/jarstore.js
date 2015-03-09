@@ -137,15 +137,12 @@ var JARStore = (function() {
       return null;
     }
 
-    if (jar.isBuiltIn) {
-      return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    } else {
-      if (fileName.endsWith(".class")) {
-        // Classes are loaded just once and then are cached in ClassRegistry::classes
-        delete jar.directory[fileName];
-      }
-      return bytes.buffer;
+    if (!jar.isBuiltIn && fileName.endsWith(".class")) {
+      // Classes are loaded just once and then are cached in ClassRegistry::classes
+      delete jar.directory[fileName];
     }
+
+    return bytes;
   }
 
   function loadFile(fileName) {

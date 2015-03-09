@@ -105,8 +105,8 @@ module J2ME {
 
     reset(methodInfo: MethodInfo, local: any [], localBase: number) {
       this.methodInfo = methodInfo;
-      this.cp = methodInfo ? methodInfo.classInfo.constant_pool : null;
-      this.code = methodInfo ? methodInfo.code : null;
+      this.cp = methodInfo ? methodInfo.classInfo.constantPool : null;
+      this.code = methodInfo ? methodInfo.codeAttribute.code : null;
       this.pc = 0;
       this.opPC = 0;
       this.stack = [];
@@ -454,7 +454,7 @@ module J2ME {
       release || Debug.assert(!U, "Unexpected unwind during createException.");
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
-      var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
+      var methodInfo = classInfo.getMethodByName("<init>", "(Ljava/lang/String;)V", false);
       jsGlobal[methodInfo.mangledClassAndMethodName].call(exception, message ? newString(message) : null);
 
       return exception;
