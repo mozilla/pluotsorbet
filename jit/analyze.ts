@@ -61,7 +61,6 @@ module J2ME {
     "com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z": YieldReason.Root,
     "java/lang/Object.wait.(J)V": YieldReason.Root,
     "java/lang/Class.invoke_clinit.()V": YieldReason.Root,
-    "java/lang/Class.newInstance.()Ljava/lang/Object;": YieldReason.Root,
     "java/lang/Thread.yield.()V": YieldReason.Root,
     "java/lang/Thread.start0.()V": YieldReason.Root,
     "java/lang/Class.forName0.(Ljava/lang/String;)V": YieldReason.Root,
