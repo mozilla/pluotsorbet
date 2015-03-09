@@ -1517,7 +1517,7 @@ var currentlyFocusedTextEditor;
             return dirtyEditors.shift();
         }
 
-        asyncImpl("I", new Promise(function(resolve, reject) {
+        asyncImpl("Lcom/nokia/mid/ui/TextEditor;", new Promise(function(resolve, reject) {
             textEditorResolve = function() {
                 resolve(dirtyEditors.shift());
             }
