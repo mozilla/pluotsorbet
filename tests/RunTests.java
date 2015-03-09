@@ -134,8 +134,6 @@ public class RunTests extends MIDlet {
         fail += harness.failed();
         knownFail += harness.knownFailed();
         unknownPass += harness.unknownPassed();
-
-        System.out.println("Completed " + name);
     }
 
     public void startApp() {
