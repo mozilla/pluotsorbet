@@ -285,7 +285,7 @@ module J2ME {
               frame = frames[frames.length - 1];
 
               // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
-              returnValue = O.methodInfo.fn();
+              returnValue = Methods[O.methodInfo.mangledClassAndMethodName].call(O.methodInfo);
               if (U) {
                 return;
               }

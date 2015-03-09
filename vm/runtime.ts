@@ -1498,7 +1498,7 @@ module J2ME {
       return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
     };
 
-    jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = indirectFn;
+    jsGlobal[methodInfo.mangledClassAndMethodName] = indirectFn;
 
     if (!methodInfo.isStatic) {
       methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = indirectFn;
@@ -1689,7 +1689,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
-    methodInfo.fn = fn;
+    Methods[mangledClassAndMethodName] = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 
