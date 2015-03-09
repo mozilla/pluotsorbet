@@ -265,6 +265,7 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
     // Graphics tests
 
     gfxTests.forEach(function(testCase) {
+        console.log("Running " + testCase.name);
         casper
         .thenOpen("http://localhost:8000/index.html?fontSize=12&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
         .withFrame(0, function() {
@@ -354,6 +355,7 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
                         } else if (todo) {
                             test.skip(1, testCase.name + " - Todo");
                         } else {
+                            console.log("Completed " + testCase.name);
                             test.pass(testCase.name + " - Pass");
                         }
 
