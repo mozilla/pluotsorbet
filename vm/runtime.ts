@@ -43,6 +43,7 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var CompiledMethodCache;
+  export var Methods = {};
 
   export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
