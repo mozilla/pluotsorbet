@@ -156,12 +156,6 @@ module J2ME {
           superClass = superClass.superClass;
         }
       }
-      //var classes = classInfo.getClasses();
-      // FIXME
-      //classes.forEach(function (c, n) {
-      //  debugger;
-      //  classes[n] = self.loadClass(c.className);
-      //});
       classInfo.complete();
       loadWriter && loadWriter.leave("<");
       return classInfo;

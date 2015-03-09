@@ -4,7 +4,6 @@ module J2ME {
 
   module UTF8 {
     export var Code = new Uint8Array([67, 111, 100, 101]);
-    export var InnerClasses = new Uint8Array([73, 110, 110, 101, 114, 67, 108, 97, 115, 115, 101, 115]);
     export var ConstantValue = new Uint8Array([67, 111, 110, 115, 116, 97, 110, 116, 86, 97, 108, 117, 101]);
   }
 
@@ -624,8 +623,7 @@ module J2ME {
     None          = 0,
     Fields        = 1,
     Methods       = 2,
-    Classes       = 4,
-    Interfaces    = 8
+    Interfaces    = 4
   }
 
   export class CodeAttribute {
@@ -660,7 +658,6 @@ module J2ME {
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
     private fields: (number | FieldInfo) [] = null;
     private methods: (number | MethodInfo) [] = null;
-    private classes: (number | ClassInfo) [] = null;
     private interfaces: (number | ClassInfo) [] = null;
 
     sourceFile: string;
@@ -780,16 +777,6 @@ module J2ME {
         var attribute_name_index = s.readU2();
         var attribute_length = s.readU4();
         var o = s.offset;
-        var attribute_name = this.constantPool.resolveUtf8(attribute_name_index);
-        if (strcmp(attribute_name, UTF8.InnerClasses)) {
-          var number_of_classes = s.readU2();
-          assert (!this.classes);
-          this.classes = new Array(number_of_classes);
-          for(var i = 0; i < number_of_classes; i++) {
-            this.classes[i] = s.offset;
-            s.skip(8);
-          }
-        }
         s.seek(o + attribute_length);
       }
     }
@@ -917,27 +904,6 @@ module J2ME {
       }
       this.resolvedFlags |= ResolvedFlags.Fields;
       return <FieldInfo []>this.fields;
-    }
-
-    getClass(i: number): ClassInfo {
-      if (typeof this.classes[i] === "number") {
-        this.classes[i] = new ClassInfo(null);
-      }
-      return <ClassInfo>this.classes[i];
-    }
-
-    getClasses(): ClassInfo [] {
-      if (!this.classes) {
-        return ArrayUtilities.EMPTY_ARRAY;
-      }
-      if (this.resolvedFlags & ResolvedFlags.Classes) {
-        return <ClassInfo []>this.classes;
-      }
-      for (var i = 0; i < this.classes.length; i++) {
-        this.getClass(i);
-      }
-      this.resolvedFlags |= ResolvedFlags.Classes;
-      return <ClassInfo []>this.classes;
     }
 
     getInterface(i: number): ClassInfo {
