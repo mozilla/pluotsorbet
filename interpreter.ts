@@ -1147,12 +1147,12 @@ module J2ME {
             // to MethodState.Compiled if the method has a native implementation,
             // so we should do something like that instead to reduce the number
             // of methods we link.  We just need to create a better call for it.
-            if (calleeMethodInfo.fn && calleeMethodInfo.fn.name === "lazyFn") {
-              linkKlassMethod(calleeMethodInfo, true);
-            }
-            // if (findNativeMethodImplementation(calleeMethodInfo)) {
-            //   calleeMethodInfo.state = MethodState.Compiled;
+            // if (calleeMethodInfo.fn && calleeMethodInfo.fn.name === "lazyFn") {
+            //   linkKlassMethod(calleeMethodInfo, true);
             // }
+            if (findNativeMethodImplementation(calleeMethodInfo)) {
+              calleeMethodInfo.state = MethodState.Compiled;
+            }
 
             // Fast path for some of the most common interpreter call targets.
             if (calleeMethodInfo.implKey === "java/lang/Object.<init>.()V") {

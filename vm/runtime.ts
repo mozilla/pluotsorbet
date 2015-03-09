@@ -1242,7 +1242,7 @@ module J2ME {
     };
   }
 
-  function findNativeMethodImplementation(methodInfo: MethodInfo) {
+  export function findNativeMethodImplementation(methodInfo: MethodInfo) {
     var implKey = methodInfo.implKey;
     // Look in bindings first.
     var binding = findNativeMethodBinding(methodInfo);
@@ -1457,25 +1457,26 @@ module J2ME {
       updateGlobalObject = true;
     }
 
-    methodInfo.fn = fn;
+    // methodInfo.fn = fn;
+    Methods[methodInfo.mangledClassAndMethodName] = fn;
 
-    // Link even non-static methods globally so they can be invoked statically via invokespecial.
-    // We always link the method globally if we're linking methods lazily,
-    // to overwrite the lazy linker function.
-    if (isLazy || updateGlobalObject) {
-      jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
-    }
+    // // Link even non-static methods globally so they can be invoked statically via invokespecial.
+    // // We always link the method globally if we're linking methods lazily,
+    // // to overwrite the lazy linker function.
+    // if (isLazy || updateGlobalObject) {
+    //   jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
+    // }
 
-    if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
-      var classBindings = Bindings[methodInfo.classInfo.className];
-      if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
-        var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
-        if (methodKey) {
-          methodInfo.classInfo.klass.prototype[methodKey] = fn;
-        }
-      }
-    }
+    // if (!methodInfo.isStatic) {
+    //   methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
+    //   var classBindings = Bindings[methodInfo.classInfo.className];
+    //   if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
+    //     var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
+    //     if (methodKey) {
+    //       methodInfo.classInfo.klass.prototype[methodKey] = fn;
+    //     }
+    //   }
+    // }
 
     linkedMethodCount ++;
   }
@@ -1492,15 +1493,21 @@ module J2ME {
       return methodInfo.fn.apply(this, arguments);
     };
 
-    Methods[methodInfo.mangledClassAndMethodName] = jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = lazyFn;
+    Methods[methodInfo.mangledClassAndMethodName] = lazyFn;
+
+    var indirectFn = function indirectFn() {
+      return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
+    };
+
+    jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = indirectFn;
 
     if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = lazyFn;
+      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = indirectFn;
       var classBindings = Bindings[methodInfo.classInfo.className];
       if (instanceSymbols) {
         var methodKey = instanceSymbols[methodInfo.name + "." + methodInfo.signature];
         if (methodKey) {
-          methodInfo.classInfo.klass.prototype[methodKey] = lazyFn;
+          methodInfo.classInfo.klass.prototype[methodKey] = indirectFn;
         }
       }
     }
