@@ -1181,11 +1181,11 @@ module J2ME {
                   break;
                 case Bytecodes.INVOKESPECIAL:
                   checkNull(object);
-                  calleeMethod = calleeMethodInfo.fn;
+                  calleeMethod = Methods[calleeMethodInfo.mangledClassAndMethodName];
                   break;
               }
             } else {
-              calleeMethod = calleeMethodInfo.fn;
+              calleeMethod = Methods[calleeMethodInfo.mangledClassAndMethodName];
             }
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {

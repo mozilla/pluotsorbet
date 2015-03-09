@@ -52,7 +52,7 @@ module J2ME {
 
   export var Methods = new Proxy({}, {
     get: function(target, name) {
-      return ((name in target) ? target[name] : linkKlassMethod(methodInfos[name], true));
+      return target[name] || (target[name] = linkKlassMethod(methodInfos[name], true));
     },
   });
 
@@ -1467,9 +1467,6 @@ module J2ME {
       fn = tracingWrapper(fn, methodInfo, methodType);
       updateGlobalObject = true;
     }
-
-    methodInfo.fn = fn;
-    Methods[methodInfo.mangledClassAndMethodName] = fn;
 
     // Link even non-static methods globally so they can be invoked statically via invokespecial.
     // We always link the method globally if we're linking methods lazily,
