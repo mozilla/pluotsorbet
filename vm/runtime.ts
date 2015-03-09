@@ -1628,15 +1628,6 @@ module J2ME {
       return;
     }
 
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
-        cachedMethodCount ++;
-        jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      }
-    }
-
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
     jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
