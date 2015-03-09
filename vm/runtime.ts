@@ -43,7 +43,18 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var CompiledMethodCache;
-  export var Methods = {};
+  declare var Proxy;
+
+  /**
+   * A map from mangled class/method names to MethodInfo objects.
+   */
+  var methodInfos = {};
+
+  export var Methods = new Proxy({}, {
+    get: function(target, name) {
+      return ((name in target) ? target[name] : linkKlassMethod(methodInfos[name], true));
+    },
+  });
 
   export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
@@ -1418,7 +1429,7 @@ module J2ME {
     return fn;
   }
 
-  export function linkKlassMethod(methodInfo: MethodInfo, isLazy: boolean) {
+  export function linkKlassMethod(methodInfo: MethodInfo, isLazy: boolean): Function {
     var fn;
     var methodType;
     var methodDescription = methodInfo.name + methodInfo.signature;
@@ -1479,9 +1490,13 @@ module J2ME {
     // }
 
     linkedMethodCount ++;
+
+    return fn;
   }
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
+    methodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
+
     var lazyFn = function lazyFn() {
       // TODO: figure out why this assertion fails
       // for java/lang/Object.getClass.()Ljava/lang/Class;
