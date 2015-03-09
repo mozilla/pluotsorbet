@@ -110,11 +110,6 @@ module J2ME {
      */
     state: MethodState;
 
-    /**
-     * The compiled version of the method.
-     */
-    compiledFn: {()};
-
     exception_table: ExceptionHandler [];
     max_locals: number;
     max_stack: number;

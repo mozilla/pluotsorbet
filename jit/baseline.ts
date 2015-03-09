@@ -854,12 +854,12 @@ module J2ME {
         object = this.pop(Kind.Reference);
         if (opcode === Bytecodes.INVOKESPECIAL) {
           args.unshift(object);
-          call = methodInfo.mangledClassAndMethodName + ".call(" + args.join(",") + ")";
+          call = "Methods['" + methodInfo.mangledClassAndMethodName + "'].call(" + args.join(",") + ")";
         } else {
           call = object + "." + methodInfo.mangledName + "(" + args.join(",") + ")";
         }
       } else {
-        call = methodInfo.mangledClassAndMethodName + "(" + args.join(",") + ")";
+        call = "Methods['" + methodInfo.mangledClassAndMethodName + "'](" + args.join(",") + ")";
       }
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
