@@ -1508,8 +1508,6 @@ module J2ME {
       return methodInfo.fn.apply(this, arguments);
     };
 
-    Methods[methodInfo.mangledClassAndMethodName] = lazyFn;
-
     var indirectFn = function indirectFn() {
       return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
     };
