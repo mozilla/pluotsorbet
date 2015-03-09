@@ -2,7 +2,7 @@
 
 ///<reference path='config.ts' />
 ///<reference path='utilities.ts' />
-///<reference path='parser.ts' />
+///<reference path='vm/parser.ts' />
 
 ///<reference path='metrics.ts' />
 ///<reference path='bytecodes.ts' />
