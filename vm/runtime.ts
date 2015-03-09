@@ -1492,7 +1492,7 @@ module J2ME {
       return methodInfo.fn.apply(this, arguments);
     };
 
-    jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = lazyFn;
+    Methods[methodInfo.mangledClassAndMethodName] = jsGlobal[methodInfo.mangledClassAndMethodName] = methodInfo.fn = lazyFn;
 
     if (!methodInfo.isStatic) {
       methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = lazyFn;
