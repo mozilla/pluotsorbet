@@ -1143,13 +1143,9 @@ module J2ME {
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo = resolveMethod(index, mi.classInfo, isStatic);
 
-            // TODO: the only thing we really need to do here is set *state*
+            // TODO: the only thing we need to do here is set *state*
             // to MethodState.Compiled if the method has a native implementation,
-            // so we should do something like that instead to reduce the number
-            // of methods we link.  We just need to create a better call for it.
-            // if (calleeMethodInfo.fn && calleeMethodInfo.fn.name === "lazyFn") {
-            //   linkKlassMethod(calleeMethodInfo, true);
-            // }
+            // so simplify this call to do only that.
             if (findNativeMethodImplementation(calleeMethodInfo)) {
               calleeMethodInfo.state = MethodState.Compiled;
             }

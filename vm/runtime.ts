@@ -1468,26 +1468,7 @@ module J2ME {
       updateGlobalObject = true;
     }
 
-    // methodInfo.fn = fn;
     Methods[methodInfo.mangledClassAndMethodName] = fn;
-
-    // // Link even non-static methods globally so they can be invoked statically via invokespecial.
-    // // We always link the method globally if we're linking methods lazily,
-    // // to overwrite the lazy linker function.
-    // if (isLazy || updateGlobalObject) {
-    //   jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
-    // }
-
-    // if (!methodInfo.isStatic) {
-    //   methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
-    //   var classBindings = Bindings[methodInfo.classInfo.className];
-    //   if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
-    //     var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
-    //     if (methodKey) {
-    //       methodInfo.classInfo.klass.prototype[methodKey] = fn;
-    //     }
-    //   }
-    // }
 
     linkedMethodCount ++;
 
@@ -1496,17 +1477,6 @@ module J2ME {
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
     methodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
-
-    var lazyFn = function lazyFn() {
-      // TODO: figure out why this assertion fails
-      // for java/lang/Object.getClass.()Ljava/lang/Class;
-      // (java_lang_Object_getClass_G_UxuCaT).
-      // release || assert(methodInfo.fn === lazyFn, "method isn't linked yet");
-
-      linkKlassMethod(methodInfo, true);
-
-      return methodInfo.fn.apply(this, arguments);
-    };
 
     var indirectFn = function indirectFn() {
       return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
