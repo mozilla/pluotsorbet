@@ -435,7 +435,11 @@ var fs = (function() {
       setZeroTimeout(function() { cb(-1) });
     } else {
       var reader = new FileReader();
-      reader.addEventListener("loadend", function() {
+      reader.addEventListener("error", function() {
+        console.error("Failed to read blob data from: " + path);
+        setZeroTimeout(function() { cb(-1) });
+      });
+      reader.addEventListener("load", function() {
         openedFiles.set(++lastId, {
           dirty: false,
           path: path,
