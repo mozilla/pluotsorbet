@@ -224,7 +224,7 @@ Remember:
 
 ## Packaging
 
-The repository includes tools for packaging j2me.js into an Open Web App.
+`make app` packages j2me.js into an Open Web App in output directory.
 It's possible to simply package the entire contents of your working directory,
 but these tools will produce a better app.
 
@@ -238,9 +238,3 @@ To use it, first install a recent version of the
 ### Compiling With Closure
 
 `make closure` compiles some JavaScript code with the Closure compiler.
-
-To use it, first download this custom version of the compiler to tools/closure.jar:
-
-```
-wget https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar -P tools/
-```
