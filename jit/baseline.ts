@@ -912,13 +912,16 @@ module J2ME {
 
       switch (tag) {
         case TAGS.CONSTANT_Integer:
-          this.emitPush(Kind.Int, cp.resolve(cpi, tag), Precedence.Primary);
+          var value = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Int, value, value < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Float:
-          this.emitPush(Kind.Float, doubleConstant(cp.resolve(cpi, tag)), Precedence.Primary);
+          var value = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Float, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Double:
-          this.emitPush(Kind.Double, doubleConstant(cp.resolve(cpi, tag)), Precedence.Primary);
+          var value = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Double, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Long:
           var long = cp.resolve(cpi, tag);
@@ -1302,7 +1305,7 @@ module J2ME {
       switch (opcode) {
         case Bytecodes.NOP            : break;
         case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null", Precedence.Primary); break;
-        case Bytecodes.ICONST_M1      :
+        case Bytecodes.ICONST_M1      : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.UnaryNegation); break;
         case Bytecodes.ICONST_0       :
         case Bytecodes.ICONST_1       :
         case Bytecodes.ICONST_2       :
