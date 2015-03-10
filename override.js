@@ -18,25 +18,9 @@ function asyncImpl(returnKind, promise) {
     }
     ctx.execute();
   }, function(exception) {
-    var syntheticMethod = new MethodInfo({
-      name: "RaiseExceptionSynthetic",
-      signature: "()V",
-      isStatic: true,
-      classInfo: J2ME.ClassInfo.createFromObject({
-        className: {value: "java/lang/Object"},
-        vmc: {value: {}},
-        vfc: {value: {}},
-        constant_pool: {value: [
-          null
-        ]}
-      }),
-      code: new Uint8Array([
-        0x2a,             // aload_0
-        0xbf              // athrow
-      ])
-    });
-    var callee = Frame.create(syntheticMethod, [exception], 0);
-    ctx.frames.push(callee);
+    var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
+    var methodInfo = classInfo.getMethodByName("throwException", "(Ljava/lang/Exception;)V", true);
+    ctx.frames.push(Frame.create(methodInfo, [exception], 0));
     ctx.execute();
   });
   $.pause("Async");
