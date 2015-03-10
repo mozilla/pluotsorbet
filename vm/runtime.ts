@@ -1101,35 +1101,19 @@ module J2ME {
       initializeInterfaces(klass, classInfo);
     }
 
-// log("klass: " + classInfo.className);
     klass.methodInfos = {};
 
-    klass.prototype = new Proxy(klass.prototype, {
-      get: function(target, name) {
-// log("klass.prototype.get: " + name);
-        // if (name in target) {
-          return target[name];
-        // }
-        // return klass.prototype[name];
-        // var methodInfo = klass.methodInfos[name];
-        // if (methodInfo) {
-        //   return Methods[methodInfo.mangledClassAndMethodName];
-        // }
-      },
-    });
-
-//     klass.prototype.__noSuchMethod__ = function(id, args) {
-// log("klass.prototype.__noSuchMethod__: " + id);
-//       var methodInfo = klass.methodInfos[id];
-// log("methodInfo: " + methodInfo);
-//       var method = Methods[methodInfo.mangledClassAndMethodName];
-// log("method: " + method);
-//       if (method) {
-//         this[id] = method;
-//         return method.apply(this, args);
-//       }
-//       throw new TypeError;
-//     };
+    // klass.prototype = new Proxy(klass.prototype, {
+    //   get: function(target, name) {
+    //     if (name in target) {
+    //       return target[name];
+    //     }
+    //     var methodInfo = klass.methodInfos[name];
+    //     if (methodInfo) {
+    //       return Methods[methodInfo.mangledClassAndMethodName];
+    //     }
+    //   },
+    // });
 
     return klass;
   }
