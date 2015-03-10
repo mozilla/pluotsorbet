@@ -52,9 +52,11 @@ module J2ME {
 
   export var Methods = new Proxy({}, {
     get: function(target, name) {
-      return target[name] || (target[name] = linkKlassMethod(methodInfos[name], true));
+      return target[name] || (target[name] = linkKlassMethod(methodInfos[name]));
     },
   });
+
+  export var CompiledMethods = <{string: Function}>Object.create(null);
 
   export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
@@ -1456,22 +1458,20 @@ module J2ME {
     if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
       cachedMethodCount ++;
       linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      fn = jsGlobal[methodInfo.mangledClassAndMethodName];
+      fn = Methods[methodInfo.mangledClassAndMethodName];
     }
     return fn;
   }
 
-  export function linkKlassMethod(methodInfo: MethodInfo, isLazy: boolean): Function {
+  export function linkKlassMethod(methodInfo: MethodInfo): Function {
     var fn;
     var methodType;
     var methodDescription = methodInfo.name + methodInfo.signature;
-    var updateGlobalObject = false;
     if (fn = findNativeMethodImplementation(methodInfo)) {
       linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
-      updateGlobalObject = true;
-    } else if (fn = methodInfo.compiledFn) {
+    } else if (fn = CompiledMethods[methodInfo.mangledClassAndMethodName]) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
       methodType = MethodType.Compiled;
       aotMethodCount ++;
@@ -1487,24 +1487,14 @@ module J2ME {
       linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
       methodType = MethodType.Interpreted;
       fn = prepareInterpretedMethod(methodInfo);
-      updateGlobalObject = true;
     }
 
     if (false && methodTimeline) {
       fn = profilingWrapper(fn, methodInfo, methodType);
-      updateGlobalObject = true;
     }
 
     if (traceWriter) {
       fn = tracingWrapper(fn, methodInfo, methodType);
-      updateGlobalObject = true;
-    }
-
-    // Link even non-static methods globally so they can be invoked statically via invokespecial.
-    // We always link the method globally if we're linking methods lazily,
-    // to overwrite the lazy linker function.
-    if (isLazy || updateGlobalObject) {
-      jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
     }
 
     if (!methodInfo.isStatic) {
@@ -1530,8 +1520,6 @@ module J2ME {
     var indirectFn = function indirectFn() {
       return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
     };
-
-    jsGlobal[methodInfo.mangledClassAndMethodName] = indirectFn;
 
     if (!methodInfo.isStatic) {
       methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = indirectFn;
@@ -1559,11 +1547,7 @@ module J2ME {
         continue;
       }
 
-      // Lazy linking overwrites the global function with the lazy linker,
-      // so we need to preserve a reference to it.
-      methodInfo.compiledFn = jsGlobal[methodInfo.mangledClassAndMethodName];
-
-      // linkKlassMethod(methodInfo, false);
+      // Methods[methodInfo.mangledClassAndMethodName] = linkKlassMethod(methodInfo);
       lazyLinkKlassMethod(methodInfo, instanceSymbols);
 
       loadedMethodCount ++;
@@ -1684,7 +1668,8 @@ module J2ME {
     }
     leaveTimeline("Compiling");
     var compiledMethodName = mangledClassAndMethodName;
-    var source = "function " + compiledMethodName +
+    // TODO: refactor string literals with equivalents in compileClassInfo.
+    var source = "CompiledMethods['" + compiledMethodName + "'] = function " + compiledMethodName +
                  "(" + compiledMethod.args.join(",") + ") {\n" +
                    compiledMethod.body +
                  "\n}";
@@ -1721,12 +1706,13 @@ module J2ME {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
-    // This overwrites the method on the global object.
+    // This writes the method to the CompiledMethods object.  We then copy it
+    // into the Methods object below, overwriting the existing method.
     (1, eval)(source);
     leaveTimeline("Eval Compiled Code");
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    var fn = jsGlobal[mangledClassAndMethodName];
+    var fn = CompiledMethods[mangledClassAndMethodName];
     Methods[mangledClassAndMethodName] = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
@@ -2067,6 +2053,9 @@ module J2ME {
 var Runtime = J2ME.Runtime;
 
 var AOTMD = J2ME.aotMetaData;
+
+var Methods = J2ME.Methods;
+var CompiledMethods = J2ME.CompiledMethods;
 
 /**
  * Are we currently unwinding the stack because of a Yield? This technically
