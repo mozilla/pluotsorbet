@@ -1319,8 +1319,10 @@ module J2ME {
         case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
         case Bytecodes.LCONST_0       :
         case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0), Precedence.Primary); break;
-        case Bytecodes.BIPUSH         : this.emitPush(Kind.Int, stream.readByte(), Precedence.Primary); break;
-        case Bytecodes.SIPUSH         : this.emitPush(Kind.Int, stream.readShort(), Precedence.Primary); break;
+        case Bytecodes.BIPUSH         : var value = stream.readByte();
+                                        this.emitPush(Kind.Int, value, value < 0 ? Precedence.UnaryNegation : Precedence.Primary); break;
+        case Bytecodes.SIPUSH         : var value = stream.readShort();
+                                        this.emitPush(Kind.Int, value, value < 0 ? Precedence.UnaryNegation : Precedence.Primary); break;
         case Bytecodes.LDC            :
         case Bytecodes.LDC_W          :
         case Bytecodes.LDC2_W         : this.emitLoadConstant(stream.readCPI()); break;
