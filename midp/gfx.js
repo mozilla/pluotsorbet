@@ -383,7 +383,7 @@ var currentlyFocusedTextEditor;
         if (!defaultFont) {
             var classInfo = CLASSES.loadAndLinkClass("javax/microedition/lcdui/Font");
             defaultFont = new classInfo.klass();
-            var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(III)V");
+            var methodInfo = classInfo.getMethodByName("<init>", "(III)V", false);
             jsGlobal[methodInfo.mangledClassAndMethodName].call(defaultFont, 0, 0, 0);
         }
         return defaultFont;
@@ -1517,7 +1517,7 @@ var currentlyFocusedTextEditor;
             return dirtyEditors.shift();
         }
 
-        asyncImpl("I", new Promise(function(resolve, reject) {
+        asyncImpl("Lcom/nokia/mid/ui/TextEditor;", new Promise(function(resolve, reject) {
             textEditorResolve = function() {
                 resolve(dirtyEditors.shift());
             }

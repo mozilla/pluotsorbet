@@ -6,6 +6,7 @@
 module J2ME {
   declare var ZipFile;
   declare var snarf;
+  export var classCounter = new Metrics.Counter(true);
   declare var JARStore;
 
   export class ClassRegistry {
@@ -79,10 +80,15 @@ module J2ME {
         this.preInitializedClasses.push(this.loadAndLinkClass(classNames[i]));
       }
 
-      // Link primitive values and primitive arrays.
-      for (var i = 0; i < "ZCFDBSIJ".length; i++) {
-        var typeName = "ZCFDBSIJ"[i];
+      // Link primitive values.
+      var primitiveTypes = "ZCFDBSIJ";
+      for (var i = 0; i < primitiveTypes.length; i++) {
+        var typeName = primitiveTypes[i];
         linkKlass(PrimitiveClassInfo[typeName]);
+      }
+      // Link primitive arrays.
+      PrimitiveArrayClassInfo.initialize();
+      for (var i = 0; i < primitiveTypes.length; i++) {
         this.getClass("[" + typeName);
       }
       leaveTimeline("initializeBuiltinClasses");
@@ -123,10 +129,11 @@ module J2ME {
       return null;
     }
 
-    loadClassBytes(bytes: ArrayBuffer): ClassInfo {
+    loadClassBytes(bytes: Uint8Array): ClassInfo {
       enterTimeline("loadClassBytes");
       var classInfo = new ClassInfo(bytes);
       leaveTimeline("loadClassBytes", {className: classInfo.className});
+      loadWriter && loadWriter.writeLn("XXX: " + classInfo.className + " -> " + classInfo.superClassName + ";");
       this.classes[classInfo.className] = classInfo;
       return classInfo;
     }
@@ -149,10 +156,6 @@ module J2ME {
           superClass = superClass.superClass;
         }
       }
-      var classes = classInfo.classes;
-      classes.forEach(function (c, n) {
-        classes[n] = self.loadClass(c);
-      });
       classInfo.complete();
       loadWriter && loadWriter.leave("<");
       return classInfo;
@@ -173,8 +176,8 @@ module J2ME {
     }
 
     getEntryPoint(classInfo: ClassInfo): MethodInfo {
-      var methods = classInfo.methods;
-      for (var i=0; i<methods.length; i++) {
+      var methods = classInfo.getMethods();
+      for (var i = 0; i < methods.length; i++) {
         var method = methods[i];
         if (method.isPublic && method.isStatic && !method.isNative &&
             method.name === "main" &&
@@ -208,66 +211,12 @@ module J2ME {
         if (elementType[0] === "L") {
           elementType = elementType.substr(1).replace(";", "");
         }
-        classInfo = new ArrayClassInfo(typeName, this.getClass(elementType));
+        classInfo = new ObjectArrayClassInfo(this.getClass(elementType));
       }
       if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
         J2ME.linkKlass(classInfo);
       }
       return this.classes[typeName] = classInfo;
-    }
-
-
-    getField(classInfo, fieldKey) {
-      if (classInfo.vfc[fieldKey]) {
-        return classInfo.vfc[fieldKey];
-      }
-  
-      do {
-        var fields = classInfo.fields;
-        for (var i=0; i<fields.length; ++i) {
-          var field = fields[i];
-          if (!field.key) {
-            field.key = (AccessFlags.isStatic(field.access_flags) ? "S" : "I") + "." + field.name + "." + field.signature;
-          }
-          if (field.key === fieldKey) {
-            return classInfo.vfc[fieldKey] = field;
-          }
-        }
-  
-        if (fieldKey[0] === 'S') {
-          for (var n = 0; n < classInfo.interfaces.length; ++n) {
-            var field = this.getField(classInfo.interfaces[n], fieldKey);
-            if (field) {
-              return classInfo.vfc[fieldKey] = field;
-            }
-          }
-        }
-  
-        classInfo = classInfo.superClass;
-      } while (classInfo);
-    }
-
-    getMethod(classInfo, methodKey) {
-      var c = classInfo;
-      do {
-        var methods = c.methods;
-        for (var i=0; i<methods.length; ++i) {
-          var method = methods[i];
-          if (method.key === methodKey) {
-            return classInfo.vmc[methodKey] = method;
-          }
-        }
-        c = c.superClass;
-      } while (c);
-  
-      if (AccessFlags.isInterface(classInfo.access_flags)) {
-        for (var n = 0; n < classInfo.interfaces.length; ++n) {
-          var method = this.getMethod(classInfo.interfaces[n], methodKey);
-          if (method) {
-            return classInfo.vmc[methodKey] = method;
-          }
-        }
-      }
     }
 
   }

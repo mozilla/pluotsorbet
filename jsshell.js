@@ -95,11 +95,11 @@ var config = {
 
 try {
   load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
-       "libs/encoding.js", "util.js", "libs/jarstore.js",
-       "override.js", "vm/tags.js", "native.js", "string.js", "tests/override.js",
-       "midp/midp.js", "midp/gestures.js",
-       "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
-       "build/classes.jar.js");
+    "libs/encoding.js", "util.js", "libs/jarstore.js",
+    "override.js", "native.js", "string.js", "tests/override.js",
+    "midp/midp.js", "midp/gestures.js",
+    "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
+    "build/classes.jar.js");
 
   // load("build/classes.jar.js");
   // load("build/program.jar.js");

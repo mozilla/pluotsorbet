@@ -115,8 +115,18 @@ class Class {
      *               instantiation fails for some other reason.
      * @since     JDK1.0
      */
-    public native Object newInstance()
-        throws InstantiationException, IllegalAccessException;
+    public Object newInstance() throws InstantiationException, IllegalAccessException {
+        Object o = newInstance0();
+        // newInstance1 can potentially unwind.
+        newInstance1(o);
+        return o;
+    }
+
+    // Creates the object without running the constructor.
+    private native Object newInstance0();
+    // Runs o's constructor.
+    private native void newInstance1(Object o);
+
 
     /**
      * Determines if the specified <code>Object</code> is assignment-compatible

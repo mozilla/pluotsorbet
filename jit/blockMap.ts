@@ -79,7 +79,7 @@ module J2ME.Bytecode {
   }
 
   export class ExceptionBlock extends Block {
-    public handler: ExceptionHandler ;
+    public handler: ExceptionEntryView;
     public deoptBci: number;
   }
 
@@ -91,16 +91,14 @@ module J2ME.Bytecode {
     private blockMap: Block [];
     private startBlock: Block;
     private canTrap: Uint32ArrayBitSet;
-    exceptionHandlers: ExceptionHandler [];
 
     constructor(method: MethodInfo) {
       this.blocks = [];
       this.method = method;
       this.hasBackwardBranches = false;
       this.invokeCount = 0;
-      this.blockMap = new Array<Block>(method.code.length);
+      this.blockMap = new Array<Block>(method.codeAttribute.code.length);
       this.canTrap = new Uint32ArrayBitSet(this.blockMap.length);
-      this.exceptionHandlers = this.method.exception_table;
     }
 
     build() {
@@ -115,8 +113,8 @@ module J2ME.Bytecode {
 
     private makeExceptionEntries() {
       // start basic blocks at all exception handler blocks and mark them as exception entries
-      for (var i = 0; i < this.exceptionHandlers.length; i++) {
-        var handler = this.exceptionHandlers[i];
+      for (var i = 0; i < this.method.exception_table_length; i++) {
+        var handler = this.method.getExceptionEntryViewByIndex(i);
         var block = this.makeBlock(handler.handler_pc);
         block.isExceptionEntry = true;
       }
@@ -209,7 +207,7 @@ module J2ME.Bytecode {
       // iterate over the bytecodes top to bottom.
       // mark the entrypoints of basic blocks and build lists of successors for
       // all bytecodes that end basic blocks (i.e. goto, ifs, switches, throw, jsr, returns, ret)
-      var code = this.method.code;
+      var code = this.method.codeAttribute.code;
       var current: Block = null;
       var bci = 0;
       while (bci < code.length) {
@@ -336,13 +334,13 @@ module J2ME.Bytecode {
 
     // catch_type
 
-    private handlerIsCatchAll(handler: ExceptionHandler) {
+    private handlerIsCatchAll(handler: ExceptionEntryView) {
       return handler.catch_type === 0;
     }
 
-    private exceptionDispatch: Map<ExceptionHandler, ExceptionBlock> = new Map<ExceptionHandler, ExceptionBlock>();
+    private exceptionDispatch: Map<ExceptionEntryView, ExceptionBlock> = new Map<ExceptionEntryView, ExceptionBlock>();
 
-    private makeExceptionDispatch(handlers: ExceptionHandler [], index: number, bci: number): Block {
+    private makeExceptionDispatch(handlers: ExceptionEntryView [], index: number, bci: number): Block {
       var handler = handlers[index];
       if (this.handlerIsCatchAll(handler)) {
         return this.blockMap[handler.handler_pc];
@@ -367,9 +365,9 @@ module J2ME.Bytecode {
       var length = this.canTrap.length;
       for (var bci = this.canTrap.nextSetBit(0, length); bci >= 0; bci = this.canTrap.nextSetBit(bci + 1, length)) {
         var block = this.blockMap[bci];
-        var handlers: ExceptionHandler [] = null;
-        for (var i = 0; i < this.exceptionHandlers.length; i++) {
-          var handler = this.exceptionHandlers[i];
+        var handlers: ExceptionEntryView [] = null;
+        for (var i = 0; i < this.method.exception_table_length; i++) {
+          var handler = this.method.getExceptionEntryViewByIndex(i);
           if (handler.start_pc <= bci && bci < handler.end_pc) {
             if (!handlers) {
               handlers = [];
@@ -512,7 +510,7 @@ module J2ME.Bytecode {
     }
 
     public trace(writer: IndentingWriter, traceBytecode: boolean = false) {
-      var code = this.method.code;
+      var code = this.method.codeAttribute.code;
       var stream = new BytecodeStream(code);
 
       writer.enter("Block Map: " + this.blocks.map(b => b.blockID).join(", "));

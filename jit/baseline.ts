@@ -88,7 +88,7 @@ module J2ME {
     var compileExceptions = true;
     var compileSynchronized = true;
 
-    if (!compileExceptions && methodInfo.exception_table && methodInfo.exception_table.length) {
+    if (!compileExceptions && methodInfo.exception_table_length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
     if (!compileSynchronized && methodInfo.isSynchronized) {
@@ -217,7 +217,7 @@ module J2ME {
     if (classInfo instanceof PrimitiveArrayClassInfo) {
       return classInfo.mangledName;
     }
-    if (classInfo.isArrayClass) {
+    if (classInfo instanceof ArrayClassInfo) {
       return "AK(" + classConstant(classInfo.elementClass) + ")";
     }
     if (classInfo.mangledName) {
@@ -329,7 +329,7 @@ module J2ME {
       this.parameters = [];
       this.referencedClasses = [];
       this.initializedClasses = null;
-      this.hasHandlers = !!methodInfo.exception_table.length;
+      this.hasHandlers = methodInfo.exception_table_length > 0;
       this.hasMonitorEnter = false;
       this.blockStackHeightMap = [0];
       this.bodyEmitter = new Emitter(!release);
@@ -383,7 +383,7 @@ module J2ME {
     emitBody() {
       var blockMap = this.blockMap;
       writer && blockMap.trace(writer);
-      var stream = new BytecodeStream(this.methodInfo.code);
+      var stream = new BytecodeStream(this.methodInfo.codeAttribute.code);
 
       var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
 
@@ -430,9 +430,8 @@ module J2ME {
         this.blockStack = [this.getStackName(0)];
         this.sp = 1;
         if (this.hasHandlers) {
-          var handlers = this.methodInfo.exception_table;
-          for (var i = 0; i < handlers.length; i++) {
-            this.emitExceptionHandler(this.bodyEmitter, handlers[i]);
+          for (var i = 0; i < this.methodInfo.exception_table_length; i++) {
+            this.emitExceptionHandler(this.bodyEmitter, this.methodInfo.getExceptionEntryViewByIndex(i));
           }
         }
         if (this.methodInfo.isSynchronized) {
@@ -446,7 +445,7 @@ module J2ME {
       }
     }
 
-    private emitExceptionHandler(emitter: Emitter, handler: ExceptionHandler) {
+    private emitExceptionHandler(emitter: Emitter, handler: ExceptionEntryView) {
       var check = "";
       if (handler.catch_type > 0) {
         var classInfo = this.lookupClass(handler.catch_type);
@@ -516,7 +515,7 @@ module J2ME {
         parameterLocalIndex += isTwoSlot(kind) ? 2 : 1;
       }
 
-      var maxLocals = this.methodInfo.max_locals;
+      var maxLocals = this.methodInfo.codeAttribute.max_locals;
       for (var i = 0; i < maxLocals; i++) {
         local.push(this.getLocalName(i));
       }
@@ -527,7 +526,7 @@ module J2ME {
         this.bodyEmitter.writeLn(this.getLocal(0) + "=this;");
       }
       var stack = this.stack;
-      for (var i = 0; i < this.methodInfo.max_stack; i++) {
+      for (var i = 0; i < this.methodInfo.codeAttribute.max_stack; i++) {
         stack.push(this.getStackName(i));
       }
       if (stack.length) {
@@ -572,7 +571,7 @@ module J2ME {
 
         // Restore locals.
         var restoreLocals = [];
-        for (var i = 0; i < this.methodInfo.max_locals; i++) {
+        for (var i = 0; i < this.methodInfo.codeAttribute.max_locals; i++) {
           restoreLocals.push(this.getLocal(i) + "=_[" + i + "]");
         }
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
@@ -621,19 +620,19 @@ module J2ME {
     }
 
     lookupClass(cpi: number): ClassInfo {
-      var classInfo = this.methodInfo.classInfo.resolve(cpi, false);
+      var classInfo = this.methodInfo.classInfo.constantPool.resolveClass(cpi);
       ArrayUtilities.pushUnique(this.referencedClasses, classInfo);
       return classInfo;
     }
 
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
-      var methodInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
+      var methodInfo = this.methodInfo.classInfo.constantPool.resolveMethod(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, methodInfo.classInfo);
       return methodInfo;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
-      var fieldInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
+      var fieldInfo = this.methodInfo.classInfo.constantPool.resolveField(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, fieldInfo.classInfo);
       return fieldInfo;
     }
@@ -712,6 +711,14 @@ module J2ME {
       this.emitPush(Kind.Void, v, Precedence.Sequence); // TODO: Revisit precedence.
     }
 
+    emitPushInteger(v) {
+      if (v < 0) {
+        this.emitPush(Kind.Int, v, Precedence.UnaryNegation);
+      } else {
+        this.emitPush(Kind.Int, v, Precedence.Primary);
+      }
+    }
+    
     emitPush(kind: Kind, v, precedence: Precedence) {
       writer && writer.writeLn("push: sp: " + this.sp + " " + Kind[kind] + " " + v);
       // this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
@@ -803,8 +810,8 @@ module J2ME {
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
-      while (classInfo.isArrayClass) {
-        classInfo = classInfo.elementClass;
+      while (classInfo instanceof ArrayClassInfo) {
+        classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
         if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.className]) {
@@ -908,27 +915,30 @@ module J2ME {
     }
 
     emitLoadConstant(cpi: number) {
-      var cp = this.methodInfo.classInfo.constant_pool;
-      var entry = cp[cpi];
-      switch (entry.tag) {
+      var cp = this.methodInfo.classInfo.constantPool;
+      var tag = cp.getConstantTag(cpi);
+
+      switch (tag) {
         case TAGS.CONSTANT_Integer:
-          this.emitPush(Kind.Int, entry.integer, Precedence.Primary);
+          this.emitPushInteger(cp.resolve(cpi, tag));
           return;
         case TAGS.CONSTANT_Float:
-          this.emitPush(Kind.Float, doubleConstant(entry.float), Precedence.Primary);
+          var value = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Float, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Double:
-          this.emitPush(Kind.Double, doubleConstant(entry.double), Precedence.Primary);
+          var value = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Double, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Long:
-          this.emitPush(Kind.Long, "Long.fromBits(" + entry.lowBits + "," + entry.highBits + ")", Precedence.Primary);
+          var long = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Long, "Long.fromBits(" + long.getLowBits() + "," + long.getHighBits() + ")", Precedence.Primary);
           return;
         case TAGS.CONSTANT_String:
-          entry = cp[entry.string_index];
-          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")", Precedence.Primary);
+          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(cp.resolveString(cpi)) + ")", Precedence.Primary);
           return;
         default:
-          throw "Not done for: " + entry.tag;
+          throw "Not done for: " + TAGS[tag];
       }
     }
 
@@ -1302,7 +1312,7 @@ module J2ME {
       switch (opcode) {
         case Bytecodes.NOP            : break;
         case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null", Precedence.Primary); break;
-        case Bytecodes.ICONST_M1      :
+        case Bytecodes.ICONST_M1      : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.UnaryNegation); break;
         case Bytecodes.ICONST_0       :
         case Bytecodes.ICONST_1       :
         case Bytecodes.ICONST_2       :
@@ -1316,8 +1326,8 @@ module J2ME {
         case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
         case Bytecodes.LCONST_0       :
         case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0), Precedence.Primary); break;
-        case Bytecodes.BIPUSH         : this.emitPush(Kind.Int, stream.readByte(), Precedence.Primary); break;
-        case Bytecodes.SIPUSH         : this.emitPush(Kind.Int, stream.readShort(), Precedence.Primary); break;
+        case Bytecodes.BIPUSH         : this.emitPushInteger(stream.readByte()); break;
+        case Bytecodes.SIPUSH         : this.emitPushInteger(stream.readShort()); break;
         case Bytecodes.LDC            :
         case Bytecodes.LDC_W          :
         case Bytecodes.LDC2_W         : this.emitLoadConstant(stream.readCPI()); break;

@@ -980,13 +980,14 @@ AudioRecorder.prototype.requestData = function() {
 
 AudioRecorder.prototype.close = function() {
     if (this._closed) {
-        return new Promise(function(resolve) { resolve(1); });
+        return Promise.resolve(1);
     }
 
     // Make sure recording is stopped on the other side.
-    return this.stop().then(function() {
+    return this.stop().then(function(result) {
         DumbPipe.close(this.sender);
         this._closed = true;
+        return result;
     }.bind(this));
 };
 
