@@ -861,6 +861,8 @@ module J2ME {
 
     classSymbols: string [];
 
+    methodInfos: {};
+
     /**
      * Static constructor, not all klasses have one.
      */
@@ -1096,6 +1098,36 @@ module J2ME {
     if (!classInfo.isInterface) {
       initializeInterfaces(klass, classInfo);
     }
+
+// log("klass: " + classInfo.className);
+    klass.methodInfos = {};
+
+    klass.prototype = new Proxy(klass.prototype, {
+      get: function(target, name) {
+// log("klass.prototype.get: " + name);
+        // if (name in target) {
+          return target[name];
+        // }
+        // return klass.prototype[name];
+        // var methodInfo = klass.methodInfos[name];
+        // if (methodInfo) {
+        //   return Methods[methodInfo.mangledClassAndMethodName];
+        // }
+      },
+    });
+
+//     klass.prototype.__noSuchMethod__ = function(id, args) {
+// log("klass.prototype.__noSuchMethod__: " + id);
+//       var methodInfo = klass.methodInfos[id];
+// log("methodInfo: " + methodInfo);
+//       var method = Methods[methodInfo.mangledClassAndMethodName];
+// log("method: " + method);
+//       if (method) {
+//         this[id] = method;
+//         return method.apply(this, args);
+//       }
+//       throw new TypeError;
+//     };
 
     return klass;
   }
@@ -1493,6 +1525,7 @@ module J2ME {
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
     methodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
+    methodInfo.classInfo.klass.methodInfos[methodInfo.mangledName] = methodInfo;
 
     var indirectFn = function indirectFn() {
       return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
