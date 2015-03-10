@@ -142,6 +142,59 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
+### Java profiling
+
+The VM has several profiling tools. The simplest feature is to use counters. For instance, `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these should only ever be used in non release builds.
+
+To use them, just sprinkle calls to `runtimeCounter.count("string")`. To see the accumulated counts, press the `Dump Counters` button, or `Clear Counters` if you want to reset them.
+
+The second, more heavy weight profiling tool is to build with `PROFILE=1 make`. This will include Shumway's timeline viewer. One way to use it is to manually insert calls to `timeline.enter` / `timeline.leave` around code blocks that you're interested in measuring. 
+
+If you want to record every method call, change the line in `runtime.ts` from:
+
+```
+if (false && methodTimeline) {
+```
+to
+```
+if (methodTimeline) {
+```
+
+This will wrap all methods with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed flame chart of the execution. Because of the fine grained nature of this instrumentation, timing for very short lived events may not be recorded accurately.
+
+You can get creative with the timelines. The API looks something like this:
+
+```
+timeline.enter(name: string, details?: Object);
+timeline.leave(name?: string, details?: Object);
+```
+
+You must pair the `enter` and `leave` events but you don't necessarily need to specify arguments for `name` and `details`.
+
+The `name` argument can be any string and it specifies a event type. The timeline view will draw different types of events in different colors. It will also give you some statistics about the number of times a certain event type was seen, how long it took, etc.. 
+
+The `details` is an object, whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
+
+The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the even type. At the moment, this is set to `MethodType[methodType]`, but you can easily set it to `implKey` which will give you a very detailed output.
+
+Additionally, you may create your own timelines. At the moment there are 3:
+- `timeline`: VM Events like loading class files, linking, etc.
+- `methodTimeline`: Method execution.
+- `threadTimeline`: Thread scheduling.
+
+You may have to change the CSS height style of the `profileContainer` if you don't see all timelines.
+
+![Shumway's timeline viewer](https://cloud.githubusercontent.com/assets/311082/5998278/644761ec-aa7a-11e4-8149-3556b08b8c54.png)
+
+Top band is an overview of all the timelines. Second band is the `timeline`, third is the `threadTimeline` and finally the fourth is the `methodTimeline`. Us your mouse wheel to zoom in and out, pan and hover.
+
+The tooltip displays:
+- `total`: ms spent in this event including all the child events.
+- `self`: `total` - `total` sum of all child events.
+- `count`: number of events seen with this name.
+- `all total` and `all self`: cumulative total and self times for all events with this name.
+- the remaining fields show the custom data specified in the `details` object.
+
 ## Benchmarks
 
 ### Startup Benchmark
