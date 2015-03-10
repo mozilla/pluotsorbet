@@ -62,10 +62,10 @@ module J2ME {
     "com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z": YieldReason.Root,
     "java/lang/Object.wait.(J)V": YieldReason.Root,
     "java/lang/Class.invoke_clinit.()V": YieldReason.Root,
-    "java/lang/Class.newInstance.()Ljava/lang/Object;": YieldReason.Root,
     "java/lang/Thread.yield.()V": YieldReason.Root,
     "java/lang/Thread.start0.()V": YieldReason.Root,
     "java/lang/Class.forName0.(Ljava/lang/String;)V": YieldReason.Root,
+    "java/lang/Class.newInstance1.(Ljava/lang/Object;)V": YieldReason.Root,
     // Test Files:
     "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
@@ -77,7 +77,7 @@ module J2ME {
     // These can technically yield but are worth the risk.
     // XXX Determine the current status of this item.
     // "java/lang/Object.equals.(Ljava/lang/Object;)Z": YieldReason.None
-  }
+  };
 
   export function isFinalClass(classInfo: ClassInfo): boolean {
     var result = classInfo.isFinal;
@@ -98,7 +98,7 @@ module J2ME {
       var allSubClasses = classInfo.allSubClasses;
       result = true;
       for (var i = 0; i < allSubClasses.length; i++) {
-        var subClassMethods = allSubClasses[i].methods;
+        var subClassMethods = allSubClasses[i].getMethods();
         for (var j = 0; j < subClassMethods.length; j++) {
           var subClassMethodInfo = subClassMethods[j];
           if (methodInfo.name === subClassMethodInfo.name &&
@@ -114,7 +114,7 @@ module J2ME {
   }
 
   export function gatherCallees(callees: MethodInfo [], classInfo: ClassInfo, methodInfo: MethodInfo) {
-    var methods = classInfo.methods;
+    var methods = classInfo.getMethods();
 
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
@@ -225,25 +225,28 @@ module J2ME {
       yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[YieldReason.Cycle]);
       return YieldReason.Cycle;
     }
-    if (!methodInfo.code) {
+    if (!methodInfo.codeAttribute) {
       assert (methodInfo.isNative || methodInfo.isAbstract);
       yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " Abstract");
       return yieldMap[methodInfo.implKey] = YieldReason.None;
     }
 
     checkingForCanYield[methodInfo.implKey] = true;
+    var constantPool = methodInfo.classInfo.constantPool;
     try {
       var result = YieldReason.None;
-      var stream = new BytecodeStream(methodInfo.code);
+      var stream = new BytecodeStream(methodInfo.codeAttribute.code);
       stream.setBCI(0);
-      while (stream.currentBCI < methodInfo.code.length) {
+      while (stream.currentBCI < methodInfo.codeAttribute.code.length) {
         var op: Bytecodes = stream.currentBC();
         switch (op) {
           case Bytecodes.NEW:
+            var classInfo = constantPool.resolveClass(stream.readCPI());
+            result = canStaticInitializerYield(classInfo);
+            break;
           case Bytecodes.GETSTATIC:
           case Bytecodes.PUTSTATIC:
-            var cpi = stream.readCPI();
-            var fieldInfo = methodInfo.classInfo.resolve(cpi, true);
+            var fieldInfo = constantPool.resolveField(stream.readCPI(), true);
             var classInfo = fieldInfo.classInfo;
             result = canStaticInitializerYield(classInfo);
             break;
@@ -262,8 +265,8 @@ module J2ME {
           case Bytecodes.RESOLVED_INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
-            var cpi = stream.readCPI()
-            var callee = methodInfo.classInfo.resolve(cpi, op === Bytecodes.INVOKESTATIC);
+            var cpi = stream.readCPI();
+            var callee = constantPool.resolveMethod(cpi, op === Bytecodes.INVOKESTATIC);
 
             if (op !== Bytecodes.INVOKESTATIC) {
               if (yieldVirtualMap[methodInfo.implKey] === YieldReason.None) {

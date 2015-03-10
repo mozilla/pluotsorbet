@@ -151,14 +151,40 @@ var Benchmark = (function() {
     startup.startTimer();
   }
 
+  var numRoundsEl;
+  var roundDelayEl;
+  var deleteFsEl;
+  var deleteJitCacheEl;
+  var startButton;
+  var baselineButton;
+
+  function getSettings() {
+    return {
+      numRounds: numRoundsEl.value | 0,
+      roundDelay: roundDelayEl.value | 0,
+      deleteFs: !!deleteFsEl.checked,
+      deleteJitCache: !!deleteJitCacheEl.checked,
+    };
+  }
+
+  function start() {
+    startup.run(getSettings());
+  };
+
+  function buildBaseline() {
+    var settings = getSettings();
+    settings["buildBaseline"] = true;
+    startup.run(settings);
+  }
+
   return {
     initUI: function() {
-      var numRoundsEl = document.getElementById("benchmark-num-rounds");
-      var roundDelayEl = document.getElementById("benchmark-round-delay");
-      var deleteFsEl = document.getElementById("benchmark-delete-fs");
-      var deleteJitCacheEl = document.getElementById("benchmark-delete-jit-cache");
-      var startButton = document.getElementById("benchmark-startup-run");
-      var baselineButton = document.getElementById("benchmark-startup-baseline");
+      numRoundsEl = document.getElementById("benchmark-num-rounds");
+      roundDelayEl = document.getElementById("benchmark-round-delay");
+      deleteFsEl = document.getElementById("benchmark-delete-fs");
+      deleteJitCacheEl = document.getElementById("benchmark-delete-jit-cache");
+      startButton = document.getElementById("benchmark-startup-run");
+      baselineButton = document.getElementById("benchmark-startup-baseline");
 
       numRoundsEl.value = storage.numRounds;
       roundDelayEl.value = storage.roundDelay;
@@ -169,25 +195,11 @@ var Benchmark = (function() {
         startButton.disabled = true;
       }
 
-      function getSettings() {
-        return {
-          numRounds: numRoundsEl.value | 0,
-          roundDelay: roundDelayEl.value | 0,
-          deleteFs: !!deleteFsEl.checked,
-          deleteJitCache: !!deleteJitCacheEl.checked,
-        };
-      }
-
-      startButton.onclick = function() {
-        startup.run(getSettings());
-      };
-
-      baselineButton.onclick = function() {
-        var settings = getSettings();
-        settings["buildBaseline"] = true;
-        startup.run(settings);
-      };
+      startButton.onclick = start;
+      baselineButton.onclick = buildBaseline;
     },
+    start: start,
+    buildBaseline: buildBaseline,
     startup: {
       init: function() {
         if (!storage.running) {

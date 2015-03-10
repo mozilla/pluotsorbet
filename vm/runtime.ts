@@ -907,7 +907,7 @@ module J2ME {
       $.setClassInitialized(runtimeKlass);
       return;
     }
-    var fields = runtimeKlass.templateKlass.classInfo.fields;
+    var fields = runtimeKlass.templateKlass.classInfo.getFields();
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       if (field.isStatic) {
@@ -1072,7 +1072,7 @@ module J2ME {
     registerKlass(klass, classInfo);
     leaveTimeline("registerKlass");
 
-    if (classInfo.isArrayClass) {
+    if (classInfo instanceof ArrayClassInfo) {
       klass.isArrayKlass = true;
       var elementKlass = getKlass(classInfo.elementClass);
       elementKlass.arrayKlass = klass;
@@ -1100,7 +1100,7 @@ module J2ME {
         return "[Interface Klass " + classInfo.className + "]";
       };
       setKlassSymbol(mangledName, klass);
-    } else if (classInfo.isArrayClass) {
+    } else if (classInfo instanceof ArrayClassInfo) {
       var elementKlass = getKlass(classInfo.elementClass);
       // Have we already created one? We need to maintain pointer identity.
       if (elementKlass.arrayKlass) {
@@ -1341,7 +1341,7 @@ module J2ME {
    */
   function linkKlassFields(klass: Klass) {
     var classInfo = klass.classInfo;
-    var fields = classInfo.fields;
+    var fields = classInfo.getFields();
     var classBindings = Bindings[klass.classInfo.className];
     if (classBindings && classBindings.fields) {
       for (var i = 0; i < fields.length; i++) {
@@ -1373,8 +1373,12 @@ module J2ME {
   }
 
   function linkKlassMethods(klass: Klass) {
+    var methods = klass.classInfo.getMethods();
+    if (!methods) {
+      return;
+    }
     linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
-    var methods = klass.classInfo.methods;
+    var methods = klass.classInfo.getMethods();
     var classBindings = Bindings[klass.classInfo.className];
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
@@ -1442,7 +1446,7 @@ module J2ME {
         if (methodType === MethodType.Interpreted) {
           nativeCounter.count(MethodType[MethodType.Interpreted]);
           key += methodInfo.isSynchronized ? " Synchronized" : "";
-          key += methodInfo.exception_table.length ? " Has Exceptions" : "";
+          key += methodInfo.exception_table_length ? " Has Exceptions" : "";
           // key += " " + methodInfo.implKey;
         }
         // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
@@ -1480,7 +1484,7 @@ module J2ME {
     function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
       return function() {
         var args = Array.prototype.slice.apply(arguments);
-        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.callCount ++));
+        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
         var s = performance.now();
         var value = fn.apply(this, args);
         traceWriter.outdent();
@@ -1510,9 +1514,11 @@ module J2ME {
     release || assert (!klass.interfaces);
     var interfaces = klass.interfaces = klass.superKlass ? klass.superKlass.interfaces.slice() : [];
 
-    var interfaceClassInfos = classInfo.interfaces;
-    for (var j = 0; j < interfaceClassInfos.length; j++) {
-      ArrayUtilities.pushUnique(interfaces, getKlass(interfaceClassInfos[j]));
+    var interfaceClassInfos = classInfo.getAllInterfaces();
+    if (interfaceClassInfos) {
+      for (var j = 0; j < interfaceClassInfos.length; j++) {
+        ArrayUtilities.pushUnique(interfaces, getKlass(interfaceClassInfos[j]));
+      }
     }
   }
 
@@ -1565,8 +1571,8 @@ module J2ME {
     }
 
     // Don't compile methods that are too large.
-    if (methodInfo.code.length > 2000) {
-      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.code.length);
+    if (methodInfo.codeAttribute.code.length > 2000) {
+      jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
       return;
     }
@@ -1582,7 +1588,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
-    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.bytecodeCount);
+    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
     var s = performance.now();
 
     var compiledMethod;
@@ -1622,7 +1628,7 @@ module J2ME {
     if (jitWriter) {
       jitWriter.leave(
         "Compilation Done: " + methodJITTime.toFixed(2) + " ms, " +
-        "codeSize: " + methodInfo.code.length + ", " +
+        "codeSize: " + methodInfo.codeAttribute.code.length + ", " +
         "sourceSize: " + compiledMethod.body.length);
       jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
     }
@@ -1866,7 +1872,7 @@ module J2ME {
   }
 
   export function classInitCheck(classInfo: ClassInfo) {
-    if (classInfo.isArrayClass || $.initialized[classInfo.className]) {
+    if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.className]) {
       return;
     }
     linkKlass(classInfo);
