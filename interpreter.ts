@@ -1058,7 +1058,7 @@ module J2ME {
             var calleeMethodInfo = <MethodInfo><any>rp[index];
             var object = frame.peekInvokeObject(calleeMethodInfo);
 
-            calleeMethod = object[calleeMethodInfo.mangledName];
+            calleeMethod = Methods[object["_name_" + calleeMethodInfo.mangledName]];
             var calleeTargetMethodInfo: MethodInfo = calleeMethod.methodInfo;
 
             if (calleeTargetMethodInfo &&
@@ -1165,7 +1165,7 @@ module J2ME {
                     frame.patch(3, Bytecodes.INVOKEVIRTUAL, Bytecodes.RESOLVED_INVOKEVIRTUAL);
                   }
                 case Bytecodes.INVOKEINTERFACE:
-                  calleeMethod = object[calleeMethodInfo.mangledName];
+                  calleeMethod = Methods[object["_name_" + calleeMethodInfo.mangledName]];
                   calleeTargetMethodInfo = calleeMethod.methodInfo;
                   break;
                 case Bytecodes.INVOKESPECIAL:

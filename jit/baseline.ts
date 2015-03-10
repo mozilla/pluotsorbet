@@ -859,11 +859,11 @@ module J2ME {
       var object = null, call;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         object = this.pop(Kind.Reference);
+        args.unshift(object);
         if (opcode === Bytecodes.INVOKESPECIAL) {
-          args.unshift(object);
           call = "Methods['" + methodInfo.mangledClassAndMethodName + "'].call(" + args.join(",") + ")";
         } else {
-          call = object + "." + methodInfo.mangledName + "(" + args.join(",") + ")";
+          call = "Methods[" + object + "['_name_" + methodInfo.mangledName + "']].call(" + args.join(",") + ")";
         }
       } else {
         call = "Methods['" + methodInfo.mangledClassAndMethodName + "'](" + args.join(",") + ")";

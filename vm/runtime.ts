@@ -863,8 +863,6 @@ module J2ME {
 
     classSymbols: string [];
 
-    methodInfos: {};
-
     /**
      * Static constructor, not all klasses have one.
      */
@@ -1100,20 +1098,6 @@ module J2ME {
     if (!classInfo.isInterface) {
       initializeInterfaces(klass, classInfo);
     }
-
-    klass.methodInfos = {};
-
-    // klass.prototype = new Proxy(klass.prototype, {
-    //   get: function(target, name) {
-    //     if (name in target) {
-    //       return target[name];
-    //     }
-    //     var methodInfo = klass.methodInfos[name];
-    //     if (methodInfo) {
-    //       return Methods[methodInfo.mangledClassAndMethodName];
-    //     }
-    //   },
-    // });
 
     return klass;
   }
@@ -1482,7 +1466,6 @@ module J2ME {
     }
 
     if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
       var classBindings = Bindings[methodInfo.classInfo.className];
       if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
         var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
@@ -1499,14 +1482,13 @@ module J2ME {
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
     methodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
-    methodInfo.classInfo.klass.methodInfos[methodInfo.mangledName] = methodInfo;
 
     var indirectFn = function indirectFn() {
       return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
     };
 
     if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = indirectFn;
+      methodInfo.classInfo.klass.prototype["_name_" + methodInfo.mangledName] = methodInfo.mangledClassAndMethodName;
       var classBindings = Bindings[methodInfo.classInfo.className];
       if (instanceSymbols) {
         var methodKey = instanceSymbols[methodInfo.name + "." + methodInfo.signature];
