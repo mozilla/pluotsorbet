@@ -306,9 +306,13 @@ module J2ME {
             methodFilterList.splice(methodFilterList.indexOf(method.implKey), 1);
           }
           var compiledMethodName = mangledClassAndMethodName;
-          writer.enter("function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
+          // We name the function expression, in addition to adding it to CompiledMethods,
+          // because Runtime.B/T retrieve its name via arguments.callee.caller.name.
+          // TODO: remove use of arguments.callee, which has perf issues, so we can remove function names.
+          // TODO: refactor string literals with equivalents in Runtime.compileAndLinkMethod.
+          writer.enter("CompiledMethods['" + compiledMethodName + "'] = function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
-          writer.leave("}");
+          writer.leave("};");
           if (method.name === "<clinit>") {
             writer.writeLn(mangledClassName + ".staticConstructor = " + mangledClassAndMethodName);
           } else if (!method.isStatic) {
