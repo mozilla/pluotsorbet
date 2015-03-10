@@ -182,11 +182,11 @@ Java compiler will do nothing to ensure that implementation actually exists. At 
 
 We use `Native` object in JS to handle creation and registration of `native` functions. See native.js
 
-    Native.create("name/of/function.(parameterTypes)returnType", jsFuncToCall, isAsync)
+    Native["name/of/function.(parameterTypes)returnType"] = jsFuncToCall;
 
 e.g.:
 
-    Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {...});
+    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
 
 If you need to implement a method in JS but you can't declare it `native` in Java, use `Override`.
 
@@ -200,12 +200,26 @@ If raising a Java `Exception`, throw new instance of Java `Exception` class as d
 
     throw $.newNullPointerException("Cannot copy to/from a null array.");
 
+If you need implement a native method with async JS calls, the following steps are required:
+
+1. Add the method to the `yieldMap` in jit/analyze.ts
+2. Use `asyncImpl` in override.js to return the asnyc value with a `Promise`.
+
+The `asyncImpl` is optional if part of the code doesn't make async calls, the method could return value as regular native method and the VM will handle it properly.
+
+e.g:
+
+    Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
+        asyncImpl("V", new Promise(function(resolve, reject) {
+            window.setTimeout(resolve, delay.toNumber());
+        }));
+    };
+
 Remember:
 
   * Return types are automatically converted to Java types, but parameters are not automatically converted from Java types to JS types
-  * Pass `true` as last param if JS will make async calls and return a `Promise`
   * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
-  * Context is last param to every function registered using `Native.create` or `Override.create`
+  * `$` is current runtime and `$.ctx` current Context
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
 
 ## Packaging
