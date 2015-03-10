@@ -156,7 +156,6 @@ benchmarks: java tests
 	make -C bench
 
 clean:
-	rm -f j2me.js `find . -name "*~"`
 	rm -rf build
 	rm -f config/build.js
 	make -C tools/jasmin-2.4 clean

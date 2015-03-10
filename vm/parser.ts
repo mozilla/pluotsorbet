@@ -662,8 +662,6 @@ module J2ME {
     // this_class: number;
     // super_class: number;
 
-    staticInitializer: MethodInfo;
-
     klass: Klass = null;
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
     private fields: (number | FieldInfo) [] = null;
@@ -944,6 +942,10 @@ module J2ME {
         allInterfaces = allInterfaces.concat(interfaces[i].getAllInterfaces());
       }
       return allInterfaces;
+    }
+
+    get staticInitializer(): MethodInfo {
+      return this.getMethodByName("<clinit>", "()V", true);
     }
 
     /**
