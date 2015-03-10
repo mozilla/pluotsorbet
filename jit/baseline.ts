@@ -711,6 +711,14 @@ module J2ME {
       this.emitPush(Kind.Void, v, Precedence.Sequence); // TODO: Revisit precedence.
     }
 
+    emitPushInteger(v) {
+      if (v < 0) {
+        this.emitPush(Kind.Int, v, Precedence.UnaryNegation);
+      } else {
+        this.emitPush(Kind.Int, v, Precedence.Primary);
+      }
+    }
+    
     emitPush(kind: Kind, v, precedence: Precedence) {
       writer && writer.writeLn("push: sp: " + this.sp + " " + Kind[kind] + " " + v);
       // this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
@@ -912,11 +920,9 @@ module J2ME {
 
       switch (tag) {
         case TAGS.CONSTANT_Integer:
-          var value = cp.resolve(cpi, tag);
-          this.emitPush(Kind.Int, value, value < 0 ? Precedence.UnaryNegation : Precedence.Primary);
+          this.emitPushInteger(cp.resolve(cpi, tag));
           return;
         case TAGS.CONSTANT_Float:
-          var value = cp.resolve(cpi, tag);
           this.emitPush(Kind.Float, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Double:
@@ -1319,10 +1325,8 @@ module J2ME {
         case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
         case Bytecodes.LCONST_0       :
         case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0), Precedence.Primary); break;
-        case Bytecodes.BIPUSH         : var value = stream.readByte();
-                                        this.emitPush(Kind.Int, value, value < 0 ? Precedence.UnaryNegation : Precedence.Primary); break;
-        case Bytecodes.SIPUSH         : var value = stream.readShort();
-                                        this.emitPush(Kind.Int, value, value < 0 ? Precedence.UnaryNegation : Precedence.Primary); break;
+        case Bytecodes.BIPUSH         : this.emitPushInteger(stream.readByte()); break;
+        case Bytecodes.SIPUSH         : this.emitPushInteger(stream.readShort()); break;
         case Bytecodes.LDC            :
         case Bytecodes.LDC_W          :
         case Bytecodes.LDC2_W         : this.emitLoadConstant(stream.readCPI()); break;
