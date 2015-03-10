@@ -1141,7 +1141,7 @@ var emoji = (function() {
           var num = i.toString(16);
           if (config.customEmojiImageFormat) {
             var fileName = config.customEmojiImageFormat.replace("NUM", num);
-            images[i].src = URL.createObjectURL(new Blob([ CLASSES.loadFile(fileName) ]));
+            images[i].src = URL.createObjectURL(new Blob([ JARStore.loadFile(fileName) ]));
           } else {
             images[i].src = "style/emoji/emoji" + num + ".png";
           }

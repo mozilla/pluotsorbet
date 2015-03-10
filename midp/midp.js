@@ -53,15 +53,14 @@ var MIDP = (function() {
   var manifest = {};
 
   Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
-    var bytes = CLASSES.loadFileFromJar(util.fromJavaString(jar), util.fromJavaString(entryName));
+    var bytes = JARStore.loadFileFromJAR(util.fromJavaString(jar), util.fromJavaString(entryName));
     if (!bytes) {
       throw $.newIOException();
     }
     var length = bytes.byteLength;
-    var data = new Int8Array(bytes);
     var array = J2ME.newByteArray(length);
     for (var n = 0; n < length; ++n) {
-      array[n] = data[n];
+      array[n] = bytes[n];
     }
     return array;
   };
@@ -425,6 +424,7 @@ var MIDP = (function() {
     return AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
   };
 
+  // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
   Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
     // See DisplayContainer::createDisplayId, called by the LCDUIEnvironment constructor,
     // called by CldcMIDletSuiteLoader::createSuiteEnvironment.
@@ -432,6 +432,8 @@ var MIDP = (function() {
     // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
     // the display ID.
     displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
+
+    asyncImpl("V", Promise.all(loadingMIDletPromises));
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
@@ -491,16 +493,15 @@ var MIDP = (function() {
 
   Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
     var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
-    var data = CLASSES.loadFile(fileName);
+    var data = JARStore.loadFile(fileName);
     if (!data) {
       console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
       return null;
     }
     var len = data.byteLength;
     var bytes = J2ME.newByteArray(len);
-    var src = new Int8Array(data);
-    for (var n = 0; n < bytes.byteLength; ++n) {
-      bytes[n] = src[n];
+    for (var n = 0; n < len; ++n) {
+      bytes[n] = data[n];
     }
     return bytes;
   };
@@ -947,21 +948,14 @@ var MIDP = (function() {
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
 
-      fs.remove("/midlet.jad");
-      fs.create("/midlet.jad", new Blob([ data.jadData ]));
-      fs.remove("/midlet.jar");
-      fs.create("/midlet.jar", new Blob([ data.jarData ]));
-
       Promise.all([
-        new Promise(function(resolve, reject) {
-          fs.syncStore(resolve);
-        }),
+        JARStore.installJAR("midlet.jar", data.jarData, data.jadData),
         CompiledMethodCache.clear(),
-        ]).then(function() {
-          pendingMIDletUpdate = null;
-          DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
-          DumbPipe.close(DumbPipe.open("reload", {}));
-        });
+      ]).then(function() {
+        pendingMIDletUpdate = null;
+        DumbPipe.close(DumbPipe.open("alert", "Update completed!"));
+        DumbPipe.close(DumbPipe.open("reload", {}));
+      });
     });
   };
 
@@ -1153,15 +1147,16 @@ var MIDP = (function() {
       // First build up a mapping of field names to field IDs
       var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
       var constantsMap = new Map();
-      classInfo.fields.forEach(function(field) {
-        constantsMap.set(field.name, classInfo.constant_pool[field.constantValue].integer);
+      var fields = classInfo.getFields();
+      fields.forEach(function(field) {
+        constantsMap.set(field.name, field.constantValue);
       });
 
-      var data = CLASSES.loadFileFromJar("java/classes.jar", "assets/0/en-US.xml");
+      var data = JARStore.loadFileFromJAR("java/classes.jar", "assets/0/en-US.xml");
       if (!data)
         throw $.newIOException();
 
-      var text = util.decodeUtf8(data);
+      var text = util.decodeUtf8Array(data);
       var xml = new window.DOMParser().parseFromString(text, "text/xml");
       var entries = xml.getElementsByTagName("localized_string");
 
@@ -1446,6 +1441,8 @@ var MIDP = (function() {
     console.warn("GestureInteractiveZone.isSupported.(I)Z not implemented (" + gestureEventIdentity + ")");
     return 0;
   };
+
+  addUnimplementedNative("com/nokia/mid/ui/gestures/GestureInteractiveZone.getGestures.()I", 0);
 
   Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(suiteId, permission) {
     return 1;

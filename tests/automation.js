@@ -105,7 +105,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -162,29 +162,29 @@ casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
         casper.waitForText("DONE", function() {
             test.assertTextExists("I m\n" +
                                   "I a ma\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I ma\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I 1 isolate\n" +
                                   "I Isolate ID correct\n" +
-                                  "I 4\n" +
                                   "I 5\n" +
+                                  "I 6\n" +
                                   "I 1 isolate\n" +
                                   "I ma\n" +
                                   "I ma\n" +
                                   "I 3 isolates\n" +
                                   "I 1 m1\n" +
-                                  "I 4\n" +
-                                  "I 2 m2\n" +
                                   "I 5\n" +
+                                  "I 2 m2\n" +
+                                  "I 6\n" +
                                   "I ma\n" +
                                   "I 1 isolate\n" +
                                   "I Isolates terminated\n" +
                                   "I r mar\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I mar\n" +
                                   "I c marc\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I marc\n" +
                                   "I Main isolate still running");
         });
@@ -373,7 +373,7 @@ casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
         });
     });
 
-    // Run the test a second time to ensure loading the JAR stored in the FS works correctly.
+    // Run the test a second time to ensure loading the JAR stored in the JARStore works correctly.
     casper
     .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
     .withFrame(0, function() {
@@ -412,9 +412,9 @@ casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
         });
     });
 
-    // Clear the FS before downloading another JAD
+    // Clear the JARStore before downloading another JAD
     casper
-    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
+    .thenOpen("http://localhost:8000/tests/jarstore/clear-jarstore.html")
     .waitForText("DONE");
 
     casper
@@ -447,6 +447,12 @@ casper.test.begin("unit tests", 19 + gfxTests.length, function(test) {
                 });
             });
         });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/tests/jarstore/jarstoretests.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 23 pass, 0 fail", "JARStore unit tests");
     });
 
     casper

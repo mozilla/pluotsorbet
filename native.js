@@ -260,7 +260,7 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
-    return J2ME.getRuntimeKlass($.ctx.runtime, this.klass).classObject;
+    return $.getRuntimeKlass(this.klass).classObject;
 };
 
 Native["java/lang/Object.wait.(J)V"] = function(timeout) {
@@ -275,103 +275,73 @@ Native["java/lang/Object.notifyAll.()V"] = function() {
     $.ctx.notify(this, true);
 };
 
-Native["java/lang/Class.invoke_clinit.()V"] = function() {
-    var classInfo = this.classInfo;
-    var className = classInfo.className;
-    var runtime = $.ctx.runtime;
-    if (runtime.initialized[className] || runtime.pending[className])
-        return;
-    runtime.pending[className] = true;
-    if (className === "com/sun/cldc/isolate/Isolate") {
-        // The very first isolate is granted access to the isolate API.
-        var isolate = classInfo.getStaticObject($.ctx);
-        CLASSES.getField(classInfo, "S._API_access_ok.I").set(isolate, 1);
+Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
+    var superKlass = this.runtimeKlass.templateKlass.superKlass;
+    if (!superKlass) {
+      return null;
     }
-    var clinit = CLASSES.getMethod(classInfo, "S.<clinit>.()V");
+    return superKlass.classInfo.getClassObject();
+};
 
-    var frames = [];
+Native["java/lang/Class.invoke_clinit.()V"] = function() {
+    var classInfo = this.runtimeKlass.templateKlass.classInfo;
+    var className = classInfo.className;
+    var clinit = classInfo.staticInitializer;
     if (clinit && clinit.classInfo.className === className) {
-        frames.push(Frame.create(clinit, [], 0));
-    }
-    if (classInfo.superClass) {
-        var classInitFrame = $.ctx.getClassInitFrame(classInfo.superClass);
-        if (classInitFrame) {
-            frames.push(classInitFrame);
-        }
-    }
-    if (frames.length) {
-        $.ctx.executeFrames(frames);
+        $.ctx.executeFrames([Frame.create(clinit, [], 0)]);
     }
 };
 
+Native["java/lang/Class.invoke_verify.()V"] = function() {
+    // There is currently no verification.
+};
+
 Native["java/lang/Class.init9.()V"] = function() {
-    var classInfo = this.classInfo;
-    var className = classInfo.className;
-    var runtime = $.ctx.runtime;
-    if (runtime.initialized[className])
-        return;
-    runtime.pending[className] = false;
-    runtime.initialized[className] = true;
+    $.setClassInitialized(this.runtimeKlass);
 };
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function() {
     return J2ME.newString(this.runtimeKlass.templateKlass.classInfo.className.replace(/\//g, "."));
 };
 
-Native["java/lang/Class.forName.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
-    try {
-        if (!name)
-            throw new J2ME.ClassNotFoundException();
-        var className = util.fromJavaString(name).replace(/\./g, "/");
-        var classInfo = null;
-        classInfo = CLASSES.getClass(className);
-    } catch (e) {
-        if (e instanceof (J2ME.ClassNotFoundException))
-            throw $.newClassNotFoundException("'" + e.message + "' not found.");
-        throw e;
-    }
-    J2ME.linkKlass(classInfo);
-    var classObject = classInfo.getClassObject();
-    J2ME.Debug.assert(!U, "Unwinding isn't currently supported here.");
-    return classObject;
+Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
+  var classInfo = null;
+  try {
+    if (!name)
+      throw new J2ME.ClassNotFoundException();
+    var className = util.fromJavaString(name).replace(/\./g, "/");
+    classInfo = CLASSES.getClass(className);
+  } catch (e) {
+    if (e instanceof (J2ME.ClassNotFoundException))
+      throw $.newClassNotFoundException("'" + e.message + "' not found.");
+    throw e;
+  }
+  // The following can trigger an unwind.
+  J2ME.classInitCheck(classInfo);
 };
 
-Native["java/lang/Class.newInstance.()Ljava/lang/Object;"] = function() {
-    var className = this.runtimeKlass.templateKlass.classInfo.className;
-    var syntheticMethod = new MethodInfo({
-      name: "ClassNewInstanceSynthetic",
-      signature: "()Ljava/lang/Object;",
-      isStatic: true,
-      classInfo: J2ME.ClassInfo.createFromObject({
-        className: {value: className},
-        vmc: {value: {}},
-        vfc: {value: {}},
-        constant_pool: {value: [
-          null,
-          { tag: TAGS.CONSTANT_Class, name_index: 2 },
-          { bytes: className },
-          { tag: TAGS.CONSTANT_Methodref, class_index: 1, name_and_type_index: 4 },
-          { name_index: 5, signature_index: 6 },
-          { bytes: "<init>" },
-          { bytes: "()V" },
-        ]}
-      }),
-      code: new Uint8Array([
-        0xbb, 0x00, 0x01, // new <idx=1>
-        0x59,             // dup
-        0xb7, 0x00, 0x03, // invokespecial <idx=3>
-        0xb0              // areturn
-      ]),
-    });
-    return $.ctx.executeFrames([new Frame(syntheticMethod, [], 0)]);
+Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
+  var className = util.fromJavaString(name).replace(/\./g, "/");
+  var classInfo = CLASSES.getClass(className);
+  var classObject = classInfo.getClassObject();
+  return classObject;
+};
+
+Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
+  return new this.runtimeKlass.templateKlass;
+};
+
+Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
+  // The following can trigger an unwind.
+  o.klass.classInfo.getMethodByName("<init>", "()V", false).fn.call(o);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {
-    return J2ME.AccessFlags.isInterface(this.runtimeKlass.templateKlass.classInfo.access_flags) ? 1 : 0;
+    return this.runtimeKlass.templateKlass.classInfo.isInterface ? 1 : 0;
 };
 
 Native["java/lang/Class.isArray.()Z"] = function() {
-    return this.runtimeKlass.templateKlass.classInfo.isArrayClass ? 1 : 0;
+    return this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo ? 1 : 0;
 };
 
 Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(fromClass) {
@@ -432,7 +402,7 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
             return;
         var classInfo = methodInfo.classInfo;
         var className = classInfo.className;
-        this.stackTrace.unshift({ className: className, methodName: methodName, offset: frame.bci });
+        this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
     }.bind(this));
 };
 
@@ -465,9 +435,6 @@ Native["java/lang/Runtime.totalMemory.()J"] = function() {
 };
 
 Native["java/lang/Runtime.gc.()V"] = function() {
-    if (typeof gc !== "undefined") {
-        gc(); // gc exists in the spidermonkey shell.
-    }
 };
 
 Native["java/lang/Math.floor.(D)D"] = function(val) {
@@ -528,48 +495,14 @@ Native["java/lang/Thread.start0.()V"] = function() {
         throw $.newIllegalThreadStateException();
     this.alive = true;
     this.pid = util.id();
-    var run = CLASSES.getMethod(this.klass.classInfo, "I.run.()V");
     // Create a context for the thread and start it.
     var newCtx = new Context($.ctx.runtime);
     newCtx.thread = this;
 
-
-    var syntheticMethod = new MethodInfo({
-      name: "ThreadStart0Synthetic",
-      signature: "()V",
-      classInfo: J2ME.ClassInfo.createFromObject({
-        className: {value: this.klass.classInfo.className},
-        vmc: {value: {}},
-        vfc: {value: {}},
-        constant_pool: {value: [
-          null,
-          { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4 },
-          { tag: TAGS.CONSTANT_Class, name_index: 3 },
-          { bytes: "java/lang/Thread" },
-          { tag: TAGS.CONSTANT_Methodref, name_index: 5, signature_index: 6 },
-          { bytes: "run" },
-          { bytes: "()V" },
-          { tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 8 },
-          { name_index: 9, signature_index: 10 },
-          { bytes: "internalExit" },
-          { bytes: "()V" },
-        ]},
-      }),
-      code: new Uint8Array([
-        0x2a,             // aload_0
-        0x59,             // dup
-        0xb6, 0x00, 0x01, // invokespecial <idx=1>
-        0xb7, 0x00, 0x07, // invokespecial <idx=7>
-        0xb1,             // return
-      ])
-    });
-
-    newCtx.start(new Frame(syntheticMethod, [ this ], 0));
-};
-
-Native["java/lang/Thread.internalExit.()V"] = function() {
-    this.alive = false;
-};
+    var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
+    var run = classInfo.getMethodByName("runThread", "(Ljava/lang/Thread;)V", true);
+    newCtx.start([new Frame(run, [ this ], 0)]);
+}
 
 Native["java/lang/Thread.isAlive.()Z"] = function() {
     return this.alive ? 1 : 0;
@@ -595,11 +528,11 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(name) {
     var fileName = util.fromJavaString(name);
-    var data = CLASSES.loadFile(fileName);
+    var data = JARStore.loadFile(fileName);
     var obj = null;
     if (data) {
         obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-        obj.data = new Uint8Array(data);
+        obj.data = data;
         obj.pos = 0;
     }
     return obj;
@@ -756,6 +689,24 @@ Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/s
     asyncImpl("V", new Promise(function(){}));
 };
 
+Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V"] = function(data) {
+    this.decoded = new TextDecoder("UTF-8").decode(data);
+};
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I"] = function(cbuf, off, len) {
+    if (this.decoded.length === 0) {
+      return -1;
+    }
+
+    for (var i = 0; i < len; i++) {
+      cbuf[i + off] = this.decoded.charCodeAt(i);
+    }
+
+    this.decoded = this.decoded.substring(len);
+
+    return len;
+};
+
 Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(jStr) {
     var str = util.fromJavaString(jStr);
 
@@ -795,6 +746,129 @@ Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(
     }
 
     return bytearr;
+};
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.encodeUTF8.([CII)[B"] = function(cbuf, off, len) {
+  var outputArray = [];
+
+  var pendingSurrogate = this.pendingSurrogate;
+
+  var inputChar = 0;
+  var outputSize = 0;
+  var count = 0;
+
+  while (count < len) {
+    var outputByte = new Int8Array(4);     // Never more than 4 encoded bytes
+    inputChar = 0xffff & cbuf[off + count];
+    if (0 != pendingSurrogate) {
+      if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+        //000u uuuu xxxx xxxx xxxx xxxx
+        //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
+        var highHalf = (pendingSurrogate & 0x03ff) + 0x0040;
+        var lowHalf = inputChar & 0x03ff;
+        inputChar = (highHalf << 10) | lowHalf;
+      } else {
+        // write replacement value instead of unpaired surrogate
+        outputByte[0] = replacementValue;
+        outputSize = 1;
+        outputArray.push(outputByte.subarray(0, outputSize));
+      }
+      pendingSurrogate = 0;
+    }
+    if (inputChar < 0x80) {
+      outputByte[0] = inputChar;
+      outputSize = 1;
+    } else if (inputChar < 0x800) {
+      outputByte[0] = 0xc0 | ((inputChar >> 6) & 0x1f);
+      outputByte[1] = 0x80 | (inputChar & 0x3f);
+      outputSize = 2;
+    } else if (0xd800 <= inputChar && inputChar <= 0xdbff) {
+      pendingSurrogate = inputChar;
+      outputSize = 0;
+    } else if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+      // unpaired surrogate
+      outputByte[0] = replacementValue;
+      outputSize = 1;
+    } else if (inputChar < 0x10000) {
+      outputByte[0] = 0xe0 | ((inputChar >> 12) & 0x0f);
+      outputByte[1] = 0x80 | ((inputChar >> 6) & 0x3f);
+      outputByte[2] = 0x80 | (inputChar & 0x3f);
+      outputSize = 3;
+    } else {
+      /* 21 bits: 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+       * a aabb  bbbb cccc  ccdd dddd
+       */
+      outputByte[0] = 0xf0 | ((inputChar >> 18) & 0x07);
+      outputByte[1] = 0x80 | ((inputChar >> 12) & 0x3f);
+      outputByte[2] = 0x80 | ((inputChar >> 6) & 0x3f);
+      outputByte[3] = 0x80 | (inputChar & 0x3f);
+      outputSize = 4;
+    }
+    outputArray.push(outputByte.subarray(0, outputSize));
+    count++;
+  }
+
+  this.pendingSurrogate = pendingSurrogate;
+
+  var totalSize = outputArray.reduce(function(total, cur) {
+    return total + cur.length;
+  }, 0);
+
+  var res = J2ME.newByteArray(totalSize);
+  outputArray.reduce(function(total, cur) {
+    res.set(cur, total);
+    return total + cur.length;
+  }, 0);
+
+  return res;
+};
+
+Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(cbuf, off, len) {
+  var inputChar = 0;
+  var outputSize = 0;
+  var outputCount = 0;
+  var count = 0;
+  var localPendingSurrogate = this.pendingSurrogate;
+  while (count < length) {
+    inputChar = 0xffff & cbuf[offset + count];
+    if (0 != localPendingSurrogate) {
+      if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+        //000u uuuu xxxx xxxx xxxx xxxx
+        //1101 10ww wwxx xxxx   1101 11xx xxxx xxxx
+        var highHalf = (localPendingSurrogate & 0x03ff) + 0x0040;
+        var lowHalf = inputChar & 0x03ff;
+        inputChar = (highHalf << 10) | lowHalf;
+      } else {
+        // going to write replacement value instead of unpaired surrogate
+        outputSize = 1;
+        outputCount += outputSize;
+      }
+      localPendingSurrogate = 0;
+    }
+    if (inputChar < 0x80) {
+      outputSize = 1;
+    } else if (inputChar < 0x800) {
+      outputSize = 2;
+    } else if (0xd800 <= inputChar && inputChar <= 0xdbff) {
+      localPendingSurrogate = inputChar;
+      outputSize = 0;
+    } else if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
+      // unpaired surrogate
+      // going to output replacementValue;
+      outputSize = 1;
+    } else if (inputChar < 0x10000) {
+      outputSize = 3;
+    } else {
+      /* 21 bits: 1111 0xxx  10xx xxxx  10xx xxxx  10xx xxxx
+       * a aabb  bbbb cccc  ccdd dddd
+       */
+      outputSize = 4;
+    }
+    outputCount += outputSize;
+    count++;
+  }
+
+  return outputCount;
 };
 
 Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
@@ -886,18 +960,5 @@ function addUnimplementedNative(signature, returnValue) {
 Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
-    }
-};
-
-Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
-    var string = util.fromJavaString(this);
-
-    var internedString = J2ME.internedStrings.get(string);
-
-    if (internedString) {
-        return internedString;
-    } else {
-        J2ME.internedStrings.set(string, this);
-        return this;
     }
 };

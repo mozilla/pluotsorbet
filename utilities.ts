@@ -335,6 +335,8 @@ module J2ME {
 
   export module ArrayUtilities {
     import assert = Debug.assert;
+    
+    export var EMPTY_ARRAY = [];
 
     export function makeArrays(length: number): any [][] {
       var arrays = [];
@@ -1117,6 +1119,10 @@ module J2ME {
      */
     export function int32ToFloat(i: number) {
       i32[0] = i; return f32[0];
+    }
+
+    export function int64ToDouble(high: number, low: number) {
+      i32[0] = low; i32[1] = high; return f64[0];
     }
 
     /**

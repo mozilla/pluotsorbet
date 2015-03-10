@@ -66,6 +66,9 @@ tests.jar: $(SRCS) $(JASMIN_SRCS) Testlets.java
 	java -jar ../tools/jasmin-2.4/jasmin.jar -d build/ $(JASMIN_SRCS)
 	jar cvfe tests.jar RunTests -C build/ .
 	jar uvf $(PACKAGE_FILES) > /dev/null
+	# Create JARs for JARStore tests
+	jar cvf compressed.jar build/RunTests.class
+	jar cvf0 uncompressed.jar build/RunTests.class
 	rm -rf build
 
 clean:

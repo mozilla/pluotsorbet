@@ -105,8 +105,8 @@ module J2ME {
 
     reset(methodInfo: MethodInfo, local: any [], localBase: number) {
       this.methodInfo = methodInfo;
-      this.cp = methodInfo ? methodInfo.classInfo.constant_pool : null;
-      this.code = methodInfo ? methodInfo.code : null;
+      this.cp = methodInfo ? methodInfo.classInfo.constantPool : null;
+      this.code = methodInfo ? methodInfo.codeAttribute.code : null;
       this.pc = 0;
       this.opPC = 0;
       this.stack = [];
@@ -444,88 +444,17 @@ module J2ME {
       return returnValue;
     }
 
-    getClassInitFrame(classInfo: ClassInfo) {
-      if (this.runtime.initialized[classInfo.className]) {
-        return;
-      }
-      classInfo.thread = this.thread;
-      var syntheticMethod = new MethodInfo({
-        name: "ClassInitSynthetic",
-        signature: "()V",
-        isStatic: false,
-        classInfo: ClassInfo.createFromObject({
-          className: {value: classInfo.className},
-          vmc: {value: {}},
-          vfc: {value: {}},
-          constant_pool: {value: [
-            null,
-            {tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 4},
-            {tag: TAGS.CONSTANT_Class, name_index: 3},
-            {bytes: "java/lang/Class"},
-            {name_index: 5, signature_index: 6},
-            {bytes: "invoke_clinit"},
-            {bytes: "()V"},
-            {tag: TAGS.CONSTANT_Methodref, class_index: 2, name_and_type_index: 8},
-            {name_index: 9, signature_index: 10},
-            {bytes: "init9"},
-            {bytes: "()V"},
-          ]},
-        }),
-        code: new Uint8Array([
-          0x2a,             // aload_0
-          0x59,             // dup
-          0x59,             // dup
-          0x59,             // dup
-          0xc2,             // monitorenter
-          0xb7, 0x00, 0x01, // invokespecial <idx=1>
-          0xb7, 0x00, 0x07, // invokespecial <idx=7>
-          0xc3,             // monitorexit
-          0xb1,             // return
-        ])
-      });
-      return Frame.create(syntheticMethod, [classInfo.getClassInitLockObject(this)], 0);
-    }
-
-    pushClassInitFrame(classInfo: ClassInfo) {
-      if (this.runtime.initialized[classInfo.className] ||
-          this.runtime.pending[classInfo.className]) {
-        return;
-      }
-      var needsInitialization = true;
-      if (!classInfo.staticInitializer) {
-        needsInitialization = false;
-        // Special case Isolate.
-        if (classInfo.className === "com/sun/cldc/isolate/Isolate") {
-          needsInitialization = true;
-        }
-        var superClass = classInfo.superClass;
-        while (superClass) {
-          if (!this.runtime.initialized[superClass.className] &&
-            superClass.staticInitializer) {
-            needsInitialization = true;
-            break;
-          }
-          superClass = superClass.superClass;
-        }
-      }
-      linkKlass(classInfo);
-      if (!needsInitialization) {
-        this.runtime.initialized[classInfo.className] = true;
-        return;
-      }
-      var classInitFrame = this.getClassInitFrame(classInfo);
-      this.executeFrames([classInitFrame]);
-    }
-
     createException(className: string, message?: string) {
       if (!message) {
         message = "";
       }
       message = "" + message;
       var classInfo = CLASSES.loadAndLinkClass(className);
+      classInitCheck(classInfo);
+      release || Debug.assert(!U, "Unexpected unwind during createException.");
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
-      var methodInfo = CLASSES.getMethod(classInfo, "I.<init>.(Ljava/lang/String;)V");
+      var methodInfo = classInfo.getMethodByName("<init>", "(Ljava/lang/String;)V", false);
       jsGlobal[methodInfo.mangledClassAndMethodName].call(exception, message ? newString(message) : null);
 
       return exception;
@@ -552,8 +481,9 @@ module J2ME {
       Context.setWriters(Context.writer);
     }
 
-    start(frame: Frame) {
-      this.frames = [Frame.Start, frame];
+    start(frames: Frame[]) {
+      frames.unshift(Frame.Start);
+      this.frames = frames;
       this.resume();
     }
 

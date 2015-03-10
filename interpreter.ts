@@ -26,12 +26,20 @@ module J2ME {
     traceWriter.writeLn(toDebugString(array) + "[" + index + "] (" + toDebugString(array[index]) + ")");
   }
 
+  function classInitAndUnwindCheck(classInfo: ClassInfo, pc: number) {
+    classInitCheck(classInfo);
+    if (U) {
+      $.ctx.current().pc = pc;
+      return;
+    } 
+  }
+
   /**
    * Optimize method bytecode.
    */
   function optimizeMethodBytecode(methodInfo: MethodInfo) {
     interpreterCounter && interpreterCounter.count("optimize: " + methodInfo.implKey);
-    var stream = new BytecodeStream(methodInfo.code);
+    var stream = new BytecodeStream(methodInfo.codeAttribute.code);
     while (stream.currentBC() !== Bytecodes.END) {
       if (stream.rawCurrentBC() === Bytecodes.WIDE) {
         stream.next();
@@ -59,22 +67,10 @@ module J2ME {
     methodInfo.isOptimized = true;
   }
 
-  function resolve(index: number, classInfo: ClassInfo, isStatic: boolean = false): any {
-    return classInfo.resolve(index, isStatic);
-  }
-
-  function resolveField(index: number, classInfo: ClassInfo, isStatic: boolean): FieldInfo {
-    return <FieldInfo><any>classInfo.resolve(index, isStatic);
-  }
-
-  function resolveClass(index: number, classInfo: ClassInfo, isStatic: boolean): ClassInfo {
-    var classInfo: ClassInfo = <any>classInfo.resolve(index, isStatic);
+  function resolveClass(index: number, classInfo: ClassInfo): ClassInfo {
+    var classInfo = classInfo.constantPool.resolveClass(index);
     linkKlass(classInfo);
     return classInfo;
-  }
-
-  function resolveMethod(index: number, classInfo: ClassInfo, isStatic: boolean): MethodInfo {
-    return <MethodInfo><any>classInfo.resolve(index, isStatic);
   }
 
   /**
@@ -111,9 +107,9 @@ module J2ME {
 
   function buildExceptionLog(ex, stackTrace) {
     var className = ex.klass.classInfo.className;
-    var detailMessage = util.fromJavaString(CLASSES.getField(ex.klass.classInfo, "I.detailMessage.Ljava/lang/String;").get(ex));
+    var detailMessage = util.fromJavaString(ex.klass.classInfo.getFieldByName("detailMessage", "Ljava/lang/String;", false).get(ex));
     return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
-      return " - " + entry.className + "." + entry.methodName + "(), pc=" + entry.offset;
+      return " - " + entry.className + "." + entry.methodName + entry.methodSignature + ", pc=" + entry.offset;
     }).join("\n") + "\n\n";
   }
 
@@ -131,17 +127,18 @@ module J2ME {
     var stackTrace = e.stackTrace;
 
     do {
-      var exception_table = frame.methodInfo.exception_table;
       var handler_pc = null;
-      for (var i = 0; exception_table && i < exception_table.length; i++) {
-        if (frame.opPC >= exception_table[i].start_pc && frame.opPC < exception_table[i].end_pc) {
-          if (exception_table[i].catch_type === 0) {
-            handler_pc = exception_table[i].handler_pc;
+
+      for (var i = 0; i < frame.methodInfo.exception_table_length; i++) {
+        var exceptionEntryView = frame.methodInfo.getExceptionEntryViewByIndex(i);
+        if (frame.opPC >= exceptionEntryView.start_pc && frame.opPC < exceptionEntryView.end_pc) {
+          if (exceptionEntryView.catch_type === 0) {
+            handler_pc = exceptionEntryView.handler_pc;
             break;
           } else {
-            classInfo = resolveClass(exception_table[i].catch_type, frame.methodInfo.classInfo, false);
+            classInfo = resolveClass(exceptionEntryView.catch_type, frame.methodInfo.classInfo);
             if (isAssignableTo(e.klass, classInfo.klass)) {
-              handler_pc = exception_table[i].handler_pc;
+              handler_pc = exceptionEntryView.handler_pc;
               break;
             }
           }
@@ -153,6 +150,7 @@ module J2ME {
         stackTrace.push({
           className: classInfo.className,
           methodName: frame.methodInfo.name,
+          methodSignature: frame.methodInfo.signature,
           offset: frame.pc
         });
       }
@@ -201,7 +199,7 @@ module J2ME {
     var frames = ctx.frames;
     var mi = frame.methodInfo;
     var ci = mi.classInfo;
-    var rp = ci.resolved_constant_pool;
+    var rp = ci.constantPool.resolved;
     var stack = frame.stack;
 
 
@@ -230,17 +228,17 @@ module J2ME {
 
     // We don't want to optimize methods for interpretation if we're going to be using the JIT until
     // we teach the Baseline JIT about the new bytecodes.
-    if (!enableRuntimeCompilation && !frame.methodInfo.isOptimized && frame.methodInfo.bytecodeCount > 100) {
+    if (!enableRuntimeCompilation && !frame.methodInfo.isOptimized && frame.methodInfo.stats.bytecodeCount > 100) {
       optimizeMethodBytecode(frame.methodInfo);
     }
 
-    mi.interpreterCallCount ++;
+    mi.stats.interpreterCallCount ++;
 
     interpreterCount ++;
 
     while (true) {
       bytecodeCount ++;
-      mi.bytecodeCount ++;
+      mi.stats.bytecodeCount ++;
 
       // TODO: Make sure this works even if we JIT everything. At the moment it fails
       // for synthetic method frames which have bad max_local counts.
@@ -248,13 +246,13 @@ module J2ME {
       // Inline heuristics that trigger JIT compilation here.
       if (enableRuntimeCompilation &&
           mi.state < MethodState.Compiled && // Give up if we're at this state.
-          mi.backwardsBranchCount + mi.interpreterCallCount > 10) {
+          mi.stats.backwardsBranchCount + mi.stats.interpreterCallCount > 10) {
         compileAndLinkMethod(mi);
       }
 
       try {
         if (frame.pc < lastPC) {
-          mi.backwardsBranchCount ++;
+          mi.stats.backwardsBranchCount ++;
           if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
             // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
             // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
@@ -287,7 +285,7 @@ module J2ME {
               }
               mi = frame.methodInfo;
               ci = mi.classInfo;
-              rp = ci.resolved_constant_pool;
+              rp = ci.constantPool.resolved;
               stack = frame.stack;
               lastPC = -1;
 
@@ -342,12 +340,12 @@ module J2ME {
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
             index = (op === Bytecodes.LDC) ? frame.read8() : frame.read16();
-            constant = resolve(index, ci, false);
+            constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
             stack.push(constant);
             break;
           case Bytecodes.LDC2_W:
             index = frame.read16();
-            constant = resolve(index, ci, false);
+            constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:
@@ -936,19 +934,19 @@ module J2ME {
             break;
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
-            classInfo = resolveClass(index, mi.classInfo, false);
-            classInitCheck(classInfo, frame.pc - 3);
+            classInfo = resolveClass(index, mi.classInfo);
+            classInitAndUnwindCheck(classInfo, frame.pc - 3);
             size = stack.pop();
             stack.push(newArray(classInfo.klass, size));
             break;
           case Bytecodes.MULTIANEWARRAY:
             index = frame.read16();
-            classInfo = resolveClass(index, mi.classInfo, false);
+            classInfo = resolveClass(index, mi.classInfo);
             var dimensions = frame.read8();
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++)
               lengths[i] = stack.pop();
-            stack.push(util.newMultiArray(classInfo, lengths.reverse()));
+            stack.push(J2ME.newMultiArray(classInfo.klass, lengths.reverse()));
             break;
           case Bytecodes.ARRAYLENGTH:
             array = stack.pop();
@@ -965,7 +963,7 @@ module J2ME {
             break;
           case Bytecodes.GETFIELD:
             index = frame.read16();
-            fieldInfo = resolveField(index, mi.classInfo, false);
+            fieldInfo = mi.classInfo.constantPool.resolveField(index, false);
             object = stack.pop();
             stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
             frame.patch(3, Bytecodes.GETFIELD, Bytecodes.RESOLVED_GETFIELD);
@@ -977,7 +975,7 @@ module J2ME {
             break;
           case Bytecodes.PUTFIELD:
             index = frame.read16();
-            fieldInfo = resolveField(index, mi.classInfo, false);
+            fieldInfo = mi.classInfo.constantPool.resolveField(index, false);
             value = stack.popKind(fieldInfo.kind);
             object = stack.pop();
             fieldInfo.set(object, value);
@@ -991,8 +989,8 @@ module J2ME {
             break;
           case Bytecodes.GETSTATIC:
             index = frame.read16();
-            fieldInfo = resolveField(index, mi.classInfo, true);
-            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
+            fieldInfo = mi.classInfo.constantPool.resolveField(index, true);
+            classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -1001,8 +999,8 @@ module J2ME {
             break;
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
-            fieldInfo = resolveField(index, mi.classInfo, true);
-            classInitCheck(fieldInfo.classInfo, frame.pc - 3);
+            fieldInfo = mi.classInfo.constantPool.resolveField(index, true);
+            classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -1010,8 +1008,8 @@ module J2ME {
             break;
           case Bytecodes.NEW:
             index = frame.read16();
-            classInfo = resolveClass(index, mi.classInfo, false);
-            classInitCheck(classInfo, frame.pc - 3);
+            classInfo = resolveClass(index, mi.classInfo);
+            classInitAndUnwindCheck(classInfo, frame.pc - 3);
             if (U) {
               return;
             }
@@ -1019,7 +1017,7 @@ module J2ME {
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
-            classInfo = resolveClass(index, mi.classInfo, false);
+            classInfo = resolveClass(index, mi.classInfo);
             object = stack[stack.length - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException(
@@ -1029,7 +1027,7 @@ module J2ME {
             break;
           case Bytecodes.INSTANCEOF:
             index = frame.read16();
-            classInfo = resolveClass(index, mi.classInfo, false);
+            classInfo = resolveClass(index, mi.classInfo);
             object = stack.pop();
             var result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
             stack.push(result ? 1 : 0);
@@ -1072,9 +1070,9 @@ module J2ME {
               frames.push(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
-              mi.interpreterCallCount ++;
+              mi.stats.interpreterCallCount ++;
               ci = mi.classInfo;
-              rp = ci.resolved_constant_pool;
+              rp = ci.constantPool.resolved;
               stack = frame.stack;
               lastPC = -1;
               continue;
@@ -1103,7 +1101,8 @@ module J2ME {
                 returnValue = calleeMethod.call(object, a, b, c);
                 break;
               default:
-                debugger;
+                Debug.assertUnreachable("Unexpected number of arguments");
+                break;
             }
             stack.pop();
             if (!release) {
@@ -1131,7 +1130,7 @@ module J2ME {
             var isStatic = (op === Bytecodes.INVOKESTATIC);
 
             // Resolve method and do the class init check if necessary.
-            var calleeMethodInfo = resolveMethod(index, mi.classInfo, isStatic);
+            var calleeMethodInfo = mi.classInfo.constantPool.resolveMethod(index, isStatic);
 
             // Fast path for some of the most common interpreter call targets.
             if (calleeMethodInfo.implKey === "java/lang/Object.<init>.()V") {
@@ -1140,7 +1139,7 @@ module J2ME {
             }
 
             if (isStatic) {
-              classInitCheck(calleeMethodInfo.classInfo, lastPC);
+              classInitAndUnwindCheck(calleeMethodInfo.classInfo, lastPC);
               if (U) {
                 return;
               }
@@ -1177,9 +1176,9 @@ module J2ME {
               frames.push(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
-              mi.interpreterCallCount ++;
+              mi.stats.interpreterCallCount ++;
               ci = mi.classInfo;
-              rp = ci.resolved_constant_pool;
+              rp = ci.constantPool.resolved;
               stack = frame.stack;
               lastPC = -1;
               if (calleeTargetMethodInfo.isSynchronized) {
@@ -1270,7 +1269,7 @@ module J2ME {
             }
             mi = frame.methodInfo;
             ci = mi.classInfo;
-            rp = ci.resolved_constant_pool;
+            rp = ci.constantPool.resolved;
             stack = frame.stack;
             lastPC = -1;
             if (op === Bytecodes.RETURN) {
@@ -1302,7 +1301,7 @@ module J2ME {
         assert (!Frame.isMarker(frame));
         mi = frame.methodInfo;
         ci = mi.classInfo;
-        rp = ci.resolved_constant_pool;
+        rp = ci.constantPool.resolved;
         stack = frame.stack;
         lastPC = -1;
         continue;

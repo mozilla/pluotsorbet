@@ -73,17 +73,6 @@ var util = (function () {
     return J2ME.fromJavaString(jStr);
   }
 
-  function newMultiArray(classInfo, lengths) {
-    var length = lengths[0];
-    var array = J2ME.newArray(classInfo.elementClass.klass, length);
-    if (lengths.length > 1) {
-      lengths = lengths.slice(1);
-      for (var i=0; i<length; i++)
-        array[i] = newMultiArray(classInfo.elementClass, lengths);
-    }
-    return array;
-  }
-
   /**
    * Returns an ArrayBufferView of the underlying code points
    * represented by the given Java string.
@@ -173,7 +162,6 @@ var util = (function () {
     double2long: double2long,
     fromJavaChars: fromJavaChars,
     fromJavaString: fromJavaString,
-    newMultiArray: newMultiArray,
     stringToCharArray: stringToCharArray,
     id: id,
     tag: tag,
