@@ -164,7 +164,7 @@ AccelerometerSensor.readBuffer = (function() {
     };
 
     var DATA_LENGTH = 1;
-    var result = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, 5 + DATA_LENGTH * 13);
+    var result = new Int8Array(5 + DATA_LENGTH * 13);
 
     return function(channelNumber) {
         offset = 0;
