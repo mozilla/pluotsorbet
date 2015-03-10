@@ -286,7 +286,7 @@ Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
 Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var classInfo = this.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.className;
-    var clinit = classInfo.getMethodByName("<clinit>", "()V", true);
+    var clinit = classInfo.staticInitializer;
     if (clinit && clinit.classInfo.className === className) {
         $.ctx.executeFrames([Frame.create(clinit, [], 0)]);
     }
