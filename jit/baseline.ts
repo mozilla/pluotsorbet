@@ -923,6 +923,7 @@ module J2ME {
           this.emitPushInteger(cp.resolve(cpi, tag));
           return;
         case TAGS.CONSTANT_Float:
+          var value = cp.resolve(cpi, tag);
           this.emitPush(Kind.Float, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Double:
