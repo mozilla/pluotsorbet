@@ -133,7 +133,7 @@ module J2ME {
       enterTimeline("loadClassBytes");
       var classInfo = new ClassInfo(bytes);
       leaveTimeline("loadClassBytes", {className: classInfo.className});
-      loadWriter && loadWriter.writeLn("XXX: " + classInfo.className + " -> " + classInfo.superClassName + ";");
+      loadWriter && loadWriter.writeLn(classInfo.className + " -> " + classInfo.superClassName + ";");
       this.classes[classInfo.className] = classInfo;
       return classInfo;
     }

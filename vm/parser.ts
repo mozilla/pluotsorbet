@@ -10,6 +10,21 @@ module J2ME {
   module UTF8 {
     export var Code = new Uint8Array([67, 111, 100, 101]);
     export var ConstantValue = new Uint8Array([67, 111, 110, 115, 116, 97, 110, 116, 86, 97, 108, 117, 101]);
+    export var Init = new Uint8Array([60, 105, 110, 105, 116, 62]);
+    export var OpenBracket = new Uint8Array([91]);
+    export var OpenBracketL = new Uint8Array([91, 76]);
+    export var Semicolon = new Uint8Array([59]);
+
+    export var Z = new Uint8Array([90]);
+    export var C = new Uint8Array([67]);
+    export var F = new Uint8Array([70]);
+    export var D = new Uint8Array([68]);
+    export var B = new Uint8Array([66]);
+    export var S = new Uint8Array([83]);
+    export var I = new Uint8Array([73]);
+    export var J = new Uint8Array([74]);
+
+    // "<init>".split("").map(function (x) { return String.charCodeAt(x); })
   }
 
   function strcmp(a: Uint8Array, b: Uint8Array): boolean {
@@ -25,6 +40,21 @@ module J2ME {
       }
     }
     return true;
+  }
+
+  function strcat(a: Uint8Array, b: Uint8Array): Uint8Array {
+    var r = new Uint8Array(a.length + b.length);
+    r.set(a, 0);
+    r.set(b, a.length);
+    return r;
+  }
+
+  function strcat3(a: Uint8Array, b: Uint8Array, c: Uint8Array): Uint8Array {
+    var r = new Uint8Array(a.length + b.length + c.length);
+    r.set(a, 0);
+    r.set(b, a.length);
+    r.set(c, a.length + b.length);
+    return r;
   }
 
   /**
@@ -177,17 +207,20 @@ module J2ME {
   }
 
   export enum ACCESS_FLAGS {
-    ACC_PUBLIC = 0x0001,
-    ACC_PRIVATE = 0x0002,
-    ACC_PROTECTED = 0x0004,
-    ACC_STATIC = 0x0008,
-    ACC_FINAL = 0x0010,
-    ACC_SYNCHRONIZED = 0x0020,
-    ACC_VOLATILE = 0x0040,
-    ACC_TRANSIENT = 0x0080,
-    ACC_NATIVE = 0x0100,
-    ACC_INTERFACE = 0x0200,
-    ACC_ABSTRACT = 0x0400
+    ACC_PUBLIC        = 0x0001,
+    ACC_PRIVATE       = 0x0002,
+    ACC_PROTECTED     = 0x0004,
+    ACC_STATIC        = 0x0008,
+    ACC_FINAL         = 0x0010,
+    ACC_SYNCHRONIZED  = 0x0020,
+    ACC_VOLATILE      = 0x0040,
+    ACC_TRANSIENT     = 0x0080,
+    ACC_NATIVE        = 0x0100,
+    ACC_INTERFACE     = 0x0200,
+    ACC_ABSTRACT      = 0x0400,
+
+    J2ME_IMPLEMENTS_INTERFACE     = 0x10000
+
   }
 
   export enum TAGS {
@@ -305,6 +338,11 @@ module J2ME {
       return this.resolveUtf8String(this.readTagU2(i, TAGS.CONSTANT_Class, 1));
     }
 
+    resolveUtf8ClassName(i: number): Uint8Array {
+      if (i === 0) return null;
+      return this.resolveUtf8(this.readTagU2(i, TAGS.CONSTANT_Class, 1));
+    }
+
     getConstantTag(i: number) {
       return this.seekTag(i);
     }
@@ -391,6 +429,11 @@ module J2ME {
 
   export class FieldInfo extends ByteStream {
     classInfo: ClassInfo;
+    detail: Detail;
+    utf8Name: Uint8Array;
+    utf8Signature: Uint8Array;
+
+    fTableIndex: number;
     name: string;
     mangledName: string;
     signature: string;
@@ -402,12 +445,20 @@ module J2ME {
       super(classInfo.buffer, offset);
       this.classInfo = classInfo;
       this.access_flags = this.readU2();
+      this.detail = Detail.Full;
       this.name = classInfo.constantPool.resolveUtf8String(this.readU2());
       this.signature = classInfo.constantPool.resolveUtf8String(this.readU2());
       this.kind = getSignatureKind(this.signature);
       this.scanFieldInfoAttributes();
     }
 
+    fill(detail: Detail) {
+      if ((this.detail & detail) === detail) {
+        return;
+      }
+
+      this.detail |= detail;
+    }
     get isStatic(): boolean {
       return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
     }
@@ -495,16 +546,32 @@ module J2ME {
     }
   }
 
+  export function mangleMethod(methodInfo: MethodInfo) {
+    if (methodInfo.implementsInterface || methodInfo.vTableIndex < 0) {
+      // TODO: Get rid of JS strings in the computation of the hash.
+      var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
+      if (!hashedMangledNames) {
+        return escapeString(name);
+      }
+      return "$" + hashStringToString(name);
+    } else if (methodInfo.vTableIndex >= 0) {
+      return "m" + methodInfo.vTableIndex;
+    }
+    assert(false);
+  }
+
   export class MethodInfo extends ByteStream {
     classInfo: ClassInfo;
-    name: string;
-    signature: string;
     access_flags: ACCESS_FLAGS;
 
     state: MethodState;
-
     stats: MethodInfoStats;
     codeAttribute: CodeAttribute;
+
+    utf8Name: Uint8Array;
+    utf8Signature: Uint8Array;
+    vTableIndex: number;
+    detail: Detail;
 
     ///// FIX THESE LATER ////
     fn: any;
@@ -513,8 +580,6 @@ module J2ME {
     mangledClassAndMethodName: string;
 
     onStackReplacementEntryPoints: number [];
-
-
 
     argumentSlots: number;
 
@@ -535,8 +600,18 @@ module J2ME {
       super(classInfo.buffer, offset);
       this.access_flags = this.u2(0);
       this.classInfo = classInfo;
-      this.name = classInfo.constantPool.resolveUtf8String(this.name_index);
-      this.signature = classInfo.constantPool.resolveUtf8String(this.descriptor_index);
+
+      var cp = this.classInfo.constantPool;
+      this.utf8Name = cp.resolveUtf8(this.u2(2));
+      this.utf8Signature = cp.resolveUtf8(this.u2(4));
+      this.vTableIndex = -1;
+      this.detail = Detail.Brief;
+    }
+
+    fill(detail: Detail) {
+      if ((this.detail & detail) === detail) {
+        return;
+      }
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
       this.state = MethodState.Cold;
       // TODO: Make this lazy.
@@ -554,18 +629,23 @@ module J2ME {
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
+      this.detail |= detail;
     }
 
-    get name_index(): number {
-      return this.u2(2);
+    get name(): string {
+      return ByteStream.readString(this.utf8Name);
     }
 
-    get descriptor_index(): number {
-      return this.u2(4);
+    get signature(): string {
+      return ByteStream.readString(this.utf8Signature);
     }
 
     public getReturnKind(): Kind {
       return this.signatureDescriptor.typeDescriptors[0].kind;
+    }
+
+    get implementsInterface(): boolean {
+      return !!(this.access_flags & ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE);
     }
 
     get isNative(): boolean {
@@ -643,19 +723,34 @@ module J2ME {
     }
   }
 
+  function indexOfMethod(table: MethodInfo [], utf8Name: Uint8Array, utf8Signature: Uint8Array): number {
+    for (var i = 0; i < table.length; i++) {
+      var methodInfo = table[i];
+      if (strcmp(utf8Name, methodInfo.utf8Name) && strcmp(utf8Signature, methodInfo.utf8Signature)) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  export enum Detail {
+    Brief = 0x01,
+    Full  = 0x03
+  }
+
   export class ClassInfo extends ByteStream {
     constantPool: ConstantPool;
-    className: string;
-    superClassName: string;
+
+    utf8Name: Uint8Array;
+    utf8SuperName: Uint8Array;
+
     superClass: ClassInfo = null;
     subClasses: ClassInfo [] = [];
     allSubClasses: ClassInfo [] = [];
 
     access_flags: number;
-
-    ////////// Clean Up ////////////
-    // this_class: number;
-    // super_class: number;
+    vTable: MethodInfo [];
+    fTable: FieldInfo [];
 
     staticInitializer: MethodInfo;
 
@@ -673,6 +768,7 @@ module J2ME {
       if (!buffer) {
         return;
       }
+      enterTimeline("ClassInfo");
       var s = this;
       s.readU4(); // magic
       s.readU2(); // minor_version
@@ -680,15 +776,16 @@ module J2ME {
       this.constantPool = new ConstantPool(s);
       s.seek(this.constantPool.offset);
       this.access_flags = s.readU2();
-      this.className = this.constantPool.resolveUtf8ClassNameString(s.readU2());
-      this.superClassName = this.constantPool.resolveUtf8ClassNameString(s.readU2());
-
+      this.utf8Name = this.constantPool.resolveUtf8ClassName(s.readU2());
+      this.utf8SuperName = this.constantPool.resolveUtf8ClassName(s.readU2());
+      this.vTable = [];
+      this.fTable = []
       this.scanInterfaces();
       this.scanFields();
       this.scanMethods();
       this.scanClassInfoAttributes();
-
       this.mangledName = mangleClass(this);
+      leaveTimeline("ClassInfo");
     }
 
     private scanInterfaces() {
@@ -711,6 +808,17 @@ module J2ME {
       }
     }
 
+    get className(): string {
+      return ByteStream.readString(this.utf8Name);
+    }
+
+    get superClassName(): string {
+      if (this.utf8SuperName) {
+        return ByteStream.readString(this.utf8SuperName);
+      }
+      return null;
+    }
+
     /**
      * Gets the class hierarchy in derived -> base order.
      */
@@ -724,33 +832,68 @@ module J2ME {
       return classHierarchy;
     }
 
-    public complete() {
-      enterTimeline("mangleFields");
-      this.mangleFields();
-      leaveTimeline("mangleFields");
+    private trace(writer: IndentingWriter) {
+      writer.enter(this.className + " VTable:");
+      for (var i = 0; i < this.vTable.length; i++) {
+        writer.writeLn(i + ": " + ByteStream.readString(this.vTable[i].utf8Name) + "." + ByteStream.readString(this.vTable[i].utf8Signature));
+      }
+      writer.leave("");
     }
 
-    private mangleFields() {
-      // Keep track of how many times a field name was used and resolve conflicts by
-      // prefixing filed names with numbers.
-      var classInfo: ClassInfo;
-      var classHierarchy = this.getClassHierarchy();
-      var count = Object.create(null);
-      for (var i = classHierarchy.length - 1; i >= 0; i--) {
-        classInfo = classHierarchy[i];
-        var fields = classInfo.getFields();
-        for (var j = 0; j < fields.length; j++) {
-          var field = fields[j];
-          var fieldName = field.name;
-          if (count[field.name] === undefined) {
-            count[fieldName] = 0;
+    public complete() {
+      if (!this.isInterface) {
+        this.buildVTable();
+        this.buildFTable();
+      }
+      loadWriter && this.trace(loadWriter);
+    }
+
+    /**
+     * Constructs the VTable for this class by appending to or overriding methods
+     * in the super class VTable.
+     */
+    private buildVTable() {
+      var superClassVTable = this.superClass ? this.superClass.vTable : null;
+      var vTable = this.vTable = superClassVTable ? superClassVTable.slice() : [];
+      var methods = this.methods;
+      for (var i = 0; i < methods.length; i++) {
+        var methodInfo: MethodInfo = this.getMethodByIndex(i, Detail.Brief);
+        if (!methodInfo.isStatic && !strcmp(methodInfo.utf8Name, UTF8.Init)) {
+          var vTableIndex = superClassVTable ? indexOfMethod(superClassVTable, methodInfo.utf8Name, methodInfo.utf8Signature) : -1;
+          if (vTableIndex < 0) {
+            methodInfo.vTableIndex = vTable.length;
+            vTable.push(methodInfo); // Append
+          } else {
+            vTable[vTableIndex] = methodInfo; // Override
+            methodInfo.vTableIndex = vTableIndex;
           }
-          var fieldCount = count[fieldName];
-          // Only mangle this classInfo's fields.
-          if (i === 0) {
-            field.mangledName = "$" + (fieldCount ? "$" + fieldCount : "") + field.name;
+        }
+      }
+
+      // Go through all the interfaces and mark all methods in the vTable that implement interface methods.
+      var interfaces = this.getAllInterfaces();
+      for (var i = 0; i < interfaces.length; i++) {
+        var c = interfaces[i];
+        for (var j = 0; j < c.methods.length; j++) {
+          var methodInfo = c.getMethodByIndex(j, Detail.Brief);
+          var vTableIndex = indexOfMethod(this.vTable, methodInfo.utf8Name, methodInfo.utf8Signature);
+          if (vTableIndex >= 0) {
+            this.vTable[vTableIndex].access_flags |= ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE;
           }
-          count[fieldName] ++;
+        }
+      }
+    }
+
+    private buildFTable() {
+      var superClassFTable = this.superClass ? this.superClass.fTable : null;
+      var fTable = this.fTable = superClassFTable ? superClassFTable.slice() : [];
+      var fields = this.fields;
+      for (var i = 0; i < fields.length; i++) {
+        var fieldInfo: FieldInfo = this.getFieldByIndex(i, Detail.Brief);
+        if (!fieldInfo.isStatic) {
+          fieldInfo.fTableIndex = fTable.length;
+          fTable.push(fieldInfo); // Append
+          fieldInfo.mangledName = "f" + fieldInfo.fTableIndex;
         }
       }
     }
@@ -764,6 +907,10 @@ module J2ME {
         s.skip(6);
         this.skipAttributes();
       }
+    }
+
+    private addVTableEntry(access_flags, name_index, descriptor_index) {
+
     }
 
     private skipAttributes() {
@@ -786,11 +933,15 @@ module J2ME {
       }
     }
 
-    getMethodByIndex(i: number): MethodInfo {
+    getMethodByIndex(i: number, detail: Detail): MethodInfo {
       if (typeof this.methods[i] === "number") {
-        this.methods[i] = new MethodInfo(this, <number>this.methods[i]);
+        enterTimeline("MethodInfo");
+        var methodInfo = this.methods[i] = new MethodInfo(this, <number>this.methods[i]);
+        leaveTimeline("MethodInfo");
       }
-      return <MethodInfo>this.methods[i];
+      var methodInfo = <MethodInfo>this.methods[i];
+      methodInfo.fill(detail);
+      return methodInfo;
     }
 
     indexOfMethod(name: string, signature: string, isStatic: boolean): number {
@@ -799,7 +950,7 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < methods.length; i++) {
-        var method = this.getMethodByIndex(i);
+        var method = this.getMethodByIndex(i, Detail.Full);
         if (method.name === name && method.signature === signature && method.isStatic === isStatic) {
           return i;
         }
@@ -812,7 +963,7 @@ module J2ME {
       do {
         var i = c.indexOfMethod(name, signature, isStatic);
         if (i >= 0) {
-          return c.getMethodByIndex(i);
+          return c.getMethodByIndex(i, Detail.Full);
         }
         c = c.superClass;
       } while (c);
@@ -838,17 +989,19 @@ module J2ME {
         return <MethodInfo []>this.methods;
       }
       for (var i = 0; i < this.methods.length; i++) {
-        this.getMethodByIndex(i);
+        this.getMethodByIndex(i, Detail.Full);
       }
       this.resolvedFlags |= ResolvedFlags.Methods;
       return <MethodInfo []>this.methods;
     }
 
-    getFieldByIndex(i: number): FieldInfo {
+    getFieldByIndex(i: number, detail: Detail): FieldInfo {
       if (typeof this.fields[i] === "number") {
         this.fields[i] = new FieldInfo(this, <number>this.fields[i]);
       }
-      return <FieldInfo>this.fields[i];
+      var fieldInfo = <FieldInfo>this.fields[i]
+      fieldInfo.fill(detail);
+      return fieldInfo;
     }
 
     indexOfField(name: string, signature: string, isStatic: boolean): number {
@@ -857,7 +1010,7 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < fields.length; i++) {
-        var field = this.getFieldByIndex(i);
+        var field = this.getFieldByIndex(i, Detail.Full);
         if (field.name === name && field.signature === signature && field.isStatic === isStatic) {
           return i;
         }
@@ -870,7 +1023,7 @@ module J2ME {
       do {
         var i = c.indexOfField(name, signature, isStatic);
         if (i >= 0) {
-          return c.getFieldByIndex(i);
+          return c.getFieldByIndex(i, Detail.Full);
         }
         
         if (isStatic) {
@@ -905,7 +1058,7 @@ module J2ME {
         return <FieldInfo []>this.fields;
       }
       for (var i = 0; i < this.fields.length; i++) {
-        this.getFieldByIndex(i);
+        this.getFieldByIndex(i, Detail.Full);
       }
       this.resolvedFlags |= ResolvedFlags.Fields;
       return <FieldInfo []>this.fields;
@@ -988,20 +1141,20 @@ module J2ME {
 
   export class PrimitiveClassInfo extends ClassInfo {
 
-    constructor(className, mangledName) {
+    constructor(utf8Name, mangledName) {
       super(null);
-      this.className = className;
+      this.utf8Name = utf8Name;
       this.mangledName = mangledName;
     }
 
-    static Z = new PrimitiveClassInfo("Z", "boolean");
-    static C = new PrimitiveClassInfo("C", "char");
-    static F = new PrimitiveClassInfo("F", "float");
-    static D = new PrimitiveClassInfo("D", "double");
-    static B = new PrimitiveClassInfo("B", "byte");
-    static S = new PrimitiveClassInfo("S", "short");
-    static I = new PrimitiveClassInfo("I", "int");
-    static J = new PrimitiveClassInfo("J", "long");
+    static Z = new PrimitiveClassInfo(UTF8.Z, "boolean");
+    static C = new PrimitiveClassInfo(UTF8.C, "char");
+    static F = new PrimitiveClassInfo(UTF8.F, "float");
+    static D = new PrimitiveClassInfo(UTF8.D, "double");
+    static B = new PrimitiveClassInfo(UTF8.B, "byte");
+    static S = new PrimitiveClassInfo(UTF8.S, "short");
+    static I = new PrimitiveClassInfo(UTF8.I, "int");
+    static J = new PrimitiveClassInfo(UTF8.J, "long");
   }
 
   export class ArrayClassInfo extends ClassInfo {
@@ -1034,9 +1187,9 @@ module J2ME {
     constructor(elementClass: ClassInfo) {
       super(elementClass);
       if (elementClass instanceof ArrayClassInfo) {
-        this.className = "[" + elementClass.className;
+        this.utf8Name = strcat(UTF8.OpenBracket, elementClass.utf8Name);
       } else {
-        this.className = "[L" + elementClass.className + ";";
+        this.utf8Name = strcat3(UTF8.OpenBracketL, elementClass.utf8Name, UTF8.Semicolon);
       }
       this.mangledName = mangleClassName(this.className);
     }
@@ -1045,8 +1198,8 @@ module J2ME {
   export class PrimitiveArrayClassInfo extends ArrayClassInfo {
     constructor(elementClass: ClassInfo, mangledName: string) {
       super(elementClass);
+      this.utf8Name = strcat(UTF8.OpenBracket, elementClass.utf8Name);
       this.mangledName = mangledName;
-      this.className = "[" + elementClass.className;
     }
     
     static initialize() {

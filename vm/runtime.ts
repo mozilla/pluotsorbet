@@ -49,7 +49,7 @@ module J2ME {
   /**
    * Turns on just-in-time compilation of methods.
    */
-  export var enableRuntimeCompilation = true;
+  export var enableRuntimeCompilation = false;
 
   /**
    * Turns on onStackReplacement
@@ -64,7 +64,7 @@ module J2ME {
   /**
    * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
    */
-  var hashedMangledNames = release;
+  export var hashedMangledNames = release;
 
   /**
    * Traces method execution.
@@ -408,14 +408,6 @@ module J2ME {
       return escapeString(name);
     }
     return hashStringToString(name);
-  }
-
-  export function mangleMethod(methodInfo: MethodInfo) {
-    var name = concat3(methodInfo.name, "_", hashStringToString(methodInfo.signature));
-    if (!hashedMangledNames) {
-      return escapeString(name);
-    }
-    return "$" + hashStringToString(name);
   }
 
   export function mangleClassName(name: string): string {
