@@ -462,20 +462,20 @@ module J2ME {
   }
 
   export class FieldInfo extends ByteStream {
-    classInfo: ClassInfo;
-    kind: Kind;
-    utf8Name: Uint8Array;
-    utf8Signature: Uint8Array;
+    public classInfo: ClassInfo;
+    public kind: Kind;
+    public utf8Name: Uint8Array;
+    public utf8Signature: Uint8Array;
+    public mangledName: string;
+    public accessFlags: ACCESS_FLAGS;
+    public constantValue: any;
 
     fTableIndex: number;
-    mangledName: string;
-    access_flags: ACCESS_FLAGS;
-    constantValue: any;
 
     constructor(classInfo: ClassInfo, offset: number) {
       super(classInfo.buffer, offset);
       this.classInfo = classInfo;
-      this.access_flags = this.readU2();
+      this.accessFlags = this.readU2();
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
       this.kind = getSignatureKind(this.utf8Signature);
@@ -483,27 +483,27 @@ module J2ME {
       this.scanFieldInfoAttributes();
     }
 
-    get isStatic(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
+    public get isStatic(): boolean {
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_STATIC);
     }
 
-    get(object: java.lang.Object) {
+    public get(object: java.lang.Object) {
       return object[this.mangledName];
     }
 
-    set(object: java.lang.Object, value: any) {
+    public set(object: java.lang.Object, value: any) {
       object[this.mangledName] = value
     }
 
-    getStatic() {
+    public getStatic() {
       return this.get(this.classInfo.getStaticObject($.ctx));
     }
 
-    setStatic(value: any) {
+    public setStatic(value: any) {
       return this.set(this.classInfo.getStaticObject($.ctx), value);
     }
 
-    scanFieldInfoAttributes() {
+    private scanFieldInfoAttributes() {
       var s = this;
       var attributes_count = s.readU2();
       var constantvalue_index = -1;
@@ -521,7 +521,6 @@ module J2ME {
       if (constantvalue_index >= 0) {
         this.constantValue = this.classInfo.constantPool.resolve(constantvalue_index, TAGS.CONSTANT_Any);
       }
-
     }
   }
 
@@ -584,7 +583,7 @@ module J2ME {
 
   export class MethodInfo extends ByteStream {
     classInfo: ClassInfo;
-    access_flags: ACCESS_FLAGS;
+    accessFlags: ACCESS_FLAGS;
 
     index: number;
     state: MethodState;
@@ -624,7 +623,7 @@ module J2ME {
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
       this.index = index;
-      this.access_flags = this.u2(0);
+      this.accessFlags = this.u2(0);
       this.classInfo = classInfo;
 
       var cp = this.classInfo.constantPool;
@@ -674,31 +673,31 @@ module J2ME {
     }
 
     get implementsInterface(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE);
+      return !!(this.accessFlags & ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE);
     }
 
     get isNative(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_NATIVE);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_NATIVE);
     }
 
     get isFinal(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_FINAL);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_FINAL);
     }
 
     get isPublic(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_PUBLIC);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_PUBLIC);
     }
 
     get isStatic(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_STATIC);
     }
 
     get isSynchronized(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_SYNCHRONIZED);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_SYNCHRONIZED);
     }
 
     get isAbstract(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_ABSTRACT);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_ABSTRACT);
     }
 
     getSourceLocationForPC(pc: number): SourceLocation {
@@ -777,7 +776,7 @@ module J2ME {
     subClasses: ClassInfo [] = [];
     allSubClasses: ClassInfo [] = [];
 
-    access_flags: number;
+    accessFlags: number;
     vTable: MethodInfo [];
     fTable: FieldInfo [];
 
@@ -809,7 +808,7 @@ module J2ME {
       s.readU2(); // major_version
       this.constantPool = new ConstantPool(s);
       s.seek(this.constantPool.offset);
-      this.access_flags = s.readU2();
+      this.accessFlags = s.readU2();
       this.utf8Name = this.constantPool.resolveUtf8ClassName(s.readU2());
       this.utf8SuperName = this.constantPool.resolveUtf8ClassName(s.readU2());
       this.vTable = [];
@@ -912,7 +911,7 @@ module J2ME {
           var methodInfo = c.getMethodByIndex(j, Detail.Brief);
           var vTableIndex = indexOfMethod(this.vTable, methodInfo.utf8Name, methodInfo.utf8Signature);
           if (vTableIndex >= 0) {
-            this.vTable[vTableIndex].access_flags |= ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE;
+            this.vTable[vTableIndex].accessFlags |= ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE;
           }
         }
       }
@@ -931,7 +930,6 @@ module J2ME {
         } else {
           fieldInfo.mangledName = "s" + i;
         }
-
       }
     }
 
@@ -946,7 +944,7 @@ module J2ME {
       }
     }
 
-    private addVTableEntry(access_flags, name_index, descriptor_index) {
+    private addVTableEntry(accessFlags, name_index, descriptor_index) {
 
     }
 
@@ -1155,11 +1153,11 @@ module J2ME {
     }
 
     get isInterface(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_INTERFACE);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_INTERFACE);
     }
 
     get isFinal(): boolean {
-      return !!(this.access_flags & ACCESS_FLAGS.ACC_FINAL);
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_FINAL);
     }
 
     implementsInterface(i: ClassInfo): boolean {
