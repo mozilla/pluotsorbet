@@ -1484,7 +1484,6 @@ module J2ME {
 
     for (var i = 0; i < methodIDs.length; i++) {
       var methodID = methodIDs[i];
-      loadedMethodCount ++;
 
       var name = methodID[0];
       var signature = methodID[1];
@@ -1495,6 +1494,8 @@ module J2ME {
       if (isAbstract) {
         continue;
       }
+
+      loadedMethodCount ++;
 
       if (!isStatic) {
         var mangledName = mangleMethod(name, signature);
