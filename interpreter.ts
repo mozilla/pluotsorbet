@@ -274,7 +274,7 @@ module J2ME {
               frame = frames[frames.length - 1];
 
               // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
-              returnValue = Methods[O.methodInfo.mangledClassAndMethodName].call(O.methodInfo);
+              returnValue = Methods[O.methodInfo.implKey].call(O.methodInfo);
               if (U) {
                 return;
               }
@@ -1171,11 +1171,11 @@ module J2ME {
                   break;
                 case Bytecodes.INVOKESPECIAL:
                   checkNull(object);
-                  calleeMethod = Methods[calleeMethodInfo.mangledClassAndMethodName];
+                  calleeMethod = Methods[calleeMethodInfo.implKey];
                   break;
               }
             } else {
-              calleeMethod = Methods[calleeMethodInfo.mangledClassAndMethodName];
+              calleeMethod = Methods[calleeMethodInfo.implKey];
             }
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {

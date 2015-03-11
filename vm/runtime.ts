@@ -45,14 +45,24 @@ module J2ME {
   declare var CompiledMethodCache;
   declare var Proxy;
 
-  /**
-   * A map from mangled class/method names to MethodInfo objects.
-   */
-  var methodInfos = {};
-
   export var Methods = new Proxy({}, {
     get: function(target, name) {
-      return target[name] || (target[name] = linkKlassMethod(methodInfos[name]));
+      // TODO: make proxy be the prototype of Methods, then make it set
+      // properties on the Methods object rather than the target object,
+      // so this trap only gets called once per method.
+
+      if (target[name]) {
+        return target[name];
+      }
+
+      var parts = name.split(".");
+      var className = parts[0];
+      var methodName = parts[1];
+      var signature = parts[2];
+
+      var classInfo = jsGlobal[mangleClassName(className)].classInfo;
+      var methodInfo = classInfo.getMethodByName(methodName, signature);
+      return (target[name] = linkKlassMethod(methodInfo));
     },
   });
 
@@ -1408,7 +1418,7 @@ module J2ME {
     if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
       cachedMethodCount ++;
       linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      fn = Methods[methodInfo.mangledClassAndMethodName];
+      fn = Methods[methodInfo.implKey];
     }
     return fn;
   }
@@ -1463,16 +1473,14 @@ module J2ME {
   }
 
   function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
-    methodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
-
     if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype["_name_" + methodInfo.mangledName] = methodInfo.mangledClassAndMethodName;
+      methodInfo.classInfo.klass.prototype["_name_" + methodInfo.mangledName] = methodInfo.implKey;
 
       if (instanceSymbols) {
         var methodKey = instanceSymbols[methodInfo.name + "." + methodInfo.signature];
         if (methodKey) {
           methodInfo.classInfo.klass.prototype[methodKey] = function() {
-            return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
+            return Methods[methodInfo.implKey].apply(this, arguments);
           };
         }
       }
@@ -1493,7 +1501,7 @@ module J2ME {
         continue;
       }
 
-      // Methods[methodInfo.mangledClassAndMethodName] = linkKlassMethod(methodInfo);
+      // Methods[methodInfo.implKey] = linkKlassMethod(methodInfo);
       lazyLinkKlassMethod(methodInfo, instanceSymbols);
 
       loadedMethodCount ++;
@@ -1659,7 +1667,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = CompiledMethods[mangledClassAndMethodName];
-    Methods[mangledClassAndMethodName] = fn;
+    Methods[methodInfo.implKey] = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 

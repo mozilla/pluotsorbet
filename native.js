@@ -333,7 +333,8 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
   // The following can trigger an unwind.
-  J2ME.Methods[o.klass.classInfo.getMethodByName("<init>", "()V", false).mangledClassAndMethodName].call(o);
+  var methodInfo = o.klass.classInfo.getMethodByName("<init>", "()V", false);
+  J2ME.Methods[methodInfo.implKey].call(o);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {
