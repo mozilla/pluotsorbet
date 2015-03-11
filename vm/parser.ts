@@ -24,7 +24,13 @@ module J2ME {
 
     L = 76,
     OpenBracket = 91,
-    Semicolon = 59
+    Semicolon = 59,
+    Dot = 46,
+    Slash = 47,
+
+    OpenParenthesis = 40,
+    CloseParenthesis = 41,
+
   }
 
   module UTF8 {
@@ -593,11 +599,15 @@ module J2ME {
 
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
+    public returnKind: Kind;
+
     vTableIndex: number;
 
     private _virtualName: string;
     private _mangledName: string;
     private _mangledClassAndMethodName: string;
+
+    private _signatureDescriptor: SignatureDescriptor;
 
     ///// FIX THESE LATER ////
     fn: any;
@@ -617,7 +627,6 @@ module J2ME {
     exception_table_offset: number;
     implKey: string;
     isOptimized: boolean;
-    signatureDescriptor: SignatureDescriptor;
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
@@ -639,15 +648,19 @@ module J2ME {
       this.codeAttribute = null;
       this.scanMethodInfoAttributes();
 
-      // TODO: make this lazy
-      this.signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature);
-      this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
-      this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
+      var signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0);
+      this.returnKind = signatureKinds[0];
+      this.hasTwoSlotArguments = signatureHasTwoSlotArguments(signatureKinds);
+      this.argumentSlots = signatureArgumentSlotCount(signatureKinds);
+
       this.consumeArgumentSlots = this.argumentSlots;
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
+    }
 
+    get signatureDescriptor() {
+      return this._signatureDescriptor || (this._signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature));
     }
 
     get virtualName() {
@@ -671,10 +684,6 @@ module J2ME {
 
     get signature(): string {
       return ByteStream.readString(this.utf8Signature);
-    }
-
-    public getReturnKind(): Kind {
-      return this.signatureDescriptor.typeDescriptors[0].kind;
     }
 
     get implementsInterface(): boolean {

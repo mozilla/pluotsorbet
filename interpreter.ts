@@ -83,8 +83,8 @@ module J2ME {
       }
       return;
     }
-    if (!(getKindCheck(methodInfo.getReturnKind())(returnValue))) {
-      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue + " in " + methodInfo.implKey);
+    if (!(getKindCheck(methodInfo.returnKind)(returnValue))) {
+      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got " + returnValue + " in " + methodInfo.implKey);
     }
   }
 
@@ -266,7 +266,7 @@ module J2ME {
               frames.pop();
 
               // Remember the return kind since we'll need it later.
-              var returnKind = mi.getReturnKind();
+              var returnKind = mi.returnKind;
 
               // Set the global OSR frame to the current frame.
               O = frame;
@@ -1112,8 +1112,8 @@ module J2ME {
             if (U) {
               return;
             }
-            if (calleeMethodInfo.getReturnKind() !== Kind.Void) {
-              if (isTwoSlot(calleeMethodInfo.getReturnKind())) {
+            if (calleeMethodInfo.returnKind !== Kind.Void) {
+              if (isTwoSlot(calleeMethodInfo.returnKind)) {
                 stack.push2(returnValue);
               } else {
                 stack.push(returnValue);
@@ -1240,8 +1240,8 @@ module J2ME {
               return;
             }
 
-            if (calleeMethodInfo.getReturnKind() !== Kind.Void) {
-              if (isTwoSlot(calleeMethodInfo.getReturnKind())) {
+            if (calleeMethodInfo.returnKind !== Kind.Void) {
+              if (isTwoSlot(calleeMethodInfo.returnKind)) {
                 stack.push2(returnValue);
               } else {
                 stack.push(returnValue);
