@@ -863,7 +863,7 @@ module J2ME {
         if (opcode === Bytecodes.INVOKESPECIAL) {
           call = "Methods['" + methodInfo.implKey + "'].call(" + args.join(",") + ")";
         } else {
-          call = "Methods[" + object + "['_name_" + methodInfo.mangledName + "']].call(" + args.join(",") + ")";
+          call = "Methods[" + object + "['implKeyFor_" + methodInfo.mangledName + "']].call(" + args.join(",") + ")";
         }
       } else {
         call = "Methods['" + methodInfo.implKey + "'](" + args.join(",") + ")";

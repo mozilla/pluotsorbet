@@ -1518,7 +1518,7 @@ module J2ME {
       if (!isStatic) {
         var mangledName = mangleMethod(name, signature);
 
-        klass.prototype["_name_" + mangledName] = implKey;
+        klass.prototype["implKeyFor_" + mangledName] = implKey;
 
         if (instanceSymbols) {
           var methodKey = instanceSymbols[name + "." + signature];
@@ -1699,7 +1699,7 @@ module J2ME {
 
     // Link member methods on the prototype.
     if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
+      methodInfo.classInfo.klass.prototype["implKeyFor_" + methodInfo.mangledName] = methodInfo.implKey;
     }
 
     // Make JITed code available in the |jitMethodInfos| so that bailout
