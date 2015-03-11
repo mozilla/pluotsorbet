@@ -354,6 +354,73 @@ DumbPipe.registerOpener("audiorecorder", function(message, sender) {
     };
 });
 
+
+DumbPipe.registerOpener("audioplayer", function(message, sender) {
+  var audio = new Audio();
+
+  function play() {
+    audio.play();
+    audio.onended = function() {
+      sender({ type: "end", duration: getDuration() });
+    };
+  }
+
+  function getDuration() {
+    return Math.round(audio.duration * 1000);
+  }
+
+  return function(message) {
+    var data;
+    switch(message.type) {
+      case "start":
+        if (!message.data) {
+          play();
+          return;
+        }
+        // Convert the data back to an Int8Array.
+        data = new Int8Array(message.data);
+        new Promise(function(resolve, reject) {
+          var blob = new Blob([ data ],
+                              { type: message.contentType });
+          audio.src = URL.createObjectURL(blob);
+          audio.onloadedmetadata = function() {
+            resolve();
+            play();
+          };
+          audio.onerror = reject;
+        }).done(function() {
+          URL.revokeObjectURL(audio.src);
+        });
+        break;
+      case "play":
+        play();
+        break;
+      case "pause":
+        audio.onended = null;
+        audio.pause();
+        break;
+      case "close":
+        audio.pause();
+        audio.src = "";
+        break;
+      case "getMediaTime":
+        sender({ type: "mediaTime", data: Math.round(audio.currentTime * 1000) });
+        break;
+      case "setMediaTime":
+        audio.currentTime = messsage.data / 1000;
+        break;
+      case "setVolume":
+        audio.volume = message.data / 100;
+        break;
+      case "setMute":
+        audio.muted = message.data;
+      case "getDuration":
+        sender({ type: "duration", data: getDuration() });
+        break;
+    }
+  };
+});
+
 DumbPipe.registerOpener("camera", function(message, sender) {
   var mediaStream = null;
   var url = null;

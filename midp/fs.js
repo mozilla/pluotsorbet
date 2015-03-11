@@ -490,8 +490,15 @@ MIDP.openFileHandler = function(fileHandler, mode) {
         throw $.newIOException("file is a directory");
     }
 
+    var ctx = $.ctx;
+
     asyncImpl("V", new Promise(function(resolve, reject) {
         fs.open(pathname, function(fd) {
+            if (fd === -1) {
+              ctx.setAsCurrentContext();
+              reject($.newIOException("Failed to open file handler for " + pathname));
+              return;
+            }
             fileHandler.$nativeDescriptor = fd;
             MIDP.markFileHandler(fileHandler, mode, true);
             resolve();
