@@ -582,26 +582,25 @@ module J2ME {
   }
 
   export class MethodInfo extends ByteStream {
-    classInfo: ClassInfo;
-    accessFlags: ACCESS_FLAGS;
+    public classInfo: ClassInfo;
+    public accessFlags: ACCESS_FLAGS;
 
-    index: number;
-    state: MethodState;
-    stats: MethodInfoStats;
+    public index: number;
+    public state: MethodState;
+    public stats: MethodInfoStats;
 
-    codeAttribute: CodeAttribute;
+    public codeAttribute: CodeAttribute;
 
-    utf8Name: Uint8Array;
-    utf8Signature: Uint8Array;
+    public utf8Name: Uint8Array;
+    public utf8Signature: Uint8Array;
     vTableIndex: number;
-    detail: Detail;
 
-    virtualName: string;
+    private _virtualName: string;
+    private _mangledName: string;
+    private _mangledClassAndMethodName: string;
 
     ///// FIX THESE LATER ////
     fn: any;
-    mangledName: string;
-    mangledClassAndMethodName: string;
 
     onStackReplacementEntryPoints: number [];
 
@@ -630,15 +629,11 @@ module J2ME {
       this.utf8Name = cp.resolveUtf8(this.u2(2));
       this.utf8Signature = cp.resolveUtf8(this.u2(4));
       this.vTableIndex = -1;
-      this.detail = Detail.Brief;
-    }
 
-    fill(detail: Detail) {
-      if ((this.detail & detail) === detail) {
-        return;
-      }
+      // Lazify;
       this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
       this.state = MethodState.Cold;
+
       // TODO: Make this lazy.
       this.stats = new MethodInfoStats();
       this.codeAttribute = null;
@@ -649,15 +644,25 @@ module J2ME {
       this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
       this.consumeArgumentSlots = this.argumentSlots;
-      this.mangledName = mangleMethod(this);
-      if (this.vTableIndex >= 0) {
-        this.virtualName = "m" + this.vTableIndex;
-      }
-      this.mangledClassAndMethodName = mangleClassAndMethod(this);
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
-      this.detail |= detail;
+
+    }
+
+    get virtualName() {
+      if (this.vTableIndex >= 0) {
+        return this._virtualName || (this._virtualName = "m" + this.vTableIndex);
+      }
+      return undefined;
+    }
+
+    get mangledName() {
+      return this._mangledName || (this._mangledName = mangleMethod(this));
+    }
+
+    get mangledClassAndMethodName() {
+      return this._mangledClassAndMethodName || (this._mangledClassAndMethodName = mangleClassAndMethod(this));
     }
 
     get name(): string {
@@ -890,7 +895,7 @@ module J2ME {
       var vTable = this.vTable = superClassVTable ? superClassVTable.slice() : [];
       var methods = this.methods;
       for (var i = 0; i < methods.length; i++) {
-        var methodInfo: MethodInfo = this.getMethodByIndex(i, Detail.Brief);
+        var methodInfo: MethodInfo = this.getMethodByIndex(i);
         if (!methodInfo.isStatic && !strcmp(methodInfo.utf8Name, UTF8.Init)) {
           var vTableIndex = superClassVTable ? indexOfMethod(superClassVTable, methodInfo.utf8Name, methodInfo.utf8Signature) : -1;
           if (vTableIndex < 0) {
@@ -908,7 +913,7 @@ module J2ME {
       for (var i = 0; i < interfaces.length; i++) {
         var c = interfaces[i];
         for (var j = 0; j < c.methods.length; j++) {
-          var methodInfo = c.getMethodByIndex(j, Detail.Brief);
+          var methodInfo = c.getMethodByIndex(j);
           var vTableIndex = indexOfMethod(this.vTable, methodInfo.utf8Name, methodInfo.utf8Signature);
           if (vTableIndex >= 0) {
             this.vTable[vTableIndex].accessFlags |= ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE;
@@ -922,7 +927,7 @@ module J2ME {
       var fTable = this.fTable = superClassFTable ? superClassFTable.slice() : [];
       var fields = this.fields;
       for (var i = 0; i < fields.length; i++) {
-        var fieldInfo: FieldInfo = this.getFieldByIndex(i, Detail.Brief);
+        var fieldInfo: FieldInfo = this.getFieldByIndex(i);
         if (!fieldInfo.isStatic) {
           fieldInfo.fTableIndex = fTable.length;
           fTable.push(fieldInfo); // Append
@@ -968,14 +973,13 @@ module J2ME {
       }
     }
 
-    getMethodByIndex(i: number, detail: Detail): MethodInfo {
+    getMethodByIndex(i: number): MethodInfo {
       if (typeof this.methods[i] === "number") {
         enterTimeline("MethodInfo");
         var methodInfo = this.methods[i] = new MethodInfo(this, <number>this.methods[i], i);
         leaveTimeline("MethodInfo");
       }
       var methodInfo = <MethodInfo>this.methods[i];
-      methodInfo.fill(detail);
       return methodInfo;
     }
 
@@ -985,7 +989,7 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < methods.length; i++) {
-        var method = this.getMethodByIndex(i, Detail.Full);
+        var method = this.getMethodByIndex(i);
         if (strcmp(method.utf8Name, utf8Name) && strcmp(method.utf8Signature, utf8Signature) && method.isStatic === isStatic) {
           return i;
         }
@@ -1006,7 +1010,7 @@ module J2ME {
       do {
         var i = c.indexOfMethod(utf8Name, utf8Signature, isStatic);
         if (i >= 0) {
-          return c.getMethodByIndex(i, Detail.Full);
+          return c.getMethodByIndex(i);
         }
         c = c.superClass;
       } while (c);
@@ -1031,13 +1035,13 @@ module J2ME {
         return <MethodInfo []>this.methods;
       }
       for (var i = 0; i < this.methods.length; i++) {
-        this.getMethodByIndex(i, Detail.Full);
+        this.getMethodByIndex(i);
       }
       this.resolvedFlags |= ResolvedFlags.Methods;
       return <MethodInfo []>this.methods;
     }
 
-    getFieldByIndex(i: number, detail: Detail): FieldInfo {
+    getFieldByIndex(i: number): FieldInfo {
       if (typeof this.fields[i] === "number") {
         this.fields[i] = new FieldInfo(this, <number>this.fields[i]);
       }
@@ -1050,7 +1054,7 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < fields.length; i++) {
-        var field = this.getFieldByIndex(i, Detail.Full);
+        var field = this.getFieldByIndex(i);
         if (strcmp(field.utf8Name, utf8Name) &&
             strcmp(field.utf8Signature, utf8Signature) &&
             field.isStatic === isStatic) {
@@ -1068,7 +1072,7 @@ module J2ME {
       do {
         var i = c.indexOfField(utf8Name, utf8Signature, isStatic);
         if (i >= 0) {
-          return c.getFieldByIndex(i, Detail.Full);
+          return c.getFieldByIndex(i);
         }
         
         if (isStatic) {
@@ -1103,7 +1107,7 @@ module J2ME {
         return <FieldInfo []>this.fields;
       }
       for (var i = 0; i < this.fields.length; i++) {
-        this.getFieldByIndex(i, Detail.Full);
+        this.getFieldByIndex(i);
       }
       this.resolvedFlags |= ResolvedFlags.Fields;
       return <FieldInfo []>this.fields;
