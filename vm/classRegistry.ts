@@ -89,7 +89,7 @@ module J2ME {
       // Link primitive arrays.
       PrimitiveArrayClassInfo.initialize();
       for (var i = 0; i < primitiveTypes.length; i++) {
-        this.getClass("[" + typeName);
+        this.getClass("[" + primitiveTypes[i]);
       }
       leaveTimeline("initializeBuiltinClasses");
     }
