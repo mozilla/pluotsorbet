@@ -527,7 +527,6 @@ module J2ME {
 
     exception_table_length: number;
     exception_table_offset: number;
-    implKey: string;
     isOptimized: boolean;
     signatureDescriptor: SignatureDescriptor;
 
@@ -537,7 +536,6 @@ module J2ME {
       this.classInfo = classInfo;
       this.name = classInfo.constantPool.resolveUtf8String(this.name_index);
       this.signature = classInfo.constantPool.resolveUtf8String(this.descriptor_index);
-      this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
       this.state = MethodState.Cold;
       // TODO: Make this lazy.
       this.stats = new MethodInfoStats();
@@ -562,6 +560,10 @@ module J2ME {
 
     get descriptor_index(): number {
       return this.u2(4);
+    }
+
+    get implKey(): string {
+      return this.classInfo.className + "." + this.name + "." + this.signature;
     }
 
     public getReturnKind(): Kind {

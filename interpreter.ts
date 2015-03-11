@@ -1133,7 +1133,8 @@ module J2ME {
             var calleeMethodInfo = mi.classInfo.constantPool.resolveMethod(index, isStatic);
 
             // Fast path for some of the most common interpreter call targets.
-            if (calleeMethodInfo.implKey === "java/lang/Object.<init>.()V") {
+            if (calleeMethodInfo.classInfo.className === "java/lang/Object" &&
+                calleeMethodInfo.name === "<init>") {
               stack.pop();
               continue;
             }
