@@ -80,15 +80,22 @@ module J2ME {
   };
 
   export function isFinalClass(classInfo: ClassInfo): boolean {
+    return classInfo.isFinal;
+    // XXX The following can only be used if every class in all jars is loaded.
+    /*
     var result = classInfo.isFinal;
     if (!result) {
       result = classInfo.subClasses.length === 0;
     }
     // console.log(classInfo.className + " is final class " + result);
     return result;
+    */
   }
 
   export function isFinalMethod(methodInfo: MethodInfo): boolean {
+    if (isFinalClass(methodInfo.classInfo)) {
+      return true;
+    }
     return methodInfo.isFinal;
     // XXX The following can only be used if every class in all jars is loaded.
     /*
