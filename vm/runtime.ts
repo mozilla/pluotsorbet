@@ -84,8 +84,6 @@ module J2ME {
 
   export var Methods = Object.create(MethodProxy);
 
-  export var CompiledMethods = <{string: Function}>Object.create(null);
-
   export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
   /**
@@ -791,6 +789,7 @@ module J2ME {
      * Bailout callback whenever a JIT frame is unwound.
      */
     B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+      // TODO: remove use of arguments.callee, which has perf issues.
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
       $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
@@ -801,6 +800,7 @@ module J2ME {
      * convetion that makes it more convenient to emit in some cases.
      */
     T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
+      // TODO: remove use of arguments.callee, which has perf issues.
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
       $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
@@ -1449,7 +1449,7 @@ module J2ME {
       linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
-    } else if (fn = CompiledMethods[methodInfo.mangledClassAndMethodName]) {
+    } else if (fn = jsGlobal[methodInfo.mangledClassAndMethodName]) {
       linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
       methodType = MethodType.Compiled;
       aotMethodCount ++;
@@ -1648,8 +1648,8 @@ module J2ME {
     }
     leaveTimeline("Compiling");
     var compiledMethodName = mangledClassAndMethodName;
-    // TODO: refactor string literals with equivalents in compileClassInfo.
-    var source = "CompiledMethods['" + compiledMethodName + "'] = function " + compiledMethodName +
+    // TODO: refactor this template with the equivalent in compileClassInfo.
+    var source = "function " + compiledMethodName +
                  "(" + compiledMethod.args.join(",") + ") {\n" +
                    compiledMethod.body +
                  "\n}";
@@ -1686,13 +1686,13 @@ module J2ME {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
-    // This writes the method to the CompiledMethods object.  We then copy it
-    // into the Methods object below, overwriting the existing method.
+    // This overwrites the method on the global object.
+    // We then copy it to the Methods object below.
     (1, eval)(source);
     leaveTimeline("Eval Compiled Code");
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    var fn = CompiledMethods[mangledClassAndMethodName];
+    var fn = jsGlobal[mangledClassAndMethodName];
     Methods[methodInfo.implKey] = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
@@ -2035,7 +2035,6 @@ var Runtime = J2ME.Runtime;
 var AOTMD = J2ME.aotMetaData;
 
 var Methods = J2ME.Methods;
-var CompiledMethods = J2ME.CompiledMethods;
 
 /**
  * Are we currently unwinding the stack because of a Yield? This technically
