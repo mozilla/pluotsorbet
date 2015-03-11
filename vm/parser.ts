@@ -470,7 +470,7 @@ module J2ME {
     fTableIndex: number;
     mangledName: string;
     access_flags: ACCESS_FLAGS;
-    private constantvalue_index: number;
+    constantValue: any;
 
     constructor(classInfo: ClassInfo, offset: number) {
       super(classInfo.buffer, offset);
@@ -479,18 +479,12 @@ module J2ME {
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
       this.kind = getSignatureKind(this.utf8Signature);
+      this.constantValue = undefined;
       this.scanFieldInfoAttributes();
     }
 
     get isStatic(): boolean {
       return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
-    }
-    
-    get constantValue(): any {
-      if (this.constantvalue_index === undefined) {
-        return;
-      }
-      return this.classInfo.constantPool.resolve(this.constantvalue_index, TAGS.CONSTANT_Any);
     }
 
     get(object: java.lang.Object) {
@@ -512,6 +506,7 @@ module J2ME {
     scanFieldInfoAttributes() {
       var s = this;
       var attributes_count = s.readU2();
+      var constantvalue_index = -1;
       for (var i = 0; i < attributes_count; i++) {
         var attribute_name_index = s.readU2();
         var attribute_length = s.readU4();
@@ -519,10 +514,14 @@ module J2ME {
         var attribute_name = this.classInfo.constantPool.resolveUtf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.ConstantValue)) {
           release || assert(attribute_length === 2, "Attribute length of ConstantValue must be 2.")
-          this.constantvalue_index = s.readU2();
+          constantvalue_index = s.readU2();
         }
         s.seek(o + attribute_length);
       }
+      if (constantvalue_index >= 0) {
+        this.constantValue = this.classInfo.constantPool.resolve(constantvalue_index, TAGS.CONSTANT_Any);
+      }
+
     }
   }
 
