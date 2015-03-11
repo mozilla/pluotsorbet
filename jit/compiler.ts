@@ -9,8 +9,7 @@ module J2ME {
       public writer: IndentingWriter,
       public closure: boolean,
       public debugInfo: boolean,
-      public klassHeaderOnly: boolean = false,
-      public definitions: boolean = false
+      public klassHeaderOnly: boolean = false
     ) {
       // ...
     }
@@ -131,14 +130,6 @@ module J2ME {
     }
   }
 
-  export function emitFieldDefinition(emitter: Emitter, fieldInfo: FieldInfo) {
-    if (fieldInfo.isStatic && fieldInfo.classInfo.isInterface) {
-      return;
-    }
-    var isStaticString = fieldInfo.isStatic ? "static " : "";
-    emitter.writer.writeLn(isStaticString + fieldInfo.name + ": " + typeDescriptorToDefinition(fieldInfo.signature) + ";");
-  }
-
   export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
     var mangledClassName = classInfo.mangledName;
@@ -166,22 +157,12 @@ module J2ME {
           defaultValue = "0";
           break;
         }
-        if (emitter.definitions) {
-          emitFieldDefinition(emitter, fieldInfo);
+        if (emitter.closure) {
+          writer.writeLn("this[" + quote(fieldInfo.mangledName) + "] = " + defaultValue + ";");
         } else {
-          if (emitter.closure) {
-            writer.writeLn("this[" + quote(fieldInfo.mangledName) + "] = " + defaultValue + ";");
-          } else {
-            writer.writeLn("this." + fieldInfo.mangledName + " = " + defaultValue + ";");
-          }
+          writer.writeLn("this." + fieldInfo.mangledName + " = " + defaultValue + ";");
         }
       }
-    }
-
-    if (emitter.definitions) {
-      emitFields(classInfo.getFields(), false);
-      emitFields(classInfo.getFields(), true);
-      return;
     }
 
     // Emit class initializer.
@@ -251,20 +232,6 @@ module J2ME {
     }
 
     var classNameParts;
-    if (emitter.definitions) {
-      classNameParts = classInfo.className.split("/");
-      if (classNameParts.length > 1) {
-        writer.enter("module " + classNameParts.slice(0, classNameParts.length - 1).join(".") + " {");
-      }
-      var classOrInterfaceString = classInfo.isInterface ? "interface" : "class";
-      var extendsString = classInfo.superClass ? " extends " + classNameWithDots(classInfo.superClass) : "";
-      if (classInfo.isInterface) {
-        extendsString = "";
-      }
-      // var implementsString = classInfo.interfaces.length ? " implements " + classInfo.interfaces.map(i => classNameWithDots(i)).join(", ") : "";
-      var implementsString = "";
-      writer.enter("export " + classOrInterfaceString + " " + classNameParts[classNameParts.length - 1] + extendsString + implementsString + " {");
-    }
 
     emitKlass(emitter, classInfo);
 
@@ -284,10 +251,6 @@ module J2ME {
       var mangledMethodName = method.mangledName;
       if (!isIdentifierName(mangledMethodName)) {
         mangledMethodName = quote(mangledMethodName);
-      }
-      if (emitter.definitions) {
-        emitMethodDefinition(emitter, method);
-        continue;
       }
       try {
         var mangledClassAndMethodName = method.mangledClassAndMethodName;
@@ -332,13 +295,6 @@ module J2ME {
 
     emitReferencedSymbols(emitter, classInfo, compiledMethods);
 
-    if (emitter.definitions) {
-      if (classNameParts.length > 1) {
-        writer.leave("}");
-      }
-      writer.leave("}");
-    }
-
     return compiledMethods;
   }
 
@@ -368,7 +324,7 @@ module J2ME {
                           jarFilter: (jarFile: string) => boolean,
                           classFilter: (classInfo: ClassInfo) => boolean,
                           methodFilterList: string[],
-                          fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
+                          fileFilter: string, debugInfo: boolean) {
     var runtime = new Runtime(jvm);
     var ctx = new Context(runtime);
     var code = "";
@@ -376,7 +332,7 @@ module J2ME {
       code += s + "\n";
     });
 
-    var emitter = new Emitter(writer, false, debugInfo, false, tsDefinitions);
+    var emitter = new Emitter(writer, false, debugInfo, false);
 
     var compiledMethods: CompiledMethodInfo [] = [];
     var classInfoList: ClassInfo [] = [];
