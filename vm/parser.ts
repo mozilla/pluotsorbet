@@ -552,11 +552,7 @@ module J2ME {
   }
 
   export function mangleClassAndMethod(methodInfo: MethodInfo) {
-    var name = concat5(methodInfo.classInfo.className, "_", methodInfo.name, "_", hashStringToString(methodInfo.signature));
-    if (!hashedMangledNames) {
-      return escapeString(name);
-    }
-    return hashStringToString(name);
+    return methodInfo.classInfo.mangledName + "_" + methodInfo.index;
   }
 
   export function mangleMethod(methodInfo: MethodInfo) {
@@ -573,8 +569,10 @@ module J2ME {
     classInfo: ClassInfo;
     access_flags: ACCESS_FLAGS;
 
+    index: number;
     state: MethodState;
     stats: MethodInfoStats;
+
     codeAttribute: CodeAttribute;
 
     utf8Name: Uint8Array;
@@ -606,8 +604,9 @@ module J2ME {
     isOptimized: boolean;
     signatureDescriptor: SignatureDescriptor;
 
-    constructor(classInfo: ClassInfo, offset: number) {
+    constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
+      this.index = index;
       this.access_flags = this.u2(0);
       this.classInfo = classInfo;
 
@@ -957,7 +956,7 @@ module J2ME {
     getMethodByIndex(i: number, detail: Detail): MethodInfo {
       if (typeof this.methods[i] === "number") {
         enterTimeline("MethodInfo");
-        var methodInfo = this.methods[i] = new MethodInfo(this, <number>this.methods[i]);
+        var methodInfo = this.methods[i] = new MethodInfo(this, <number>this.methods[i], i);
         leaveTimeline("MethodInfo");
       }
       var methodInfo = <MethodInfo>this.methods[i];

@@ -278,8 +278,6 @@ module J2ME {
   declare var util;
 
   import assert = J2ME.Debug.assert;
-  import concat3 = StringUtilities.concat3;
-  import concat5 = StringUtilities.concat5;
 
   export enum RuntimeStatus {
     New       = 1,
