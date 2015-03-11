@@ -1351,6 +1351,17 @@ module J2ME {
             configurable: true,
             enumerable: false
           });
+          delete symbols[key];
+        }
+      }
+      if (!release) {
+        if (classBindings.fields.staticSymbols) {
+          var staticSymbols = Object.keys(classBindings.fields.staticSymbols);
+          assert(staticSymbols.length === 0, "Unlinked symbols: " + staticSymbols.join(", "));
+        }
+        if (classBindings.fields.instanceSymbols) {
+          var instanceSymbols = Object.keys(classBindings.fields.instanceSymbols);
+          assert(instanceSymbols.length === 0, "Unlinked symbols: " + instanceSymbols.join(", "));
         }
       }
     }
