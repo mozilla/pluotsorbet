@@ -507,13 +507,6 @@ module J2ME {
     codeAttribute: CodeAttribute;
 
     ///// FIX THESE LATER ////
-    fn: any;
-
-    /**
-     * The compiled version of the method.
-     */
-    compiledFn: {()};
-
     mangledName: string;
     mangledClassAndMethodName: string;
 
