@@ -45,44 +45,52 @@ module J2ME {
   declare var CompiledMethodCache;
   declare var Proxy;
 
-  var MethodProxy = new Proxy({}, {
-    get: function(target, property, receiver) {
-      var parts = property.split(".");
-      var className = parts[0];
-      var methodName = parts[1];
-      var signature = parts[2];
+  export var Methods;
 
-      var classInfo = jsGlobal[mangleClassName(className)].classInfo;
-      var methodInfo = classInfo.getMethodByName(methodName, signature);
+  // Sadly, Chrome doesn't support Proxy, nor is it possible to polyfill it.
+  // So the best we can do there is link methods eagerly.
+  if (typeof Proxy === "undefined") {
+    Methods = Object.create(null);
+  } else {
+    var MethodProxy = new Proxy({}, {
+      get: function(target, property, receiver) {
+        var parts = property.split(".");
+        var className = parts[0];
+        var methodName = parts[1];
+        var signature = parts[2];
 
-      // Set the property on the receiver rather than the target
-      // so this trap only gets called once per method.
-      return (receiver[property] = linkKlassMethod(methodInfo));
-    },
+        var classInfo = jsGlobal[mangleClassName(className)].classInfo;
+        var methodInfo = classInfo.getMethodByName(methodName, signature);
 
-    // According to http://kangax.github.io/compat-table/es6/#fx-proxy-get-note:
-    //   Firefox 18 up to 37 doesn't allow a proxy's "get" handler to be
-    //   triggered via the prototype chain, unless the proxied object does
-    //   possess the named property (or the proxy's "has" handler reports it
-    //   as present).
-    //
-    // That's a problem for us, because we want to use the *get* trap
-    // to intercept requests for missing properties.  So here we report that
-    // the target "has" all properties, which should be ok as long as
-    // we never use the *in* operator to find out if Methods actually has
-    // a property.
-    //
-    // (It'd probably be ok even in that case, since we'll always link
-    // the method and return it when a caller dereferences it. Although only if
-    // we maintain the invariant that the method has always been, or can always
-    // be, loaded when the property is dereferenced.)
-    //
-    has: function() {
-      return true;
-    },
-  });
+        // Set the property on the receiver rather than the target
+        // so this trap only gets called once per method.
+        return (receiver[property] = linkKlassMethod(methodInfo));
+      },
 
-  export var Methods = Object.create(MethodProxy);
+      // According to http://kangax.github.io/compat-table/es6/#fx-proxy-get-note:
+      //   Firefox 18 up to 37 doesn't allow a proxy's "get" handler to be
+      //   triggered via the prototype chain, unless the proxied object does
+      //   possess the named property (or the proxy's "has" handler reports it
+      //   as present).
+      //
+      // That's a problem for us, because we want to use the *get* trap
+      // to intercept requests for missing properties.  So here we report that
+      // the target "has" all properties, which should be ok as long as
+      // we never use the *in* operator to find out if Methods actually has
+      // a property.
+      //
+      // (It'd probably be ok even in that case, since we'll always link
+      // the method and return it when a caller dereferences it. Although only if
+      // we maintain the invariant that the method has always been, or can always
+      // be, loaded when the property is dereferenced.)
+      //
+      has: function() {
+        return true;
+      },
+    });
+
+    Methods = Object.create(MethodProxy);
+  }
 
   export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
@@ -1226,7 +1234,11 @@ module J2ME {
     linkWriter && linkWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
 
     enterTimeline("linkKlassMethods");
-    linkKlassMethods(classInfo.klass);
+    if (typeof Proxy === "undefined") {
+      linkKlassMethods(classInfo.klass);
+    } else {
+      lazyLinkKlassMethods(classInfo.klass);
+    }
     leaveTimeline("linkKlassMethods");
 
     enterTimeline("linkKlassFields");
@@ -1491,12 +1503,40 @@ module J2ME {
   }
 
   function linkKlassMethods(klass: Klass) {
+    linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
+
+    var methods = klass.classInfo.getMethods();
+    if (!methods) {
+      return;
+    }
+
+    for (var i = 0; i < methods.length; i++) {
+      var methodInfo = methods[i];
+
+      if (methodInfo.isAbstract) {
+        continue;
+      }
+
+      loadedMethodCount ++;
+
+      if (!methodInfo.isStatic) {
+        klass.prototype["implKeyFor_" + methodInfo.mangledName] = methodInfo.implKey;
+      }
+
+      Methods[methodInfo.implKey] = linkKlassMethod(methodInfo);
+    }
+
+    linkWriter && linkWriter.outdent();
+  }
+
+  function lazyLinkKlassMethods(klass: Klass) {
     var methodIDs = klass.classInfo.getMethodIDs();
     if (!methodIDs) {
       return;
     }
 
-    linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
+    linkWriter && linkWriter.enter("Lazy Link Klass Methods: " + klass);
+
     var classBindings = Bindings[klass.classInfo.className];
     var instanceSymbols = classBindings && classBindings.methods && classBindings.methods.instanceSymbols;
 
