@@ -1483,17 +1483,15 @@ module J2ME {
   function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
     methodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
 
-    var indirectFn = function indirectFn() {
-      return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
-    };
-
     if (!methodInfo.isStatic) {
       methodInfo.classInfo.klass.prototype["_name_" + methodInfo.mangledName] = methodInfo.mangledClassAndMethodName;
-      var classBindings = Bindings[methodInfo.classInfo.className];
+
       if (instanceSymbols) {
         var methodKey = instanceSymbols[methodInfo.name + "." + methodInfo.signature];
         if (methodKey) {
-          methodInfo.classInfo.klass.prototype[methodKey] = indirectFn;
+          methodInfo.classInfo.klass.prototype[methodKey] = function() {
+            return Methods[methodInfo.mangledClassAndMethodName].apply(this, arguments);
+          };
         }
       }
     }
