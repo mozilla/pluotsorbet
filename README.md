@@ -175,7 +175,7 @@ The `name` argument can be any string and it specifies a event type. The timelin
 
 The `details` is an object, whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
 
-The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the even type. At the moment, this is set to `MethodType[methodType]`, but you can easily set it to `implKey` which will give you a very detailed output.
+The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the event type. At the moment, this is set to `MethodType[methodType]`, but you can easily set it to `implKey` which will give you a very detailed output.
 
 Additionally, you may create your own timelines. At the moment there are 3:
 - `timeline`: VM Events like loading class files, linking, etc.
@@ -186,7 +186,7 @@ You may have to change the CSS height style of the `profileContainer` if you don
 
 ![Shumway's timeline viewer](https://cloud.githubusercontent.com/assets/311082/5998278/644761ec-aa7a-11e4-8149-3556b08b8c54.png)
 
-Top band is an overview of all the timelines. Second band is the `timeline`, third is the `threadTimeline` and finally the fourth is the `methodTimeline`. Us your mouse wheel to zoom in and out, pan and hover.
+Top band is an overview of all the timelines. Second band is the `timeline`, third is the `threadTimeline` and finally the fourth is the `methodTimeline`. Use your mouse wheel to zoom in and out, pan and hover.
 
 The tooltip displays:
 - `total`: ms spent in this event including all the child events.
@@ -258,13 +258,27 @@ If you need implement a native method with async JS calls, the following steps a
 1. Add the method to the `yieldMap` in jit/analyze.ts
 2. Use `asyncImpl` in override.js to return the asnyc value with a `Promise`.
 
-The `asyncImpl` is optional if part of the code doesn't make async calls, the method could return value as regular native method and the VM will handle it properly.
-
 e.g:
 
     Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
         asyncImpl("V", new Promise(function(resolve, reject) {
             window.setTimeout(resolve, delay.toNumber());
+        }));
+    };
+
+The `asyncImpl` call is optional if part of the code doesn't make async calls. The method can sometimes return a value synchronously, and the VM will handle it properly. However, if a native ever calls asyncImpl, even if it doesn't always do so, then you need to add the method to `yieldMap`.
+
+e.g:
+
+    Native["java/lang/Thread.newSleep.(J)Z"] = function(delay) {
+        if (delay < 0) {
+          // Return false synchronously. Note: we use 1 and 0 in JavaScript to
+          // represent true and false in Java.
+          return 0;
+        }
+        // Return true asynchronously with `asyncImpl`.
+        asyncImpl("Z", new Promise(function(resolve, reject) {
+            window.setTimeout(resolve.bind(null, 1), delay.toNumber());
         }));
     };
 
