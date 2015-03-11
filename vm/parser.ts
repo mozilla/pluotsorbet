@@ -362,7 +362,7 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Fieldref) {
               r = this.resolved[i] = classInfo.getFieldByName(name, type, isStatic);
             } else {
-              r = this.resolved[i] = classInfo.getMethodByName(name, type, isStatic);
+              r = this.resolved[i] = classInfo.getMethodByName(name, type);
             }
             if (!r) {
               throw $.newRuntimeException(classInfo.className + "." + name + "." + type + " not found");
@@ -796,24 +796,24 @@ module J2ME {
       return <MethodInfo>this.methods[i];
     }
 
-    indexOfMethod(name: string, signature: string, isStatic: boolean): number {
+    indexOfMethod(name: string, signature: string): number {
       var methods = this.methods;
       if (!methods) {
         return -1;
       }
       for (var i = 0; i < methods.length; i++) {
         var method = this.getMethodByIndex(i);
-        if (method.name === name && method.signature === signature && method.isStatic === isStatic) {
+        if (method.name === name && method.signature === signature) {
           return i;
         }
       }
       return -1;
     }
 
-    getMethodByName(name: string, signature: string, isStatic: boolean): MethodInfo {
+    getMethodByName(name: string, signature: string): MethodInfo {
       var c = this;
       do {
-        var i = c.indexOfMethod(name, signature, isStatic);
+        var i = c.indexOfMethod(name, signature);
         if (i >= 0) {
           return c.getMethodByIndex(i);
         }
@@ -823,7 +823,7 @@ module J2ME {
       if (this.isInterface) {
         var interfaces = this.getInterfaces();
         for (var n = 0; n < interfaces.length; ++n) {
-          var method = interfaces[n].getMethodByName(name, signature, isStatic);
+          var method = interfaces[n].getMethodByName(name, signature);
           if (method) {
             return method;
           }
@@ -854,14 +854,14 @@ module J2ME {
       return <FieldInfo>this.fields[i];
     }
 
-    indexOfField(name: string, signature: string, isStatic: boolean): number {
+    indexOfField(name: string, signature: string): number {
       var fields = this.fields;
       if (!fields) {
         return -1;
       }
       for (var i = 0; i < fields.length; i++) {
         var field = this.getFieldByIndex(i);
-        if (field.name === name && field.signature === signature && field.isStatic === isStatic) {
+        if (field.name === name && field.signature === signature) {
           return i;
         }
       }
@@ -871,7 +871,7 @@ module J2ME {
     getFieldByName(name: string, signature: string, isStatic: boolean): FieldInfo {
       var c = this;
       do {
-        var i = c.indexOfField(name, signature, isStatic);
+        var i = c.indexOfField(name, signature);
         if (i >= 0) {
           return c.getFieldByIndex(i);
         }
@@ -945,7 +945,7 @@ module J2ME {
     }
 
     get staticInitializer(): MethodInfo {
-      return this.getMethodByName("<clinit>", "()V", true);
+      return this.getMethodByName("<clinit>", "()V");
     }
 
     /**
