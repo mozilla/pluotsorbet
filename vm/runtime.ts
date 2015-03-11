@@ -434,12 +434,12 @@ module J2ME {
     return hashStringToString(name);
   }
 
-  export function mangleMethod(methodInfo: MethodInfo) {
-    var name = concat3(methodInfo.name, "_", hashStringToString(methodInfo.signature));
+  export function mangleMethod(name: string, signature: string) {
+    var mangledName = concat3(name, "_", hashStringToString(signature));
     if (!hashedMangledNames) {
-      return escapeString(name);
+      return escapeString(mangledName);
     }
-    return "$" + hashStringToString(name);
+    return "$" + hashStringToString(mangledName);
   }
 
   export function mangleClassName(name: string): string {
@@ -1472,39 +1472,46 @@ module J2ME {
     return fn;
   }
 
-  function lazyLinkKlassMethod(methodInfo: MethodInfo, instanceSymbols) {
-    if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype["_name_" + methodInfo.mangledName] = methodInfo.implKey;
-
-      if (instanceSymbols) {
-        var methodKey = instanceSymbols[methodInfo.name + "." + methodInfo.signature];
-        if (methodKey) {
-          methodInfo.classInfo.klass.prototype[methodKey] = function() {
-            return Methods[methodInfo.implKey].apply(this, arguments);
-          };
-        }
-      }
-    }
-  }
-
   function linkKlassMethods(klass: Klass) {
-    var methods = klass.classInfo.getMethods();
-    if (!methods) {
+    var methodIDs = klass.classInfo.getMethodIDs();
+    if (!methodIDs) {
       return;
     }
+
     linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
     var classBindings = Bindings[klass.classInfo.className];
     var instanceSymbols = classBindings && classBindings.methods && classBindings.methods.instanceSymbols;
-    for (var i = 0; i < methods.length; i++) {
-      var methodInfo = methods[i];
-      if (methodInfo.isAbstract) {
+
+    for (var i = 0; i < methodIDs.length; i++) {
+      var methodID = methodIDs[i];
+      loadedMethodCount ++;
+
+      var name = methodID[0];
+      var signature = methodID[1];
+      var isStatic = methodID[2];
+      var isAbstract = methodID[3];
+      var implKey = klass.classInfo.className + "." + name + "." + signature;
+
+      if (isAbstract) {
         continue;
       }
 
-      // Methods[methodInfo.implKey] = linkKlassMethod(methodInfo);
-      lazyLinkKlassMethod(methodInfo, instanceSymbols);
+      if (!isStatic) {
+        var mangledName = mangleMethod(name, signature);
 
-      loadedMethodCount ++;
+        klass.prototype["_name_" + mangledName] = implKey;
+
+        if (instanceSymbols) {
+          var methodKey = instanceSymbols[name + "." + signature];
+          if (methodKey) {
+            (function(klass, methodKey, implKey) {
+              klass.prototype[methodKey] = function() {
+                return Methods[implKey].apply(this, arguments);
+              };
+            })(klass, methodKey, implKey);
+          }
+        }
+      }
     }
 
     linkWriter && linkWriter.outdent();
