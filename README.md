@@ -142,6 +142,59 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
+### Java profiling
+
+The VM has several profiling tools. The simplest feature is to use counters. For instance, `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these should only ever be used in non release builds.
+
+To use them, just sprinkle calls to `runtimeCounter.count("string")`. To see the accumulated counts, press the `Dump Counters` button, or `Clear Counters` if you want to reset them.
+
+The second, more heavy weight profiling tool is to build with `PROFILE=1 make`. This will include Shumway's timeline viewer. One way to use it is to manually insert calls to `timeline.enter` / `timeline.leave` around code blocks that you're interested in measuring. 
+
+If you want to record every method call, change the line in `runtime.ts` from:
+
+```
+if (false && methodTimeline) {
+```
+to
+```
+if (methodTimeline) {
+```
+
+This will wrap all methods with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed flame chart of the execution. Because of the fine grained nature of this instrumentation, timing for very short lived events may not be recorded accurately.
+
+You can get creative with the timelines. The API looks something like this:
+
+```
+timeline.enter(name: string, details?: Object);
+timeline.leave(name?: string, details?: Object);
+```
+
+You must pair the `enter` and `leave` events but you don't necessarily need to specify arguments for `name` and `details`.
+
+The `name` argument can be any string and it specifies a event type. The timeline view will draw different types of events in different colors. It will also give you some statistics about the number of times a certain event type was seen, how long it took, etc.. 
+
+The `details` is an object, whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
+
+The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the event type. At the moment, this is set to `MethodType[methodType]`, but you can easily set it to `implKey` which will give you a very detailed output.
+
+Additionally, you may create your own timelines. At the moment there are 3:
+- `timeline`: VM Events like loading class files, linking, etc.
+- `methodTimeline`: Method execution.
+- `threadTimeline`: Thread scheduling.
+
+You may have to change the CSS height style of the `profileContainer` if you don't see all timelines.
+
+![Shumway's timeline viewer](https://cloud.githubusercontent.com/assets/311082/5998278/644761ec-aa7a-11e4-8149-3556b08b8c54.png)
+
+Top band is an overview of all the timelines. Second band is the `timeline`, third is the `threadTimeline` and finally the fourth is the `methodTimeline`. Use your mouse wheel to zoom in and out, pan and hover.
+
+The tooltip displays:
+- `total`: ms spent in this event including all the child events.
+- `self`: `total` - `total` sum of all child events.
+- `count`: number of events seen with this name.
+- `all total` and `all self`: cumulative total and self times for all events with this name.
+- the remaining fields show the custom data specified in the `details` object.
+
 ## Benchmarks
 
 ### Startup Benchmark
@@ -182,11 +235,11 @@ Java compiler will do nothing to ensure that implementation actually exists. At 
 
 We use `Native` object in JS to handle creation and registration of `native` functions. See native.js
 
-    Native.create("name/of/function.(parameterTypes)returnType", jsFuncToCall, isAsync)
+    Native["name/of/function.(parameterTypes)returnType"] = jsFuncToCall;
 
 e.g.:
 
-    Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {...});
+    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
 
 If you need to implement a method in JS but you can't declare it `native` in Java, use `Override`.
 
@@ -200,17 +253,45 @@ If raising a Java `Exception`, throw new instance of Java `Exception` class as d
 
     throw $.newNullPointerException("Cannot copy to/from a null array.");
 
+If you need implement a native method with async JS calls, the following steps are required:
+
+1. Add the method to the `yieldMap` in jit/analyze.ts
+2. Use `asyncImpl` in override.js to return the asnyc value with a `Promise`.
+
+e.g:
+
+    Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
+        asyncImpl("V", new Promise(function(resolve, reject) {
+            window.setTimeout(resolve, delay.toNumber());
+        }));
+    };
+
+The `asyncImpl` call is optional if part of the code doesn't make async calls. The method can sometimes return a value synchronously, and the VM will handle it properly. However, if a native ever calls asyncImpl, even if it doesn't always do so, then you need to add the method to `yieldMap`.
+
+e.g:
+
+    Native["java/lang/Thread.newSleep.(J)Z"] = function(delay) {
+        if (delay < 0) {
+          // Return false synchronously. Note: we use 1 and 0 in JavaScript to
+          // represent true and false in Java.
+          return 0;
+        }
+        // Return true asynchronously with `asyncImpl`.
+        asyncImpl("Z", new Promise(function(resolve, reject) {
+            window.setTimeout(resolve.bind(null, 1), delay.toNumber());
+        }));
+    };
+
 Remember:
 
   * Return types are automatically converted to Java types, but parameters are not automatically converted from Java types to JS types
-  * Pass `true` as last param if JS will make async calls and return a `Promise`
   * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
-  * Context is last param to every function registered using `Native.create` or `Override.create`
+  * `$` is current runtime and `$.ctx` current Context
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
 
 ## Packaging
 
-The repository includes tools for packaging j2me.js into an Open Web App.
+`make app` packages j2me.js into an Open Web App in output directory.
 It's possible to simply package the entire contents of your working directory,
 but these tools will produce a better app.
 
@@ -224,9 +305,3 @@ To use it, first install a recent version of the
 ### Compiling With Closure
 
 `make closure` compiles some JavaScript code with the Closure compiler.
-
-To use it, first download this custom version of the compiler to tools/closure.jar:
-
-```
-wget https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar -P tools/
-```
