@@ -854,8 +854,12 @@ module J2ME {
         if (opcode === Bytecodes.INVOKESPECIAL) {
           args.unshift(object);
           call = methodInfo.mangledClassAndMethodName + ".call(" + args.join(",") + ")";
-        } else {
+        } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
+          call = object + "." + methodInfo.virtualName + "(" + args.join(",") + ")";
+        } else if (opcode === Bytecodes.INVOKEINTERFACE) {
           call = object + "." + methodInfo.mangledName + "(" + args.join(",") + ")";
+        } else {
+          assert(false);
         }
       } else {
         call = methodInfo.mangledClassAndMethodName + "(" + args.join(",") + ")";

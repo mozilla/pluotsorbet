@@ -6,6 +6,7 @@
 module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
+  import concat5 = StringUtilities.concat5;
   import pushUnique = ArrayUtilities.pushUnique;
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
@@ -31,7 +32,7 @@ module J2ME {
     // "<init>".split("").map(function (x) { return String.charCodeAt(x); })
   }
 
-  function strcmp(a: Uint8Array, b: Uint8Array): boolean {
+  export function strcmp(a: Uint8Array, b: Uint8Array): boolean {
     if (a === b) {
       return true;
     }
@@ -550,17 +551,21 @@ module J2ME {
     }
   }
 
-  export function mangleMethod(methodInfo: MethodInfo) {
-    if (methodInfo.implementsInterface || methodInfo.vTableIndex < 0) {
-      // TODO: Get rid of JS strings in the computation of the hash.
-      var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
-      if (!hashedMangledNames) {
-        return escapeString(name);
-      }
-      return "$" + hashStringToString(name);
-    } else if (methodInfo.vTableIndex >= 0) {
-      return "m" + methodInfo.vTableIndex;
+  export function mangleClassAndMethod(methodInfo: MethodInfo) {
+    var name = concat5(methodInfo.classInfo.className, "_", methodInfo.name, "_", hashStringToString(methodInfo.signature));
+    if (!hashedMangledNames) {
+      return escapeString(name);
     }
+    return hashStringToString(name);
+  }
+
+  export function mangleMethod(methodInfo: MethodInfo) {
+    // TODO: Get rid of JS strings in the computation of the hash.
+    var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
+    if (!hashedMangledNames) {
+      return escapeString(name);
+    }
+    return "$" + hashStringToString(name);
     assert(false);
   }
 
@@ -577,9 +582,10 @@ module J2ME {
     vTableIndex: number;
     detail: Detail;
 
+    virtualName: string;
+
     ///// FIX THESE LATER ////
     fn: any;
-
     mangledName: string;
     mangledClassAndMethodName: string;
 
@@ -629,6 +635,9 @@ module J2ME {
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
       this.consumeArgumentSlots = this.argumentSlots;
       this.mangledName = mangleMethod(this);
+      if (this.vTableIndex >= 0) {
+        this.virtualName = "m" + this.vTableIndex;
+      }
       this.mangledClassAndMethodName = mangleClassAndMethod(this);
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;

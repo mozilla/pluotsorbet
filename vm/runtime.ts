@@ -402,14 +402,6 @@ module J2ME {
     return c;
   }
 
-  export function mangleClassAndMethod(methodInfo: MethodInfo) {
-    var name = concat5(methodInfo.classInfo.className, "_", methodInfo.name, "_", hashStringToString(methodInfo.signature));
-    if (!hashedMangledNames) {
-      return escapeString(name);
-    }
-    return hashStringToString(name);
-  }
-
   export function mangleClassName(name: string): string {
     if (!hashedMangledNames) {
       return "$" + escapeString(name);
@@ -1419,13 +1411,24 @@ module J2ME {
       if (updateGlobalObject) {
         jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
       }
-      if (!methodInfo.isStatic) {
-        klass.prototype[methodInfo.mangledName] = fn;
+      if (!methodInfo.isStatic && methodInfo.virtualName) {
+        klass.prototype[methodInfo.virtualName] = fn;
         if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
           var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
           if (methodKey) {
             klass.prototype[methodKey] = fn;
           }
+        }
+      }
+    }
+
+    var vTable = klass.classInfo.vTable;
+    if (vTable) {
+      for (var i = 0; i < vTable.length; i++) {
+        var methodInfo = vTable[i];
+        if (methodInfo.implementsInterface) {
+          release || assert(methodInfo.mangledName);
+          klass.prototype[methodInfo.mangledName] = methodInfo.fn;
         }
       }
     }
@@ -1645,7 +1648,11 @@ module J2ME {
 
     // Link member methods on the prototype.
     if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
+      var klass = methodInfo.classInfo.klass;
+      klass.prototype[methodInfo.mangledName] = fn;
+      if (methodInfo.virtualName) {
+        klass.prototype[methodInfo.virtualName] = fn;
+      }
     }
 
     // Make JITed code available in the |jitMethodInfos| so that bailout
