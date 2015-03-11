@@ -591,37 +591,28 @@ module J2ME {
     public classInfo: ClassInfo;
     public accessFlags: ACCESS_FLAGS;
 
+    public fn: any;
     public index: number;
     public state: MethodState;
     public stats: MethodInfoStats;
-
     public codeAttribute: CodeAttribute;
-
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
     public returnKind: Kind;
+
+    public argumentSlots: number;
+    public consumeArgumentSlots: number;
+    public hasTwoSlotArguments: boolean;
 
     vTableIndex: number;
 
     private _virtualName: string;
     private _mangledName: string;
     private _mangledClassAndMethodName: string;
-
     private _signatureDescriptor: SignatureDescriptor;
 
     ///// FIX THESE LATER ////
-    fn: any;
-
     onStackReplacementEntryPoints: number [];
-
-    argumentSlots: number;
-
-    /**
-     * The number of arguments to pop of the stack when calling this function.
-     */
-    consumeArgumentSlots: number;
-
-    hasTwoSlotArguments: boolean;
 
     exception_table_length: number;
     exception_table_offset: number;
@@ -648,11 +639,12 @@ module J2ME {
       this.codeAttribute = null;
       this.scanMethodInfoAttributes();
 
+
+      // Parse signature and cache some useful information.
       var signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0);
       this.returnKind = signatureKinds[0];
       this.hasTwoSlotArguments = signatureHasTwoSlotArguments(signatureKinds);
       this.argumentSlots = signatureArgumentSlotCount(signatureKinds);
-
       this.consumeArgumentSlots = this.argumentSlots;
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
