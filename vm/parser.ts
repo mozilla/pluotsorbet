@@ -6,6 +6,10 @@
 module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
+  import pushUnique = ArrayUtilities.pushUnique;
+  import pushMany = ArrayUtilities.pushMany;
+  import unique = ArrayUtilities.unique;
+
 
   module UTF8 {
     export var Code = new Uint8Array([67, 111, 100, 101]);
@@ -759,6 +763,7 @@ module J2ME {
     private fields: (number | FieldInfo) [] = null;
     private methods: (number | MethodInfo) [] = null;
     private interfaces: (number | ClassInfo) [] = null;
+    private allInterfaces: ClassInfo [] = null;
 
     sourceFile: string;
     mangledName: string;
@@ -1086,12 +1091,18 @@ module J2ME {
     }
     
     getAllInterfaces(): ClassInfo [] {
-      var interfaces = this.getInterfaces();
-      var allInterfaces = interfaces;
-      for (var i = 0; i < interfaces.length; i++) {
-        allInterfaces = allInterfaces.concat(interfaces[i].getAllInterfaces());
+      if (this.allInterfaces) {
+        return this.allInterfaces;
       }
-      return allInterfaces;
+      var interfaces = this.getInterfaces();
+      var list = interfaces.slice();
+      for (var i = 0; i < interfaces.length; i++) {
+        pushMany(list, interfaces[i].getAllInterfaces());
+      }
+      if (this.superClass) {
+        pushMany(list, this.superClass.getAllInterfaces());
+      }
+      return this.allInterfaces = unique(list);
     }
 
     /**
