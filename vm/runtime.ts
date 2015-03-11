@@ -1265,7 +1265,7 @@ module J2ME {
     };
   }
 
-  export function findNativeMethodImplementation(methodInfo: MethodInfo) {
+  function findNativeMethodImplementation(methodInfo: MethodInfo) {
     var implKey = methodInfo.implKey;
     // Look in bindings first.
     var binding = findNativeMethodBinding(methodInfo);

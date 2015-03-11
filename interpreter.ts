@@ -1132,13 +1132,6 @@ module J2ME {
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo = mi.classInfo.constantPool.resolveMethod(index, isStatic);
 
-            // TODO: the only thing we need to do here is set *state*
-            // to MethodState.Compiled if the method has a native implementation,
-            // so simplify this call to do only that.
-            if (findNativeMethodImplementation(calleeMethodInfo)) {
-              calleeMethodInfo.state = MethodState.Compiled;
-            }
-
             // Fast path for some of the most common interpreter call targets.
             if (calleeMethodInfo.classInfo.className === "java/lang/Object" &&
                 calleeMethodInfo.name === "<init>") {
