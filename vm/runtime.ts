@@ -45,26 +45,44 @@ module J2ME {
   declare var CompiledMethodCache;
   declare var Proxy;
 
-  export var Methods = new Proxy({}, {
-    get: function(target, name) {
-      // TODO: make proxy be the prototype of Methods, then make it set
-      // properties on the Methods object rather than the target object,
-      // so this trap only gets called once per method.
-
-      if (target[name]) {
-        return target[name];
-      }
-
-      var parts = name.split(".");
+  var MethodProxy = new Proxy({}, {
+    get: function(target, property, receiver) {
+      var parts = property.split(".");
       var className = parts[0];
       var methodName = parts[1];
       var signature = parts[2];
 
       var classInfo = jsGlobal[mangleClassName(className)].classInfo;
       var methodInfo = classInfo.getMethodByName(methodName, signature);
-      return (target[name] = linkKlassMethod(methodInfo));
+
+      // Set the property on the receiver rather than the target
+      // so this trap only gets called once per method.
+      return (receiver[property] = linkKlassMethod(methodInfo));
+    },
+
+    // According to http://kangax.github.io/compat-table/es6/#fx-proxy-get-note:
+    //   Firefox 18 up to 37 doesn't allow a proxy's "get" handler to be
+    //   triggered via the prototype chain, unless the proxied object does
+    //   possess the named property (or the proxy's "has" handler reports it
+    //   as present).
+    //
+    // That's a problem for us, because we want to use the *get* trap
+    // to intercept requests for missing properties.  So here we report that
+    // the target "has" all properties, which should be ok as long as
+    // we never use the *in* operator to find out if Methods actually has
+    // a property.
+    //
+    // (It'd probably be ok even in that case, since we'll always link
+    // the method and return it when a caller dereferences it. Although only if
+    // we maintain the invariant that the method has always been, or can always
+    // be, loaded when the property is dereferenced.)
+    //
+    has: function() {
+      return true;
     },
   });
+
+  export var Methods = Object.create(MethodProxy);
 
   export var CompiledMethods = <{string: Function}>Object.create(null);
 
