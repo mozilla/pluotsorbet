@@ -768,6 +768,10 @@ module J2ME {
     sourceFile: string;
     mangledName: string;
 
+    // TODO: Remove me:
+
+    private _name: string;
+
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
       if (!buffer) {
@@ -814,7 +818,7 @@ module J2ME {
     }
 
     get className(): string {
-      return ByteStream.readString(this.utf8Name);
+      return this._name || (this._name = ByteStream.readString(this.utf8Name));
     }
 
     get superClassName(): string {
