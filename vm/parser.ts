@@ -899,7 +899,10 @@ module J2ME {
           fieldInfo.fTableIndex = fTable.length;
           fTable.push(fieldInfo); // Append
           fieldInfo.mangledName = "f" + fieldInfo.fTableIndex;
+        } else {
+          fieldInfo.mangledName = "s" + i;
         }
+
       }
     }
 
