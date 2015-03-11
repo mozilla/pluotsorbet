@@ -11,23 +11,38 @@ module J2ME {
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
 
+  export enum UTF8Chars {
+    Z = 90,
+    C = 67,
+    F = 70,
+    D = 68,
+    B = 66,
+    S = 83,
+    I = 73,
+    J = 74,
+    V = 86,
+
+    L = 76,
+    OpenBracket = 91,
+    Semicolon = 59
+  }
 
   module UTF8 {
     export var Code = new Uint8Array([67, 111, 100, 101]);
     export var ConstantValue = new Uint8Array([67, 111, 110, 115, 116, 97, 110, 116, 86, 97, 108, 117, 101]);
     export var Init = new Uint8Array([60, 105, 110, 105, 116, 62]);
-    export var OpenBracket = new Uint8Array([91]);
-    export var OpenBracketL = new Uint8Array([91, 76]);
-    export var Semicolon = new Uint8Array([59]);
+    export var OpenBracket = new Uint8Array([UTF8Chars.OpenBracket]);
+    export var OpenBracketL = new Uint8Array([UTF8Chars.OpenBracket, UTF8Chars.L]);
+    export var Semicolon = new Uint8Array([UTF8Chars.Semicolon]);
 
-    export var Z = new Uint8Array([90]);
-    export var C = new Uint8Array([67]);
-    export var F = new Uint8Array([70]);
-    export var D = new Uint8Array([68]);
-    export var B = new Uint8Array([66]);
-    export var S = new Uint8Array([83]);
-    export var I = new Uint8Array([73]);
-    export var J = new Uint8Array([74]);
+    export var Z = new Uint8Array([UTF8Chars.Z]);
+    export var C = new Uint8Array([UTF8Chars.C]);
+    export var F = new Uint8Array([UTF8Chars.F]);
+    export var D = new Uint8Array([UTF8Chars.D]);
+    export var B = new Uint8Array([UTF8Chars.B]);
+    export var S = new Uint8Array([UTF8Chars.S]);
+    export var I = new Uint8Array([UTF8Chars.I]);
+    export var J = new Uint8Array([UTF8Chars.J]);
 
     // "<init>".split("").map(function (x) { return String.charCodeAt(x); })
   }
@@ -45,6 +60,20 @@ module J2ME {
       }
     }
     return true;
+  }
+
+  export function toUTF8(s: string): Uint8Array {
+    var r = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      release || assert(c <= 0x7f);
+      r[i] = c;
+    }
+    return r;
+  }
+
+  export function fromUTF8(s: Uint8Array): string {
+    return ByteStream.readString(s);
   }
 
   function strcat(a: Uint8Array, b: Uint8Array): Uint8Array {
@@ -400,15 +429,15 @@ module J2ME {
             var classInfo = this.resolveClass(class_index);
             var name_index = this.readTagU2(name_and_type_index, TAGS.CONSTANT_NameAndType, 1);
             var type_index = this.readTagU2(name_and_type_index, TAGS.CONSTANT_NameAndType, 3);
-            var name = this.resolveUtf8String(name_index);
-            var type = this.resolveUtf8String(type_index);
+            var name = this.resolveUtf8(name_index);
+            var type = this.resolveUtf8(type_index);
             if (tag === TAGS.CONSTANT_Fieldref) {
               r = this.resolved[i] = classInfo.getFieldByName(name, type, isStatic);
             } else {
               r = this.resolved[i] = classInfo.getMethodByName(name, type, isStatic);
             }
             if (!r) {
-              throw $.newRuntimeException(classInfo.className + "." + name + "." + type + " not found");
+              throw $.newRuntimeException(classInfo.className + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
             }
             break;
           default:
@@ -434,15 +463,12 @@ module J2ME {
 
   export class FieldInfo extends ByteStream {
     classInfo: ClassInfo;
-    detail: Detail;
+    kind: Kind;
     utf8Name: Uint8Array;
     utf8Signature: Uint8Array;
 
     fTableIndex: number;
-    name: string;
     mangledName: string;
-    signature: string;
-    kind: Kind;
     access_flags: ACCESS_FLAGS;
     private constantvalue_index: number;
 
@@ -450,20 +476,12 @@ module J2ME {
       super(classInfo.buffer, offset);
       this.classInfo = classInfo;
       this.access_flags = this.readU2();
-      this.detail = Detail.Full;
-      this.name = classInfo.constantPool.resolveUtf8String(this.readU2());
-      this.signature = classInfo.constantPool.resolveUtf8String(this.readU2());
-      this.kind = getSignatureKind(this.signature);
+      this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
+      this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
+      this.kind = getSignatureKind(this.utf8Signature);
       this.scanFieldInfoAttributes();
     }
 
-    fill(detail: Detail) {
-      if ((this.detail & detail) === detail) {
-        return;
-      }
-
-      this.detail |= detail;
-    }
     get isStatic(): boolean {
       return !!(this.access_flags & ACCESS_FLAGS.ACC_STATIC);
     }
@@ -964,24 +982,32 @@ module J2ME {
       return methodInfo;
     }
 
-    indexOfMethod(name: string, signature: string, isStatic: boolean): number {
+    indexOfMethod(utf8Name: Uint8Array, utf8Signature: Uint8Array, isStatic: boolean): number {
       var methods = this.methods;
       if (!methods) {
         return -1;
       }
       for (var i = 0; i < methods.length; i++) {
         var method = this.getMethodByIndex(i, Detail.Full);
-        if (method.name === name && method.signature === signature && method.isStatic === isStatic) {
+        if (strcmp(method.utf8Name, utf8Name) && strcmp(method.utf8Signature, utf8Signature) && method.isStatic === isStatic) {
           return i;
         }
       }
       return -1;
     }
 
-    getMethodByName(name: string, signature: string, isStatic: boolean): MethodInfo {
+    // This should only ever be used from code where the name and signature originate from JS strings.
+    getMethodByNameString(name: string, signature: string, isStatic: boolean): MethodInfo {
+      return this.getMethodByName(toUTF8(name), toUTF8(signature), isStatic);
+    }
+
+    getMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array, isStatic: boolean): MethodInfo {
+      if (typeof utf8Name === "string") {
+        debugger;
+      }
       var c = this;
       do {
-        var i = c.indexOfMethod(name, signature, isStatic);
+        var i = c.indexOfMethod(utf8Name, utf8Signature, isStatic);
         if (i >= 0) {
           return c.getMethodByIndex(i, Detail.Full);
         }
@@ -991,13 +1017,12 @@ module J2ME {
       if (this.isInterface) {
         var interfaces = this.getInterfaces();
         for (var n = 0; n < interfaces.length; ++n) {
-          var method = interfaces[n].getMethodByName(name, signature, isStatic);
+          var method = interfaces[n].getMethodByName(utf8Name, utf8Signature, isStatic);
           if (method) {
             return method;
           }
         }
       }
-
       return null;
     }
 
@@ -1019,29 +1044,32 @@ module J2ME {
       if (typeof this.fields[i] === "number") {
         this.fields[i] = new FieldInfo(this, <number>this.fields[i]);
       }
-      var fieldInfo = <FieldInfo>this.fields[i]
-      fieldInfo.fill(detail);
-      return fieldInfo;
+      return <FieldInfo>this.fields[i]
     }
 
-    indexOfField(name: string, signature: string, isStatic: boolean): number {
+    indexOfField(utf8Name: Uint8Array, utf8Signature: Uint8Array, isStatic: boolean): number {
       var fields = this.fields;
       if (!fields) {
         return -1;
       }
       for (var i = 0; i < fields.length; i++) {
         var field = this.getFieldByIndex(i, Detail.Full);
-        if (field.name === name && field.signature === signature && field.isStatic === isStatic) {
+        if (strcmp(field.utf8Name, utf8Name) &&
+            strcmp(field.utf8Signature, utf8Signature) &&
+            field.isStatic === isStatic) {
           return i;
         }
       }
       return -1;
     }
 
-    getFieldByName(name: string, signature: string, isStatic: boolean): FieldInfo {
+    getFieldByName(utf8Name: Uint8Array, utf8Signature: Uint8Array, isStatic: boolean): FieldInfo {
+      if (typeof utf8Name === "string") {
+        debugger;
+      }
       var c = this;
       do {
-        var i = c.indexOfField(name, signature, isStatic);
+        var i = c.indexOfField(utf8Name, utf8Signature, isStatic);
         if (i >= 0) {
           return c.getFieldByIndex(i, Detail.Full);
         }
@@ -1049,7 +1077,7 @@ module J2ME {
         if (isStatic) {
           var interfaces = c.getAllInterfaces();
           for (var n = 0; n < interfaces.length; ++n) {
-            var field = interfaces[n].getFieldByName(name, signature, isStatic);
+            var field = interfaces[n].getFieldByName(utf8Name, utf8Signature, isStatic);
             if (field) {
               return field;
             }
@@ -1067,7 +1095,7 @@ module J2ME {
       var secondDot = key.indexOf(".", 2);
       var name = key.substring(2, secondDot);
       var signature = key.substr(secondDot + 1);
-      return this.getFieldByName(name, signature, isStatic);
+      return this.getFieldByName(toUTF8(name), toUTF8(signature), isStatic);
     }
 
     getFields(): FieldInfo [] {

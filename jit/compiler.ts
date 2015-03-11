@@ -143,8 +143,7 @@ module J2ME {
         if (fieldInfo.isStatic !== emitStatic) {
           continue;
         }
-        var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-        var kind = signature.kind;
+        var kind = getSignatureKind(fieldInfo.utf8Signature);
         var defaultValue;
         switch (kind) {
         case Kind.Reference:

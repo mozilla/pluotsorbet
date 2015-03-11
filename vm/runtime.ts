@@ -49,7 +49,7 @@ module J2ME {
   /**
    * Turns on just-in-time compilation of methods.
    */
-  export var enableRuntimeCompilation = false;
+  export var enableRuntimeCompilation = true;
 
   /**
    * Turns on onStackReplacement
@@ -893,7 +893,7 @@ module J2ME {
     for (var i = 0; i < fields.length; i++) {
       var field = fields[i];
       if (field.isStatic) {
-        var kind = TypeDescriptor.makeTypeDescriptor(field.signature).kind;
+        var kind = getSignatureKind(field.utf8Signature);
         var defaultValue;
         switch (kind) {
           case Kind.Reference:
@@ -1328,7 +1328,11 @@ module J2ME {
     if (classBindings && classBindings.fields) {
       for (var i = 0; i < fields.length; i++) {
         var field = fields[i];
-        var key = field.name + "." + field.signature;
+        // TODO Startup Performance: This iterates over all the fields then looks for symbols
+        // that need to be linked. We should instead scan the symbol list and then look for
+        // matching fields in the class. Doing this will avoid creating the key below that is
+        // only used to lookup symbols.
+        var key = ByteStream.readString(field.utf8Name) + "." + ByteStream.readString(field.utf8Signature);
         var symbols = field.isStatic ? classBindings.fields.staticSymbols :
                                        classBindings.fields.instanceSymbols;
         if (symbols && symbols[key]) {

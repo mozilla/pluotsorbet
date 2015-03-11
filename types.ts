@@ -116,28 +116,28 @@ module J2ME {
     }
   }
 
-  export function getSignatureKind(signature: string): Kind {
+  export function getSignatureKind(signature: Uint8Array): Kind {
     switch (signature[0]) {
-      case 'Z':
+      case UTF8Chars.Z:
         return Kind.Boolean;
-      case 'B':
+      case UTF8Chars.B:
         return Kind.Byte;
-      case 'S':
+      case UTF8Chars.S:
         return Kind.Short;
-      case 'C':
+      case UTF8Chars.C:
         return Kind.Char;
-      case 'I':
+      case UTF8Chars.I:
         return Kind.Int;
-      case 'F':
+      case UTF8Chars.F:
         return Kind.Float;
-      case 'J':
+      case UTF8Chars.J:
         return Kind.Long;
-      case 'D':
+      case UTF8Chars.D:
         return Kind.Double;
-      case '[':
-      case 'L':
+      case UTF8Chars.OpenBracket:
+      case UTF8Chars.L:
         return Kind.Reference;
-      case 'V':
+      case UTF8Chars.V:
         return Kind.Void;
     }
   }

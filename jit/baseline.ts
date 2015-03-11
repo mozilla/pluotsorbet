@@ -753,17 +753,17 @@ module J2ME {
       if (isStatic) {
         this.emitClassInitializationCheck(fieldInfo.classInfo);
       }
-      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+      var kind = getSignatureKind(fieldInfo.utf8Signature);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitPush(signature.kind, object + "." + fieldInfo.mangledName, Precedence.Member);
+      this.emitPush(kind, object + "." + fieldInfo.mangledName, Precedence.Member);
     }
 
     emitPutField(fieldInfo: FieldInfo, isStatic: boolean) {
       if (isStatic) {
         this.emitClassInitializationCheck(fieldInfo.classInfo);
       }
-      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      var value = this.pop(signature.kind, Precedence.Sequence);
+      var kind = getSignatureKind(fieldInfo.utf8Signature);
+      var value = this.pop(kind, Precedence.Sequence);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       this.blockEmitter.writeLn(object + "." + fieldInfo.mangledName + "=" + value + ";");
     }
