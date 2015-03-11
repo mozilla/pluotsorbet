@@ -288,13 +288,12 @@ AudioPlayer.prototype.close = function() {
 };
 
 AudioPlayer.prototype.getMediaTime = function() {
-    var p =  new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
         this.sender({ type: "getMediaTime" });
         this.messageHandlers.mediaTime.push(function(data) {
             resolve(data);
         });
     }.bind(this));
-    asyncImpl("I", p);
 };
 
 // The range of ms has already been checked, we don't need to check it again.
@@ -328,13 +327,12 @@ AudioPlayer.prototype.setMute = function(mute) {
 };
 
 AudioPlayer.prototype.getDuration = function() {
-    var p = new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
         this.sender({ type: "getDuration" });
         this.messageHandlers.duration.push(function(data) {
             resolve(data);
         });
     }.bind(this));
-    asyncImpl("I", p);
 };
 
 function ImagePlayer(playerContainer) {
@@ -1165,7 +1163,12 @@ Native["com/sun/mmedia/DirectPlayer.nPrefetch.(I)Z"] = function(handle) {
 
 Native["com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I"] = function(handle) {
     var player = Media.PlayerCache[handle];
-    return player.getMediaTime();
+    var mediaTime = player.getMediaTime();
+    if (mediaTime instanceof Promise) {
+        asyncImpl("I", mediaTime);
+    } else {
+        return mediaTime;
+    }
 };
 
 Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, ms) {
@@ -1227,7 +1230,12 @@ Native["com/sun/mmedia/DirectPlayer.nIsRecordControlSupported.(I)Z"] = function(
 };
 
 Native["com/sun/mmedia/DirectPlayer.nGetDuration.(I)I"] = function(handle) {
-    return Media.PlayerCache[handle].getDuration();
+    var duration = Media.PlayerCache[handle].getDuration();
+    if (duration instanceof Promise) {
+        asyncImpl("I", duration);
+    } else {
+        return duration;
+    }
 };
 
 Native["com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I"] = function(handle, locator) {
