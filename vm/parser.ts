@@ -956,6 +956,10 @@ module J2ME {
       return !!(this.access_flags & ACCESS_FLAGS.ACC_INTERFACE);
     }
 
+    get isAbstract(): boolean {
+      return !!(this.access_flags & ACCESS_FLAGS.ACC_ABSTRACT);
+    }
+
     get isFinal(): boolean {
       return !!(this.access_flags & ACCESS_FLAGS.ACC_FINAL);
     }

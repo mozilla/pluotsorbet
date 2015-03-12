@@ -328,6 +328,11 @@ Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = funct
 };
 
 Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
+  if (this.runtimeKlass.templateKlass.classInfo.isInterface ||
+      this.runtimeKlass.templateKlass.classInfo.isAbstract) {
+    throw $.newInstantiationException("Can't instantiate interfaces or abstract classes");
+  }
+
   return new this.runtimeKlass.templateKlass;
 };
 
