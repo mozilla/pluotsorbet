@@ -342,7 +342,13 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
   // The following can trigger an unwind.
-  o.klass.classInfo.getMethodByName("<init>", "()V", false).fn.call(o);
+  var method = o.klass.classInfo.getLocalMethodByName("<init>", "()V", false);
+
+  if (!method) {
+    throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
+  }
+
+  method.fn.call(o);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {
