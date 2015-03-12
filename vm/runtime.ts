@@ -1372,17 +1372,16 @@ module J2ME {
       var fn;
       var methodType;
       var nativeMethod = findNativeMethodImplementation(methods[i]);
-      var methodDescription = methods[i].name + methods[i].signature;
       var updateGlobalObject = true;
       if (nativeMethod) {
-        linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
+        linkWriter && linkWriter.writeLn("Method: " + methods[i].name + methods[i].signature + " -> Native / Override");
         fn = nativeMethod;
         methodType = MethodType.Native;
         methodInfo.state = MethodState.Compiled;
       } else {
         fn = findCompiledMethod(klass, methodInfo);
         if (fn) {
-          linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
+          linkWriter && linkWriter.greenLn("Method: " + methods[i].name + methods[i].signature + " -> Compiled");
           methodType = MethodType.Compiled;
           // Save method info so that we can figure out where we are bailing
           // out from.
@@ -1390,7 +1389,7 @@ module J2ME {
           updateGlobalObject = false;
           methodInfo.state = MethodState.Compiled;
         } else {
-          linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
+          linkWriter && linkWriter.warnLn("Method: " + methods[i].name + methods[i].signature + " -> Interpreter");
           methodType = MethodType.Interpreted;
           fn = prepareInterpretedMethod(methodInfo);
         }

@@ -619,6 +619,10 @@ module J2ME {
     private _mangledClassAndMethodName: string;
     private _signatureDescriptor: SignatureDescriptor;
 
+    private _implKey: string;
+    private _name: string;
+    private _signature: string;
+
     ///// FIX THESE LATER ////
     onStackReplacementEntryPoints: number [];
 
@@ -676,11 +680,11 @@ module J2ME {
     }
 
     get name(): string {
-      return ByteStream.readString(this.utf8Name);
+      return this._name || (this._name = ByteStream.readString(this.utf8Name));
     }
 
     get signature(): string {
-      return ByteStream.readString(this.utf8Signature);
+      return this._signature || (this._signature = ByteStream.readString(this.utf8Signature));
     }
 
     get implementsInterface(): boolean {
@@ -688,7 +692,7 @@ module J2ME {
     }
 
     get implKey(): string {
-      return this.classInfo.getClassNameSlow() + "." + this.name + "." + this.signature;
+      return this._implKey || (this._implKey = this.classInfo.getClassNameSlow() + "." + this.name + "." + this.signature);
     }
 
     get isNative(): boolean {
