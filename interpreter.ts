@@ -106,7 +106,7 @@ module J2ME {
   var argArray = [];
 
   function buildExceptionLog(ex, stackTrace) {
-    var className = ex.klass.classInfo.className;
+    var className = ex.klass.classInfo.getClassNameSlow();
     var classInfo: ClassInfo = ex.klass.classInfo;
     var detailMessage = util.fromJavaString(classInfo.getFieldByName(toUTF8("detailMessage"), toUTF8("Ljava/lang/String;"), false).get(ex));
     return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
@@ -147,9 +147,9 @@ module J2ME {
       }
 
       var classInfo = frame.methodInfo.classInfo;
-      if (classInfo && classInfo.className) {
+      if (classInfo && classInfo.getClassNameSlow()) {
         stackTrace.push({
-          className: classInfo.className,
+          className: classInfo.getClassNameSlow(),
           methodName: frame.methodInfo.name,
           methodSignature: frame.methodInfo.signature,
           offset: frame.pc
@@ -1022,8 +1022,8 @@ module J2ME {
             object = stack[stack.length - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException(
-                  object.klass.classInfo.className + " is not assignable to " +
-                  classInfo.className);
+                  object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
+                  classInfo.getClassNameSlow());
             }
             break;
           case Bytecodes.INSTANCEOF:
@@ -1134,7 +1134,7 @@ module J2ME {
             var calleeMethodInfo = mi.classInfo.constantPool.resolveMethod(index, isStatic);
 
             // Fast path for some of the most common interpreter call targets.
-            if (calleeMethodInfo.classInfo.className === "java/lang/Object" &&
+            if (calleeMethodInfo.classInfo.getClassNameSlow() === "java/lang/Object" &&
                 calleeMethodInfo.name === "<init>") {
               stack.pop();
               continue;

@@ -814,31 +814,31 @@ module J2ME {
         classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
-        if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.className]) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", is already initialized.";
+        if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.getClassNameSlow()]) {
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", is already initialized.";
           baselineCounter && baselineCounter.count(message);
-        } else if (this.initializedClasses[classInfo.className]) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", block redundant.";
+        } else if (this.initializedClasses[classInfo.getClassNameSlow()]) {
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
         } else if (classInfo === this.methodInfo.classInfo) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", self access.";
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", self access.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
         } else if (!classInfo.isInterface && this.methodInfo.classInfo.isAssignableTo(classInfo)) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", base access.";
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
         } else {
-          baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.className);
-          this.blockEmitter.writeLn("if ($.initialized[\"" + classInfo.className + "\"] === undefined) { " + this.runtimeClassObject(classInfo) + ".initialize(); }");
+          baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
+          this.blockEmitter.writeLn("if ($.initialized[\"" + classInfo.getClassNameSlow() + "\"] === undefined) { " + this.runtimeClassObject(classInfo) + ".initialize(); }");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc), String(this.pc));
           } else {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
         }
-        this.initializedClasses[classInfo.className] = true;
+        this.initializedClasses[classInfo.getClassNameSlow()] = true;
       }
     }
 

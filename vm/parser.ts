@@ -443,7 +443,7 @@ module J2ME {
               r = this.resolved[i] = classInfo.getMethodByName(name, type);
             }
             if (!r) {
-              throw $.newRuntimeException(classInfo.className + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
+              throw $.newRuntimeException(classInfo.getClassNameSlow() + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
             }
             break;
           default:
@@ -577,6 +577,14 @@ module J2ME {
     return methodInfo.classInfo.mangledName + "_" + methodInfo.index;
   }
 
+
+  export function mangleClass(classInfo: ClassInfo): string {
+    var name = StringUtilities.variableLengthEncodeInt32(hashUTF8String(classInfo.utf8Name));
+    // Also use the length for some more precision.
+    name += StringUtilities.toEncoding(classInfo.utf8Name.length & 0x3f);
+    return "$" + name;
+  }
+
   export function mangleMethod(methodInfo: MethodInfo) {
     // TODO: Get rid of JS strings in the computation of the hash.
     var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
@@ -629,7 +637,6 @@ module J2ME {
       this.vTableIndex = -1;
 
       // Lazify;
-      this.implKey = this.classInfo.className + "." + this.name + "." + this.signature;
       this.state = MethodState.Cold;
 
       // TODO: Make this lazy.
@@ -681,7 +688,7 @@ module J2ME {
     }
 
     get implKey(): string {
-      return this.classInfo.className + "." + this.name + "." + this.signature;
+      return this.classInfo.getClassNameSlow() + "." + this.name + "." + this.signature;
     }
 
     get isNative(): boolean {
@@ -847,7 +854,7 @@ module J2ME {
       }
     }
 
-    get className(): string {
+    getClassNameSlow(): string {
       return this._name || (this._name = ByteStream.readString(this.utf8Name));
     }
 
@@ -872,7 +879,7 @@ module J2ME {
     }
 
     private trace(writer: IndentingWriter) {
-      writer.enter(this.className + " VTable:");
+      writer.enter(this.getClassNameSlow() + " VTable:");
       for (var i = 0; i < this.vTable.length; i++) {
         writer.writeLn(i + ": " + ByteStream.readString(this.vTable[i].utf8Name) + "." + ByteStream.readString(this.vTable[i].utf8Signature));
       }
@@ -1224,7 +1231,7 @@ module J2ME {
       super(null);
       this.elementClass = elementClass;
       this.superClass = CLASSES.java_lang_Object;
-      this.superClassName = CLASSES.java_lang_Object.className;
+      this.superClassName = CLASSES.java_lang_Object.getClassNameSlow();
     }
 
     isAssignableTo(toClass: ClassInfo): boolean {
@@ -1250,7 +1257,7 @@ module J2ME {
       } else {
         this.utf8Name = strcat3(UTF8.OpenBracketL, elementClass.utf8Name, UTF8.Semicolon);
       }
-      this.mangledName = mangleClassName(this.className);
+      this.mangledName = mangleClassName(this.getClassNameSlow());
     }
   }
 

@@ -285,9 +285,9 @@ Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
 
 Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var classInfo = this.runtimeKlass.templateKlass.classInfo;
-    var className = classInfo.className;
+    var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
-    if (clinit && clinit.classInfo.className === className) {
+    if (clinit && clinit.classInfo.getClassNameSlow() === className) {
         $.ctx.executeFrames([Frame.create(clinit, [], 0)]);
     }
 };
@@ -301,7 +301,7 @@ Native["java/lang/Class.init9.()V"] = function() {
 };
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function() {
-    return J2ME.newString(this.runtimeKlass.templateKlass.classInfo.className.replace(/\//g, "."));
+    return J2ME.newString(this.runtimeKlass.templateKlass.classInfo.getClassNameSlow().replace(/\//g, "."));
 };
 
 Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
@@ -401,7 +401,7 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
         if (!methodName)
             return;
         var classInfo = methodInfo.classInfo;
-        var className = classInfo.className;
+        var className = classInfo.getClassNameSlow();
         this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
     }.bind(this));
 };
@@ -414,7 +414,7 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() 
         var methodNames = J2ME.newObjectArray(depth);
         var offsets = J2ME.newIntArray(depth);
         this.stackTrace.forEach(function(e, n) {
-            classNames[n] = J2ME.newString(e.className);
+            classNames[n] = J2ME.newString(e.getClassNameSlow());
             methodNames[n] = J2ME.newString(e.methodName);
             offsets[n] = e.offset;
         });

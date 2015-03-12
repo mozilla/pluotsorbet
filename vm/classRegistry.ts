@@ -132,9 +132,9 @@ module J2ME {
     loadClassBytes(bytes: Uint8Array): ClassInfo {
       enterTimeline("loadClassBytes");
       var classInfo = new ClassInfo(bytes);
-      leaveTimeline("loadClassBytes", {className: classInfo.className});
-      loadWriter && loadWriter.writeLn(classInfo.className + " -> " + classInfo.superClassName + ";");
-      this.classes[classInfo.className] = classInfo;
+      leaveTimeline("loadClassBytes", {className: classInfo.getClassNameSlow()});
+      loadWriter && loadWriter.writeLn(classInfo.getClassNameSlow() + " -> " + classInfo.superClassName + ";");
+      this.classes[classInfo.getClassNameSlow()] = classInfo;
       return classInfo;
     }
 

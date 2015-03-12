@@ -244,9 +244,9 @@ module J2ME {
     }
     function classFilter(classInfo: ClassInfo): boolean {
       if (classNameList) {
-        return classNameList.indexOf(classInfo.className) >= 0;
+        return classNameList.indexOf(classInfo.getClassNameSlow()) >= 0;
       } else if (classFilterOption.value) {
-        return !!classInfo.className.match(classFilterOption.value);
+        return !!classInfo.getClassNameSlow().match(classFilterOption.value);
       }
       return false;
     }

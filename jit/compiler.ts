@@ -194,7 +194,7 @@ module J2ME {
   }
 
   function classNameWithDots(classInfo: ClassInfo) {
-    return classInfo.className.replace(/\//g, '.');
+    return classInfo.getClassNameSlow().replace(/\//g, '.');
   }
 
   export function emitMethodMetaData(emitter: Emitter, methodInfo: MethodInfo, compiledMethodInfo: CompiledMethodInfo) {
@@ -215,7 +215,7 @@ module J2ME {
     var mangledClassName = classInfo.mangledName;
 
     emitter.writer.writeLn(mangledClassName + ".classSymbols = [" + referencedClasses.map(classInfo => {
-      return quote(classInfo.className);
+      return quote(classInfo.getClassNameSlow());
     }).join(", ") + "];");
   }
 
@@ -372,14 +372,14 @@ module J2ME {
         return false;
       }
       for (var i = 0; i < list.length; i++) {
-        if (list[i].className === superClass.className) {
+        if (list[i].getClassNameSlow() === superClass.getClassNameSlow()) {
           return true;
         }
       }
 
       for (var j = 0; j < interfaces; j++) {
         for (var i = 0; i < list.length; i++) {
-          if (list[i].className === interfaces[j].className) {
+          if (list[i].getClassNameSlow() === interfaces[j].getClassNameSlow()) {
             return true;
           }
         }
@@ -416,7 +416,7 @@ module J2ME {
       var classInfo = filteredClassInfoList[i];
 
       if (emitter.debugInfo) {
-        writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
+        writer.writeLn("// " + classInfo.getClassNameSlow() + (classInfo.superClass ? " extends " + classInfo.superClass.getClassNameSlow() : ""));
       }
       // Don't compile interfaces.
       if (classInfo.isInterface) {
