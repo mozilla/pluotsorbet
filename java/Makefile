@@ -26,8 +26,8 @@ classes.jar: $(SRCS) $(JPP_DESTS)
 	$(foreach dir,$(SRC_DIRS),cp -a $(dir)/. build-src/;)
 	find ./build-src -name *.java > build-srcs.txt
 	javac -cp build-src -g:none -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build @build-srcs.txt > /dev/null
-	cd build && jar cvf0 ../classes.jar *
-	jar uvf0 classes.jar $(EXTRA)
+	cd build && jar cf0 ../classes.jar *
+	jar uf0 classes.jar $(EXTRA)
 	rm -rf build build-src
 
 tools/Jpp.class: tools/Jpp.java
