@@ -617,6 +617,7 @@ module J2ME {
 
     vTableIndex: number;
 
+    private _staticName: string;
     private _virtualName: string;
     private _mangledName: string;
     private _mangledClassAndMethodName: string;
@@ -672,6 +673,10 @@ module J2ME {
         return this._virtualName || (this._virtualName = "m" + this.vTableIndex);
       }
       return undefined;
+    }
+
+    get staticName() {
+      return this._staticName || (this._staticName = "m" + this.index);
     }
 
     get mangledName() {

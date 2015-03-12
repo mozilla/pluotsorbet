@@ -861,7 +861,7 @@ module J2ME {
         object = this.pop(Kind.Reference);
         if (opcode === Bytecodes.INVOKESPECIAL) {
           args.unshift(object);
-          call = methodInfo.mangledClassAndMethodName + ".call(" + args.join(",") + ")";
+          call = classConstant(methodInfo.classInfo) + "." + methodInfo.staticName + ".call(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           call = object + "." + methodInfo.virtualName + "(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
@@ -870,7 +870,7 @@ module J2ME {
           assert(false);
         }
       } else {
-        call = methodInfo.mangledClassAndMethodName + "(" + args.join(",") + ")";
+        call = classConstant(methodInfo.classInfo) + "." + methodInfo.staticName + "(" + args.join(",") + ")";
       }
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
