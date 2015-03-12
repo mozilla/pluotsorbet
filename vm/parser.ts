@@ -507,8 +507,6 @@ module J2ME {
     codeAttribute: CodeAttribute;
 
     ///// FIX THESE LATER ////
-    fn: any;
-
     mangledName: string;
     mangledClassAndMethodName: string;
 
@@ -547,7 +545,7 @@ module J2ME {
       this.hasTwoSlotArguments = this.signatureDescriptor.hasTwoSlotArguments();
       this.argumentSlots = this.signatureDescriptor.getArgumentSlotCount();
       this.consumeArgumentSlots = this.argumentSlots;
-      this.mangledName = mangleMethod(this);
+      this.mangledName = mangleMethod(this.name, this.signature);
       this.mangledClassAndMethodName = mangleClassAndMethod(this);
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
@@ -665,6 +663,13 @@ module J2ME {
     private methods: (number | MethodInfo) [] = null;
     private interfaces: (number | ClassInfo) [] = null;
 
+    /**
+     * The name, signature, and isStatic/isAbstract flags of each method
+     * in the class.  We use this info to do the minimum necessary linking
+     * of methods at startup.
+     */
+    private methodIDs: any [] = null;
+
     sourceFile: string;
     mangledName: string;
 
@@ -759,8 +764,17 @@ module J2ME {
       var s = this;
       var methods_count = s.readU2();
       var m = this.methods = new Array(methods_count);
+      var ids = this.methodIDs = new Array(methods_count);
       for (var i = 0; i < methods_count; i++) {
         m[i] = s.offset;
+
+        ids[i] = [
+          s.constantPool.resolveUtf8String(this.u2(2)),
+          s.constantPool.resolveUtf8String(this.u2(4)),
+          !!(this.u2(0) & ACCESS_FLAGS.ACC_STATIC),
+          !!(this.u2(0) & ACCESS_FLAGS.ACC_ABSTRACT),
+        ];
+
         s.skip(6);
         this.skipAttributes();
       }
@@ -842,6 +856,13 @@ module J2ME {
       }
       this.resolvedFlags |= ResolvedFlags.Methods;
       return <MethodInfo []>this.methods;
+    }
+
+    getMethodIDs(): any [] {
+      if (!this.methodIDs) {
+        return ArrayUtilities.EMPTY_ARRAY;
+      }
+      return <any []>this.methodIDs;
     }
 
     getFieldByIndex(i: number): FieldInfo {

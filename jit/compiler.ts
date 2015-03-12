@@ -306,6 +306,7 @@ module J2ME {
             methodFilterList.splice(methodFilterList.indexOf(method.implKey), 1);
           }
           var compiledMethodName = mangledClassAndMethodName;
+          // TODO: refactor this template with the equivalent in Runtime.compileAndLinkMethod.
           writer.enter("function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
           writer.writeLns(compiledMethod.body);
           writer.leave("}");

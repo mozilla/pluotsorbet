@@ -274,7 +274,7 @@ module J2ME {
               frame = frames[frames.length - 1];
 
               // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
-              returnValue = O.methodInfo.fn();
+              returnValue = Methods[O.methodInfo.implKey].call(O.methodInfo);
               if (U) {
                 return;
               }
@@ -1058,7 +1058,7 @@ module J2ME {
             var calleeMethodInfo = <MethodInfo><any>rp[index];
             var object = frame.peekInvokeObject(calleeMethodInfo);
 
-            calleeMethod = object[calleeMethodInfo.mangledName];
+            calleeMethod = Methods[object["implKeyFor_" + calleeMethodInfo.mangledName]];
             var calleeTargetMethodInfo: MethodInfo = calleeMethod.methodInfo;
 
             if (calleeTargetMethodInfo &&
@@ -1159,16 +1159,16 @@ module J2ME {
                     frame.patch(3, Bytecodes.INVOKEVIRTUAL, Bytecodes.RESOLVED_INVOKEVIRTUAL);
                   }
                 case Bytecodes.INVOKEINTERFACE:
-                  calleeMethod = object[calleeMethodInfo.mangledName];
+                  calleeMethod = Methods[object["implKeyFor_" + calleeMethodInfo.mangledName]];
                   calleeTargetMethodInfo = calleeMethod.methodInfo;
                   break;
                 case Bytecodes.INVOKESPECIAL:
                   checkNull(object);
-                  calleeMethod = calleeMethodInfo.fn;
+                  calleeMethod = Methods[calleeMethodInfo.implKey];
                   break;
               }
             } else {
-              calleeMethod = calleeMethodInfo.fn;
+              calleeMethod = Methods[calleeMethodInfo.implKey];
             }
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {

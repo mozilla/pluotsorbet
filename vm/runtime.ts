@@ -43,6 +43,54 @@ module J2ME {
   declare var Native, Override;
   declare var VM;
   declare var CompiledMethodCache;
+  declare var Proxy;
+
+  export var Methods;
+
+  // Sadly, Chrome doesn't support Proxy, nor is it possible to polyfill it.
+  // So the best we can do there is link methods eagerly.
+  if (typeof Proxy === "undefined") {
+    Methods = Object.create(null);
+  } else {
+    var MethodProxy = new Proxy({}, {
+      get: function(target, property, receiver) {
+        var parts = property.split(".");
+        var className = parts[0];
+        var methodName = parts[1];
+        var signature = parts[2];
+
+        var classInfo = jsGlobal[mangleClassName(className)].classInfo;
+        var methodInfo = classInfo.getMethodByName(methodName, signature);
+
+        // Set the property on the receiver rather than the target
+        // so this trap only gets called once per method.
+        return (receiver[property] = linkKlassMethod(methodInfo));
+      },
+
+      // According to http://kangax.github.io/compat-table/es6/#fx-proxy-get-note:
+      //   Firefox 18 up to 37 doesn't allow a proxy's "get" handler to be
+      //   triggered via the prototype chain, unless the proxied object does
+      //   possess the named property (or the proxy's "has" handler reports it
+      //   as present).
+      //
+      // That's a problem for us, because we want to use the *get* trap
+      // to intercept requests for missing properties.  So here we report that
+      // the target "has" all properties, which should be ok as long as
+      // we never use the *in* operator to find out if Methods actually has
+      // a property.
+      //
+      // (It'd probably be ok even in that case, since we'll always link
+      // the method and return it when a caller dereferences it. Although only if
+      // we maintain the invariant that the method has always been, or can always
+      // be, loaded when the property is dereferenced.)
+      //
+      has: function() {
+        return true;
+      },
+    });
+
+    Methods = Object.create(MethodProxy);
+  }
 
   export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
 
@@ -410,12 +458,12 @@ module J2ME {
     return hashStringToString(name);
   }
 
-  export function mangleMethod(methodInfo: MethodInfo) {
-    var name = concat3(methodInfo.name, "_", hashStringToString(methodInfo.signature));
+  export function mangleMethod(name: string, signature: string) {
+    var mangledName = concat3(name, "_", hashStringToString(signature));
     if (!hashedMangledNames) {
-      return escapeString(name);
+      return escapeString(mangledName);
     }
-    return "$" + hashStringToString(name);
+    return "$" + hashStringToString(mangledName);
   }
 
   export function mangleClassName(name: string): string {
@@ -749,6 +797,7 @@ module J2ME {
      * Bailout callback whenever a JIT frame is unwound.
      */
     B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+      // TODO: remove use of arguments.callee, which has perf issues.
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
       $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
@@ -759,6 +808,7 @@ module J2ME {
      * convetion that makes it more convenient to emit in some cases.
      */
     T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
+      // TODO: remove use of arguments.callee, which has perf issues.
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
       $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
@@ -1184,7 +1234,11 @@ module J2ME {
     linkWriter && linkWriter.writeLn("Link: " + classInfo.className + " -> " + klass);
 
     enterTimeline("linkKlassMethods");
-    linkKlassMethods(classInfo.klass);
+    if (typeof Proxy === "undefined") {
+      linkKlassMethods(classInfo.klass);
+    } else {
+      lazyLinkKlassMethods(classInfo.klass);
+    }
     leaveTimeline("linkKlassMethods");
 
     enterTimeline("linkKlassFields");
@@ -1300,24 +1354,6 @@ module J2ME {
     return method;
   }
 
-  function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    var fn = jsGlobal[methodInfo.mangledClassAndMethodName];
-    if (fn) {
-      aotMethodCount++;
-      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
-      return fn;
-    }
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
-        cachedMethodCount ++;
-        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      }
-    }
-
-    return jsGlobal[methodInfo.mangledClassAndMethodName];
-  }
-
   /**
    * Creates convenience getters / setters on Java objects.
    */
@@ -1354,125 +1390,190 @@ module J2ME {
     }
   }
 
+  function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
+    return function (a, b, c, d) {
+      var key = MethodType[methodType];
+      if (methodType === MethodType.Interpreted) {
+        nativeCounter.count(MethodType[MethodType.Interpreted]);
+        key += methodInfo.isSynchronized ? " Synchronized" : "";
+        key += methodInfo.exception_table_length ? " Has Exceptions" : "";
+        // key += " " + methodInfo.implKey;
+      }
+      // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
+      // var key = MethodType[methodType] + " " + methodInfo.implKey;
+      nativeCounter.count(key);
+      var s = bytecodeCount;
+      try {
+        methodTimeline.enter(key);
+        var r;
+        switch (arguments.length) {
+          case 0:
+            r = fn.call(this);
+            break;
+          case 1:
+            r = fn.call(this, a);
+            break;
+          case 2:
+            r = fn.call(this, a, b);
+            break;
+          case 3:
+            r = fn.call(this, a, b, c);
+            break;
+          default:
+            r = fn.apply(this, arguments);
+        }
+        methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
+      } catch (e) {
+        methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
+        throw e;
+      }
+      return r;
+    };
+  }
+
+  function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
+    return function() {
+      var args = Array.prototype.slice.apply(arguments);
+      traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
+      var s = performance.now();
+      var value = fn.apply(this, args);
+      traceWriter.outdent();
+      return value;
+    };
+  }
+
+  function findCachedMethod(methodInfo: MethodInfo): Function {
+    var fn;
+    var cachedMethod;
+    if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+      cachedMethodCount ++;
+      linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+      fn = Methods[methodInfo.implKey];
+    }
+    return fn;
+  }
+
+  export function linkKlassMethod(methodInfo: MethodInfo): Function {
+    var fn;
+    var methodType;
+    var methodDescription = methodInfo.name + methodInfo.signature;
+    if (fn = findNativeMethodImplementation(methodInfo)) {
+      linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
+      methodType = MethodType.Native;
+      methodInfo.state = MethodState.Compiled;
+    } else if (fn = jsGlobal[methodInfo.mangledClassAndMethodName]) {
+      linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
+      methodType = MethodType.Compiled;
+      aotMethodCount ++;
+      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
+      // Save method info so that we can figure out where we are bailing
+      // out from.
+      jitMethodInfos[methodInfo.mangledClassAndMethodName] = methodInfo;
+      methodInfo.state = MethodState.Compiled;
+    } else if (enableCompiledMethodCache && (fn = findCachedMethod(methodInfo))) {
+      linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Cached");
+      methodType = MethodType.Compiled;
+    } else {
+      linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
+      methodType = MethodType.Interpreted;
+      fn = prepareInterpretedMethod(methodInfo);
+    }
+
+    if (false && methodTimeline) {
+      fn = profilingWrapper(fn, methodInfo, methodType);
+    }
+
+    if (traceWriter) {
+      fn = tracingWrapper(fn, methodInfo, methodType);
+    }
+
+    if (!methodInfo.isStatic) {
+      var classBindings = Bindings[methodInfo.classInfo.className];
+      if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
+        var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
+        if (methodKey) {
+          methodInfo.classInfo.klass.prototype[methodKey] = fn;
+        }
+      }
+    }
+
+    linkedMethodCount ++;
+
+    return fn;
+  }
+
   function linkKlassMethods(klass: Klass) {
+    linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
+
     var methods = klass.classInfo.getMethods();
     if (!methods) {
       return;
     }
-    linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
-    var methods = klass.classInfo.getMethods();
-    var classBindings = Bindings[klass.classInfo.className];
+
     for (var i = 0; i < methods.length; i++) {
       var methodInfo = methods[i];
+
       if (methodInfo.isAbstract) {
         continue;
       }
-      var fn;
-      var methodType;
-      var nativeMethod = findNativeMethodImplementation(methods[i]);
-      var methodDescription = methods[i].name + methods[i].signature;
-      var updateGlobalObject = true;
-      if (nativeMethod) {
-        linkWriter && linkWriter.writeLn("Method: " + methodDescription + " -> Native / Override");
-        fn = nativeMethod;
-        methodType = MethodType.Native;
-        methodInfo.state = MethodState.Compiled;
-      } else {
-        fn = findCompiledMethod(klass, methodInfo);
-        if (fn) {
-          linkWriter && linkWriter.greenLn("Method: " + methodDescription + " -> Compiled");
-          methodType = MethodType.Compiled;
-          // Save method info so that we can figure out where we are bailing
-          // out from.
-          jitMethodInfos[fn.name] = methodInfo;
-          updateGlobalObject = false;
-          methodInfo.state = MethodState.Compiled;
-        } else {
-          linkWriter && linkWriter.warnLn("Method: " + methodDescription + " -> Interpreter");
-          methodType = MethodType.Interpreted;
-          fn = prepareInterpretedMethod(methodInfo);
-        }
-      }
-      if (false && methodTimeline) {
-        fn = profilingWrapper(fn, methodInfo, methodType);
-        updateGlobalObject = true;
-      }
 
-      if (traceWriter) {
-        fn = tracingWrapper(fn, methodInfo, methodType);
-        updateGlobalObject = true;
-      }
+      loadedMethodCount ++;
 
-      methodInfo.fn = fn;
-
-      // Link even non-static methods globally so they can be invoked statically via invokespecial.
-      if (updateGlobalObject) {
-        jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
-      }
       if (!methodInfo.isStatic) {
-        klass.prototype[methodInfo.mangledName] = fn;
-        if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
-          var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
+        klass.prototype["implKeyFor_" + methodInfo.mangledName] = methodInfo.implKey;
+      }
+
+      Methods[methodInfo.implKey] = linkKlassMethod(methodInfo);
+    }
+
+    linkWriter && linkWriter.outdent();
+  }
+
+  function lazyLinkKlassMethods(klass: Klass) {
+    var methodIDs = klass.classInfo.getMethodIDs();
+    if (!methodIDs) {
+      return;
+    }
+
+    linkWriter && linkWriter.enter("Lazy Link Klass Methods: " + klass);
+
+    var classBindings = Bindings[klass.classInfo.className];
+    var instanceSymbols = classBindings && classBindings.methods && classBindings.methods.instanceSymbols;
+
+    for (var i = 0; i < methodIDs.length; i++) {
+      var methodID = methodIDs[i];
+
+      var name = methodID[0];
+      var signature = methodID[1];
+      var isStatic = methodID[2];
+      var isAbstract = methodID[3];
+      var implKey = klass.classInfo.className + "." + name + "." + signature;
+
+      if (isAbstract) {
+        continue;
+      }
+
+      loadedMethodCount ++;
+
+      if (!isStatic) {
+        var mangledName = mangleMethod(name, signature);
+
+        klass.prototype["implKeyFor_" + mangledName] = implKey;
+
+        if (instanceSymbols) {
+          var methodKey = instanceSymbols[name + "." + signature];
           if (methodKey) {
-            klass.prototype[methodKey] = fn;
+            (function(klass, methodKey, implKey) {
+              klass.prototype[methodKey] = function() {
+                return Methods[implKey].apply(this, arguments);
+              };
+            })(klass, methodKey, implKey);
           }
         }
       }
     }
 
     linkWriter && linkWriter.outdent();
-
-    function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
-      return function (a, b, c, d) {
-        var key = MethodType[methodType];
-        if (methodType === MethodType.Interpreted) {
-          nativeCounter.count(MethodType[MethodType.Interpreted]);
-          key += methodInfo.isSynchronized ? " Synchronized" : "";
-          key += methodInfo.exception_table_length ? " Has Exceptions" : "";
-          // key += " " + methodInfo.implKey;
-        }
-        // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
-        // var key = MethodType[methodType] + " " + methodInfo.implKey;
-        nativeCounter.count(key);
-        var s = bytecodeCount;
-        try {
-          methodTimeline.enter(key);
-          var r;
-          switch (arguments.length) {
-            case 0:
-              r = fn.call(this);
-              break;
-            case 1:
-              r = fn.call(this, a);
-              break;
-            case 2:
-              r = fn.call(this, a, b);
-              break;
-            case 3:
-              r = fn.call(this, a, b, c);
-              break;
-            default:
-              r = fn.apply(this, arguments);
-          }
-          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
-        } catch (e) {
-          methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
-          throw e;
-        }
-        return r;
-      };
-    }
-
-    function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
-      return function() {
-        var args = Array.prototype.slice.apply(arguments);
-        traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
-        var s = performance.now();
-        var value = fn.apply(this, args);
-        traceWriter.outdent();
-        return value;
-      };
-    }
   }
 
   /**
@@ -1539,6 +1640,16 @@ module J2ME {
   export var aotMethodCount = 0;
 
   /**
+   * Number of methods that have been loaded thus far.
+   */
+  export var loadedMethodCount = 0;
+
+  /**
+   * Number of methods that have been linked thus far.
+   */
+  export var linkedMethodCount = 0;
+
+  /**
    * Number of ms that have been spent compiled code thus far.
    */
   var totalJITTime = 0;
@@ -1559,15 +1670,6 @@ module J2ME {
       return;
     }
 
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
-        cachedMethodCount ++;
-        jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      }
-    }
-
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
     jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
@@ -1586,6 +1688,7 @@ module J2ME {
     }
     leaveTimeline("Compiling");
     var compiledMethodName = mangledClassAndMethodName;
+    // TODO: refactor this template with the equivalent in compileClassInfo.
     var source = "function " + compiledMethodName +
                  "(" + compiledMethod.args.join(",") + ") {\n" +
                    compiledMethod.body +
@@ -1624,18 +1727,19 @@ module J2ME {
 
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
+    // We then copy it to the Methods object below.
     (1, eval)(source);
     leaveTimeline("Eval Compiled Code");
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
-    methodInfo.fn = fn;
+    Methods[methodInfo.implKey] = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 
     // Link member methods on the prototype.
     if (!methodInfo.isStatic) {
-      methodInfo.classInfo.klass.prototype[methodInfo.mangledName] = fn;
+      methodInfo.classInfo.klass.prototype["implKeyFor_" + methodInfo.mangledName] = methodInfo.implKey;
     }
 
     // Make JITed code available in the |jitMethodInfos| so that bailout
@@ -1969,6 +2073,8 @@ module J2ME {
 var Runtime = J2ME.Runtime;
 
 var AOTMD = J2ME.aotMetaData;
+
+var Methods = J2ME.Methods;
 
 /**
  * Are we currently unwinding the stack because of a Yield? This technically

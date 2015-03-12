@@ -518,7 +518,7 @@ module J2ME.C4.Backend {
       if (this.opcode === J2ME.Bytecode.Bytecodes.INVOKESPECIAL) {
         result = callCall(id(mangleClassAndMethod(this.methodInfo)), object, args);
       } else {
-        callee = property(object, mangleMethod(this.methodInfo));
+        callee = property(object, mangleMethod(this.methodInfo.name, this.methodInfo.signature));
         result = call(callee, args);
       }
     } else {

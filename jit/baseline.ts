@@ -859,14 +859,14 @@ module J2ME {
       var object = null, call;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         object = this.pop(Kind.Reference);
+        args.unshift(object);
         if (opcode === Bytecodes.INVOKESPECIAL) {
-          args.unshift(object);
-          call = methodInfo.mangledClassAndMethodName + ".call(" + args.join(",") + ")";
+          call = "Methods['" + methodInfo.implKey + "'].call(" + args.join(",") + ")";
         } else {
-          call = object + "." + methodInfo.mangledName + "(" + args.join(",") + ")";
+          call = "Methods[" + object + "['implKeyFor_" + methodInfo.mangledName + "']].call(" + args.join(",") + ")";
         }
       } else {
-        call = methodInfo.mangledClassAndMethodName + "(" + args.join(",") + ")";
+        call = "Methods['" + methodInfo.implKey + "'](" + args.join(",") + ")";
       }
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
