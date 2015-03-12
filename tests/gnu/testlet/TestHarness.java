@@ -178,6 +178,25 @@ public abstract class TestHarness {
         todo(result);
     }
 
+    public void todo(byte[] result, byte[] expected, String note) {
+        boolean ok = true;
+        if (result.length != expected.length) {
+            ok = false;
+        } else {
+            for (int i = 0; i < result.length; i++) {
+                if (result[i] != expected[i]) {
+                    ok = false;
+                    break;
+                }
+            } 
+        }
+
+        setNote(note);
+        todo(ok);
+        if (!ok)
+            debug("got (" + result + "), expected (" + expected + ")");
+    }
+
     public Display getDisplay() {
         return display;
     }
