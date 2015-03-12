@@ -524,8 +524,10 @@ module J2ME {
         }
         s.seek(o + attribute_length);
       }
-      if (constantvalue_index >= 0) {
-        this.constantValue = this.classInfo.constantPool.resolve(constantvalue_index, TAGS.CONSTANT_Any);
+      if (phase !== ExecutionPhase.Compiler) {
+        if (constantvalue_index >= 0) {
+          this.constantValue = this.classInfo.constantPool.resolve(constantvalue_index, TAGS.CONSTANT_Any);
+        }
       }
     }
   }

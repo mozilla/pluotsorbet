@@ -310,12 +310,6 @@ module J2ME {
     var method;
     method = baselineCompileMethod(methodInfo, target);
     return method;
-    try {
-      method = optimizerCompileMethod(methodInfo, target);
-    } catch (x) {
-      method = baselineCompileMethod(methodInfo, target);
-    }
-    return method;
   }
 
   export function compile(jvm: any,
@@ -356,7 +350,7 @@ module J2ME {
           }
           classInfoList.push(classInfo);
         } catch (e) {
-          stderrWriter.writeLn(e);
+          stderrWriter.writeLn(e.stack);
         }
         return true;
       }.bind(this));
