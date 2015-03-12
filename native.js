@@ -333,6 +333,10 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
     throw $.newInstantiationException("Can't instantiate interfaces or abstract classes");
   }
 
+  if (this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo) {
+    throw $.newInstantiationException("Can't instantiate array classes");
+  }
+
   return new this.runtimeKlass.templateKlass;
 };
 
