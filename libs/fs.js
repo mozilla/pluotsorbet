@@ -278,10 +278,16 @@ var fs = (function() {
             var record = records[key];
             if (record.isDir) {
               output[key] = record;
+            } else if (record.size === 0) { // Chrome has problems exporting empty blobs.
+              record.data = [];
+              output[key] = record;
             } else {
               promises.push(new Promise(function(resolve, reject) {
                 var reader = new FileReader();
-                reader.addEventListener("loadend", function() {
+                reader.addEventListener("error", function() {
+                  reject("Failed to read: " + key);
+                });
+                reader.addEventListener("load", function() {
                   record.data = Array.prototype.slice.call(new Int8Array(reader.result));
                   output[key] = record;
                   resolve();
@@ -295,6 +301,8 @@ var fs = (function() {
             var blob = new Blob([JSON.stringify(output)]);
             if (DEBUG_FS) { console.log("export completed"); }
             cb(blob);
+          }, function(reason) {
+            console.error("Failed to export: " + reason);
           });
         }
       };
@@ -435,7 +443,11 @@ var fs = (function() {
       setZeroTimeout(function() { cb(-1) });
     } else {
       var reader = new FileReader();
-      reader.addEventListener("loadend", function() {
+      reader.addEventListener("error", function() {
+        console.error("Failed to read blob data from: " + path);
+        setZeroTimeout(function() { cb(-1) });
+      });
+      reader.addEventListener("load", function() {
         openedFiles.set(++lastId, {
           dirty: false,
           path: path,

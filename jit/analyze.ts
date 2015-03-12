@@ -48,6 +48,8 @@ module J2ME {
     "org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.receiveData.([B)I": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.waitConnection.()V": YieldReason.Root,
+    "com/sun/mmedia/DirectPlayer.nGetDuration.(I)I": YieldReason.Root,
+    "com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I": YieldReason.Root,
     "com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z": YieldReason.Root,
     "com/sun/mmedia/DirectRecord.nPause.(I)I": YieldReason.Root,
     "com/sun/mmedia/DirectRecord.nStop.(I)I": YieldReason.Root,
@@ -80,15 +82,22 @@ module J2ME {
   };
 
   export function isFinalClass(classInfo: ClassInfo): boolean {
+    return classInfo.isFinal;
+    // XXX The following can only be used if every class in all jars is loaded.
+    /*
     var result = classInfo.isFinal;
     if (!result) {
       result = classInfo.subClasses.length === 0;
     }
     // console.log(classInfo.className + " is final class " + result);
     return result;
+    */
   }
 
   export function isFinalMethod(methodInfo: MethodInfo): boolean {
+    if (isFinalClass(methodInfo.classInfo)) {
+      return true;
+    }
     return methodInfo.isFinal;
     // XXX The following can only be used if every class in all jars is loaded.
     /*
