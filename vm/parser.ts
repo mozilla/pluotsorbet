@@ -581,10 +581,11 @@ module J2ME {
 
 
   export function mangleClass(classInfo: ClassInfo): string {
-    var name = StringUtilities.variableLengthEncodeInt32(hashUTF8String(classInfo.utf8Name));
-    // Also use the length for some more precision.
-    name += StringUtilities.toEncoding(classInfo.utf8Name.length & 0x3f);
-    return "$" + name;
+    return mangleClassName(classInfo.getClassNameSlow());
+    //var name = StringUtilities.variableLengthEncodeInt32(hashUTF8String(classInfo.utf8Name));
+    //// Also use the length for some more precision.
+    //name += StringUtilities.toEncoding(classInfo.utf8Name.length & 0x3f);
+    //return "$" + name;
   }
 
   export function mangleMethod(methodInfo: MethodInfo) {
