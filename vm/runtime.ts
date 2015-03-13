@@ -62,11 +62,6 @@ module J2ME {
   export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
 
   /**
-   * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
-   */
-  export var hashedMangledNames = release;
-
-  /**
    * Traces method execution.
    */
   export var traceWriter = null;
@@ -411,13 +406,6 @@ module J2ME {
     c = stringHashes[s] = hashStringStrong(s);
     stringHashCount ++;
     return c;
-  }
-
-  export function mangleClassName(name: string): string {
-    if (!hashedMangledNames) {
-      return "$" + escapeString(name);
-    }
-    return "$" + hashStringToString(name);
   }
 
   /**
@@ -952,7 +940,7 @@ module J2ME {
 
   export function registerKlassSymbol(className: string) {
     // TODO: This needs to be kept in sync to how mangleClass works.
-    var mangledName = mangleClassName(className);
+    var mangledName = mangleClassName(toUTF8(className));
     if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       return;
     }

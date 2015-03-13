@@ -7,9 +7,10 @@ module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
   import concat5 = StringUtilities.concat5;
+  import concat3 = StringUtilities.concat3;
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
-
+  import hashBytesTo32BitsMurmur = HashUtilities.hashBytesTo32BitsMurmur;
   export enum UTF8Chars {
     Z = 90,
     C = 67,
@@ -592,23 +593,19 @@ module J2ME {
     return methodInfo.classInfo.mangledName + "_" + methodInfo.index;
   }
 
-
-  export function mangleClass(classInfo: ClassInfo): string {
-    return mangleClassName(classInfo.getClassNameSlow());
-    //var name = StringUtilities.variableLengthEncodeInt32(hashUTF8String(classInfo.utf8Name));
-    //// Also use the length for some more precision.
-    //name += StringUtilities.toEncoding(classInfo.utf8Name.length & 0x3f);
-    //return "$" + name;
+  export function mangleMethod(methodInfo: MethodInfo) {
+    var utf8Name = methodInfo.utf8Name;
+    var utf8Signature = methodInfo.utf8Signature;
+    var hash = hashBytesTo32BitsMurmur(utf8Name, 0, utf8Name.length);
+    hash ^= hashBytesTo32BitsMurmur(utf8Signature, 0, utf8Signature.length);
+    return "$" + StringUtilities.variableLengthEncodeInt32(hash);
   }
 
-  export function mangleMethod(methodInfo: MethodInfo) {
-    // TODO: Get rid of JS strings in the computation of the hash.
-    var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
-    if (!hashedMangledNames) {
-      return escapeString(name);
-    }
-    return "$" + hashStringToString(name);
-    assert(false);
+  export function mangleClassName(utf8Name: Uint8Array) {
+    var hash = hashBytesTo32BitsMurmur(utf8Name, 0, utf8Name.length);
+    return concat3("$",
+                   StringUtilities.variableLengthEncodeInt32(hash),
+                   StringUtilities.toEncoding(utf8Name.length & 0x3f));
   }
 
   export class MethodInfo extends ByteStream {
@@ -850,7 +847,7 @@ module J2ME {
       this.scanFields();
       this.scanMethods();
       this.scanClassInfoAttributes();
-      this.mangledName = mangleClass(this);
+      this.mangledName = mangleClassName(this.utf8Name);
       leaveTimeline("ClassInfo");
     }
 
@@ -1294,7 +1291,7 @@ module J2ME {
       } else {
         this.utf8Name = strcat3(UTF8.OpenBracketL, elementClass.utf8Name, UTF8.Semicolon);
       }
-      this.mangledName = mangleClassName(this.getClassNameSlow());
+      this.mangledName = mangleClassName(this.utf8Name);
       this.complete();
     }
   }
