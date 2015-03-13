@@ -350,7 +350,7 @@ module J2ME {
           }
           classInfoList.push(classInfo);
         } catch (e) {
-          stderrWriter.writeLn(e.stack);
+          stderrWriter.writeLn(e + ": " + e.stack);
         }
         return true;
       }.bind(this));

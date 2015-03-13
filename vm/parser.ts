@@ -7,7 +7,6 @@ module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
   import concat5 = StringUtilities.concat5;
-  import pushUnique = ArrayUtilities.pushUnique;
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
 
