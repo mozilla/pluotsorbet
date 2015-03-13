@@ -797,11 +797,6 @@ module J2ME {
     superKlass: Klass;
 
     /**
-     * Trampoline prototype.
-     */
-    trampolinePrototype: any;
-
-    /**
      * Would be nice to remove this. So we try not to depend on it too much.
      */
     classInfo: ClassInfo;
@@ -1425,6 +1420,7 @@ module J2ME {
   }
 
   function linkKlassMethod(klass: Klass, methodInfo: MethodInfo) {
+    runtimeCounter && runtimeCounter.count("linkKlassMethod");
     var fn;
     var methodType;
     var classBindings = Bindings[klass.classInfo.getClassNameSlow()];
@@ -1461,6 +1457,7 @@ module J2ME {
     klass[methodInfo.staticName] = methodInfo.fn = fn;
 
     if (!methodInfo.isStatic && methodInfo.virtualName) {
+      release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName));
       klass.prototype[methodInfo.virtualName] = fn;
       if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
         var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
@@ -1481,11 +1478,12 @@ module J2ME {
 
     var vTable = klass.classInfo.vTable;
     if (vTable) {
+      // Eagerly install interface forwarders.
       for (var i = 0; i < vTable.length; i++) {
         var methodInfo = vTable[i];
         if (methodInfo.implementsInterface) {
           release || assert(methodInfo.mangledName);
-          klass.prototype[methodInfo.mangledName] = makeInterfaceMethodForwarder(methodInfo.virtualName);
+          klass.prototype[methodInfo.mangledName] = makeInterfaceMethodForwarder(methodInfo.vTableIndex);
         }
       }
     }
@@ -1522,23 +1520,49 @@ module J2ME {
     }
   }
 
+  // Links the virtual method at a given index.
   function linkVirtualMethodByIndex(self: java.lang.Object, index: number) {
+    // Self is the object on which the trampoline is called. We want to figure
+    // out the appropraite prototype object where we need to link the method. To
+    // do this we look at self's class vTable, then find out the class of the
+    // bound method and then call linkKlassMethod to patch it on the appropraite
+    // prototype.
     var klass = self.klass;
     var classInfo = klass.classInfo;
     var methodInfo = classInfo.vTable[index];
-    linkKlassMethod(klass, methodInfo);
+    var methodKlass = methodInfo.classInfo.klass;
+    linkKlassMethod(methodKlass, methodInfo);
     release || assert(methodInfo.fn);
     return methodInfo.fn;
   }
 
-  function makeInterfaceMethodForwarder(virtualName: string) {
-    return function () {
-      return this[virtualName].apply(this, arguments);
+  // Cache virtual trampolines.
+  var interfaceMethodForwarders = new Array(256);
+
+  // Creates a forwarder function that dispatches to a specified virtual
+  // name. These are used for interface dispatch.
+  function makeInterfaceMethodForwarder(index: number) {
+    var forwarder = interfaceMethodForwarders[index];
+    if (forwarder) {
+      return forwarder;
+    }
+    runtimeCounter && runtimeCounter.count("makeInterfaceMethodForwarder");
+    return interfaceMethodForwarders[index] = function () {
+      return this["v" + index].apply(this, arguments);
     };
   }
 
+  // Cache virtual trampolines.
+  var virtualMethodTrampolines = new Array(256);
+
+  // Creates a reusable trampoline function for a given index in the vTable.
   function makeVirtualMethodTrampoline(index: number) {
-    return function () {
+    var trampoline = virtualMethodTrampolines[index];
+    if (trampoline) {
+      return trampoline;
+    }
+    runtimeCounter && runtimeCounter.count("makeVirtualMethodTrampoline");
+    return virtualMethodTrampolines[index] = function vTrampoline() {
       return linkVirtualMethodByIndex(this, index).apply(this, arguments);
     };
   }
@@ -1551,31 +1575,34 @@ module J2ME {
   }
 
   function makeMethodTrampoline(klass: Klass, index: number) {
+    runtimeCounter && runtimeCounter.count("makeMethodTrampoline");
     return function () {
       return linkMethodByIndex(klass, index).apply(this, arguments);
     };
   }
 
-  function fillTrampolineObject(object, count: number, prefix: string, trampolineMaker: Function) {
-    var s = 0;
-    if (object._lastTrampolineIndex === undefined) {
-      object._lastTrampolineIndex = 0;
-    } else {
-      s = object._lastTrampolineIndex;
+  // Inserts trampolines for virtual methods on prototype objects whenever new methods
+  // are defined. Inherited methods don't need trampolines since they already have them
+  // in the super class prototypes.
+  function initializeKlassVirtualMethodTrampolines(classInfo: ClassInfo, klass: Klass) {
+    var vTable = classInfo.vTable;
+    for (var i = 0; i < vTable.length; i++) {
+      if (vTable[i].classInfo === classInfo) {
+        runtimeCounter && runtimeCounter.count("fillTrampoline");
+        // TODO: Uncomment this assertion. Array prototype has Object prototype on the
+        // prototype hierarchy, and trips this assert since it already has the virtual
+        // trampolines installed.
+        // assert (!klass.prototype.hasOwnProperty("v" + i));
+        klass.prototype["v" + i] = makeVirtualMethodTrampoline(i);
+      }
     }
-    //assert(i >= 0);
-    for (var i = 0; i < count; i++) {
-      object[prefix + i] = trampolineMaker(i);
-    }
-    object._lastTrampolineIndex = i;
   }
 
-  var rootMethodTrampolinePrototype  = {};
-
   function initializeKlassMethodTrampolines(classInfo: ClassInfo, klass: Klass) {
-    fillTrampolineObject(klass, classInfo.getMethodCount(), "m", function (index: number) {
-      return makeMethodTrampoline(klass, index);
-    });
+    // TODO:
+    //fillTrampolineObject(klass, classInfo.getMethodCount(), "m", function (index: number) {
+    //  return makeMethodTrampoline(klass, index);
+    //});
   }
 
   export function extendKlass(classInfo: ClassInfo, klass: Klass, superKlass: Klass) {
@@ -1583,25 +1610,20 @@ module J2ME {
     if (superKlass) {
       if (isPrototypeOfFunctionMutable(klass)) {
         linkWriter && linkWriter.writeLn("Extending: " + klass + " -> " + superKlass);
-        if (!superKlass.trampolinePrototype) {
-          superKlass.trampolinePrototype = Object.create(superKlass.prototype);
-        }
-        fillTrampolineObject(superKlass.trampolinePrototype, classInfo.vTable.length, "v", makeVirtualMethodTrampoline);
-        klass.prototype = Object.create(superKlass.trampolinePrototype);
-        release || assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.trampolinePrototype);
+        klass.prototype = Object.create(superKlass.prototype);
+        release || assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype);
       } else {
         release || assert(!superKlass.superKlass, "Should not have a super-super-klass.");
         for (var key in superKlass.prototype) {
           klass.prototype[key] = superKlass.prototype[key];
         }
-        fillTrampolineObject(klass.prototype, classInfo.vTable.length, "v", makeVirtualMethodTrampoline);
       }
     } else {
       klass.prototype = {};
-      klass.trampolinePrototype = klass.prototype;
     }
     klass.prototype.klass = klass;
     initializeKlassTables(klass);
+    initializeKlassVirtualMethodTrampolines(classInfo, klass);
     initializeKlassMethodTrampolines(classInfo, klass);
   }
 

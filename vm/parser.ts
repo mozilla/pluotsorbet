@@ -1233,6 +1233,7 @@ module J2ME {
       super(null);
       this.utf8Name = utf8Name;
       this.mangledName = mangledName;
+      this.complete();
     }
 
     static Z = new PrimitiveClassInfo(UTF8.Z, "boolean");
