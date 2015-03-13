@@ -64,11 +64,11 @@ tests.jar: $(SRCS) $(JASMIN_SRCS) Testlets.java
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -cp $(BUILDTIME_SUPPORT_DIR) -extdirs "" -d ./build $(SRCS) > /dev/null
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -extdirs "" -d ./build $(RUNTIME_SUPPORT_SRCS) > /dev/null
 	java -jar ../tools/jasmin-2.4/jasmin.jar -d build/ $(JASMIN_SRCS)
-	jar cvfe tests.jar RunTests -C build/ .
-	jar uvf $(PACKAGE_FILES) > /dev/null
+	jar cfe tests.jar RunTests -C build/ .
+	jar uf $(PACKAGE_FILES) > /dev/null
 	# Create JARs for JARStore tests
-	jar cvf compressed.jar build/RunTests.class
-	jar cvf0 uncompressed.jar build/RunTests.class
+	jar cf compressed.jar build/RunTests.class
+	jar cf0 uncompressed.jar build/RunTests.class
 	rm -rf build
 
 clean:

@@ -39,7 +39,7 @@ Override["java/lang/String.<init>.([C)V"] = function(chars) {
 
 Override["java/lang/String.<init>.([CII)V"] = function(value, offset, count) {
   if (offset < 0 || count < 0 || offset > value.length - count) {
-    throw $.newIndexOutOfBoundsException();
+    throw $.newStringIndexOutOfBoundsException();
   }
   this.str = util.fromJavaChars(value, offset, count);
 };
@@ -94,7 +94,7 @@ Override["java/lang/String.length.()I"] = function() {
 
 Override["java/lang/String.charAt.(I)C"] = function(index) {
   if (index < 0 || index >= this.str.length) {
-    throw $.newIndexOutOfBoundsException();
+    throw $.newStringIndexOutOfBoundsException();
   }
   return this.str.charCodeAt(index);
 };
@@ -102,7 +102,7 @@ Override["java/lang/String.charAt.(I)C"] = function(index) {
 Override["java/lang/String.getChars.(II[CI)V"] = function(srcBegin, srcEnd, dst, dstBegin) {
   if (srcBegin < 0 || srcEnd > this.str.length || srcBegin > srcEnd ||
       dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
-    throw $.newIndexOutOfBoundsException();
+    throw $.newStringIndexOutOfBoundsException();
   }
   dst.set(util.stringToCharArray(this.str.substring(srcBegin, srcEnd)), dstBegin);
 };
@@ -210,14 +210,14 @@ Override["java/lang/String.indexOf.(Ljava/lang/String;I)I"] = function(s, fromIn
 
 Override["java/lang/String.substring.(I)Ljava/lang/String;"] = function(beginIndex) {
   if (beginIndex < 0 || beginIndex > this.str.length) {
-    throw $.newIndexOutOfBoundsException();
+    throw $.newStringIndexOutOfBoundsException();
   }
   return J2ME.newString(this.str.substring(beginIndex));
 };
 
 Override["java/lang/String.substring.(II)Ljava/lang/String;"] = function(beginIndex, endIndex) {
   if (beginIndex < 0 || endIndex > this.str.length || beginIndex > endIndex) {
-    throw $.newIndexOutOfBoundsException();
+    throw $.newStringIndexOutOfBoundsException();
   }
   return J2ME.newString(this.str.substring(beginIndex, endIndex));
 };
