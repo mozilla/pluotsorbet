@@ -670,7 +670,7 @@ module J2ME {
 
     get virtualName() {
       if (this.vTableIndex >= 0) {
-        return this._virtualName || (this._virtualName = "m" + this.vTableIndex);
+        return this._virtualName || (this._virtualName = "v" + this.vTableIndex);
       }
       return undefined;
     }
@@ -914,6 +914,9 @@ module J2ME {
       var superClassVTable = this.superClass ? this.superClass.vTable : null;
       var vTable = this.vTable = superClassVTable ? superClassVTable.slice() : [];
       var methods = this.methods;
+      if (!methods) {
+        return;
+      }
       for (var i = 0; i < methods.length; i++) {
         var methodInfo: MethodInfo = this.getMethodByIndex(i);
         if (!methodInfo.isStatic && !strcmp(methodInfo.utf8Name, UTF8.Init)) {
@@ -946,6 +949,9 @@ module J2ME {
       var superClassFTable = this.superClass ? this.superClass.fTable : null;
       var fTable = this.fTable = superClassFTable ? superClassFTable.slice() : [];
       var fields = this.fields;
+      if (!fields) {
+        return;
+      }
       for (var i = 0; i < fields.length; i++) {
         var fieldInfo: FieldInfo = this.getFieldByIndex(i);
         if (!fieldInfo.isStatic) {
@@ -1045,6 +1051,10 @@ module J2ME {
         }
       }
       return null;
+    }
+
+    getMethodCount(): number {
+      return this.methods ? this.methods.length : 0;
     }
 
     getMethods(): MethodInfo [] {
@@ -1270,6 +1280,7 @@ module J2ME {
         this.utf8Name = strcat3(UTF8.OpenBracketL, elementClass.utf8Name, UTF8.Semicolon);
       }
       this.mangledName = mangleClassName(this.getClassNameSlow());
+      this.complete();
     }
   }
 
@@ -1278,6 +1289,7 @@ module J2ME {
       super(elementClass);
       this.utf8Name = strcat(UTF8.OpenBracket, elementClass.utf8Name);
       this.mangledName = mangledName;
+      this.complete();
     }
     
     static initialize() {

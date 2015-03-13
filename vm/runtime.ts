@@ -1041,7 +1041,7 @@ module J2ME {
     var superKlass = getKlass(classInfo.superClass);
 
     enterTimeline("extendKlass");
-    extendKlass(klass, superKlass);
+    extendKlass(classInfo, klass, superKlass);
     leaveTimeline("extendKlass");
 
     enterTimeline("registerKlass");
@@ -1187,7 +1187,7 @@ module J2ME {
     leaveTimeline("linkKlass");
 
     if (klass === Klasses.java.lang.Object) {
-      extendKlass(<Klass><any>Array, Klasses.java.lang.Object);
+      extendKlass(classInfo, <Klass><any>Array, Klasses.java.lang.Object);
     }
   }
 
@@ -1429,7 +1429,6 @@ module J2ME {
     var methodType;
     var classBindings = Bindings[klass.classInfo.getClassNameSlow()];
     var nativeMethod = findNativeMethodImplementation(methodInfo);
-    var updateGlobalObject = true;
     if (nativeMethod) {
       linkWriter && linkWriter.writeLn("Method: " + methodInfo.name + methodInfo.signature + " -> Native / Override");
       fn = nativeMethod;
@@ -1443,7 +1442,6 @@ module J2ME {
         // Save method info so that we can figure out where we are bailing
         // out from.
         jitMethodInfos[fn.name] = methodInfo;
-        updateGlobalObject = false;
         methodInfo.state = MethodState.Compiled;
       } else {
         linkWriter && linkWriter.warnLn("Method: " + methodInfo.name + methodInfo.signature + " -> Interpreter");
@@ -1454,20 +1452,14 @@ module J2ME {
 
     if (false && methodTimeline) {
       fn = profilingWrapper(fn, methodInfo, methodType);
-      updateGlobalObject = true;
     }
 
     if (traceWriter) {
       fn = tracingWrapper(fn, methodInfo, methodType);
-      updateGlobalObject = true;
     }
 
-    methodInfo.fn = fn;
+    klass[methodInfo.staticName] = methodInfo.fn = fn;
 
-    // Link even non-static methods globally so they can be invoked statically via invokespecial.
-    if (updateGlobalObject) {
-      jsGlobal[methodInfo.mangledClassAndMethodName] = fn;
-    }
     if (!methodInfo.isStatic && methodInfo.virtualName) {
       klass.prototype[methodInfo.virtualName] = fn;
       if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
@@ -1486,13 +1478,6 @@ module J2ME {
     }
     linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
     var methods = klass.classInfo.getMethods();
-    for (var i = 0; i < methods.length; i++) {
-      var methodInfo = methods[i];
-      if (methodInfo.isAbstract) {
-        continue;
-      }
-      // linkKlassMethod(klass, methodInfo);
-    }
 
     var vTable = klass.classInfo.vTable;
     if (vTable) {
@@ -1500,7 +1485,7 @@ module J2ME {
         var methodInfo = vTable[i];
         if (methodInfo.implementsInterface) {
           release || assert(methodInfo.mangledName);
-          klass.prototype[methodInfo.mangledName] = methodInfo.fn;
+          klass.prototype[methodInfo.mangledName] = makeInterfaceMethodForwarder(methodInfo.virtualName);
         }
       }
     }
@@ -1537,7 +1522,7 @@ module J2ME {
     }
   }
 
-  function linkVirtualMethodByID(self, index) {
+  function linkVirtualMethodByIndex(self: java.lang.Object, index: number) {
     var klass = self.klass;
     var classInfo = klass.classInfo;
     var methodInfo = classInfo.vTable[index];
@@ -1546,27 +1531,54 @@ module J2ME {
     return methodInfo.fn;
   }
 
-  var rootTrampolinePrototype = {
-    //m22: function () {
-    //  return linkVirtualMethodByID(this, 22).apply(this, arguments);
-    //}
-  };
-
-  function makeTrampoline(index) {
+  function makeInterfaceMethodForwarder(virtualName: string) {
     return function () {
-      return linkVirtualMethodByID(this, index).apply(this, arguments);
+      return this[virtualName].apply(this, arguments);
     };
   }
 
-  function fillTrampolinePrototype(object, count) {
-    for (var i = 0; i < count; i++) {
-      object["m" + i] = makeTrampoline(i);
-    }
+  function makeVirtualMethodTrampoline(index: number) {
+    return function () {
+      return linkVirtualMethodByIndex(this, index).apply(this, arguments);
+    };
   }
 
-  fillTrampolinePrototype(rootTrampolinePrototype, 100);
+  function linkMethodByIndex(klass: Klass, index: number) {
+    var methodInfo = klass.classInfo.getMethodByIndex(index);
+    linkKlassMethod(klass, methodInfo);
+    release || assert(methodInfo.fn);
+    return methodInfo.fn;
+  }
 
-  export function extendKlass(klass: Klass, superKlass: Klass) {
+  function makeMethodTrampoline(klass: Klass, index: number) {
+    return function () {
+      return linkMethodByIndex(klass, index).apply(this, arguments);
+    };
+  }
+
+  function fillTrampolineObject(object, count: number, prefix: string, trampolineMaker: Function) {
+    var s = 0;
+    if (object._lastTrampolineIndex === undefined) {
+      object._lastTrampolineIndex = 0;
+    } else {
+      s = object._lastTrampolineIndex;
+    }
+    //assert(i >= 0);
+    for (var i = 0; i < count; i++) {
+      object[prefix + i] = trampolineMaker(i);
+    }
+    object._lastTrampolineIndex = i;
+  }
+
+  var rootMethodTrampolinePrototype  = {};
+
+  function initializeKlassMethodTrampolines(classInfo: ClassInfo, klass: Klass) {
+    fillTrampolineObject(klass, classInfo.getMethodCount(), "m", function (index: number) {
+      return makeMethodTrampoline(klass, index);
+    });
+  }
+
+  export function extendKlass(classInfo: ClassInfo, klass: Klass, superKlass: Klass) {
     klass.superKlass = superKlass;
     if (superKlass) {
       if (isPrototypeOfFunctionMutable(klass)) {
@@ -1574,20 +1586,23 @@ module J2ME {
         if (!superKlass.trampolinePrototype) {
           superKlass.trampolinePrototype = Object.create(superKlass.prototype);
         }
+        fillTrampolineObject(superKlass.trampolinePrototype, classInfo.vTable.length, "v", makeVirtualMethodTrampoline);
         klass.prototype = Object.create(superKlass.trampolinePrototype);
         release || assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.trampolinePrototype);
       } else {
         release || assert(!superKlass.superKlass, "Should not have a super-super-klass.");
-          for (var key in superKlass.prototype) {
-              klass.prototype[key] = superKlass.prototype[key];
-          }
+        for (var key in superKlass.prototype) {
+          klass.prototype[key] = superKlass.prototype[key];
+        }
+        fillTrampolineObject(klass.prototype, classInfo.vTable.length, "v", makeVirtualMethodTrampoline);
       }
     } else {
-      klass.prototype = Object.create(rootTrampolinePrototype);
+      klass.prototype = {};
       klass.trampolinePrototype = klass.prototype;
     }
     klass.prototype.klass = klass;
     initializeKlassTables(klass);
+    initializeKlassMethodTrampolines(classInfo, klass);
   }
 
   /**
