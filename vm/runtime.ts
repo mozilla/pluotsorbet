@@ -184,6 +184,7 @@ module J2ME {
         ClassNotFoundException: null,
         SecurityException: null,
         IllegalThreadStateException: null,
+        InstantiationException: null,
         Exception: null
       },
       io: {
@@ -639,6 +640,11 @@ module J2ME {
     newMediaException(str?: string): javax.microedition.media.MediaException {
       return <javax.microedition.media.MediaException>$.ctx.createException(
         "javax/microedition/media/MediaException", str);
+    }
+
+    newInstantiationException(str?: string): java.lang.InstantiationException {
+      return <java.lang.InstantiationException>$.ctx.createException(
+        "java/lang/InstantiationException", str);
     }
 
     newException(str?: string): java.lang.Exception {
@@ -1158,6 +1164,7 @@ module J2ME {
         case "java/lang/String": Klasses.java.lang.String = klass; break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
+        case "java/lang/InstantiationException": Klasses.java.lang.InstantiationException = klass; break;
         case "java/lang/IllegalArgumentException": Klasses.java.lang.IllegalArgumentException = klass; break;
         case "java/lang/NegativeArraySizeException": Klasses.java.lang.NegativeArraySizeException = klass; break;
         case "java/lang/IllegalStateException": Klasses.java.lang.IllegalStateException = klass; break;

@@ -1022,6 +1022,14 @@ module J2ME {
       return this.getMethodByName(toUTF8(name), toUTF8(signature));
     }
 
+    getLocalMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
+      var i = this.indexOfMethod(utf8Name, utf8Signature);
+      if (i >= 0) {
+        return this.getMethodByIndex(i);
+      }
+      return null;
+    }
+
     getMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
       var c = this;
       do {
@@ -1179,6 +1187,10 @@ module J2ME {
 
     get isInterface(): boolean {
       return !!(this.accessFlags & ACCESS_FLAGS.ACC_INTERFACE);
+    }
+
+    get isAbstract(): boolean {
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_ABSTRACT);
     }
 
     get isFinal(): boolean {

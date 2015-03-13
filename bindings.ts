@@ -241,6 +241,9 @@ module J2ME {
       message: string;
     }
 
+    export interface InstantiationException extends java.lang.Exception {
+    }
+
     export interface IllegalArgumentException extends java.lang.Exception {
     }
 
