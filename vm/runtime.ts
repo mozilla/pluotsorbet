@@ -1420,7 +1420,7 @@ module J2ME {
     };
   }
 
-  export function tryLinkMethod(methodInfo: MethodInfo) {
+  export function getLinkedMethod(methodInfo: MethodInfo) {
     if (methodInfo.fn) {
       return methodInfo.fn;
     }

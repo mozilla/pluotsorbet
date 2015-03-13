@@ -1166,11 +1166,11 @@ module J2ME {
                   break;
                 case Bytecodes.INVOKESPECIAL:
                   checkNull(object);
-                  calleeMethod = tryLinkMethod(calleeMethodInfo);
+                  calleeMethod = getLinkedMethod(calleeMethodInfo);
                   break;
               }
             } else {
-              calleeMethod = tryLinkMethod(calleeMethodInfo);
+              calleeMethod = getLinkedMethod(calleeMethodInfo);
             }
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {

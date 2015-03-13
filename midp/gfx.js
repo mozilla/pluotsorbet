@@ -384,7 +384,7 @@ var currentlyFocusedTextEditor;
             var classInfo = CLASSES.loadAndLinkClass("javax/microedition/lcdui/Font");
             defaultFont = new classInfo.klass();
             var methodInfo = classInfo.getMethodByNameString("<init>", "(III)V", false);
-            J2ME.tryLinkMethod(methodInfo).call(defaultFont, 0, 0, 0);
+            J2ME.getLinkedMethod(methodInfo).call(defaultFont, 0, 0, 0);
         }
         return defaultFont;
     }
