@@ -833,6 +833,16 @@ module J2ME {
     isArrayKlass: boolean;
 
     elementKlass: Klass;
+
+    /**
+     * Links class method.
+     */
+    m(index: number): Function;
+
+    /**
+     * Linked class methods.
+     */
+    methods: Function[];
   }
 
   export class RuntimeKlass {
@@ -1454,7 +1464,7 @@ module J2ME {
       fn = tracingWrapper(fn, methodInfo, methodType);
     }
 
-    klass[methodInfo.staticName] = methodInfo.fn = fn;
+    klass.methods[methodInfo.index] = methodInfo.fn = fn;
 
     if (!methodInfo.isStatic && methodInfo.virtualName) {
       release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName));
@@ -1605,6 +1615,17 @@ module J2ME {
     }
   }
 
+  function klassMethodLink(index: number) {
+    var klass: Klass = this;
+    var fn = klass.methods[index];
+    if (fn) {
+      return fn;
+    }
+    linkKlassMethod(klass, klass.classInfo.getMethodByIndex(index));
+    release || assert(klass.methods[index], "Method should be linked now.");
+    return klass.methods[index];
+  }
+
   export function extendKlass(classInfo: ClassInfo, klass: Klass, superKlass: Klass) {
     klass.superKlass = superKlass;
     if (superKlass) {
@@ -1624,7 +1645,10 @@ module J2ME {
     klass.prototype.klass = klass;
     initializeKlassTables(klass);
     initializeKlassVirtualMethodTrampolines(classInfo, klass);
-    initializeKlassMethodTrampolines(classInfo, klass);
+
+    // Method linking.
+    klass.m = klassMethodLink;
+    klass.methods = new Array(classInfo.getMethodCount());
   }
 
   /**
