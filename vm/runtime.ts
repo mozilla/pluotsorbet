@@ -49,7 +49,7 @@ module J2ME {
   /**
    * Turns on just-in-time compilation of methods.
    */
-  export var enableRuntimeCompilation = false;
+  export var enableRuntimeCompilation = true;
 
   /**
    * Turns on onStackReplacement
@@ -1599,10 +1599,10 @@ module J2ME {
   }
 
   function initializeKlassMethodTrampolines(classInfo: ClassInfo, klass: Klass) {
-    // TODO:
-    //fillTrampolineObject(klass, classInfo.getMethodCount(), "m", function (index: number) {
-    //  return makeMethodTrampoline(klass, index);
-    //});
+    var count = classInfo.getMethodCount();
+    for (var i = 0; i < count; i++) {
+      klass["m" + i] = makeMethodTrampoline(klass, i);
+    }
   }
 
   export function extendKlass(classInfo: ClassInfo, klass: Klass, superKlass: Klass) {
