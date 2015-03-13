@@ -455,7 +455,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
-      tryLinkMethod(methodInfo).call(exception, message ? newString(message) : null);
+      getLinkedMethod(methodInfo).call(exception, message ? newString(message) : null);
       return exception;
     }
 

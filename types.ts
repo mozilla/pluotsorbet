@@ -180,7 +180,13 @@ module J2ME {
   var descriptorKinds = [];
 
   /**
-   * Don't alias the returned array.
+   * Returns an array of kinds that appear in a method signature. The first element is always the
+   * return kind. The returned array is shared, so you if you need a copy of it, you'll need to
+   * clone it.
+   *
+   * The parsing algorithm needs some global state to keep track of the current position in the
+   * descriptor, namely |globalNextIndex| which always points to the next index in the descriptor
+   * after a token has been consumed.
    */
   export function parseMethodDescriptorKinds(value: Uint8Array, startIndex: number): Kind [] {
     globalNextIndex = 0;
@@ -236,7 +242,7 @@ module J2ME {
           globalNextIndex = endIndex + 1;
           return Kind.Reference;
         }
-        Debug.unexpected();
+        Debug.unexpected("Invalid signature.");
       }
       case UTF8Chars.OpenBracket: {
         // compute the number of dimensions
@@ -246,13 +252,13 @@ module J2ME {
         }
         var dimensions = index - startIndex;
         if (dimensions > 255) {
-          throw "array with more than 255 dimensions";;
+          Debug.unexpected("Array with more than 255 dimensions.");
         }
         var component = parseTypeDescriptorKind(value, index);
         return Kind.Reference;
       }
       default:
-        Debug.unexpected(value[startIndex]);
+        Debug.unexpected("Unexpected type descriptor prefix: " + value[startIndex]);
     }
   }
 

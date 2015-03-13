@@ -867,7 +867,7 @@ module J2ME {
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
           call = object + "." + methodInfo.mangledName + "(" + args.join(",") + ")";
         } else {
-          assert(false);
+          Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
         call = classConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ")" + "(" + args.join(",") + ")";

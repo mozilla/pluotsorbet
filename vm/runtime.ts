@@ -184,6 +184,7 @@ module J2ME {
         ClassNotFoundException: null,
         SecurityException: null,
         IllegalThreadStateException: null,
+        InstantiationException: null,
         Exception: null
       },
       io: {
@@ -639,6 +640,11 @@ module J2ME {
     newMediaException(str?: string): javax.microedition.media.MediaException {
       return <javax.microedition.media.MediaException>$.ctx.createException(
         "javax/microedition/media/MediaException", str);
+    }
+
+    newInstantiationException(str?: string): java.lang.InstantiationException {
+      return <java.lang.InstantiationException>$.ctx.createException(
+        "java/lang/InstantiationException", str);
     }
 
     newException(str?: string): java.lang.Exception {
@@ -1158,6 +1164,7 @@ module J2ME {
         case "java/lang/String": Klasses.java.lang.String = klass; break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
+        case "java/lang/InstantiationException": Klasses.java.lang.InstantiationException = klass; break;
         case "java/lang/IllegalArgumentException": Klasses.java.lang.IllegalArgumentException = klass; break;
         case "java/lang/NegativeArraySizeException": Klasses.java.lang.NegativeArraySizeException = klass; break;
         case "java/lang/IllegalStateException": Klasses.java.lang.IllegalStateException = klass; break;
@@ -1420,7 +1427,7 @@ module J2ME {
     };
   }
 
-  export function tryLinkMethod(methodInfo: MethodInfo) {
+  export function getLinkedMethod(methodInfo: MethodInfo) {
     if (methodInfo.fn) {
       return methodInfo.fn;
     }
@@ -1533,9 +1540,9 @@ module J2ME {
   // Links the virtual method at a given index.
   function linkVirtualMethodByIndex(self: java.lang.Object, index: number) {
     // Self is the object on which the trampoline is called. We want to figure
-    // out the appropraite prototype object where we need to link the method. To
+    // out the appropriate prototype object where we need to link the method. To
     // do this we look at self's class vTable, then find out the class of the
-    // bound method and then call linkKlassMethod to patch it on the appropraite
+    // bound method and then call linkKlassMethod to patch it on the appropriate
     // prototype.
     var klass = self.klass;
     var classInfo = klass.classInfo;
@@ -1546,7 +1553,7 @@ module J2ME {
     return methodInfo.fn;
   }
 
-  // Cache virtual trampolines.
+  // Cache interface forwarders.
   var interfaceMethodForwarders = new Array(256);
 
   // Creates a forwarder function that dispatches to a specified virtual

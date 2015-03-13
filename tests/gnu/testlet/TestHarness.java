@@ -56,6 +56,14 @@ public abstract class TestHarness {
 	    debug("got (" + result + "), expected (" + expected + ")");
     }
 
+    public void check(Object result, Object expected, String note) {
+    boolean ok = (result == null ? expected == null : (result.toString().equals(expected.toString())));
+    setNote(note);
+    check(ok);
+    if (!ok)
+        debug("got (" + result + "), expected (" + expected + ")");
+    }
+
     public void check(Object result, Object expected) {
 	boolean ok = (result == null ? expected == null : (result.toString().equals(expected.toString())));
 	check(ok);
@@ -94,6 +102,25 @@ public abstract class TestHarness {
 	check(ok);
 	if (!ok)
 	    debug("got (" + result + "), expected (" + expected + ")");
+    }
+
+    public void check(byte[] result, byte[] expected, String note) {
+        boolean ok = true;
+        if (result.length != expected.length) {
+            ok = false;
+        } else {
+            for (int i = 0; i < result.length; i++) {
+                if (result[i] != expected[i]) {
+                    ok = false;
+                    break;
+                }
+            } 
+        }
+
+        setNote(note);
+        check(ok);
+        if (!ok)
+            debug("got (" + result + "), expected (" + expected + ")");
     }
 
     public void check(boolean ok, String note) {
@@ -149,6 +176,25 @@ public abstract class TestHarness {
     public void todo(boolean result, String note) {
         setNote(note);
         todo(result);
+    }
+
+    public void todo(byte[] result, byte[] expected, String note) {
+        boolean ok = true;
+        if (result.length != expected.length) {
+            ok = false;
+        } else {
+            for (int i = 0; i < result.length; i++) {
+                if (result[i] != expected[i]) {
+                    ok = false;
+                    break;
+                }
+            } 
+        }
+
+        setNote(note);
+        todo(ok);
+        if (!ok)
+            debug("got (" + result + "), expected (" + expected + ")");
     }
 
     public Display getDisplay() {

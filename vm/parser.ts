@@ -7,7 +7,6 @@ module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
   import concat5 = StringUtilities.concat5;
-  import pushUnique = ArrayUtilities.pushUnique;
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
 
@@ -1037,10 +1036,15 @@ module J2ME {
       return this.getMethodByName(cacheUTF8(name), cacheUTF8(signature));
     }
 
-    getMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
-      if (typeof utf8Name === "string") {
-        debugger;
+    getLocalMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
+      var i = this.indexOfMethod(utf8Name, utf8Signature);
+      if (i >= 0) {
+        return this.getMethodByIndex(i);
       }
+      return null;
+    }
+
+    getMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
       var c = this;
       do {
         var i = c.indexOfMethod(utf8Name, utf8Signature);
@@ -1103,9 +1107,6 @@ module J2ME {
     }
 
     getFieldByName(utf8Name: Uint8Array, utf8Signature: Uint8Array, isStatic: boolean): FieldInfo {
-      if (typeof utf8Name === "string") {
-        debugger;
-      }
       var c = this;
       do {
         var i = c.indexOfField(utf8Name, utf8Signature);
@@ -1200,6 +1201,10 @@ module J2ME {
 
     get isInterface(): boolean {
       return !!(this.accessFlags & ACCESS_FLAGS.ACC_INTERFACE);
+    }
+
+    get isAbstract(): boolean {
+      return !!(this.accessFlags & ACCESS_FLAGS.ACC_ABSTRACT);
     }
 
     get isFinal(): boolean {
