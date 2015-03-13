@@ -1086,9 +1086,6 @@ module J2ME {
     }
 
     getFieldByName(utf8Name: Uint8Array, utf8Signature: Uint8Array, isStatic: boolean): FieldInfo {
-      if (typeof utf8Name === "string") {
-        debugger;
-      }
       var c = this;
       do {
         var i = c.indexOfField(utf8Name, utf8Signature);
