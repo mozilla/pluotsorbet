@@ -1022,6 +1022,11 @@ module J2ME {
       return this.getMethodByName(toUTF8(name), toUTF8(signature));
     }
 
+    // This should only ever be used from code where the name and signature originate from JS strings.
+    getLocalMethodByNameString(name: string, signature: string): MethodInfo {
+      return this.getLocalMethodByName(toUTF8(name), toUTF8(signature));
+    }
+
     getLocalMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
       var i = this.indexOfMethod(utf8Name, utf8Signature);
       if (i >= 0) {
