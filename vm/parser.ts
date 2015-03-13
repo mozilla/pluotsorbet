@@ -1024,9 +1024,6 @@ module J2ME {
     }
 
     getMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
-      if (typeof utf8Name === "string") {
-        debugger;
-      }
       var c = this;
       do {
         var i = c.indexOfMethod(utf8Name, utf8Signature);
