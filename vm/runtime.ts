@@ -1985,15 +1985,17 @@ module J2ME {
     return e;
   }
 
+  var initializeMethodInfo = null;
   export function classInitCheck(classInfo: ClassInfo) {
     if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.getClassNameSlow()]) {
       return;
     }
     linkKlass(classInfo);
     var runtimeKlass = $.getRuntimeKlass(classInfo.klass);
-    // runtimeKlass.classObject.initialize();
-    var methodInfo = runtimeKlass.classObject.klass.classInfo.getMethodByNameString("initialize", "()V");
-    runtimeKlass.classObject[methodInfo.virtualName]();
+    if (!initializeMethodInfo) {
+      initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
+    }
+    runtimeKlass.classObject[initializeMethodInfo.virtualName]();
   }
 
   /**
