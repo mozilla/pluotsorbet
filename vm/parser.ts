@@ -68,6 +68,20 @@ module J2ME {
     return true;
   }
 
+  var utf8Cache = Object.create(null);
+
+  /**
+   * Caches frequently used UTF8 strings. Only use this for a small set of frequently
+   * used JS -> UTF8 conversions.
+   */
+  export function cacheUTF8(s: string) {
+    var r = utf8Cache[s];
+    if (r !== undefined) {
+      return r;
+    }
+    return utf8Cache[s] = toUTF8(s);
+  }
+
   export function toUTF8(s: string): Uint8Array {
     var r = new Uint8Array(s.length);
     for (var i = 0; i < s.length; i++) {
@@ -1020,7 +1034,7 @@ module J2ME {
 
     // This should only ever be used from code where the name and signature originate from JS strings.
     getMethodByNameString(name: string, signature: string): MethodInfo {
-      return this.getMethodByName(toUTF8(name), toUTF8(signature));
+      return this.getMethodByName(cacheUTF8(name), cacheUTF8(signature));
     }
 
     getMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
