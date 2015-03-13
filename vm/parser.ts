@@ -807,6 +807,15 @@ module J2ME {
       return -1;
     }
 
+    getLocalMethodByName(name: string, signature: string): MethodInfo {
+      var i = this.indexOfMethod(name, signature);
+      if (i >= 0) {
+        return this.getMethodByIndex(i);
+      }
+
+      return null;
+    }
+
     getMethodByName(name: string, signature: string): MethodInfo {
       var c = this;
       do {
@@ -954,6 +963,10 @@ module J2ME {
 
     get isInterface(): boolean {
       return !!(this.access_flags & ACCESS_FLAGS.ACC_INTERFACE);
+    }
+
+    get isAbstract(): boolean {
+      return !!(this.access_flags & ACCESS_FLAGS.ACC_ABSTRACT);
     }
 
     get isFinal(): boolean {

@@ -328,12 +328,27 @@ Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = funct
 };
 
 Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
+  if (this.runtimeKlass.templateKlass.classInfo.isInterface ||
+      this.runtimeKlass.templateKlass.classInfo.isAbstract) {
+    throw $.newInstantiationException("Can't instantiate interfaces or abstract classes");
+  }
+
+  if (this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo) {
+    throw $.newInstantiationException("Can't instantiate array classes");
+  }
+
   return new this.runtimeKlass.templateKlass;
 };
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
   // The following can trigger an unwind.
-  o.klass.classInfo.getMethodByName("<init>", "()V", false).fn.call(o);
+  var method = o.klass.classInfo.getLocalMethodByName("<init>", "()V", false);
+
+  if (!method) {
+    throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
+  }
+
+  method.fn.call(o);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {
