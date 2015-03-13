@@ -126,6 +126,7 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
     break;
 
     case "SubscribeMessages":
+      promptForMessageText();
       encoder.putStart(DataType.STRUCT, "event");
       encoder.put(DataType.METHOD, "name", "SubscribeMessages");
       encoder.put(DataType.USHORT, "trans_id", decoder.getValue(DataType.USHORT)); // The meaning of this field is unknown
