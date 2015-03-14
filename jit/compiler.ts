@@ -71,18 +71,8 @@ module J2ME {
     // initialize it zero to keep object shapes fixed.
     // writer.writeLn("this._hashCode = $.nextHashCode(this);");
     writer.writeLn("this._hashCode = 0;");
-    getClassInheritanceChain(classInfo).forEach(function (ci) {
-      emitFields(ci.getFields(), false);
-    });
+    emitFields(classInfo.fTable, false);
     writer.leave("}");
-
-    // Emit class static initializer if it has any static fields. We don't emit this for now
-    // since it probably doesn't pay off to emit code that only gets executed once.
-    if (false && classInfo.getFields().some(f => f.isStatic)) {
-      writer.enter(mangledClassName + ".staticInitializer = function() {");
-      emitFields(classInfo.getFields(), true);
-      writer.leave("}");
-    }
 
     if (emitter.klassHeaderOnly) {
       return;
