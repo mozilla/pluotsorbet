@@ -1234,7 +1234,7 @@ module J2ME {
       overrideMap = new Uint8Hashtable(10);
       for (var k in Override) {
         var className = k.substring(0, k.indexOf("."));
-        overrideMap.put(toUTF8(className), true);
+        overrideMap.put(cacheUTF8(className), true);
       }
     }
     return overrideMap;
@@ -1453,7 +1453,6 @@ module J2ME {
     runtimeCounter && runtimeCounter.count("linkKlassMethod");
     var fn;
     var methodType;
-    var classBindings = Bindings[klass.classInfo.getClassNameSlow()];
     var nativeMethod = findNativeMethodImplementation(methodInfo);
     if (nativeMethod) {
       linkWriter && linkWriter.writeLn("Method: " + methodInfo.name + methodInfo.signature + " -> Native / Override");
@@ -1489,6 +1488,7 @@ module J2ME {
     if (!methodInfo.isStatic && methodInfo.virtualName) {
       release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName));
       klass.prototype[methodInfo.virtualName] = fn;
+      var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
       if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
         var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
         if (methodKey) {
