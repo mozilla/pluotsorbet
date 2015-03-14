@@ -987,11 +987,13 @@ module J2ME {
     enterTimeline("emitKlassConstructor");
     // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
     // creating a closure, which will probably be slower at runtime.
-    var source = "";
-    var writer = new IndentingWriter(false, x => source += x + "\n");
+    var source = [];
+    var writer = new IndentingWriter(false, function (x) {
+        source.push(x);
+    });
     var emitter = new Emitter(writer, false, true, true);
     J2ME.emitKlass(emitter, classInfo);
-    (1, eval)(source);
+    (1, eval)(source.join("\n"));
     leaveTimeline("emitKlassConstructor");
     // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.getClassNameSlow());
     // consoleWriter.writeLn(source);
