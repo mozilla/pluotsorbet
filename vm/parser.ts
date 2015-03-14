@@ -798,11 +798,6 @@ module J2ME {
     return -1;
   }
 
-  export enum Detail {
-    Brief = 0x01,
-    Full  = 0x03
-  }
-
   export class ClassInfo extends ByteStream {
     constantPool: ConstantPool;
 
