@@ -135,10 +135,10 @@ module J2ME {
   export var timeline;
   export var methodTimeline;
   export var threadTimeline;
-  export var nativeCounter = new Metrics.Counter(true);
-  export var runtimeCounter = new Metrics.Counter(true);
-  export var baselineMethodCounter = new Metrics.Counter(true);
-  export var asyncCounter = new Metrics.Counter(true);
+  export var nativeCounter = release ? null : new Metrics.Counter(true);
+  export var runtimeCounter = release ? null : new Metrics.Counter(true);
+  export var baselineMethodCounter = release ? null : new Metrics.Counter(true);
+  export var asyncCounter = release ? null : new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
   export var unwindCount = 0;
