@@ -623,6 +623,7 @@ module J2ME {
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
     public returnKind: Kind;
+    public signatureKinds: Kind [];
 
     public argumentSlots: number;
     public consumeArgumentSlots: number;
@@ -633,7 +634,6 @@ module J2ME {
     private _virtualName: string;
     private _mangledName: string;
     private _mangledClassAndMethodName: string;
-    private _signatureDescriptor: SignatureDescriptor;
 
     private _implKey: string;
     private _name: string;
@@ -666,7 +666,7 @@ module J2ME {
 
 
       // Parse signature and cache some useful information.
-      var signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0);
+      var signatureKinds = this.signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0).slice();
       this.returnKind = signatureKinds[0];
       this.hasTwoSlotArguments = signatureHasTwoSlotArguments(signatureKinds);
       this.argumentSlots = signatureArgumentSlotCount(signatureKinds);
@@ -674,10 +674,6 @@ module J2ME {
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
-    }
-
-    get signatureDescriptor() {
-      return this._signatureDescriptor || (this._signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature));
     }
 
     get virtualName() {

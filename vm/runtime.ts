@@ -1292,13 +1292,12 @@ module J2ME {
       if (!methodInfo.isStatic) {
         frame.setLocal(j++, this);
       }
-      var typeDescriptors = methodInfo.signatureDescriptor.typeDescriptors;
-      release || assert (arguments.length === typeDescriptors.length - 1,
-        "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor " +
-        methodInfo.signatureDescriptor);
-      for (var i = 1; i < typeDescriptors.length; i++) {
+      var signatureKinds = methodInfo.signatureKinds;
+      release || assert (arguments.length === signatureKinds.length - 1,
+        "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
+      for (var i = 1; i < signatureKinds.length; i++) {
         frame.setLocal(j++, arguments[i - 1]);
-        if (isTwoSlot(typeDescriptors[i].kind)) {
+        if (isTwoSlot(signatureKinds[i])) {
           frame.setLocal(j++, null);
         }
       }

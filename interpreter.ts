@@ -1222,7 +1222,7 @@ module J2ME {
                 break;
               default:
                 if (calleeMethodInfo.hasTwoSlotArguments) {
-                  frame.popArgumentsInto(calleeMethodInfo.signatureDescriptor, argArray);
+                  frame.popArgumentsInto(calleeMethodInfo, argArray);
                 } else {
                   popManyInto(stack, calleeMethodInfo.argumentSlots, argArray);
                 }
