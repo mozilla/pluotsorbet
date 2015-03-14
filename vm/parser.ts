@@ -60,7 +60,8 @@ module J2ME {
     if (a.length !== b.length) {
       return false;
     }
-    for (var i = 0; i < a.length; i++) {
+    var l = a.length;
+    for (var i = 0; i < l; i++) {
       if (a[i] !== b[i]) {
         return false;
       }
@@ -786,7 +787,11 @@ module J2ME {
   function indexOfMethod(table: MethodInfo [], utf8Name: Uint8Array, utf8Signature: Uint8Array): number {
     for (var i = 0; i < table.length; i++) {
       var methodInfo = table[i];
-      if (strcmp(utf8Name, methodInfo.utf8Name) && strcmp(utf8Signature, methodInfo.utf8Signature)) {
+      var methodUTF8Name = methodInfo.utf8Name;
+      if (utf8Name.length !== methodUTF8Name.length || utf8Name[0] !== methodUTF8Name[0]) { // Quick false test.
+        continue;
+      }
+      if (strcmp(utf8Name, methodUTF8Name) && strcmp(utf8Signature, methodInfo.utf8Signature)) {
         return i;
       }
     }
@@ -1020,8 +1025,12 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < methods.length; i++) {
-        var method = this.getMethodByIndex(i);
-        if (strcmp(method.utf8Name, utf8Name) && strcmp(method.utf8Signature, utf8Signature)) {
+        var methodInfo = this.getMethodByIndex(i);
+        var methodUTF8Name = methodInfo.utf8Name;
+        if (utf8Name.length !== methodUTF8Name.length || utf8Name[0] !== methodUTF8Name[0]) { // Quick false test.
+          continue;
+        }
+        if (strcmp(methodUTF8Name, utf8Name) && strcmp(methodInfo.utf8Signature, utf8Signature)) {
           return i;
         }
       }
@@ -1099,9 +1108,12 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < fields.length; i++) {
-        var field = this.getFieldByIndex(i);
-        if (strcmp(field.utf8Name, utf8Name) &&
-            strcmp(field.utf8Signature, utf8Signature)) {
+        var fieldInfo = this.getFieldByIndex(i);
+        var fieldUTF8Name = fieldInfo.utf8Name;
+        if (utf8Name.length !== fieldUTF8Name.length || utf8Name[0] !== fieldUTF8Name[0]) { // Quick false check.
+          continue;
+        }
+        if (strcmp(fieldUTF8Name, utf8Name) && strcmp(fieldInfo.utf8Signature, utf8Signature)) {
           return i;
         }
       }
