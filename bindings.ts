@@ -188,6 +188,13 @@ module J2ME {
     }
   };
 
+  export var BindingsMap = new Uint8Hashtable(50);
+
+  // Create a map of the classes that have bindings.
+  for (var k in Bindings) {
+    BindingsMap.put(toUTF8(k), Bindings[k]);
+  }
+
   export module java.lang {
     export interface Object {
       /**

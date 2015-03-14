@@ -1192,7 +1192,7 @@ module J2ME {
   }
 
   function findNativeMethodBinding(methodInfo: MethodInfo) {
-    var classBindings = Bindings[methodInfo.classInfo.getClassNameSlow()];
+    var classBindings = BindingsMap.get(methodInfo.classInfo.utf8Name);
     if (classBindings && classBindings.native) {
       var method = classBindings.native[methodInfo.name + "." + methodInfo.signature];
       if (method) {
@@ -1217,14 +1217,35 @@ module J2ME {
     };
   }
 
+  // OverrideMap is constructed lazily.
+  var overrideMap = null;
+
+  /**
+   * Builds a hashmap that keeps track of the class names that have overriden methods. This is a temporary
+   * solution to avoid creating methodInfo implKeys unnecessarily for methods whose class has no overriden
+   * methods.
+   *
+   * TODO: This mechanism should be deleted once we get rid of overrides.
+   */
+  function getOverrideMap() {
+    if (!overrideMap) {
+      overrideMap = new Uint8Hashtable(10);
+      for (var k in Override) {
+        var className = k.substring(0, k.indexOf("."));
+        overrideMap.put(toUTF8(className), true);
+      }
+    }
+    return overrideMap;
+  }
+
   function findNativeMethodImplementation(methodInfo: MethodInfo) {
-    var implKey = methodInfo.implKey;
     // Look in bindings first.
     var binding = findNativeMethodBinding(methodInfo);
     if (binding) {
-      return release ? binding : reportError(binding, implKey);
+      return release ? binding : reportError(binding, methodInfo.implKey);
     }
     if (methodInfo.isNative) {
+      var implKey = methodInfo.implKey;
       if (implKey in Native) {
         return release ? Native[implKey] : reportError(Native[implKey], implKey);
       } else {
@@ -1234,8 +1255,11 @@ module J2ME {
           stderrWriter.errorLn("implKey " + implKey + " is native but does not have an implementation.");
         }
       }
-    } else if (implKey in Override) {
-      return release ? Override[implKey] : reportError(Override[implKey], implKey);
+    } else if (getOverrideMap().get(methodInfo.classInfo.utf8Name)) {
+      var implKey = methodInfo.implKey;
+      if (implKey in Override) {
+        return release ? Override[implKey] : reportError(Override[implKey], implKey);
+      }
     }
     return null;
   }
@@ -1318,7 +1342,7 @@ module J2ME {
   function linkKlassFields(klass: Klass) {
     var classInfo = klass.classInfo;
     var fields = classInfo.getFields();
-    var classBindings = Bindings[klass.classInfo.getClassNameSlow()];
+    var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
     if (classBindings && classBindings.fields) {
       for (var i = 0; i < fields.length; i++) {
         var field = fields[i];
