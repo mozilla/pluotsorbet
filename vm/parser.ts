@@ -336,7 +336,9 @@ module J2ME {
       var s = this;
       var c  = s.readU2();
       this.entries = new Uint32Array(c);
-      this.resolved = new Array(c);
+      // We make this dense because the access pattern is pretty random, and it would otherwise
+      // cause lots of ION bailouts.
+      this.resolved = ArrayUtilities.makeDenseArray(c, undefined);
       var S = ConstantPool.tagSize;
       var o = s.offset;
       var buffer = s.buffer;
