@@ -159,6 +159,10 @@ module J2ME {
       return this.readS4() >>> 0;
     }
 
+    skipU4() {
+      this.offset += 4;
+    }
+
     readS4() {
       var o = this.offset;
       var buffer = this.buffer;
@@ -425,18 +429,18 @@ module J2ME {
               r = this.resolved[i] = s.readS4();
               break;
             case TAGS.CONSTANT_Float:
-              r = this.resolved[i] = IntegerUtilities.int32ToFloat(s.readU4());
+              r = this.resolved[i] = IntegerUtilities.int32ToFloat(s.readS4());
               break;
             case TAGS.CONSTANT_String:
               r = this.resolved[i] = $.newStringConstant(this.resolveUtf8String(s.readU2()));
               break;
             case TAGS.CONSTANT_Long:
-              var high = s.readU4();
-              var low = s.readU4();
+              var high = s.readS4();
+              var low = s.readS4();
               r = this.resolved[i] = Long.fromBits(low, high);
               break;
             case TAGS.CONSTANT_Double:
-              r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readU4(), s.readU4());
+              r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readS4(), s.readS4());
               break;
           case TAGS.CONSTANT_Utf8:
             r = this.resolved[i] = s.readBytes(s.readU2());
@@ -831,7 +835,7 @@ module J2ME {
       }
       enterTimeline("ClassInfo");
       var s = this;
-      s.readU4(); // magic
+      s.skipU4(); // magic
       s.readU2(); // minor_version
       s.readU2(); // major_version
       this.constantPool = new ConstantPool(s);
