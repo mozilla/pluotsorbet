@@ -1764,17 +1764,14 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
-    methodInfo.fn = fn;
+    var klass = methodInfo.classInfo.klass;
+    klass.methods[methodInfo.index] = methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 
     // Link member methods on the prototype.
-    if (!methodInfo.isStatic) {
-      var klass = methodInfo.classInfo.klass;
-      klass.prototype[methodInfo.mangledName] = fn;
-      if (methodInfo.virtualName) {
-        klass.prototype[methodInfo.virtualName] = fn;
-      }
+    if (!methodInfo.isStatic && methodInfo.virtualName) {
+      klass.prototype[methodInfo.virtualName] = fn;
     }
 
     // Make JITed code available in the |jitMethodInfos| so that bailout
