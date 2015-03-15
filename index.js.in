@@ -407,7 +407,7 @@ DumbPipe.registerOpener("audioplayer", function(message, sender) {
         sender({ type: "mediaTime", data: Math.round(audio.currentTime * 1000) });
         break;
       case "setMediaTime":
-        audio.currentTime = messsage.data / 1000;
+        audio.currentTime = message.data / 1000;
         break;
       case "setVolume":
         audio.volume = message.data / 100;
