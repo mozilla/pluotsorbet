@@ -11,6 +11,7 @@ public class TestResourceConstants implements Testlet {
     native static void setLanguage(String language);
 
     public void test(TestHarness th) {
+        setLanguage("en-EN");
         th.check(Resource.getString(ResourceConstants.DONE), "Done");
         th.check(Resource.getString(ResourceConstants.ABSTRACTIONS_PIM_TODO), "PIM to-do list");
 

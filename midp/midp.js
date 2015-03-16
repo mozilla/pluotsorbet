@@ -1146,7 +1146,7 @@ var MIDP = (function() {
     if (!MIDP.localizedStrings) {
       var data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/" + (config.language || navigator.language) + ".json");
       if (!data) {
-        // Fallback to english
+        // Fallback to English
         data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/en-US.json");
 
         if (!data) {
