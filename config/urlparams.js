@@ -22,6 +22,7 @@
  *    platform
  *    autosize
  *    fontSize
+ *    language
  *
  * Keep this list up-to-date!
  */

@@ -1144,7 +1144,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(id) {
     if (!localizedStrings) {
-      var data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/" + navigator.language + ".json");
+      var data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/" + (config.language || navigator.language) + ".json");
       if (!data) {
         // Fallback to english
         data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/en-US.json");
