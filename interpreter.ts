@@ -83,8 +83,8 @@ module J2ME {
       }
       return;
     }
-    if (!(getKindCheck(methodInfo.getReturnKind())(returnValue))) {
-      assert(false, "Expected " + Kind[methodInfo.getReturnKind()] + " return value, got " + returnValue + " in " + methodInfo.implKey);
+    if (!(getKindCheck(methodInfo.returnKind)(returnValue))) {
+      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got " + returnValue + " in " + methodInfo.implKey);
     }
   }
 
@@ -106,8 +106,9 @@ module J2ME {
   var argArray = [];
 
   function buildExceptionLog(ex, stackTrace) {
-    var className = ex.klass.classInfo.className;
-    var detailMessage = util.fromJavaString(ex.klass.classInfo.getFieldByName("detailMessage", "Ljava/lang/String;", false).get(ex));
+    var classInfo: ClassInfo = ex.klass.classInfo;
+    var className = classInfo.getClassNameSlow();
+    var detailMessage = util.fromJavaString(classInfo.getFieldByName(toUTF8("detailMessage"), toUTF8("Ljava/lang/String;"), false).get(ex));
     return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
       return " - " + entry.className + "." + entry.methodName + entry.methodSignature + ", pc=" + entry.offset;
     }).join("\n") + "\n\n";
@@ -146,9 +147,9 @@ module J2ME {
       }
 
       var classInfo = frame.methodInfo.classInfo;
-      if (classInfo && classInfo.className) {
+      if (classInfo && classInfo.getClassNameSlow()) {
         stackTrace.push({
-          className: classInfo.className,
+          className: classInfo.getClassNameSlow(),
           methodName: frame.methodInfo.name,
           methodSignature: frame.methodInfo.signature,
           offset: frame.pc
@@ -265,7 +266,7 @@ module J2ME {
               frames.pop();
 
               // Remember the return kind since we'll need it later.
-              var returnKind = mi.getReturnKind();
+              var returnKind = mi.returnKind;
 
               // Set the global OSR frame to the current frame.
               O = frame;
@@ -1021,8 +1022,8 @@ module J2ME {
             object = stack[stack.length - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException(
-                  object.klass.classInfo.className + " is not assignable to " +
-                  classInfo.className);
+                  object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
+                  classInfo.getClassNameSlow());
             }
             break;
           case Bytecodes.INSTANCEOF:
@@ -1058,7 +1059,7 @@ module J2ME {
             var calleeMethodInfo = <MethodInfo><any>rp[index];
             var object = frame.peekInvokeObject(calleeMethodInfo);
 
-            calleeMethod = object[calleeMethodInfo.mangledName];
+            calleeMethod = object[calleeMethodInfo.virtualName];
             var calleeTargetMethodInfo: MethodInfo = calleeMethod.methodInfo;
 
             if (calleeTargetMethodInfo &&
@@ -1111,8 +1112,8 @@ module J2ME {
             if (U) {
               return;
             }
-            if (calleeMethodInfo.getReturnKind() !== Kind.Void) {
-              if (isTwoSlot(calleeMethodInfo.getReturnKind())) {
+            if (calleeMethodInfo.returnKind !== Kind.Void) {
+              if (isTwoSlot(calleeMethodInfo.returnKind)) {
                 stack.push2(returnValue);
               } else {
                 stack.push(returnValue);
@@ -1133,7 +1134,7 @@ module J2ME {
             var calleeMethodInfo = mi.classInfo.constantPool.resolveMethod(index, isStatic);
 
             // Fast path for some of the most common interpreter call targets.
-            if (calleeMethodInfo.classInfo.className === "java/lang/Object" &&
+            if (calleeMethodInfo.classInfo.getClassNameSlow() === "java/lang/Object" &&
                 calleeMethodInfo.name === "<init>") {
               stack.pop();
               continue;
@@ -1159,16 +1160,17 @@ module J2ME {
                     frame.patch(3, Bytecodes.INVOKEVIRTUAL, Bytecodes.RESOLVED_INVOKEVIRTUAL);
                   }
                 case Bytecodes.INVOKEINTERFACE:
-                  calleeMethod = object[calleeMethodInfo.mangledName];
+                  var name = op === Bytecodes.INVOKEVIRTUAL ? calleeMethodInfo.virtualName : calleeMethodInfo.mangledName;
+                  calleeMethod = object[name];
                   calleeTargetMethodInfo = calleeMethod.methodInfo;
                   break;
                 case Bytecodes.INVOKESPECIAL:
                   checkNull(object);
-                  calleeMethod = calleeMethodInfo.fn;
+                  calleeMethod = getLinkedMethod(calleeMethodInfo);
                   break;
               }
             } else {
-              calleeMethod = calleeMethodInfo.fn;
+              calleeMethod = getLinkedMethod(calleeMethodInfo);
             }
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
@@ -1239,8 +1241,8 @@ module J2ME {
               return;
             }
 
-            if (calleeMethodInfo.getReturnKind() !== Kind.Void) {
-              if (isTwoSlot(calleeMethodInfo.getReturnKind())) {
+            if (calleeMethodInfo.returnKind !== Kind.Void) {
+              if (isTwoSlot(calleeMethodInfo.returnKind)) {
                 stack.push2(returnValue);
               } else {
                 stack.push(returnValue);

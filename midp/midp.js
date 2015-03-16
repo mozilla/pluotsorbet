@@ -1105,7 +1105,7 @@ var MIDP = (function() {
       var fields = obj.klass.classInfo.fields;
       for (var i = 0; i < fields.length; i++) {
         var field = fields[i];
-        e[field.name] = field.get(obj);
+        e[J2ME.fromUTF8(field.utf8Name)] = field.get(obj);
       }
 
       sendNativeEvent(e, isolateId);
@@ -1149,7 +1149,7 @@ var MIDP = (function() {
       var constantsMap = new Map();
       var fields = classInfo.getFields();
       fields.forEach(function(field) {
-        constantsMap.set(field.name, field.constantValue);
+        constantsMap.set(J2ME.fromUTF8(field.utf8Name), field.constantValue);
       });
 
       var data = JARStore.loadFileFromJAR("java/classes.jar", "assets/0/en-US.xml");
