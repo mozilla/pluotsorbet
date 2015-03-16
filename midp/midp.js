@@ -1143,7 +1143,7 @@ var MIDP = (function() {
   var localizedStrings;
 
   Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(id) {
-    if (!localizedStrings) {
+    if (!MIDP.localizedStrings) {
       var data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/" + (config.language || navigator.language) + ".json");
       if (!data) {
         // Fallback to english
@@ -1154,10 +1154,10 @@ var MIDP = (function() {
         }
       }
 
-      localizedStrings = JSON.parse(util.decodeUtf8Array(data));
+      MIDP.localizedStrings = JSON.parse(util.decodeUtf8Array(data));
     }
 
-    var value = localizedStrings[id];
+    var value = MIDP.localizedStrings[id];
 
     if (!value) {
       throw $.newIllegalStateException();
@@ -1520,5 +1520,6 @@ var MIDP = (function() {
     keyRelease: keyRelease,
     displayId: displayId,
     context2D: context2D,
+    localizedStrings: localizedStrings,
   };
 })();
