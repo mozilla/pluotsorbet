@@ -66,7 +66,6 @@ function promptForMessageText() {
         clearInterval(intervalID);
         clearTimeout(timeoutID);
         el.parentElement.removeChild(el);
-        console.log('SMS prompt filled out:', input.value);
         // We don't have easy access to our own phone number; use a
         // dummy unknown value instead.
         receiveSms(MIDlet.SMSDialogReceiveFilter(input.value), 'unknown');
@@ -125,8 +124,6 @@ Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = func
 Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] =
 function(port, msid, handle, smsPacket) {
     asyncImpl("I", new Promise(function(resolve, reject) {
-        promptForMessageText();
-
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
             var text = sms.text;

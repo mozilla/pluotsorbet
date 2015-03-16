@@ -1067,7 +1067,7 @@ module J2ME {
         c = c.superClass;
       } while (c);
 
-      if (this.isInterface) {
+      if (this.isInterface || this.isAbstract) {
         var interfaces = this.getInterfaces();
         for (var n = 0; n < interfaces.length; ++n) {
           var method = interfaces[n].getMethodByName(utf8Name, utf8Signature);

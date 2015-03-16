@@ -425,16 +425,19 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() 
         var depth = this.stackTrace.length;
         var classNames = J2ME.newObjectArray(depth);
         var methodNames = J2ME.newObjectArray(depth);
+        var methodSignatures = J2ME.newObjectArray(depth);
         var offsets = J2ME.newIntArray(depth);
         this.stackTrace.forEach(function(e, n) {
             classNames[n] = J2ME.newString(e.getClassNameSlow());
             methodNames[n] = J2ME.newString(e.methodName);
+            methodSignatures[n] = J2ME.newString(e.methodSignature);
             offsets[n] = e.offset;
         });
         result = J2ME.newObjectArray(3);
         result[0] = classNames;
         result[1] = methodNames;
-        result[2] = offsets;
+        result[2] = methodSignatures;
+        result[3] = offsets;
     }
     return result;
 };
