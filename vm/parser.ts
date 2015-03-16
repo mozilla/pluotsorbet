@@ -112,6 +112,11 @@ module J2ME {
     return r;
   }
 
+  // Seal ClassInfo, MethodInfo and FieldInfo objects so their shapes are fixed. This should
+  // not be enabled by default as it usually causes perf problems, but it's useful as a
+  // debugging feature nonetheless.
+  var sealObjects = false;
+
   /**
    * Base class of all class file structs.
    */
@@ -493,11 +498,10 @@ module J2ME {
     public kind: Kind;
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
-    public mangledName: string;
+    public mangledName: string = null;
     public accessFlags: ACCESS_FLAGS;
-    public constantValue: any;
-
-    fTableIndex: number;
+    public constantValue: any = undefined;
+    fTableIndex: number = -1;
 
     constructor(classInfo: ClassInfo, offset: number) {
       super(classInfo.buffer, offset);
@@ -506,8 +510,8 @@ module J2ME {
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
       this.kind = getSignatureKind(this.utf8Signature);
-      this.constantValue = undefined;
       this.scanFieldInfoAttributes();
+      sealObjects && Object.seal(this);
     }
 
     public get isStatic(): boolean {
@@ -619,7 +623,7 @@ module J2ME {
     public classInfo: ClassInfo;
     public accessFlags: ACCESS_FLAGS;
 
-    public fn: any;
+    public fn: any = null;
     public index: number;
     public state: MethodState;
     public stats: MethodInfoStats;
@@ -635,20 +639,20 @@ module J2ME {
 
     vTableIndex: number;
 
-    private _virtualName: string;
-    private _mangledName: string;
-    private _mangledClassAndMethodName: string;
+    private _virtualName: string = null;
+    private _mangledName: string = null;
+    private _mangledClassAndMethodName: string = null;
 
-    private _implKey: string;
-    private _name: string;
-    private _signature: string;
+    private _implKey: string = null;
+    private _name: string = null;
+    private _signature: string = null;
 
     ///// FIX THESE LATER ////
-    onStackReplacementEntryPoints: number [];
+    onStackReplacementEntryPoints: number [] = null;
 
-    exception_table_length: number;
-    exception_table_offset: number;
-    isOptimized: boolean;
+    exception_table_length: number = -1;
+    exception_table_offset: number = -1;
+    isOptimized: boolean = false;
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
@@ -660,14 +664,10 @@ module J2ME {
       this.utf8Signature = cp.resolveUtf8(this.u2(4));
       this.vTableIndex = -1;
 
-      // Lazify;
       this.state = MethodState.Cold;
-
-      // TODO: Make this lazy.
       this.stats = new MethodInfoStats();
       this.codeAttribute = null;
       this.scanMethodInfoAttributes();
-
 
       // Parse signature and cache some useful information.
       var signatureKinds = this.signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0).slice();
@@ -678,6 +678,7 @@ module J2ME {
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
+      sealObjects && Object.seal(this);
     }
 
     get virtualName() {
@@ -801,18 +802,19 @@ module J2ME {
   }
 
   export class ClassInfo extends ByteStream {
-    constantPool: ConstantPool;
+    constantPool: ConstantPool = null;
 
-    utf8Name: Uint8Array;
-    utf8SuperName: Uint8Array;
+    utf8Name: Uint8Array = null;
+    utf8SuperName: Uint8Array = null;
 
     superClass: ClassInfo = null;
+    elementClass: ClassInfo = null;
     subClasses: ClassInfo [] = [];
     allSubClasses: ClassInfo [] = [];
 
-    accessFlags: number;
-    vTable: MethodInfo [];
-    fTable: FieldInfo [];
+    accessFlags: number = 0;
+    vTable: MethodInfo [] = null;
+    fTable: FieldInfo [] = null;
 
     klass: Klass = null;
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
@@ -821,16 +823,16 @@ module J2ME {
     private interfaces: (number | ClassInfo) [] = null;
     private allInterfaces: ClassInfo [] = null;
 
-    sourceFile: string;
-    mangledName: string;
+    sourceFile: string = null;
+    mangledName: string = null;
 
-    // TODO: Remove me:
-
-    private _name: string;
+    private _name: string = null;
+    private _superName: string = null;
 
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
       if (!buffer) {
+        sealObjects && Object.seal(this);
         return;
       }
       enterTimeline("ClassInfo");
@@ -851,6 +853,7 @@ module J2ME {
       this.scanClassInfoAttributes();
       this.mangledName = mangleClassName(this.utf8Name);
       leaveTimeline("ClassInfo");
+      sealObjects && Object.seal(this);
     }
 
     private scanInterfaces() {
@@ -879,7 +882,7 @@ module J2ME {
 
     get superClassName(): string {
       if (this.utf8SuperName) {
-        return ByteStream.readString(this.utf8SuperName);
+        return this._superName || (this._superName = ByteStream.readString(this.utf8SuperName));
       }
       return null;
     }
@@ -1272,7 +1275,6 @@ module J2ME {
   }
 
   export class ArrayClassInfo extends ClassInfo {
-    elementClass: ClassInfo;
 
     // XXX: This constructor should not be called directly.
     constructor(elementClass: ClassInfo) {
