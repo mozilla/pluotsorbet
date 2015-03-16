@@ -154,7 +154,8 @@ public class Throwable {
       if (backtrace != null) {
         Object[] class_names = (Object[])backtrace[0];
         Object[] method_names = (Object[])backtrace[1];
-        int[] offsets = (int[])backtrace[2];
+        Object[] method_signatures = (Object[])backtrace[2];
+        int[] offsets = (int[])backtrace[3];
         int i = 0;
         for (; i < class_names.length; i++) {
           if (class_names[i] == null) {
@@ -164,7 +165,8 @@ public class Throwable {
           stream.print(class_names[i]);
           stream.print(".");
           stream.print(method_names[i]);
-          stream.println("(), bci=" + offsets[i]);
+          stream.print(method_signatures[i]);
+          stream.println(", bci=" + offsets[i]);
 
         }
        complete = (i == class_names.length);
