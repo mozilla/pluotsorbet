@@ -1152,9 +1152,15 @@ var MIDP = (function() {
         constantsMap.set(field.name, field.constantValue);
       });
 
-      var data = JARStore.loadFileFromJAR("java/classes.jar", "assets/0/en-US.xml");
-      if (!data)
-        throw $.newIOException();
+      var data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/" + navigator.language + ".xml.json");
+      if (!data) {
+        // Fallback to english
+        data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/en-US.xml.json");
+
+        if (!data) {
+          throw $.newIOException();
+        }
+      }
 
       var text = util.decodeUtf8Array(data);
       var xml = new window.DOMParser().parseFromString(text, "text/xml");
