@@ -1140,18 +1140,10 @@ var MIDP = (function() {
       return 1;
     };
 
-  var localizedStrings = new Map();
+  var localizedStrings;
 
   Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(id) {
-    if (localizedStrings.size === 0) {
-      // First build up a mapping of field names to field IDs
-      var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
-      var constantsMap = new Map();
-      var fields = classInfo.getFields();
-      fields.forEach(function(field) {
-        constantsMap.set(field.name, field.constantValue);
-      });
-
+    if (!localizedStrings) {
       var data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/" + navigator.language + ".xml.json");
       if (!data) {
         // Fallback to english
@@ -1162,19 +1154,10 @@ var MIDP = (function() {
         }
       }
 
-      var text = util.decodeUtf8Array(data);
-      var xml = new window.DOMParser().parseFromString(text, "text/xml");
-      var entries = xml.getElementsByTagName("localized_string");
-
-      for (var n = 0; n < entries.length; ++n) {
-        var attrs = entries[n].attributes;
-        // map the key value to a field ID
-        var id = constantsMap.get(attrs.Key.value);
-        localizedStrings.set(id, attrs.Value.value);
-      }
+      localizedStrings = JSON.parse(util.decodeUtf8Array(data));
     }
 
-    var value = localizedStrings.get(id);
+    var value = localizedStrings[id];
 
     if (!value) {
       throw $.newIllegalStateException();
