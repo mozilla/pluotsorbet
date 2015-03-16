@@ -89,7 +89,7 @@ module J2ME {
     if (!result) {
       result = classInfo.subClasses.length === 0;
     }
-    // console.log(classInfo.className + " is final class " + result);
+    // console.log(classInfo.getClassNameSlow() + " is final class " + result);
     return result;
     */
   }

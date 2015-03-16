@@ -101,7 +101,6 @@ module J2ME {
   var fileFilterOption: Options.Option;
   var debuggerOption: Options.Option;
   var releaseOption: Options.Option;
-  var definitionOption: Options.Option;
 
 
   function main(commandLineArguments: string []) {
@@ -122,7 +121,6 @@ module J2ME {
     fileFilterOption = shellOptions.register(new Options.Option("ff", "fileFilter", "string", ".*", "Compile File Filter"));
     debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
     releaseOption = shellOptions.register(new Options.Option("r", "release", "boolean", false, "Release mode"));
-    definitionOption = shellOptions.register(new Options.Option("t", "definition", "boolean", false, "Emit Definition"));
 
     var argumentParser = new Options.ArgumentParser();
     argumentParser.addBoundOptionSet(shellOptions);
@@ -246,9 +244,9 @@ module J2ME {
     }
     function classFilter(classInfo: ClassInfo): boolean {
       if (classNameList) {
-        return classNameList.indexOf(classInfo.className) >= 0;
+        return classNameList.indexOf(classInfo.getClassNameSlow()) >= 0;
       } else if (classFilterOption.value) {
-        return !!classInfo.className.match(classFilterOption.value);
+        return !!classInfo.getClassNameSlow().match(classFilterOption.value);
       }
       return false;
     }
@@ -257,7 +255,7 @@ module J2ME {
     }
 
     stdoutWriter.writeLn("var start = performance.now();");
-    compile(jvm, jarFiles, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    compile(jvm, jarFiles, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value);
     stdoutWriter.writeLn("console.log(\"Loaded " + jarFileFilterOption.value + " in \" + (performance.now() - start).toFixed(2) + \" ms.\");");
     if (methodFilterList !== null && methodFilterList.length) {
       stderrWriter.enter("The following method(s) in the method filter list failed to compile or were not found:");

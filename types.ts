@@ -116,30 +116,184 @@ module J2ME {
     }
   }
 
-  export function getSignatureKind(signature: string): Kind {
+  export function getSignatureKind(signature: Uint8Array): Kind {
     switch (signature[0]) {
-      case 'Z':
+      case UTF8Chars.Z:
         return Kind.Boolean;
-      case 'B':
+      case UTF8Chars.B:
         return Kind.Byte;
-      case 'S':
+      case UTF8Chars.S:
         return Kind.Short;
-      case 'C':
+      case UTF8Chars.C:
         return Kind.Char;
-      case 'I':
+      case UTF8Chars.I:
         return Kind.Int;
-      case 'F':
+      case UTF8Chars.F:
         return Kind.Float;
-      case 'J':
+      case UTF8Chars.J:
         return Kind.Long;
-      case 'D':
+      case UTF8Chars.D:
         return Kind.Double;
-      case '[':
-      case 'L':
+      case UTF8Chars.OpenBracket:
+      case UTF8Chars.L:
         return Kind.Reference;
-      case 'V':
+      case UTF8Chars.V:
         return Kind.Void;
     }
+  }
+
+  /**
+   * MethodDescriptor:
+   *    ( ParameterDescriptor* ) ReturnDescriptor
+   *  ParameterDescriptor:
+   *    FieldType
+   *  ReturnDescriptor:
+   *    FieldType
+   *    VoidDescriptor
+   *  VoidDescriptor:
+   *    V
+   *  FieldDescriptor:
+   *    FieldType
+   *  FieldType:
+   *    BaseType
+   *    ObjectType
+   *    ArrayType
+   *  BaseType:
+   *    B
+   *    C
+   *    D
+   *    F
+   *    I
+   *    J
+   *    S
+   *    Z
+   *  ObjectType:
+   *    L ClassName ;
+   *  ArrayType:
+   *    [ ComponentType
+   *  ComponentType:
+   *    FieldType
+   */
+
+  // Global state for signature parsing, kind of hackish but fast.
+  var globalNextIndex = 0;
+  var descriptorKinds = [];
+
+  /**
+   * Returns an array of kinds that appear in a method signature. The first element is always the
+   * return kind. The returned array is shared, so you if you need a copy of it, you'll need to
+   * clone it.
+   *
+   * The parsing algorithm needs some global state to keep track of the current position in the
+   * descriptor, namely |globalNextIndex| which always points to the next index in the descriptor
+   * after a token has been consumed.
+   */
+  export function parseMethodDescriptorKinds(value: Uint8Array, startIndex: number): Kind [] {
+    globalNextIndex = 0;
+    if ((startIndex > value.length - 3) || value[startIndex] !== UTF8Chars.OpenParenthesis) {
+      assert(false, "Invalid method signature.");
+    }
+    descriptorKinds.length = 0;
+    descriptorKinds.push(Kind.Void); // placeholder until the return type is parsed
+    var i = startIndex + 1;
+    while (value[i] !== UTF8Chars.CloseParenthesis) {
+      var kind = parseTypeDescriptorKind(value, i);
+      descriptorKinds.push(kind);
+      i = globalNextIndex;
+      if (i >= value.length) {
+        assert(false, "Invalid method signature.");
+      }
+    }
+    i++;
+    var kind = parseTypeDescriptorKind(value, i);
+    if (globalNextIndex !== value.length) {
+      assert(false, "Invalid method signature.");
+    }
+    // Plug in the return type
+    descriptorKinds[0] = kind;
+    return descriptorKinds;
+  }
+
+  function parseTypeDescriptorKind(value: Uint8Array, startIndex: number): Kind {
+    globalNextIndex = startIndex + 1;
+    switch (value[startIndex]) {
+      case UTF8Chars.Z:
+        return Kind.Boolean;
+      case UTF8Chars.B:
+        return Kind.Byte;
+      case UTF8Chars.C:
+        return Kind.Char;
+      case UTF8Chars.D:
+        return Kind.Double;
+      case UTF8Chars.F:
+        return Kind.Float;
+      case UTF8Chars.I:
+        return Kind.Int;
+      case UTF8Chars.J:
+        return Kind.Long;
+      case UTF8Chars.S:
+        return Kind.Short;
+      case UTF8Chars.V:
+        return Kind.Void;
+      case UTF8Chars.L: {
+        // parse a slashified Java class name
+        var endIndex = parseClassNameKind(value, startIndex + 1, UTF8Chars.Slash);
+        if (endIndex > startIndex + 1 && endIndex < value.length && value[endIndex] === UTF8Chars.Semicolon) {
+          globalNextIndex = endIndex + 1;
+          return Kind.Reference;
+        }
+        Debug.unexpected("Invalid signature.");
+      }
+      case UTF8Chars.OpenBracket: {
+        // compute the number of dimensions
+        var index = startIndex;
+        while (index < value.length && value[index] === UTF8Chars.OpenBracket) {
+          index++;
+        }
+        var dimensions = index - startIndex;
+        if (dimensions > 255) {
+          Debug.unexpected("Array with more than 255 dimensions.");
+        }
+        var component = parseTypeDescriptorKind(value, index);
+        return Kind.Reference;
+      }
+      default:
+        Debug.unexpected("Unexpected type descriptor prefix: " + value[startIndex]);
+    }
+  }
+
+  function parseClassNameKind(value: Uint8Array, index: number, separator: number): number {
+    var position = index;
+    var length = value.length;
+    while (position < length) {
+      var nextch = value[position];
+      if (nextch === UTF8Chars.Dot || nextch === UTF8Chars.Slash) {
+        if (separator !== nextch) {
+          return position;
+        }
+      } else if (nextch === UTF8Chars.Semicolon || nextch === UTF8Chars.OpenBracket) {
+        return position;
+      }
+      position++;
+    }
+    return position;
+  }
+
+  export function signatureHasTwoSlotArguments(signatureKinds: Kind []): boolean {
+    for (var i = 1; i < signatureKinds.length; i++) {
+      if (isTwoSlot(signatureKinds[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  export function signatureArgumentSlotCount(signatureKinds: Kind []): number {
+    var count = 0;
+    for (var i = 1; i < signatureKinds.length; i++) {
+      count += isTwoSlot(signatureKinds[i]) ? 2 : 1;
+    }
+    return count;
   }
 
   export class TypeDescriptor {
