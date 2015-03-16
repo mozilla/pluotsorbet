@@ -66,5 +66,4 @@ tools/jasmin-2.4/src/jasmin/sym.java
 tools/closure.jar
 
 # These files are generated from l10n
-l10n/build/*
 java/l10n/*
