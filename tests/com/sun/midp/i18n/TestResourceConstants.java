@@ -30,7 +30,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestResourceConstants implements Testlet {
-    public int getExpectedPass() { return 1; }
+    public int getExpectedPass() { return 410; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
 
@@ -39,6 +39,15 @@ public class TestResourceConstants implements Testlet {
      */
     public void test(TestHarness th) {
         th.check(Resource.getString(ResourceConstants.DONE), "Done");
+        th.check(Resource.getString(ResourceConstants.ABSTRACTIONS_PIM_TODO), "PIM to-do list");
+
+        int first = ResourceConstants.DONE;
+        int last = ResourceConstants.ABSTRACTIONS_PIM_TODO;
+
+        while (first <= last) {
+            th.check(Resource.getString(first).length() > 0);
+            first++;
+        }
     }
 
 }
