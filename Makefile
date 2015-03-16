@@ -141,14 +141,12 @@ tests/tests.jar: tests
 tests: java jasmin
 	make -C tests
 
-java/classes.jar: java l10n
-java:
+java/classes.jar: java
+java: l10n
 	make -C java
 
 l10n:
 	make -C l10n
-	mkdir -p java/l10n/
-	cp l10n/build/* java/l10n/
 
 certs:
 	make -C certs
