@@ -10,44 +10,140 @@ var Benchmark = (function() {
   var defaultStorage = {
     numRounds: 10,
     roundDelay: 5000, // ms to delay starting next round of tests
-    baseline: [],
+    baseline: {},
+    current: {},
     running: false,
     round: 0,
-    times: [],
-    deleteFs: true,
-    deleteJitCache: true,
-    buildBaseline: false
+    deleteFs: false,
+    deleteJitCache: false,
+    buildBaseline: false,
+    recordMemory: true
   };
 
-  function Storage(key, defaults) {
-    this.key = key;
-    if (!(key in localStorage)) {
-      this.storage = defaults;
-      this.save();
-    }
-    this.storage = JSON.parse(localStorage[key]);
-    Object.keys(defaultStorage).forEach(function(key) {
-      Object.defineProperty(this, key, {
-        get: function() { return this.storage[key]; },
-        set: function(newValue) { this.storage[key] = newValue; this.save() },
-        enumerable: true,
-        configurable: true
-      });
-    }, this);
+  var NO_SECURITY = typeof netscape !== "undefined" && netscape.security.PrivilegeManager;
+
+  function enableSuperPowers() {
+    // To enable chrome privileges use a separate profile and enable the pref:
+    // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   }
 
-  Storage.prototype = {
-    save: function() {
-      localStorage[this.key] = JSON.stringify(this.storage);
+  function forceCollectors() {
+    enableSuperPowers();
+    console.log("Forcing CC/GC.");
+    for (var i = 0; i < 3; i++) {
+      Components.utils.forceCC();
+      Components.utils.forceGC();
     }
-  };
+  }
 
-  var storage = new Storage("benchmark", defaultStorage);
+  var STORAGE_KEY = "benchmark";
+  var storage;
+  function initStorage(defaults) {
+    if (!(STORAGE_KEY in localStorage)) {
+      storage = defaults;
+    } else {
+      storage = JSON.parse(localStorage[STORAGE_KEY]);
+      for (var key in defaults) {
+        if (key in storage) {
+          continue;
+        }
+        storage[key] = defaults[key];
+      }
+    }
+  }
+
+  function saveStorage() {
+    localStorage[STORAGE_KEY] = JSON.stringify(storage);
+  }
+  
+  initStorage(defaultStorage);
+  var LEFT = 0; var CENTER = 1; var RIGHT = 2;
+  function prettyTable(rows, alignment) {
+    function pad(str, repeat, n, align) {
+      if (align === LEFT) {
+        return str.padRight(repeat, n);
+      } else if (align === CENTER) {
+        var middle = ((n - str.length) / 2) | 0;
+        return str.padRight(repeat, middle + str.length).padLeft(repeat, n);
+      } else if (align === RIGHT) {
+        return str.padLeft(repeat, n);
+      }
+      throw new Error("Bad align value." + align);
+    }
+    var maxColumnLengths = [];
+    var numColumns = rows[0].length;
+    for (var colIndex = 0; colIndex < numColumns; colIndex++) {
+      var maxLength = 0;
+      for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+        maxLength = Math.max(rows[rowIndex][colIndex].toString().length, maxLength);
+      }
+      maxColumnLengths[colIndex] = maxLength;
+    }
+    var out = "";
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      out += "| ";
+      for (var colIndex = 0; colIndex < numColumns; colIndex++) {
+        out += pad(rows[rowIndex][colIndex].toString(), " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
+      }
+      out += "\n";
+      if (rowIndex === 0) {
+        out += "|";
+        for (var colIndex = 0; colIndex < numColumns; colIndex++) {
+          var align = alignment[colIndex];
+          if (align === 0) {
+            out += ":".padRight("-", maxColumnLengths[colIndex] + 2);
+          } else if (align === 1) {
+            out += ":".padLeft("-", maxColumnLengths[colIndex] + 1) + ":";
+          } else if (align === 2) {
+            out += ":".padLeft("-", maxColumnLengths[colIndex] + 2);
+          }
+          out += "|";
+        }
+        out += "\n";
+      }
+    }
+    return out;
+  }
+
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function msFormatter(x) {
+    return numberWithCommas(Math.round(x)) + "ms";
+  }
+
+  function byteFormatter(x) {
+    return numberWithCommas(Math.round(x / 1024)) + "kb";
+  }
+
+  var valueFormatters = {
+    startupTime: msFormatter,
+    totalSize: byteFormatter,
+    domSize: byteFormatter,
+    styleSize: byteFormatter,
+    jsObjectsSize: byteFormatter,
+    jsStringsSize: byteFormatter,
+    jsOtherSize: byteFormatter,
+    otherSize: byteFormatter,
+  };
 
   var startup = {
     run: function(settings) {
       storage.round = 0;
-      storage.times = [];
+      var current = storage.current = {};
+      current.startupTime = [];
+      if (settings.recordMemory) {
+        storage.recordMemory = true;
+        current.totalSize     = [];
+        current.domSize       = [];
+        current.styleSize     = [];
+        current.jsObjectsSize = [];
+        current.jsStringsSize = [];
+        current.jsOtherSize   = [];
+        current.otherSize     = [];
+      }
       storage.running = true;
       storage.numRounds = "numRounds" in settings ? settings.numRounds : defaultStorage.numRounds;
       storage.roundDelay = "roundDelay" in settings ? settings.roundDelay : defaultStorage.roundDelay;
@@ -55,8 +151,9 @@ var Benchmark = (function() {
       storage.deleteJitCache = "deleteJitCache" in settings ? settings.deleteJitCache : defaultStorage.deleteJitCache;
       storage.buildBaseline = "buildBaseline" in settings ? settings.buildBaseline : defaultStorage.buildBaseline;
       if (storage.buildBaseline) {
-        storage.baseline = [];
+        storage.baseline = {};
       }
+      saveStorage();
       this.runNextRound();
     },
     startTimer: function() {
@@ -77,29 +174,57 @@ var Benchmark = (function() {
       }
       var took = performance.now() - this.startTime;
       this.startTime = null;
-      var times = storage.times;
-      times.push(took);
-      storage.times = times;
+      storage.current.startupTime.push(took);
       storage.round++;
-      if (storage.round >= storage.numRounds) {
-        this.finish();
-        return;
-      }
+      saveStorage();
       this.runNextRound();
     },
-    runNextRound: function() {
-      function run() {
-        DumbPipe.close(DumbPipe.open("reload", {}));
-      }
-      if (typeof netscape !== "undefined" && netscape.security.PrivilegeManager) {
-        // To enable GC use a seperate profile and enable the pref:
-        // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-        console.log("Forcing CC/GC.");
-        for (var i = 0; i < 3; i++) {
-          Components.utils.forceCC();
-          Components.utils.forceGC();
+    sampleMemory: function() {
+      if (NO_SECURITY) {
+        forceCollectors();
+        var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
+
+        var jsObjectsSize = {};
+        var jsStringsSize = {};
+        var jsOtherSize = {};
+        var domSize = {};
+        var styleSize = {};
+        var otherSize = {};
+        var totalSize = {};
+        var jsMilliseconds = {};
+        var nonJSMilliseconds = {};
+
+        try {
+          memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
+            domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
+        } catch (e) {
+          console.log(e);
         }
+        storage.current.totalSize.push(totalSize.value);
+        storage.current.domSize.push(domSize.value);
+        storage.current.styleSize.push(styleSize.value);
+        storage.current.jsObjectsSize.push(jsObjectsSize.value);
+        storage.current.jsStringsSize.push(jsStringsSize.value);
+        storage.current.jsOtherSize.push(jsOtherSize.value);
+        storage.current.otherSize.push(otherSize.value);
+        saveStorage();
+      }
+    },
+    runNextRound: function() {
+      var self = this;
+      var done = storage.round >= storage.numRounds;
+      function run() {
+        forceCollectors();
+        if (storage.round !== 0) {
+          if (NO_SECURITY) {
+            self.sampleMemory();
+          }
+          if (done) {
+            self.finish();
+            return;
+          }
+        }
+        DumbPipe.close(DumbPipe.open("reload", {}));
       }
       if (storage.deleteFs) {
         console.log("Deleting fs.");
@@ -109,39 +234,55 @@ var Benchmark = (function() {
         console.log("Deleting jit cache.");
         indexedDB.deleteDatabase("CompiledMethodCache");
       }
-      console.log("Scheduling round " + (storage.round + 1) + " of " + storage.numRounds + " to run in " + storage.roundDelay + "ms");
-      setTimeout(run, storage.roundDelay);
+      if (storage.round !== 0) {
+        console.log("Scheduling round " + (storage.round) + " of " + storage.numRounds + " finalization in " + storage.roundDelay + "ms");
+        setTimeout(run, storage.roundDelay);
+      } else {
+        run();
+      }
     },
     finish: function() {
       storage.running = false;
-      var times = storage.times;
-      var message = "Current times: " + JSON.stringify(times) + "\n";
-      var baselineMean = mean(storage.baseline);
-      var currentMean = mean(times);
-      message += "Current mean : " + Math.round(currentMean) + "ms\n";
-      if (storage.baseline.length) {
-        message +=
-          "Baseline mean: " + Math.round(baselineMean) + "ms\n" +
-          "+/-          : " + Math.round(currentMean - baselineMean) + "ms\n" +
-          "%            : " + (100 * (currentMean - baselineMean) / baselineMean).toFixed(2) + "\n";
-      }
-      if (storage.baseline.length) {
-        var p = (storage.baseline.length < 2) ? 1 : ttest(storage.baseline, times).pValue();
-        if (p < 0.05) {
-          message += currentMean < baselineMean ? "FASTER" : "SLOWER";
+      saveStorage();
+      var labels = ["Test", "Baseline Mean", "Mean", "+/-", "%", "P", "Min", "Max"];
+      var rows = [labels];
+      for (var key in storage.current) {
+        var samples = storage.current[key];
+        var baselineSamples = storage.baseline[key] || [];
+        var hasBaseline = baselineSamples.length > 0;
+        var formatter = valueFormatters[key];
+
+        var row = [key];
+        rows.push(row);
+        var currentMean = mean(samples);
+        var baselineMean = mean(baselineSamples);
+        row.push(hasBaseline ? formatter(baselineMean) + "" : "n/a");
+        row.push(formatter(currentMean) + "");
+        row.push(hasBaseline ? formatter(currentMean - baselineMean) + "" : "n/a");
+        row.push(hasBaseline ? (100 * (currentMean - baselineMean) / baselineMean).toFixed(2) : "n/a");
+        var pMessage = "n/a";
+        if (hasBaseline) {
+          var p = (baselineSamples.length < 2) ? 1 : ttest(baselineSamples, samples).pValue();
+          if (p < 0.05) {
+            pMessage = currentMean < baselineMean ? "BETTER" : "WORSE";
+          } else {
+            pMessage = "INSIGNIFICANT";
+          }
         } else {
-          message += "INSIGNIFICANT RESULT";
+          pMessage = "n/a";
         }
+        row.push(pMessage);
+        row.push(formatter(Math.min.apply(null, samples)));
+        row.push(formatter(Math.max.apply(null, samples)));
       }
       if (storage.buildBaseline) {
-        storage.baseline = times;
+        storage.baseline = storage.current;
         storage.buildBaseline = false;
-        message = "FINISHED BUILDING BASELINE\n" + message;
+        console.log("FINISHED BUILDING BASELINE");
       }
-      message = "-------------------------------------------------------------\n" +
-                message + "\n" +
-                "-------------------------------------------------------------\n";
-      console.log(message);
+      console.log("Raw Values:\n" + "Current: " + JSON.stringify(storage.current) + "\nBaseline: " + JSON.stringify(storage.baseline))
+      console.log("\n" + prettyTable(rows, [LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT]));
+      saveStorage();
     }
 
   };
@@ -164,16 +305,17 @@ var Benchmark = (function() {
       roundDelay: roundDelayEl.value | 0,
       deleteFs: !!deleteFsEl.checked,
       deleteJitCache: !!deleteJitCacheEl.checked,
+      recordMemory: NO_SECURITY
     };
   }
 
   function start() {
     startup.run(getSettings());
-  };
+  }
 
   function buildBaseline() {
     var settings = getSettings();
-    settings["buildBaseline"] = true;
+    settings.buildBaseline = true;
     startup.run(settings);
   }
 
@@ -190,10 +332,6 @@ var Benchmark = (function() {
       roundDelayEl.value = storage.roundDelay;
       deleteFsEl.checked = storage.deleteFs;
       deleteJitCacheEl.checked = storage.deleteJitCache;
-
-      if (storage.baseline.length === 0) {
-        startButton.disabled = true;
-      }
 
       startButton.onclick = start;
       baselineButton.onclick = buildBaseline;
