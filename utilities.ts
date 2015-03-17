@@ -443,6 +443,18 @@ module J2ME {
       return array;
     }
 
+    /**
+     * You'd hope that new Array() triggers different heuristics about how and when it should fall back
+     * to dictionary mode. I've experienced ION bailouts from non-dense new Arrays(), hence this helper
+     * method.
+     */
+    export function makeDenseArray(length, value) {
+      var array = new Array(length);
+      for (var i = 0; i < length; i++) {
+        array[i] = value;
+      }
+      return array;
+    }
   }
 
   export module ObjectUtilities {

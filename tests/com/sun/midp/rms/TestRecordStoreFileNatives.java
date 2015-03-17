@@ -7,7 +7,7 @@ import javax.microedition.io.file.FileConnection;
 import javax.microedition.rms.RecordStoreException;
 
 public class TestRecordStoreFileNatives implements Testlet, SuiteContainer {
-    public int getExpectedPass() { return 14; }
+    public int getExpectedPass() { return 16; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
     // SuiteContainer stubs
@@ -85,6 +85,11 @@ public class TestRecordStoreFileNatives implements Testlet, SuiteContainer {
             } catch(java.io.IOException ex) {
                 th.check(ex, "java.io.IOException: handle invalid or segment indices out of bounds");
             }
+
+            // Test list record stores.
+            String[] list = RecordStoreFile.listRecordStores(suiteId);
+            th.check(list.length, 1);
+            th.check(list[0], name + "." + extension);
 
             // Clean up.
             file.close();

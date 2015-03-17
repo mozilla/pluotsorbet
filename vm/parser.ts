@@ -6,9 +6,10 @@
 module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
+  import concat3 = StringUtilities.concat3;
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
-
+  import hashBytesTo32BitsMurmur = HashUtilities.hashBytesTo32BitsMurmur;
   export enum UTF8Chars {
     Z = 90,
     C = 67,
@@ -53,12 +54,27 @@ module J2ME {
     if (a.length !== b.length) {
       return false;
     }
-    for (var i = 0; i < a.length; i++) {
+    var l = a.length;
+    for (var i = 0; i < l; i++) {
       if (a[i] !== b[i]) {
         return false;
       }
     }
     return true;
+  }
+
+  var utf8Cache = Object.create(null);
+
+  /**
+   * Caches frequently used UTF8 strings. Only use this for a small set of frequently
+   * used JS -> UTF8 conversions.
+   */
+  export function cacheUTF8(s: string) {
+    var r = utf8Cache[s];
+    if (r !== undefined) {
+      return r;
+    }
+    return utf8Cache[s] = toUTF8(s);
   }
 
   export function toUTF8(s: string): Uint8Array {
@@ -105,10 +121,28 @@ module J2ME {
     return r;
   }
 
+  // Seal ClassInfo, MethodInfo and FieldInfo objects so their shapes are fixed. This should
+  // not be enabled by default as it usually causes perf problems, but it's useful as a
+  // debugging feature nonetheless.
+  var sealObjects = false;
+
   /**
    * Base class of all class file structs.
    */
   export class ByteStream {
+
+    private static internedOneByteArrays: Uint8Array [] = ArrayUtilities.makeDenseArray(256, null);
+
+    // Most common tree byte arrays signatures, these must all be prefixed with "()". If you want
+    // to support more complicated patterns, modify |readBytes|.
+    private static internedThreeByteArraySignatures: Uint8Array [] = [
+      new Uint8Array([40, 41, 86]), // ()V
+      new Uint8Array([40, 41, 73]), // ()I
+      new Uint8Array([40, 41, 90]), // ()Z
+      new Uint8Array([40, 41, 74]), // ()J
+    ];
+
+    private static internedMap = new Uint8Hashtable(64);
 
     constructor (
       public buffer: Uint8Array,
@@ -152,6 +186,10 @@ module J2ME {
       return this.readS4() >>> 0;
     }
 
+    skipU4() {
+      this.offset += 4;
+    }
+
     readS4() {
       var o = this.offset;
       var buffer = this.buffer;
@@ -173,8 +211,61 @@ module J2ME {
       return this;
     }
 
-    readBytes(length): Uint8Array {
-      var data = this.buffer.subarray(this.offset, this.offset + length);
+    /**
+     * Interns small and frequently used Uint8Array buffers.
+     *
+     * Relative frequencies of readByte sizes.
+     *  2011: readBytes 2
+     *  1853: readBytes 1 - Special cased.
+     *  1421: readBytes 4
+     *  1170: readBytes 5
+     *  1042: readBytes 3 - Special cased, most three byte buffers are signatures of the form "()?".
+     *  1022: readBytes 6
+     *
+     * All other sizes are interned using a hashtable.
+     */
+    internBytes(length: number) {
+      var o = this.offset;
+      var buffer = this.buffer;
+      var a = buffer[o];
+      if (length === 1) { // Intern all 1 byte buffers.
+        var one = ByteStream.internedOneByteArrays;
+        var r = one[a];
+        if (r === null) {
+          r = one[a] = new Uint8Array([a]);
+        }
+        return r;
+      } else if (length === 3 && // Intern most common 3 byte buffers.
+        a === UTF8Chars.OpenParenthesis) { // Check if first byte is "(".
+        var b = buffer[o + 1];
+        if (b === UTF8Chars.CloseParenthesis) {
+          var three = ByteStream.internedThreeByteArraySignatures;
+          var c = buffer[o + 2];
+          for (var i = 0; i < three.length; i++) {
+            if (three[i][2] === c) {
+              return three[i]
+            }
+          }
+        }
+      } else {
+        var data: Uint8Array = ByteStream.internedMap.getByRange(buffer, o, length);
+        if (data) {
+          return data;
+        }
+        var data = this.buffer.subarray(o, o + length);
+        ByteStream.internedMap.put(data, data);
+        return data;
+      }
+      return null;
+    }
+
+    readBytes(length: number): Uint8Array {
+      var data = length <= 4 ? this.internBytes(length) : null;
+      if (data) {
+        this.offset += data.length;
+        return data;
+      }
+      data = this.buffer.subarray(this.offset, this.offset + length);
       this.offset += length;
       return data;
     }
@@ -329,7 +420,9 @@ module J2ME {
       var s = this;
       var c  = s.readU2();
       this.entries = new Uint32Array(c);
-      this.resolved = new Array(c);
+      // We make this dense because the access pattern is pretty random, and it would otherwise
+      // cause lots of ION bailouts.
+      this.resolved = ArrayUtilities.makeDenseArray(c, undefined);
       var S = ConstantPool.tagSize;
       var o = s.offset;
       var buffer = s.buffer;
@@ -416,24 +509,24 @@ module J2ME {
               r = this.resolved[i] = s.readS4();
               break;
             case TAGS.CONSTANT_Float:
-              r = this.resolved[i] = IntegerUtilities.int32ToFloat(s.readU4());
+              r = this.resolved[i] = IntegerUtilities.int32ToFloat(s.readS4());
               break;
             case TAGS.CONSTANT_String:
               r = this.resolved[i] = $.newStringConstant(this.resolveUtf8String(s.readU2()));
               break;
             case TAGS.CONSTANT_Long:
-              var high = s.readU4();
-              var low = s.readU4();
+              var high = s.readS4();
+              var low = s.readS4();
               r = this.resolved[i] = Long.fromBits(low, high);
               break;
             case TAGS.CONSTANT_Double:
-              r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readU4(), s.readU4());
+              r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readS4(), s.readS4());
               break;
           case TAGS.CONSTANT_Utf8:
             r = this.resolved[i] = s.readBytes(s.readU2());
             break;
           case TAGS.CONSTANT_Class:
-            r = this.resolved[i] = CLASSES.getClass(util.decodeUtf8Array(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
+            r = this.resolved[i] = CLASSES.getClass(ByteStream.readString(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
             break;
           case TAGS.CONSTANT_Fieldref:
           case TAGS.CONSTANT_Methodref:
@@ -480,11 +573,10 @@ module J2ME {
     public kind: Kind;
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
-    public mangledName: string;
+    public mangledName: string = null;
     public accessFlags: ACCESS_FLAGS;
-    public constantValue: any;
-
-    fTableIndex: number;
+    private _constantvalue_index: number = -1;
+    fTableIndex: number = -1;
 
     constructor(classInfo: ClassInfo, offset: number) {
       super(classInfo.buffer, offset);
@@ -493,8 +585,8 @@ module J2ME {
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
       this.kind = getSignatureKind(this.utf8Signature);
-      this.constantValue = undefined;
       this.scanFieldInfoAttributes();
+      sealObjects && Object.seal(this);
     }
 
     public get isStatic(): boolean {
@@ -520,7 +612,6 @@ module J2ME {
     private scanFieldInfoAttributes() {
       var s = this;
       var attributes_count = s.readU2();
-      var constantvalue_index = -1;
       for (var i = 0; i < attributes_count; i++) {
         var attribute_name_index = s.readU2();
         var attribute_length = s.readU4();
@@ -528,15 +619,18 @@ module J2ME {
         var attribute_name = this.classInfo.constantPool.resolveUtf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.ConstantValue)) {
           release || assert(attribute_length === 2, "Attribute length of ConstantValue must be 2.")
-          constantvalue_index = s.readU2();
+          this._constantvalue_index = s.readU2();
         }
         s.seek(o + attribute_length);
       }
-      if (phase !== ExecutionPhase.Compiler) {
-        if (constantvalue_index >= 0) {
-          this.constantValue = this.classInfo.constantPool.resolve(constantvalue_index, TAGS.CONSTANT_Any);
-        }
+    }
+
+    get constantValue(): any {
+      if (this._constantvalue_index >= 0) {
+        // This is not a very frequently called method, so no need to cache the resolved value.
+        return this.classInfo.constantPool.resolve(this._constantvalue_index, TAGS.CONSTANT_Any);
       }
+      return undefined;
     }
   }
 
@@ -587,30 +681,26 @@ module J2ME {
     return methodInfo.classInfo.mangledName + "_" + methodInfo.index;
   }
 
-
-  export function mangleClass(classInfo: ClassInfo): string {
-    return mangleClassName(classInfo.getClassNameSlow());
-    //var name = StringUtilities.variableLengthEncodeInt32(hashUTF8String(classInfo.utf8Name));
-    //// Also use the length for some more precision.
-    //name += StringUtilities.toEncoding(classInfo.utf8Name.length & 0x3f);
-    //return "$" + name;
+  export function mangleMethod(methodInfo: MethodInfo) {
+    var utf8Name = methodInfo.utf8Name;
+    var utf8Signature = methodInfo.utf8Signature;
+    var hash = hashBytesTo32BitsMurmur(utf8Name, 0, utf8Name.length);
+    hash ^= hashBytesTo32BitsMurmur(utf8Signature, 0, utf8Signature.length);
+    return "$" + StringUtilities.variableLengthEncodeInt32(hash);
   }
 
-  export function mangleMethod(methodInfo: MethodInfo) {
-    // TODO: Get rid of JS strings in the computation of the hash.
-    var name = methodInfo.name + "_" + hashStringToString(methodInfo.signature);
-    if (!hashedMangledNames) {
-      return escapeString(name);
-    }
-    return "$" + hashStringToString(name);
-    assert(false);
+  export function mangleClassName(utf8Name: Uint8Array) {
+    var hash = hashBytesTo32BitsMurmur(utf8Name, 0, utf8Name.length);
+    return concat3("$",
+                   StringUtilities.variableLengthEncodeInt32(hash),
+                   StringUtilities.toEncoding(utf8Name.length & 0x3f));
   }
 
   export class MethodInfo extends ByteStream {
     public classInfo: ClassInfo;
     public accessFlags: ACCESS_FLAGS;
 
-    public fn: any;
+    public fn: any = null;
     public index: number;
     public state: MethodState;
     public stats: MethodInfoStats;
@@ -618,6 +708,7 @@ module J2ME {
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
     public returnKind: Kind;
+    public signatureKinds: Kind [];
 
     public argumentSlots: number;
     public consumeArgumentSlots: number;
@@ -625,21 +716,20 @@ module J2ME {
 
     vTableIndex: number;
 
-    private _virtualName: string;
-    private _mangledName: string;
-    private _mangledClassAndMethodName: string;
-    private _signatureDescriptor: SignatureDescriptor;
+    private _virtualName: string = null;
+    private _mangledName: string = null;
+    private _mangledClassAndMethodName: string = null;
 
-    private _implKey: string;
-    private _name: string;
-    private _signature: string;
+    private _implKey: string = null;
+    private _name: string = null;
+    private _signature: string = null;
 
     ///// FIX THESE LATER ////
-    onStackReplacementEntryPoints: number [];
+    onStackReplacementEntryPoints: number [] = null;
 
-    exception_table_length: number;
-    exception_table_offset: number;
-    isOptimized: boolean;
+    exception_table_length: number = -1;
+    exception_table_offset: number = -1;
+    isOptimized: boolean = false;
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
@@ -651,17 +741,13 @@ module J2ME {
       this.utf8Signature = cp.resolveUtf8(this.u2(4));
       this.vTableIndex = -1;
 
-      // Lazify;
       this.state = MethodState.Cold;
-
-      // TODO: Make this lazy.
       this.stats = new MethodInfoStats();
       this.codeAttribute = null;
       this.scanMethodInfoAttributes();
 
-
       // Parse signature and cache some useful information.
-      var signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0);
+      var signatureKinds = this.signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0).slice();
       this.returnKind = signatureKinds[0];
       this.hasTwoSlotArguments = signatureHasTwoSlotArguments(signatureKinds);
       this.argumentSlots = signatureArgumentSlotCount(signatureKinds);
@@ -669,6 +755,7 @@ module J2ME {
       if (!this.isStatic) {
         this.consumeArgumentSlots ++;
       }
+      sealObjects && Object.seal(this);
     }
 
     /**
@@ -676,10 +763,6 @@ module J2ME {
      */
     cloneMethodInfo(): MethodInfo {
       return new MethodInfo(this.classInfo, this.offset, this.index);
-    }
-
-    get signatureDescriptor() {
-      return this._signatureDescriptor || (this._signatureDescriptor = SignatureDescriptor.makeSignatureDescriptor(this.signature));
     }
 
     get virtualName() {
@@ -788,34 +871,59 @@ module J2ME {
     }
   }
 
-  function indexOfMethod(table: MethodInfo [], utf8Name: Uint8Array, utf8Signature: Uint8Array): number {
+  function indexOfMethod(table: MethodInfo [], utf8Name: Uint8Array, utf8Signature: Uint8Array, indexHint: number): number {
+    // Quick test using the index hint.
+    if (indexHint >= 0) {
+      if (strcmp(utf8Name, table[indexHint].utf8Name) && strcmp(utf8Signature, table[indexHint].utf8Signature)) {
+        return indexHint;
+      }
+    }
     for (var i = 0; i < table.length; i++) {
       var methodInfo = table[i];
-      if (strcmp(utf8Name, methodInfo.utf8Name) && strcmp(utf8Signature, methodInfo.utf8Signature)) {
+      var methodUTF8Name = methodInfo.utf8Name;
+      if (utf8Name.length !== methodUTF8Name.length || utf8Name[0] !== methodUTF8Name[0]) { // Quick false test.
+        continue;
+      }
+      if (strcmp(utf8Name, methodUTF8Name) && strcmp(utf8Signature, methodInfo.utf8Signature)) {
         return i;
       }
     }
     return -1;
   }
 
-  export enum Detail {
-    Brief = 0x01,
-    Full  = 0x03
+  // Very simple hash map that uses Uint8Array keys.
+  var hashMapSizeMask = 0xff;
+  function setHashMapValue(cache: Uint16Array, key: Uint8Array, value: number) {
+    var hash = key[0] + Math.imul(key.length, 31);
+    cache[hash & 0xff] = value;
+  }
+  function getHashMapValue(cache: Uint16Array, key: Uint8Array): number {
+    var hash = key[0] + Math.imul(key.length, 31);
+    return cache[hash & 0xff];
   }
 
   export class ClassInfo extends ByteStream {
-    constantPool: ConstantPool;
+    constantPool: ConstantPool = null;
 
-    utf8Name: Uint8Array;
-    utf8SuperName: Uint8Array;
+    utf8Name: Uint8Array = null;
+    utf8SuperName: Uint8Array = null;
 
     superClass: ClassInfo = null;
+    elementClass: ClassInfo = null;
     subClasses: ClassInfo [] = [];
     allSubClasses: ClassInfo [] = [];
 
-    accessFlags: number;
-    vTable: MethodInfo [];
-    fTable: FieldInfo [];
+    accessFlags: number = 0;
+    vTable: MethodInfo [] = null;
+
+    // Custom hash map to make vTable name lookups quicker. It maps utf8 method names to indices in
+    // the vTable. A zero value indicate no method by that name exists, while a value > 0 indicates
+    // that a method entry at |value - 1| position exists in the vTable whose hash matches they
+    // lookup key. We can use this map as a quick way to detect if a method doesn't exist in the
+    // vTable.
+    private vTableMap: Uint16Array = null;
+
+    fTable: FieldInfo [] = null;
 
     klass: Klass = null;
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
@@ -824,23 +932,22 @@ module J2ME {
     private interfaces: (number | ClassInfo) [] = null;
     private allInterfaces: ClassInfo [] = null;
 
-    sourceFile: string;
-    mangledName: string;
+    sourceFile: string = null;
+    mangledName: string = null;
 
-    // TODO: Remove me:
-
-    private _name: string;
+    private _name: string = null;
+    private _superName: string = null;
 
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
       if (!buffer) {
+        sealObjects && Object.seal(this);
         return;
       }
       enterTimeline("ClassInfo");
       var s = this;
-      s.readU4(); // magic
-      s.readU2(); // minor_version
-      s.readU2(); // major_version
+      s.skipU4(); // magic
+      s.skipU4(); // minor_version and major_version
       this.constantPool = new ConstantPool(s);
       s.seek(this.constantPool.offset);
       this.accessFlags = s.readU2();
@@ -852,9 +959,10 @@ module J2ME {
       this.scanFields();
       this.scanMethods();
       this.scanClassInfoAttributes();
-      this.mangledName = mangleClass(this);
+      this.mangledName = mangleClassName(this.utf8Name);
       this.createAbstractMethods();
       leaveTimeline("ClassInfo");
+      sealObjects && Object.seal(this);
     }
 
     /**
@@ -879,7 +987,7 @@ module J2ME {
             // Ignore static methods.
             continue;
           }
-          var index = indexOfMethod(methods, methodInfo.utf8Name, methodInfo.utf8Signature);
+          var index = indexOfMethod(methods, methodInfo.utf8Name, methodInfo.utf8Signature, -1);
           if (index < 0) {
             // Make a copy of the interface method info and add it to the current list of
             // virtual class methods. The vTable construction will give this a proper
@@ -917,7 +1025,7 @@ module J2ME {
 
     get superClassName(): string {
       if (this.utf8SuperName) {
-        return ByteStream.readString(this.utf8SuperName);
+        return this._superName || (this._superName = ByteStream.readString(this.utf8SuperName));
       }
       return null;
     }
@@ -958,6 +1066,12 @@ module J2ME {
     private buildVTable() {
       var superClassVTable = this.superClass ? this.superClass.vTable : null;
       var vTable = this.vTable = superClassVTable ? superClassVTable.slice() : [];
+      var vTableMap = this.vTableMap = new Uint16Array(hashMapSizeMask + 1);
+      var superClassVTableMap = null;
+      if (this.superClass) {
+        superClassVTableMap = this.superClass.vTableMap;
+        vTableMap.set(superClassVTableMap);
+      }
       var methods = this.methods;
       if (!methods) {
         return;
@@ -965,10 +1079,17 @@ module J2ME {
       for (var i = 0; i < methods.length; i++) {
         var methodInfo: MethodInfo = this.getMethodByIndex(i);
         if (!methodInfo.isStatic && !strcmp(methodInfo.utf8Name, UTF8.Init)) {
-          var vTableIndex = superClassVTable ? indexOfMethod(superClassVTable, methodInfo.utf8Name, methodInfo.utf8Signature) : -1;
+          var vTableIndex = -1;
+          if (superClassVTable) {
+            vTableIndex = getHashMapValue(superClassVTableMap, methodInfo.utf8Name) - 1;
+            if (vTableIndex >= 0) { // May exist, but we need to check to make sure the index is correct.
+              vTableIndex = indexOfMethod(superClassVTable, methodInfo.utf8Name, methodInfo.utf8Signature, vTableIndex);
+            }
+          }
           if (vTableIndex < 0) {
             methodInfo.vTableIndex = vTable.length;
             vTable.push(methodInfo); // Append
+            setHashMapValue(vTableMap, methodInfo.utf8Name, methodInfo.vTableIndex + 1);
           } else {
             vTable[vTableIndex] = methodInfo; // Override
             methodInfo.vTableIndex = vTableIndex;
@@ -982,7 +1103,7 @@ module J2ME {
         var c = interfaces[i];
         for (var j = 0; j < c.methods.length; j++) {
           var methodInfo = c.getMethodByIndex(j);
-          var vTableIndex = indexOfMethod(this.vTable, methodInfo.utf8Name, methodInfo.utf8Signature);
+          var vTableIndex = indexOfMethod(this.vTable, methodInfo.utf8Name, methodInfo.utf8Signature, -1);
           if (vTableIndex >= 0) {
             this.vTable[vTableIndex].accessFlags |= ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE;
           }
@@ -1060,8 +1181,12 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < methods.length; i++) {
-        var method = this.getMethodByIndex(i);
-        if (strcmp(method.utf8Name, utf8Name) && strcmp(method.utf8Signature, utf8Signature)) {
+        var methodInfo = this.getMethodByIndex(i);
+        var methodUTF8Name = methodInfo.utf8Name;
+        if (utf8Name.length !== methodUTF8Name.length || utf8Name[0] !== methodUTF8Name[0]) { // Quick false test.
+          continue;
+        }
+        if (strcmp(methodUTF8Name, utf8Name) && strcmp(methodInfo.utf8Signature, utf8Signature)) {
           return i;
         }
       }
@@ -1070,7 +1195,7 @@ module J2ME {
 
     // This should only ever be used from code where the name and signature originate from JS strings.
     getMethodByNameString(name: string, signature: string): MethodInfo {
-      return this.getMethodByName(toUTF8(name), toUTF8(signature));
+      return this.getMethodByName(cacheUTF8(name), cacheUTF8(signature));
     }
 
     // This should only ever be used from code where the name and signature originate from JS strings.
@@ -1139,9 +1264,12 @@ module J2ME {
         return -1;
       }
       for (var i = 0; i < fields.length; i++) {
-        var field = this.getFieldByIndex(i);
-        if (strcmp(field.utf8Name, utf8Name) &&
-            strcmp(field.utf8Signature, utf8Signature)) {
+        var fieldInfo = this.getFieldByIndex(i);
+        var fieldUTF8Name = fieldInfo.utf8Name;
+        if (utf8Name.length !== fieldUTF8Name.length || utf8Name[0] !== fieldUTF8Name[0]) { // Quick false check.
+          continue;
+        }
+        if (strcmp(fieldUTF8Name, utf8Name) && strcmp(fieldInfo.utf8Signature, utf8Signature)) {
           return i;
         }
       }
@@ -1303,7 +1431,6 @@ module J2ME {
   }
 
   export class ArrayClassInfo extends ClassInfo {
-    elementClass: ClassInfo;
 
     // XXX: This constructor should not be called directly.
     constructor(elementClass: ClassInfo) {
@@ -1336,7 +1463,7 @@ module J2ME {
       } else {
         this.utf8Name = strcat4Single(UTF8Chars.OpenBracket, UTF8Chars.L, elementClass.utf8Name, UTF8Chars.Semicolon);
       }
-      this.mangledName = mangleClassName(this.getClassNameSlow());
+      this.mangledName = mangleClassName(this.utf8Name);
       this.complete();
     }
   }
