@@ -227,6 +227,16 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   overflow: auto;
 }
 
+#image-launcher {
+  position: absolute;
+  z-index: 102;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: none center center / contain no-repeat #000;
+}
+
 .lcdui-alert menu,
 .download-progress-dialog menu {
   text-align: center;
