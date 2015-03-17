@@ -6,8 +6,8 @@
 var util = (function () {
   var Utf8TextDecoder = new TextDecoder("utf-8");
 
-  function decodeUtf8(arrayBuffer) {
-    return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
+  function decodeUtf8(array) {
+    return Utf8TextDecoder.decode(array);
   }
 
   /**
