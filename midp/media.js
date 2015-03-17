@@ -133,7 +133,7 @@ Media.convert3gpToAmr = function(inBuffer) {
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I"] = function(jProtocol) {
-    var protocol = util.fromJavaString(jProtocol);
+    var protocol = J2ME.fromJavaString(jProtocol);
     var types = [];
     if (protocol) {
         types = Media.ContentTypes[protocol].slice();
@@ -171,7 +171,7 @@ Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesClose.(I)V"] = func
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsOpen.(Ljava/lang/String;)I"] = function(jMime) {
-    var mime = util.fromJavaString(jMime);
+    var mime = J2ME.fromJavaString(jMime);
     var protocols = [];
     for (var protocol in Media.ContentTypes) {
         if (!mime || Media.ContentTypes[protocol].indexOf(mime) >= 0) {
@@ -1024,7 +1024,7 @@ AudioRecorder.prototype.close = function() {
 };
 
 Native["com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I"] = function(appId, pId, jURI) {
-    var url = util.fromJavaString(jURI);
+    var url = J2ME.fromJavaString(jURI);
     var id = pId + (appId << 32);
     Media.PlayerCache[id] = new PlayerContainer(url, pId);
     return id;
@@ -1058,7 +1058,7 @@ Native["com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z"] = function(handle) {
 };
 
 Native["com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z"] = function(handle, jMime) {
-    var mime = util.fromJavaString(jMime);
+    var mime = J2ME.fromJavaString(jMime);
     var player = Media.PlayerCache[handle];
     asyncImpl("Z", player.realize(mime));
 };
@@ -1423,7 +1423,7 @@ Native["com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z"] = function(appId) {
 };
 
 Native["com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V"] = function(handle, imageType) {
-    Media.PlayerCache[handle].startSnapshot(util.fromJavaString(imageType));
+    Media.PlayerCache[handle].startSnapshot(J2ME.fromJavaString(imageType));
 };
 
 Native["com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B"] = function(handle) {

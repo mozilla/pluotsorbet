@@ -61,10 +61,6 @@ var util = (function () {
     return jStringDecoder.decode(chars.subarray(offset, offset + count));
   }
 
-  function fromJavaString(jStr) {
-    return J2ME.fromJavaString(jStr);
-  }
-
   /**
    * Returns an ArrayBufferView of the underlying code points
    * represented by the given Java string.
@@ -82,12 +78,6 @@ var util = (function () {
       return ++gen;
     }
   })();
-
-  function tag(obj) {
-    if (!obj.tag)
-      obj.tag = id();
-    return obj.tag;
-  }
 
   /**
    * Compare two typed arrays, returning *true* if they have the same length
@@ -152,10 +142,8 @@ var util = (function () {
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
-    fromJavaString: fromJavaString,
     stringToCharArray: stringToCharArray,
     id: id,
-    tag: tag,
     compareTypedArrays: compareTypedArrays,
     pad: pad,
     toCodePointArray: toCodePointArray,

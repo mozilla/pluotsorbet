@@ -140,29 +140,29 @@ Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function() {
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = function(tag, name) {
-  this.encoder.putStart(tag, util.fromJavaString(name));
+  this.encoder.putStart(tag, J2ME.fromJavaString(name));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V"] = function(tag, name, value) {
-  this.encoder.put(tag, util.fromJavaString(name), util.fromJavaString(value));
+  this.encoder.put(tag, J2ME.fromJavaString(name), J2ME.fromJavaString(value));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(tag, name, value) {
-  this.encoder.put(tag, util.fromJavaString(name), value.toNumber());
+  this.encoder.put(tag, J2ME.fromJavaString(name), value.toNumber());
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(tag, name, value) {
-  this.encoder.put(tag, util.fromJavaString(name), value);
+  this.encoder.put(tag, J2ME.fromJavaString(name), value);
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(Ljava/lang/String;[BI)V"] = function(name, data, length) {
   var array = Array.prototype.slice.call(data.subarray(0, length));
   array.constructor = Array;
-  this.encoder.putNoTag(util.fromJavaString(name), array);
+  this.encoder.putNoTag(J2ME.fromJavaString(name), array);
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(tag, name) {
-  this.encoder.putEnd(tag, util.fromJavaString(name));
+  this.encoder.putEnd(tag, J2ME.fromJavaString(name));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function() {

@@ -314,7 +314,7 @@ Override["java/lang/String.valueOf.(J)Ljava/lang/String;"] = function(n) {
 var internedStrings = J2ME.internedStrings;
 
 Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
-    var string = util.fromJavaString(this);
+    var string = J2ME.fromJavaString(this);
 
     var internedString = internedStrings.get(string);
 
