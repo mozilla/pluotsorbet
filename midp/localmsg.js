@@ -1074,7 +1074,7 @@ MIDP.LocalMsgConnections["nokia.active-standby"] = NokiaActiveStandbyLocalMsgCon
 MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnection;
 
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(jName) {
-    var name = util.fromJavaString(jName);
+    var name = J2ME.fromJavaString(jName);
 
     this.server = (name[2] == ":");
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);

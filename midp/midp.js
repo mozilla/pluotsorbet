@@ -60,7 +60,7 @@ var MIDP = (function() {
   var manifest = {};
 
   Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
-    var bytes = JARStore.loadFileFromJAR(util.fromJavaString(jar), util.fromJavaString(entryName));
+    var bytes = JARStore.loadFileFromJAR(J2ME.fromJavaString(jar), J2ME.fromJavaString(entryName));
     if (!bytes) {
       throw $.newIOException();
     }
@@ -73,7 +73,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
-    console.info(util.fromJavaString(message));
+    console.info(J2ME.fromJavaString(message));
   };
 
   Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
@@ -104,7 +104,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
-    request = util.fromJavaString(request);
+    request = J2ME.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
       if (request.endsWith(".jad")) {
         // The download will start after the MIDlet has terminated its execution.
@@ -178,7 +178,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     var value;
-    switch (util.fromJavaString(key)) {
+    switch (J2ME.fromJavaString(key)) {
       case "com.sun.midp.publickeystore.WebPublicKeyStore":
         if (config.midletClassName == "RunTests") {
           value = "_test.ks";
@@ -217,7 +217,7 @@ var MIDP = (function() {
         value = null;
         break;
       default:
-        console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
+        console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + J2ME.fromJavaString(key));
         value = null;
         break;
     }
@@ -225,7 +225,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
-    var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
+    var fileName = "assets/0/" + J2ME.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = JARStore.loadFile(fileName);
     if (!data) {
       console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
@@ -573,7 +573,7 @@ var MIDP = (function() {
   var lastInterIsolateMutexID = -1;
 
   Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(jName) {
-    var name = util.fromJavaString(jName);
+    var name = J2ME.fromJavaString(jName);
 
     var mutex;
     for (var i = 0; i < interIsolateMutexes.length; i++) {
@@ -1068,7 +1068,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(connection) {
-    var values = util.fromJavaString(connection).split(',');
+    var values = J2ME.fromJavaString(connection).split(',');
 
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
@@ -1163,7 +1163,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(suiteId, className) {
-    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" + suiteId + ", " + util.fromJavaString(className) + ")");
+    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" + suiteId + ", " + J2ME.fromJavaString(className) + ")");
   };
 
   Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(name) {
