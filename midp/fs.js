@@ -46,6 +46,21 @@ function(filenameBase, name, ext) {
     fs.remove(path);
 };
 
+Native["com/sun/midp/rms/RecordStoreFile.getNumberOfStores.(Ljava/lang/String;)I"] =
+function(filenameBase) {
+    var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase);
+    return fs.list(path).length;
+};
+
+Native["com/sun/midp/rms/RecordStoreFile.getRecordStoreList.(Ljava/lang/String;[Ljava/lang/String;)V"] =
+function (filenameBase, names) {
+    var path = RECORD_STORE_BASE + "/" + util.fromJavaString(filenameBase);
+    var files = fs.list(path);
+    for (var i = 0; i < files.length; i++) {
+        names[i] = J2ME.newString(files[i]);
+    }
+};
+
 Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I"] = function(filenameBase, storageId) {
     // Pretend there is 50MiB available.  Our implementation is backed
     // by IndexedDB, which has no actual limit beyond space available on device,
