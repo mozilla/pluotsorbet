@@ -157,7 +157,7 @@ Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = fu
 
 Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(language) {
   MIDP.localizedStrings = null;
-  config.language = util.fromJavaString(language);
+  config.language = J2ME.fromJavaString(language);
 }
 
 // Many tests create FileConnection objects to files with the "/" root,

@@ -888,7 +888,7 @@ var MIDP = (function() {
         }
       }
 
-      MIDP.localizedStrings = JSON.parse(util.decodeUtf8Array(data));
+      MIDP.localizedStrings = JSON.parse(util.decodeUtf8(data));
     }
 
     var value = MIDP.localizedStrings[id];
