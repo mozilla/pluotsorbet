@@ -2,6 +2,7 @@
  * Port of Java java.util.Hashtable.
  */
 module J2ME {
+  import assert = Debug.assert;
   export class Uint8HashtableEntry {
     hash: number = 0;
     value: any = null;
@@ -25,14 +26,30 @@ module J2ME {
     return true;
   }
 
-  export function uint8ArrayHash(value: any): number {
+  export function arrayRangeEqual(a: Uint8Array, offset: number, length: number, b: Uint8Array): boolean {
+    if (length !== b.length) {
+      return false;
+    }
+    var j = offset;
+    for (var i = 0; i < length; j++, i++) {
+      if (a[j] !== b[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  export function arrayHash(array: Uint8Array): number {
+    return arrayRangeHash(array, 0, array.length);
+  }
+
+  export function arrayRangeHash(array: Uint8Array, offset: number, length: number): number {
     var h = 0;
-    var l = value.length;
-    for (var i = 0; i < l; i++) {
-      h = (Math.imul(31, h)|0 + value[i++]|0);
+    var l = offset + length;
+    for (var i = offset; i < l; i++) {
+      h = (Math.imul(31, h)|0 + array[i++]|0);
     }
     return h;
-    // return HashUtilities.hashBytesTo32BitsAdler(value, 0, value.length);
   }
 
   function nullArray(capacity) {
@@ -45,12 +62,12 @@ module J2ME {
 
   export class Uint8Hashtable {
     table: Uint8HashtableEntry []
-    count: number;
+    count: number = 0;
     private threshold: number;
     private static loadFactorPercent = 75;
 
     constructor(initialCapacity: number) {
-      release || Debug.assert(initialCapacity >= 0);
+      release || assert(initialCapacity >= 0);
       if (initialCapacity == 0) {
         initialCapacity = 1;
       }
@@ -60,7 +77,7 @@ module J2ME {
 
     contains(key: Uint8Array) {
       var table = this.table;
-      var hash = uint8ArrayHash(key);
+      var hash = arrayHash(key);
       var index = (hash & 0x7FFFFFFF) % table.length;
       for (var e = table[index]; e !== null; e = e.next) {
         if ((e.hash === hash) && uint8ArrayEqual(e.key, key)) {
@@ -70,9 +87,21 @@ module J2ME {
       return false;
     }
 
+    getByRange(key: Uint8Array, offset: number, length: number) {
+      var table = this.table;
+      var hash = arrayRangeHash(key, offset, length);
+      var index = (hash & 0x7FFFFFFF) % table.length;
+      for (var e = table[index]; e !== null; e = e.next) {
+        if ((e.hash === hash) && arrayRangeEqual(key, offset, length, e.key)) {
+          return e.value;
+        }
+      }
+      return null;
+    }
+
     get(key: Uint8Array) {
       var table = this.table;
-      var hash = uint8ArrayHash(key);
+      var hash = arrayHash(key);
       var index = (hash & 0x7FFFFFFF) % table.length;
       for (var e = table[index]; e !== null; e = e.next) {
         if ((e.hash === hash) && uint8ArrayEqual(e.key, key)) {
@@ -84,11 +113,11 @@ module J2ME {
 
     put(key: Uint8Array, value: any) {
       // Make sure the value is not null
-      Debug.assert(value !== null);
+      release || assert(value !== null);
 
       // Makes sure the key is not already in the hashtable.
       var table = this.table;
-      var hash = uint8ArrayHash(key);
+      var hash = arrayHash(key);
       var index = (hash & 0x7FFFFFFF) % table.length;
       for (var e = table[index]; e !== null; e = e.next) {
         if ((e.hash === hash) && uint8ArrayEqual(e.key, key)) {
