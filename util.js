@@ -28,14 +28,6 @@ var util = (function () {
     return fallibleUtf8Decoder.decode(arr);
   }
 
-  function defaultValue(type) {
-    if (type === 'J')
-      return Long.ZERO;
-    if (type[0] === '[' || type[0] === 'L')
-      return null;
-    return 0;
-  }
-
   var INT_MAX = Math.pow(2, 31) - 1;
   var INT_MIN = -INT_MAX - 1;
 
@@ -157,7 +149,6 @@ var util = (function () {
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
     decodeUtf8Array: decodeUtf8Array,
-    defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
