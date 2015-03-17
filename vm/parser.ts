@@ -36,9 +36,6 @@ module J2ME {
     export var Code = new Uint8Array([67, 111, 100, 101]);
     export var ConstantValue = new Uint8Array([67, 111, 110, 115, 116, 97, 110, 116, 86, 97, 108, 117, 101]);
     export var Init = new Uint8Array([60, 105, 110, 105, 116, 62]);
-    export var OpenBracket = new Uint8Array([UTF8Chars.OpenBracket]);
-    export var OpenBracketL = new Uint8Array([UTF8Chars.OpenBracket, UTF8Chars.L]);
-    export var Semicolon = new Uint8Array([UTF8Chars.Semicolon]);
 
     export var Z = new Uint8Array([UTF8Chars.Z]);
     export var C = new Uint8Array([UTF8Chars.C]);
