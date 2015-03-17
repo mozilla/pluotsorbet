@@ -84,7 +84,9 @@ module J2ME {
   function strcatSingle(a: number, b: Uint8Array): Uint8Array {
     var r = new Uint8Array(1 + b.length);
     r[0] = a;
-    r.set(b, 1);
+    for (var i = 1; i < b.length + 1; i++) {
+      r[i] = b[i - 1];
+    }
     return r;
   }
 
@@ -92,7 +94,9 @@ module J2ME {
     var r = new Uint8Array(c.length + 3);
     r[0] = a;
     r[1] = b;
-    r.set(c, 2);
+    for (var i = 2; i < c.length + 2; i++) {
+      r[i] = c[i - 2];
+    }
     r[2 + c.length] = d;
     return r;
   }
