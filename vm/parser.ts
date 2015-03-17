@@ -796,7 +796,13 @@ module J2ME {
     }
   }
 
-  function indexOfMethod(table: MethodInfo [], utf8Name: Uint8Array, utf8Signature: Uint8Array): number {
+  function indexOfMethod(table: MethodInfo [], utf8Name: Uint8Array, utf8Signature: Uint8Array, indexHint: number): number {
+    // Quick test using the index hint.
+    if (indexHint >= 0) {
+      if (strcmp(utf8Name, table[indexHint].utf8Name) && strcmp(utf8Signature, table[indexHint].utf8Signature)) {
+        return indexHint;
+      }
+    }
     for (var i = 0; i < table.length; i++) {
       var methodInfo = table[i];
       var methodUTF8Name = methodInfo.utf8Name;
@@ -808,6 +814,17 @@ module J2ME {
       }
     }
     return -1;
+  }
+
+  // Very simple hash map that uses Uint8Array keys.
+  var hashMapSizeMask = 0xff;
+  function setHashMapValue(cache: Uint16Array, key: Uint8Array, value: number) {
+    var hash = key[0] + Math.imul(key.length, 31);
+    cache[hash & 0xff] = value;
+  }
+  function getHashMapValue(cache: Uint16Array, key: Uint8Array): number {
+    var hash = key[0] + Math.imul(key.length, 31);
+    return cache[hash & 0xff];
   }
 
   export class ClassInfo extends ByteStream {
@@ -823,6 +840,14 @@ module J2ME {
 
     accessFlags: number = 0;
     vTable: MethodInfo [] = null;
+
+    // Custom hash map to make vTable name lookups quicker. It maps utf8 method names to indices in
+    // the vTable. A zero value indicate no method by that name exists, while a value > 0 indicates
+    // that a method entry at |value - 1| position exists in the vTable whose hash matches they
+    // lookup key. We can use this map as a quick way to detect if a method doesn't exist in the
+    // vTable.
+    private vTableMap: Uint16Array = null;
+
     fTable: FieldInfo [] = null;
 
     klass: Klass = null;
@@ -888,7 +913,7 @@ module J2ME {
             // Ignore static methods.
             continue;
           }
-          var index = indexOfMethod(methods, methodInfo.utf8Name, methodInfo.utf8Signature);
+          var index = indexOfMethod(methods, methodInfo.utf8Name, methodInfo.utf8Signature, -1);
           if (index < 0) {
             // Make a copy of the interface method info and add it to the current list of
             // virtual class methods. The vTable construction will give this a proper
@@ -967,6 +992,12 @@ module J2ME {
     private buildVTable() {
       var superClassVTable = this.superClass ? this.superClass.vTable : null;
       var vTable = this.vTable = superClassVTable ? superClassVTable.slice() : [];
+      var vTableMap = this.vTableMap = new Uint16Array(hashMapSizeMask + 1);
+      var superClassVTableMap = null;
+      if (this.superClass) {
+        superClassVTableMap = this.superClass.vTableMap;
+        vTableMap.set(superClassVTableMap);
+      }
       var methods = this.methods;
       if (!methods) {
         return;
@@ -974,10 +1005,17 @@ module J2ME {
       for (var i = 0; i < methods.length; i++) {
         var methodInfo: MethodInfo = this.getMethodByIndex(i);
         if (!methodInfo.isStatic && !strcmp(methodInfo.utf8Name, UTF8.Init)) {
-          var vTableIndex = superClassVTable ? indexOfMethod(superClassVTable, methodInfo.utf8Name, methodInfo.utf8Signature) : -1;
+          var vTableIndex = -1;
+          if (superClassVTable) {
+            vTableIndex = getHashMapValue(superClassVTableMap, methodInfo.utf8Name) - 1;
+            if (vTableIndex >= 0) { // May exist, but we need to check to make sure the index is correct.
+              vTableIndex = indexOfMethod(superClassVTable, methodInfo.utf8Name, methodInfo.utf8Signature, vTableIndex);
+            }
+          }
           if (vTableIndex < 0) {
             methodInfo.vTableIndex = vTable.length;
             vTable.push(methodInfo); // Append
+            setHashMapValue(vTableMap, methodInfo.utf8Name, methodInfo.vTableIndex + 1);
           } else {
             vTable[vTableIndex] = methodInfo; // Override
             methodInfo.vTableIndex = vTableIndex;
@@ -991,7 +1029,7 @@ module J2ME {
         var c = interfaces[i];
         for (var j = 0; j < c.methods.length; j++) {
           var methodInfo = c.getMethodByIndex(j);
-          var vTableIndex = indexOfMethod(this.vTable, methodInfo.utf8Name, methodInfo.utf8Signature);
+          var vTableIndex = indexOfMethod(this.vTable, methodInfo.utf8Name, methodInfo.utf8Signature, -1);
           if (vTableIndex >= 0) {
             this.vTable[vTableIndex].accessFlags |= ACCESS_FLAGS.J2ME_IMPLEMENTS_INTERFACE;
           }
