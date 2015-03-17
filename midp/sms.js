@@ -116,7 +116,7 @@ Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = func
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
-      host: util.fromJavaString(host),
+      host: J2ME.fromJavaString(host),
     };
 
     return ++MIDP.lastSMSConnection;
@@ -178,7 +178,7 @@ function(handle, type, host, destPort, sourcePort, message) {
             name: "new",
             data: {
               type: "websms/sms",
-              number: util.fromJavaString(host),
+              number: J2ME.fromJavaString(host),
               body: new TextDecoder('utf-16be').decode(message),
             },
         });
