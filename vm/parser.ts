@@ -683,6 +683,13 @@ module J2ME {
       sealObjects && Object.seal(this);
     }
 
+    /**
+     * Clones this method info.
+     */
+    cloneMethodInfo(): MethodInfo {
+      return new MethodInfo(this.classInfo, this.offset, this.index);
+    }
+
     get virtualName() {
       if (this.vTableIndex >= 0) {
         return this._virtualName || (this._virtualName = "v" + this.vTableIndex);
@@ -854,8 +861,43 @@ module J2ME {
       this.scanMethods();
       this.scanClassInfoAttributes();
       this.mangledName = mangleClassName(this.utf8Name);
+      this.createAbstractMethods();
       leaveTimeline("ClassInfo");
       sealObjects && Object.seal(this);
+    }
+
+    /**
+     * Creates synthetic methodInfo objects in abstract classes for all unimplemented
+     * interface methods. This is needed so that vTable entries are created correctly
+     * for abstract classes that don't otherwise define methods for their implemented
+     * interface.
+     */
+    private createAbstractMethods() {
+      // We only do this for abstract classes. Sometimes, interfaces are also marked
+      // as abstract but they aren't really.
+      if (!this.isAbstract || this.isInterface) {
+        return;
+      }
+      var methods = this.getMethods();
+      var interfaces = this.getAllInterfaces();
+      for (var i = 0; i < interfaces.length; i++) {
+        var c = interfaces[i];
+        for (var j = 0; j < c.methods.length; j++) {
+          var methodInfo = c.getMethodByIndex(j);
+          if (methodInfo.isStatic || strcmp(methodInfo.utf8Name, UTF8.Init)) {
+            // Ignore static methods.
+            continue;
+          }
+          var index = indexOfMethod(methods, methodInfo.utf8Name, methodInfo.utf8Signature);
+          if (index < 0) {
+            // Make a copy of the interface method info and add it to the current list of
+            // virtual class methods. The vTable construction will give this a proper
+            // vTable index later.
+            var abstractMethod = methodInfo.cloneMethodInfo();
+            methods.push(abstractMethod);
+          }
+        }
+      }
     }
 
     private scanInterfaces() {
@@ -1067,7 +1109,7 @@ module J2ME {
         c = c.superClass;
       } while (c);
 
-      if (this.isInterface || this.isAbstract) {
+      if (this.isInterface) {
         var interfaces = this.getInterfaces();
         for (var n = 0; n < interfaces.length; ++n) {
           var method = interfaces[n].getMethodByName(utf8Name, utf8Signature);
