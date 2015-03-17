@@ -30,106 +30,6 @@ module J2ME {
     return list;
   }
 
-  function typeDescriptorToDefinition(value: string): string {
-    var typeDescriptor = TypeDescriptor.parseTypeDescriptor(value, 0);
-    var type = "";
-    if (typeDescriptor.kind === Kind.Reference) {
-      var dimensions = TypeDescriptor.getArrayDimensions(typeDescriptor);
-      if (dimensions) {
-        var elementType = typeDescriptor.value.substring(dimensions);
-        var elementTypeDescriptor = TypeDescriptor.parseTypeDescriptor(elementType, 0);
-        dimensions --;
-        switch (elementTypeDescriptor.kind) {
-          case Kind.Int:
-            type = "Int32Array";
-            break;
-          case Kind.Char:
-            type = "Uint16Array";
-            break;
-          case Kind.Short:
-            type = "Int16Array";
-            break;
-          case Kind.Byte:
-          case Kind.Boolean:
-            type = "Int8Array";
-            break;
-          case Kind.Float:
-            type = "Float32Array";
-            break;
-          case Kind.Long:
-            type = "Array";
-            break;
-          case Kind.Double:
-            type = "Float64Array";
-            break;
-          default:
-            type = typeDescriptorToDefinition(elementType);
-            dimensions ++;
-            break;
-        }
-      } else {
-        type = typeDescriptor.value.substring(dimensions + 1, typeDescriptor.value.length - 1);
-        type = type.replace(/\//g, '.');
-      }
-      for (var i = 0; i < dimensions; i++) {
-        type += "[]";
-      }
-    } else {
-      switch (typeDescriptor.kind) {
-        case Kind.Boolean: return "boolean";
-        case Kind.Byte:
-        case Kind.Short:
-        case Kind.Char:
-        case Kind.Int:
-        case Kind.Float:
-        case Kind.Double:
-          return "number";
-        case Kind.Long:
-          return "number"; // Should be Long.
-        case Kind.Void:
-          return "void";
-        default: throw Debug.unexpected("Unknown kind: " + typeDescriptor.kind);
-
-      }
-    }
-    return type;
-  }
-
-  export function signatureToDefinition(signature: string, includeReturnType = true, excludeArgumentNames = false): string {
-    var types = SignatureDescriptor.makeSignatureDescriptor(signature).typeDescriptors;
-    var argumentNames = "abcdefghijklmnopqrstuvwxyz";
-    var i = 0;
-    var result;
-    if (excludeArgumentNames) {
-      result = "(" + types.slice(1).map(t => typeDescriptorToDefinition(t.value)).join(", ") + ")";
-    } else {
-      result = "(" + types.slice(1).map(t => argumentNames[i++] + ": " + typeDescriptorToDefinition(t.value)).join(", ") + ")";
-    }
-    J2ME.Debug.assert(i < argumentNames.length);
-    if (includeReturnType) {
-      result += " => " + typeDescriptorToDefinition(types[0].value);
-    }
-    return result;
-  }
-
-
-  export function emitMethodDefinition(emitter: Emitter, methodInfo: MethodInfo) {
-    if (methodInfo.name === "<clinit>") {
-      return;
-    }
-    if (methodInfo.isStatic && methodInfo.classInfo.isInterface) {
-      return;
-    }
-    var isStaticString = methodInfo.isStatic ? "static " : "";
-    var isConstructor = methodInfo.name === "<init>";
-    if (isConstructor) {
-      // emitter.writer.writeLn("constructor" + signatureToDefinition(methodInfo.signature, false) + " {}");
-    } else {
-      var name = methodInfo.name + methodInfo.signature;
-      emitter.writer.writeLn(isStaticString + quote(name) + ": " + signatureToDefinition(methodInfo.signature) + ";");
-    }
-  }
-
   export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
     var mangledClassName = classInfo.mangledName;
@@ -171,18 +71,8 @@ module J2ME {
     // initialize it zero to keep object shapes fixed.
     // writer.writeLn("this._hashCode = $.nextHashCode(this);");
     writer.writeLn("this._hashCode = 0;");
-    getClassInheritanceChain(classInfo).forEach(function (ci) {
-      emitFields(ci.getFields(), false);
-    });
+    emitFields(classInfo.fTable, false);
     writer.leave("}");
-
-    // Emit class static initializer if it has any static fields. We don't emit this for now
-    // since it probably doesn't pay off to emit code that only gets executed once.
-    if (false && classInfo.getFields().some(f => f.isStatic)) {
-      writer.enter(mangledClassName + ".staticInitializer = function() {");
-      emitFields(classInfo.getFields(), true);
-      writer.leave("}");
-    }
 
     if (emitter.klassHeaderOnly) {
       return;

@@ -61,7 +61,7 @@ var stubProperties = {
 };
 
 Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
-    key = util.fromJavaString(key);
+    key = J2ME.fromJavaString(key);
     var value;
     switch (key) {
     case "microedition.encoding":
@@ -309,7 +309,7 @@ Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
   try {
     if (!name)
       throw new J2ME.ClassNotFoundException();
-    var className = util.fromJavaString(name).replace(/\./g, "/");
+    var className = J2ME.fromJavaString(name).replace(/\./g, "/");
     classInfo = CLASSES.getClass(className);
   } catch (e) {
     if (e instanceof (J2ME.ClassNotFoundException))
@@ -321,7 +321,7 @@ Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
 };
 
 Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
-  var className = util.fromJavaString(name).replace(/\./g, "/");
+  var className = J2ME.fromJavaString(name).replace(/\./g, "/");
   var classInfo = CLASSES.getClass(className);
   var classObject = classInfo.getClassObject();
   return classObject;
@@ -543,7 +543,7 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(name) {
-    var fileName = util.fromJavaString(name);
+    var fileName = J2ME.fromJavaString(name);
     var data = JARStore.loadFile(fileName);
     var obj = null;
     if (data) {
@@ -724,7 +724,7 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I"] = function(cbuf
 };
 
 Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(jStr) {
-    var str = util.fromJavaString(jStr);
+    var str = J2ME.fromJavaString(jStr);
 
     var utflen = 0;
 
@@ -892,7 +892,7 @@ Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = f
 };
 
 Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V"] = function(content) {
-    var fileName = util.fromJavaString(content);
+    var fileName = J2ME.fromJavaString(content);
 
     var ext = fileName.split('.').pop().toLowerCase();
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#Supported_image_formats
@@ -928,16 +928,6 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
             } else {
                 mask = document.createElement("div");
                 mask.id = maskId;
-                mask.style.position = "absolute";
-                mask.style.top = 0;
-                mask.style.left = 0;
-                mask.style.height = MIDP.context2D.canvas.height + "px";
-                mask.style.width = MIDP.context2D.canvas.width + "px";
-                mask.style.backgroundColor = "#000";
-                mask.style.backgroundPosition = "center center";
-                mask.style.backgroundRepeat = "no-repeat";
-                mask.style.backgroundSize = "contain";
-
                 mask.onclick = mask.ontouchstart = function() {
                     _revokeImageURL();
                     mask.parentNode.removeChild(mask);

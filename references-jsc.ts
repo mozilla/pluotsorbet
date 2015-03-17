@@ -1,6 +1,7 @@
 // Basics
 ///<reference path='config.ts' />
 ///<reference path='utilities.ts' />
+///<reference path='vm/hashtable.ts' />
 ///<reference path='vm/parser.ts' />
 
 ///<reference path='options.ts' />

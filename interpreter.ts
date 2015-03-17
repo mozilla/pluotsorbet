@@ -108,7 +108,7 @@ module J2ME {
   function buildExceptionLog(ex, stackTrace) {
     var classInfo: ClassInfo = ex.klass.classInfo;
     var className = classInfo.getClassNameSlow();
-    var detailMessage = util.fromJavaString(classInfo.getFieldByName(toUTF8("detailMessage"), toUTF8("Ljava/lang/String;"), false).get(ex));
+    var detailMessage = J2ME.fromJavaString(classInfo.getFieldByName(toUTF8("detailMessage"), toUTF8("Ljava/lang/String;"), false).get(ex));
     return className + ": " + (detailMessage || "") + "\n" + stackTrace.map(function(entry) {
       return " - " + entry.className + "." + entry.methodName + entry.methodSignature + ", pc=" + entry.offset;
     }).join("\n") + "\n\n";
@@ -1222,7 +1222,7 @@ module J2ME {
                 break;
               default:
                 if (calleeMethodInfo.hasTwoSlotArguments) {
-                  frame.popArgumentsInto(calleeMethodInfo.signatureDescriptor, argArray);
+                  frame.popArgumentsInto(calleeMethodInfo, argArray);
                 } else {
                   popManyInto(stack, calleeMethodInfo.argumentSlots, argArray);
                 }

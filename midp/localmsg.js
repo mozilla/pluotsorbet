@@ -620,7 +620,8 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           throw new Error("Media type '" + mediaType + "' not supported");
       }
 
-      var el = document.getElementById('nokia-fileui-prompt').cloneNode(true);
+      var promptTemplateNode = document.getElementById('nokia-fileui-prompt');
+      var el = promptTemplateNode.cloneNode(true);
       el.style.display = 'block';
       el.classList.add('visible');
 
@@ -680,7 +681,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
         });
       }).bind(this));
 
-      document.body.appendChild(el);
+      promptTemplateNode.parentNode.appendChild(el);
     break;
 
     default:
@@ -1073,7 +1074,7 @@ MIDP.LocalMsgConnections["nokia.active-standby"] = NokiaActiveStandbyLocalMsgCon
 MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnection;
 
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(jName) {
-    var name = util.fromJavaString(jName);
+    var name = J2ME.fromJavaString(jName);
 
     this.server = (name[2] == ":");
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);

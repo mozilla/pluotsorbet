@@ -503,14 +503,11 @@ module J2ME {
       var local = this.local;
       var parameterLocalIndex = this.methodInfo.isStatic ? 0 : 1;
 
-      var typeDescriptors = SignatureDescriptor.makeSignatureDescriptor(this.methodInfo.signature).typeDescriptors;
+      var signatureKinds = this.methodInfo.signatureKinds;
 
       // Skip the first typeDescriptor since it is the return type.
-      for (var i = 1; i < typeDescriptors.length; i++) {
-        var kind = Kind.Reference;
-        if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
-          kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
-        }
+      for (var i = 1; i < signatureKinds.length; i++) {
+        var kind = signatureKinds[i];
         this.parameters.push(this.getLocalName(parameterLocalIndex));
         parameterLocalIndex += isTwoSlot(kind) ? 2 : 1;
       }
@@ -850,11 +847,11 @@ module J2ME {
       if (opcode === Bytecodes.INVOKESTATIC) {
         this.emitClassInitializationCheck(methodInfo.classInfo);
       }
-      var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
-      var types = signature.typeDescriptors;
+
+      var signatureKinds = methodInfo.signatureKinds;
       var args: string [] = [];
-      for (var i = types.length - 1; i > 0; i--) {
-        args.unshift(this.pop(types[i].kind));
+      for (var i = signatureKinds.length - 1; i > 0; i--) {
+        args.unshift(this.pop(signatureKinds[i]));
       }
       var object = null, call;
       if (opcode !== Bytecodes.INVOKESTATIC) {
@@ -885,8 +882,8 @@ module J2ME {
         emitCompilerAssertions && this.emitUndefinedReturnAssertion();
         emitCompilerAssertions && this.emitNoUnwindAssertion();
       }
-      if (types[0].kind !== Kind.Void) {
-        this.emitPush(types[0].kind, "re", Precedence.Primary);
+      if (signatureKinds[0] !== Kind.Void) {
+        this.emitPush(signatureKinds[0], "re", Precedence.Primary);
       }
     }
 
