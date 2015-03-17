@@ -938,8 +938,7 @@ module J2ME {
       enterTimeline("ClassInfo");
       var s = this;
       s.skipU4(); // magic
-      s.readU2(); // minor_version
-      s.readU2(); // major_version
+      s.skipU4(); // minor_version and major_version
       this.constantPool = new ConstantPool(s);
       s.seek(this.constantPool.offset);
       this.accessFlags = s.readU2();
