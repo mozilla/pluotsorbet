@@ -177,6 +177,9 @@ var Benchmark = (function() {
       storage.current.startupTime.push(took);
       storage.round++;
       saveStorage();
+      this.runNextRound();
+    },
+    sampleMemory: function() {
       if (NO_SECURITY) {
         forceCollectors();
         var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
@@ -206,15 +209,21 @@ var Benchmark = (function() {
         storage.current.otherSize.push(otherSize.value);
         saveStorage();
       }
-      if (storage.round >= storage.numRounds) {
-        this.finish();
-        return;
-      }
-      this.runNextRound();
     },
     runNextRound: function() {
+      var self = this;
+      var done = storage.round >= storage.numRounds;
       function run() {
         forceCollectors();
+        if (storage.round !== 0) {
+          if (NO_SECURITY) {
+            self.sampleMemory();
+          }
+          if (done) {
+            self.finish();
+            return;
+          }
+        }
         DumbPipe.close(DumbPipe.open("reload", {}));
       }
       if (storage.deleteFs) {
@@ -225,8 +234,12 @@ var Benchmark = (function() {
         console.log("Deleting jit cache.");
         indexedDB.deleteDatabase("CompiledMethodCache");
       }
-      console.log("Scheduling round " + (storage.round + 1) + " of " + storage.numRounds + " to run in " + storage.roundDelay + "ms");
-      setTimeout(run, storage.roundDelay);
+      if (storage.round !== 0) {
+        console.log("Scheduling round " + (storage.round) + " of " + storage.numRounds + " finalization in " + storage.roundDelay + "ms");
+        setTimeout(run, storage.roundDelay);
+      } else {
+        run();
+      }
     },
     finish: function() {
       storage.running = false;
