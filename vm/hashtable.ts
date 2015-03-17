@@ -10,15 +10,14 @@ module J2ME {
     key: Uint8Array = null;
   }
 
-  export function uint8ArrayEqual(a: Uint8Array, b: Uint8Array): boolean {
+  function arrayEqual(a: Uint8Array, b: Uint8Array): boolean {
     if (a === b) {
       return true;
     }
     if (a.length !== b.length) {
       return false;
     }
-    var l = a.length;
-    for (var i = 0; i < l; i++) {
+    for (var i = 0; i < a.length; i++) {
       if (a[i] !== b[i]) {
         return false;
       }
@@ -26,7 +25,7 @@ module J2ME {
     return true;
   }
 
-  export function arrayRangeEqual(a: Uint8Array, offset: number, length: number, b: Uint8Array): boolean {
+  function arrayRangeEqual(a: Uint8Array, offset: number, length: number, b: Uint8Array): boolean {
     if (length !== b.length) {
       return false;
     }
@@ -39,11 +38,11 @@ module J2ME {
     return true;
   }
 
-  export function arrayHash(array: Uint8Array): number {
+  function arrayHash(array: Uint8Array): number {
     return arrayRangeHash(array, 0, array.length);
   }
 
-  export function arrayRangeHash(array: Uint8Array, offset: number, length: number): number {
+  function arrayRangeHash(array: Uint8Array, offset: number, length: number): number {
     var h = 0;
     var l = offset + length;
     for (var i = offset; i < l; i++) {
@@ -80,7 +79,7 @@ module J2ME {
       var hash = arrayHash(key);
       var index = (hash & 0x7FFFFFFF) % table.length;
       for (var e = table[index]; e !== null; e = e.next) {
-        if ((e.hash === hash) && uint8ArrayEqual(e.key, key)) {
+        if ((e.hash === hash) && arrayEqual(e.key, key)) {
           return true;
         }
       }
@@ -104,7 +103,7 @@ module J2ME {
       var hash = arrayHash(key);
       var index = (hash & 0x7FFFFFFF) % table.length;
       for (var e = table[index]; e !== null; e = e.next) {
-        if ((e.hash === hash) && uint8ArrayEqual(e.key, key)) {
+        if ((e.hash === hash) && arrayEqual(e.key, key)) {
           return e.value;
         }
       }
@@ -120,7 +119,7 @@ module J2ME {
       var hash = arrayHash(key);
       var index = (hash & 0x7FFFFFFF) % table.length;
       for (var e = table[index]; e !== null; e = e.next) {
-        if ((e.hash === hash) && uint8ArrayEqual(e.key, key)) {
+        if ((e.hash === hash) && arrayEqual(e.key, key)) {
           var old = e.value;
           e.value = value;
           return old;
