@@ -122,6 +122,19 @@ module J2ME {
    */
   export class ByteStream {
 
+    private static internedOneByteArrays: Uint8Array [] = ArrayUtilities.makeDenseArray(256, null);
+
+    // Most common tree byte arrays signatures, these must all be prefixed with "()". If you want
+    // to support more complicated patterns, modify |readBytes|.
+    private static internedThreeByteArraySignatures: Uint8Array [] = [
+      new Uint8Array([40, 41, 86]), // ()V
+      new Uint8Array([40, 41, 73]), // ()I
+      new Uint8Array([40, 41, 90]), // ()Z
+      new Uint8Array([40, 41, 74]), // ()J
+    ];
+
+    private static internedMap = new Uint8Hashtable(64);
+
     constructor (
       public buffer: Uint8Array,
       public offset: number
@@ -189,8 +202,61 @@ module J2ME {
       return this;
     }
 
-    readBytes(length): Uint8Array {
-      var data = this.buffer.subarray(this.offset, this.offset + length);
+    /**
+     * Interns small and frequently used Uint8Array buffers.
+     *
+     * Relative frequencies of readByte sizes.
+     *  2011: readBytes 2
+     *  1853: readBytes 1 - Special cased.
+     *  1421: readBytes 4
+     *  1170: readBytes 5
+     *  1042: readBytes 3 - Special cased, most three byte buffers are signatures of the form "()?".
+     *  1022: readBytes 6
+     *
+     * All other sizes are interned using a hashtable.
+     */
+    internBytes(length: number) {
+      var o = this.offset;
+      var buffer = this.buffer;
+      var a = buffer[o];
+      if (length === 1) { // Intern all 1 byte buffers.
+        var one = ByteStream.internedOneByteArrays;
+        var r = one[a];
+        if (r === null) {
+          r = one[a] = new Uint8Array([a]);
+        }
+        return r;
+      } else if (length === 3 && // Intern most common 3 byte buffers.
+        a === UTF8Chars.OpenParenthesis) { // Check if first byte is "(".
+        var b = buffer[o + 1];
+        if (b === UTF8Chars.CloseParenthesis) {
+          var three = ByteStream.internedThreeByteArraySignatures;
+          var c = buffer[o + 2];
+          for (var i = 0; i < three.length; i++) {
+            if (three[i][2] === c) {
+              return three[i]
+            }
+          }
+        }
+      } else {
+        var data: Uint8Array = ByteStream.internedMap.getByRange(buffer, o, length);
+        if (data) {
+          return data;
+        }
+        var data = this.buffer.subarray(o, o + length);
+        ByteStream.internedMap.put(data, data);
+        return data;
+      }
+      return null;
+    }
+
+    readBytes(length: number): Uint8Array {
+      var data = length <= 4 ? this.internBytes(length) : null;
+      if (data) {
+        this.offset += data.length;
+        return data;
+      }
+      data = this.buffer.subarray(this.offset, this.offset + length);
       this.offset += length;
       return data;
     }
