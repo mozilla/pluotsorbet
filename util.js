@@ -6,8 +6,8 @@
 var util = (function () {
   var Utf8TextDecoder = new TextDecoder("utf-8");
 
-  function decodeUtf8(arrayBuffer) {
-    return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
+  function decodeUtf8(array) {
+    return Utf8TextDecoder.decode(array);
   }
 
   /**
@@ -26,14 +26,6 @@ var util = (function () {
    */
   function decodeUtf8Array(arr) {
     return fallibleUtf8Decoder.decode(arr);
-  }
-
-  function defaultValue(type) {
-    if (type === 'J')
-      return Long.ZERO;
-    if (type[0] === '[' || type[0] === 'L')
-      return null;
-    return 0;
   }
 
   var INT_MAX = Math.pow(2, 31) - 1;
@@ -69,10 +61,6 @@ var util = (function () {
     return jStringDecoder.decode(chars.subarray(offset, offset + count));
   }
 
-  function fromJavaString(jStr) {
-    return J2ME.fromJavaString(jStr);
-  }
-
   /**
    * Returns an ArrayBufferView of the underlying code points
    * represented by the given Java string.
@@ -90,12 +78,6 @@ var util = (function () {
       return ++gen;
     }
   })();
-
-  function tag(obj) {
-    if (!obj.tag)
-      obj.tag = id();
-    return obj.tag;
-  }
 
   /**
    * Compare two typed arrays, returning *true* if they have the same length
@@ -157,14 +139,11 @@ var util = (function () {
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
     decodeUtf8Array: decodeUtf8Array,
-    defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
-    fromJavaString: fromJavaString,
     stringToCharArray: stringToCharArray,
     id: id,
-    tag: tag,
     compareTypedArrays: compareTypedArrays,
     pad: pad,
     toCodePointArray: toCodePointArray,

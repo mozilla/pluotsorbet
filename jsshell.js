@@ -8,12 +8,27 @@
 
 if (typeof console === "undefined") {
   var console = {
-    log: print
+    log: print,
   }
 }
 
 console.print = function (c) {
   putstr(String.fromCharCode(c));
+};
+
+console.info = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
+console.error = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
+var START_TIME = dateNow();
+var performance = {
+  now: function () {
+    return dateNow();
+  }
 };
 
 function check() {
@@ -93,7 +108,12 @@ var config = {
   args: "",
 };
 
+var profileTimeline = false;
+
 try {
+  if (profileTimeline) {
+    load("build/shumway.js");
+  }
   load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
     "libs/encoding.js", "util.js", "libs/jarstore.js",
     "override.js", "native.js", "string.js", "tests/override.js",
@@ -121,21 +141,17 @@ try {
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.JIT;
-
-  print("INITIALIZATION TIME: " + (dateNow() - start));
-
+  J2ME.writers = J2ME.WriterFlags.None;
   start = dateNow();
   var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
-
   while (callbacks.length) {
     (callbacks.shift())();
   }
-
-  print("RUNNING TIME: " + (dateNow() - start));
-
+  print("Time: " + (dateNow() - start).toFixed(4) + " ms");
+  if (profileTimeline) {
+    J2ME.timeline.createSnapshot().trace(new J2ME.IndentingWriter());
+  }
   // J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
-
 } catch (x) {
   print(x);
   print(x.stack);

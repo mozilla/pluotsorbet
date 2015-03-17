@@ -62,11 +62,6 @@ module J2ME {
   export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
 
   /**
-   * Enables more compact mangled names. This helps reduce code size but may cause naming collisions.
-   */
-  export var hashedMangledNames = release;
-
-  /**
    * Traces method execution.
    */
   export var traceWriter = null;
@@ -140,10 +135,10 @@ module J2ME {
   export var timeline;
   export var methodTimeline;
   export var threadTimeline;
-  export var nativeCounter = new Metrics.Counter(true);
-  export var runtimeCounter = new Metrics.Counter(true);
-  export var baselineMethodCounter = new Metrics.Counter(true);
-  export var asyncCounter = new Metrics.Counter(true);
+  export var nativeCounter = release ? null : new Metrics.Counter(true);
+  export var runtimeCounter = release ? null : new Metrics.Counter(true);
+  export var baselineMethodCounter = release ? null : new Metrics.Counter(true);
+  export var asyncCounter = release ? null : new Metrics.Counter(true);
   export var jitMethodInfos = {};
 
   export var unwindCount = 0;
@@ -411,13 +406,6 @@ module J2ME {
     c = stringHashes[s] = hashStringStrong(s);
     stringHashCount ++;
     return c;
-  }
-
-  export function mangleClassName(name: string): string {
-    if (!hashedMangledNames) {
-      return "$" + escapeString(name);
-    }
-    return "$" + hashStringToString(name);
   }
 
   /**
@@ -952,7 +940,7 @@ module J2ME {
 
   export function registerKlassSymbol(className: string) {
     // TODO: This needs to be kept in sync to how mangleClass works.
-    var mangledName = mangleClassName(className);
+    var mangledName = mangleClassName(toUTF8(className));
     if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
       return;
     }
@@ -999,11 +987,13 @@ module J2ME {
     enterTimeline("emitKlassConstructor");
     // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
     // creating a closure, which will probably be slower at runtime.
-    var source = "";
-    var writer = new IndentingWriter(false, x => source += x + "\n");
+    var source = [];
+    var writer = new IndentingWriter(false, function (x) {
+        source.push(x);
+    });
     var emitter = new Emitter(writer, false, true, true);
     J2ME.emitKlass(emitter, classInfo);
-    (1, eval)(source);
+    (1, eval)(source.join("\n"));
     leaveTimeline("emitKlassConstructor");
     // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.getClassNameSlow());
     // consoleWriter.writeLn(source);
@@ -1204,7 +1194,7 @@ module J2ME {
   }
 
   function findNativeMethodBinding(methodInfo: MethodInfo) {
-    var classBindings = Bindings[methodInfo.classInfo.getClassNameSlow()];
+    var classBindings = BindingsMap.get(methodInfo.classInfo.utf8Name);
     if (classBindings && classBindings.native) {
       var method = classBindings.native[methodInfo.name + "." + methodInfo.signature];
       if (method) {
@@ -1229,14 +1219,35 @@ module J2ME {
     };
   }
 
+  // OverrideMap is constructed lazily.
+  var overrideMap = null;
+
+  /**
+   * Builds a hashmap that keeps track of the class names that have overriden methods. This is a temporary
+   * solution to avoid creating methodInfo implKeys unnecessarily for methods whose class has no overriden
+   * methods.
+   *
+   * TODO: This mechanism should be deleted once we get rid of overrides.
+   */
+  function getOverrideMap() {
+    if (!overrideMap) {
+      overrideMap = new Uint8Hashtable(10);
+      for (var k in Override) {
+        var className = k.substring(0, k.indexOf("."));
+        overrideMap.put(cacheUTF8(className), true);
+      }
+    }
+    return overrideMap;
+  }
+
   function findNativeMethodImplementation(methodInfo: MethodInfo) {
-    var implKey = methodInfo.implKey;
     // Look in bindings first.
     var binding = findNativeMethodBinding(methodInfo);
     if (binding) {
-      return release ? binding : reportError(binding, implKey);
+      return release ? binding : reportError(binding, methodInfo.implKey);
     }
     if (methodInfo.isNative) {
+      var implKey = methodInfo.implKey;
       if (implKey in Native) {
         return release ? Native[implKey] : reportError(Native[implKey], implKey);
       } else {
@@ -1246,8 +1257,11 @@ module J2ME {
           stderrWriter.errorLn("implKey " + implKey + " is native but does not have an implementation.");
         }
       }
-    } else if (implKey in Override) {
-      return release ? Override[implKey] : reportError(Override[implKey], implKey);
+    } else if (getOverrideMap().get(methodInfo.classInfo.utf8Name)) {
+      var implKey = methodInfo.implKey;
+      if (implKey in Override) {
+        return release ? Override[implKey] : reportError(Override[implKey], implKey);
+      }
     }
     return null;
   }
@@ -1278,13 +1292,12 @@ module J2ME {
       if (!methodInfo.isStatic) {
         frame.setLocal(j++, this);
       }
-      var typeDescriptors = methodInfo.signatureDescriptor.typeDescriptors;
-      release || assert (arguments.length === typeDescriptors.length - 1,
-        "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor " +
-        methodInfo.signatureDescriptor);
-      for (var i = 1; i < typeDescriptors.length; i++) {
+      var signatureKinds = methodInfo.signatureKinds;
+      release || assert (arguments.length === signatureKinds.length - 1,
+        "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
+      for (var i = 1; i < signatureKinds.length; i++) {
         frame.setLocal(j++, arguments[i - 1]);
-        if (isTwoSlot(typeDescriptors[i].kind)) {
+        if (isTwoSlot(signatureKinds[i])) {
           frame.setLocal(j++, null);
         }
       }
@@ -1330,7 +1343,7 @@ module J2ME {
   function linkKlassFields(klass: Klass) {
     var classInfo = klass.classInfo;
     var fields = classInfo.getFields();
-    var classBindings = Bindings[klass.classInfo.getClassNameSlow()];
+    var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
     if (classBindings && classBindings.fields) {
       for (var i = 0; i < fields.length; i++) {
         var field = fields[i];
@@ -1440,7 +1453,6 @@ module J2ME {
     runtimeCounter && runtimeCounter.count("linkKlassMethod");
     var fn;
     var methodType;
-    var classBindings = Bindings[klass.classInfo.getClassNameSlow()];
     var nativeMethod = findNativeMethodImplementation(methodInfo);
     if (nativeMethod) {
       linkWriter && linkWriter.writeLn("Method: " + methodInfo.name + methodInfo.signature + " -> Native / Override");
@@ -1476,6 +1488,7 @@ module J2ME {
     if (!methodInfo.isStatic && methodInfo.virtualName) {
       release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName));
       klass.prototype[methodInfo.virtualName] = fn;
+      var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
       if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
         var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
         if (methodKey) {
@@ -1989,15 +2002,17 @@ module J2ME {
     return e;
   }
 
+  var initializeMethodInfo = null;
   export function classInitCheck(classInfo: ClassInfo) {
     if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.getClassNameSlow()]) {
       return;
     }
     linkKlass(classInfo);
     var runtimeKlass = $.getRuntimeKlass(classInfo.klass);
-    // runtimeKlass.classObject.initialize();
-    var methodInfo = runtimeKlass.classObject.klass.classInfo.getMethodByNameString("initialize", "()V");
-    runtimeKlass.classObject[methodInfo.virtualName]();
+    if (!initializeMethodInfo) {
+      initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
+    }
+    runtimeKlass.classObject[initializeMethodInfo.virtualName]();
   }
 
   /**

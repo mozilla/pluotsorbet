@@ -14,6 +14,13 @@ var MIDP = (function() {
     updateCanvas();
   };
 
+  function updatePhysicalScreenSize() {
+    if (!config.autosize || /no|0/.test(config.autosize)) {
+      physicalScreenWidth = document.getElementById('display').clientWidth;
+      physicalScreenHeight = document.getElementById('display').clientHeight;
+    }
+  }
+
   function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
@@ -53,7 +60,7 @@ var MIDP = (function() {
   var manifest = {};
 
   Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
-    var bytes = JARStore.loadFileFromJAR(util.fromJavaString(jar), util.fromJavaString(entryName));
+    var bytes = JARStore.loadFileFromJAR(J2ME.fromJavaString(jar), J2ME.fromJavaString(entryName));
     if (!bytes) {
       throw $.newIOException();
     }
@@ -66,211 +73,38 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
-    console.info(util.fromJavaString(message));
+    console.info(J2ME.fromJavaString(message));
   };
-
-  var groupTBL = [
-    "net_access",
-    "low_level_net_access",
-    "call_control",
-    "application_auto_invocation",
-    "local_connectivity",
-    "messaging",
-    "restricted_messaging",
-    "multimedia_recording",
-    "read_user_data_access",
-    "write_user_data_access",
-    "location",
-    "landmark",
-    "payment",
-    "authentication",
-    "smart_card",
-    "satsa"
-  ];
 
   Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
-    var list = J2ME.newStringArray(groupTBL.length);
-    groupTBL.forEach(function (e, n) {
-      list[n] = J2ME.newString(e);
-    });
-    return list;
+    return J2ME.newStringArray(0);
   };
-
-  var messagesTBL = [
-    ["Airtime",
-     "How often should %1 ask for permission to use airtime? Using airtime may result in charges.",
-     "Don't use airtime and don't ask",
-     "Is it OK to Use Airtime?",
-     "%1 wants to send and receive data using the network. This will use airtime and may result in charges.\n\nIs it OK to use airtime?",
-    ],
-    ["Network",
-     "How often should %1 ask for permission to use network? Using network may result in charges.",
-     "Don't use network and don't ask",
-     "Is it OK to Use Network?",
-     "%1 wants to send and receive data using the network. This will use airtime and may result in charges.\n\nIs it OK to use network?"
-    ],
-    ["Restricted Network Connections",
-     "How often should %1 ask for permission to open a restricted network connection?",
-     "Don't open any restricted connections and don't ask",
-     "Is it OK to open a restricted network connection?",
-     "%1 wants to open a restricted network connection.\n\nIs it OK to open a restricted network connection?"
-    ],
-    ["Auto-Start Registration",
-     "How often should %1 ask for permission to register itself to automatically start?",
-     "Don't register and don't ask",
-     "Is it OK to automatically start the application?",
-     "%1 wants to register itself to be automatically started.\n\nIs it OK to register to be automatically started?"
-    ],
-    ["Computer Connection",
-     "How often should %1 ask for permission to connect to a computer? This may require a data cable that came with your phone.",
-     "Don't connect and don't ask",
-     "Is it OK to Connect?",
-     "%1 wants to connect to a computer. This may require a data cable.\n\nIs it OK to make a connection?"
-    ],
-    ["Messaging",
-     "How often should %1 ask for permission before sending or receiving text messages?",
-     "Don't send or receive messages and don't ask",
-     "Is it OK to Send Messages?",
-     "%1 wants to send text message(s). This could result in charges.%3 message(s) will be sent to %2.\n\nIs it OK to send messages?"
-    ],
-    ["Secured Messaging",
-     "How often should %1 ask for permission before sending or receiving secured text messages?",
-     "Don't send or receive secured messages and don't ask",
-     "Is it OK to Send secured Messages?",
-     "%1 wants to send text secured message(s). This could result in charges.%3 message(s) will be sent to %2.\n\nIs it OK to send messages?"
-    ],
-    ["Recording",
-     "How often should %1 ask for permission to record audio and images? This will use space on your phone.",
-     "Don't record and don't ask",
-     "Is it OK to Record?",
-     "%1 wants to record an image or audio clip.\n\nIs it OK to record?"
-    ],
-    ["Read Personal Data",
-     "How often should %1 ask for permission to read your personal data (contacts, appointments, etc)?",
-     "Don't read my data and don't ask",
-     "Is it OK to read your personal data?",
-     "%1 wants to read your personal data (contacts, appointments, etc)\n\nIs it OK to read your personal data?"
-    ],
-    ["Update Personal Data",
-     "How often should %1 ask for permission to update your personal data (contacts, appointments, etc)?",
-     "Don't update my data and don't ask",
-     "Is it OK to update your personal data?",
-     "%1 wants to update your personal data (contacts, appointments, etc)\n\nIs it OK to update your personal data?",
-     "%1 wants to update %2\n\nIs it OK to update this data?"
-    ],
-    ["Obtain Current Location",
-     "How often should %1 ask for permission to obtain your location?",
-     "Don't give my location and don't ask",
-     "Is it OK to obtain your location?",
-     "Application %1 wants to obtain your the location.\n\nIs it OK to obtain your location?"
-    ],
-    ["Access Landmark Database",
-     "How often should %1 ask for permission to access your landmark database?",
-     "Don't access my landmark database and don't ask",
-     "Is it OK to access your landmark database?",
-     "Application %1 wants to access your landmark database.\n\nIs it OK to access your landmark database?"
-    ],
-    ["payment"],
-    ["Personal Indentification",
-     "How often should %1 ask for permission to use your smart card to identify you?",
-     "Don't sign and don't ask",
-     "Is it OK to obtain your personal signature?",
-     "%1 wants to obtain your personal digital signature.\n\nIs it OK to obtain your personal signature?\nContent to be signed:\n\n%3"
-    ],
-    ["Smart Card Communication",
-     "How often should %1 ask for permission to access your smart card?",
-     "Don't access my smart card and don't ask",
-     "Is it OK to access your smart card?",
-     "Application %1 wants to access your smart card.\n\nIs it OK to access your smart card?"
-    ],
-    ["satsa"]
-  ];
 
   Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
-    var name = util.fromJavaString(jName);
-    var list = null;
-    groupTBL.forEach(function(e, n) {
-      if (e === name) {
-        var messages = messagesTBL[n];
-        list = J2ME.newStringArray(messages.length);
-        messages.forEach(function (e, n) {
-          list[n] = J2ME.newString(e);
-        });
-      }
-    });
-    return list;
+    return null;
   };
 
-  var membersTBL = [
-    ["javax.microedition.io.Connector.http",
-     "javax.microedition.io.Connector.https",
-     "javax.microedition.io.Connector.obex.client.tcp",
-     "javax.microedition.io.Connector.obex.server.tcp"],
-    ["javax.microedition.io.Connector.datagram",
-     "javax.microedition.io.Connector.datagramreceiver",
-     "javax.microedition.io.Connector.socket",
-     "javax.microedition.io.Connector.serversocket",
-     "javax.microedition.io.Connector.ssl"],
-    ["javax.microedition.io.Connector.sip",
-     "javax.microedition.io.Connector.sips"],
-    ["javax.microedition.io.PushRegistry",
-     "javax.microedition.content.ContentHandler"],
-    ["javax.microedition.io.Connector.comm",
-     "javax.microedition.io.Connector.obex.client",
-     "javax.microedition.io.Connector.obex.server",
-     "javax.microedition.io.Connector.bluetooth.client",
-     "javax.microedition.io.Connector.bluetooth.server"],
-    ["javax.wireless.messaging.sms.send",
-     "javax.wireless.messaging.mms.send",
-     "javax.microedition.io.Connector.sms",
-     "javax.wireless.messaging.sms.receive",
-     "javax.microedition.io.Connector.mms",
-     "javax.wireless.messaging.mms.receive"],
-    ["javax.wireless.messaging.cbs.receive",
-     "javax.microedition.io.Connector.cbs"],
-    ["javax.microedition.media.control.RecordControl",
-     "javax.microedition.media.control.VideoControl.getSnapshot",
-     "javax.microedition.amms.control.camera.enableShutterFeedback"],
-    ["javax.microedition.pim.ContactList.read",
-     "javax.microedition.pim.EventList.read",
-     "javax.microedition.pim.ToDoList.read",
-     "javax.microedition.io.Connector.file.read"],
-    ["javax.microedition.pim.ContactList.write",
-     "javax.microedition.pim.EventList.write",
-     "javax.microedition.pim.ToDoList.write",
-     "javax.microedition.io.Connector.file.write",
-     "javax.microedition.amms.control.tuner.setPreset"],
-    ["javax.microedition.location.Location",
-     "javax.microedition.location.ProximityListener",
-     "javax.microedition.location.Orientation"],
-    ["javax.microedition.location.LandmarkStore.read",
-     "javax.microedition.location.LandmarkStore.write",
-     "javax.microedition.location.LandmarkStore.category",
-     "javax.microedition.location.LandmarkStore.management"],
-    ["javax.microedition.payment.process"],
-    ["javax.microedition.securityservice.CMSMessageSignatureService"],
-    ["javax.microedition.apdu.aid",
-     "javax.microedition.jcrmi"],
-    ["javax.microedition.apdu.sat"],
-  ];
+  Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(name) {
+    return J2ME.newStringArray(0);
+  };
 
-  Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
-    var name = util.fromJavaString(jName);
-    var list = null;
-    groupTBL.forEach(function(e, n) {
-      if (e === name) {
-        var members = membersTBL[n];
-        list = J2ME.newStringArray(members.length);
-        members.forEach(function (e, n) {
-          list[n] = J2ME.newString(e);
-        });
-      }
-    });
-    return list;
+  Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
+    return J2ME.newStringArray(0);
+  };
+
+  Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
+    return 1;
+  };
+
+  Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
+    return 1;
+  };
+
+  Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function() {
   };
 
   Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
-    request = util.fromJavaString(request);
+    request = J2ME.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
       if (request.endsWith(".jad")) {
         // The download will start after the MIDlet has terminated its execution.
@@ -304,107 +138,6 @@ var MIDP = (function() {
     state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, J2ME.newString((args.length > 0) ? args[0] : ""));
     state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, J2ME.newString((args.length > 1) ? args[1] : ""));
     state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, J2ME.newString((args.length > 2) ? args[2] : ""));
-  };
-
-  var domainTBL = [
-    "manufacturer",
-    "operator",
-    "identified_third_party",
-    "unidentified_third_party,unsecured",
-    "minimum,unsecured",
-    "maximum,unsecured",
-  ];
-
-  Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
-    var list = J2ME.newStringArray(domainTBL.length);
-    domainTBL.forEach(function (e, n) {
-      list[n] = J2ME.newString(e);
-    });
-    return list;
-  };
-
-  var NEVER = 0;
-  var ALLOW = 1;
-  var BLANKET = 4;
-  var SESSION = 8;
-  var ONESHOT = 16;
-
-  var identifiedTBL = {
-    net_access: { max: BLANKET, default: SESSION},
-    low_level_net_access: { max: BLANKET, default: SESSION},
-    call_control: { max: BLANKET, default: ONESHOT},
-    application_auto_invocation: { max: BLANKET, default: ONESHOT},
-    local_connectivity: { max: BLANKET, default: SESSION},
-    messaging: { max: BLANKET, default: ONESHOT},
-    restricted_messaging: { max: BLANKET, default: ONESHOT},
-    multimedia_recording: { max: BLANKET, default: SESSION},
-    read_user_data_access: { max: BLANKET, default: ONESHOT},
-    write_user_data_access: { max: BLANKET, default: ONESHOT},
-    location: { max: BLANKET, default: SESSION},
-    landmark: { max: BLANKET, default: SESSION},
-    payment: { max: ALLOW,   default: ALLOW},
-    authentication: { max: BLANKET, default: SESSION},
-    smart_card: { max: BLANKET, default: SESSION},
-    satsa: { max: NEVER,   default: NEVER},
-  };
-
-  var unidentifiedTBL = {
-    net_access: { max: SESSION, default: ONESHOT},
-    low_level_net_access: { max: SESSION, default: ONESHOT},
-    call_control: { max: ONESHOT, default: ONESHOT},
-    application_auto_invocation: { max: SESSION, default: ONESHOT},
-    local_connectivity: { max: BLANKET, default: ONESHOT},
-    messaging: { max: ONESHOT, default: ONESHOT},
-    restricted_messaging: { max: ONESHOT, default: ONESHOT},
-    multimedia_recording: { max: SESSION, default: ONESHOT},
-    read_user_data_access: { max: ONESHOT, default: ONESHOT},
-    write_user_data_access: { max: ONESHOT, default: ONESHOT},
-    location: { max: SESSION, default: ONESHOT},
-    landmark: { max: SESSION, default: ONESHOT},
-    payment: { max: NEVER,   default: NEVER},
-    authentication: { max: NEVER,   default: NEVER},
-    smart_card: { max: NEVER,   default: NEVER},
-    satsa: { max: NEVER,   default: NEVER},
-  };
-
-  Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    var allow = NEVER;
-    switch (util.fromJavaString(domain)) {
-      case "manufacturer":
-      case "maximum":
-      case "operator":
-        allow = ALLOW;
-        break;
-      case "identified_third_party":
-        allow = identifiedTBL[util.fromJavaString(group)].default;
-        break;
-      case "unidentified_third_party":
-        allow = unidentifiedTBL[util.fromJavaString(group)].default;
-        break;
-    }
-    return allow;
-  };
-
-  Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    var allow = NEVER;
-    switch (util.fromJavaString(domain)) {
-      case "manufacturer":
-      case "maximum":
-      case "operator":
-        allow = ALLOW;
-        break;
-      case "identified_third_party":
-        allow = identifiedTBL[util.fromJavaString(group)].max;
-        break;
-      case "unidentified_third_party":
-        allow = unidentifiedTBL[util.fromJavaString(group)].max;
-        break;
-    }
-    return allow;
-  };
-
-  Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function() {
-    console.warn("Permissions.loadingFinished.()V not implemented");
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
@@ -445,7 +178,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     var value;
-    switch (util.fromJavaString(key)) {
+    switch (J2ME.fromJavaString(key)) {
       case "com.sun.midp.publickeystore.WebPublicKeyStore":
         if (config.midletClassName == "RunTests") {
           value = "_test.ks";
@@ -484,7 +217,7 @@ var MIDP = (function() {
         value = null;
         break;
       default:
-        console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + util.fromJavaString(key));
+        console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + J2ME.fromJavaString(key));
         value = null;
         break;
     }
@@ -492,7 +225,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(file) {
-    var fileName = "assets/0/" + util.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
+    var fileName = "assets/0/" + J2ME.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = JARStore.loadFile(fileName);
     if (!data) {
       console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
@@ -563,8 +296,8 @@ var MIDP = (function() {
     window.addEventListener("resize", onWindowResize);
   } else {
     document.documentElement.classList.add('debug-mode');
-    physicalScreenWidth = 240;
-    physicalScreenHeight = 320;
+    physicalScreenWidth = document.getElementById('display').clientWidth;
+    physicalScreenHeight = document.getElementById('display').clientHeight;
 
     updateCanvas();
     isVKVisible = function() {
@@ -840,7 +573,7 @@ var MIDP = (function() {
   var lastInterIsolateMutexID = -1;
 
   Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(jName) {
-    var name = util.fromJavaString(jName);
+    var name = J2ME.fromJavaString(jName);
 
     var mutex;
     for (var i = 0; i < interIsolateMutexes.length; i++) {
@@ -940,10 +673,11 @@ var MIDP = (function() {
     }
 
     // Perform updating.
-    var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+    var dialogTemplateNode = document.getElementById('download-progress-dialog');
+    var dialog = dialogTemplateNode.cloneNode(true);
     dialog.style.display = 'block';
     dialog.classList.add('visible');
-    document.body.appendChild(dialog);
+    dialogTemplateNode.parentNode.appendChild(dialog);
 
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
@@ -1323,7 +1057,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(connection) {
-    var values = util.fromJavaString(connection).split(',');
+    var values = J2ME.fromJavaString(connection).split(',');
 
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
@@ -1418,7 +1152,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(suiteId, className) {
-    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" + suiteId + ", " + util.fromJavaString(className) + ")");
+    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" + suiteId + ", " + J2ME.fromJavaString(className) + ")");
   };
 
   Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(name) {
@@ -1520,6 +1254,8 @@ var MIDP = (function() {
     keyRelease: keyRelease,
     displayId: displayId,
     context2D: context2D,
+    updatePhysicalScreenSize: updatePhysicalScreenSize,
+    updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,
   };
 })();

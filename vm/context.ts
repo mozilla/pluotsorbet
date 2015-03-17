@@ -278,19 +278,18 @@ module J2ME {
       return this.stack[i];
     }
 
-    popArgumentsInto(signatureDescriptor: SignatureDescriptor, args): any [] {
+    popArgumentsInto(methodInfo: MethodInfo, args): any [] {
       var stack = this.stack;
-      var typeDescriptors = signatureDescriptor.typeDescriptors;
-      var argumentSlotCount = signatureDescriptor.getArgumentSlotCount();
-      for (var i = 1, j = stack.length - argumentSlotCount, k = 0; i < typeDescriptors.length; i++) {
-        var typeDescriptor = typeDescriptors[i];
+      var signatureKinds = methodInfo.signatureKinds;
+      var argumentSlots = methodInfo.argumentSlots;
+      for (var i = 1, j = stack.length - argumentSlots, k = 0; i < signatureKinds.length; i++) {
         args[k++] = stack[j++];
-        if (isTwoSlot(typeDescriptor.kind)) {
+        if (isTwoSlot(signatureKinds[i])) {
           j++;
         }
       }
-      release || assert(j === stack.length && k === signatureDescriptor.getArgumentCount());
-      stack.length -= argumentSlotCount;
+      release || assert(j === stack.length && k === signatureKinds.length - 1);
+      stack.length -= argumentSlots;
       args.length = k;
       return args;
     }
