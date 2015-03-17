@@ -3,8 +3,8 @@
 var DEBUG_FS = false;
 
 var fs = (function() {
-  var reportRequestError = function(type, request) {
-    console.error(type + " error " + request.error);
+  var reportRequestError = function(type, event) {
+    console.error(type + " error " + event.target.error);
   }
 
   var Store = function() {
@@ -25,11 +25,19 @@ var fs = (function() {
   };
 
   Store.DBNAME = "asyncStorage";
-  Store.DBVERSION = 4;
+  Store.DBVERSION = 5;
   Store.DBSTORENAME_1 = "keyvaluepairs";
   Store.DBSTORENAME_2 = "fs";
   Store.DBSTORENAME_4 = "fs4";
+
+  // Retain the old const to avoid having to change every reference to it.
   Store.DBSTORENAME = Store.DBSTORENAME_4;
+
+  // The names of the stat and data object stores.  The stat store contains
+  // all information about files except their data, while the data store
+  // contains the file data.
+  Store.DB_STAT_STORE = Store.DBSTORENAME_4;
+  Store.DB_DATA_STORE = "fsData";
 
   Store.prototype.upgrade = {
     "1to2": function(db, transaction, next) {
@@ -121,6 +129,34 @@ var fs = (function() {
         next();
       };
     },
+
+    "4to5": function(db, transaction, next) {
+      // Create new object store.
+      var dataObjectStore = db.createObjectStore(Store.DB_DATA_STORE, { keyPath: "pathname" });
+
+      // Iterate the keys in the stat object store and move the file data
+      // to the data object store.
+      var statObjectStore = transaction.objectStore(Store.DB_STAT_STORE);
+      statObjectStore.openCursor().onsuccess = function(event) {
+        var cursor = event.target.result;
+
+        if (cursor) {
+          var statRecord = cursor.value;
+          var dataRecord = {
+            pathname: statRecord.pathname,
+            data: statRecord.data,
+          };
+          delete statRecord.data;
+          statObjectStore.put(statRecord);
+          dataObjectStore.put(dataRecord);
+          cursor.continue();
+          return;
+        }
+
+        next();
+      };
+    },
+
   };
 
   Store.prototype.init = function(cb) {
@@ -146,6 +182,7 @@ var fs = (function() {
         // or perhaps moving the latest object store creation into a function.
         var objectStore = openreq.result.createObjectStore(Store.DBSTORENAME, { keyPath: "pathname" });
         objectStore.createIndex("parentDir", "parentDir", { unique: false });
+        db.createObjectStore(Store.DB_DATA_STORE, { keyPath: "pathname" });
       } else {
         var version = event.oldVersion;
         var next = (function() {
@@ -187,14 +224,34 @@ var fs = (function() {
     return value;
   };
 
-  Store.prototype.setItem = function(key, value) {
-    this.map.set(key, value);
-    this.changesToSync.set(key, { type: "put", value: value });
+  Store.prototype.getData = function(pathname) {
+    return new Promise((function(resolve, reject) {
+      // We have to sync to ensure data is written to the data store.
+      this.sync((function() {
+        var transaction = this.db.transaction(Store.DB_DATA_STORE, "readonly");
+        if (DEBUG_FS) { console.log("getData " + pathname); }
+        var objectStore = transaction.objectStore(Store.DB_DATA_STORE);
+        var then = performance.now();
+        var request = objectStore.get(pathname);
+        request.onsuccess = function(event) {
+          resolve(event.target.result.data);
+          if (DEBUG_FS) { console.log("getData " + pathname + " completed in " + (performance.now() - then) + "ms"); }
+        };
+        request.onerror = function(event) {
+          reject(event.target.error.name);
+        };
+      }).bind(this));
+    }).bind(this));
   };
 
-  Store.prototype.removeItem = function(key) {
+  Store.prototype.setItem = function(key, value, data) {
+    this.map.set(key, value);
+    this.changesToSync.set(key, { type: "put", value: value, data: data });
+  };
+
+  Store.prototype.removeItem = function(key, hasData) {
     this.map.set(key, null);
-    this.changesToSync.set(key, { type: "delete" });
+    this.changesToSync.set(key, { type: "delete", hasData: hasData });
   };
 
   Store.prototype.clear = function() {
@@ -223,25 +280,33 @@ var fs = (function() {
       return;
     }
 
-    var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+    var transaction = this.db.transaction([Store.DB_STAT_STORE, Store.DB_DATA_STORE], "readwrite");
     if (DEBUG_FS) { console.log("sync initiated"); }
-    var objectStore = transaction.objectStore(Store.DBSTORENAME);
+    var statStore = transaction.objectStore(Store.DB_STAT_STORE);
+    var dataStore = transaction.objectStore(Store.DB_DATA_STORE);
 
     this.changesToSync.forEach((function(change, key) {
-      var req;
       if (change.type == "put") {
-        change.value.pathname = key;
-        req = objectStore.put(change.value);
         if (DEBUG_FS) { console.log("put " + key); }
-        req.onerror = function() {
-          console.error("Error putting " + key + ": " + req.error.name);
+        change.value.pathname = key;
+        statStore.put(change.value).onerror = function(event) {
+          console.error("Error putting " + key + ": " + event.target.error.name);
         };
+        if (change.data) {
+          dataStore.put({ pathname: key, data: change.data }).onerror = function(event) {
+            console.error("Error putting " + key + " data: " + event.target.error.name);
+          };
+        }
       } else if (change.type == "delete") {
-        req = objectStore.delete(key);
         if (DEBUG_FS) { console.log("delete " + key); }
-        req.onerror = function() {
-          console.error("Error deleting " + key + ": " + req.error.name);
+        statStore.delete(key).onerror = function(event) {
+          console.error("Error deleting " + key + ": " + event.target.error.name);
         };
+        if (change.hasData) {
+          dataStore.delete(key).onerror = function(event) {
+            console.error("Error deleting " + key + " data: " + event.target.error.name);
+          };
+        }
       }
     }).bind(this));
 
@@ -259,11 +324,12 @@ var fs = (function() {
     var promises = [];
 
     this.sync((function() {
-      var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
+      var transaction = this.db.transaction([Store.DB_STAT_STORE, Store.DB_DATA_STORE], "readonly");
       if (DEBUG_FS) { console.log("export initiated"); }
-      var objectStore = transaction.objectStore(Store.DBSTORENAME);
+      var statStore = transaction.objectStore(Store.DB_STAT_STORE);
+      var dataStore = transaction.objectStore(Store.DB_DATA_STORE);
 
-      var req = objectStore.openCursor();
+      var req = statStore.openCursor();
       req.onerror = function() {
         console.error("export error " + req.error);
       };
@@ -283,16 +349,18 @@ var fs = (function() {
               output[key] = record;
             } else {
               promises.push(new Promise(function(resolve, reject) {
-                var reader = new FileReader();
-                reader.addEventListener("error", function() {
-                  reject("Failed to read: " + key);
-                });
-                reader.addEventListener("load", function() {
-                  record.data = Array.prototype.slice.call(new Int8Array(reader.result));
-                  output[key] = record;
-                  resolve();
-                });
-                reader.readAsArrayBuffer(record.data);
+                dataStore.get(key).onsuccess = function(event) {
+                  var reader = new FileReader();
+                  reader.addEventListener("error", function() {
+                    reject("Failed to read: " + key);
+                  });
+                  reader.addEventListener("load", function() {
+                    record.data = Array.prototype.slice.call(new Int8Array(reader.result));
+                    output[key] = record;
+                    resolve();
+                  });
+                  reader.readAsArrayBuffer(event.target.result ? event.target.result.data : []);
+                }
               }));
             }
           });
@@ -313,22 +381,25 @@ var fs = (function() {
     var reader = new FileReader();
     reader.onload = (function() {
       var input = JSON.parse(reader.result);
-      var transaction = this.db.transaction(Store.DBSTORENAME, "readwrite");
+      var transaction = this.db.transaction([Store.DB_STAT_STORE, Store.DB_DATA_STORE], "readwrite");
       if (DEBUG_FS) { console.log("import initiated"); }
       this.map.clear();
-      var objectStore = transaction.objectStore(Store.DBSTORENAME);
-      var req = objectStore.clear();
-      req.onerror = reportRequestError.bind(null, "import", req);
+      var statStore = transaction.objectStore(Store.DB_STAT_STORE);
+      var dataStore = transaction.objectStore(Store.DB_DATA_STORE);
+      statStore.clear().onerror = reportRequestError.bind(null, "import: clear stat store");
+      dataStore.clear().onerror = reportRequestError.bind(null, "import: clear data store");
       Object.keys(input).forEach((function(key) {
         if (DEBUG_FS) { console.log("importing " + key); }
         var record = input[key];
+        var data;
         if (!record.isDir) {
-          record.data = new Blob([new Int8Array(record.data)]);
+          data = new Blob([new Int8Array(record.data)]);
+          delete record.data;
         }
         this.map.set(key, record);
         record.pathname = key;
-        var req = objectStore.put(record);
-        req.onerror = reportRequestError.bind(null, "import", req);
+        statStore.put(record).onerror = reportRequestError.bind(null, "import: put stat");
+        dataStore.put({ pathname: key, data: data }).onerror = reportRequestError.bind(null, "import: put data");
       }).bind(this));
       transaction.oncomplete = function() {
         if (DEBUG_FS) { console.log("import completed"); }
@@ -442,24 +513,29 @@ var fs = (function() {
     if (record == null || record.isDir) {
       setZeroTimeout(function() { cb(-1) });
     } else {
-      var reader = new FileReader();
-      reader.addEventListener("error", function() {
-        console.error("Failed to read blob data from: " + path);
-        setZeroTimeout(function() { cb(-1) });
-      });
-      reader.addEventListener("load", function() {
-        openedFiles.set(++lastId, {
-          dirty: false,
-          path: path,
-          buffer: new FileBuffer(new Int8Array(reader.result)),
-          mtime: record.mtime,
-          size: record.size,
-          position: 0,
-          record: record,
+      store.getData(path).then(function(data) {
+        var reader = new FileReader();
+        reader.addEventListener("error", function() {
+          console.error("Failed to read blob data from: " + path);
+          cb(-1);
         });
-        cb(lastId);
+        reader.addEventListener("load", function() {
+          openedFiles.set(++lastId, {
+            dirty: false,
+            path: path,
+            buffer: new FileBuffer(new Int8Array(reader.result)),
+            mtime: record.mtime,
+            size: record.size,
+            position: 0,
+            record: record,
+          });
+          cb(lastId);
+        });
+        reader.readAsArrayBuffer(data);
+      }).catch(function() {
+        console.error("Failed to get data for: " + path);
+        cb(-1);
       });
-      reader.readAsArrayBuffer(record.data);
     }
   }
 
@@ -556,10 +632,10 @@ var fs = (function() {
       return;
     }
 
-    openedFile.record.data = new Blob([openedFile.buffer.getContent()]);
+    var data = new Blob([openedFile.buffer.getContent()]);
     openedFile.record.mtime = openedFile.mtime;
     openedFile.record.size = openedFile.size;
-    store.setItem(openedFile.path, openedFile.record);
+    store.setItem(openedFile.path, openedFile.record, data);
     openedFile.dirty = false;
   }
 
@@ -620,24 +696,31 @@ var fs = (function() {
     return !!record;
   }
 
-  function truncate(path, size) {
+  function truncate(path, size, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs truncate " + path); }
 
     var record = store.getItem(path);
     if (record == null || record.isDir) {
-      return false;
+      setZeroTimeout(function() { cb(false) });
+      return;
     }
 
     if (size >= record.size) {
-      return true;
+      setZeroTimeout(function() { cb(true) });
+      return;
     }
 
-    record.data = record.data.slice(0, size || 0, record.data.type);
-    record.mtime = Date.now();
-    record.size = size || 0;
-    store.setItem(path, record);
-    return true;
+    store.getData(path).then(function(data) {
+      data = data.slice(0, size || 0, data.type);
+      record.mtime = Date.now();
+      record.size = size || 0;
+      store.setItem(path, record, data);
+      cb(true);
+    }).catch(function(error) {
+      console.error(error);
+      cb(false);
+    });
   }
 
   function ftruncate(fd, size) {
@@ -681,11 +764,11 @@ var fs = (function() {
       }
     }
 
-    store.removeItem(path);
+    store.removeItem(path, !record.isDir);
     return true;
   }
 
-  function createInternal(path, record) {
+  function createInternal(path, record, data) {
     var name = basename(path);
     var dir = dirname(path);
 
@@ -707,7 +790,7 @@ var fs = (function() {
     }
 
     // Create the file.
-    store.setItem(path, record);
+    store.setItem(path, record, data);
 
     return true;
   }
@@ -719,12 +802,11 @@ var fs = (function() {
     var record = {
       isDir: false,
       mtime: Date.now(),
-      data: blob,
       size: blob.size,
       parentDir: dirname(path),
     };
 
-    return createInternal(path, record);
+    return createInternal(path, record, blob);
   }
 
   function mkdir(path) {
@@ -796,7 +878,7 @@ var fs = (function() {
 
   // Callers of this function should make sure
   // newPath doesn't exist.
-  function rename(oldPath, newPath) {
+  function rename(oldPath, newPath, cb) {
     oldPath = normalizePath(oldPath);
     newPath = normalizePath(newPath);
     if (DEBUG_FS) { console.log("fs rename " + oldPath + " -> " + newPath); }
@@ -804,7 +886,8 @@ var fs = (function() {
     for (var file of openedFiles.values()) {
       if (file.path === oldPath) {
         if (DEBUG_FS) { console.log("file is open"); }
-        return false;
+        setZeroTimeout(function() { cb(false) });
+        return;
       }
     }
 
@@ -812,24 +895,33 @@ var fs = (function() {
 
     // If the old path doesn't exist, we can't move it.
     if (oldRecord == null) {
-      return false;
+      setZeroTimeout(function() { cb(false) });
+      return;
     }
 
-    // If the old path is a dir with files in it, then we don't move it.
-    // XXX Move it along with its files.
+    function doRename(data) {
+      store.removeItem(oldPath, !oldRecord.isDir);
+      oldRecord.parentDir = dirname(newPath);
+      store.setItem(newPath, oldRecord, data);
+      cb(true);
+    }
+
     if (oldRecord.isDir) {
+      // If the old path is a dir with files in it, then we don't move it.
+      // XXX Move it along with its files.
       for (var value of store.map.values()) {
         if (value && value.parentDir === oldPath) {
           console.error("rename directory containing files not implemented: " + oldPath + " to " + newPath);
-          return false;
+          setZeroTimeout(function() { cb(false) });
+          return;
         }
       }
+      setZeroTimeout(doRename);
+    } else {
+      store.getData(oldPath).then(function(data) {
+        doRename(data);
+      });
     }
-
-    store.removeItem(oldPath);
-    oldRecord.parentDir = dirname(newPath);
-    store.setItem(newPath, oldRecord);
-    return true;
   }
 
   function stat(path) {
