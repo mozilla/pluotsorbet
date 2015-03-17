@@ -1,4 +1,4 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks l10n
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
@@ -141,12 +141,17 @@ tests/tests.jar: tests
 tests: java jasmin
 	make -C tests
 
+LANG_FILES=$(shell find l10n -name "*.xml")
+LANG_DESTS=java/$(LANG_FILES:.xml=.json)
+
 java/classes.jar: java
-java: l10n
+java: $(LANG_DESTS)
 	make -C java
 
-l10n:
-	make -C l10n
+$(LANG_DESTS): $(LANG_FILES)
+	rm -rf java/l10n/
+	mkdir java/l10n/
+	$(foreach file,$(LANG_FILES), ./l10n/xml_to_json.py $(file) java/$(file:.xml=.json);)
 
 certs:
 	make -C certs
@@ -164,5 +169,5 @@ clean:
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
-	make -C l10n clean
+	rm -rf java/l10n/
 	make -C bench clean
