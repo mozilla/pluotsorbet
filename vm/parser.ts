@@ -81,18 +81,19 @@ module J2ME {
     return ByteStream.readString(s);
   }
 
-  function strcat(a: Uint8Array, b: Uint8Array): Uint8Array {
-    var r = new Uint8Array(a.length + b.length);
-    r.set(a, 0);
-    r.set(b, a.length);
+  function strcatSingle(a: number, b: Uint8Array): Uint8Array {
+    var r = new Uint8Array(1 + b.length);
+    r[0] = a;
+    r.set(b, 1);
     return r;
   }
 
-  function strcat3(a: Uint8Array, b: Uint8Array, c: Uint8Array): Uint8Array {
-    var r = new Uint8Array(a.length + b.length + c.length);
-    r.set(a, 0);
-    r.set(b, a.length);
-    r.set(c, a.length + b.length);
+  function strcat4Single(a: number, b: number, c: Uint8Array, d: number): Uint8Array {
+    var r = new Uint8Array(c.length + 3);
+    r[0] = a;
+    r[1] = b;
+    r.set(c, 2);
+    r[2 + c.length] = d;
     return r;
   }
 
@@ -1323,9 +1324,9 @@ module J2ME {
     constructor(elementClass: ClassInfo) {
       super(elementClass);
       if (elementClass instanceof ArrayClassInfo) {
-        this.utf8Name = strcat(UTF8.OpenBracket, elementClass.utf8Name);
+        this.utf8Name = strcatSingle(UTF8Chars.OpenBracket, elementClass.utf8Name);
       } else {
-        this.utf8Name = strcat3(UTF8.OpenBracketL, elementClass.utf8Name, UTF8.Semicolon);
+        this.utf8Name = strcat4Single(UTF8Chars.OpenBracket, UTF8Chars.L, elementClass.utf8Name, UTF8Chars.Semicolon);
       }
       this.mangledName = mangleClassName(this.getClassNameSlow());
       this.complete();
@@ -1335,7 +1336,7 @@ module J2ME {
   export class PrimitiveArrayClassInfo extends ArrayClassInfo {
     constructor(elementClass: ClassInfo, mangledName: string) {
       super(elementClass);
-      this.utf8Name = strcat(UTF8.OpenBracket, elementClass.utf8Name);
+      this.utf8Name = strcatSingle(UTF8Chars.OpenBracket, elementClass.utf8Name);
       this.mangledName = mangledName;
       this.complete();
     }
