@@ -6,7 +6,6 @@
 module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
-  import concat5 = StringUtilities.concat5;
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
 
@@ -45,8 +44,6 @@ module J2ME {
     export var S = new Uint8Array([UTF8Chars.S]);
     export var I = new Uint8Array([UTF8Chars.I]);
     export var J = new Uint8Array([UTF8Chars.J]);
-
-    // "<init>".split("").map(function (x) { return String.charCodeAt(x); })
   }
 
   export function strcmp(a: Uint8Array, b: Uint8Array): boolean {
@@ -80,21 +77,31 @@ module J2ME {
 
   function strcatSingle(a: number, b: Uint8Array): Uint8Array {
     var r = new Uint8Array(1 + b.length);
+
     r[0] = a;
+
+    // For short strings, a for loop is faster than a call to TypedArray::set()
     for (var i = 1; i < b.length + 1; i++) {
       r[i] = b[i - 1];
     }
+
     return r;
   }
 
   function strcat4Single(a: number, b: number, c: Uint8Array, d: number): Uint8Array {
     var r = new Uint8Array(c.length + 3);
+
     r[0] = a;
+
     r[1] = b;
+
+    // For short strings, a for loop is faster than a call to TypedArray::set()
     for (var i = 2; i < c.length + 2; i++) {
       r[i] = c[i - 2];
     }
+
     r[2 + c.length] = d;
+
     return r;
   }
 
