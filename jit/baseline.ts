@@ -989,7 +989,7 @@ module J2ME {
           this.emitPush(Kind.Long, "Long.fromBits(" + long.getLowBits() + "," + long.getHighBits() + ")", Precedence.Primary);
           return;
         case TAGS.CONSTANT_String:
-          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(cp.resolveString(cpi)) + ")", Precedence.Primary);
+          this.emitPush(Kind.Reference, classConstant(this.methodInfo.classInfo) + ".c(" + cpi + ")", Precedence.Primary);
           return;
         default:
           throw "Not done for: " + TAGS[tag];
