@@ -18,9 +18,9 @@ endif
 SRCS=$(shell find $(SRC_DIRS) -name *.java)
 JPP_SRCS=$(shell find $(SRC_DIRS) -name *.jpp)
 JPP_DESTS=$(JPP_SRCS:.jpp=.java)
-EXTRA=$(shell find . -name *.png) $(shell find . -name *.bin) $(shell find . -name *.xml)
+EXTRA=$(shell find . -name *.png) $(shell find . -name *.bin) $(shell find l10n -name *.json)
 
-classes.jar: $(SRCS) $(JPP_DESTS)
+classes.jar: $(SRCS) $(JPP_DESTS) $(EXTRA)
 	rm -rf build build-src
 	mkdir build build-src
 	$(foreach dir,$(SRC_DIRS),cp -a $(dir)/. build-src/;)

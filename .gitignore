@@ -64,3 +64,6 @@ java/custom/javax/microedition/lcdui/Display.java
 tools/jasmin-2.4/src/jasmin/parser.java
 tools/jasmin-2.4/src/jasmin/sym.java
 tools/closure.jar
+
+# These files are generated from l10n
+java/l10n/*
