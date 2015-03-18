@@ -385,12 +385,6 @@ module J2ME {
     }
 
     var _concat3array = new Array(3);
-    var _concat4array = new Array(4);
-    var _concat5array = new Array(5);
-    var _concat6array = new Array(6);
-    var _concat7array = new Array(7);
-    var _concat8array = new Array(8);
-    var _concat9array = new Array(9);
 
     /**
      * The concatN() functions concatenate multiple strings in a way that
@@ -406,23 +400,6 @@ module J2ME {
         _concat3array[1] = s1;
         _concat3array[2] = s2;
         return _concat3array.join('');
-    }
-
-    export function concat4(s0: any, s1: any, s2: any, s3: any) {
-        _concat4array[0] = s0;
-        _concat4array[1] = s1;
-        _concat4array[2] = s2;
-        _concat4array[3] = s3;
-        return _concat4array.join('');
-    }
-
-    export function concat5(s0: any, s1: any, s2: any, s3: any, s4: any) {
-        _concat5array[0] = s0;
-        _concat5array[1] = s1;
-        _concat5array[2] = s2;
-        _concat5array[3] = s3;
-        _concat5array[4] = s4;
-        return _concat5array.join('');
     }
   }
 
