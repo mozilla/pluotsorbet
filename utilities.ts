@@ -513,17 +513,6 @@ module J2ME {
       return ((i + (i >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
     }
 
-    export function nearestPowerOfTwo(x: number) {
-      x --;
-      x |= x >> 1;
-      x |= x >> 2;
-      x |= x >> 4;
-      x |= x >> 8;
-      x |= x >> 16;
-      x ++;
-      return x;
-    }
-
     /**
      * Polyfill imul.
      */
