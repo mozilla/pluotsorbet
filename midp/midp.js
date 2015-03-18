@@ -874,35 +874,24 @@ var MIDP = (function() {
       return 1;
     };
 
-  var localizedStrings = new Map();
+  var localizedStrings;
 
   Native["com/sun/midp/l10n/LocalizedStringsBase.getContent.(I)Ljava/lang/String;"] = function(id) {
-    if (localizedStrings.size === 0) {
-      // First build up a mapping of field names to field IDs
-      var classInfo = CLASSES.getClass("com/sun/midp/i18n/ResourceConstants");
-      var constantsMap = new Map();
-      var fields = classInfo.getFields();
-      fields.forEach(function(field) {
-        constantsMap.set(J2ME.fromUTF8(field.utf8Name), field.constantValue);
-      });
+    if (!MIDP.localizedStrings) {
+      var data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/" + (config.language || navigator.language) + ".json");
+      if (!data) {
+        // Fallback to English
+        data = JARStore.loadFileFromJAR("java/classes.jar", "l10n/en-US.json");
 
-      var data = JARStore.loadFileFromJAR("java/classes.jar", "assets/0/en-US.xml");
-      if (!data)
-        throw $.newIOException();
-
-      var text = util.decodeUtf8Array(data);
-      var xml = new window.DOMParser().parseFromString(text, "text/xml");
-      var entries = xml.getElementsByTagName("localized_string");
-
-      for (var n = 0; n < entries.length; ++n) {
-        var attrs = entries[n].attributes;
-        // map the key value to a field ID
-        var id = constantsMap.get(attrs.Key.value);
-        localizedStrings.set(id, attrs.Value.value);
+        if (!data) {
+          throw $.newIOException();
+        }
       }
+
+      MIDP.localizedStrings = JSON.parse(util.decodeUtf8(data));
     }
 
-    var value = localizedStrings.get(id);
+    var value = MIDP.localizedStrings[id];
 
     if (!value) {
       throw $.newIllegalStateException();
@@ -1267,5 +1256,6 @@ var MIDP = (function() {
     context2D: context2D,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,
+    localizedStrings: localizedStrings,
   };
 })();

@@ -141,9 +141,17 @@ tests/tests.jar: tests
 tests: java jasmin
 	make -C tests
 
+LANG_FILES=$(shell find l10n -name "*.xml")
+LANG_DESTS=$(LANG_FILES:%.xml=java/%.json)
+
 java/classes.jar: java
-java:
+java: $(LANG_DESTS)
 	make -C java
+
+$(LANG_DESTS): $(LANG_FILES)
+	rm -rf java/l10n/
+	mkdir java/l10n/
+	$(foreach file,$(LANG_FILES), tools/xml_to_json.py $(file) java/$(file:.xml=.json);)
 
 certs:
 	make -C certs
@@ -161,4 +169,5 @@ clean:
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
+	rm -rf java/l10n/
 	make -C bench clean

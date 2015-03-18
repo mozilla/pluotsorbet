@@ -254,6 +254,10 @@
                 Value="Copyright 2009 Sun Microsystems, Inc. All rights reserved."/>
 <localized_string Key="AMS_COPYRIGHT_LONG"
                 Value="Copyright 2009 Sun Microsystems, Inc.aux Etats-Unis et dans d'autres pays."/>
+<localized_string Key="AMS_PROJECT_NAME"
+                Value="phoneME Feature project"/>
+<localized_string Key="AMS_PROJECT_NAME_SHORT"
+                Value="phoneME Feature"/>
 <localized_string Key="AMS_CANNOT_START"
                 Value="Cannot start: "/>
 <localized_string Key="AMS_CONFIRMATION"
