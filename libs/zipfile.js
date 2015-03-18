@@ -95,7 +95,7 @@ var fixedDistCodeTab = [new Int32Array([
   0x50003, 0x50013, 0x5000b, 0x5001b, 0x50007, 0x50017, 0x5000f, 0x00000
 ]), 5];
 
-function inflate(bytes, uncompressed_len) {
+function inflate(bytes) {
   var bytesPos = 0;
 
   var codeSize = 0;
@@ -171,8 +171,21 @@ function inflate(bytes, uncompressed_len) {
     return [codes, maxLen];
   };
 
-  var buffer = new Uint8Array(uncompressed_len);
+  var buffer;
   var bufferLength = 0;
+
+  function ensureBuffer(requested) {
+    var current = buffer ? buffer.byteLength : 0;
+    if (requested <= current)
+      return;
+    var size = 512;
+    while (size < requested)
+      size <<= 1;
+    var buffer2 = new Uint8Array(size);
+    for (var i = 0; i < current; ++i)
+      buffer2[i] = buffer[i];
+    buffer = buffer2;
+  }
 
   function readBlock() {
     var eof = false;
@@ -204,12 +217,17 @@ function inflate(bytes, uncompressed_len) {
       codeBuf = 0;
       codeSize = 0;
 
+      ensureBuffer(bufferLength + blockLen);
       var end = bufferLength + blockLen;
-      for (; bufferLength < end && bytesPos < bytes.length; ++bufferLength, ++bytesPos) {
-        buffer[bufferLength] = bytes[bytesPos];
+      for (var n = bufferLength; n < end; ++n) {
+        if (typeof (b = bytes[bytesPos++]) == 'undefined') {
+          eof = true;
+          break;
+        }
+        buffer[n] = b;
       }
-
-      return bytesPos === bytes.length;
+      bufferLength = end;
+      return eof;
     }
 
     var litCodeTable;
@@ -258,13 +276,20 @@ function inflate(bytes, uncompressed_len) {
       new Error('Unknown block type in flate stream');
     }
 
+    var limit = buffer ? buffer.length : 0;
+    var pos = bufferLength;
     while (true) {
       var code1 = getCode(litCodeTable);
       if (code1 < 256) {
-        buffer[bufferLength++] = code1;
+        if (pos + 1 >= limit) {
+          ensureBuffer(pos + 1);
+          limit = buffer.length;
+        }
+        buffer[pos++] = code1;
         continue;
       }
       if (code1 == 256) {
+        bufferLength = pos;
         return eof;
       }
       code1 -= 257;
@@ -279,15 +304,30 @@ function inflate(bytes, uncompressed_len) {
       if (code2 > 0)
         code2 = getBits(code2);
       var dist = (code1 & 0xffff) + code2;
-      for (var k = 0; k < len; ++k, ++bufferLength)
-        buffer[bufferLength] = buffer[bufferLength - dist];
+      if (pos + len >= limit) {
+        ensureBuffer(pos + len);
+        limit = buffer.length;
+      }
+      for (var k = 0; k < len; ++k, ++pos)
+        buffer[pos] = buffer[pos - dist];
     }
   };
 
   while (!readBlock())
     ;
 
-  return buffer;
+  // Shrink the buffer to the actual data size.
+
+  // If we've got more than 10% slack, copy the buffer. If that is a perf problem,
+  // adjust the slack. If that's a memory problem then adjust the growth heuristic
+  // of the buffer. At the moment it's 2x, perhaps 1.5x would be a better growth
+  // factor.
+  if (bufferLength / buffer.length < 0.9) {
+    var result = new Uint8Array(bufferLength);
+    result.set(buffer.subarray(0, bufferLength), 0);
+    return result;
+  }
+  return new Uint8Array(buffer.buffer, 0, bufferLength);
 }
 
 var arrays = J2ME.ArrayUtilities.makeArrays(256);
@@ -335,10 +375,11 @@ function ZipFile(buffer, extract) {
       arrays = J2ME.ArrayUtilities.makeArrays(filename_len);
     }
     var array = arrays[filename_len];
+    var filename = "";
     for (var n = 0; n < filename_len; ++n) {
       array[n] = String.fromCharCode(bytes[pos++]);
     }
-    var filename = array.join("");
+    filename = array.join("");
     // locate the compressed data
     var local_extra_len = view.getInt16(local_header_offset + 28, true);
     var data_offset = local_header_offset + 30 + filename_len + local_extra_len;
@@ -356,7 +397,6 @@ function ZipFile(buffer, extract) {
     directory[filename] = {
       compression_method: compression_method,
       compressed_data: compressed_data,
-      uncompressed_len: uncompressed_len,
     };
     // advance to the next entry
     pos += extra_len + comment_len;
@@ -377,7 +417,7 @@ ZipFile.prototype = {
     case 0: // stored
       return data;
     case 8: // deflated
-      return inflate(data, entry.uncompressed_len);
+      return inflate(data);
     }
     return null;
   }
