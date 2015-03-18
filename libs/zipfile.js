@@ -335,11 +335,10 @@ function ZipFile(buffer, extract) {
       arrays = J2ME.ArrayUtilities.makeArrays(filename_len);
     }
     var array = arrays[filename_len];
-    var filename = "";
     for (var n = 0; n < filename_len; ++n) {
       array[n] = String.fromCharCode(bytes[pos++]);
     }
-    filename = array.join("");
+    var filename = array.join("");
     // locate the compressed data
     var local_extra_len = view.getInt16(local_header_offset + 28, true);
     var data_offset = local_header_offset + 30 + filename_len + local_extra_len;
