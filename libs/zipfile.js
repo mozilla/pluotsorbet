@@ -95,7 +95,7 @@ var fixedDistCodeTab = [new Int32Array([
   0x50003, 0x50013, 0x5000b, 0x5001b, 0x50007, 0x50017, 0x5000f, 0x00000
 ]), 5];
 
-function inflate(bytes) {
+function inflate(bytes, uncompressed_len) {
   var bytesPos = 0;
 
   var codeSize = 0;
@@ -171,21 +171,8 @@ function inflate(bytes) {
     return [codes, maxLen];
   };
 
-  var buffer;
+  var buffer = new Uint8Array(uncompressed_len);
   var bufferLength = 0;
-
-  function ensureBuffer(requested) {
-    var current = buffer ? buffer.byteLength : 0;
-    if (requested <= current)
-      return;
-    var size = 512;
-    while (size < requested)
-      size <<= 1;
-    var buffer2 = new Uint8Array(size);
-    for (var i = 0; i < current; ++i)
-      buffer2[i] = buffer[i];
-    buffer = buffer2;
-  }
 
   function readBlock() {
     var eof = false;
@@ -217,17 +204,12 @@ function inflate(bytes) {
       codeBuf = 0;
       codeSize = 0;
 
-      ensureBuffer(bufferLength + blockLen);
       var end = bufferLength + blockLen;
-      for (var n = bufferLength; n < end; ++n) {
-        if (typeof (b = bytes[bytesPos++]) == 'undefined') {
-          eof = true;
-          break;
-        }
-        buffer[n] = b;
+      for (; bufferLength < end && bytesPos < bytes.length; ++bufferLength, ++bytesPos) {
+        buffer[bufferLength] = bytes[bytesPos];
       }
-      bufferLength = end;
-      return eof;
+
+      return bytesPos === bytes.length;
     }
 
     var litCodeTable;
@@ -276,15 +258,11 @@ function inflate(bytes) {
       new Error('Unknown block type in flate stream');
     }
 
-    var limit = buffer ? buffer.length : 0;
+    var limit = buffer.length;
     var pos = bufferLength;
     while (true) {
       var code1 = getCode(litCodeTable);
       if (code1 < 256) {
-        if (pos + 1 >= limit) {
-          ensureBuffer(pos + 1);
-          limit = buffer.length;
-        }
         buffer[pos++] = code1;
         continue;
       }
@@ -304,10 +282,6 @@ function inflate(bytes) {
       if (code2 > 0)
         code2 = getBits(code2);
       var dist = (code1 & 0xffff) + code2;
-      if (pos + len >= limit) {
-        ensureBuffer(pos + len);
-        limit = buffer.length;
-      }
       for (var k = 0; k < len; ++k, ++pos)
         buffer[pos] = buffer[pos - dist];
     }
@@ -316,18 +290,7 @@ function inflate(bytes) {
   while (!readBlock())
     ;
 
-  // Shrink the buffer to the actual data size.
-
-  // If we've got more than 10% slack, copy the buffer. If that is a perf problem,
-  // adjust the slack. If that's a memory problem then adjust the growth heuristic
-  // of the buffer. At the moment it's 2x, perhaps 1.5x would be a better growth
-  // factor.
-  if (bufferLength / buffer.length < 0.9) {
-    var result = new Uint8Array(bufferLength);
-    result.set(buffer.subarray(0, bufferLength), 0);
-    return result;
-  }
-  return new Uint8Array(buffer.buffer, 0, bufferLength);
+  return buffer;
 }
 
 var arrays = J2ME.ArrayUtilities.makeArrays(256);
@@ -397,6 +360,7 @@ function ZipFile(buffer, extract) {
     directory[filename] = {
       compression_method: compression_method,
       compressed_data: compressed_data,
+      uncompressed_len: uncompressed_len,
     };
     // advance to the next entry
     pos += extra_len + comment_len;
@@ -417,7 +381,7 @@ ZipFile.prototype = {
     case 0: // stored
       return data;
     case 8: // deflated
-      return inflate(data);
+      return inflate(data, entry.uncompressed_len);
     }
     return null;
   }
