@@ -6,7 +6,6 @@
 module J2ME {
   declare var util;
   import assert = J2ME.Debug.assert;
-  import concat5 = StringUtilities.concat5;
   import concat3 = StringUtilities.concat3;
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
@@ -37,9 +36,6 @@ module J2ME {
     export var Code = new Uint8Array([67, 111, 100, 101]);
     export var ConstantValue = new Uint8Array([67, 111, 110, 115, 116, 97, 110, 116, 86, 97, 108, 117, 101]);
     export var Init = new Uint8Array([60, 105, 110, 105, 116, 62]);
-    export var OpenBracket = new Uint8Array([UTF8Chars.OpenBracket]);
-    export var OpenBracketL = new Uint8Array([UTF8Chars.OpenBracket, UTF8Chars.L]);
-    export var Semicolon = new Uint8Array([UTF8Chars.Semicolon]);
 
     export var Z = new Uint8Array([UTF8Chars.Z]);
     export var C = new Uint8Array([UTF8Chars.C]);
@@ -49,8 +45,6 @@ module J2ME {
     export var S = new Uint8Array([UTF8Chars.S]);
     export var I = new Uint8Array([UTF8Chars.I]);
     export var J = new Uint8Array([UTF8Chars.J]);
-
-    // "<init>".split("").map(function (x) { return String.charCodeAt(x); })
   }
 
   export function strcmp(a: Uint8Array, b: Uint8Array): boolean {
@@ -97,18 +91,33 @@ module J2ME {
     return ByteStream.readString(s);
   }
 
-  function strcat(a: Uint8Array, b: Uint8Array): Uint8Array {
-    var r = new Uint8Array(a.length + b.length);
-    r.set(a, 0);
-    r.set(b, a.length);
+  function strcatSingle(a: number, b: Uint8Array): Uint8Array {
+    var r = new Uint8Array(1 + b.length);
+
+    r[0] = a;
+
+    // For short strings, a for loop is faster than a call to TypedArray::set()
+    for (var i = 1; i < b.length + 1; i++) {
+      r[i] = b[i - 1];
+    }
+
     return r;
   }
 
-  function strcat3(a: Uint8Array, b: Uint8Array, c: Uint8Array): Uint8Array {
-    var r = new Uint8Array(a.length + b.length + c.length);
-    r.set(a, 0);
-    r.set(b, a.length);
-    r.set(c, a.length + b.length);
+  function strcat4Single(a: number, b: number, c: Uint8Array, d: number): Uint8Array {
+    var r = new Uint8Array(c.length + 3);
+
+    r[0] = a;
+
+    r[1] = b;
+
+    // For short strings, a for loop is faster than a call to TypedArray::set()
+    for (var i = 2; i < c.length + 2; i++) {
+      r[i] = c[i - 2];
+    }
+
+    r[2 + c.length] = d;
+
     return r;
   }
 
@@ -1456,9 +1465,9 @@ module J2ME {
     constructor(elementClass: ClassInfo) {
       super(elementClass);
       if (elementClass instanceof ArrayClassInfo) {
-        this.utf8Name = strcat(UTF8.OpenBracket, elementClass.utf8Name);
+        this.utf8Name = strcatSingle(UTF8Chars.OpenBracket, elementClass.utf8Name);
       } else {
-        this.utf8Name = strcat3(UTF8.OpenBracketL, elementClass.utf8Name, UTF8.Semicolon);
+        this.utf8Name = strcat4Single(UTF8Chars.OpenBracket, UTF8Chars.L, elementClass.utf8Name, UTF8Chars.Semicolon);
       }
       this.mangledName = mangleClassName(this.utf8Name);
       this.complete();
@@ -1468,7 +1477,7 @@ module J2ME {
   export class PrimitiveArrayClassInfo extends ArrayClassInfo {
     constructor(elementClass: ClassInfo, mangledName: string) {
       super(elementClass);
-      this.utf8Name = strcat(UTF8.OpenBracket, elementClass.utf8Name);
+      this.utf8Name = strcatSingle(UTF8Chars.OpenBracket, elementClass.utf8Name);
       this.mangledName = mangledName;
       this.complete();
     }
