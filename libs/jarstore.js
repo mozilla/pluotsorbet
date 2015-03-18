@@ -132,7 +132,7 @@ var JARStore = (function() {
     if (entry.compression_method === 0) {
       bytes = entry.compressed_data;
     } else if (entry.compression_method === 8) {
-      bytes = inflate(entry.compressed_data, entry.uncompressed_len);
+      bytes = inflate(entry.compressed_data);
     } else {
       return null;
     }
