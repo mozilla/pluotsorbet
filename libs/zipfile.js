@@ -258,16 +258,13 @@ function inflate(bytes, uncompressed_len) {
       new Error('Unknown block type in flate stream');
     }
 
-    var limit = buffer.length;
-    var pos = bufferLength;
     while (true) {
       var code1 = getCode(litCodeTable);
       if (code1 < 256) {
-        buffer[pos++] = code1;
+        buffer[bufferLength++] = code1;
         continue;
       }
       if (code1 == 256) {
-        bufferLength = pos;
         return eof;
       }
       code1 -= 257;
@@ -282,8 +279,8 @@ function inflate(bytes, uncompressed_len) {
       if (code2 > 0)
         code2 = getBits(code2);
       var dist = (code1 & 0xffff) + code2;
-      for (var k = 0; k < len; ++k, ++pos)
-        buffer[pos] = buffer[pos - dist];
+      for (var k = 0; k < len; ++k, ++bufferLength)
+        buffer[bufferLength] = buffer[bufferLength - dist];
     }
   };
 
