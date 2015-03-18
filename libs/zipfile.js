@@ -316,7 +316,17 @@ function inflate(bytes) {
   while (!readBlock())
     ;
 
-  // shrink the buffer to the actual data size
+  // Shrink the buffer to the actual data size.
+
+  // If we've got more than 10% slack, copy the buffer. If that is a perf problem,
+  // adjust the slack. If that's a memory problem then adjust the growth heuristic
+  // of the buffer. At the moment it's 2x, perhaps 1.5x would be a better growth
+  // factor.
+  if (bufferLength / buffer.length < 0.9) {
+    var result = new Uint8Array(bufferLength);
+    result.set(buffer.subarray(0, bufferLength), 0);
+    return result;
+  }
   return new Uint8Array(buffer.buffer, 0, bufferLength);
 }
 

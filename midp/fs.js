@@ -654,8 +654,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
-    var pathname = J2ME.fromJavaString(this.nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.close: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.close: " + J2ME.fromJavaString(this.nativePath));
 
     MIDP.closeFileHandler(this, "read");
     MIDP.closeFileHandler(this, "write");
@@ -734,10 +733,9 @@ DEBUG_FS && console.log("getSuiteIdString: " + id);
 };
 
 Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
-    var pathname = J2ME.fromJavaString(this.fileHandler.nativePath);
     var fd = this.fileHandler.nativeDescriptor;
     var available = fs.getsize(fd) - fs.getpos(fd);
-    DEBUG_FS && console.log("Protocol.available: " + pathname + ": " + available);
+    DEBUG_FS && console.log("Protocol.available: " + J2ME.fromJavaString(this.fileHandler.nativePath) + ": " + available);
     return available;
 };
 

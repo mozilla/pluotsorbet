@@ -1857,7 +1857,7 @@ module J2ME {
 
   export function newArray(klass: Klass, size: number) {
     if (size < 0) {
-      throw $.newNegativeArraySizeException();
+      throwNegativeArraySizeException();
     }
     var constructor: any = getArrayKlass(klass);
     return new constructor(size);
@@ -1873,6 +1873,10 @@ module J2ME {
       }
     }
     return array;
+  }
+
+  export function throwNegativeArraySizeException() {
+    throw $.newNegativeArraySizeException();
   }
 
   export function newObjectArray(size: number): java.lang.Object[] {
@@ -1939,13 +1943,13 @@ module J2ME {
 
   export function checkDivideByZero(value: number) {
     if (value === 0) {
-      throw $.newArithmeticException("/ by zero");
+      throwArithmeticException();
     }
   }
 
   export function checkDivideByZeroLong(value: Long) {
     if (value.isZero()) {
-      throw $.newArithmeticException("/ by zero");
+      throwArithmeticException();
     }
   }
 
@@ -1960,6 +1964,14 @@ module J2ME {
     if ((index >>> 0) >= (array.length >>> 0)) {
       throw $.newArrayIndexOutOfBoundsException(String(index));
     }
+  }
+
+  export function throwArrayIndexOutOfBoundsException(index: number) {
+    throw $.newArrayIndexOutOfBoundsException(String(index));
+  }
+
+  export function throwArithmeticException() {
+    throw $.newArithmeticException("/ by zero");
   }
 
   export function checkArrayStore(array: java.lang.Object, value: any) {
@@ -2170,6 +2182,9 @@ var CAS = J2ME.checkArrayStore;
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
+var TI = J2ME.throwArrayIndexOutOfBoundsException;
+var TA = J2ME.throwArithmeticException;
+var TN = J2ME.throwNegativeArraySizeException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.

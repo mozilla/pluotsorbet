@@ -46,7 +46,7 @@ module J2ME {
     var h = 0;
     var l = offset + length;
     for (var i = offset; i < l; i++) {
-      h = (Math.imul(31, h)|0 + array[i++]|0);
+      h = (Math.imul(31, h)|0 + array[i]|0);
     }
     return h;
   }

@@ -125,7 +125,7 @@ module J2ME {
     private static internedOneByteArrays: Uint8Array [] = ArrayUtilities.makeDenseArray(256, null);
 
     // Most common tree byte arrays signatures, these must all be prefixed with "()". If you want
-    // to support more complicated patterns, modify |readBytes|.
+    // to support more complicated patterns, modify |readInternedBytes|.
     private static internedThreeByteArraySignatures: Uint8Array [] = [
       new Uint8Array([40, 41, 86]), // ()V
       new Uint8Array([40, 41, 73]), // ()I
@@ -251,14 +251,18 @@ module J2ME {
     }
 
     readBytes(length: number): Uint8Array {
+      var data = this.buffer.subarray(this.offset, this.offset + length);
+      this.offset += length;
+      return data;
+    }
+
+    readInternedBytes(length: number): Uint8Array {
       var data = length <= 4 ? this.internBytes(length) : null;
       if (data) {
         this.offset += data.length;
         return data;
       }
-      data = this.buffer.subarray(this.offset, this.offset + length);
-      this.offset += length;
-      return data;
+      return this.readBytes(length);
     }
 
     static arrays: string [][] = ArrayUtilities.makeArrays(128);
@@ -514,7 +518,7 @@ module J2ME {
               r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readS4(), s.readS4());
               break;
           case TAGS.CONSTANT_Utf8:
-            r = this.resolved[i] = s.readBytes(s.readU2());
+            r = this.resolved[i] = s.readInternedBytes(s.readU2());
             break;
           case TAGS.CONSTANT_Class:
             r = this.resolved[i] = CLASSES.getClass(ByteStream.readString(this.resolve(s.readU2(), TAGS.CONSTANT_Utf8)));
@@ -858,6 +862,8 @@ module J2ME {
       this.max_stack = s.readU2();
       this.max_locals = s.readU2();
       var code_length = s.readU4();
+      // We don't call |readInternedBytes| because the returned bytes can be modified by the
+      // interpreter, and interned bytes must be immutable.
       this.code = s.readBytes(code_length);
     }
   }

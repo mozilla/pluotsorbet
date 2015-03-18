@@ -428,7 +428,7 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() 
         var methodSignatures = J2ME.newObjectArray(depth);
         var offsets = J2ME.newIntArray(depth);
         this.stackTrace.forEach(function(e, n) {
-            classNames[n] = J2ME.newString(e.getClassNameSlow());
+            classNames[n] = J2ME.newString(e.className);
             methodNames[n] = J2ME.newString(e.methodName);
             methodSignatures[n] = J2ME.newString(e.methodSignature);
             offsets[n] = e.offset;
