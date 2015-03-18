@@ -6,6 +6,7 @@ RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
+CONSOLE ?= 1
 
 # Sensor support
 JSR_256 ?= 1
@@ -32,6 +33,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(call toBool,$(PROFILE)) \
              -D BENCHMARK=$(call toBool,$(BENCHMARK)) \
+             -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
              -D VERSION=$(VERSION)
