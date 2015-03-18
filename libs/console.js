@@ -170,29 +170,12 @@
   }
 
   WebConsole.prototype = {
-    flush: function() {
-      if (this.buffer.length) {
-        var temp = this.buffer;
-        this.buffer = "";
-        console.info(temp);
-      }
-    },
-
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        this.flush(); // Preserve order w/r/t console.print().
+        NativeConsoleOutputStream.flush(); // Preserve order w/r/t NativeConsoleOutputStream.print().
         windowConsole[item.levelName].apply(windowConsole, [item.message]);
       }
     },
-
-    /** Print one character to the output (buffered). */
-    print: function(ch) {
-      if (ch === 10) {
-        this.flush();
-      } else {
-        this.buffer += String.fromCharCode(ch);
-      }
-    }
   };
 
   /**
@@ -299,12 +282,9 @@
     terminal: typeof Terminal === "undefined" ? new WebConsole() : new TerminalConsole("#consoleContainer")
   };
 
-  var print = CONSOLES.web.print.bind(CONSOLES.web);
-
   // If we're only printing to the web console, then use the original console
   // object, so that file/line number references show up correctly in it.
   if (ENABLED_CONSOLE_TYPES.length === 1 && ENABLED_CONSOLE_TYPES[0] === "web") {
-    windowConsole.print = print;
     return;
   }
 
@@ -351,7 +331,6 @@
     info: logAtLevel.bind(null, "info"),
     warn: logAtLevel.bind(null, "warn"),
     error: logAtLevel.bind(null, "error"),
-    print: print,
     profile: typeof console !== "undefined" && console.profile ? console.profile.bind(console) : null,
     profileEnd: typeof console !== "undefined" && console.profileEnd ? console.profileEnd.bind(console) : null,
   };
