@@ -22,14 +22,6 @@ declare var printErr;
 
 declare var dateNow: () => number;
 
-declare var dump: (message: string) => void;
-
-function dumpLine(s) {
-  if (typeof dump !== "undefined") {
-    dump(s + "\n");
-  }
-}
-
 if (!jsGlobal.performance) {
   jsGlobal.performance = {};
 }
@@ -38,30 +30,10 @@ if (!jsGlobal.performance.now) {
   jsGlobal.performance.now = typeof dateNow !== 'undefined' ? dateNow : Date.now;
 }
 
-function log(message?: any, ...optionalParams: any[]): void {
-  if (inBrowser) {
-    console.log.apply(console, arguments);
-  } else {
-    jsGlobal.print.apply(jsGlobal, arguments);
-  }
-}
-
-function warn(message?: any, ...optionalParams: any[]): void {
-  if (inBrowser) {
-    console.warn.apply(console, arguments);
-  } else {
-    jsGlobal.print(J2ME.IndentingWriter.YELLOW + message + J2ME.IndentingWriter.ENDC);
-  }
-}
-
 interface String {
   padRight(c: string, n: number): string;
   padLeft(c: string, n: number): string;
   endsWith(s: string): boolean;
-}
-
-interface Function {
-  boundTo: boolean;
 }
 
 interface Math {
@@ -75,26 +47,6 @@ interface Math {
 
 interface Error {
   stack: string;
-}
-
-interface Uint8ClampedArray extends ArrayBufferView {
-  BYTES_PER_ELEMENT: number;
-  length: number;
-  [index: number]: number;
-  get(index: number): number;
-  set(index: number, value: number): void;
-  set(array: Uint8Array, offset?: number): void;
-  set(array: number[], offset?: number): void;
-  subarray(begin: number, end?: number): Uint8ClampedArray;
-}
-
-declare var Uint8ClampedArray: {
-  prototype: Uint8ClampedArray;
-  new (length: number): Uint8ClampedArray;
-  new (array: Uint8Array): Uint8ClampedArray;
-  new (array: number[]): Uint8ClampedArray;
-  new (buffer: ArrayBuffer, byteOffset?: number, length?: number): Uint8ClampedArray;
-  BYTES_PER_ELEMENT: number;
 }
 
 module J2ME {
@@ -119,142 +71,8 @@ module J2ME {
     return true;
   }
 
-  export enum CharacterCodes {
-    _0 = 48,
-    _1 = 49,
-    _2 = 50,
-    _3 = 51,
-    _4 = 52,
-    _5 = 53,
-    _6 = 54,
-    _7 = 55,
-    _8 = 56,
-    _9 = 57
-  }
-
-  /**
-   * The buffer length required to contain any unsigned 32-bit integer.
-   */
-  /** @const */ export var UINT32_CHAR_BUFFER_LENGTH = 10; // "4294967295".length;
-  /** @const */ export var UINT32_MAX = 0xFFFFFFFF;
-  /** @const */ export var UINT32_MAX_DIV_10 = 0x19999999; // UINT32_MAX / 10;
-  /** @const */ export var UINT32_MAX_MOD_10 = 0x5; // UINT32_MAX % 10
-
-  export function isString(value): boolean {
-    return typeof value === "string";
-  }
-
-  export function isFunction(value): boolean {
-    return typeof value === "function";
-  }
-
-  export function isNumber(value): boolean {
-    return typeof value === "number";
-  }
-
-  export function isInteger(value): boolean {
-    return (value | 0) === value;
-  }
-
-  export function isArray(value): boolean {
-    return value instanceof Array;
-  }
-
-  export function isNumberOrString(value): boolean {
-    return typeof value === "number" || typeof value === "string";
-  }
-
   export function isObject(value): boolean {
     return typeof value === "object" || typeof value === 'function';
-  }
-
-  export function toNumber(x): number {
-    return +x;
-  }
-
-  export function isNumericString(value: string): boolean {
-    // ECMAScript 5.1 - 9.8.1 Note 1, this expression is true for all
-    // numbers x other than -0.
-    return String(Number(value)) === value;
-  }
-
-  /**
-   * Whether the specified |value| is a number or the string representation of a number.
-   */
-  export function isNumeric(value: any): boolean {
-    if (typeof value === "number") {
-      return true;
-    }
-    if (typeof value === "string") {
-      // |value| is rarely numeric (it's usually an identifier), and the
-      // isIndex()/isNumericString() pair is slow and expensive, so we do a
-      // quick check for obvious non-numericalness first. Just checking if the
-      // first char is a 7-bit identifier char catches most cases.
-      var c = value.charCodeAt(0);
-      if ((65 <= c && c <= 90) ||     // 'A'..'Z'
-          (97 <= c && c <= 122) ||    // 'a'..'z'
-          (c === 36) ||               // '$'
-          (c === 95)) {               // '_'
-        return false;
-      }
-      return isIndex(value) || isNumericString(value);
-    }
-    // Debug.notImplemented(typeof value);
-    return false;
-  }
-
-  /**
-   * Whether the specified |value| is an unsigned 32 bit number expressed as a number
-   * or string.
-   */
-  export function isIndex(value: any): boolean {
-    // js/src/vm/String.cpp JSFlatString::isIndexSlow
-    // http://dxr.mozilla.org/mozilla-central/source/js/src/vm/String.cpp#474
-    var index = 0;
-    if (typeof value === "number") {
-      index = (value | 0);
-      if (value === index && index >= 0) {
-        return true;
-      }
-      return value >>> 0 === value;
-    }
-    if (typeof value !== "string") {
-      return false;
-    }
-    var length = value.length;
-    if (length === 0) {
-      return false;
-    }
-    if (value === "0") {
-      return true;
-    }
-    // Is there any way this will fit?
-    if (length > UINT32_CHAR_BUFFER_LENGTH) {
-      return false;
-    }
-    var i = 0;
-    index = value.charCodeAt(i++) - CharacterCodes._0;
-    if (index < 1 || index > 9) {
-      return false;
-    }
-    var oldIndex = 0;
-    var c = 0;
-    while (i < length) {
-      c = value.charCodeAt(i++) - CharacterCodes._0;
-      if (c < 0 || c > 9) {
-        return false;
-      }
-      oldIndex = index;
-      index = 10 * index + c;
-    }
-    /*
-     * Look out for "4294967296" and larger-number strings that fit in UINT32_CHAR_BUFFER_LENGTH.
-     * Only unsigned 32-bit integers shall pass.
-     */
-    if ((oldIndex < UINT32_MAX_DIV_10) || (oldIndex === UINT32_MAX_DIV_10 && c <= UINT32_MAX_MOD_10)) {
-      return true;
-    }
-    return false;
   }
 
   export function isNullOrUndefined(value) {
@@ -262,14 +80,6 @@ module J2ME {
   }
 
   export module Debug {
-    export function backtrace() {
-      try {
-        throw new Error();
-      } catch (e) {
-        return e.stack ? e.stack.split('\n').slice(2).join('\n') : '';
-      }
-    }
-
     export function error(message: string) {
       throw new Error(message);
     }
@@ -288,44 +98,12 @@ module J2ME {
       throw new Error("Reached unreachable location " + location + msg);
     }
 
-    export function assertNotImplemented(condition: boolean, message: string) {
-      if (!condition) {
-        Debug.error("notImplemented: " + message);
-      }
-    }
-
-    export function warning(message: string) {
-      release || warn(message);
-    }
-
-    export function notUsed(message: string) {
-      release || Debug.assert(false, "Not Used " + message);
-    }
-
-    export function notImplemented(message: string) {
-      release || Debug.assert(false, "Not Implemented " + message);
-    }
-
     export function abstractMethod(message: string) {
       Debug.assert(false, "Abstract Method " + message);
     }
 
-    var somewhatImplementedCache = {};
-
-    export function somewhatImplemented(message: string) {
-      if (somewhatImplementedCache[message]) {
-        return;
-      }
-      somewhatImplementedCache[message] = true;
-      Debug.warning("somewhatImplemented: " + message);
-    }
-
     export function unexpected(message?: any) {
       Debug.assert(false, "Unexpected: " + message);
-    }
-
-    export function untested(message?: any) {
-      Debug.warning("Congratulations, you've found a code path for which we haven't found a test case. Please submit the test case: " + message);
     }
   }
 
@@ -361,48 +139,10 @@ module J2ME {
       dst.length = count;
     }
 
-    export function popMany<T>(array: T [], count: number): T [] {
-      release || assert(array.length >= count);
-      var start = array.length - count;
-      var result = array.slice(start, this.length);
-      array.splice(start, count);
-      return result;
-    }
-
-    /**
-     * Just deletes several array elements from the end of the list.
-     */
-    export function popManyIntoVoid(array: any [], count: number) {
-      release || assert(array.length >= count);
-      array.length = array.length - count;
-    }
-
     export function pushMany(dst: any [], src: any []) {
       for (var i = 0; i < src.length; i++) {
         dst.push(src[i]);
       }
-    }
-
-    export function top(array: any []) {
-      return array.length && array[array.length - 1]
-    }
-
-    export function last(array: any []) {
-      return array.length && array[array.length - 1]
-    }
-
-    export function peek(array: any []) {
-      release || assert(array.length > 0);
-      return array[array.length - 1];
-    }
-
-    export function indexOf<T>(array: T [], value: T): number {
-      for (var i = 0, j = array.length; i < j; i++) {
-        if (array[i] === value) {
-          return i;
-        }
-      }
-      return -1;
     }
 
     export function pushUnique<T>(array: T [], value: T): number {
