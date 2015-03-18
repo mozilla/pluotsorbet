@@ -103,7 +103,9 @@
     },
 
     matchesCurrentFilters: function() {
-      return this.logLevel >= minLogLevel;
+      return (this.logLevel >= minLogLevel &&
+              (CONSOLES.page.currentFilterText === "" ||
+               this.searchPredicate.indexOf(CONSOLES.page.currentFilterText) !== -1));
     }
   };
 
@@ -319,14 +321,19 @@
   });
 
   var logLevelSelect = document.querySelector('#loglevel');
+  var consoleFilterTextInput = document.querySelector('#console-filter-input');
+
   function updateFilters() {
     minLogLevel = logLevelSelect.value;
+    CONSOLES.page.currentFilterText = consoleFilterTextInput.value.toLowerCase();
     window.dispatchEvent(new CustomEvent('console-filters-changed'));
   }
 
   logLevelSelect.value = minLogLevel;
   logLevelSelect.addEventListener('change', updateFilters);
 
+  consoleFilterTextInput.value = "";
+  consoleFilterTextInput.addEventListener('input', updateFilters);
 
   //----------------------------------------------------------------
 
