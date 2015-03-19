@@ -18,7 +18,7 @@
   <script type="text/javascript" src="benchmark.js" defer></script>
   <script type="text/javascript" src="libs/ttest.js" defer></script>
   <!-- #endif -->
-  <!-- #if PROFILE == "true" -->
+  <!-- #if PROFILE > 0 -->
   <script type="text/javascript" src="build/shumway.js" defer></script>
   <!-- #endif -->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->

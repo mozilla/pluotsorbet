@@ -1390,17 +1390,7 @@ module J2ME {
 
   function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
     return function (a, b, c, d) {
-      var key = MethodType[methodType];
-      if (methodType === MethodType.Interpreted) {
-        nativeCounter.count(MethodType[MethodType.Interpreted]);
-        key += methodInfo.isSynchronized ? " Synchronized" : "";
-        key += methodInfo.exception_table_length ? " Has Exceptions" : "";
-        // key += " " + methodInfo.implKey;
-      }
-      // var key = methodType !== MethodType.Interpreted ? MethodType[methodType] : methodInfo.implKey;
-      // var key = MethodType[methodType] + " " + methodInfo.implKey;
-      nativeCounter.count(key);
-      var s = bytecodeCount;
+      var key = MethodType[methodType] + " " + methodInfo.implKey;
       try {
         methodTimeline.enter(key);
         var r;
@@ -1420,9 +1410,9 @@ module J2ME {
           default:
             r = fn.apply(this, arguments);
         }
-        methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
+        methodTimeline.leave(key);
       } catch (e) {
-        methodTimeline.leave(key, s !== bytecodeCount ? { bytecodeCount: bytecodeCount - s } : undefined);
+        methodTimeline.leave(key);
         throw e;
       }
       return r;
