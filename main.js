@@ -3,6 +3,9 @@
 
 'use strict';
 
+// The real profile variable declaration in config.ts is folded away by closure. Until we
+// make closure process this file also, make sure that |profile| is defined in this file.
+var profile;
 var jvm = new JVM();
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
