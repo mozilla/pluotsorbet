@@ -330,7 +330,7 @@ module J2ME {
      * Contains method frames separated by special frame instances called marker frames. These
      * mark the position in the frame stack where the interpreter starts execution.
      *
-     * During normal execution, a marker frame is inserted on every call to |executeFrames|, so
+     * During normal execution, a marker frame is inserted on every call to |executeFrame|, so
      * the stack looks something like:
      *
      *     frame stack: [start, f0, m, f1, m, f2]
