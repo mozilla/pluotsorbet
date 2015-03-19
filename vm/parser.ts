@@ -1173,9 +1173,7 @@ module J2ME {
 
     getMethodByIndex(i: number): MethodInfo {
       if (typeof this.methods[i] === "number") {
-        enterTimeline("MethodInfo");
         var methodInfo = this.methods[i] = new MethodInfo(this, <number>this.methods[i], i);
-        leaveTimeline("MethodInfo");
       }
       var methodInfo = <MethodInfo>this.methods[i];
       return methodInfo;

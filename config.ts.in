@@ -15,4 +15,4 @@
  */
 
 /** @const */ var release: boolean = @RELEASE@;
-/** @const */ var profile: boolean = @PROFILE@;
+/** @const */ var profile: number = @PROFILE@;

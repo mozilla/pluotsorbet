@@ -163,10 +163,38 @@ function toggle(button) {
 
 var bigBang = 0;
 
+function startTimeline() {
+  requestTimelineBuffers(function (buffers) {
+    for (var i = 0; i < buffers.length; i++) {
+      buffers[i].reset();
+    }
+  });
+}
+
+function stopAndSaveTimeline() {
+  console.log("Saving profile, please wait ...");
+  var output = [];
+  requestTimelineBuffers(function (buffers) {
+    for (var i = 0; i < buffers.length; i++) {
+      buffers[i].createSnapshot().trace(new J2ME.IndentingWriter(false, function (s) {
+        output.push(s);
+      }));
+    }
+  });
+  var text = output.join("\n");
+  var profileFilename = "profile.txt";
+  var blob = new Blob([text], {type : 'text/html'});
+  saveAs(blob, profileFilename);
+  console.log("Saved profile in: adb pull /sdcard/downloads/" + profileFilename);
+}
+
 function start() {
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
-  profiler && profiler.start(2000, false);
+  // For profile mode 1, we start the profiler and wait 2 seconds and show the flame chart UI.
+  profile === 1 && profiler.start(2000, false);
   bigBang = performance.now();
+  // For profiler mode 2, we start the timeline and stop it later by calling |stopAndSaveTimeline|.
+  profile === 2 && startTimeline();
   jvm.startIsolate0(config.main, config.args);
 }
 
@@ -372,8 +400,7 @@ perfWriterCheckbox.addEventListener('change', function() {
   }
 });
 
-
-var profiler = typeof Shumway !== "undefined" ? (function() {
+var profiler = profile === 1 ? (function() {
 
   var elPageContainer = document.getElementById("pageContainer");
   elPageContainer.classList.add("profile-mode");
