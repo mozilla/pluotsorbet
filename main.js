@@ -174,11 +174,23 @@ function startTimeline() {
 function stopAndSaveTimeline() {
   console.log("Saving profile, please wait ...");
   var output = [];
+  var writer = new J2ME.IndentingWriter(false, function (s) {
+    output.push(s);
+  });
   requestTimelineBuffers(function (buffers) {
+    var snapshots = [];
     for (var i = 0; i < buffers.length; i++) {
-      buffers[i].createSnapshot().trace(new J2ME.IndentingWriter(false, function (s) {
-        output.push(s);
-      }));
+      snapshots.push(buffers[i].createSnapshot());
+    }
+    // Trace Statistcs
+    for (var i = 0; i < snapshots.length; i++) {
+      writer.writeLn("Timeline Statistics: " + i);
+      snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
+    }
+    // Trace Events
+    for (var i = 0; i < snapshots.length; i++) {
+      writer.writeLn("Timeline Events: " + i);
+      snapshots[i].trace(writer, 0.1); // Don't trace anything below 0.1 ms.
     }
   });
   var text = output.join("\n");
