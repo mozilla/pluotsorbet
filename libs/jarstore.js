@@ -5,8 +5,9 @@
 
 var JARStore = (function() {
   var DATABASE = "JARStore";
-  var VERSION = 1;
-  var OBJECT_STORE = "files";
+  var VERSION = 2;
+  var OBJECT_STORE_OLD = "files";
+  var OBJECT_STORE_WITH_UNCOMPRESSED_LEN = "files_v2"
   var KEY_PATH = "jarName";
 
   var database;
@@ -15,7 +16,14 @@ var JARStore = (function() {
 
   var upgrade = {
     "0to1": function(database, transaction, next) {
-      database.createObjectStore(OBJECT_STORE, { keyPath: KEY_PATH });
+      database.createObjectStore(OBJECT_STORE_OLD, { keyPath: KEY_PATH });
+      next();
+    },
+    "1to2": function(database, transaction, next) {
+      database.deleteObjectStore(OBJECT_STORE_OLD);
+      // We don't migrate data from the old format to the new one, but
+      // rely on JARStore users to recreate the needed data.
+      database.createObjectStore(OBJECT_STORE_WITH_UNCOMPRESSED_LEN, { keyPath: KEY_PATH });
       next();
     },
   };
@@ -60,8 +68,8 @@ var JARStore = (function() {
       return new Promise(function(resolve, reject) {
         var zip = new ZipFile(jarData, true);
 
-        var transaction = database.transaction(OBJECT_STORE, "readwrite");
-        var objectStore = transaction.objectStore(OBJECT_STORE);
+        var transaction = database.transaction(OBJECT_STORE_WITH_UNCOMPRESSED_LEN, "readwrite");
+        var objectStore = transaction.objectStore(OBJECT_STORE_WITH_UNCOMPRESSED_LEN);
         var request = objectStore.put({
           jarName: jarName,
           jar: zip.directory,
@@ -87,8 +95,8 @@ var JARStore = (function() {
   function loadJAR(jarName) {
     return openDatabase.then(function() {
       return new Promise(function(resolve, reject) {
-        var transaction = database.transaction(OBJECT_STORE, "readonly");
-        var objectStore = transaction.objectStore(OBJECT_STORE);
+        var transaction = database.transaction(OBJECT_STORE_WITH_UNCOMPRESSED_LEN, "readonly");
+        var objectStore = transaction.objectStore(OBJECT_STORE_WITH_UNCOMPRESSED_LEN);
         var request = objectStore.get(jarName);
 
         request.onerror = function() {
@@ -132,7 +140,7 @@ var JARStore = (function() {
     if (entry.compression_method === 0) {
       bytes = entry.compressed_data;
     } else if (entry.compression_method === 8) {
-      bytes = inflate(entry.compressed_data);
+      bytes = inflate(entry.compressed_data, entry.uncompressed_len);
     } else {
       return null;
     }
@@ -163,8 +171,8 @@ var JARStore = (function() {
       return new Promise(function(resolve, reject) {
         jars.clear();
 
-        var transaction = database.transaction(OBJECT_STORE, "readwrite");
-        var objectStore = transaction.objectStore(OBJECT_STORE);
+        var transaction = database.transaction(OBJECT_STORE_WITH_UNCOMPRESSED_LEN, "readwrite");
+        var objectStore = transaction.objectStore(OBJECT_STORE_WITH_UNCOMPRESSED_LEN);
         var request = objectStore.clear();
 
         request.onerror = function() {
