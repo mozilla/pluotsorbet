@@ -414,13 +414,9 @@ module J2ME {
       release || assert (Frame.isMarker(marker));
     }
 
-    executeFrames(group: Frame []) {
+    executeFrame(frame: Frame) {
       var frames = this.frames;
-      frames.push(Frame.Marker);
-
-      for (var i = 0; i < group.length; i++) {
-        frames.push(group[i]);
-      }
+      frames.push(Frame.Marker, frame);
 
       try {
         var returnValue = VM.execute();
