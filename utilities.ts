@@ -233,22 +233,6 @@ module J2ME {
       return "\"" + s + "\"";
     }
 
-    var json = false;
-    var escapeless = false;
-    var hexadecimal = false;
-    var renumber = false;
-    var quotes = "double";
-
-    function stringToArray(str) {
-      var length = str.length,
-        result = [],
-        i;
-      for (i = 0; i < length; ++i) {
-        result[i] = str.charAt(i);
-      }
-      return result;
-    }
-
     var _encoding = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$_';
     var arrays = [null, new Array(1), new Array(2), new Array(3), new Array(4), new Array(5), new Array(6)];
     export function variableLengthEncodeInt32(n) {
