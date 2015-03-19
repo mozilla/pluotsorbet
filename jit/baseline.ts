@@ -380,15 +380,15 @@ module J2ME {
       this.emitPrologue();
       this.emitBody();
 
-      if (Object.keys(this.variables).length) {
-        var variables = [];
-        for (var k in this.variables) {
-          if (this.variables[k] !== undefined) {
-            variables.push(k + "=" + this.variables[k]);
-          } else {
-            variables.push(k);
-          }
+      var variables = [];
+      for (var k in this.variables) {
+        if (this.variables[k] !== undefined) {
+          variables.push(k + "=" + this.variables[k]);
+        } else {
+          variables.push(k);
         }
+      }
+      if (variables.length > 0) {
         this.bodyEmitter.prependLn("var " + variables.join(",") + ";");
       }
       if (this.hasMonitorEnter) {
