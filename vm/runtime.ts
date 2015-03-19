@@ -985,15 +985,31 @@ module J2ME {
   function emitKlassConstructor(classInfo: ClassInfo, mangledName: string): Klass {
     var klass: Klass;
     enterTimeline("emitKlassConstructor");
-    // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
-    // creating a closure, which will probably be slower at runtime.
-    var source = [];
-    var writer = new IndentingWriter(false, function (x) {
-        source.push(x);
+    Object.defineProperty(jsGlobal, mangledName, {
+      value: function() {
+        this._hashCode = 0;
+        for (var i = 0; i < classInfo.fTable.length; i++) {
+          var fieldInfo = classInfo.fTable[i];
+          if (fieldInfo.isStatic) {
+            continue;
+          }
+          var kind = getSignatureKind(fieldInfo.utf8Signature);
+          var defaultValue;
+          switch (kind) {
+          case Kind.Reference:
+            defaultValue = null;
+            break;
+          case Kind.Long:
+            defaultValue = Long.ZERO;
+            break;
+          default:
+            defaultValue = 0;
+            break;
+          }
+          this[fieldInfo.mangledName] = defaultValue;
+        }
+      },
     });
-    var emitter = new Emitter(writer, false, true, true);
-    J2ME.emitKlass(emitter, classInfo);
-    (1, eval)(source.join("\n"));
     leaveTimeline("emitKlassConstructor");
     // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.getClassNameSlow());
     // consoleWriter.writeLn(source);
