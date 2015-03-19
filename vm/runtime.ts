@@ -1285,7 +1285,7 @@ module J2ME {
         for (var i = 0; i < slots; i++) {
           frame.setLocal(j++, arguments[i]);
         }
-        return $.ctx.executeFrames([frame]);
+        return $.ctx.executeFrame(frame);
       };
       (<any>method).methodInfo = methodInfo;
       return method;
@@ -1318,7 +1318,7 @@ module J2ME {
           return;
         }
       }
-      return $.ctx.executeFrames([frame]);
+      return $.ctx.executeFrame(frame);
     };
     (<any>method).methodInfo = methodInfo;
     return method;
