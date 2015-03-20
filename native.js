@@ -678,8 +678,7 @@ Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] 
     var isolateId = $.ctx.runtime.isolate.id;
 
     for (var i = 0; i < links[isolateId].length; i++) {
-        var nativePointer = links[isolateId][i].klass.classInfo.getField("I.nativePointer.I").get(links[isolateId][i]);
-        linkArray[i].klass.classInfo.getField("I.nativePointer.I").set(linkArray[i], nativePointer);
+        linkArray[i].nativePointer = links[isolateId][i].nativePointer;
         linkArray[i].sender = links[isolateId][i].sender;
         linkArray[i].receiver = links[isolateId][i].receiver;
     }
@@ -696,7 +695,7 @@ Native["com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V"]
 Native["com/sun/midp/links/Link.init0.(II)V"] = function(sender, receiver) {
     this.sender = sender;
     this.receiver = receiver;
-    this.klass.classInfo.getField("I.nativePointer.I").set(this, util.id());
+    this.nativePointer = util.id();
 };
 
 Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(linkMessage, link) {
