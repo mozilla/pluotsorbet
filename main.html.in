@@ -18,7 +18,7 @@
   <script type="text/javascript" src="benchmark.js" defer></script>
   <script type="text/javascript" src="libs/ttest.js" defer></script>
   <!-- #endif -->
-  <!-- #if PROFILE == "true" -->
+  <!-- #if PROFILE > 0 -->
   <script type="text/javascript" src="build/shumway.js" defer></script>
   <!-- #endif -->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
@@ -31,7 +31,10 @@
   <script type="text/javascript" src="polyfill/codepointat.js" defer></script>
   <script type="text/javascript" src="polyfill/IndexedDB-getAll-shim.js" defer></script>
   <script type="text/javascript" src="polyfill/map.js" defer></script>
-  <script type="text/javascript" src="legacy.js" defer></script>
+  <script type="text/javascript" src="polyfill/contains.js" defer></script>
+  <script type="text/javascript" src="polyfill/find.js" defer></script>
+  <script type="text/javascript" src="polyfill/findIndex.js" defer></script>
+  <script type="text/javascript" src="polyfill/fround.js" defer></script>
   <script type="text/javascript" src="blackBox.js" defer></script>
   <script type="text/javascript" src="timer.js" defer></script>
   <script type="text/javascript" src="util.js" defer></script>

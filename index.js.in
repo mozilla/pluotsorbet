@@ -14,7 +14,7 @@
   }
 
   if (navigator.userAgent.indexOf('Chrome') > -1) {
-    loadingPromises.push(loadScript("chrome_polyfills.js"));
+    loadingPromises.push(loadScript("polyfill/chrome_polyfills.js"));
   }
 
   Promise.all(loadingPromises).then(function() {

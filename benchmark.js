@@ -214,7 +214,9 @@ var Benchmark = (function() {
       var self = this;
       var done = storage.round >= storage.numRounds;
       function run() {
-        forceCollectors();
+        if (NO_SECURITY) {
+          forceCollectors();
+        }
         if (storage.round !== 0) {
           if (NO_SECURITY) {
             self.sampleMemory();

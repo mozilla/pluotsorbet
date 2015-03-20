@@ -3,6 +3,9 @@
 
 'use strict';
 
+// The real profile variable declaration in config.ts is folded away by closure. Until we
+// make closure process this file also, make sure that |profile| is defined in this file.
+var profile;
 var jvm = new JVM();
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
@@ -163,10 +166,50 @@ function toggle(button) {
 
 var bigBang = 0;
 
+function startTimeline() {
+  requestTimelineBuffers(function (buffers) {
+    for (var i = 0; i < buffers.length; i++) {
+      buffers[i].reset();
+    }
+  });
+}
+
+function stopAndSaveTimeline() {
+  console.log("Saving profile, please wait ...");
+  var output = [];
+  var writer = new J2ME.IndentingWriter(false, function (s) {
+    output.push(s);
+  });
+  requestTimelineBuffers(function (buffers) {
+    var snapshots = [];
+    for (var i = 0; i < buffers.length; i++) {
+      snapshots.push(buffers[i].createSnapshot());
+    }
+    // Trace Statistcs
+    for (var i = 0; i < snapshots.length; i++) {
+      writer.writeLn("Timeline Statistics: " + i);
+      snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
+    }
+    // Trace Events
+    for (var i = 0; i < snapshots.length; i++) {
+      writer.writeLn("Timeline Events: " + i);
+      snapshots[i].trace(writer, 0.1); // Don't trace anything below 0.1 ms.
+    }
+  });
+  var text = output.join("\n");
+  var profileFilename = "profile.txt";
+  var blob = new Blob([text], {type : 'text/html'});
+  saveAs(blob, profileFilename);
+  console.log("Saved profile in: adb pull /sdcard/downloads/" + profileFilename);
+}
+
 function start() {
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
-  profiler && profiler.start(2000, false);
+  // For profile mode 1, we start the profiler and wait 2 seconds and show the flame chart UI.
+  profile === 1 && profiler.start(2000, false);
   bigBang = performance.now();
+  // For profiler mode 2, we start the timeline and stop it later by calling |stopAndSaveTimeline|.
+  profile === 2 && startTimeline();
   jvm.startIsolate0(config.main, config.args);
 }
 
@@ -372,8 +415,7 @@ perfWriterCheckbox.addEventListener('change', function() {
   }
 });
 
-
-var profiler = typeof Shumway !== "undefined" ? (function() {
+var profiler = profile === 1 ? (function() {
 
   var elPageContainer = document.getElementById("pageContainer");
   elPageContainer.classList.add("profile-mode");

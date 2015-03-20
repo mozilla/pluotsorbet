@@ -95,6 +95,13 @@ var currentlyFocusedTextEditor;
         MIDP.setFullScreen(d.fullScreen);
 
         asyncImpl("V", emoji.loadData());
+
+        if (profile === 2) {
+          // Use setTimeout to make sure our profiling enter/leave stack is not unpaired.
+          setTimeout(function () {
+            stopAndSaveTimeline();
+          }, 0);
+        }
     };
 
     Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {

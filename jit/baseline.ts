@@ -325,7 +325,7 @@ module J2ME {
     private stack: string [];
     private blockStack: string [];
     private blockStackPrecedence: Precedence [];
-    private variables: string [];
+    private variables: any;
     private lockObject: string;
     private hasOSREntryPoint = false;
     private entryBlock: number;
@@ -346,7 +346,7 @@ module J2ME {
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
       this.local = [];
-      this.variables = [];
+      this.variables = {};
       this.pc = 0;
       this.sp = 0;
       this.stack = [];
@@ -380,8 +380,16 @@ module J2ME {
       this.emitPrologue();
       this.emitBody();
 
-      if (this.variables.length) {
-        this.bodyEmitter.prependLn("var " + this.variables.join(",") + ";");
+      var variables = [];
+      for (var k in this.variables) {
+        if (this.variables[k] !== undefined) {
+          variables.push(k + "=" + this.variables[k]);
+        } else {
+          variables.push(k);
+        }
+      }
+      if (variables.length > 0) {
+        this.bodyEmitter.prependLn("var " + variables.join(",") + ";");
       }
       if (this.hasMonitorEnter) {
         this.bodyEmitter.prependLn("var th=$.ctx.thread;");
@@ -389,10 +397,8 @@ module J2ME {
       return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint ? this.blockMap.getOSREntryPoints() : []);
     }
 
-    needsVariable(name: string) {
-      if (this.variables.indexOf(name) < 0) {
-        this.variables.push(name);
-      }
+    needsVariable(name: string, value?: string) {
+      this.variables[name] = value;
     }
 
     setSuccessorsBlockStackHeight(block: Block, sp: number) {
@@ -405,6 +411,15 @@ module J2ME {
         }
         this.setBlockStackHeight(successors[i].startBci, sp);
       }
+    }
+
+    // Cache classes known to be initialized as locals.
+    localClassConstant(classInfo: ClassInfo): string {
+      if (classInfo !== this.methodInfo.classInfo) {
+        return classConstant(classInfo);
+      }
+      this.needsVariable("k0", classConstant(classInfo));
+      return "k0";
     }
 
     emitBody() {
@@ -480,7 +495,7 @@ module J2ME {
         if (classInfo.isInterface) {
           check = "IOI";
         }
-        check += "(" + this.peek(Kind.Reference) + "," + classConstant(classInfo) + ")";
+        check += "(" + this.peek(Kind.Reference) + "," + this.localClassConstant(classInfo) + ")";
         check = "&&" + check;
       }
       this.bodyEmitter.writeLn("if(pc>=" + handler.start_pc + "&&pc<" + handler.end_pc + check + "){pc=" + this.getBlockIndex(handler.handler_pc) + ";continue;}");
@@ -886,7 +901,7 @@ module J2ME {
         object = this.pop(Kind.Reference);
         if (opcode === Bytecodes.INVOKESPECIAL) {
           args.unshift(object);
-          call = classConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ").call(" + args.join(",") + ")";
+          call = this.localClassConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ").call(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           call = object + "." + methodInfo.virtualName + "(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
@@ -895,7 +910,7 @@ module J2ME {
           Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
-        call = classConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ")" + "(" + args.join(",") + ")";
+        call = this.localClassConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ")" + "(" + args.join(",") + ")";
       }
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
@@ -989,7 +1004,7 @@ module J2ME {
           this.emitPush(Kind.Long, "Long.fromBits(" + long.getLowBits() + "," + long.getHighBits() + ")", Precedence.Primary);
           return;
         case TAGS.CONSTANT_String:
-          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(cp.resolveString(cpi)) + ")", Precedence.Primary);
+          this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".c(" + cpi + ")", Precedence.Primary);
           return;
         default:
           throw "Not done for: " + TAGS[tag];
@@ -1004,7 +1019,7 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "new " + classConstant(classInfo)+ "()", Precedence.New);
+      this.emitPush(Kind.Reference, "new " + this.localClassConstant(classInfo)+ "()", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
@@ -1021,7 +1036,7 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "CCI";
       }
-      this.blockEmitter.writeLn(call + "(" + object + "," + classConstant(classInfo) + ");");
+      this.blockEmitter.writeLn(call + "(" + object + "," + this.localClassConstant(classInfo) + ");");
     }
 
     emitInstanceOf(cpi: number) {
@@ -1031,7 +1046,7 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      this.emitPush(Kind.Int, call + "(" + object + "," + classConstant(classInfo) + ")|0", Precedence.BitwiseOR);
+      this.emitPush(Kind.Int, call + "(" + object + "," + this.localClassConstant(classInfo) + ")|0", Precedence.BitwiseOR);
     }
 
     emitArrayLength() {
@@ -1043,7 +1058,7 @@ module J2ME {
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + "," + length + ")", Precedence.Call);
+      this.emitPush(Kind.Reference, "NA(" + this.localClassConstant(classInfo) + "," + length + ")", Precedence.Call);
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
@@ -1053,7 +1068,7 @@ module J2ME {
       for (var i = numDimensions - 1; i >= 0; i--) {
         dimensions[i] = this.pop(Kind.Int);
       }
-      this.emitPush(Kind.Reference, "NM(" + classConstant(classInfo) + ",[" + dimensions.join(",") + "])", Precedence.Call);
+      this.emitPush(Kind.Reference, "NM(" + this.localClassConstant(classInfo) + ",[" + dimensions.join(",") + "])", Precedence.Call);
     }
 
     private emitUnwind(emitter: Emitter, pc: string, nextPC: string, forceInline: boolean = false) {
