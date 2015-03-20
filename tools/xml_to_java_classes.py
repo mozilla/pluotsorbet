@@ -17,7 +17,7 @@ def convert(element):
 
 def main(argv):
   if not len(sys.argv) == 2:
-    print("xml_to_ResourceConstants.py <xml>")
+    print("xml_to_java_classes.py <xml>")
     return
 
   dom = minidom.parse(sys.argv[1])
