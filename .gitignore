@@ -67,3 +67,4 @@ tools/closure.jar
 
 # These files are generated from l10n
 java/l10n/*
+java/custom/com/sun/midp/i18n/ResourceConstants.java

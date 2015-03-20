@@ -152,6 +152,8 @@ $(LANG_DESTS): $(LANG_FILES)
 	rm -rf java/l10n/
 	mkdir java/l10n/
 	$(foreach file,$(LANG_FILES), tools/xml_to_json.py $(file) java/$(file:.xml=.json);)
+	mkdir -p java/custom/com/sun/midp/i18n/
+	tools/xml_to_ResourceConstants.py l10n/en-US.xml java/custom/com/sun/midp/i18n/ResourceConstants.java
 
 certs:
 	make -C certs
