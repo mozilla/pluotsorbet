@@ -16,13 +16,18 @@ def convert(element):
   return output
 
 def main(argv):
-  if not len(sys.argv) == 3:
-    print("xml_to_ResourceConstants.py <xml> <java source file>")
+  if not len(sys.argv) == 2:
+    print("xml_to_ResourceConstants.py <xml>")
     return
 
   dom = minidom.parse(sys.argv[1])
-  f = open(sys.argv[2], 'w')
-  output = "package com.sun.midp.i18n;\npublic class ResourceConstants {\n" + convert(dom) + "}"
+  f = open("java/custom/com/sun/midp/i18n/ResourceConstants.java", 'w')
+  output = "package com.sun.midp.i18n;\npublic class ResourceConstants {\n" + convert(dom) + "}\n"
+  f.write(output)
+  f.close()
+
+  f = open("java/custom/com/sun/midp/l10n/LocalizedStringsBase.java", 'w')
+  output = "package com.sun.midp.l10n;\nabstract class LocalizedStringsBase {\nnative static String getContent(int index);\n}\n"
   f.write(output)
   f.close()
 

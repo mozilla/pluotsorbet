@@ -142,7 +142,7 @@ tests: java jasmin
 	make -C tests
 
 LANG_FILES=$(shell find l10n -name "*.xml")
-LANG_DESTS=$(LANG_FILES:%.xml=java/%.json)
+LANG_DESTS=$(LANG_FILES:%.xml=java/%.json) java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 
 java/classes.jar: java
 java: $(LANG_DESTS)
@@ -152,8 +152,8 @@ $(LANG_DESTS): $(LANG_FILES)
 	rm -rf java/l10n/
 	mkdir java/l10n/
 	$(foreach file,$(LANG_FILES), tools/xml_to_json.py $(file) java/$(file:.xml=.json);)
-	mkdir -p java/custom/com/sun/midp/i18n/
-	tools/xml_to_ResourceConstants.py l10n/en-US.xml java/custom/com/sun/midp/i18n/ResourceConstants.java
+	mkdir -p java/custom/com/sun/midp/i18n/ java/custom/com/sun/midp/l10n/
+	tools/xml_to_java_classes.py l10n/en-US.xml
 
 certs:
 	make -C certs
