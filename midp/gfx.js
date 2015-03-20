@@ -1743,7 +1743,7 @@ var currentlyFocusedTextEditor;
                     return;
                 }
                 var li = document.createElement("li");
-                var text = J2ME.fromJavaString(command.shortLabel).get(command));
+                var text = J2ME.fromJavaString(command.shortLabel);
                 var a = document.createElement("a");
                 a.textContent = text;
                 li.appendChild(a);
