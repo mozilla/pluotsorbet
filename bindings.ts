@@ -236,7 +236,7 @@ module J2ME {
         }
       }
     },
-    "com/sun/midp/io/j2me/sms/Protocol$SMSPacket;": {
+    "com/sun/midp/io/j2me/sms/Protocol$SMSPacket": {
       fields: {
         instanceSymbols: {
           "message.[B": "message",
