@@ -539,8 +539,7 @@ var TextEditorProvider = (function() {
         },
 
         getContentHeight: function() {
-            var lineHeight = this.font.height;
-            return ((this.content.match(/\n/g) || []).length + 1) * lineHeight;
+            return ((this.content.match(/\n/g) || []).length + 1) * this.font.height;
         },
     }, CommonEditorPrototype);
 
