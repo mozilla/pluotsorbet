@@ -154,9 +154,9 @@ Native["com/sun/j2me/pim/PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescri
   console.warn("PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V incomplete");
 
   PIM.supportedFields.forEach(function(field, i) {
-    desc[i].klass.classInfo.getField("I.field.I").set(desc[i], field.field);
-    desc[i].klass.classInfo.getField("I.dataType.I").set(desc[i], field.dataType);
-    desc[i].klass.classInfo.getField("I.maxValues.I").set(desc[i], field.maxValues);
+    desc[i].field = field.field;
+    desc[i].dataType = field.dataType;
+    desc[i].maxValues = field.maxValues;
   });
 };
 

@@ -185,6 +185,15 @@ module J2ME {
           "fileHandler.Lcom/sun/cdc/io/j2me/file/BaseFileHandler;": "fileHandler",
         }
       }
+    },
+    "com/sun/j2me/pim/PIMFieldDescriptor": {
+      fields: {
+        instanceSymbols: {
+          "field.I": "field",
+          "dataType.I": "dataType",
+          "maxValues.I": "maxValues",
+        }
+      }
     }
   };
 
