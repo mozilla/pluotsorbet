@@ -247,6 +247,31 @@ module J2ME {
         }
       }
     },
+    "com/sun/midp/main/CommandState": {
+      fields: {
+        instanceSymbols: {
+          "suiteId.I": "suiteId",
+          "midletClassName.Ljava/lang/String;": "midletClassName",
+          "arg0.Ljava/lang/String;": "arg0",
+          "arg1.Ljava/lang/String;": "arg1",
+          "arg2.Ljava/lang/String;": "arg2",
+        }
+      }
+    },
+    "com/sun/midp/midletsuite/SuiteSettings": {
+      fields: {
+        instanceSymbols: {
+          "pushInterruptSetting.B": "pushInterruptSetting",
+        }
+      }
+    },
+    "com/sun/midp/midletsuite/InstallInfo": {
+      fields: {
+        instanceSymbols: {
+          "trusted.Z": "trusted",
+        }
+      }
+    },
   };
 
   export var BindingsMap = new Uint8Hashtable(50);
