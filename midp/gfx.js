@@ -348,7 +348,7 @@ var GFX = (function(Native) {
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
     function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
         var c = initImageData(dataDest, width, height);
-        copyImage(c, dataSource.contextInfo.context.canvas, 0, 0, width, height, transform, x, y);
+        copyImage(c, dataSource.contextInfo.context.canvas, x, y, width, height, transform, 0, 0);
         dataDest.klass.classInfo.getField("I.isMutable.Z").set(dataDest, isMutable);
     };
 
