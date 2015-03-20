@@ -124,7 +124,7 @@ module J2ME {
           "priority.I": "priority",
         }
       }
-    }
+    },
     "javax/microedition/lcdui/Font": {
       fields: {
         instanceSymbols: {
@@ -220,7 +220,18 @@ module J2ME {
           "maxValues.I": "maxValues",
         }
       }
-    }
+    },
+    "com/sun/midp/io/j2me/sms/Protocol$SMSPacket;": {
+      fields: {
+        instanceSymbols: {
+          "message.[B": "message",
+          "address.[B": "address",
+          "port.I": "port",
+          "sentAt.J": "sentAt",
+          "messageType.I": "messageType",
+        }
+      }
+    },
   };
 
   export var BindingsMap = new Uint8Hashtable(50);
