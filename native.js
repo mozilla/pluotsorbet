@@ -705,24 +705,6 @@ Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/s
     asyncImpl("V", new Promise(function(){}));
 };
 
-Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V"] = function(data) {
-    this.decoded = new TextDecoder("UTF-8").decode(data);
-};
-
-Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.readNative.([CII)I"] = function(cbuf, off, len) {
-    if (this.decoded.length === 0) {
-      return -1;
-    }
-
-    for (var i = 0; i < len; i++) {
-      cbuf[i + off] = this.decoded.charCodeAt(i);
-    }
-
-    this.decoded = this.decoded.substring(len);
-
-    return len;
-};
-
 Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(jStr) {
     var str = J2ME.fromJavaString(jStr);
 
@@ -967,4 +949,14 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
     }
+};
+
+Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
+  var internedStrings = J2ME.internedStrings;
+  var internedString = internedStrings.getByRange(this.value, this.offset, this.count);
+  if (internedString !== null) {
+    return internedString;
+  }
+  internedStrings.put(this.value.subarray(this.offset, this.offset + this.count), this);
+  return this;
 };
