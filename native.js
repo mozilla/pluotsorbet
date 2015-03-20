@@ -561,23 +561,11 @@ Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang
     return obj;
 };
 
-Override["com/sun/cldc/io/ResourceInputStream.available.()I"] = function() {
-    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
-
-    if (!handle) {
-        throw $.newIOException();
-    }
-
+Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
     return handle.data.length - handle.pos;
 };
 
-Override["com/sun/cldc/io/ResourceInputStream.read.()I"] = function() {
-    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
-
-    if (!handle) {
-        throw $.newIOException();
-    }
-
+Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
 };
 
