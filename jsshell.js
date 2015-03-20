@@ -75,12 +75,22 @@ var document = {
       },
     };
   },
-  getElementById: function() {
+  createElement: createElement,
+  getElementById: createElement,
+  addEventListener: function() {
+  },
+};
+
+function createElement() {
     return {
       addEventListener: function() {
       },
       getContext: function() {
         return {
+          getImageData: function() {
+          },
+          putImageData: function() {
+          },
           save: function() {
           },
         };
@@ -95,10 +105,7 @@ var document = {
       },
       style: "",
     };
-  },
-  addEventListener: function() {
-  },
-};
+  }
 
 var Event = function() {
 }

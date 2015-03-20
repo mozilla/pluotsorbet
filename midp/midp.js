@@ -4,6 +4,7 @@
 'use strict';
 
 var MIDP = (function() {
+  var foregroundDisplayId = -1;
   var canvas = document.getElementById("canvas");
   var context2D = canvas.getContext("2d");
   context2D.save();
@@ -14,11 +15,54 @@ var MIDP = (function() {
     updateCanvas();
   };
 
+  function NativeDisplay() {
+    this.fullScreen = 1;
+  };
+
+  var nativeDisplays = (function() {
+    var map = new Map();
+
+    function get(id) {
+      var d = map.get(id);
+      if (!d) {
+        d = new NativeDisplay();
+        map.set(id, d);
+      }
+      return d;
+    }
+
+    return {
+      get: get,
+    }
+  })();
+
+  Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
+    var d = nativeDisplays.get(displayId);
+    d.fullScreen = mode;
+    if (isForegroundDisplay(displayId)) {
+      setFullScreen(mode);
+    }
+  };
+
+  function setForegroundDisplay(displayId) {
+    if (displayId == foregroundDisplayId) {
+      return;
+    }
+
+    foregroundDisplayId = displayId;
+    var d = nativeDisplays.get(displayId);
+    setFullScreen(d.fullScreen);
+  }
+
   function updatePhysicalScreenSize() {
     if (!config.autosize || /no|0/.test(config.autosize)) {
       physicalScreenWidth = document.getElementById('display').clientWidth;
       physicalScreenHeight = document.getElementById('display').clientHeight;
     }
+  }
+
+  function isForegroundDisplay(displayId) {
+    return displayId === foregroundDisplayId;
   }
 
   function updateCanvas() {
@@ -30,13 +74,16 @@ var MIDP = (function() {
     var newHeight = physicalScreenHeight - headerHeight;
     var newWidth = physicalScreenWidth;
 
-    if (newHeight != canvas.height || newWidth != canvas.width) {
-      canvas.height = newHeight;
-      canvas.width = newWidth;
-      canvas.style.height = canvas.height + "px";
-      canvas.style.width = canvas.width + "px";
-      canvas.style.top = headerHeight + "px";
-      canvas.dispatchEvent(new Event("canvasresize"));
+    var imageData;
+
+    if (-1 != foregroundDisplayId) {
+      if (newHeight != canvas.height || newWidth != canvas.width) {
+        canvas.style.height = newHeight + "px";
+        canvas.style.width = newWidth + "px";
+        canvas.style.top = headerHeight + "px";
+        GFX.screenContextInfo.resize(newWidth, newHeight);
+        canvas.dispatchEvent(new Event("canvasresize"));
+      }
     }
   };
 
@@ -159,13 +206,6 @@ var MIDP = (function() {
 
   // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
   Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
-    // See DisplayContainer::createDisplayId, called by the LCDUIEnvironment constructor,
-    // called by CldcMIDletSuiteLoader::createSuiteEnvironment.
-    // The formula depens on the ID of the isolate that calls createDisplayId, that is
-    // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
-    // the display ID.
-    displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
-
     asyncImpl("V", Promise.all(loadingMIDletPromises));
   };
 
@@ -311,7 +351,7 @@ var MIDP = (function() {
       intParam1: whichType,
       intParam2: pt.x,
       intParam3: pt.y,
-      intParam4: displayId
+      intParam4: foregroundDisplayId
     }, foregroundIsolateId);
   }
 
@@ -321,7 +361,7 @@ var MIDP = (function() {
       intParam1: whichType,
       intParam2: distancePt && distancePt.x || 0,
       intParam3: distancePt && distancePt.y || 0,
-      intParam4: displayId,
+      intParam4: foregroundDisplayId,
       intParam5: pt.x,
       intParam6: pt.y,
       floatParam1: Math.fround(aFloatParam1 || 0.0),
@@ -694,8 +734,7 @@ var MIDP = (function() {
   };
 
   // The foreground isolate will get the user events (keypresses, etc.)
-  var foregroundIsolateId;
-  var displayId = -1;
+  var foregroundIsolateId = -1;
   var nativeEventQueues = {};
   var waitingNativeEventQueue = {};
 
@@ -720,43 +759,43 @@ var MIDP = (function() {
   }
 
   function sendVirtualKeyboardEvent() {
-    if (-1 != displayId && undefined != foregroundIsolateId) {
+    if (-1 != foregroundDisplayId && -1 != foregroundIsolateId) {
       sendNativeEvent({
         type: VIRTUAL_KEYBOARD_EVENT,
         intParam1: 0,
         intParam2: 0,
         intParam3: 0,
-        intParam4: displayId,
+        intParam4: foregroundDisplayId,
       }, foregroundIsolateId);
     }
   };
 
   function sendRotationEvent() {
-    if (-1 != displayId && undefined != foregroundIsolateId) {
+    if (-1 != foregroundDisplayId && -1 != foregroundIsolateId) {
       sendNativeEvent({
         type: ROTATION_EVENT,
         intParam1: 0,
         intParam2: 0,
         intParam3: 0,
-        intParam4: displayId,
+        intParam4: foregroundDisplayId,
       }, foregroundIsolateId);
     }
   }
 
   function sendCommandEvent(id) {
-    if (-1 != displayId && undefined != foregroundIsolateId) {
+    if (-1 != foregroundDisplayId && -1 != foregroundIsolateId) {
       sendNativeEvent({
         type: COMMAND_EVENT,
         intParam1: id,
         intParam2: 0,
         intParam3: 0,
-        intParam4: displayId,
+        intParam4: foregroundDisplayId,
       }, foregroundIsolateId);
     }
   }
 
   function sendEndOfMediaEvent(pId, duration) {
-    if (undefined != foregroundIsolateId) {
+    if (-1 != foregroundIsolateId) {
       sendNativeEvent({
         type: MMAPI_EVENT,
         intParam1: pId,
@@ -768,7 +807,7 @@ var MIDP = (function() {
   }
 
   function sendMediaSnapshotFinishedEvent(pId) {
-    if (undefined != foregroundIsolateId) {
+    if (-1 != foregroundIsolateId) {
       sendNativeEvent({
         type: MMAPI_EVENT,
         intParam1: pId,
@@ -806,13 +845,13 @@ var MIDP = (function() {
 
   function keyPress(keyCode) {
     if (!suppressKeyEvents) {
-      sendNativeEvent({ type: KEY_EVENT, intParam1: PRESSED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
+      sendNativeEvent({ type: KEY_EVENT, intParam1: PRESSED, intParam2: keyCode, intParam3: 0, intParam4: foregroundDisplayId }, foregroundIsolateId);
     }
   };
 
   function keyRelease(keyCode) {
     if (!suppressKeyEvents) {
-      sendNativeEvent({ type: KEY_EVENT, intParam1: RELEASED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
+      sendNativeEvent({ type: KEY_EVENT, intParam1: RELEASED, intParam2: keyCode, intParam3: 0, intParam4: foregroundDisplayId }, foregroundIsolateId);
     }
   };
 
@@ -996,12 +1035,12 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function() {
-    displayId = -1;
+    setForegroundDisplay(-1);
   };
 
   Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(isolateId, dispId) {
-    displayId = dispId;
     foregroundIsolateId = isolateId;
+    setForegroundDisplay(dispId);
   };
 
   var connectionRegistry = {
@@ -1252,10 +1291,10 @@ var MIDP = (function() {
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
     keyPress: keyPress,
     keyRelease: keyRelease,
-    displayId: displayId,
     context2D: context2D,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,
+    isForegroundDisplay: isForegroundDisplay,
   };
 })();
