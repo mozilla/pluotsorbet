@@ -205,6 +205,13 @@ module J2ME {
         }
       }
     },
+    "com/sun/midp/rms/RecordStoreSharedDBHeader": {
+      fields: {
+        instanceSymbols: {
+          "lookupId.I": "lookupId",
+        }
+      }
+    },
     "com/sun/cdc/io/j2me/file/Protocol": {
       fields: {
         instanceSymbols: {
