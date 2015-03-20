@@ -288,7 +288,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
-        $.ctx.executeFrames([Frame.create(clinit, [], 0)]);
+        $.ctx.executeFrame(Frame.create(clinit, [], 0));
     }
 };
 

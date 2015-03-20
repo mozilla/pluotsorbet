@@ -834,6 +834,11 @@ module J2ME {
     m(index: number): Function;
 
     /**
+     * Resolve constant pool entry.
+     */
+    c(index: number): any;
+
+    /**
      * Linked class methods.
      */
     methods: Function[];
@@ -1296,7 +1301,7 @@ module J2ME {
         for (var i = 0; i < slots; i++) {
           frame.setLocal(j++, arguments[i]);
         }
-        return $.ctx.executeFrames([frame]);
+        return $.ctx.executeFrame(frame);
       };
       (<any>method).methodInfo = methodInfo;
       return method;
@@ -1329,7 +1334,7 @@ module J2ME {
           return;
         }
       }
-      return $.ctx.executeFrames([frame]);
+      return $.ctx.executeFrame(frame);
     };
     (<any>method).methodInfo = methodInfo;
     return method;
@@ -1652,6 +1657,11 @@ module J2ME {
     return klass.methods[index];
   }
 
+  function klassResolveConstantPoolEntry(index: number) {
+    var klass: Klass = this;
+    return klass.classInfo.constantPool.resolve(index, TAGS.CONSTANT_Any);
+  }
+
   export function extendKlass(classInfo: ClassInfo, klass: Klass, superKlass: Klass) {
     klass.superKlass = superKlass;
     if (superKlass) {
@@ -1674,6 +1684,7 @@ module J2ME {
 
     // Method linking.
     klass.m = klassMethodLink;
+    klass.c = klassResolveConstantPoolEntry;
     klass.methods = new Array(classInfo.getMethodCount());
   }
 
@@ -1856,10 +1867,6 @@ module J2ME {
     object.str = str;
     return object;
   }
-
-  export function newStringConstant(str: string): java.lang.String {
-    return $.newStringConstant(str);
-  };
 
   export function newArray(klass: Klass, size: number) {
     if (size < 0) {
@@ -2177,7 +2184,6 @@ var CCI = J2ME.checkCastInterface;
 var AK = J2ME.getArrayKlass;
 var NA = J2ME.newArray;
 var NM = J2ME.newMultiArray;
-var SC = J2ME.newStringConstant;
 
 var CDZ = J2ME.checkDivideByZero;
 var CDZL = J2ME.checkDivideByZeroLong;
