@@ -115,6 +115,24 @@ module J2ME {
         }
       }
     },
+    "javax/microedition/lcdui/Command": {
+      fields: {
+        instanceSymbols: {
+          "id.I": "id",
+          "commandType.I": "commandType",
+          "shortLabel.Ljava/lang/String;": "shortLabel",
+          "priority.I": "priority",
+        }
+      }
+    }
+    "javax/microedition/lcdui/Font": {
+      fields: {
+        instanceSymbols: {
+          "baseline.I": "baseline",
+          "height.I": "height",
+        }
+      }
+    },
     "javax/microedition/lcdui/Image": {
       fields: {
         instanceSymbols: {
@@ -128,7 +146,15 @@ module J2ME {
       fields: {
         instanceSymbols: {
           "width.I": "width",
-          "height.I": "height"
+          "height.I": "height",
+          "isMutable.Z": "isMutable",
+        }
+      }
+    },
+    "com/nokia/mid/ui/TextEditor": {
+      fields: {
+        instanceSymbols: {
+          "font.Ljavax/microedition/lcdui/Font;": "font",
         }
       }
     },
@@ -362,6 +388,7 @@ module J2ME {
     export interface ImageData extends java.lang.Object {
       width: number;
       height: number;
+      isMutable: boolean;
     }
 
     export interface Image extends java.lang.Object {
