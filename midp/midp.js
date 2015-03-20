@@ -894,7 +894,7 @@ var MIDP = (function() {
     var value = MIDP.localizedStrings[id];
 
     if (!value) {
-      throw $.newIllegalStateException();
+      throw $.newIllegalStateException("String with ID (" + id + ") doesn't exist");
     }
 
     return J2ME.newString(value);
