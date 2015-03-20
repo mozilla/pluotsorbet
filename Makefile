@@ -172,5 +172,5 @@ clean:
 	make -C tests clean
 	make -C java clean
 	rm -rf java/l10n/
-	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java
+	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 	make -C bench clean
