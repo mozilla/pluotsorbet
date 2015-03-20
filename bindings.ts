@@ -409,5 +409,13 @@ module J2ME {
       stringParam6: java.lang.String;
     }
   }
+
+  export module com.sun.j2me.pim {
+    export interface PIMFieldDescriptor {
+      field: number;
+      dataType: number;
+      maxValues: number;
+    }
+  }
 }
 
