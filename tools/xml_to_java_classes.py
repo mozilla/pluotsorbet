@@ -10,7 +10,7 @@ def convert(element):
 
   entries = element.getElementsByTagName("localized_string");
   for entry in entries:
-    output = output + "public final static int " + entry.getAttribute("Key") + " = " + str(constant) + ";"
+    output = output + "    public final static int " + entry.getAttribute("Key") + " = " + str(constant) + ";\n"
     constant = constant + 1
 
   return output
@@ -22,12 +22,12 @@ def main(argv):
 
   dom = minidom.parse(sys.argv[1])
   f = open("java/custom/com/sun/midp/i18n/ResourceConstants.java", 'w')
-  output = "package com.sun.midp.i18n;\npublic class ResourceConstants {\n" + convert(dom) + "}\n"
+  output = "package com.sun.midp.i18n;\n\npublic class ResourceConstants {\n" + convert(dom) + "}\n"
   f.write(output)
   f.close()
 
   f = open("java/custom/com/sun/midp/l10n/LocalizedStringsBase.java", 'w')
-  output = "package com.sun.midp.l10n;\nabstract class LocalizedStringsBase {\nnative static String getContent(int index);\n}\n"
+  output = "package com.sun.midp.l10n;\n\nabstract class LocalizedStringsBase {\n    native static String getContent(int index);\n}\n"
   f.write(output)
   f.close()
 
