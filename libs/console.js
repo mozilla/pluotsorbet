@@ -166,13 +166,15 @@
    * WebConsole: The standard console.log() and friends.
    */
   function WebConsole() {
-    this.buffer = "";
   }
 
   WebConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        NativeConsoleOutputStream.flush(); // Preserve order w/r/t NativeConsoleOutputStream.print().
+        if (console.buffer.length) {
+          // Preserve order w/r/t console.print().
+          console.flush();
+        }
         windowConsole[item.levelName].apply(windowConsole, [item.message]);
       }
     },
@@ -333,6 +335,24 @@
     error: logAtLevel.bind(null, "error"),
     profile: typeof console !== "undefined" && console.profile ? console.profile.bind(console) : null,
     profileEnd: typeof console !== "undefined" && console.profileEnd ? console.profileEnd.bind(console) : null,
+  };
+
+  window.console.buffer = "";
+
+  window.console.print = function(ch) {
+    if (ch === 10) {
+      this.flush();
+    } else {
+      this.buffer += String.fromCharCode(ch);
+    }
+  };
+
+  window.console.flush = function() {
+    if (this.buffer.length) {
+      var temp = this.buffer;
+      this.buffer = "";
+      console.info(temp);
+    }
   };
 
 })();
