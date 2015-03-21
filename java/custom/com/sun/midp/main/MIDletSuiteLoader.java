@@ -98,10 +98,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
      * The systems should be initialized only once in the AMS task.
      */
     protected void initGlobalSystems() {
-
-        // Initialize AMS task resources needed for all tasks
-        MIDletSuiteUtils.initAmsResources();
-
         // Initialize JSR subsystems
         JSRInitializer.init();
 

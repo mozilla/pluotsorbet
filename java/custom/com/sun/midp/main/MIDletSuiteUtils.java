@@ -624,40 +624,6 @@ public class MIDletSuiteUtils {
     }
 
     /**
-     * The method is designed to init AMS task resources. The resources
-     * can be shared between all working isolates, so it is important to
-     * init them before other isolate tasks will require the resources.
-     *
-     * The tasks other than AMS shouldn't call this method, it's guarded
-     * by run-time exception.
-     *
-     * IMPL_NOTE: The method is temporarily loacated here, since we need
-     *   to introduce new abstraction for AMS task logic and separate it
-     *   from the MIDlet suite loading and execution logic. Now the method
-     *   is needed to MIDletSuiteLoader & NativeAppManagerPeer classes
-     *   which represent an AMS task for Java AMS and Native AMS cases
-     *   correspondingly.
-     */
-    static void initAmsResources() {
-        // Check whether caller task is an AMS task
-        if (!isAmsIsolate()) {
-            throw new RuntimeException(
-                "Resources initialization should be done from the AMS task");
-        }
-
-        // The static initializer of the Display class will forward on
-        // the Chameleon skin resources loading if Chameleon is being used.
-        // It is important to load Chameleon resources from the AMS isolate
-        // before other isolates will need them.
-        try {
-            Class.forName("javax.microedition.lcdui.Display");
-        } catch (Throwable ex) {
-            throw new RuntimeException(
-                "Display initialization has failed");
-        }
-    }
-
-    /**
      * Returns sequence number of MIDlet.
      *
      * @param suite suite the MIDLet belongs to
