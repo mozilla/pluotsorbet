@@ -579,6 +579,7 @@ module J2ME {
     public utf8Signature: Uint8Array;
     public mangledName: string = null;
     public accessFlags: ACCESS_FLAGS;
+    public defaultValue: any = undefined;
     private _constantvalue_index: number = -1;
     fTableIndex: number = -1;
 

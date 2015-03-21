@@ -998,20 +998,24 @@ module J2ME {
           if (fieldInfo.isStatic) {
             continue;
           }
-          var kind = getSignatureKind(fieldInfo.utf8Signature);
-          var defaultValue;
-          switch (kind) {
-          case Kind.Reference:
-            defaultValue = null;
-            break;
-          case Kind.Long:
-            defaultValue = Long.ZERO;
-            break;
-          default:
-            defaultValue = 0;
-            break;
+          if (typeof fieldInfo.defaultValue !== "undefined") {
+            this[fieldInfo.mangledName] = fieldInfo.defaultValue;
+          } else {
+            var kind = getSignatureKind(fieldInfo.utf8Signature);
+            var defaultValue;
+            switch (kind) {
+            case Kind.Reference:
+              defaultValue = null;
+              break;
+            case Kind.Long:
+              defaultValue = Long.ZERO;
+              break;
+            default:
+              defaultValue = 0;
+              break;
+            }
+            this[fieldInfo.mangledName] = fieldInfo.defaultValue = defaultValue;
           }
-          this[fieldInfo.mangledName] = defaultValue;
         }
       },
     });
