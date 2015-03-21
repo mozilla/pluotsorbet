@@ -1051,10 +1051,6 @@ module J2ME {
     emitInstanceOf(cpi: number) {
       var object = this.pop(Kind.Reference);
       var classInfo = this.lookupClass(cpi);
-      if (this.isPrivileged) {
-        this.emitPush(Kind.Int, "1", Precedence.Primary);
-        return;
-      }
       var call = "IOK";
       if (classInfo.isInterface) {
         call = "IOI";
