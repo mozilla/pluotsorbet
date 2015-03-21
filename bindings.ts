@@ -30,6 +30,14 @@ module J2ME {
         }
       }
     },
+    "com/sun/cldc/isolate/Isolate": {
+      fields: {
+        instanceSymbols: {
+          "_mainArgs.[Ljava/lang/String;": "_mainArgs",
+          "_mainClass.Ljava/lang/String;": "_mainClass",
+        }
+      }
+    },
     "java/io/ByteArrayOutputStream": {
       fields: {
         instanceSymbols: {
@@ -115,6 +123,24 @@ module J2ME {
         }
       }
     },
+    "javax/microedition/lcdui/Command": {
+      fields: {
+        instanceSymbols: {
+          "id.I": "id",
+          "commandType.I": "commandType",
+          "shortLabel.Ljava/lang/String;": "shortLabel",
+          "priority.I": "priority",
+        }
+      }
+    },
+    "javax/microedition/lcdui/Font": {
+      fields: {
+        instanceSymbols: {
+          "baseline.I": "baseline",
+          "height.I": "height",
+        }
+      }
+    },
     "javax/microedition/lcdui/Image": {
       fields: {
         instanceSymbols: {
@@ -128,7 +154,15 @@ module J2ME {
       fields: {
         instanceSymbols: {
           "width.I": "width",
-          "height.I": "height"
+          "height.I": "height",
+          "isMutable.Z": "isMutable",
+        }
+      }
+    },
+    "com/nokia/mid/ui/TextEditor": {
+      fields: {
+        instanceSymbols: {
+          "font.Ljavax/microedition/lcdui/Font;": "font",
         }
       }
     },
@@ -179,10 +213,69 @@ module J2ME {
         }
       }
     },
+    "com/sun/midp/rms/RecordStoreSharedDBHeader": {
+      fields: {
+        instanceSymbols: {
+          "lookupId.I": "lookupId",
+        }
+      }
+    },
     "com/sun/cdc/io/j2me/file/Protocol": {
       fields: {
         instanceSymbols: {
           "fileHandler.Lcom/sun/cdc/io/j2me/file/BaseFileHandler;": "fileHandler",
+        }
+      }
+    },
+    "com/sun/j2me/pim/PIMFieldDescriptor": {
+      fields: {
+        instanceSymbols: {
+          "field.I": "field",
+          "dataType.I": "dataType",
+          "maxValues.I": "maxValues",
+        }
+      }
+    },
+    "com/sun/midp/io/j2me/sms/Protocol$SMSPacket": {
+      fields: {
+        instanceSymbols: {
+          "message.[B": "message",
+          "address.[B": "address",
+          "port.I": "port",
+          "sentAt.J": "sentAt",
+          "messageType.I": "messageType",
+        }
+      }
+    },
+    "com/sun/midp/main/CommandState": {
+      fields: {
+        instanceSymbols: {
+          "suiteId.I": "suiteId",
+          "midletClassName.Ljava/lang/String;": "midletClassName",
+          "arg0.Ljava/lang/String;": "arg0",
+          "arg1.Ljava/lang/String;": "arg1",
+          "arg2.Ljava/lang/String;": "arg2",
+        }
+      }
+    },
+    "com/sun/midp/midletsuite/SuiteSettings": {
+      fields: {
+        instanceSymbols: {
+          "pushInterruptSetting.B": "pushInterruptSetting",
+        }
+      }
+    },
+    "com/sun/midp/midletsuite/InstallInfo": {
+      fields: {
+        instanceSymbols: {
+          "trusted.Z": "trusted",
+        }
+      }
+    },
+    "com/sun/midp/links/Link": {
+      fields: {
+        instanceSymbols: {
+          "nativePointer.I": "nativePointer",
         }
       }
     }
@@ -332,6 +425,8 @@ module J2ME {
     export interface Isolate extends java.lang.Object {
       id: number;
       runtime: Runtime;
+      _mainArgs: java.lang.String [];
+      _mainClass: java.lang.String;
     }
   }
 
@@ -353,6 +448,7 @@ module J2ME {
     export interface ImageData extends java.lang.Object {
       width: number;
       height: number;
+      isMutable: boolean;
     }
 
     export interface Image extends java.lang.Object {
@@ -398,6 +494,14 @@ module J2ME {
       stringParam4: java.lang.String;
       stringParam5: java.lang.String;
       stringParam6: java.lang.String;
+    }
+  }
+
+  export module com.sun.j2me.pim {
+    export interface PIMFieldDescriptor {
+      field: number;
+      dataType: number;
+      maxValues: number;
     }
   }
 }
