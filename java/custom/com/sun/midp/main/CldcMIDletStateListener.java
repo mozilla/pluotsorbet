@@ -30,8 +30,6 @@ import javax.microedition.midlet.*;
 
 import com.sun.midp.content.CHManager;
 
-import com.sun.midp.installer.OtaNotifier;
-
 import com.sun.midp.lcdui.DisplayContainer;
 
 import com.sun.midp.midlet.*;
@@ -108,8 +106,6 @@ class CldcMIDletStateListener implements MIDletStateListener {
         midletControllerEventProducer.sendMIDletCreateNotifyEvent(
             suite.getID(), className, externalAppId,
                 suite.getMIDletName(className));
-
-        OtaNotifier.retryInstallNotification(classSecurityToken, suite);
 
         if (vmInMidletStartMode) {
             /*
