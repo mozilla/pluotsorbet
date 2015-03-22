@@ -23,7 +23,7 @@ export JSR_179
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(JSR_256)$(JSR_179)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(JSR_256)$(JSR_082)$(JSR_179)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
