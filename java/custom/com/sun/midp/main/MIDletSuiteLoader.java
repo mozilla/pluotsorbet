@@ -31,7 +31,6 @@ import com.sun.midp.midlet.*;
 import com.sun.midp.jsr.JSRInitializer;
 import com.sun.midp.io.j2me.push.PushRegistryInternal;
 import com.sun.midp.content.CHManager;
-import com.sun.midp.wma.WMACleanupMonitor;
 import com.sun.midp.configurator.Constants;
 import com.sun.midp.i18n.*;
 import com.sun.midp.log.*;
@@ -106,9 +105,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
         // Initialize the Content Handler Monitor of MIDlet exits
         CHManager.getManager(internalSecurityToken).init(
             midletProxyList, eventQueue);
-
-        // Initialize WMA's cleanup monitor
-        WMACleanupMonitor.init(midletProxyList);
 
         // Initialize Pipe service
         com.sun.midp.io.j2me.pipe.Protocol.registerService(internalSecurityToken);
