@@ -55,24 +55,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
         this.midletDisplayName = args[2];
         this.args = new String[] {args[3], args[4], args[5]};
         this.externalAppId = Integer.parseInt(args[6]);
-
-        if (args.length > 7) {
-            boolean isDebugMode = Integer.parseInt(args[7]) != 0;
-
-            if (isDebugMode) {
-                currentIsolate = Isolate.currentIsolate();
-                currentIsolate.attachDebugger();
-
-                // wait for a connection from debugger
-                while (!currentIsolate.isDebuggerConnected()) {
-                    try {
-                        Thread.sleep(300);
-                    } catch (Exception e) {
-                        // ignore
-                    }
-                }
-            }
-        }
     }
 
     /** Inits suite loader instance */
