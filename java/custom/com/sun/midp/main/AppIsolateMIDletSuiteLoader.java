@@ -27,7 +27,6 @@
 package com.sun.midp.main;
 
 import com.sun.cldc.isolate.Isolate;
-import com.sun.midp.io.j2me.pipe.Protocol;
 import com.sun.midp.links.Link;
 import com.sun.midp.links.LinkPortal;
 import com.sun.midp.security.Permissions;
@@ -113,8 +112,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
             midletExecuteEventProducer);
         
         initLinks();
-
-        com.sun.midp.io.j2me.pipe.Protocol.initUserContext();
     }
 
     /** Restricts suite access to internal API */
