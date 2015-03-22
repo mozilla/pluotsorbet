@@ -213,6 +213,11 @@ function start() {
   jvm.startIsolate0(config.main, config.args);
 }
 
+// If we're not running a MIDlet, we need to wait everything to be loaded.
+if (!config.midletClassName || config.midletClassName == "RunTests") {
+  loadingPromises = loadingPromises.concat(loadingMIDletPromises);
+}
+
 Promise.all(loadingPromises).then(start, function (reason) {
   console.error("Loading failed: \"" + reason + "\"");
 });
