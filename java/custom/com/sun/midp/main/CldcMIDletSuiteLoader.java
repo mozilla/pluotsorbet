@@ -27,6 +27,8 @@ package com.sun.midp.main;
 import com.sun.j2me.security.AccessController;
 
 import com.sun.midp.midlet.*;
+import com.sun.midp.security.*;
+import com.sun.midp.events.EventQueue;
 import com.sun.midp.lcdui.*;
 import com.sun.midp.midletsuite.*;
 import com.sun.midp.configurator.Constants;
@@ -36,12 +38,65 @@ import com.sun.midp.publickeystore.WebPublicKeyStore;
 import com.sun.midp.rms.RmsEnvironment;
 import com.sun.midp.rms.RecordStoreRegistry;
 
-
 /**
  * The class presents abstract MIDlet suite loader with routines to prepare
  * runtime environment for CLDC a suite execution.
  */
-abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
+abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
+        /** The ID of the MIDlte suite task Isolate */
+    protected int isolateId;
+
+    /** The ID of the AMS task Isolate */
+    protected int amsIsolateId;
+
+    /** Suite ID of the MIDlet suite */
+    protected int suiteId;
+
+    /** External application ID that can be provided by native AMS */
+    protected int externalAppId;
+
+    /** Name of the class to start MIDlet suite execution */
+    protected String midletClassName;
+
+    /** Display name of a MIDlet suite */
+    protected String midletDisplayName;
+
+    /** The arguments to start MIDlet suite with */
+    protected String args[];
+
+    /**
+     * Inner class to request security token from SecurityInitializer.
+     * SecurityInitializer should be able to check this inner class name.
+     */
+    static private class SecurityTrusted implements ImplicitlyTrustedClass {}
+
+    /** This class has a different security domain than the MIDlet suite */
+    protected static SecurityToken internalSecurityToken =
+        SecurityInitializer.requestToken(new SecurityTrusted());
+
+    /** Event queue instance created for this MIDlet suite execution */
+    protected EventQueue eventQueue;
+
+    /**
+     * MIDlet suite instance created and properly initialized for
+     * a MIDlet suite invocation.
+     */
+    protected MIDletSuite midletSuite;
+
+    /** Foreground Controller adapter. */
+    protected ForegroundController foregroundController;
+
+    /** Stores array of active displays for a MIDlet suite isolate. */
+    protected DisplayContainer displayContainer;
+
+    /**
+     * Provides interface to lcdui environment.
+     */
+    protected LCDUIEnvironment lcduiEnvironment;
+
+    /** Starts and controls MIDlets through the lifecycle states. */
+    protected MIDletStateHandler midletStateHandler;
+
     /** Event producer to send MIDlet state events to the AMS isolate. */
     protected MIDletControllerEventProducer midletControllerEventProducer;
 
@@ -54,6 +109,37 @@ abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
      */
     protected ForegroundEventListener foregroundEventListener;
 
+    /**
+     * Reports an error detected during MIDlet suite invocation.
+     * @param errorCode the error code to report
+     */
+    protected abstract void reportError(int errorCode, String details);
+    
+    /**
+     * Reports an error detected during MIDlet suite invocation.
+     * @param errorCode the error code to report
+     */
+    protected void reportError(int errorCode) {
+        reportError(errorCode, null);
+    }
+
+    /**
+     * Sets MIDlet suite arguments as temporary suite properties.
+     * Subclasses can override the method to export any other needed
+     * suite properties.
+     */
+    protected void setSuiteProperties() {
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] != null) {
+                    midletSuite.setTempProperty(
+                        internalSecurityToken,
+                        "arg-" + i, args[i]);
+                }
+            }
+        }
+    }
+
     /** Core initialization of a MIDlet suite loader */
     protected void init() {
         isolateId = MIDletSuiteUtils.getIsolateId();
@@ -65,7 +151,11 @@ abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
         WebPublicKeyStore.initKeystoreLocation(internalSecurityToken,
             Configuration.getProperty("com.sun.midp.publickeystore.WebPublicKeyStore"));
 
-        super.init();
+        // Init security tokens for core subsystems
+        SecurityInitializer.initSystem();
+
+        eventQueue = EventQueue.getEventQueue(
+            internalSecurityToken);
     }
 
     /**
@@ -90,7 +180,12 @@ abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
 						foregroundController);
 
         // creates display container, needs foregroundController
-        super.createSuiteEnvironment();
+        if (lcduiEnvironment == null) {
+            throw new
+            RuntimeException("Suite environment not complete.");
+        }
+
+        displayContainer = lcduiEnvironment.getDisplayContainer();
 
         foregroundEventListener = new ForegroundEventListener(
             eventQueue,
@@ -124,7 +219,7 @@ abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
     protected void done() {
         RecordStoreRegistry.shutdown(
             internalSecurityToken);
-        super.done();
+        eventQueue.shutdown();
     }
 
     /**
@@ -135,11 +230,16 @@ abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
      * used to initialize any per suite data.
      */
     protected void initSuiteEnvironment() {
-        super.initSuiteEnvironment();
+        lcduiEnvironment.setTrustedState(midletSuite.isTrusted());
 
         /* Set up permission checking for this suite. */
         AccessController.setAccessControlContext(
             new CldcAccessControlContext(midletSuite));
+    }
+
+    /** Restricts suite access to internal API */
+    protected void restrictAPIAccess() {
+        // IMPL_NOTE: No restrictions by default
     }
 
     /**
@@ -152,8 +252,37 @@ abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
     protected void startSuite() throws Exception {
         // Hint VM of startup finish: system init phase 
         MIDletSuiteUtils.vmEndStartUp(isolateId);
-        super.startSuite();
+        midletStateHandler.startSuite(
+            this, midletSuite, externalAppId, midletClassName);
     }
+
+    /** Closes suite and unlock native suite locks */
+    protected void closeSuite() {
+        if (midletSuite != null) {
+            /* When possible, don't wait for the finalizer
+             * to unlock the suite. */
+            midletSuite.close();
+        }
+
+        if (lcduiEnvironment != null) {
+            lcduiEnvironment.shutDown();
+        }
+    }
+
+    /**
+     * Checks whether an executed MIDlet suite has requested
+     * for a system shutdown. User MIDlets most probably have
+     * no right for it, however Java AMS MIDlet could do it.
+     */
+    protected void checkForShutdown() {
+        // IMPL_NOTE: No checks for shutdown by default
+    }
+
+    /**
+     * Explicitly requests suite loader exit after MIDlet
+     * suite execution is finished and created environment is done.
+     */
+    protected abstract void exitLoader();
 
     /**
      * Creates MIDlet suite instance by suite ID
@@ -169,6 +298,87 @@ abstract class CldcMIDletSuiteLoader extends AbstractMIDletSuiteLoader {
         MIDletSuite suite = storage.getMIDletSuite(suiteId, false);
         Logging.initLogSettings(suiteId);
         return suite;
+    }
+
+    /**
+     * Inits MIDlet suite runtime environment and start a MIDlet
+     * suite with it
+     */
+    protected void runMIDletSuite() {
+        // WARNING: Don't add any calls before this!
+        //
+        // The core init of a MIDlet suite task should be able
+        // to perform the very first initializations of the environment
+        init();
+
+        try {
+            /*
+             * Prepare MIDlet suite environment, classes that only need
+             * the isolate ID can be created here.
+             */
+            createSuiteEnvironment();
+
+            /* Check to see that all of the core object are created. */
+            if (foregroundController == null ||
+                displayContainer == null ||
+                midletStateHandler == null) {
+
+                throw new
+                    RuntimeException("Suite environment not complete.");
+        }    
+
+            // Create suite instance ready for start
+            midletSuite = createMIDletSuite();
+
+            if (midletSuite == null) {
+                reportError(Constants.MIDLET_SUITE_NOT_FOUND);
+                return;
+            }
+
+            if (!midletSuite.isEnabled()) {
+                reportError(Constants.MIDLET_SUITE_DISABLED);
+                return;
+            }
+
+            /*
+             * Now that we have the suite and reserved its resources
+             * we can initialize any classes that need MIDlet Suite
+             * information.
+             */
+            initSuiteEnvironment();
+
+            // Export suite arguments as properties, so well
+            // set any other properties to control a suite
+            setSuiteProperties();
+
+            // Restrict suite access to internal API
+            restrictAPIAccess();
+
+            if (Logging.REPORT_LEVEL <= Logging.WARNING) {
+                Logging.report(Logging.WARNING, LogChannels.LC_CORE,
+                    "MIDlet suite task starting a suite");
+            }
+
+            // Blocking call to start MIDlet suite
+            // in the prepared environment
+            startSuite();
+
+            // Check for shutdown possibly requested from the suite
+            checkForShutdown();
+
+            if (Logging.REPORT_LEVEL <= Logging.WARNING) {
+                Logging.report(Logging.INFORMATION, LogChannels.LC_CORE,
+                    "MIDlet suite loader exiting");
+            }
+
+        } catch (Throwable t) {
+           handleException(t);
+
+        } finally {
+            closeSuite();
+            done();
+            exitLoader();
+        }
     }
 
     /**

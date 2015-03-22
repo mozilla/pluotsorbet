@@ -147,7 +147,7 @@ public final class SecurityInitializer {
 
         // The main security token consumer causing security system
         // initialization over SecurityToken request
-        "com.sun.midp.main.AbstractMIDletSuiteLoader$SecurityTrusted",
+        "com.sun.midp.main.CldcMIDletSuiteLoader$SecurityTrusted",
 
 // #ifdef ENABLE_CDC
         "com.sun.midp.jump.isolate.MIDletContainer$SecurityTrusted",
