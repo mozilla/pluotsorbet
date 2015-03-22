@@ -111,17 +111,6 @@ abstract class AbstractMIDletSuiteLoader
     }
 
     /**
-     * Allocates resources for a suite execution according to
-     * global resource policy.
-     *
-     * @return true in the case resources were successfully allocated,
-     *   false otherwise
-     */
-    protected boolean allocateReservedResources() {
-        return true;
-    }
-
-    /**
      * Sets MIDlet suite arguments as temporary suite properties.
      * Subclasses can override the method to export any other needed
      * suite properties.
@@ -196,12 +185,6 @@ abstract class AbstractMIDletSuiteLoader
      * @throws Exception can be thrown during execution
      */
     protected void startSuite() throws Exception {
-        if (suiteId == -1 && midletClassName.equals("internal")) {
-            // no class name, need to look for it in the JAD file
-            midletClassName = 
-                ((InternalMIDletSuiteImpl)midletSuite).getMIDletClassName();
-        }
-
         midletStateHandler.startSuite(
             this, midletSuite, externalAppId, midletClassName);
     }
@@ -270,13 +253,7 @@ abstract class AbstractMIDletSuiteLoader
 
                 throw new
                     RuntimeException("Suite environment not complete.");
-	    }
-
-            // Regard resource policy for the suite task
-            if (!allocateReservedResources()) {
-                reportError(Constants.MIDLET_RESOURCE_LIMIT);
-                return;
-            }          
+	    }    
 
             // Create suite instance ready for start
             midletSuite = createMIDletSuite();
