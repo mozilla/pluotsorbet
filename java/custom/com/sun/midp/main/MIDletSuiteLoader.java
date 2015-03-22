@@ -132,29 +132,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
     }
 
     /**
-     * Sets suite arguments as temporary suite properties.
-     * The implementation extends base class method with
-     * additional properties specific for AMS MIDlet in
-     * the internal suite.
-     */
-    protected void setSuiteProperties() {
-        super.setSuiteProperties();
-
-        // Handle logo displaying for Manager MIDlet
-        if (suiteId == MIDletSuite.INTERNAL_SUITE_ID) {
-            // Disable logo when startup performance is being
-            // measured or if the logo has been displayed already
-            if (Constants.MEASURE_STARTUP || state.logoDisplayed) {
-                midletSuite.setTempProperty(
-                    internalSecurityToken, "logo-displayed", "");
-            } else {
-                state.logoDisplayed = true;
-            }
-        }
-
-    }
-
-    /**
      * The AMS MIDlet started in the suite loader could request for
      * shutdown, so we need to check it, wait for other MIDlets destroying
      * and update <code>CommandState</code> with appropriate status.
