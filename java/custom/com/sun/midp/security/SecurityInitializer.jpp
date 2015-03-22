@@ -163,8 +163,6 @@ public final class SecurityInitializer {
         "com.sun.midp.main.NamsTestServiceMidlet$SecurityTrusted",
         // #endif ENABLE_NAMS_TEST_SERVICE
 
-        "com.sun.midp.main.TrustedMIDletIcon$SecurityTrusted",
-
         // #ifdef ENABLE_CHAMELEON
         "com.sun.midp.chameleon.skins.resources.SkinResourcesImpl$SecurityTrusted",
         // #endif ENABLE_CHAMELEON
