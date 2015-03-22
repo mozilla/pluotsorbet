@@ -122,14 +122,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
     }
 
     /**
-     * Allocates resources for a suite task according
-     * to global resource policy
-     */
-    protected boolean allocateReservedResources() {
-        return allocateReservedResources0();
-    }
-
-    /**
      * Posts suite task error to event system.
      *
      * @param errorCode the error code to report
@@ -174,13 +166,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
      * even if killed.
      */
     private native void finalize();
-
-    /**
-     * Allocates reserved resources for the given isolate.
-     *
-     * @return true if the reserved resources are available otherwise false
-     */
-    private native static boolean allocateReservedResources0();
 
     /**
      * Handles a fatal error
