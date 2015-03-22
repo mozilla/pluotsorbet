@@ -165,7 +165,7 @@ benchmarks: java tests
 
 clean:
 	rm -rf build
-	rm -f config/build.js
+	rm -f $(PREPROCESS_DESTS)
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
