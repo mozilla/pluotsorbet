@@ -29,7 +29,6 @@ package com.sun.midp.main;
 import com.sun.midp.lcdui.ForegroundEventProducer;
 import com.sun.midp.midlet.*;
 import com.sun.midp.jsr.JSRInitializer;
-import com.sun.midp.automation.AutomationInitializer;
 import com.sun.midp.io.j2me.push.PushRegistryInternal;
 import com.sun.midp.content.CHManager;
 import com.sun.midp.wma.WMACleanupMonitor;
@@ -100,10 +99,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
     protected void initGlobalSystems() {
         // Initialize JSR subsystems
         JSRInitializer.init();
-
-        // Initaialize automation API
-        AutomationInitializer.init(
-            eventQueue, midletControllerEventProducer);
 
         // Start inbound connection watcher thread.
         PushRegistryInternal.startListening(internalSecurityToken);
