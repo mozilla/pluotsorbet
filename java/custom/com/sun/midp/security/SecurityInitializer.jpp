@@ -255,7 +255,6 @@ public final class SecurityInitializer {
 
         // #ifdef ENABLE_MULTIPLE_ISOLATES
         "com.sun.midp.util.isolate.SecurityTokenProvider$SecurityTrusted",
-        "com.sun.midp.io.j2me.pipe.SecurityTokenProvider$SecurityTrusted",
         // #endif        
 
         // MMAPI event handler stabbed in MIDP in the case of no JSR 135/234
@@ -263,8 +262,6 @@ public final class SecurityInitializer {
 
         // #ifdef ENABLE_MULTIPLE_ISOLATES
         "com.sun.midp.main.AmsUtil$SecurityTrusted",
-        "com.sun.midp.io.j2me.pipe.Protocol$SecurityTrusted",
-        "com.sun.midp.installer.AutoTester$SecurityTrusted",
         // #endif
 
         // #ifdef ENABLE_ON_DEVICE_DEBUG
