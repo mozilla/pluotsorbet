@@ -25,12 +25,8 @@
  */
 
 package com.sun.midp.main;
-
 import com.sun.cldc.isolate.Isolate;
-import com.sun.midp.links.Link;
-import com.sun.midp.links.LinkPortal;
 import com.sun.midp.security.Permissions;
-import com.sun.midp.services.SystemServiceLinkPortal;
 
 /**
  * The first class loaded in an application Isolate by the MIDP AMS to
@@ -110,8 +106,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
 
         AmsUtil.initClassInAppIsolate(
             midletExecuteEventProducer);
-        
-        initLinks();
     }
 
     /** Restricts suite access to internal API */
@@ -194,15 +188,4 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
      * @param t the Throwable that caused the fatal error
      */
     private static native void handleFatalError(Throwable t);
-    
-    /**
-     * Installs initial set of links for this isolate
-     */
-    private void initLinks() {
-        Link[] myLinks = LinkPortal.getLinks();
-        
-        if (myLinks.length == 2) {
-            SystemServiceLinkPortal.linksObtained(myLinks);
-        }
-    }
 }

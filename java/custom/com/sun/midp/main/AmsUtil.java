@@ -35,14 +35,10 @@ import com.sun.midp.midletsuite.DynamicComponentStorage;
 
 import com.sun.midp.configurator.Constants;
 
-import com.sun.midp.links.Link;
-import com.sun.midp.links.LinkPortal;
-
 import com.sun.midp.security.ImplicitlyTrustedClass;
 import com.sun.midp.security.SecurityInitializer;
 import com.sun.midp.security.SecurityToken;
 import com.sun.midp.amsservices.ComponentInfo;
-import com.sun.midp.services.SystemServiceLinkPortal;
 
 import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
@@ -411,12 +407,6 @@ public class AmsUtil {
             
             isolate.setAPIAccess(true);
             isolate.start();
-
-            // Ability to launch midlet implies right to use Service API
-            // for negotiations with isolate being run
-            Link[] isolateLinks = SystemServiceLinkPortal.establishLinksFor( 
-                    isolate, getTrustedToken());
-            LinkPortal.setLinks(isolate, isolateLinks);
         } catch (Throwable t) {
             int errorCode;
             String msg;
