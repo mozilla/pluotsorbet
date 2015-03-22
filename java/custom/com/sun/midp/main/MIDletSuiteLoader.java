@@ -105,10 +105,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
         // Initialize the Content Handler Monitor of MIDlet exits
         CHManager.getManager(internalSecurityToken).init(
             midletProxyList, eventQueue);
-        
-        // Initialize AutoTester service
-        com.sun.midp.installer.AutoTesterServiceInitializer.init(
-                internalSecurityToken);
     }
 
     /**
