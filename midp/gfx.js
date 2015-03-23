@@ -907,7 +907,7 @@ var currentlyFocusedTextEditor;
         return (red*76 + green*150 + blue*29) >> 8;
     }
 
-    Override["javax/microedition/lcdui/Graphics.<init>.()V"] = function() {
+    Native["javax/microedition/lcdui/Graphics.init.()V"] = function() {
         this.maxWidth = 0;
         this.maxHeight = 0;
         this.transX = 0;

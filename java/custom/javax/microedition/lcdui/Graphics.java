@@ -526,10 +526,13 @@ public class Graphics {
     private native void initScreen0(int displayId, int width, int height);
     private native void initImage0(Image img, int width, int height);
 
+    private native void init();
+
     /**
      * Create a Graphics object
      */
     Graphics() {
+      init();
     }
 
     /**
