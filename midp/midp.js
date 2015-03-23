@@ -1190,7 +1190,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
-    console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
+    // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
   };
 
