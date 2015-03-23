@@ -26,47 +26,6 @@ function asyncImpl(returnKind, promise) {
   $.pause("Async");
 }
 
-Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) {
-  if ((off < 0) || (off > b.length) || (len < 0) ||
-      ((off + len) > b.length)) {
-    throw $.newIndexOutOfBoundsException();
-  }
-
-  if (len == 0) {
-    return;
-  }
-
-  var count = this.count;
-  var buf = this.buf;
-
-  var newcount = count + len;
-  if (newcount > buf.length) {
-    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
-    newbuf.set(buf);
-    buf = newbuf;
-    this.buf = buf;
-  }
-
-  buf.set(b.subarray(off, off + len), count);
-  this.count = newcount;
-};
-
-Override["java/io/ByteArrayOutputStream.write.(I)V"] = function(value) {
-  var count = this.count;
-  var buf = this.buf;
-
-  var newcount = count + 1;
-  if (newcount > buf.length) {
-    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
-    newbuf.set(buf);
-    buf = newbuf;
-    this.buf = buf;
-  }
-
-  buf[count] = value;
-  this.count = newcount;
-};
-
 Override["java/io/ByteArrayInputStream.<init>.([B)V"] = function(buf) {
   if (!buf) {
     throw $.newNullPointerException();
