@@ -254,9 +254,9 @@ module J2ME {
       methodFilterList = [methodFilterOption.value];
     }
 
-    stdoutWriter.writeLn("var start = performance.now();");
+    stdoutWriter.writeLn("var startCompile = performance.now();");
     compile(jvm, jarFiles, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value);
-    stdoutWriter.writeLn("console.log(\"Loaded " + jarFileFilterOption.value + " in \" + (performance.now() - start).toFixed(2) + \" ms.\");");
+    stdoutWriter.writeLn("console.log(\"Loaded " + jarFileFilterOption.value + " in \" + (performance.now() - startCompile).toFixed(2) + \" ms.\");");
     if (methodFilterList !== null && methodFilterList.length) {
       stderrWriter.enter("The following method(s) in the method filter list failed to compile or were not found:");
       for (var i = 0; i < methodFilterList.length; i++) {
