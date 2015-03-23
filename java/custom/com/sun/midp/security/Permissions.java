@@ -186,10 +186,9 @@ public final class Permissions {
      * @exception SecurityException if the permission is invalid
      */
     public static String getName(int permission) {
-    if (permission < 0 || permission >= permissionSpecs.length) {
-            throw new SecurityException(SecurityToken.STD_EX_MSG);
-        }
-        return permissionSpecs[permission].name;
+        // The code that uses this method doesn't actually use the return value, but
+        // passes it to Permissions.getId. So we can return anything.
+        return "com.sun.midp";
     }
 
     /**
@@ -201,11 +200,7 @@ public final class Permissions {
      * @exception SecurityException if the permission is invalid
      */
     public static String getTitle(int permission) {
-        if (permission < 0 || permission >= permissionSpecs.length) {
-            throw new SecurityException(SecurityToken.STD_EX_MSG);
-        }
-
-        return permissionSpecs[permission].group.getRuntimeDialogTitle();
+        return "Title";
     }
 
     /**
@@ -218,11 +213,7 @@ public final class Permissions {
      * @exception SecurityException if the permission is invalid
      */
     public static String getQuestion(int permission) {
-        if (permission < 0 || permission >= permissionSpecs.length) {
-            throw new SecurityException(SecurityToken.STD_EX_MSG);
-        }
-
-        return permissionSpecs[permission].group.getRuntimeQuestion();
+        return "Question";
     }
 
     /**
@@ -235,11 +226,7 @@ public final class Permissions {
      * @exception SecurityException if the permission is invalid
      */
     public static String getOneshotQuestion(int permission) {
-        if (permission < 0 || permission >= permissionSpecs.length) {
-            throw new SecurityException(SecurityToken.STD_EX_MSG);
-        }
-
-        return permissionSpecs[permission].group.getRuntimeOneshotQuestion();
+        return "Oneshot Question";
     }
 
     /**
@@ -252,13 +239,9 @@ public final class Permissions {
      * @exception SecurityException if the permission is invalid
      */
     public static int getId(String name) {
-        int index;
-        try {
-            index = ((Integer)permissionsHash.get(name)).intValue();
-            return index;
-        } catch (Exception e){
-            throw new SecurityException(SecurityToken.STD_EX_MSG);
-        }
+        // Returns the ID of the permission. The callers will use this ID to check the
+        // permission in the permissions array returned by Permissions::forDomain.
+        return 0;
     }
 
     /**
@@ -269,17 +252,10 @@ public final class Permissions {
      * @return true if a domain is trusted, false if not
      */
     public static boolean isTrusted(String domain) {
-        if (domainsAll == null) {
-            init();
-        }
-
-        for (int i1 = 0; i1 < domainsAll.length;i1++) {
-            if (domainsAll[i1].getName().equals(domain)) {
-                return domainsAll[i1].isTrusted();
-            }
-        }
-
-        return false;
+        // Always return true to make Java think the MIDlet domain is trusted.
+        // We rely on the web security model, so we don't need to ask permissions
+        // to the user.
+        return true;
     }
     
     /**
@@ -319,29 +295,17 @@ public final class Permissions {
      *     for each permission supported
      */
     public static byte[][] forDomain(String name) {
-        if (domainsAll == null) {
-            init();
-        }
-                
+        NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2;
+
         byte[] maximums = new byte[NUMBER_OF_PERMISSIONS];
         byte[] defaults = new byte[NUMBER_OF_PERMISSIONS];
         byte[][] permissions = {maximums, defaults};
 
-        if (MANUFACTURER_DOMAIN_BINDING.equals(name)) {
-            for (int i1 = 0; i1 < NUMBER_OF_PERMISSIONS; i1 ++) {
-                maximums[i1] = ALLOW;
-                defaults[i1] = ALLOW;
-            }
-            return permissions;
+        for (int i = 0; i < NUMBER_OF_PERMISSIONS; i++) {
+            maximums[i] = ALLOW;
+            defaults[i] = ALLOW;
         }
 
-        for (int i1 = 0; i1 < domainsAll.length; i1++) {
-            if (domainsAll[i1].getName().equals(name)) {
-                domainsAll[i1].getPermissionlevels(defaults, CUR_LEVELS);
-                domainsAll[i1].getPermissionlevels(maximums, MAX_LEVELS);
-            }
-        }
-        
         return permissions;
     }
 
@@ -906,288 +870,8 @@ public final class Permissions {
                 values);
     }
 
-    private static void init() {
-        try {
-            // initialization process
-            // step 1: permissions list and hashtable
-            int i1, i2;
-            String [] list;
-
-            /*
-             * IMPL_NOTE:
-             *     Here is the only usage of the generated PermissionsStrings
-             *     class. It contains a list of all permissions known to MIDP.
-             *     The current implementation takes the permission list from it,
-             *     but all other information (permission groups, security domain
-             *     names, etc.) is read from _policy.txt.* file (for javacall-
-             *     based implementations) or is hard-coded (for non-javacall
-             *     implementations).
-             */
-            String [] permList = PermissionsStrings.PERMISSION_STRINGS;
-
-            permissionSpecs = new PermissionSpec[permList.length + 2];
-            permissionSpecs[0] =
-                    new PermissionSpec(MIDP_PERMISSION_NAME, NEVER_GROUP);
-            permissionSpecs[1] =
-                    new PermissionSpec(AMS_PERMISSION_NAME, NEVER_GROUP);
-
-            NUMBER_OF_PERMISSIONS = permissionSpecs.length;
-
-            permissionsHash = new Hashtable(NUMBER_OF_PERMISSIONS);
-            permissionsHash.put(MIDP_PERMISSION_NAME, new Integer(0));
-            permissionsHash.put(AMS_PERMISSION_NAME, new Integer(1));
-
-            for (i1 = 2; i1 < NUMBER_OF_PERMISSIONS; i1++) {
-                permissionsHash.put(permList[i1 - 2], new Integer(i1));
-                permissionSpecs[i1] = new PermissionSpec(permList[i1 - 2],
-                                                         NEVER_GROUP);
-            }
-
-            // step 2: groups list
-            list = loadGroupList();
-            if (list == null) {
-                throw new IOException("Policy file not found");
-            }
-
-            /*
-             * Later in the code "[restricted_]messaging" groups, if they
-             * present in the list of the loaded groups, will be split
-             * into 2 subgroups (send_* and receive_*).
-             * Now we'll count how many extra groups will be added in the
-             * result of this split.
-             */
-            int extraGroups = 0;
-
-            for (i1 = 0; i1 < list.length; i1++) {
-                if ("messaging".equals(list[i1]) ||
-                        "restricted_messaging".equals(list[i1])) {
-                    extraGroups++;
-                }
-            }
-
-            /*
-             * Create an array of permission groups and split "messaging"
-             * group(s), if any.
-             */
-            groupsAll = new PermissionGroup[list.length + extraGroups];
-            String [] messages = new String[6];
-            int n = 0;
-
-            for (i1 = 0; i1 < list.length; i1++) {
-                String [] tmp = getGroupMessages(list[i1]);
-                if (tmp != null) {
-                    for (i2 = 0; i2 < tmp.length; i2++) {
-                        messages[i2] = replaceCRLF(tmp[i2]);
-                    }
-                } else {
-                    messages[0] = list[i1];
-                }
-
-                if ("messaging".equals(list[i1]) ||
-                        "restricted_messaging".equals(list[i1])) {
-                    // split the group into SEND_*/READ_* subgroups
-                    groupsAll[n++] = new PermissionGroup("send_" + list[i1],
-                                            messages[0], messages[1],
-                                            messages[2], messages[3],
-                                            messages[4], messages[5]);
-
-                    groupsAll[n++] = new PermissionGroup("read_" + list[i1],
-                                            messages[0], messages[1],
-                                            messages[2], messages[3],
-                                            messages[4], messages[5]);
-                } else {
-                    groupsAll[n++] = new PermissionGroup(list[i1],
-                                            messages[0], messages[1],
-                                            messages[2], messages[3],
-                                            messages[4], messages[5]);
-                }
-            }
-
-            // step 3: group's permissions members
-            String [] members;
-            for (i1 = 0; i1 < groupsAll.length; i1++) {
-                String groupNativeName = groupsAll[i1].getNativeName();
-                if (groupNativeName.endsWith("_messaging")) {
-                    // remove "send_"/"read_" prefix
-                    members = loadGroupPermissions(
-                            groupNativeName.substring(5));
-                    if (groupNativeName.startsWith("send_")) {
-                        // remove known "read" permissions from the "send" group
-                        members = removeElementsFromArray(members,
-                            new String [] {
-                                "javax.microedition.io.Connector.sms",
-                                "javax.microedition.io.Connector.mms",
-                                "javax.microedition.io.Connector.cbs",
-                                "javax.wireless.messaging.sms.receive",
-                                "javax.wireless.messaging.mms.receive",
-                                "javax.wireless.messaging.cbs.receive"
-                            }
-                        );
-                    } else if (groupNativeName.startsWith("read_")) {
-                        // remove known "send" permissions from the "read" group
-                        members = removeElementsFromArray(members,
-                            new String [] {
-                                "javax.wireless.messaging.sms.send",
-                                "javax.wireless.messaging.mms.send"
-                            }
-                        );
-                    }
-                } else {
-                    members = loadGroupPermissions(groupNativeName);
-                }
-
-                for (i2 = 0; i2 < members.length; i2++) {
-                    Integer c = (Integer)permissionsHash.get(members[i2]);
-                    if (c == null) {
-                        throw new RuntimeException(
-                            "unknown permission in policy file: "
-                                                        + members[i2]);
-                    }
-
-                    permissionSpecs[c.intValue()] =
-                            new PermissionSpec(members[i2], groupsAll[i1]);
-                }
-            }
-                        
-            // step 4: Domains list
-            list = loadDomainList();
-            DomainPolicy[] domains = new DomainPolicy[list.length + 1];
-            // internal 'manufacturer' domain always exists
-            domains[0] = new DomainPolicy(MANUFACTURER_DOMAIN_BINDING, true);
-
-            int domainsCounter = 1;
-
-            for (i1 = 0; i1 < list.length; i1++) {
-                String item = list[i1];
-
-                if (MANUFACTURER_DOMAIN_BINDING.equals(item)) {
-                    continue;
-                }
-
-                boolean isTrusted = true;
-                String name;
-                int pos = item.indexOf(',');
-                if (pos > 0) {
-                    name = item.substring(0, pos);
-                    if (item.charAt(pos + 1) == 'u') {
-                        isTrusted = false;
-                    }
-                } else {
-                    name = item;
-                }
-
-                domains[domainsCounter++] = new DomainPolicy(name, isTrusted);
-                if (name.startsWith("untrusted") ||
-                        name.startsWith("unidentified")) {
-                    unsignedDomain = name;
-                }
-            }
-
-            loadingFinished();
-            
-            domainsAll = new DomainPolicy[domainsCounter];
-            System.arraycopy(domains, 0, domainsAll, 0, domainsCounter);
-            
-            // fill internal groups
-            Hashtable tmpList = new Hashtable(groupsAll.length);
-            for (i1 = 0; i1 < groupsAll.length; i1++) {
-                tmpList.put(groupsAll[i1].getNativeName(), groupsAll[i1]);
-            }
-
-            NET_ACCESS_GROUP = (PermissionGroup)tmpList.get("net_access");
-            LOW_LEVEL_NET_ACCESS_GROUP =
-                    (PermissionGroup)tmpList.get("low_level_net_access");
-            CALL_CONTROL_GROUP = (PermissionGroup)tmpList.get("call_control");
-
-            // if the group was called "messaging", it is already converted
-            // to "<send_/read_>messaging"
-            SEND_MESSAGE_GROUP = (PermissionGroup)tmpList.get("send_messaging");
-            READ_MESSAGE_GROUP = (PermissionGroup)tmpList.get("read_messaging");
-
-            SEND_RESTRICTED_MESSAGE_GROUP =
-                    (PermissionGroup)tmpList.get("send_restricted_messaging");
-            READ_RESTRICTED_MESSAGE_GROUP =
-                    (PermissionGroup)tmpList.get("read_restricted_messaging");
-
-            AUTO_INVOCATION_GROUP =
-                    (PermissionGroup)tmpList.get("application_auto_invocation");
-            READ_USER_DATA_GROUP =
-                    (PermissionGroup)tmpList.get("read_user_data_access");
-            MULTIMEDIA_GROUP =
-                    (PermissionGroup)tmpList.get("multimedia_recording");
-            LOCAL_CONN_GROUP =
-                    (PermissionGroup)tmpList.get("local_connectivity");
-           
-        } catch (Throwable e) {
-            // e.printStackTrace();
-            System.out.println("Permissions init() error: " + e.toString());
-        }
-    }
-
-    private static String replaceCRLF(String value) {
-        int posCRLF, pos = 0;
-        String result = "";
-
-        while ((posCRLF = value.indexOf("\\n", pos)) != -1) {
-            result += value.substring(pos,  posCRLF) + "\n";
-            pos = posCRLF + 2;
-        }
-
-        return result + value.substring(pos);
-    }
-
-    /**
-     * Removes the given strings from the specified string array.
-     *
-     * @param srcArray source array of strings
-     * @param elementsToRemove array of strings to remove
-     *
-     * @return a new array containing those strings from srcArray
-     *         that are not contained in elementsToRemove
-     */
-    private static String[] removeElementsFromArray(String[] srcArray,
-                                                    String[] elementsToRemove) {
-        if (srcArray == null) {
-            return null;
-        }
-
-        /*
-         * This method is internal, so we can guarantee that it is never
-         * called with elementsToRemove == null.
-         */
-
-        int i, j;
-        Vector res = new Vector(srcArray.length);
-
-        for (i = 0; i < srcArray.length; i++) {
-            for (j = 0; j < elementsToRemove.length; j++) {
-                if (srcArray[i].equals(elementsToRemove[j])) {
-                    break;
-                }
-            }
-
-            if (j < elementsToRemove.length) {
-                continue;
-            }
-            res.addElement(srcArray[i]);
-        }
-
-        String[] dstArray = new String[res.size()];
-        for (i = 0; i < res.size(); i++) {
-            dstArray[i] = (String)res.elementAt(i);
-        }
-
-        return dstArray;
-    }
-
-    private static native String [] loadDomainList();
-    private static native String [] loadGroupList();
-    static native String [] loadGroupPermissions(String group);
-    static native String [] getGroupMessages(String group);
     static native byte      getMaxValue(String domain, String group);
     static native byte      getDefaultValue(String domain, String group);
-    static native void      loadingFinished();
-
 
     /**
      * Create a potentially dangerous permission setting warning message.
