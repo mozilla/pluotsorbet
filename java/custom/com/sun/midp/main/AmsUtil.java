@@ -31,14 +31,12 @@ import com.sun.cldc.isolate.*;
 import com.sun.midp.midlet.MIDletSuite;
 
 import com.sun.midp.midletsuite.MIDletSuiteStorage;
-import com.sun.midp.midletsuite.DynamicComponentStorage;
 
 import com.sun.midp.configurator.Constants;
 
 import com.sun.midp.security.ImplicitlyTrustedClass;
 import com.sun.midp.security.SecurityInitializer;
 import com.sun.midp.security.SecurityToken;
-import com.sun.midp.amsservices.ComponentInfo;
 
 import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
@@ -266,92 +264,6 @@ public class AmsUtil {
             classpathext = new String[] {isolateClassPath};
         }
 
-        /*
-         * Include paths to dynamic components belonging to this suite
-         * and to the "internal" suite (actually, to AMS) into class
-         * path for the new Isolate.
-         */
-        DynamicComponentStorage componentStorage =
-                DynamicComponentStorage.getComponentStorage();
-        ComponentInfo[] ci = componentStorage.getListOfSuiteComponents(id);
-        ComponentInfo[] ciAms = componentStorage.getListOfSuiteComponents(
-                MIDletSuite.INTERNAL_SUITE_ID);
-        int numOfComponents = 0;
-
-        // calculate the number of the components to be added to the class path
-        if (ci != null) {
-            numOfComponents += ci.length;
-        }
-
-        if (ciAms != null) {
-            numOfComponents += ciAms.length;
-        }
-
-        if (numOfComponents > 0) {
-            Vector ciVector = new Vector(numOfComponents);
-
-            // add the suite's own components
-            if (ci != null) {
-                for (int i = 0; i < ci.length; i++) {
-                    ciVector.addElement(ci[i]);
-                }
-            }
-
-            // add the shared (belonging to AMS) components
-            if (ciAms != null) {
-                for (int i = 0; i < ciAms.length; i++) {
-                    ciVector.addElement(ciAms[i]);
-                }
-            }
-
-            /*
-             * IMPL_NOTE: currently is assumed that each component may have
-             *            not more than 1 entry in class path.
-             *            Later it will be possible to have 2: 1 for MONET.
-             *            + 1 is for System.getProperty("classpathext").
-             */
-            int n = 0;
-            if (isolateClassPath != null) {
-                classpathext = new String[ciVector.size() + 1];
-                classpathext[n++] = isolateClassPath;
-            } else {
-                classpathext = new String[ciVector.size()];
-            }
-
-            try {
-                for (int i = 0; i < ciVector.size(); i++) {
-                    final ComponentInfo nextComponent =
-                            ((ComponentInfo)ciVector.elementAt(i));
-                    final String[] componentPath =
-                            componentStorage.getComponentClassPath(
-                                    nextComponent.getComponentId());
-                    if (componentPath != null) {
-                        for (int j = 0; j < componentPath.length; j++) {
-                            classpathext[n++] = componentPath[j];
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                /*
-                 * if something is wrong with a dynamic component, just
-                 * don't use the components, this error is not fatal
-                 */
-                if (isolateClassPath != null) {
-                    classpathext = new String[1];
-                    classpathext[0] = isolateClassPath;
-                } else {
-                    classpathext = null;
-                }
-
-                if (Logging.REPORT_LEVEL <= Logging.ERROR) {
-                    e.printStackTrace();
-                    Logging.report(Logging.ERROR, LogChannels.LC_AMS,
-                        "Cannot use a dynamic component when starting '" +
-                        midlet + "' from the suite with id = " + id);
-                }
-            }
-        }
-
         try {
             StartMIDletMonitor app = StartMIDletMonitor.okToStart(id, midlet);
             if (app == null) {
@@ -361,7 +273,7 @@ public class AmsUtil {
 
             isolate =
                 new Isolate("com.sun.midp.main.AppIsolateMIDletSuiteLoader",
-                    args, classpath, classpathext);
+                    args, classpath, null);
             app.setIsolate(isolate);
         } catch (Throwable t) {
             t.printStackTrace();
@@ -369,41 +281,9 @@ public class AmsUtil {
         }
 
         try {
-            int reserved, limit;
-
-            if (memoryReserved >= 0) {
-                reserved = memoryReserved;
-            } else {
-                reserved = Constants.SUITE_MEMORY_RESERVED * 1024;
-            }
-
-            if (memoryTotal > 0) {
-                limit = memoryTotal;
-            } else {
-                limit = Constants.SUITE_MEMORY_LIMIT;
-                if (limit < 0) {
-                    limit = isolate.totalMemory();
-                } else {
-                    limit = limit * 1024;
-                }
-
-                int heapSize = getMidletHeapSize(id, midlet);
-                if ((heapSize > 0) && (heapSize < limit)) {
-                    limit = heapSize;
-                }
-            }
-
-            isolate.setMemoryQuota(reserved, limit);
-
             if (priority >= Isolate.MIN_PRIORITY) {
                 isolate.setPriority(priority);
             }
-
-            if (profileName != null) {
-                IsolateUtil.setProfile(isolate, profileName);
-            }
-
-            isolate.setDebug(isDebugMode);
             
             isolate.setAPIAccess(true);
             isolate.start();
