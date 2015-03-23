@@ -832,8 +832,8 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(cbuf, of
   var outputCount = 0;
   var count = 0;
   var localPendingSurrogate = this.pendingSurrogate;
-  while (count < length) {
-    inputChar = 0xffff & cbuf[offset + count];
+  while (count < len) {
+    inputChar = 0xffff & cbuf[off + count];
     if (0 != localPendingSurrogate) {
       if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
         //000u uuuu xxxx xxxx xxxx xxxx
