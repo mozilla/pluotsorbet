@@ -396,10 +396,6 @@ var currentlyFocusedTextEditor;
         return defaultFont;
     }
 
-    Override["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function() {
-        return getDefaultFont();
-    };
-
     Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(str) {
         return calcStringWidth(this, J2ME.fromJavaString(str));
     };
