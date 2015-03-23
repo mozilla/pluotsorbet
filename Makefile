@@ -23,7 +23,7 @@ export JSR_179
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(JSR_256)$(JSR_179)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(JSR_256)$(JSR_082)$(JSR_179)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -142,7 +142,7 @@ tests: java jasmin
 	make -C tests
 
 LANG_FILES=$(shell find l10n -name "*.xml")
-LANG_DESTS=$(LANG_FILES:%.xml=java/%.json)
+LANG_DESTS=$(LANG_FILES:%.xml=java/%.json) java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 
 java/classes.jar: java
 java: $(LANG_DESTS)
@@ -152,6 +152,8 @@ $(LANG_DESTS): $(LANG_FILES)
 	rm -rf java/l10n/
 	mkdir java/l10n/
 	$(foreach file,$(LANG_FILES), tools/xml_to_json.py $(file) java/$(file:.xml=.json);)
+	mkdir -p java/custom/com/sun/midp/i18n/ java/custom/com/sun/midp/l10n/
+	tools/xml_to_java_classes.py l10n/en-US.xml
 
 certs:
 	make -C certs
@@ -165,9 +167,10 @@ benchmarks: java tests
 
 clean:
 	rm -rf build
-	rm -f config/build.js
+	rm -f $(PREPROCESS_DESTS)
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
 	rm -rf java/l10n/
+	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 	make -C bench clean
