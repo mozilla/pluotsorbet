@@ -26,10 +26,6 @@ function asyncImpl(returnKind, promise) {
   $.pause("Async");
 }
 
-Override["java/lang/Math.min.(II)I"] = function(a, b) {
-  return Math.min(a, b);
-};
-
 Override["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
