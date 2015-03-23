@@ -1,4 +1,4 @@
-'use strict';
+
 
 var DEBUG_FS = false;
 

@@ -401,12 +401,12 @@ module J2ME {
   }
 
   export class IndentingWriter {
-    public static PURPLE = '\033[94m';
-    public static YELLOW = '\033[93m';
-    public static GREEN = '\033[92m';
-    public static RED = '\033[91m';
-    public static BOLD_RED = '\033[1;91m';
-    public static ENDC = '\033[0m';
+    public static PURPLE = '\x1B[94m';
+    public static YELLOW = '\x1B[93m';
+    public static GREEN = '\x1B[92m';
+    public static RED = '\x1B[91m';
+    public static BOLD_RED = '\x1B[1;91m';
+    public static ENDC = '\x1B[0m';
 
     public static logLevel: LogLevel = LogLevel.All;
 
@@ -882,7 +882,7 @@ module J2ME {
   }
 
   function removeColors(s) {
-    return s.replace(/\033\[[0-9]*m/g, "");
+    return s.replace(/\x1B\[[0-9]*m/g, "");
   }
 
   extendBuiltin(String.prototype, "padRight", function (c, n) {

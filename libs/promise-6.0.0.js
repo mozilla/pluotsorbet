@@ -94,7 +94,7 @@ THE SOFTWARE.
     };
   }, {} ],
   2: [ function(require, module, exports) {
-    "use strict";
+    ;
     var asap = require("asap");
     module.exports = Promise;
     function Promise(fn) {
@@ -186,7 +186,7 @@ THE SOFTWARE.
     asap: 4
   } ],
   3: [ function(require, module, exports) {
-    "use strict";
+    ;
     var Promise = require("./core.js");
     var asap = require("asap");
     module.exports = Promise;

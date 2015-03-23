@@ -1,4 +1,4 @@
-'use strict';
+
 
 var TextEditorProvider = (function() {
     var eTextArea = document.getElementById('textarea-editor');

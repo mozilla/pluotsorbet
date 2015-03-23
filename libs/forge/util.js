@@ -665,7 +665,7 @@ if(typeof define !== 'function') {
   } else {
     // <script>
     if(typeof forge === 'undefined') {
-      forge = {};
+      (1, eval)("var forge = {};");
     }
     return initModule(forge);
   }
@@ -694,7 +694,7 @@ var tmpDefine = define;
 define = function(ids, factory) {
   deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
   if(nodeJS) {
-    delete define;
+    define = null;
     return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
   }
   define = tmpDefine;

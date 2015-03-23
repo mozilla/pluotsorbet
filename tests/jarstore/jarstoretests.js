@@ -1,4 +1,4 @@
-'use strict';
+
 
 var log = function() {
   var s = Array.prototype.join.call(arguments, ",");
