@@ -996,3 +996,71 @@ Native["java/io/ByteArrayOutputStream.write.(I)V"] = function(value) {
   buf[count] = value;
   this.count = newcount;
 };
+
+Native["java/io/ByteArrayInputStream.init.([BII)V"] = function(buf, offset, length) {
+  if (!buf) {
+    throw $.newNullPointerException();
+  }
+
+  this.buf = buf;
+  this.pos = this.mark = offset;
+  this.count = (offset + length <= buf.length) ? (offset + length) : buf.length;
+};
+
+Native["java/io/ByteArrayInputStream.read.()I"] = function() {
+  return (this.pos < this.count) ? (this.buf[this.pos++] & 0xFF) : -1;
+};
+
+Native["java/io/ByteArrayInputStream.read.([BII)I"] = function(b, off, len) {
+  if (!b) {
+    throw $.newNullPointerException();
+  }
+
+  if ((off < 0) || (off > b.length) || (len < 0) ||
+      ((off + len) > b.length)) {
+    throw $.newIndexOutOfBoundsException();
+  }
+
+  if (this.pos >= this.count) {
+    return -1;
+  }
+  if (this.pos + len > this.count) {
+    len = this.count - this.pos;
+  }
+  if (len === 0) {
+    return 0;
+  }
+
+  b.set(this.buf.subarray(this.pos, this.pos + len), off);
+
+  this.pos += len;
+  return len;
+};
+
+Native["java/io/ByteArrayInputStream.skip.(J)J"] = function(long) {
+  var n = long.toNumber();
+
+  if (this.pos + n > this.count) {
+    n = this.count - this.pos;
+  }
+
+  if (n < 0) {
+    return Long.fromNumber(0);
+  }
+
+  this.pos += n;
+
+  return Long.fromNumber(n);
+};
+
+Native["java/io/ByteArrayInputStream.available.()I"] = function() {
+  return this.count - this.pos;
+};
+
+Native["java/io/ByteArrayInputStream.mark.(I)V"] = function(readAheadLimit) {
+  this.mark = this.pos;
+};
+
+Native["java/io/ByteArrayInputStream.reset.()V"] = function() {
+  this.pos = this.mark;
+};
