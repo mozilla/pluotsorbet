@@ -19,7 +19,7 @@
   <script type="text/javascript" src="libs/ttest.js" defer></script>
   <!-- #endif -->
   <!-- #if PROFILE > 0 -->
-  <script type="text/javascript" src="build/shumway.js" defer></script>
+  <script type="text/javascript" src="bld/shumway.js" defer></script>
   <!-- #endif -->
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
   <script type="text/javascript" src="libs/console.js" defer></script>
@@ -39,7 +39,7 @@
 
   <script type="text/javascript" src="libs/compiled-method-cache.js" defer></script>
   <script type="text/javascript" src="libs/relooper.js" defer></script>
-  <script type="text/javascript" src="build/j2me.js" defer></script>
+  <script type="text/javascript" src="bld/j2me.js" defer></script>
   <script type="text/javascript" src="override.js" defer></script>
   <script type="text/javascript" src="native.js" defer></script>
   <script type="text/javascript" src="string.js" defer></script>
@@ -83,9 +83,9 @@
   <script type="text/javascript" src="game-ui.js" defer></script>
 
   <!-- run make aot to generate these -->
-  <script type="text/javascript" src="build/classes.jar.js" defer></script>
-  <!--<script type="text/javascript" src="build/program.jar.js" defer></script>-->
-  <!--<script type="text/javascript" src="build/tests.jar.js" defer></script>-->
+  <script type="text/javascript" src="bld/classes.jar.js" defer></script>
+  <!--<script type="text/javascript" src="bld/program.jar.js" defer></script>-->
+  <!--<script type="text/javascript" src="bld/tests.jar.js" defer></script>-->
   <script type="text/javascript" src="main.js" defer></script>
 </head>
 
