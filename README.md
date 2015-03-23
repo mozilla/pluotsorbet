@@ -248,7 +248,7 @@ If raising a Java `Exception`, throw new instance of Java `Exception` class as d
 If you need implement a native method with async JS calls, the following steps are required:
 
 1. Add the method to the `yieldMap` in jit/analyze.ts
-2. Use `asyncImpl` in override.js to return the asnyc value with a `Promise`.
+2. Use `asyncImpl` in native.js to return the asnyc value with a `Promise`.
 
 e.g:
 
