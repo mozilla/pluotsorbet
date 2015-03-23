@@ -339,9 +339,17 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)
         throw $.newIOException("file with new name exists");
     }
 
-    if (!fs.rename(pathname, newPathname)) {
-        throw $.newIOException("error renaming file");
-    }
+    var ctx = $.ctx;
+    asyncImpl("V", new Promise(function(resolve, reject) {
+        fs.rename(pathname, newPathname, function(renamed) {
+            if (renamed) {
+                resolve();
+            } else {
+                ctx.setAsCurrentContext();
+                reject($.newIOException("error renaming file"));
+            }
+        });
+    }));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(byteOffset) {
@@ -364,7 +372,17 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(b
 
     // TODO: If the file is open, flush it first.
 
-    fs.truncate(pathname, byteOffset.toNumber());
+    var ctx = $.ctx;
+    asyncImpl("V", new Promise(function(resolve, reject) {
+        fs.truncate(pathname, byteOffset.toNumber(), function(truncated) {
+            if (truncated) {
+                resolve();
+            } else {
+                ctx.setAsCurrentContext();
+                reject($.newIOException("error truncating file"));
+            }
+        });
+    }));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() {

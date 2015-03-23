@@ -271,15 +271,17 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  var truncated = fs.truncate("/tmp");
-  is(truncated, false, "can't truncate a directory");
-  next();
+  fs.truncate("/tmp", 0, function(truncated) {
+    is(truncated, false, "can't truncate a directory");
+    next();
+  });
 });
 
 tests.push(function() {
-  var truncated = fs.truncate("/tmp/tmp.txt");
-  is(truncated, true, "truncated a file");
-  next();
+  fs.truncate("/tmp/tmp.txt", 0, function(truncated) {
+    is(truncated, true, "truncated a file");
+    next();
+  });
 });
 
 tests.push(function() {
@@ -376,10 +378,13 @@ tests.push(function() {
   is(files.length, 1, "files has one entry");
   is(files[0], "tmp.txt", "tmp.txt is in files");
   next();
+console.log("foo");
 });
 
 tests.push(function() {
+console.log("bar");
   fs.open("/tmp/tmp.txt", function(fd) {
+console.log("baz");
     is(fd, 3, "opened a file");
     next();
   });
@@ -614,69 +619,77 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  var truncated = fs.truncate("/tmp/tmp.txt", 11);
-  is(truncated, true, "truncated a file to 11 bytes");
-  var size = fs.size("/tmp/tmp.txt");
-  is(size, 11, "truncated file's size is 11");
-  next();
+  fs.truncate("/tmp/tmp.txt", 11, function(truncated) {
+    is(truncated, true, "truncated a file to 11 bytes");
+    var size = fs.size("/tmp/tmp.txt");
+    is(size, 11, "truncated file's size is 11");
+    next();
+  });
 });
 
 tests.push(function() {
-  var truncated = fs.truncate("/tmp/tmp.txt");
-  is(truncated, true, "truncated a file");
-  var size = fs.size("/tmp/tmp.txt");
-  is(size, 0, "truncated file's size is 0");
-  next();
+  fs.truncate("/tmp/tmp.txt", 0, function(truncated) {
+    is(truncated, true, "truncated a file");
+    var size = fs.size("/tmp/tmp.txt");
+    is(size, 0, "truncated file's size is 0");
+    next();
+  });
 });
 
 tests.push(function() {
-  var renamed = fs.rename("/tmp/tmp.txt", "/tmp/tmp2.txt");
-  ok(renamed, "File renamed");
-  next();
+  fs.rename("/tmp/tmp.txt", "/tmp/tmp2.txt", function(renamed) {
+    ok(renamed, "File renamed");
+    next();
+  });
 });
 
 tests.push(function() {
   var created = fs.create("/file", new Blob([1,2,3,4]));
   ok(created, "File created");
-  var renamed = fs.rename("/file", "/file2");
-  ok(renamed, "File renamed");
-  var size = fs.size("/file2");
-  is(size, 4, "Renamed file size is correct");
-  var exists = fs.exists("/file");
-  ok(!exists, "file doesn't exist anymore");
-  next();
+  fs.rename("/file", "/file2", function(renamed) {
+    ok(renamed, "File renamed");
+    var size = fs.size("/file2");
+    is(size, 4, "Renamed file size is correct");
+    var exists = fs.exists("/file");
+    ok(!exists, "file doesn't exist anymore");
+    next();
+  });
 });
 
 tests.push(function() {
   var created = fs.mkdir("/newdir");
   ok(created, "Directory created");
-  var renamed = fs.rename("/newdir", "/newdir2");
-  ok(renamed, "Directory renamed");
-  var exists = fs.exists("/newdir");
-  ok(!exists, "newdir doesn't exist anymore");
-  next();
+  fs.rename("/newdir", "/newdir2", function(renamed) {
+    ok(renamed, "Directory renamed");
+    var exists = fs.exists("/newdir");
+    ok(!exists, "newdir doesn't exist anymore");
+    next();
+  });
 });
 
 tests.push(function() {
-  var renamed = fs.rename("/tmp", "/tmp3");
-  ok(!renamed, "Can't rename a non-empty directory");
-  var exists = fs.exists("/tmp");
-  ok(exists, "Directory still exists after an error while renaming");
-  next();
+  fs.rename("/tmp", "/tmp3", function(renamed) {
+    ok(!renamed, "Can't rename a non-empty directory");
+    var exists = fs.exists("/tmp");
+    ok(exists, "Directory still exists after an error while renaming");
+    next();
+  });
 });
 
 tests.push(function() {
-  var renamed = fs.rename("/tmp", "/newdir2");
-  ok(!renamed, "Can't rename a directory with a path to a directory that already exists");
-  var exists = fs.exists("/tmp");
-  ok(exists, "Directory still exists after an error while renaming");
-  next();
+  fs.rename("/tmp", "/newdir2", function(renamed) {
+    ok(!renamed, "Can't rename a directory with a path to a directory that already exists");
+    var exists = fs.exists("/tmp");
+    ok(exists, "Directory still exists after an error while renaming");
+    next();
+  });
 });
 
 tests.push(function() {
-  var renamed = fs.rename("/nonexisting", "/nonexisting2");
-  ok(!renamed, "Can't rename a non-existing file");
-  next();
+  fs.rename("/nonexisting", "/nonexisting2", function(renamed) {
+    ok(!renamed, "Can't rename a non-existing file");
+    next();
+  });
 });
 
 // stat/mtime tests
@@ -806,24 +819,27 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.truncate("/tmp/stat.txt");
-      var stat = fs.stat("/tmp/stat.txt");
-      ok(stat.mtime > lastTime, "truncate updates mtime");
-      lastTime = stat.mtime;
-      next();
+      fs.truncate("/tmp/stat.txt", 0, function() {
+        var stat = fs.stat("/tmp/stat.txt");
+        ok(stat.mtime > lastTime, "truncate updates mtime");
+        lastTime = stat.mtime;
+        next();
+      });
     }, 1);
   });
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.rename("/tmp/stat.txt", "/tmp/stat2.txt");
-      var stat = fs.stat("/tmp/stat2.txt")
-      is(stat.mtime, lastTime, "rename doesn't update mtime");
+      fs.rename("/tmp/stat.txt", "/tmp/stat2.txt", function() {
+        var stat = fs.stat("/tmp/stat2.txt")
+        is(stat.mtime, lastTime, "rename doesn't update mtime");
 
-      // Rename it back to its original name so the next test
-      // doesn't have to know about the name change.
-      fs.rename("/tmp/stat2.txt", "/tmp/stat.txt");
-      next();
+        // Rename it back to its original name so the next test
+        // doesn't have to know about the name change.
+        fs.rename("/tmp/stat2.txt", "/tmp/stat.txt", function() {
+          next();
+        });
+      });
     }, 1);
   });
 
@@ -840,10 +856,11 @@ tests.push(function() {
   var stat = fs.stat("/tmp/stat");
   var mtime = stat.mtime;
   window.setTimeout(function() {
-    fs.rename("/tmp/stat", "/tmp/stat2")
-    var stat = fs.stat("/tmp/stat2");
-    is(stat.mtime, mtime, "rename directory doesn't update mtime");
-    next();
+    fs.rename("/tmp/stat", "/tmp/stat2", function() {
+      var stat = fs.stat("/tmp/stat2");
+      is(stat.mtime, mtime, "rename directory doesn't update mtime");
+      next();
+    })
   }, 1);
 });
 
