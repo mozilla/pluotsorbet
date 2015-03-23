@@ -18,7 +18,7 @@ if (typeof module !== "undefined" && module.exports) {
 }
 
 (function(global) {
-  'use strict';
+  
 
   //
   // Utilities

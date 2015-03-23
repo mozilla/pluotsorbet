@@ -1,4 +1,4 @@
-'use strict';
+
 
 if (config.midletClassName !== "RunTests" && navigator && !navigator.mozContacts) {
   navigator.mozContacts = {

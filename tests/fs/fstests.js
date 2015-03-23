@@ -1,4 +1,4 @@
-'use strict';
+
 
 /**
  * Convert a callback-based fs function to a Promise-based one.

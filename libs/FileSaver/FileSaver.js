@@ -18,7 +18,7 @@ var saveAs = saveAs
       navigator.msSaveOrOpenBlob && navigator.msSaveOrOpenBlob.bind(navigator))
   // Everyone else
   || (function(view) {
-	"use strict";
+	;
 	// IE <10 is explicitly unsupported
 	if (typeof navigator !== "undefined" &&
 	    /MSIE [1-9]\./.test(navigator.userAgent)) {
