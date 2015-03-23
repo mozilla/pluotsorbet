@@ -37,9 +37,6 @@ import com.sun.midp.security.ImplicitlyTrustedClass;
 
 import javax.microedition.midlet.MIDlet;
 
-import com.sun.midp.installer.InstallState;
-import com.sun.midp.installer.Installer;
-import com.sun.midp.installer.InvalidJadException;
 import com.sun.midp.main.MIDletProxy;
 import com.sun.midp.main.MIDletProxyList;
 import com.sun.midp.main.MIDletProxyListListener;
@@ -116,59 +113,6 @@ public class CHManagerImpl extends com.sun.midp.content.CHManager
             regInstaller.install();
             regInstaller = null; // Let GC take it.
         }
-    }
-
-    /**
-     * Parse the ContentHandler attributes and check for errors.
-     * <ul>
-     * <li> Parse attributes into set of ContentHandlers.
-     * <li> If none, return
-     * <li> Check for permission to install handlers
-     * <li> Check each for simple invalid arguments
-     * <li> Check each for MIDlet is registered
-     * <li> Check each for conflicts with other application registrations
-     * <li> Find any current registrations
-     * <li> Merge current dynamic current registrations into set of new
-     * <li> Check and resolve any conflicts between static and curr dynamic
-     * <li> Retain current set and new set for registration step.
-     * </ul>
-     * @param installer the installer with access to the JAR, etc.
-     * @param state the InstallState with the attributes and other context
-     * @param msuite access to information about the suite
-     * @param authority the authority, if any, that authorized the trust level
-     * @exception InvalidJadException if there is no classname field,
-     *   or if there are more than five comma separated fields on the line.
-     */
-    public void preInstall(Installer installer, InstallState state,
-					MIDletSuite msuite, String authority) throws InvalidJadException
-    {
-        if( AppProxy.LOGGER != null ) 
-        	AppProxy.LOGGER.println( "CHManagerImpl.preInstall(): installer = " + 
-        			installer + ", state = " + state + ", msuite = " + msuite + 
-        			"\n\tauthority = '" + authority + "'" );
-		try {
-		    AppBundleProxy bundle =
-		    	new AppBundleProxy(installer, state, msuite, authority);
-            regInstaller = new RegistryInstaller(bundle);
-            regInstaller.preInstall();
-		} catch (IllegalArgumentException ill) {
-		    throw new InvalidJadException(
-				  InvalidJadException.INVALID_CONTENT_HANDLER, ill.getMessage());
-		} catch (ContentHandlerException che) {
-		    if (che.getErrorCode() == ContentHandlerException.AMBIGUOUS) {
-				throw new InvalidJadException(
-					      InvalidJadException.CONTENT_HANDLER_CONFLICT,
-					      che.getMessage());
-		    } else {
-				throw new InvalidJadException(
-					      InvalidJadException.INVALID_CONTENT_HANDLER,
-					      che.getMessage());
-		    }
-		} catch (ClassNotFoundException cnfe) {
-		    throw new InvalidJadException(InvalidJadException.CORRUPT_JAR,
-						  cnfe.getMessage());
-		}
-        if( AppProxy.LOGGER != null ) AppProxy.LOGGER.println( "CHManagerImpl.preInstall() exit" );
     }
 
     /**

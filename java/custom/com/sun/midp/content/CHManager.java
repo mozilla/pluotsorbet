@@ -34,8 +34,6 @@ import com.sun.midp.main.MIDletProxyList;
 
 import com.sun.midp.midlet.MIDletSuite;
 import com.sun.midp.installer.InvalidJadException;
-import com.sun.midp.installer.Installer;
-import com.sun.midp.installer.InstallState;
 
 import com.sun.midp.security.Permissions;
 import com.sun.midp.security.SecurityToken;
@@ -139,35 +137,6 @@ public class CHManager {
      *   descriptor is invalid
      */
     public void install() throws InvalidJadException {
-    }
-
-    /**
-     * Parse the ContentHandler attributes and check for errors.
-     * <ul>
-     * <li> Parse attributes into set of ContentHandlers.
-     * <li> If none, return
-     * <li> Check for permission to install handlers
-     * <li> Check each for simple invalid arguments
-     * <li> Check each for MIDlet is registered
-     * <li> Check each for conflicts with other application registrations
-     * <li> Find any current registrations
-     * <li> Merge current dynamic current registrations into set of new
-     * <li> Check and resolve any conflicts between static and curr dynamic
-     * <li> Retain current set and new set for registration step.
-     * </ul>
-     * @param installer the installer with access to the JAR, etc.
-     * @param state the InstallState with the attributes and other context
-     * @param msuite access to information about the suite
-     * @param authority the authority, if any, that authorized the trust level
-     * @exception InvalidJadException if there is no classname field,
-     * the option field is not "true", "false" or blank or if there are
-     * more than five comma separated fields on the line.
-     */
-    public void preInstall(Installer installer,
-			   InstallState state,
-			   MIDletSuite msuite,
-			   String authority)
-	throws InvalidJadException {
     }
 
     /**
