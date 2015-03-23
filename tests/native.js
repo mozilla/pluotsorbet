@@ -163,3 +163,56 @@ Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)
 // Many tests create FileConnection objects to files with the "/" root,
 // so add it to the list of valid roots.
 MIDP.fsRoots.push("/");
+
+var NO_SECURITY = typeof netscape !== "undefined" && netscape.security.PrivilegeManager;
+
+function enableSuperPowers() {
+  // To enable chrome privileges use a separate profile and enable the pref:
+  // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
+  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+}
+
+function forceCollectors() {
+  enableSuperPowers();
+  console.log("Forcing CC/GC.");
+  for (var i = 0; i < 3; i++) {
+    Components.utils.forceCC();
+    Components.utils.forceGC();
+  }
+}
+
+function sampleMemory() {
+  if (NO_SECURITY) {
+    forceCollectors();
+    var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
+
+    var jsObjectsSize = {};
+    var jsStringsSize = {};
+    var jsOtherSize = {};
+    var domSize = {};
+    var styleSize = {};
+    var otherSize = {};
+    var totalSize = {};
+    var jsMilliseconds = {};
+    var nonJSMilliseconds = {};
+
+    try {
+      memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
+        domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
+    } catch (e) {
+      console.log(e);
+    }
+
+    console.log("totalSize: " + totalSize.value);
+    console.log("domSize: " + domSize.value);
+    console.log("styleSize: " + styleSize.value);
+    console.log("jsObjectsSize: " + jsObjectsSize.value);
+    console.log("jsStringsSize: " + jsStringsSize.value);
+    console.log("jsOtherSize: " + jsOtherSize.value);
+    console.log("otherSize: " + otherSize.value);
+  }
+}
+
+Native["org/mozilla/MemorySampler.sampleMemory.()V"] = function() {
+  sampleMemory();
+};
