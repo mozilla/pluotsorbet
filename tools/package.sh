@@ -7,7 +7,7 @@ PACKAGE_DIR="output"
 
 rm -rf $PACKAGE_DIR/
 mkdir $PACKAGE_DIR
-mkdir $PACKAGE_DIR/build
+mkdir $PACKAGE_DIR/bld
 
 # setup the root
 cp *.js *.html *.webapp $PACKAGE_DIR/.
