@@ -26,8 +26,8 @@ import gnu.testlet.TestHarness;
 public class to implements Testlet
 {
   public int getExpectedPass() { return 7; }
-  public int getExpectedFail() { return 5; }
-  public int getExpectedKnownFail() { return 0; }
+  public int getExpectedFail() { return 0; }
+  public int getExpectedKnownFail() { return 5; }
   public void test (TestHarness harness)
     {
       // The default case converter in CLDC only supports the ISO Latin-1
