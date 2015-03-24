@@ -34,6 +34,7 @@ public class FileConnectionBench {
       System.out.println("OutputStream.write time: " + (JVM.monotonicTimeMillis() - start));
 
       out.close();
+      file.close();
     } catch (Exception e) {
       System.out.println("Unexpected exception: " + e);
       e.printStackTrace();
