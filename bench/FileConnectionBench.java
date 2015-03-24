@@ -8,6 +8,8 @@ import javax.microedition.io.file.FileConnection;
 import org.mozilla.MemorySampler;
 
 public class FileConnectionBench {
+  private static final byte[] b = new byte[1024];
+
   void runBenchmark() {
     try {
       long start, time;
@@ -20,11 +22,8 @@ public class FileConnectionBench {
       System.out.println("Writing to file " + privateDir + filename);
       file.create();
 
-      SecureRandom rnd = SecureRandom.getInstance(SecureRandom.ALG_SECURE_RANDOM);
       OutputStream out = file.openOutputStream();
-      byte[] b = new byte[1024];
       for (int i = 0; i < 1000; i++) {
-        rnd.nextBytes(b, 0, 1024);
         out.write(b);
       }
       out.close();
@@ -38,7 +37,16 @@ public class FileConnectionBench {
   }
 
   public static void main(String args[]) {
+    try {
+      SecureRandom rnd = SecureRandom.getInstance(SecureRandom.ALG_SECURE_RANDOM);
+      rnd.nextBytes(b, 0, 1024);
+    } catch (Exception e) {
+      System.out.println("Unexpected exception: " + e);
+      e.printStackTrace();
+    }
+
     FileConnectionBench bench = new FileConnectionBench();
+
     MemorySampler.sampleMemory();
     bench.runBenchmark();
     MemorySampler.sampleMemory();
