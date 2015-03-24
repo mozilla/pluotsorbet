@@ -164,7 +164,7 @@ Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)
 // so add it to the list of valid roots.
 MIDP.fsRoots.push("/");
 
-Native["org/mozilla/MemorySampler.sampleMemory.()V"] = function() {
+Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(label) {
   if (typeof Benchmark !== "undefined") {
     var memory = Benchmark.sampleMemory();
     var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
@@ -173,6 +173,6 @@ Native["org/mozilla/MemorySampler.sampleMemory.()V"] = function() {
     rows.push(keys.map(function(k) { return memory[k] }));
     var RIGHT = Benchmark.RIGHT;
     var alignment = [RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT];
-    console.log("Memory Sample:\n" + Benchmark.prettyTable(rows, alignment));
+    console.log((J2ME.fromJavaString(label) || "Memory sample") + ":\n" + Benchmark.prettyTable(rows, alignment));
   }
 };

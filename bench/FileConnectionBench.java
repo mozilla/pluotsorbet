@@ -52,8 +52,16 @@ public class FileConnectionBench {
 
     FileConnectionBench bench = new FileConnectionBench();
 
-    MemorySampler.sampleMemory();
+    MemorySampler.sampleMemory("Memory before benchmarking FileConnection");
     bench.runBenchmark();
-    MemorySampler.sampleMemory();
+    MemorySampler.sampleMemory("Memory after benchmarking FileConnection");
+
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      // nothing to do
+    }
+
+    MemorySampler.sampleMemory("Memory five seconds later");
   }
 }
