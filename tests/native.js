@@ -166,9 +166,13 @@ MIDP.fsRoots.push("/");
 
 Native["org/mozilla/MemorySampler.sampleMemory.()V"] = function() {
   if (typeof Benchmark !== "undefined") {
-    var mem = Benchmark.sampleMemory();
-    for (var p in mem) {
-      console.log(p + "=" + mem[p]);
-    }
+    var memory = Benchmark.sampleMemory();
+    var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
+    var rows = [];
+    rows.push(keys);
+    rows.push(keys.map(function(k) { return memory[k] }));
+    var RIGHT = Benchmark.RIGHT;
+    var alignment = [RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT];
+    console.log("Memory Sample:\n" + Benchmark.prettyTable(rows, alignment));
   }
 };

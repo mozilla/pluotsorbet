@@ -353,6 +353,10 @@ var Benchmark = (function() {
     start: start,
     buildBaseline: buildBaseline,
     sampleMemory: sampleMemory,
+    prettyTable: prettyTable,
+    LEFT: LEFT,
+    CENTER: CENTER,
+    RIGHT: RIGHT,
     startup: {
       init: function() {
         if (!storage.running) {
