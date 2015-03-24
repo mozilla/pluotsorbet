@@ -129,6 +129,42 @@ var Benchmark = (function() {
     otherSize: byteFormatter,
   };
 
+  function sampleMemory() {
+    if (NO_SECURITY) {
+      forceCollectors();
+      var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
+
+      var jsObjectsSize = {};
+      var jsStringsSize = {};
+      var jsOtherSize = {};
+      var domSize = {};
+      var styleSize = {};
+      var otherSize = {};
+      var totalSize = {};
+      var jsMilliseconds = {};
+      var nonJSMilliseconds = {};
+
+      try {
+        memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
+          domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
+      } catch (e) {
+        console.log(e);
+      }
+
+      return {
+        totalSize: totalSize.value,
+        domSize: domSize.value,
+        styleSize: styleSize.value,
+        jsObjectsSize: jsObjectsSize.value,
+        jsStringsSize: jsStringsSize.value,
+        jsOtherSize: jsOtherSize.value,
+        otherSize: otherSize.value,
+      };
+    }
+
+    return {};
+  }
+
   var startup = {
     run: function(settings) {
       storage.round = 0;
@@ -179,36 +215,12 @@ var Benchmark = (function() {
       saveStorage();
       this.runNextRound();
     },
-    sampleMemory: function() {
-      if (NO_SECURITY) {
-        forceCollectors();
-        var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
-
-        var jsObjectsSize = {};
-        var jsStringsSize = {};
-        var jsOtherSize = {};
-        var domSize = {};
-        var styleSize = {};
-        var otherSize = {};
-        var totalSize = {};
-        var jsMilliseconds = {};
-        var nonJSMilliseconds = {};
-
-        try {
-          memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
-            domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
-        } catch (e) {
-          console.log(e);
-        }
-        storage.current.totalSize.push(totalSize.value);
-        storage.current.domSize.push(domSize.value);
-        storage.current.styleSize.push(styleSize.value);
-        storage.current.jsObjectsSize.push(jsObjectsSize.value);
-        storage.current.jsStringsSize.push(jsStringsSize.value);
-        storage.current.jsOtherSize.push(jsOtherSize.value);
-        storage.current.otherSize.push(otherSize.value);
-        saveStorage();
+    sampleMemoryToStorage: function() {
+      var mem = sampleMemory();
+      for (var p in mem) {
+        storage.current[p] = mem[p];
       }
+      saveStorage();
     },
     runNextRound: function() {
       var self = this;
@@ -219,7 +231,7 @@ var Benchmark = (function() {
         }
         if (storage.round !== 0) {
           if (NO_SECURITY) {
-            self.sampleMemory();
+            self.sampleMemoryToStorage();
           }
           if (done) {
             self.finish();
@@ -340,6 +352,7 @@ var Benchmark = (function() {
     },
     start: start,
     buildBaseline: buildBaseline,
+    sampleMemory: sampleMemory,
     startup: {
       init: function() {
         if (!storage.running) {
