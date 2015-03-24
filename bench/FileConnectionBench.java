@@ -3,7 +3,6 @@ package benchmark;
 import com.sun.cldchi.jvm.JVM;
 import com.sun.midp.crypto.SecureRandom;
 import java.io.OutputStream;
-import java.util.Random;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
 import org.mozilla.MemorySampler;
@@ -16,8 +15,7 @@ public class FileConnectionBench {
       start = JVM.monotonicTimeMillis();
 
       String privateDir = System.getProperty("fileconn.dir.private");
-      Random random = new Random();
-      String filename = new javax.bluetooth.UUID(java.lang.Math.abs(random.nextInt())).toString();
+      String filename = String.valueOf(System.currentTimeMillis());
       FileConnection file = (FileConnection)Connector.open(privateDir + filename);
       System.out.println("Writing to file " + privateDir + filename);
       file.create();
